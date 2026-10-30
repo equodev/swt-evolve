@@ -791,6 +791,21 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   bool get wrapsWholeWidgetForDnd => true;
 
+  /// Whether [wrap] puts this control in [inOwnLayer]: every Composite does, so that a change to
+  /// one of its controls repaints the Composite rather than the shell. A control that builds its own
+  /// top instead of going through [wrap] puts that top there itself.
+  bool get drawsInOwnLayer => false;
+
+  /// [top], the outermost thing this control builds, in a layer of its own. Painting restarts from
+  /// the nearest layer above what changed, so without one here a change repaints the shell and
+  /// every control in it. A relayout inside a control (a LayoutBuilder lays itself out again for any
+  /// change below it) climbs to the control's top, where its bounds fix its size, and repaints all
+  /// it passes: outermost, or the layer is climbed past.
+  Widget inOwnLayer(Widget top) => RepaintBoundary(child: top);
+
+  Widget _ownLayerIfDrawn(Widget control, bool ownLayer) =>
+      ownLayer && drawsInOwnLayer ? inOwnLayer(control) : control;
+
   Widget wrapDnd(Widget content) {
     if (state.dragSource != true && state.dropTargetId == null) return content;
     // A DragSource drags from anywhere inside the control. What a self-drawn control renders under
@@ -803,12 +818,19 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       child: content,
       state: state,
       onDrop: (_, __, ___, position) => sendControlDrop(position),
-      builder: (context, child, negotiation, isHovering) => isHovering
-          ? DecoratedBox(
-              decoration: BoxDecoration(border: Border.all(color: Colors.blue, width: 2)),
-              child: child,
-            )
-          : child,
+      // Painted under the control in a layer of its own, so the border coming and going repaints
+      // nothing else, and the control is not built again.
+      builder: (context, child, isHovering) => Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Positioned.fill(
+            child: IgnorePointer(
+              child: RepaintBoundary(child: CustomPaint(painter: _DropBorderPainter(isHovering))),
+            ),
+          ),
+          child,
+        ],
+      ),
     );
     return wrapDraggable<DndDragPayload>(
       child: content,
@@ -951,8 +973,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   /// The control's own chrome around [widget]. [opacity] is the impl's own fade, folded into the
-  /// one layer the control already has.
-  Widget wrap(Widget widget, {double opacity = 1}) {
+  /// one layer the control already has. [ownLayer] false for a control whose own build puts this in
+  /// [inOwnLayer] further out.
+  Widget wrap(Widget widget, {double opacity = 1, bool ownLayer = true}) {
     // Every Control build ends here, so this counts real rebuilds, which a duration mark cannot see.
     if (perfMarksEnabled) perfCount('${state.swt}.build');
     final hoverDepth = ControlNestingScope.depthOf(context);
@@ -991,7 +1014,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       forwardKeys,
       opacity,
     );
-    final key = (innerKey, disabled, effective);
+    final key = (innerKey, disabled, effective, ownLayer);
     // The slot is normally marked with this control (see [setState]); marking it during the build
     // makes the build owner re-sort its dirty list, once per control.
     _slotRebuild.mark();
@@ -1008,20 +1031,22 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _innerKey = innerKey;
       inner = _inner = _innerChain(KeptSlot(_slotRebuild, () => _slotChild), hoverDepth, mouseCursor);
     }
-    return _wrapped = SwtControlScope(
-      swt: state.swt,
-      child: ControlNestingScope(
-        depth: hoverDepth + 1,
-        child: RegionClip.maybe(
-            state.region,
-            blockWhenDisabled(
-                _FadeOpacity(
-                    opacity: (disabled ? AppOpacities.disabled : 1) * opacity,
-                    child: semantics ? _SemanticsGeneration(generation: effective, child: inner) : inner),
-                effective: effective,
-                onKeyEvent: forwardKeys ? _forwardKeyDown : null)),
-      ),
-    );
+    return _wrapped = _ownLayerIfDrawn(
+        SwtControlScope(
+          swt: state.swt,
+          child: ControlNestingScope(
+            depth: hoverDepth + 1,
+            child: RegionClip.maybe(
+                state.region,
+                blockWhenDisabled(
+                    _FadeOpacity(
+                        opacity: (disabled ? AppOpacities.disabled : 1) * opacity,
+                        child: semantics ? _SemanticsGeneration(generation: effective, child: inner) : inner),
+                    effective: effective,
+                    onKeyEvent: forwardKeys ? _forwardKeyDown : null)),
+          ),
+        ),
+        ownLayer);
   }
 
   Widget _innerChain(Widget widget, int hoverDepth, MouseCursor? mouseCursor) {
@@ -1384,6 +1409,26 @@ class _PointerTooltipLayout extends SingleChildLayoutDelegate {
       oldDelegate.pointer != pointer ||
       oldDelegate.cursorOffset != cursorOffset ||
       oldDelegate.screenMargin != screenMargin;
+}
+
+/// The border a plain control's drop target shows while a drag is over it.
+class _DropBorderPainter extends CustomPainter {
+  const _DropBorderPainter(this.hovering);
+
+  final bool hovering;
+
+  static final BoxDecoration _border = BoxDecoration(border: Border.all(color: Colors.blue, width: 2));
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!hovering) return;
+    final painter = _border.createBoxPainter();
+    painter.paint(canvas, Offset.zero, ImageConfiguration(size: size));
+    painter.dispose();
+  }
+
+  @override
+  bool shouldRepaint(_DropBorderPainter old) => old.hovering != hovering;
 }
 
 /// The control's [Opacity]: a layer of its own only while it is see-through, so that a fade or a

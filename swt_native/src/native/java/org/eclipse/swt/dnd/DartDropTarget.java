@@ -496,12 +496,17 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
             return;
         }
         if (eventType == DND.DragEnter || eventType == DND.DragOver || eventType == DND.DragOperationChanged || eventType == DND.DragLeave || eventType == DND.DropAccept) {
+            // A drag over this target starts afresh: its first answer is sent whatever the last one was.
+            if (eventType == DND.DragEnter)
+                answer.reset();
             DNDEvent negotiationEvent = toNegotiationEvent(eventType, event);
             super.sendEvent(eventType, negotiationEvent);
             selectedDataType = negotiationEvent.dataType;
             selectedOperation = negotiationEvent.detail;
             dndFeedback = negotiationEvent.feedback;
-            sendNegotiationResult();
+            answer.sendIfChanged(this, selectedOperation, dndFeedback, selectedDataType != null ? (int) selectedDataType.type : 0);
+            if (eventType == DND.DragLeave)
+                answer.reset();
             return;
         }
         super.sendEvent(eventType, event);
@@ -509,13 +514,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     int dndFeedback = DND.FEEDBACK_NONE;
 
-    private void sendNegotiationResult() {
-        java.util.Map<String, Object> response = new java.util.HashMap<>();
-        response.put("detail", selectedOperation);
-        response.put("feedback", dndFeedback);
-        response.put("currentDataTypeId", selectedDataType != null ? (int) selectedDataType.type : 0);
-        FlutterBridge.send(this, "Drop/negotiationResult", response);
-    }
+    private final DropAnswer answer = new DropAnswer(335, 339, 334, 364);
 
     private DNDEvent toNegotiationEvent(int eventType, Event e) {
         DNDEvent event = new DNDEvent();
@@ -594,7 +593,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     private Widget resolveItem(Event e) {
         if (e.itemId != 0) {
-            Widget found = findItemById(control, e.itemId);
+            Widget found = DropTargetHelper.findItemById(control, e.itemId);
             if (found != null)
                 return found;
         }
@@ -611,41 +610,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return null;
     }
 
-    private Widget findItemById(Control control, long id) {
-        if (control instanceof Table) {
-            Table table = (Table) control;
-            for (TableItem item : table.getItems()) {
-                if (FlutterBridge.id(item) == id)
-                    return item;
-            }
-        } else if (control instanceof Tree) {
-            Tree tree = (Tree) control;
-            for (TreeItem item : tree.getItems()) {
-                Widget found = findTreeItemById(item, id);
-                if (found != null)
-                    return found;
-            }
-        } else if (control instanceof org.eclipse.swt.custom.CTabFolder) {
-            org.eclipse.swt.custom.CTabFolder folder = (org.eclipse.swt.custom.CTabFolder) control;
-            for (org.eclipse.swt.custom.CTabItem item : folder.getItems()) {
-                if (FlutterBridge.id(item) == id)
-                    return item;
-            }
-        }
-        return null;
-    }
-
-    private Widget findTreeItemById(TreeItem item, long id) {
-        if (FlutterBridge.id(item) == id)
-            return item;
-        for (TreeItem child : item.getItems()) {
-            Widget found = findTreeItemById(child, id);
-            if (found != null)
-                return found;
-        }
-        return null;
-    }
-
     private void notifyDragSourceOfDragEnd(int detail) {
         DartDragSource source = matchingDragSource();
         if (source != null)
@@ -653,8 +617,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
     }
 
     private DartDragSource matchingDragSource() {
-        DartDragSource source = DartDragSource.activeDrag;
-        return source != null && !source.isDisposed() ? source : null;
+        DragSource source = ActiveDrag.of(getDisplay());
+        return source != null ? (DartDragSource) source.getImpl() : null;
     }
 
     protected void _hookEvents() {

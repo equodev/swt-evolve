@@ -46,6 +46,11 @@ public interface CommService {
     default void removeOwner(String owner) {
     }
 
+    /** {@link #removeOwner(String)} for the owner {@code type + "/" + id}. */
+    default void removeOwner(String type, long id) {
+        removeOwner(type + "/" + id);
+    }
+
     /**
      * One handler for every channel {@code owner + "/" + rest}, {@code rest} one of {@code rests},
      * told which rest a message came on. A channel with a handler of its own (see {@link #on}) goes
@@ -54,6 +59,28 @@ public interface CommService {
     default <T> void onOwner(String owner, String[] rests, Class<T> cls,
             java.util.function.BiConsumer<String, T> callback) {
         for (String rest : rests) on(owner + "/" + rest, cls, value -> callback.accept(rest, value));
+    }
+
+    /** What {@link #onType} hands a message on {@code type + "/" + id + "/" + rest}. */
+    interface TypeCallback<T> {
+        /**
+         * What the message is for, or null when it is not this callback's: read before its payload
+         * is decoded, and handed to {@link #accept} with it.
+         */
+        Object target(String type, long id, String rest);
+
+        void accept(Object target, String rest, T value);
+    }
+
+    /**
+     * One handler for every channel of every widget of {@code type}, finding the widget by the id
+     * its channel names, so a widget registers nothing of its own and leaves nothing behind. A
+     * channel with a handler of its own (see {@link #on}, {@link #onOwner}) goes to that handler
+     * instead. Registering a type a second time keeps the first callback. False where this comm does
+     * not dispatch by type; its caller registers each widget's handlers then.
+     */
+    default <T> boolean onType(String type, Class<T> cls, TypeCallback<T> callback) {
+        return false;
     }
 
     /**

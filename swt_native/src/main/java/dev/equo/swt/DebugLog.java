@@ -1,6 +1,6 @@
 package dev.equo.swt;
 
-import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -62,22 +62,60 @@ final class DebugLog {
     /** Prints a {@code send:} line for this event/payload when debugging is on and the event passes filters. */
     static void logSend(String eventName, byte[] bytes, int offset, int length) {
         if (!shouldLog(eventName)) return;
-        String body;
-        try {
-            Object tree = decoded(eventName, bytes, offset, length);
-            prune(tree);
-            StringBuilder sb = new StringBuilder();
-            render(tree, 0, sb);
-            body = sb.toString();
-        } catch (RuntimeException e) {
-            // Never let debug logging break a send; fall back to the payload as text.
-            body = new String(bytes, offset, length, StandardCharsets.UTF_8);
+        if (!dev.equo.swt.comm.TaggedValues.isTagged(bytes, offset, length)) {
+            // Bytes with a form of their own (an image's, a widget frame's): only their size says anything here.
+            System.out.println("send: " + eventName + ": <" + length + " B>");
+            return;
         }
+        Object tree;
+        try {
+            tree = dev.equo.swt.comm.TaggedValues.decode(bytes, offset, length);
+        } catch (RuntimeException e) {
+            // Never let debug logging break a send.
+            System.out.println("send: " + eventName + ": <" + length + " B, unreadable: " + e + ">");
+            return;
+        }
+        print("send: " + eventName + (SUMMARY ? " (" + length + " B)" : ""), tree);
+    }
+
+    /**
+     * A frame of widget records, one {@code send:} line per record: what it is ({@code whole}, a
+     * {@code change} with the stamp it was computed from), the widget, and its properties by name.
+     * A whole record leaves out every property still at the client's default.
+     */
+    static void logWidgetFrame(byte[] payload) {
+        List<WireDump.Record> records;
+        try {
+            records = WireDump.records(payload, 0, payload.length);
+        } catch (RuntimeException e) {
+            System.out.println("send: " + WidgetWire.CHANNEL + ": <" + payload.length + " B, unreadable: " + e + ">");
+            return;
+        }
+        for (WireDump.Record r : records) {
+            String channel = r.channel();
+            if (!shouldLog(channel)) continue;
+            String kind;
+            switch (r.kind) {
+                case WidgetWire.WHOLE: kind = "whole _s=" + r.stamp; break;
+                case WidgetWire.CHANGE: kind = "change _s=" + r.stamp + " _b=" + r.base; break;
+                case WidgetWire.IMAGE: kind = "image"; break;
+                case WidgetWire.HOLDER: kind = "holder"; break;
+                default: kind = "kind " + r.kind;
+            }
+            print("send: " + channel + " (" + kind + ")", new LinkedHashMap<String, Object>(r.properties));
+        }
+    }
+
+    private static void print(String header, Object decoded) {
+        Object tree = mutableCopy(decoded);
+        prune(tree);
+        StringBuilder sb = new StringBuilder();
+        render(tree, 0, sb);
+        String body = sb.toString();
         if (MAX_LEN > 0 && body.length() > MAX_LEN) {
             body = body.substring(0, MAX_LEN) + "…(+" + (body.length() - MAX_LEN) + " chars)";
         }
-        String size = SUMMARY ? " (" + length + " B)" : "";
-        System.out.println("send: " + eventName + size + ": " + body);
+        System.out.println(header + ": " + body);
     }
 
     /** A GC's binary frame, one {@code send:} line per record. */
@@ -89,22 +127,6 @@ final class DebugLog {
             render(entry.value, 0, sb);
             System.out.println("send: " + entry.channel + ": " + sb);
         }
-    }
-
-    /**
-     * A payload as values: a frame of widget records as each record's properties by channel, tagged
-     * values decoded, anything else as its UTF-8 text.
-     */
-    private static Object decoded(String eventName, byte[] bytes, int offset, int length) {
-        if (WidgetWire.CHANNEL.equals(eventName)) {
-            Map<String, Object> records = new java.util.LinkedHashMap<>();
-            for (WireDump.Record r : WireDump.records(bytes, offset, length)) records.put(r.channel(), r.properties);
-            return records;
-        }
-        if (dev.equo.swt.comm.TaggedValues.isTagged(bytes, offset, length)) {
-            return dev.equo.swt.comm.TaggedValues.decode(bytes, offset, length);
-        }
-        return new String(bytes, offset, length, StandardCharsets.UTF_8);
     }
 
     /**
@@ -146,8 +168,8 @@ final class DebugLog {
         System.out.println(sb);
     }
 
+    /** Whether the name filters let {@code eventName} through; reached only from {@link DebugTap}. */
     private static boolean shouldLog(String eventName) {
-        if (!Config.isDebug()) return false;
         if (EXCLUDE != null && EXCLUDE.matcher(eventName).find()) return false;
         if (FILTER != null && !FILTER.matcher(eventName).find()) return false;
         return true;
@@ -163,6 +185,21 @@ final class DebugLog {
     }
 
     // ---- tree pruning ------------------------------------------------------
+
+    /** {@code node} with every map and list in it copied, so pruning leaves what was decoded alone. */
+    private static Object mutableCopy(Object node) {
+        if (node instanceof Map) {
+            Map<String, Object> copy = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> e : ((Map<?, ?>) node).entrySet()) copy.put(String.valueOf(e.getKey()), mutableCopy(e.getValue()));
+            return copy;
+        }
+        if (node instanceof List) {
+            List<Object> copy = new ArrayList<>();
+            for (Object v : (List<?>) node) copy.add(mutableCopy(v));
+            return copy;
+        }
+        return node;
+    }
 
     @SuppressWarnings("unchecked")
     private static void prune(Object node) {
@@ -183,13 +220,22 @@ final class DebugLog {
             renderMap((Map<String, Object>) node, indent, out);
         } else if (node instanceof List) {
             renderList((List<Object>) node, indent, out);
-        } else if (node instanceof String) {
-            out.append('"').append(node).append('"');
-        } else if (node instanceof byte[]) {
-            out.append('"').append(WireDump.describe((byte[]) node)).append('"');
         } else {
-            out.append(node);
+            out.append(scalar(node));
         }
+    }
+
+    /** A decoded value that is no map or list, as the log prints it. */
+    private static String scalar(Object v) {
+        if (v == null) return "null";
+        if (v instanceof CharSequence) return "\"" + v + "\"";
+        if (v instanceof byte[]) return "\"" + WireDump.describe((byte[]) v) + "\"";
+        if (v instanceof int[]) return java.util.Arrays.toString((int[]) v);
+        if (v instanceof long[]) return java.util.Arrays.toString((long[]) v);
+        if (v instanceof double[]) return java.util.Arrays.toString((double[]) v);
+        if (v instanceof boolean[]) return java.util.Arrays.toString((boolean[]) v);
+        if (v instanceof Object[]) return java.util.Arrays.deepToString((Object[]) v);
+        return String.valueOf(v);
     }
 
     private static void renderMap(Map<String, Object> map, int indent, StringBuilder out) {

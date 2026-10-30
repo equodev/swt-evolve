@@ -23,6 +23,7 @@ import 'utils/font_utils.dart';
 import 'utils/viewport_clip.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/dnd_session.dart' show ActiveDragTracker;
 import 'utils/cached_text.dart';
 import 'utils/text_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
@@ -695,8 +696,15 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
   @override
   Widget build(BuildContext context) {
     if (!widget.theme.cellHoverZoomEnabled) return widget.child;
+    // A held button keeps the mouse with the control it was pressed on, so a drag passing over the
+    // cells grows none of them; the first move after release does.
     return MouseRegion(
-      onEnter: (_) => _show(),
+      onEnter: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) _show();
+      },
+      onHover: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) _show();
+      },
       onExit: (_) => _hide(),
       child: _HoverAnchor(link: _link, showing: _showing, child: widget.child),
     );

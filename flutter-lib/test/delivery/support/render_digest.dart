@@ -35,7 +35,12 @@ final _semanticsId = RegExp(r'SemanticsNode#\d+');
 final _transient = RegExp(
     r'\s+(NEEDS-LAYOUT|NEEDS-PAINT|NEEDS-COMPOSITING-BITS-UPDATE|DETACHED|DISPOSED)');
 
+/// A layer's record of how often it was painted again, which says how the tree was reached: a
+/// layer that was repainted by an update and one only just mounted show the same picture.
+final _layerUsage = RegExp(r'^.*\b(metrics|diagnosis): .*\n', multiLine: true);
+
 String _normalize(String dump) => dump
+    .replaceAll(_layerUsage, '')
     .replaceAll(_semanticsId, 'SemanticsNode#')
     .replaceAll(_hash, '#')
     .replaceAll(_transient, '');

@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../comm/comm.dart';
+import '../../comm/widget_wire.dart' show WidgetWireReader;
+import '../../gen/event.dart';
 import 'hover_arbiter.dart';
 import 'veto_gate.dart';
 
@@ -69,12 +71,13 @@ class DndSession {
     (_listeners[dropTargetId] ??= []).add(onUpdate);
     if (_subscribed[dropTargetId] == true) return;
     _subscribed[dropTargetId] = true;
-    EquoCommService.onRaw("DropTarget/$dropTargetId/Drop/negotiationResult", (payload) {
-      final result = payload as Map;
+    // Java answers with an event's fields, only when the answer changes.
+    EquoCommService.onBytes("DropTarget/$dropTargetId/Drop/negotiationResult", (bytes) {
+      final event = WidgetWireReader(bytes).fields(VEvent());
       final state = DndNegotiationState(
-        detail: result['detail'] as int? ?? 0,
-        feedback: result['feedback'] as int? ?? 0,
-        currentDataTypeId: result['currentDataTypeId'] as int? ?? 0,
+        detail: event.detail ?? 0,
+        feedback: event.feedback ?? 0,
+        currentDataTypeId: event.currentDataTypeId ?? 0,
       );
       _state[dropTargetId] = state;
       for (final listener in List.of(_listeners[dropTargetId] ?? const [])) {

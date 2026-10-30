@@ -1931,7 +1931,7 @@ public abstract class DartWidget implements IWidget {
     }
 
     protected void _hookEvents() {
-        FlutterBridge.onClientEvents(this, FlutterBridge.clientEvents(getClass(), this::_clientEvents), this::_onClientEvent);
+        FlutterBridge.onClientEvents(this, FlutterBridge.clientEvents(getClass(), this::_clientEvents));
     }
 
     protected String[] _clientEvents() {
@@ -1951,6 +1951,10 @@ public abstract class DartWidget implements IWidget {
                 }
             default:
         }
+    }
+
+    public final void clientEvent(String channel, org.eclipse.swt.widgets.Event e) {
+        _onClientEvent(channel, e);
     }
 
     public Widget getApi() {

@@ -88,6 +88,13 @@ public class VControl extends VWidget {
     public void setDragSource(boolean value) {
     }
 
+    public Long getDragSourceId() {
+        return ((DartControl) impl).getDragSourceId();
+    }
+
+    public void setDragSourceId(Long value) {
+    }
+
     public Long getDropTargetId() {
         return ((DartControl) impl).getDropTargetId();
     }
@@ -218,6 +225,8 @@ public class VControl extends VWidget {
 
     public static final int DRAG_SOURCE = 295;
 
+    public static final int DRAG_SOURCE_ID = 1406;
+
     public static final int DROP_TARGET_ID = 296;
 
     public static final int ENABLED = 297;
@@ -253,6 +262,8 @@ public class VControl extends VWidget {
                 return "dragDetect";
             case DRAG_SOURCE:
                 return "dragSource";
+            case DRAG_SOURCE_ID:
+                return "dragSourceId";
             case DROP_TARGET_ID:
                 return "dropTargetId";
             case ENABLED:
@@ -297,6 +308,9 @@ public class VControl extends VWidget {
                 return true;
             case 295:
                 w.write(getDragSource());
+                return true;
+            case 1406:
+                w.write(getDragSourceId());
                 return true;
             case 296:
                 w.write(getDropTargetId());
@@ -387,6 +401,15 @@ public class VControl extends VWidget {
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(295);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1406:
+                {
+                    Long v_ = getDragSourceId();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(1406);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -484,7 +507,7 @@ public class VControl extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 569, 303, 304 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 290, 291, 292, 293, 294, 295, 1406, 296, 297, 298, 299, 300, 301, 302, 569, 303, 304 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

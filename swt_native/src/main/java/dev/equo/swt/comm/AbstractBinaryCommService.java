@@ -35,6 +35,13 @@ public abstract class AbstractBinaryCommService implements CommService {
     private static final Map<String, String> REST_NAMES = new ConcurrentHashMap<>();
     /** One handler for most of an owner's channels; see {@link #onOwner}. */
     private final Map<String, OwnerHandler<?>> ownerHandlers = new ConcurrentHashMap<>();
+    /**
+     * How many owners each type has in {@link #handlers} and {@link #ownerHandlers} together, so a
+     * widget of a type with none, which is most of them, is released without a lookup by its name.
+     */
+    private final Map<String, java.util.concurrent.atomic.AtomicInteger> ownersByType = new ConcurrentHashMap<>();
+    /** Handlers for every widget of a type, by type: {@link #onType}. */
+    private final Map<String, TypeHandler<?>> typeHandlers = new ConcurrentHashMap<>();
     private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
@@ -123,10 +130,19 @@ public abstract class AbstractBinaryCommService implements CommService {
         String rest = REST_NAMES.computeIfAbsent(rest(eventName, split), r -> r);
         TypedHandler<T> handler = new TypedHandler<>(cls, callback);
         handlers.compute(eventName.substring(0, split), (owner, named) -> {
-            if (named == null) named = new ConcurrentHashMap<>(8);
+            if (named == null) {
+                named = new ConcurrentHashMap<>(8);
+                countOwner(owner, 1);
+            }
             named.put(rest, handler);
             return named;
         });
+    }
+
+    private void countOwner(String owner, int delta) {
+        int slash = owner.indexOf('/');
+        ownersByType.computeIfAbsent(slash < 0 ? owner : owner.substring(0, slash),
+                t -> new java.util.concurrent.atomic.AtomicInteger()).addAndGet(delta);
     }
 
     @Override
@@ -135,20 +151,52 @@ public abstract class AbstractBinaryCommService implements CommService {
         String rest = rest(eventName, split);
         handlers.computeIfPresent(eventName.substring(0, split), (owner, named) -> {
             named.remove(rest);
-            return named.isEmpty() ? null : named;
+            if (!named.isEmpty()) return named;
+            countOwner(owner, -1);
+            return null;
         });
     }
 
     @Override
     public void removeOwner(String owner) {
-        handlers.remove(owner);
-        ownerHandlers.remove(owner);
+        if (handlers.remove(owner) != null) countOwner(owner, -1);
+        if (ownerHandlers.remove(owner) != null) countOwner(owner, -1);
+    }
+
+    @Override
+    public void removeOwner(String type, long id) {
+        java.util.concurrent.atomic.AtomicInteger owners = ownersByType.get(type);
+        if (owners == null || owners.get() <= 0) return;
+        removeOwner(type + "/" + id);
     }
 
     @Override
     public <T> void onOwner(String owner, String[] rests, Class<T> cls,
             java.util.function.BiConsumer<String, T> callback) {
-        ownerHandlers.put(owner, new OwnerHandler<>(new TypedHandler<>(cls, null), rests, callback));
+        if (ownerHandlers.put(owner, new OwnerHandler<>(new TypedHandler<>(cls, null), rests, callback)) == null)
+            countOwner(owner, 1);
+    }
+
+    @Override
+    public <T> boolean onType(String type, Class<T> cls, TypeCallback<T> callback) {
+        typeHandlers.computeIfAbsent(type, t -> new TypeHandler<>(new TypedHandler<>(cls, null), callback));
+        return true;
+    }
+
+    private boolean dispatchToType(String eventName, byte[] data, int offset, int length) {
+        int first = eventName.indexOf('/');
+        if (first < 0) return false;
+        String type = eventName.substring(0, first);
+        TypeHandler<?> handler = typeHandlers.get(type);
+        if (handler == null) return false;
+        int split = ownerEnd(eventName);
+        long id = ChannelHeader.parseId(eventName, first + 1, split);
+        if (id == Long.MIN_VALUE) return false;
+        String rest = rest(eventName, split);
+        Object target = handler.callback.target(type, id, rest);
+        if (target == null) return false;
+        handler.handle(target, rest, data, offset, length, serializer, logTag());
+        return true;
     }
 
     private boolean dispatchToOwner(String eventName, byte[] data, int offset, int length) {
@@ -253,6 +301,8 @@ public abstract class AbstractBinaryCommService implements CommService {
         if (dispatchToOwner(eventName, data, offset, length)) return;
         String alternateOwner = alternateName.apply(eventName);
         if (alternateOwner != null && dispatchToOwner(alternateOwner, data, offset, length)) return;
+        if (dispatchToType(eventName, data, offset, length)) return;
+        if (alternateOwner != null && dispatchToType(alternateOwner, data, offset, length)) return;
         // The same-type count distinguishes "wrong widget id" (siblings exist) from "this widget
         // type never registered" (none). The list itself runs to hundreds of lines per miss, so it
         // is printed only in debug mode.
@@ -279,6 +329,20 @@ public abstract class AbstractBinaryCommService implements CommService {
     /** Prefix for diagnostic logging; defaults to the concrete class' simple name. */
     protected String logTag() {
         return "[" + getClass().getSimpleName() + "]";
+    }
+
+    private static final class TypeHandler<T> {
+        final TypedHandler<T> reader;
+        final TypeCallback<T> callback;
+
+        TypeHandler(TypedHandler<T> reader, TypeCallback<T> callback) {
+            this.reader = reader;
+            this.callback = callback;
+        }
+
+        void handle(Object target, String rest, byte[] data, int offset, int length, Serializer serializer, String tag) {
+            reader.handle(data, offset, length, serializer, tag, value -> callback.accept(target, rest, value));
+        }
     }
 
     private static final class OwnerHandler<T> {

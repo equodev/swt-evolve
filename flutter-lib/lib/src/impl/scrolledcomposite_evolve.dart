@@ -11,6 +11,7 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_settings/scrolledcomposite_theme_settings.dart';
 import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import 'utils/widget_utils.dart';
+import 'utils/layered_layout_builder.dart';
 import 'utils/quiet_animations.dart';
 
 class ScrolledCompositeImpl<
@@ -284,7 +285,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         final vpW = constraints.maxWidth;
         final vpH = constraints.maxHeight;

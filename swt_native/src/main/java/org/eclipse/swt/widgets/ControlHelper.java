@@ -26,6 +26,18 @@ public class ControlHelper {
     // opened during that dispatch carries it to Flutter, which composites within it.
     private static Rectangle paintDamage;
 
+    /**
+     * The id of the live DragSource or DropTarget a control holds under {@code key} ({@code DND.DRAG_SOURCE_KEY}
+     * or {@code DND.DROP_TARGET_KEY}), or null, for the client to address it by.
+     */
+    public static Long dndId(Widget control, String key) {
+        Object held = control.isDisposed() ? null : control.getData(key);
+        if (!(held instanceof org.eclipse.swt.dnd.DragSource || held instanceof org.eclipse.swt.dnd.DropTarget)
+                || ((Widget) held).isDisposed())
+            return null;
+        return FlutterBridge.id(((Widget) held).getImpl());
+    }
+
     /** The damage the in-flight Paint is scoped to, or null outside one / for a full-area Paint. */
     public static Rectangle currentPaintDamage() {
         return paintDamage;

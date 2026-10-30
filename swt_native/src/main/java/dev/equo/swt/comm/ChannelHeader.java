@@ -101,7 +101,7 @@ public final class ChannelHeader {
     }
 
     /** The decimal id in {@code s[from, to)}, or {@link Long#MIN_VALUE} when it is not one. */
-    private static long parseId(String s, int from, int to) {
+    static long parseId(String s, int from, int to) {
         if (from >= to || to - from > 20) return Long.MIN_VALUE;
         boolean negative = s.charAt(from) == '-';
         int i = negative ? from + 1 : from;

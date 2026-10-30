@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/comm_frame.dart' show EquoCommBase;
+import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/table.dart';
@@ -136,5 +138,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_topShownRow(tester), 500);
+  });
+
+  testWidgets('a scroll tells Java how far the rows moved', (tester) async {
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() => EquoCommBase.recordSentFrames = false);
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(width: 200, height: _viewportHeight, child: TableSwt<VTable>(value: _table())),
+    ));
+    await tester.pumpAndSettle();
+    EquoCommService.commForTesting.clearSentFrames();
+
+    final vertical = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down);
+    final position = tester.state<ScrollableState>(vertical.first).position;
+    position.jumpTo(position.pixels + 40 * 100);
+    await tester.pumpAndSettle();
+
+    final reported = [
+      for (final frame in EquoCommService.commForTesting.sentFrames)
+        if (EquoCommBase.decodeFrame(frame).$1 == 'Table/1/Scroll/Scroll') EquoCommBase.decodeEvent(frame).y,
+    ];
+    expect(reported, isNotEmpty);
+    expect(reported.last, position.pixels.round(),
+        reason: 'Java works the first row out of how far the rows moved, so it is told exactly that');
   });
 }

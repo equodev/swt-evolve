@@ -33,6 +33,7 @@ import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
 import '../gen/widgets.dart' show WireKey;
 import '../testing/tree_test_registry.dart';
+import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
 
 class _FlatTreeItem {
@@ -238,7 +239,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   Widget createTreeView() {
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
         _cachedWidgetTheme = widgetTheme;
@@ -755,6 +756,26 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       columns,
       widgetTheme,
       effectiveWidths,
+    );
+    // Over the rows and inside any horizontal scroll, so it moves with them both ways.
+    listViewWithLines = Stack(
+      children: [
+        listViewWithLines,
+        Positioned.fill(
+          child: DropRowLayer(
+            rows: dropRow,
+            rowHeight: _cachedItemHeight!,
+            rowCount: flatItems.length,
+            scroll: _verticalController,
+            decoration: (feedback) => dropFeedbackDecoration(
+              feedback: feedback,
+              color: widgetTheme.selectedBackgroundColor,
+              lineWidth: widgetTheme.dropFeedbackLineWidth,
+              highlightAlpha: widgetTheme.dropFeedbackHighlightAlpha,
+            ),
+          ),
+        ),
+      ],
     );
 
     double? totalWidth = _calculateTotalWidth(
@@ -1567,7 +1588,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   /// Finds the TreeItem ID at the given x, y coordinates.
   /// Returns null if no item is found at that position.
-  Object? findItemIdAtPosition(double x, double y) {
+  /// The flat row under [y], items above it expanded or not, or null over the header.
+  int? _flatIndexAt(double y) {
     if (_cachedWidgetTheme == null) {
       return null;
     }
@@ -1589,18 +1611,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       return null;
     }
 
-    // Calculate which item index this y position corresponds to
-    final itemIndex = (adjustedY / itemHeight).floor();
-
-    // Get the item at that flat index
-    final item = _getItemAtFlatIndex(itemIndex);
-    return item?.id;
+    // The items scroll under the header, so a point on the body is that far further down them.
+    return ((adjustedY + _verticalController.scrolledBy) / itemHeight).floor();
   }
 
-  final HoverTracker<int> dragHover = HoverTracker<int>();
+  Object? findItemIdAtPosition(double x, double y) {
+    final index = _flatIndexAt(y);
+    return index == null ? null : _getItemAtFlatIndex(index)?.id;
+  }
 
-  /// The DND.FEEDBACK_* bits the drop target's listener answered for [dragHover]'s item.
-  final ValueNotifier<int> dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+  /// The flat row a drag is over and the feedback the drop target's listener answered for it.
+  final DropRowFeedback dropRow = DropRowFeedback();
 
   Widget wrapTreeForDrop(Widget content) {
     Offset? localOffset(DragTargetDetails<DndDragPayload> details) {
@@ -1611,11 +1632,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     int resolveItemId(DragTargetDetails<DndDragPayload> details) {
       final local = localOffset(details);
       if (local == null) {
-        dragHover.update(null);
+        dropRow.hover(null);
         return 0;
       }
-      final id = findItemIdAtPosition(local.dx, local.dy) as int?;
-      dragHover.update(id);
+      final index = _flatIndexAt(local.dy);
+      final id = index == null ? null : _getItemAtFlatIndex(index)?.id;
+      dropRow.hover(id == null ? null : index);
       return id ?? 0;
     }
 
@@ -1627,14 +1649,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       resolveItemId: resolveItemId,
       resolvePosition: resolvePosition,
       onDrop: (_, __, targetItemId, position) => sendItemDrop(targetItemId, position),
-      builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) {
-          dragHover.update(null);
-        } else {
-          dropFeedback.value = negotiation.feedback;
-        }
-        return child;
-      },
+      onAnswer: (answer) => dropRow.answer(answer.feedback),
+      // The next drag starts with no answer, as Java gives a new one for each.
+      onLeave: () => dropRow
+        ..hover(null)
+        ..answer(Dnd.feedbackNone),
     );
   }
 
@@ -2192,7 +2211,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _horizontalController?.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();
-    dropFeedback.dispose();
     super.dispose();
   }
 }

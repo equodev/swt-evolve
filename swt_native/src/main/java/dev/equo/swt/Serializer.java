@@ -611,9 +611,13 @@ public class Serializer {
          * for a composite, which can come to be presented under another name as its children arrive.
          */
         private int beginRecord(int kind, DartWidget impl, Object api, SentHashes seen) {
-            if (seen.type == null || impl instanceof DartComposite) {
+            if (impl instanceof DartComposite) {
                 seen.type = swtWidgetName(impl, (org.eclipse.swt.widgets.Widget) api);
                 seen.typeNumber = WidgetWire.typeNumber(seen.type);
+            } else if (seen.type == null) {
+                RecordType type = recordType(impl, api);
+                seen.type = type.name;
+                seen.typeNumber = type.number;
             }
             return frame.beginRecord(kind, seen.type, seen.typeNumber, FlutterBridge.id(api));
         }
@@ -742,11 +746,25 @@ public class Serializer {
             return false;
         }
 
+        /**
+         * Whether every slot so far was filled at its property's position, so the next position is
+         * the next slot and holds no key yet. A key put any other way can sit anywhere, and a second
+         * slot for it would be read in place of the one it updates.
+         */
+        private boolean inOrder = true;
+
         /** {@link #put(int, int, long)} for the property at {@code at} in its class's {@code wireKeys()}. */
         void put(int at, int key, int connection, long hash) {
             if (at < size && (int) (sent[at] >>> 32) == key) {
                 sent[at] = ((long) key << 32) | (connection & 0xFFFFFFFFL);
                 hashes[at] = hash;
+                return;
+            }
+            // A widget's first whole record: each property lands in the next slot, with nothing to search.
+            if (at == size && inOrder && size < sent.length) {
+                sent[size] = ((long) key << 32) | (connection & 0xFFFFFFFFL);
+                hashes[size] = hash;
+                size++;
                 return;
             }
             put(key, connection, hash);
@@ -772,6 +790,7 @@ public class Serializer {
                     return;
                 }
             }
+            inOrder = false;
             if (size == sent.length) {
                 sent = java.util.Arrays.copyOf(sent, size * 2);
                 hashes = java.util.Arrays.copyOf(hashes, size * 2);
@@ -852,6 +871,41 @@ public class Serializer {
         if (!any) return base;
         w.state(GcWire.STATE, props);
         return writeSeq.incrementAndGet();
+    }
+
+    /** The type a record names a widget by, and the client's number for it. */
+    private static final class RecordType {
+        final Class<?> api;
+        final String name;
+        final Integer number;
+
+        RecordType(Class<?> api, String name) {
+            this.api = api;
+            this.name = name;
+            this.number = WidgetWire.typeNumber(name);
+        }
+    }
+
+    /**
+     * The record type of each implementation class, with the API class it was worked out for. Only a
+     * composite is ever presented under another name, so for any other widget it is a fact about its
+     * two classes, worked out once rather than for each widget's first record.
+     */
+    private static final ClassValue<java.util.concurrent.atomic.AtomicReference<RecordType>> RECORD_TYPES =
+            new ClassValue<java.util.concurrent.atomic.AtomicReference<RecordType>>() {
+                @Override
+                protected java.util.concurrent.atomic.AtomicReference<RecordType> computeValue(Class<?> type) {
+                    return new java.util.concurrent.atomic.AtomicReference<>();
+                }
+            };
+
+    private static RecordType recordType(DartWidget impl, Object api) {
+        java.util.concurrent.atomic.AtomicReference<RecordType> held = RECORD_TYPES.get(impl.getClass());
+        RecordType type = held.get();
+        if (type != null && type.api == api.getClass()) return type;
+        type = new RecordType(api.getClass(), swtWidgetName(impl, (Widget) api));
+        held.set(type);
+        return type;
     }
 
     private static String swtWidgetName(DartWidget impl, Widget api) {

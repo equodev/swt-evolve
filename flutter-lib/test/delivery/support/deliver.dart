@@ -7,13 +7,18 @@
 // also the only path production has: a frame of widget records, as Java's WidgetWire writes one.
 
 import 'dart:typed_data';
+import 'dart:ui' show Offset;
 
+import 'package:flutter/painting.dart' show BoxDecoration;
+import 'package:flutter/rendering.dart' show RenderBox;
+import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/comm/widget_wire.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireTypeNames;
@@ -104,6 +109,26 @@ void applyRecords(List<WireRecord> records, {VRegistry? registry}) =>
 Future<void> deliverFrame(String channel, Map<String, dynamic> body) async {
   EquoCommService.commForTesting.receiveBinary(ChannelHeader.frame(channel, TaggedValues.encode(body)));
   await Future<void>.microtask(() {});
+}
+
+/// [event]'s fields arriving on [channel], as Java sends an answer that is an event.
+Future<void> deliverEvent(String channel, VEvent event) async {
+  EquoCommService.commForTesting.receiveBinary(ChannelHeader.frame(channel, WidgetWireWriter.encode(event)));
+  await Future<void>.microtask(() {});
+}
+
+/// The drop feedback drawn over [at], wherever a drop target draws it, or null.
+BoxDecoration? dropFeedbackAt(WidgetTester tester, Offset at) {
+  for (final e in find.byType(DropRowLayer).evaluate()) {
+    final layer = e.widget as DropRowLayer;
+    final row = layer.rows.row;
+    if (row == null) continue;
+    final box = e.renderObject! as RenderBox;
+    final local = layer.rowRect(row, box.size.width);
+    final drawn = box.localToGlobal(local.topLeft) & local.size;
+    if (drawn.contains(at)) return layer.decorationOver(row);
+  }
+  return null;
 }
 
 /// Everything this client knew, forgotten. What a reconnect is, and what a test needs between two

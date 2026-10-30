@@ -3069,6 +3069,10 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
 
     boolean dragSourceSet;
 
+    Long dragSourceId;
+
+    boolean dragSourceIdSet;
+
     Long dropTargetId;
 
     boolean dropTargetIdSet;
@@ -3208,6 +3212,8 @@ public abstract class DynControl extends DynWidget implements Drawable, IControl
         if (dragDetectSet)
             newImpl.setDragDetect(getDragDetect());
         //newImpl.dragSource = dragSource;
+        ;
+        //newImpl.dragSourceId = dragSourceId;
         ;
         //newImpl.dropTargetId = dropTargetId;
         ;

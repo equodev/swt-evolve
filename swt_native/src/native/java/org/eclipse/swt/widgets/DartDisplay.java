@@ -1397,7 +1397,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     int getLastEventTime() {
-        return (int) (System.nanoTime() / 1000_000L);
+        return DisplayBridge.lastEventTime(this);
     }
 
     Menu[] getMenus(Decorations shell) {
@@ -3988,6 +3988,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     public Shell[] _shells() {
         return shells;
     }
+
+    volatile int lastEventTime;
 
     Menu[] shownPopups = new Menu[0];
 

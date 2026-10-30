@@ -7,6 +7,7 @@ import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
@@ -283,6 +284,78 @@ class DndFlutterTest {
                 .containsExactly(DND.DROP_LINK);
     }
 
+    /** The client's word that the drag it started is over, however it ended, as it sends it. */
+    private void clientEndsDrag(DragSource source) {
+        ((DartDragSource) source.getImpl())._onClientEvent("Drag/dragFinished", new Event());
+        while (display.readAndDispatch()) {
+        }
+    }
+
+    private static List<DragSourceEvent> recordDragEnds(DragSource source) {
+        List<DragSourceEvent> ends = new ArrayList<>();
+        source.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragFinished(DragSourceEvent event) {
+                ends.add(event);
+            }
+        });
+        return ends;
+    }
+
+    @Test
+    @DisplayName("a drag dropped on nothing ends with DROP_NONE and doit false, as natively")
+    void aDragDroppedOnNothingEndsWithNothingDone() {
+        Label source = new Label(shell, SWT.NONE);
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE | DND.DROP_COPY);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        List<DragSourceEvent> ends = recordDragEnds(dragSource);
+        shell.open();
+
+        ((DartDragSource) dragSource.getImpl()).startDrag(new Event());
+        clientEndsDrag(dragSource);
+
+        assertThat(ends).hasSize(1);
+        assertThat(ends.get(0).detail).isEqualTo(DND.DROP_NONE);
+        assertThat(ends.get(0).doit).isFalse();
+    }
+
+    @Test
+    @DisplayName("a drag a drop ended is not ended again when the client says it is over")
+    void aDroppedDragEndsOnce() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragSetData(DragSourceEvent event) {
+                event.data = "text";
+            }
+        });
+        List<DragSourceEvent> ends = recordDragEnds(dragSource);
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        shell.open();
+
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+        clientEndsDrag(dragSource);
+
+        assertThat(ends).hasSize(1);
+        assertThat(ends.get(0).detail).isEqualTo(DND.DROP_MOVE);
+        assertThat(ends.get(0).doit).isTrue();
+    }
+
+    @Test
+    @DisplayName("a control tells the client which DragSource its drags end on")
+    void aControlNamesItsDragSource() {
+        Label source = new Label(shell, SWT.NONE);
+        assertThat(((DartControl) source.getImpl()).getDragSourceId()).isNull();
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE);
+        assertThat(((DartControl) source.getImpl()).getDragSourceId())
+                .isEqualTo(FlutterBridge.id(dragSource.getImpl()));
+    }
+
     @Test
     @DisplayName("drop resolves DROP_DEFAULT to a concrete operation when the app never overrides it (Snippet91)")
     void dropResolvesDefaultOperationWhenAppNeverOverridesIt() {
@@ -398,6 +471,38 @@ class DndFlutterTest {
         impl.sendEvent(DND.DragOver, new Event());
 
         assertThat(seen).containsExactly(DND.FEEDBACK_SELECT, DND.FEEDBACK_SELECT);
+    }
+
+    @Test
+    @DisplayName("the drop target's answer to a drag reaches the client and is read there")
+    @SuppressWarnings("unchecked")
+    void dropTargetAnswerIsReadByTheClient() {
+        Tree tree = new Tree(shell, SWT.BORDER);
+        new TreeItem(tree, SWT.NONE).setText("node");
+        DragSource dragSource = new DragSource(tree, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        DropTarget dropTarget = new DropTarget(tree, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragOver(DropTargetEvent event) {
+                event.detail = DND.DROP_MOVE;
+                event.feedback = DND.FEEDBACK_SELECT;
+            }
+        });
+        shell.open();
+        flutter.show(shell);
+
+        ((DartDragSource) dragSource.getImpl()).startDrag(new Event());
+        DartDropTarget impl = (DartDropTarget) dropTarget.getImpl();
+        impl.sendEvent(DND.DragEnter, new Event());
+        impl.sendEvent(DND.DragOver, new Event());
+        flutter.flush();
+
+        Map<String, Object> answer = (Map<String, Object>) flutter.queryState(dropTarget).get("dropAnswer");
+        assertThat(answer).as("the client decoded the answer Java sent").isNotNull();
+        assertThat(((Number) answer.get("detail")).intValue()).isEqualTo(DND.DROP_MOVE);
+        assertThat(((Number) answer.get("feedback")).intValue()).isEqualTo(DND.FEEDBACK_SELECT);
     }
 
     @Test

@@ -580,8 +580,6 @@ public class DartDragSource extends DartWidget implements IDragSource {
         return moveData;
     }
 
-    static DartDragSource activeDrag;
-
     private void sendDragStartResult(boolean doit) {
         if (control == null)
             return;
@@ -606,11 +604,11 @@ public class DartDragSource extends DartWidget implements IDragSource {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.detail = detail;
-        event.doit = true;
+        // As every platform reports it: true only when something was dropped.
+        event.doit = detail != DND.DROP_NONE;
         notifyListeners(DND.DragEnd, event);
         lastDragData = null;
-        if (activeDrag == this)
-            activeDrag = null;
+        ActiveDrag.end(getApi());
     }
 
     public Object _lastDragData() {
@@ -634,7 +632,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        sendEvent(DND.DragEnd, e);
+                        if (ActiveDrag.is(getApi()))
+                            fireDragEnd(DND.DROP_NONE);
                     });
                     return;
                 }

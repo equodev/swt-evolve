@@ -21,6 +21,7 @@ import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/focus_report.dart';
 import 'utils/tab_only_focus_node.dart';
+import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
 import 'utils/cached_text.dart';
 import 'utils/quiet_animations.dart';
@@ -210,7 +211,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           if (hasBounds(state.bounds)) {
             final allocatedHeight = state.bounds!.height.toDouble();
             final unscaledBar = bar;
-            bar = LayoutBuilder(
+            bar = LayeredLayoutBuilder(
               builder: (context, incoming) {
                 if (incoming.maxWidth <= 0) return unscaledBar;
                 return ConstrainedBox(

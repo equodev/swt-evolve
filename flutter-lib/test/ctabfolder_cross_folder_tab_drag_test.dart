@@ -95,6 +95,10 @@ Finder _markerIn(Finder folder) => find.descendant(
       matching: find.byType(CTabInsertionMarker),
     );
 
+/// Whether [folder] shows the insertion marker, which stays mounted when it is not shown.
+bool _markerShownIn(WidgetTester tester, Finder folder) =>
+    tester.widgetList<CTabInsertionMarker>(_markerIn(folder)).any((marker) => marker.shown.value);
+
 Finder _folderWithId(int id) => find.byWidgetPredicate(
     (w) => w is CTabFolderSwt<VCTabFolder> && w.value.id == id);
 
@@ -115,9 +119,9 @@ void main() {
         await _dragTo(tester, find.text('A one'), tester.getCenter(find.text('B two')));
     await tester.pump();
 
-    expect(_markerIn(_folderWithId(2)), findsOneWidget,
+    expect(_markerShownIn(tester, _folderWithId(2)), isTrue,
         reason: 'the folder under the pointer must show where the tab would land');
-    expect(_markerIn(_folderWithId(1)), findsNothing,
+    expect(_markerShownIn(tester, _folderWithId(1)), isFalse,
         reason: 'the tab left its own folder, so that folder must not claim the drop');
 
     await gesture.up();
@@ -145,9 +149,9 @@ void main() {
     final gesture = await _dragTo(tester, find.text('A one'), emptyStrip);
     await tester.pump();
 
-    expect(_markerIn(_folderWithId(2)), findsOneWidget,
+    expect(_markerShownIn(tester, _folderWithId(2)), isTrue,
         reason: 'the empty strip belongs to the folder that owns it');
-    expect(_markerIn(_folderWithId(1)), findsNothing);
+    expect(_markerShownIn(tester, _folderWithId(1)), isFalse);
 
     await gesture.up();
     await tester.pumpAndSettle();
@@ -172,7 +176,7 @@ void main() {
     final gesture = await _dragTo(tester, find.text('A one'), emptyStrip);
     await tester.pump();
 
-    expect(_markerIn(_folderWithId(2)), findsOneWidget,
+    expect(_markerShownIn(tester, _folderWithId(2)), isTrue,
         reason: 'a folder with no tabs left must still accept one back');
 
     await gesture.up();
@@ -246,7 +250,7 @@ void main() {
         await _dragTo(tester, find.text('A one'), tester.getCenter(find.text('A three')));
     await tester.pump();
 
-    expect(_markerIn(_folderWithId(1)), findsOneWidget,
+    expect(_markerShownIn(tester, _folderWithId(1)), isTrue,
         reason: 'reordering within a folder must show the drop position too');
 
     await gesture.up();

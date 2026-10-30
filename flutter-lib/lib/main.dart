@@ -579,7 +579,9 @@ class EvolveApp extends StatelessWidget {
           themeMode: effectiveThemeMode,
           debugShowCheckedModeBanner: false,
           actions: {...WidgetsApp.defaultActions, ...TraversalVetoScope.appActions},
-          builder: (ctx, navigator) => SwtZoomScale(child: navigator!),
+          // The navigator's overlay is repainted whenever one of its entries moves, a drag image
+          // with every frame of a drag; the layer stops that at the overlay, not the whole window.
+          builder: (ctx, navigator) => SwtZoomScale(child: RepaintBoundary(child: navigator!)),
           home: Scaffold(
             backgroundColor: effectiveThemeMode == ThemeMode.dark
                 ? darkTheme.scaffoldBackgroundColor

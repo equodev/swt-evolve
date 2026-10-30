@@ -458,6 +458,7 @@
 1403 decimal_separator
 1404 locale
 1405 transparent_menu_check_box
+1407 dragSourceId
 1409 use_swt_border
 1424 blinkRate
 1425 focused

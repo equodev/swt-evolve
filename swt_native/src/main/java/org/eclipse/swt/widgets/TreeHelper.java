@@ -613,9 +613,12 @@ public class TreeHelper {
     }
 
     public static Image[] getImages(DartTreeItem item) {
+        OwnerDraw drawn = ownerDraw(item);
+        // A row with no image in any cell, and nothing an owner draws over it: there is nothing for
+        // images to say that its absence does not.
+        if (drawn == null && item.image == null && item.images == null) return null;
         int count = Math.max(1, item.parent.getColumnCount());
         Image[] result = ownImages(item, count);
-        OwnerDraw drawn = ownerDraw(item);
         if (drawn != null) {
             // The row's overlay already shows what the listener drew, images included.
             boolean overlay = OwnerDrawOverlay.isListening(item.getApi());
@@ -687,7 +690,11 @@ public class TreeHelper {
     public static String[] getTexts(DartTreeItem item) {
         OwnerDraw drawn = ownerDraw(item);
         if (drawn == null) {
-            return item.strings;
+            String[] strings = item.strings;
+            // A row whose only text is its item's text says nothing texts adds: the client reads
+            // the first column's text from text when texts is absent.
+            if (strings != null && strings.length == 1 && java.util.Objects.equals(strings[0], item.text)) return null;
+            return strings;
         }
         String[] result = new String[drawn.suppressed.length];
         for (int i = 0; i < result.length; i++) {

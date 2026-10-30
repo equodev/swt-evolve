@@ -568,6 +568,7 @@
 1386 int Tree.sortDirection
 1387 ref Tree.topItem
 1388 int[] Table.columnOrder
+1406 long? Control.dragSourceId
 1410 int Combo.caretPosition
 1416 int ExpandItem.headerHeight
 1417 int Caret.blinkRate

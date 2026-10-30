@@ -798,6 +798,7 @@ abstract final class WireKey {
   static const int k_ConfigFlags_decimal_separator = 1399;
   static const int k_ConfigFlags_locale = 1400;
   static const int k_ConfigFlags_transparent_menu_check_box = 1401;
+  static const int k_Control_dragSourceId = 1406;
   static const int k_ConfigFlags_use_swt_border = 1408;
   static const int k_Combo_caretPosition = 1410;
   static const int k_ExpandItem_headerHeight = 1416;
@@ -1635,6 +1636,7 @@ const Map<int, String> wireMapKeyNames = {
   1403: 'decimal_separator',
   1404: 'locale',
   1405: 'transparent_menu_check_box',
+  1407: 'dragSourceId',
   1409: 'use_swt_border',
   1424: 'blinkRate',
   1425: 'focused',

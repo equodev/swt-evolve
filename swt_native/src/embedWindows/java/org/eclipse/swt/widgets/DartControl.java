@@ -4351,13 +4351,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return (ds instanceof org.eclipse.swt.dnd.DragSource) && !((org.eclipse.swt.dnd.DragSource) ds).isDisposed();
     }
 
+    public Long getDragSourceId() {
+        return ControlHelper.dndId(getApi(), org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
+    }
+
     public Long getDropTargetId() {
-        Widget w = getApi();
-        Object dt = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DROP_TARGET_KEY);
-        if (dt instanceof org.eclipse.swt.dnd.DropTarget && !((org.eclipse.swt.dnd.DropTarget) dt).isDisposed() && ((org.eclipse.swt.dnd.DropTarget) dt).getImpl() instanceof org.eclipse.swt.dnd.DartDropTarget) {
-            return FlutterBridge.id(((org.eclipse.swt.dnd.DropTarget) dt).getImpl());
-        }
-        return null;
+        return ControlHelper.dndId(getApi(), org.eclipse.swt.dnd.DND.DROP_TARGET_KEY);
     }
 
     public Color getOwnForeground() {

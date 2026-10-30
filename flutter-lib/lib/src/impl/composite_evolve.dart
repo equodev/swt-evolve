@@ -232,6 +232,9 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     extends ScrollableImpl<T, V> implements GCGround {
   final DoubleTapDetector dblTap = DoubleTapDetector();
 
+  @override
+  bool get drawsInOwnLayer => true;
+
   Color? _renderedGround;
 
   @override
@@ -373,12 +376,12 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     if (children == null || children.isEmpty) {
       final content = Focus(
         focusNode: _surfaceFocus,
-        child: wrap(paintBackground(const SizedBox.expand())),
+        child: wrap(paintBackground(const SizedBox.expand()), ownLayer: false),
       );
       // Hidden Composite: the chrome Listener sits outside wrap()'s Visibility gate, so it would keep
       // stealing clicks from a shown sibling stacked at the same bounds (e.g. a CTabFolder page).
       if (state.visible != null && !state.visible!) return content;
-      return wrapCompositeInteractionChrome(this, content);
+      return inOwnLayer(wrapCompositeInteractionChrome(this, content));
     }
 
     // Re-scopes background inheritance for this composite's own children instead of leaving a
@@ -408,6 +411,6 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
     final gcWrapped = stackGCUnderChildren(paintBackground, inner);
     final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
-    return blockWhenDisabled(wrapCompositeInteractionChrome(this, dndWrapped));
+    return inOwnLayer(blockWhenDisabled(wrapCompositeInteractionChrome(this, dndWrapped)));
   }
 }

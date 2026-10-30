@@ -35,7 +35,7 @@ public class Config {
     private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
     static final Map<Class<?>, Impl> equoEnabled;
     static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
-    static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
+    static final boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
 

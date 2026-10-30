@@ -59,6 +59,32 @@ class OwnerHandlerDispatchTest {
         assertThat(seen).isEmpty();
     }
 
+    @Test
+    void removingAnOwnerByTypeAndIdRemovesItsHandlers() {
+        comm.onOwner("Shell/9", new String[] { "Shell/Close" }, Object.class, (channel, value) -> seen.add("owner"));
+        comm.on("Shell/9/Shell/SetBounds", Object.class, value -> seen.add("own"));
+        comm.on("Shell/10/Shell/SetBounds", Object.class, value -> seen.add("other"));
+
+        comm.removeOwner("Shell", 9);
+        comm.deliver("Shell/9/Shell/Close");
+        comm.deliver("Shell/9/Shell/SetBounds");
+        comm.deliver("Shell/10/Shell/SetBounds");
+
+        assertThat(seen).containsExactly("other");
+    }
+
+    @Test
+    void theLastOwnerOfATypeGoesTooOnceItsOnlyHandlerIsRemoved() {
+        comm.on("Label/5/Mouse/MouseDown", Object.class, value -> seen.add("first"));
+        comm.remove("Label/5/Mouse/MouseDown");
+        comm.on("Label/6/Mouse/MouseDown", Object.class, value -> seen.add("second"));
+
+        comm.removeOwner("Label", 6);
+        comm.deliver("Label/6/Mouse/MouseDown");
+
+        assertThat(seen).isEmpty();
+    }
+
     /** The real dispatcher, fed frames directly instead of over a socket. */
     private static final class Feeder extends AbstractBinaryCommService {
         void deliver(String channel) {

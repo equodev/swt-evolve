@@ -35,52 +35,43 @@ class SwtZoomScale extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<double>(
       valueListenable: appScaleNotifier,
-      builder: (context, scale, _) => LayoutBuilder(
-        builder: (context, constraints) {
-          final media = MediaQuery.of(context);
-          final w = constraints.hasBoundedWidth
-              ? constraints.maxWidth / scale
-              : double.infinity;
-          final h = constraints.hasBoundedHeight
-              ? constraints.maxHeight / scale
-              : double.infinity;
-          // The box that widens the constraints stays above the transform: a RenderBox refuses a
-          // pointer outside its own size, so below the transform it would measure the laid-out
-          // space against the view's, dropping every control past `view * scale`.
-          return OverflowBox(
+      // The view's size, which at the app's root equals the constraints: a LayoutBuilder over the
+      // whole app would lay out and repaint up to the view whenever any widget below it is dirtied.
+      builder: (context, scale, _) {
+        final media = MediaQuery.of(context);
+        final w = media.size.width / scale;
+        final h = media.size.height / scale;
+        // The box that widens the constraints stays above the transform: a RenderBox refuses a
+        // pointer outside its own size, so below the transform it would measure the laid-out
+        // space against the view's, dropping every control past `view * scale`.
+        return OverflowBox(
+          alignment: Alignment.topLeft,
+          minWidth: 0,
+          maxWidth: w,
+          minHeight: 0,
+          maxHeight: h,
+          child: Transform.scale(
+            scale: scale,
             alignment: Alignment.topLeft,
-            minWidth: 0,
-            maxWidth: w,
-            minHeight: 0,
-            maxHeight: h,
-            child: Transform.scale(
-              scale: scale,
-              alignment: Alignment.topLeft,
-              child: SizedBox(
-                width: w.isFinite ? w : null,
-                height: h.isFinite ? h : null,
-                child: MediaQuery(
-                  data: media.copyWith(
-                    size: Size(w.isFinite ? w : media.size.width,
-                        h.isFinite ? h : media.size.height),
-                    // Text is the one thing the zoom must not grow: native SWT builds fonts from
-                    // the monitor's own DPI, so `swt.autoScale` widens boxes, rows and images and
-                    // leaves the glyphs inside them alone. Shrinking by the same factor the
-                    // transform above magnifies by lands every Text at its true size. Painted text
-                    // -- the GC and StyledText scenes -- goes through a TextPainter, which no
-                    // MediaQuery reaches; Java divides those by the same factor when it publishes
-                    // `font_point_scale`.
-                    textScaler: scale > 0 && scale != 1.0
-                        ? TextScaler.linear(1 / scale)
-                        : media.textScaler,
-                  ),
-                  child: child,
+            child: SizedBox(
+              width: w.isFinite ? w : null,
+              height: h.isFinite ? h : null,
+              child: MediaQuery(
+                data: media.copyWith(
+                  size: Size(w.isFinite ? w : media.size.width, h.isFinite ? h : media.size.height),
+                  // The zoom must not grow text: native SWT sizes fonts from the monitor's DPI, so
+                  // `swt.autoScale` widens boxes and images but not glyphs. Painted text (GC,
+                  // StyledText) is out of MediaQuery's reach; Java scales it by `font_point_scale`.
+                  textScaler: scale > 0 && scale != 1.0
+                      ? TextScaler.linear(1 / scale)
+                      : media.textScaler,
                 ),
+                child: child,
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

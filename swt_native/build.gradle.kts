@@ -722,6 +722,10 @@ tasks.withType<Test>().configureEach {
     extensions.configure(org.gradle.testing.jacoco.plugins.JacocoTaskExtension::class) {
         isEnabled = name == "test"
     }
+    // Tests check what goes out on the wire through FlutterBridge.setSendObserver and WireStats,
+    // which only a JVM started with these watches.
+    systemProperty("dev.equo.swt.observeSends", "true")
+    systemProperty("dev.equo.swt.wireStats", "true")
 }
 
 /**

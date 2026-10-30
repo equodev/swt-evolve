@@ -26,6 +26,7 @@ import 'utils/veto_gate.dart';
 import 'widget_config.dart';
 import '../comm/v_registry.dart';
 import '../comm/widget_wire.dart' show sendWireWith;
+import 'utils/layered_layout_builder.dart';
 
 class DisplaySwt extends StatefulWidget {
   final VDisplay value;
@@ -351,7 +352,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
     return TraversalVetoScope(
         gate: _traverseGate,
-        child: LayoutBuilder(builder: (context, constraints) {
+        child: LayeredLayoutBuilder(builder: (context, constraints) {
       final mainShells = <VShell>[];
       final dialogShells = <VShell>[];
       final named = _namedMainShell(shells);

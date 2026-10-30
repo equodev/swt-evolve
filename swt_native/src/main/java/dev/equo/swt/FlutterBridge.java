@@ -157,11 +157,7 @@ public abstract class FlutterBridge {
         comm.on(PROPERTY_SET_CHANNEL, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on("swt.evolve.url.open", String.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
-        // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
-        // that reaches surfaces the Flutter action layer can't drive — e.g. a native-menu-gated
-        // Preferences dialog. Gated so it never registers in production. See TestUiRunner.
-        if (Config.isDebug())
-            comm.on(TestUiRunner.CHANNEL, Object.class, m -> TestUiRunner.handle(comm, m));
+        TAP.wired(comm);
         if (ECHO_TIMING)
             comm.on(ECHO_CHANNEL, Object.class, m -> echoTiming(comm, m));
         return comm;
@@ -645,7 +641,7 @@ public abstract class FlutterBridge {
             return SENT;
         }
 
-        long flushStart = WireStats.on ? System.nanoTime() : 0;
+        long flushStart = TAP.flushStarted();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
         // Drain, don't copy-then-clear: clearing after the sends discarded every mark made while
@@ -763,7 +759,7 @@ public abstract class FlutterBridge {
             // A send made from here on goes out on its own, as one made outside any flush does, or into
             // the flush this one started inside.
             restore(flushSends, outerSends);
-            long sendStart = flushStart != 0 ? System.nanoTime() : 0;
+            long sendStart = TAP.flushSending(flushStart);
             // Each frame goes out whatever happened to the one before: a comm that fails (its client
             // gone mid-send) must not keep another comm's frames, already counted as delivered, from
             // their client. The first failure is reported once every frame has been tried.
@@ -785,12 +781,7 @@ public abstract class FlutterBridge {
                     if (failed == null) failed = e;
                 }
             }
-            if (flushStart != 0) {
-                long end = System.nanoTime();
-                WireStats.flushes++;
-                WireStats.flushNanos += end - flushStart;
-                WireStats.sendNanos += end - sendStart;
-            }
+            TAP.flushEnded(flushStart, sendStart);
             if (failed != null) throw failed;
         }
         if (futures.isEmpty()) return SENT;
@@ -938,12 +929,19 @@ public abstract class FlutterBridge {
         void onSend(String eventName, byte[] payload);
     }
 
-    private static volatile SendObserver sendObserver;
-
-    /** Installs (or, with null, removes) the outbound-frame observer. */
+    /**
+     * Installs (or, with null, removes) the outbound-frame observer. Only where sends are observed
+     * at all, {@code -Ddev.equo.swt.observeSends=true}: elsewhere nothing reads it.
+     */
     public static void setSendObserver(SendObserver observer) {
-        sendObserver = observer;
+        ObservedSends.set(observer);
     }
+
+    /**
+     * What watches this bridge's traffic, chosen once from system properties (see {@link BridgeTap}).
+     * Final, so with nothing watching each call to it compiles to nothing.
+     */
+    static final BridgeTap TAP = BridgeTap.select();
 
     private static void serializeAndSend(CommService comm, String eventName, Object args) throws IOException {
         // Named here as well as at the flush, so a send from anywhere else - an event reply, a
@@ -1014,12 +1012,7 @@ public abstract class FlutterBridge {
 
     private static void sendFrameOf(CommService comm, Serializer.Tape tape) {
         if (tape.isEmpty()) return;
-        if (WireStats.on) {
-            WireStats.frame(tape.frame().byteSize());
-            WireStats.binaryFrames++;
-        }
-        SendObserver observer = sendObserver;
-        if (observer != null) observer.onSend(WidgetWire.CHANNEL, tape.frame().payload());
+        TAP.widgetFrame(tape.frame());
         tape.sendTo(comm);
     }
 
@@ -1032,10 +1025,7 @@ public abstract class FlutterBridge {
         // does not: a widget can be written to be read rather than sent.
         Serializer.markDelivered();
         int payloadLength = length - payloadStart;
-        if (WireStats.on) WireStats.frame(length);
-        DebugLog.logSend(eventName, buffer, payloadStart, payloadLength);
-        SendObserver observer = sendObserver;
-        if (observer != null) observer.onSend(eventName, java.util.Arrays.copyOfRange(buffer, payloadStart, length));
+        TAP.sent(eventName, buffer, payloadStart, length);
         Map<CommService, MessageBatch> open = flushSends.get();
         if (open != null) {
             MessageBatch batch = open.computeIfAbsent(comm, c -> borrowBatch());
@@ -1104,17 +1094,33 @@ public abstract class FlutterBridge {
         return bridge;
     }
 
+    /** Registered only from {@code DisplayBridge}; stays unset in embed builds, whose events carry the OS's times. */
+    public interface EventClock {
+        /** Stamps an event arriving from {@code display}'s client. */
+        void stamp(Display display);
+    }
+
+    private static volatile EventClock eventClock;
+
+    public static void setEventClock(EventClock clock) {
+        eventClock = clock;
+    }
+
+    private static void stampEventTime(DartWidget widget) {
+        EventClock clock = eventClock;
+        if (clock != null) clock.stamp(getDisplay(widget));
+    }
+
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
         // The handler holds the parts, not the joined name: there is one per widget and event, and
         // the name is only needed for the log.
-        boolean mouseMove = "MouseMove".equals(listener);
         commFor(widget).on(event(widget, listener, event), Event.class, ev -> {
             if (widget.isDisposed()) {
-                if (Config.isDebug()) DebugLog.checkpoint(event(widget, listener, event), "skipped: widget disposed");
+                TAP.skipped(widget, listener, event, "skipped: widget disposed");
                 return;
             }
-            if (Config.isDebug() && (!mouseMove || getConfigFlags().print_move))
-                DebugLog.logRecv(event(widget, listener, event), ev);
+            stampEventTime(widget);
+            TAP.received(widget, listener, event, ev);
             // A message whose body is absent deserializes to null, and handlers read the Event
             // straight away — DartText's DefaultSelection does `e.detail == SWT.ICON_CANCEL`, so a
             // bodyless Enter in a Text threw NullPointerException out of an asyncExec, which e4
@@ -1124,7 +1130,7 @@ public abstract class FlutterBridge {
             // "no detail" event means to every one of them. Logged, not swallowed: a null body is
             // still worth seeing when reading a trace.
             if (ev == null) {
-                if (Config.isDebug()) DebugLog.checkpoint(event(widget, listener, event), "empty body: substituting a blank Event");
+                TAP.skipped(widget, listener, event, "empty body: substituting a blank Event");
                 cb.accept(new Event());
                 return;
             }
@@ -1137,22 +1143,71 @@ public abstract class FlutterBridge {
      * Registers {@code dispatch} for every channel of {@code widget} named in {@code events}
      * ("Listener/Event"), as one handler for all of them, delivering each as {@link #on} does.
      */
-    public static void onClientEvents(DartWidget widget, String[] events, BiConsumer<String, Event> dispatch) {
-        commFor(widget).onOwner(event(widget), events, Event.class, (channel, ev) -> {
-            if (widget.isDisposed()) {
-                if (Config.isDebug()) DebugLog.checkpoint(event(widget, channel), "skipped: widget disposed");
-                return;
-            }
-            if (Config.isDebug() && (!channel.startsWith("MouseMove/") || getConfigFlags().print_move))
-                DebugLog.logRecv(event(widget, channel), ev);
-            if (ev == null) {
-                if (Config.isDebug()) DebugLog.checkpoint(event(widget, channel), "empty body: substituting a blank Event");
-                dispatch.accept(channel, new Event());
-                return;
-            }
-            if (channel.startsWith("Key/")) ControlHelper.applyControlCharacter(ev);
-            dispatch.accept(channel, ev);
-        });
+    public static void onClientEvents(DartWidget widget, String[] events) {
+        CommService comm = commFor(widget);
+        if (comm.onType(widgetName(widget), Event.class, new ClientEventsByType(comm))) {
+            // Found by its id from now on: a widget is entered when first sent, but one that takes
+            // the client's events need never be sent itself (a DropTarget is drawn by its control).
+            registerForRefresh(widget);
+            return;
+        }
+        comm.onOwner(event(widget), events, Event.class, (channel, ev) -> deliverClientEvent(widget, channel, ev));
+    }
+
+    /**
+     * The client events of every widget on one comm, found by the id their channel names: a widget
+     * known to the client was sent, and so can be found by its id (see {@link #registerForRefresh}).
+     * One that has been disposed is not found, and its events are dropped. The ids are looked up
+     * across the JVM, so a widget reached through another comm is not this one's: its client cannot
+     * send events to another session's widgets.
+     */
+    private static final class ClientEventsByType implements CommService.TypeCallback<Event> {
+        private final CommService comm;
+
+        ClientEventsByType(CommService comm) {
+            this.comm = comm;
+        }
+
+        @Override
+        public Object target(String type, long id, String rest) {
+            Object found = findById(id);
+            if (!(found instanceof DartWidget)) return null;
+            DartWidget widget = (DartWidget) found;
+            if (commFor(widget) != comm) return null;
+            String name = widgetName(widget);
+            if (!name.equals(type) && !type.equals(alternateTypeName(name))) return null;
+            String[] events = CLIENT_EVENTS.get(widget.getClass());
+            if (events == null) return null;
+            for (String event : events) if (event.equals(rest)) return widget;
+            return null;
+        }
+
+        @Override
+        public void accept(Object widget, String rest, Event ev) {
+            deliverClientEvent((DartWidget) widget, rest, ev);
+        }
+    }
+
+    private static String alternateTypeName(String name) {
+        if (name.equals("MainComposite")) return "Composite";
+        if (name.equals("Composite")) return "MainComposite";
+        return null;
+    }
+
+    private static void deliverClientEvent(DartWidget widget, String channel, Event ev) {
+        if (widget.isDisposed()) {
+            TAP.skipped(widget, channel, "skipped: widget disposed");
+            return;
+        }
+        stampEventTime(widget);
+        TAP.received(widget, channel, ev);
+        if (ev == null) {
+            TAP.skipped(widget, channel, "empty body: substituting a blank Event");
+            widget.clientEvent(channel, new Event());
+            return;
+        }
+        if (channel.startsWith("Key/")) ControlHelper.applyControlCharacter(ev);
+        widget.clientEvent(channel, ev);
     }
 
     private static final Map<Class<?>, String[]> CLIENT_EVENTS = new ConcurrentHashMap<>();
@@ -1172,8 +1227,7 @@ public abstract class FlutterBridge {
     public static void onPayload(Object widget, String event, Consumer<byte[]> cb) {
         String eventName = eventName(widget, event);
         commFor(widget).on(eventName, byte[].class, p -> {
-            if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                DebugLog.logRecvPayload(eventName, p == null ? "null" : p.length + "B");
+            TAP.receivedPayload(eventName, p);
             cb.accept(p);
         });
     }
@@ -1181,8 +1235,7 @@ public abstract class FlutterBridge {
     public static <T> void onPayload(Object widget, String event, Class<T> cls, Consumer<T> cb) {
         String eventName = eventName(widget, event);
         commFor(widget).on(eventName, cls, p -> {
-            if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                DebugLog.logRecvPayload(eventName, String.valueOf(p));
+            TAP.receivedPayload(eventName, p);
             cb.accept(p);
         });
     }
@@ -1547,7 +1600,7 @@ public abstract class FlutterBridge {
             releaseWire(batch);
             return;
         }
-        DebugLog.logGcFrame(batch);
+        TAP.gcFrame(batch);
         CommService comm = commFor(gc);
         int connection = comm == null ? 0 : comm.connectionId();
         FlutterBridge bridge = getBridge(gc);
@@ -1692,6 +1745,22 @@ public abstract class FlutterBridge {
         }
     }
 
+    /**
+     * Sends {@code fields} on {@code widget}'s channel {@code event} as the binary wire writes an
+     * object's fields, which the client reads straight into its value class: what an event carries
+     * when an answer is one, with no map of names to build or read.
+     */
+    public static void sendFields(DartWidget widget, String event, WireObject fields) {
+        CommService comm = commFor(widget);
+        if (comm == null) return;
+        String eventName = eventName(widget, event);
+        byte[] header = CommService.frameHeader(eventName);
+        byte[] payload = WidgetWire.fieldsOf(fields);
+        byte[] frame = java.util.Arrays.copyOf(header, header.length + payload.length);
+        System.arraycopy(payload, 0, frame, header.length, payload.length);
+        sendBytes(comm, eventName, frame, header.length, frame.length);
+    }
+
     public static void send(DartWidget resource, String event, Object args) {
         if (drawnByParent(resource))
             return;
@@ -1831,8 +1900,8 @@ public abstract class FlutterBridge {
     private static void registerForRefresh(Object w) {
         // A control's GC shares the control's id; recording it would shadow the control.
         if (w instanceof DartGC) return;
-        // Every change marks its widget, and an entry is never taken back: a widget remembers it
-        // has one rather than looking it up each time.
+        // Every change marks its widget, and an entry stays until the widget is disposed: a widget
+        // remembers it has one rather than looking it up each time.
         VWidget value = w instanceof DartWidget ? ((DartWidget) w).getValue() : null;
         Serializer.SentHashes mark = value != null ? Serializer.sentHashes(value) : null;
         if (mark != null && mark.registered) return;
@@ -1953,10 +2022,11 @@ public abstract class FlutterBridge {
         }
         CommService comm = commFor(widget);
         if (comm == null) return;
-        String owner = event(widget);
-        comm.removeOwner(owner);
-        String alternate = alternateAddress(owner);
-        if (alternate != null) comm.removeOwner(alternate);
+        String name = widgetName(widget);
+        long id = id(widget);
+        comm.removeOwner(name, id);
+        String alternate = alternateTypeName(name);
+        if (alternate != null) comm.removeOwner(alternate, id);
     }
 
     public void setBounds(DartControl control, Rectangle bounds) {

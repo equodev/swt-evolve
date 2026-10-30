@@ -12,6 +12,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
+import 'src/impl/utils/dnd_session.dart' show DndNegotiationState, DndSession;
 import 'src/comm/comm_frame.dart' show EquoCommBase;
 import 'src/comm/widget_wire.dart' show WireVisitable;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
@@ -36,13 +37,22 @@ part 'test_harness_actions.dart';
 ///   request  on `evolve.test.query`         : { "queryId": int, "targetId": int }
 ///   response on `evolve.test.queryResponse`  : { "queryId": int, "found": bool,
 ///                                                "state": the widget's [describeState] or null,
-///                                                "render": render-tree facts or null }
+///                                                "render": render-tree facts or null,
+///                                                "dropAnswer": a drop target's last answer or null }
 ///
 /// `targetId` is the SWT widget id (Java `widget.hashCode()` == `V*.id`). The
 /// returned `state` is exactly what the widget's [WidgetSwtState] currently
 /// holds — i.e. what Flutter would paint — so a test can assert that a state
 /// pushed from Java actually reached and updated the rendered widget. `render`
 /// reports what only the rendered tree can answer; see [_renderFacts].
+/// What the client holds of the drop target [id]'s last answer to a drag, as it decoded it from
+/// Java; null when it has none.
+Map<String, int>? _dropAnswer(int id) {
+  final answer = DndSession.stateFor(id);
+  if (identical(answer, DndNegotiationState.none)) return null;
+  return {'detail': answer.detail, 'feedback': answer.feedback, 'currentDataTypeId': answer.currentDataTypeId};
+}
+
 void registerTestQueryChannel() {
   // StyledText counters, reset on read so two calls bracket an action.
   EquoCommService.onRaw("evolve.test.styledTextPerf", (dynamic req) {
@@ -67,6 +77,15 @@ void registerTestQueryChannel() {
     _reply(
         "evolve.test.frameCostResponse", {'costId': costId, 'frames': frames});
   });
+  // A drag the client makes as a user's pointer would: `evolve.test.drag` {dragId, from, to, steps,
+  // intervalMs} answers on `evolve.test.dragDone` {dragId, moves, elapsedMicros} once released.
+  EquoCommService.onRaw("evolve.test.drag", (dynamic req) async {
+    final map = (req as Map).cast<String, dynamic>();
+    final dragId = map['dragId'];
+    final result = await dragByIds(map['from'] as String, map['to'] as String,
+        (map['steps'] as num).toInt(), (map['intervalMs'] as num).toInt());
+    _reply("evolve.test.dragDone", {'dragId': dragId, ...result});
+  });
   EquoCommService.onRaw("evolve.test.query", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int queryId = (map['queryId'] as num).toInt();
@@ -77,6 +96,7 @@ void registerTestQueryChannel() {
       'found': vstate != null,
       'state': vstate,
       'render': _renderFacts(targetId),
+      'dropAnswer': _dropAnswer(targetId),
     });
   });
   // Frame barrier: ack once what was pushed before it is built + painted, so a test can wait for

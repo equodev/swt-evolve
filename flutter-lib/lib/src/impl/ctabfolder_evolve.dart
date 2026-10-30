@@ -4,9 +4,10 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderAbstractViewport, RenderMetaData;
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/main.dart';
 import '../comm/comm.dart';
@@ -30,7 +31,9 @@ import 'ctab_tab_compression.dart';
 import 'widget_config.dart';
 import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
+import 'utils/dnd_session.dart' show ActiveDragTracker;
 import 'utils/dnd_utils.dart';
+import 'utils/layered_layout_builder.dart';
 import 'utils/tracker_session.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
@@ -340,25 +343,25 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // through `wrap()`, so it owes them that answer itself, and the folder's own pointer events:
     // SWT's CTabFolder draws its tabs and reports the mouse over them as its own.
     if (constraints != null) {
-      return SwtControlScope(
+      return inOwnLayer(SwtControlScope(
           swt: state.swt,
           child: tagSemantics(trackPointer(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             selectionForeground: state.selectionForeground,
             child: ConstrainedBox(constraints: constraints, child: column),
-          ))));
+          )))));
     }
 
     // The tabs letter and colour in the folder's own font/foreground when they carry none.
-    return SwtControlScope(
+    return inOwnLayer(SwtControlScope(
         swt: state.swt,
         child: tagSemantics(trackPointer(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           selectionForeground: state.selectionForeground,
           child: column,
-        ))));
+        )))));
   }
 
   void _handleTabSelection(int index) {
@@ -693,16 +696,27 @@ class _CTabBar extends StatefulWidget {
 
 class _CTabBarState extends State<_CTabBar> {
   final GlobalKey<_TabDragRowState> _rowState = GlobalKey<_TabDragRowState>();
-  bool _hoveringTopBar = false;
-  bool _scrollbarVisible = false;
+  // Hover rebuilds the top-right controls alone; a state change would build every tab with them.
+  final ValueNotifier<bool> _hoveringTopBar = ValueNotifier<bool>(false);
+  // Rebuilds the scrollbar alone: a state change here would build every tab again with it.
+  final ValueNotifier<bool> _scrollbarVisible = ValueNotifier<bool>(false);
   // True when the tab row overflows its width (some tabs scroll off-view). Drives the chevron.
   bool _hasOverflow = false;
   Timer? _scrollbarHideTimer;
   late final ScrollController _horizontalScrollController;
-  bool _isMinimizeHovered = false;
-  bool _isMaximizeHovered = false;
+  final ValueNotifier<bool> _minimizeHovered = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _maximizeHovered = ValueNotifier<bool>(false);
   bool _isChevronHovered = false;
   int? _hoveredTabIndex;
+
+  // The whole bar is built again for a hover change, so only for a real one.
+  void _hoverTab(int index) {
+    if (_hoveredTabIndex != index) setState(() => _hoveredTabIndex = index);
+  }
+
+  void _unhoverTab(int index) {
+    if (_hoveredTabIndex == index) setState(() => _hoveredTabIndex = null);
+  }
   int? _pendingFrom;
   int? _pendingTo;
 
@@ -781,6 +795,10 @@ class _CTabBarState extends State<_CTabBar> {
   @override
   void dispose() {
     _scrollbarHideTimer?.cancel();
+    _scrollbarVisible.dispose();
+    _hoveringTopBar.dispose();
+    _minimizeHovered.dispose();
+    _maximizeHovered.dispose();
     _horizontalScrollController.dispose();
     super.dispose();
   }
@@ -858,10 +876,8 @@ class _CTabBarState extends State<_CTabBar> {
                         ? () => widget.onTabClose(index)
                         : null,
                     isTabBottom: isTabBottom,
-                    onHoverEnter: () => setState(() => _hoveredTabIndex = index),
-                    onHoverExit: () => setState(() {
-                      if (_hoveredTabIndex == index) _hoveredTabIndex = null;
-                    }),
+                    onHoverEnter: () => _hoverTab(index),
+                    onHoverExit: () => _unhoverTab(index),
                   ),
                 );
               }).toList(),
@@ -921,10 +937,8 @@ class _CTabBarState extends State<_CTabBar> {
         onTap: () => widget.onTabSelected(index),
         onClose: tab.showCloseButton ? () => widget.onTabClose(index) : null,
         isTabBottom: isTabBottom,
-        onHoverEnter: () => setState(() => _hoveredTabIndex = index),
-        onHoverExit: () => setState(() {
-          if (_hoveredTabIndex == index) _hoveredTabIndex = null;
-        }),
+        onHoverEnter: () => _hoverTab(index),
+        onHoverExit: () => _unhoverTab(index),
       );
     }).toList();
 
@@ -1010,8 +1024,15 @@ class _CTabBarState extends State<_CTabBar> {
     }
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _hoveringTopBar = true),
-      onExit: (_) => setState(() => _hoveringTopBar = false),
+      // A held button keeps the mouse with the control it was pressed on: a drag passing over the
+      // bar reveals none of its controls; the first move after release does.
+      onEnter: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) _hoveringTopBar.value = true;
+      },
+      onHover: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) _hoveringTopBar.value = true;
+      },
+      onExit: (_) => _hoveringTopBar.value = false,
       child: _buildTabBarContainer(
         widgetTheme: widgetTheme,
         height: barHeight,
@@ -1179,7 +1200,14 @@ class _CTabBarState extends State<_CTabBar> {
     // the properties that changed with it, silently dropping the identifier the tab is found by.
     return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: Semantics(container: true, child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => onHoverEnter(),
+      // A held button keeps the mouse with the control it was pressed on, so a drag passing over
+      // the tabs lights none of them; the first move after release does.
+      onEnter: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) onHoverEnter();
+      },
+      onHover: (_) {
+        if (!isHovered && !ActiveDragTracker.isSuppressingHover) onHoverEnter();
+      },
       onExit: (_) => onHoverExit(),
       child: GestureDetector(
         onTap: onTap,
@@ -1402,7 +1430,14 @@ class _CTabBarState extends State<_CTabBar> {
     // the properties that changed with it, silently dropping the identifier the tab is found by.
     return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: Semantics(container: true, child: MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => onHoverEnter(),
+      // A held button keeps the mouse with the control it was pressed on, so a drag passing over
+      // the tabs lights none of them; the first move after release does.
+      onEnter: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) onHoverEnter();
+      },
+      onHover: (_) {
+        if (!isHovered && !ActiveDragTracker.isSuppressingHover) onHoverEnter();
+      },
       onExit: (_) => onHoverExit(),
       child: GestureDetector(
         onTap: onTap,
@@ -1637,7 +1672,7 @@ class _CTabBarState extends State<_CTabBar> {
     required CTabFolderThemeExtension widgetTheme,
     required Widget child,
   }) {
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         // Re-measure overflow after each frame (a toggled _hasOverflow rebuilds this subtree).
         WidgetsBinding.instance.addPostFrameCallback((_) => _checkOverflow());
@@ -1662,8 +1697,10 @@ class _CTabBarState extends State<_CTabBar> {
               return false;
             },
             child: MouseRegion(
+              // A held button keeps the mouse with the control it was pressed on: a drag passing
+              // over the strip does not reveal its scrollbar.
               onEnter: (_) {
-                _showScrollbar();
+                if (!ActiveDragTracker.isSuppressingHover) _showScrollbar();
               },
               onExit: (_) {
                 _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
@@ -1693,10 +1730,14 @@ class _CTabBarState extends State<_CTabBar> {
                     _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
                   }
                 },
-                child: Scrollbar(
-                  controller: _horizontalScrollController,
-                  thumbVisibility: _scrollbarVisible,
-                  thickness: widgetTheme.tabScrollbarThickness,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _scrollbarVisible,
+                  builder: (context, visible, strip) => Scrollbar(
+                    controller: _horizontalScrollController,
+                    thumbVisibility: visible,
+                    thickness: widgetTheme.tabScrollbarThickness,
+                    child: strip!,
+                  ),
                   child: SingleChildScrollView(
                     controller: _horizontalScrollController,
                     scrollDirection: Axis.horizontal,
@@ -1743,21 +1784,16 @@ class _CTabBarState extends State<_CTabBar> {
   void _hideScrollbarAfterDelay(Duration delay) {
     _scrollbarHideTimer?.cancel();
     _scrollbarHideTimer = Timer(delay, () {
-      if (mounted && _scrollbarVisible) {
-        setState(() {
-          _scrollbarVisible = false;
-        });
-      }
+      if (mounted) _scrollbarVisible.value = false;
     });
   }
 
+  // Only a strip wider than its viewport has a thumb to show; revealing one otherwise animates a
+  // scrollbar that paints nothing.
   void _showScrollbar() {
+    if (!_hasOverflow) return;
     _scrollbarHideTimer?.cancel();
-    if (!_scrollbarVisible) {
-      setState(() {
-        _scrollbarVisible = true;
-      });
-    }
+    _scrollbarVisible.value = true;
   }
 
   /// The part of the laid-out strip the folder clips off on its page side.
@@ -1883,114 +1919,115 @@ class _CTabBarState extends State<_CTabBar> {
         showChevron;
     if (!hasControls) return const SizedBox.shrink();
 
-    final controls = Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (showChevron)
-          _ownToolbarPointer(_buildChevronButton(widgetTheme)),
-        if (topRightComposite != null)
-          _buildTopRightComposite(
-            topRightComposite,
-            backgroundColor: widgetTheme.tabBarBackgroundColor,
-          ),
-        // Java packs the folder's own buttons to the right of the topRight control and places the
-        // control from that edge; the buttons take the same room here, so the control is drawn where
-        // toDisplay() says it is.
-        _ownToolbarPointer(ConstrainedBox(
-          constraints: BoxConstraints(minWidth: _javaTrailingWidth(topRightComposite, alignment)),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.end,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-            if (showMinimizeButton)
-              Builder(
-                builder: (context) {
-                  final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
-                  return _buildControlButton(
-                    context: context,
-                    widgetTheme: widgetTheme,
-                    icon: isMinimized ? Icons.maximize : Icons.minimize,
-                    onTap: isVisible ? widget.onMinimize : () {},
-                    isHovered: _isMinimizeHovered,
-                    onHoverChanged: (hovered) {
-                      setState(() {
-                        _isMinimizeHovered = hovered;
-                      });
-                    },
-                    enabled: true,
-                  );
-                },
+    final scaled = ListenableBuilder(
+      listenable: Listenable.merge([_hoveringTopBar, _minimizeHovered, _maximizeHovered]),
+      builder: (context, _) {
+        final controls = Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showChevron)
+              _ownToolbarPointer(_buildChevronButton(widgetTheme)),
+            if (topRightComposite != null)
+              _buildTopRightComposite(
+                topRightComposite,
+                backgroundColor: widgetTheme.tabBarBackgroundColor,
               ),
-            if (showMaximizeButton)
-              Builder(
-                builder: (context) {
-                  final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
-                  return _buildControlButton(
-                    context: context,
-                    widgetTheme: widgetTheme,
-                    icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-                    onTap: isVisible ? widget.onMaximize : () {},
-                    isHovered: _isMaximizeHovered,
-                    onHoverChanged: (hovered) {
-                      setState(() {
-                        _isMaximizeHovered = hovered;
-                      });
+            // Java packs the folder's own buttons to the right of the topRight control and places the
+            // control from that edge; the buttons take the same room here, so the control is drawn where
+            // toDisplay() says it is.
+            _ownToolbarPointer(ConstrainedBox(
+              constraints: BoxConstraints(minWidth: _javaTrailingWidth(topRightComposite, alignment)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                if (showMinimizeButton)
+                  Builder(
+                    builder: (context) {
+                      final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar.value;
+                      return _buildControlButton(
+                        context: context,
+                        widgetTheme: widgetTheme,
+                        icon: isMinimized ? Icons.maximize : Icons.minimize,
+                        onTap: isVisible ? widget.onMinimize : () {},
+                        isHovered: _minimizeHovered.value,
+                        onHoverChanged: (hovered) {
+                          _minimizeHovered.value = hovered;
+                        },
+                        enabled: true,
+                      );
                     },
-                    enabled: true,
-                  );
-                },
-              ),
-            ],
-          ),
-        )),
-      ],
-    );
-
-    final isControlsVisible = _controlsAlwaysVisible ? true : _hoveringTopBar;
-
-    final revealWidget = _HoverReveal(
-      visible: isControlsVisible,
-      revealDuration: widgetTheme.hoverRevealDuration,
-      hideDuration: widgetTheme.hoverHideDuration,
-      child: Align(
-        alignment: Alignment.topRight,
-        // Opacity alone doesn't stop hit-testing: while faded out (not hovering)
-        // this box still sat on top of the Stack and swallowed clicks meant for
-        // a tab hidden underneath it. Only block pointers while genuinely hidden.
-        child: IgnorePointer(
-          ignoring: !isControlsVisible,
-          child: Container(
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: widgetTheme.tabBarBackgroundColor,
-              boxShadow: [
-                BoxShadow(
-                  color: widgetTheme.topRightControlsShadowColor.withOpacity(
-                    widgetTheme.topRightControlsShadowOpacity,
                   ),
-                  blurRadius: widgetTheme.topRightControlsShadowBlurRadius,
-                  offset: widgetTheme.topRightControlsShadowOffset,
-                ),
-              ],
-            ),
-            child: controls,
-          ),
-        ),
-      ),
-    );
+                if (showMaximizeButton)
+                  Builder(
+                    builder: (context) {
+                      final isVisible = _controlsAlwaysVisible ? true : _hoveringTopBar.value;
+                      return _buildControlButton(
+                        context: context,
+                        widgetTheme: widgetTheme,
+                        icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
+                        onTap: isVisible ? widget.onMaximize : () {},
+                        isHovered: _maximizeHovered.value,
+                        onHoverChanged: (hovered) {
+                          _maximizeHovered.value = hovered;
+                        },
+                        enabled: true,
+                      );
+                    },
+                  ),
+                ],
+              ),
+            )),
+          ],
+        );
 
-    final scaledWidget = Transform.scale(
-      scale: widgetTheme.controlButtonScale,
-      alignment: Alignment.topRight,
-      child: revealWidget,
+        final isControlsVisible = _controlsAlwaysVisible ? true : _hoveringTopBar.value;
+
+        final revealWidget = _HoverReveal(
+          visible: isControlsVisible,
+          revealDuration: widgetTheme.hoverRevealDuration,
+          hideDuration: widgetTheme.hoverHideDuration,
+          child: Align(
+            alignment: Alignment.topRight,
+            // Opacity alone doesn't stop hit-testing: while faded out (not hovering)
+            // this box still sat on top of the Stack and swallowed clicks meant for
+            // a tab hidden underneath it. Only block pointers while genuinely hidden.
+            child: IgnorePointer(
+              ignoring: !isControlsVisible,
+              child: Container(
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  color: widgetTheme.tabBarBackgroundColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: widgetTheme.topRightControlsShadowColor.withOpacity(
+                        widgetTheme.topRightControlsShadowOpacity,
+                      ),
+                      blurRadius: widgetTheme.topRightControlsShadowBlurRadius,
+                      offset: widgetTheme.topRightControlsShadowOffset,
+                    ),
+                  ],
+                ),
+                child: controls,
+              ),
+            ),
+          ),
+        );
+
+        return Transform.scale(
+          scale: widgetTheme.controlButtonScale,
+          alignment: Alignment.topRight,
+          child: revealWidget,
+        );
+      },
     );
 
     if (alignment == SWT.CENTER) {
-      return Expanded(child: Center(child: scaledWidget));
+      return Expanded(child: Center(child: scaled));
     } else {
-      return scaledWidget;
+      return scaled;
     }
   }
 }
@@ -2001,9 +2038,12 @@ class _CTabBarState extends State<_CTabBar> {
 /// reads as a tab border as easily as an insertion point. The heads overhang the row, so the width
 /// is wider than the bar and the marker is positioned by its bar rather than by its box.
 class CTabInsertionMarker extends StatelessWidget {
-  const CTabInsertionMarker({super.key, required this.color});
+  const CTabInsertionMarker({super.key, required this.color, required this.shown});
 
   final Color color;
+
+  /// Whether the marker is drawn: a drag over the strip shows it, and it stays mounted otherwise.
+  final ValueListenable<bool> shown;
 
   static const double barWidth = 3;
   static const double caretWidth = 4;
@@ -2015,17 +2055,19 @@ class CTabInsertionMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox(
         width: caretWidth * 2 + barWidth,
-        child: CustomPaint(painter: _CTabInsertionMarkerPainter(color)),
+        child: CustomPaint(painter: _CTabInsertionMarkerPainter(color, shown)),
       );
 }
 
 class _CTabInsertionMarkerPainter extends CustomPainter {
-  const _CTabInsertionMarkerPainter(this.color);
+  _CTabInsertionMarkerPainter(this.color, this.shown) : super(repaint: shown);
 
   final Color color;
+  final ValueListenable<bool> shown;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (!shown.value) return;
     final paint = Paint()..color = color;
     final centre = size.width / 2;
     final half = CTabInsertionMarker.barWidth / 2;
@@ -2352,37 +2394,19 @@ class _TabDragRowState extends State<TabDragRow> {
           ),
         );
       }),
-      childWhenDraggingBuilder: (child) => Opacity(opacity: 0.3, child: child),
     );
   }
 
-  Widget _insertionMarker(int index, Color color) {
-    double left = 0;
+  /// Where in the row the gap [index] is.
+  double _gapLeft(int index) {
     final row = _row;
-    if (row != null && widget.children.isNotEmpty) {
-      if (index < widget.children.length) {
-        left = _itemLeft(row, index) ?? 0;
-      } else {
-        final last = widget.children.length - 1;
-        final lastLeft = _itemLeft(row, last);
-        final box = _itemBox(last);
-        if (lastLeft != null && box != null) left = lastLeft + box.size.width;
-      }
-    }
-    // Animated so the mark slides between the gaps it can occupy: dragging along a row of tabs
-    // otherwise reads as the marker blinking out and back rather than as one thing moving.
-    return AnimatedPositioned(
-      key: _insertionMarkerKey,
-      duration: const Duration(milliseconds: 90),
-      curve: Curves.easeOut,
-      left: left - CTabInsertionMarker.overhang,
-      top: 0,
-      bottom: 0,
-      child: CTabInsertionMarker(color: color),
-    );
+    if (row == null || widget.children.isEmpty) return 0;
+    if (index < widget.children.length) return _itemLeft(row, index) ?? 0;
+    final last = widget.children.length - 1;
+    final lastLeft = _itemLeft(row, last);
+    final box = _itemBox(last);
+    return lastLeft != null && box != null ? lastLeft + box.size.width : 0;
   }
-
-  static const Key _insertionMarkerKey = ValueKey('ctab-insertion-marker');
 
   @override
   Widget build(BuildContext context) {
@@ -2418,46 +2442,224 @@ class _TabDragRowState extends State<TabDragRow> {
       resolveItemId: (details) => _itemIdAt(details.offset) ?? 0,
       resolvePosition: (details) => widget.folderPointFor?.call(details.offset),
       onDrop: _handleDrop,
-      builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) _insertHover.update(null);
-        return child;
-      },
+      onLeave: () => _insertHover.update(null),
       child: widget.rowWrapper(
         // A Row with no children is zero-high, which would stop the strip hit-testing and leave
         // a folder that lost its last tab unable to be given one back. Hold the strip's height.
         ConstrainedBox(
           constraints: BoxConstraints(minHeight: widget.tabHeight ?? 0),
-          child: ValueListenableBuilder<int?>(
-            valueListenable: _insertHover.notifier,
-            builder: (context, index, child) {
-              final marker = Theme.of(context)
-                  .extension<CTabFolderThemeExtension>()!
-                  .tabHighlightColor;
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Tinted while this folder is the one under the pointer: with several folders
-                  // on screen the marker alone says where in a row the tab lands, not which row.
-                  QuietAnimatedContainer(
-                    duration: const Duration(milliseconds: 90),
-                    color: index == null
-                        ? null
-                        : marker.withValues(alpha: _receivingStripTint),
-                    child: child,
-                  ),
-                  if (index != null) _insertionMarker(index, marker),
-                ],
-              );
-            },
-            child: row,
+          child: _StripDropFeedback(
+            gap: _insertHover.notifier,
+            gapLeft: _gapLeft,
+            child: RepaintBoundary(child: row),
           ),
         ),
       ),
     );
   }
 
+}
+
+/// What a strip shows while a tab is dragged over it: a tint, so that with several folders on
+/// screen it says which row the tab lands in, and the insertion marker at the gap it lands at,
+/// sliding between gaps so that dragging along the tabs reads as one thing moving rather than as
+/// the marker blinking out and back.
+///
+/// Both animate by painting alone, each in a layer of its own: a widget rebuilt for every frame of
+/// the fade or the slide would lay the strip out again, and through it the folder.
+class _StripDropFeedback extends StatefulWidget {
+  const _StripDropFeedback({required this.gap, required this.gapLeft, required this.child});
+
+  final ValueListenable<int?> gap;
+  final double Function(int gap) gapLeft;
+  final Widget child;
+
+  @override
+  State<_StripDropFeedback> createState() => _StripDropFeedbackState();
+}
+
+class _StripDropFeedbackState extends State<_StripDropFeedback> with TickerProviderStateMixin {
   /// Enough to read as "this row", not enough to fight the tabs drawn on it.
-  static const double _receivingStripTint = 0.12;
+  static const double _tintAlpha = 0.12;
+  static const Duration _duration = Duration(milliseconds: 90);
+
+  late final AnimationController _tint = AnimationController(vsync: this, duration: _duration);
+  late final AnimationController _slide = AnimationController(vsync: this, duration: _duration)
+    ..addListener(_slid);
+  final ValueNotifier<double> _markerLeft = ValueNotifier<double>(0);
+  final ValueNotifier<bool> _marked = ValueNotifier<bool>(false);
+  double _from = 0;
+  double _to = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.gap.addListener(_gapChanged);
+  }
+
+  @override
+  void didUpdateWidget(_StripDropFeedback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.gap, widget.gap)) {
+      oldWidget.gap.removeListener(_gapChanged);
+      widget.gap.addListener(_gapChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.gap.removeListener(_gapChanged);
+    _tint.dispose();
+    _slide.dispose();
+    _markerLeft.dispose();
+    _marked.dispose();
+    super.dispose();
+  }
+
+  void _gapChanged() {
+    final gap = widget.gap.value;
+    if (gap == null) {
+      _tint.reverse();
+      _marked.value = false;
+      return;
+    }
+    _tint.forward();
+    final left = widget.gapLeft(gap);
+    if (!_marked.value) {
+      _from = _to = left;
+      _markerLeft.value = left;
+      _marked.value = true;
+    } else if (left != _to) {
+      _from = _markerLeft.value;
+      _to = left;
+      _slide.forward(from: 0);
+    }
+  }
+
+  void _slid() => _markerLeft.value = _from + (_to - _from) * Curves.easeOut.transform(_slide.value);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).extension<CTabFolderThemeExtension>()!.tabHighlightColor;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: RepaintBoundary(
+              child: CustomPaint(painter: _StripTintPainter(_tint, color.withValues(alpha: _tintAlpha))),
+            ),
+          ),
+        ),
+        widget.child,
+        // Always there, shown or not, so that it comes and goes by painting alone.
+        Positioned.fill(
+          child: IgnorePointer(
+            child: RepaintBoundary(
+              child: _PaintedAt(
+                left: _markerLeft,
+                shift: -CTabInsertionMarker.overhang,
+                child: RepaintBoundary(child: CTabInsertionMarker(color: color, shown: _marked)),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StripTintPainter extends CustomPainter {
+  _StripTintPainter(this.amount, this.color) : super(repaint: amount);
+
+  final Animation<double> amount;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (amount.value == 0) return;
+    canvas.drawRect(Offset.zero & size, Paint()..color = color.withValues(alpha: color.a * amount.value));
+  }
+
+  @override
+  bool shouldRepaint(_StripTintPainter old) => old.color != color || !identical(old.amount, amount);
+}
+
+/// Its child, as tall as it and as wide as the child is, painted [left] (plus [shift]) along it:
+/// moving it repaints this and places the child's layer, nothing else.
+class _PaintedAt extends SingleChildRenderObjectWidget {
+  const _PaintedAt({required this.left, required this.shift, required super.child});
+
+  final ValueListenable<double> left;
+  final double shift;
+
+  @override
+  _RenderPaintedAt createRenderObject(BuildContext context) => _RenderPaintedAt(left, shift);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderPaintedAt renderObject) {
+    renderObject
+      ..left = left
+      ..shift = shift;
+  }
+}
+
+class _RenderPaintedAt extends RenderProxyBox {
+  _RenderPaintedAt(this._left, this._shift);
+
+  ValueListenable<double> _left;
+  double _shift;
+
+  set left(ValueListenable<double> value) {
+    if (identical(value, _left)) return;
+    if (attached) {
+      _left.removeListener(markNeedsPaint);
+      value.addListener(markNeedsPaint);
+    }
+    _left = value;
+    markNeedsPaint();
+  }
+
+  set shift(double value) {
+    if (value == _shift) return;
+    _shift = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _left.addListener(markNeedsPaint);
+  }
+
+  @override
+  void detach() {
+    _left.removeListener(markNeedsPaint);
+    super.detach();
+  }
+
+  @override
+  void performLayout() {
+    size = constraints.biggest;
+    child?.layout(BoxConstraints.tightFor(height: size.height));
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) => constraints.biggest;
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) => false;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child != null) context.paintChild(child, offset + Offset(_left.value + _shift, 0));
+  }
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    transform.translate(_left.value + _shift, 0.0);
+  }
 }
 
 /// Side of the square a tab image is drawn in: the theme's icon size, or the image's own height when

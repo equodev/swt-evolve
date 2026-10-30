@@ -20,8 +20,10 @@ void main() {
   Future<void> pumpAt(WidgetTester tester, Offset buttonTopLeft,
       {required List<String> taps}) async {
     appScaleNotifier.value = scale;
-    await tester.binding.setSurfaceSize(view);
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    // The view itself, so its MediaQuery and the constraints it hands the app agree, as a window's do.
+    tester.view.physicalSize = view;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
 
     await tester.pumpWidget(MaterialApp(
       home: SwtZoomScale(

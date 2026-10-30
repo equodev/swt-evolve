@@ -7,6 +7,7 @@ import '../gen/rgb.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_extensions/colordialog_theme_extension.dart';
 import 'utils/pointer.dart';
+import 'utils/layered_layout_builder.dart';
 
 /// Sentinel the Java side (`DartColorDialog.open`) reads as "the user cancelled".
 const int cancelledColor = -1;
@@ -290,7 +291,7 @@ class _SaturationValueArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         void handle(Offset local) {
           final s = (local.dx / constraints.maxWidth).clamp(0.0, 1.0);
@@ -372,7 +373,7 @@ class _HueSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: theme.hueSliderHeight,
-      child: LayoutBuilder(
+      child: LayeredLayoutBuilder(
         builder: (context, constraints) {
           void handle(Offset local) {
             final hue = (local.dx / constraints.maxWidth).clamp(0.0, 1.0) * 360.0;

@@ -18,6 +18,7 @@ import 'widget_config.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
 import 'key_mapping.dart';
+import 'utils/layered_layout_builder.dart';
 
 /// Browser implementation backed by the `webview_all` plugin (the federated
 /// `webview_flutter` API), which provides a real embedded webview on every
@@ -524,8 +525,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// tolerates either form.
   void _onOp(String op, void Function(dynamic) handler) {
     final channel = "${state.swt}/${state.id}/$op";
-    _opTokens[channel] = EquoCommService.onRaw(
-        channel, (raw) => handler(raw is String ? jsonDecode(raw) : raw));
+    _opTokens[channel] = EquoCommService.onRaw(channel, handler);
   }
 
   final Map<String, Object> _opTokens = {};
@@ -770,10 +770,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   @override
   Widget build(BuildContext context) {
-    return tagSemantics(ValueListenableBuilder<double>(
+    return inOwnLayer(tagSemantics(ValueListenableBuilder<double>(
       valueListenable: appScaleNotifier,
       builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
-    ));
+    )));
   }
 
   /// Renders the page at the pixel count it is displayed with, instead of stretching it.
@@ -789,7 +789,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// under the transform rather than a texture.
   Widget _unzoomed(Widget webview, double zoom) {
     if (kIsWeb || zoom <= 0 || zoom == 1.0) return webview;
-    return LayoutBuilder(builder: (context, constraints) {
+    return LayeredLayoutBuilder(builder: (context, constraints) {
       if (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight) return webview;
       // OverflowBox, not a plain SizedBox: a Transform does not change layout, so a child sized
       // past its parent's constraints would simply be clamped back to them and then scaled down --

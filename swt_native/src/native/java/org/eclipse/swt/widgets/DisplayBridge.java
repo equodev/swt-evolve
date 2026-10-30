@@ -31,6 +31,36 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Display-wide: a focus request can name a control the client has not built yet. */
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
+
+    static {
+        FlutterBridge.setEventClock(DisplayBridge::stampEventTime);
+    }
+
+    /**
+     * The time of the last event the display's client sent, in milliseconds, as SWT's {@code getLastEventTime}
+     * answers it on a native toolkit: the time of the OS event behind whatever is being handled, which every event
+     * sent without a time of its own is stamped with. Before any has arrived, the clock.
+     */
+    static int lastEventTime(DartDisplay display) {
+        int t = display.lastEventTime;
+        return t != 0 ? t : (int) (System.nanoTime() / 1_000_000L);
+    }
+
+    /**
+     * Stamps an event arriving from the display's client. Never the same time as the one before: Eclipse takes a
+     * command triggered at the time of the previous one for a repeat and drops it. Kept per display, since one JVM
+     * can serve several sessions.
+     */
+    private static void stampEventTime(Display display) {
+        if (display == null || !(display.getImpl() instanceof DartDisplay))
+            return;
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        synchronized (impl) {
+            int now = (int) (System.nanoTime() / 1_000_000L);
+            int last = impl.lastEventTime;
+            impl.lastEventTime = now - last > 0 ? now : last + 1;
+        }
+    }
     /** The client's answer to a focus request, sent as it receives the request: {@code {seq}}. */
     private static final String FOCUS_SEEN_CHANNEL = "swt.evolve.focus.seen";
     /** Display-wide: which control Java holds as its focus control, without moving the client's. */

@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/control.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
@@ -67,8 +68,8 @@ Future<TestGesture> _dragOntoTarget(WidgetTester tester) async {
   return gesture;
 }
 
-Future<void> _answer({required int detail, required int feedback}) => deliverFrame(
-    'DropTarget/$_dropTargetId/Drop/negotiationResult', {'detail': detail, 'feedback': feedback});
+Future<void> _answer({required int detail, required int feedback}) => deliverEvent(
+    'DropTarget/$_dropTargetId/Drop/negotiationResult', VEvent()..detail = detail..feedback = feedback);
 
 Future<void> _finish(WidgetTester tester, TestGesture gesture) async {
   await gesture.up();
@@ -81,14 +82,8 @@ Future<void> _finish(WidgetTester tester, TestGesture gesture) async {
 MouseCursor _activeCursor() =>
     RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(_mousePointer)!;
 
-BoxDecoration? _dropFeedbackOn(WidgetTester tester, String text) {
-  final boxes = find.ancestor(
-    of: find.text(text),
-    matching: find.byType(DropFeedbackBox),
-  );
-  if (boxes.evaluate().isEmpty) return null;
-  return tester.widget<DropFeedbackBox>(boxes.first).decoration;
-}
+BoxDecoration? _dropFeedbackOn(WidgetTester tester, String text) =>
+    dropFeedbackAt(tester, tester.getCenter(find.text(text).first));
 
 /// Presses on 'Source' and moves [by] with a mouse, leaving the button held.
 Future<TestGesture> _dragBy(WidgetTester tester, Offset by) async {
@@ -132,6 +127,20 @@ VTable _table() => VTable()
 
 void main() {
   setUp(freshClient);
+
+  testWidgets('the drag cursor stays while the pointer outruns the drag image', (tester) async {
+    await _pumpTree(tester);
+    final gesture = await _dragOntoTarget(tester);
+    await _answer(detail: Dnd.dropCopy, feedback: Dnd.feedbackSelect);
+    await tester.pump();
+    expect(_activeCursor(), SystemMouseCursors.copy);
+
+    // Before the next frame moves the image after it, as a fast pointer does between two frames.
+    await gesture.moveBy(const Offset(30, -30));
+    expect(_activeCursor(), SystemMouseCursors.copy);
+
+    await _finish(tester, gesture);
+  });
 
   testWidgets('the drag cursor shows the operation the drop target answered', (tester) async {
     await _pumpTree(tester);
@@ -261,8 +270,8 @@ void main() {
     await tester.pump();
     final gesture = await _dragBy(tester, const Offset(0, 330));
 
-    await deliverFrame(
-        'DropTarget/$outerId/Drop/negotiationResult', {'detail': Dnd.dropCopy, 'feedback': 0});
+    await deliverEvent(
+        'DropTarget/$outerId/Drop/negotiationResult', VEvent()..detail = Dnd.dropCopy..feedback = 0);
     await tester.pump();
     expect(_activeCursor(), SystemMouseCursors.copy);
 
@@ -283,7 +292,7 @@ void main() {
           state: VControl(),
           alwaysAccepts: true,
           onDrop: (_, __, ___, ____) {},
-          builder: (_, child, __, isHovering) {
+          builder: (_, child, isHovering) {
             accepted = accepted || isHovering;
             return child;
           },

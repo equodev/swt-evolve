@@ -123,23 +123,23 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     // every ancestor's - so a disabled folder disables the pages it holds: trackPointer's gate
     // covers them.
     if (hasValidBounds) {
-      return SwtControlScope(
+      return inOwnLayer(SwtControlScope(
           swt: state.swt,
           child: tagSemantics(trackPointer(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             child: ConstrainedBox(constraints: constraints!, child: content),
-          ))));
+          )))));
     }
 
     // The tabs letter and colour in the folder's own font/foreground: VTabItem has neither.
-    return SwtControlScope(
+    return inOwnLayer(SwtControlScope(
         swt: state.swt,
         child: tagSemantics(trackPointer(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           child: content,
-        ))));
+        )))));
   }
 
   Widget _buildTabContent(List<Widget> tabBodies) {

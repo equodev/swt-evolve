@@ -31,6 +31,7 @@ import '../gen/widgets.dart';
 import '../gen/rectangle.dart';
 import 'utils/double_tap_detector.dart';
 import 'owner_draw_overlay.dart';
+import 'utils/layered_layout_builder.dart';
 import 'utils/cached_text.dart';
 import 'utils/text_utils.dart';
 
@@ -162,8 +163,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   }
 
   /// How far the rows are scrolled.
-  double get verticalScrollOffset =>
-      _verticalScrollController.hasClients ? _verticalScrollController.offset : 0.0;
+  double get verticalScrollOffset => _verticalScrollController.scrolledBy;
 
   int _reportedScrollOffset = 0;
 
@@ -262,7 +262,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         children: [
           Container(
             decoration: buildBorder(widgetTheme),
-            child: LayoutBuilder(
+            child: LayeredLayoutBuilder(
               builder: (context, constraints) {
                 final bounded = constraints.maxHeight.isFinite;
                 return Column(
@@ -303,7 +303,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   void dispose() {
     _verticalScrollController.dispose();
-    _dropFeedback.dispose();
     super.dispose();
   }
 
@@ -596,36 +595,41 @@ class TableImpl<T extends TableSwt, V extends VTable>
       height: height,
       child: totalRows == 0
           ? Container()
-          : LayoutBuilder(
+          : LayeredLayoutBuilder(
               builder: (context, constraints) {
                 final window = _rowWindow(constraints, rowHeight, totalRows);
                 _requestRows(window.end);
                 _followTopIndex(rowHeight);
                 return SingleChildScrollView(
                   controller: _verticalScrollController,
-                  child: Padding(
-                    // The rows outside the window are height alone, so the scrollbar spans the table.
-                    padding: EdgeInsets.only(
-                      top: window.start * rowHeight,
-                      bottom: (totalRows - window.end) * rowHeight,
-                    ),
-                    child: withOwnerDrawnRows(
-                      Table(
-                        columnWidths: trailingColumnWidths,
-                        border: buildBodyBorder(showLines, theme),
-                        children: [
-                          for (int i = window.start; i < window.end; i++)
-                            i < items.length
-                                ? buildRow(context, i, items[i], columns.length, theme,
-                                    showLines: showLines)
-                                : buildPendingRow(i, columns, rowHeight, showLines, theme),
-                        ],
+                  child: Stack(
+                    children: [
+                      Padding(
+                        // The rows outside the window are height alone, so the scrollbar spans the table.
+                        padding: EdgeInsets.only(
+                          top: window.start * rowHeight,
+                          bottom: (totalRows - window.end) * rowHeight,
+                        ),
+                        child: withOwnerDrawnRows(
+                          Table(
+                            columnWidths: trailingColumnWidths,
+                            border: buildBodyBorder(showLines, theme),
+                            children: [
+                              for (int i = window.start; i < window.end; i++)
+                                i < items.length
+                                    ? buildRow(context, i, items[i], columns.length, theme,
+                                        showLines: showLines)
+                                    : buildPendingRow(i, columns, rowHeight, showLines, theme),
+                            ],
+                          ),
+                          items,
+                          window,
+                          rowHeight,
+                          theme,
+                        ),
                       ),
-                      items,
-                      window,
-                      rowHeight,
-                      theme,
-                    ),
+                      Positioned.fill(child: _dropRowLayer(rowHeight, items.length, theme)),
+                    ],
                   ),
                 );
               },
@@ -821,10 +825,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     );
   }
 
-  final HoverTracker<int> _dragHover = HoverTracker<int>();
-
-  /// The DND.FEEDBACK_* bits the drop target's listener answered for [_dragHover]'s row.
-  final ValueNotifier<int> _dropFeedback = ValueNotifier<int>(Dnd.feedbackNone);
+  /// The row a drag is over and the feedback the drop target's listener answered for it.
+  final DropRowFeedback _dropRow = DropRowFeedback();
 
   int _rowIndexForLocalY(double y, int itemCount) {
     final rowHeight = _cachedRowHeight;
@@ -832,7 +834,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerOffset = _cachedHeaderOffset ?? 0.0;
     final adjustedY = y - headerOffset;
     if (adjustedY < 0) return 0;
-    return (adjustedY / rowHeight).floor().clamp(0, itemCount);
+    // The rows scroll under the header, so a point on the body is that far further down them.
+    return ((adjustedY + verticalScrollOffset) / rowHeight).floor().clamp(0, itemCount);
   }
 
   Widget wrapTableForDrop(Widget content, int itemCount) {
@@ -841,7 +844,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final index = box is RenderBox
           ? _rowIndexForLocalY(box.globalToLocal(details.offset).dy, itemCount)
           : itemCount;
-      _dragHover.update(index);
+      _dropRow.hover(index);
       return index;
     }
 
@@ -850,35 +853,32 @@ class TableImpl<T extends TableSwt, V extends VTable>
       state: state,
       resolveIndex: resolveIndex,
       onDrop: (_, targetIndex, __, position) => sendRowDrop(targetIndex ?? itemCount, position),
-      builder: (context, child, negotiation, isHovering) {
-        if (!isHovering) {
-          _dragHover.update(null);
-        } else {
-          _dropFeedback.value = negotiation.feedback;
-        }
-        return child;
-      },
+      onAnswer: (answer) => _dropRow.answer(answer.feedback),
+      // The next drag starts with no answer, as Java gives a new one for each.
+      onLeave: () => _dropRow
+        ..hover(null)
+        ..answer(Dnd.feedbackNone),
+    );
+  }
+
+  // Laid over the rows inside the scrolled content, so it scrolls with them.
+  Widget _dropRowLayer(double rowHeight, int itemCount, TableThemeExtension theme) {
+    return DropRowLayer(
+      rows: _dropRow,
+      rowHeight: rowHeight,
+      rowCount: itemCount,
+      decoration: (feedback) => dropFeedbackDecoration(
+        feedback: feedback,
+        color: theme.selectedBackgroundColor,
+        lineWidth: theme.dropFeedbackLineWidth,
+        highlightAlpha: theme.dropFeedbackHighlightAlpha,
+      ),
     );
   }
 
   Widget wrapCellForRowDrag(Widget cell, int rowIndex, VTableItem item) {
-    final row = ListenableBuilder(
-      listenable: Listenable.merge([_dragHover.notifier, _dropFeedback]),
-      builder: (context, child) {
-        if (_dragHover.value != rowIndex) return child!;
-        final theme = Theme.of(context).extension<TableThemeExtension>();
-        return decorateDropFeedback(
-          feedback: _dropFeedback.value,
-          color: theme?.selectedBackgroundColor ?? Theme.of(context).colorScheme.primary,
-          lineWidth: theme?.dropFeedbackLineWidth ?? 2.0,
-          highlightAlpha: theme?.dropFeedbackHighlightAlpha ?? 90,
-          child: child!,
-        );
-      },
-      child: cell,
-    );
     return wrapDraggable<DndDragPayload>(
-      child: row,
+      child: cell,
       data: DndDragPayload(sourceControlId: state.id, index: rowIndex),
       widget: widget,
       state: state,
@@ -898,7 +898,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
           ),
         ),
       ),
-      childWhenDraggingBuilder: (c) => Opacity(opacity: 0.3, child: cell),
     );
   }
 

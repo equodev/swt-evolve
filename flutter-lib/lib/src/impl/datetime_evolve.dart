@@ -9,6 +9,7 @@ import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import 'utils/client_locale.dart';
 import 'utils/widget_utils.dart';
+import 'utils/layered_layout_builder.dart';
 
 const _kDtButtonWidth = 9.0;
 const _kDtIconSize = 9.0;
@@ -448,7 +449,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         }
         return KeyEventResult.ignored;
       },
-      child: LayoutBuilder(
+      child: LayeredLayoutBuilder(
         builder: (ctx, constraints) {
           final isBounded = constraints.hasBoundedWidth;
           return Container(

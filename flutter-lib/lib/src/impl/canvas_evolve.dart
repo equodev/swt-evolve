@@ -29,11 +29,16 @@ import 'widget_config.dart';
 import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
+import 'utils/layered_layout_builder.dart';
 
 const double _kBarSize = 17.0;
 
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
+  // Its layer is on the Focus around wrap(), which is further out.
+  @override
+  bool get drawsInOwnLayer => false;
+
   @override
   bool get forwardsWheelFromWrap => false;
 
@@ -236,7 +241,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     // Always mounted: unmounting it when a child appears would drop a held focus to the previous holder.
     // Forwards only the Canvas's own keys to SWT; a child's key is left to the child. Checked per event,
     // since an external node keeps the callback from its first build.
-    return Focus(
+    return inOwnLayer(Focus(
       focusNode: _keyboardFocus,
       onKeyEvent: (node, event) {
         final kids = state.children;
@@ -263,7 +268,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         return KeyEventResult.ignored;
       },
       child: content,
-    );
+    ));
   }
 
   // From Flutter 3.41 a semantics node with no action of its own is unreliable in the web DOM:
@@ -725,7 +730,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     final thickness = scrollTheme.scrollbarThickness;
     final radius = scrollTheme.scrollbarRadius;
 
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         final trackSize =
             widget.vertical ? constraints.maxHeight : constraints.maxWidth;

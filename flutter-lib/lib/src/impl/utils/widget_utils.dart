@@ -479,3 +479,11 @@ class ControlNestingScope extends InheritedWidget {
   bool updateShouldNotify(ControlNestingScope oldWidget) =>
       depth != oldWidget.depth;
 }
+
+extension ScrolledBy on ScrollController? {
+  /// How far the controller's view is scrolled; 0 while no view is attached.
+  double get scrolledBy {
+    final controller = this;
+    return controller != null && controller.hasClients ? controller.offset : 0.0;
+  }
+}

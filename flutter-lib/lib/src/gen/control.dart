@@ -112,6 +112,7 @@ class VControl extends VWidget {
   VCursor? cursor;
   bool? dragDetect;
   bool? dragSource;
+  int? dragSourceId;
   int? dropTargetId;
   bool? enabled;
   VFont? font;
@@ -133,6 +134,7 @@ class VControl extends VWidget {
       cursor = other.cursor;
       dragDetect = other.dragDetect;
       dragSource = other.dragSource;
+      dragSourceId = other.dragSourceId;
       dropTargetId = other.dropTargetId;
       enabled = other.enabled;
       font = other.font;
@@ -166,6 +168,9 @@ class VControl extends VWidget {
         return true;
       case 295: // dragSource
         dragSource = r.boolean();
+        return true;
+      case 1406: // dragSourceId
+        dragSourceId = r.longBoxed();
         return true;
       case 296: // dropTargetId
         dropTargetId = r.longBoxed();
@@ -245,6 +250,13 @@ class VControl extends VWidget {
       if (v_ != null && w.wants(295)) {
         w.key(295);
         w.boolean(v_);
+      }
+    }
+    {
+      final v_ = dragSourceId;
+      if (v_ != null && w.wants(1406)) {
+        w.key(1406);
+        w.longBoxed(v_);
       }
     }
     {
@@ -328,6 +340,7 @@ class VControl extends VWidget {
     visit(293, cursor);
     visit(294, dragDetect);
     visit(295, dragSource);
+    visit(1406, dragSourceId);
     visit(296, dropTargetId);
     visit(297, enabled);
     visit(298, font);
