@@ -2074,6 +2074,8 @@ public class DartShell extends DartDecorations implements IShell {
                             return;
                         }
                         sendEvent(SWT.Deactivate, e);
+                        if (!isDisposed() && getBridge() instanceof DisplayBridge)
+                            ((DisplayBridge) getBridge()).releaseFocusOf(this);
                     });
                     return;
                 }

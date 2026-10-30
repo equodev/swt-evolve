@@ -1879,6 +1879,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             clientActivated = null;
     }
 
+    /**
+     * Clears the focus a shell the client deactivated still holds. The client's FocusOut for it is
+     * handled later than a Deactivate listener's asyncExec, which natively already sees it gone.
+     */
+    public void releaseFocusOf(DartShell shell) {
+        if (focused != null && !focused.getApi().isDisposed() && focused.getApi().getShell() == shell.getApi())
+            clearFocus(focused);
+    }
+
     /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
     public void clearFocus(DartControl widget) {
         // A shown popup menu takes the keyboard without moving the focus control, as natively.
