@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/transform.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 /// A 9x9 RGBA bitmap, the smallest thing ImageShape will decode.
 const _pngBase64 =
@@ -25,9 +26,9 @@ void main() {
 
   var nextId = 940001;
 
-  void deliver(String actionId, Map<String, dynamic> json) {
+  void deliver(String actionId, Map<String, dynamic> payload) {
     final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
+    final body = TaggedValues.encode(payload);
     final out = Uint8List(2 + action.length + body.length);
     out[0] = (action.length >> 8) & 0xFF;
     out[1] = action.length & 0xFF;

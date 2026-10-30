@@ -1,7 +1,5 @@
 package dev.equo.swt.delivery;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
@@ -83,12 +81,9 @@ class CTabFolderResizeCensusTest {
 
             long whole = folderFrames.stream().skip(1).filter(f -> !names(f)).count();
             System.out.println("PROBE CTabFolder frames: " + folderFrames.size()
-                    + ", of which whole: " + whole
-                    + ", bytes: " + folderFrames.stream().mapToInt(f -> f.json().length()).sum());
+                    + ", of which whole: " + whole);
             for (DeliveryAudit.Frame frame : folderFrames) {
-                JsonObject o = JsonParser.parseString(frame.json()).getAsJsonObject();
-                System.out.println("   " + frame.json().length() + " B  _d="
-                        + (o.has("_d") ? o.get("_d") : "(none — whole)"));
+                System.out.println("   " + frame.size() + "B _d=" + (names(frame) ? frame.state().get("_d") : "(none — whole)"));
             }
 
             assertThat(whole)
@@ -122,9 +117,8 @@ class CTabFolderResizeCensusTest {
 
             List<DeliveryAudit.Frame> folderFrames = audit.framesOn(channelOf(folder));
             long whole = folderFrames.stream().skip(1).filter(f -> !names(f)).count();
-            int bytes = folderFrames.stream().mapToInt(f -> f.json().length()).sum();
             System.out.println("PROBE with a changed child: " + folderFrames.size()
-                    + " folder frames, whole: " + whole + ", bytes: " + bytes);
+                    + " folder frames, whole: " + whole);
 
             assertThat(whole)
                     .as("a resize with a changed child sent the whole folder, subtree and all")
@@ -157,13 +151,10 @@ class CTabFolderResizeCensusTest {
 
             List<DeliveryAudit.Frame> folderFrames = audit.framesOn(channelOf(folder));
             long whole = folderFrames.stream().skip(1).filter(f -> !names(f)).count();
-            int bytes = folderFrames.stream().mapToInt(f -> f.json().length()).sum();
             System.out.println("PROBE with a changed tab item: " + folderFrames.size()
-                    + " folder frames, whole: " + whole + ", bytes: " + bytes);
+                    + " folder frames, whole: " + whole);
             for (DeliveryAudit.Frame frame : folderFrames) {
-                JsonObject o = JsonParser.parseString(frame.json()).getAsJsonObject();
-                System.out.println("   " + frame.json().length() + " B  _d="
-                        + (o.has("_d") ? o.get("_d") : "(none — whole)"));
+                System.out.println("   " + frame.size() + "B _d=" + (names(frame) ? frame.state().get("_d") : "(none — whole)"));
             }
 
             assertThat(whole)
@@ -199,10 +190,8 @@ class CTabFolderResizeCensusTest {
             List<DeliveryAudit.Frame> folderFrames = audit.framesOn(channelOf(folder));
             List<DeliveryAudit.Frame> textFrames = audit.framesOn(channelOf(text));
             long whole = folderFrames.stream().skip(1).filter(f -> !names(f)).count();
-            System.out.println("PROBE naming children: folder " + folderFrames.size() + " frames ("
-                    + folderFrames.stream().mapToInt(f -> f.json().length()).sum() + " B), whole "
-                    + whole + "; text " + textFrames.size() + " frames ("
-                    + textFrames.stream().mapToInt(f -> f.json().length()).sum() + " B)");
+            System.out.println("PROBE naming children: folder " + folderFrames.size() + " frames, whole "
+                    + whole + "; text " + textFrames.size() + " frames");
 
             assertThat(textFrames)
                     .as("the changed text had no frame of its own, so an ancestor had to carry it")
@@ -214,7 +203,7 @@ class CTabFolderResizeCensusTest {
     }
 
     private static boolean names(DeliveryAudit.Frame frame) {
-        return JsonParser.parseString(frame.json()).getAsJsonObject().has("_d");
+        return frame.state().containsKey("_d");
     }
 
     private static String channelOf(Widget widget) {

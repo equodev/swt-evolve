@@ -4,60 +4,38 @@
 // taking it as a whole description would null every property the change did not name, and the ops
 // that follow would be drawn in the wrong colour, with the wrong clip, or not at all.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+
+import 'support/gc_frames.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const id = 851001;
 
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
-
-  Map<String, dynamic> colour(int r, int g, int b) => {'r': r, 'g': g, 'b': b, 'a': 255};
-
-  Map<String, dynamic> clip(int x, int y, int w, int h) =>
-      {'x': x, 'y': y, 'width': w, 'height': h};
-
   /// The whole GC, as the first state push of a paint describes it.
-  Map<String, dynamic> whole() => {
-        'id': id,
-        'swt': 'GC',
-        'style': 33554432,
-        'alpha': 255,
-        'fillRule': 1,
-        'lineStyle': 1,
-        'lineCap': 1,
-        'lineJoin': 1,
-        'lineWidth': 3,
-        'background': colour(192, 192, 192),
-        'foreground': colour(0, 0, 0),
-        'clipping': clip(20, 20, 96, 54),
-      };
+  void deliverWhole(VGC state) => receive('GC/$id/b', GcFrame().whole(state).bytes);
 
-  /// A change to it, as every state push after the first does.
-  Map<String, dynamic> change(Map<String, dynamic> properties) => {
-        'id': id,
-        'swt': 'GC',
-        '_d': properties.keys.toList(),
-        ...properties,
-      };
+  /// A change naming [keys], as every state push after the first sends one.
+  void deliverChange(VGC state, Set<int> keys) => receive('GC/$id/b', GcFrame().change(state, keys).bytes);
+
+  VGC whole() => VGC.empty()
+    ..id = id
+    ..style = 33554432
+    ..alpha = 255
+    ..fillRule = 1
+    ..lineStyle = 1
+    ..lineCap = 1
+    ..lineJoin = 1
+    ..lineWidth = 3
+    ..background = colourOf(192, 192, 192)
+    ..foreground = colourOf(0, 0, 0)
+    ..clipping = rectOf(20, 20, 96, 54);
 
   GCDrawer drawer() {
     final state = VGC.empty()..id = id;
@@ -74,7 +52,7 @@ void main() {
 
   test('a whole state push replaces what the drawer holds', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
 
     expect(d.state.lineWidth, 3);
@@ -84,10 +62,10 @@ void main() {
 
   test('a change applies on top of the state held, leaving the rest alone', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
 
-    deliver('GC/$id', change({'foreground': colour(128, 128, 128)}));
+    deliverChange(VGC.empty()..foreground = colourOf(128, 128, 128), {WireKey.k_GC_foreground});
     await settle();
 
     expect(d.state.foreground?.red, 128,
@@ -101,12 +79,16 @@ void main() {
     expect(d.state.fillRule, 1);
   });
 
-  test('a change in the lean form Java sends merges too: no stamps, colours packed', () async {
+  test('a change naming a colour and a number merges both, each colour one ARGB word', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
 
-    deliver('GC/$id', {'_d': 0, 'foreground': 0xFF123456, 'lineWidth': 2});
+    deliverChange(
+        VGC.empty()
+          ..foreground = VColor.fromArgb(0xFF123456)
+          ..lineWidth = 2,
+        {WireKey.k_GC_foreground, WireKey.k_GC_lineWidth});
     await settle();
 
     expect(d.state.foreground?.alpha, 0xFF);
@@ -120,14 +102,14 @@ void main() {
 
   test('successive changes accumulate, the way a paint applies them one op at a time', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
 
-    deliver('GC/$id', change({'clipping': clip(200, 100, 7, 7)}));
+    deliverChange(VGC.empty()..clipping = rectOf(200, 100, 7, 7), {WireKey.k_GC_clipping});
     await settle();
-    deliver('GC/$id', change({'background': colour(0, 0, 0)}));
+    deliverChange(VGC.empty()..background = colourOf(0, 0, 0), {WireKey.k_GC_background});
     await settle();
-    deliver('GC/$id', change({'lineWidth': 1}));
+    deliverChange(VGC.empty()..lineWidth = 1, {WireKey.k_GC_lineWidth});
     await settle();
 
     expect(d.state.clipping?.x, 200);
@@ -138,13 +120,12 @@ void main() {
 
   test('a later whole push still replaces, so a new paint starts clean', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
-    deliver('GC/$id', change({'lineWidth': 9}));
+    deliverChange(VGC.empty()..lineWidth = 9, {WireKey.k_GC_lineWidth});
     await settle();
 
-    final next = whole()..['lineWidth'] = 1;
-    deliver('GC/$id', next);
+    deliverWhole(whole()..lineWidth = 1);
     await settle();
 
     expect(d.state.lineWidth, 1,
@@ -153,9 +134,9 @@ void main() {
 
   test('the drawer reads the merged state when it turns an op into a shape', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
-    deliver('GC/$id', change({'background': colour(10, 20, 30)}));
+    deliverChange(VGC.empty()..background = colourOf(10, 20, 30), {WireKey.k_GC_background});
     await settle();
 
     expect(d.fillColor.red, 10);
@@ -168,9 +149,9 @@ void main() {
   // named property is replaced outright rather than merged field by field.
   test('a change carries each named value whole', () async {
     final d = drawer();
-    deliver('GC/$id', whole());
+    deliverWhole(whole());
     await settle();
-    deliver('GC/$id', change({'clipping': clip(1, 2, 3, 4)}));
+    deliverChange(VGC.empty()..clipping = rectOf(1, 2, 3, 4), {WireKey.k_GC_clipping});
     await settle();
 
     final VRectangle? c = d.state.clipping;

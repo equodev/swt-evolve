@@ -3,12 +3,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VTracker extends VWidget {
 
     protected VTracker() {
@@ -18,7 +14,6 @@ public class VTracker extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Cursor getCursor() {
         Cursor val = ((DartTracker) impl).clientCursor;
         if (val != null && !(val.getImpl() instanceof DartCursor))
@@ -30,7 +25,6 @@ public class VTracker extends VWidget {
         ((DartTracker) impl).clientCursor = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Rectangle[] getRectangles() {
         Rectangle[] values = ((DartTracker) impl).rectangles;
         if (values == null)
@@ -45,7 +39,6 @@ public class VTracker extends VWidget {
         ((DartTracker) impl).rectangles = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getStippled() {
         return ((DartTracker) impl).getStippled();
     }
@@ -55,34 +48,44 @@ public class VTracker extends VWidget {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Tracker.class)
-    public static class TrackerJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTracker.class, (JsonWriter.WriteObject<DartTracker>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTracker.class, (JsonReader.ReadObject<DartTracker>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Tracker read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Tracker api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

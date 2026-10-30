@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,8 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
@@ -36,15 +33,13 @@ import dev.equo.swt.comm.CommService;
  */
 public final class PaintPacing {
 
-    /** Sent by the client with {@code {"id": <control's id>}} when the frame showing its Paint begins. */
+    /** Sent by the client with the control's id when the frame showing its Paint begins. */
     static final String IN_FRAME = "GC/inFrame";
 
     static final int TIMEOUT_MS = 100;
 
     /** Paints of one control the client may have yet to take into a frame. */
     static final int IN_FLIGHT = 1;
-
-    private static final Pattern ID = Pattern.compile("\"id\"\\s*:\\s*(-?\\d+)");
 
     private static final String PACER_KEY = PaintPacing.class.getName();
 
@@ -72,11 +67,9 @@ public final class PaintPacing {
     private static final class Router {
         final Set<Pacer> pacers = ConcurrentHashMap.newKeySet();
 
-        void answered(byte[] bytes) {
-            if (bytes == null) return;
-            Matcher m = ID.matcher(new String(bytes, StandardCharsets.UTF_8));
-            if (!m.find()) return;
-            int id = Integer.parseInt(m.group(1));
+        void answered(java.nio.ByteBuffer body) {
+            if (!body.hasRemaining()) return;
+            int id = (int) new dev.equo.swt.WireReader(body).int64();
             for (Pacer pacer : pacers) {
                 DartControl shown = pacer.byId.get(id);
                 if (shown != null && !pacer.display.isDisposed()) {
@@ -159,7 +152,7 @@ public final class PaintPacing {
     private static Router router(AbstractBinaryCommService comm) {
         return comm.attachment(Router.class, () -> {
             Router router = new Router();
-            comm.on(IN_FRAME, byte[].class, router::answered);
+            comm.on(IN_FRAME, java.nio.ByteBuffer.class, router::answered);
             return router;
         });
     }
@@ -192,13 +185,14 @@ public final class PaintPacing {
      * Called with the state a flush is about to send. Anything in it besides a held control's own
      * drawing releases every Paint its Display holds, so a control that repaints to follow another
      * (a ruler following its editor's scroll) is not shown a frame behind it. Another Display's
-     * state leaves them held.
+     * state leaves them held. Returns whether a Paint ran.
      */
-    public static void flushing(Collection<Object> states) {
+    public static boolean flushing(Collection<Object> states) {
         Display current = Display.getCurrent();
         if (current != null && current.isDisposed()) current = null;
         Pacer currentPacer = current == null ? null : existingPacer(current);
         Set<Pacer> released = new HashSet<>();
+        boolean painted = false;
         for (Object state : states) {
             Object owner = state instanceof DartGC ? ((DartGC) state)._drawable()
                     : state instanceof DartWidget ? ((DartWidget) state).getApi() : null;
@@ -207,9 +201,10 @@ public final class PaintPacing {
             DartControl c = dartImpl(owner);
             if (c == null || !pacer.held.contains(c)) {
                 released.add(pacer);
-                releaseAll(pacer);
+                painted |= releaseAll(pacer);
             }
         }
+        return painted;
     }
 
     /**
@@ -232,14 +227,32 @@ public final class PaintPacing {
                 ? (DartControl) ((Control) o).getImpl() : null;
     }
 
-    private static void releaseAll(Pacer pacer) {
-        DartControl[] all;
-        synchronized (pacer.held) {
-            all = pacer.held.toArray(new DartControl[0]);
-            pacer.held.clear();
+    /** Rounds of {@link #releaseAll}: two controls that redraw each other would otherwise never stop. */
+    private static final int RELEASE_ROUNDS = 8;
+
+    private static boolean releaseAll(Pacer pacer) {
+        boolean painted = false;
+        // A released Paint can redraw another control (an editor's Paint redraws its ruler), and the
+        // pacing holds that one too: it follows the same change, so it goes out in this flush as well.
+        for (int round = 0; round < RELEASE_ROUNDS; round++) {
+            DartControl[] all;
+            synchronized (pacer.held) {
+                if (pacer.held.isEmpty()) break;
+                all = pacer.held.toArray(new DartControl[0]);
+                pacer.held.clear();
+            }
+            boolean paintedNow = false;
+            for (DartControl c : all) {
+                if (c.isDisposed()) continue;
+                if (c.getDisplay().getThread() == Thread.currentThread()) {
+                    paintedNow |= ControlHelper.paintHeldNow(c);
+                } else {
+                    ControlHelper.dispatchHeldPaint(c);
+                }
+            }
+            painted |= paintedNow;
+            if (!paintedNow) break;
         }
-        for (DartControl c : all) {
-            if (!c.isDisposed()) ControlHelper.dispatchHeldPaint(c);
-        }
+        return painted;
     }
 }

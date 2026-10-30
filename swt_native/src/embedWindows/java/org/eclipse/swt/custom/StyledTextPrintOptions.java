@@ -15,10 +15,6 @@
  */
 package org.eclipse.swt.custom;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
-
 /**
  * Use StyledTextPrintOptions to specify printing options for the
  * StyledText.print(Printer, StyledTextPrintOptions) API.
@@ -41,8 +37,7 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 2.1
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public class StyledTextPrintOptions {
+public class StyledTextPrintOptions implements dev.equo.swt.WireObject {
 
     /**
      * Page number placeholder constant for use in <code>header</code>
@@ -66,7 +61,6 @@ public class StyledTextPrintOptions {
      * left aligned, centered and right aligned. They are separated by a tab
      * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
      */
-    @JsonAttribute()
     public String header = null;
 
     /**
@@ -79,37 +73,31 @@ public class StyledTextPrintOptions {
      * left aligned, centered and right aligned. They are separated by a tab
      * character (<code>StyledTextPrintOptions.SEPARATOR</code>).
      */
-    @JsonAttribute()
     public String footer = null;
 
     /**
      * Name of the print job.
      */
-    @JsonAttribute()
     public String jobName = null;
 
     /**
      * Print the text foreground color. Default value is <code>false</code>.
      */
-    @JsonAttribute()
     public boolean printTextForeground = false;
 
     /**
      * Print the text background color. Default value is <code>false</code>.
      */
-    @JsonAttribute()
     public boolean printTextBackground = false;
 
     /**
      * Print the font styles. Default value is <code>false</code>.
      */
-    @JsonAttribute()
     public boolean printTextFontStyle = false;
 
     /**
      * Print the line background color. Default value is <code>false</code>.
      */
-    @JsonAttribute()
     public boolean printLineBackground = false;
 
     /**
@@ -117,7 +105,6 @@ public class StyledTextPrintOptions {
      *
      * @since 3.3
      */
-    @JsonAttribute()
     public boolean printLineNumbers = false;
 
     /**
@@ -125,6 +112,66 @@ public class StyledTextPrintOptions {
      *
      * @since 3.4
      */
-    @JsonAttribute()
     public String[] lineLabels = null;
+
+    @Override
+    public int wireTypeId() {
+        return 323;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(315);
+        w.write(header);
+        w.key(314);
+        w.write(footer);
+        w.key(316);
+        w.write(jobName);
+        w.key(322);
+        w.write(printTextForeground);
+        w.key(320);
+        w.write(printTextBackground);
+        w.key(321);
+        w.write(printTextFontStyle);
+        w.key(318);
+        w.write(printLineBackground);
+        w.key(319);
+        w.write(printLineNumbers);
+        w.key(317);
+        w.write(lineLabels);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 315:
+                header = r.string();
+                return true;
+            case 314:
+                footer = r.string();
+                return true;
+            case 316:
+                jobName = r.string();
+                return true;
+            case 322:
+                printTextForeground = r.bool();
+                return true;
+            case 320:
+                printTextBackground = r.bool();
+                return true;
+            case 321:
+                printTextFontStyle = r.bool();
+                return true;
+            case 318:
+                printLineBackground = r.bool();
+                return true;
+            case 319:
+                printLineNumbers = r.bool();
+                return true;
+            case 317:
+                lineLabels = r.strings();
+                return true;
+        }
+        return false;
+    }
 }

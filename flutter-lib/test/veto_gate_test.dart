@@ -7,10 +7,11 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
-void _receiveJson(String actionId, Object payload) {
+void _deliver(String actionId, Object payload) {
   final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
+  final body = TaggedValues.encode(payload);
   final frame = Uint8List(2 + actionBytes.length + body.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;
@@ -25,7 +26,7 @@ void main() {
     addTearDown(gate.detach);
 
     expect(gate.armed, isFalse, reason: 'no listener on the Java side yet');
-    _receiveJson('Spinner/7/key/vetoable', {'value': true});
+    _deliver('Spinner/7/key/vetoable', {'value': true});
     await tester.pump();
     expect(gate.armed, isTrue);
   });
@@ -33,7 +34,7 @@ void main() {
   testWidgets('verdicts resolve proposals in order', (tester) async {
     final gate = VetoGate('key')..attach('Text', 3);
     addTearDown(gate.detach);
-    _receiveJson('Text/3/key/vetoable', {'value': true});
+    _deliver('Text/3/key/vetoable', {'value': true});
     await tester.pump();
 
     final seen = <String>[];
@@ -41,13 +42,13 @@ void main() {
     gate.propose((doit) => seen.add('second:$doit'));
     gate.propose((doit) => seen.add('third:$doit'));
 
-    _receiveJson('Text/3/key/verdict', {'doit': false});
+    _deliver('Text/3/key/verdict', {'doit': false});
     await tester.pump();
     expect(seen, ['first:false'], reason: 'the head resolves, nothing behind it');
 
-    _receiveJson('Text/3/key/verdict', {'doit': true});
+    _deliver('Text/3/key/verdict', {'doit': true});
     await tester.pump();
-    _receiveJson('Text/3/key/verdict', {'doit': false});
+    _deliver('Text/3/key/verdict', {'doit': false});
     await tester.pump();
     expect(seen, ['first:false', 'second:true', 'third:false']);
   });
@@ -56,7 +57,7 @@ void main() {
     final gate = VetoGate('modify', timeout: const Duration(milliseconds: 400))
       ..attach('Text', 4);
     addTearDown(gate.detach);
-    _receiveJson('Text/4/modify/vetoable', {'value': true});
+    _deliver('Text/4/modify/vetoable', {'value': true});
     await tester.pump();
 
     bool? verdict;
@@ -72,7 +73,7 @@ void main() {
     final gate = VetoGate('modify', timeout: const Duration(milliseconds: 400))
       ..attach('Text', 5);
     addTearDown(gate.detach);
-    _receiveJson('Text/5/modify/vetoable', {'value': true});
+    _deliver('Text/5/modify/vetoable', {'value': true});
     await tester.pump();
 
     final seen = <String>[];
@@ -82,12 +83,12 @@ void main() {
 
     gate.propose((doit) => seen.add('second:$doit'));
     // Java's answer for the FIRST proposal finally turns up.
-    _receiveJson('Text/5/modify/verdict', {'doit': false});
+    _deliver('Text/5/modify/verdict', {'doit': false});
     await tester.pump();
     expect(seen, ['first:true'],
         reason: 'the stale verdict is consumed by its own spent proposal, not by the second');
 
-    _receiveJson('Text/5/modify/verdict', {'doit': true});
+    _deliver('Text/5/modify/verdict', {'doit': true});
     await tester.pump();
     expect(seen, ['first:true', 'second:true']);
   });
@@ -100,22 +101,22 @@ void main() {
     addTearDown(a.detach);
     addTearDown(b.detach);
 
-    _receiveJson('Tree/11/drag/vetoable', {'value': true});
+    _deliver('Tree/11/drag/vetoable', {'value': true});
     await tester.pump();
     expect(a.armed, isTrue);
     expect(b.armed, isFalse, reason: 'arming Tree must not arm Table');
 
-    _receiveJson('Table/12/drag/vetoable', {'value': true});
+    _deliver('Table/12/drag/vetoable', {'value': true});
     await tester.pump();
     final seen = <String>[];
     a.propose((doit) => seen.add('tree:$doit'));
     b.propose((doit) => seen.add('table:$doit'));
 
-    _receiveJson('Tree/11/drag/verdict', {'doit': false});
+    _deliver('Tree/11/drag/verdict', {'doit': false});
     await tester.pump();
     expect(seen, ['tree:false'], reason: "Tree's veto must not reach Table");
 
-    _receiveJson('Table/12/drag/verdict', {'doit': true});
+    _deliver('Table/12/drag/verdict', {'doit': true});
     await tester.pump();
     expect(seen, ['tree:false', 'table:true']);
   });
@@ -127,10 +128,10 @@ void main() {
     // legitimately beat the proposal it belongs to.
     final gate = VetoGate('key')..attach('Spinner', 11);
     addTearDown(gate.detach);
-    _receiveJson('Spinner/11/key/vetoable', {'value': true});
+    _deliver('Spinner/11/key/vetoable', {'value': true});
     await tester.pump();
 
-    _receiveJson('Spinner/11/key/verdict', {'doit': true});
+    _deliver('Spinner/11/key/verdict', {'doit': true});
     await tester.pump();
 
     bool? verdict;
@@ -142,9 +143,9 @@ void main() {
   testWidgets('an early veto still vetoes', (tester) async {
     final gate = VetoGate('key')..attach('Spinner', 12);
     addTearDown(gate.detach);
-    _receiveJson('Spinner/12/key/vetoable', {'value': true});
+    _deliver('Spinner/12/key/vetoable', {'value': true});
     await tester.pump();
-    _receiveJson('Spinner/12/key/verdict', {'doit': false});
+    _deliver('Spinner/12/key/verdict', {'doit': false});
     await tester.pump();
 
     bool? verdict;
@@ -156,7 +157,7 @@ void main() {
       (tester) async {
     final gate = VetoGate('key')..attach('Spinner', 9);
     addTearDown(gate.detach);
-    _receiveJson('Spinner/9/key/vetoable', {'value': true});
+    _deliver('Spinner/9/key/vetoable', {'value': true});
     await tester.pump();
 
     var ran = false;
@@ -164,7 +165,7 @@ void main() {
     gate.armed = false; // focus moved away; Java re-arms on the next focus
 
     expect(ran, isFalse, reason: 'there is nothing left to commit the edit to');
-    _receiveJson('Spinner/9/key/verdict', {'doit': true});
+    _deliver('Spinner/9/key/verdict', {'doit': true});
     await tester.pump();
     expect(ran, isFalse, reason: 'and a verdict arriving afterwards is inert');
   });

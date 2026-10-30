@@ -84,29 +84,16 @@ class EditorResizeCostFlutterTest {
      */
     private static List<String> channelsIn(byte[] frame) {
         List<String> names = new ArrayList<>();
-        if (frame.length < 2) return names;
-        int nameLen = ((frame[0] & 0xFF) << 8) | (frame[1] & 0xFF);
-        if (frame.length < 2 + nameLen) return names;
-        String actionId = new String(frame, 2, nameLen, java.nio.charset.StandardCharsets.UTF_8);
-        String body = new String(frame, 2 + nameLen, frame.length - 2 - nameLen,
-                java.nio.charset.StandardCharsets.UTF_8);
+        dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length);
+        if (header == null) return names;
+        String actionId = header.channel();
         if (!"swt.evolve.batch".equals(actionId)) {
             names.add(actionId.replaceAll("/-?\\d+", "/#"));
             return names;
         }
-        // A batch spells a channel out once and refers to repeats by entry index (see MessageBatch).
-        java.util.List<String> asSent = new ArrayList<>();
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("\\[\\s*(?:\"([^\"]+)\"|(\\d+))\\s*,").matcher(body);
-        while (m.find()) {
-            String spelled = m.group(1);
-            if (spelled != null) {
-                asSent.add(spelled);
-            } else {
-                int at = Integer.parseInt(m.group(2));
-                asSent.add(at >= 0 && at < asSent.size() ? asSent.get(at) : "?");
-            }
-            names.add(asSent.get(asSent.size() - 1).replaceAll("/-?\\d+", "/#"));
+        byte[] body = java.util.Arrays.copyOfRange(frame, header.payloadStart(), frame.length);
+        for (dev.equo.swt.harness.GcFrames.Entry entry : dev.equo.swt.harness.GcFrames.batch(body)) {
+            names.add(entry.channel().replaceAll("/-?\\d+", "/#"));
         }
         return names;
     }

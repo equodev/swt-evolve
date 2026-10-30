@@ -62,10 +62,11 @@ public class GCImageDrawer extends EmbeddedBridge {
     private static final java.util.Set<GCImageDrawer> holdingOps = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 
     private static byte[] gcDispose(long remoteRef, boolean wantPixels, boolean retain) {
-        return ("{\"ref\":" + remoteRef
-                + ",\"pixels\":" + wantPixels
-                + ",\"retain\":" + retain + "}")
-                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("ref", remoteRef);
+        payload.put("pixels", wantPixels);
+        payload.put("retain", retain);
+        return dev.equo.swt.comm.TaggedValues.encode(payload, null);
     }
 
     /** The id the Flutter side addresses this drawer's GC frames to. */
@@ -227,14 +228,8 @@ public class GCImageDrawer extends EmbeddedBridge {
         // Serialized synchronously, before endDrawCycle mints this cycle's ref, so it captures the
         // Image as the GC found it. Deferring it would describe the Image by the render it has not
         // produced yet, leaving the render side waiting on its own output as its base.
-        byte[] initBytes;
-        try {
-            initBytes = serializer.to(dartImage);
-        } catch (Exception e) {
-            System.err.println("[GCImageDrawer] Failed to serialize imageInit: " + e.getMessage());
-            initBytes = null;
-        }
-        final byte[] imageInit = initBytes;
+        final byte[] imageInit = dartImage != null && dartImage.getImpl() instanceof DartImage
+                ? Serializer.wireFields(((DartImage) dartImage.getImpl()).getValue()) : null;
         if (comm != null) {
             // No handshake: frames apply one at a time in arrival order, so the GC/create handler
             // has built the drawer before anything sent after it is applied.

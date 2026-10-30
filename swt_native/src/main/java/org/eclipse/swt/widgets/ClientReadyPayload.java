@@ -1,10 +1,10 @@
 package org.eclipse.swt.widgets;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.ObjectFormatPolicy;
+import dev.equo.swt.WireReader;
+import dev.equo.swt.WireReadable;
 
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public class ClientReadyPayload {
+/** What the client reports when it is ready: its fields numbered 1 to 9, in declaration order. */
+public class ClientReadyPayload implements WireReadable {
     /** The client viewport (window content) logical size — drives the main shell on desk, the Display on web. */
     public int width;
     public int height;
@@ -31,4 +31,20 @@ public class ClientReadyPayload {
      * {@code linux}, {@code iOS}, {@code android}). Null from a client that does not report it.
      */
     public String targetPlatform;
+
+    @Override
+    public boolean readWire(int key, WireReader r) {
+        switch (key) {
+            case 1: width = r.int32(); return true;
+            case 2: height = r.int32(); return true;
+            case 3: isFirst = r.bool(); return true;
+            case 4: displayWidth = r.int32(); return true;
+            case 5: displayHeight = r.int32(); return true;
+            case 6: zoom = r.int32(); return true;
+            case 7: insetTop = r.int32(); return true;
+            case 8: locale = r.string(); return true;
+            case 9: targetPlatform = r.string(); return true;
+        }
+        return false;
+    }
 }

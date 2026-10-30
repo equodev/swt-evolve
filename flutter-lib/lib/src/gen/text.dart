@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/cursor.dart';
 import '../gen/font.dart';
@@ -12,11 +12,10 @@ import '../gen/region.dart';
 import '../gen/scrollable.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/text_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'text.g.dart';
 
 class TextSwt<V extends VText> extends ScrollableSwt<V> {
   const TextSwt({super.key, required super.value});
@@ -45,7 +44,6 @@ class TextSwt<V extends VText> extends ScrollableSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VText extends VScrollable {
   VText() : this.empty();
   VText.empty() {
@@ -75,30 +73,100 @@ class VText extends VScrollable {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'caretPosition':
-        caretPosition = (json['caretPosition'] as num?)?.toInt();
-      case 'echoCharacter':
-        echoCharacter = (json['echoCharacter'] as num?)?.toInt();
-      case 'editable':
-        editable = json['editable'] as bool?;
-      case 'message':
-        message = json['message'] as String?;
-      case 'selection':
-        selection = json['selection'] == null
-            ? null
-            : VPoint.fromJson(json['selection'] as Map<String, dynamic>);
-      case 'text':
-        text = json['text'] as String?;
-      case 'textLimit':
-        textLimit = (json['textLimit'] as num?)?.toInt();
+      case 515: // caretPosition
+        caretPosition = r.int32();
+        return true;
+      case 516: // echoCharacter
+        echoCharacter = r.int32();
+        return true;
+      case 517: // editable
+        editable = r.boolean();
+        return true;
+      case 518: // message
+        message = r.string();
+        return true;
+      case 519: // selection
+        selection = r.point();
+        return true;
+      case 520: // text
+        text = r.string();
+        return true;
+      case 521: // textLimit
+        textLimit = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VText.fromJson(Map<String, dynamic> json) =>
-      _$VTextFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTextToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = caretPosition;
+      if (v_ != null && w.wants(515)) {
+        w.key(515);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = echoCharacter;
+      if (v_ != null && w.wants(516)) {
+        w.key(516);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = editable;
+      if (v_ != null && w.wants(517)) {
+        w.key(517);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = message;
+      if (v_ != null && w.wants(518)) {
+        w.key(518);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null && w.wants(519)) {
+        w.key(519);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(520)) {
+        w.key(520);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = textLimit;
+      if (v_ != null && w.wants(521)) {
+        w.key(521);
+        w.int32(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(515, caretPosition);
+    visit(516, echoCharacter);
+    visit(517, editable);
+    visit(518, message);
+    visit(519, selection);
+    visit(520, text);
+    visit(521, textLimit);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

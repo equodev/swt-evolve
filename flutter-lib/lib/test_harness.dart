@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'src/impl/gc_evolve.dart';
 import 'src/impl/gcdrawer_evolve.dart';
@@ -11,9 +13,11 @@ import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
 import 'src/comm/comm_frame.dart' show EquoCommBase;
+import 'src/comm/widget_wire.dart' show WireVisitable;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
 import 'src/gen/widget.dart';
 import 'src/testing/frame_stats.dart';
+import 'src/testing/wire_stats.dart';
 import 'src/testing/render_facts.dart';
 import 'src/testing/tree_test_registry.dart';
 import 'test_harness_iframe_stub.dart'
@@ -28,10 +32,10 @@ part 'test_harness_actions.dart';
 /// back for assertions. It is inert in production — nothing ever sends on these
 /// channels there — so it is safe to register unconditionally from `main()`.
 ///
-/// Protocol (JSON):
+/// Protocol (tagged values):
 ///   request  on `evolve.test.query`         : { "queryId": int, "targetId": int }
 ///   response on `evolve.test.queryResponse`  : { "queryId": int, "found": bool,
-///                                                "state": the widget's `V*.toJson()` or null,
+///                                                "state": the widget's [describeState] or null,
 ///                                                "render": render-tree facts or null }
 ///
 /// `targetId` is the SWT widget id (Java `widget.hashCode()` == `V*.id`). The
@@ -43,7 +47,7 @@ void registerTestQueryChannel() {
   // StyledText counters, reset on read so two calls bracket an action.
   EquoCommService.onRaw("evolve.test.styledTextPerf", (dynamic req) {
     final perfId = req is Map ? req['perfId'] : null;
-    EquoCommService.sendPayload("evolve.test.styledTextPerfResponse",
+    _reply("evolve.test.styledTextPerfResponse",
         {'perfId': perfId, 'perf': styledTextPerfSnapshot()});
   });
   // Engine frame timings: `evolve.test.frameCost` {} (clears them) answers on
@@ -60,7 +64,7 @@ void registerTestQueryChannel() {
         },
     ];
     _frameTimings.clear();
-    EquoCommService.sendPayload(
+    _reply(
         "evolve.test.frameCostResponse", {'costId': costId, 'frames': frames});
   });
   EquoCommService.onRaw("evolve.test.query", (dynamic req) {
@@ -68,17 +72,18 @@ void registerTestQueryChannel() {
     final int queryId = (map['queryId'] as num).toInt();
     final int targetId = (map['targetId'] as num).toInt();
     final Map<String, dynamic>? vstate = _findStateById(targetId);
-    EquoCommService.sendPayload("evolve.test.queryResponse", {
+    _reply("evolve.test.queryResponse", {
       'queryId': queryId,
       'found': vstate != null,
       'state': vstate,
       'render': _renderFacts(targetId),
     });
   });
-  // Frame barrier: ack once the next frame has been built + painted, so a test can wait for pushed
-  // state to actually render instead of pumping an arbitrary number of times. We schedule a frame
-  // unconditionally (the pushed state may or may not have dirtied anything) and ack from the
-  // post-frame callback, which runs after build/layout/paint of that frame.
+  // Frame barrier: ack once what was pushed before it is built + painted, so a test can wait for
+  // pushed state to actually render instead of pumping an arbitrary number of times. Checked once the
+  // work already queued has run: with a frame to come, the ack is sent from its post-frame callback,
+  // which runs after build/layout/paint; with none, nothing pushed changed what is painted, and the
+  // ack goes at once rather than after a frame that would only draw the same picture again.
   EquoCommService.onRaw("evolve.test.frameSync", (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int syncId = (map['syncId'] as num).toInt();
@@ -88,15 +93,25 @@ void registerTestQueryChannel() {
     final received = EquoCommBase.lastReceivedMicros;
     final arrived = clock.elapsedMicroseconds;
     var began = arrived;
-    SchedulerBinding.instance.scheduleFrameCallback((_) => began = clock.elapsedMicroseconds);
-    scheduleFrameSync(() {
+    void ack() {
       final painted = clock.elapsedMicroseconds;
-      EquoCommService.sendPayload("evolve.test.frameSynced", {
+      _reply("evolve.test.frameSynced", {
         'syncId': syncId,
         'queuedMicros': arrived - received,
         'toVsyncMicros': began - arrived,
         'vsyncToPaintedMicros': painted - began,
       });
+    }
+
+    Timer.run(() {
+      final scheduler = SchedulerBinding.instance;
+      if (!scheduler.hasScheduledFrame && scheduler.schedulerPhase == SchedulerPhase.idle) {
+        began = clock.elapsedMicroseconds;
+        ack();
+        return;
+      }
+      scheduler.scheduleFrameCallback((_) => began = clock.elapsedMicroseconds);
+      scheduleFrameSync(ack);
     });
   });
 
@@ -120,10 +135,25 @@ void registerTestQueryChannel() {
       // caller waiting on a timeout with nothing to diagnose.
       stats = <String, dynamic>{'error': '$e'};
     }
-    EquoCommService.sendPayload("evolve.test.frameStatsResponse", {
+    _reply("evolve.test.frameStatsResponse", {
       'statsId': statsId,
       'stats': stats,
     });
+  });
+
+  // Receive-side cost of widget state: `evolve.test.wireStats` {statsId, action: start|stop} answers on
+  // `evolve.test.wireStatsResponse` {statsId, stats}; see [WireStats].
+  EquoCommService.onRaw("evolve.test.wireStats", (dynamic req) {
+    final map = (req as Map).cast<String, dynamic>();
+    final int statsId = (map['statsId'] as num).toInt();
+    final Map<String, dynamic> stats;
+    if (map['action'] == 'start') {
+      WireStats.start();
+      stats = const <String, dynamic>{};
+    } else {
+      stats = WireStats.stop();
+    }
+    _reply("evolve.test.wireStatsResponse", {'statsId': statsId, 'stats': stats});
   });
 
   // Result channel for the debug UI-thread runner (see test_harness_actions.dart `openPref` /
@@ -197,7 +227,7 @@ String queryPrimaryFocus() {
   return owner ?? '<unowned>';
 }
 
-/// The widget's live `V*.toJson()` as a JSON string, or null if not mounted. Shared by
+/// The widget's live [describeState] as a JSON string, or null if not mounted. Shared by
 /// the Java-facing comm channel above and the JS-facing window API (see
 /// test_harness_jsapi_web.dart).
 String? queryStateJson(int targetId) {
@@ -206,7 +236,7 @@ String? queryStateJson(int targetId) {
   return jsonEncode(vstate);
 }
 
-/// The live `V*.toJson()` of the widgets named by [identifiers] (`{swt}/{id}`), keyed the same
+/// The live [describeState] of the widgets named by [identifiers] (`{swt}/{id}`), keyed the same
 /// way, as a JSON-encoded object; an identifier with no mounted widget is left out. One walk of the
 /// tree, and only the requested states are encoded, so asking for a few widgets does not pay for
 /// serializing all of them the way [queryAllStatesJson] does.
@@ -228,7 +258,7 @@ String queryStatesJson(List<String> identifiers) {
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
-        addWithItems(vstate.toJson() as Map<String, dynamic>);
+        addWithItems(describeState(vstate));
       }
     }
     el.visitChildren(visit);
@@ -238,11 +268,10 @@ String queryStatesJson(List<String> identifiers) {
   return jsonEncode(found);
 }
 
-/// Every mounted SWT widget's live `V*.toJson()`, keyed by its `{swt}/{id}` semantics
+/// Every mounted SWT widget's live [describeState], keyed by its `{swt}/{id}` semantics
 /// identifier, as a JSON-encoded object. Items rendered inline by their parent (VTreeItem,
 /// VTabItem, VExpandItem, ...) have no [WidgetSwtState] of their own, but they ARE nested in
-/// the parent's serialized `items` — so the JSON maps are walked instead of the V objects
-/// (no dynamic member dispatch, which dart2js can't resolve for a field only some V* have).
+/// the parent's description, so the descriptions are walked rather than the State objects.
 String queryAllStatesJson() {
   final root = WidgetsBinding.instance.rootElement;
   final Map<String, dynamic> all = {};
@@ -258,7 +287,7 @@ String queryAllStatesJson() {
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
-        addWithItems(vstate.toJson() as Map<String, dynamic>);
+        addWithItems(describeState(vstate));
       }
     }
     el.visitChildren(visit);
@@ -310,24 +339,47 @@ String queryPaintOpsJson() {
   return jsonEncode(all);
 }
 
-/// The serialized node's `items` children, or empty when it has none. `toJson()` (no
-/// `explicitToJson`) leaves nested V objects raw — they only become maps inside `jsonEncode`,
-/// via `toEncodable` — so raw items are serialized here the same way.
+/// [value]'s state as the harness reports it: `swt` and `id`, then every property it holds keyed
+/// by the number the wire gives it, which the reader names from wire-kinds.txt. A value it holds is
+/// described the same way, a widget met again inside its own description by identity only.
+Map<String, dynamic> describeState(Object value) =>
+    value is WireVisitable ? _describe(value, {}) : <String, dynamic>{};
+
+Map<String, dynamic> _describe(WireVisitable value, Set<Object> seen) {
+  final out = <String, dynamic>{};
+  if (value is VWidget) {
+    out['swt'] = value.swt;
+    out['id'] = value.id;
+    if (!seen.add(value)) return out;
+  }
+  value.visitWire((key, v) {
+    if (v != null) out['$key'] = _plain(v, seen);
+  });
+  return out;
+}
+
+Object? _plain(Object? v, Set<Object> seen) => switch (v) {
+      null || num() || bool() || String() => v,
+      Uint8List() => base64Encode(v),
+      List() => [for (final e in v) _plain(e, seen)],
+      Map() => {for (final e in v.entries) '${e.key}': _plain(e.value, seen)},
+      WireVisitable() => _describe(v, seen),
+      _ => '$v',
+    };
+
+/// The widgets described inside [node]'s properties: its items, its children.
 List<Map<String, dynamic>> _itemsOf(Map<String, dynamic> node) {
-  final dynamic items = node['items'];
-  if (items is! List) return const [];
   final List<Map<String, dynamic>> result = [];
-  for (final dynamic item in items) {
-    if (item == null) continue;
-    if (item is Map<String, dynamic>) {
-      result.add(item);
-      continue;
+  void collect(Object? v) {
+    if (v is List) {
+      v.forEach(collect);
+    } else if (v is Map<String, dynamic> && v.containsKey('swt') && v.containsKey('id')) {
+      result.add(v);
     }
-    try {
-      result.add((item as dynamic).toJson() as Map<String, dynamic>);
-    } catch (_) {
-      // not a serializable value object — skip
-    }
+  }
+
+  for (final entry in node.entries) {
+    if (entry.key != 'swt' && entry.key != 'id') collect(entry.value);
   }
   return result;
 }
@@ -423,7 +475,7 @@ bool? _takesInputWhere(
     if (_refusesInput(el.widget)) refused = true;
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
-      if (vstate != null && matches(vstate.toJson() as Map<String, dynamic>)) {
+      if (vstate != null && matches(describeState(vstate))) {
         answer = !refused && !_ownWrapperRefuses(el);
         return;
       }
@@ -465,7 +517,7 @@ Map<String, dynamic>? _findItemById(Map<String, dynamic> node, int targetId) {
   return null;
 }
 
-/// Walk the live element tree and return the serialized (`toJson`) state of the
+/// Walk the live element tree and return the [describeState] of the
 /// [WidgetSwtState] whose `state.id` matches [targetId], or null if not mounted.
 /// Inline items are matched through their parent's serialized `items` (see
 /// [queryAllStatesJson]).
@@ -487,7 +539,7 @@ Map<String, dynamic>? _findStateById(int targetId) {
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
-        result = findIn(vstate.toJson() as Map<String, dynamic>);
+        result = findIn(describeState(vstate));
         if (result != null) return;
       }
     }
@@ -496,4 +548,18 @@ Map<String, dynamic>? _findStateById(int targetId) {
 
   root.visitChildren(visit);
   return result;
+}
+
+/// A reply to the test harness. One that cannot be sent still answers, with what went wrong, under
+/// the ids the harness waits on.
+void _reply(String channel, Map<String, Object?> payload) {
+  try {
+    EquoCommService.sendPayload(channel, payload);
+  } catch (e) {
+    EquoCommService.sendPayload(channel, {
+      for (final entry in payload.entries)
+        if (entry.key.endsWith('Id')) entry.key: entry.value,
+      'error': '$e',
+    });
+  }
 }

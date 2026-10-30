@@ -2,7 +2,9 @@ package dev.equo.swt.delivery;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -62,23 +65,18 @@ class ImageTravelsOnceTest {
 
         try (DeliveryAudit audit = DeliveryAudit.install()) {
             // Nothing named: described in full, as a full description of any ancestor is.
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-            String described = latestOn(audit, label);
-            assertThat(described)
+            List<Object> described = values(flushOf(audit, label));
+            assertThat(WireValues.mentions(described, "imageData"))
                     .as("the client was never given the image at all")
-                    .contains("imageData");
+                    .isTrue();
 
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-            String named = latestOn(audit, label);
-
-            assertThat(named)
+            List<Object> named = values(flushOf(audit, label));
+            assertThat(WireValues.mentions(named, "imageData"))
                     .as("the image was described again to a client that already had it")
-                    .doesNotContain("imageData");
-            assertThat(named)
+                    .isFalse();
+            assertThat(WireValues.mentions(named, "_r"))
                     .as("and what replaces it has to say which image it is")
-                    .contains("\"_r\"");
+                    .isTrue();
         }
 
         icon.dispose();
@@ -97,14 +95,10 @@ class ImageTravelsOnceTest {
         settle(shell);
 
         try (DeliveryAudit audit = DeliveryAudit.install()) {
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-
-            assertThat(latestOn(audit, label))
+            flushOf(audit, label);
+            assertThat(describes(flushOf(audit, label), empty))
                     .as("an image the far side does not keep was named, so it has nothing to draw")
-                    .doesNotContain("\"_r\"");
+                    .isTrue();
         }
 
         empty.dispose();
@@ -123,12 +117,9 @@ class ImageTravelsOnceTest {
         settle(shell);
 
         try (DeliveryAudit audit = DeliveryAudit.install()) {
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-
-            assertThat(latestOn(audit, label))
+            assertThat(WireValues.find(values(flushOf(audit, label)), m -> m.get("imageData") instanceof Map))
                     .as("a blank buffer reached the client, which keeps it and draws it black")
-                    .doesNotContain("imageData");
+                    .isEmpty();
         }
 
         drawn.dispose();
@@ -144,28 +135,39 @@ class ImageTravelsOnceTest {
         settle(shell);
 
         try (DeliveryAudit audit = DeliveryAudit.install()) {
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-            assertThat(latestOn(audit, label)).contains("imageData");
+            assertThat(WireValues.mentions(values(flushOf(audit, label)), "imageData")).isTrue();
 
             // About to become a render, so the client's copy is stale.
             dev.equo.swt.Serializer.forgetResource(((org.eclipse.swt.graphics.DartImage) icon.getImpl()).getValue());
 
-            bridge.dirty((DartWidget) label.getImpl());
-            FlutterBridge.update().join();
-            assertThat(latestOn(audit, label))
+            assertThat(WireValues.mentions(values(flushOf(audit, label)), "imageData"))
                     .as("an image whose pixels changed was named, so the client keeps the old ones")
-                    .contains("imageData");
+                    .isTrue();
         }
 
         icon.dispose();
     }
 
-    private static String latestOn(DeliveryAudit audit, Widget widget) {
+    /** Everything one flush of {@code widget}, scheduled whole, sends: an image can travel as its own record. */
+    private List<DeliveryAudit.Frame> flushOf(DeliveryAudit audit, Widget widget) {
+        int before = audit.frames().size();
+        bridge.dirty((DartWidget) widget.getImpl());
+        FlutterBridge.update().join();
+        List<DeliveryAudit.Frame> frames = audit.frames().subList(before, audit.frames().size());
         String channel = widget.getClass().getSimpleName() + "/" + widget.hashCode();
-        List<DeliveryAudit.Frame> frames = audit.framesOn(channel);
-        assertThat(frames).as("nothing was sent on " + channel).isNotEmpty();
-        return frames.get(frames.size() - 1).json();
+        assertThat(frames).as("nothing was sent on " + channel).anyMatch(f -> f.channel().equals(channel));
+        return List.copyOf(frames);
+    }
+
+    /** What each frame of {@code flush} carries. */
+    private static List<Object> values(List<DeliveryAudit.Frame> flush) {
+        return flush.stream().map(DeliveryAudit.Frame::value).toList();
+    }
+
+    /** Whether {@code flush} describes {@code image} rather than only naming it. */
+    private static boolean describes(List<DeliveryAudit.Frame> flush, Image image) {
+        String channel = "Image/" + image.hashCode();
+        return flush.stream().anyMatch(f -> f.channel().equals(channel));
     }
 
     private void settle(Widget root) {

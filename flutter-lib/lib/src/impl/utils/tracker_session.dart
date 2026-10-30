@@ -98,7 +98,8 @@ class TrackerSession {
     }
     EquoCommService.onRaw('$key/Tracker/open', (payload) {
       _activeHost = key;
-      _begin(VEvent.fromJson(payload as Map<String, dynamic>).itemId);
+      // The Tracker's opening, as the map Java builds it.
+      _begin(((payload as Map)['itemId'] as num?)?.toInt());
     });
     EquoCommService.onRaw('$key/Tracker/close', (_) => _release());
   }

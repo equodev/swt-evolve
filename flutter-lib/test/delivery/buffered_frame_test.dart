@@ -1,11 +1,9 @@
-// A frame that arrives before anything is listening for it.
+// A record that arrives before anything renders the widget it describes.
 //
 // Java writes a widget when it has something to say, not when the client happens to be ready to
-// render it, so a payload routinely reaches a channel nobody is subscribed to yet. The comm holds
-// it and replays it on the first subscription - and both ways that can go wrong were once real
-// bugs, which is why the comm used to refuse to do either and asked Java to re-serialize instead.
-//
-// These are those two bugs, driven through the delivery path that decides now.
+// render it, so a record routinely describes a widget nothing has mounted yet. The registry holds
+// it, and the widget reads it once it mounts - and both ways that can go wrong were once real bugs:
+// losing what arrived first, and letting an older copy rewind what is held.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +14,7 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'support/deliver.dart';
 
@@ -45,38 +44,26 @@ Future<void> _mount(WidgetTester tester, VLabel value) async {
 void main() {
   testWidgets('content sent before the widget mounts still reaches it', (tester) async {
     // The dialog case: Java describes the content immediately after the update that causes it to
-    // be mounted, so the content lands on a channel with nothing listening yet. Dropping it left
-    // the dialog empty.
-    await deliverFrame('Label/9', {
-      'swt': 'Label',
-      'id': 9,
-      '_s': 20,
-      'style': SWT.NONE,
-      'text': 'sent before anything was listening',
-    });
+    // be mounted, so the content arrives before anything renders it. Dropping it left the dialog
+    // empty.
+    await deliverWhole(_label('sent before anything was listening', seq: 20));
 
     await _mount(tester, _label('what the parent was carrying', seq: 10));
 
     expect(find.text('sent before anything was listening'), findsOneWidget,
-        reason: 'the frame was held for exactly this moment, and it describes the widget later '
+        reason: 'the record was held for exactly this moment, and it describes the widget later '
             'than the copy it was mounted with');
   });
 
   testWidgets('a snapshot from before the widget was last told anything does not rewind it',
       (tester) async {
-    // The other half: a payload buffered long ago, from before the state the widget now holds.
-    // Replaying that one blanked a whole pane on its first reveal.
+    // The other half: a description from before the state the widget now holds. Taking that one
+    // blanked a whole pane on its first reveal.
     await _mount(tester, _label('current', seq: 30));
     await deliverWhole(_label('current', seq: 30));
     await tester.pumpAndSettle();
 
-    await deliverFrame('Label/9', {
-      'swt': 'Label',
-      'id': 9,
-      '_s': 5,
-      'style': SWT.NONE,
-      'text': 'a snapshot from before all this',
-    });
+    await deliverWhole(_label('a snapshot from before all this', seq: 5));
     await tester.pumpAndSettle();
 
     expect(find.text('current'), findsOneWidget);
@@ -86,30 +73,14 @@ void main() {
     expect((VRegistry.instance.valueOn('Label/9') as VLabel).text, 'current');
   });
 
-  testWidgets('a change buffered behind the widget it changes does not displace it',
-      (tester) async {
-    // What an Eclipse startup did a hundred times over. Java writes a widget on its own channel
-    // from the moment it counts it delivered, which is well before anything here is listening: a
-    // widget delivered inside its parent's payload, or one created hidden. So a whole frame and
-    // the changes that follow it can all land on a channel with no subscriber - and holding only
-    // the newest dropped the widget and kept a change relative to it, which fits nothing. The
-    // client answered the only way it could, by asking for the whole widget all over again.
+  testWidgets('a change arriving before the widget mounts does not displace it', (tester) async {
+    // What a large application's startup did a hundred times over: a widget delivered inside its
+    // parent, or one created hidden, is described whole and then changed well before anything
+    // renders it. Holding only the newest dropped the widget and kept a change relative to it,
+    // which fits nothing, and the client had to ask for the whole widget all over again.
     freshClient();
-    await deliverFrame('Label/9', {
-      'swt': 'Label',
-      'id': 9,
-      '_s': 20,
-      'style': SWT.NONE,
-      'text': 'as first delivered',
-    });
-    await deliverFrame('Label/9', {
-      'swt': 'Label',
-      'id': 9,
-      '_s': 21,
-      '_b': 20,
-      '_d': ['text'],
-      'text': 'and changed since',
-    });
+    await deliverWhole(_label('as first delivered', seq: 20));
+    await deliverChange(_label('and changed since', seq: 21), keys: [WireKey.k_Label_text], base: 20);
 
     await _mount(tester, _label('what the parent was carrying', seq: 10));
 

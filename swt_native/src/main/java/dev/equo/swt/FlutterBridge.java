@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import dev.equo.swt.comm.AbstractBinaryCommService;
 import dev.equo.swt.comm.BinaryCommService;
+import dev.equo.swt.comm.InProcessCommService;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.JettyBinaryCommService;
 import dev.equo.swt.comm.MessageBatch;
@@ -18,6 +19,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static dev.equo.swt.Config.getConfigFlags;
@@ -25,7 +28,78 @@ import static dev.equo.swt.Config.getConfigFlags;
 public abstract class FlutterBridge {
     private static final String DEV_EQU_SWT_NEW = "dev.equo.swt.new";
     protected static final Serializer serializer = new Serializer();
-    private static final Set<Object> dirty = new HashSet<>();
+    /**
+     * What the next flush sends besides widgets, in the order it was dirtied: resources and other
+     * state. Also the lock for everything queued, {@link #dirtyWidgets} included.
+     */
+    private static final Set<Object> dirty = new java.util.LinkedHashSet<>();
+
+    /**
+     * Widgets the next flush sends, in the order they were first dirtied. A widget knows it is here
+     * ({@link Serializer.SentHashes#queued}), so dirtying it again costs no lookup, and the flush
+     * takes the list whole rather than copying a set. A widget taken off is only unmarked: the
+     * flush skips an entry whose widget is no longer marked.
+     */
+    private static ArrayList<DartWidget> dirtyWidgets = new ArrayList<>();
+    /** The list the flush before handed back, emptied, for the next to fill. */
+    private static ArrayList<DartWidget> spareDirtyWidgets = new ArrayList<>();
+    /** How many widgets in {@link #dirtyWidgets} are still marked. */
+    private static int queuedWidgets;
+
+    /** Queues {@code widget} for the next flush; the caller holds {@link #dirty}. */
+    private static void queue(DartWidget widget) {
+        VWidget value = widget.getValue();
+        if (value == null) {
+            dirty.add(widget);
+            return;
+        }
+        Serializer.SentHashes memo = Serializer.sentHashes(value);
+        if (memo.queued) return;
+        memo.queued = true;
+        dirtyWidgets.add(widget);
+        queuedWidgets++;
+    }
+
+    /** Takes {@code widget} off the next flush, whichever way it was queued; the caller holds {@link #dirty}. */
+    private static boolean unqueue(Object widget) {
+        if (widget instanceof DartWidget) {
+            VWidget value = ((DartWidget) widget).getValue();
+            Serializer.SentHashes memo = value == null ? null : (Serializer.SentHashes) value.wireMemo;
+            if (memo != null && memo.queued) {
+                memo.queued = false;
+                queuedWidgets--;
+                return true;
+            }
+        }
+        return !dirty.isEmpty() && dirty.remove(widget);
+    }
+
+    /**
+     * Whether {@code widget} may be queued, read without the lock: false only when it is not, as far as
+     * this thread has seen, for a caller that then takes the lock to be sure.
+     */
+    private static boolean mayBeQueued(Object widget) {
+        if (!dirty.isEmpty()) return true;
+        if (!(widget instanceof DartWidget)) return false;
+        VWidget value = ((DartWidget) widget).getValue();
+        Serializer.SentHashes memo = value == null ? null : (Serializer.SentHashes) value.wireMemo;
+        return memo != null && memo.queued;
+    }
+
+    /** Whether {@code widget} is queued for the next flush; the caller holds {@link #dirty}. */
+    private static boolean isQueued(Object widget) {
+        if (widget instanceof DartWidget) {
+            VWidget value = ((DartWidget) widget).getValue();
+            Serializer.SentHashes memo = value == null ? null : (Serializer.SentHashes) value.wireMemo;
+            if (memo != null && memo.queued) return true;
+        }
+        return dirty.contains(widget);
+    }
+
+    /** Whether nothing is queued; the caller holds {@link #dirty}. */
+    private static boolean nothingQueued() {
+        return queuedWidgets == 0 && dirty.isEmpty();
+    }
     private static FlutterBridge bridge;
     private static boolean keepClient = false;
 
@@ -66,9 +140,22 @@ public abstract class FlutterBridge {
      */
     protected static CommService newComm() {
         String impl = System.getProperty("comm.impl", "java-websocket");
-        CommService comm = "jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService();
+        return wire("jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService());
+    }
+
+    /**
+     * {@link #newComm()} for a client that runs in this process: the in-process channel where the
+     * native bridge carries it and no transport was asked for with {@code -Dcomm.impl}.
+     */
+    protected static CommService newLocalComm() {
+        if (System.getProperty("comm.impl") == null && InProcessCommService.isAvailable())
+            return wire(new InProcessCommService());
+        return newComm();
+    }
+
+    private static CommService wire(CommService comm) {
         comm.on(PROPERTY_SET_CHANNEL, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
-        comm.on("swt.evolve.url.open", Object.class, FlutterBridge::handleUrlOpenFromFlutter);
+        comm.on("swt.evolve.url.open", String.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(WIDGET_REFRESH_CHANNEL, String.class, FlutterBridge::handleWidgetRefresh);
         // Debug-only: a reflective "run this on the UI thread" primitive (open a dialog by id, etc.)
         // that reaches surfaces the Flutter action layer can't drive — e.g. a native-menu-gated
@@ -170,17 +257,22 @@ public abstract class FlutterBridge {
         if (bridge == null) return;
         // The request says this client holds nothing for the widget, so what it has been sent
         // before is worth nothing to it: forget that, or the answer is a description of what
-        // changed since a state it does not have.
-        // dirty() is safe off the display thread; the next dispatch flushes the fresh state.
-        if (w instanceof DartWidget) {
-            DartWidget widget = (DartWidget) w;
-            Serializer.forgetDelivery(widget.getValue());
-            bridge.dirty(widget);
-        } else if (w instanceof DartResource) {
-            DartResource resource = (DartResource) w;
-            resource.getValue().sent(0, 0L);
-            bridge.dirty(resource);
-        }
+        // changed since a state it does not have. Nor the images it names, which a request also
+        // stands for: the client asks for the widget when one of them never reached it. On the
+        // Display thread, which writes the same records of what was sent.
+        runOnDisplayThread(w, () -> {
+            if (isDisposed(w)) return;
+            if (w instanceof DartWidget) {
+                DartWidget widget = (DartWidget) w;
+                Serializer.forgetDelivery(widget.getValue());
+                Serializer.forgetResourcesNamedBy(widget.getValue());
+                bridge.dirty(widget);
+            } else if (w instanceof DartResource) {
+                DartResource resource = (DartResource) w;
+                resource.getValue().sent(0, 0L);
+                bridge.dirty(resource);
+            }
+        });
     }
 
     /** The shared desktop comm, created (and started) on first access. */
@@ -190,7 +282,7 @@ public abstract class FlutterBridge {
             synchronized (FlutterBridge.class) {
                 c = desktopComm;
                 if (c == null) {
-                    c = newComm();
+                    c = newLocalComm();
                     desktopComm = c;
                 }
             }
@@ -223,8 +315,8 @@ public abstract class FlutterBridge {
         return b != null ? b.comm() : null;
     }
 
-    static void handleUrlOpenFromFlutter(Object payload) {
-        String url = payload instanceof Map ? urlOf((Map<?, ?>) payload) : null;
+    static void handleUrlOpenFromFlutter(String payload) {
+        String url = payload == null ? null : urlOf(payload);
         if (url == null) {
             System.out.println("[url.open] refused: " + payload);
             return;
@@ -240,10 +332,8 @@ public abstract class FlutterBridge {
      * ShellExecute on Windows, which would equally run an executable path or a custom scheme. The
      * check belongs here rather than in {@code Program.launch}, which legitimately opens local files.
      */
-    static String urlOf(Map<?, ?> payload) {
-        Object value = payload.get("url");
-        if (!(value instanceof String)) return null;
-        String url = ((String) value).trim();
+    static String urlOf(String payload) {
+        String url = payload.trim();
         String lower = url.toLowerCase(java.util.Locale.ROOT);
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
     }
@@ -257,11 +347,7 @@ public abstract class FlutterBridge {
         changed |= applyStringField("theme_color", current.theme_color, parsed.theme_color, v -> current.theme_color = v);
         if (changed) {
             // Echo the updated properties back on the comm they arrived on.
-            try {
-                serializeAndSend(comm, PROPERTIES_CHANNEL, getConfigFlags());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            comm.send(PROPERTIES_CHANNEL, WidgetWire.fieldsOf(getConfigFlags()));
         }
     }
 
@@ -323,12 +409,9 @@ public abstract class FlutterBridge {
     }
 
     /**
-     * The order one flush's frames go out in: the display first, then parents before children.
-     *
-     * <p>The set they come from is a hash set, so without this they leave in identity-hash order -
-     * arbitrary, and different between runs of the same code. The frames of one flush travel as one
-     * message and are applied in the order they were written, so that hash order was the delivery
-     * order.
+     * Drains {@code flush} into the order its frames go out in: the display first, then parents
+     * before children. The frames of one flush travel as one message and are applied in the order
+     * they were written.
      *
      * <p>What has to come first is the display: its frame carries the shell list, which is how the
      * far side learns a shell exists at all, and sent after the widgets beneath those shells it
@@ -342,14 +425,27 @@ public abstract class FlutterBridge {
      * {@link #filterWidgetsWithDirtyAncestors}, so what is left is mostly siblings, where the order
      * between them decides nothing.
      */
-    private static java.util.List<Object> flushOrder(Set<Object> flush) {
-        java.util.List<Object> ordered = new ArrayList<>(flush.size());
-        for (Object o : flush) {
+    private static java.util.List<Object> flushOrder() {
+        java.util.List<Object> ordered = new ArrayList<>(dirty.size() + queuedWidgets);
+        for (Object o : dirty) {
             if (o instanceof DirtyState) ordered.add(o);
         }
-        for (Object o : flush) {
+        for (Object o : dirty) {
             if (!(o instanceof DirtyState)) ordered.add(o);
         }
+        dirty.clear();
+        ArrayList<DartWidget> widgets = dirtyWidgets;
+        dirtyWidgets = spareDirtyWidgets;
+        for (int i = 0, n = widgets.size(); i < n; i++) {
+            DartWidget widget = widgets.get(i);
+            Serializer.SentHashes memo = (Serializer.SentHashes) widget.getValue().wireMemo;
+            if (!memo.queued) continue;
+            memo.queued = false;
+            ordered.add(widget);
+        }
+        widgets.clear();
+        spareDirtyWidgets = widgets;
+        queuedWidgets = 0;
         return ordered;
     }
 
@@ -389,7 +485,7 @@ public abstract class FlutterBridge {
         // would answer that every widget is sent whole, which drops the children of one that is
         // not.
         if (!Serializer.canDiff(w, connectionOf(widget))) return true;
-        return w.getValue().changedKeys().contains("children");
+        return w.getValue().changedKeys().contains(org.eclipse.swt.widgets.VComposite.CHILDREN);
     }
 
     private static boolean isShell(Object widget) {
@@ -540,44 +636,48 @@ public abstract class FlutterBridge {
         return update(false);
     }
 
+    /** What a flush returns once everything it had is on its way: shared, as nothing completes it. */
+    private static final CompletableFuture<Void> SENT = CompletableFuture.completedFuture(null);
+
     private static CompletableFuture<Void> update(boolean coalesce) {
         flushOpBatches();
-        if (dirty.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
+        if (nothingQueued()) {
+            return SENT;
         }
 
+        long flushStart = WireStats.on ? System.nanoTime() : 0;
         List<CompletableFuture<Void>> futures = new ArrayList<>();
 
         // Drain, don't copy-then-clear: clearing after the sends discarded every mark made while
         // this flush ran, and nothing re-marks them, so that state never reached Dart at all.
         // Anything dirtied from here on belongs to the next flush.
-        Set<Object> dirtySnapshot;
+        // Every widget gets a record of its own and names its children by id, so nothing is carried
+        // inside an ancestor and there is no ancestry to work out.
+        java.util.List<Object> flush;
         synchronized (dirty) {
-            dirtySnapshot = new HashSet<>(dirty);
-            dirty.clear();
+            flush = flushOrder();
+            lastQueued = null;
         }
-        org.eclipse.swt.widgets.PaintPacing.flushing(dirtySnapshot);
-        Set<Object> filteredDirty = filterWidgetsWithDirtyAncestors(dirtySnapshot);
-        Set<Object> carryingDescendants = ancestorsCarryingOthers(dirtySnapshot, filteredDirty);
-        // Only widgets without a frame of their own need the path down to them described.
-        Set<Object> carried = new HashSet<>(dirtySnapshot);
-        carried.removeAll(filteredDirty);
-        Serializer.describeInFull(pathsToDirty(carried));
-        Serializer.sendingSeparately(valuesOf(filteredDirty));
-
-        for (Object widget : dirtySnapshot) {
-            if (!filteredDirty.contains(widget)) {
-                setNotNew(widget);
-            }
-        }
+        // A Paint the flush released has drawn by now: its ops go out ahead of this flush's records.
+        if (org.eclipse.swt.widgets.PaintPacing.flushing(flush)) flushOpBatches();
 
         long now = System.nanoTime();
         // Everything this flush sends belongs to one moment, so it travels as one message. Only the
         // sends made inline are caught: a widget still waiting on clientReady sends when it can.
+        // A flush started inside another, while one of its records is written, hands the outer one
+        // back as it found it: the outer frames are still open, and what it writes after this one
+        // belongs in them, not sent ahead of what it wrote before.
+        Map<CommService, MessageBatch> outerSends = flushSends.get();
+        Map<CommService, Serializer.Tape> outerTapes = flushTapes.get();
         Map<CommService, MessageBatch> batching = new java.util.LinkedHashMap<>();
         flushSends.set(batching);
+        Map<CommService, Serializer.Tape> tapes = new java.util.LinkedHashMap<>();
+        flushTapes.set(tapes);
+        // The widgets of one flush nearly always share a display, whose thread is asked once.
+        Display lastDisplay = null;
+        boolean lastInline = false;
         try {
-        for (Object widget : flushOrder(filteredDirty)) {
+        for (Object widget : flush) {
             // Non-widget state (the Display) sends itself, and does so without waiting on
             // clientReady: its frame is what gives a connecting client its first content, and the
             // comm buffers it until the socket opens. Gating it here is what once left a workbench
@@ -593,7 +693,8 @@ public abstract class FlutterBridge {
             if (getBridge(widget) == null) continue;
             if (coalesce && !pushDue(widget, now)) {
                 synchronized (dirty) {
-                    dirty.add(widget);
+                    if (widget instanceof DartWidget) queue((DartWidget) widget);
+                    else dirty.add(widget);
                 }
                 continue;
             }
@@ -605,38 +706,26 @@ public abstract class FlutterBridge {
                             && !((org.eclipse.swt.widgets.DartControl) widget).getVisible();
                     if (!isNew(widget) || widget instanceof DartToolTip || widget instanceof DartMenu || isHidden) { // send with the parent
                         setNotNew(widget);
-                        synchronized (dirty) { // undirty if it was dirtied while waiting foe clientReady
-                            dirty.remove(widget);
+                        // Undirty if it was dirtied while waiting for clientReady. A widget the flush has
+                        // just taken is not queued again, so it is not locked for.
+                        if (mayBeQueued(widget)) {
+                            synchronized (dirty) {
+                                unqueue(widget);
+                                lastQueued = null;
+                            }
                         }
-                        String event = event(widget);
                         CommService comm = commFor(widget);
                         try {
                             // Written for one client, so say which before writing: whether a nested
                             // widget can travel as a name depends on whether that client holds it.
                             Serializer.targeting(comm == null ? 0 : comm.connectionId(), () -> {
-                                try {
-                                    // A widget already sent whole can be described by what changed
-                                    // since. Decided here rather than inside the writer because it
-                                    // is a property of the frame: a widget nested in an ancestor's
-                                    // payload is still written whole, since the far side has
-                                    // nothing to merge a nested change into yet.
-                                    if (widget instanceof DartWidget && Serializer.canDiff((DartWidget) widget)
-                                            && !carryingDescendants.contains(widget)) {
-                                        byte[] header = CommService.frameHeader(event);
-                                        serializer.toDiff(header, (DartWidget) widget, (buffer, length) ->
-                                                sendBytes(comm, event, buffer, header.length, length));
-                                    } else if (widget instanceof DartGC) {
-                                        byte[] header = CommService.frameHeader(event);
-                                        writeGCState(comm, (DartGC) widget, header, (buffer, length) ->
-                                                sendBytes(comm, event, buffer, header.length, length));
-                                    } else {
-                                        if (Config.isDebug())
-                                            DebugLog.logWholeSend(event, wholeSendReason(widget,
-                                                    comm, carryingDescendants));
-                                        serializeAndSend(comm, event, getApi(widget));
-                                    }
-                                } catch (IOException e) {
-                                    throw new java.io.UncheckedIOException(e);
+                                if (widget instanceof DartWidget) {
+                                    describe(comm, (DartWidget) widget);
+                                } else if (widget instanceof DartGC) {
+                                    sendGcState(comm, (DartGC) widget, event(widget));
+                                } else if (widget instanceof DartImage) {
+                                    // A changed image is described again, as an image record.
+                                    writeTape(comm, tape -> tape.describeImage(((DartImage) widget).getApi()));
                                 }
                             });
                         } catch (Exception e) {
@@ -649,17 +738,62 @@ public abstract class FlutterBridge {
                     e.printStackTrace();
                 }
             };
-            CompletableFuture<Void> future = getBridge(widget).clientReady.thenRun(() -> runOnDisplayThread(widget, send));
-            futures.add(future);
-        }
-        } finally {
-            Serializer.describeNormally();
-            flushSends.remove();
-            for (Map.Entry<CommService, MessageBatch> entry : batching.entrySet()) {
-                entry.getKey().send(entry.getValue());
-                releaseBatch(entry.getValue());
+            CompletableFuture<Boolean> ready = getBridge(widget).clientReady;
+            if (ready.isDone() && !ready.isCompletedExceptionally()) {
+                // What thenRun would do on a completed future, without one per widget to wait on.
+                Display display = getDisplay(widget);
+                if (display != lastDisplay) {
+                    lastDisplay = display;
+                    lastInline = runsInline(display);
+                }
+                if (lastInline) send.run();
+                else futures.add(sentOnDisplayThread(display, send));
+            } else {
+                futures.add(ready.thenCompose(r -> {
+                    Display display = getDisplay(widget);
+                    if (runsInline(display)) {
+                        send.run();
+                        return SENT;
+                    }
+                    return sentOnDisplayThread(display, send);
+                }));
             }
         }
+        } finally {
+            // A send made from here on goes out on its own, as one made outside any flush does, or into
+            // the flush this one started inside.
+            restore(flushSends, outerSends);
+            long sendStart = flushStart != 0 ? System.nanoTime() : 0;
+            // Each frame goes out whatever happened to the one before: a comm that fails (its client
+            // gone mid-send) must not keep another comm's frames, already counted as delivered, from
+            // their client. The first failure is reported once every frame has been tried.
+            RuntimeException failed = null;
+            for (Map.Entry<CommService, MessageBatch> entry : batching.entrySet()) {
+                try {
+                    entry.getKey().send(entry.getValue());
+                } catch (RuntimeException e) {
+                    if (failed == null) failed = e;
+                } finally {
+                    releaseBatch(entry.getValue());
+                }
+            }
+            restore(flushTapes, outerTapes);
+            for (Map.Entry<CommService, Serializer.Tape> entry : tapes.entrySet()) {
+                try {
+                    sendTape(entry.getKey(), entry.getValue());
+                } catch (RuntimeException e) {
+                    if (failed == null) failed = e;
+                }
+            }
+            if (flushStart != 0) {
+                long end = System.nanoTime();
+                WireStats.flushes++;
+                WireStats.flushNanos += end - flushStart;
+                WireStats.sendNanos += end - sendStart;
+            }
+            if (failed != null) throw failed;
+        }
+        if (futures.isEmpty()) return SENT;
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
@@ -675,8 +809,10 @@ public abstract class FlutterBridge {
     private static boolean isNew(Object widget) {
         if (widget instanceof DartWidget) {
             DartWidget w = (DartWidget) widget;
+            VWidget value = w.getValue();
+            if (value != null && value.wireMemo != null && ((Serializer.SentHashes) value.wireMemo).notNew) return false;
             return w.getData(DEV_EQU_SWT_NEW) == null
-                    && w.getValue().sentSeq(connectionOf(widget)) == 0;
+                    && value.sentSeq(connectionOf(widget)) == 0;
         }
         return false;
     }
@@ -706,20 +842,34 @@ public abstract class FlutterBridge {
     }
 
     /**
-     * Runs {@code task} on {@code widget}'s Display thread. {@link #clientReady} is completed from
-     * {@link #onClientReady}, which runs on the comm (network) thread — a callback chained onto it
-     * (e.g. {@link #update()}'s per-widget send) that touches widget state (getters like
-     * {@code Control#isEnabled()}) must hop back to the Display thread first, or it throws
-     * {@code SWTException: Invalid thread access}. No-op hop when already on the right thread or
-     * when no Display can be resolved (unchanged, synchronous behavior in both cases).
+     * Runs {@code send} on {@code display}'s thread; what is returned completes once it has run, so
+     * a message about the widget chained on it cannot reach the client first.
      */
+    private static CompletableFuture<Void> sentOnDisplayThread(Display display, Runnable send) {
+        CompletableFuture<Void> sent = new CompletableFuture<>();
+        display.asyncExec(() -> {
+            try {
+                send.run();
+            } finally {
+                sent.complete(null);
+            }
+        });
+        return sent;
+    }
+
+    /** Runs {@code task} on {@code widget}'s Display thread: right here when that is this thread or there is none. */
     private static void runOnDisplayThread(Object widget, Runnable task) {
         Display display = getDisplay(widget);
-        if (display == null || display.isDisposed() || display.getThread() == Thread.currentThread()) {
+        if (runsInline(display)) {
             task.run();
             return;
         }
         display.asyncExec(task);
+    }
+
+    /** Whether a task for {@code display} runs right here: no display to run it, or this is its thread. */
+    private static boolean runsInline(Display display) {
+        return display == null || display.isDisposed() || display.getThread() == Thread.currentThread();
     }
 
     private static Object getApi(Object w) {
@@ -813,10 +963,64 @@ public abstract class FlutterBridge {
         if (failed[0] != null) throw failed[0];
     }
 
-    /** Serializes {@code args} behind its frame header, so the frame is sent from where it was written. */
+    /**
+     * Sends {@code args}, made of maps, lists and scalars, as tagged values behind its frame header.
+     * Anything else has a binary form of its own and goes through it, not through here.
+     */
     private static void serializeFrameAndSend(CommService comm, String eventName, Object args) throws IOException {
+        if (!dev.equo.swt.comm.TaggedValues.isPlain(args)) {
+            throw new IllegalArgumentException("no tagged form for " + args.getClass().getName() + " on " + eventName);
+        }
         byte[] header = CommService.frameHeader(eventName);
-        serializer.to(header, args, (buffer, length) -> sendBytes(comm, eventName, buffer, header.length, length));
+        dev.equo.swt.comm.TaggedValues.frame(header, args, null,
+                (buffer, length) -> sendBytes(comm, eventName, buffer, header.length, length));
+    }
+
+    private static <T> void restore(ThreadLocal<T> local, T outer) {
+        if (outer == null) local.remove();
+        else local.set(outer);
+    }
+
+    /** The binary frame each comm's records go into while a flush runs; see {@link #flushSends}. */
+    private static final ThreadLocal<Map<CommService, Serializer.Tape>> flushTapes = new ThreadLocal<>();
+
+    /**
+     * Runs {@code write} against {@code comm}'s binary frame: the running flush's, or, when no flush is
+     * running, one of its own sent as soon as {@code write} returns.
+     */
+    public static void writeTape(CommService comm, java.util.function.Consumer<Serializer.Tape> write) {
+        if (comm == null) return;
+        Map<CommService, Serializer.Tape> open = flushTapes.get();
+        if (open == null) {
+            Serializer.Tape own = new Serializer.Tape(comm.connectionId());
+            write.accept(own);
+            sendTape(comm, own);
+            return;
+        }
+        write.accept(open.computeIfAbsent(comm, c -> new Serializer.Tape(c.connectionId())));
+    }
+
+    private static void describe(CommService comm, DartWidget widget) {
+        writeTape(comm, tape -> tape.describe(widget));
+    }
+
+    private static void sendTape(CommService comm, Serializer.Tape tape) {
+        try {
+            sendFrameOf(comm, tape);
+        } finally {
+            tape.release();
+        }
+    }
+
+    private static void sendFrameOf(CommService comm, Serializer.Tape tape) {
+        if (tape.isEmpty()) return;
+        if (WireStats.on) {
+            WireStats.frame(tape.frame().byteSize());
+            WireStats.binaryFrames++;
+        }
+        SendObserver observer = sendObserver;
+        if (observer != null) observer.onSend(WidgetWire.CHANNEL, tape.frame().payload());
+        tape.sendTo(comm);
     }
 
     /**
@@ -828,6 +1032,7 @@ public abstract class FlutterBridge {
         // does not: a widget can be written to be read rather than sent.
         Serializer.markDelivered();
         int payloadLength = length - payloadStart;
+        if (WireStats.on) WireStats.frame(length);
         DebugLog.logSend(eventName, buffer, payloadStart, payloadLength);
         SendObserver observer = sendObserver;
         if (observer != null) observer.onSend(eventName, java.util.Arrays.copyOfRange(buffer, payloadStart, length));
@@ -879,8 +1084,11 @@ public abstract class FlutterBridge {
     }
 
     private static void setNotNew(Object control) {
-        if (control instanceof DartWidget)
-            ((DartWidget) control).setData(DEV_EQU_SWT_NEW, false);
+        if (control instanceof DartWidget) {
+            VWidget value = ((DartWidget) control).getValue();
+            if (value != null) Serializer.sentHashes(value).notNew = true;
+            else ((DartWidget) control).setData(DEV_EQU_SWT_NEW, false);
+        }
     }
 
     public static void set(FlutterBridge staticBridge) {
@@ -897,14 +1105,16 @@ public abstract class FlutterBridge {
     }
 
     public static void on(DartWidget widget, String listener, String event, Consumer<Event> cb) {
-        String eventName = event(widget, listener, event);
-        commFor(widget).on(eventName, Event.class, ev -> {
+        // The handler holds the parts, not the joined name: there is one per widget and event, and
+        // the name is only needed for the log.
+        boolean mouseMove = "MouseMove".equals(listener);
+        commFor(widget).on(event(widget, listener, event), Event.class, ev -> {
             if (widget.isDisposed()) {
-                DebugLog.checkpoint(eventName, "skipped: widget disposed");
+                if (Config.isDebug()) DebugLog.checkpoint(event(widget, listener, event), "skipped: widget disposed");
                 return;
             }
-            if (!eventName.contains("MouseMove") || getConfigFlags().print_move)
-                DebugLog.logRecv(eventName, ev);
+            if (Config.isDebug() && (!mouseMove || getConfigFlags().print_move))
+                DebugLog.logRecv(event(widget, listener, event), ev);
             // A message whose body is absent deserializes to null, and handlers read the Event
             // straight away — DartText's DefaultSelection does `e.detail == SWT.ICON_CANCEL`, so a
             // bodyless Enter in a Text threw NullPointerException out of an asyncExec, which e4
@@ -914,13 +1124,49 @@ public abstract class FlutterBridge {
             // "no detail" event means to every one of them. Logged, not swallowed: a null body is
             // still worth seeing when reading a trace.
             if (ev == null) {
-                DebugLog.checkpoint(eventName, "empty body: substituting a blank Event");
+                if (Config.isDebug()) DebugLog.checkpoint(event(widget, listener, event), "empty body: substituting a blank Event");
                 cb.accept(new Event());
                 return;
             }
             if ("Key".equals(listener)) ControlHelper.applyControlCharacter(ev);
             cb.accept(ev);
         });
+    }
+
+    /**
+     * Registers {@code dispatch} for every channel of {@code widget} named in {@code events}
+     * ("Listener/Event"), as one handler for all of them, delivering each as {@link #on} does.
+     */
+    public static void onClientEvents(DartWidget widget, String[] events, BiConsumer<String, Event> dispatch) {
+        commFor(widget).onOwner(event(widget), events, Event.class, (channel, ev) -> {
+            if (widget.isDisposed()) {
+                if (Config.isDebug()) DebugLog.checkpoint(event(widget, channel), "skipped: widget disposed");
+                return;
+            }
+            if (Config.isDebug() && (!channel.startsWith("MouseMove/") || getConfigFlags().print_move))
+                DebugLog.logRecv(event(widget, channel), ev);
+            if (ev == null) {
+                if (Config.isDebug()) DebugLog.checkpoint(event(widget, channel), "empty body: substituting a blank Event");
+                dispatch.accept(channel, new Event());
+                return;
+            }
+            if (channel.startsWith("Key/")) ControlHelper.applyControlCharacter(ev);
+            dispatch.accept(channel, ev);
+        });
+    }
+
+    private static final Map<Class<?>, String[]> CLIENT_EVENTS = new ConcurrentHashMap<>();
+
+    /** The events a widget class takes from the client, listed once per class. */
+    public static String[] clientEvents(Class<?> type, java.util.function.Supplier<String[]> list) {
+        return CLIENT_EVENTS.computeIfAbsent(type, t -> list.get());
+    }
+
+    /** {@code inherited} followed by {@code own}. */
+    public static String[] joinEvents(String[] inherited, String... own) {
+        String[] all = java.util.Arrays.copyOf(inherited, inherited.length + own.length);
+        System.arraycopy(own, 0, all, inherited.length, own.length);
+        return all;
     }
 
     public static void onPayload(Object widget, String event, Consumer<byte[]> cb) {
@@ -992,48 +1238,72 @@ public abstract class FlutterBridge {
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     /** A GC's ops, held to one frame per paint. Flutter paints nothing until gcDispose anyway. */
-    private static final Map<DartGC, OpBatch> opBatches =
+    private static final Map<DartGC, GcWire> opBatches =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
-    /**
-     * A batch and the thread writing it. A batch is written without locking, so only its owner may
-     * send it from an event-loop flush: Displays sharing a JVM each flush on their own thread, and
-     * one sending another's batch sends it mid-write and recycles it while it is still being filled.
-     */
-    private static final class OpBatch {
-        final MessageBatch batch = borrowBatch();
-        final Thread owner = Thread.currentThread();
-    }
 
     /** Cap on what one batch holds, so a GC that is never disposed cannot grow it without end. */
     private static final int MAX_BATCH_BYTES = 1 << 20;
 
-    private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
-        OpBatch held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
-        if (held.owner != Thread.currentThread()) {
-            // The GC changed threads: what the previous one drew goes first, then this one owns it.
-            if (opBatches.remove(gc, held)) sendOpBatch(gc, held.batch);
-            held = opBatches.computeIfAbsent(gc, g -> new OpBatch());
+    /**
+     * The GC the last op on this thread was buffered for, and what its ops go into. A paint's ops
+     * come in a run for one GC, and looking each up in the weak maps cost more than writing the op.
+     */
+    private static final class OpTarget {
+        OpTarget(DartGC gc) {
+            this.gc = gc;
+            channel = gcChannel(gc);
+            // A control's overlay outlives its GCs; an image GC's drawer starts blank, so it has no target.
+            target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
         }
-        MessageBatch batch = held.batch;
-        String channel = gcChannel(gc);
-        // A control's overlay outlives its GCs; an image GC's drawer starts blank, so it has no target.
-        Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
+
+        final DartGC gc;
+        final String channel;
+        final Object target;
+        GcWire batch;
+        long[] cycle;
+    }
+
+    private static final ThreadLocal<OpTarget> lastOpTarget = new ThreadLocal<>();
+
+    private static void bufferOp(CommService comm, DartGC gc, String event, Object args) {
+        OpTarget last = lastOpTarget.get();
+        if (last == null || last.gc != gc) {
+            last = new OpTarget(gc);
+            lastOpTarget.set(last);
+        }
+        String channel = last.channel;
+        if (last.batch == null || !last.batch.ownedBy(gc)) {
+            GcWire found = opBatches.computeIfAbsent(gc, g -> borrowWire(channel, g));
+            if (found.writer() != Thread.currentThread()) {
+                // The GC changed threads: what the previous one drew goes first, then this one owns it.
+                if (opBatches.remove(gc, found)) {
+                    found.own(null);
+                    sendOpBatch(gc, found);
+                }
+                found = opBatches.computeIfAbsent(gc, g -> borrowWire(channel, g));
+            }
+            last.batch = found;
+        }
+        GcWire batch = last.batch;
+        Object target = last.target;
         int connection = comm == null ? 0 : comm.connectionId();
         boolean[] failed = { false };
         // Per paint cycle: the description is staged at the first op and the send decided at the last.
-        long[] cycle = cycleHash(gc);
+        if (last.cycle == null) last.cycle = cycleHash(gc);
+        long[] cycle = last.cycle;
         Serializer.targeting(connection, () -> {
             try {
                 // The GC's state has to precede the op drawn with it, and on the same frame.
                 synchronized (dirty) {
+                    // Any removal: the set compares GCs by equality, and a removed GC may stand for it.
+                    lastQueued = null;
                     if (dirty.remove(gc)
-                            && stageGcState(batch, channel, target, gc, connection)) {
+                            && stageGcState(batch, target, gc, connection)) {
                         cycle[STAGED] = 1;
                     }
                 }
-                addToBatch(batch, channel + "/" + event, args, cycle);
-            } catch (IOException e) {
+                addOp(batch, event, args, cycle);
+            } catch (RuntimeException e) {
                 e.printStackTrace();
                 failed[0] = true;
             }
@@ -1048,6 +1318,8 @@ public abstract class FlutterBridge {
             return;
         }
         cycleHashes.remove(gc);
+        // The paint is over: holding the GC past it would keep it, and its Image, from being collected.
+        lastOpTarget.remove();
         long drawn = cycle[DRAWN];
         boolean stateStaged = cycle[STAGED] != 0;
         // A restated description always goes (the next clear clears to it); otherwise a repaint of
@@ -1058,8 +1330,8 @@ public abstract class FlutterBridge {
         if (DROP_REPEATED_REPAINTS && repeat) {
             // Nothing in this paint reaches the client, so nothing it wrote counts as held.
             opResources.remove(gc);
-            OpBatch dropped = opBatches.remove(gc);
-            if (dropped != null) releaseBatch(dropped.batch);
+            GcWire dropped = takeBatch(gc);
+            if (dropped != null) releaseWire(dropped);
             org.eclipse.swt.widgets.PaintPacing.unchanged(target);
             return;
         }
@@ -1076,35 +1348,26 @@ public abstract class FlutterBridge {
      */
     private static final Map<Object, Long> gcStateSeq = new java.util.WeakHashMap<>();
 
-    /**
-     * Writes a GC's state as what changed since its channel last got it, or whole when the channel
-     * holds something else: a GC that has not written yet, or another GC of the same control.
-     */
-    private static void writeGCState(CommService comm, DartGC gc, byte[] prefix, Serializer.Lent sink) {
-        VResource value = gc.getValue();
-        int connection = comm == null ? 0 : comm.connectionId();
-        // Id 0 is shared by every GC on a drawable that is neither a control nor an image.
-        Object channel = id(gc) == 0 ? null : GCHelper.stateKeyOf(gc);
-        synchronized (gcStateSeq) {
-            Long held = channel == null ? null : gcStateSeq.get(channel);
-            long base = value.sentSeq(connection);
-            boolean diff = Serializer.mayDiffResources() && base != 0 && held != null && held == base
-                    && value.anyDirty();
-            if (!diff) Serializer.forgetSentProperties(value);
-            long seq = diff ? serializer.toDiff(prefix, gc, base, sink) : serializer.toStamped(prefix, gc, sink);
-            value.sent(connection, seq);
-            if (channel != null) gcStateSeq.put(channel, seq);
-            gcStateSent.remove(gcStateKey(gc));
+    /** A GC's state on its own, as a frame of one record: what changed, or the whole of it. */
+    private static void sendGcState(CommService comm, DartGC gc, String channel) {
+        GcWire frame = borrowWire(channel, gc);
+        try {
+            int connection = comm == null ? 0 : comm.connectionId();
+            Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
+            Serializer.targeting(connection, () -> stageGcState(frame, target, gc, connection));
+            frame.sendTo(comm);
+        } finally {
+            frame.own(null);
+            releaseWire(frame);
         }
     }
 
     /**
      * Stages a paint's GC state: as a change when this GC was the last to describe itself on the
-     * channel, else named or whole ({@link #addGcStateIfChanged}). Either way the channel then holds
-     * this GC's whole state, which is what the next change is relative to.
+     * channel, else whole ({@link #addGcStateIfChanged}). Either way the channel then holds this
+     * GC's whole state, which is what the next change is relative to.
      */
-    private static boolean stageGcState(MessageBatch batch, String channel, Object target, DartGC gc,
-            int connection) throws IOException {
+    private static boolean stageGcState(GcWire batch, Object target, DartGC gc, int connection) {
         VResource value = gc.getValue();
         Object drawable = id(gc) == 0 ? null : GCHelper.stateKeyOf(gc);
         synchronized (gcStateSeq) {
@@ -1112,23 +1375,19 @@ public abstract class FlutterBridge {
             long base = value.sentSeq(connection);
             if (Serializer.mayDiffResources() && base != 0 && held != null && held == base
                     && value.anyDirty()) {
-                long seq = serializer.toDiff(NO_PREFIX, gc, base, (buffer, length) -> {
-                    DebugLog.logSend(channel, buffer, 0, length);
-                    batch.add(channel, buffer, 0, length);
-                });
+                long seq = serializer.toDiffBinary(gc, base, batch);
                 value.sent(connection, seq);
                 gcStateSeq.put(drawable, seq);
                 // The channel holds a state no whole description was hashed from.
                 gcStateSent.remove(gcStateKey(gc));
                 return seq != base;
             }
-            Serializer.forgetSentProperties(value);
-            long stamp = addGcStateIfChanged(batch, channel, target, gc, connection);
-            // A reference, or nothing at all, still leaves the channel holding this GC's state.
-            long seq = stamp > 0 ? stamp : Serializer.nextWriteStamp();
+            boolean staged = addGcStateIfChanged(batch, target, gc, connection);
+            // Staged or already held, the channel now holds this GC's state.
+            long seq = Serializer.nextWriteStamp();
             value.sent(connection, seq);
             if (drawable != null) gcStateSeq.put(drawable, seq);
-            return stamp != NOT_STAGED;
+            return staged;
         }
     }
 
@@ -1141,14 +1400,6 @@ public abstract class FlutterBridge {
     private static final int DRAWN = 0;
     private static final int STAGED = 1;
 
-    /**
-     * GCs are described whole, not diffed, and pooled GCs keep restating the same description.
-     *
-     * @return whether anything was staged.
-     */
-    /** {@link #addGcStateIfChanged}'s answer when the client already holds the description. */
-    private static final long NOT_STAGED = -1;
-
     /** Where {@link #addGcStateIfChanged} records what it last staged for a GC. */
     private static Object gcStateKey(DartGC gc) {
         Object target = getBridge(gc) instanceof GCImageDrawer ? null : GCHelper.stateKeyOf(gc);
@@ -1156,89 +1407,27 @@ public abstract class FlutterBridge {
     }
 
     /**
-     * @return the write stamp of a whole description staged, 0 for a name staged, or
-     *     {@link #NOT_STAGED} when the client already holds this description.
+     * Stages {@code gc}'s whole state, unless the client already holds that very description: pooled
+     * GCs keep restating the same one.
+     *
+     * @return whether anything was staged.
      */
-    private static long addGcStateIfChanged(MessageBatch batch, String channel, Object target,
-            DartGC gc, int connection) throws IOException {
-        long[] staged = { NOT_STAGED };
+    private static boolean addGcStateIfChanged(GcWire batch, Object target, DartGC gc, int connection) {
         // Keyed on the control, not the channel (whose id a new control may reuse); an image GC's
         // drawer starts blank, so it is keyed on the GC.
         Object key = target == null ? gc : target;
-        serializer.to(getApi(gc), (buffer, length) -> {
-            // Hashed past the id, the only thing that differs between identically described GCs.
-            int from = 0;
-            while (from < length && buffer[from] != ',') from++;
-            long hash = 0xcbf29ce484222325L;
-            for (int i = from; i < length; i++) hash = (hash ^ (buffer[i] & 0xFF)) * 0x100000001b3L;
-            long[] seen = gcStateSent.get(key);
-            if (seen != null && seen[0] == connection && seen[1] == hash) return;
-            gcStateSent.put(key, new long[] { connection, hash });
-            Integer named = NAME_GC_STATE ? gcNames(connection).get(hash) : null;
-            if (named != null) {
-                byte[] ref = ("{\"id\":" + id(gc.getApi()) + ",\"swt\":\"GC\",\"_gr\":"
-                        + named + "}").getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                DebugLog.logSend(channel, ref, 0, ref.length);
-                batch.add(channel, ref, 0, ref.length);
-                staged[0] = 0;
-                return;
-            }
-            // Past the cap GCs are described in full; names already given stay valid.
-            if (NAME_GC_STATE && gcNames(connection).size() < GC_NAME_LIMIT) {
-                // Never reused, so an old name cannot come to mean something new to the client.
-                int name = gcNameCounter++;
-                gcNames(connection).put(hash, name);
-                byte[] tail = (",\"_gd\":" + name + "}")
-                        .getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                staged[0] = serializer.toStamped(NO_PREFIX, gc, (whole, wholeLength) -> {
-                    byte[] def = new byte[wholeLength - 1 + tail.length];
-                    System.arraycopy(whole, 0, def, 0, wholeLength - 1);
-                    System.arraycopy(tail, 0, def, wholeLength - 1, tail.length);
-                    DebugLog.logSend(channel, def, 0, def.length);
-                    batch.add(channel, def, 0, def.length);
-                });
-                return;
-            }
-            staged[0] = serializer.toStamped(NO_PREFIX, gc, (whole, wholeLength) -> {
-                DebugLog.logSend(channel, whole, 0, wholeLength);
-                batch.add(channel, whole, 0, wholeLength);
-            });
-        });
-        return staged[0];
+        WidgetWire props = serializer.wholeState(gc, batch);
+        long hash = props.hash(0, props.size());
+        long[] seen = gcStateSent.get(key);
+        if (seen != null && seen[0] == connection && seen[1] == hash) return false;
+        gcStateSent.put(key, new long[] { connection, hash });
+        batch.state(GcWire.WHOLE, props);
+        return true;
     }
-
-    /** Description hash to name, per connection: a name means nothing to a client that was not told it. */
-    private static final Map<Long, Integer> gcNames = new java.util.HashMap<>();
-    private static int gcNamesConnection;
-    private static int gcNameCounter;
 
     /** Bisect switch: {@code -Ddev.equo.swt.gc.dropBlank=false} also sends repaints of what is already shown. */
     private static final boolean DROP_REPEATED_REPAINTS =
             !"false".equals(System.getProperty("dev.equo.swt.gc.dropBlank"));
-
-    /** Off by default: a name whose description never reached the client leaves the GC with no colours. */
-    private static final boolean NAME_GC_STATE =
-            "true".equals(System.getProperty("dev.equo.swt.gc.nameState"));
-
-    /** How many descriptions are named; past this they travel whole. */
-    private static final int GC_NAME_LIMIT = 1024;
-
-    private static Map<Long, Integer> gcNames(int connection) {
-        if (connection != gcNamesConnection) {
-            gcNames.clear();
-            gcNameCounter = 0;
-            gcNamesConnection = connection;
-        }
-        return gcNames;
-    }
-
-    /**
-     * For a dropped batch, whose names were defined in frames that never travelled. The counter is
-     * not rewound, so names the client already holds keep their meaning.
-     */
-    private static void forgetGcNames() {
-        gcNames.clear();
-    }
 
     /** The description last staged for a drawable, as a hash, so an identical one is not restated. */
     private static final Map<Object, long[]> gcStateSent =
@@ -1265,21 +1454,16 @@ public abstract class FlutterBridge {
     /** Terminates a paint: Flutter commits the staged ops when it arrives. */
     private static final String GC_DISPOSE = "gcDispose";
 
-    private static void addToBatch(MessageBatch batch, String event, Object args) throws IOException {
-        addToBatch(batch, event, args, null);
-    }
-
-    private static void addToBatch(MessageBatch batch, String event, Object args, long[] cycle)
-            throws IOException {
-        serializer.to(args, (buffer, length) -> {
-            DebugLog.logSend(event, buffer, 0, length);
-            batch.add(event, buffer, 0, length);
-            if (cycle != null) {
-                cycle[DRAWN] = fnv(fnv(cycle[DRAWN],
-                        event.getBytes(java.nio.charset.StandardCharsets.UTF_8), 0, event.length()),
-                        buffer, 0, length);
-            }
-        });
+    /** Appends an op to a GC's frame, folding its record into the paint's running hash. */
+    private static void addOp(GcWire batch, String event, Object args, long[] cycle) {
+        int from = batch.byteSize();
+        if (args instanceof GcWire.Op) {
+            batch.op((GcWire.Op) args);
+        } else {
+            byte[] payload = args == null ? new byte[0] : dev.equo.swt.comm.TaggedValues.encode(args, null);
+            batch.escape(batch.channel() + "/" + event, payload, 0, payload.length);
+        }
+        cycle[DRAWN] = fnv(cycle[DRAWN], batch.buffer(), from, batch.byteSize() - from);
     }
 
     /** FNV offset basis: the hash of a cycle that has buffered nothing. */
@@ -1299,17 +1483,16 @@ public abstract class FlutterBridge {
     }
 
     /**
-     * Sends an image GC's ops with {@code event} as their last frame. The frame must be JSON: the
-     * client parses a batch whole.
+     * Sends an image GC's ops with {@code event} and its {@code payload} as their last frame.
      *
      * @return false when the GC buffered no ops for it to join.
      */
-    public static boolean flushBufferedOpsWith(GCImageDrawer drawer, String event, byte[] json) {
+    public static boolean flushBufferedOpsWith(GCImageDrawer drawer, String event, byte[] payload) {
         DartGC gc = gcBuffering(drawer);
         if (gc == null) return false;
-        OpBatch held = opBatches.get(gc);
-        if (held == null) return false;
-        held.batch.add(widgetName(gc) + "/" + drawer.channelId() + "/" + event, json);
+        GcWire batch = opBatches.get(gc);
+        if (batch == null) return false;
+        batch.escape(widgetName(gc) + "/" + drawer.channelId() + "/" + event, payload, 0, payload.length);
         flushOpBatch(gc);
         return true;
     }
@@ -1320,9 +1503,8 @@ public abstract class FlutterBridge {
         DartGC gc = gcBuffering(drawer);
         if (gc == null) return;
         opResources.remove(gc);
-        OpBatch held = opBatches.remove(gc);
-        if (held != null) releaseBatch(held.batch);
-        forgetGcNames();
+        GcWire batch = takeBatch(gc);
+        if (batch != null) releaseWire(batch);
     }
 
     /** The GC whose ops {@code drawer} will draw, if it has any buffered. */
@@ -1346,34 +1528,98 @@ public abstract class FlutterBridge {
         if (gcBridge instanceof GCImageDrawer) ((GCImageDrawer) gcBridge).startForPendingReply();
     }
 
+    /** Takes {@code gc}'s batch out of the buffer, so no later op adds to it. */
+    private static GcWire takeBatch(DartGC gc) {
+        GcWire batch = opBatches.remove(gc);
+        if (batch != null) batch.own(null);
+        return batch;
+    }
+
     private static void flushOpBatch(DartGC gc) {
-        OpBatch held = opBatches.remove(gc);
-        sendOpBatch(gc, held == null ? null : held.batch);
+        sendOpBatch(gc, takeBatch(gc));
     }
 
     /** Sends a batch already taken out of {@link #opBatches}, so no other thread can reach it. */
-    private static void sendOpBatch(DartGC gc, MessageBatch batch) {
+    private static void sendOpBatch(DartGC gc, GcWire batch) {
         java.util.List<Object> written = opResources.remove(gc);
         if (batch == null) return;
         if (batch.isEmpty()) {
-            releaseBatch(batch);
+            releaseWire(batch);
             return;
         }
+        DebugLog.logGcFrame(batch);
         CommService comm = commFor(gc);
-        // The bytes are going out, so what they carried counts as held from here on.
-        if (written != null) Serializer.creditResources(written, comm == null ? 0 : comm.connectionId());
+        int connection = comm == null ? 0 : comm.connectionId();
         FlutterBridge bridge = getBridge(gc);
         if (bridge instanceof GCImageDrawer) {
             // Through the drawer's queue: the ops must not reach Flutter before GCDrawer.standalone
-            // registers its listeners. Raw-byte frames stay out of the batch, which is parsed as JSON.
+            // registers its listeners. What they carry counts as held once they are sent: a drawer
+            // given up on drops its queue, and an image credited then would never be sent again.
+            Thread borrower = Thread.currentThread();
             ((GCImageDrawer) bridge).queueOp(() -> {
-                comm.send(batch);
-                releaseBatch(batch);
+                batch.sendTo(comm);
+                if (written != null) Serializer.creditResources(written, connection);
+                // As the tape of an image's record: given back only on the thread that took it.
+                if (Thread.currentThread() == borrower) releaseWire(batch);
             });
             return;
         }
-        comm.send(batch);
-        releaseBatch(batch);
+        batch.sendTo(comm);
+        // The bytes are on their way, so what they carried counts as held from here on.
+        if (written != null) Serializer.creditResources(written, connection);
+        releaseWire(batch);
+    }
+
+    private static final ThreadLocal<java.util.ArrayDeque<GcWire>> spareWires =
+            ThreadLocal.withInitial(java.util.ArrayDeque::new);
+
+    private static GcWire borrowWire(String channel, DartGC gc) {
+        GcWire wire = spareWires.get().pollFirst();
+        if (wire == null) wire = new GcWire();
+        wire.begin(channel);
+        wire.own(gc);
+        wire.images(new GcImages(gc));
+        return wire;
+    }
+
+    /**
+     * Sends what the client lacks of an image a GC frame names, ahead of the frame: the frame names
+     * it by id. An image drawer's frames wait in its queue, so the image waits there too.
+     */
+    private static final class GcImages implements WidgetWire.Names {
+        private final DartGC gc;
+
+        GcImages(DartGC gc) {
+            this.gc = gc;
+        }
+
+        @Override
+        public void widget(Object widget) {
+        }
+
+        @Override
+        public void image(org.eclipse.swt.graphics.Image image) {
+            CommService comm = commFor(gc);
+            if (comm == null) return;
+            Serializer.Tape tape = new Serializer.Tape(comm.connectionId());
+            tape.describeImage(image);
+            Thread borrower = Thread.currentThread();
+            Runnable send = () -> {
+                tape.sendTo(comm);
+                // Back into the pool of the thread that took it; one a drawer's queue runs elsewhere
+                // would sit in that thread's pool, which never takes from it.
+                if (Thread.currentThread() == borrower) tape.release();
+            };
+            if (tape.isEmpty()) tape.release();
+            else if (getBridge(gc) instanceof GCImageDrawer) ((GCImageDrawer) getBridge(gc)).queueOp(send);
+            else send.run();
+        }
+    }
+
+    private static void releaseWire(GcWire wire) {
+        java.util.ArrayDeque<GcWire> spares = spareWires.get();
+        // One outsized frame must not pin its buffer for the life of the thread.
+        if (spares.size() < MAX_SPARE_BATCHES && wire.buffer().length <= 2 * MAX_BATCH_BYTES) spares.addFirst(wire);
     }
 
     /** Nothing this thread buffered may outlast its event-loop turn, whatever disposed the GC or didn't. */
@@ -1381,17 +1627,20 @@ public abstract class FlutterBridge {
         if (opBatches.isEmpty()) return;
         Thread current = Thread.currentThread();
         List<DartGC> gcs = new ArrayList<>();
-        List<MessageBatch> mine = new ArrayList<>();
+        List<GcWire> mine = new ArrayList<>();
         synchronized (opBatches) {
-            for (java.util.Iterator<Map.Entry<DartGC, OpBatch>> it = opBatches.entrySet().iterator(); it.hasNext(); ) {
-                Map.Entry<DartGC, OpBatch> entry = it.next();
-                if (entry.getValue().owner != current) continue;
+            for (java.util.Iterator<Map.Entry<DartGC, GcWire>> it = opBatches.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<DartGC, GcWire> entry = it.next();
+                if (entry.getValue().writer() != current) continue;
                 gcs.add(entry.getKey());
-                mine.add(entry.getValue().batch);
+                mine.add(entry.getValue());
                 it.remove();
             }
         }
-        for (int i = 0; i < gcs.size(); i++) sendOpBatch(gcs.get(i), mine.get(i));
+        for (int i = 0; i < gcs.size(); i++) {
+            mine.get(i).own(null);
+            sendOpBatch(gcs.get(i), mine.get(i));
+        }
     }
 
     // A send through the "dirty" branch above defers the actual wire send to an arbitrary
@@ -1447,7 +1696,11 @@ public abstract class FlutterBridge {
         if (drawnByParent(resource))
             return;
         CommService comm = commFor(resource);
-        if (dirty.contains(resource)) {
+        boolean queued;
+        synchronized (dirty) {
+            queued = isQueued(resource);
+        }
+        if (queued) {
             update().whenComplete((r, a) -> {
                 try {
                     serializeAndSend(comm, eventName(resource, event), args);
@@ -1510,12 +1763,32 @@ public abstract class FlutterBridge {
             dirty(((DartResource) obj));
     }
 
+    /**
+     * The resource last added to {@link #dirty}, while it is still there: a GC paint marks its state
+     * once per setter, and the lock is only needed to queue it the first time. Set and cleared only
+     * under the lock, and cleared by every removal, so when it names a resource, that resource is
+     * queued.
+     */
+    private static volatile Object lastQueued;
+
+    /**
+     * {@link #lastQueued}'s hash when it was added. A GC's hash can change once it is set up, and the
+     * set holds it under the one it had: under a new hash it has to be added again to be found.
+     */
+    private static volatile int lastQueuedHash;
+
     public void dirty(DartResource resource) {
         if (resource == null)
             return;
+        if (lastQueued == resource && resource.hashCode() == lastQueuedHash) {
+            wakeForDirty();
+            return;
+        }
         registerForRefresh(resource);
         synchronized (dirty) {
             dirty.add(resource);
+            lastQueuedHash = resource.hashCode();
+            lastQueued = resource;
         }
         wakeForDirty();
     }
@@ -1525,7 +1798,7 @@ public abstract class FlutterBridge {
             return;
         registerForRefresh(widget);
         synchronized (dirty) {
-            dirty.add(widget);
+            queue(widget);
         }
         wakeForDirty();
     }
@@ -1558,9 +1831,17 @@ public abstract class FlutterBridge {
     private static void registerForRefresh(Object w) {
         // A control's GC shares the control's id; recording it would shadow the control.
         if (w instanceof DartGC) return;
+        // Every change marks its widget, and an entry is never taken back: a widget remembers it
+        // has one rather than looking it up each time.
+        VWidget value = w instanceof DartWidget ? ((DartWidget) w).getValue() : null;
+        Serializer.SentHashes mark = value != null ? Serializer.sentHashes(value) : null;
+        if (mark != null && mark.registered) return;
         Object api = getApi(w);
-        if (api != null)
-            widgetsById.put((long) api.hashCode(), new java.lang.ref.WeakReference<>(w));
+        if (api == null) return;
+        Long id = (long) api.hashCode();
+        java.lang.ref.WeakReference<Object> held = widgetsById.get(id);
+        if (held == null || held.get() != w) widgetsById.put(id, new java.lang.ref.WeakReference<>(w));
+        if (mark != null) mark.registered = true;
     }
 
     /**
@@ -1578,13 +1859,14 @@ public abstract class FlutterBridge {
     // Package-private methods for testing
     static void clearDirty() {
         synchronized (dirty) {
-            dirty.clear();
+            flushOrder();
+            lastQueued = null;
         }
     }
 
     static boolean isDirty(Object widget) {
         synchronized (dirty) {
-            return dirty.contains(widget);
+            return isQueued(widget);
         }
     }
     
@@ -1598,6 +1880,10 @@ public abstract class FlutterBridge {
         synchronized (dirty) {
             for (Object widget : dirty) {
                 if (pushDue(widget, now)) return true;
+            }
+            for (int i = 0, n = dirtyWidgets.size(); i < n; i++) {
+                DartWidget widget = dirtyWidgets.get(i);
+                if (((Serializer.SentHashes) widget.getValue().wireMemo).queued && pushDue(widget, now)) return true;
             }
             return false;
         }
@@ -1642,7 +1928,12 @@ public abstract class FlutterBridge {
     public abstract void initFlutterView(Composite parent, DartControl control);
 
     public void destroy(DartWidget control) {
-        comm().remove(event(control,"ClientReady"));
+        CommService comm = comm();
+        if (comm == null) return;
+        String owner = event(control);
+        comm.removeOwner(owner);
+        String alternate = alternateAddress(owner);
+        if (alternate != null) comm.removeOwner(alternate);
     }
 
     /**
@@ -1697,6 +1988,14 @@ public abstract class FlutterBridge {
     /** The client moved its focus to {@code control}: tracked like {@link #setFocus}, without echoing it back. */
     public void clientFocused(DartControl control) {
         setFocus(control);
+    }
+
+    /**
+     * Whether a client report that it focused {@code control} is older than a focus request Java has
+     * made since, so acting on it -- activating the control's part included -- would undo that request.
+     */
+    public boolean staleFocusReport(DartControl control) {
+        return false;
     }
 
     public boolean hasFocus(DartControl control) {
@@ -1769,11 +2068,8 @@ public abstract class FlutterBridge {
     }
 
     protected void broadcastSwtEvolveProperties() {
-        try {
-            serializeAndSend(PROPERTIES_CHANNEL, getConfigFlags());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        CommService comm = comm();
+        if (comm != null) comm.send(PROPERTIES_CHANNEL, WidgetWire.fieldsOf(getConfigFlags()));
     }
 
     protected void sendSwtEvolveProperties() {

@@ -7,7 +7,10 @@ import static org.eclipse.swt.widgets.Mocks.*;
 import org.eclipse.swt.graphics.Image;
 import org.junit.jupiter.api.*;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
+import dev.equo.swt.harness.WireValues;
+
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class ButtonDisposedImageSerializeTest extends SerializeTestBase {
@@ -19,8 +22,8 @@ class ButtonDisposedImageSerializeTest extends SerializeTestBase {
         w.setImage(image);
         image.dispose();
 
-        String json = assertDoesNotThrow(() -> serialize(w));
+        Map<String, Object> state = assertDoesNotThrow(() -> serialize(w));
 
-        assertThatJson(json).node("image").isEqualTo(null);
+        org.assertj.core.api.Assertions.assertThat(WireValues.find(state, m -> m.get("image") instanceof Map)).isEmpty();
     }
 }

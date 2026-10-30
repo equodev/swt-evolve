@@ -9,6 +9,7 @@ import '../../gen/image.dart';
 import '../assets_manager.dart';
 import '../icons_map.dart';
 import '../widget_config.dart';
+import 'frame_presentation.dart';
 import 'glyph_tone.dart';
 
 class ImageUtils {
@@ -133,9 +134,10 @@ class ImageUtils {
   static RemoteRender? remoteRender(int ref) => _remoteImageCache[ref];
 
   /// The rendered pixels behind [ref], PNG-encoded — the answer to Java's explicit
-  /// `Image/requestPixels`. Null when nothing is registered under that ref.
+  /// `Image/requestPixels`. Null when nothing is registered under that ref in time.
   static Future<Uint8List?> encodeRemoteImagePng(int ref) async {
-    final render = _remoteImageCache[ref];
+    // A page that has just connected can be asked before the render it was sent is in.
+    final render = await _awaitRemoteRender(ref, timeout: const Duration(seconds: 20));
     if (render == null) {
       print('[Image] no render registered for remoteRef $ref');
       return null;
@@ -149,13 +151,18 @@ class ImageUtils {
   /// into it; a frame that resizes it in between gets the read-back done at the view's size.
   /// Read-backs therefore run one at a time, and one whose dimensions are not the image's is
   /// done again: matching dimensions mean the surface was the image's own when it rasterised.
+  /// Each starts only once no frame is on its way to the screen ([FramePresentation.idle]): one
+  /// started in between would leave that frame rasterised at the image's size. While frames keep
+  /// coming every read can land on one, so reads go on for [readBackBudget]; past it there is no
+  /// answer rather than the view's pixels passed off as the image's.
   static Future<Uint8List?> toBytes(ui.Image image, ui.ImageByteFormat format) {
     final next = _readBack.then((_) async {
-      for (var attempt = 0; ; attempt++) {
+      final deadline = DateTime.now().add(readBackBudget);
+      while (true) {
+        await FramePresentation.idle();
         final bytes = (await image.toByteData(format: format))?.buffer.asUint8List();
-        if (bytes == null || attempt == 4 || _hasSize(bytes, format, image.width, image.height)) {
-          return bytes;
-        }
+        if (bytes == null || _hasSize(bytes, format, image.width, image.height)) return bytes;
+        if (DateTime.now().isAfter(deadline)) return null;
       }
     });
     _readBack = next.then((_) {}, onError: (_) {});
@@ -163,6 +170,10 @@ class ImageUtils {
   }
 
   static Future<void> _readBack = Future.value();
+
+  /// How long [toBytes] goes on reading an image back while every read comes out at another size:
+  /// short of the 30s Java waits for the answer, so a read that lands late still reaches it.
+  static const Duration readBackBudget = Duration(seconds: 25);
 
   static bool _hasSize(Uint8List bytes, ui.ImageByteFormat format, int width, int height) {
     if (format != ui.ImageByteFormat.png) return bytes.length == width * height * 4;

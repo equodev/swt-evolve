@@ -56,16 +56,16 @@ bool refreshAppScale() {
 /// Bumped when the flags change; the root [MaterialApp] listens to it and rebuilds with the new theme.
 final ValueNotifier<int> configFlagsVersion = ValueNotifier<int>(0);
 
-Map<String, dynamic>? _lastAppliedConfig;
+Uint8List? _lastAppliedConfig;
 
 /// Applies config flags from either source: the `config` field of a `Display/{id}` update, or the
 /// `swt.evolve.properties` message. The flags repeat in every Display update, so the dedup keeps an
 /// unchanged payload from rebuilding the whole [MaterialApp].
 void applyConfigFlags(ConfigFlags? flags) {
   if (flags == null) return;
-  final json = flags.toJson();
-  if (mapEquals(json, _lastAppliedConfig)) return;
-  _lastAppliedConfig = json;
+  final wire = flags.wire;
+  if (wire != null && listEquals(wire, _lastAppliedConfig)) return;
+  _lastAppliedConfig = wire;
   setConfigFlags(flags);
   refreshAppScale();
   configFlagsVersion.value++;

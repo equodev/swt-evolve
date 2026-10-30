@@ -17,9 +17,6 @@ enum DecorationsAlign {
     }
   }
 
-  static DecorationsAlign? fromJson(String? s) => s != null ? fromString(s) : null;
-  static String? toJson(DecorationsAlign? a) => a?.name;
-
   bool get isVertical => this == vleft || this == vright;
   bool get isAtStart => this == vleft || this == hleft;
 }

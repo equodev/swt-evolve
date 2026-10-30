@@ -9,6 +9,9 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+
+import 'delivery/support/deliver.dart';
 
 class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   const _CapturingCComboSwt({required super.value, required this.onEvent});
@@ -62,14 +65,13 @@ Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
 Future<void> _javaSends(WidgetTester tester, bool listVisible) async {
   final base = _seq;
   _seq += 1;
-  VRegistry.instance.apply('CCombo/$_id', <String, dynamic>{
-    'id': _id,
-    'swt': 'CCombo',
-    '_s': _seq,
-    '_b': base,
-    '_d': <String>['listVisible'],
-    'listVisible': listVisible,
-  });
+  applyChange(
+      VCCombo()
+        ..id = _id
+        ..seq = _seq
+        ..listVisible = listVisible,
+      keys: [WireKey.k_CCombo_listVisible],
+      base: base);
   await tester.pumpAndSettle();
 }
 

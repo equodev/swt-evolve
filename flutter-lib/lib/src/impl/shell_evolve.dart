@@ -89,30 +89,22 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
     TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
-    _popupsToken = EquoCommService.onRaw(_popupsChannel, _receivePopups);
+    _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('ShellPopups', VShellPopups.new, (id, record) {
+      if (id == state.id) _showPopups(record.popups ?? const []);
+    });
   }
+
+  void Function()? _stopPopupRecords;
 
   /// Popups opened over this shell, when this client is the window drawing it. Empty in every other
   /// client: Java sends them only to the window that owns the control they were opened for (see
   /// `DisplayBridge.syncShellPopups`), because a popup hangs off the Display rather than off this
   /// shell's widget tree and nothing else would carry it here.
   List<VMenu> _popups = const [];
-  Object? _popupsToken;
 
   String get _popupsChannel => 'Shell/${state.id}/Popups';
 
-  void _receivePopups(dynamic payload) {
-    final menus = <VMenu>[];
-    if (payload is Map && payload['popups'] is List) {
-      for (final raw in payload['popups'] as List) {
-        if (raw is Map<String, dynamic>) menus.add(VMenu.fromJson(raw));
-      }
-    }
-    // Registering is what puts the menu and its items in the registry; holding is what lets a popup
-    // that closed stop being held, instead of being kept for the life of the session.
-    for (final menu in menus) {
-      VRegistry.instance.register(menu);
-    }
+  void _showPopups(List<VMenu> menus) {
     VRegistry.instance.holds(_popupsChannel, menus);
     if (!mounted) return;
     setState(() => _popups = menus);
@@ -147,7 +139,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   @override
   void dispose() {
-    EquoCommService.remove(_popupsChannel, _popupsToken);
+    _stopPopupRecords?.call();
     VRegistry.instance.holds(_popupsChannel, const []);
     _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
@@ -187,12 +179,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final change = lastChange;
     // An alpha-only delivery is an animation frame: the notifier above has already carried it, and
     // rebuilding the shell for each one is the cost this bypass exists to avoid.
-    if (change != null && change.isOnly(const {'alpha'})) return;
+    if (change != null && change.isOnly(const {gen.WireKey.k_Shell_alpha})) return;
     // A value is changed in place, so there is no earlier copy to compare against - what the
     // delivery named is all there is to reason with. A delivery that never mentioned the dialogs
     // did not change them; one that mentions nothing was a whole widget, and then anything may have.
     final prevDialogs =
-        (change != null && !change.touches('dialogs')) ? (value.dialogs ?? []) : const <VDialog>[];
+        (change != null && !change.touches(gen.WireKey.k_Shell_dialogs)) ? (value.dialogs ?? []) : const <VDialog>[];
     super.setValue(value);
     final newDialogs = value.dialogs ?? [];
     _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));

@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import java.nio.charset.StandardCharsets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.junit.jupiter.api.Tag;
@@ -23,8 +22,17 @@ class StyledTextImeFromFlutterNativeTest extends EventsFromFlutterNativeTestBase
 
     /** What the client sends on ImeComposition, applied as its handler does. */
     private static void report(StyledText st, String text, int caret, boolean commit) {
-        String json = "{\"text\":\"" + text + "\",\"caret\":" + caret + (commit ? ",\"commit\":true" : "") + "}";
-        ImeHelper.apply((DartCanvas) st.getImpl(), json.getBytes(StandardCharsets.UTF_8));
+        // The text, the caret within it, and whether it is committed, as the client writes them.
+        dev.equo.swt.WidgetWire w = dev.equo.swt.WidgetWire.borrow();
+        try {
+            w.reset();
+            w.write(text);
+            w.write(caret);
+            w.write(commit);
+            ImeHelper.apply((DartCanvas) st.getImpl(), java.util.Arrays.copyOf(w.buffer(), w.size()));
+        } finally {
+            dev.equo.swt.WidgetWire.giveBack(w);
+        }
     }
 
     @Test

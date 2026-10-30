@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -12,11 +12,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/combo_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'combo.g.dart';
 
 class ComboSwt<V extends VCombo> extends CompositeSwt<V> {
   const ComboSwt({super.key, required super.value});
@@ -45,7 +44,6 @@ class ComboSwt<V extends VCombo> extends CompositeSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VCombo extends VComposite {
   VCombo() : this.empty();
   VCombo.empty() {
@@ -69,24 +67,67 @@ class VCombo extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'caretPosition':
-        caretPosition = (json['caretPosition'] as num?)?.toInt();
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
-      case 'listVisible':
-        listVisible = json['listVisible'] as bool?;
-      case 'text':
-        text = json['text'] as String?;
+      case 1410: // caretPosition
+        caretPosition = r.int32();
+        return true;
+      case 287: // items
+        items = r.strings()?.map((e) => e ?? '').toList();
+        return true;
+      case 288: // listVisible
+        listVisible = r.boolean();
+        return true;
+      case 289: // text
+        text = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VCombo.fromJson(Map<String, dynamic> json) =>
-      _$VComboFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VComboToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = caretPosition;
+      if (v_ != null && w.wants(1410)) {
+        w.key(1410);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = items;
+      if (v_ != null && w.wants(287)) {
+        w.key(287);
+        w.strings(v_);
+      }
+    }
+    {
+      final v_ = listVisible;
+      if (v_ != null && w.wants(288)) {
+        w.key(288);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(289)) {
+        w.key(289);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(1410, caretPosition);
+    visit(287, items);
+    visit(288, listVisible);
+    visit(289, text);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

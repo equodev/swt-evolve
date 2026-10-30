@@ -17,7 +17,6 @@
 ///  * where the mirror goes: the builder only builds it, inside the region's [Focus].
 library;
 
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -118,8 +117,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     widget.send(SwingIslandRegion.ask);
   }
 
-  void _onIsland(Object? raw) {
-    final decoded = raw is String ? jsonDecode(raw) : raw;
+  void _onIsland(Object? decoded) {
     if (decoded is! Map) return;
     final windowId = (decoded['windowId'] as num?)?.toInt();
     final port = (decoded['port'] as num?)?.toInt();

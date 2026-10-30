@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -10,11 +10,10 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/scale_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'scale.g.dart';
 
 class ScaleSwt<V extends VScale> extends ControlSwt<V> {
   const ScaleSwt({super.key, required super.value});
@@ -31,7 +30,6 @@ class ScaleSwt<V extends VScale> extends ControlSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VScale extends VControl {
   VScale() : this.empty();
   VScale.empty() {
@@ -53,20 +51,53 @@ class VScale extends VControl {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'maximum':
-        maximum = (json['maximum'] as num?)?.toInt();
-      case 'minimum':
-        minimum = (json['minimum'] as num?)?.toInt();
-      case 'selection':
-        selection = (json['selection'] as num?)?.toInt();
+      case 442: // maximum
+        maximum = r.int32();
+        return true;
+      case 443: // minimum
+        minimum = r.int32();
+        return true;
+      case 444: // selection
+        selection = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VScale.fromJson(Map<String, dynamic> json) =>
-      _$VScaleFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VScaleToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = maximum;
+      if (v_ != null && w.wants(442)) {
+        w.key(442);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = minimum;
+      if (v_ != null && w.wants(443)) {
+        w.key(443);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null && w.wants(444)) {
+        w.key(444);
+        w.int32(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(442, maximum);
+    visit(443, minimum);
+    visit(444, selection);
+  }
 }

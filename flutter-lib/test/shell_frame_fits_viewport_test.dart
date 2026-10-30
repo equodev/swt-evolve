@@ -4,9 +4,6 @@
 // then lays the dialog out in the room there is: a button bar laid out at the bottom of a body
 // taller than the frame is behind the frame's edge, and nothing scrolls it into view.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -22,6 +19,8 @@ import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/display_theme_extension.dart';
 
+import 'delivery/support/deliver.dart';
+
 const _viewport = Size(1200, 900);
 const _dialogId = 2002;
 
@@ -36,8 +35,11 @@ VShell _shell({
   required String text,
   required VRectangle bounds,
   required int style,
+  int seq = 1,
 }) => VShell()
+  ..swt = 'Shell'
   ..id = id
+  ..seq = seq
   ..style = style
   ..text = text
   ..bounds = bounds
@@ -56,30 +58,18 @@ VShell _main() => _shell(
   style: SWT.SHELL_TRIM,
 );
 
-VShell _dialog(int height) => _shell(
+VShell _dialog(int height, {int seq = 1}) => _shell(
   id: _dialogId,
+  seq: seq,
   text: 'Preferences',
   bounds: _rect(300, 0, 600, height),
   style: SWT.DIALOG_TRIM,
 );
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON
-/// body), so the Shell receives the update the way Java pushes one.
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
-
 List<Map<String, dynamic>> _reports() => EquoCommService.commForTesting.sentFrames
-    .map(EquoCommBase.decodeFrame)
-    .where((f) => f.$1 == 'Shell/$_dialogId/Shell/SetBounds')
-    .map((f) => jsonDecode(f.$2) as Map<String, dynamic>)
+    .where((f) => EquoCommBase.decodeFrame(f).$1 == 'Shell/$_dialogId/Shell/SetBounds')
+    .map(EquoCommBase.decodeEvent)
+    .map((e) => <String, dynamic>{'x': e.x, 'y': e.y, 'width': e.width, 'height': e.height})
     .toList();
 
 void main() {
@@ -157,7 +147,7 @@ void main() {
 
     // JFace growing the dialog to a page's preferred size, up to the monitor's client area, which
     // on this surface is the whole viewport.
-    _receiveJson('Shell/$_dialogId', _dialog(_viewport.height.toInt()).toJson());
+    await deliverWhole(_dialog(_viewport.height.toInt(), seq: 2));
     await tester.pumpAndSettle();
     await tester.pump();
 
@@ -172,7 +162,7 @@ void main() {
     await pumpDialog(tester, _dialog(500));
     final before = _reports().length;
 
-    _receiveJson('Shell/$_dialogId', _dialog(500).toJson());
+    await deliverWhole(_dialog(500, seq: 2));
     await tester.pumpAndSettle();
     await tester.pump();
 

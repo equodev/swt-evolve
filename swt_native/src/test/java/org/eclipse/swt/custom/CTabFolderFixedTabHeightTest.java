@@ -2,7 +2,6 @@ package org.eclipse.swt.custom;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.size.CTabFolderSizes;
 import org.eclipse.swt.SWT;
@@ -18,9 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -74,8 +72,8 @@ class CTabFolderFixedTabHeightTest {
         }
     }
 
-    private static String serialize(CTabFolder folder) throws IOException {
-        return new String(new Serializer().to(folder), StandardCharsets.UTF_8);
+    private static java.util.Map<String, Object> serialize(CTabFolder folder) throws IOException {
+        return dev.equo.swt.harness.WireFrames.describe(folder);
     }
 
     @Test
@@ -153,7 +151,7 @@ class CTabFolderFixedTabHeightTest {
         CTabFolder folder = folder(SWT.NONE);
         setTabHeight(folder, 8);
 
-        assertThatJson(serialize(folder)).isObject().containsEntry("tabHeight", 9);
+        assertThatWire(serialize(folder)).isObject().containsEntry("tabHeight", 9);
     }
 
     @Test
@@ -161,6 +159,6 @@ class CTabFolderFixedTabHeightTest {
         CTabFolder folder = folder(SWT.NONE);
         setTabHeight(folder, 0);
 
-        assertThatJson(serialize(folder)).isObject().containsEntry("tabHeight", 0);
+        assertThatWire(serialize(folder)).isObject().containsEntry("tabHeight", 0);
     }
 }

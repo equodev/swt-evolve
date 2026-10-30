@@ -55,7 +55,7 @@ class FontMeasureBridge extends FlutterHarness implements BeforeAllCallback, Aft
         bootRenderer(id(this), widgetName(this));
         onPayload(this, "fontSizeResponse", p -> {
             try {
-                double[] arr = serializer.from(double[].class, p);
+                double[] arr = dev.equo.swt.harness.Trees.read(double[].class, p);
                 CompletableFuture<double[]> awaiting = pendingResults.poll();
                 if (awaiting != null) awaiting.complete(arr);
             } catch (Exception e) {

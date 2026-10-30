@@ -2029,43 +2029,64 @@ public class DartCCombo extends DartComposite implements ICCombo {
                 CComboHelper.listShownByFlutter(this, e.detail != 0);
             });
         });
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Selection/DefaultSelection", "Selection/Selection", "Verify/Verify");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        setText(e.text);
+                    });
                     return;
-                setText(e.text);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (!isActive())
-                    return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                // Update internal state before notifying listeners
-                if (isDisposed())
-                    return;
-                if (e.text != null) {
-                    int index = indexOf(e.text);
-                    text.setText(e.text);
-                    if (index >= 0)
-                        selectionIndex = index;
                 }
-                sendEvent(SWT.Selection, e);
-            });
-        });
-        FlutterBridge.on(this, "Verify", "Verify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
                     return;
-                sendEvent(SWT.Verify, e);
-            });
-        });
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        // Update internal state before notifying listeners
+                        if (isDisposed())
+                            return;
+                        if (e.text != null) {
+                            int index = indexOf(e.text);
+                            text.setText(e.text);
+                            if (index >= 0)
+                                selectionIndex = index;
+                        }
+                        sendEvent(SWT.Selection, e);
+                    });
+                    return;
+                }
+            case "Verify/Verify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Verify, e);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public CCombo getApi() {

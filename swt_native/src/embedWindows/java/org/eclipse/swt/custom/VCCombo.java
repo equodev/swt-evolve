@@ -6,12 +6,8 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VCCombo extends VComposite {
 
     protected VCCombo() {
@@ -29,7 +25,6 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).alignment = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getEditable() {
         return ((DartCCombo) impl).getEditable();
     }
@@ -82,7 +77,6 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).selection = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartCCombo) impl).getText();
     }
@@ -99,7 +93,6 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).textLimit = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getVisibleItemCount() {
         return ((DartCCombo) impl).getVisibleItemCount();
     }
@@ -108,70 +101,163 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).visibleItemCount = value;
     }
 
-    public static final String ALIGNMENT = "alignment";
+    public static final int ALIGNMENT = 501;
 
-    public static final String ITEM_TOOLTIPS = "itemTooltips";
+    public static final int ITEM_TOOLTIPS = 502;
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 503;
 
-    public static final String LIST_VISIBLE = "listVisible";
+    public static final int LIST_VISIBLE = 504;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 505;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 506;
 
-    public static final String TEXT_LIMIT = "textLimit";
+    public static final int TEXT_LIMIT = 507;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "alignment":
-                Serializer.writeKeyValue(writer, "alignment", getAlignment());
-                return;
-            case "itemTooltips":
-                Serializer.writeKeyValue(writer, "itemTooltips", getItemTooltips());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "listVisible":
-                Serializer.writeKeyValue(writer, "listVisible", getListVisible());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
-            case "textLimit":
-                Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
-                return;
+            case ALIGNMENT:
+                return "alignment";
+            case ITEM_TOOLTIPS:
+                return "itemTooltips";
+            case ITEMS:
+                return "items";
+            case LIST_VISIBLE:
+                return "listVisible";
+            case SELECTION:
+                return "selection";
+            case TEXT:
+                return "text";
+            case TEXT_LIMIT:
+                return "textLimit";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = CCombo.class)
-    public static class CComboJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCCombo.class, (JsonWriter.WriteObject<DartCCombo>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCCombo.class, (JsonReader.ReadObject<DartCCombo>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 501:
+                w.write((int) getAlignment());
+                return true;
+            case 502:
+                w.write(getItemTooltips());
+                return true;
+            case 503:
+                w.write(getItems());
+                return true;
+            case 504:
+                w.write(getListVisible());
+                return true;
+            case 505:
+                w.write(getSelection());
+                return true;
+            case 506:
+                w.write(getText());
+                return true;
+            case 507:
+                w.write((int) getTextLimit());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static CCombo read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 501:
+                {
+                    int v_ = getAlignment();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(501);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 502:
+                {
+                    String[] v_ = getItemTooltips();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(502);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 503:
+                {
+                    String[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(503);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 504:
+                {
+                    boolean v_ = getListVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(504);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 505:
+                {
+                    Point v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(505);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 506:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(506);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 507:
+                {
+                    int v_ = getTextLimit();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(507);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, CCombo api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 501, 502, 503, 504, 505, 506, 507 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

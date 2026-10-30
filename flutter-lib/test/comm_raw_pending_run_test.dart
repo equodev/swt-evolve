@@ -3,10 +3,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 /// Raw-bytes frames that arrive before `onBytes` registers are held as an ordered run per channel,
-/// like JSON frames: a protocol's opening message is routinely followed by another before the
-/// listener is up, and keeping only the newest one loses the opening message.
+/// like tagged-values frames: a protocol's opening message is routinely followed by another before
+/// the listener is up, and keeping only the newest one loses the opening message.
 class _TestComm extends EquoCommBase {
   _TestComm() {
     markOpen();
@@ -30,7 +31,7 @@ class _TestComm extends EquoCommBase {
 Future<void> _drainMicrotasks() => Future<void>.delayed(Duration.zero);
 
 void main() {
-  // Bodies are not valid JSON, so they can only be claimed by onBytes.
+  // Bodies are not tagged values, so they can only be claimed by onBytes.
   const first = [0xFF, 0x01];
   const second = [0xFF, 0x02];
 
@@ -89,20 +90,20 @@ void main() {
     expect(received, isEmpty);
   });
 
-  test('a JSON listener claims the held frames from the raw run too', () async {
+  test('a listener of decoded values claims the held frames from the raw run too', () async {
     final comm = _TestComm();
-    // Valid JSON bodies are held both ways until a listener of either kind claims the channel.
-    comm.receiveRaw('json.channel', '{"a":1}'.codeUnits);
-    comm.receiveRaw('json.channel', '{"a":2}'.codeUnits);
+    // Tagged values are held both ways until a listener of either kind claims the channel.
+    comm.receiveRaw('tagged.channel', TaggedValues.encode({'a': 1}));
+    comm.receiveRaw('tagged.channel', TaggedValues.encode({'a': 2}));
     await _drainMicrotasks();
 
-    final json = <dynamic>[];
-    comm.on('json.channel', json.add);
+    final decoded = <dynamic>[];
+    comm.on('tagged.channel', decoded.add);
     final raw = <List<int>>[];
-    comm.onBytes('json.channel', (bytes) => raw.add(bytes.toList()));
+    comm.onBytes('tagged.channel', (bytes) => raw.add(bytes.toList()));
     await _drainMicrotasks();
 
-    expect(json, [
+    expect(decoded, [
       {'a': 1},
       {'a': 2}
     ]);

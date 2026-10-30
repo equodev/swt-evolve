@@ -9,20 +9,22 @@ import 'dart:ui' show Offset, PathFillType, Rect;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/path.dart';
 import 'package:swtflutter/src/gen/pathdata.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   var nextId = 134101;
 
-  void deliver(String actionId, Map<String, dynamic> json) {
+  void deliver(String actionId, Map<String, dynamic> payload) {
     final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
+    final body = TaggedValues.encode(payload);
     final out = Uint8List(2 + action.length + body.length);
     out[0] = (action.length >> 8) & 0xFF;
     out[1] = action.length & 0xFF;
@@ -143,11 +145,15 @@ void main() {
     expect(await committed(drawer, id), isEmpty);
   });
 
-  test('the types array survives the base64 encoding dsl-json gives a Java byte[]', () {
-    final decoded = VPathData.fromJson({
-      'types': base64Encode([SWT.PATH_MOVE_TO, SWT.PATH_LINE_TO, SWT.PATH_CLOSE]),
-      'points': [1.0, 2.0, 3.0, 4.0],
-    });
+  test('the types array survives the wire as the bytes Java writes a byte[] as', () {
+    final written = Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
+      (VPathData()
+            ..types = [SWT.PATH_MOVE_TO, SWT.PATH_LINE_TO, SWT.PATH_CLOSE]
+            ..points = [1.0, 2.0, 3.0, 4.0])
+          .writeWire(w);
+      w.u8(0);
+    }));
+    final decoded = WidgetWireReader(written).fields(VPathData());
     expect(decoded.types, [SWT.PATH_MOVE_TO, SWT.PATH_LINE_TO, SWT.PATH_CLOSE]);
     expect(decoded.points, [1.0, 2.0, 3.0, 4.0]);
   });

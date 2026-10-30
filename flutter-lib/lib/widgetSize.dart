@@ -1,9 +1,9 @@
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/swt.dart';
@@ -15,6 +15,8 @@ import 'package:swtflutter/src/theme/theme.dart';
 
 import 'main.dart';
 import 'src/comm/comm.dart';
+import 'src/comm/v_registry.dart';
+import 'src/comm/widget_wire.dart' show widgetWireChannel;
 
 const SCREENSHOT = false;
 
@@ -149,19 +151,20 @@ void printSizes(RenderBox renderBox) {
 
 void measureRequest(String bridge, int id) {
   print("Listen on $bridge/$id/widgetSizeRequest");
+  // The widget to measure arrives as the app's widgets do, as records of the binary wire.
+  EquoCommService.onBytes(widgetWireChannel, VRegistry.instance.applyWire);
   EquoCommService.onRaw("$bridge/$id/widgetSizeRequest", (payload) {
-    print("on $bridge/$id/sizeRequest $payload");
     final Map<String, dynamic> widgetConfig = payload as Map<String, dynamic>;
 
+    // The flags as the widget wire writes an object's fields.
     if (widgetConfig.containsKey("config")) {
-      final config = ConfigFlags.fromJson(widgetConfig["config"]);
-      setConfigFlags(config);
+      setConfigFlags(ConfigFlags.read(widgetConfig["config"] as Uint8List));
     }
 
     final key = GlobalKey();
-    var widgetValue = widgetConfig["widget"];
-    final widget = mapWidget(widgetValue);
-    final widgetName = widgetValue["swt"];
+    final widgetValue = VRegistry.instance.valueOn(widgetConfig["widget"] as String)!;
+    final widget = mapWidgetFromValue(widgetValue);
+    final widgetName = widgetValue.swt;
     final caseName = widgetConfig["name"] as String;
     final unbounded = widgetConfig["unbounded"] == true;
     final testApp = _TestApp(

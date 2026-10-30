@@ -3,12 +3,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VToolBar extends VComposite {
 
     protected VToolBar() {
@@ -32,40 +28,63 @@ public class VToolBar extends VComposite {
         ((DartToolBar) impl).items = value;
     }
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 522;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
+            case ITEMS:
+                return "items";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = ToolBar.class)
-    public static class ToolBarJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartToolBar.class, (JsonWriter.WriteObject<DartToolBar>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartToolBar.class, (JsonReader.ReadObject<DartToolBar>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 522:
+                w.refs(getItems());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static ToolBar read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 522:
+                {
+                    ToolItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(522);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, ToolBar api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 522 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.*;
@@ -22,11 +23,11 @@ import java.util.Map;
 
 /**
  * Records what one state change actually costs on the wire, per scenario: how many frames leave
- * Java, how many bytes they carry, and how many widget nodes are serialized inside them.
+ * Java, how many bytes they take on the wire, and how many widget nodes are serialized inside them.
  *
  * <p>All three are exact integers with no timing component, so they are a stable reference point
  * rather than a measurement: the same scenario on the same sources yields the same numbers on any
- * machine. Run it before changing the delivery mechanism and the result is the "before" column that
+ * machine, give or take the width of widget ids, which are {@code hashCode()}s. Run it before changing the delivery mechanism and the result is the "before" column that
  * cannot be reconstructed afterwards; run it after and the difference is the change, with no
  * benchmark noise in between.
  *
@@ -183,8 +184,7 @@ class DeliveryCensusTest {
     @DisplayName("7 - one property on a property-rich leaf, per widget type")
     void leafPropertyByWidgetType() {
         System.out.println("--- one setToolTipText() on an established leaf, by widget type ---");
-        System.out.printf("%-14s %-10s %-8s %-12s %-10s%n",
-                "widget", "full", "props", "diff (est)", "saving");
+        System.out.printf("%-14s %-10s %-8s%n", "widget", "bytes", "props");
         for (String type : PROPERTY_RICH_LEAVES) {
             measureSingleProperty(type);
         }
@@ -216,27 +216,16 @@ class DeliveryCensusTest {
             System.out.printf("%-14s (no frame - setToolTipText does not mark this widget dirty)%n", type);
             return;
         }
-        String payload = normalize(frames.get(0).json);
-        int full = payload.getBytes(StandardCharsets.UTF_8).length;
-        int props = topLevelPropertyCount(frames.get(0).json);
+        int bytes = frames.get(0).size;
+        int props = topLevelPropertyCount(frames.get(0));
 
-        // What the same update would cost keyed by name: identity, the changed-key list, and the
-        // one property. Constructed rather than guessed, so the ratio below is arithmetic on real
-        // payloads instead of an estimate.
-        String asDiff = "{\"id\":0000000000,\"swt\":\"" + type + "\",\"_s\":0000000000,"
-                + "\"_d\":[\"toolTipText\"],\"toolTipText\":\"tip\"}";
-        int diff = asDiff.getBytes(StandardCharsets.UTF_8).length;
-
-        System.out.printf("%-14s %-10d %-8d %-12d %.0f%%%n",
-                type, full, props, diff, 100.0 * (full - diff) / full);
+        System.out.printf("%-14s %-10d %-8d%n", type, bytes, props);
 
         Map<String, Object> entry = new LinkedHashMap<>();
         entry.put("frames", 1);
-        entry.put("bytes", full);
-        entry.put("raw_bytes", frames.get(0).json.getBytes(StandardCharsets.UTF_8).length);
-        entry.put("widget_nodes_serialized", countNodes(frames.get(0).json));
+        entry.put("bytes", bytes);
+        entry.put("widget_nodes_serialized", countNodes(frames.get(0)));
         entry.put("top_level_properties", props);
-        entry.put("projected_diff_bytes", diff);
         census.put("leaf_property_" + type, entry);
     }
 
@@ -265,22 +254,8 @@ class DeliveryCensusTest {
     }
 
     /** Keys of the payload's own object, not counting nested ones - the width of this widget. */
-    private static int topLevelPropertyCount(String json) {
-        int depth = 0;
-        int count = 0;
-        boolean inString = false;
-        boolean escaped = false;
-        for (int i = 0; i < json.length(); i++) {
-            char c = json.charAt(i);
-            if (escaped) { escaped = false; continue; }
-            if (c == '\\') { escaped = true; continue; }
-            if (c == '"') { inString = !inString; continue; }
-            if (inString) continue;
-            if (c == '{' || c == '[') depth++;
-            else if (c == '}' || c == ']') depth--;
-            else if (c == ':' && depth == 1) count++;
-        }
-        return count;
+    private static int topLevelPropertyCount(RecordingComm.Frame frame) {
+        return frame.state().size();
     }
 
     // ---------------- harness ----------------
@@ -307,13 +282,10 @@ class DeliveryCensusTest {
         // Actually deliver the tree once. A widget that has never been written out has nothing on
         // the far side for a later update to be relative to, so it would be sent whole however it
         // was flushed - and the measurement would compare a first delivery against a first
-        // delivery. Writing the root walks its children, so the whole subtree counts as delivered.
-        try {
-            new dev.equo.swt.Serializer().to(root);
-            dev.equo.swt.Serializer.markDelivered();
-        } catch (java.io.IOException e) {
-            throw new AssertionError("could not establish the delivered state for " + root, e);
-        }
+        // delivery. Describing the root owes the client every child it lacks, so the whole subtree
+        // is described and counts as delivered.
+        dev.equo.swt.harness.WireFrames.frame((org.eclipse.swt.widgets.DartWidget) root.getImpl(),
+                bridge.comm.connectionId());
         bridge.comm.sent.clear();
     }
 
@@ -334,19 +306,16 @@ class DeliveryCensusTest {
 
     private static void record(String scenario, List<RecordingComm.Frame> frames) {
         int bytes = 0;
-        int rawBytes = 0;
         int nodes = 0;
         List<String> channels = new ArrayList<>();
         for (RecordingComm.Frame frame : frames) {
-            rawBytes += frame.json.getBytes(StandardCharsets.UTF_8).length;
-            bytes += normalize(frame.json).getBytes(StandardCharsets.UTF_8).length;
-            nodes += countNodes(frame.json);
+            bytes += frame.size;
+            nodes += countNodes(frame);
             channels.add(frame.event);
         }
         Map<String, Object> entry = new LinkedHashMap<>();
         entry.put("frames", frames.size());
         entry.put("bytes", bytes);
-        entry.put("raw_bytes", rawBytes);
         entry.put("widget_nodes_serialized", nodes);
         entry.put("channels", channels);
         census.put(scenario, entry);
@@ -354,32 +323,19 @@ class DeliveryCensusTest {
         System.out.printf("%-30s frames=%-4d bytes=%-8d nodes=%-5d%n",
                 scenario, frames.size(), bytes, nodes);
         if (!frames.isEmpty()) {
-            String sample = frames.get(0).json;
+            String sample = String.valueOf(frames.get(0).value);
             System.out.println("    first frame on " + frames.get(0).event + ": "
                     + sample.substring(0, Math.min(300, sample.length())));
         }
     }
 
     /**
-     * Pads the payload's fixture noise to a fixed width so a byte count measures the delivery
-     * mechanism rather than this run's accidents. Three sources vary run to run without anything
-     * changing: widget ids are {@code hashCode()}s, the write stamp grows over a run, and the mocked
-     * colors are random in 1..255 - each of them 1 to 10 digits wide. Without this the same scenario
-     * reports a different size on every run and no size can ever be asserted.
-     */
-    private static String normalize(String json) {
-        return json.replaceAll("\"(id|seq|red|green|blue|alpha)\":\\d+", "\"$1\":0000000000");
-    }
-
-    /**
-     * Widget nodes inside a payload, counted by the {@code "swt"} type key every serialized widget
+     * Widget nodes inside a payload, counted by the {@code swt} type key every serialized widget
      * carries. A nested child costs one, so this separates "one small frame" from "one frame that
      * happens to contain the whole subtree" - which frame and byte counts alone cannot.
      */
-    private static int countNodes(String json) {
-        int count = 0;
-        for (int i = json.indexOf("\"swt\":"); i >= 0; i = json.indexOf("\"swt\":", i + 1)) count++;
-        return count;
+    private static int countNodes(RecordingComm.Frame frame) {
+        return WireValues.find(frame.value, m -> m.containsKey("swt")).size();
     }
 
     private static void report() throws IOException {
@@ -393,7 +349,6 @@ class DeliveryCensusTest {
             json.append("    \"").append(scenario.getKey()).append("\": {")
                     .append("\"frames\": ").append(values.get("frames"))
                     .append(", \"bytes\": ").append(values.get("bytes"))
-                    .append(", \"raw_bytes\": ").append(values.get("raw_bytes"))
                     .append(", \"widget_nodes_serialized\": ").append(values.get("widget_nodes_serialized"))
                     .append("}").append(--remaining > 0 ? "," : "").append("\n");
         }

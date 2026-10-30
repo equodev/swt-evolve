@@ -1,12 +1,8 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VTaskBar extends VWidget {
 
     protected VTaskBar() {
@@ -16,7 +12,6 @@ public class VTaskBar extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public TaskItem[] getItems() {
         TaskItem[] values = ((DartTaskBar) impl).items;
         if (values == null)
@@ -32,34 +27,44 @@ public class VTaskBar extends VWidget {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = TaskBar.class)
-    public static class TaskBarJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTaskBar.class, (JsonWriter.WriteObject<DartTaskBar>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTaskBar.class, (JsonReader.ReadObject<DartTaskBar>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TaskBar read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TaskBar api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/cursor.dart';
 import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/gen/imagedata.dart';
@@ -41,7 +42,11 @@ void main() {
 
   test('a system cursor arrives without a hotspot', () {
     // Java leaves default values out of a nested cursor.
-    final cursor = VCursor.fromJson({'cursorStyle': 21});
+    final written = Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
+      (VCursor()..cursorStyle = 21).writeWire(w);
+      w.u8(0);
+    }));
+    final cursor = WidgetWireReader(written).fields(VCursor());
     expect([cursor.cursorStyle, cursor.hotspotX, cursor.image], [21, null, null]);
   });
 

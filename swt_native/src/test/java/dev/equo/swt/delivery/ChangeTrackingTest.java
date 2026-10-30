@@ -3,6 +3,7 @@ package dev.equo.swt.delivery;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartLabel;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,9 +64,9 @@ class ChangeTrackingTest {
         Label label = newLabel();
         VLabel value = value(label);
 
-        value.markDirty("text");
+        value.markDirty(VLabel.TEXT);
 
-        assertThat(value.changedKeys()).containsExactly("text");
+        assertThat(value.changedNames()).containsExactly("text");
         assertThat(value.anyDirty()).isTrue();
 
         FlutterBridge.update();
@@ -78,11 +81,11 @@ class ChangeTrackingTest {
     void recordsEveryChange() {
         VLabel value = value(newLabel());
 
-        value.markDirty("text");
-        value.markDirty("toolTipText");
-        value.markDirty("text");
+        value.markDirty(VLabel.TEXT);
+        value.markDirty(VLabel.TOOL_TIP_TEXT);
+        value.markDirty(VLabel.TEXT);
 
-        assertThat(value.changedKeys())
+        assertThat(value.changedNames())
                 .as("a property changed twice between sends is still one property to send")
                 .containsExactly("text", "toolTipText");
     }
@@ -91,11 +94,11 @@ class ChangeTrackingTest {
     @DisplayName("clearing leaves nothing behind")
     void clearingEmptiesTheRecord() {
         VLabel value = value(newLabel());
-        value.markDirty("text");
+        value.markDirty(VLabel.TEXT);
 
         value.clearDirty();
 
-        assertThat(value.changedKeys()).isEmpty();
+        assertThat(value.changedNames()).isEmpty();
         assertThat(value.anyDirty()).isFalse();
     }
 
@@ -104,17 +107,16 @@ class ChangeTrackingTest {
     void recordIsNotSerialized() {
         Label label = newLabel();
         label.setText("visible");
-        value(label).markDirty("text");
+        value(label).markDirty(VLabel.TEXT);
         FlutterBridge.update();
 
         assertThat(bridge.comm.sent).isNotEmpty();
-        String json = bridge.comm.sent.get(bridge.comm.sent.size() - 1).json;
-        assertThat(json)
+        Object sent = bridge.comm.sent.get(bridge.comm.sent.size() - 1).value;
+        assertThat(List.of("changed", "anyDirty"))
                 .as("this is bookkeeping about the wire, not content for it - and it is named like a "
                         + "property, so a codec that bound it would ship it to every client")
-                .doesNotContain("changed")
-                .doesNotContain("anyDirty");
-        assertThat(json).contains("\"text\":\"visible\"");
+                .noneMatch(text -> WireValues.containsText(sent, text));
+        assertThat(WireValues.find(sent, m -> "visible".equals(m.get("text")))).isNotEmpty();
     }
 
     private Label newLabel() {

@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'tabfolder_theme_extension.tailor.dart';
-part 'tabfolder_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
 class TabFolderThemeExtension extends ThemeExtension<TabFolderThemeExtension> with _$TabFolderThemeExtensionTailorMixin {
   // Tab bar colors
   final Color tabBarBackgroundColor;
@@ -80,10 +73,5 @@ class TabFolderThemeExtension extends ThemeExtension<TabFolderThemeExtension> wi
     required this.tabFocusRingColor,
     required this.tabFocusRingWidth,
   });
-
-  factory TabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$TabFolderThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$TabFolderThemeExtensionToJson(this);
 }
 

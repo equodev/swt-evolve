@@ -7,20 +7,18 @@
 // That race is the Eclipse Preferences composition: the click also moves focus, focus dirties the
 // surrounding ScrolledComposite, and its payload is serialized before Java's Selection handler runs.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/button.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/button_evolve.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int _boxId = 77;
 
@@ -44,23 +42,6 @@ VComposite _parent(int seq, List<VControl> children) => VComposite()
   ..seq = seq
   ..style = SWT.NONE
   ..children = children;
-
-/// What Java puts on the wire: the value's own JSON plus the write stamp, which the serializer
-/// emits separately (`seq` is out of `toJson` so it never affects value equality).
-Map<String, dynamic> _pushed({required int seq, required bool selection}) =>
-    {..._box(seq: seq, selection: selection).toJson(), '_s': seq};
-
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
 
 bool? _selection(WidgetTester tester) =>
     tester.state<ButtonImpl>(find.byType(ButtonSwt<VButton>)).state.selection;
@@ -90,9 +71,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(_selection(tester), isTrue, reason: 'sanity: the optimistic flip happened');
 
-    // Java answers on the box's own channel with the value Flutter already shows — same JSON,
-    // newer stamp.
-    _receive('Button/$_boxId', _pushed(seq: 30, selection: true));
+    // Java answers with the value Flutter already shows — the same box, a newer stamp.
+    await deliverWhole(_box(seq: 30, selection: true));
     await tester.pumpAndSettle();
 
     // The ancestor was serialized while the click was in flight, so its copy of the box is still

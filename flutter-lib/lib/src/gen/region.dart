@@ -1,9 +1,7 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'region.g.dart';
-
-@JsonSerializable()
-class VRegion {
+class VRegion implements WireReadable, WireWritable, WireVisitable {
   VRegion() : this.empty();
   VRegion.empty();
 
@@ -12,7 +10,12 @@ class VRegion {
   /// for are mostly hole.
   List<int>? rects;
 
-  factory VRegion.fromJson(Map<String, dynamic> json) =>
-      _$VRegionFromJson(json);
-  Map<String, dynamic> toJson() => _$VRegionToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

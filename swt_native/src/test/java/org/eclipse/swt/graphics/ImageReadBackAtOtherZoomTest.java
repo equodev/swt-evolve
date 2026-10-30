@@ -14,10 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -139,8 +136,6 @@ class ImageReadBackAtOtherZoomTest extends SerializeTestBase {
      */
     private static final class RenderingComm extends RecordingComm {
         static final RGB RENDERED = new RGB(0x33, 0x66, 0xCC);
-        private static final Pattern WIDTH = Pattern.compile("\"width\":(\\d+)");
-        private static final Pattern HEIGHT = Pattern.compile("\"height\":(\\d+)");
         private int[] lastDescribed;
 
         long renders() {
@@ -149,21 +144,22 @@ class ImageReadBackAtOtherZoomTest extends SerializeTestBase {
 
         @Override
         public void send(String eventName, byte[] payload) {
+            int before = sent.size();
             super.send(eventName, payload);
-            if (eventName.endsWith("/imageInit")) {
-                String text = new String(payload, StandardCharsets.UTF_8);
-                lastDescribed = new int[] {lastInt(WIDTH, text), lastInt(HEIGHT, text)};
-            } else if (eventName.equals("Image/requestPixels")) {
+            for (Frame frame : sent.subList(before, sent.size())) {
+                if (frame.event.endsWith("/imageInit")) {
+                    lastDescribed = new int[] {size(frame, "width"), size(frame, "height")};
+                }
+            }
+            if (eventName.equals("Image/requestPixels")) {
                 long ref = ByteBuffer.wrap(payload).getLong();
                 answer("Image/" + ref + "/pixelsResult", png(lastDescribed));
             }
         }
 
-        private static int lastInt(Pattern pattern, String text) {
-            Matcher m = pattern.matcher(text);
-            int value = -1;
-            while (m.find()) value = Integer.parseInt(m.group(1));
-            return value;
+        private static int size(Frame frame, String key) {
+            Object value = frame.state().get(key);
+            return value instanceof Number ? ((Number) value).intValue() : -1;
         }
 
         private static byte[] png(int[] size) {

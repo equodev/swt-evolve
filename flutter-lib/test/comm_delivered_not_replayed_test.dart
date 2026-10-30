@@ -3,6 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
+import 'support/batch.dart';
 
 /// A frame a handler took is not held for the next handler of the same channel.
 ///
@@ -19,9 +22,9 @@ class _TestComm extends EquoCommBase {
   @override
   void rawSend(Uint8List frame) {}
 
-  void receiveJson(String actionId, Object payload) {
+  void receivePayload(String actionId, Object payload) {
     final actionBytes = utf8.encode(actionId);
-    final body = utf8.encode(json.encode(payload));
+    final body = TaggedValues.encode(payload);
     final frame = Uint8List(2 + actionBytes.length + body.length);
     frame[0] = (actionBytes.length >> 8) & 0xFF;
     frame[1] = actionBytes.length & 0xFF;
@@ -42,7 +45,7 @@ void main() {
     comm.on(op, (payload) {
       first.add(payload);
     });
-    comm.receiveJson(op, {'y': 350, 'string': 'row'});
+    comm.receivePayload(op, {'y': 350, 'string': 'row'});
     await _drainMicrotasks();
 
     final second = <dynamic>[];
@@ -64,10 +67,10 @@ void main() {
     comm.on(op, (payload) {
       first.add(payload);
     });
-    comm.receiveJson(EquoCommBase.batchEvent, [
-      [op, {'y': 350, 'string': 'row'}],
-      [0, {'y': 112, 'string': 'row'}],
-    ]);
+    comm.receiveBinary(ChannelHeader.frame(EquoCommBase.batchEvent, batchBody([
+      (op, {'y': 350, 'string': 'row'}),
+      (op, {'y': 112, 'string': 'row'}),
+    ])));
     await _drainMicrotasks();
 
     final second = <dynamic>[];
@@ -82,7 +85,7 @@ void main() {
 
   test('a frame no handler took is still replayed when one registers', () async {
     final comm = _TestComm();
-    comm.receiveJson(op, {'y': 112, 'string': 'row'});
+    comm.receivePayload(op, {'y': 112, 'string': 'row'});
     await _drainMicrotasks();
 
     final received = <dynamic>[];

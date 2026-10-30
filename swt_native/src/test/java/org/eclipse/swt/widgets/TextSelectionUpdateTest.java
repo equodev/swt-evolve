@@ -4,6 +4,8 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -13,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,8 +31,6 @@ class TextSelectionUpdateTest {
 
     /** Delivery is recorded against a client, so a test that sends has to name one. */
     private static final int CLIENT = 1;
-
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -62,11 +62,11 @@ class TextSelectionUpdateTest {
 
         typeFromClient(impl, "fwneono");
 
-        String update = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
-        assertThat(update)
+        Map<String, Object> update = dev.equo.swt.harness.WireFrames.record(impl, CLIENT);
+        assertThat(WireValues.mentions(update, "selection"))
                 .as("the client holds the select-all and re-applies it; an update that does not "
                         + "name the selection leaves the whole field highlighted while typing")
-                .contains("\"selection\"");
+                .isTrue();
         assertThat(field.getSelection())
                 .as("one keystroke past a select-all leaves a caret, not a selection")
                 .isEqualTo(new org.eclipse.swt.graphics.Point(7, 7));
@@ -80,8 +80,8 @@ class TextSelectionUpdateTest {
 
         field.setSelection(2, 5);
 
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
-                .contains("\"selection\"");
+        assertThat(WireValues.mentions(dev.equo.swt.harness.WireFrames.record(impl, CLIENT), "selection"))
+                .isTrue();
     }
 
     @Test
@@ -127,16 +127,15 @@ class TextSelectionUpdateTest {
         Text field = openedDialogField();
         DartText impl = (DartText) field.getImpl();
         field.setSelection(2, 5);
-        serializer.toDiff(impl);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
 
         TextHelper.clientCaretMoved(impl, 0, 0);
         field.setSelection(2, 5);
 
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
+        assertThat(WireValues.mentions(WireFrames.record(impl, CLIENT), "selection"))
                 .as("the client's caret moved on from the range it was last sent; naming that range "
                         + "again is a change for it, not a repeat")
-                .contains("\"selection\"");
+                .isTrue();
     }
 
     @Test
@@ -147,9 +146,9 @@ class TextSelectionUpdateTest {
 
         field.setText("Hi");
 
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
+        assertThat(WireValues.mentions(dev.equo.swt.harness.WireFrames.record(impl, CLIENT), "selection"))
                 .as("the client holds the select-all of the old text and would apply it to the new one")
-                .contains("\"selection\"");
+                .isTrue();
     }
 
     @Test
@@ -172,7 +171,7 @@ class TextSelectionUpdateTest {
 
         field.setText("Hi");
 
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8)).doesNotContain("\"selection\"");
+        assertThat(WireValues.mentions(dev.equo.swt.harness.WireFrames.record(impl, CLIENT), "selection")).isFalse();
     }
 
     @Test
@@ -187,7 +186,7 @@ class TextSelectionUpdateTest {
 
         field.setText("Hi");
 
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8)).contains("\"selection\"");
+        assertThat(WireValues.mentions(dev.equo.swt.harness.WireFrames.record(impl, CLIENT), "selection")).isTrue();
         assertThat(field.getSelection()).isEqualTo(new org.eclipse.swt.graphics.Point(0, 0));
     }
 
@@ -220,11 +219,8 @@ class TextSelectionUpdateTest {
     }
 
     private void sendWhole(Text field) {
-        try {
-            serializer.to(field);
-            Serializer.markDelivered();
-        } catch (java.io.IOException e) {
-            throw new AssertionError(e);
-        }
+        DartText impl = (DartText) field.getImpl();
+        Serializer.forgetDelivery(impl.getValue());
+        dev.equo.swt.harness.WireFrames.record(impl, CLIENT);
     }
 }

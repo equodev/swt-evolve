@@ -674,6 +674,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
             return;
         minWidth = Math.max(0, width);
         minHeight = Math.max(0, height);
+        getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
         layout(false);
     }
 

@@ -8,19 +8,28 @@ import '../impl/utils/perf_marks.dart';
 
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
-import 'comm_api.dart' show CommCallback;
-import 'delivery_gate.dart' show kBase, kChangedKeys;
-import 'received_images.dart';
-
-/// Fused JSON→UTF-8 codec: encodes straight to bytes (and decodes from bytes)
-/// in one pass, no intermediate String. Shared by every transport.
-final _jsonBytes = json.fuse(utf8);
+import 'channel_header.dart';
+import 'tagged_values.dart';
+import 'comm_api.dart' show ChannelRouter;
+import 'gc_wire.dart';
+import 'widget_wire.dart' show widgetWireChannel, WireWritable, WidgetWireWriter, WidgetWireReader;
+import '../gen/event.dart';
 
 // FutureOr, not void: a handler that awaits (an image decode, a surface being created) has to be
 // awaitable, or the frame after it starts while it is still half-applied. See [_drainApplyQueue].
 typedef OnSuccessCallback<T> = FutureOr<void> Function(T response);
 typedef OnErrorCallback = void Function(SDKCommError error);
 typedef Payload = dynamic;
+
+/// Told what receiving each frame cost, while something measures it ([EquoCommBase.receiveTimer]).
+abstract class ReceiveTimer {
+  /// The clock the readings passed to [received] are taken on, in microseconds.
+  int now();
+
+  /// A frame of [length] bytes on [channel] started decoding at [startedAt], was decoded at
+  /// [decodedAt] and was handed to its handler by [appliedAt].
+  void received(String channel, int length, int startedAt, int decodedAt, int appliedAt);
+}
 
 void _logHandlerError(String actionId, Object error, StackTrace stack) {
   print('[comm] Handler error for "$actionId": $error\n$stack');
@@ -60,7 +69,7 @@ class UserEventCallback {
 /// Transport-agnostic binary comm protocol, shared by the desktop (`dart:io`) and
 /// web (`package:web`) transports. It owns everything that does not depend on the
 /// socket API:
-///   - the frame codec `[2-byte actionId length BE][actionId UTF-8][body]`
+///   - the frame codec: the channel as [ChannelHeader] writes it, then the body
 ///     (envelope-less, fire-and-forget — same wire format as the Java server),
 ///   - the handler / pending / raw-bytes maps and dispatch,
 ///   - a send-before-open queue (sends issued before the socket opens are buffered
@@ -73,18 +82,45 @@ class UserEventCallback {
 /// closes or fails, calls [receiveBinary] with the bytes of each incoming binary
 /// frame, and implements [rawSend] to put bytes on the wire.
 abstract class EquoCommBase {
+  /// What times received frames; null unless something is measuring them.
+  static ReceiveTimer? receiveTimer;
+
   final Map<String, UserEventCallback> _handlers = {};
-  final Map<String, List<dynamic>> _pending = {};
+  final Map<String, List<(int, dynamic)>> _pending = {};
 
   /// The channels a handler is registered on.
   @visibleForTesting
   Iterable<String> get handledChannels => _handlers.keys;
 
-  /// Channels whose held run overflowed and has had no whole frame since: the changes arriving
-  /// after it describe a state this side no longer has, so they are not kept.
-  final Set<String> _overflowed = {};
   final Map<String, FutureOr<void> Function(Uint8List)> _rawHandlers = {};
-  final Map<String, List<Uint8List>> _rawPending = {};
+
+  /// What waits for a GC's first message, by GC id: see [onFirstGcMessage].
+  final Map<int, void Function()> _gcWaiters = {};
+
+  /// Calls [arrived], once, when something arrives for the GC [id] that nothing is listening for
+  /// yet. What arrived is held as anything without a listener is, and replayed in order once the
+  /// GC registers.
+  void onFirstGcMessage(int id, void Function() arrived) => _gcWaiters[id] = arrived;
+
+  /// Undoes [onFirstGcMessage], unless [arrived] has been replaced by another wait for the same id.
+  void cancelFirstGcMessage(int id, void Function() arrived) {
+    if (identical(_gcWaiters[id], arrived)) _gcWaiters.remove(id);
+  }
+
+  void _heldOn(String actionId) {
+    if (_gcWaiters.isEmpty || !actionId.startsWith('GC/')) return;
+    final end = actionId.indexOf('/', 3);
+    final id = int.tryParse(end < 0 ? actionId.substring(3) : actionId.substring(3, end));
+    if (id != null) _gcWaiters.remove(id)?.call();
+  }
+
+  /// Routers by base channel, with the token [remove] checks: see [onRouted].
+  final Map<String, (ChannelRouter, Object)> _routers = {};
+  final Map<String, List<(int, Uint8List)>> _rawPending = {};
+
+  /// A GC's binary frames held for a drawer that does not exist yet. A run, as [_hold] keeps one:
+  /// each frame is a paint, and a later one may only add to what an earlier one drew.
+  final Map<String, List<(int, Uint8List)>> _gcPending = {};
   final Map<String, bool Function(Uint8List)> _arrivalHandlers = {};
   final List<Uint8List> _queue = [];
   bool _open = false;
@@ -97,6 +133,28 @@ abstract class EquoCommBase {
   /// the run is dropped rather than trimmed: half a run of partial frames is not applicable, and
   /// the far side answers a widget it cannot place by asking for it again.
   static const int maxPendingPerChannel = 64;
+
+  /// Cap on channels frames are held for, the oldest let go first: a widget that never mounts must
+  /// not keep what was sent to it for the life of the page.
+  static const int maxHeldChannels = 1024;
+
+  /// The run held for [actionId] in [held], made room for among [maxHeldChannels].
+  static List<T> _runIn<T>(Map<String, List<T>> held, String actionId) {
+    final run = held[actionId];
+    if (run != null) return run;
+    if (held.length >= maxHeldChannels) held.remove(held.keys.first);
+    return held[actionId] = [];
+  }
+
+  /// Lets go of what is held for [owner] (`Type/id`) and its channels: it is gone, and will never
+  /// listen for them.
+  void forgetHeld(String owner) {
+    bool owned(String channel) =>
+        channel.startsWith(owner) && (channel.length == owner.length || channel.codeUnitAt(owner.length) == 0x2F);
+    _pending.removeWhere((channel, _) => owned(channel));
+    _rawPending.removeWhere((channel, _) => owned(channel));
+    _gcPending.removeWhere((channel, _) => owned(channel));
+  }
 
   /// Cap on frames buffered while the socket is down. An outage lasts as long as the
   /// other end is away while the UI keeps producing frames, so an uncapped buffer grows
@@ -196,15 +254,7 @@ abstract class EquoCommBase {
     _queue.add(frame);
   }
 
-  Uint8List _frame(String actionId, Uint8List body) {
-    final actionBytes = utf8.encode(actionId);
-    final out = Uint8List(2 + actionBytes.length + body.length);
-    out[0] = (actionBytes.length >> 8) & 0xFF;
-    out[1] = actionBytes.length & 0xFF;
-    out.setRange(2, 2 + actionBytes.length, actionBytes);
-    if (body.isNotEmpty) out.setRange(2 + actionBytes.length, out.length, body);
-    return out;
-  }
+  Uint8List _frame(String actionId, Uint8List body) => ChannelHeader.frame(actionId, body);
 
   /// Frames this client has sent, recorded only while [recordSentFrames] is on.
   ///
@@ -224,14 +274,19 @@ abstract class EquoCommBase {
   @visibleForTesting
   void clearSentFrames() => _sent.clear();
 
-  /// Splits a frame from [sentFrames] into its channel and its JSON body.
+  /// Splits a frame from [sentFrames] into its channel and its body as text (a binary body reads
+  /// as garbage; see [decodeEvent]).
   @visibleForTesting
   static (String, String) decodeFrame(Uint8List frame) {
-    final nameLen = (frame[0] << 8) | frame[1];
-    return (
-      utf8.decode(frame.sublist(2, 2 + nameLen)),
-      utf8.decode(frame.sublist(2 + nameLen)),
-    );
+    final (channel, start) = ChannelHeader.read(frame)!;
+    return (channel, utf8.decode(frame.sublist(start), allowMalformed: true));
+  }
+
+  /// The event a frame from [sentFrames] carries.
+  @visibleForTesting
+  static VEvent decodeEvent(Uint8List frame) {
+    final (_, start) = ChannelHeader.read(frame)!;
+    return WidgetWireReader(Uint8List.sublistView(frame, start)).fields(VEvent());
   }
 
   /// Subclasses call this with the raw bytes of each received binary frame.
@@ -241,17 +296,13 @@ abstract class EquoCommBase {
 
   void receiveBinary(Uint8List data) {
     lastReceivedMicros = clock.elapsedMicroseconds;
-    if (data.length < 2) return;
-    final nameLen = (data[0] << 8) | data[1];
-    if (data.length < 2 + nameLen) return;
-    // No-copy frame split: utf8.decoder.convert takes start/end (vs sublist which copies), and
-    // sublistView is a view onto `data` (vs sublist which copies the body). Each incoming WS
-    // message is a fresh buffer, so a retained view stays valid — matters most on the raw-bytes/
-    // image path where the body can be hundreds of KB. The JSON path consumes the body
-    // synchronously below; onBytes consumers must not assume the view's buffer starts at offset 0.
-    final actionId = utf8.decoder.convert(data, 2, 2 + nameLen);
-    final bodyLen = data.length - 2 - nameLen;
-    final body = bodyLen > 0 ? Uint8List.sublistView(data, 2 + nameLen) : null;
+    final header = ChannelHeader.read(data);
+    if (header == null) return;
+    // The body is a view onto `data`, not a copy: each incoming message is a fresh buffer, so a
+    // retained view stays valid, which matters most on the raw-bytes and image paths where the body
+    // can be hundreds of KB. onBytes consumers must not assume the view's buffer starts at offset 0.
+    final (actionId, start) = header;
+    final body = data.length > start ? Uint8List.sublistView(data, start) : null;
 
     // A channel that can answer from already-applied state skips the queue entirely; returning
     // false means it could not, and the frame takes its turn like any other.
@@ -261,38 +312,95 @@ abstract class EquoCommBase {
     // Which handler a frame belongs to is resolved at apply time, never at arrival: a frame
     // routinely registers the handler the next frame needs (GC/create builds the drawer that owns
     // the ops behind it).
-    _enqueueApply(actionId, () => _applyFrame(actionId, body));
+    _enqueueApply(actionId, () => _applyFrame(actionId, body), ++_arrived);
   }
 
   FutureOr<void> _applyFrame(String actionId, Uint8List? body) {
-    // Raw-bytes handlers skip JSON decode entirely.
+    // A raw-bytes handler gets the body as it came.
     final rawHandler = _rawHandlers[actionId];
-    if (rawHandler != null) return rawHandler(body ?? Uint8List(0));
+    if (rawHandler != null) {
+      // A binary frame of changes decodes as it applies, so its whole cost counts as applying.
+      final timer = receiveTimer;
+      if (timer != null && body != null && actionId == widgetWireChannel) {
+        final startedAt = timer.now();
+        final applied = rawHandler(body);
+        timer.received(actionId, body.length, startedAt, startedAt, timer.now());
+        return applied;
+      }
+      return rawHandler(body ?? Uint8List(0));
+    }
+    if (isGcFrame(actionId)) {
+      final frame = body ?? Uint8List(0);
+      final handler = _handlers[actionId];
+      if (handler != null) {
+        return handler.onSuccess(frame);
+      }
+      _holdGcFrame(actionId, frame);
+      return null;
+    }
 
+    final timer = body != null ? receiveTimer : null;
+    final startedAt = timer != null ? timer.now() : 0;
+    if (actionId == batchEvent && body != null) return _applyBinaryBatch(body);
+    // Tagged values decode to the maps, lists and scalars they hold; any other body is bytes, for a
+    // handler that reads them as such.
     dynamic payload;
-    var jsonOk = true;
-    if (body != null) {
-      try {
-        payload = _jsonBytes.decode(body);
-      } catch (e) {
-        jsonOk = false;
+    var decoded = true;
+    if (body != null && body.isNotEmpty) {
+      if (TaggedValues.isTagged(body)) {
+        payload = TaggedValues.decode(body);
+      } else {
+        decoded = false;
       }
     }
-
-    // A run of frames fused into one: each entry is delivered on its own channel, in order.
-    if (jsonOk && actionId == batchEvent && payload is List) {
-      return _applyBatch(payload);
+    if (timer != null && decoded) {
+      final decodedAt = timer.now();
+      final applied = _applyDecoded(actionId, payload, body);
+      timer.received(actionId, body!.length, startedAt, decodedAt, timer.now());
+      return applied;
     }
+    return _applyDecoded(actionId, payload, body, decoded: decoded);
+  }
 
-    if (jsonOk) {
+  /// A run of frames sent as one (Java's `MessageBatch`): per entry, its channel as a header names
+  /// it, its payload's length and its payload, each applied in turn as if it had come on its own.
+  Future<void> _applyBinaryBatch(Uint8List body) async {
+    var pos = 0;
+    while (pos < body.length) {
+      final header = ChannelHeader.readAt(body, pos);
+      if (header == null) return;
+      final (channel, lengthAt) = header;
+      var at = lengthAt;
+      var length = 0;
+      var scale = 1;
+      while (true) {
+        final x = body[at++];
+        length += (x & 0x7F) * scale;
+        if (x < 0x80) break;
+        scale *= 128;
+      }
+      final payload = length == 0 ? null : Uint8List.sublistView(body, at, at + length);
+      pos = at + length;
+      // An entry that fails is that entry's failure alone: the rest of the run applies, as it would
+      // have arriving in frames of its own.
+      try {
+        final applied = _applyFrame(channel, payload);
+        if (applied is Future) await applied;
+      } catch (e, st) {
+        _logHandlerError(channel, e, st);
+      }
+    }
+  }
+
+  FutureOr<void> _applyDecoded(String actionId, dynamic payload, Uint8List? body, {bool decoded = true}) {
+    if (decoded) {
       final delivered = _deliverDecoded(actionId, payload);
       if (!identical(delivered, _noHandler)) return delivered;
     }
 
-    // Neither on() nor onBytes() has registered yet for this actionId (or the body isn't valid
-    // JSON, meaning it's a raw-bytes payload). Buffer both ways so whichever registers first
-    // can claim it.
-    if (jsonOk) _hold(actionId, payload);
+    // Neither on() nor onBytes() has registered yet for this actionId (or the body is bytes rather
+    // than tagged values). Buffer both ways so whichever registers first can claim it.
+    if (decoded) _hold(actionId, payload);
     _holdRaw(actionId, body ?? Uint8List(0));
     return null;
   }
@@ -301,96 +409,46 @@ abstract class EquoCommBase {
   /// opening message is routinely followed by another before its listener is up, and a slot would
   /// keep only the later one.
   void _holdRaw(String actionId, Uint8List body) {
-    final run = _rawPending.putIfAbsent(actionId, () => []);
+    _heldOn(actionId);
+    final run = _runIn(_rawPending, actionId);
     if (run.length >= maxPendingPerChannel) {
       run.clear();
       return;
     }
-    run.add(body);
+    // Its own bytes only: a frame read out of a batch would otherwise keep the whole batch.
+    run.add((_applyingSeq, Uint8List.fromList(body)));
   }
 
-  /// GC descriptions by name: the sender defines one under `_gd` and refers to it by `_gr` after.
-  final Map<int, Map<String, dynamic>> _gcNames = {};
-
-  /// [payload] with a named GC description filled back in, or unchanged when it carries none.
-  Object? _namedGcState(Object? payload) {
-    if (payload is! Map) return payload;
-    final defined = payload['_gd'];
-    if (defined is int) {
-      final described = Map<String, dynamic>.from(payload.cast<String, dynamic>())
-        ..remove('_gd')
-        ..remove('id');
-      _gcNames[defined] = described;
-      return Map<String, dynamic>.from(payload.cast<String, dynamic>())..remove('_gd');
-    }
-    final named = payload['_gr'];
-    if (named is! int) return payload;
-    final described = _gcNames[named];
-    // An unknown name passes through unchanged rather than dropping the frame's ops.
-    if (described == null) return payload;
-    return <String, dynamic>{...described, 'id': payload['id']};
-  }
-
-  Future<void> _applyBatch(List entries) async {
-    // Later entries on a channel carry the index of the entry that spelled it out. Indexed by
-    // position, so a malformed entry leaves a hole instead of shifting later channels.
-    final names = List<String?>.filled(entries.length, null);
-    for (var i = 0; i < entries.length; i++) {
-      final entry = entries[i];
-      if (entry is! List || entry.length != 2) continue;
-      final first = entry[0];
-      final String? name = first is String
-          ? first
-          : (first is int && first >= 0 && first < i ? names[first] : null);
-      if (name == null) continue;
-      names[i] = name;
-      // An entry that fails is that entry's failure alone: the rest of the run applies, as it would
-      // have arriving in frames of its own.
-      try {
-        final delivered = _deliverDecoded(name, _namedGcState(entry[1]));
-        if (identical(delivered, _noHandler)) {
-          _hold(name, entry[1]);
-        } else if (delivered is Future) {
-          await delivered;
-        }
-      } catch (e, st) {
-        _logHandlerError(name, e, st);
-      }
-    }
-  }
-
-  /// Keeps a frame for a channel nothing is listening on yet, to be replayed when something is.
-  ///
-  /// A run, not a slot. Frames on one channel are a sequence: a widget arrives whole and is then
-  /// described by what changed since, and a change is meaningless without the state it was computed
-  /// from. Keeping only the newest frame drops the whole widget and replays the change alone, which
-  /// the far side can only answer by asking for the widget all over again.
-  ///
-  /// A whole frame does not replace the run either. What it does not carry is the widgets nested in
-  /// the frames before it: the sender counts those delivered by writing them once, and from then on
-  /// names them rather than describing them, so dropping the earlier frames loses the only
-  /// description they will ever get. Every frame is dated and the gate refuses the ones that
-  /// describe the past, so replaying the run in order costs a little work and settles on the same
-  /// state.
+  /// Keeps a decoded payload for a channel nothing is listening on yet, to be replayed in arrival
+  /// order when something is: a run, capped as [_holdRaw]'s is.
   void _hold(String actionId, dynamic payload) {
-    // Its images count as delivered already, and a held frame may never be decoded.
-    keepImagesIn(payload);
-    // A resource's change names no base, only that it is one.
-    final whole = payload is Map && !payload.containsKey(kBase) && !payload.containsKey(kChangedKeys);
-    if (_overflowed.contains(actionId)) {
-      // Past an overflow only a whole frame means anything; it starts the run over.
-      if (!whole) return;
-      _overflowed.remove(actionId);
-      _pending[actionId] = [payload];
-      return;
-    }
-    final run = _pending.putIfAbsent(actionId, () => []);
+    _heldOn(actionId);
+    final run = _runIn(_pending, actionId);
     if (run.length >= maxPendingPerChannel) {
       run.clear();
-      _overflowed.add(actionId);
       return;
     }
-    run.add(payload);
+    run.add((_applyingSeq, payload));
+  }
+
+  void _holdGcFrame(String actionId, Uint8List frame) {
+    _heldOn(actionId);
+    final run = _runIn(_gcPending, actionId);
+    if (run.length >= maxPendingPerChannel) {
+      run.clear();
+    }
+    run.add((_applyingSeq, Uint8List.fromList(frame)));
+  }
+
+  /// Delivers one entry of a GC's binary frame that travels on a channel of its own, as a batch
+  /// delivers its entries.
+  FutureOr<void> deliverEntry(String channel, Object? payload) {
+    final delivered = _deliverDecoded(channel, payload);
+    if (identical(delivered, _noHandler)) {
+      _hold(channel, payload);
+      return null;
+    }
+    return delivered;
   }
 
   /// Channel a fused run of frames arrives on.
@@ -403,7 +461,12 @@ abstract class EquoCommBase {
   /// Runs [actionId]'s handler on an already-decoded payload, or returns [_noHandler].
   FutureOr<void>? _deliverDecoded(String actionId, dynamic payload) {
     final callback = _handlers[actionId];
-    if (callback == null) return _noHandler;
+    if (callback == null) {
+      final slash = actionId.lastIndexOf('/');
+      final router = slash < 0 ? null : _routers[actionId.substring(0, slash)];
+      final handler = router?.$1(actionId.substring(slash + 1));
+      return handler == null ? _noHandler : handler(payload);
+    }
     if (callback.args?.once ?? false) _handlers.remove(actionId);
     return callback.onSuccess(payload);
   }
@@ -412,24 +475,40 @@ abstract class EquoCommBase {
   // until it is done. The transport already delivers in order; what did not was the applying — an
   // async handler returns the moment it awaits, letting the next frame start against half-applied
   // state.
-  final List<Future<void>? Function()> _applyQueue = [];
+  final List<(int, Future<void>? Function())> _applyQueue = [];
   bool _applying = false;
+
+  /// How many frames have arrived; each frame's number is its place in the apply order.
+  int _arrived = 0;
+
+  /// The number of the frame being applied, which a frame held for a later handler keeps.
+  int _applyingSeq = 0;
 
   /// Runs a handler off the current call stack with its errors isolated, after every frame already
   /// queued has finished applying.
   ///
   /// [scheduleMicrotask], never `Future(...)`/`Timer`: those compile to `setTimeout(_, 0)` on
   /// dart2js, which the browser clamps to ~4.7 ms per received message.
-  void _deliver(String actionId, OnSuccessCallback<dynamic> onSuccess, dynamic payload) {
-    _enqueueApply(actionId, () => onSuccess(payload));
+  void _deliver(String actionId, OnSuccessCallback<dynamic> onSuccess, dynamic payload, [int? seq]) {
+    _enqueueApply(actionId, () => onSuccess(payload), seq);
   }
 
   /// Action ids whose queue wait is measured every time rather than sampled.
   static final Set<String> queueTracedActions = {};
 
-  void _enqueueApply(String actionId, FutureOr<void> Function() apply) {
+  /// Queues [apply] at frame number [seq]'s place: after everything that arrived before it, ahead of
+  /// everything that arrived after. A frame held until its handler registers is replayed at the
+  /// place it arrived in, so one drawer's frames on several channels apply in the order they were
+  /// sent whichever channel registers first. No [seq]: after everything that has arrived.
+  void _enqueueApply(String actionId, FutureOr<void> Function() apply, [int? seq]) {
+    final at = seq ?? _arrived;
     final queuedAt = perfNow();
-    _applyQueue.add(() {
+    var index = _applyQueue.length;
+    while (index > 0 && _applyQueue[index - 1].$1 > at) {
+      index--;
+    }
+    _applyQueue.insert(index, (at, () {
+      _applyingSeq = at;
       if (queueTracedActions.contains(actionId)) {
         perfSpan('queueWait:$actionId', queuedAt, perfNow());
       } else {
@@ -446,7 +525,7 @@ abstract class EquoCommBase {
         _logHandlerError(actionId, e, st);
       }
       return null;
-    });
+    }));
     if (!_applying) {
       _applying = true;
       _applyingCount++;
@@ -492,7 +571,7 @@ abstract class EquoCommBase {
       while (_applyQueue.isNotEmpty) {
         // Only a genuinely async handler yields: awaiting unconditionally would spend a microtask
         // turn per frame, so a run of synchronous pushes would take a run of turns to settle.
-        final applied = _applyQueue.removeAt(0)();
+        final applied = _applyQueue.removeAt(0).$2();
         if (applied != null) await applied;
       }
     } finally {
@@ -506,14 +585,24 @@ abstract class EquoCommBase {
   @visibleForTesting
   static void Function(String actionId, Payload? payload)? sendObserverForTesting;
 
+  /// Tells [sendObserverForTesting] about an event about to be sent in the wire's encoding.
+  static void observeSend(String actionId, Payload? payload) =>
+      sendObserverForTesting?.call(actionId, payload);
+
   Future send(String actionId, [Payload? payload]) {
     sendObserverForTesting?.call(actionId, payload);
-    final body = payload != null ? (_jsonBytes.encode(payload) as Uint8List) : Uint8List(0);
+    // A value in the wire's encoding, a string as its UTF-8 bytes: what Java reads them as.
+    final body = switch (payload) {
+      null => Uint8List(0),
+      WireWritable() => WidgetWireWriter.encode(payload),
+      String() => utf8.encode(payload),
+      _ => TaggedValues.encode(payload),
+    };
     _enqueue(_frame(actionId, body));
     return Future.value();
   }
 
-  /// Raw-bytes send: [bytes] become the frame body verbatim, no JSON. Receiver uses [onBytes].
+  /// Raw-bytes send: [bytes] become the frame body verbatim. Receiver uses [onBytes].
   Future sendBytes(String actionId, Uint8List bytes) {
     _enqueue(_frame(actionId, bytes));
     return Future.value();
@@ -535,14 +624,33 @@ abstract class EquoCommBase {
     // every widget described before it was mounted.
     // The same frames were held as raw bytes too, for an onBytes that will not come now.
     _rawPending.remove(actionId);
-    for (final pending in _pending.remove(actionId) ?? const []) {
-      _deliver(actionId, onSuccess, pending);
+    for (final (seq, pending) in _pending.remove(actionId) ?? const <(int, dynamic)>[]) {
+      _deliver(actionId, onSuccess, pending, seq);
     }
-    // What was held overflowed and nothing whole came after it: asked for once, whole, instead of
-    // replaying changes to a state that never arrived.
-    if (_overflowed.remove(actionId)) {
-      final slash = actionId.lastIndexOf('/');
-      if (slash >= 0) send(widgetRefreshChannel, actionId.substring(slash + 1));
+    for (final (seq, frame) in _gcPending.remove(actionId) ?? const <(int, Uint8List)>[]) {
+      _deliver(actionId, onSuccess, frame, seq);
+    }
+    return token;
+  }
+
+  /// Handles every channel `<base>/<name>` that has no handler of its own: [resolve] gives the
+  /// handler for a name, or null for a name it does not know. One registration in place of one per
+  /// name, for a receiver that answers many names but rarely receives any.
+  Object onRouted(String base, ChannelRouter resolve) {
+    final token = Object();
+    _routers[base] = (resolve, token);
+    final prefix = '$base/';
+    final held = [
+      for (final channel in _pending.keys)
+        if (channel.startsWith(prefix) && !_handlers.containsKey(channel)) channel,
+    ];
+    for (final channel in held) {
+      final handler = resolve(channel.substring(prefix.length));
+      if (handler == null) continue;
+      _rawPending.remove(channel);
+      for (final (seq, pending) in _pending.remove(channel)!) {
+        _enqueueApply(channel, () => handler(pending), seq);
+      }
     }
     return token;
   }
@@ -551,11 +659,6 @@ abstract class EquoCommBase {
   /// FlutterBridge.handleWidgetRefresh).
   static const widgetRefreshChannel = 'swt.evolve.widget.refresh';
 
-
-  /// Typed handler: decodes the payload into the widget value object before delivery.
-  Object onWidget<V extends VWidget>(String actionId, CommCallback<V> onSuccess) {
-    return on(actionId, (payload) => onSuccess(mapWidgetValue(payload) as V));
-  }
 
   /// Answers [actionId] at arrival, ahead of the apply queue, when it can.
   ///
@@ -570,25 +673,29 @@ abstract class EquoCommBase {
     _arrivalHandlers[actionId] = handler;
   }
 
-  /// Raw-bytes receive: callback gets the raw frame body (no JSON decode).
+  /// Raw-bytes receive: callback gets the raw frame body, undecoded.
   void onBytes(String actionId, FutureOr<void> Function(Uint8List) callback) {
     _rawHandlers[actionId] = callback;
-    // A body that happened to decode as JSON was held for on() too; this channel is raw now.
+    // A body that decoded as tagged values was held for on() too; this channel is raw now.
     _pending.remove(actionId);
     // Frames that arrived before anyone was listening replay through the queue, in arrival order,
     // so they still land ahead of whatever has arrived since.
-    for (final pending in _rawPending.remove(actionId) ?? const <Uint8List>[]) {
-      _enqueueApply(actionId, () => callback(pending));
+    for (final (seq, pending) in _rawPending.remove(actionId) ?? const <(int, Uint8List)>[]) {
+      _enqueueApply(actionId, () => callback(pending), seq);
     }
   }
 
   void remove(String actionId, [Object? token]) {
+    if (token != null && identical(_routers[actionId]?.$2, token)) {
+      _routers.remove(actionId);
+      return;
+    }
     if (token != null && _handlers[actionId]?.token != token) return;
     _handlers.remove(actionId);
     _pending.remove(actionId);
-    _overflowed.remove(actionId);
     _rawHandlers.remove(actionId);
     _rawPending.remove(actionId);
+    _gcPending.remove(actionId);
   }
 }
 

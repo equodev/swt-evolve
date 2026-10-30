@@ -756,10 +756,10 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
     int dndFeedback = DND.FEEDBACK_NONE;
 
     private void sendNegotiationResult() {
-        Event response = new Event();
-        response.detail = selectedOperation;
-        response.feedback = dndFeedback;
-        response.currentDataTypeId = selectedDataType != null ? (int) selectedDataType.type : 0;
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("detail", selectedOperation);
+        response.put("feedback", dndFeedback);
+        response.put("currentDataTypeId", selectedDataType != null ? (int) selectedDataType.type : 0);
         FlutterBridge.send(this, "Drop/negotiationResult", response);
     }
 
@@ -905,48 +905,73 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Drop", "dragEnter", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Drop/dragEnter", "Drop/dragLeave", "Drop/dragOperationChanged", "Drop/dragOver", "Drop/drop", "Drop/dropAccept");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Drop/dragEnter":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DragEnter, e);
+                    });
                     return;
-                sendEvent(DND.DragEnter, e);
-            });
-        });
-        FlutterBridge.on(this, "Drop", "dragLeave", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drop/dragLeave":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DragLeave, e);
+                    });
                     return;
-                sendEvent(DND.DragLeave, e);
-            });
-        });
-        FlutterBridge.on(this, "Drop", "dragOperationChanged", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drop/dragOperationChanged":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DragOperationChanged, e);
+                    });
                     return;
-                sendEvent(DND.DragOperationChanged, e);
-            });
-        });
-        FlutterBridge.on(this, "Drop", "dragOver", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drop/dragOver":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DragOver, e);
+                    });
                     return;
-                sendEvent(DND.DragOver, e);
-            });
-        });
-        FlutterBridge.on(this, "Drop", "drop", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drop/drop":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.Drop, e);
+                    });
                     return;
-                sendEvent(DND.Drop, e);
-            });
-        });
-        FlutterBridge.on(this, "Drop", "dropAccept", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drop/dropAccept":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DropAccept, e);
+                    });
                     return;
-                sendEvent(DND.DropAccept, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public DropTarget getApi() {

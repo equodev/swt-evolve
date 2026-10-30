@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../comm/comm.dart';
-import '../../gen/event.dart';
 import 'hover_arbiter.dart';
 import 'veto_gate.dart';
 
@@ -71,11 +70,12 @@ class DndSession {
     if (_subscribed[dropTargetId] == true) return;
     _subscribed[dropTargetId] = true;
     EquoCommService.onRaw("DropTarget/$dropTargetId/Drop/negotiationResult", (payload) {
-      final event = VEvent.fromJson(payload as Map<String, dynamic>);
+      // DropTarget's answer, as the map Java builds it.
+      final answer = payload as Map;
       final state = DndNegotiationState(
-        detail: event.detail ?? 0,
-        feedback: event.feedback ?? 0,
-        currentDataTypeId: event.currentDataTypeId ?? 0,
+        detail: (answer['detail'] as num?)?.toInt() ?? 0,
+        feedback: (answer['feedback'] as num?)?.toInt() ?? 0,
+        currentDataTypeId: (answer['currentDataTypeId'] as num?)?.toInt() ?? 0,
       );
       _state[dropTargetId] = state;
       for (final listener in List.of(_listeners[dropTargetId] ?? const [])) {

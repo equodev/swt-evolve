@@ -15,6 +15,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/gc_frames.dart';
+import 'package:swtflutter/src/gen/image.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,16 +26,7 @@ void main() {
       '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8">'
       '<rect width="8" height="8" fill="$color"/></svg>';
 
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
+  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 40; i++) {
@@ -41,14 +35,7 @@ void main() {
   }
 
   /// One BufferedGraphicsSource.flushGraphics: the damage-sized buffer blitted to its position.
-  void blit(int id, String color, int x, int y) => deliver(
-        'GC/$id/drawImageImageintintintintintintintint',
-        {
-          'image': {'svgContent': svgSquare(color)},
-          'srcX': 0, 'srcY': 0, 'srcWidth': 8, 'srcHeight': 8,
-          'destX': x, 'destY': y, 'destWidth': 8, 'destHeight': 8,
-        },
-      );
+  void blit(int id, String color, int x, int y) => receive('GC/$id/b', gcOp('drawImageImageintintintintintintintint', [heldImage(VImage()..svgContent = svgSquare(color)), 0, 0, 8, 8, x, y, 8, 8]));
 
   /// controlGC.dispose() on a GC opened outside a Paint dispatch.
   void incrementalDispose(int id) =>

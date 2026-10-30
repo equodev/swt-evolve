@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'button_theme_extension.tailor.dart';
-part 'button_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$ButtonThemeExtensionTailorMixin {
   final Duration buttonPressDelay;
   final bool enableTapAnimation;
@@ -179,10 +171,5 @@ class ButtonThemeExtension extends ThemeExtension<ButtonThemeExtension> with _$B
     required this.focusRingWidth,
     required this.minTextContrast,
   });
-
-  factory ButtonThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ButtonThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ButtonThemeExtensionToJson(this);
 }
 

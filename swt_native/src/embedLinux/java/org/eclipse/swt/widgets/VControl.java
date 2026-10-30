@@ -6,9 +6,6 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
 public class VControl extends VWidget {
 
@@ -19,7 +16,6 @@ public class VControl extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public AutoscalingMode getAutoscalingMode() {
         return ((DartControl) impl).autoscalingMode;
     }
@@ -47,7 +43,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).backgroundImage = value;
     }
 
-    @JsonAttribute(nullable = true)
     public Rectangle getBounds() {
         return ((DartControl) impl).bounds;
     }
@@ -56,7 +51,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).bounds = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getCapture() {
         return ((DartControl) impl).capture;
     }
@@ -91,7 +85,6 @@ public class VControl extends VWidget {
     public void setDragSource(boolean value) {
     }
 
-    @JsonAttribute(nullable = true)
     public Long getDropTargetId() {
         return ((DartControl) impl).getDropTargetId();
     }
@@ -99,7 +92,6 @@ public class VControl extends VWidget {
     public void setDropTargetId(Long value) {
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public Boolean getEnabled() {
         return ((DartControl) impl).getEnabled();
     }
@@ -154,7 +146,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).menu = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getOrientation() {
         return ((DartControl) impl).getOrientation();
     }
@@ -163,7 +154,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).setOrientation(value);
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getRedraw() {
         return ((DartControl) impl).redraw;
     }
@@ -172,7 +162,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).redraw = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Region getRegion() {
         return ((DartControl) impl).region;
     }
@@ -181,7 +170,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).region = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTextDirection() {
         return ((DartControl) impl).getTextDirection();
     }
@@ -198,7 +186,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).toolTipText = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getTouchEnabled() {
         return ((DartControl) impl).getTouchEnabled();
     }
@@ -207,7 +194,6 @@ public class VControl extends VWidget {
         ((DartControl) impl).touchEnabled = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public Boolean getVisible() {
         return ((DartControl) impl).getVisible();
     }
@@ -216,110 +202,290 @@ public class VControl extends VWidget {
         ((DartControl) impl).getApi().state = Boolean.TRUE.equals(value) ? (((DartControl) impl).getApi().state & ~DartWidget.HIDDEN) : (((DartControl) impl).getApi().state | DartWidget.HIDDEN);
     }
 
-    public static final String BACKGROUND = "background";
+    public static final int BACKGROUND = 290;
 
-    public static final String BACKGROUND_IMAGE = "backgroundImage";
+    public static final int BACKGROUND_IMAGE = 291;
 
-    public static final String BOUNDS = "bounds";
+    public static final int BOUNDS = 292;
 
-    public static final String CURSOR = "cursor";
+    public static final int CURSOR = 293;
 
-    public static final String DRAG_DETECT = "dragDetect";
+    public static final int DRAG_DETECT = 294;
 
-    public static final String DRAG_SOURCE = "dragSource";
+    public static final int DRAG_SOURCE = 295;
 
-    public static final String DROP_TARGET_ID = "dropTargetId";
+    public static final int DROP_TARGET_ID = 296;
 
-    public static final String ENABLED = "enabled";
+    public static final int ENABLED = 297;
 
-    public static final String FONT = "font";
+    public static final int FONT = 298;
 
-    public static final String FOREGROUND = "foreground";
+    public static final int FOREGROUND = 299;
 
-    public static final String HAS_OWN_BACKGROUND = "hasOwnBackground";
+    public static final int HAS_OWN_BACKGROUND = 300;
 
-    public static final String INHERITS_BACKGROUND = "inheritsBackground";
+    public static final int INHERITS_BACKGROUND = 301;
 
-    public static final String MENU = "menu";
+    public static final int MENU = 302;
 
-    public static final String TOOL_TIP_TEXT = "toolTipText";
+    public static final int TOOL_TIP_TEXT = 303;
 
-    public static final String VISIBLE = "visible";
+    public static final int VISIBLE = 304;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "background":
-                Serializer.writeKeyValue(writer, "background", getBackground());
-                return;
-            case "backgroundImage":
-                Serializer.writeKeyValue(writer, "backgroundImage", getBackgroundImage());
-                return;
-            case "bounds":
-                Serializer.writeKeyValue(writer, "bounds", getBounds());
-                return;
-            case "cursor":
-                Serializer.writeKeyValue(writer, "cursor", getCursor());
-                return;
-            case "dragDetect":
-                Serializer.writeKeyValue(writer, "dragDetect", getDragDetect());
-                return;
-            case "dragSource":
-                Serializer.writeKeyValue(writer, "dragSource", getDragSource());
-                return;
-            case "dropTargetId":
-                Serializer.writeKeyValue(writer, "dropTargetId", getDropTargetId());
-                return;
-            case "enabled":
-                Serializer.writeKeyValue(writer, "enabled", getEnabled());
-                return;
-            case "font":
-                Serializer.writeKeyValue(writer, "font", getFont());
-                return;
-            case "foreground":
-                Serializer.writeKeyValue(writer, "foreground", getForeground());
-                return;
-            case "hasOwnBackground":
-                Serializer.writeKeyValue(writer, "hasOwnBackground", getHasOwnBackground());
-                return;
-            case "inheritsBackground":
-                Serializer.writeKeyValue(writer, "inheritsBackground", getInheritsBackground());
-                return;
-            case "menu":
-                Serializer.writeKeyValue(writer, "menu", getMenu());
-                return;
-            case "toolTipText":
-                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
-                return;
-            case "visible":
-                Serializer.writeKeyValue(writer, "visible", getVisible());
-                return;
+            case BACKGROUND:
+                return "background";
+            case BACKGROUND_IMAGE:
+                return "backgroundImage";
+            case BOUNDS:
+                return "bounds";
+            case CURSOR:
+                return "cursor";
+            case DRAG_DETECT:
+                return "dragDetect";
+            case DRAG_SOURCE:
+                return "dragSource";
+            case DROP_TARGET_ID:
+                return "dropTargetId";
+            case ENABLED:
+                return "enabled";
+            case FONT:
+                return "font";
+            case FOREGROUND:
+                return "foreground";
+            case HAS_OWN_BACKGROUND:
+                return "hasOwnBackground";
+            case INHERITS_BACKGROUND:
+                return "inheritsBackground";
+            case MENU:
+                return "menu";
+            case TOOL_TIP_TEXT:
+                return "toolTipText";
+            case VISIBLE:
+                return "visible";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Control.class)
-    public static class ControlJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartControl.class, (JsonWriter.WriteObject<DartControl>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartControl.class, (JsonReader.ReadObject<DartControl>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 290:
+                w.write(getBackground());
+                return true;
+            case 291:
+                w.image(getBackgroundImage());
+                return true;
+            case 292:
+                w.write(getBounds());
+                return true;
+            case 293:
+                w.object((getCursor() == null || getCursor().isDisposed() ? null : ((DartCursor) getCursor().getImpl()).getValue()));
+                return true;
+            case 294:
+                w.write(getDragDetect());
+                return true;
+            case 295:
+                w.write(getDragSource());
+                return true;
+            case 296:
+                w.write(getDropTargetId());
+                return true;
+            case 297:
+                w.write(getEnabled());
+                return true;
+            case 298:
+                w.object((getFont() == null || getFont().isDisposed() ? null : getFont().getImpl() instanceof DartFont ? ((DartFont) getFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getFont()).getImpl()).getValue()));
+                return true;
+            case 299:
+                w.write(getForeground());
+                return true;
+            case 300:
+                w.write(getHasOwnBackground());
+                return true;
+            case 301:
+                w.write(getInheritsBackground());
+                return true;
+            case 302:
+                w.ref(getMenu());
+                return true;
+            case 303:
+                w.write(getToolTipText());
+                return true;
+            case 304:
+                w.write(getVisible());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Control read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 290:
+                {
+                    Color v_ = getBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(290);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 291:
+                {
+                    Image v_ = getBackgroundImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(291);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 292:
+                {
+                    Rectangle v_ = getBounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(292);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 293:
+                {
+                    Cursor v_ = getCursor();
+                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartCursor) v_.getImpl()).getValue());
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(293);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 294:
+                {
+                    boolean v_ = getDragDetect();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(294);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 295:
+                {
+                    boolean v_ = getDragSource();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(295);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 296:
+                {
+                    Long v_ = getDropTargetId();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(296);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 297:
+                {
+                    Boolean v_ = getEnabled();
+                    w.key(297);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 298:
+                {
+                    Font v_ = getFont();
+                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(298);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 299:
+                {
+                    Color v_ = getForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(299);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 300:
+                {
+                    boolean v_ = getHasOwnBackground();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(300);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 301:
+                {
+                    boolean v_ = getInheritsBackground();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(301);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 302:
+                {
+                    Menu v_ = getMenu();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(302);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 303:
+                {
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(303);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 304:
+                {
+                    Boolean v_ = getVisible();
+                    w.key(304);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Control api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 297:
+            case 304:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

@@ -133,7 +133,8 @@ class ControlFocusRequestFlutterTest {
         web.sendDisplayUpdate((DartDisplay) display.getImpl());
 
         assertThat(web.comm.sent.stream().filter(f -> f.event.startsWith("Display/")
-                        && f.json.contains("\"focusHolderId\":" + first.hashCode())))
+                        && dev.equo.swt.harness.WireValues.same(
+                                dev.equo.swt.harness.WireValues.at(f.value, "focusHolderId"), first.hashCode())))
                 .as("the Display state names the focus holder")
                 .isNotEmpty();
         assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
@@ -283,7 +284,7 @@ class ControlFocusRequestFlutterTest {
     private static java.util.List<String> ids(TestWebBridge web, String channel) {
         return web.comm.sent.stream()
                 .filter(f -> f.event.equals(channel))
-                .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
+                .map(f -> String.valueOf(((Number) dev.equo.swt.harness.WireValues.at(f.value, "id")).longValue()))
                 .toList();
     }
 

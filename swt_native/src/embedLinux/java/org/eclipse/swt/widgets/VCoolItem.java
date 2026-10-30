@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VCoolItem extends VItem {
 
     protected VCoolItem() {
@@ -28,7 +24,6 @@ public class VCoolItem extends VItem {
         ((DartCoolItem) impl).control = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Point getMinimumSize() {
         return ((DartCoolItem) impl).getMinimumSize();
     }
@@ -45,45 +40,77 @@ public class VCoolItem extends VItem {
         ((DartCoolItem) impl).setPreferredSize(value);
     }
 
-    public static final String CONTROL = "control";
+    public static final int CONTROL = 171;
 
-    public static final String PREFERRED_SIZE = "preferredSize";
+    public static final int PREFERRED_SIZE = 172;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "control":
-                Serializer.writeKeyValue(writer, "control", getControl());
-                return;
-            case "preferredSize":
-                Serializer.writeKeyValue(writer, "preferredSize", getPreferredSize());
-                return;
+            case CONTROL:
+                return "control";
+            case PREFERRED_SIZE:
+                return "preferredSize";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = CoolItem.class)
-    public static class CoolItemJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCoolItem.class, (JsonWriter.WriteObject<DartCoolItem>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCoolItem.class, (JsonReader.ReadObject<DartCoolItem>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 171:
+                w.ref(getControl());
+                return true;
+            case 172:
+                w.write(getPreferredSize());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static CoolItem read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 171:
+                {
+                    Control v_ = getControl();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(171);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 172:
+                {
+                    Point v_ = getPreferredSize();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(172);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, CoolItem api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 171, 172 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

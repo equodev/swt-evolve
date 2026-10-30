@@ -4,11 +4,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VMenu extends VWidget {
 
     protected VMenu() {
@@ -18,7 +14,6 @@ public class VMenu extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public MenuItem getDefaultItem() {
         MenuItem val = ((DartMenu) impl).defaultItem;
         if (val != null && !(val.getImpl() instanceof DartMenuItem))
@@ -30,7 +25,6 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).defaultItem = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartMenu) impl).getEnabled();
     }
@@ -69,7 +63,6 @@ public class VMenu extends VWidget {
         ((DartMenu) impl)._setOrientation(value);
     }
 
-    @JsonAttribute(ignore = true)
     public Menu getParentMenu() {
         Menu val = ((DartMenu) impl).parentMenu;
         if (val != null && !(val.getImpl() instanceof DartMenu))
@@ -81,7 +74,6 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).parentMenu = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartMenu) impl).getVisible();
     }
@@ -90,60 +82,128 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).visible = value;
     }
 
-    public static final String ENABLED = "enabled";
+    public static final int ENABLED = 219;
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 220;
 
-    public static final String LOCATION = "location";
+    public static final int LOCATION = 221;
 
-    public static final String ORIENTATION = "orientation";
+    public static final int ORIENTATION = 222;
 
-    public static final String VISIBLE = "visible";
+    public static final int VISIBLE = 223;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "enabled":
-                Serializer.writeKeyValue(writer, "enabled", getEnabled());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "location":
-                Serializer.writeKeyValue(writer, "location", getLocation());
-                return;
-            case "orientation":
-                Serializer.writeKeyValue(writer, "orientation", getOrientation());
-                return;
-            case "visible":
-                Serializer.writeKeyValue(writer, "visible", getVisible());
-                return;
+            case ENABLED:
+                return "enabled";
+            case ITEMS:
+                return "items";
+            case LOCATION:
+                return "location";
+            case ORIENTATION:
+                return "orientation";
+            case VISIBLE:
+                return "visible";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Menu.class)
-    public static class MenuJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartMenu.class, (JsonWriter.WriteObject<DartMenu>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartMenu.class, (JsonReader.ReadObject<DartMenu>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 219:
+                w.write(getEnabled());
+                return true;
+            case 220:
+                w.refs(getItems());
+                return true;
+            case 221:
+                w.write(getLocation());
+                return true;
+            case 222:
+                w.write((int) getOrientation());
+                return true;
+            case 223:
+                w.write(getVisible());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Menu read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 219:
+                {
+                    boolean v_ = getEnabled();
+                    w.key(219);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 220:
+                {
+                    MenuItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(220);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 221:
+                {
+                    Point v_ = getLocation();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(221);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 222:
+                {
+                    int v_ = getOrientation();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(222);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 223:
+                {
+                    boolean v_ = getVisible();
+                    w.key(223);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Menu api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 219, 220, 221, 222, 223 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 219:
+            case 223:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

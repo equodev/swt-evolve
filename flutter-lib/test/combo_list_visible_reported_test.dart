@@ -3,9 +3,6 @@
 // click outside. What Java itself asked for is not reported back, and neither a push that left Java
 // before it heard the report nor Java's echo of it changes the list the user is working in.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +15,8 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int comboId = 92;
 
@@ -45,17 +44,8 @@ VCombo _combo({int seq = 1, bool listVisible = false}) => VCombo()
     ..width = 120
     ..height = 30);
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(VCombo value) {
-  final actionBytes = utf8.encode('Combo/$comboId');
-  final body = utf8.encode(json.encode({...value.toJson(), '_s': value.seq}));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
+/// Delivers [value] as Java describes it whole.
+void _receive(VCombo value) => applyWhole(value);
 
 Future<List<(String, VEvent?)>> _pump(WidgetTester tester) async {
   final events = <(String, VEvent?)>[];

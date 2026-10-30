@@ -1,15 +1,14 @@
 // A reference to a widget the client has let go of.
 //
-// The sender writes a name instead of a description when its own record says the widget was
+// The sender names a widget by id instead of describing it when its own record says the widget was
 // delivered. The client forgets a widget when the last thing describing it stops carrying it. Both
 // are right, and they disagree: a tree node that collapses drops its children from what is sent, so
 // the client forgets them, and expanding it again names widgets the client no longer holds.
 //
 // Rendered, that is an expanded node with blank children, or a restored tab stack whose tabs have
-// no labels. The widget has to be asked for instead - and the answer has to have somewhere to land.
+// no labels. The widget has to be asked for instead - and the answer has to land in what draws it.
 
-import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 
@@ -18,254 +17,216 @@ import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/control.dart';
+import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
+
+import 'support/deliver.dart';
+
+/// Every frame received so far applied: when the registry forgets what was let go of.
+Future<void> _applied() {
+  final applied = Completer<void>();
+  EquoCommBase.whenApplied(applied.complete);
+  return applied.future;
+}
 
 const int _treeId = 1;
 const int _rootItemId = 11;
 const int _childItemId = 12;
 
-Map<String, dynamic> _childWhole(String text, int seq) =>
-    {'swt': 'TreeItem', 'id': _childItemId, '_s': seq, 'style': SWT.NONE, 'texts': [text]};
+VTreeItem _item(int id, String text, int seq, {List<VTreeItem>? items}) => VTreeItem()
+  ..id = id
+  ..seq = seq
+  ..style = SWT.NONE
+  ..texts = [text]
+  ..items = items;
 
-Map<String, dynamic> _reference(int id, String swt) =>
-    {'swt': swt, 'id': id, 'style': SWT.NONE, '_r': 1};
+VTreeItem _child(String text, int seq) => _item(_childItemId, text, seq);
 
-Map<String, dynamic> _tree(List<Map<String, dynamic>> rootItems, int seq) =>
-    {'swt': 'Tree', 'id': _treeId, '_s': seq, 'style': SWT.NONE, 'items': rootItems};
+VTreeItem _root(List<VTreeItem>? children, int seq) => _item(_rootItemId, 'root', seq, items: children);
 
-Map<String, dynamic> _rootItem(List<Map<String, dynamic>>? children, int seq) => {
-      'swt': 'TreeItem',
-      'id': _rootItemId,
-      '_s': seq,
-      'style': SWT.NONE,
-      'texts': ['root'],
-      if (children != null) 'items': children,
-    };
+VTree _tree(List<VTreeItem> rootItems, int seq) => VTree()
+  ..id = _treeId
+  ..seq = seq
+  ..style = SWT.NONE
+  ..items = rootItems;
 
-Future<void> _deliver(String channel, Object payload) async {
-  final action = utf8.encode(channel);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + action.length + body.length);
-  frame[0] = (action.length >> 8) & 0xFF;
-  frame[1] = action.length & 0xFF;
-  frame.setRange(2, 2 + action.length, action);
-  frame.setRange(2 + action.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-  await Future<void>.microtask(() {});
-}
+/// The ids the client asked Java to describe again, in order.
+List<String> _asked() => EquoCommService.commForTesting.sentFrames
+    .map(EquoCommBase.decodeFrame)
+    .where((frame) => frame.$1 == widgetRefreshChannel)
+    .map((frame) => frame.$2)
+    .toList();
 
 void main() {
   late VRegistry registry;
 
-  setUp(() => registry = VRegistry());
-
-  test('a reference is recognised wherever it appears, not only among children', () {
-    // Children decode through the shared widget decoder and always carried the marker; items decode
-    // through their own class and did not, so a reference to one read as a real widget with nothing
-    // in it - which is precisely a blank row.
-    final tree = VTree.fromJson(_tree([_reference(_rootItemId, 'TreeItem')], 30));
-
-    expect(tree.items!.single.isReference, isTrue,
-        reason: 'an item named rather than described has to be recognisable as such');
+  setUp(() {
+    registry = VRegistry();
+    EquoCommBase.recordSentFrames = true;
+    EquoCommService.commForTesting.clearSentFrames();
   });
 
-  test('a reference to a widget still held resolves to it', () async {
-    registry.register(VTree.fromJson(_tree([_rootItem([_childWhole('leaf', 10)], 10)], 10)));
+  tearDown(() {
+    EquoCommBase.recordSentFrames = false;
+    EquoCommService.commForTesting.clearSentFrames();
+  });
 
-    await _deliver('Tree/$_treeId', _tree([_reference(_rootItemId, 'TreeItem')], 30));
+  test('a widget named while still held resolves to it', () {
+    applyWhole(_tree([_root([_child('leaf', 10)], 10)], 10), registry: registry);
+
+    applyWhole(_tree([_root(null, 10)], 30), registry: registry, named: {_rootItemId});
 
     expect((registry.valueOn('TreeItem/$_childItemId') as VTreeItem).texts!.single, 'leaf');
+    expect(identical((registry.valueOn('Tree/$_treeId') as VTree).items!.single,
+            registry.valueOn('TreeItem/$_rootItemId')),
+        isTrue,
+        reason: 'an item named rather than described is the one already held');
+    expect(_asked(), isEmpty);
   });
 
-  test('a reference to a widget the client let go of is asked for, not rendered empty', () async {
+  test('a widget named after the client let go of it is asked for, not rendered empty', () async {
     // Expanded: the whole subtree is described.
-    registry.register(VTree.fromJson(_tree([_rootItem([_childWhole('leaf', 10)], 10)], 10)));
+    applyWhole(_tree([_root([_child('leaf', 10)], 10)], 10), registry: registry);
     expect(registry.valueOn('TreeItem/$_childItemId'), isNotNull);
 
     // Collapsed: the node stops carrying its children, so nothing describes them any more.
-    await _deliver('Tree/$_treeId', _tree([_rootItem(null, 20)], 20));
+    applyWhole(_tree([_root(null, 20)], 20), registry: registry);
+    await _applied();
     expect(registry.valueOn('TreeItem/$_childItemId'), isNull,
         reason: 'precondition: the client has genuinely forgotten it');
 
     // Expanded again. The sender's own record still says this widget was delivered, so it names it.
-    await _deliver(
-        'Tree/$_treeId',
-        _tree([
-          {
-            'swt': 'TreeItem',
-            'id': _rootItemId,
-            '_s': 30,
-            'style': SWT.NONE,
-            'texts': ['root'],
-            'items': [_reference(_childItemId, 'TreeItem')],
-          }
-        ], 30));
+    applyWhole(_tree([_root([_child('leaf', 10)], 30)], 30), registry: registry, named: {_childItemId});
 
     expect(registry.valueOn('TreeItem/$_childItemId'), isNull,
-        reason: 'the empty shell that arrived is not the widget, and holding it as one is the blank '
-            'row the user sees');
+        reason: 'nothing described it, and an empty shell held as it is the blank row the user sees');
+    expect(_asked(), ['$_childItemId', '$_rootItemId'],
+        reason: 'the widget is asked for, then what named it, so the name resolves once both arrive');
 
-    // The answer to that request, on the widget's own channel.
-    await _deliver('TreeItem/$_childItemId', _childWhole('leaf', 40));
+    // The answer.
+    applyWhole(_child('leaf', 40), registry: registry);
 
-    expect((registry.valueOn('TreeItem/$_childItemId') as VTreeItem).texts!.single, 'leaf',
-        reason: 'asking is only half of it - there has to be an entry listening for the answer');
+    expect((registry.valueOn('TreeItem/$_childItemId') as VTreeItem).texts!.single, 'leaf');
   });
 
-  test('what arrives fills in the object the tree is drawing', () async {
-    // The row is drawn from the item list the tree holds, so the content has to land in the object
-    // that list is pointing at. Anything else renders the node with nothing in it - the row is
-    // there, indented and expandable, and has no text.
-    registry.register(VTree.fromJson(_tree([_rootItem([_childWhole('leaf', 10)], 10)], 10)));
-    await _deliver('Tree/$_treeId', _tree([_rootItem(null, 20)], 20));
+  test('what arrives lands in the object the tree draws', () {
+    // The row is drawn from the item list the tree holds, so that list has to point at the object
+    // the answer filled. Anything else renders the node with nothing in it - the row is there,
+    // indented and expandable, and has no text.
+    applyWhole(_tree([_root([_child('leaf', 10)], 10)], 10), registry: registry);
+    applyWhole(_tree([_root(null, 20)], 20), registry: registry);
+    applyWhole(_tree([_root([_child('leaf', 10)], 30)], 30), registry: registry, named: {_childItemId});
 
-    await _deliver(
-        'Tree/$_treeId',
-        _tree([
-          {
-            'swt': 'TreeItem',
-            'id': _rootItemId,
-            '_s': 30,
-            'style': SWT.NONE,
-            'texts': ['root'],
-            'items': [_reference(_childItemId, 'TreeItem')],
-          }
-        ], 30));
-    await _deliver('TreeItem/$_childItemId', _childWhole('leaf', 40));
+    // Java answers both requests: the child, then the item that named it.
+    applyWhole(_child('leaf', 40), registry: registry);
+    applyWhole(_root([_child('leaf', 40)], 41), registry: registry);
 
     final drawnByTheTree = (registry.valueOn('TreeItem/$_rootItemId') as VTreeItem).items!.single;
-    expect(drawnByTheTree.texts!.single, 'leaf',
-        reason: 'the list held this object before the widget arrived and holds it still');
+    expect(drawnByTheTree.texts!.single, 'leaf');
     expect(identical(drawnByTheTree, registry.valueOn('TreeItem/$_childItemId')), isTrue,
         reason: 'one widget, one object - whoever named it and whoever answered for it agree');
   });
 
-  test('an answer still lands when what rendered the widget before it moved lets go afterwards',
-      () async {
-    // A widget moved to another parent: the old parent's frame drops it, the new one names it, and
+  test('an answer still lands when what rendered the widget before it moved lets go afterwards', () {
+    // A widget moved to another parent: the old parent's record drops it, the new one names it, and
     // the client asks. The state that drew it in the old place unmounts only after that, and stops
     // watching the channel the answer is about to arrive on.
-    registry.register(VTree.fromJson(_tree([_rootItem([_childWhole('leaf', 10)], 10)], 10)));
+    applyWhole(_tree([_root([_child('leaf', 10)], 10)], 10), registry: registry);
     void rendered(VChange _) {}
     registry.watch('TreeItem/$_childItemId', rendered);
-    await _deliver('Tree/$_treeId', _tree([_rootItem(null, 20)], 20));
-    await _deliver(
-        'Tree/$_treeId',
-        _tree([
-          {
-            'swt': 'TreeItem',
-            'id': _rootItemId,
-            '_s': 30,
-            'style': SWT.NONE,
-            'texts': ['root'],
-            'items': [_reference(_childItemId, 'TreeItem')],
-          }
-        ], 30));
+    applyWhole(_tree([_root(null, 20)], 20), registry: registry);
+    applyWhole(_tree([_root([_child('leaf', 10)], 30)], 30), registry: registry, named: {_childItemId});
 
     registry.unwatch('TreeItem/$_childItemId', rendered);
-    await _deliver('TreeItem/$_childItemId', _childWhole('leaf', 40));
+    applyWhole(_child('leaf', 40), registry: registry);
 
     expect((registry.valueOn('TreeItem/$_childItemId') as VTreeItem?)?.texts?.single, 'leaf');
   });
 
-  test('a frame refused as a description of the past still hands over what it alone describes',
-      () async {
-    // Where the references above came from, on an Eclipse startup. Java describes one widget twice
-    // in a flush; the two frames reach the client out of the order they were written, so the older
-    // one arrives second and is refused - rightly, since taking it would rewind the widget.
-    //
-    // But a whole frame carries everything beneath it, and the sender counts each of those
-    // delivered by writing them: from then on it names them instead of describing them. The refused
-    // frame was the only description of the item below, so dropping it whole left the next
-    // reference pointing at a widget the client had never been given.
+  test('a record refused as a description of the past does not cost the records beside it', () {
+    // Java describes one widget twice in a flush; the two descriptions reach the client out of the
+    // order they were written, so the older one arrives second and is refused - rightly, since
+    // taking it would rewind the widget. The item described next to it is described nowhere else.
     const int treeId = 71;
     const int itemId = 72;
+    VTree tree(List<VTreeItem> items, int seq) => VTree()
+      ..id = treeId
+      ..seq = seq
+      ..style = SWT.NONE
+      ..items = items;
 
-    Map<String, dynamic> tree(List<Map<String, dynamic>> items, int seq) =>
-        {'swt': 'Tree', 'id': treeId, '_s': seq, 'style': SWT.NONE, 'items': items};
-    Map<String, dynamic> item(int seq) =>
-        {'swt': 'TreeItem', 'id': itemId, '_s': seq, 'style': SWT.NONE, 'texts': ['described once']};
+    // The later of the two arrives first, and carries no item.
+    applyWhole(tree([], 40), registry: registry);
 
-    // The later of the two frames arrives first, and carries no item.
-    registry.register(VTree.fromJson(tree([], 40)));
-
-    // The earlier one arrives second. It describes the tree as it used to be - and the item as
-    // nothing else ever will.
-    await _deliver('Tree/$treeId', tree([item(39)], 30));
+    // The earlier one arrives second, with the item as nothing else will ever describe it.
+    applyWhole(tree([_item(itemId, 'described once', 39)], 30), registry: registry);
 
     expect((registry.valueOn('TreeItem/$itemId') as VTreeItem?)?.texts?.single, 'described once',
-        reason: 'the item was in the payload and nothing else has ever described it');
+        reason: 'the item had a record of its own, and nothing else has ever described it');
     expect((registry.valueOn('Tree/$treeId') as VTree).items, isEmpty,
-        reason: 'the tree itself is not rewound: that frame is still older than what it holds');
+        reason: 'the tree itself is not rewound: its record is still older than what it holds');
   });
 
-  test('a widget named before it is described, then described inside another payload, fills in '
-      'the object its parent holds', () async {
-    // A parent built around one child: the parent's payload names the child, whose own description
-    // lands inside a different payload a moment later. The parent lays the child out from the object
-    // in its child list, so content that lands anywhere else lays it out at no size at all.
+  test('a widget named before it is described resolves once its parent is described again', () {
+    // A parent built around one child: the parent's record names the child, whose own description
+    // lands in another record a moment later. The parent lays the child out from the object in its
+    // child list, so it has to be the one that description filled.
     const int parentId = 81;
     const int otherId = 82;
     const int childId = 83;
+    VComposite composite(int id, List<VControl> children, int seq) => VComposite()
+      ..id = id
+      ..seq = seq
+      ..style = SWT.NONE
+      ..children = children;
+    VComposite described() => VComposite()
+      ..id = childId
+      ..seq = 50
+      ..style = SWT.NONE
+      ..bounds = (VRectangle()
+        ..width = 500
+        ..height = 326);
 
-    Map<String, dynamic> composite(int id, List<Map<String, dynamic>> children, int seq) =>
-        {'swt': 'Composite', 'id': id, '_s': seq, 'style': SWT.NONE, 'children': children};
-    final described = {
-      'swt': 'Composite',
-      'id': childId,
-      '_s': 50,
-      'style': SWT.NONE,
-      'bounds': {'x': 0, 'y': 0, 'width': 500, 'height': 326},
-    };
+    applyWhole(composite(parentId, [described()], 40), registry: registry, named: {childId});
+    expect(_asked(), ['$childId', '$parentId']);
+    applyWhole(composite(otherId, [], 45), registry: registry);
+    applyWhole(composite(otherId, [described()], 50), registry: registry);
 
-    final parent = registry.register(
-        VComposite.fromJson(composite(parentId, [_reference(childId, 'Composite')], 40))) as VComposite;
-    registry.register(VComposite.fromJson(composite(otherId, [], 45)));
-    await _deliver('Composite/$otherId', composite(otherId, [described], 50));
+    // Java answers the parent's request.
+    applyWhole(composite(parentId, [described()], 51), registry: registry);
 
-    final laidOutByTheParent = parent.children!.single;
+    final laidOutByTheParent = (registry.valueOn('Composite/$parentId') as VComposite).children!.single;
     expect(laidOutByTheParent.bounds?.width, 500,
         reason: 'the parent lays its child out from this object, and an empty one gets no size');
     expect(identical(laidOutByTheParent, registry.valueOn('Composite/$childId')), isTrue,
         reason: 'one widget, one object - whoever named it and whoever described it agree');
   });
 
-  test('a widget named but never described is still asked for once something renders the name',
-      () async {
-    // A mounted widget registers the value it was built from, and a child is built from its
-    // parent's child list - which, for a widget only named so far, holds the stand-in. Registering
-    // that stand-in is not the widget arriving: nothing describes it anywhere else, so the request
-    // is the only way it ever gets content, and without it the control stays empty.
+  test('a widget named but never described is asked for, and not held as its state', () {
+    // Nothing describes it anywhere else, so the request is the only way it ever gets content, and
+    // an empty value held for it would be drawn as the control.
     const int parentId = 91;
     const int childId = 92;
-    EquoCommBase.recordSentFrames = true;
-    addTearDown(() => EquoCommBase.recordSentFrames = false);
-    EquoCommService.commForTesting.clearSentFrames();
+    final child = VComposite()
+      ..id = childId
+      ..style = SWT.NONE;
 
-    final parent = registry.register(VComposite.fromJson({
-      'swt': 'Composite',
-      'id': parentId,
-      '_s': 60,
-      'style': SWT.NONE,
-      'children': [_reference(childId, 'Composite')],
-    })) as VComposite;
+    applyWhole(
+        VComposite()
+          ..id = parentId
+          ..seq = 60
+          ..style = SWT.NONE
+          ..children = [child],
+        registry: registry,
+        named: {childId});
 
-    final named = parent.children!.single;
-    registry.register(named);
-    void rendered(VChange _) {}
-    registry.watch('Composite/$childId', rendered);
-    await Future<void>.microtask(() {});
-
-    final asked = EquoCommService.commForTesting.sentFrames
-        .map(EquoCommBase.decodeFrame)
-        .where((frame) => frame.$1 == widgetRefreshChannel)
-        .map((frame) => frame.$2)
-        .toList();
-    expect(asked, ['"$childId"'],
+    expect(_asked(), ['$childId', '$parentId'],
         reason: 'nothing else will ever describe this widget, so it has to be asked for');
-    expect(registry.isAwaiting('Composite/$childId'), isTrue,
-        reason: 'the stand-in is a name, not the widget, and must not be held as its state');
+    expect(registry.valueOn('Composite/$childId'), isNull);
+    expect((registry.valueOn('Composite/$parentId') as VComposite).children, isEmpty,
+        reason: 'a name nothing resolves is left out of the list rather than drawn empty');
   });
 }

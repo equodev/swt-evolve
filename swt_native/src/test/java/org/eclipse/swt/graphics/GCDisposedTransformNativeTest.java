@@ -1,7 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -12,6 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -58,8 +64,27 @@ class GCDisposedTransformNativeTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+    private List<GcFrames.Entry> wire() {
+        return BatchEntries.of(bridge.comm.sent);
+    }
+
+    /** What each entry of the GC's traffic carries. */
+    private List<Object> values() {
+        return wire().stream().map(GcFrames.Entry::value).toList();
+    }
+
+    /** Whether a state the GC sent sets its transform to exactly {@code elements}. */
+    private boolean sentTransform(List<Double> elements) {
+        Map<String, Object> transform = Map.of("elements", elements);
+        return !WireValues.find(values(), m -> m.containsKey("transform") && WireValues.same(m.get("transform"), transform)).isEmpty();
+    }
+
+    /** Whether {@code list} appears anywhere in {@code tree}. */
+    private static boolean holds(Object tree, List<?> list) {
+        if (WireValues.same(tree, list)) return true;
+        if (tree instanceof Map<?, ?> map) return map.values().stream().anyMatch(v -> holds(v, list));
+        if (tree instanceof List<?> items) return items.stream().anyMatch(v -> holds(v, list));
+        return false;
     }
 
     @Test
@@ -76,9 +101,9 @@ class GCDisposedTransformNativeTest {
         }).as("disposing the Transform is legal SWT — drawing after it must not throw")
                 .doesNotThrowAnyException();
 
-        assertThat(wire()).as("sanity: the GC's ops reached the wire").contains("drawLine");
-        assertThat(wire()).as("the matrix set before the dispose must still travel")
-                .contains("\"transform\":{\"elements\":[2.0,0.0,0.0,2.0,5.0,7.0]}");
+        assertThat(wire()).as("sanity: the GC's ops reached the wire").anyMatch(e -> e.channel().contains("drawLine"));
+        assertThat(sentTransform(List.of(2.0, 0.0, 0.0, 2.0, 5.0, 7.0))).as("the matrix set before the dispose must still travel")
+                .isTrue();
     }
 
     @Test
@@ -95,8 +120,8 @@ class GCDisposedTransformNativeTest {
         gc.drawLine(0, 0, 10, 10);
         gc.dispose();
 
-        assertThat(wire()).contains("\"transform\":{\"elements\":[3.0,0.0,0.0,3.0,1.0,1.0]}");
-        assertThat(wire()).doesNotContain("[2.0,0.0,0.0,2.0,5.0,7.0]");
+        assertThat(sentTransform(List.of(3.0, 0.0, 0.0, 3.0, 1.0, 1.0))).isTrue();
+        assertThat(holds(values(), List.of(2.0, 0.0, 0.0, 2.0, 5.0, 7.0))).isFalse();
     }
 
     @Test
@@ -111,7 +136,7 @@ class GCDisposedTransformNativeTest {
         gc.drawLine(0, 0, 10, 10);
         gc.dispose();
 
-        assertThat(wire()).doesNotContain("\"transform\"");
+        assertThat(WireValues.mentions(values(), "transform")).isFalse();
     }
 
     @Test

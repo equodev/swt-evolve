@@ -1,12 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'rgba.g.dart';
-
-@JsonSerializable()
-class VRGBA {
+class VRGBA implements WireReadable, WireWritable, WireVisitable {
   VRGBA() : this.empty();
   VRGBA.empty();
 
-  factory VRGBA.fromJson(Map<String, dynamic> json) => _$VRGBAFromJson(json);
-  Map<String, dynamic> toJson() => _$VRGBAToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

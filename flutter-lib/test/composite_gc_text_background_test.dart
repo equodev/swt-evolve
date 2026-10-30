@@ -10,11 +10,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 
 import 'delivery/support/deliver.dart';
+import 'support/gc_frames.dart';
 
 const int _panelId = 1682973478;
 const _appGround = Color(0xFF292929);
@@ -25,8 +27,6 @@ VColor _v(Color c) => VColor()
   ..red = (c.r * 255).round()
   ..green = (c.g * 255).round()
   ..blue = (c.b * 255).round();
-
-Map<String, dynamic> _rgba(Color c) => _v(c).toJson();
 
 VRectangle _bounds(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -52,16 +52,15 @@ VComposite _panel() => VComposite()
   ];
 
 Future<void> _paint(Color gcBackground, {bool transparent = false}) async {
-  await deliverFrame('GC/$_panelId', {
-    'id': _panelId,
-    'swt': 'GC',
-    '_s': 1,
-    'background': _rgba(gcBackground),
-    'foreground': _rgba(const Color(0xFFFFFFFF)),
-  });
   // drawString reaches the client as drawText with flags: none, or DRAW_TRANSPARENT.
-  await deliverFrame('GC/$_panelId/drawTextStringintintint',
-      {'string': ' Header ', 'x': 0, 'y': 6, 'flags': transparent ? SWT.DRAW_TRANSPARENT : 0});
+  receive(
+      'GC/$_panelId/b',
+      GcFrame()
+          .whole(VGC.empty()
+            ..background = _v(gcBackground)
+            ..foreground = _v(const Color(0xFFFFFFFF)))
+          .opNamed('drawTextStringintintint', [' Header ', 0, 6, transparent ? SWT.DRAW_TRANSPARENT : 0])
+          .bytes);
   await deliverFrame('GC/$_panelId/gcDispose', {'fullRepaint': true});
 }
 

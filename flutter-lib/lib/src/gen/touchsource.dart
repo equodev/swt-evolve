@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'touchsource.g.dart';
-
-@JsonSerializable()
-class VTouchSource {
+class VTouchSource implements WireReadable, WireWritable, WireVisitable {
   VTouchSource() : this.empty();
   VTouchSource.empty();
 
-  factory VTouchSource.fromJson(Map<String, dynamic> json) =>
-      _$VTouchSourceFromJson(json);
-  Map<String, dynamic> toJson() => _$VTouchSourceToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
 }

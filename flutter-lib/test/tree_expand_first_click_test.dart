@@ -136,4 +136,23 @@ void main() {
     expect(value.items!.first.expanded, isTrue);
     expect(find.text('Leaf 0.0'), findsOneWidget);
   });
+
+  testWidgets('with semantics on, the arrow has a node of its own that expands the branch',
+      (tester) async {
+    // The web hands a click on a semantics node to the row as a tap at its centre, so the
+    // arrow is reachable for an assistive technology, or a test, only through its own node.
+    final handle = tester.ensureSemantics();
+    final value = _treeWithBranch(expanded: false);
+    final tree = _CapturingTree(value: value);
+    await tester.pumpWidget(_wrap(tree));
+    await tester.pump();
+
+    tester.semantics.tap(find.semantics.byLabel('Expand'));
+    await tester.pump();
+
+    expect(tree.expands, hasLength(1));
+    expect(value.items!.first.expanded, isTrue);
+    expect(find.text('Leaf 0.0'), findsOneWidget);
+    handle.dispose();
+  });
 }

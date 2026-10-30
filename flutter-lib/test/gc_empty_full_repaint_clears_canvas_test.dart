@@ -17,6 +17,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 
 import 'delivery/support/deliver.dart';
+import 'support/gc_frames.dart';
 
 const int _canvasId = 4711;
 
@@ -32,10 +33,11 @@ VCanvas _canvas() => VCanvas()
     ..width = 324
     ..height = 22);
 
-Future<void> _drawString(String text) => deliverFrame(
-      'GC/$_canvasId/drawTextStringintintint',
-      {'string': text, 'x': 2, 'y': 2, 'flags': 1}, // drawString(text, 2, 2, true): DRAW_TRANSPARENT
-    );
+// drawString(text, 2, 2, true): DRAW_TRANSPARENT.
+Future<void> _drawString(String text) async {
+  receive('GC/$_canvasId/b', gcOp('drawTextStringintintint', [text, 2, 2, 1]));
+  await Future<void>.microtask(() {});
+}
 
 Future<void> _endPaint() =>
     deliverFrame('GC/$_canvasId/gcDispose', {'fullRepaint': true});

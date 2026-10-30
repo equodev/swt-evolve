@@ -202,8 +202,8 @@ public abstract class EmbeddedBridge extends FlutterBridge {
 
     @Override
     public void destroy(DartWidget control) {
+        super.destroy(control);
         if (control instanceof DartControl && control == forWidget) { DartControl dartControl = (DartControl) control;
-            super.destroy(control);
             // Dispose Flutter context FIRST to handle view disconnection
             FlutterNative.dispose(context);
             context = 0;

@@ -4,16 +4,15 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
 
 class SashSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Sash() {
         Sash w = new Sash(shell(), SWT.NONE);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Sash");
     }
@@ -22,11 +21,10 @@ class SashSerializeTest extends SerializeTestBase {
     void should_serialize_filled_Sash() {
         Sash w = new Sash(shell(), SWT.NONE);
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Sash")
-               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
@@ -38,6 +36,16 @@ class SashSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_write_every_property_Sash() throws Exception {
+        assertWritesEveryProperty(style -> {
+            Sash w = new Sash(shell(), style);
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SMOOTH, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

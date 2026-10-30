@@ -2,8 +2,10 @@ package dev.equo.swt;
 
 import dev.equo.swt.comm.AbstractBinaryCommService;
 import dev.equo.swt.comm.CommService;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.widgets.Composite;
@@ -18,12 +20,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,7 +38,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MainSashCompositeAddressingTest {
 
     private static final String BATCH = "swt.evolve.batch";
-    private static final Pattern CHANNEL = Pattern.compile("\"([A-Za-z]+/\\d+)\"");
 
     private RecordingBridge bridge;
 
@@ -78,9 +76,9 @@ class MainSashCompositeAddressingTest {
         FlutterBridge.update();
 
         long id = FlutterBridge.id(sash);
-        assertThat(sentJson())
+        assertThat(WireValues.describing(sentValues(), id))
                 .as("the composite is described as the main sash area")
-                .contains("\"id\":" + id + ",\"swt\":\"MainComposite\"");
+                .anyMatch(described -> "MainComposite".equals(described.get("swt")));
         assertThat(channels())
                 .as("so its update is addressed where the client listens for it")
                 .contains("MainComposite/" + id)
@@ -117,10 +115,17 @@ class MainSashCompositeAddressingTest {
             for (Widget child : ((Composite) widget).getChildren()) markKnown(child);
     }
 
-    private String sentJson() {
-        StringBuilder all = new StringBuilder();
-        for (RecordingComm.Frame frame : bridge.comm.sent) all.append(frame.json);
-        return all.toString();
+    /** Every payload sent, a batch's entries each on their own. */
+    private List<Object> sentValues() {
+        List<Object> all = new ArrayList<>();
+        for (RecordingComm.Frame frame : bridge.comm.sent) {
+            if (!BATCH.equals(frame.event)) {
+                all.add(frame.value);
+                continue;
+            }
+            for (Object entry : (List<?>) frame.value) all.add(((GcFrames.Entry) entry).value());
+        }
+        return all;
     }
 
     /** Every channel a message was addressed to, including those fused into a batch. */
@@ -131,8 +136,7 @@ class MainSashCompositeAddressingTest {
                 channels.add(frame.event);
                 continue;
             }
-            Matcher m = CHANNEL.matcher(frame.json);
-            while (m.find()) channels.add(m.group(1));
+            for (Object entry : (List<?>) frame.value) channels.add(((GcFrames.Entry) entry).channel());
         }
         return channels;
     }

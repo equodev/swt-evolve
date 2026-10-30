@@ -34,16 +34,14 @@ class RoundTripTiming {
   static void _listen() {
     if (_listening) return;
     _listening = true;
-    EquoCommService.onRaw(_bare, (payload) {
-      final body = payload is String ? jsonDecode(payload) : payload;
+    EquoCommService.onRaw(_bare, (body) {
       if (body is! Map) return;
       final seq = (body['seq'] as num?)?.toInt();
       // Peeked, not taken: the ordinary echo for this seq is still on its way.
       final sent = seq == null ? null : _sentAt[seq];
       if (sent != null) perfSpan('RoundTrip.bare', sent, perfNow());
     });
-    EquoCommService.onRaw(_pong, (payload) {
-      final body = payload is String ? jsonDecode(payload) : payload;
+    EquoCommService.onRaw(_pong, (body) {
       if (body is! Map) return;
       final seq = (body['seq'] as num?)?.toInt();
       final javaMs = (body['javaMs'] as num?)?.toDouble();

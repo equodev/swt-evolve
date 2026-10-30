@@ -20,9 +20,8 @@ void sendScrollBarSelectionEvent(
 }) {
   EquoCommService.sendPayload(
     'ScrollBar/${bar.id}/Selection/Selection',
-    (VEvent()
-          ..index = selection
-          ..detail = detail)
-        .toJson(),
+    VEvent()
+      ..index = selection
+      ..detail = detail,
   );
 }

@@ -4,7 +4,11 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.Test;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import dev.equo.swt.harness.WireValues;
+
+import java.util.Map;
+
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.eclipse.swt.widgets.Mocks.device;
@@ -27,11 +31,12 @@ class CursorImageTest extends SerializeTestBase {
     void anImageCursorCarriesItsImageAndHotspot() {
         Cursor cursor = new Cursor(device(), pointer(), 3, 1);
 
-        String json = serialize(cursor);
+        Map<String, Object> state = serialize(cursor);
 
-        assertThatJson(json).inPath("hotspotX").isEqualTo(3);
-        assertThatJson(json).inPath("hotspotY").isEqualTo(1);
-        assertThatJson(json).inPath("image.imageData.width").isEqualTo(8);
+        assertThatWire(state).node("hotspotX").isEqualTo(3);
+        assertThatWire(state).node("hotspotY").isEqualTo(1);
+        // The image travels by id; its pixels go in an image record of their own.
+        assertThatWire(state).node("image.id").isEqualTo(((DartCursor) cursor.getImpl()).image.hashCode());
     }
 
     @Test
@@ -49,7 +54,8 @@ class CursorImageTest extends SerializeTestBase {
     void aSystemCursorCarriesNoImage() {
         Cursor cursor = new Cursor(device(), SWT.CURSOR_HAND);
 
-        assertThatJson(serialize(cursor)).inPath("image").isAbsent();
+        org.assertj.core.api.Assertions.assertThat(WireValues.find(serialize(cursor), m -> m.get("image") instanceof Map))
+                .isEmpty();
     }
 
     @Test

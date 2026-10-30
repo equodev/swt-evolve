@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'tree_theme_extension.tailor.dart';
-part 'tree_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
-@CurveConverter()
 class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeThemeExtensionTailorMixin {
   // Background colors
   final Color backgroundColor;
@@ -253,9 +244,4 @@ class TreeThemeExtension extends ThemeExtension<TreeThemeExtension> with _$TreeT
     required this.eventDefaultDetail,
     required this.minTextContrast,
   });
-
-  factory TreeThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$TreeThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$TreeThemeExtensionToJson(this);
 }

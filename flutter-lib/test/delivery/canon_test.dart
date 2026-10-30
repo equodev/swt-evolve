@@ -22,7 +22,7 @@ void main() {
     for (final entry in (cases['equal'] as List)) {
       final c = entry as Map<String, dynamic>;
       test('equal: ${c['why']}', () {
-        expect(canonJson(c['a']), canonJson(c['b']),
+        expect(canonText(c['a']), canonText(c['b']),
             reason: 'these two payloads carry the same state and must canonicalise alike');
       });
     }
@@ -30,7 +30,7 @@ void main() {
     for (final entry in (cases['differ'] as List)) {
       final c = entry as Map<String, dynamic>;
       test('differ: ${c['why']}', () {
-        expect(canonJson(c['a']), isNot(canonJson(c['b'])),
+        expect(canonText(c['a']), isNot(canonText(c['b'])),
             reason: 'these two payloads carry different state; collapsing them would hide a real '
                 'divergence from every probe that relies on this comparison');
       });
@@ -53,7 +53,7 @@ void main() {
     test('recurses to arbitrary depth', () {
       Object nest(int depth) =>
           depth == 0 ? {'swt': 'Label', 'id': 1, '_s': 9} : {'swt': 'Composite', 'id': depth, '_s': depth, 'children': [nest(depth - 1)]};
-      expect(canonJson(nest(20)).contains('_s'), isFalse,
+      expect(canonText(nest(20)).contains('_s'), isFalse,
           reason: 'a write stamp buried 20 levels down is still not state');
     });
 
@@ -62,10 +62,10 @@ void main() {
     // side changed its spacing or escaping that comparison would fail on formatting rather than on
     // state, and the failure would read as a delivery bug.
     test('emits the agreed byte format', () {
-      expect(canonJson({'text': 'x', 'id': 1, 'swt': 'Label', '_s': 4, 'enabled': false}),
+      expect(canonText({'text': 'x', 'id': 1, 'swt': 'Label', '_s': 4, 'enabled': false}),
           '{"id":1,"swt":"Label","text":"x"}');
-      expect(canonJson({'a': 'q"q', 'b': 'tab\there'}), r'{"a":"q\"q","b":"tab\there"}');
-      expect(canonJson({'n': 3.0, 'm': 2.5}), '{"m":2.5,"n":3}');
+      expect(canonText({'a': 'q"q', 'b': 'tab\there'}), r'{"a":"q\"q","b":"tab\there"}');
+      expect(canonText({'n': 3.0, 'm': 2.5}), '{"m":2.5,"n":3}');
     });
 
     test('a deeply buried change survives the reduction', () {
@@ -78,7 +78,7 @@ void main() {
               ]}
             ]
           };
-      expect(canonJson(nest('a')), isNot(canonJson(nest('b'))),
+      expect(canonText(nest('a')), isNot(canonText(nest('b'))),
           reason: 'the reduction must not flatten away a nested difference');
     });
   });

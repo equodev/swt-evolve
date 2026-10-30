@@ -2,12 +2,8 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VIME extends VWidget {
 
     protected VIME() {
@@ -17,7 +13,6 @@ public class VIME extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int getCompositionOffset() {
         return ((DartIME) impl).getCompositionOffset();
     }
@@ -26,7 +21,6 @@ public class VIME extends VWidget {
         ((DartIME) impl).startOffset = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getRanges() {
         return ((DartIME) impl).ranges;
     }
@@ -35,7 +29,6 @@ public class VIME extends VWidget {
         ((DartIME) impl).ranges = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TextStyle[] getStyles() {
         TextStyle[] values = ((DartIME) impl).styles;
         if (values == null)
@@ -51,34 +44,44 @@ public class VIME extends VWidget {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = IME.class)
-    public static class IMEJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartIME.class, (JsonWriter.WriteObject<DartIME>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartIME.class, (JsonReader.ReadObject<DartIME>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static IME read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, IME api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

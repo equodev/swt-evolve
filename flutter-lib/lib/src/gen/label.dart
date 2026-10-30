@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -9,10 +9,9 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/label_evolve.dart';
 import 'widgets.dart';
-
-part 'label.g.dart';
 
 class LabelSwt<V extends VLabel> extends ControlSwt<V> {
   const LabelSwt({super.key, required super.value});
@@ -21,7 +20,6 @@ class LabelSwt<V extends VLabel> extends ControlSwt<V> {
   State createState() => LabelImpl<LabelSwt<VLabel>, VLabel>();
 }
 
-@JsonSerializable()
 class VLabel extends VControl {
   VLabel() : this.empty();
   VLabel.empty() {
@@ -41,20 +39,45 @@ class VLabel extends VControl {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'image':
-        image = json['image'] == null
-            ? null
-            : VImage.fromJson(json['image'] as Map<String, dynamic>);
-      case 'text':
-        text = json['text'] as String?;
+      case 463: // image
+        image = r.image();
+        return true;
+      case 464: // text
+        text = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VLabel.fromJson(Map<String, dynamic> json) =>
-      _$VLabelFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VLabelToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = image;
+      if (v_ != null && w.wants(463)) {
+        w.key(463);
+        w.ref(v_.id);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(464)) {
+        w.key(464);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(463, image);
+    visit(464, text);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

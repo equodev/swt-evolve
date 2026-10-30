@@ -522,12 +522,14 @@ public class DartButton extends DartControl implements IButton {
                 return;
             getApi().style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
             getApi().style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
             return;
         }
         if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
     }
 
     /**
@@ -701,7 +703,7 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         checkWidget();
-        if (this.selection != newValue) {
+        if (getSelection() != newValue) {
             getValue().markDirty(VButton.SELECTION);
         }
         if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
@@ -902,31 +904,48 @@ public class DartButton extends DartControl implements IButton {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
                     return;
-                if (!isActive())
-                    return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if ((getApi().style & SWT.RADIO) != 0) {
-                    if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
-                        selectRadio();
-                    } else {
-                        setSelection(!getSelection());
-                    }
-                } else if ((getApi().style & (SWT.CHECK | SWT.TOGGLE)) != 0) {
-                    setSelection(!getSelection());
                 }
-                sendEvent(SWT.Selection, e);
-            });
-        });
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if ((getApi().style & SWT.RADIO) != 0) {
+                            if ((parent.getStyle() & SWT.NO_RADIO_GROUP) == 0) {
+                                selectRadio();
+                            } else {
+                                setSelection(!getSelection());
+                            }
+                        } else if ((getApi().style & (SWT.CHECK | SWT.TOGGLE)) != 0) {
+                            setSelection(!getSelection());
+                        }
+                        sendEvent(SWT.Selection, e);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Button getApi() {

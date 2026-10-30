@@ -1,12 +1,8 @@
 package dev.equo.swt.delivery;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.GcFrames;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Objects;
@@ -36,14 +32,24 @@ import java.util.Set;
  */
 public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoCloseable {
 
-    /** One observed outbound frame. */
-    public record Frame(String channel, String json) {
+    /**
+     * One observed outbound frame: a widget's record as its state, any other frame as its payload
+     * decoded; {@code size} is the bytes it took on the wire.
+     */
+    public record Frame(String channel, Object value, int size) {
+
+        /** The value as a record of properties; fails when it is not one. */
+        @SuppressWarnings("unchecked")
+        public Map<String, Object> state() {
+            if (!(value instanceof Map)) throw new AssertionError(channel + " carries no record: " + value);
+            return (Map<String, Object>) value;
+        }
     }
 
     private final List<Frame> frames = new ArrayList<>();
 
     /** Canonical form of the last frame seen per channel — the state to derive the next diff from. */
-    private final Map<String, String> lastSent = new LinkedHashMap<>();
+    private final Map<String, Map<String, Object>> lastSent = new LinkedHashMap<>();
 
     /** Changed keys per observed frame, in arrival order, derived by comparison. */
     private final List<Map.Entry<String, Set<String>>> derivedChanges = new ArrayList<>();
@@ -60,7 +66,7 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
      * what was named covers what changed. Whether the real client merges correctly is a different
      * question, answered by the merge tests on that side.
      */
-    private final Map<String, JsonObject> reconstructed = new LinkedHashMap<>();
+    private final Map<String, Map<String, Object>> reconstructed = new LinkedHashMap<>();
 
     /** Installs itself as the bridge's observer; {@link #close()} removes it. */
     public static DeliveryAudit install() {
@@ -71,28 +77,37 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
 
     @Override
     public void onSend(String eventName, byte[] payload) {
-        String json = new String(payload, StandardCharsets.UTF_8);
-        frames.add(new Frame(eventName, json));
-        String canonical = Canon.canon(json);
-        String previous = lastSent.put(eventName, canonical);
+        if (dev.equo.swt.WidgetWire.CHANNEL.equals(eventName)) {
+            for (dev.equo.swt.harness.WireFrames.Record record : dev.equo.swt.harness.WireFrames.records(payload)) {
+                observe(record.channel(), record.state(), record.size());
+            }
+            return;
+        }
+        GcFrames.Decoded frame = GcFrames.decode(eventName, payload);
+        frames.add(new Frame(frame.event(), frame.value(), payload.length));
+    }
+
+    private void observe(String eventName, Map<String, Object> state, int size) {
+        frames.add(new Frame(eventName, state, size));
+        Map<String, Object> canonical = Canon.canon(state);
+        Map<String, Object> previous = lastSent.put(eventName, canonical);
         derivedChanges.add(Map.entry(eventName, previous == null
                 ? firstDelivery(canonical)
                 : changedKeys(previous, canonical)));
-        applyToReconstruction(eventName, json);
+        applyToReconstruction(eventName, state);
     }
 
     /** Applies one frame to the reconstructed client state, as the client would. */
-    private void applyToReconstruction(String channel, String json) {
-        JsonObject frame = JsonParser.parseString(json).getAsJsonObject();
-        if (!frame.has("_d")) {
-            reconstructed.put(channel, frame.deepCopy());
+    private void applyToReconstruction(String channel, Map<String, Object> frame) {
+        if (!frame.containsKey("_d")) {
+            reconstructed.put(channel, new LinkedHashMap<>(frame));
             return;
         }
-        JsonObject held = reconstructed.get(channel);
+        Map<String, Object> held = reconstructed.get(channel);
         if (held == null) return; // nothing to merge into; the gate would have asked for it whole
-        for (JsonElement named : frame.getAsJsonArray("_d")) {
-            String key = named.getAsString();
-            if (frame.has(key)) held.add(key, frame.get(key));
+        for (Object named : (List<?>) frame.get("_d")) {
+            String key = String.valueOf(named);
+            if (frame.containsKey(key)) held.put(key, frame.get(key));
             else held.remove(key);
         }
     }
@@ -104,13 +119,13 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
      * was never named is missing from the reconstruction and present in the truth, and no amount of
      * inspecting the flags would reveal it.
      */
-    public void assertConverged(String channel, String truthJson) {
-        JsonObject held = reconstructed.get(channel);
+    public void assertConverged(String channel, Map<String, Object> truthState) {
+        Map<String, Object> held = reconstructed.get(channel);
         if (held == null) {
             throw new AssertionError("nothing was ever delivered on " + channel);
         }
-        String reconstructedState = Canon.canon(held.toString());
-        String truth = Canon.canon(truthJson);
+        Map<String, Object> reconstructedState = Canon.canon(held);
+        Map<String, Object> truth = Canon.canon(truthState);
         if (!reconstructedState.equals(truth)) {
             throw new AssertionError("what was sent on " + channel + " does not add up to the state "
                     + "it describes.\n  a client would hold: " + reconstructedState
@@ -153,8 +168,8 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
     }
 
     /** Every key of a first delivery is a change: the far side held nothing before it. */
-    private static Set<String> firstDelivery(String canonical) {
-        return new LinkedHashSet<>(JsonParser.parseString(canonical).getAsJsonObject().keySet());
+    private static Set<String> firstDelivery(Map<String, Object> canonical) {
+        return new LinkedHashSet<>(canonical.keySet());
     }
 
     /**
@@ -169,13 +184,10 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
      * What still counts is the identity of what is held: a different widget, or a different set of
      * them, is a change to the property naming them.
      */
-    public static Set<String> changedKeys(String canonicalBefore, String canonicalAfter) {
-        JsonObject before = JsonParser.parseString(canonicalBefore).getAsJsonObject();
-        JsonObject after = JsonParser.parseString(canonicalAfter).getAsJsonObject();
-
+    public static Set<String> changedKeys(Map<String, Object> before, Map<String, Object> after) {
         Set<String> changed = new LinkedHashSet<>();
-        for (Map.Entry<String, JsonElement> entry : after.entrySet()) {
-            JsonElement previous = before.get(entry.getKey());
+        for (Map.Entry<String, Object> entry : after.entrySet()) {
+            Object previous = before.get(entry.getKey());
             if (previous == null) {
                 changed.add(entry.getKey());
             } else if (!previous.equals(entry.getValue())
@@ -184,7 +196,7 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
             }
         }
         for (String key : before.keySet()) {
-            if (!after.has(key)) changed.add(key); // cleared back to its default
+            if (!after.containsKey(key)) changed.add(key); // cleared back to its default
         }
         return changed;
     }
@@ -196,14 +208,14 @@ public final class DeliveryAudit implements FlutterBridge.SendObserver, AutoClos
      * no identity of its own - a rectangle, a colour - is state, and a difference in one is a real
      * difference in the property holding it.
      */
-    private static boolean sameWidgets(JsonElement before, JsonElement after) {
-        if (before.isJsonObject() && after.isJsonObject()) {
-            JsonObject a = before.getAsJsonObject(), b = after.getAsJsonObject();
-            return a.has("swt") && b.has("swt")
-                    && a.has("id") && Objects.equals(a.get("id"), b.get("id"));
+    private static boolean sameWidgets(Object before, Object after) {
+        if (before instanceof Map && after instanceof Map) {
+            Map<?, ?> a = (Map<?, ?>) before, b = (Map<?, ?>) after;
+            return a.containsKey("swt") && b.containsKey("swt")
+                    && a.containsKey("id") && Objects.equals(a.get("id"), b.get("id"));
         }
-        if (before.isJsonArray() && after.isJsonArray()) {
-            JsonArray a = before.getAsJsonArray(), b = after.getAsJsonArray();
+        if (before instanceof List && after instanceof List) {
+            List<?> a = (List<?>) before, b = (List<?>) after;
             if (a.isEmpty() || a.size() != b.size()) return false;
             for (int i = 0; i < a.size(); i++) {
                 if (!sameWidgets(a.get(i), b.get(i))) return false;

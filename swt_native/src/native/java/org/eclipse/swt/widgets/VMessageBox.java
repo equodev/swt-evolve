@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VMessageBox extends VDialog {
 
     protected VMessageBox() {
@@ -28,34 +24,17 @@ public class VMessageBox extends VDialog {
         return ((DartMessageBox) impl).wireButtonLabels();
     }
 
-    public void setButtonLabels(String[] value) {
+    @Override
+    public int wireTypeId() {
+        return 646;
     }
 
-    @JsonConverter(target = MessageBox.class)
-    public static class MessageBoxJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartMessageBox.class, (JsonWriter.WriteObject<DartMessageBox>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartMessageBox.class, (JsonReader.ReadObject<DartMessageBox>) reader -> {
-                return null;
-            });
-        }
-
-        public static MessageBox read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, MessageBox api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(645);
+        w.write(getMessage());
+        w.key(1428);
+        w.write(getButtonLabels());
     }
 }

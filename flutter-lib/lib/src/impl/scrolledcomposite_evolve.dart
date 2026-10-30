@@ -59,7 +59,7 @@ class ScrolledCompositeImpl<
   /// afterwards the view keeps its own offset as it does after a scroll by the user.
   @override
   void setValue(V value) {
-    if (lastChange?.touches('origin') ?? true) _requestedOrigin = state.origin;
+    if (lastChange?.touches(WireKey.k_ScrolledComposite_origin) ?? true) _requestedOrigin = state.origin;
     super.setValue(value);
     if (!mounted) return;
     _showOrigin();

@@ -8,6 +8,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
 import 'delivery/support/deliver.dart';
@@ -115,11 +116,11 @@ void main() {
         {'start': 0, 'replaced': 0, 'text': 'xy', 'charCount': 18});
     // The caret moving on its own, ahead of the restyling.
     await deliverChange(value(held, text: 'xyalpha beta gamma')..caretOffset = 2..seq = 3,
-        changed: ['caretOffset'], base: 2);
+        keys: [WireKey.k_StyledText_caretOffset], base: 2);
     final target = [8, 0, 2, 5, 1, 8, 4, 0, 13, 5];
     await deliverChange(
         value(change(target, 7, 0, [0, 13, 5]), text: 'xyalpha beta gamma')..seq = 4,
-        changed: ['styleIndex'], base: 3);
+        keys: [WireKey.k_StyledText_styleIndex], base: 3);
     await tester.pump();
 
     expect(key.currentState!.state.styleIndex, target);

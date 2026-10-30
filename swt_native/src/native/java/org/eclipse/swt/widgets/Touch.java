@@ -15,10 +15,6 @@
  */
 package org.eclipse.swt.widgets;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
-
 /**
  * Instances of this class are created in response to a
  * touch-based input device being touched. They are found
@@ -29,21 +25,18 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.7
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public final class Touch {
+public final class Touch implements dev.equo.swt.WireObject {
 
     /**
      * The unique identity of the touch. Use this value to track changes to a touch
      * during the touch's life. Two touches may have the same identity even if they
      * come from different sources.
      */
-    @JsonAttribute()
     public long id;
 
     /**
      * The object representing the input source that generated the touch.
      */
-    @JsonAttribute()
     public TouchSource source;
 
     /**
@@ -55,7 +48,6 @@ public final class Touch {
      * @see org.eclipse.swt.SWT#TOUCHSTATE_MOVE
      * @see org.eclipse.swt.SWT#TOUCHSTATE_UP
      */
-    @JsonAttribute()
     public int state;
 
     /**
@@ -63,19 +55,16 @@ public final class Touch {
      * state of no touch points. Once designated as such, the touch remains
      * the primary touch until all fingers are removed from the device.
      */
-    @JsonAttribute()
     public boolean primary;
 
     /**
      * The x location of the touch in TouchSource coordinates.
      */
-    @JsonAttribute()
     public int x;
 
     /**
      * The y location of the touch in TouchSource coordinates.
      */
-    @JsonAttribute()
     public int y;
 
     /**
@@ -88,8 +77,8 @@ public final class Touch {
      * @param x X location of the touch in screen coordinates
      * @param y Y location of the touch in screen coordinates
      */
-    Touch(long id, TouchSource source, int state, boolean primary, int x, int y) {
-        this.id = id;
+    Touch(long identity, TouchSource source, int state, boolean primary, int x, int y) {
+        this.id = identity;
         this.source = source;
         this.state = state;
         this.primary = primary;
@@ -106,5 +95,48 @@ public final class Touch {
     @Override
     public String toString() {
         return "Touch {id=" + id + " source=" + source + " state=" + state + " primary=" + primary + " x=" + x + " y=" + y + "}";
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 313;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(307);
+        w.write(id);
+        w.key(309);
+        w.object(source);
+        w.key(310);
+        w.write((int) state);
+        w.key(308);
+        w.write(primary);
+        w.key(311);
+        w.write((int) x);
+        w.key(312);
+        w.write((int) y);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 307:
+                id = r.int64();
+                return true;
+            case 310:
+                state = r.int32();
+                return true;
+            case 308:
+                primary = r.bool();
+                return true;
+            case 311:
+                x = r.int32();
+                return true;
+            case 312:
+                y = r.int32();
+                return true;
+        }
+        return false;
     }
 }

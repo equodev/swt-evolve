@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
@@ -12,10 +12,9 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/clabel_evolve.dart';
 import 'widgets.dart';
-
-part 'clabel.g.dart';
 
 class CLabelSwt<V extends VCLabel> extends CanvasSwt<V> {
   const CLabelSwt({super.key, required super.value});
@@ -24,7 +23,6 @@ class CLabelSwt<V extends VCLabel> extends CanvasSwt<V> {
   State createState() => CLabelImpl<CLabelSwt<VCLabel>, VCLabel>();
 }
 
-@JsonSerializable()
 class VCLabel extends VCanvas {
   VCLabel() : this.empty();
   VCLabel.empty() {
@@ -62,44 +60,144 @@ class VCLabel extends VCanvas {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alignment':
-        alignment = (json['alignment'] as num?)?.toInt();
-      case 'backgroundImage':
-        backgroundImage = json['backgroundImage'] == null
-            ? null
-            : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>);
-      case 'bottomMargin':
-        bottomMargin = (json['bottomMargin'] as num?)?.toInt();
-      case 'gradientColors':
-        gradientColors = (json['gradientColors'] as List<dynamic>?)
-            ?.map((e) => VColor.read(e)!)
-            .toList();
-      case 'gradientPercents':
-        gradientPercents = (json['gradientPercents'] as List<dynamic>?)
-            ?.map((e) => (e as num).toInt())
-            .toList();
-      case 'gradientVertical':
-        gradientVertical = json['gradientVertical'] as bool?;
-      case 'image':
-        image = json['image'] == null
-            ? null
-            : VImage.fromJson(json['image'] as Map<String, dynamic>);
-      case 'leftMargin':
-        leftMargin = (json['leftMargin'] as num?)?.toInt();
-      case 'rightMargin':
-        rightMargin = (json['rightMargin'] as num?)?.toInt();
-      case 'text':
-        text = json['text'] as String?;
-      case 'topMargin':
-        topMargin = (json['topMargin'] as num?)?.toInt();
+      case 541: // alignment
+        alignment = r.int32();
+        return true;
+      case 542: // backgroundImage
+        backgroundImage = r.image();
+        return true;
+      case 543: // bottomMargin
+        bottomMargin = r.int32();
+        return true;
+      case 1357: // gradientColors
+        gradientColors = r.list(() => r.color())?.whereType<VColor>().toList();
+        return true;
+      case 1358: // gradientPercents
+        gradientPercents = r.ints();
+        return true;
+      case 1359: // gradientVertical
+        gradientVertical = r.boolean();
+        return true;
+      case 544: // image
+        image = r.image();
+        return true;
+      case 545: // leftMargin
+        leftMargin = r.int32();
+        return true;
+      case 546: // rightMargin
+        rightMargin = r.int32();
+        return true;
+      case 547: // text
+        text = r.string();
+        return true;
+      case 548: // topMargin
+        topMargin = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VCLabel.fromJson(Map<String, dynamic> json) =>
-      _$VCLabelFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VCLabelToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alignment;
+      if (v_ != null && w.wants(541)) {
+        w.key(541);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = backgroundImage;
+      if (v_ != null && w.wants(542)) {
+        w.key(542);
+        w.ref(v_.id);
+      }
+    }
+    {
+      final v_ = bottomMargin;
+      if (v_ != null && w.wants(543)) {
+        w.key(543);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = gradientColors;
+      if (v_ != null && w.wants(1357)) {
+        w.key(1357);
+        w.list(v_, (e) => w.colorValue(e));
+      }
+    }
+    {
+      final v_ = gradientPercents;
+      if (v_ != null && w.wants(1358)) {
+        w.key(1358);
+        w.ints(v_);
+      }
+    }
+    {
+      final v_ = gradientVertical;
+      if (v_ != null && w.wants(1359)) {
+        w.key(1359);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = image;
+      if (v_ != null && w.wants(544)) {
+        w.key(544);
+        w.ref(v_.id);
+      }
+    }
+    {
+      final v_ = leftMargin;
+      if (v_ != null && w.wants(545)) {
+        w.key(545);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = rightMargin;
+      if (v_ != null && w.wants(546)) {
+        w.key(546);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(547)) {
+        w.key(547);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = topMargin;
+      if (v_ != null && w.wants(548)) {
+        w.key(548);
+        w.int32(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(541, alignment);
+    visit(542, backgroundImage);
+    visit(543, bottomMargin);
+    visit(1357, gradientColors);
+    visit(1358, gradientPercents);
+    visit(1359, gradientVertical);
+    visit(544, image);
+    visit(545, leftMargin);
+    visit(546, rightMargin);
+    visit(547, text);
+    visit(548, topMargin);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

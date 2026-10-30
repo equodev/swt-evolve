@@ -2,9 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
 public class VScrollable extends VControl {
 
@@ -26,7 +23,6 @@ public class VScrollable extends VControl {
         ((DartScrollable) impl).horizontalBar = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getScrollbarsMode() {
         return ((DartScrollable) impl).getScrollbarsMode();
     }
@@ -46,45 +42,77 @@ public class VScrollable extends VControl {
         ((DartScrollable) impl).verticalBar = value;
     }
 
-    public static final String HORIZONTAL_BAR = "horizontalBar";
+    public static final int HORIZONTAL_BAR = 499;
 
-    public static final String VERTICAL_BAR = "verticalBar";
+    public static final int VERTICAL_BAR = 500;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "horizontalBar":
-                Serializer.writeKeyValue(writer, "horizontalBar", getHorizontalBar());
-                return;
-            case "verticalBar":
-                Serializer.writeKeyValue(writer, "verticalBar", getVerticalBar());
-                return;
+            case HORIZONTAL_BAR:
+                return "horizontalBar";
+            case VERTICAL_BAR:
+                return "verticalBar";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Scrollable.class)
-    public static class ScrollableJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartScrollable.class, (JsonWriter.WriteObject<DartScrollable>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartScrollable.class, (JsonReader.ReadObject<DartScrollable>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 499:
+                w.ref(getHorizontalBar());
+                return true;
+            case 500:
+                w.ref(getVerticalBar());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Scrollable read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 499:
+                {
+                    ScrollBar v_ = getHorizontalBar();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(499);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 500:
+                {
+                    ScrollBar v_ = getVerticalBar();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(500);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Scrollable api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 499, 500 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

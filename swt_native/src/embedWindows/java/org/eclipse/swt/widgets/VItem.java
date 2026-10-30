@@ -2,9 +2,6 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
 public class VItem extends VWidget {
 
@@ -15,7 +12,6 @@ public class VItem extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartItem) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -27,7 +23,6 @@ public class VItem extends VWidget {
         ((DartItem) impl).image = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartItem) impl).getText();
     }
@@ -36,45 +31,79 @@ public class VItem extends VWidget {
         ((DartItem) impl).text = value;
     }
 
-    public static final String IMAGE = "image";
+    public static final int IMAGE = 305;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 306;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "image":
-                Serializer.writeKeyValue(writer, "image", getImage());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
+            case IMAGE:
+                return "image";
+            case TEXT:
+                return "text";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Item.class)
-    public static class ItemJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartItem.class, (JsonWriter.WriteObject<DartItem>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartItem.class, (JsonReader.ReadObject<DartItem>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 305:
+                w.image(getImage());
+                return true;
+            case 306:
+                w.write(getText());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Item read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 305:
+                {
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(305);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 306:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(306);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Item api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 305, 306 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

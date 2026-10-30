@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -13,11 +13,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/ccombo_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'ccombo.g.dart';
 
 class CComboSwt<V extends VCCombo> extends CompositeSwt<V> {
   const CComboSwt({super.key, required super.value});
@@ -42,7 +41,6 @@ class CComboSwt<V extends VCCombo> extends CompositeSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VCCombo extends VComposite {
   VCCombo() : this.empty();
   VCCombo.empty() {
@@ -72,34 +70,100 @@ class VCCombo extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alignment':
-        alignment = (json['alignment'] as num?)?.toInt();
-      case 'itemTooltips':
-        itemTooltips = (json['itemTooltips'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
-      case 'listVisible':
-        listVisible = json['listVisible'] as bool?;
-      case 'selection':
-        selection = json['selection'] == null
-            ? null
-            : VPoint.fromJson(json['selection'] as Map<String, dynamic>);
-      case 'text':
-        text = json['text'] as String?;
-      case 'textLimit':
-        textLimit = (json['textLimit'] as num?)?.toInt();
+      case 501: // alignment
+        alignment = r.int32();
+        return true;
+      case 502: // itemTooltips
+        itemTooltips = r.strings()?.map((e) => e ?? '').toList();
+        return true;
+      case 503: // items
+        items = r.strings()?.map((e) => e ?? '').toList();
+        return true;
+      case 504: // listVisible
+        listVisible = r.boolean();
+        return true;
+      case 505: // selection
+        selection = r.point();
+        return true;
+      case 506: // text
+        text = r.string();
+        return true;
+      case 507: // textLimit
+        textLimit = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VCCombo.fromJson(Map<String, dynamic> json) =>
-      _$VCComboFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VCComboToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alignment;
+      if (v_ != null && w.wants(501)) {
+        w.key(501);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = itemTooltips;
+      if (v_ != null && w.wants(502)) {
+        w.key(502);
+        w.strings(v_);
+      }
+    }
+    {
+      final v_ = items;
+      if (v_ != null && w.wants(503)) {
+        w.key(503);
+        w.strings(v_);
+      }
+    }
+    {
+      final v_ = listVisible;
+      if (v_ != null && w.wants(504)) {
+        w.key(504);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null && w.wants(505)) {
+        w.key(505);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(506)) {
+        w.key(506);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = textLimit;
+      if (v_ != null && w.wants(507)) {
+        w.key(507);
+        w.int32(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(501, alignment);
+    visit(502, itemTooltips);
+    visit(503, items);
+    visit(504, listVisible);
+    visit(505, selection);
+    visit(506, text);
+    visit(507, textLimit);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

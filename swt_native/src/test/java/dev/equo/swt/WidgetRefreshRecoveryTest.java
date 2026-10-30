@@ -1,6 +1,7 @@
 package dev.equo.swt;
 
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -71,7 +72,7 @@ class WidgetRefreshRecoveryTest {
         assertThat(bridge.comm.sent)
                 .as("a client that cannot use an update has exactly one way back, and it has to work")
                 .anyMatch(f -> f.event.equals("Label/" + label.hashCode())
-                        && f.json.contains("\"text\":\"current\""));
+                        && !WireValues.find(f.value, m -> "current".equals(m.get("text"))).isEmpty());
     }
 
     @Test

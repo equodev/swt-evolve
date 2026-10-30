@@ -11,6 +11,8 @@ import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 
+import 'support/gc_frames.dart';
+
 Uint8List _frame(String actionId, List<int> body) {
   final action = utf8.encode(actionId);
   final out = Uint8List(2 + action.length + body.length);
@@ -21,7 +23,6 @@ Uint8List _frame(String actionId, List<int> body) {
   return out;
 }
 
-List<int> _json(Object o) => utf8.encode(jsonEncode(o));
 
 Future<void> _settle() async {
   for (var i = 0; i < 120; i++) {
@@ -50,20 +51,20 @@ void main() {
       ..id = gcId);
 
     // A 10x10 Image held at twice its size: 20x20 pixels.
-    comm.receiveBinary(_frame('GC/$gcId', _json({
-      'id': gcId,
-      'swt': 'GC',
-      'alpha': 255,
-      'bufferScale': 2.0,
-      'clippingRects': <Object>[],
-      'background': {'a': 255, 'r': 255, 'g': 0, 'b': 0},
-      'foreground': {'a': 255, 'r': 0, 'g': 0, 'b': 0},
-    })));
-    comm.receiveBinary(_frame('GC/$gcId/imageInit', _json({'width': 20, 'height': 20})));
-    comm.receiveBinary(_frame('GC/$gcId/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': 5, 'height': 5})));
+    comm.receiveBinary(_frame('GC/$gcId/b', gcState(VGC.empty()
+      ..alpha = 255
+      ..bufferScale = 2.0
+      ..clippingRects = []
+      ..background = colourOf(255, 0, 0)
+      ..foreground = colourOf(0, 0, 0))));
+    comm.receiveBinary(_frame(
+        'GC/$gcId/imageInit',
+        imageInit(VImage()
+          ..width = 20
+          ..height = 20)));
+    comm.receiveBinary(_frame('GC/$gcId/b', gcOp('fillRectangleintintintint', [0, 0, 5, 5])));
     comm.receiveBinary(_frame('GC/$gcId/gcDispose',
-        _json({'ref': ref, 'pixels': false, 'retain': false})));
+        tagged({'ref': ref, 'pixels': false, 'retain': false})));
 
     await _settle();
 

@@ -5,12 +5,8 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VCLabel extends VCanvas {
 
     protected VCLabel() {
@@ -77,7 +73,6 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).gradientVertical = value;
     }
 
-    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartCLabel) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -121,90 +116,243 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).topMargin = value;
     }
 
-    public static final String ALIGNMENT = "alignment";
+    public static final int ALIGNMENT = 541;
 
-    public static final String BACKGROUND_IMAGE = "backgroundImage";
+    public static final int BACKGROUND_IMAGE = 542;
 
-    public static final String BOTTOM_MARGIN = "bottomMargin";
+    public static final int BOTTOM_MARGIN = 543;
 
-    public static final String GRADIENT_COLORS = "gradientColors";
+    public static final int GRADIENT_COLORS = 1357;
 
-    public static final String GRADIENT_PERCENTS = "gradientPercents";
+    public static final int GRADIENT_PERCENTS = 1358;
 
-    public static final String GRADIENT_VERTICAL = "gradientVertical";
+    public static final int GRADIENT_VERTICAL = 1359;
 
-    public static final String IMAGE = "image";
+    public static final int IMAGE = 544;
 
-    public static final String LEFT_MARGIN = "leftMargin";
+    public static final int LEFT_MARGIN = 545;
 
-    public static final String RIGHT_MARGIN = "rightMargin";
+    public static final int RIGHT_MARGIN = 546;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 547;
 
-    public static final String TOP_MARGIN = "topMargin";
+    public static final int TOP_MARGIN = 548;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "alignment":
-                Serializer.writeKeyValue(writer, "alignment", getAlignment());
-                return;
-            case "backgroundImage":
-                Serializer.writeKeyValue(writer, "backgroundImage", getBackgroundImage());
-                return;
-            case "bottomMargin":
-                Serializer.writeKeyValue(writer, "bottomMargin", getBottomMargin());
-                return;
-            case "gradientColors":
-                Serializer.writeKeyValue(writer, "gradientColors", getGradientColors());
-                return;
-            case "gradientPercents":
-                Serializer.writeKeyValue(writer, "gradientPercents", getGradientPercents());
-                return;
-            case "gradientVertical":
-                Serializer.writeKeyValue(writer, "gradientVertical", getGradientVertical());
-                return;
-            case "image":
-                Serializer.writeKeyValue(writer, "image", getImage());
-                return;
-            case "leftMargin":
-                Serializer.writeKeyValue(writer, "leftMargin", getLeftMargin());
-                return;
-            case "rightMargin":
-                Serializer.writeKeyValue(writer, "rightMargin", getRightMargin());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
-            case "topMargin":
-                Serializer.writeKeyValue(writer, "topMargin", getTopMargin());
-                return;
+            case ALIGNMENT:
+                return "alignment";
+            case BACKGROUND_IMAGE:
+                return "backgroundImage";
+            case BOTTOM_MARGIN:
+                return "bottomMargin";
+            case GRADIENT_COLORS:
+                return "gradientColors";
+            case GRADIENT_PERCENTS:
+                return "gradientPercents";
+            case GRADIENT_VERTICAL:
+                return "gradientVertical";
+            case IMAGE:
+                return "image";
+            case LEFT_MARGIN:
+                return "leftMargin";
+            case RIGHT_MARGIN:
+                return "rightMargin";
+            case TEXT:
+                return "text";
+            case TOP_MARGIN:
+                return "topMargin";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = CLabel.class)
-    public static class CLabelJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCLabel.class, (JsonWriter.WriteObject<DartCLabel>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCLabel.class, (JsonReader.ReadObject<DartCLabel>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 541:
+                w.write((int) getAlignment());
+                return true;
+            case 542:
+                w.image(getBackgroundImage());
+                return true;
+            case 543:
+                w.write((int) getBottomMargin());
+                return true;
+            case 1357:
+                {
+                    Color[] a_ = getGradientColors();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Color e_ : a_) w.write(e_);
+                    }
+                }
+                return true;
+            case 1358:
+                w.write(getGradientPercents());
+                return true;
+            case 1359:
+                w.write(getGradientVertical());
+                return true;
+            case 544:
+                w.image(getImage());
+                return true;
+            case 545:
+                w.write((int) getLeftMargin());
+                return true;
+            case 546:
+                w.write((int) getRightMargin());
+                return true;
+            case 547:
+                w.write(getText());
+                return true;
+            case 548:
+                w.write((int) getTopMargin());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static CLabel read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 541:
+                {
+                    int v_ = getAlignment();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(541);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 542:
+                {
+                    Image v_ = getBackgroundImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(542);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 543:
+                {
+                    int v_ = getBottomMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(543);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1357:
+                {
+                    Color[] v_ = getGradientColors();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(1357);
+                    {
+                        Color[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Color e_ : a_) w.write(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1358:
+                {
+                    int[] v_ = getGradientPercents();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(1358);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1359:
+                {
+                    boolean v_ = getGradientVertical();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(1359);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 544:
+                {
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(544);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 545:
+                {
+                    int v_ = getLeftMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(545);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 546:
+                {
+                    int v_ = getRightMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(546);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 547:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(547);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 548:
+                {
+                    int v_ = getTopMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(548);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, CLabel api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 541, 542, 543, 1357, 1358, 1359, 544, 545, 546, 547, 548 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

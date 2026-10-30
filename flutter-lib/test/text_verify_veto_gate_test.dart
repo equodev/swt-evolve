@@ -23,6 +23,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/text.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
@@ -51,10 +52,10 @@ Widget _appWith(VText v) => _app(SizedBox(
     ));
 
 /// Delivers an inbound frame exactly as the transport would (2-byte name length,
-/// name, JSON body) so the widget's channel subscriptions receive it.
-void _receiveJson(String actionId, Object payload) {
+/// name, tagged-values body) so the widget's channel subscriptions receive it.
+void _deliver(String actionId, Object payload) {
   final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
+  final body = TaggedValues.encode(payload);
   final frame = Uint8List(2 + actionBytes.length + body.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;
@@ -69,7 +70,7 @@ void main() {
     await tester.pumpWidget(_appWith(_value('1234')));
 
     // Java: this field has a VerifyListener — edits need a verdict.
-    _receiveJson('Text/1/modify/vetoable', {'value': true});
+    _deliver('Text/1/modify/vetoable', {'value': true});
     await tester.pump();
 
     final field = find.byType(EditableText);
@@ -81,7 +82,7 @@ void main() {
     expect(find.text('1234'), findsOneWidget);
 
     // Java's VerifyListener vetoed (e.g. 12347 > 9999): the edit is dropped.
-    _receiveJson('Text/1/modify/verdict', {'doit': false});
+    _deliver('Text/1/modify/verdict', {'doit': false});
     await tester.pump();
 
     expect(find.text('12347'), findsNothing,
@@ -94,7 +95,7 @@ void main() {
     expect(find.text('1239'), findsNothing,
         reason: 'still gated until the verdict');
 
-    _receiveJson('Text/1/modify/verdict', {'doit': true});
+    _deliver('Text/1/modify/verdict', {'doit': true});
     await tester.pump();
     expect(find.text('1239'), findsOneWidget,
         reason: 'an accepted edit is applied on the verdict');
@@ -114,7 +115,7 @@ void main() {
 
     // Java rejected the Modify; its corrective push carries the pre-edit text,
     // which the stale-echo guard would otherwise swallow (the focus baseline).
-    _receiveJson('Text/1/modify/verdict', {'doit': false});
+    _deliver('Text/1/modify/verdict', {'doit': false});
     await tester.pump();
     await deliverWhole(_value('1234')..seq = 2);
     await tester.pump();

@@ -750,7 +750,7 @@ public class DartCombo extends DartComposite implements ICombo {
     public void setListVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (this.listVisible != newValue) {
+        if (getListVisible() != newValue) {
             getValue().markDirty(VCombo.LIST_VISIBLE);
         }
         this.listVisible = newValue;
@@ -1892,58 +1892,81 @@ public class DartCombo extends DartComposite implements ICombo {
                 ComboHelper.listShownByFlutter(this, e.detail != 0);
             });
         });
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                setText(e.text);
-            });
-        });
-        FlutterBridge.on(this, "Segment", "Segments", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Segments, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (!isActive())
-                    return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (e.text != null) {
-                    text = e.text;
-                    int idx = indexOf(e.text);
-                    if (idx >= 0 && idx != selectedIndex) {
-                        selectedIndex = idx;
-                        getValue().markDirty(VCombo.TEXT);
-                    }
-                }
-                sendEvent(SWT.Modify);
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Selection, e);
-            });
-        });
-        FlutterBridge.on(this, "Verify", "Verify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (ComboHelper.proposesNoChange(e)) {
-                    ComboHelper.clientCaretMoved(this, e.start, e.index);
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Segment/Segments", "Selection/DefaultSelection", "Selection/Selection", "Verify/Verify");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        setText(e.text);
+                    });
                     return;
                 }
-                sendEvent(SWT.Verify, e);
-            });
-        });
+            case "Segment/Segments":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Segments, e);
+                    });
+                    return;
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
+                    return;
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (e.text != null) {
+                            text = e.text;
+                            int idx = indexOf(e.text);
+                            if (idx >= 0 && idx != selectedIndex) {
+                                selectedIndex = idx;
+                                getValue().markDirty(VCombo.TEXT);
+                            }
+                        }
+                        sendEvent(SWT.Modify);
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Selection, e);
+                    });
+                    return;
+                }
+            case "Verify/Verify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (ComboHelper.proposesNoChange(e)) {
+                            ComboHelper.clientCaretMoved(this, e.start, e.index);
+                            return;
+                        }
+                        sendEvent(SWT.Verify, e);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Combo getApi() {

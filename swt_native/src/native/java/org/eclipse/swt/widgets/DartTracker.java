@@ -844,14 +844,15 @@ public class DartTracker extends DartWidget implements ITracker {
                 }
             }));
         }
-        Event e = new Event();
-        e.itemId = FlutterBridge.id(this);
+        // A plain map: an SWT Event has no form on the wire.
+        java.util.Map<String, Object> e = new java.util.HashMap<>();
+        e.put("itemId", FlutterBridge.id(this));
         Rectangle bounds = computeBounds();
         if (bounds != null) {
-            e.x = bounds.x;
-            e.y = bounds.y;
-            e.width = bounds.width;
-            e.height = bounds.height;
+            e.put("x", bounds.x);
+            e.put("y", bounds.y);
+            e.put("width", bounds.width);
+            e.put("height", bounds.height);
         }
         FlutterBridge.sendNow(host, "Tracker/open", e);
     }
@@ -865,9 +866,7 @@ public class DartTracker extends DartWidget implements ITracker {
         announcedOn = null;
         if (host == null || host.isDisposed())
             return;
-        Event e = new Event();
-        e.itemId = FlutterBridge.id(this);
-        FlutterBridge.sendNow(host, "Tracker/close", e);
+        FlutterBridge.sendNow(host, "Tracker/close", java.util.Collections.singletonMap("itemId", FlutterBridge.id(this)));
     }
 
     void mouse(Event e) {
@@ -895,34 +894,55 @@ public class DartTracker extends DartWidget implements ITracker {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Control", "Move", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Control/Move", "Control/Resize", "Key/KeyDown", "Key/KeyUp");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Control/Move":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Move, e);
+                    });
                     return;
-                sendEvent(SWT.Move, e);
-            });
-        });
-        FlutterBridge.on(this, "Control", "Resize", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Control/Resize":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Resize, e);
+                    });
                     return;
-                sendEvent(SWT.Resize, e);
-            });
-        });
-        FlutterBridge.on(this, "Key", "KeyDown", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Key/KeyDown":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ControlHelper.sendFlutterKeyDown(this, e);
+                    });
                     return;
-                ControlHelper.sendFlutterKeyDown(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Key", "KeyUp", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Key/KeyUp":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.KeyUp, e);
+                    });
                     return;
-                sendEvent(SWT.KeyUp, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Tracker getApi() {

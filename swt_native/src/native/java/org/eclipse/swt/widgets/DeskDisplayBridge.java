@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
+import dev.equo.swt.comm.CommService;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
@@ -110,6 +111,11 @@ public class DeskDisplayBridge extends DisplayBridge {
         // Logical pixels, not converted: the client has not reported its monitor yet, so the UI
         // scale is unknown here, and the shell is fitted to whatever viewport the window reports.
         windowContext = openNativeWindow(0, displayId, "Display", width, height);
+    }
+
+    @Override
+    protected CommService createComm() {
+        return newLocalComm();
     }
 
     /** Opens one native top-level window hosting a Flutter client rooted at {@code widgetName/id}.
@@ -533,10 +539,26 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /**
+     * The {@link #sleep(int)} wait ends on any wake, so the cap only bounds a wake that never reaches the OS loop
+     * (Windows posts it to the thread that last waited, and before the first wait there is none).
+     */
+    @Override
+    public int parkCapMillis() {
+        return hasNativeWindow() ? 1000 : super.parkCapMillis();
+    }
+
+    /** A wake the last pump drained has left the flag set; clear it so the next one is posted. */
+    @Override
+    public void armWake() {
+        wakeQueued.set(false);
+    }
+
+    /**
      * Idle wait: block inside the native (Cocoa/GTK/Win32) event loop instead of {@code Thread.sleep}.
      * Keeps the SWT main thread parked in the OS event loop, so a click, key, or window event wakes
-     * it immediately (no up-to-16ms input lag) and live window drag/resize stays smooth. The deadline
-     * still bounds the wait so Java-side timers (caret blink, etc.) keep ticking when idle.
+     * it immediately (no up-to-16ms input lag) and live window drag/resize stays smooth. The caller
+     * bounds the wait by the next timer's deadline; asyncExec and dirty state end it through
+     * {@link #wake()}.
      */
     @Override
     public void sleep(int millis) throws InterruptedException {

@@ -1,6 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
 
@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  */
 class ExpandBarHeaderWireNativeTest extends SerializeTestBase {
 
-    private static java.util.Set<String> changed(ExpandItem item) {
+    private static java.util.Set<Integer> changed(ExpandItem item) {
         return ((DartWidget) item.getImpl()).getValue().changedKeys();
     }
 
@@ -28,7 +28,7 @@ class ExpandBarHeaderWireNativeTest extends SerializeTestBase {
         ExpandBar bar = new ExpandBar(shell(), SWT.NONE);
         ExpandItem item = new ExpandItem(bar, SWT.NONE);
 
-        assertThatJson(serialize(item)).node("headerHeight").isEqualTo(item.getHeaderHeight());
+        assertThatWire(serialize(item)).node("headerHeight").isEqualTo(item.getHeaderHeight());
         assertThat(item.getHeaderHeight()).isEqualTo(24);
     }
 
@@ -48,9 +48,9 @@ class ExpandBarHeaderWireNativeTest extends SerializeTestBase {
         gc.dispose();
 
         assertThat(line).isGreaterThan(24);
-        assertThat(changed(first)).contains("headerHeight");
-        assertThat(changed(second)).contains("headerHeight");
-        assertThatJson(serialize(first)).node("headerHeight").isEqualTo(line);
+        assertThat(changed(first)).contains(VExpandItem.HEADER_HEIGHT);
+        assertThat(changed(second)).contains(VExpandItem.HEADER_HEIGHT);
+        assertThatWire(serialize(first)).node("headerHeight").isEqualTo(line);
         big.dispose();
     }
 
@@ -63,7 +63,7 @@ class ExpandBarHeaderWireNativeTest extends SerializeTestBase {
         Image tall = new Image(Mocks.device(), new ImageData(30, 40, 24, new PaletteData(0xFF0000, 0xFF00, 0xFF)));
         item.setImage(tall);
 
-        assertThat(changed(item)).contains("headerHeight");
-        assertThatJson(serialize(item)).node("headerHeight").isEqualTo(40);
+        assertThat(changed(item)).contains(VExpandItem.HEADER_HEIGHT);
+        assertThatWire(serialize(item)).node("headerHeight").isEqualTo(40);
     }
 }

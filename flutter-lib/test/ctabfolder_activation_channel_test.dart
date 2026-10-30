@@ -18,13 +18,14 @@ import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 const _left = 1000;
 const _right = 2000;
 
-void _receiveJson(String actionId, Object payload) {
+void _deliver(String actionId, Object payload) {
   final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
+  final body = TaggedValues.encode(payload);
   final frame = Uint8List(2 + actionBytes.length + body.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;
@@ -101,7 +102,7 @@ Future<void> _focus(WidgetTester tester, int textId) async {
 }
 
 Future<void> _activate(WidgetTester tester, int folderId, bool active) async {
-  _receiveJson('CTabFolder/$folderId/activation', {'active': active});
+  _deliver('CTabFolder/$folderId/activation', {'active': active});
   await tester.pump();
   await tester.pump();
   while (tester.takeException() != null) {}

@@ -2,8 +2,10 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.DartCCombo;
@@ -93,10 +95,11 @@ class CComboTextStaysInJavaTest {
         combo.setSelection(new org.eclipse.swt.graphics.Point(0, 2));
         FlutterBridge.update().join();
 
-        List<String> payloads = bridge.comm.sent.stream().map((RecordingComm.Frame f) -> f.json).collect(Collectors.toList());
-        assertThat(payloads).as("the combo still ships its own text").anyMatch(json -> json != null && json.contains("Bravoz"));
+        List<Object> payloads = BatchEntries.of(bridge.comm.sent).stream().map(GcFrames.Entry::value).collect(Collectors.toList());
+        assertThat(payloads).as("the combo still ships its own text").anyMatch(value -> WireValues.containsText(value, "Bravoz"));
         assertThat(sentEvents()).as("nothing goes out on a Text channel").noneMatch(e -> e.startsWith("Text/"));
-        assertThat(payloads).as("no payload describes a Text").noneMatch(json -> json != null && json.contains("\"swt\":\"Text\""));
+        assertThat(payloads).as("no payload describes a Text")
+                .noneMatch(value -> !WireValues.find(value, m -> "Text".equals(m.get("swt"))).isEmpty());
     }
 
     @Test

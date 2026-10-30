@@ -3,7 +3,6 @@ package org.eclipse.swt.graphics;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
@@ -17,9 +16,10 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -79,10 +79,10 @@ class GCCanvasFillsNativeTest {
 
         assertThat(fills(unlisted)[0]).isNull();
         assertThat(fills(unlisted)[1]).isNull();
-        assertThat(json(unlisted)).doesNotContain("hoverFills").doesNotContain("selectionFills");
-        assertThat(json(new Grid(shell)))
-                .contains("\"hoverFills\":[{\"red\":246,\"green\":230,\"blue\":214}]")
-                .contains("\"selectionFills\":[{\"red\":219,\"green\":199,\"blue\":180}]");
+        assertThatWire(described(unlisted)).containsEntry("hoverFills", null).containsEntry("selectionFills", null);
+        assertThatWire(described(new Grid(shell)))
+                .containsEntry("hoverFills", List.of(Map.of("red", 246, "green", 230, "blue", 214)))
+                .containsEntry("selectionFills", List.of(Map.of("red", 219, "green", 199, "blue", 180)));
     }
 
     /** The hover and the selection fills a GC on {@code control} carries. */
@@ -96,10 +96,10 @@ class GCCanvasFillsNativeTest {
         }
     }
 
-    private static String json(Control control) throws IOException {
+    private static Map<String, Object> described(Control control) throws IOException {
         GC gc = new GC(control);
         try {
-            return new String(new Serializer().to(((DartGC) gc.getImpl()).getValue()), StandardCharsets.UTF_8);
+            return dev.equo.swt.harness.WireFrames.describe(((DartGC) gc.getImpl()).getValue());
         } finally {
             gc.dispose();
         }

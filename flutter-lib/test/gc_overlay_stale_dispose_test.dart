@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 /// Minimal concrete comm for driving [receiveBinary] deterministically; sends go nowhere.
 class _TestComm extends EquoCommBase {
@@ -16,11 +17,11 @@ class _TestComm extends EquoCommBase {
   @override
   void rawSend(Uint8List frame) {}
 
-  /// Build and deliver one framed message for [actionId] carrying [json] as its body,
+  /// Build and deliver one framed message for [actionId] carrying [payload] as its tagged-values body,
   /// exactly as the wire transport would: [2-byte actionId length BE][actionId][body].
-  void deliver(String actionId, Map<String, dynamic> json) {
+  void deliver(String actionId, Map<String, dynamic> payload) {
     final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
+    final body = TaggedValues.encode(payload);
     final out = Uint8List(2 + action.length + body.length);
     out[0] = (action.length >> 8) & 0xFF;
     out[1] = action.length & 0xFF;

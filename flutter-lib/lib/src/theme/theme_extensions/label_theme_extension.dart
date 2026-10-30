@@ -1,21 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'label_theme_extension.tailor.dart';
-part 'label_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
-@TextDecorationConverter()
-@TextAlignConverter()
-@MainAxisAlignmentConverter()
-@CrossAxisAlignmentConverter()
 class LabelThemeExtension extends ThemeExtension<LabelThemeExtension> with _$LabelThemeExtensionTailorMixin {
   // Text colors
   final Color primaryTextColor;
@@ -125,9 +113,4 @@ class LabelThemeExtension extends ThemeExtension<LabelThemeExtension> with _$Lab
     required this.separatorThickness,
     required this.minTextContrast,
   });
-
-  factory LabelThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$LabelThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$LabelThemeExtensionToJson(this);
 }

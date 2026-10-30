@@ -3,18 +3,16 @@
 // such a push as a command closed the dropdown a click had just opened, so picking an item worked
 // or not depending on whether an unrelated push landed in between.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/combo_evolve.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int _comboId = 91;
 
@@ -32,18 +30,6 @@ VCombo _readOnlyCombo({required int seq, bool? listVisible}) => VCombo()
     ..y = 0
     ..width = 160
     ..height = 34);
-
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
 
 Future<void> _pumpCombo(WidgetTester tester) async {
   await tester.pumpWidget(EvolveApp(
@@ -70,7 +56,7 @@ void main() {
 
     // Any unrelated state push for this Combo. It carries listVisible exactly as Java always
     // sends it -- Java never learns the user opened the list.
-    _receive('Combo/$_comboId', {..._readOnlyCombo(seq: 2).toJson(), '_s': 2});
+    await deliverWhole(_readOnlyCombo(seq: 2));
     await tester.pumpAndSettle();
 
     expect(find.text('Combo B'), findsOneWidget,
@@ -85,11 +71,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Combo B'), findsOneWidget);
 
-    _receive('Combo/$_comboId',
-        {..._readOnlyCombo(seq: 2, listVisible: true).toJson(), '_s': 2});
+    await deliverWhole(_readOnlyCombo(seq: 2, listVisible: true));
     await tester.pumpAndSettle();
-    _receive('Combo/$_comboId',
-        {..._readOnlyCombo(seq: 3, listVisible: false).toJson(), '_s': 3});
+    await deliverWhole(_readOnlyCombo(seq: 3, listVisible: false));
     await tester.pumpAndSettle();
 
     expect(find.text('Combo B'), findsNothing,

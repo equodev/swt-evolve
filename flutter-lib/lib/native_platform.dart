@@ -116,4 +116,8 @@ void observeWindowClose(void Function() onClose) {}
 /// shared platform interface with web_platform.dart.
 void suppressBrowserShortcuts() {}
 
+/// No-op off the web: a native engine that crashes takes the process with it. Present to satisfy
+/// the shared platform interface with web_platform.dart.
+void reloadOnRendererCrash() {}
+
 void close() {}

@@ -7,6 +7,7 @@ import '../gen/event.dart';
 import '../gen/list.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/list_theme_extension.dart';
@@ -43,7 +44,7 @@ class ListImpl<T extends ListSwt, V extends VList>
   @override
   void setValue(V value) {
     super.setValue(value);
-    if (lastChange?.touches('topIndex') ?? true) _scrollToTopIndexAfterLayout();
+    if (lastChange?.touches(WireKey.k_List_topIndex) ?? true) _scrollToTopIndexAfterLayout();
   }
 
   /// Java keeps how far the items are scrolled: getTopIndex and API scrolling are computed from it.

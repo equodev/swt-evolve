@@ -3,8 +3,10 @@ package org.eclipse.swt.graphics;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.Serializer;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
@@ -16,8 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,12 +51,14 @@ class GCThemedCanvasNativeTest {
     }
 
     private ConfigFlags savedFlags;
+    private RecordingBridge bridge;
     private Shell shell;
 
     @BeforeEach
     void setUp() {
         savedFlags = Config.getConfigFlags();
-        FlutterBridge.set(new RecordingBridge());
+        bridge = new RecordingBridge();
+        FlutterBridge.set(bridge);
         shell = DartMocks.dartShell(DartMocks.dartDisplay());
     }
 
@@ -115,13 +118,13 @@ class GCThemedCanvasNativeTest {
     }
 
     @Test
-    void an_explicit_false_travels_and_no_decision_stays_off_the_wire() throws IOException {
+    void an_explicit_false_travels_and_no_decision_stays_off_the_wire() {
         byClass(Map.of(Ramp.class.getName(), false));
         Ramp ramp = new Ramp(shell);
         Composite unlisted = new Composite(shell, SWT.NONE);
 
-        assertThat(json(ramp)).contains("\"themedCanvas\":false");
-        assertThat(json(unlisted)).doesNotContain("themedCanvas");
+        assertThat(WireValues.find(sent(ramp), m -> Boolean.FALSE.equals(m.get("themedCanvas")))).isNotEmpty();
+        assertThat(WireValues.containsText(sent(unlisted), "themedCanvas")).isFalse();
     }
 
     private static void byClass(Map<String, Boolean> byClass) {
@@ -139,12 +142,12 @@ class GCThemedCanvasNativeTest {
         }
     }
 
-    private static String json(Control control) throws IOException {
+    /** What a GC on {@code control} sends: its state, with what it drew. */
+    private List<Object> sent(Control control) {
+        bridge.comm.sent.clear();
         GC gc = new GC(control);
-        try {
-            return new String(new Serializer().to(((DartGC) gc.getImpl()).getValue()), StandardCharsets.UTF_8);
-        } finally {
-            gc.dispose();
-        }
+        gc.drawLine(0, 0, 1, 1);
+        gc.dispose();
+        return BatchEntries.of(bridge.comm.sent).stream().map(GcFrames.Entry::value).toList();
     }
 }

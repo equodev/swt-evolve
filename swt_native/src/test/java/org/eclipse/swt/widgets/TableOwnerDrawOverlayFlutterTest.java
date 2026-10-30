@@ -3,7 +3,9 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -94,9 +96,9 @@ class TableOwnerDrawOverlayFlutterTest {
         String[] texts = ((DartTableItem) second.getImpl()).getTexts();
 
         String row = "GC/" + second.hashCode();
-        List<String[]> entries = BatchEntries.of(bridge.comm.sent);
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
         List<String> rowChannels = entries.stream()
-                .map(e -> e[0])
+                .map(GcFrames.Entry::channel)
                 .filter(c -> c.startsWith(row))
                 .collect(Collectors.toList());
 
@@ -106,23 +108,28 @@ class TableOwnerDrawOverlayFlutterTest {
                 // drawString(String, int, int, true) reaches the client as the flags form SWT defines it by.
                 .contains(row + "/fillRoundRectangleintintintintintint", row + "/drawTextStringintintint",
                         row + "/gcDispose");
-        assertThat(body(entries, row + "/gcDispose"))
+        assertThat(WireValues.find(body(entries, row + "/gcDispose"), m -> Boolean.TRUE.equals(m.get("fullRepaint"))))
                 .as("each paint of the row replaces the last")
-                .contains("\"fullRepaint\":true");
-        String state = entries.stream().filter(e -> e[0].equals(row)).map(e -> e[1])
-                .collect(Collectors.joining("\n"));
-        assertThat(state).as("the row is drawn in its own coordinates").contains("\"transform\"")
-                .contains(String.valueOf((float) -rowY));
-        assertThat(state).as("the bold font the name is drawn in").contains("\"style\":1");
-        assertThat(state).as("the row's foreground, which native SWT sets on the GC it hands the listener")
-                .contains("\"b\":222,\"g\":222,\"r\":223");
-        assertThat(entries.stream().map(e -> e[0]))
+                .isNotEmpty();
+        List<Object> state = entries.stream().filter(e -> e.channel().equals(row)).map(GcFrames.Entry::value)
+                .collect(Collectors.toList());
+        assertThat(WireValues.mentions(state, "transform")).as("the row is drawn in its own coordinates").isTrue();
+        assertThat(WireValues.find(state, m -> m.containsKey("transform")).stream()
+                .anyMatch(m -> holdsNumber(m.get("transform"), -rowY)))
+                .as("the row is drawn in its own coordinates")
+                .isTrue();
+        assertThat(WireValues.find(state, m -> m.containsKey("style") && WireValues.same(m.get("style"), 1)))
+                .as("the bold font the name is drawn in").isNotEmpty();
+        assertThat(WireValues.find(state, m -> "#ffdfdede".equals(m.get("foreground"))))
+                .as("the row's foreground, which native SWT sets on the GC it hands the listener")
+                .isNotEmpty();
+        assertThat(entries.stream().map(GcFrames.Entry::channel))
                 .as("nothing the row draws lands on the Table's own channel")
                 .noneMatch(c -> c.startsWith("GC/" + table.hashCode() + "/"));
 
         bridge.comm.sent.clear();
         ((DartTableItem) first.getImpl()).getTexts();
-        assertThat(BatchEntries.of(bridge.comm.sent).stream().map(e -> e[0]))
+        assertThat(BatchEntries.of(bridge.comm.sent).stream().map(GcFrames.Entry::channel))
                 .as("a row whose overlay never reported listening is not painted into it")
                 .noneMatch(c -> c.startsWith("GC/" + first.hashCode()));
 
@@ -141,12 +148,20 @@ class TableOwnerDrawOverlayFlutterTest {
     }
 
     /** The last body sent on exactly {@code channel}. */
-    private static String body(List<String[]> entries, String channel) {
-        String found = null;
-        for (String[] entry : entries) {
-            if (entry[0].equals(channel)) found = entry[1];
+    private static Object body(List<GcFrames.Entry> entries, String channel) {
+        Object found = null;
+        for (GcFrames.Entry entry : entries) {
+            if (entry.channel().equals(channel)) found = entry.value();
         }
         assertThat(found).as("a frame on " + channel).isNotNull();
         return found;
+    }
+
+    /** Whether {@code tree} holds the number {@code n} at any depth. */
+    private static boolean holdsNumber(Object tree, double n) {
+        if (tree instanceof Number) return ((Number) tree).doubleValue() == n;
+        if (tree instanceof java.util.Map<?, ?> map) return map.values().stream().anyMatch(v -> holdsNumber(v, n));
+        if (tree instanceof List<?> list) return list.stream().anyMatch(v -> holdsNumber(v, n));
+        return false;
     }
 }

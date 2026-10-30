@@ -17,9 +17,6 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are descriptions of colors in
@@ -45,7 +42,7 @@ import com.dslplatform.json.JsonAttribute;
  * @see <a href="https://eclipse.dev/eclipse/swt/snippets/#color">Color and RGB snippets</a>
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-public final class RGB implements Serializable {
+public final class RGB implements Serializable, dev.equo.swt.WireObject {
 
     /**
      * the red component of the RGB
@@ -76,7 +73,6 @@ public final class RGB implements Serializable {
      *    <li>ERROR_INVALID_ARGUMENT - if the red, green or blue argument is not between 0 and 255</li>
      * </ul>
      */
-    @CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
     public RGB(int red, int green, int blue) {
         if ((red > 255) || (red < 0) || (green > 255) || (green < 0) || (blue > 255) || (blue < 0))
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -249,5 +245,36 @@ public final class RGB implements Serializable {
     public String toString() {
         //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
         return "RGB {" + red + ", " + green + ", " + blue + "}";
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 112;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(111);
+        w.write((int) red);
+        w.key(110);
+        w.write((int) green);
+        w.key(109);
+        w.write((int) blue);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 111:
+                red = r.int32();
+                return true;
+            case 110:
+                green = r.int32();
+                return true;
+            case 109:
+                blue = r.int32();
+                return true;
+        }
+        return false;
     }
 }

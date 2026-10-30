@@ -67,22 +67,19 @@ abstract class GenericSizeBridge<REQUEST, SERIALIZED, RESULT> extends FlutterHar
     }
 
     private void initFlutterView() {
-        CompletableFuture<Point> windowSizeFuture = onReady(this, Point.class);
+        CompletableFuture<org.eclipse.swt.widgets.ClientReadyPayload> windowSizeFuture =
+                onReady(this, org.eclipse.swt.widgets.ClientReadyPayload.class);
         CompletableFuture<Void> windowReady = windowSizeFuture.thenAccept((p) -> {
-            System.out.println("Received windowSize " + p);
-            this.windowSize = p;
+            this.windowSize = p == null ? null : new Point(p.width, p.height);
+            System.out.println("Received windowSize " + this.windowSize);
         });
         bootRenderer(id(this), widgetName(this));
         onPayload(this, responseChannel, p -> {
-            try {
-                SERIALIZED serialized = serializer.from(serializedClass, p);
-                RESULT dartResult = convertResult(serialized);
-                windowReady.thenRun(() ->
-                    result.complete(dartResult)
-                );
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            SERIALIZED serialized = dev.equo.swt.harness.Trees.read(serializedClass, p);
+            RESULT dartResult = convertResult(serialized);
+            windowReady.thenRun(() ->
+                result.complete(dartResult)
+            );
         });
     }
 

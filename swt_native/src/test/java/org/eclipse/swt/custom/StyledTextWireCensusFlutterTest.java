@@ -1,16 +1,14 @@
 package org.eclipse.swt.custom;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.equo.swt.harness.UserInput.Key;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.junit.jupiter.api.*;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -503,30 +501,23 @@ class StyledTextWireCensusFlutterTest {
         stage.focusAt(stage.subject.getOffsetAtLine(3));
         stage.settle();
         // The first keystroke settles what Java holds; the second is the one measured against it.
-        String whole = lastGeometry(() -> stage.type("x"));
-        String push = lastGeometry(() -> stage.type("y"));
-        Assertions.assertNotNull(push, "a keystroke pushed no geometry at all");
+        byte[] whole = lastGeometry(() -> stage.type("x"));
+        byte[] push = lastGeometry(() -> stage.type("y"));
+        assertThat(push).as("a keystroke pushed no geometry at all").isNotNull();
 
-        JsonObject payload = JsonParser.parseString(push).getAsJsonObject();
-        Assertions.assertNull(payload.get("lines"),
-                "a keystroke described the whole table instead of the rows it changed");
-        JsonArray rows = payload.getAsJsonArray("rows");
-        Assertions.assertNotNull(rows, "the push named no rows");
-        Assertions.assertTrue(rows.size() <= 4,
-                "a keystroke rewrote " + rows.size() + " rows, which is not a splice of one line");
+        StyledTextHelper.GeometryPush payload = StyledTextHelper.readPush(push);
+        assertThat(payload.lines)
+                .as("a keystroke described the whole table instead of the rows it changed").isNull();
+        assertThat(payload.rows)
+                .as("a keystroke rewrites at most the rows of a splice of one line").isNotNull().hasSizeLessThanOrEqualTo(4);
 
-        int rowBytes = 0;
-        for (JsonElement row : rows) {
-            rowBytes += row.toString().length();
-        }
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("rows pushed", rows.size());
-        result.put("push bytes", push.length());
-        result.put("bytes of the pushed rows", rowBytes);
-        result.put("first row rewritten", num(payload.get("rowStart") == null ? 0 : payload.get("rowStart").getAsInt()));
-        result.put("rows replaced", num(payload.get("rowsReplaced") == null ? 0 : payload.get("rowsReplaced").getAsInt()));
+        result.put("rows pushed", payload.rows.length);
+        result.put("push bytes", push.length);
+        result.put("first row rewritten", num(payload.rowStart));
+        result.put("rows replaced", num(payload.rowsReplaced));
         if (whole != null) {
-            result.put("previous push bytes", whole.length());
+            result.put("previous push bytes", whole.length);
         }
         census.put("geometry table, keystroke in a 2000-line document", result);
         System.out.println("== geometry table, keystroke in a 2000-line document\n"
@@ -537,11 +528,7 @@ class StyledTextWireCensusFlutterTest {
         return o instanceof Number ? ((Number) o).doubleValue() : 0;
     }
 
-    private static boolean sameField(JsonObject a, JsonObject b, String key) {
-        return String.valueOf(a.get(key)).equals(String.valueOf(b.get(key)));
-    }
-
-    private String lastGeometry(Runnable action) {
+    private byte[] lastGeometry(Runnable action) {
         synchronized (frames) {
             frames.clear();
         }
@@ -551,16 +538,13 @@ class StyledTextWireCensusFlutterTest {
         synchronized (frames) {
             taken = new ArrayList<>(frames);
         }
-        String last = null;
+        byte[] last = null;
         for (Frame f : taken) {
             if (f.fromJava()) continue;
             byte[] frame = f.bytes();
-            if (frame.length < 2) continue;
-            int nameLength = ((frame[0] & 0xff) << 8) | (frame[1] & 0xff);
-            if (2 + nameLength > frame.length) continue;
-            String name = new String(frame, 2, nameLength, StandardCharsets.UTF_8);
-            if (!name.endsWith("/TextGeometry")) continue;
-            last = new String(frame, 2 + nameLength, frame.length - 2 - nameLength, StandardCharsets.UTF_8);
+            dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length);
+            if (header == null || !header.channel().endsWith("/TextGeometry")) continue;
+            last = java.util.Arrays.copyOfRange(frame, header.payloadStart(), frame.length);
         }
         return last;
     }
@@ -640,33 +624,37 @@ class StyledTextWireCensusFlutterTest {
 
     /** Splits a frame into its channels: a name-prefixed payload, or a batch of them. */
     private static void account(byte[] frame, Map<String, long[]> byChannel) {
-        if (frame.length < 2) return;
-        int nameLength = ((frame[0] & 0xff) << 8) | (frame[1] & 0xff);
-        if (2 + nameLength > frame.length) return;
-        String name = new String(frame, 2, nameLength, StandardCharsets.UTF_8);
-        int payloadStart = 2 + nameLength;
+        dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length);
+        if (header == null) return;
+        String name = header.channel();
+        int payloadStart = header.payloadStart();
         if (name.equals("swt.evolve.batch")) {
-            try {
-                JsonArray entries = JsonParser.parseString(
-                        new String(frame, payloadStart, frame.length - payloadStart, StandardCharsets.UTF_8)).getAsJsonArray();
-                for (JsonElement entry : entries) {
-                    JsonArray pair = entry.getAsJsonArray();
-                    add(byChannel, pair.get(0).getAsString(), pair.get(1).toString().length(), pair.get(1));
+            // Each entry: its channel header, then its payload's length as a varint and the payload.
+            int pos = payloadStart;
+            while (pos < frame.length) {
+                dev.equo.swt.comm.ChannelHeader.Decoded entry = dev.equo.swt.comm.ChannelHeader.decode(frame, pos, frame.length);
+                int at = entry.payloadStart();
+                int length = 0;
+                for (int shift = 0; ; shift += 7) {
+                    int b = frame[at++] & 0xFF;
+                    length |= (b & 0x7F) << shift;
+                    if ((b & 0x80) == 0) break;
                 }
-                return;
-            } catch (RuntimeException notJson) {
-                // counted whole below
+                add(byChannel, entry.channel(), length,
+                        dev.equo.swt.harness.GcFrames.value(java.util.Arrays.copyOfRange(frame, at, at + length)));
+                pos = at + length;
             }
+            return;
         }
         add(byChannel, name, frame.length - payloadStart, null);
     }
 
-    private static void add(Map<String, long[]> byChannel, String channel, long bytes, JsonElement payload) {
+    private static void add(Map<String, long[]> byChannel, String channel, long bytes, Object payload) {
         String kind = channel.replaceAll("/-?\\d+", "/#");
-        if (payload != null && payload.isJsonObject() && kind.startsWith("StyledText/")) {
-            JsonObject object = payload.getAsJsonObject();
+        if (payload instanceof Map && kind.startsWith("StyledText/")) {
+            Map<?, ?> object = (Map<?, ?>) payload;
             // Which properties an update names, or that it is the whole widget.
-            kind += object.has("_d") ? " " + object.get("_d") : " (whole)";
+            kind += object.containsKey("_d") ? " " + object.get("_d") : " (whole)";
         }
         long[] tally = byChannel.computeIfAbsent(kind, k -> new long[2]);
         tally[0]++;

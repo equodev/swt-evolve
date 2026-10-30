@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import dev.equo.swt.comm.BinaryCommService;
 import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
@@ -92,7 +93,7 @@ class PushCopyAllocationTest {
             };
         });
         assertThat(client.lastEvent()).isEqualTo("Probe/1");
-        assertThat(client.lastPayload()).isEqualTo("\"" + "x".repeat(2 * TEXT_CHARS) + "\"");
+        assertThat(client.lastPayload()).isEqualTo("x".repeat(2 * TEXT_CHARS));
         assertThat(copies).as("payload copies per push, direct").isLessThan(1.5);
     }
 
@@ -108,9 +109,8 @@ class PushCopyAllocationTest {
                 FlutterBridge.update();
             };
         });
-        assertThat(client.lastEvent()).isEqualTo(MessageBatch.EVENT);
-        assertThat(client.lastPayload()).startsWith("[[\"Button/").endsWith("}]]");
-        assertThat(copies).as("payload copies per push, batched flush").isLessThan(1.5);
+        assertThat(client.lastEvent()).isEqualTo(WidgetWire.CHANNEL);
+        assertThat(copies).as("payload copies per push, one flush").isLessThan(1.5);
     }
 
     @Test
@@ -125,10 +125,10 @@ class PushCopyAllocationTest {
                 batch.clear();
             };
         });
-        String json = "\"" + "x".repeat(2 * TEXT_CHARS) + "\"";
+        String text = "\"" + "x".repeat(2 * TEXT_CHARS) + "\"";
         assertThat(client.lastEvent()).isEqualTo(MessageBatch.EVENT);
-        // A repeated channel travels as the index of the entry that named it (see MessageBatch).
-        assertThat(client.lastPayload()).isEqualTo("[[\"GC/1/drawText\"," + json + "],[0," + json + "]]");
+        assertThat(client.lastBatch()).containsExactly(
+                new GcFrames.Entry("GC/1/drawText", text), new GcFrames.Entry("GC/1/drawText", text));
         assertThat(copies).as("payload copies per push, batch of owned payloads").isLessThan(1.5);
     }
 
@@ -215,14 +215,19 @@ class PushCopyAllocationTest {
 
         String lastEvent() {
             byte[] frame = last;
-            int nameLength = ((frame[0] & 0xFF) << 8) | (frame[1] & 0xFF);
-            return new String(frame, 2, nameLength, StandardCharsets.UTF_8);
+            return dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length).channel();
         }
 
-        String lastPayload() {
+        java.util.List<GcFrames.Entry> lastBatch() {
             byte[] frame = last;
-            int nameLength = ((frame[0] & 0xFF) << 8) | (frame[1] & 0xFF);
-            return new String(frame, 2 + nameLength, frame.length - 2 - nameLength, StandardCharsets.UTF_8);
+            int start = dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length).payloadStart();
+            return GcFrames.batch(java.util.Arrays.copyOfRange(frame, start, frame.length));
+        }
+
+        Object lastPayload() {
+            byte[] frame = last;
+            int start = dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length).payloadStart();
+            return GcFrames.value(java.util.Arrays.copyOfRange(frame, start, frame.length));
         }
 
         @Override

@@ -3,12 +3,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VList extends VScrollable {
 
     protected VList() {
@@ -48,50 +44,97 @@ public class VList extends VScrollable {
         ((DartList) impl).topIndex = value;
     }
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 461;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 462;
 
-    public static final String TOP_INDEX = "topIndex";
+    public static final int TOP_INDEX = 1422;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "topIndex":
-                Serializer.writeKeyValue(writer, "topIndex", getTopIndex());
-                return;
+            case ITEMS:
+                return "items";
+            case SELECTION:
+                return "selection";
+            case TOP_INDEX:
+                return "topIndex";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = List.class)
-    public static class ListJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartList.class, (JsonWriter.WriteObject<DartList>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartList.class, (JsonReader.ReadObject<DartList>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 461:
+                w.write(getItems());
+                return true;
+            case 462:
+                w.write(getSelection());
+                return true;
+            case 1422:
+                w.write((int) getTopIndex());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static List read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 461:
+                {
+                    String[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(461);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 462:
+                {
+                    int[] v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(462);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1422:
+                {
+                    int v_ = getTopIndex();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(1422);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, List api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 461, 462, 1422 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

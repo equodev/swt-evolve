@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -10,11 +10,10 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/button_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'button.g.dart';
 
 class ButtonSwt<V extends VButton> extends ControlSwt<V> {
   const ButtonSwt({super.key, required super.value});
@@ -31,7 +30,6 @@ class ButtonSwt<V extends VButton> extends ControlSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VButton extends VControl {
   VButton() : this.empty();
   VButton.empty() {
@@ -59,28 +57,89 @@ class VButton extends VControl {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alignment':
-        alignment = (json['alignment'] as num?)?.toInt();
-      case 'grayed':
-        grayed = json['grayed'] as bool?;
-      case 'image':
-        image = json['image'] == null
-            ? null
-            : VImage.fromJson(json['image'] as Map<String, dynamic>);
-      case 'primary':
-        primary = json['primary'] as bool?;
-      case 'selection':
-        selection = json['selection'] as bool?;
-      case 'text':
-        text = json['text'] as String?;
+      case 527: // alignment
+        alignment = r.int32();
+        return true;
+      case 528: // grayed
+        grayed = r.boolean();
+        return true;
+      case 529: // image
+        image = r.image();
+        return true;
+      case 530: // primary
+        primary = r.boolean();
+        return true;
+      case 531: // selection
+        selection = r.boolean();
+        return true;
+      case 532: // text
+        text = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VButton.fromJson(Map<String, dynamic> json) =>
-      _$VButtonFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VButtonToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alignment;
+      if (v_ != null && w.wants(527)) {
+        w.key(527);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = grayed;
+      if (v_ != null && w.wants(528)) {
+        w.key(528);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = image;
+      if (v_ != null && w.wants(529)) {
+        w.key(529);
+        w.ref(v_.id);
+      }
+    }
+    {
+      final v_ = primary;
+      if (v_ != null && w.wants(530)) {
+        w.key(530);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null && w.wants(531)) {
+        w.key(531);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(532)) {
+        w.key(532);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(527, alignment);
+    visit(528, grayed);
+    visit(529, image);
+    visit(530, primary);
+    visit(531, selection);
+    visit(532, text);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

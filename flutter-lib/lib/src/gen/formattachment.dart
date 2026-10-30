@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'formattachment.g.dart';
-
-@JsonSerializable()
-class VFormAttachment {
+class VFormAttachment implements WireReadable, WireWritable, WireVisitable {
   VFormAttachment() : this.empty();
   VFormAttachment.empty();
 
-  factory VFormAttachment.fromJson(Map<String, dynamic> json) =>
-      _$VFormAttachmentFromJson(json);
-  Map<String, dynamic> toJson() => _$VFormAttachmentToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
 }

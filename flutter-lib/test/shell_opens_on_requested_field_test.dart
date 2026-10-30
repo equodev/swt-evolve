@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/label.dart';
@@ -16,8 +17,6 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
-
-import 'delivery/support/deliver.dart';
 
 const int base = 7600;
 const int mainShellId = base + 1;
@@ -106,11 +105,12 @@ Future<void> _openMainShell(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-/// The Display update that shows the popup over the workbench, with [activeShellId] active.
-Future<void> _showPopup({required int activeShellId}) => deliverFrame(
-      'Display/$base',
-      _display(shells: [_mainShell(), _popup()], activeShellId: activeShellId).toJson(),
-    );
+/// The Display update that shows the popup over the workbench, with [activeShellId] active: the
+/// record it arrives in, the only way an update reaches a mounted DisplaySwt.
+Future<void> _showPopup({required int activeShellId}) async {
+  VRegistry.instance.deliverHolderForTesting(
+      'Display', base, _display(shells: [_mainShell(), _popup()], activeShellId: activeShellId));
+}
 
 /// Settles, then one more frame for a focus the shell defers past the frame it is built in.
 Future<void> _settle(WidgetTester tester) async {

@@ -113,10 +113,11 @@ class SpinnerTypedEditFromFlutterNativeTest {
         return heard;
     }
 
-    private List<String> verdicts() {
-        List<String> verdicts = new ArrayList<>();
+    /** The {@code doit} of each modify verdict sent, in order. */
+    private List<Object> verdicts() {
+        List<Object> verdicts = new ArrayList<>();
         for (RecordingComm.Frame frame : bridge.comm.sent) {
-            if (frame.event.contains("modify/verdict")) verdicts.add(frame.json);
+            if (frame.event.contains("modify/verdict")) verdicts.add(frame.state().get("doit"));
         }
         return verdicts;
     }
@@ -293,7 +294,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
         assertThat(asked.get(0).end).isEqualTo(1);
         assertThat(spinner.getSelection()).isEqualTo(265);
         assertThat(verdicts()).hasSize(1);
-        assertThat(verdicts().get(0)).contains("true");
+        assertThat(verdicts().get(0)).isEqualTo(true);
     }
 
     @Test
@@ -309,7 +310,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
         assertThat(spinner.getSelection()).isEqualTo(25);
         assertThat(heard).isEmpty();
         assertThat(verdicts()).hasSize(1);
-        assertThat(verdicts().get(0)).contains("false");
+        assertThat(verdicts().get(0)).isEqualTo(false);
     }
 
     @Test
@@ -323,7 +324,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
         fromFlutter(spinner, edit("6", 0, 2, 1));
 
         assertThat(spinner.getSelection()).isEqualTo(7);
-        assertThat(verdicts().get(0)).as("the client shows the value Java holds, not what was typed").contains("false");
+        assertThat(verdicts().get(0)).as("the client shows the value Java holds, not what was typed").isEqualTo(false);
     }
 
     @Test

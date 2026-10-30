@@ -154,6 +154,7 @@ class GCHelperNativeTest {
         byte[] red = png(3, 3, 0xFF0000);
 
         GCHelper.updateImageFromPngBytes(image, null, (byte[]) null);
+        GCHelper.updateImageFromPngBytes(image, null, new byte[0]);
         GCHelper.updateImageFromPngBytes(image, null, (ByteBuffer) null);
         GCHelper.updateImageFromPngBytes(image, null, ByteBuffer.allocate(0));
         GCHelper.updateImageFromPng(image, null, null);

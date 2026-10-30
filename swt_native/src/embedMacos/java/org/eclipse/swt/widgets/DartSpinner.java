@@ -793,36 +793,57 @@ public class DartSpinner extends DartComposite implements ISpinner {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Selection/DefaultSelection", "Selection/Selection", "Verify/Verify");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        SpinnerHelper.editedInFlutter(this, e);
+                    });
                     return;
-                SpinnerHelper.editedInFlutter(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        SpinnerHelper.committedInFlutter(this, e);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        SpinnerHelper.selectedInFlutter(this, e.index);
+                    });
                     return;
-                SpinnerHelper.committedInFlutter(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Verify/Verify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Verify, e);
+                    });
                     return;
-                SpinnerHelper.selectedInFlutter(this, e.index);
-            });
-        });
-        FlutterBridge.on(this, "Verify", "Verify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Verify, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Spinner getApi() {

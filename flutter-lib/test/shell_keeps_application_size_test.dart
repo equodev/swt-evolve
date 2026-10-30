@@ -3,7 +3,6 @@
 // client adds to it becomes the application's size too -- and an application that sizes its own
 // content to the Shell (a layout, an embedded toolkit's window) then grows to fill the extra room.
 
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,11 +80,11 @@ void main() {
     await tester.pump();
 
     final setBounds = EquoCommService.commForTesting.sentFrames
-        .map(EquoCommBase.decodeFrame)
-        .where((f) => f.$1 == 'Shell/${dialog.id}/Shell/SetBounds')
+        .where((f) => EquoCommBase.decodeFrame(f).$1 == 'Shell/${dialog.id}/Shell/SetBounds')
         .toList();
     expect(setBounds, isNotEmpty, reason: 'the shell reports its geometry after the first frame');
-    return jsonDecode(setBounds.last.$2) as Map<String, dynamic>;
+    final event = EquoCommBase.decodeEvent(setBounds.last);
+    return {'x': event.x, 'y': event.y, 'width': event.width, 'height': event.height};
   }
 
   // The body: the clipped box the Shell lays its client area out in, under the title bar.

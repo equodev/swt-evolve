@@ -127,6 +127,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
             },
             onUrlChange: (change) {
               if (_isPlaceholderLoad(change.url)) return;
+              if (!_urlChangeIsLive()) return;
               final real = _resolveReportedUrl(change.url);
               if (real != null) {
                 widget.sendLocationchanged(state, VEvent()..text = real);
@@ -259,32 +260,19 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     _onOp("evaluate", (args) async {
       final map = args as Map;
       final script = map["script"] as String?;
-      final reqId = map["reqId"] as String?;
+      final reqId = map["reqId"] as int?;
       if (script == null || reqId == null) return;
       try {
         final Object? result = _params != null
             ? browserEvalInFrame(_params, script)
             : await _controller.runJavaScriptReturningResult(script);
-        // Carry the value as JSON so Java can restore the SWT evaluate() type
-        // contract (null/Boolean/Double/String/Object[]); a plain toString()
-        // would collapse every result to a String.
-        String encoded;
-        try {
-          encoded = jsonEncode(result);
-        } catch (_) {
-          // Not JSON-representable (DOM node, function, cyclic): the SWT
-          // contract has no mapping for it, so report JS null.
-          encoded = 'null';
-        }
-        EquoCommService.sendPayload(
-          "${state.swt}/${state.id}/evaluate/$reqId",
-          VEvent()..text = encoded,
-        );
+        // The value as it is, so Java can restore the SWT evaluate() type contract
+        // (null/Boolean/Double/String/Object[]).
+        EquoCommService.sendPayload("${state.swt}/${state.id}/evaluate/result",
+            {'reqId': reqId, 'value': _plainValue(result)});
       } catch (e) {
         EquoCommService.sendPayload(
-          "${state.swt}/${state.id}/evaluate/$reqId",
-          VEvent()..text = '__error__:$e',
-        );
+            "${state.swt}/${state.id}/evaluate/result", {'reqId': reqId, 'error': '$e'});
       }
     });
 
@@ -363,6 +351,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       Map<String, String> headers = const <String, String>{},
       Uint8List? body}) async {
     if (!_asksNavigationRequests && !await _locationChanging(uri.toString())) return;
+    _awaitedFrameUrl = _expectSameOrigin ? uri : null;
     await _controller.loadRequest(uri, method: method, headers: headers, body: body);
   }
 
@@ -418,10 +407,37 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (!_expectSameOrigin || _params == null) return true;
     try {
       final href = browserEvalInFrame(_params, 'location.href');
+      if (!_isAwaitedDocument(href)) return false;
       // The placeholder about:blank shares our origin, so being readable does
       // not make it the setText document.
       final inline = _loadedText != null ? _inlineDocuments.current : null;
-      return inline == null || href == inline;
+      if (inline != null && href != inline) return false;
+      _awaitedFrameUrl = null;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// The same-origin URL the frame was last sent to, until a load shows the frame holding it. A load
+  /// event in between comes from the document being replaced, which then still answers to the
+  /// requested url; reporting it hands the new navigation a completion that is not its own.
+  Uri? _awaitedFrameUrl;
+
+  /// Whether the frame, at [href], holds the document the last navigation is waiting for, or none is.
+  bool _isAwaitedDocument(Object? href) {
+    final awaited = _awaitedFrameUrl;
+    if (awaited == null) return true;
+    final at = href is String ? Uri.tryParse(href) : null;
+    return at != null && at.removeFragment() == awaited.removeFragment();
+  }
+
+  /// Whether a url change the webview reports is the frame moving to the awaited document: a change
+  /// reported while the frame still holds another one belongs to that one, not to the navigation.
+  bool _urlChangeIsLive() {
+    if (!_expectSameOrigin || _params == null || _awaitedFrameUrl == null) return true;
+    try {
+      return _isAwaitedDocument(browserEvalInFrame(_params, 'location.href'));
     } catch (_) {
       return false;
     }
@@ -627,6 +643,19 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     _controller.runJavaScript(script).catchError((e) {});
   }
 
+  /// [value] when it is made of maps, lists and scalars only, else null: what a script returns that
+  /// is none of those (a DOM node, a function) has no SWT type to map to.
+  static Object? _plainValue(Object? value) {
+    bool plain(Object? v) =>
+        v == null ||
+        v is bool ||
+        v is num ||
+        v is String ||
+        (v is List && v.every(plain)) ||
+        (v is Map && v.keys.every((k) => k is String) && v.values.every(plain));
+    return plain(value) ? value : null;
+  }
+
   /// Handles a call posted to [_kFunctionChannel] (desktop only, see
   /// [_injectBrowserFunction]). Forwards it to Java as a one-way event; no
   /// result travels back to JS.
@@ -637,10 +666,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       final name = data['name'];
       if (name is! String) return;
       final args = data['args'] is List ? data['args'] as List : const [];
-      EquoCommService.sendPayload(
-        "${state.swt}/${state.id}/browserFunctionCall",
-        VEvent()..text = jsonEncode({'name': name, 'args': args}),
-      );
+      EquoCommService.sendPayload("${state.swt}/${state.id}/browserFunctionCall",
+          {'name': name, 'args': _plainValue(args)});
     } catch (_) {}
   }
 

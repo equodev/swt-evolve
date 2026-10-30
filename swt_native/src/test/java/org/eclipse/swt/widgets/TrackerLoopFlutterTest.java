@@ -688,7 +688,7 @@ class TrackerLoopFlutterTest {
         assertThat(ended).isTrue();
         assertThat(trackerHeard).containsExactly(Integer.valueOf('x'));
         assertThat(web.comm.sent.stream().anyMatch(f -> f.event.contains("/" + focused.hashCode() + "/key/verdict")
-                && f.json.contains("false"))).isTrue();
+                && Boolean.FALSE.equals(dev.equo.swt.harness.WireValues.at(f.value, "doit")))).isTrue();
     }
 
     /** See {@code ControlFocusRequestFlutterTest.install} — a Display whose bridge is the test bridge. */

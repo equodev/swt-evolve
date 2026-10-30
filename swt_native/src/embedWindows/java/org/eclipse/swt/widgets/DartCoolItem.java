@@ -697,20 +697,37 @@ public class DartCoolItem extends DartItem implements ICoolItem {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
                     return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Selection, e);
+                    });
                     return;
-                sendEvent(SWT.Selection, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public CoolItem getApi() {

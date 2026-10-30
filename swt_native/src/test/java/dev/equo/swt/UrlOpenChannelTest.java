@@ -1,8 +1,5 @@
 package dev.equo.swt;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -19,12 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
  */
 public class UrlOpenChannelTest {
 
-    private static Map<String, Object> payload(Object url) {
-        Map<String, Object> m = new HashMap<>();
-        m.put("url", url);
-        return m;
-    }
-
     @ParameterizedTest
     @ValueSource(strings = {
             "http://example.com",
@@ -33,12 +24,12 @@ public class UrlOpenChannelTest {
             "HTTPS://EXAMPLE.COM",
     })
     void accepts_http_and_https(String url) {
-        assertThat(FlutterBridge.urlOf(payload(url))).isEqualTo(url);
+        assertThat(FlutterBridge.urlOf(url)).isEqualTo(url);
     }
 
     @Test
     void trims_surrounding_whitespace() {
-        assertThat(FlutterBridge.urlOf(payload("  https://example.com  "))).isEqualTo("https://example.com");
+        assertThat(FlutterBridge.urlOf("  https://example.com  ")).isEqualTo("https://example.com");
     }
 
     @ParameterizedTest
@@ -58,15 +49,7 @@ public class UrlOpenChannelTest {
             "   ",
     })
     void rejects_everything_else(String url) {
-        assertThat(FlutterBridge.urlOf(payload(url))).isNull();
-    }
-
-    @Test
-    void rejects_payloads_without_a_usable_url() {
-        assertThat(FlutterBridge.urlOf(new HashMap<>())).isNull();
-        assertThat(FlutterBridge.urlOf(payload(null))).isNull();
-        assertThat(FlutterBridge.urlOf(payload(42))).isNull();
-        assertThat(FlutterBridge.urlOf(Map.of("notUrl", "https://example.com"))).isNull();
+        assertThat(FlutterBridge.urlOf(url)).isNull();
     }
 
     /** A malformed frame must not throw out of the comm thread. */
@@ -74,9 +57,8 @@ public class UrlOpenChannelTest {
     void handler_swallows_unusable_payloads() {
         assertDoesNotThrow(() -> {
             FlutterBridge.handleUrlOpenFromFlutter(null);
-            FlutterBridge.handleUrlOpenFromFlutter(42);
-            FlutterBridge.handleUrlOpenFromFlutter("https://example.com");
-            FlutterBridge.handleUrlOpenFromFlutter(payload("javascript:alert(1)"));
+            FlutterBridge.handleUrlOpenFromFlutter("");
+            FlutterBridge.handleUrlOpenFromFlutter("javascript:alert(1)");
         });
     }
 }

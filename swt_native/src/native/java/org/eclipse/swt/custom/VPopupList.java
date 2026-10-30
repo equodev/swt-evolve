@@ -4,13 +4,9 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
-public class VPopupList {
+public class VPopupList implements dev.equo.swt.WireObject {
 
     protected VPopupList() {
     }
@@ -62,31 +58,20 @@ public class VPopupList {
         ((DartPopupList) impl).selection = value;
     }
 
-    @JsonConverter(target = PopupList.class)
-    public static class PopupListJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 657;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartPopupList.class, (JsonWriter.WriteObject<DartPopupList>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartPopupList.class, (JsonReader.ReadObject<DartPopupList>) reader -> {
-                return null;
-            });
-        }
-
-        public static PopupList read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, PopupList api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(653);
+        w.object((getFont() == null || getFont().isDisposed() ? null : ((DartFont) getFont().getImpl()).getValue()));
+        w.key(654);
+        w.write(getItems());
+        w.key(655);
+        w.write((int) getMinimumWidth());
+        w.key(656);
+        w.write(getSelection());
     }
 }

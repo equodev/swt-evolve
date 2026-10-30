@@ -3,9 +3,6 @@
 // notifies Modify. The edit goes up with the text it left, the range of the previous text it replaced and
 // how many characters it put there, so Java can ask its Verify listeners about exactly those.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +13,8 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/spinner.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+
+import 'support/batch.dart';
 
 /// The generated SpinnerSwt, except sendEvent captures outgoing events instead of handing them to
 /// EquoCommService, which needs a live transport.
@@ -65,16 +64,7 @@ List<VEvent> _edits(List<(String, VEvent?)> sent) =>
     [for (final (ev, payload) in sent) if (ev == 'Modify/Modify') payload!];
 
 // What Java answers to an edit it was asked to verify.
-void _verdict(bool doit) {
-  final actionBytes = utf8.encode('Spinner/41/modify/verdict');
-  final body = utf8.encode(json.encode({'doit': doit}));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
+void _verdict(bool doit) => receiveTagged('Spinner/41/modify/verdict', {'doit': doit});
 
 void main() {
   testWidgets('typing over the text sends the edit, not a commit',

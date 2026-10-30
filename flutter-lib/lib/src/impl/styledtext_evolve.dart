@@ -22,6 +22,7 @@ import '../gen/styledtext.dart';
 import '../gen/styledtextrenderer.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/canvas_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
@@ -35,6 +36,7 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
 import 'utils/wheel_input.dart';
+import '../comm/widget_wire.dart' show sendWireWith, WidgetWireWriter, WireVisitable;
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
@@ -78,10 +80,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   );
 
   void _sendComposition(String text, int caret, {required bool commit}) {
-    EquoCommService.sendPayload(
-      "${state.swt}/${state.id}/ImeComposition",
-      {'text': text, 'caret': caret, 'commit': commit},
-    );
+    sendWireWith("${state.swt}/${state.id}/ImeComposition", (w) {
+      w
+        ..string(text)
+        ..int32(caret)
+        ..boolean(commit);
+    });
   }
 
   String? _metricsSource;
@@ -212,7 +216,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _appliedSeq = value.seq;
       // A frame without the index leaves the one carried across the edits standing, which is also
       // what Java takes this side to hold until it sends the index again.
-      if (lastChange?.touches('styleIndex') ?? true) {
+      if (lastChange?.touches(WireKey.k_StyledText_styleIndex) ?? true) {
         _takeStyleIndex(value);
         _splicedStyleIndex = null;
       }
@@ -227,7 +231,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   int? _appliedSeq;
 
   void _requestText() {
-    EquoCommService.sendPayload("StyledText/${state.id}/ResendText", const {});
+    EquoCommService.send("StyledText/${state.id}/ResendText");
   }
 
   @override
@@ -483,6 +487,38 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// cached under that object's identity.
   final Map<String, _PaletteStyle> _paletteByContent = {};
 
+  /// What [range] draws as, as a key: every property but where it lies. Read through [visitWire],
+  /// which holds every field; a range's writer holds only what Java reads back from the client.
+  static String _drawnAs(VStyleRange range) {
+    final out = StringBuffer();
+    void add(Object? value) {
+      if (value is WireVisitable) {
+        out.write('{');
+        value.visitWire((key, field) {
+          if (key == WireKey.k_StyleRange_start || key == WireKey.k_StyleRange_length) return;
+          out
+            ..write(key)
+            ..write(':');
+          add(field);
+          out.write(',');
+        });
+        out.write('}');
+      } else if (value is List) {
+        out.write('[');
+        for (final e in value) {
+          add(e);
+          out.write(',');
+        }
+        out.write(']');
+      } else {
+        out.write(value);
+      }
+    }
+
+    add(range);
+    return out.toString();
+  }
+
   /// What a decoded entry also depends on besides its own fields.
   Object? _paletteBasis;
 
@@ -557,7 +593,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         if (named < 0 || named >= styles.length) continue;
         final vRange = styles[named];
         if (vRange == null) continue;
-        final entry = decoded[named] ??= _paletteByContent[jsonEncode(vRange.toJson())] ??= _PaletteStyle(
+        final entry = decoded[named] ??= _paletteByContent[_drawnAs(vRange)] ??= _PaletteStyle(
           style: _convertVStyleRangeToTextStyle(vRange),
           underlineStyle:
               vRange.underline == true ? (vRange.underlineStyle ?? SWT.UNDERLINE_SINGLE) : null,
@@ -650,6 +686,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @visibleForTesting
   TextStyle debugRangeStyle(VStyleRange vRange) => _convertVStyleRangeToTextStyle(vRange);
+
+  /// The runs the text is drawn in, as last built.
+  @visibleForTesting
+  List<StyleRange>? get debugCharacterRanges => _heldEditingState?.editingState.characterRanges;
 
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
     final defaultTextColor = _textColor;
@@ -1022,7 +1062,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   double? _geometrySentBandBottom;
   GeometryTable? _geometrySent;
 
-  /// Comparing the widget's text style is expensive, so layout keys carry a count of its changes.
+  /// Comparing the widget's text style is expensive, so layout keys carry a token for it instead. The
+  /// layout cache is shared by every StyledText, so the token stands for the style's value: equal
+  /// styles share a token, and with it the lines another editor already laid out; any other style,
+  /// a font or a colour apart, has its own.
+  static final Map<TextStyle, int> _styleTokens = {};
+  static int _nextStyleToken = 0;
   TextStyle? _lastDefaultStyle;
   int _styleToken = 0;
 
@@ -1031,7 +1076,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final last = _lastDefaultStyle;
     if (last == null || built != last) {
       _lastDefaultStyle = built;
-      _styleToken++;
+      // Tokens keep counting up, so one handed out before a clear is never reused for another style.
+      if (_styleTokens.length >= 256) _styleTokens.clear();
+      _styleToken = _styleTokens[built] ??= ++_nextStyleToken;
       return built;
     }
     return last;
@@ -1053,7 +1100,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   static int debugGeometryPushes = 0;
   static GeometryTable? _debugLastTable;
   @visibleForTesting
-  static Map<String, dynamic>? get debugLastGeometry => _debugLastTable?.toJson();
+  static Map<String, dynamic>? get debugLastGeometry => _debugLastTable?.toMap();
   @visibleForTesting
   static set debugLastGeometry(Map<String, dynamic>? cleared) {
     assert(cleared == null, 'only clearing is supported');
@@ -1094,14 +1141,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         previous!.sameExtentsAs(geometry)) {
       return;
     }
-    final payload = _geometryPayload(geometry, splice);
     _geometrySent = geometry;
     debugGeometryPushes++;
     _debugLastTable = geometry;
-    EquoCommService.sendPayload(
-      "${state.swt}/${state.id}/TextGeometry",
-      payload,
-    );
+    sendWireWith("${state.swt}/${state.id}/TextGeometry", (w) => _writeGeometry(w, geometry, splice));
   }
 
   /// Worked out after the frame, since the table only answers Java's position queries: owed ahead
@@ -1131,26 +1174,35 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   /// What to send for [table]: the splice from the table the other side holds, or the whole thing.
-  Map<String, dynamic> _geometryPayload(GeometryTable table, _GeometrySplice? splice) {
+  ///
+  /// `u8 splice, version, [base], charCount, contentWidth, contentHeight, [rowStart, rowsReplaced,
+  /// lineDelta, offsetDelta, yDelta], rows`, as Java's `StyledTextHelper.readPush` reads it.
+  void _writeGeometry(WidgetWireWriter w, GeometryTable table, _GeometrySplice? splice) {
     final version = ++_geometryVersion;
     // A splice that rewrites most of the table (a resize, a wrap toggle) is the table.
-    if (splice == null || splice.rows.length * 2 > table.rows.length) {
-      if (splice == null) _geometryFullNeeded = false;
-      return <String, dynamic>{...table.toJson(), 'v': version};
+    final whole = splice == null || splice.rows.length * 2 > table.rows.length;
+    if (splice == null) _geometryFullNeeded = false;
+    w
+      ..u8(whole ? 0 : 1)
+      ..int32(version);
+    if (!whole) w.int32(version - 1);
+    w
+      ..int32(table.charCount)
+      ..float64(table.contentWidth)
+      ..float64(table.contentHeight);
+    final rows = whole ? table.rows : splice!.rows;
+    if (!whole) {
+      w
+        ..int32(splice!.rowStart)
+        ..int32(splice.rowsReplaced)
+        ..int32(splice.lineDelta)
+        ..int32(splice.offsetDelta)
+        ..float64(splice.yDelta);
     }
-    return <String, dynamic>{
-      'v': version,
-      'base': version - 1,
-      'charCount': table.charCount,
-      'contentWidth': table.contentWidth,
-      'contentHeight': table.contentHeight,
-      'rowStart': splice.rowStart,
-      'rowsReplaced': splice.rowsReplaced,
-      'lineDelta': splice.lineDelta,
-      'offsetDelta': splice.offsetDelta,
-      'yDelta': splice.yDelta,
-      'rows': [for (final row in splice.rows) row.toJson()],
-    };
+    w.varint(rows.length);
+    for (final row in rows) {
+      row.writeWire(w);
+    }
   }
 
   /// The rows that changed between [before] and [after], as a replacement of one run of rows plus
@@ -2629,7 +2681,7 @@ class TextShape extends Shape {
   static double _roundPx(double v) => (v * 100).roundToDouble() / 100;
 
   Map<String, dynamic>? computeGeometry({double? visibleTop, double? visibleBottom}) =>
-      computeGeometryTable(visibleTop: visibleTop, visibleBottom: visibleBottom).toJson();
+      computeGeometryTable(visibleTop: visibleTop, visibleBottom: visibleBottom).toMap();
 
   GeometryTable computeGeometryTable({double? visibleTop, double? visibleBottom}) {
     final lines = _lines;
@@ -2672,11 +2724,17 @@ class TextShape extends Shape {
       }
 
       var layout = _measuredLine(i, line, wantCaretX: wholeDocument);
+      final lineVisible = rowIsVisible(currentY, vIndent + _advance(layout.height, i));
+      // A wrapped line sends per-character x for its rows in view only, so only those are measured:
+      // one caret query per character is most of what describing a long line costs.
+      final caretsByRow = !wholeDocument &&
+          layout.caretX == null &&
+          lineVisible &&
+          layout.metrics.length > 1 &&
+          !_uniformRows;
       // Per-character x is worth its weight only for the rows someone can see; the line has to
       // be laid out to know where it ends, so the decision comes after.
-      if (!wholeDocument &&
-          layout.caretX == null &&
-          rowIsVisible(currentY, vIndent + _advance(layout.height, i))) {
+      if (!wholeDocument && layout.caretX == null && lineVisible && !caretsByRow) {
         layout = _measuredLine(i, line, wantCaretX: true);
       }
 
@@ -2684,17 +2742,20 @@ class TextShape extends Shape {
           props.indent, props.align, layout.width, canvasSize == null ? double.infinity : maxW);
 
       final caretX = layout.caretX;
+      TextPainter? rowCarets;
       // Rounded to a hundredth of a pixel: far below what changes Java's answers, and shorter to send.
-      List<double> charX(int from, int to, double base) => [
-        for (int k = from; k <= to; k++) base + caretX![k],
-      ];
+      List<double> charX(int from, int to, double base) {
+        if (caretX != null) return [for (int k = from; k <= to; k++) base + caretX[k]];
+        final tp = rowCarets ??= _measuringPainter(line, i, align: props.align, maxWidth: maxW);
+        return [for (int k = from; k <= to; k++) base + _caretXOf(tp, k)];
+      }
 
       // The visual line's box: `y`/`h` include the line's vertical indent so bands
       // stay contiguous; `vi` (first visual row only) is the indent within the box,
       // i.e. the glyphs sit at y + vi. The Java side adds `vi` when answering
       // text-position queries and uses the box for line/pixel queries.
       final metrics = layout.metrics;
-      final includeCharX = caretX != null;
+      final includeCharX = caretX != null || caretsByRow;
       // Uniform rows hold one line each, whatever rows its layout broke into.
       if (metrics.length <= 1 || _uniformRows) {
         maxWidth = math.max(maxWidth, finalX + layout.width);
@@ -2744,12 +2805,23 @@ class TextShape extends Shape {
           top = bottom;
         }
       }
+      rowCarets?.dispose();
 
       currentY += vIndent + _advance(layout.height, i);
       docOffset += line.length + 1;
     }
 
     return GeometryTable(text.length, _roundPx(maxWidth), _roundPx(currentY), visual);
+  }
+
+  /// Caret positions asked for to describe the document, for tests asserting their cost.
+  @visibleForTesting
+  static int debugCaretQueries = 0;
+
+  /// x of the character boundary at [offset] in [tp], relative to the line's own origin.
+  static double _caretXOf(TextPainter tp, int offset) {
+    debugCaretQueries++;
+    return tp.getOffsetForCaret(TextPosition(offset: offset), Rect.zero).dx;
   }
 
   /// The span for one logical line. Deliberately built per line rather than sliced out
@@ -2876,17 +2948,7 @@ class TextShape extends Shape {
       } else {
         debugLineCaretMisses++;
       }
-      final expanded = _expandTabStops(_getTextSpanForLine(lineText, lineIndex), lineIndex);
-      debugLayoutLineCalls++;
-      final tp = TextPainter(
-        text: expanded.span,
-        textAlign: align,
-        textDirection: TextDirection.ltr,
-      );
-      if (expanded.tabStops.isNotEmpty) {
-        tp.setPlaceholderDimensions(expanded.tabStops);
-      }
-      tp.layout(maxWidth: maxWidth);
+      final tp = _measuringPainter(lineText, lineIndex, align: align, maxWidth: maxWidth);
 
       final metrics = tp.computeLineMetrics();
       final rowEnds = <int>[];
@@ -2911,16 +2973,30 @@ class TextShape extends Shape {
         rowEnds,
       );
       if (wantCaretX) {
-        layout.caretX = [
-          for (int k = 0; k <= lineText.length; k++)
-            tp.getOffsetForCaret(TextPosition(offset: k), Rect.zero).dx,
-        ];
+        layout.caretX = [for (int k = 0; k <= lineText.length; k++) _caretXOf(tp, k)];
       }
       tp.dispose();
     }
     // Re-inserting on a hit puts the entry back at the young end of the eviction order.
     _cacheLineLayout(key, layout);
     return layout;
+  }
+
+  /// [lineText] laid out as the geometry measures it, for the caller to dispose.
+  TextPainter _measuringPainter(String lineText, int lineIndex,
+      {required TextAlign align, required double maxWidth}) {
+    final expanded = _expandTabStops(_getTextSpanForLine(lineText, lineIndex), lineIndex);
+    debugLayoutLineCalls++;
+    final tp = TextPainter(
+      text: expanded.span,
+      textAlign: align,
+      textDirection: TextDirection.ltr,
+    );
+    if (expanded.tabStops.isNotEmpty) {
+      tp.setPlaceholderDimensions(expanded.tabStops);
+    }
+    tp.layout(maxWidth: maxWidth);
+    return tp;
   }
 
   // Every per-line TextPainter goes through here so painting, caret placement and
@@ -4391,11 +4467,11 @@ class GeometryTable {
       contentWidth == other.contentWidth &&
       contentHeight == other.contentHeight;
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
         'charCount': charCount,
         'contentWidth': contentWidth,
         'contentHeight': contentHeight,
-        'lines': [for (final row in rows) row.toJson()],
+        'lines': [for (final row in rows) row.toMap()],
       };
 }
 
@@ -4444,7 +4520,7 @@ class GeometryRow {
     return true;
   }
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
         'l': l,
         's': s,
         'e': e,
@@ -4455,6 +4531,37 @@ class GeometryRow {
         if (vi != null) 'vi': vi,
         ...?charX,
       };
+
+  /// `l s e x y w h vi`, then the character positions: `u8 0` none, `1` each one, `2` origin and
+  /// advance.
+  void writeWire(WidgetWireWriter out) {
+    out
+      ..int32(l)
+      ..int32(s)
+      ..int32(e)
+      ..float64(x)
+      ..float64(y)
+      ..float64(w)
+      ..float64(h)
+      ..int32(vi ?? 0);
+    final cx = charX?['cx'];
+    final cxu = charX?['cxu'];
+    if (cx is List) {
+      out
+        ..u8(1)
+        ..varint(cx.length);
+      for (final v in cx) {
+        out.float64((v as num).toDouble());
+      }
+    } else if (cxu is List && cxu.length == 2) {
+      out
+        ..u8(2)
+        ..float64((cxu[0] as num).toDouble())
+        ..float64((cxu[1] as num).toDouble());
+    } else {
+      out.u8(0);
+    }
+  }
 }
 
 /// The change from one table to the next: [rowsReplaced] rows from [rowStart] became [rows], and

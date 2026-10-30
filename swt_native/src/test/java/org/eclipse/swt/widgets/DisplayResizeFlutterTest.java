@@ -4,6 +4,7 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -418,9 +419,10 @@ class DisplayResizeFlutterTest {
         assertThat(neverShown.getBounds())
                 .as("a shell that is never shown does not take the viewport")
                 .isNotEqualTo(new Rectangle(0, 0, 2560, 1271));
-        assertThat(lastDisplayFrame(web.comm))
+        assertThat(WireValues.find(lastDisplayFrame(web.comm),
+                        m -> m.containsKey("mainShellId") && WireValues.same(m.get("mainShellId"), workbench.hashCode())))
                 .as("the client is told which shell is main, so it does not float it")
-                .contains("\"mainShellId\":" + workbench.hashCode());
+                .isNotEmpty();
     }
 
     @Test
@@ -488,9 +490,10 @@ class DisplayResizeFlutterTest {
                 // Ctrl+ to 125%: the client's first report still divides by the zoom it was last told.
                 clientReady(web.comm, 1384, 855, 125, false);
 
-                assertThat(lastPropertiesFrame(web.comm))
+                assertThat(WireValues.find(lastPropertiesFrame(web.comm),
+                                m -> m.containsKey("ui_zoom") && WireValues.same(m.get("ui_zoom"), 125)))
                         .as("the render side learns it now draws at 125, so it stops shrinking the page")
-                        .contains("\"ui_zoom\":125");
+                        .isNotEmpty();
 
                 clientReady(web.comm, 1107, 684, 125, false);
 
@@ -562,18 +565,18 @@ class DisplayResizeFlutterTest {
         return bridge;
     }
 
-    private static String lastDisplayFrame(RecordingComm comm) {
-        String last = null;
+    private static Object lastDisplayFrame(RecordingComm comm) {
+        Object last = null;
         for (RecordingComm.Frame frame : comm.sent) {
-            if (frame.json != null && frame.json.contains("\"mainShellId\"")) last = frame.json;
+            if (frame.value != null && WireValues.mentions(frame.value, "mainShellId")) last = frame.value;
         }
         return last;
     }
 
-    private static String lastPropertiesFrame(RecordingComm comm) {
-        String last = null;
+    private static Object lastPropertiesFrame(RecordingComm comm) {
+        Object last = null;
         for (RecordingComm.Frame frame : comm.sent) {
-            if ("swt.evolve.properties".equals(frame.event)) last = frame.json;
+            if ("swt.evolve.properties".equals(frame.event)) last = frame.value;
         }
         return last;
     }

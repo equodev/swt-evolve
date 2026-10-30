@@ -27,7 +27,7 @@ class TableImplementationNativeTest extends SerializeTestBase {
         return (DartTable) table.getImpl();
     }
 
-    private static boolean named(Table table, String key) {
+    private static boolean named(Table table, int key) {
         return impl(table).getValue().changedKeys().contains(key);
     }
 

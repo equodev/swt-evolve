@@ -135,10 +135,7 @@ class VetoGate {
     proposal.onVerdict(true);
   }
 
-  static bool? _boolArg(dynamic args, String key) {
-    final decoded = args is String ? jsonDecode(args) : args;
-    return decoded is Map ? decoded[key] as bool? : null;
-  }
+  static bool? _boolArg(dynamic args, String key) => args is Map ? args[key] as bool? : null;
 }
 
 class _Proposal {

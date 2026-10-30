@@ -2,7 +2,10 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.graphics.Rectangle;
@@ -18,6 +21,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,7 +37,7 @@ import static org.mockito.Mockito.doAnswer;
 @ExtendWith(Mocks.class)
 class GCUnsetClippingTest {
 
-    private static final String ZERO_RECT = "\"clipping\":{\"x\":0,\"y\":0,\"width\":0,\"height\":0}";
+    private static final Map<String, Object> ZERO_RECT = Map.of("x", 0, "y", 0, "width", 0, "height", 0);
 
     private RecordingBridge bridge;
     private final Deque<Runnable> asyncQueue = new ArrayDeque<>();
@@ -78,21 +83,26 @@ class GCUnsetClippingTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wireAfterDisposing(GC gc) {
+    private List<Object> wireAfterDisposing(GC gc) {
         gc.drawLine(0, 0, 10, 10);
         gc.dispose();
-        String wire = bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
-        assertThat(wire).as("sanity: the GC's ops reached the wire").contains("drawLine");
-        return wire;
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
+        assertThat(entries).as("sanity: the GC's ops reached the wire").anyMatch(e -> e.channel().contains("drawLine"));
+        return entries.stream().map(GcFrames.Entry::value).toList();
+    }
+
+    /** Whether any record on {@code wire} sets the clipping to the zero rectangle. */
+    private static boolean clipsToZeroRect(List<Object> wire) {
+        return !WireValues.find(wire, m -> WireValues.same(m.get("clipping"), ZERO_RECT)).isEmpty();
     }
 
     @Test
     @DisplayName("a GC that was never clipped does not report an empty clipping region")
     void unsetClippingIsAbsent() {
-        assertThat(wireAfterDisposing(freshGc()))
+        assertThat(clipsToZeroRect(wireAfterDisposing(freshGc())))
                 .as("an unset clipping must not travel as a zero rectangle — that is what an "
                         + "empty region looks like, and it would discard every op")
-                .doesNotContain(ZERO_RECT);
+                .isFalse();
     }
 
     @Test
@@ -100,9 +110,9 @@ class GCUnsetClippingTest {
     void emptyClippingIsSent() {
         GC gc = freshGc();
         gc.setClipping(new Rectangle(0, 0, 0, 0));
-        assertThat(wireAfterDisposing(gc))
+        assertThat(clipsToZeroRect(wireAfterDisposing(gc)))
                 .as("an application that clips everything away must be able to say so")
-                .contains(ZERO_RECT);
+                .isTrue();
     }
 
     @Test
@@ -110,6 +120,6 @@ class GCUnsetClippingTest {
     void clippingPathDoesNotResurrectAZeroRectangle() {
         GC gc = freshGc();
         gc.setClipping((Path) null);
-        assertThat(wireAfterDisposing(gc)).doesNotContain(ZERO_RECT);
+        assertThat(clipsToZeroRect(wireAfterDisposing(gc))).isFalse();
     }
 }

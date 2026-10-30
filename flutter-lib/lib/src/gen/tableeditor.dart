@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/control.dart';
+import '../gen/controleditor.dart';
 import '../gen/tableitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tableeditor_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
-
-part 'tableeditor.g.dart';
 
 class TableEditorSwt<V extends VTableEditor> extends WidgetSwt<V> {
   const TableEditorSwt({super.key, required super.value});
@@ -24,15 +24,13 @@ abstract class TableEditorState<
 >
     extends WidgetSwtState<T, V> {}
 
-@JsonSerializable()
-class VTableEditor extends VWidget {
+class VTableEditor extends VControlEditor {
   VTableEditor() : this.empty();
   VTableEditor.empty() {
     swt = "TableEditor";
   }
 
   int? column;
-  VControl? editor;
   VTableItem? item;
 
   @override
@@ -40,37 +38,53 @@ class VTableEditor extends VWidget {
     super.copyFrom(other);
     if (other is VTableEditor) {
       column = other.column;
-      editor = other.editor;
       item = other.item;
     }
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'column':
-        column = (json['column'] as num?)?.toInt();
-      case 'editor':
-        editor = json['editor'] == null
-            ? null
-            : VControl.fromJson(json['editor'] as Map<String, dynamic>);
-      case 'item':
-        item = json['item'] == null
-            ? null
-            : VTableItem.fromJson(json['item'] as Map<String, dynamic>);
+      case 173: // column
+        column = r.int32();
+        return true;
+      case 174: // item
+        item = r.ref<VTableItem>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = column;
+      if (v_ != null && w.wants(173)) {
+        w.key(173);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = item;
+      if (v_ != null && w.wants(174)) {
+        w.key(174);
+        w.ref(v_.id);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(173, column);
+    visit(174, item);
   }
 
   @override
   void adoptChildren(VWidget Function(VWidget) adopt) {
     super.adoptChildren(adopt);
-    editor = VWidget.adoptOne(editor, adopt);
     item = VWidget.adoptOne(item, adopt);
   }
-
-  factory VTableEditor.fromJson(Map<String, dynamic> json) =>
-      _$VTableEditorFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTableEditorToJson(this);
 }

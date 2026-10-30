@@ -5,7 +5,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,7 @@ import java.util.Map;
  * <i>builder</i> and Eclipse's {@code PreferencesUtil} — selected by the payload's {@code style};
  * it names no application and carries no product-specific literal.
  *
- * <p>Wire — Flutter &rarr; Java on {@link #CHANNEL} ({@code swt.evolve.test.runUi}), a JSON object:
+ * <p>Wire — Flutter &rarr; Java on {@link #CHANNEL} ({@code swt.evolve.test.runUi}), a map of tagged values:
  * <pre>
  *   { "action":"openPreferences", "opener":"&lt;fqcn&gt;", "style":"builder"|"util", "id":"&lt;pageId?&gt;" }
  *   { "action":"openPreferences", "style":"registry", "registry":"&lt;fqcn&gt;", "xpField":"&lt;staticField&gt;", "id":"&lt;pageId?&gt;" }
@@ -246,19 +245,19 @@ final class TestUiRunner {
         Method getId = nodeItf.getMethod("getId");
         Method getLabel = nodeItf.getMethod("getLabelText");
 
-        StringBuilder json = new StringBuilder("{\"action\":\"listPrefPages\",\"pages\":[");
-        boolean first = true;
+        List<Map<String, Object>> pages = new java.util.ArrayList<>();
         for (Object node : nodes) {
             if (node == null) continue;
-            if (!first) json.append(',');
-            first = false;
-            json.append("{\"id\":").append(quote(str(getId.invoke(node))))
-                    .append(",\"label\":").append(quote(str(getLabel.invoke(node)))).append('}');
+            Map<String, Object> page = new java.util.LinkedHashMap<>();
+            page.put("id", str(getId.invoke(node)));
+            page.put("label", str(getLabel.invoke(node)));
+            pages.add(page);
         }
-        json.append("]}");
-        byte[] bytes = json.toString().getBytes(StandardCharsets.UTF_8);
-        DebugLog.checkpoint(CHANNEL, "listPrefPages", nodes.size(), "pages:", json);
-        comm.send(RESPONSE_CHANNEL, bytes);
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("action", "listPrefPages");
+        response.put("pages", pages);
+        DebugLog.checkpoint(CHANNEL, "listPrefPages", nodes.size(), "pages:", pages);
+        comm.send(RESPONSE_CHANNEL, dev.equo.swt.comm.TaggedValues.encode(response, null));
     }
 
     // ---- helpers ------------------------------------------------------------
@@ -364,24 +363,4 @@ final class TestUiRunner {
         return s == null || s.isEmpty() ? null : s;
     }
 
-    /** Minimal JSON string quoting for the ids/labels in a listPrefPages response. */
-    private static String quote(String s) {
-        if (s == null) return "null";
-        StringBuilder b = new StringBuilder(s.length() + 2).append('"');
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '"': b.append("\\\""); break;
-                case '\\': b.append("\\\\"); break;
-                case '\n': b.append("\\n"); break;
-                case '\r': b.append("\\r"); break;
-                case '\t': b.append("\\t"); break;
-                default: {
-                    if (c < 0x20) b.append(String.format(java.util.Locale.ROOT, "\\u%04x", (int) c));
-                    else b.append(c);
-                }
-            }
-        }
-        return b.append('"').toString();
-    }
 }

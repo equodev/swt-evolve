@@ -15,10 +15,6 @@
  */
 package org.eclipse.swt.graphics;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
-
 /**
  * Instances of this class describe device-independent paths.
  *
@@ -27,8 +23,7 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.1
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class PathData {
+public final class PathData implements dev.equo.swt.WireObject {
 
     /**
      * The type of each point.
@@ -39,4 +34,17 @@ public final class PathData {
      * The points of a path.
      */
     public float[] points;
+
+    @Override
+    public int wireTypeId() {
+        return 126;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(125);
+        w.write(types);
+        w.key(124);
+        w.write(points);
+    }
 }

@@ -5,9 +5,6 @@ import java.util.stream.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
 public class VWidget {
 
@@ -20,7 +17,6 @@ public class VWidget {
 
     protected IWidget impl;
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getStyle() {
         return ((DartWidget) impl).getStyle();
     }
@@ -30,14 +26,20 @@ public class VWidget {
     }
 
     /**
-     * Wire names of the properties changed since the last send.
+     * Numbers of the properties changed since the last send.
      */
-    private final java.util.Set<String> changed = new java.util.LinkedHashSet<>();
+    private final dev.equo.swt.ChangedKeys changed = new dev.equo.swt.ChangedKeys();
+
+    /**
+     * What the binary wire last sent of this value, kept by the writer; nothing else reads it.
+     */
+    public Object wireMemo;
 
     /**
      * Records that {@code key} changed and schedules the widget for the next flush. Both, always: a flag without a flush never ships, and a flush without a flag ships an update that claims nothing changed.
      */
-    public void markDirty(String key) {
+    public void markDirty(int key) {
+        assert java.util.Arrays.stream(wireKeys()).anyMatch(k -> k == key) : "key " + key + " is not a property of " + getClass().getSimpleName();
         changed.add(key);
         if (impl instanceof DartWidget)
             ((DartWidget) impl).dirty();
@@ -46,8 +48,17 @@ public class VWidget {
     /**
      * The properties changed since the last send, in the order they changed.
      */
-    public java.util.Set<String> changedKeys() {
+    public dev.equo.swt.ChangedKeys changedKeys() {
         return changed;
+    }
+
+    /**
+     * {@link #changedKeys()} by name, in order, for whoever reads them: a log, a test.
+     */
+    public java.util.Set<String> changedNames() {
+        java.util.Set<String> names = new java.util.LinkedHashSet<>();
+        for (int i = 0; i < changed.size(); i++) names.add(wireName(changed.get(i)));
+        return names;
     }
 
     public boolean anyDirty() {
@@ -90,61 +101,81 @@ public class VWidget {
     /**
      * Records that the state stamped {@code seq} has been sent to {@code connection}, forgetting only the properties {@code written} actually carried. A property can be changed after the walk that wrote this frame and before the frame is credited - a layout that adds a child while its parent is being serialized. Forgetting everything at that point drops a change whose new value nothing has sent, and nothing marks it again: the far side keeps the state from before it, and only an unrelated write to the same widget ever repairs that.
      */
-    public void sent(int connection, long seq, java.util.Set<String> written) {
+    public void sent(int connection, long seq, int[] written) {
         sentConn_ = connection;
         sentSeq_ = seq;
         changed.removeAll(written);
     }
 
-    /**
-     * Writes the changed properties, and only those. Each pair leaves a trailing comma for the caller to overwrite with the closing brace, as the full writer does.
-     */
-    public void writeDiff(JsonWriter writer) {
-        for (String key : changed) writeProperty(writer, key);
-    }
+    public static final int STYLE = 68;
 
     /**
-     * Writes the named properties, for a caller that has already decided which of the changed ones are worth sending.
+     * A property's name, by its number: for logs and tests.
      */
-    public void writeDiff(JsonWriter writer, java.util.Collection<String> keys) {
-        for (String key : keys) writeProperty(writer, key);
-    }
-
-    public static final String STYLE = "style";
-
-    /**
-     * Writes one property by its wire name. Each class handles the properties it declares and passes the rest up, so a subclass never has to know what it inherited. A name nothing recognises writes nothing: it can only have come from a version that knows a property this one does not.
-     */
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "style":
-                Serializer.writeKeyValue(writer, "style", getStyle());
-                return;
+            case STYLE:
+                return "style";
         }
+        return null;
     }
 
-    @JsonConverter(target = Widget.class)
-    public static class WidgetJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartWidget.class, (JsonWriter.WriteObject<DartWidget>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartWidget.class, (JsonReader.ReadObject<DartWidget>) reader -> {
-                return null;
-            });
+    /**
+     * Writes one property's value into a frame of the binary wire by its number; false for a number no class up to this one writes.
+     */
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 68:
+                w.write((int) getStyle());
+                return true;
         }
+        return false;
+    }
 
-        public static Widget read(JsonReader<?> reader) throws IOException {
-            return null;
+    /**
+     * Writes one property of a whole description, key and value, unless it is at a default the client starts from, which is recognised without writing it; returns which (dev.equo.swt.WidgetWire.WRITTEN, AT_ZERO, AT_EMPTY or UNHANDLED).
+     */
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 68:
+                {
+                    int v_ = getStyle();
+                    w.key(68);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return dev.equo.swt.WidgetWire.UNHANDLED;
+    }
 
-        public static void write(JsonWriter writer, Widget api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = new int[] { 68 };
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    /**
+     * The number of every property a whole description writes.
+     */
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    /**
+     * Whether a whole description writes this property even at its default.
+     */
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 68:
+                return true;
         }
+        return false;
+    }
+
+    /**
+     * Whether this property is written when empty: empty is not its default, null is.
+     */
+    public boolean wireKeepsEmpty(int key) {
+        return false;
     }
 }

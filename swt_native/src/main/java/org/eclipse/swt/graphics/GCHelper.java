@@ -300,7 +300,8 @@ public class GCHelper {
      * D→J image path. No base64 is involved (the bytes arrive verbatim via {@code sendBytes}).
      */
     public static void updateImageFromPngBytes(Image dartImage, Image swtSource, byte[] pngBytes) {
-        if (pngBytes == null) return;
+        // No pixels: the client could not read the frame back.
+        if (pngBytes == null || pngBytes.length == 0) return;
         updateImageFrom(dartImage, swtSource, new java.io.ByteArrayInputStream(pngBytes));
     }
 
@@ -381,6 +382,44 @@ public class GCHelper {
         return requestRemotePixels(device, comm, remoteRef, timeoutMs);
     }
 
+    /**
+     * A client-owned image's pixels, read back at a size its {@code bounds} scale to, or {@code null}
+     * if the client's PNG could not be decoded. A read the render side did at another surface's size
+     * (the view's, on a renderer that shares one surface between frames and read-backs) is not this
+     * image, so it is read again, up to three times.
+     */
+    public static ImageData readRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef,
+            Rectangle bounds) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            // Generous: a GPU-less browser can take seconds to answer the first read of a kind of
+            // image, and an answer that arrives after the bound is lost.
+            byte[] png = fetchRemotePixels(device, comm, remoteRef, 30000);
+            if (png == null || png.length == 0) break;
+            ImageData read;
+            try {
+                read = new ImageData(new java.io.ByteArrayInputStream(png));
+            } catch (Exception e) {
+                System.err.println("[Image] Could not decode the pixels Flutter returned for remoteRef "
+                        + remoteRef + ": " + e.getMessage());
+                return null;
+            }
+            if (isAtSomeZoom(read, bounds)) return read;
+        }
+        SWT.error(SWT.ERROR_IO, null, " [the render side did not return the pixels for image " + remoteRef + "]");
+        return null;
+    }
+
+    /**
+     * Whether {@code read} is {@code bounds} at one zoom: getImageData scales a read back by the zoom
+     * its width implies, so a buffer a row short would come back a row short.
+     */
+    static boolean isAtSomeZoom(ImageData read, Rectangle bounds) {
+        if (bounds.width <= 0 || bounds.height <= 0) return true;
+        double zoom = Math.round(100f * read.width / bounds.width) / 100.0;
+        return zoom > 0 && Math.abs(read.width - bounds.width * zoom) <= 0.5
+                && Math.abs(read.height - bounds.height * zoom) <= 0.5;
+    }
+
     private static byte[] requestRemotePixels(Device device, dev.equo.swt.comm.CommService comm, long remoteRef, long timeoutMs) {
         if (comm == null) return null;
         Display display = device instanceof Display ? (Display) device : Display.getCurrent();
@@ -440,6 +479,13 @@ public class GCHelper {
      * responsive and lets the inbound WebSocket frame be dispatched. Used by the binary D→J image
      * path where Flutter returns PNG bytes via {@code sendBytes} (e.g. {@code GC.copyArea(Image,…)}).
      */
+    /**
+     * How long a pixel read-back is waited for: the client goes on reading for up to 25s when the
+     * browser hands back a frame of another size, and a GPU-less browser can take seconds over a
+     * first render. Every read-back waits as long, so an answer that lands late is not given up on.
+     */
+    public static final long READ_BACK_TIMEOUT_MS = 30_000;
+
     public static void callOnDisplayBytes(Object widget, String eventName, Object args,
                                           java.util.function.Consumer<byte[]> handler, long timeoutMs) {
         Display display = displayOf(widget);
@@ -460,10 +506,20 @@ public class GCHelper {
         // Batched until the paint ends, and we are about to wait for this one's answer.
         dev.equo.swt.FlutterBridge.flushOps(widget);
         long deadline = System.currentTimeMillis() + timeoutMs;
-        while (!future.isDone() && System.currentTimeMillis() < deadline) {
-            if (display != null && !display.isDisposed() && !display.readAndDispatch()) {
-                display.sleep();
+        // Display#sleep() waits for an event with no timeout of its own: with nothing else
+        // happening, only this timer wakes it to see the deadline pass.
+        Runnable wakeOnTimeout = () -> {
+        };
+        boolean timed = display != null && !display.isDisposed();
+        if (timed) display.timerExec((int) timeoutMs, wakeOnTimeout);
+        try {
+            while (!future.isDone() && System.currentTimeMillis() < deadline) {
+                if (display != null && !display.isDisposed() && !display.readAndDispatch()) {
+                    display.sleep();
+                }
             }
+        } finally {
+            if (timed && !display.isDisposed()) display.timerExec(-1, wakeOnTimeout);
         }
         if (!future.isDone()) dev.equo.swt.FlutterBridge.removeEvent(widget, receiveEvent);
     }

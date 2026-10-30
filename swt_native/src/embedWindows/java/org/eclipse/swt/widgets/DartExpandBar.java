@@ -548,20 +548,37 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Expand", "Collapse", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Expand/Collapse", "Expand/Expand");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Expand/Collapse":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ExpandBarHelper.sendExpand(this, e, false);
+                    });
                     return;
-                ExpandBarHelper.sendExpand(this, e, false);
-            });
-        });
-        FlutterBridge.on(this, "Expand", "Expand", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Expand/Expand":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ExpandBarHelper.sendExpand(this, e, true);
+                    });
                     return;
-                ExpandBarHelper.sendExpand(this, e, true);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public ExpandBar getApi() {

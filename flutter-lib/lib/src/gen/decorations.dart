@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
@@ -12,10 +12,9 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/decorations_evolve.dart';
 import 'widgets.dart';
-
-part 'decorations.g.dart';
 
 class DecorationsSwt<V extends VDecorations> extends CanvasSwt<V> {
   const DecorationsSwt({super.key, required super.value});
@@ -25,7 +24,6 @@ class DecorationsSwt<V extends VDecorations> extends CanvasSwt<V> {
       DecorationsImpl<DecorationsSwt<VDecorations>, VDecorations>();
 }
 
-@JsonSerializable()
 class VDecorations extends VCanvas {
   VDecorations() : this.empty();
   VDecorations.empty() {
@@ -50,21 +48,65 @@ class VDecorations extends VCanvas {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'menuBar':
-        menuBar = json['menuBar'] == null
-            ? null
-            : VMenu.fromJson(json['menuBar'] as Map<String, dynamic>);
-      case 'text':
-        text = json['text'] as String?;
-      case 'menuStripHeight':
-        menuStripHeight = (json['menuStripHeight'] as num?)?.toInt();
-      case 'ownMenuStrip':
-        ownMenuStrip = json['ownMenuStrip'] as bool?;
+      case 558: // menuBar
+        menuBar = r.ref<VMenu>();
+        return true;
+      case 559: // text
+        text = r.string();
+        return true;
+      case 1366: // menuStripHeight
+        menuStripHeight = r.int32();
+        return true;
+      case 1367: // ownMenuStrip
+        ownMenuStrip = r.boolean();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = menuBar;
+      if (v_ != null && w.wants(558)) {
+        w.key(558);
+        w.ref(v_.id);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(559)) {
+        w.key(559);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = menuStripHeight;
+      if (v_ != null && w.wants(1366)) {
+        w.key(1366);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = ownMenuStrip;
+      if (v_ != null && w.wants(1367)) {
+        w.key(1367);
+        w.boolean(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(558, menuBar);
+    visit(559, text);
+    visit(1366, menuStripHeight);
+    visit(1367, ownMenuStrip);
   }
 
   @override
@@ -73,7 +115,6 @@ class VDecorations extends VCanvas {
     menuBar = VWidget.adoptOne(menuBar, adopt);
   }
 
-  factory VDecorations.fromJson(Map<String, dynamic> json) =>
-      _$VDecorationsFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VDecorationsToJson(this);
+  @override
+  String? get semanticsText => text;
 }

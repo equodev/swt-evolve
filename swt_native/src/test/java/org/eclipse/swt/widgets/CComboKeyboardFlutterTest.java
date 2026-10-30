@@ -155,28 +155,14 @@ class CComboKeyboardFlutterTest {
         clientReports(combo, "List/Visible", 1);
     }
 
-    /**
-     * The value of {@code key} in the last update sent for the CCombo itself, or null when none had it.
-     * An update travels on the CCombo's own channel, or as its entry in a batch.
-     */
+    /** The value of {@code key} in the last record sent for the CCombo itself, or null when none had it. */
     private String shipped(CCombo combo, String key) {
-        String channel = "CCombo/" + combo.hashCode();
-        String entry = "[\"" + channel + "\",";
-        java.util.regex.Pattern field = java.util.regex.Pattern.compile("\"" + key + "\":\"?([^\",}]*)");
         String value = null;
         for (RecordingComm.Frame frame : web.comm.sent) {
-            String update;
-            if (frame.event.equals(channel)) {
-                update = frame.json;
-            } else {
-                int at = frame.json.indexOf(entry);
-                if (at < 0)
-                    continue;
-                update = frame.json.substring(at, frame.json.indexOf("}]", at));
+            for (java.util.Map<String, Object> record : dev.equo.swt.harness.WireValues.describing(frame.value, combo.hashCode())) {
+                if (record.containsKey(key))
+                    value = String.valueOf(record.get(key));
             }
-            java.util.regex.Matcher m = field.matcher(update);
-            if (m.find())
-                value = m.group(1);
         }
         return value;
     }

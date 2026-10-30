@@ -29,10 +29,7 @@ class _TestComm extends EquoCommBase {
   }
 
   @override
-  void rawSend(Uint8List frame) {
-    final nameLen = (frame[0] << 8) | frame[1];
-    sent.add(utf8.decode(frame.sublist(2, 2 + nameLen)));
-  }
+  void rawSend(Uint8List frame) => sent.add(EquoCommBase.decodeFrame(frame).$1);
 }
 
 void main() {

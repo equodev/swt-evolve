@@ -3,6 +3,7 @@ package org.eclipse.swt.custom;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.FocusTrackingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartWidget;
@@ -10,6 +11,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.*;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -91,12 +94,12 @@ class CTabFolderActiveHighlightFlutterTest {
 
         focusInside(right);
 
-        assertThat(lastActivationOf(right))
+        assertThat(lastActivationOf(right).map(v -> WireValues.find(v, m -> Boolean.TRUE.equals(m.get("active")))))
                 .as("the stack that gained focus has to announce it; wire was %s", bridge.comm.sent)
-                .contains("\"active\":true");
-        assertThat(lastActivationOf(left))
+                .hasValueSatisfying(found -> assertThat(found).isNotEmpty());
+        assertThat(lastActivationOf(left).map(v -> WireValues.find(v, m -> Boolean.FALSE.equals(m.get("active")))))
                 .as("the stack that lost focus has to announce it too")
-                .contains("\"active\":false");
+                .hasValueSatisfying(found -> assertThat(found).isNotEmpty());
         assertThat(lastPushOf(right))
                 .as("the stack that gained focus must not be re-sent")
                 .isEmpty();
@@ -105,28 +108,26 @@ class CTabFolderActiveHighlightFlutterTest {
                 .isEmpty();
     }
 
-    /** The last activation this folder put on the wire, as JSON. */
-    private String lastActivationOf(CTabFolder folder) {
+    /** The last activation this folder put on the wire. */
+    private Optional<Object> lastActivationOf(CTabFolder folder) {
         String event = FlutterBridge.event((DartWidget) folder.getImpl(), "activation");
         return bridge.comm.sent.stream()
                 .filter(f -> f.event.equals(event))
-                .map(f -> f.json)
-                .reduce((first, second) -> second)
-                .orElse("");
+                .map(f -> f.value)
+                .reduce((first, second) -> second);
     }
 
     private boolean highlightOf(CTabFolder folder) {
         return ((DartCTabFolder) folder.getImpl()).getValue().getHighlight();
     }
 
-    /** The last state this folder put on the wire, as JSON. */
-    private String lastPushOf(CTabFolder folder) {
+    /** The last state this folder put on the wire. */
+    private Optional<Object> lastPushOf(CTabFolder folder) {
         String event = FlutterBridge.event((DartWidget) folder.getImpl());
         return bridge.comm.sent.stream()
                 .filter(f -> f.event.equals(event))
-                .map(f -> f.json)
-                .reduce((first, second) -> second)
-                .orElse("");
+                .map(f -> f.value)
+                .reduce((first, second) -> second);
     }
 
     /**

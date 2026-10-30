@@ -3,8 +3,6 @@
 // the request, the focus the field held would fall back to whatever control was focused before it,
 // and Java would be told that control took focus.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +13,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int frameId = 3;
 
@@ -125,8 +125,7 @@ void main() {
     // field is removed by the next update.
     FocusRequests.instance.request(frameId);
     await tester.pumpAndSettle();
-    final emptied = jsonDecode(jsonEncode(frame([], 2).toJson())) as Map<String, dynamic>;
-    VRegistry.instance.apply('Composite/$frameId', emptied..['_s'] = 2);
+    applyWhole(frame([], 2));
     await tester.pumpAndSettle();
     await tester.pump();
 

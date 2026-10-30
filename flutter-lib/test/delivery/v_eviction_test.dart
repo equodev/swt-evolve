@@ -22,6 +22,8 @@ import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
+import 'support/deliver.dart';
+
 VLabel _label(int id, {required int seq}) => VLabel()
   ..id = id
   ..seq = seq
@@ -51,7 +53,7 @@ void main() {
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
     expect(registry.size, 2);
 
-    registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
+    applyWhole(_composite(1, seq: 20), registry: registry);
 
     await _applied();
     expect(registry.valueOn('Label/9'), isNull);
@@ -66,7 +68,7 @@ void main() {
     ]));
     expect(registry.size, 3);
 
-    registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
+    applyWhole(_composite(1, seq: 20), registry: registry);
 
     await _applied();
     expect(registry.size, 1,
@@ -80,7 +82,7 @@ void main() {
     registry.register(_composite(2, seq: 10, children: [shared]));
     expect(registry.size, 3);
 
-    registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
+    applyWhole(_composite(1, seq: 20), registry: registry);
 
     await _applied();
     expect(registry.valueOn('Label/9'), isNotNull,
@@ -95,7 +97,7 @@ void main() {
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
 
     registry.register(_composite(2, seq: 30, children: [_label(9, seq: 30)]));
-    registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
+    applyWhole(_composite(1, seq: 20), registry: registry);
 
     await _applied();
     expect(registry.valueOn('Label/9'), isNotNull,
@@ -109,7 +111,7 @@ void main() {
     // widget ending up gone once both have been heard.
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
 
-    registry.apply('Composite/1', _composite(1, seq: 20).toJson()..['_s'] = 20);
+    applyWhole(_composite(1, seq: 20), registry: registry);
     registry.register(_composite(2, seq: 30, children: [_label(9, seq: 30)]));
 
     await _applied();
@@ -121,13 +123,7 @@ void main() {
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
 
     for (var seq = 20; seq <= 60; seq += 10) {
-      registry.apply(
-          'Composite/1',
-          _composite(1, seq: seq, children: [_label(9, seq: seq)]).toJson()
-            ..['_s'] = seq
-            ..['children'] = [
-              (_label(9, seq: seq).toJson()..['_s'] = seq)
-            ]);
+      applyWhole(_composite(1, seq: seq, children: [_label(9, seq: seq)]), registry: registry);
     }
 
     await _applied();
@@ -136,7 +132,7 @@ void main() {
             'exists to prevent');
     expect(registry.valueOn('Label/9'), isNotNull);
 
-    registry.apply('Composite/1', _composite(1, seq: 70).toJson()..['_s'] = 70);
+    applyWhole(_composite(1, seq: 70), registry: registry);
     await _applied();
     expect(registry.size, 1,
         reason: 'and the count has to still be right after all those repeats, or the widget is '
@@ -196,13 +192,7 @@ void main() {
     // for want of a referrer would empty the screen.
     registry.register(_composite(1, seq: 10, children: [_label(9, seq: 10)]));
 
-    registry.apply(
-        'Composite/1',
-        _composite(1, seq: 20, children: [_label(9, seq: 20)]).toJson()
-          ..['_s'] = 20
-          ..['children'] = [
-            (_label(9, seq: 20).toJson()..['_s'] = 20)
-          ]);
+    applyWhole(_composite(1, seq: 20, children: [_label(9, seq: 20)]), registry: registry);
 
     await _applied();
     expect(registry.valueOn('Composite/1'), isNotNull);

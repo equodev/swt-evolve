@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VScale extends VControl {
 
     protected VScale() {
@@ -17,7 +13,6 @@ public class VScale extends VControl {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int getIncrement() {
         return ((DartScale) impl).getIncrement();
     }
@@ -42,7 +37,6 @@ public class VScale extends VControl {
         ((DartScale) impl).minimum = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getPageIncrement() {
         return ((DartScale) impl).getPageIncrement();
     }
@@ -59,50 +53,93 @@ public class VScale extends VControl {
         ((DartScale) impl).selection = value;
     }
 
-    public static final String MAXIMUM = "maximum";
+    public static final int MAXIMUM = 442;
 
-    public static final String MINIMUM = "minimum";
+    public static final int MINIMUM = 443;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 444;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "maximum":
-                Serializer.writeKeyValue(writer, "maximum", getMaximum());
-                return;
-            case "minimum":
-                Serializer.writeKeyValue(writer, "minimum", getMinimum());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
+            case MAXIMUM:
+                return "maximum";
+            case MINIMUM:
+                return "minimum";
+            case SELECTION:
+                return "selection";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Scale.class)
-    public static class ScaleJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartScale.class, (JsonWriter.WriteObject<DartScale>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartScale.class, (JsonReader.ReadObject<DartScale>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 442:
+                w.write((int) getMaximum());
+                return true;
+            case 443:
+                w.write((int) getMinimum());
+                return true;
+            case 444:
+                w.write((int) getSelection());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Scale read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 442:
+                {
+                    int v_ = getMaximum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(442);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 443:
+                {
+                    int v_ = getMinimum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(443);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 444:
+                {
+                    int v_ = getSelection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(444);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Scale api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 442, 443, 444 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

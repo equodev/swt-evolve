@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VFileDialog extends VDialog {
 
     protected VFileDialog() {
@@ -90,31 +86,27 @@ public class VFileDialog extends VDialog {
         ((DartFileDialog) impl).overwrite = value;
     }
 
-    @JsonConverter(target = FileDialog.class)
-    public static class FileDialogJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 613;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartFileDialog.class, (JsonWriter.WriteObject<DartFileDialog>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartFileDialog.class, (JsonReader.ReadObject<DartFileDialog>) reader -> {
-                return null;
-            });
-        }
-
-        public static FileDialog read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, FileDialog api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(606);
+        w.write(getFileName());
+        w.key(607);
+        w.write(getFileNames());
+        w.key(608);
+        w.write(getFilterExtensions());
+        w.key(609);
+        w.write((int) getFilterIndex());
+        w.key(610);
+        w.write(getFilterNames());
+        w.key(611);
+        w.write(getFilterPath());
+        w.key(612);
+        w.write(getOverwrite());
     }
 }

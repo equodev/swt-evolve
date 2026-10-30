@@ -17,9 +17,6 @@ package org.eclipse.swt.custom;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * <code>StyleRange</code> defines a set of styles for a specified
@@ -33,7 +30,6 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.MINIMAL)
 public class StyleRange extends TextStyle implements Cloneable {
 
     /**
@@ -237,5 +233,37 @@ public class StyleRange extends TextStyle implements Cloneable {
             buffer.append(", ");
         buffer.append(str);
         return buffer.toString();
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 557;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(556);
+        w.write((int) start);
+        w.key(555);
+        w.write((int) length);
+        w.key(554);
+        w.write((int) fontStyle);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 556:
+                start = r.int32();
+                return true;
+            case 555:
+                length = r.int32();
+                return true;
+            case 554:
+                fontStyle = r.int32();
+                return true;
+        }
+        return super.readWire(key, r);
     }
 }

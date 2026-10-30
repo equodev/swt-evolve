@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'combo_theme_extension.tailor.dart';
-part 'combo_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$ComboThemeExtensionTailorMixin {
   // Colors
   final Color backgroundColor;
@@ -78,10 +70,5 @@ class ComboThemeExtension extends ThemeExtension<ComboThemeExtension> with _$Com
     required this.animationDuration,
     required this.minTextContrast,
   });
-
-  factory ComboThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ComboThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ComboThemeExtensionToJson(this);
 }
 

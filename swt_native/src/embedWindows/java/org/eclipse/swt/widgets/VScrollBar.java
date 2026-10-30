@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VScrollBar extends VWidget {
 
     protected VScrollBar() {
@@ -17,7 +13,6 @@ public class VScrollBar extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartScrollBar) impl).getEnabled();
     }
@@ -50,7 +45,6 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).minimum = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getPageIncrement() {
         return ((DartScrollBar) impl).getPageIncrement();
     }
@@ -75,7 +69,6 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).thumb = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartScrollBar) impl).getVisible();
     }
@@ -84,70 +77,158 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).visible = value;
     }
 
-    public static final String ENABLED = "enabled";
+    public static final int ENABLED = 324;
 
-    public static final String INCREMENT = "increment";
+    public static final int INCREMENT = 325;
 
-    public static final String MAXIMUM = "maximum";
+    public static final int MAXIMUM = 326;
 
-    public static final String MINIMUM = "minimum";
+    public static final int MINIMUM = 327;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 328;
 
-    public static final String THUMB = "thumb";
+    public static final int THUMB = 329;
 
-    public static final String VISIBLE = "visible";
+    public static final int VISIBLE = 330;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "enabled":
-                Serializer.writeKeyValue(writer, "enabled", getEnabled());
-                return;
-            case "increment":
-                Serializer.writeKeyValue(writer, "increment", getIncrement());
-                return;
-            case "maximum":
-                Serializer.writeKeyValue(writer, "maximum", getMaximum());
-                return;
-            case "minimum":
-                Serializer.writeKeyValue(writer, "minimum", getMinimum());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "thumb":
-                Serializer.writeKeyValue(writer, "thumb", getThumb());
-                return;
-            case "visible":
-                Serializer.writeKeyValue(writer, "visible", getVisible());
-                return;
+            case ENABLED:
+                return "enabled";
+            case INCREMENT:
+                return "increment";
+            case MAXIMUM:
+                return "maximum";
+            case MINIMUM:
+                return "minimum";
+            case SELECTION:
+                return "selection";
+            case THUMB:
+                return "thumb";
+            case VISIBLE:
+                return "visible";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = ScrollBar.class)
-    public static class ScrollBarJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartScrollBar.class, (JsonWriter.WriteObject<DartScrollBar>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartScrollBar.class, (JsonReader.ReadObject<DartScrollBar>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 324:
+                w.write(getEnabled());
+                return true;
+            case 325:
+                w.write((int) getIncrement());
+                return true;
+            case 326:
+                w.write((int) getMaximum());
+                return true;
+            case 327:
+                w.write((int) getMinimum());
+                return true;
+            case 328:
+                w.write((int) getSelection());
+                return true;
+            case 329:
+                w.write((int) getThumb());
+                return true;
+            case 330:
+                w.write(getVisible());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static ScrollBar read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 324:
+                {
+                    boolean v_ = getEnabled();
+                    w.key(324);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 325:
+                {
+                    int v_ = getIncrement();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(325);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 326:
+                {
+                    int v_ = getMaximum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(326);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 327:
+                {
+                    int v_ = getMinimum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(327);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 328:
+                {
+                    int v_ = getSelection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(328);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 329:
+                {
+                    int v_ = getThumb();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(329);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 330:
+                {
+                    boolean v_ = getVisible();
+                    w.key(330);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, ScrollBar api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 324, 325, 326, 327, 328, 329, 330 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 324:
+            case 330:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

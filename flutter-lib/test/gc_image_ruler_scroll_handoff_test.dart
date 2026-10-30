@@ -7,10 +7,13 @@ import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/image.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+
+import 'support/gc_frames.dart';
 
 const int _w = 29;
 const int _h = 120;
@@ -26,7 +29,6 @@ Uint8List _frame(String actionId, List<int> body) {
   return out;
 }
 
-List<int> _json(Object o) => utf8.encode(jsonEncode(o));
 
 Future<void> _settle() async {
   for (var i = 0; i < 200; i++) {
@@ -34,34 +36,27 @@ Future<void> _settle() async {
   }
 }
 
-Map<String, Object> _rgb(int r, int g, int b) =>
-    {'a': 255, 'r': r, 'g': g, 'b': b};
+VColor _rgb(int r, int g, int b) => colourOf(r, g, b);
 
 /// Opens a drawer for one GC on the buffer Image, whose current content is [baseRef].
-void _openGc(dynamic comm, int gcId, int? baseRef, Map<String, Object> background) {
+void _openGc(dynamic comm, int gcId, int? baseRef, VColor background) {
   // What the GC/create handler does in production.
   GCDrawer.standalone(VGC()
     ..swt = 'GC'
     ..id = gcId);
-  comm.receiveBinary(_frame('GC/$gcId', _json({
-    'id': gcId,
-    'swt': 'GC',
-    'alpha': 255,
-    'clippingRects': <Object>[],
-    'background': background,
-  })));
-  comm.receiveBinary(_frame('GC/$gcId/imageInit', _json({
-    'id': 77,
-    'swt': 'Image',
-    'width': _w,
-    'height': _h,
-    if (baseRef != null) 'remoteRef': baseRef,
-  })));
+  comm.receiveBinary(_frame('GC/$gcId/b', gcState(VGC.empty()
+    ..alpha = 255
+    ..clippingRects = []
+    ..background = background)));
+  comm.receiveBinary(_frame('GC/$gcId/imageInit', imageInit(VImage()
+    ..width = _w
+    ..height = _h
+    ..remoteRef = baseRef)));
 }
 
 void _closeGc(dynamic comm, int gcId, int ref) {
   comm.receiveBinary(_frame('GC/$gcId/gcDispose',
-      _json({'ref': ref, 'pixels': false, 'retain': false})));
+      tagged({'ref': ref, 'pixels': false, 'retain': false})));
 }
 
 Future<ui.Color> _pixelAt(ui.Image image, int x, int y) async {
@@ -81,14 +76,12 @@ void main() {
 
     // Cycle 0: the gutter as it stands — red everywhere, with one green row at y=[18,36).
     _openGc(comm, 6001, null, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6001/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': _w, 'height': _h})));
-    comm.receiveBinary(_frame('GC/6001', _json({
-      'id': 6001, 'swt': 'GC', 'alpha': 255,
-      'clippingRects': <Object>[], 'background': _rgb(0, 255, 0),
-    })));
-    comm.receiveBinary(_frame('GC/6001/fillRectangleintintintint',
-        _json({'x': 0, 'y': _step, 'width': _w, 'height': _step})));
+    comm.receiveBinary(_frame('GC/6001/b', gcOp('fillRectangleintintintint', [0, 0, _w, _h])));
+    comm.receiveBinary(_frame('GC/6001/b', gcState(VGC.empty()
+      ..alpha = 255
+      ..clippingRects = []
+      ..background = _rgb(0, 255, 0))));
+    comm.receiveBinary(_frame('GC/6001/b', gcOp('fillRectangleintintintint', [0, _step, _w, _step])));
     _closeGc(comm, 6001, 6100);
     await _settle();
 
@@ -99,10 +92,8 @@ void main() {
 
     // Cycle 1: one scroll step. The first GC copies rows [18, 120) up to y=0.
     _openGc(comm, 6002, 6100, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6002/copyAreaintintintintintintboolean', _json({
-      'srcX': 0, 'srcY': _step, 'width': _w, 'height': _h - _step,
-      'destX': 0, 'destY': 0, 'paint': true,
-    })));
+    comm.receiveBinary(_frame('GC/6002/b',
+        gcOp('copyAreaintintintintintintboolean', [0, _step, _w, _h - _step, 0, 0, true])));
     _closeGc(comm, 6002, 6101);
     await _settle();
     // The copy cycle on its own: its render is what the next GC starts from.
@@ -113,8 +104,7 @@ void main() {
 
     // Cycle 2: A second GC on the same Image fills only the newly exposed band at the bottom.
     _openGc(comm, 6003, 6101, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6003/fillRectangleintintintint',
-        _json({'x': 0, 'y': _h - _step, 'width': _w, 'height': _step})));
+    comm.receiveBinary(_frame('GC/6003/b', gcOp('fillRectangleintintintint', [0, _h - _step, _w, _step])));
     _closeGc(comm, 6003, 6102);
     await _settle();
 
@@ -135,28 +125,23 @@ void main() {
     const green = ui.Color(0xFF00FF00);
 
     _openGc(comm, 6201, null, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6201/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': _w, 'height': _h})));
-    comm.receiveBinary(_frame('GC/6201', _json({
-      'id': 6201, 'swt': 'GC', 'alpha': 255,
-      'clippingRects': <Object>[], 'background': _rgb(0, 255, 0),
-    })));
-    comm.receiveBinary(_frame('GC/6201/fillRectangleintintintint',
-        _json({'x': 0, 'y': _step, 'width': _w, 'height': _step})));
+    comm.receiveBinary(_frame('GC/6201/b', gcOp('fillRectangleintintintint', [0, 0, _w, _h])));
+    comm.receiveBinary(_frame('GC/6201/b', gcState(VGC.empty()
+      ..alpha = 255
+      ..clippingRects = []
+      ..background = _rgb(0, 255, 0))));
+    comm.receiveBinary(_frame('GC/6201/b', gcOp('fillRectangleintintintint', [0, _step, _w, _step])));
     _closeGc(comm, 6201, 6300);
     await _settle();
 
     _openGc(comm, 6202, 6300, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6202/copyAreaintintintintintintboolean', _json({
-      'srcX': 0, 'srcY': _step, 'width': _w, 'height': _h - _step,
-      'destX': 0, 'destY': 0, 'paint': true,
-    })));
+    comm.receiveBinary(_frame('GC/6202/b',
+        gcOp('copyAreaintintintintintintboolean', [0, _step, _w, _h - _step, 0, 0, true])));
     _closeGc(comm, 6202, 6301);
     await _settle();
 
     _openGc(comm, 6203, 6301, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6203/fillRectangleintintintint',
-        _json({'x': 0, 'y': _h - _step, 'width': _w, 'height': _step})));
+    comm.receiveBinary(_frame('GC/6203/b', gcOp('fillRectangleintintintint', [0, _h - _step, _w, _step])));
     _closeGc(comm, 6203, 6302);
     await _settle();
 
@@ -174,16 +159,14 @@ void main() {
     final comm = EquoCommService.commForTesting;
     const blue = ui.Color(0xFF0000FF);
     _openGc(comm, 6400, null, _rgb(0, 0, 255));
-    comm.receiveBinary(_frame('GC/6400/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': _w, 'height': _h})));
+    comm.receiveBinary(_frame('GC/6400/b', gcOp('fillRectangleintintintint', [0, 0, _w, _h])));
     _closeGc(comm, 6400, 6500);
     await _settle();
     var base = 6500;
     for (var i = 1; i <= 20; i++) {
       // Each cycle draws only one pixel row, so every render has to start from the one before.
       _openGc(comm, 6400 + i, base, _rgb(0, 0, 255));
-      comm.receiveBinary(_frame('GC/${6400 + i}/fillRectangleintintintint',
-          _json({'x': 0, 'y': i, 'width': 1, 'height': 1})));
+      comm.receiveBinary(_frame('GC/${6400 + i}/b', gcOp('fillRectangleintintintint', [0, i, 1, 1])));
       _closeGc(comm, 6400 + i, 6500 + i);
       await _settle();
       base = 6500 + i;
@@ -197,13 +180,11 @@ void main() {
   test('a repaint that covers the whole buffer does not draw the one before it', () async {
     final comm = EquoCommService.commForTesting;
     _openGc(comm, 6600, null, _rgb(255, 0, 0));
-    comm.receiveBinary(_frame('GC/6600/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': _w, 'height': _h})));
+    comm.receiveBinary(_frame('GC/6600/b', gcOp('fillRectangleintintintint', [0, 0, _w, _h])));
     _closeGc(comm, 6600, 6700);
     await _settle();
     _openGc(comm, 6601, 6700, _rgb(0, 255, 0));
-    comm.receiveBinary(_frame('GC/6601/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': _w, 'height': _h})));
+    comm.receiveBinary(_frame('GC/6601/b', gcOp('fillRectangleintintintint', [0, 0, _w, _h])));
     _closeGc(comm, 6601, 6701);
     await _settle();
 

@@ -278,6 +278,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         if (size) {
             this.width = width;
             this.height = height;
+            getValue().markDirty(VExpandItem.HEIGHT);
             redraw();
         }
         if (control != null && !control.isDisposed()) {
@@ -343,7 +344,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     @Override
     public void setImage(Image image) {
         super.setImage(image);
-        getValue().markDirty("headerHeight");
+        getValue().markDirty(VExpandItem.HEADER_HEIGHT);
         int oldImageHeight = imageHeight;
         if (image != null) {
             Rectangle bounds = image.getBounds();

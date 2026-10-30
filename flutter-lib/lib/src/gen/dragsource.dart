@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/dragsource_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'dragsource.g.dart';
 
 class DragSourceSwt<V extends VDragSource> extends WidgetSwt<V> {
   const DragSourceSwt({super.key, required super.value});
@@ -28,14 +27,9 @@ class DragSourceSwt<V extends VDragSource> extends WidgetSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VDragSource extends VWidget {
   VDragSource() : this.empty();
   VDragSource.empty() {
     swt = "DragSource";
   }
-
-  factory VDragSource.fromJson(Map<String, dynamic> json) =>
-      _$VDragSourceFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VDragSourceToJson(this);
 }

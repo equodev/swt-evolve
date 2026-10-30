@@ -58,7 +58,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The cell editor has just been activated: JFace gives the combo focus.
-    await tester.tap(find.byType(EditableText));
+    await tester.tap(find.descendant(of: find.byType(_CapturingCComboSwt), matching: find.byType(EditableText)));
     await tester.pumpAndSettle();
     expect(events, contains('Focus/FocusIn'), reason: 'sanity: the editor took focus');
     events.clear();
@@ -96,7 +96,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(EditableText).first);
+    await tester.tap(find.descendant(of: find.byType(_CapturingCComboSwt), matching: find.byType(EditableText)));
     await tester.pumpAndSettle();
     events.clear();
 

@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -57,7 +58,7 @@ void main() {
       ..flags = 6); // drawText(String, int, int): DRAW_DELIMITER | DRAW_TAB
 
     final action = utf8.encode('GC/$id/gcDispose');
-    final body = utf8.encode(jsonEncode({'fullRepaint': true}));
+    final body = TaggedValues.encode({'fullRepaint': true});
     final frame = Uint8List(2 + action.length + body.length);
     frame[0] = (action.length >> 8) & 0xFF;
     frame[1] = action.length & 0xFF;

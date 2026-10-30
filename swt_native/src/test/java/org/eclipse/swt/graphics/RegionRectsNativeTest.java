@@ -2,6 +2,7 @@ package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartControl;
@@ -62,19 +63,17 @@ class RegionRectsNativeTest {
     }
 
     @Test
-    @DisplayName("the region is in the JSON the control is rebuilt from")
+    @DisplayName("the region is in the record the control is rebuilt from")
     void regionReachesTheWire() throws Exception {
         Canvas canvas = freshCanvas();
         Region region = new Region(canvas.getDisplay());
         region.add(10, 20, 100, 50);
         canvas.setRegion(region);
 
-        String json = new String(
-                new dev.equo.swt.Serializer().to(((DartControl) canvas.getImpl()).getValue()),
-                java.nio.charset.StandardCharsets.UTF_8);
+        java.util.Map<String, Object> wire = dev.equo.swt.harness.WireFrames.describe(canvas);
 
-        assertThat(json).as("the value object carries it, but only the wire reaches Flutter")
-                .contains("\"region\"").contains("\"rects\"");
+        assertThat(WireValues.mentions(wire, "region") && WireValues.mentions(wire, "rects"))
+                .as("the value object carries it, but only the wire reaches Flutter").isTrue();
     }
 
     @Test

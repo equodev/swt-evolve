@@ -148,6 +148,8 @@ class PaintPacingTest {
         Canvas canvas = inFlightFull(Mocks.shell(), paints);
         Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
         Button button = new Button(canvas.getShell(), SWT.PUSH);
+        // The button's own record goes out now, or it could release the paints held below.
+        FlutterBridge.update();
         pumpAsync();
 
         canvas.redraw();
@@ -235,8 +237,10 @@ class PaintPacingTest {
         // Answers arrive in order, so once the second one is handled the first one was too.
         client.inFrame(canvas);
         client.inFrame(otherCanvas);
-        waitFor(() -> !asyncQueue.isEmpty());
-        pumpAsync();
+        waitFor(() -> {
+            pumpAsync();
+            return otherPaints.get() > PaintPacing.IN_FLIGHT;
+        });
         assertThat(paints).as("paints of the disposed Display's canvas").hasValue(PaintPacing.IN_FLIGHT);
         assertThat(otherPaints).as("paints of the live Display's canvas").hasValue(PaintPacing.IN_FLIGHT + 1);
     }
@@ -329,7 +333,15 @@ class PaintPacingTest {
         /** What the client says when the frame showing [control]'s oldest paint begins. */
         void inFrame(Control control) {
             byte[] header = CommService.frameHeader(PaintPacing.IN_FRAME);
-            byte[] payload = ("{\"id\":" + control.hashCode() + "}").getBytes(StandardCharsets.UTF_8);
+            long id = control.hashCode();
+            long z = (id << 1) ^ (id >> 63);
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            while ((z & ~0x7FL) != 0) {
+                out.write((int) ((z & 0x7F) | 0x80));
+                z >>>= 7;
+            }
+            out.write((int) z);
+            byte[] payload = out.toByteArray();
             send(ByteBuffer.allocate(header.length + payload.length).put(header).put(payload).array());
         }
 
@@ -343,11 +355,9 @@ class PaintPacingTest {
 
         @Override
         public void onMessage(ByteBuffer bytes) {
-            int nameLength = ((bytes.get(0) & 0xFF) << 8) | (bytes.get(1) & 0xFF);
-            byte[] name = new byte[nameLength];
-            bytes.position(2);
-            bytes.get(name);
-            received.add(new String(name, StandardCharsets.UTF_8));
+            byte[] frame = new byte[bytes.remaining()];
+            bytes.get(frame);
+            received.add(dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length).channel());
         }
 
         @Override

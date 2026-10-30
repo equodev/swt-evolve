@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/rgb.dart';
@@ -276,7 +277,7 @@ class _GroundState extends State<_Ground> implements GCGround {
 /// Ends the paint in flight, as Java's gcDispose does.
 void _endPaint() {
   final action = utf8.encode('GC/$_gcId/gcDispose');
-  final body = utf8.encode(jsonEncode({'fullRepaint': true}));
+  final body = TaggedValues.encode({'fullRepaint': true});
   final frame = Uint8List(2 + action.length + body.length);
   frame[0] = (action.length >> 8) & 0xFF;
   frame[1] = action.length & 0xFF;

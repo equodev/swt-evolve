@@ -55,10 +55,11 @@ class ShellRegionPayloadNativeTest {
         region.add(0, 598, 800, 2);
         shell.setRegion(region);
 
-        String json = new String(new Serializer().to(shell), StandardCharsets.UTF_8);
+        java.util.Map<String, Object> described = dev.equo.swt.harness.WireFrames.describe(shell);
 
-        assertThat(json).as("without the shape there is nothing to clip the shell to")
-                .contains("\"rects\"");
-        assertThat(json).contains("\"region\"");
+        assertThat(dev.equo.swt.harness.WireValues.mentions(described, "rects"))
+                .as("without the shape there is nothing to clip the shell to")
+                .isTrue();
+        assertThat(dev.equo.swt.harness.WireValues.mentions(described, "region")).isTrue();
     }
 }

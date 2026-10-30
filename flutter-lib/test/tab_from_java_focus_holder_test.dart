@@ -3,9 +3,6 @@
 // own focus can sit elsewhere (nowhere, or the shell). Tab must still go to the control after the
 // one Java focused, not start from wherever the client's focus happens to be.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +18,8 @@ import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/traversal_veto_scope.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
+
+import 'support/batch.dart';
 
 const int _firstId = 51;
 const int _buttonId = 52;
@@ -39,17 +38,6 @@ VText _text(int id, int y, String text) => VText()
   ..visible = true
   ..enabled = true
   ..bounds = _rect(0, y, 120, 24);
-
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
 
 Future<void> _pumpTextButtonText(WidgetTester tester) async {
   final gate = VetoGate('traverse')..attach('Display', 950);
@@ -117,7 +105,7 @@ void main() {
     expect(_textNode(tester, 'first').hasFocus, isFalse,
         reason: 'the client was never asked to focus the field');
 
-    _receiveJson(FocusRequests.holderChannel, {'id': _firstId});
+    receiveTagged(FocusRequests.holderChannel, {'id': _firstId});
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -129,7 +117,7 @@ void main() {
 
   testWidgets('Shift+Tab goes back from the control Java focused', (tester) async {
     await _pumpTextButtonText(tester);
-    _receiveJson(FocusRequests.holderChannel, {'id': _secondId});
+    receiveTagged(FocusRequests.holderChannel, {'id': _secondId});
     await tester.pump();
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -142,11 +130,11 @@ void main() {
 
   testWidgets('a field the client already focused traverses from where it is', (tester) async {
     await _pumpTextButtonText(tester);
-    _receiveJson(FocusRequests.holderChannel, {'id': _firstId});
+    receiveTagged(FocusRequests.holderChannel, {'id': _firstId});
     _textNode(tester, 'second').requestFocus();
     await tester.pump();
     // The client's own move reaches Java and comes back as the new holder.
-    _receiveJson(FocusRequests.holderChannel, {'id': _secondId});
+    receiveTagged(FocusRequests.holderChannel, {'id': _secondId});
     await tester.pump();
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
@@ -159,7 +147,7 @@ void main() {
 
   testWidgets('a focus the client holds on another control is left where it is', (tester) async {
     await _pumpTextButtonText(tester);
-    _receiveJson(FocusRequests.holderChannel, {'id': _firstId});
+    receiveTagged(FocusRequests.holderChannel, {'id': _firstId});
     _textNode(tester, 'second').requestFocus();
     await tester.pump();
 

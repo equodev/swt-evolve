@@ -82,10 +82,29 @@ class ReceiveCopyAllocationTest {
             lastLength = event.text.length();
             handled.release();
         });
-        double copies = copiesPerPayloadByte(size -> frame("Probe/1/event",
-                ("{\"text\":\"" + "x".repeat(size - 11) + "\"}").getBytes(StandardCharsets.UTF_8)));
+        double copies = copiesPerPayloadByte(size -> frame("Probe/1/event", eventWithText(size - 11)));
         assertThat(lastLength).isEqualTo(2 * PAYLOAD - 11);
         System.out.printf("[receive-copies] typed event: %.2f%n", copies);
+    }
+
+    /** An event whose text is {@code length} x's, as the client writes it: the text's key, then the text. */
+    private static byte[] eventWithText(int length) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        int key = 354 * 2;
+        while ((key & ~0x7F) != 0) {
+            out.write((key & 0x7F) | 0x80);
+            key >>>= 7;
+        }
+        out.write(key);
+        int n = (length << 1) + 1;
+        while ((n & ~0x7F) != 0) {
+            out.write((n & 0x7F) | 0x80);
+            n >>>= 7;
+        }
+        out.write(n);
+        out.writeBytes("x".repeat(length).getBytes(StandardCharsets.UTF_8));
+        out.write(0);
+        return out.toByteArray();
     }
 
     /** Extra bytes the server threads allocated per extra payload byte, between two payload sizes. */

@@ -1,6 +1,6 @@
 package org.eclipse.swt.custom;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
 
@@ -43,7 +43,7 @@ class ScrolledCompositeOriginRequestTest extends SerializeTestBase {
         sc.setOrigin(10, 50);
 
         assertThat(value(sc).getOriginRequest()).isEqualTo(1);
-        assertThat(value(sc).changedKeys()).contains("originRequest", "origin");
+        assertThat(value(sc).changedKeys()).contains(VScrolledComposite.ORIGIN_REQUEST, VScrolledComposite.ORIGIN);
     }
 
     @Test
@@ -55,7 +55,7 @@ class ScrolledCompositeOriginRequestTest extends SerializeTestBase {
         sc.setOrigin(0, 50);
 
         assertThat(value(sc).getOriginRequest()).isEqualTo(2);
-        assertThat(value(sc).changedKeys()).contains("originRequest");
+        assertThat(value(sc).changedKeys()).contains(VScrolledComposite.ORIGIN_REQUEST);
     }
 
     @Test
@@ -72,10 +72,10 @@ class ScrolledCompositeOriginRequestTest extends SerializeTestBase {
         ScrolledComposite sc = scrolledWithContent();
         sc.setOrigin(10, 50);
 
-        String json = serialize(sc);
+        java.util.Map<String, Object> state = serialize(sc);
 
-        assertThatJson(json).node("originRequest").isEqualTo(1);
-        assertThatJson(json).node("origin.x").isEqualTo(10);
-        assertThatJson(json).node("origin.y").isEqualTo(50);
+        assertThatWire(state).node("originRequest").isEqualTo(1);
+        assertThatWire(state).node("origin.x").isEqualTo(10);
+        assertThatWire(state).node("origin.y").isEqualTo(50);
     }
 }

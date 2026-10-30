@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'fontmetrics.g.dart';
-
-@JsonSerializable()
-class VFontMetrics {
+class VFontMetrics implements WireReadable, WireWritable, WireVisitable {
   VFontMetrics() : this.empty();
   VFontMetrics.empty();
 
-  factory VFontMetrics.fromJson(Map<String, dynamic> json) =>
-      _$VFontMetricsFromJson(json);
-  Map<String, dynamic> toJson() => _$VFontMetricsToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

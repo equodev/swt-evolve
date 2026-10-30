@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
 
-import 'json_converters.dart';
 
 part 'scaling_scale_theme_extension.tailor.dart';
-part 'scaling_scale_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@EdgeInsetsConverter()
 class ScalingScaleThemeExtension
     extends ThemeExtension<ScalingScaleThemeExtension>
     with _$ScalingScaleThemeExtensionTailorMixin {
@@ -47,9 +41,4 @@ class ScalingScaleThemeExtension
     required this.collapseTooltip,
     required this.resetTooltip,
   });
-
-  factory ScalingScaleThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ScalingScaleThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ScalingScaleThemeExtensionToJson(this);
 }

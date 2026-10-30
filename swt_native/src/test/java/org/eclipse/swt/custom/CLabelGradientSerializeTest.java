@@ -1,6 +1,6 @@
 package org.eclipse.swt.custom;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.device;
 import static org.mockito.Mockito.when;
@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+
 /**
  * The gradient and the image a CLabel paints behind its text are the label's own state, not the
  * Control's background: they have to reach the render side, and every call that sets or clears
@@ -25,9 +27,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 public class CLabelGradientSerializeTest extends SerializeTestBase {
 
     // The wire names, spelled out: the test is about what is sent under them.
-    private static final String GRADIENT_COLORS = "gradientColors";
-    private static final String GRADIENT_PERCENTS = "gradientPercents";
-    private static final String GRADIENT_VERTICAL = "gradientVertical";
+    private static final int GRADIENT_COLORS = VCLabel.GRADIENT_COLORS;
+    private static final int GRADIENT_PERCENTS = VCLabel.GRADIENT_PERCENTS;
+    private static final int GRADIENT_VERTICAL = VCLabel.GRADIENT_VERTICAL;
 
     private static final Color RED = new Color(device(), 255, 0, 0);
     private static final Color BLUE = new Color(device(), 0, 0, 255);
@@ -54,6 +56,11 @@ public class CLabelGradientSerializeTest extends SerializeTestBase {
         return label;
     }
 
+    /** An opaque colour as the wire dump writes it. */
+    private static String rgb(int r, int g, int b) {
+        return String.format("#ff%02x%02x%02x", r, g, b);
+    }
+
     private static VCLabel value(CLabel label) {
         return ((DartCLabel) label.getImpl()).getValue();
     }
@@ -66,14 +73,12 @@ public class CLabelGradientSerializeTest extends SerializeTestBase {
         assertThat(value(label).changedKeys()).contains(GRADIENT_COLORS, GRADIENT_PERCENTS, GRADIENT_VERTICAL)
                 .as("a label with no image has none to clear").doesNotContain(VCLabel.BACKGROUND_IMAGE);
 
-        assertThatJson(serialize(label)).isObject()
-                .node("gradientColors").isArray().hasSize(2);
-        assertThatJson(serialize(label)).node("gradientColors[0]").isObject()
-                .containsEntry("r", 255).containsEntry("g", 0).containsEntry("b", 0);
-        assertThatJson(serialize(label)).node("gradientColors[1]").isObject()
-                .containsEntry("r", 0).containsEntry("g", 0).containsEntry("b", 255);
-        assertThatJson(serialize(label)).node("gradientPercents").isEqualTo("[60]");
-        assertThatJson(serialize(label)).node("gradientVertical").isEqualTo(true);
+        assertThatWire(serialize(label)).isObject()
+                .node("gradientColors").hasSize(2);
+        assertThatWire(serialize(label)).node("gradientColors[0]").isEqualTo(rgb(255, 0, 0));
+        assertThatWire(serialize(label)).node("gradientColors[1]").isEqualTo(rgb(0, 0, 255));
+        assertThatWire(serialize(label)).node("gradientPercents").isEqualTo(List.of(60));
+        assertThatWire(serialize(label)).node("gradientVertical").isEqualTo(true);
     }
 
     @Test
@@ -95,12 +100,10 @@ public class CLabelGradientSerializeTest extends SerializeTestBase {
         Color background = label.getBackground();
         label.setBackground(new Color[] { RED, null, BLUE }, new int[] { 30, 100 }, false);
 
-        assertThatJson(serialize(label)).node("gradientColors").isArray().hasSize(3);
-        assertThatJson(serialize(label)).node("gradientColors[1]").isObject()
-                .containsEntry("r", background.getRed())
-                .containsEntry("g", background.getGreen())
-                .containsEntry("b", background.getBlue());
-        assertThatJson(serialize(label)).node("gradientPercents").isEqualTo("[30,100]");
+        assertThatWire(serialize(label)).node("gradientColors").hasSize(3);
+        assertThatWire(serialize(label)).node("gradientColors[1]")
+                .isEqualTo(rgb(background.getRed(), background.getGreen(), background.getBlue()));
+        assertThatWire(serialize(label)).node("gradientPercents").isEqualTo(List.of(30, 100));
     }
 
     @Test
@@ -113,8 +116,8 @@ public class CLabelGradientSerializeTest extends SerializeTestBase {
         label.setBackground((Color[]) null, null);
 
         assertThat(value(label).changedKeys()).contains(GRADIENT_COLORS, GRADIENT_PERCENTS);
-        assertThatJson(serialize(label)).node("gradientColors").isAbsent();
-        assertThatJson(serialize(label)).node("gradientPercents").isAbsent();
+        assertThatWire(serialize(label)).node("gradientColors").isAbsent();
+        assertThatWire(serialize(label)).node("gradientPercents").isAbsent();
     }
 
     @Test

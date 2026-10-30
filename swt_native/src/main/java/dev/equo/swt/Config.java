@@ -625,6 +625,8 @@ public class Config {
      * class name instead reaches nothing.
      */
     public static String presentedName(DartWidget impl, String name) {
+        // Only a composite is ever presented under another name, or filed by describedAs.
+        if (!(impl instanceof DartComposite)) return name;
         String filed = presented.get(impl);
         if (filed != null) return filed;
         return "Composite".equals(name) && impl instanceof DartComposite && !impl.isDisposed()
@@ -643,7 +645,7 @@ public class Config {
      * listening on a channel nothing is addressed to.
      */
     static void describedAs(DartWidget impl, String name) {
-        presented.put(impl, name);
+        if (impl instanceof DartComposite) presented.put(impl, name);
     }
 
     private static final Map<DartWidget, String> presented =

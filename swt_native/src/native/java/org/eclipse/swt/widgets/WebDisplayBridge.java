@@ -68,10 +68,11 @@ public class WebDisplayBridge extends DisplayBridge {
 
     private void registerClipboard(long displayId) {
         clipboardDisplayId = displayId;
-        comm().on("Display/" + displayId + "/Clipboard/contents", java.util.Map.class, reply -> {
-            if (reply == null) return;
-            java.util.concurrent.CompletableFuture<String> read = clipboardReads.remove(String.valueOf(reply.get("reqId")));
-            if (read != null) read.complete(reply.get("text") instanceof String ? (String) reply.get("text") : null);
+        // The request's id, then the text (absent when the browser handed over none).
+        comm().on("Display/" + displayId + "/Clipboard/contents", java.nio.ByteBuffer.class, reply -> {
+            dev.equo.swt.WireReader r = new dev.equo.swt.WireReader(reply);
+            java.util.concurrent.CompletableFuture<String> read = clipboardReads.remove(r.string());
+            if (read != null) read.complete(r.string());
         });
     }
 
@@ -214,6 +215,7 @@ public class WebDisplayBridge extends DisplayBridge {
                 launchBrowserUnlessThePageReturns(webServer);
             } else {
                 webServer.launchBrowser();
+                if (webServer.launchedHeadlessBrowser()) awaitHeadlessClient(comm);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to start web server for Display", e);
@@ -223,6 +225,24 @@ public class WebDisplayBridge extends DisplayBridge {
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
         dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
+    }
+
+    /** How long a Display waits for the headless browser it launched to connect, on a loaded machine. */
+    private static final long HEADLESS_CONNECT_WAIT_MS = 60_000;
+
+    /**
+     * The headless browser is this Display's own, so the Display is ready once it has connected.
+     * Until then every frame waits in the comm, and an answer a caller waits on, a pixel read-back
+     * say, spends its budget on the browser starting.
+     */
+    private static void awaitHeadlessClient(CommService comm) throws InterruptedException {
+        if (!(comm instanceof dev.equo.swt.comm.AbstractBinaryCommService)) return;
+        dev.equo.swt.comm.AbstractBinaryCommService binary = (dev.equo.swt.comm.AbstractBinaryCommService) comm;
+        long deadline = System.currentTimeMillis() + HEADLESS_CONNECT_WAIT_MS;
+        while (!binary.hasClient() && System.currentTimeMillis() < deadline) Thread.sleep(10);
+        if (!binary.hasClient()) {
+            System.err.println("[WebDisplayBridge] The headless browser did not connect within " + HEADLESS_CONNECT_WAIT_MS + "ms");
+        }
     }
 
     /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */
@@ -275,9 +295,7 @@ public class WebDisplayBridge extends DisplayBridge {
         comm.on(win + "WinUnload", String.class, s -> scheduleDeferredClose());
         // A browser refused the window (popup blocker, or the user's browser opened nothing). The
         // shell has to go back to being drawn inside this one, or it would exist nowhere at all.
-        // Read as a plain Object: that reader is registered for every comm, whereas a payload class
-        // of our own needs one generated for it, and without it this never arrives at all.
-        comm.on(win + "WindowOpenFailed", Object.class, payload -> {
+        comm.on(win + "WindowOpenFailed", java.nio.ByteBuffer.class, payload -> {
             long shellId = shellIdOf(payload);
             if (shellId != 0) winApi.asyncExec(() -> onShellWindowRejected(shellId));
         });
@@ -285,14 +303,9 @@ public class WebDisplayBridge extends DisplayBridge {
 
     // ---- one browser window per detached shell (see WindowPolicy) ---------------------------------
 
-    /** The {@code shellId} in a window payload, or 0 when it carries none. Package-private so a test
-     *  can put a really-decoded payload through it. */
-    static long shellIdOf(Object payload) {
-        if (payload instanceof java.util.Map<?, ?>) {
-            Object shellId = ((java.util.Map<?, ?>) payload).get("shellId");
-            if (shellId instanceof Number) return ((Number) shellId).longValue();
-        }
-        return 0;
+    /** The shell id a window payload carries, or 0 when it carries none. */
+    static long shellIdOf(java.nio.ByteBuffer payload) {
+        return payload.hasRemaining() ? new dev.equo.swt.WireReader(payload).int64() : 0;
     }
 
     /** Shells whose window the browser refused, so the policy is not asked about them again. */
@@ -511,7 +524,9 @@ public class WebDisplayBridge extends DisplayBridge {
     @Override
     protected void wakeForDirty() {
         DartDisplay display = forDisplay;
-        if (display != null)
+        // The UI thread is not waiting while it dirties state, and sleep() does not wait while state
+        // is dirty; a paint dirties state once per GC call.
+        if (display != null && display.thread != Thread.currentThread())
             display.wakeThread();
     }
 

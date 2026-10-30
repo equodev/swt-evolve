@@ -153,17 +153,17 @@ void main() {
     // The shell reports its geometry once the first frame is up.
     await tester.pump();
 
-    final setBounds = EquoCommService.commForTesting.sentFrames
-        .map(EquoCommBase.decodeFrame)
-        .where((f) => f.$1.startsWith('Shell/') && f.$1.endsWith('/SetBounds'))
-        .toList();
+    final setBounds = EquoCommService.commForTesting.sentFrames.where((frame) {
+      final channel = EquoCommBase.decodeFrame(frame).$1;
+      return channel.startsWith('Shell/') && channel.endsWith('/SetBounds');
+    }).toList();
     expect(setBounds, isNotEmpty,
         reason: 'the shell reports its geometry after the first frame');
 
-    final body = jsonDecode(setBounds.last.$2) as Map<String, dynamic>;
-    expect(body['x'], 1000,
+    final body = EquoCommBase.decodeEvent(setBounds.last);
+    expect(body.x, 1000,
         reason: 'reporting the drawn offset tells Java the shell moved left by the window x');
-    expect(body['y'], 600,
+    expect(body.y, 600,
         reason: 'and up by the title bar and whatever else is above the window');
   });
 
@@ -178,12 +178,11 @@ void main() {
     await pumpDisplay(tester, [_workbench(), _detached(x: 300, y: 200)]);
     await tester.pump();
 
-    final setBounds = EquoCommService.commForTesting.sentFrames
-        .map(EquoCommBase.decodeFrame)
-        .where((f) => f.$1.startsWith('Shell/') && f.$1.endsWith('/SetBounds'))
-        .toList();
+    final setBounds = EquoCommService.commForTesting.sentFrames.where((frame) {
+      final channel = EquoCommBase.decodeFrame(frame).$1;
+      return channel.startsWith('Shell/') && channel.endsWith('/SetBounds');
+    }).toList();
     expect(setBounds, hasLength(1));
-    final body = jsonDecode(setBounds.single.$2) as Map<String, dynamic>;
-    expect(body['detail'], initialClientBounds);
+    expect(EquoCommBase.decodeEvent(setBounds.single).detail, initialClientBounds);
   });
 }

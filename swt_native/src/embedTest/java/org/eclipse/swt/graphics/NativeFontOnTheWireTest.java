@@ -1,13 +1,13 @@
 package org.eclipse.swt.graphics;
 
-import com.dslplatform.json.DslJson;
-import com.dslplatform.json.JsonWriter;
-import dev.equo.swt.Serializer;
+import dev.equo.swt.WidgetWire;
+import dev.equo.swt.WireDump;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -20,44 +20,49 @@ import static org.mockito.Mockito.when;
  */
 class NativeFontOnTheWireTest {
 
-    private static String write(java.util.function.Consumer<JsonWriter> body) {
-        DslJson<Object> dsl = new DslJson<>(new DslJson.Settings<>()
-                .includeServiceLoader(Serializer.class.getClassLoader()));
-        JsonWriter writer = dsl.newWriter();
-        body.accept(writer);
-        return new String(writer.getByteBuffer(), 0, writer.size(), StandardCharsets.UTF_8);
-    }
-
-    private static Font nativeFont(Display display) {
+    private static Font nativeFont(Display display, FontData data) {
         Font font = mock(Font.class);
         when(font.getImpl()).thenReturn(mock(SwtFont.class));
         when(font.getDevice()).thenReturn(display);
-        FontData data = new FontData((IFontData) null);
-        data.setImpl(new DartFontData("Courier", 13, SWT.BOLD, data));
         when(font.getFontData()).thenReturn(new FontData[] {data});
         return font;
+    }
+
+    /** Whether some record at any depth of {@code tree} names this font. */
+    private static boolean describesFont(Object tree, String name, int height) {
+        if (tree instanceof Map<?, ?> map) {
+            if (name.equals(map.get("name")) && map.get("height") instanceof Number h && h.intValue() == height) return true;
+            return map.values().stream().anyMatch(v -> describesFont(v, name, height));
+        }
+        if (tree instanceof List<?> list) return list.stream().anyMatch(v -> describesFont(v, name, height));
+        return false;
+    }
+
+    private static Map<String, Object> written(Font font) {
+        TextStyle style = new TextStyle();
+        style.font = font;
+        byte[] fields = WidgetWire.fieldsOf(style);
+        return WireDump.fields(fields, 0, fields.length);
     }
 
     @Test
     void aNativeFontIsWrittenAsItsDartCopy() {
         Display display = org.eclipse.swt.widgets.Mocks.display();
-        Font font = nativeFont(display);
+        FontData data = new FontData((IFontData) null);
+        data.setImpl(new DartFontData("Courier", 13, SWT.BOLD, data));
 
-        String json = write(w -> VFont.FontJson.write(w, font));
-
-        assertThat(json).contains("Courier").contains("13");
+        assertThat(describesFont(written(nativeFont(display, data)), "Courier", 13)).isTrue();
     }
 
     @Test
     void aNativeFontDataIsWrittenAsItsDartCopy() {
+        Display display = org.eclipse.swt.widgets.Mocks.display();
         FontData data = mock(FontData.class);
         when(data.getImpl()).thenReturn(mock(SwtFontData.class));
         when(data.getName()).thenReturn("Courier");
         when(data.getHeight()).thenReturn(13);
         when(data.getStyle()).thenReturn(SWT.ITALIC);
 
-        String json = write(w -> VFontData.FontDataJson.write(w, data));
-
-        assertThat(json).contains("Courier").contains("13");
+        assertThat(describesFont(written(nativeFont(display, data)), "Courier", 13)).isTrue();
     }
 }

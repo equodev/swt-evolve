@@ -25,8 +25,8 @@ import java.util.List;
 /**
  * Bench payloads built from real SWT widgets. Each shape is a plausible production-style
  * widget tree whose serialized size falls naturally in a chosen rough size class — no padding,
- * no synthetic bulk. All wire bytes are valid production JSON produced by the real
- * {@link Serializer} path ({@code writeWithId} envelope, real DSL-JSON converters).
+ * no synthetic bulk. All wire bytes are the frame of widget records the real {@link Serializer}
+ * tape writes.
  *
  * <p>Three shapes — {@link #SMALL} (~250–400B single Button), {@link #MEDIUM} (~3–6KB labelled
  * form), {@link #LARGE} (~50–80KB workbench-style pane tree). Constructed in a static
@@ -38,11 +38,11 @@ public final class BenchPayloads {
     public static final Shape MEDIUM;
     public static final Shape LARGE;
     /** A Button carrying a real {@link Image} — the serialized VButton holds a nested VImage
-     *  whose pixel data ships base64-encoded inside the JSON (the cost we want to baseline). */
+     *  whose pixel data ships inside the record (the cost we want to baseline). */
     public static final Shape IMAGE_SMALL;
     public static final Shape IMAGE_LARGE;
     /** A Button carrying an SVG image — VImage.svgContent is plain text markup (no base64,
-     *  no raster pixel data), so it serializes as a JSON string. */
+     *  no raster pixel data), so it serializes as a string. */
     public static final Shape SVG;
     /** A real Eclipse workbench widget tree (CTabFolder editor stacks, Trees with columns, ToolBars,
      *  …) as live SWT widgets built by {@link WorkbenchTree} — hardcoded Java generated once from the
@@ -62,7 +62,7 @@ public final class BenchPayloads {
             this.size = encode(impl).length;
         }
 
-        /** Live shape — re-serialized fresh on each call (measures DSL-JSON encode cost). */
+        /** Live shape — re-serialized fresh on each call (measures the encode cost). */
         static Shape live(String name, DartControl impl) { return new Shape(name, impl); }
 
         /** J→D payload — re-encoded from the live widget tree on every call. */
@@ -148,9 +148,9 @@ public final class BenchPayloads {
     }
 
     /**
-     * A Button with a real image whose pixels are a non-trivial pattern (so the encoded PNG —
-     * and thus its base64 wire form — has realistic size). This is the production J→D image
-     * path: an icon-bearing widget whose VButton nests a VImage carrying the base64 pixel data.
+     * A Button with a real image whose pixels are a non-trivial pattern (so its wire form has a
+     * realistic size). This is the production J→D image path: an icon-bearing widget whose VButton
+     * nests a VImage carrying the pixel data.
      */
     private static Widget buildImageButton(Shell shell, int w, int h) {
         ImageData data = new ImageData(w, h, 24, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
@@ -168,7 +168,7 @@ public final class BenchPayloads {
 
     /**
      * A Button whose image is an SVG. SVG crosses the bridge as plain text in
-     * {@code VImage.svgContent} — a JSON string, no base64 and no raster pixel data — so this
+     * {@code VImage.svgContent} — a string, no raster pixel data — so this
      * shape isolates the cost of shipping vector markup vs raster images.
      */
     private static Widget buildSvgButton(Shell shell) {
@@ -201,11 +201,15 @@ public final class BenchPayloads {
         return (DartControl) w.getImpl();
     }
 
+    /** {@code impl} described whole, as the frame of widget records that carries it. */
     private static byte[] encode(DartControl impl) {
+        dev.equo.swt.Serializer.Tape tape = new dev.equo.swt.Serializer.Tape(Integer.MIN_VALUE);
         try {
-            return serializer.to(impl);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize bench impl", e);
+            tape.describe(impl);
+            dev.equo.swt.Serializer.discardWritten();
+            return tape.frame().payload();
+        } finally {
+            tape.release();
         }
     }
 }

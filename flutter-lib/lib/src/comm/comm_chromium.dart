@@ -29,11 +29,6 @@ external JSString? get _servedBy;
 /// Web comm: a direct browser WebSocket speaking the binary frame protocol. All
 /// protocol logic lives in [EquoCommBase]; this class only owns the socket.
 ///
-/// This replaces the legacy `equo-comm.js` text-JSON bridge (Dart→JS→`JSON.stringify`,
-/// an `{actionId,payload,callbackId}` envelope, and a 5 ms `setTimeout` per send).
-/// Owning the socket in Dart removes the JS-interop hops, the envelope, the double
-/// JSON-encode, and the timer.
-///
 /// The socket is opened through [EquoCommBase.openSocket], so its whole lifecycle —
 /// retrying a connect that never opened, and reopening one that dropped — is the base's
 /// capped-backoff loop, and sends buffer instead of reaching a dead wire in between.
@@ -172,9 +167,18 @@ class EquoCommService {
   static Object onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
       _comm.on(userEventActionId, onSuccess);
 
-  static Object on<V extends VWidget>(
-          String userEventActionId, CommCallback<V> onSuccess) =>
-      _comm.onWidget<V>(userEventActionId, onSuccess);
+  /// See [EquoCommBase.onRouted]; [remove] with the base and the token returned undoes it.
+  static Object onRouted(String base, ChannelRouter resolve) => _comm.onRouted(base, resolve);
+
+  /// See [EquoCommBase.onFirstGcMessage].
+  static void onFirstGcMessage(int id, void Function() arrived) => _comm.onFirstGcMessage(id, arrived);
+
+  /// See [EquoCommBase.forgetHeld].
+  static void forgetHeld(String owner) => _comm.forgetHeld(owner);
+
+  /// See [EquoCommBase.cancelFirstGcMessage].
+  static void cancelFirstGcMessage(int id, void Function() arrived) =>
+      _comm.cancelFirstGcMessage(id, arrived);
 
   static Future send(String userEventActionId) => _comm.send(userEventActionId);
 
@@ -193,6 +197,10 @@ class EquoCommService {
       _comm.onArrival(userEventActionId, handler);
 
   static void remove(eventName, [Object? token]) => _comm.remove(eventName, token);
+
+  /// Delivers [payload] on [channel] as if it had arrived in a batch: an entry of a GC's binary frame.
+  static FutureOr<void> deliverEntry(String channel, Object? payload) =>
+      _comm.deliverEntry(channel, payload);
 
   /// Registers the callback fired when the socket comes back after a drop, so the app can
   /// resync the state the other end pushed while it was down. See [EquoCommBase.onReconnected].

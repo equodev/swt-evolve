@@ -1,7 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -12,6 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -64,12 +70,22 @@ class GCFreshStateNativeTest {
     }
 
     /** What the next paint sends ahead of its first op, or null when it sends no state. */
-    private String stateBeforeFirstOp() {
-        String wire = bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
-        int op = wire.indexOf("GC/" + canvas.hashCode() + "/fillRectangleintintintint");
+    private List<Object> stateBeforeFirstOp() {
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
+        String fill = "GC/" + canvas.hashCode() + "/fillRectangleintintintint";
+        int op = -1;
+        for (int i = 0; i < entries.size() && op < 0; i++) if (entries.get(i).channel().contains(fill)) op = i;
         assertThat(op).as("sanity: the paint's fill reached the wire").isNotNegative();
-        String before = wire.substring(0, op);
-        return before.contains("\"swt\":\"GC\"") ? before : null;
+        List<Object> before = new ArrayList<>();
+        for (GcFrames.Entry entry : entries.subList(0, op)) before.add(entry.value());
+        boolean state = !WireValues.find(before, m -> Boolean.TRUE.equals(m.get("_whole"))
+                || (m.get("_d") instanceof Number && ((Number) m.get("_d")).intValue() == 0)).isEmpty();
+        return state ? before : null;
+    }
+
+    /** Whether some record in {@code state} has {@code key} equal to {@code value}. */
+    private static boolean carries(List<Object> state, String key, Object value) {
+        return !WireValues.find(state, m -> m.containsKey(key) && WireValues.same(m.get(key), value)).isEmpty();
     }
 
     @Test
@@ -81,17 +97,18 @@ class GCFreshStateNativeTest {
         gc.fillRectangle(0, 0, 200, 100);
         gc.dispose();
 
-        String state = stateBeforeFirstOp();
+        List<Object> state = stateBeforeFirstOp();
         assertThat(state).as("the fill must not be drawn with the previous paint's state").isNotNull();
         // A control GC starts from the control's background, and from the foreground the
         // application set on it -- none here, so black, whatever the colour scheme's text is.
         Color canvasBg = canvas.getBackground();
-        assertThat(state).contains(String.format("\"background\":{\"a\":255,\"b\":%d,\"g\":%d,\"r\":%d}",
-                canvasBg.getBlue(), canvasBg.getGreen(), canvasBg.getRed()));
-        assertThat(state).contains("\"foreground\":{\"a\":255,\"b\":0,\"g\":0,\"r\":0}");
+        assertThat(carries(state, "background", String.format("#ff%02x%02x%02x",
+                canvasBg.getRed(), canvasBg.getGreen(), canvasBg.getBlue()))).isTrue();
+        assertThat(carries(state, "foreground", "#ff000000")).isTrue();
         // A whole description replaces what the client holds, so an alpha left out is the default.
-        assertThat(state).doesNotContain("\"alpha\":40");
-        assertThat(state).doesNotContain("\"clipping\":").doesNotContain("\"transform\"");
+        assertThat(carries(state, "alpha", 40)).isFalse();
+        assertThat(WireValues.mentions(state, "clipping")).isFalse();
+        assertThat(WireValues.mentions(state, "transform")).isFalse();
     }
 
     @Test
@@ -113,8 +130,8 @@ class GCFreshStateNativeTest {
         gc.fillRectangle(0, 0, 200, 100);
         gc.dispose();
 
-        String state = stateBeforeFirstOp();
+        List<Object> state = stateBeforeFirstOp();
         assertThat(state).as("a clear in the default colour must not reuse the previous background").isNotNull();
-        assertThat(state).contains("\"background\":{\"a\":255,\"b\":255,\"g\":255,\"r\":255}");
+        assertThat(carries(state, "background", "#ffffffff")).isTrue();
     }
 }

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,10 +55,10 @@ class ThemePickFromFlutterTest {
             flags.force_theme = "light";
         });
 
-        List<ConfigFlags> echoes = echoes();
+        List<Map<String, Object>> echoes = echoes();
         assertThat(echoes).hasSize(1);
-        assertThat(echoes.get(0).theme_name).isEqualTo("hb");
-        assertThat(echoes.get(0).force_theme).isEqualTo("light");
+        assertThat(echoes.get(0).get("theme_name")).isEqualTo("hb");
+        assertThat(echoes.get(0).get("force_theme")).isEqualTo("light");
         assertThat(Config.getConfigFlags().theme_name).isEqualTo("hb");
     }
 
@@ -81,12 +80,12 @@ class ThemePickFromFlutterTest {
         FlutterBridge.handlePropertySetFromFlutter(comm, flags);
     }
 
-    private List<ConfigFlags> echoes() throws Exception {
-        Serializer serializer = new Serializer();
-        List<ConfigFlags> echoes = new ArrayList<>();
+    /** The flags Java echoed, each as its fields by name. */
+    private List<Map<String, Object>> echoes() throws Exception {
+        List<Map<String, Object>> echoes = new ArrayList<>();
         for (RecordingComm.Frame frame : comm.sent) {
             if (FlutterBridge.PROPERTIES_CHANNEL.equals(frame.event))
-                echoes.add(serializer.from(ConfigFlags.class, frame.json.getBytes(StandardCharsets.UTF_8)));
+                echoes.add(WireDump.fields(frame.bytes, 0, frame.bytes.length));
         }
         return echoes;
     }

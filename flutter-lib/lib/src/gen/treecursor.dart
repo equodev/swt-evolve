@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
@@ -13,11 +13,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/treecursor_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'treecursor.g.dart';
 
 class TreeCursorSwt<V extends VTreeCursor> extends CanvasSwt<V> {
   const TreeCursorSwt({super.key, required super.value});
@@ -35,14 +34,9 @@ class TreeCursorSwt<V extends VTreeCursor> extends CanvasSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VTreeCursor extends VCanvas {
   VTreeCursor() : this.empty();
   VTreeCursor.empty() {
     swt = "TreeCursor";
   }
-
-  factory VTreeCursor.fromJson(Map<String, dynamic> json) =>
-      _$VTreeCursorFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTreeCursorToJson(this);
 }

@@ -58,7 +58,7 @@ Widget _wrap(VTable value) => EvolveApp(
 /// means it is being cut off with an ellipsis.
 double _slack(WidgetTester tester, String text) {
   final finder = find.text(text);
-  final paragraph = tester.renderObject<RenderParagraph>(finder);
+  final paragraph = tester.renderObject<RenderBox>(finder);
   return tester.getSize(finder).width -
       paragraph.getMaxIntrinsicWidth(double.infinity);
 }
@@ -86,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // 'Host' is nowhere near 130px, so nothing about that column moves.
-    final host = tester.renderObject<RenderParagraph>(find.text('Host'));
+    final host = tester.renderObject<RenderBox>(find.text('Host'));
     final available = tester.getSize(find.text('Host')).width;
     expect(available, lessThan(130));
     expect(available,

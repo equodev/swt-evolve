@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/gen/decorations.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/menu.dart';
@@ -81,7 +82,7 @@ List<String> _sent(String suffix) => EquoCommService.commForTesting.sentFrames
 
 Future<void> _fromJava(WidgetTester tester, String channel) async {
   final action = utf8.encode(channel);
-  final body = utf8.encode('{}');
+  final body = TaggedValues.encode(<String, Object?>{});
   final frame = Uint8List(2 + action.length + body.length);
   frame[0] = (action.length >> 8) & 0xFF;
   frame[1] = action.length & 0xFF;

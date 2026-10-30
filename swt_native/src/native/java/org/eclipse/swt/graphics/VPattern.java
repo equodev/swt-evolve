@@ -1,11 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VPattern extends VResource {
 
     protected VPattern() {
@@ -45,7 +41,6 @@ public class VPattern extends VResource {
         ((DartPattern) impl).endY = value;
     }
 
-    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartPattern) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -73,73 +68,173 @@ public class VPattern extends VResource {
         ((DartPattern) impl).startY = value;
     }
 
-    public static final String COLOR1 = "color1";
+    public static final int COLOR1 = 570;
 
-    public static final String COLOR2 = "color2";
+    public static final int COLOR2 = 571;
 
-    public static final String END_X = "endX";
+    public static final int END_X = 572;
 
-    public static final String END_Y = "endY";
+    public static final int END_Y = 573;
 
-    public static final String IMAGE = "image";
+    public static final int IMAGE = 574;
 
-    public static final String START_X = "startX";
+    public static final int START_X = 575;
 
-    public static final String START_Y = "startY";
+    public static final int START_Y = 576;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "color1":
-                Serializer.writeKeyValue(writer, "color1", getColor1());
-                return;
-            case "color2":
-                Serializer.writeKeyValue(writer, "color2", getColor2());
-                return;
-            case "endX":
-                Serializer.writeKeyValue(writer, "endX", getEndX());
-                return;
-            case "endY":
-                Serializer.writeKeyValue(writer, "endY", getEndY());
-                return;
-            case "image":
-                Serializer.writeKeyValue(writer, "image", getImage());
-                return;
-            case "startX":
-                Serializer.writeKeyValue(writer, "startX", getStartX());
-                return;
-            case "startY":
-                Serializer.writeKeyValue(writer, "startY", getStartY());
-                return;
+            case COLOR1:
+                return "color1";
+            case COLOR2:
+                return "color2";
+            case END_X:
+                return "endX";
+            case END_Y:
+                return "endY";
+            case IMAGE:
+                return "image";
+            case START_X:
+                return "startX";
+            case START_Y:
+                return "startY";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Pattern.class)
-    public static class PatternJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartPattern.class, (JsonWriter.WriteObject<DartPattern>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartPattern.class, (JsonReader.ReadObject<DartPattern>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 570:
+                w.write(getColor1());
+                return true;
+            case 571:
+                w.write(getColor2());
+                return true;
+            case 572:
+                w.write(getEndX());
+                return true;
+            case 573:
+                w.write(getEndY());
+                return true;
+            case 574:
+                w.image(getImage());
+                return true;
+            case 575:
+                w.write(getStartX());
+                return true;
+            case 576:
+                w.write(getStartY());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Pattern read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 570:
+                {
+                    Color v_ = getColor1();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(570);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 571:
+                {
+                    Color v_ = getColor2();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(571);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 572:
+                {
+                    float v_ = getEndX();
+                    w.key(572);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 573:
+                {
+                    float v_ = getEndY();
+                    w.key(573);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 574:
+                {
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(574);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 575:
+                {
+                    float v_ = getStartX();
+                    w.key(575);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 576:
+                {
+                    float v_ = getStartY();
+                    w.key(576);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Pattern api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 570, 571, 572, 573, 574, 575, 576 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 663;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(570);
+        w.write(getColor1());
+        w.key(571);
+        w.write(getColor2());
+        w.key(572);
+        w.write(getEndX());
+        w.key(573);
+        w.write(getEndY());
+        w.key(574);
+        w.image(getImage());
+        w.key(575);
+        w.write(getStartX());
+        w.key(576);
+        w.write(getStartY());
     }
 }

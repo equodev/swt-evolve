@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'list_theme_extension.tailor.dart';
-part 'list_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@EdgeInsetsConverter()
-@TextStyleConverter()
-@DurationConverter()
 class ListThemeExtension extends ThemeExtension<ListThemeExtension> with _$ListThemeExtensionTailorMixin {
   // Background colors
   final Color backgroundColor;
@@ -62,9 +54,4 @@ class ListThemeExtension extends ThemeExtension<ListThemeExtension> with _$ListT
     required this.animationDuration,
     required this.minTextContrast,
   });
-
-  factory ListThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ListThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ListThemeExtensionToJson(this);
 }

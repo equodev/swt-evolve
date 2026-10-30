@@ -323,7 +323,7 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        GCHelper.callOnDisplayBytes(this, "copyAreaImageintint", drawOp, p -> GCHelper.updateImageFromPngBytes(image, null, p), 10_000);
+        GCHelper.callOnDisplayBytes(this, "copyAreaImageintint", drawOp, p -> GCHelper.updateImageFromPngBytes(image, null, p), GCHelper.READ_BACK_TIMEOUT_MS);
     }
 
     void copyArea(Image image, int x, int y, long srcImage) {
@@ -2825,24 +2825,30 @@ public final class DartGC extends DartResource implements IGC {
         if (mask == 0)
             return;
         data.lineWidth = lineWidth;
-        getValue().markDirty(VGC.LINE_WIDTH);
-        this.lineWidth = (int) data.lineWidth;
-        getValue().markDirty(VGC.LINE_WIDTH);
+        if (!java.util.Objects.deepEquals(this.lineWidth, (int) data.lineWidth)) {
+            this.lineWidth = (int) data.lineWidth;
+            getValue().markDirty(VGC.LINE_WIDTH);
+        }
         data.lineStyle = lineStyle;
-        getValue().markDirty(VGC.LINE_STYLE);
-        this.lineStyle = data.lineStyle;
-        getValue().markDirty(VGC.LINE_STYLE);
+        if (!java.util.Objects.deepEquals(this.lineStyle, data.lineStyle)) {
+            this.lineStyle = data.lineStyle;
+            getValue().markDirty(VGC.LINE_STYLE);
+        }
         data.lineCap = cap;
-        getValue().markDirty(VGC.LINE_CAP);
-        this.lineCap = data.lineCap;
-        getValue().markDirty(VGC.LINE_CAP);
+        if (!java.util.Objects.deepEquals(this.lineCap, data.lineCap)) {
+            this.lineCap = data.lineCap;
+            getValue().markDirty(VGC.LINE_CAP);
+        }
         data.lineJoin = join;
-        getValue().markDirty(VGC.LINE_JOIN);
-        this.lineJoin = data.lineJoin;
-        getValue().markDirty(VGC.LINE_JOIN);
+        if (!java.util.Objects.deepEquals(this.lineJoin, data.lineJoin)) {
+            this.lineJoin = data.lineJoin;
+            getValue().markDirty(VGC.LINE_JOIN);
+        }
         data.lineDashes = dashes;
-        this.lineDash = GCHelper.toIntDashes(data.lineDashes);
-        getValue().markDirty(VGC.LINE_DASH);
+        if (!java.util.Objects.deepEquals(this.lineDash, GCHelper.toIntDashes(data.lineDashes))) {
+            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+            getValue().markDirty(VGC.LINE_DASH);
+        }
         data.lineDashesOffset = dashOffset;
         getValue().markDirty(VGC.LINE_DASH_OFFSET);
         data.lineMiterLimit = miterLimit;
@@ -2926,25 +2932,31 @@ public final class DartGC extends DartResource implements IGC {
             if (!changed)
                 return;
             data.lineDashes = new float[dashes.length];
-            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
-            getValue().markDirty(VGC.LINE_DASH);
+            if (!java.util.Objects.deepEquals(this.lineDash, GCHelper.toIntDashes(data.lineDashes))) {
+                this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+                getValue().markDirty(VGC.LINE_DASH);
+            }
             for (int i = 0; i < dashes.length; i++) {
                 data.lineDashes[i] = dashes[i];
             }
             data.lineStyle = SWT.LINE_CUSTOM;
-            getValue().markDirty(VGC.LINE_STYLE);
-            this.lineStyle = data.lineStyle;
-            getValue().markDirty(VGC.LINE_STYLE);
+            if (!java.util.Objects.deepEquals(this.lineStyle, data.lineStyle)) {
+                this.lineStyle = data.lineStyle;
+                getValue().markDirty(VGC.LINE_STYLE);
+            }
         } else {
             if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
                 return;
             data.lineDashes = null;
-            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
-            getValue().markDirty(VGC.LINE_DASH);
+            if (!java.util.Objects.deepEquals(this.lineDash, GCHelper.toIntDashes(data.lineDashes))) {
+                this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+                getValue().markDirty(VGC.LINE_DASH);
+            }
             data.lineStyle = SWT.LINE_SOLID;
-            getValue().markDirty(VGC.LINE_STYLE);
-            this.lineStyle = data.lineStyle;
-            getValue().markDirty(VGC.LINE_STYLE);
+            if (!java.util.Objects.deepEquals(this.lineStyle, data.lineStyle)) {
+                this.lineStyle = data.lineStyle;
+                getValue().markDirty(VGC.LINE_STYLE);
+            }
         }
         this.lineDash = newValue;
         data.state &= ~LINE_STYLE;
@@ -3522,7 +3534,7 @@ public final class DartGC extends DartResource implements IGC {
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
         if (clippingText != null) {
-            getValue().markDirty("clippingText");
+            getValue().markDirty(44);
             clippingText.dispose();
         }
         clippingPath = null;

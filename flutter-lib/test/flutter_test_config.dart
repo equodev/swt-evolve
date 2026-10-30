@@ -10,7 +10,7 @@
 // image caches and the asset bundle's: they hold futures created in the previous test's fake-async
 // zone, which never complete in the next one and leave its image loading forever. And so does the
 // display config (flags, light/dark, color scheme), which drawing outside a build reads. And so do
-// the frames the comm recorded as sent: a test that reads them must see only its own.
+// the frames a test recorded as sent, which a later test reading what it sent would read too.
 
 import 'dart:async';
 

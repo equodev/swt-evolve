@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart' show kIsWasm;
+import 'package:flutter/foundation.dart' show kIsWasm, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -31,6 +31,7 @@ import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
+import '../comm/widget_wire.dart' show WidgetWireReader, sendWireWith;
 
 // ─────────────────────────────────────────────
 // GCDrawer — concrete shape engine
@@ -112,24 +113,25 @@ class GCDrawer extends GCDrawerBase {
         onGCDispose = null,
         onFullRepaintNeeded = null,
         super(state) {
-    _localTokens["${state.swt}/${state.id}/imageInit"] =
-        EquoCommService.onRaw("${state.swt}/${state.id}/imageInit", (payload) {
+    // The Image's properties as the widget wire writes an object's fields.
+    EquoCommService.onBytes("${state.swt}/${state.id}/imageInit", (bytes) {
       final completer = Completer<void>();
       _baseImageCompleter = completer;
       // Only awaited when a cycle ends; the frame queue reports a failure instead.
       completer.future.catchError((Object _) {});
-      final ready = _handleImageInit(payload).then(
+      final ready = _handleImageInit(WidgetWireReader(bytes).fields(VImage())).then(
         (_) => completer.complete(),
         onError: (Object e) => completer.completeError(e),
       );
       // Returned so the next frame waits: ops such as copyArea read the base, not just draw over it.
       return ready;
     });
-    // JSON, so it can travel in the same message as the ops it ends.
+    _localTokens["${state.swt}/${state.id}/imageInit"] = _rawByteChannel;
+    // Tagged values, so it can travel in the same message as the ops it ends.
     _localTokens["${state.swt}/${state.id}/gcDispose"] =
         EquoCommService.onRaw("${state.swt}/${state.id}/gcDispose", (raw) async {
       _settleNormalFill();
-      final payload = (raw is String ? jsonDecode(raw) : raw) as Map;
+      final payload = raw as Map;
       final ref = (payload['ref'] as num).toInt();
       final wantPixels = payload['pixels'] == true;
       // Java keeps one drawer per Image: the next GC on it draws on top of this render.
@@ -226,11 +228,18 @@ class GCDrawer extends GCDrawerBase {
         await previousCommit;
 
         cycleStaging.removeWhere((s) => s is _PlaceholderShape);
+        final damage = _damageOf(payload);
+        _settleScreenCopies(cycleStaging, fullRepaint, damage);
 
         final keep = <ui.Image>{};
         collectShapeImages(cycleStaging, keep);
         collectShapeImages(_lateLoadedImages, keep);
-        final damage = _damageOf(payload);
+        if (_droppedCaptures.isNotEmpty) {
+          for (final image in _droppedCaptures) {
+            if (!keep.contains(image)) image.dispose();
+          }
+          _droppedCaptures.clear();
+        }
         if (damage != null) {
           // A scoped Paint leaves every pixel outside its rectangle alone, so the previous frame
           // stays and this cycle becomes a layer over it. It erases its rectangle first, so
@@ -275,13 +284,40 @@ class GCDrawer extends GCDrawerBase {
         "${state.swt}/${state.id}/nextFrame", (_) => _reportInFrame());
   }
 
+  /// Captures [_settleScreenCopies] replaced by the background, disposed once nothing draws them.
+  final Set<ui.Image> _droppedCaptures = {};
+
+  /// Turns the copies of the screen this cycle made into what they copied, now that its end says
+  /// what its Paint erased first: the screen as captured where the Paint left it, the background
+  /// where it erased the source. A GC outside a Paint erased nothing.
+  void _settleScreenCopies(List<Shape> staging, bool fullRepaint, Rect? damage) {
+    final erased = damage ?? (fullRepaint ? Rect.largest : null);
+    for (var k = 0; k < staging.length; k++) {
+      final s = staging[k];
+      if (s is! _ScreenCopy) continue;
+      final clip = s.base.clipRect ?? s.base.destRect;
+      final fromErased =
+          erased == null ? Rect.zero : erased.intersect(s.screenSource).shift(s.shift).intersect(clip);
+      if (fromErased.isEmpty) {
+        staging[k] = s.base;
+      } else if (_containsRect(fromErased, clip)) {
+        staging[k] = EraseShape(clip);
+        final image = s.base.image;
+        if (image != null) _droppedCaptures.add(image);
+      } else {
+        staging[k] = s.base;
+        staging.insert(++k, EraseShape(fromErased));
+      }
+    }
+  }
+
   /// Tells Java the frame that shows this paint has begun, which is when it sends the control's next
   /// Paint: that one is built while this frame renders and lands in the next, so repaints come at
   /// the rate frames are shown, as a native toolkit delivers them, without waiting out the render.
   void _reportInFrame() {
     final id = state.id;
     WidgetsBinding.instance.scheduleFrameCallback((_) {
-      EquoCommService.sendPayload('GC/inFrame', {'id': id});
+      sendWireWith('GC/inFrame', (w) => w.int64(id));
     });
     WidgetsBinding.instance.scheduleFrame();
   }
@@ -327,20 +363,33 @@ class GCDrawer extends GCDrawerBase {
     _canvasTheme = Theme.of(ctx).extension<CanvasThemeExtension>();
   }
 
-  // SWT {m11,m12,m21,m22,dx,dy} → Flutter column-major 4×4, or null for identity.
+  Object? _matrixOf;
+  Float64List? _matrix;
+
+  // SWT {m11,m12,m21,m22,dx,dy} → Flutter column-major 4×4, or null for identity. Worked out once
+  // per transform the GC is given: every shape drawn under it asks, and nothing writes to it.
   Float64List? get currentTransform {
-    final e = state.transform?.elements;
+    final transform = state.transform;
+    if (identical(transform, _matrixOf)) return _matrix;
+    _matrixOf = transform;
+    return _matrix = _matrixFrom(transform?.elements);
+  }
+
+  static Float64List? _matrixFrom(List<double>? e) {
     if (e == null || e.length < 6) return null;
     final m11 = e[0], m12 = e[1];
     final m21 = e[2], m22 = e[3];
     final dx  = e[4], dy  = e[5];
     if (m11 == 1 && m12 == 0 && m21 == 0 && m22 == 1 && dx == 0 && dy == 0) return null;
-    return Float64List.fromList([
-      m11, m12, 0, 0,
-      m21, m22, 0, 0,
-      0,   0,   1, 0,
-      dx,  dy,  0, 1,
-    ]);
+    return Float64List(16)
+      ..[0] = m11
+      ..[1] = m12
+      ..[4] = m21
+      ..[5] = m22
+      ..[10] = 1
+      ..[12] = dx
+      ..[13] = dy
+      ..[15] = 1;
   }
 
   // ── State getters (read from VGC) ──────────────────────────────────────
@@ -504,7 +553,22 @@ class GCDrawer extends GCDrawerBase {
   ///
   /// A built-in style is a pattern in line-width units, with a fixed one standing in at width 0;
   /// LINE_CUSTOM carries its own lengths and is taken as given.
+  /// Dash patterns by line style and width. A custom pattern is not kept: it is the GC's own list.
+  static final Map<(int, num), List<double>?> _dashes = {};
+
+  /// The line style's dash pattern, worked out once per style and width: every line drawn asks for
+  /// it, and a drawing alternates between a few of them.
   List<double>? get _dashPattern {
+    final style = state.lineStyle ?? SWT.LINE_SOLID;
+    if (style == SWT.LINE_SOLID) return null;
+    if (style == SWT.LINE_CUSTOM) return _patternOfLineStyle();
+    final key = (style, state.lineWidth ?? 0);
+    final held = _dashes[key];
+    if (held != null || _dashes.containsKey(key)) return held;
+    return _dashes[key] = _patternOfLineStyle();
+  }
+
+  List<double>? _patternOfLineStyle() {
     final width = (state.lineWidth ?? 0).toDouble();
     final hairline = width == 0;
     final List<double>? pattern = switch (state.lineStyle ?? SWT.LINE_SOLID) {
@@ -598,21 +662,35 @@ class GCDrawer extends GCDrawerBase {
   /// [SegmentsShape] strokes.
   Float32List _dashSegments(Offset from, Offset to, List<double> pattern) {
     final total = (to - from).distance;
-    final period = pattern.fold(0.0, (sum, d) => sum + d);
-    final ends = <double>[];
-    var distance = -(period > 0 ? (state.lineDashOffset ?? 0) % period : 0.0);
+    var period = 0.0;
+    for (final d in pattern) {
+      period += d;
+    }
+    final start = -(period > 0 ? (state.lineDashOffset ?? 0) % period : 0.0);
+    // Counted first, so the ends go straight into a list of their size.
+    var count = 0;
+    var distance = start;
+    for (var index = 0; distance < total; index++) {
+      final length = pattern[index % pattern.length];
+      if (index.isEven && math.min(distance + length, total) > 0) count++;
+      distance += length;
+    }
+    final out = Float32List(count * 4);
+    final dx = total > 0 ? (to.dx - from.dx) / total : 0.0;
+    final dy = total > 0 ? (to.dy - from.dy) / total : 0.0;
+    var o = 0;
+    distance = start;
     for (var index = 0; distance < total; index++) {
       final length = pattern[index % pattern.length];
       final end = math.min(distance + length, total);
-      if (index.isEven && end > 0) ends..add(math.max(distance, 0))..add(end);
+      if (index.isEven && end > 0) {
+        final begin = math.max(distance, 0);
+        out[o++] = from.dx + dx * begin;
+        out[o++] = from.dy + dy * begin;
+        out[o++] = from.dx + dx * end;
+        out[o++] = from.dy + dy * end;
+      }
       distance += length;
-    }
-    final out = Float32List(ends.length * 2);
-    final dx = total > 0 ? (to.dx - from.dx) / total : 0.0;
-    final dy = total > 0 ? (to.dy - from.dy) / total : 0.0;
-    for (var i = 0; i < ends.length; i++) {
-      out[2 * i] = from.dx + dx * ends[i];
-      out[2 * i + 1] = from.dy + dy * ends[i];
     }
     return out;
   }
@@ -1112,6 +1190,25 @@ class GCDrawer extends GCDrawerBase {
         clipRect: _childClip));
   }
 
+  VFont? _styledFont;
+  BuildContext? _styledContext;
+  int _styledColor = 0;
+  TextStyle? _style;
+
+  /// The style text is drawn in, the same object while the GC's font and colour stay the same: the
+  /// layout cache compares styles, and an identical one is the cheapest to compare.
+  TextStyle _textStyle(VFont? font, Color color) {
+    final argb = color.toARGB32();
+    final held = _style;
+    if (held != null && identical(font, _styledFont) && identical(_context, _styledContext) && argb == _styledColor) {
+      return held;
+    }
+    _styledFont = font;
+    _styledContext = _context;
+    _styledColor = argb;
+    return _style = FontUtils.textStyleFromVFont(font, _context, color: color, applyDpiScaling: true);
+  }
+
   void _drawText({
     required String text,
     required double x,
@@ -1122,12 +1219,7 @@ class GCDrawer extends GCDrawerBase {
     final processedText = _processTextFlags(text, flags);
     final transparent = isTransparent ?? (flags & SWT.DRAW_TRANSPARENT) != 0;
 
-    final textStyle = FontUtils.textStyleFromVFont(
-      state.font,
-      _context,
-      color: applyAlpha(textColor),
-      applyDpiScaling: true,
-    );
+    final textStyle = _textStyle(state.font, applyAlpha(textColor));
 
     final childClip = _childClip;
     final textShape = TextShape(processedText, Offset(x, y), textStyle, childClip);
@@ -1154,9 +1246,7 @@ class GCDrawer extends GCDrawerBase {
 
   // ── Image handling ──────────────────────────────────────────────────────
 
-  Future<void> _handleImageInit(dynamic payload) async {
-    final vImage = VImage.fromJson(
-        payload as Map<String, dynamic>);
+  Future<void> _handleImageInit(VImage vImage) async {
     final ref = vImage.remoteRef;
     final render = ref == null ? null : ImageUtils.remoteRender(ref);
     final picture = render?.picture;
@@ -1396,6 +1486,8 @@ class GCDrawer extends GCDrawerBase {
           .any((e) => area.contains(
               Offset(s.points[e.$1].toDouble(), s.points[e.$1 + 1].toDouble()))),
       ImageShape s => s.destRect.overlaps(area),
+      _ScreenCopy s => s.base.destRect.overlaps(area),
+      EraseShape s => s.rect.overlaps(area),
       _ => true,
     };
   }
@@ -1438,6 +1530,9 @@ class GCDrawer extends GCDrawerBase {
           s.fromColor, s.toColor, s.begin, s.end, clipArea),
       FocusRectShape s => FocusRectShape(
           s.rect.translate(offset.dx, offset.dy), s.color, clipArea),
+      _ScreenCopy s => _ScreenCopy(
+          _translateShapeWithClip(s.base, offset, srcArea) as ImageShape, s.screenSource, s.shift + offset),
+      EraseShape s => EraseShape(s.rect.shift(offset).intersect(clipArea)),
       ImageShape s when s.type == ImageType.raster => ImageShape.raster(
           s.image!, s.srcRect!, s.destRect.translate(offset.dx, offset.dy),
           clipRect: clipArea, colorFilter: s.colorFilter, alpha: s.alpha,
@@ -1675,6 +1770,9 @@ class GCDrawer extends GCDrawerBase {
 
   @override
   void onCopyAreaImageintint(VGCCopyAreaImageintint o) async {
+    // Java waits for an answer to every read-back: with none it would wait out its whole budget.
+    // No pixels answers with none, and the Image is left as it was.
+    Uint8List? pngBytes;
     try {
       final imgW = o.image?.width ?? o.image?.imageData?.width ?? 0;
       final imgH = o.image?.height ?? o.image?.imageData?.height ?? 0;
@@ -1682,6 +1780,12 @@ class GCDrawer extends GCDrawerBase {
       final x = o.x.toDouble();
       final y = o.y.toDouble();
 
+      // A page that has rasterised no frame yet has no layers to capture: on Skwasm drawing a
+      // capture taken then traps and leaves the page unable to draw. Bounded, since a page whose
+      // view is never shown rasterises none.
+      final rasterized = await WidgetsBinding.instance.waitUntilFirstFrameRasterized
+          .then((_) => true)
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
       // The raster read below is the last painted frame; state that arrived before this request
       // is only on screen once its frame is.
       if (WidgetsBinding.instance.hasScheduledFrame) await WidgetsBinding.instance.endOfFrame;
@@ -1698,7 +1802,7 @@ class GCDrawer extends GCDrawerBase {
       // Then apply any shapes drawn via this GC on top.
       final recorder = ui.PictureRecorder();
       final canvas = ui.Canvas(recorder);
-      final captured = _captureWidget();
+      final captured = rasterized ? _captureWidget() : null;
       if (captured != null) {
         canvas.drawImage(captured.image, -captured.offset, ui.Paint());
         captured.image.dispose();
@@ -1723,15 +1827,15 @@ class GCDrawer extends GCDrawerBase {
       final result =
       await cropRecorder.endRecording().toImage(imgW, imgH);
 
-      final pngBytes = await ImageUtils.toBytes(result, ui.ImageByteFormat.png);
-      if (pngBytes == null) return;
+      pngBytes = await ImageUtils.toBytes(result, ui.ImageByteFormat.png);
+    } catch (e, stack) {
+      print('[GC copyArea] Error: $e\n$stack');
+    } finally {
       // Binary path: raw PNG bytes, no base64 (see imageResult above).
       EquoCommService.sendBytes(
         '${state.swt}/${state.id}/copyAreaImageintintResponse',
-        pngBytes,
+        pngBytes ?? Uint8List(0),
       );
-    } catch (e, stack) {
-      print('[GC copyArea] Error: $e\n$stack');
     }
   }
 
@@ -1740,15 +1844,19 @@ class GCDrawer extends GCDrawerBase {
     // earlier paints left there and this GC has not drawn.
     final captured =
         _baseImage == null && _basePicture == null ? _captureWidget() : null;
-    _staging.addAll(copyAreaShapes(
+    final srcRect = _getRectFromArgs(srcX, srcY, width, height);
+    final destOffset = Offset((destX - srcX).toDouble(), (destY - srcY).toDouble());
+    final copied = copyAreaShapes(
       baseImage: captured?.image ?? _baseImage,
       basePicture: _basePicture,
       painted: _staging,
-      srcRect: _getRectFromArgs(srcX, srcY, width, height),
-      destOffset:
-          Offset((destX - srcX).toDouble(), (destY - srcY).toDouble()),
+      srcRect: srcRect,
+      destOffset: destOffset,
       baseOffset: captured?.offset ?? Offset.zero,
-    ));
+    );
+    // Whether the screen as captured is what the copy starts from is known when the cycle ends.
+    if (captured != null) copied[0] = _ScreenCopy(copied[0] as ImageShape, srcRect, destOffset);
+    _staging.addAll(copied);
     captured?.image.dispose();
   }
 
@@ -1771,6 +1879,7 @@ class GCDrawer extends GCDrawerBase {
 void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>? keep}) {
   final disposed = seen ?? <ui.Image>{};
   for (final s in shapes) {
+    if (!s.holdsImages) continue;
     if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
       final img = s.image!;
       if (keep != null && keep.contains(img)) continue;
@@ -1785,6 +1894,13 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
         img.dispose();
       }
       s.image = null;
+    } else if (s is _ScreenCopy && s.base.image != null) {
+      final img = s.base.image!;
+      if (keep != null && keep.contains(img)) continue;
+      if (disposed.add(img)) {
+        img.dispose();
+      }
+      s.base.image = null;
     } else if (s is TransformShape) {
       disposeShapeImages(s.children, seen: disposed, keep: keep);
     } else if (s is RegionShape) {
@@ -1797,10 +1913,13 @@ void disposeShapeImages(List<Shape> shapes, {Set<ui.Image>? seen, Set<ui.Image>?
 
 void collectShapeImages(List<Shape> shapes, Set<ui.Image> out) {
   for (final s in shapes) {
+    if (!s.holdsImages) continue;
     if (s is ImageShape && s.type == ImageType.raster && s.image != null) {
       out.add(s.image!);
     } else if (s is PatternFillShape && s.image != null) {
       out.add(s.image!);
+    } else if (s is _ScreenCopy && s.base.image != null) {
+      out.add(s.base.image!);
     } else if (s is TransformShape) {
       collectShapeImages(s.children, out);
     } else if (s is RegionShape) {
@@ -1838,7 +1957,7 @@ class ScenePainter extends CustomPainter {
     // A transparent erase (the Canvas shows an ancestor's backgroundImage through) still has to
     // clear the retained frame under a scoped repaint; BlendMode.clear would punch through
     // whatever is painted below unless this scene sits in its own layer.
-    final ownLayer = bg.alpha == 0 && shapes.any((s) => s is RegionShape);
+    final ownLayer = bg.alpha == 0 && shapes.any((s) => s is RegionShape || s is EraseShape);
     if (ownLayer) canvas.saveLayer(Offset.zero & size, Paint());
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     canvas.save();
@@ -1911,6 +2030,16 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
       i++;
       continue;
     }
+    if (s is EraseShape) {
+      if (background != null) {
+        if (clipped) c.restore();
+        clipped = false;
+        open = null;
+        s.drawOver(c, background);
+      }
+      i++;
+      continue;
+    }
     if (s is ClipPathShape) {
       close();
       // The GC keeps its clip as one path while the clip holds, so consecutive shapes under it share
@@ -1944,9 +2073,14 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
         open = clip;
       }
     }
+    if (!_mayJoinRun(s)) {
+      s.paintBody(c);
+      i++;
+      continue;
+    }
     final run = _trianglesFrom(shapes, i, devicePixel());
     if (run.length > 1) {
-      final list = _TriangleList(run.fold(0, (n, p) => n + p.corners), run.fold(0, (n, p) => n + p.indices),
+      final list = _TriangleList(run.fold(0, (n, p) => n + p.vertices), run.fold(0, (n, p) => n + p.indices),
           devicePixel());
       for (final piece in run) {
         piece.addTo(list);
@@ -1963,7 +2097,7 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
 
 /// What a triangle run draws for one shape: its geometry, prepared once.
 abstract class _Piece {
-  int get corners;
+  int get vertices;
   int get indices;
   void addTo(_TriangleList list);
 }
@@ -1977,11 +2111,27 @@ class _Strokes implements _Piece {
   final Color color;
 
   @override
-  int get corners => points.length ~/ 4 * _TriangleList.cornersPerSegment;
+  int get vertices => points.length ~/ 4 * _TriangleList.verticesFor(4);
   @override
-  int get indices => points.length ~/ 4 * _TriangleList.indicesPerSegment;
+  int get indices => points.length ~/ 4 * _TriangleList.indicesFor(4);
   @override
   void addTo(_TriangleList list) => list.addSegments(points, strokeWidth, lineCap, color);
+}
+
+/// One straight segment with a flat or square cap, written straight from its shape.
+class _Line implements _Piece {
+  _Line(this.shape);
+  final LineShape shape;
+
+  @override
+  int get vertices => _TriangleList.verticesFor(4);
+  @override
+  int get indices => _TriangleList.indicesFor(4);
+  @override
+  void addTo(_TriangleList list) {
+    final s = shape;
+    list.addSegment(s.p1.dx, s.p1.dy, s.p2.dx, s.p2.dy, s.strokeWidth, s.lineCap, s.color);
+  }
 }
 
 /// A filled convex polygon as its outline inset and outset by half a device pixel, corner by corner.
@@ -1990,11 +2140,10 @@ class _ConvexFill implements _Piece {
   final Float32List inner, outer;
   final Color color;
 
-  int get _sides => inner.length ~/ 2;
   @override
-  int get corners => _sides * 2;
+  int get vertices => _TriangleList.verticesFor(inner.length ~/ 2);
   @override
-  int get indices => (_sides - 2) * 3 + _sides * 6;
+  int get indices => _TriangleList.indicesFor(inner.length ~/ 2);
   @override
   void addTo(_TriangleList list) => list.addPolygon(inner, outer, color);
 
@@ -2003,18 +2152,16 @@ class _ConvexFill implements _Piece {
   /// alone, since a star turns the same way at every point; it also has to turn once in all.
   static _ConvexFill? of(PolygonShape s, double px) {
     if (!s.isFilled || s.points.length < 6) return null;
-    final xs = <double>[], ys = <double>[];
+    final xs = Float64List(s.points.length ~/ 2), ys = Float64List(s.points.length ~/ 2);
+    var n = 0;
     for (var i = 0; i + 1 < s.points.length; i += 2) {
       final x = s.points[i].toDouble(), y = s.points[i + 1].toDouble();
-      if (xs.isNotEmpty && xs.last == x && ys.last == y) continue;
-      xs.add(x);
-      ys.add(y);
+      if (n > 0 && xs[n - 1] == x && ys[n - 1] == y) continue;
+      xs[n] = x;
+      ys[n] = y;
+      n++;
     }
-    if (xs.length > 1 && xs.first == xs.last && ys.first == ys.last) {
-      xs.removeLast();
-      ys.removeLast();
-    }
-    final n = xs.length;
+    if (n > 1 && xs[0] == xs[n - 1] && ys[0] == ys[n - 1]) n--;
     if (n < 3) return null;
     var sign = 0.0, turning = 0.0;
     for (var k = 0; k < n; k++) {
@@ -2064,11 +2211,16 @@ class _ConvexFill implements _Piece {
   }
 }
 
+/// Whether [s] is of a kind [_pieceOf] may make a piece of, decided without the device pixel: a
+/// shape that cannot join a run is drawn without reading the canvas transform back.
+bool _mayJoinRun(Shape s) =>
+    (s is LineShape && s.lineCap != SWT.CAP_ROUND) ||
+    (s is SegmentsShape && s.lineCap != SWT.CAP_ROUND && s.points.isNotEmpty) ||
+    (s is PolygonShape && s.isFilled && s.points.length >= 6);
+
 /// What a triangle run can draw [s] as, or null when it is drawn on its own.
 _Piece? _pieceOf(Shape s, double px) {
-  if (s is LineShape && s.lineCap != SWT.CAP_ROUND) {
-    return _Strokes(Float32List.fromList([s.p1.dx, s.p1.dy, s.p2.dx, s.p2.dy]), s.strokeWidth, s.lineCap, s.color);
-  }
+  if (s is LineShape && s.lineCap != SWT.CAP_ROUND) return _Line(s);
   if (s is SegmentsShape && s.lineCap != SWT.CAP_ROUND && s.points.isNotEmpty) {
     return _Strokes(s.points, s.strokeWidth, s.lineCap, s.color);
   }
@@ -2081,14 +2233,14 @@ _Piece? _pieceOf(Shape s, double px) {
 /// as separate draws would be, so the run paints what drawing the shapes one by one does.
 List<_Piece> _trianglesFrom(List<Shape> shapes, int start, double px) {
   final run = <_Piece>[];
-  var corners = 0;
+  var vertices = 0;
   final clip = shapes[start].clipRect;
   for (var i = start; i < shapes.length; i++) {
     final s = shapes[i];
     if (s.clipRect != clip) break;
     final piece = _pieceOf(s, px);
-    if (piece == null || corners + piece.corners > _TriangleList.maxCorners) break;
-    corners += piece.corners;
+    if (piece == null || vertices + piece.vertices > _TriangleList.maxVertices) break;
+    vertices += piece.vertices;
     run.add(piece);
   }
   return run;
@@ -2103,6 +2255,10 @@ double _devicePixel(ui.Canvas c) {
 
 abstract class Shape {
   void draw(ui.Canvas c);
+
+  /// Whether this shape, or one it holds, owns a decoded image that is disposed with it. Most
+  /// shapes hold none, so the walks that dispose and keep images skip them on this alone.
+  bool get holdsImages => false;
 
   /// What this shape paints, without its clip. Only meaningful when [clipsBody].
   void paintBody(ui.Canvas c) => draw(c);
@@ -2158,6 +2314,9 @@ class RegionShape extends Shape {
   final Rect rect;
   final List<Shape> ops;
 
+  @override
+  bool get holdsImages => ops.any((s) => s.holdsImages);
+
   // A scoped Paint erases its rectangle before painting it, so it covers it outright.
   @override
   Rect? get paintedBounds => rect;
@@ -2172,7 +2331,7 @@ class RegionShape extends Shape {
     final erase = ui.Paint()..color = background;
     if (background.alpha == 0) erase.blendMode = ui.BlendMode.clear;
     c.drawRect(rect, erase);
-    drawShapeRun(c, ops);
+    drawShapeRun(c, ops, background: background);
     c.restore();
   }
 
@@ -2192,6 +2351,60 @@ class RegionShape extends Shape {
   String describe() => 'Region ${_dr(rect)} [${_dn(ops)}]';
 }
 
+/// A copy of the control's pixels as they were on screen, [shift]ed from [screenSource], until the
+/// cycle that made it ends and says what its Paint erased of them first.
+class _ScreenCopy extends Shape {
+  _ScreenCopy(this.base, this.screenSource, this.shift);
+  final ImageShape base;
+  final Rect screenSource;
+  final Offset shift;
+
+  @override
+  bool get holdsImages => base.holdsImages;
+
+  @override
+  Rect? get clipRect => base.clipRect;
+
+  @override
+  void draw(ui.Canvas c) => base.draw(c);
+
+  @override
+  String toString() => 'ScreenCopy $base';
+
+  @override
+  String describe() => base.describe();
+}
+
+/// Where a copy's source was erased by its Paint before the copy: the scene's background, which
+/// only the scene knows.
+class EraseShape extends Shape {
+  EraseShape(this.rect);
+  final Rect rect;
+
+  static final ui.Paint _erase = ui.Paint();
+
+  void drawOver(ui.Canvas c, ui.Color background) {
+    c.drawRect(
+        rect,
+        _erase
+          ..color = background
+          ..blendMode = background.alpha == 0 ? ui.BlendMode.clear : ui.BlendMode.srcOver);
+  }
+
+  // Headless rendering (copyArea snapshots) has no canvas background to erase to.
+  @override
+  void draw(ui.Canvas c) {}
+
+  @override
+  Rect? get paintedBounds => rect;
+
+  @override
+  String toString() => 'Erase $rect';
+
+  @override
+  String describe() => 'Erase ${_dr(rect)}';
+}
+
 /// Ops drawn while `GC.setXORMode(true)` was in force.
 ///
 /// SWT's XOR combines source and destination bitwise. Flutter has no bitwise blend, but
@@ -2205,6 +2418,9 @@ class XorShape extends Shape {
   XorShape(this.children);
 
   final List<Shape> children;
+
+  @override
+  bool get holdsImages => children.any((s) => s.holdsImages);
 
   @override
   void draw(ui.Canvas c) {
@@ -2363,6 +2579,13 @@ class ClipPathShape extends Shape {
 
 /// Strokes where SWT does: an odd-width or hairline stroke sits on pixel centres, so a 1-pixel
 /// line covers one row of pixels instead of half of two.
+/// The half-pixel shift [_strokeAligned] applies, for a shape that moves its own geometry by it
+/// instead: a colour-only paint draws the same either way, without three more canvas calls.
+Offset _strokeShift(double strokeWidth, bool stroked) {
+  final width = strokeWidth.round();
+  return !stroked || width.isEven && width != 0 ? Offset.zero : const Offset(0.5, 0.5);
+}
+
 void _strokeAligned(ui.Canvas c, double strokeWidth, bool stroked, void Function() draw) {
   final width = strokeWidth.round();
   if (!stroked || width.isEven && width != 0) {
@@ -2379,6 +2602,9 @@ class TransformShape extends Shape {
   TransformShape(this.matrix, this.children, [this.clipRect]);
   final Float64List matrix;
   final List<Shape> children;
+
+  @override
+  bool get holdsImages => children.any((s) => s.holdsImages);
 
   @override
   final Rect? clipRect;
@@ -2437,35 +2663,67 @@ class TextShape extends Shape {
       'color=${style.color == null ? "-" : _dc(style.color!)}${_dk(clipRect)}';
 }
 
-/// LRU of laid-out text for [TextShape]; a system font change clears it.
+/// Laid-out text for [TextShape], kept by second chance; a system font change clears it.
+///
+/// A hit only marks its entry, so the text drawn every frame costs one lookup. When the cache is
+/// full, the oldest entry goes unless it was used since it last came round, in which case it moves
+/// to the back and loses its mark.
 class _TextLayouts {
-  static final Map<(String, TextStyle), TextPainter> _layouts = {};
+  static final Map<_LayoutKey, _Layout> _layouts = {};
   static const int _capacity = 512;
   static bool _watchingFonts = false;
 
   static TextPainter of(String text, TextStyle style) {
     if (!_watchingFonts) _watchingFonts = FontUtils.listenToSystemFonts(_clear);
-    final key = (text, style);
-    final held = _layouts.remove(key);
+    final key = _LayoutKey(text, style);
+    final held = _layouts[key];
     if (held != null) {
-      _layouts[key] = held;
-      return held;
+      held.used = true;
+      return held.painter;
     }
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
-    _layouts[key] = painter;
+    _layouts[key] = _Layout(painter);
     // Evicted, not disposed: a picture recorded with it may be rasterised later -- an Image's
     // render is read back only when asked for -- and on the web a disposed paragraph draws as
     // garbage there. The engine frees it once nothing references it.
-    if (_layouts.length > _capacity) {
-      _layouts.remove(_layouts.keys.first);
+    while (_layouts.length > _capacity) {
+      final oldest = _layouts.keys.first;
+      final layout = _layouts.remove(oldest)!;
+      if (layout.used) {
+        layout.used = false;
+        _layouts[oldest] = layout;
+      }
     }
     return painter;
   }
 
   static void _clear() => _layouts.clear();
+}
+
+class _Layout {
+  _Layout(this.painter);
+  final TextPainter painter;
+  bool used = false;
+}
+
+/// A text and its style, hashed once: a style's own hash goes over every field it has.
+final class _LayoutKey {
+  _LayoutKey(this.text, this.style) : hashCode = Object.hash(text, _styleHashes[style] ??= style.hashCode);
+
+  static final Expando<int> _styleHashes = Expando();
+
+  final String text;
+  final TextStyle style;
+  @override
+  final int hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _LayoutKey && other.hashCode == hashCode && other.text == text &&
+      (identical(other.style, style) || other.style == style);
 }
 
 class LineShape extends Shape {
@@ -2487,11 +2745,12 @@ class LineShape extends Shape {
 
   @override
   void paintBody(ui.Canvas c) {
-    _strokeAligned(c, strokeWidth, true, () => c.drawLine(p1, p2, _paint()
+    final shift = _strokeShift(strokeWidth, true);
+    c.drawLine(p1 + shift, p2 + shift, _paint()
       ..color = color
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin)));
+      ..strokeJoin = getStrokeJoin(lineJoin));
   }
 
   @override
@@ -2519,10 +2778,10 @@ class OvalShape extends Shape {
 
   @override
   void paintBody(ui.Canvas c) {
-    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawOval(rect, _paint()
+    c.drawOval(rect.shift(_strokeShift(strokeWidth, !isFilled)), _paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
-      ..strokeWidth = strokeWidth));
+      ..strokeWidth = strokeWidth);
   }
 
   @override
@@ -2578,7 +2837,7 @@ class RectShape extends Shape {
         ..strokeCap = getStrokeCap(lineCap)
         ..strokeJoin = getStrokeJoin(lineJoin);
     }
-    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawRect(rect, paint));
+    c.drawRect(rect.shift(_strokeShift(strokeWidth, !isFilled)), paint);
   }
 
   @override
@@ -2640,6 +2899,9 @@ class PatternFillShape extends Shape {
   PatternFillShape(this.path, this.shader, this.alpha, this.clipRect,
       {this.image, this.offset = Offset.zero});
 
+  @override
+  bool get holdsImages => image != null;
+
   PatternFillShape.image(Path path, ui.Image image, int alpha, Rect? clipRect, Float64List matrix)
       : this(path, ui.ImageShader(image, TileMode.repeated, TileMode.repeated, matrix),
             alpha, clipRect, image: image);
@@ -2700,12 +2962,12 @@ class SegmentsShape extends Shape {
     if (points.isEmpty) return;
     if (lineCap != SWT.CAP_ROUND) {
       final px = _devicePixel(c);
-      const chunk = _TriangleList.maxSegments * 4;
+      final chunk = _TriangleList.maxSegments * 4;
       for (var from = 0; from < points.length; from += chunk) {
         final part = Float32List.sublistView(points, from, math.min(points.length, from + chunk));
         final segments = part.length ~/ 4;
         c.drawVertices(
-            (_TriangleList(segments * _TriangleList.cornersPerSegment, segments * _TriangleList.indicesPerSegment, px)
+            (_TriangleList(segments * _TriangleList.verticesFor(4), segments * _TriangleList.indicesFor(4), px)
                   ..addSegments(part, strokeWidth, lineCap, color))
                 .build(),
             BlendMode.dst, Paint());
@@ -2737,101 +2999,66 @@ class SegmentsShape extends Shape {
 /// time, and without multisampling plain triangles would lose the edges a thin dot is made of.
 /// Each shape carries its own colour, so shapes of any paint share one list.
 class _TriangleList {
-  _TriangleList(int corners, int indices, this.px)
-      : positions = Float32List(corners * 2),
-        colors = Int32List(corners),
-        indices = Uint16List(indices);
+  _TriangleList(int vertices, int indices, this.px)
+      : positions = Float32List(vertices * 2),
+        colors = Int32List(vertices),
+        indices = strip ? null : Uint16List(indices);
 
-  static const int cornersPerSegment = 8;
-  static const int indicesPerSegment = 30;
+  /// Whether lists go as one strip with no indices rather than indexed triangles. The CanvasKit
+  /// build checks every index of an indexed list in Dart before drawing it, which costs more than
+  /// the strip's extra vertices; elsewhere the indexed list is the cheaper one to draw.
+  static const bool strip = kIsWeb && !kIsWasm;
 
-  /// Corners per list: as many as 16-bit indices reach, except under Skwasm (the wasm build), which
-  /// copies a list into scratch memory of limited size and fails beyond it. There a long run goes
-  /// as several lists of 1024 corners, about 20 KB each; elsewhere every split costs a call.
-  static const int maxCorners = kIsWasm ? 1024 : 0xFFFF;
+  /// Vertices a shape of [corners] corners takes. As a strip: its ring, its core, and the repeated
+  /// vertices that join it to its neighbours with triangles of no area.
+  static int verticesFor(int corners) => strip ? 3 * corners + 4 : 2 * corners;
+
+  /// Indices a shape of [corners] corners takes: a fan over its core and two triangles per side of
+  /// its ring. None as a strip.
+  static int indicesFor(int corners) => strip ? 0 : (corners - 2) * 3 + corners * 6;
+
+  /// Vertices per list. Under Skwasm (the wasm build) a list is copied into scratch memory of
+  /// limited size and fails beyond it, so there a long run goes as several lists of about 20 KB.
+  /// Indexed elsewhere, a list holds as many as 16-bit indices reach; a strip is bounded only to cap
+  /// one list's memory, since every split costs a call.
+  static const int maxVertices = kIsWasm ? 1024 : (strip ? 1 << 20 : 0xFFFF);
 
   /// Segments per list.
-  static const int maxSegments = maxCorners ~/ cornersPerSegment;
-
-  /// Corners 0-3 are the core and 4-7 the ring's outer edge, each going round the rectangle
-  /// (-l,-h), (l,-h), (l,h), (-l,h) in the segment's own frame.
-  static const _pattern = [0, 1, 2, 0, 2, 3, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2, 7, 3, 3, 7, 4, 3, 4, 0];
+  static final int maxSegments = maxVertices ~/ verticesFor(4);
 
   /// One device pixel.
   final double px;
   final Float32List positions;
   final Int32List colors;
-  final Uint16List indices;
+  final Uint16List? indices;
   int _v = 0, _n = 0;
 
-  void _corner(double x, double y, int argb) {
-    positions[_v * 2] = x;
-    positions[_v * 2 + 1] = y;
-    colors[_v++] = argb;
-  }
-
-  /// Adds the endpoint pairs in [points], stroked [strokeWidth] wide in [color]. A hairline is one
-  /// device pixel; an odd width is shifted half a pixel onto the pixel grid, as a stroke is.
-  void addSegments(Float32List points, double strokeWidth, int lineCap, Color color) {
-    final rgb = color.toARGB32() & 0xFFFFFF;
-    final f = _RenderHints.antiAlias ? px / 2 : 0.0;
-    final half = (strokeWidth > 0 ? strokeWidth : px) / 2;
-    final cap = lineCap == SWT.CAP_SQUARE ? half : 0.0;
-    final width = strokeWidth.round();
-    final shift = width.isEven && width != 0 ? 0.0 : 0.5;
-    final hi = math.max(half - f, 0.0), ho = half + f;
-    for (var i = 0; i + 3 < points.length; i += 4) {
-      final x1 = points[i], y1 = points[i + 1], x2 = points[i + 2], y2 = points[i + 3];
-      final segment = math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-      if (segment == 0) continue;
-      final ux = (x2 - x1) / segment, uy = (y2 - y1) / segment;
-      final along = segment / 2 + cap;
-      // Inset half a pixel for the core and outset half for the ring; a dash thinner or shorter
-      // than a pixel keeps an empty core, and its coverage goes into the core's alpha.
-      final li = math.max(along - f, 0.0), lo = along + f;
-      // The linear ramp lays down a frustum of coverage: scale it to the dash's true area.
-      final inner = 4 * hi * li, outer = 4 * ho * lo;
-      final laid = (inner + outer + math.sqrt(inner * outer)) / 3;
-      final coverage = laid > 0 ? math.min(1.0, 4 * half * along / laid) : 1.0;
-      final core = ((color.a * coverage * 255).round() << 24) | rgb;
-      final mx = (x1 + x2) / 2 + shift, my = (y1 + y2) / 2 + shift;
-      final iax = ux * li, iay = uy * li, ibx = -uy * hi, iby = ux * hi;
-      final oax = ux * lo, oay = uy * lo, obx = -uy * ho, oby = ux * ho;
-      final base = _v;
-      _corner(mx - iax - ibx, my - iay - iby, core);
-      _corner(mx + iax - ibx, my + iay - iby, core);
-      _corner(mx + iax + ibx, my + iay + iby, core);
-      _corner(mx - iax + ibx, my - iay + iby, core);
-      _corner(mx - oax - obx, my - oay - oby, rgb);
-      _corner(mx + oax - obx, my + oay - oby, rgb);
-      _corner(mx + oax + obx, my + oay + oby, rgb);
-      _corner(mx - oax + obx, my - oay + oby, rgb);
-      for (final k in _pattern) {
-        indices[_n++] = base + k;
-      }
+  /// One shape: its [inner] outline of [n] corners at full coverage [core], and a ring out to its
+  /// [outer] outline fading to [edge].
+  void _shape(Float32List inner, Float32List outer, int n, int core, int edge) {
+    if (strip) {
+      _stripShape(inner, outer, n, core, edge);
+      return;
     }
-  }
-
-  /// Adds a convex fill: a fan over its [inner] outline at full coverage, and a ring out to its
-  /// [outer] one fading to none.
-  void addPolygon(Float32List inner, Float32List outer, Color color) {
-    final rgb = color.toARGB32() & 0xFFFFFF;
-    final core = ((color.a * 255).round() << 24) | rgb;
-    final n = inner.length ~/ 2;
     final base = _v;
+    final positions = this.positions, colors = this.colors;
     for (var k = 0; k < n; k++) {
-      _corner(inner[k * 2], inner[k * 2 + 1], core);
+      positions[(base + k) * 2] = inner[k * 2];
+      positions[(base + k) * 2 + 1] = inner[k * 2 + 1];
+      colors[base + k] = core;
+      positions[(base + n + k) * 2] = outer[k * 2];
+      positions[(base + n + k) * 2 + 1] = outer[k * 2 + 1];
+      colors[base + n + k] = edge;
     }
-    for (var k = 0; k < n; k++) {
-      _corner(outer[k * 2], outer[k * 2 + 1], rgb);
-    }
+    _v = base + 2 * n;
+    final indices = this.indices!;
     for (var k = 1; k + 1 < n; k++) {
       indices[_n++] = base;
       indices[_n++] = base + k;
       indices[_n++] = base + k + 1;
     }
     for (var k = 0; k < n; k++) {
-      final q = (k + 1) % n;
+      final q = k + 1 == n ? 0 : k + 1;
       indices[_n++] = base + k;
       indices[_n++] = base + n + k;
       indices[_n++] = base + n + q;
@@ -2841,8 +3068,112 @@ class _TriangleList {
     }
   }
 
-  ui.Vertices build() => ui.Vertices.raw(ui.VertexMode.triangles, Float32List.sublistView(positions, 0, _v * 2),
-      colors: Int32List.sublistView(colors, 0, _v), indices: Uint16List.sublistView(indices, 0, _n));
+  /// [_shape] as a run of the strip: from its first outer corner (repeated, to start a new run)
+  /// round the ring, then across the core zigzagging between its two ends, ending on a repeated
+  /// vertex. Shapes follow one another without overlapping, since the triangles between them have
+  /// no area.
+  void _stripShape(Float32List inner, Float32List outer, int n, int core, int edge) {
+    final positions = this.positions, colors = this.colors;
+    var v = _v;
+    positions[v * 2] = outer[0];
+    positions[v * 2 + 1] = outer[1];
+    colors[v++] = edge;
+    for (var k = 0; k <= n; k++) {
+      final q = k == n ? 0 : k;
+      positions[v * 2] = outer[q * 2];
+      positions[v * 2 + 1] = outer[q * 2 + 1];
+      colors[v++] = edge;
+      positions[v * 2] = inner[q * 2];
+      positions[v * 2 + 1] = inner[q * 2 + 1];
+      colors[v++] = core;
+    }
+    positions[v * 2] = inner[0];
+    positions[v * 2 + 1] = inner[1];
+    colors[v++] = core;
+    for (var lo = 1, hi = n - 1; lo <= hi; lo++, hi--) {
+      positions[v * 2] = inner[lo * 2];
+      positions[v * 2 + 1] = inner[lo * 2 + 1];
+      colors[v++] = core;
+      if (lo != hi) {
+        positions[v * 2] = inner[hi * 2];
+        positions[v * 2 + 1] = inner[hi * 2 + 1];
+        colors[v++] = core;
+      }
+    }
+    positions[v * 2] = positions[(v - 1) * 2];
+    positions[v * 2 + 1] = positions[(v - 1) * 2 + 1];
+    colors[v] = colors[v - 1];
+    _v = v + 1;
+  }
+
+
+  final Float32List _inner = Float32List(8), _outer = Float32List(8);
+
+  /// Adds the endpoint pairs in [points], stroked [strokeWidth] wide in [color].
+  void addSegments(Float32List points, double strokeWidth, int lineCap, Color color) {
+    for (var i = 0; i + 3 < points.length; i += 4) {
+      addSegment(points[i], points[i + 1], points[i + 2], points[i + 3], strokeWidth, lineCap, color);
+    }
+  }
+
+  /// Adds the segment from (x1, y1) to (x2, y2), stroked [strokeWidth] wide in [color]. A hairline
+  /// is one device pixel; an odd width is shifted half a pixel onto the pixel grid, as a stroke is.
+  void addSegment(double x1, double y1, double x2, double y2, double strokeWidth, int lineCap, Color color) {
+    final segment = math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    if (segment == 0) return;
+    final rgb = color.toARGB32() & 0xFFFFFF;
+    final f = _RenderHints.antiAlias ? px / 2 : 0.0;
+    final half = (strokeWidth > 0 ? strokeWidth : px) / 2;
+    final cap = lineCap == SWT.CAP_SQUARE ? half : 0.0;
+    final width = strokeWidth.round();
+    final shift = width.isEven && width != 0 ? 0.0 : 0.5;
+    final hi = math.max(half - f, 0.0), ho = half + f;
+    final ux = (x2 - x1) / segment, uy = (y2 - y1) / segment;
+    final along = segment / 2 + cap;
+    // Inset half a pixel for the core and outset half for the ring; a dash thinner or shorter
+    // than a pixel keeps an empty core, and its coverage goes into the core's alpha.
+    final li = math.max(along - f, 0.0), lo = along + f;
+    // The linear ramp lays down a frustum of coverage: scale it to the dash's true area.
+    final innerArea = 4 * hi * li, outerArea = 4 * ho * lo;
+    final laid = (innerArea + outerArea + math.sqrt(innerArea * outerArea)) / 3;
+    final coverage = laid > 0 ? math.min(1.0, 4 * half * along / laid) : 1.0;
+    final core = ((color.a * coverage * 255).round() << 24) | rgb;
+    final mx = (x1 + x2) / 2 + shift, my = (y1 + y2) / 2 + shift;
+    final iax = ux * li, iay = uy * li, ibx = -uy * hi, iby = ux * hi;
+    final oax = ux * lo, oay = uy * lo, obx = -uy * ho, oby = ux * ho;
+    final inner = _inner, outer = _outer;
+    // Corners go round the rectangle (-l,-h), (l,-h), (l,h), (-l,h) in the segment's own frame.
+    inner[0] = mx - iax - ibx;
+    inner[1] = my - iay - iby;
+    inner[2] = mx + iax - ibx;
+    inner[3] = my + iay - iby;
+    inner[4] = mx + iax + ibx;
+    inner[5] = my + iay + iby;
+    inner[6] = mx - iax + ibx;
+    inner[7] = my - iay + iby;
+    outer[0] = mx - oax - obx;
+    outer[1] = my - oay - oby;
+    outer[2] = mx + oax - obx;
+    outer[3] = my + oay - oby;
+    outer[4] = mx + oax + obx;
+    outer[5] = my + oay + oby;
+    outer[6] = mx - oax + obx;
+    outer[7] = my - oay + oby;
+    _shape(inner, outer, 4, core, rgb);
+  }
+
+  /// Adds a convex fill: its [inner] outline at full coverage, and a ring out to its [outer] one
+  /// fading to none.
+  void addPolygon(Float32List inner, Float32List outer, Color color) {
+    final rgb = color.toARGB32() & 0xFFFFFF;
+    _shape(inner, outer, inner.length ~/ 2, ((color.a * 255).round() << 24) | rgb, rgb);
+  }
+
+  ui.Vertices build() => strip
+      ? ui.Vertices.raw(ui.VertexMode.triangleStrip, Float32List.sublistView(positions, 0, _v * 2),
+          colors: Int32List.sublistView(colors, 0, _v))
+      : ui.Vertices.raw(ui.VertexMode.triangles, Float32List.sublistView(positions, 0, _v * 2),
+          colors: Int32List.sublistView(colors, 0, _v), indices: Uint16List.sublistView(indices!, 0, _n));
 }
 
 class PathShape extends Shape {
@@ -3013,7 +3344,7 @@ class ArcShape extends Shape {
       final path = piePath(rect, startAngle, sweepAngle);
       _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, paint));
     } else {
-      _strokeAligned(c, strokeWidth, !isFilled, () => c.drawArc(rect, startAngle, sweepAngle, false, paint));
+      c.drawArc(rect.shift(_strokeShift(strokeWidth, true)), startAngle, sweepAngle, false, paint);
     }
   }
 
@@ -3052,12 +3383,12 @@ class RoundRectShape extends Shape {
         topRight: Radius.elliptical(radiusX, radiusY),
         bottomLeft: Radius.elliptical(radiusX, radiusY),
         bottomRight: Radius.elliptical(radiusX, radiusY));
-    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawRRect(rrect, _paint()
+    c.drawRRect(rrect.shift(_strokeShift(strokeWidth, !isFilled)), _paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin)));
+      ..strokeJoin = getStrokeJoin(lineJoin));
   }
 
   @override
@@ -3152,6 +3483,9 @@ class FocusRectShape extends Shape {
 enum ImageType { raster, svg, picture }
 
 class ImageShape extends Shape {
+  @override
+  bool get holdsImages => type == ImageType.raster && image != null;
+
   ImageShape._({
     required this.type,
     required this.destRect,

@@ -649,7 +649,7 @@ public class Sizes {
         if (!(decorations.getImpl() instanceof DartComposite)) return;
         if (ownMenuStripHeight(decorations) == before) return;
         DartComposite impl = (DartComposite) decorations.getImpl();
-        impl.getValue().markDirty("ownMenuStrip");
+        markOwnMenuStrip(impl.getValue());
         impl.sendEvent(SWT.Resize);
         if (decorations.isDisposed()) return;
         if (impl.layout != null) {
@@ -665,7 +665,20 @@ public class Sizes {
     static void resendMenuStrip(Decorations decorations) {
         if (!DartMainToolbar.hasMenuBarItems(decorations)) return;
         if (decorations.getImpl() instanceof DartWidget)
-            ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
+            markOwnMenuStrip(((DartWidget) decorations.getImpl()).getValue());
+    }
+
+    /** {@code ownMenuStrip}'s number; only the desktop and web Decorations have it, so it is looked up. */
+    private static final int OWN_MENU_STRIP = dev.equo.swt.WireDump.number("Decorations.ownMenuStrip");
+
+    /** Marks {@code ownMenuStrip} changed on a value that has it: only the desktop and web Decorations draw their own strip. */
+    private static void markOwnMenuStrip(VWidget value) {
+        for (int key : value.wireKeys()) {
+            if (key == OWN_MENU_STRIP) {
+                value.markDirty(key);
+                return;
+            }
+        }
     }
 
     /** Where the text of the first cell is: after the image, as wide as the text, and no wider than the cell. */

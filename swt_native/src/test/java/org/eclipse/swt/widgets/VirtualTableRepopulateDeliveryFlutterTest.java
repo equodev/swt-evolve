@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,12 +67,13 @@ class VirtualTableRepopulateDeliveryFlutterTest {
     /** Every row text the client was sent, in order, across all frames — state travels batched,
      *  so the widget's own channel name is not what carries it. */
     private List<String> textsDeliveredToTheClient() {
-        StringBuilder all = new StringBuilder();
-        for (RecordingComm.Frame f : web.comm.sent) all.append(f.json);
-        java.util.regex.Matcher m =
-                java.util.regex.Pattern.compile("\"texts\":\\[\"([^\"]*)\"").matcher(all);
         List<String> found = new java.util.ArrayList<>();
-        while (m.find()) found.add(m.group(1));
+        for (RecordingComm.Frame f : web.comm.sent) {
+            for (java.util.Map<String, Object> item : WireValues.find(f.value, m -> m.get("texts") instanceof List<?> texts
+                    && !texts.isEmpty() && texts.get(0) instanceof String)) {
+                found.add((String) ((List<?>) item.get("texts")).get(0));
+            }
+        }
         return found;
     }
 

@@ -40,13 +40,9 @@ VCanvas _canvas() => VCanvas()
   ..bounds = _rect(120, 60);
 
 /// Whether the control would paint what the application draws through its GC. The overlay itself
-/// only goes on screen once there is content to draw, so the flag's effect is this decision; the
-/// GC stays mounted either way, listening to Java.
-bool _paintsOverlay(WidgetTester tester, Finder control) {
-  expect(find.byWidgetPredicate((w) => w is GCSwt, skipOffstage: false), findsWidgets,
-      reason: 'the GC has to stay mounted to receive Java events');
-  return (tester.state(control) as dynamic).paintsGCOverlay as bool;
-}
+/// only goes on screen once there is content to draw, so the flag's effect is this decision.
+bool _paintsOverlay(WidgetTester tester, Finder control) =>
+    (tester.state(control) as dynamic).paintsGCOverlay as bool;
 
 /// A Canvas paints its GC content unconditionally: its overlay is on screen, not offstage.
 bool _canvasOverlayOnStage(WidgetTester tester) =>

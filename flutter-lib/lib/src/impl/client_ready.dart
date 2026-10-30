@@ -2,7 +2,7 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb, mapEquals;
 
-import '../comm/comm.dart';
+import '../comm/widget_wire.dart' show sendWireWith;
 
 /// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on,
 /// that monitor's zoom, the height of the title strip the client draws above the shell, the OS the
@@ -13,7 +13,7 @@ import '../comm/comm.dart';
 /// reaches here from both the scale's listener and the config's.
 class ClientReadyReporter {
   ClientReadyReporter([Future Function(String channel, Object payload)? send, String? Function()? locale])
-      : _send = send ?? EquoCommService.sendPayload,
+      : _send = send ?? _sendWire,
         _locale = locale ?? _platformLocale;
 
   final Future Function(String channel, Object payload) _send;
@@ -58,4 +58,31 @@ class ClientReadyReporter {
         'monitor=${displayWidth}x$displayHeight');
     _send(channel, payload);
   }
+}
+
+/// Java's ClientReadyPayload numbers its fields 1 to 9, in the order of the report's keys.
+Future _sendWire(String channel, Object payload) async {
+  final p = payload as Map<String, Object>;
+  sendWireWith(channel, (w) {
+    w
+      ..key(1)
+      ..int32(p['width'] as int)
+      ..key(2)
+      ..int32(p['height'] as int)
+      ..key(3)
+      ..boolean(p['isFirst'] as bool)
+      ..key(4)
+      ..int32(p['displayWidth'] as int)
+      ..key(5)
+      ..int32(p['displayHeight'] as int)
+      ..key(6)
+      ..int32(p['zoom'] as int)
+      ..key(7)
+      ..int32(p['insetTop'] as int);
+    final locale = p['locale'] as String?;
+    if (locale != null) w..key(8)..string(locale);
+    w
+      ..key(9)
+      ..string(p['targetPlatform'] as String);
+  });
 }

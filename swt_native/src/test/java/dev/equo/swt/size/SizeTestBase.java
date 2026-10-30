@@ -166,15 +166,24 @@ public abstract class SizeTestBase extends SizeAssert {
         }
 
         protected CompletableFuture<Measure> measure(DartWidget w) {
-            return measure(Map.of("widget", w, "name", caseName));
+            return measure(Map.of("widget", described(w), "name", caseName));
         }
 
         public CompletableFuture<Measure> measure(DartWidget w, ConfigFlags config) {
-            return measure(Map.of("widget", w, "config", config, "name", caseName));
+            return measure(Map.of("widget", described(w), "config", dev.equo.swt.WidgetWire.fieldsOf(config),
+                    "name", caseName));
         }
 
         public CompletableFuture<Measure> measureUnbounded(DartWidget w) {
-            return measure(Map.of("widget", w, "name", caseName, "unbounded", true));
+            return measure(Map.of("widget", described(w), "name", caseName, "unbounded", true));
+        }
+
+        /** Describes {@code w} to the client, as a flush would, and returns the channel it holds it on. */
+        private String described(DartWidget w) {
+            org.eclipse.swt.widgets.Widget api = w.getApi();
+            dev.equo.swt.Serializer.forgetDelivery(w.getValue());
+            dev.equo.swt.FlutterBridge.writeTape(comm(), tape -> tape.describe(w));
+            return widgetName(w) + "/" + api.hashCode();
         }
 
         @Override

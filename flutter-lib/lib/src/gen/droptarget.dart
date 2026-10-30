@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/droptarget_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'droptarget.g.dart';
 
 class DropTargetSwt<V extends VDropTarget> extends WidgetSwt<V> {
   const DropTargetSwt({super.key, required super.value});
@@ -40,14 +39,9 @@ class DropTargetSwt<V extends VDropTarget> extends WidgetSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VDropTarget extends VWidget {
   VDropTarget() : this.empty();
   VDropTarget.empty() {
     swt = "DropTarget";
   }
-
-  factory VDropTarget.fromJson(Map<String, dynamic> json) =>
-      _$VDropTargetFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VDropTargetToJson(this);
 }

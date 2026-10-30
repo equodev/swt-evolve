@@ -34,6 +34,8 @@ import 'src/impl/window_commands_native.dart'
     if (dart.library.js_interop) 'src/impl/window_commands_web.dart';
 
 import 'src/comm/comm.dart';
+import 'src/comm/v_registry.dart';
+import 'src/comm/widget_wire.dart' show widgetWireChannel;
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
 import 'src/impl/client_ready.dart';
@@ -49,8 +51,10 @@ import 'semantics_ghost_guard_stub.dart'
 import 'src/gen/gc.dart';
 import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
+import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
+import 'src/comm/widget_wire.dart' show sendWireWith;
 import 'src/impl/utils/traversal_veto_scope.dart';
 
 /// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
@@ -75,6 +79,8 @@ void main(List<String> args) async {
 
   // Dormant test-support channel (no-op in production; see test_harness.dart).
   test_harness.registerTestQueryChannel();
+  // Every client holds widgets, whatever it was opened to show, so every client takes their changes.
+  EquoCommService.onBytes(widgetWireChannel, VRegistry.instance.applyWire);
 
   int? widgetId = getWidgetId(args);
   String? widgetName = getWidgetName(args);
@@ -94,6 +100,7 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  FramePresentation.ensureTracking();
   final fallbackFonts = _loadWebFallbackFonts();
   // Registered before the first await: Java hands a client what it sent before the comm connected
   // (setPort) as soon as it connects, possibly while the fonts load, and a frame nothing listens to is
@@ -109,6 +116,7 @@ void main(List<String> args) async {
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
+  reloadOnRendererCrash();
   // Forces the semantics tree on so Flutter Web emits real <flt-semantics> DOM nodes (with our
   // Semantics identifiers, see ControlImpl.wrap) for E2E tools like Playwright to find and click.
   // Off by default: building the semantics tree has a real runtime cost, so production must not pay
@@ -212,7 +220,7 @@ int _readInt64BE(ByteData v, int offset) =>
 void _registerGcCreateListener(Future<void> fallbackFonts) {
   var fontsIn = false;
   fallbackFonts.then((_) => fontsIn = true, onError: (Object _) => fontsIn = true);
-  // Raw-bytes path: Java sends the gcId as 8 big-endian bytes, no JSON round-trip.
+  // Raw-bytes path: Java sends the gcId as 8 big-endian bytes.
   EquoCommService.onBytes("GC/create", (bytes) {
     final gcId = _readInt64BE(ByteData.sublistView(bytes), 0);
     void create() {
@@ -252,9 +260,10 @@ void registerImagePixelsListener() {
     return true;
   });
 
-  // Not rendered yet: the render is a frame still in the queue, so this has to take its turn.
-  EquoCommService.onBytes("Image/requestPixels", (bytes) async {
-    await answer(_readInt64BE(ByteData.sublistView(bytes), 0));
+  // Not rendered yet: the render is a frame still in the queue, so this takes its turn, then waits
+  // for the render without holding the queue the render may still be behind.
+  EquoCommService.onBytes("Image/requestPixels", (bytes) {
+    unawaited(answer(_readInt64BE(ByteData.sublistView(bytes), 0)));
   });
 }
 
@@ -418,9 +427,10 @@ Future<void> initSwtEvolveProperties() async {
 
   if (!_swtEvolvePropertiesListenerRegistered) {
     _swtEvolvePropertiesListenerRegistered = true;
-    EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
+    // The flags as the widget wire writes an object's fields.
+    EquoCommService.onBytes("swt.evolve.properties", (bytes) {
       try {
-        applyConfigFlags(ConfigFlags.fromJson(data as Map<String, dynamic>));
+        applyConfigFlags(ConfigFlags.read(bytes));
       } catch (e) {
         print('Error parsing properties: $e');
       } finally {
@@ -439,29 +449,24 @@ Future<void> initSwtEvolveProperties() async {
   );
 }
 
-Widget createContentWidget(String widgetName, int widgetId) {
-  Map<String, dynamic> child = {
-    'swt': widgetName,
-    'id': widgetId,
-    'style': 0,
-  };
-  return customWidget(child) ?? gen.mapWidget(child);
-}
+Widget createContentWidget(String widgetName, int widgetId) =>
+    customWidget(widgetName, widgetId) ?? gen.mapWidget(widgetName, widgetId);
 
-Widget? customWidget(Map<String, dynamic> child) {
-  var type = child['swt'];
-  var id = child['id'];
+Widget? customWidget(String type, int id) {
+  VComposite composite() => VComposite()
+    ..swt = type
+    ..id = id;
   return switch (type) {
     "MainToolbar" => ToolbarComposite(
         key: ValueKey(id),
-        value: VComposite.fromJson(child),
+        value: composite(),
         useBoundsLayout: true,
     ),
-    "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "MainComposite" => MainComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "SwingIsland" => SwingIslandSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "SideBar" => SideBarComposite(key: ValueKey(id), value: composite()),
+    "StatusBar" => StatusBarComposite(key: ValueKey(id), value: composite()),
+    "MainComposite" => MainComposite(key: ValueKey(id), value: composite()),
+    "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: composite()),
+    "SwingIsland" => SwingIslandSwt(key: ValueKey(id), value: composite()),
     "Display" => DisplaySwt(key: ValueKey(id), value: VDisplay()..swt = "Display"..id = id),
     _ => null
   };

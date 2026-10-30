@@ -1,20 +1,19 @@
-// The wiring: a frame arriving on a widget's channel is routed by what it is. Whole frames replace,
-// partial ones merge into what is held, ones that do not fit ask for the widget again.
+// The wiring: a widget record is routed by what it is. Whole records replace, changes merge into
+// what is held, ones that do not fit ask for the widget again.
 //
-// Driven through the real transport - the same bytes the socket would deliver - rather than by
-// calling the handler, so the decode, the routing and the rebuild are all in the picture.
-
-import 'dart:convert';
-import 'dart:typed_data';
+// Driven by the bytes Java writes - a frame of records - rather than by calling the handler, so the
+// decode, the routing and the rebuild are all in the picture.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+
+import 'support/deliver.dart';
 
 const int _id = 77;
 const String _channel = 'Label/$_id';
@@ -24,24 +23,6 @@ VLabel _label(String text, {int seq = 10}) => VLabel()
   ..seq = seq
   ..style = SWT.NONE
   ..text = text;
-
-Map<String, dynamic> _whole(String text, int seq) =>
-    {'swt': 'Label', 'id': _id, '_s': seq, 'style': SWT.NONE, 'text': text};
-
-Map<String, dynamic> _partial(String text, {required int seq, required int base}) =>
-    {'swt': 'Label', 'id': _id, '_s': seq, '_b': base, '_d': ['text'], 'text': text};
-
-/// Delivers a frame exactly as the transport would: 2-byte name length, name, JSON body.
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
 
 Future<void> _mount(WidgetTester tester, VLabel value) async {
   await tester.pumpWidget(EvolveApp(
@@ -58,22 +39,22 @@ Future<void> _mount(WidgetTester tester, VLabel value) async {
 void main() {
   setUp(() => deliveryGate.reset());
 
-  testWidgets('a whole frame replaces what is rendered', (tester) async {
+  testWidgets('a whole record replaces what is rendered', (tester) async {
     await _mount(tester, _label('before'));
 
-    _receive(_channel, _whole('after', 11));
+    await deliverWhole(_label('after', seq: 11));
     await tester.pumpAndSettle();
 
     expect(find.text('after'), findsOneWidget);
     expect(deliveryGate.recoveries, 0);
   });
 
-  testWidgets('a partial frame changes only what it names', (tester) async {
+  testWidgets('a change changes only what it names', (tester) async {
     await _mount(tester, _label('before'));
-    _receive(_channel, _whole('whole', 11));
+    await deliverWhole(_label('whole', seq: 11));
     await tester.pumpAndSettle();
 
-    _receive(_channel, _partial('partial', seq: 12, base: 11));
+    await deliverChange(_label('partial', seq: 12), keys: [WireKey.k_Label_text], base: 11);
     await tester.pumpAndSettle();
 
     expect(find.text('partial'), findsOneWidget,
@@ -82,14 +63,14 @@ void main() {
         reason: 'it fitted the state held, so nothing had to be asked for again');
   });
 
-  testWidgets('a partial frame that does not fit asks for the widget instead of guessing',
+  testWidgets('a change that does not fit asks for the widget instead of guessing',
       (tester) async {
     await _mount(tester, _label('before'));
-    _receive(_channel, _whole('whole', 11));
+    await deliverWhole(_label('whole', seq: 11));
     await tester.pumpAndSettle();
 
     // Computed from a state this client never held - a frame was lost, or overtaken.
-    _receive(_channel, _partial('never applied', seq: 20, base: 19));
+    await deliverChange(_label('never applied', seq: 20), keys: [WireKey.k_Label_text], base: 19);
     await tester.pumpAndSettle();
 
     expect(find.text('whole'), findsOneWidget,
@@ -98,26 +79,26 @@ void main() {
     expect(deliveryGate.recoveries, 1);
   });
 
-  testWidgets('a partial frame for a widget never seen whole is refused', (tester) async {
+  testWidgets('a change for a widget never seen whole is refused', (tester) async {
     await _mount(tester, _label('before'));
 
     // Mounting is not the same as having been told: the value came from the parent's payload, and
-    // nothing has arrived on this channel yet.
-    _receive(_channel, _partial('partial', seq: 12, base: 11));
+    // nothing has described it yet.
+    await deliverChange(_label('partial', seq: 12), keys: [WireKey.k_Label_text], base: 11);
     await tester.pumpAndSettle();
 
     expect(find.text('before'), findsOneWidget);
     expect(deliveryGate.recoveries, 1);
   });
 
-  testWidgets('a repeated frame is dropped rather than re-applied', (tester) async {
+  testWidgets('a repeated change is dropped rather than re-applied', (tester) async {
     await _mount(tester, _label('before'));
-    _receive(_channel, _whole('whole', 11));
+    await deliverWhole(_label('whole', seq: 11));
     await tester.pumpAndSettle();
 
-    _receive(_channel, _partial('once', seq: 12, base: 11));
+    await deliverChange(_label('once', seq: 12), keys: [WireKey.k_Label_text], base: 11);
     await tester.pumpAndSettle();
-    _receive(_channel, _partial('once', seq: 12, base: 11));
+    await deliverChange(_label('once', seq: 12), keys: [WireKey.k_Label_text], base: 11);
     await tester.pumpAndSettle();
 
     expect(find.text('once'), findsOneWidget);

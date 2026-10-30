@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -12,11 +12,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/browser_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'browser.g.dart';
 
 class BrowserSwt<V extends VBrowser> extends CompositeSwt<V> {
   const BrowserSwt({super.key, required super.value});
@@ -69,7 +68,6 @@ class BrowserSwt<V extends VBrowser> extends CompositeSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VBrowser extends VComposite {
   VBrowser() : this.empty();
   VBrowser.empty() {
@@ -93,24 +91,67 @@ class VBrowser extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'javascriptEnabled':
-        javascriptEnabled = json['javascriptEnabled'] as bool?;
-      case 'text':
-        text = json['text'] as String?;
-      case 'url':
-        url = json['url'] as String?;
-      case 'functionNames':
-        functionNames = (json['functionNames'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
+      case 421: // javascriptEnabled
+        javascriptEnabled = r.boolean();
+        return true;
+      case 422: // text
+        text = r.string();
+        return true;
+      case 423: // url
+        url = r.string();
+        return true;
+      case 420: // functionNames
+        functionNames = r.strings()?.map((e) => e ?? '').toList();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VBrowser.fromJson(Map<String, dynamic> json) =>
-      _$VBrowserFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VBrowserToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = javascriptEnabled;
+      if (v_ != null && w.wants(421)) {
+        w.key(421);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null && w.wants(422)) {
+        w.key(422);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = url;
+      if (v_ != null && w.wants(423)) {
+        w.key(423);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = functionNames;
+      if (v_ != null && w.wants(420)) {
+        w.key(420);
+        w.strings(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(421, javascriptEnabled);
+    visit(422, text);
+    visit(423, url);
+    visit(420, functionNames);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

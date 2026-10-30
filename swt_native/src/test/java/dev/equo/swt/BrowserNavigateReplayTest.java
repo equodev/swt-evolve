@@ -8,6 +8,7 @@ import java.util.List;
 
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.widgets.Mocks;
@@ -84,23 +85,23 @@ class BrowserNavigateReplayTest {
 
         List<RecordingComm.Frame> initial = navigateFrames();
         assertThat(initial).as("setUrl sends exactly one navigate op").hasSize(1);
-        assertThat(initial.get(0).json)
+        assertThat(initial.get(0).state())
                 .as("the op carries the same-origin /local-file token, which the state does not")
-                .contains("localFilePath")
-                .contains("viewer.html");
+                .containsKey("localFilePath");
+        assertThat(WireValues.containsText(initial.get(0).value, "viewer.html")).as("the op names the file").isTrue();
 
         // A Flutter Browser built after the op above would have missed it; this is what it sends.
         bridge.comm.fireContaining("/navigateRequest", null);
 
         List<RecordingComm.Frame> after = navigateFrames();
         assertThat(after).as("the navigation is replayed").hasSize(2);
-        assertThat(after.get(1).json)
+        assertThat(after.get(1).state())
                 .as("the replay carries the same target, token included")
-                .contains("localFilePath")
-                .contains("viewer.html");
-        assertThat(seq(after.get(1).json))
+                .containsKey("localFilePath");
+        assertThat(WireValues.containsText(after.get(1).value, "viewer.html")).as("the replay names the file").isTrue();
+        assertThat(seq(after.get(1)))
                 .as("the replay keeps the original seq, so a State that already navigated drops it")
-                .isEqualTo(seq(after.get(0).json));
+                .isEqualTo(seq(after.get(0)));
     }
 
     @Test
@@ -113,8 +114,8 @@ class BrowserNavigateReplayTest {
 
         List<RecordingComm.Frame> frames = navigateFrames();
         assertThat(frames).hasSize(2);
-        assertThat(frames.get(1).json).contains("Inline");
-        assertThat(seq(frames.get(1).json)).isEqualTo(seq(frames.get(0).json));
+        assertThat(WireValues.containsText(frames.get(1).value, "Inline")).isTrue();
+        assertThat(seq(frames.get(1))).isEqualTo(seq(frames.get(0)));
     }
 
     @Test
@@ -130,8 +131,8 @@ class BrowserNavigateReplayTest {
 
         List<RecordingComm.Frame> frames = navigateFrames();
         assertThat(frames).hasSize(3);
-        assertThat(seq(frames.get(1).json)).isEqualTo(seq(frames.get(0).json));
-        assertThat(seq(frames.get(2).json)).isEqualTo(seq(frames.get(0).json));
+        assertThat(seq(frames.get(1))).isEqualTo(seq(frames.get(0)));
+        assertThat(seq(frames.get(2))).isEqualTo(seq(frames.get(0)));
     }
 
     @Test
@@ -145,11 +146,11 @@ class BrowserNavigateReplayTest {
 
         List<RecordingComm.Frame> frames = navigateFrames();
         assertThat(frames).hasSize(3);
-        assertThat(frames.get(2).json).contains("second");
-        assertThat(seq(frames.get(2).json))
+        assertThat(WireValues.containsText(frames.get(2).value, "second")).isTrue();
+        assertThat(seq(frames.get(2)))
                 .as("a State that only saw the first navigation must still take the second")
-                .isEqualTo(seq(frames.get(1).json))
-                .isGreaterThan(seq(frames.get(0).json));
+                .isEqualTo(seq(frames.get(1)))
+                .isGreaterThan(seq(frames.get(0)));
     }
 
     @Test
@@ -162,10 +163,10 @@ class BrowserNavigateReplayTest {
         assertThat(navigateFrames()).as("nothing to replay yet").isEmpty();
     }
 
-    /** Reads the {@code "seq":<n>} value out of a recorded navigate payload. */
-    private static int seq(String json) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\"seq\":(\\d+)").matcher(json);
-        assertThat(m.find()).as("navigate payload carries a seq: " + json).isTrue();
-        return Integer.parseInt(m.group(1));
+    /** The {@code seq} a recorded navigate payload carries. */
+    private static int seq(RecordingComm.Frame frame) {
+        Object seq = frame.state().get("seq");
+        assertThat(seq).as("navigate payload carries a seq: " + frame.value).isInstanceOf(Number.class);
+        return ((Number) seq).intValue();
     }
 }

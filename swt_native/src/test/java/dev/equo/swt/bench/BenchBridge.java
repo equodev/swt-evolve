@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Bench bridge that boots a headless Flutter window registered as widgetName "BenchBridge".
  *
- * <p>JSON-codec RTT echo in both directions: the receiver runs the real production codec
- * (V*.fromJson/toJson on J→D, Event/base64-image decode on D→J) before acking, so each timing
- * is a true cross-language round trip.
+ * <p>Codec RTT echo in both directions: the receiver runs the real production codec (applying
+ * a widget frame on J→D, Event/base64-image decode on D→J) before acking, so each timing is a
+ * true cross-language round trip.
  *
  * <p>All handlers are registered ONCE at startup. Per-call state lives in atomic-reference
  * completer slots that the persistent handler completes when a response arrives. This avoids
@@ -45,14 +45,14 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
     }
 
     // J→D
-    static final String C_J2D_JSON_ECHO        = "bench/j2d/json/echo";
-    static final String C_J2D_JSON_ECHO_RESP   = "bench/j2d/json/echoResponse";
+    static final String C_J2D_ECHO        = "bench/j2d/echo";
+    static final String C_J2D_ECHO_RESP   = "bench/j2d/echoResponse";
 
     // D→J
-    static final String C_D2J_JSON_RUN         = "bench/d2j/json/run";
-    static final String C_D2J_JSON_PROBE       = "bench/d2j/json/probe";
-    static final String C_D2J_JSON_PROBE_RESP  = "bench/d2j/json/probeResponse";
-    static final String C_D2J_JSON_RESULT      = "bench/d2j/json/result";
+    static final String C_D2J_RUN         = "bench/d2j/run";
+    static final String C_D2J_PROBE       = "bench/d2j/probe";
+    static final String C_D2J_PROBE_RESP  = "bench/d2j/probeResponse";
+    static final String C_D2J_RESULT      = "bench/d2j/result";
 
     /** -Dbench.client=web drives a browser (web comm) instead of the native Flutter engine. */
     private static final boolean WEB = "web".equals(System.getProperty("bench.client"));
@@ -65,13 +65,13 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
     // Persistent completer slots — one per direction echo path. The WS-thread response handler
     // does getAndSet(null) and completes whatever's pending. Per-call code does
     // compareAndSet(null, fresh) — if it fails, an unfinished prior call is still in flight.
-    private final AtomicReference<CompletableFuture<Long>> j2dJsonPending = new AtomicReference<>();
-    private final AtomicReference<PendingD2j> d2jJsonPending = new AtomicReference<>();
+    private final AtomicReference<CompletableFuture<Long>> j2dPending = new AtomicReference<>();
+    private final AtomicReference<PendingD2j> d2jPending = new AtomicReference<>();
 
-    // Selects how the D→J JSON probe handler decodes the in-flight payload: true → base64 image
-    // String, false → org.eclipse.swt.widgets.Event. Set by d2jJsonEcho before each run is sent;
+    // Selects how the D→J probe handler decodes the in-flight payload: true → base64 image
+    // String, false → org.eclipse.swt.widgets.Event. Set by d2jEcho before each run is sent;
     // safe because D→J echo is strictly single-in-flight.
-    private volatile boolean d2jJsonProbeIsImage = false;
+    private volatile boolean d2jProbeIsImage = false;
 
     private static boolean isImageShape(String shape) {
         return shape != null && shape.startsWith("IMG");
@@ -114,7 +114,8 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
     }
 
     private void initFlutterView() {
-        CompletableFuture<Point> windowReadyFuture = super.onReady(this, Point.class);
+        CompletableFuture<org.eclipse.swt.widgets.ClientReadyPayload> windowReadyFuture =
+                super.onReady(this, org.eclipse.swt.widgets.ClientReadyPayload.class);
         windowReadyFuture.thenAccept(p -> System.out.println("[BenchBridge] Flutter window ready: " + p));
         if (WEB) {
             startWebClient();
@@ -123,8 +124,8 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         }
 
         // ---------- J→D echo response handler (persistent) ----------
-        comm().on(eventName(this, C_J2D_JSON_ECHO_RESP), byte[].class, bytes -> {
-            CompletableFuture<Long> p = j2dJsonPending.getAndSet(null);
+        comm().on(eventName(this, C_J2D_ECHO_RESP), byte[].class, bytes -> {
+            CompletableFuture<Long> p = j2dPending.getAndSet(null);
             if (p != null) p.complete(System.nanoTime());
         });
 
@@ -133,25 +134,25 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         //   - event shapes → org.eclipse.swt.widgets.Event (the path FlutterBridge.on(...) uses)
         //   - image shapes → a base64 PNG String, then base64-decode it (the imageResult path
         //     GCImageDrawer/GCHelper.updateImageFromPng uses).
-        // The expected decode type for the in-flight run is set by d2jJsonEcho before the run is sent.
-        comm().on(eventName(this, C_D2J_JSON_PROBE), byte[].class, bytes -> {
+        // The expected decode type for the in-flight run is set by d2jEcho before the run is sent.
+        comm().on(eventName(this, C_D2J_PROBE), byte[].class, bytes -> {
             if (bytes != null) {
                 try {
-                    if (d2jJsonProbeIsImage) {
-                        String b64 = serializer.from(String.class, bytes);
-                        if (b64 != null) java.util.Base64.getDecoder().decode(b64);
+                    if (d2jProbeIsImage) {
+                        String b64 = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                        java.util.Base64.getDecoder().decode(b64);
                     } else {
-                        serializer.from(Event.class, bytes);
+                        new dev.equo.swt.WireReader(bytes, 0, bytes.length).fields(new Event());
                     }
                 } catch (Exception e) {
                     System.err.println("[BenchBridge] D→J decode failed: " + e);
                 }
             }
-            comm().send(eventName(this, C_D2J_JSON_PROBE_RESP), EMPTY_ACK);
+            comm().send(eventName(this, C_D2J_PROBE_RESP), EMPTY_ACK);
         });
 
         // ---------- D→J result handler (persistent) ----------
-        comm().on(eventName(this, C_D2J_JSON_RESULT), byte[].class, bytes -> handleD2jResult(d2jJsonPending, bytes));
+        comm().on(eventName(this, C_D2J_RESULT), byte[].class, bytes -> handleD2jResult(d2jPending, bytes));
     }
 
     private void startWebClient() {
@@ -238,27 +239,27 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
 
     // ====== J→D Echo (single round-trip RTT) ======
 
-    public CompletableFuture<Long> j2dJsonEcho(BenchPayloads.Shape shape) {
+    public CompletableFuture<Long> j2dEcho(BenchPayloads.Shape shape) {
         CompletableFuture<Long> result = new CompletableFuture<>();
-        if (!j2dJsonPending.compareAndSet(null, result)) {
+        if (!j2dPending.compareAndSet(null, result)) {
             CompletableFuture<Long> failed = new CompletableFuture<>();
             failed.completeExceptionally(new IllegalStateException(
                     "J→D echo already in flight — prior call did not complete"));
             return failed;
         }
         byte[] payload = shape.serialize();
-        clientReady.thenRun(() -> comm().send(eventName(this, C_J2D_JSON_ECHO), payload));
+        clientReady.thenRun(() -> comm().send(eventName(this, C_J2D_ECHO), payload));
         return result;
     }
 
     // ====== D→J Echo (Java drives, Dart times) ======
 
-    public CompletableFuture<EchoResult> d2jJsonEcho(String shape) {
-        d2jJsonProbeIsImage = isImageShape(shape);
+    public CompletableFuture<EchoResult> d2jEcho(String shape) {
+        d2jProbeIsImage = isImageShape(shape);
         int seq = seqGen.incrementAndGet();
         CompletableFuture<EchoResult> result = new CompletableFuture<>();
         PendingD2j pending = new PendingD2j(seq, result);
-        if (!d2jJsonPending.compareAndSet(null, pending)) {
+        if (!d2jPending.compareAndSet(null, pending)) {
             result.completeExceptionally(new IllegalStateException("D→J echo already in flight"));
             return result;
         }
@@ -267,7 +268,7 @@ public class BenchBridge extends dev.equo.swt.harness.FlutterHarness implements 
         buf.putInt(seq);
         buf.put((byte) shapeBytes.length);
         buf.put(shapeBytes);
-        clientReady.thenRun(() -> comm().send(eventName(this, C_D2J_JSON_RUN), buf.array()));
+        clientReady.thenRun(() -> comm().send(eventName(this, C_D2J_RUN), buf.array()));
         return result;
     }
 

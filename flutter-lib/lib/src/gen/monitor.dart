@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'monitor.g.dart';
-
-@JsonSerializable()
-class VMonitor {
+class VMonitor implements WireReadable, WireWritable, WireVisitable {
   VMonitor() : this.empty();
   VMonitor.empty();
 
-  factory VMonitor.fromJson(Map<String, dynamic> json) =>
-      _$VMonitorFromJson(json);
-  Map<String, dynamic> toJson() => _$VMonitorToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -9,10 +9,9 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/progressbar_evolve.dart';
 import 'widgets.dart';
-
-part 'progressbar.g.dart';
 
 class ProgressBarSwt<V extends VProgressBar> extends ControlSwt<V> {
   const ProgressBarSwt({super.key, required super.value});
@@ -22,7 +21,6 @@ class ProgressBarSwt<V extends VProgressBar> extends ControlSwt<V> {
       ProgressBarImpl<ProgressBarSwt<VProgressBar>, VProgressBar>();
 }
 
-@JsonSerializable()
 class VProgressBar extends VControl {
   VProgressBar() : this.empty();
   VProgressBar.empty() {
@@ -44,20 +42,53 @@ class VProgressBar extends VControl {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'maximum':
-        maximum = (json['maximum'] as num?)?.toInt();
-      case 'minimum':
-        minimum = (json['minimum'] as num?)?.toInt();
-      case 'selection':
-        selection = (json['selection'] as num?)?.toInt();
+      case 371: // maximum
+        maximum = r.int32();
+        return true;
+      case 372: // minimum
+        minimum = r.int32();
+        return true;
+      case 373: // selection
+        selection = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VProgressBar.fromJson(Map<String, dynamic> json) =>
-      _$VProgressBarFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VProgressBarToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = maximum;
+      if (v_ != null && w.wants(371)) {
+        w.key(371);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = minimum;
+      if (v_ != null && w.wants(372)) {
+        w.key(372);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null && w.wants(373)) {
+        w.key(373);
+        w.int32(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(371, maximum);
+    visit(372, minimum);
+    visit(373, selection);
+  }
 }

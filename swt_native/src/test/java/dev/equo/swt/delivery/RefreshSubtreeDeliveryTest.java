@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.FrameRefs;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -62,7 +63,7 @@ class RefreshSubtreeDeliveryTest {
         // Described to the client, everything under it included.
         part.setBackground(display.getSystemColor(SWT.COLOR_RED));
         FlutterBridge.update();
-        assertThat(bridge.comm.sent).anyMatch(f -> f.json.contains("\"text\":\"leaf\""));
+        assertThat(bridge.comm.sent).anyMatch(f -> !WireValues.find(f.value, m -> "leaf".equals(m.get("text"))).isEmpty());
 
         int requests = 0;
         Set<Long> missing = new LinkedHashSet<>(Set.of((long) FlutterBridge.id(part)));

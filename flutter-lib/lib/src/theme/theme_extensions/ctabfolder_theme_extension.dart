@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'ctabfolder_theme_extension.tailor.dart';
-part 'ctabfolder_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
-@OffsetConverter()
 class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> with _$CTabFolderThemeExtensionTailorMixin {
   // Tab bar colors
   final Color tabBarBackgroundColor;
@@ -180,10 +171,5 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.chevronMenuItemPadding,
     required this.minTextContrast,
   });
-
-  factory CTabFolderThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$CTabFolderThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CTabFolderThemeExtensionToJson(this);
 }
 

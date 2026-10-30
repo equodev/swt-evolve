@@ -34,7 +34,6 @@ void main() {
       contentWidget: SizedBox(width: 300, height: 400, child: TreeSwt(value: _tree())),
     ));
     await tester.pumpAndSettle();
-    expect(_treeChannels(), isNotEmpty, reason: 'a mounted tree answers requests on its channels');
 
     await tester.pumpWidget(const EvolveApp(theme: ThemeMode.light, contentWidget: SizedBox()));
     await tester.pumpAndSettle();

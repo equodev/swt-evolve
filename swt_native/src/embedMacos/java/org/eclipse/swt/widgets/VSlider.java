@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VSlider extends VControl {
 
     protected VSlider() {
@@ -65,65 +61,141 @@ public class VSlider extends VControl {
         ((DartSlider) impl).thumb = value;
     }
 
-    public static final String INCREMENT = "increment";
+    public static final int INCREMENT = 50;
 
-    public static final String MAXIMUM = "maximum";
+    public static final int MAXIMUM = 51;
 
-    public static final String MINIMUM = "minimum";
+    public static final int MINIMUM = 52;
 
-    public static final String PAGE_INCREMENT = "pageIncrement";
+    public static final int PAGE_INCREMENT = 53;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 54;
 
-    public static final String THUMB = "thumb";
+    public static final int THUMB = 55;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "increment":
-                Serializer.writeKeyValue(writer, "increment", getIncrement());
-                return;
-            case "maximum":
-                Serializer.writeKeyValue(writer, "maximum", getMaximum());
-                return;
-            case "minimum":
-                Serializer.writeKeyValue(writer, "minimum", getMinimum());
-                return;
-            case "pageIncrement":
-                Serializer.writeKeyValue(writer, "pageIncrement", getPageIncrement());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "thumb":
-                Serializer.writeKeyValue(writer, "thumb", getThumb());
-                return;
+            case INCREMENT:
+                return "increment";
+            case MAXIMUM:
+                return "maximum";
+            case MINIMUM:
+                return "minimum";
+            case PAGE_INCREMENT:
+                return "pageIncrement";
+            case SELECTION:
+                return "selection";
+            case THUMB:
+                return "thumb";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Slider.class)
-    public static class SliderJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartSlider.class, (JsonWriter.WriteObject<DartSlider>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartSlider.class, (JsonReader.ReadObject<DartSlider>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 50:
+                w.write((int) getIncrement());
+                return true;
+            case 51:
+                w.write((int) getMaximum());
+                return true;
+            case 52:
+                w.write((int) getMinimum());
+                return true;
+            case 53:
+                w.write((int) getPageIncrement());
+                return true;
+            case 54:
+                w.write((int) getSelection());
+                return true;
+            case 55:
+                w.write((int) getThumb());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Slider read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 50:
+                {
+                    int v_ = getIncrement();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(50);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 51:
+                {
+                    int v_ = getMaximum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(51);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 52:
+                {
+                    int v_ = getMinimum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(52);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 53:
+                {
+                    int v_ = getPageIncrement();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(53);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 54:
+                {
+                    int v_ = getSelection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(54);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 55:
+                {
+                    int v_ = getThumb();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(55);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Slider api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 50, 51, 52, 53, 54, 55 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

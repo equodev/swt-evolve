@@ -15,6 +15,7 @@ import 'dart:async';
 import 'dart:js_interop';
 
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart' show sendWireWith;
 
 @JS('window.open')
 external JSObject? _open(JSString url, JSString target, JSString features);
@@ -201,8 +202,7 @@ void _onWindowState(Object? raw) {
 void _reportOpenFailed(int shellId) {
   final displayId = _displayId;
   if (displayId == null) return;
-  EquoCommService.sendPayload(
-      'Display/$displayId/WindowOpenFailed', {'shellId': shellId});
+  sendWireWith('Display/$displayId/WindowOpenFailed', (w) => w.int64(shellId));
 }
 
 void _startClosePoll() {

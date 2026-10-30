@@ -54,7 +54,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double? _cachedRowHeight;
   double? _cachedHeaderOffset;
   Map<int, TableColumnWidth>? _cachedColumnWidths;
-  final List<String> _eventNames = [];
   final ScrollController _verticalScrollController = ScrollController();
 
   final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
@@ -115,75 +114,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     _verticalScrollController.addListener(() => setState(() {}));
     _verticalScrollController.addListener(_reportScrollOffset);
     if (state.topIndex != null) _scrollToTopIndexAfterLayout();
-    _registerGetIdFromPointListener();
-    _registerGetItemBoundsListener();
-    _registerGetItemHeightListener();
-  }
-
-  void _registerGetIdFromPointListener() {
-    final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
-    _eventNames.add(eventName);
-    EquoCommService.onRaw(eventName, (payload) {
-      if (payload != null) {
-        try {
-          final Map<String, dynamic> point = Map<String, dynamic>.from(payload as Map);
-          final x = (point['x'] as num?)?.toDouble() ?? 0.0;
-          final y = (point['y'] as num?)?.toDouble() ?? 0.0;
-          final itemId = findItemIdAtPosition(x, y);
-          final responseEvent =
-              "${state.swt}/${state.id}/GetIdFromPointResponse";
-          EquoCommService.sendPayload(
-            responseEvent,
-            itemId?.toString() ?? "-1",
-          );
-        } catch (e) {
-          print('Error processing GetIdFromPoint: $e');
-          final responseEvent =
-              "${state.swt}/${state.id}/GetIdFromPointResponse";
-          EquoCommService.sendPayload(responseEvent, "-1");
-        }
-      }
-    });
-  }
-
-  void _registerGetItemBoundsListener() {
-    final eventName = "${state.swt}/${state.id}/GetItemBounds";
-    _eventNames.add(eventName);
-    EquoCommService.onRaw(eventName, (payload) {
-      final responseEvent = "${state.swt}/${state.id}/GetItemBoundsResponse";
-      if (payload == null) {
-        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
-        return;
-      }
-      try {
-        String raw = payload.toString();
-        if (raw.startsWith('"') && raw.endsWith('"')) {
-          raw = raw.substring(1, raw.length - 1);
-        }
-        final parts = raw.split(",");
-        final itemId = int.parse(parts[0]);
-        final columnIndex = int.parse(parts[1]);
-        final bounds = _calculateItemBounds(itemId, columnIndex);
-        final rect = VRectangle()
-          ..x = bounds.left.round()
-          ..y = bounds.top.round()
-          ..width = bounds.width.round()
-          ..height = bounds.height.round();
-        EquoCommService.sendPayload(responseEvent, rect.toJson());
-      } catch (e) {
-        print('Error processing GetItemBounds: $e');
-        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
-      }
-    });
-  }
-
-  void _registerGetItemHeightListener() {
-    final eventName = "${state.swt}/${state.id}/GetItemHeight";
-    _eventNames.add(eventName);
-    EquoCommService.onRaw(eventName, (payload) {
-      final responseEvent = "${state.swt}/${state.id}/GetItemHeightResponse";
-      EquoCommService.sendPayload(responseEvent, cachedRowHeight.round().toString());
-    });
   }
 
   /// Returns the VTableItem id at the given viewport coordinates, or null.
@@ -197,38 +127,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final items = getItems();
     if (itemIndex < 0 || itemIndex >= items.length) return null;
     return items[itemIndex].id;
-  }
-
-  /// Calculates the Flutter-coordinate bounds of a cell identified by its
-  /// Java hashCode [itemId] and [columnIndex].
-  Rect _calculateItemBounds(int itemId, int columnIndex) {
-    final rowHeight = _cachedRowHeight ?? 20.0;
-    final headerOffset = _cachedHeaderOffset ?? 0.0;
-    final columnWidths = _cachedColumnWidths;
-
-    final items = getItems();
-    int itemIndex = -1;
-    for (int i = 0; i < items.length; i++) {
-      if (items[i].id == itemId) {
-        itemIndex = i;
-        break;
-      }
-    }
-    if (itemIndex < 0) return Rect.zero;
-
-    final y = headerOffset + itemIndex * rowHeight - verticalScrollOffset;
-
-    final columns = getColumns();
-    double x = 0.0;
-    double width = state.bounds?.width?.toDouble() ?? 200.0;
-
-    if (columns.isNotEmpty && columnWidths != null && columnIndex < columns.length) {
-      x = columnLefts(fixedColumnWidths(columns.length), displayOrder)[columnIndex];
-      final colW = columnWidths[columnIndex];
-      if (colW is FixedColumnWidth) width = colW.value;
-    }
-
-    return Rect.fromLTWH(x, y, width, rowHeight);
   }
 
   @override
@@ -251,7 +149,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   void setValue(V value) {
     super.setValue(value);
-    if (lastChange?.touches('topIndex') ?? true) _scrollToTopIndexAfterLayout();
+    if (lastChange?.touches(WireKey.k_Table_topIndex) ?? true) _scrollToTopIndexAfterLayout();
   }
 
   /// How far the rows are scrolled.
@@ -397,10 +295,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void dispose() {
     _verticalScrollController.dispose();
     _dropFeedback.dispose();
-    // Remove Flutter event listeners
-    for (final eventName in _eventNames) {
-      EquoCommService.remove(eventName);
-    }
     super.dispose();
   }
 
@@ -969,9 +863,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     if (state.enabled != true) return;
     setState(() {
       _selectedRowIndex = index;
-      state.selection ??= [];
-      state.selection!.clear();
-      state.selection!.add(index);
+      // A new list: one decoded off the wire is fixed-length.
+      state.selection = [index];
 
       final event = VEvent()..segments = state.selection;
       widget.sendSelectionSelection(state, event);
@@ -999,9 +892,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     if (state.enabled != true) return;
     setState(() {
       _selectedRowIndex = index;
-      state.selection ??= [];
-      state.selection!.clear();
-      state.selection!.add(index);
+      state.selection = [index];
     });
   }
 
@@ -1010,9 +901,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     if (state.enabled != true) return;
     setState(() {
       _selectedRowIndex = index;
-      state.selection ??= [];
-      state.selection!.clear();
-      state.selection!.add(_selectedRowIndex);
+      state.selection = [_selectedRowIndex];
 
       final event = VEvent()
         ..segments = state.selection

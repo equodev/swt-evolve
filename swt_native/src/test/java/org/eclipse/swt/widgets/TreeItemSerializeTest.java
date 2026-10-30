@@ -4,16 +4,15 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
 
 class TreeItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_TreeItem() {
         TreeItem w = new TreeItem(tree(), SWT.NONE);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "TreeItem");
     }
@@ -22,12 +21,9 @@ class TreeItemSerializeTest extends SerializeTestBase {
     void should_serialize_filled_TreeItem() {
         TreeItem w = new TreeItem(tree(), SWT.NONE);
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "TreeItem")
-               .hasEntrySatisfying("texts", p -> assertThatJson(p).isArray()
-                                                                  .hasSameSizeAs(value(w).getTexts()))
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("checked").equalsTo(w.getChecked(), orAbsentIfFalse));
@@ -35,7 +31,18 @@ class TreeItemSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("grayed").equalsTo(w.getGrayed(), orAbsentIfFalse));
+        assertJ.satisfies(node("texts").sameSizeAs(value(w).getTexts()));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_write_every_property_TreeItem() throws Exception {
+        assertWritesEveryProperty(style -> {
+            TreeItem w = new TreeItem(new Tree(shell(), SWT.CHECK), style);
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE);
     }
 
     @Test

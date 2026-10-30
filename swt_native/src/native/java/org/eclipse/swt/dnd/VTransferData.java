@@ -1,10 +1,6 @@
 package org.eclipse.swt.dnd;
 
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-
-public class VTransferData {
+public class VTransferData implements dev.equo.swt.WireObject {
 
     protected VTransferData() {
     }
@@ -15,49 +11,12 @@ public class VTransferData {
 
     protected DartTransferData impl;
 
-    @JsonConverter(target = TransferData.class)
-    public static class TransferDataJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTransferData.class, (JsonWriter.WriteObject<DartTransferData>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartTransferData.class, (JsonReader.ReadObject<DartTransferData>) reader -> {
-                return null;
-            });
-        }
-
-        public static TransferData read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, TransferData api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public int wireTypeId() {
+        return 634;
     }
 
-    @JsonConverter(target = VTransferData.class)
-    public static class EmptyJson {
-
-        public static VTransferData read(JsonReader<?> reader) throws IOException {
-            if (reader.wasNull())
-                return null;
-            reader.skip();
-            return new VTransferData();
-        }
-
-        public static void write(JsonWriter writer, VTransferData value) {
-            if (value == null)
-                writer.writeNull();
-            else
-                writer.writeAscii("{}");
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
     }
 }

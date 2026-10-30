@@ -7,11 +7,12 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/dnd_session.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 void _dragStartResult(String swt, int id, bool doit) {
   final actionId = '$swt/$id/DragDetect/dragStartResult';
   final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode({'doit': doit}));
+  final body = TaggedValues.encode({'doit': doit});
   final frame = Uint8List(2 + actionBytes.length + body.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;

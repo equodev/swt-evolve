@@ -2,12 +2,8 @@ package org.eclipse.swt.browser;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
-public class VBrowserFunction {
+public class VBrowserFunction implements dev.equo.swt.WireObject {
 
     protected VBrowserFunction() {
     }
@@ -37,31 +33,16 @@ public class VBrowserFunction {
         ((DartBrowserFunction) impl).name = value;
     }
 
-    @JsonConverter(target = BrowserFunction.class)
-    public static class BrowserFunctionJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 637;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartBrowserFunction.class, (JsonWriter.WriteObject<DartBrowserFunction>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartBrowserFunction.class, (JsonReader.ReadObject<DartBrowserFunction>) reader -> {
-                return null;
-            });
-        }
-
-        public static BrowserFunction read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, BrowserFunction api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(635);
+        w.ref(getBrowser());
+        w.key(636);
+        w.write(getName());
     }
 }

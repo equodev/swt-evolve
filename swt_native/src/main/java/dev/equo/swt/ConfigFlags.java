@@ -1,7 +1,5 @@
 package dev.equo.swt;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.JsonAttribute;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -9,8 +7,7 @@ import java.util.TreeMap;
 import dev.equo.swt.DecorationsAlign;
 import org.eclipse.swt.graphics.RGB;
 
-@CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
-public class ConfigFlags {
+public class ConfigFlags implements WireObject {
 
     /**
      * System property selecting the rendering surface: {@link #MODE_DESKTOP} (a native top-level
@@ -89,7 +86,6 @@ public class ConfigFlags {
      * control they contain; the nearest listed control wins, and a control under none follows the
      * global flag. Java-only: the client gets the outcome per GC as {@code VGC.themedCanvas}.
      */
-    @JsonAttribute(ignore = true)
     public Map<String, Boolean> disable_swt_canvas_colors_by_class;
 
     /**
@@ -98,11 +94,9 @@ public class ConfigFlags {
      * class name as written; resolved like {@link #disable_swt_canvas_colors_by_class}. Java-only:
      * the client gets the outcome per GC as {@code VGC.hoverFills}.
      */
-    @JsonAttribute(ignore = true)
     public Map<String, RGB[]> canvas_hover_fills_by_class;
 
     /** Like {@link #canvas_hover_fills_by_class}, for a selection ({@code canvas_selection_fills_<Class>}). */
-    @JsonAttribute(ignore = true)
     public Map<String, RGB[]> canvas_selection_fills_by_class;
 
     /** Drops what an application paints through a Control's own GC, leaving the control's own
@@ -236,6 +230,160 @@ public class ConfigFlags {
      *  round the folder, joined over the selected tab. Off by default: the theme's flat frame is drawn.
      *  Set with {@code -Dswt.use_swt_border=true}. */
     public boolean use_swt_border;
+
+    /** Not a type a value names at runtime: the flags only ever travel as the display's. */
+    @Override
+    public int wireTypeId() {
+        return 0;
+    }
+
+    /** {@link #hover_delay_ms}'s number: wire-ids.txt is append-only, so it follows the generated ones. */
+    private static final int HOVER_DELAY_MS = 1370;
+    /** The numbers of the flags added after {@link #hover_delay_ms}, appended to wire-ids.txt in turn. */
+    private static final int CTABFOLDER_TAB_SCROLL = 1398;
+    private static final int DECIMAL_SEPARATOR = 1399;
+    private static final int LOCALE = 1400;
+    private static final int TRANSPARENT_MENU_CHECK_BOX = 1401;
+    private static final int USE_SWT_BORDER = 1408;
+
+    /** The fields {@link #writeWireFields} writes, in order: numbered from 9, then those numbered on their own. */
+    private static final String[] WIRE_FIELDS = {
+            "ctabfolder_visible_controls", "ctabfolder_topright_auto_hide", "image_disable_icons_replacement",
+            "assets_path", "disable_evolve_icons", "gc_icons_replacement", "use_swt_colors",
+            "disable_swt_canvas_colors", "disable_control_gc_overlay", "use_swt_fonts", "use_swt_font_colors",
+            "use_swt_font_colors_by_widget", "use_special_dropdown_button", "preserve_icon_colors",
+            "disable_hover_zoom", "custom_tooltip", "notification_popup", "force_theme", "theme_name",
+            "theme_color", "theme_colors_by_widget", "show_theme_color_palette", "focus_indicators",
+            "show_scaling_control", "ui_zoom", "decorations_align", "print_move", "csd_placement", "csd_os",
+            "csd_maximize", "system_menu_bar", "double_click_timeout_ms", "csd_titlebar_color",
+            "font_point_scale", "push_button_margin",
+    };
+
+    /** Each written field's number, encoding and name, for {@link WireDump}. */
+    static Map<Integer, String[]> wireKinds() {
+        Map<Integer, String[]> kinds = new java.util.HashMap<>();
+        for (int i = 0; i < WIRE_FIELDS.length; i++) {
+            String name = WIRE_FIELDS[i];
+            Class<?> type;
+            try {
+                type = ConfigFlags.class.getField(name).getType();
+            } catch (NoSuchFieldException e) {
+                throw new IllegalStateException(e);
+            }
+            String kind = type == boolean.class ? "bool" : type == Boolean.class ? "bool?"
+                    : type == int.class ? "int" : type == Integer.class ? "int?"
+                    : type == float.class ? "float" : type == Float.class ? "float?"
+                    : type == double.class ? "double" : type == Double.class ? "double?"
+                    : type == String.class || type.isEnum() ? "string"
+                    : name.equals("use_swt_font_colors_by_widget") ? "boolMap" : "stringMap";
+            kinds.put(9 + i, new String[] {kind, name});
+        }
+        kinds.put(HOVER_DELAY_MS, new String[] {"int", "hover_delay_ms"});
+        kinds.put(CTABFOLDER_TAB_SCROLL, new String[] {"bool", "ctabfolder_tab_scroll"});
+        kinds.put(DECIMAL_SEPARATOR, new String[] {"string", "decimal_separator"});
+        kinds.put(LOCALE, new String[] {"string", "locale"});
+        kinds.put(TRANSPARENT_MENU_CHECK_BOX, new String[] {"bool", "transparent_menu_check_box"});
+        kinds.put(USE_SWT_BORDER, new String[] {"bool", "use_swt_border"});
+        return kinds;
+    }
+
+    /** The flags the client sets (a theme picked on its side). */
+    @Override
+    public boolean readWire(int key, WireReader r) {
+        switch (key) {
+            case 26: force_theme = r.string(); return true;
+            case 27: theme_name = r.string(); return true;
+            case 28: theme_color = r.string(); return true;
+        }
+        return false;
+    }
+
+    /** The flags as an object of the binary widget wire; the numbers are their entries in wire-ids.txt. */
+    @Override
+    public void writeWireFields(WidgetWire w) {
+        w.key(9);
+        w.write(ctabfolder_visible_controls);
+        w.key(10);
+        w.write(ctabfolder_topright_auto_hide);
+        w.key(11);
+        w.write(image_disable_icons_replacement);
+        w.key(12);
+        w.write(assets_path);
+        w.key(13);
+        w.write(disable_evolve_icons);
+        w.key(14);
+        w.write(gc_icons_replacement);
+        w.key(15);
+        w.write(use_swt_colors);
+        w.key(16);
+        w.write(disable_swt_canvas_colors);
+        w.key(17);
+        w.write(disable_control_gc_overlay);
+        w.key(18);
+        w.write(use_swt_fonts);
+        w.key(19);
+        w.write(use_swt_font_colors);
+        w.key(20);
+        w.writeBooleans(use_swt_font_colors_by_widget);
+        w.key(21);
+        w.write(use_special_dropdown_button);
+        w.key(22);
+        w.write(preserve_icon_colors);
+        w.key(23);
+        w.write(disable_hover_zoom);
+        w.key(24);
+        w.write(custom_tooltip);
+        w.key(25);
+        w.write(notification_popup);
+        w.key(26);
+        w.write(force_theme);
+        w.key(27);
+        w.write(theme_name);
+        w.key(28);
+        w.write(theme_color);
+        w.key(29);
+        w.writeStrings(theme_colors_by_widget);
+        w.key(30);
+        w.write(show_theme_color_palette);
+        w.key(31);
+        w.write(focus_indicators);
+        w.key(32);
+        w.write(show_scaling_control);
+        w.key(33);
+        w.write(ui_zoom);
+        w.key(34);
+        w.write(decorations_align == null ? null : decorations_align.name());
+        w.key(35);
+        w.write(print_move);
+        w.key(36);
+        w.write(csd_placement);
+        w.key(37);
+        w.write(csd_os);
+        w.key(38);
+        w.write(csd_maximize);
+        w.key(39);
+        w.write(system_menu_bar);
+        w.key(40);
+        w.write(double_click_timeout_ms);
+        w.key(41);
+        w.write(csd_titlebar_color);
+        w.key(42);
+        w.write(font_point_scale);
+        w.key(43);
+        w.write(push_button_margin);
+        w.key(HOVER_DELAY_MS);
+        w.write(hover_delay_ms);
+        w.key(CTABFOLDER_TAB_SCROLL);
+        w.write(ctabfolder_tab_scroll);
+        w.key(DECIMAL_SEPARATOR);
+        w.write(decimal_separator);
+        w.key(LOCALE);
+        w.write(locale);
+        w.key(TRANSPARENT_MENU_CHECK_BOX);
+        w.write(transparent_menu_check_box);
+        w.key(USE_SWT_BORDER);
+        w.write(use_swt_border);
+    }
 
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();

@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -91,7 +92,7 @@ class TextEchoCharToggleFlutterTest {
         // so the assertion is that the client was told, not that it is told every time.
         assertThat(framesFor(password))
                 .as("the edit must carry the real text")
-                .anyMatch(f -> f.json.contains("\"text\":\"secret\""));
+                .anyMatch(f -> !WireValues.find(f.value, m -> "secret".equals(m.get("text"))).isEmpty());
 
         // "Show Password" unchecked: re-mask
         bridge.comm.sent.clear();
@@ -102,15 +103,16 @@ class TextEchoCharToggleFlutterTest {
         assertThat(frames)
                 .as("the re-mask must push a state update for the Text")
                 .isNotEmpty();
-        String payload = frames.get(frames.size() - 1).json;
-        assertThat(payload)
+        Object payload = frames.get(frames.size() - 1).value;
+        assertThat(WireValues.find(payload, m -> m.get("echoCharacter") instanceof Number
+                        && WireValues.same(m.get("echoCharacter"), 8226)))
                 .as("the pushed state must carry the echo char as a number the Dart "
                         + "VText.echoCharacter (int?) can read")
-                .contains("\"echoCharacter\":8226");
+                .isNotEmpty();
         // The masked form is derived where it is drawn, from the real text and the echo character
         // that both already travel, so pushing it as well would be sending the same thing twice.
-        assertThat(payload)
+        assertThat(WireValues.containsText(payload, "hiddenText"))
                 .as("the masked text is derived on the far side rather than pushed")
-                .doesNotContain("hiddenText");
+                .isFalse();
     }
 }

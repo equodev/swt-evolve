@@ -4,11 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Menu.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VMenuItem extends VItem {
 
     protected VMenuItem() {
@@ -18,7 +14,6 @@ public class VMenuItem extends VItem {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int getID() {
         return ((DartMenuItem) impl).getID();
     }
@@ -35,7 +30,6 @@ public class VMenuItem extends VItem {
         ((DartMenuItem) impl).accelerator = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartMenuItem) impl).getEnabled();
     }
@@ -71,60 +65,129 @@ public class VMenuItem extends VItem {
         ((DartMenuItem) impl).toolTipText = value;
     }
 
-    public static final String ACCELERATOR = "accelerator";
+    public static final int ACCELERATOR = 56;
 
-    public static final String ENABLED = "enabled";
+    public static final int ENABLED = 57;
 
-    public static final String MENU = "menu";
+    public static final int MENU = 58;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 59;
 
-    public static final String TOOL_TIP_TEXT = "toolTipText";
+    public static final int TOOL_TIP_TEXT = 60;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "accelerator":
-                Serializer.writeKeyValue(writer, "accelerator", getAccelerator());
-                return;
-            case "enabled":
-                Serializer.writeKeyValue(writer, "enabled", getEnabled());
-                return;
-            case "menu":
-                Serializer.writeKeyValue(writer, "menu", getMenu());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "toolTipText":
-                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
-                return;
+            case ACCELERATOR:
+                return "accelerator";
+            case ENABLED:
+                return "enabled";
+            case MENU:
+                return "menu";
+            case SELECTION:
+                return "selection";
+            case TOOL_TIP_TEXT:
+                return "toolTipText";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = MenuItem.class)
-    public static class MenuItemJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartMenuItem.class, (JsonWriter.WriteObject<DartMenuItem>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartMenuItem.class, (JsonReader.ReadObject<DartMenuItem>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 56:
+                w.write((int) getAccelerator());
+                return true;
+            case 57:
+                w.write(getEnabled());
+                return true;
+            case 58:
+                w.ref(getMenu());
+                return true;
+            case 59:
+                w.write(getSelection());
+                return true;
+            case 60:
+                w.write(getToolTipText());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static MenuItem read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 56:
+                {
+                    int v_ = getAccelerator();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(56);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 57:
+                {
+                    boolean v_ = getEnabled();
+                    w.key(57);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 58:
+                {
+                    Menu v_ = getMenu();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(58);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 59:
+                {
+                    boolean v_ = getSelection();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(59);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 60:
+                {
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(60);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, MenuItem api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 56, 57, 58, 59, 60 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 57:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

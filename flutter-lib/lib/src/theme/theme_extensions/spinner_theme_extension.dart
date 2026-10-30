@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'spinner_theme_extension.tailor.dart';
-part 'spinner_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class SpinnerThemeExtension extends ThemeExtension<SpinnerThemeExtension> with _$SpinnerThemeExtensionTailorMixin {
   // Animation
   final Duration animationDuration;
@@ -94,9 +86,4 @@ class SpinnerThemeExtension extends ThemeExtension<SpinnerThemeExtension> with _
     required this.defaultTextLimit,
     required this.minTextContrast,
   });
-
-  factory SpinnerThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$SpinnerThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$SpinnerThemeExtensionToJson(this);
 }

@@ -2,17 +2,17 @@
 // to the top, and the client reports how far the user scrolled, which List.getTopIndex is computed from.
 // The selection is a set of indices, so items with the same text are selected and highlighted apart.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/list.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'delivery/support/deliver.dart';
 
@@ -62,12 +62,9 @@ bool _isAtTheTop(WidgetTester tester, int index) {
   return top >= 0 && top < _itemExtent;
 }
 
-List<Map<String, dynamic>> _sent(String suffix) => EquoCommService
-    .commForTesting
-    .sentFrames
-    .map(EquoCommBase.decodeFrame)
-    .where((f) => f.$1.endsWith(suffix))
-    .map((f) => jsonDecode(f.$2) as Map<String, dynamic>)
+List<VEvent> _sent(String suffix) => EquoCommService.commForTesting.sentFrames
+    .where((frame) => EquoCommBase.decodeFrame(frame).$1.endsWith(suffix))
+    .map(EquoCommBase.decodeEvent)
     .toList();
 
 /// The rows drawn as selected.
@@ -99,7 +96,7 @@ void main() {
 
     await deliverChange(
       _list(topIndex: 30, seq: 10),
-      changed: ['topIndex'],
+      keys: [WireKey.k_List_topIndex],
       base: 1,
     );
     await tester.pumpAndSettle();
@@ -127,8 +124,8 @@ void main() {
       expect(position.pixels, greaterThan(0));
       final scrolls = _sent('/Scroll/Scroll');
       expect(scrolls, isNotEmpty);
-      expect(scrolls.last['y'], position.pixels.round());
-      expect(scrolls.last['height'], _itemExtent);
+      expect(scrolls.last.y, position.pixels.round());
+      expect(scrolls.last.height, _itemExtent);
     },
   );
 
@@ -160,7 +157,7 @@ void main() {
 
       final selections = _sent('/Selection/Selection');
       expect(selections, isNotEmpty);
-      expect(selections.last['segments'], [1]);
+      expect(selections.last.segments, [1]);
     },
   );
 }

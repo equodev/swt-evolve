@@ -51,10 +51,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   bool get keepsWheel => true;
 
-  final Map<dynamic, String> treeItemExpanders = {};
-  final List<String> eventNames = [];
   TreeThemeExtension? _cachedWidgetTheme;
-  List<double>? _cachedEffectiveWidths;
   double? _measuredContentWidth;
   // Set only while a columnless tree is actually scrolling horizontally: its rows must be
   // laid out at the content width, not at the viewport width, or they clip their own text
@@ -105,13 +102,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
     _verticalController!.addListener(_requestVisibleChildren);
-    // E2E test hooks. Rows DO carry a per-row Semantics node: each is a TreeItemSwt whose build()
+    // E2E test hook. Rows DO carry a per-row Semantics node: each is a TreeItemSwt whose build()
     // ends in tagSemantics. But the node only exists while the row is built — the list virtualises,
-    // and a row can lose its node while the widget is live — so these expose what the DOM cannot:
-    // map a point to the row id under it (GetIdFromPoint), report a row's bounds (GetItemBounds),
-    // and register a handle to read/expand the tree from the test harness. One-time; cheap.
-    _registerGetIdFromPointListener();
-    _registerGetItemBoundsListener();
+    // and a row can lose its node while the widget is live — so this registers a handle to read and
+    // expand the tree from the test harness. One-time; cheap.
     // Remember the key we register under. `state` is reassigned in didUpdateWidget (see
     // WidgetSwtState), so recomputing this string in dispose can produce a DIFFERENT key than the
     // one registered here — the unregister then removes nothing and this handle stays in the
@@ -131,106 +125,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   late final String _testTreeKey;
 
   late final TestTreeHandle _testTreeHandle;
-
-  void _registerGetIdFromPointListener() {
-    final eventName = "${state.swt}/${state.id}/GetIdFromPoint";
-    eventNames.add(eventName);
-    EquoCommService.onRaw(eventName, (payload) {
-      if (payload != null) {
-        try {
-          final Map<String, dynamic> point = Map<String, dynamic>.from(
-            payload as Map,
-          );
-          final x = (point['x'] as num?)?.toDouble() ?? 0.0;
-          final y = (point['y'] as num?)?.toDouble() ?? 0.0;
-
-          final itemId = findItemIdAtPosition(x, y);
-
-          // Send response back to Java
-          final responseEvent =
-              "${state.swt}/${state.id}/GetIdFromPointResponse";
-          EquoCommService.sendPayload(
-            responseEvent,
-            itemId?.toString() ?? "-1",
-          );
-        } catch (e) {
-          print('Error processing GetIdFromPoint: $e');
-          final responseEvent =
-              "${state.swt}/${state.id}/GetIdFromPointResponse";
-          EquoCommService.sendPayload(responseEvent, "-1");
-        }
-      }
-    });
-  }
-
-  void _registerGetItemBoundsListener() {
-    final eventName = "${state.swt}/${state.id}/GetItemBounds";
-    eventNames.add(eventName);
-    EquoCommService.onRaw(eventName, (payload) {
-      final responseEvent = "${state.swt}/${state.id}/GetItemBoundsResponse";
-      if (payload == null) {
-        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
-        return;
-      }
-      try {
-        String raw = payload.toString();
-        if (raw.startsWith('"') && raw.endsWith('"')) {
-          raw = raw.substring(1, raw.length - 1);
-        }
-        final parts = raw.split(",");
-        final itemId = int.parse(parts[0]);
-        final columnIndex = int.parse(parts[1]);
-
-        final bounds = _calculateItemBounds(itemId, columnIndex);
-        final rect = VRectangle()
-          ..x = bounds.left.round()
-          ..y = bounds.top.round()
-          ..width = bounds.width.round()
-          ..height = bounds.height.round();
-        EquoCommService.sendPayload(responseEvent, rect.toJson());
-      } catch (e) {
-        print('Error processing GetItemBounds: $e');
-        EquoCommService.sendPayload(responseEvent, VRectangle().toJson());
-      }
-    });
-  }
-
-  Rect _calculateItemBounds(int itemId, int columnIndex) {
-    if (_cachedWidgetTheme == null) return Rect.zero;
-
-    final theme = _cachedWidgetTheme!;
-    final itemHeight =
-        _cachedItemHeight ?? (theme.itemHeight + theme.itemPadding.vertical);
-    final columns = getTreeColumns();
-
-    // Find item flat index
-    final itemIndex = findItemIndex(itemId);
-    if (itemIndex < 0) return Rect.zero;
-
-    // Y position
-    double headerOffset = 0.0;
-    if (state.headerVisible == true) {
-      headerOffset = _cachedHeaderHeight ?? theme.headerHeight;
-    }
-    final y = headerOffset + (itemIndex * itemHeight);
-
-    final treeWidth = state.bounds?.width?.toDouble() ?? 0.0;
-    final hasMultiColumn = columns.length > 1;
-    final gapFraction = hasMultiColumn
-        ? theme.itemEdgeGapFractionWithCols
-        : theme.itemEdgeGapFraction;
-    final leftGap = treeWidth * gapFraction;
-    if (columns.isEmpty || _cachedEffectiveWidths == null) {
-      return Rect.fromLTWH(leftGap, y, treeWidth, itemHeight);
-    }
-    // A cell is where it is drawn: past the edge gap and the row's padding, at the sum of the widths
-    // of the columns shown before it.
-    final rowPadding = hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding;
-    final widths = _cachedEffectiveWidths!;
-    if (columnIndex >= widths.length) return Rect.fromLTWH(0, y, 0, itemHeight);
-    final x = leftGap + rowPadding.left + columnLefts(widths, displayOrder)[columnIndex];
-    return Rect.fromLTWH(x, y, widths[columnIndex], itemHeight);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +147,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       // A delivery that names the selection is Java changing it, and Java owns the selection: it
       // wins over what the last click painted. Anything else may predate the click, so the click's
       // selection stays on screen until Java confirms or replaces it.
-      final javaSetSelection = lastChange?.changed?.contains('selection') ?? false;
+      final javaSetSelection = lastChange?.keys?.contains(WireKey.k_Tree_selection) ?? false;
       if (confirmed || javaSetSelection) {
         _pendingSelection = null;
       } else {
@@ -261,7 +155,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       }
     }
     super.setValue(value);
-    if (lastChange?.touches('topItem') ?? true) _scrollToTopItemAfterLayout();
+    if (lastChange?.touches(WireKey.k_Tree_topItem) ?? true) _scrollToTopItemAfterLayout();
   }
 
   /// Brings the item Java asked for to the top, once the rows it is among are laid out. Flutter
@@ -348,7 +242,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                 availableWidth,
                 widgetTheme!,
               );
-        _cachedEffectiveWidths = effectiveWidths;
 
         final enabled = state.enabled ?? true;
         final themeBackground = enabled
@@ -1231,7 +1124,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   Widget _buildFlatTreeItemWidget(_FlatTreeItem flatItem) {
-    setupTreeItemExpandListener(flatItem.item);
 
     final treeWidth = _hScrollContentWidth ?? state.bounds?.width?.toDouble();
 
@@ -1272,52 +1164,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     setState(() {
       item.expanded = expanded;
     });
-  }
-
-  void setupTreeItemExpandListener(VTreeItem treeItemValue) {
-    String eventName = "TreeItem/${treeItemValue.id}/TreeItem/Expand";
-
-    if (treeItemExpanders.containsKey(treeItemValue.id)) {
-      return;
-    }
-
-    eventNames.add(eventName);
-    treeItemExpanders[treeItemValue.id] = eventName;
-
-    EquoCommService.on<VTreeItem>(eventName, (VTreeItem payload) {
-      setState(() {
-        treeItemValue.items = filterNonEmptyTreeItems(payload.items);
-        treeItemValue.expanded = true;
-      });
-    });
-  }
-
-  List<VTreeItem> filterNonEmptyTreeItems(List<VWidget>? items) {
-    if (items == null) return [];
-
-    List<VTreeItem> newItems = items
-        .whereType<VTreeItem>()
-        .where(
-          (treeItem) =>
-              (treeItem.texts != null &&
-                  treeItem.texts!.any((text) => text?.isNotEmpty == true)) ||
-              (treeItem.text != null && treeItem.text!.isNotEmpty) ||
-              (treeItem.items != null &&
-                  treeItem.items!.whereType<VTreeItem>().any(
-                    (child) =>
-                        (child.text != null && child.text!.isNotEmpty) ||
-                        (child.texts != null &&
-                            child.texts!.any((t) => t?.isNotEmpty == true)),
-                  )),
-        )
-        .toList();
-
-    for (VWidget item in newItems) {
-      if (item is VTreeItem && (item.expanded ?? false)) {
-        item.items = filterNonEmptyTreeItems(item.items);
-      }
-    }
-    return newItems;
   }
 
   bool isVirtual() {
@@ -2272,9 +2118,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _verticalController?.dispose();
     _focusNode.dispose();
     dropFeedback.dispose();
-    for (String eventName in eventNames) {
-      EquoCommService.remove(eventName);
-    }
     super.dispose();
   }
 }

@@ -4,11 +4,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VText extends VScrollable {
 
     protected VText() {
@@ -26,7 +22,6 @@ public class VText extends VScrollable {
         ((DartText) impl).caretPosition = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getDoubleClickEnabled() {
         return ((DartText) impl).getDoubleClickEnabled();
     }
@@ -51,7 +46,6 @@ public class VText extends VScrollable {
         ((DartText) impl).editable = value;
     }
 
-    @JsonAttribute(ignore = true)
     public char[] getHiddenText() {
         return ((DartText) impl).hiddenText;
     }
@@ -76,7 +70,6 @@ public class VText extends VScrollable {
         ((DartText) impl).selection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTabs() {
         return ((DartText) impl).getTabs();
     }
@@ -85,7 +78,6 @@ public class VText extends VScrollable {
         ((DartText) impl).tabs = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartText) impl).getText();
     }
@@ -94,7 +86,6 @@ public class VText extends VScrollable {
         ((DartText) impl).text = value;
     }
 
-    @JsonAttribute(ignore = true)
     public char[] getTextChars() {
         return ((DartText) impl).textChars;
     }
@@ -111,7 +102,6 @@ public class VText extends VScrollable {
         ((DartText) impl).textLimit = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartText) impl).getTopIndex();
     }
@@ -120,70 +110,161 @@ public class VText extends VScrollable {
         ((DartText) impl).topIndex = value;
     }
 
-    public static final String CARET_POSITION = "caretPosition";
+    public static final int CARET_POSITION = 515;
 
-    public static final String ECHO_CHARACTER = "echoCharacter";
+    public static final int ECHO_CHARACTER = 516;
 
-    public static final String EDITABLE = "editable";
+    public static final int EDITABLE = 517;
 
-    public static final String MESSAGE = "message";
+    public static final int MESSAGE = 518;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 519;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 520;
 
-    public static final String TEXT_LIMIT = "textLimit";
+    public static final int TEXT_LIMIT = 521;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "caretPosition":
-                Serializer.writeKeyValue(writer, "caretPosition", getCaretPosition());
-                return;
-            case "echoCharacter":
-                Serializer.writeKeyValue(writer, "echoCharacter", getEchoCharacter());
-                return;
-            case "editable":
-                Serializer.writeKeyValue(writer, "editable", getEditable());
-                return;
-            case "message":
-                Serializer.writeKeyValue(writer, "message", getMessage());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
-            case "textLimit":
-                Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
-                return;
+            case CARET_POSITION:
+                return "caretPosition";
+            case ECHO_CHARACTER:
+                return "echoCharacter";
+            case EDITABLE:
+                return "editable";
+            case MESSAGE:
+                return "message";
+            case SELECTION:
+                return "selection";
+            case TEXT:
+                return "text";
+            case TEXT_LIMIT:
+                return "textLimit";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Text.class)
-    public static class TextJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartText.class, (JsonWriter.WriteObject<DartText>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartText.class, (JsonReader.ReadObject<DartText>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 515:
+                w.write((int) getCaretPosition());
+                return true;
+            case 516:
+                w.write((int) getEchoCharacter());
+                return true;
+            case 517:
+                w.write(getEditable());
+                return true;
+            case 518:
+                w.write(getMessage());
+                return true;
+            case 519:
+                w.write(getSelection());
+                return true;
+            case 520:
+                w.write(getText());
+                return true;
+            case 521:
+                w.write((int) getTextLimit());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Text read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 515:
+                {
+                    int v_ = getCaretPosition();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(515);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 516:
+                {
+                    int v_ = getEchoCharacter();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(516);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 517:
+                {
+                    boolean v_ = getEditable();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(517);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 518:
+                {
+                    String v_ = getMessage();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(518);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 519:
+                {
+                    Point v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(519);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 520:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(520);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 521:
+                {
+                    int v_ = getTextLimit();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(521);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Text api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 515, 516, 517, 518, 519, 520, 521 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

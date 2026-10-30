@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tracker_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tracker.g.dart';
 
 class TrackerSwt<V extends VTracker> extends WidgetSwt<V> {
   const TrackerSwt({super.key, required super.value});
@@ -31,14 +30,9 @@ class TrackerSwt<V extends VTracker> extends WidgetSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VTracker extends VWidget {
   VTracker() : this.empty();
   VTracker.empty() {
     swt = "Tracker";
   }
-
-  factory VTracker.fromJson(Map<String, dynamic> json) =>
-      _$VTrackerFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTrackerToJson(this);
 }

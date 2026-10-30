@@ -2,29 +2,47 @@ import 'package:flutter/material.dart';
 import '../theme/theme_settings/theme_color_palette_theme_settings.dart';
 
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/widget_config.dart';
 import '../theme/named_themes.dart';
 import '../theme/theme_extensions/theme_color_palette_theme_extension.dart';
 
 const String _kEvolvePropertySetChannel = 'swt.evolve.property.set';
 
+/// The flags a theme pick sets, as Java's `ConfigFlags` reads them.
+class _ThemeFlags implements WireWritable {
+  final String? forceTheme;
+  final String? themeName;
+  final String? themeColor;
+
+  const _ThemeFlags({this.forceTheme, this.themeName, this.themeColor});
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    for (final (key, value) in [
+      (WireKey.k_ConfigFlags_force_theme, forceTheme),
+      (WireKey.k_ConfigFlags_theme_name, themeName),
+      (WireKey.k_ConfigFlags_theme_color, themeColor),
+    ]) {
+      if (value == null) continue;
+      w.key(key);
+      w.string(value);
+    }
+  }
+}
+
+void _sendThemeFlags(_ThemeFlags flags) =>
+    EquoCommService.sendBytes(_kEvolvePropertySetChannel, WidgetWireWriter.encode(flags));
+
 void _syncThemeColor(String hex6or8) {
   final trimmed = hex6or8.trim();
   if (trimmed.isEmpty) return;
-  EquoCommService.sendPayload(
-    _kEvolvePropertySetChannel,
-    <String, String>{'theme_color': trimmed},
-  );
+  _sendThemeFlags(_ThemeFlags(themeColor: trimmed));
 }
 
-void _syncThemeName(String themeName, {String? forceTheme}) {
-  final payload = <String, String>{'theme_name': themeName};
-  if (forceTheme != null) payload['force_theme'] = forceTheme;
-  EquoCommService.sendPayload(
-    _kEvolvePropertySetChannel,
-    payload,
-  );
-}
+void _syncThemeName(String themeName, {String? forceTheme}) =>
+    _sendThemeFlags(_ThemeFlags(themeName: themeName, forceTheme: forceTheme));
 
 List<String> _parseSampleHexCsv(String csv) =>
     csv.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();

@@ -752,7 +752,7 @@ class DeskMultiWindowFlutterTest {
                 .doesNotContain(modal);
         assertThat(windowedShellIdsSent(desk))
                 .as("the client draws the modal itself, so it must not be told the modal is windowed")
-                .doesNotContain(String.valueOf(modal.hashCode()));
+                .doesNotContain((long) modal.hashCode());
         assertThat(desk.nativeWindowHandle(workbench))
                 .as("the Display's client draws the inline modal, so its parent has to be the shell "
                         + "that client fills its window with")
@@ -827,15 +827,14 @@ class DeskMultiWindowFlutterTest {
     // ---- harness ---------------------------------------------------------------------------------------
 
     /** The windowed shell ids the last Display frame told the client, as sent. */
-    private String windowedShellIdsSent(TestDeskBridge desk) {
+    private List<Long> windowedShellIdsSent(TestDeskBridge desk) {
         String channel = "Display/" + display.hashCode();
         List<RecordingComm.Frame> frames =
                 desk.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
         assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
-        java.util.regex.Matcher ids = java.util.regex.Pattern
-                .compile("\"windowedShellIds\":\\[([^\\]]*)\\]")
-                .matcher(frames.get(frames.size() - 1).json);
-        return ids.find() ? ids.group(1) : "";
+        Object ids = frames.get(frames.size() - 1).state().get("windowedShellIds");
+        if (!(ids instanceof List)) return List.of();
+        return ((List<?>) ids).stream().map(id -> ((Number) id).longValue()).toList();
     }
 
     /** The Display's window reports its viewport, as its client does once it has drawn. */

@@ -3,13 +3,9 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import org.eclipse.swt.custom.*;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VTable extends VComposite {
 
     protected VTable() {
@@ -103,7 +99,6 @@ public class VTable extends VComposite {
         ((DartTable) impl).selection = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TableColumn getSortColumn() {
         TableColumn val = ((DartTable) impl).sortColumn;
         if (val != null && !(val.getImpl() instanceof DartTableColumn))
@@ -115,7 +110,6 @@ public class VTable extends VComposite {
         ((DartTable) impl).sortColumn = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getSortDirection() {
         return ((DartTable) impl).getSortDirection();
     }
@@ -136,105 +130,251 @@ public class VTable extends VComposite {
         return ((DartTable) impl)._itemCount();
     }
 
-    public void setItemCount(int value) {
-    }
-
     public int getOwnerDrawItemHeight() {
         return ((DartTable) impl).wireOwnerDrawItemHeight();
     }
 
-    public void setOwnerDrawItemHeight(int value) {
-    }
+    public static final int COLUMN_ORDER = 1388;
 
-    public static final String COLUMN_ORDER = "columnOrder";
+    public static final int COLUMNS = 465;
 
-    public static final String COLUMNS = "columns";
+    public static final int EDITORS = 466;
 
-    public static final String EDITORS = "editors";
+    public static final int HEADER_BACKGROUND = 467;
 
-    public static final String HEADER_BACKGROUND = "headerBackground";
+    public static final int HEADER_FOREGROUND = 468;
 
-    public static final String HEADER_FOREGROUND = "headerForeground";
+    public static final int HEADER_VISIBLE = 469;
 
-    public static final String HEADER_VISIBLE = "headerVisible";
+    public static final int ITEM_COUNT = 470;
 
-    public static final String ITEM_COUNT = "itemCount";
+    public static final int ITEMS = 471;
 
-    public static final String ITEMS = "items";
+    public static final int LINES_VISIBLE = 472;
 
-    public static final String LINES_VISIBLE = "linesVisible";
+    public static final int OWNER_DRAW_ITEM_HEIGHT = 1423;
 
-    public static final String OWNER_DRAW_ITEM_HEIGHT = "ownerDrawItemHeight";
+    public static final int SELECTION = 473;
 
-    public static final String SELECTION = "selection";
-
-    public static final String TOP_INDEX = "topIndex";
+    public static final int TOP_INDEX = 1353;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "columnOrder":
-                Serializer.writeKeyValue(writer, "columnOrder", getColumnOrder());
-                return;
-            case "columns":
-                Serializer.writeKeyValue(writer, "columns", getColumns());
-                return;
-            case "editors":
-                Serializer.writeKeyValue(writer, "editors", getEditors());
-                return;
-            case "headerBackground":
-                Serializer.writeKeyValue(writer, "headerBackground", getHeaderBackground());
-                return;
-            case "headerForeground":
-                Serializer.writeKeyValue(writer, "headerForeground", getHeaderForeground());
-                return;
-            case "headerVisible":
-                Serializer.writeKeyValue(writer, "headerVisible", getHeaderVisible());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "linesVisible":
-                Serializer.writeKeyValue(writer, "linesVisible", getLinesVisible());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "topIndex":
-                Serializer.writeKeyValue(writer, "topIndex", getTopIndex());
-                return;
-            case "itemCount":
-                Serializer.writeKeyValue(writer, "itemCount", getItemCount());
-                return;
-            case "ownerDrawItemHeight":
-                Serializer.writeKeyValue(writer, "ownerDrawItemHeight", getOwnerDrawItemHeight());
-                return;
+            case COLUMN_ORDER:
+                return "columnOrder";
+            case COLUMNS:
+                return "columns";
+            case EDITORS:
+                return "editors";
+            case HEADER_BACKGROUND:
+                return "headerBackground";
+            case HEADER_FOREGROUND:
+                return "headerForeground";
+            case HEADER_VISIBLE:
+                return "headerVisible";
+            case ITEMS:
+                return "items";
+            case LINES_VISIBLE:
+                return "linesVisible";
+            case SELECTION:
+                return "selection";
+            case TOP_INDEX:
+                return "topIndex";
+            case ITEM_COUNT:
+                return "itemCount";
+            case OWNER_DRAW_ITEM_HEIGHT:
+                return "ownerDrawItemHeight";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Table.class)
-    public static class TableJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTable.class, (JsonWriter.WriteObject<DartTable>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTable.class, (JsonReader.ReadObject<DartTable>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 1388:
+                w.write(getColumnOrder());
+                return true;
+            case 465:
+                w.refs(getColumns());
+                return true;
+            case 466:
+                w.refs(getEditors());
+                return true;
+            case 467:
+                w.write(getHeaderBackground());
+                return true;
+            case 468:
+                w.write(getHeaderForeground());
+                return true;
+            case 469:
+                w.write(getHeaderVisible());
+                return true;
+            case 471:
+                w.refs(getItems());
+                return true;
+            case 472:
+                w.write(getLinesVisible());
+                return true;
+            case 473:
+                w.write(getSelection());
+                return true;
+            case 1353:
+                w.write((int) getTopIndex());
+                return true;
+            case 470:
+                w.write((int) getItemCount());
+                return true;
+            case 1423:
+                w.write((int) getOwnerDrawItemHeight());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Table read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 1388:
+                {
+                    int[] v_ = getColumnOrder();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(1388);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 465:
+                {
+                    TableColumn[] v_ = getColumns();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(465);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 466:
+                {
+                    TableEditor[] v_ = getEditors();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(466);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 467:
+                {
+                    Color v_ = getHeaderBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(467);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 468:
+                {
+                    Color v_ = getHeaderForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(468);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 469:
+                {
+                    boolean v_ = getHeaderVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(469);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 471:
+                {
+                    TableItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(471);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 472:
+                {
+                    boolean v_ = getLinesVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(472);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 473:
+                {
+                    int[] v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(473);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1353:
+                {
+                    int v_ = getTopIndex();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(1353);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 470:
+                {
+                    int v_ = getItemCount();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(470);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 1423:
+                {
+                    int v_ = getOwnerDrawItemHeight();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(1423);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Table api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 1388, 465, 466, 467, 468, 469, 471, 472, 473, 1353, 470, 1423 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

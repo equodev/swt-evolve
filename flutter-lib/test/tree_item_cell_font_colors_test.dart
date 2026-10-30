@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/font.dart';
 import 'package:swtflutter/src/gen/fontdata.dart';
@@ -16,6 +17,8 @@ import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+
+import 'delivery/support/deliver.dart';
 
 const _depthBlue = Color(0xFF0A64C8);
 const _label = 'Depth_Full_Offset';
@@ -150,14 +153,20 @@ void main() {
   });
 
   test('a column the item set nothing for decodes as null', () {
-    final item = VTreeItem.fromJson({
-      'swt': 'TreeItem',
-      'id': 10,
-      'foregrounds': [
-        null,
-        {'r': 10, 'g': 100, 'b': 200, 'a': 255},
-      ],
-    });
+    final registry = VRegistry();
+    applyWhole(
+        VTreeItem()
+          ..id = 10
+          ..foregrounds = [
+            null,
+            VColor()
+              ..red = 10
+              ..green = 100
+              ..blue = 200
+              ..alpha = 255,
+          ],
+        registry: registry);
+    final item = registry.valueOn('TreeItem/10') as VTreeItem;
 
     expect(item.foregrounds, hasLength(2));
     expect(item.foregrounds![0], isNull);

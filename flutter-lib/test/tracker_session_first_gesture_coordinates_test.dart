@@ -19,10 +19,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/impl/utils/tracker_session.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 void _open(String host, int hostId, int trackerId) {
   final action = utf8.encode('$host/$hostId/Tracker/open');
-  final body = utf8.encode(json.encode({'itemId': trackerId}));
+  final body = TaggedValues.encode({'itemId': trackerId});
   final frame = Uint8List(2 + action.length + body.length);
   frame[0] = (action.length >> 8) & 0xFF;
   frame[1] = action.length & 0xFF;

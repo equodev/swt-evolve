@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.function.Consumer;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
 @ExtendWith(Mocks.class)
 public class SerializeTestBase {
@@ -48,7 +47,6 @@ public class SerializeTestBase {
     private static final java.util.Set<String> UNNAMED_ON_PURPOSE = java.util.Set.of("hasOwnBackground");
 
     private final Settings settings;
-    Serializer serializer = new Serializer();
     private MockedStatic<DartAccessible> mockedStatic;
 
     protected  SerializeTestBase() {
@@ -73,6 +71,17 @@ public class SerializeTestBase {
     @BeforeEach
     void mocks() {
         FlutterBridge.set(new MockFlutterBridge());
+        // Shell bounds and pop-up locations read these. The display mock is shared by every test
+        // in the JVM, so they are undone after each test.
+        Display display = DartMocks.dartDisplay();
+        Mockito.when(display.getBounds()).thenReturn(new Rectangle(0, 0, 1280, 720));
+        Mockito.when(display.getCursorLocation()).thenReturn(new Point(0, 0));
+        Mockito.when(display.getDepth()).thenReturn(32);
+        // Queued work runs only when a test runs it. Another class may have left the shared mock
+        // running it inline, which lays a CTabFolder out, tooltip reset included, while it is filled.
+        Mockito.doNothing().when(display).asyncExec(Mockito.any());
+        // A caret blinks at the display's rate, which a mock answers 0 for: a caret that never blinks.
+        Mockito.when(((DartDisplay) display.getImpl()).getCaretBlinkTime()).thenReturn(500);
 
         Accessible mockAcc = Mockito.mock(Accessible.class);
         mockedStatic = Mockito.mockStatic(DartAccessible.class);
@@ -83,6 +92,16 @@ public class SerializeTestBase {
     void resetStatic() {
         FlutterBridge.set(null);
         mockedStatic.close();
+        Display display = DartMocks.dartDisplay();
+        Mockito.when(display.getBounds()).thenReturn(null);
+        Mockito.when(display.getCursorLocation()).thenReturn(null);
+        Mockito.when(display.getDepth()).thenReturn(0);
+        Mockito.when(((DartDisplay) display.getImpl()).getCaretBlinkTime()).thenReturn(0);
+        try {
+            focusCaret(null);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
         // The dirty set is static and JVM-wide. A mock widget marked here and left in it is drained
         // by whoever calls update() next, and the renderer tests that follow block on the future
         // that comes back — which, for a mock, never completes. One class is enough to hang the
@@ -90,12 +109,9 @@ public class SerializeTestBase {
         FlutterBridge.clearDirty();
     }
 
-    protected <T> String serialize(Object p) {
-        try {
-            return new String(serializer.to(p), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    /** {@code p} as the wire describes it; see {@link dev.equo.swt.harness.WireFrames#describe}. */
+    protected java.util.Map<String, Object> serialize(Object p) {
+        return dev.equo.swt.harness.WireFrames.describe(p);
     }
 
     /**
@@ -114,14 +130,14 @@ public class SerializeTestBase {
     protected void assertNamesEveryChange(Widget w) {
         Widget target = w;
         firstSend(target);
-        String before = dev.equo.swt.delivery.Canon.canon(serialize(target));
+        java.util.Map<String, Object> before = dev.equo.swt.delivery.Canon.canon(serialize(target));
 
         setAll(target);
 
         // Read the flags before serializing again: writing a widget whole is what marks it as no
         // longer outstanding, so the second serialize clears the very thing being measured.
         java.util.Set<String> flagged = new java.util.LinkedHashSet<>(flagsOf(target));
-        String after = dev.equo.swt.delivery.Canon.canon(serialize(target));
+        java.util.Map<String, Object> after = dev.equo.swt.delivery.Canon.canon(serialize(target));
 
         java.util.Set<String> changed = dev.equo.swt.delivery.DeliveryAudit.changedKeys(before, after);
         changed.removeAll(UNNAMED_ON_PURPOSE);
@@ -150,7 +166,7 @@ public class SerializeTestBase {
     }
 
     private static java.util.Set<String> flagsOf(Widget w) {
-        return ((DartWidget) w.getImpl()).getValue().changedKeys();
+        return ((DartWidget) w.getImpl()).getValue().changedNames();
     }
 
     protected void setAll(Widget w) {
@@ -179,6 +195,9 @@ public class SerializeTestBase {
         }
         if (w instanceof Canvas c)
             inst.generate(Select.all(Caret.class), gen -> gen.oneOf(new Caret(c, SWT.NONE)));
+        // A generated renderer is built bare, with nothing to measure or dispose tabs with.
+        if (w instanceof org.eclipse.swt.custom.CTabFolder)
+            inst.ignore(Select.setter(org.eclipse.swt.custom.CTabFolder.class, "setRenderer"));
         inst.fill();
     }
 
@@ -371,11 +390,8 @@ public class SerializeTestBase {
     /**
      * Names chosen to carry no web substitution, unlike the embedded suite's Arial/Helvetica/Courier.
      *
-     * <p>Two reasons, and the second is the hard one. The wire carries the substituted name, so an
-     * assertion against {@code getName()} only holds for a name the table leaves alone; and every
-     * substitution in that table is two words ("Liberation Sans"), while the generated tests compare
-     * with jsonunit's {@code json(...)}, whose lenient parser reads a bare unquoted string and
-     * chokes on the space. A name with no substitution avoids both.
+     * <p>The wire carries the substituted name, so an assertion against {@code getName()} only holds
+     * for a name the table leaves alone.
      */
     protected void setAll(FontData fd) {
         InstancioObjectApi<FontData> inst = Instancio.ofObject(fd)
@@ -414,16 +430,301 @@ public class SerializeTestBase {
         inst.fill();
     }
 
+    /** What {@code setAll} cannot reach through setters; see {@link DartMocks#fillUnsettable}. */
+    protected void fillUnsettable(Object w) throws ReflectiveOperationException {
+        if (w instanceof Control c)
+            DartMocks.fillUnsettable(c);
+        if (w instanceof Widget || w instanceof ControlEditor)
+            DartMocks.fillReferences(w);
+        fillThroughApi(w);
+    }
+
+    /**
+     * The properties only a call with more than one argument, an event, a layout or another object
+     * sets: each class gets the calls an application or the render side would make.
+     */
+    private void fillThroughApi(Object w) throws ReflectiveOperationException {
+        Color red = new Color(Mocks.device(), 200, 0, 0);
+        Color blue = new Color(Mocks.device(), 0, 0, 200);
+        if (w instanceof org.eclipse.swt.browser.Browser b) {
+            new org.eclipse.swt.browser.BrowserFunction(b, "f");
+        } else if (w instanceof org.eclipse.swt.custom.CLabel l) {
+            // A gradient replaces the background image: one style holds each.
+            if ((l.getStyle() & SWT.CENTER) != 0)
+                l.setBackground(new Color[] {red, blue}, new int[] {50}, true);
+        } else if (w instanceof org.eclipse.swt.custom.CTabFolder f) {
+            // Minimized and maximized exclude each other: one style holds each.
+            if ((f.getStyle() & SWT.CLOSE) != 0)
+                f.setMaximized(true);
+            org.eclipse.swt.custom.DartCTabFolder folder = (org.eclipse.swt.custom.DartCTabFolder) f.getImpl();
+            try (Mocks.Delivery ignored = Mocks.deliverEvents(f.getDisplay())) {
+                f.notifyListeners(SWT.Activate, new Event());
+            }
+            org.eclipse.swt.custom.CTabFolderHelper.handleShowList(folder, new Event());
+            String tip = f.getToolTipText();
+            layOutTabs(f);
+            // The layout answers the tool tip of the tab under the cursor, which is none.
+            f.setToolTipText(tip);
+        } else if (w instanceof org.eclipse.swt.custom.CTabItem i) {
+            i.getParent().setSize(400, 200);
+            layOutTabs(i.getParent());
+        } else if (w instanceof Label l) {
+            // A label shows whichever of text and image was set last: one style shows the image.
+            if ((l.getStyle() & SWT.CENTER) != 0)
+                l.setImage(createTestImage());
+        } else if (w instanceof MenuItem i) {
+            if ((i.getStyle() & SWT.CASCADE) != 0)
+                i.setMenu(new Menu(i.getParent()));
+        } else if (w instanceof TableItem i) {
+            drawOwnText(i.getParent(), i);
+        } else if (w instanceof TreeItem i) {
+            drawOwnText(i.getParent(), i);
+            new TreeItem(i, SWT.NONE);
+            i.setExpanded(true);
+        } else if (w instanceof Caret c) {
+            focusCaret(c);
+        } else if (w instanceof Text t) {
+            t.setSelection(1, 1);
+        } else if (w instanceof Spinner s) {
+            // A Verify listener that rewrites the text keeps its own in the field over the selection.
+            s.addListener(SWT.Verify, e -> e.text = "kept");
+            try (Mocks.Delivery ignored = Mocks.deliverEvents(s.getDisplay())) {
+                s.setSelection(s.getSelection() == s.getMinimum() ? s.getMaximum() : s.getMinimum());
+            }
+        } else if (w instanceof org.eclipse.swt.custom.CCombo c) {
+            // The client draws the list, so Java hears it is open from the client.
+            org.eclipse.swt.custom.CComboHelper.listShownByFlutter((org.eclipse.swt.custom.DartCCombo) c.getImpl(), true);
+        } else if (w instanceof org.eclipse.swt.custom.ScrolledComposite sc) {
+            // An origin is only requested over content.
+            sc.setContent(new Composite(sc, SWT.NONE));
+            sc.setOrigin(1, 1);
+        } else if (w instanceof Table t) {
+            new TableColumn(t, SWT.NONE);
+            new TableColumn(t, SWT.NONE);
+            t.setColumnOrder(reversedOrder(t.getColumnCount()));
+            measureTallRow(t, new TableItem(t, SWT.NONE));
+        } else if (w instanceof Tree t) {
+            new TreeColumn(t, SWT.NONE);
+            new TreeColumn(t, SWT.NONE);
+            t.setColumnOrder(reversedOrder(t.getColumnCount()));
+            // The fill sets the direction to a number SWT refuses.
+            t.setSortDirection(SWT.UP);
+            measureTallRow(t, new TreeItem(t, SWT.NONE));
+        } else if (w instanceof GC gc) {
+            fill(gc);
+        } else if (w instanceof Image i && i.getImpl() instanceof DartImage image && image._svgContent() != null) {
+            // Set by the GC drawer once Flutter holds the pixels, which leaves no imageData to send:
+            // the SVG image takes it, as Flutter draws its pixels anyway.
+            image._setRemoteRef(1L);
+        }
+        fillLists(w);
+    }
+
+    /** The columns shown last to first, an order other than the one they were created in. */
+    private static int[] reversedOrder(int columns) {
+        int[] order = new int[columns];
+        for (int i = 0; i < columns; i++)
+            order[i] = columns - 1 - i;
+        return order;
+    }
+
+    /**
+     * An element in each list the value carries: a whole record leaves an empty list out, as it
+     * does any property at its default, so an empty one is a write path no test takes.
+     */
+    private void fillLists(Object w) {
+        if (w instanceof org.eclipse.swt.custom.SashForm f) {
+            new Composite(f, SWT.NONE);
+            new Composite(f, SWT.NONE);
+            int[] weights = new int[f.getWeights().length];
+            for (int i = 0; i < weights.length; i++)
+                weights[i] = i + 1;
+            f.setWeights(weights);
+        } else if (w instanceof Table t) {
+            org.eclipse.swt.custom.TableEditor editor = new org.eclipse.swt.custom.TableEditor(t);
+            editor.setEditor(new Text(t, SWT.NONE), new TableItem(t, SWT.NONE), 0);
+        } else if (w instanceof Tree t) {
+            org.eclipse.swt.custom.TreeEditor editor = new org.eclipse.swt.custom.TreeEditor(t);
+            editor.setEditor(new Text(t, SWT.NONE), new TreeItem(t, SWT.NONE), 0);
+        } else if (w instanceof CoolBar b) {
+            new CoolItem(b, SWT.NONE);
+            new CoolItem(b, SWT.NONE);
+            b.setItemLayout(new int[] {1, 0}, new int[] {1}, new Point[] {new Point(10, 10), new Point(20, 20)});
+        } else if (w instanceof ToolBar b) {
+            new ToolItem(b, SWT.PUSH);
+        } else if (w instanceof ExpandBar b) {
+            new ExpandItem(b, SWT.NONE);
+        } else if (w instanceof Menu m) {
+            new MenuItem(m, SWT.PUSH);
+        } else if (w instanceof List l) {
+            l.setItems(new String[] {"a", "b", "c", "d", "e", "f", "g", "h"});
+            l.select(1);
+            // Scrolled past the first item: more items than the list shows.
+            l.setSize(100, 40);
+            l.setTopIndex(3);
+        } else if (w instanceof CCombo c) {
+            c.setData("org.eclipse.swt.custom.CCombo.itemToolTips", new String[] {"tip"});
+        }
+        if (w instanceof Composite c && c.getChildren().length == 0)
+            new Composite(c, SWT.NONE);
+    }
+
+    private void fill(GC gc) {
+        Device device = gc.getDevice();
+        gc.setLineAttributes(new LineAttributes(2, SWT.CAP_ROUND, SWT.JOIN_ROUND, SWT.LINE_CUSTOM,
+                new float[] {2, 3}, 1, 10));
+        gc.setFillRule(SWT.FILL_WINDING);
+        gc.setTransform(new Transform(device, 1, 2, 3, 4, 5, 6));
+        gc.setForegroundPattern(new Pattern(device, 0, 0, 10, 10, new Color(device, 200, 0, 0), new Color(device, 0, 0, 200)));
+        gc.setBackgroundPattern(new Pattern(device, 0, 0, 10, 10, new Color(device, 0, 200, 0), new Color(device, 0, 0, 200)));
+        // A clip is rectangles, a path or text: one style holds each.
+        Path clip = new Path(device);
+        if ((gc.getStyle() & SWT.RIGHT_TO_LEFT) != 0) {
+            clip.addString("a", 0, 0, new Font(device, Mocks.fontData()));
+            gc.setClipping(clip);
+        } else if ((gc.getStyle() & SWT.LEFT_TO_RIGHT) != 0) {
+            clip.addRectangle(1, 1, 10, 10);
+            gc.setClipping(clip);
+        }
+        // The theme's colors for what the GC draws on, configured by the drawable's class.
+        Class<?> drawable = Canvas.class;
+        ConfigFlags flags = new ConfigFlags();
+        flags.disable_swt_canvas_colors_by_class = java.util.Map.of(drawable.getName(), true);
+        flags.canvas_hover_fills_by_class = java.util.Map.of(drawable.getName(), new RGB[] {new RGB(1, 2, 3)});
+        flags.canvas_selection_fills_by_class = java.util.Map.of(drawable.getName(), new RGB[] {new RGB(4, 5, 6)});
+        // A test can fill several GCs: what is restored is what came before the first.
+        if (savedFlags == null)
+            savedFlags = Config.getConfigFlags();
+        Config.setConfigFlags(flags);
+    }
+
+    private ConfigFlags savedFlags;
+
+    @AfterEach
+    void restoreFlags() {
+        if (savedFlags != null)
+            Config.setConfigFlags(savedFlags);
+        savedFlags = null;
+    }
+
+    /** Makes {@code caret} its display's focus caret, the one the client draws; null makes none. */
+    private static void focusCaret(Caret caret) throws ReflectiveOperationException {
+        Field current = DartDisplay.class.getDeclaredField("currentCaret");
+        current.setAccessible(true);
+        current.set(DartMocks.dartDisplay().getImpl(), caret);
+    }
+
+    /**
+     * Has {@code parent} measure its rows taller than a line of its font, as an owner-drawing table
+     * does in SWT.MeasureItem, and draws {@code row} once so the height is measured.
+     */
+    private void measureTallRow(Composite parent, Item row) throws ReflectiveOperationException {
+        parent.addListener(SWT.MeasureItem, e -> e.height = 60);
+        drawOwnText(parent, row);
+        try (Mocks.Delivery ignored = Mocks.deliverEvents(parent.getDisplay())) {
+            serialize(row);
+        }
+    }
+
+    /**
+     * Has {@code parent}'s listeners draw {@code row}'s text in place of the item's own, into the
+     * overlay Flutter mounts for the row, which the mock bridge never reports.
+     */
+    private static void drawOwnText(Composite parent, Item row) throws ReflectiveOperationException {
+        parent.addListener(SWT.EraseItem, e -> e.detail &= ~SWT.FOREGROUND);
+        parent.addListener(SWT.PaintItem, e -> e.gc.drawText("painted", e.x, e.y, true));
+        Field overlay = row.getImpl().getClass().getDeclaredField("ownerDrawOverlay");
+        overlay.setAccessible(true);
+        overlay.setBoolean(row.getImpl(), true);
+    }
+
+    /** Lays out the tab strip as the update a CTabFolder queues on the display, which the mock display never runs. */
+    private static void layOutTabs(org.eclipse.swt.custom.CTabFolder f) throws ReflectiveOperationException {
+        Class<?> folder = org.eclipse.swt.custom.DartCTabFolder.class;
+        Method tabHeight = folder.getDeclaredMethod("updateTabHeight", boolean.class);
+        Method items = folder.getDeclaredMethod("updateItems", int.class);
+        tabHeight.setAccessible(true);
+        items.setAccessible(true);
+        tabHeight.invoke(f.getImpl(), false);
+        items.invoke(f.getImpl(), f.getSelectionIndex());
+    }
+
+    /** The file path of a test resource, for the constructors that take one. */
+    protected String resourcePath(String name) throws java.net.URISyntaxException {
+        return java.nio.file.Paths.get(getClass().getClassLoader().getResource(name).toURI()).toString();
+    }
+
+    /** A value built in one style and filled, as the object the wire describes; see {@link #assertWritesEveryProperty}. */
+    @FunctionalInterface
+    protected interface Filled {
+        Object in(int style) throws Exception;
+    }
+
+    /** A value built and filled; see {@link #assertWritesEveryProperty(java.util.Map, Built...)}. */
+    @FunctionalInterface
+    protected interface Built {
+        Object get() throws Exception;
+    }
+
+    /** Property names paired with the reason no test can give them a non-default value. */
+    protected static java.util.Map<String, String> unwritable(String... nameThenReason) {
+        java.util.Map<String, String> reasons = new java.util.TreeMap<>();
+        for (int i = 0; i < nameThenReason.length; i += 2)
+            reasons.put(nameThenReason[i], nameThenReason[i + 1]);
+        return reasons;
+    }
+
+    /**
+     * Asserts that across {@code styles} the filled values leave none of their wire properties at
+     * its default, apart from {@code unwritable}, which must stay unwritten. A whole record omits a
+     * property at its default, so one that stays there is a write path no test takes.
+     */
+    protected void assertWritesEveryProperty(Filled filled, java.util.Map<String, String> unwritable, int... styles)
+            throws Exception {
+        Built[] built = new Built[styles.length];
+        for (int i = 0; i < styles.length; i++) {
+            int style = styles[i];
+            built[i] = () -> filled.in(style);
+        }
+        assertWritesEveryProperty(unwritable, built);
+    }
+
+    /** As {@link #assertWritesEveryProperty(Filled, java.util.Map, int...)}, across the values {@code built}. */
+    @SuppressWarnings("unchecked")
+    protected void assertWritesEveryProperty(java.util.Map<String, String> unwritable, Built... built)
+            throws Exception {
+        java.util.Set<String> known = new java.util.TreeSet<>();
+        java.util.Set<String> written = new java.util.TreeSet<>();
+        String name = null;
+        for (Built b : built) {
+            Object value = b.get();
+            name = value.getClass().getSimpleName();
+            known.addAll(dev.equo.swt.harness.WireFrames.propertiesOf(value));
+            // Writing an owner-drawn row runs its listeners, as the real display delivers them.
+            try (Mocks.Delivery ignored = Mocks.deliverEvents(DartMocks.dartDisplay())) {
+                written.addAll(serialize(value).keySet());
+            }
+        }
+        written.retainAll(known);
+        java.util.Set<String> expected = new java.util.TreeSet<>(known);
+        expected.removeAll(unwritable.keySet());
+        org.assertj.core.api.Assertions.assertThat(known)
+                .as("%s: listed as unwritable but not a property", name)
+                .containsAll(unwritable.keySet());
+        if (!unwritable.isEmpty())
+            org.assertj.core.api.Assertions.assertThat(written)
+                    .as("%s: listed as unwritable but written, take them off the list", name)
+                    .doesNotContainAnyElementsOf(unwritable.keySet());
+        org.assertj.core.api.Assertions.assertThat(written)
+                .as("%s: the fill leaves these at their default in every style", name)
+                .containsAll(expected);
+    }
+
     protected AssertConsumer node(String field) {
         return new AssertConsumer(field);
     }
 
-    private static String serializeByteArray(byte[] value) {
-        if (value == null) return null;
-        return Base64.getEncoder().encodeToString(value);
-    }
-
-    /** char[] crosses the bridge as a JSON array of code units (see CharArrayConverter). */
+    /** char[] crosses the bridge as its code units, which a record reads back as a list of numbers. */
     protected static int[] codeUnits(char[] chars) {
         if (chars == null) return null;
         int[] units = new int[chars.length];
@@ -432,6 +733,10 @@ public class SerializeTestBase {
         return units;
     }
 
+    /**
+     * Checks on one property of a record as the wire carried it (see
+     * {@link dev.equo.swt.harness.WireValues}), for {@code assertThatWire(...).satisfies(...)}.
+     */
     public static class AssertConsumer {
         private final String field;
 
@@ -439,124 +744,137 @@ public class SerializeTestBase {
             this.field = field;
         }
 
-        public Consumer<? super Object> equalsTo(Object value, Object def) {
+        private Object value(Object record) {
+            return dev.equo.swt.harness.WireValues.at(record, field);
+        }
+
+        private boolean present(Object record) {
+            return value(record) != dev.equo.swt.harness.WireValues.MISSING;
+        }
+
+        private dev.equo.swt.harness.WireAssert at(Object record) {
+            return dev.equo.swt.harness.WireAssert.assertThatWire(record).node(field);
+        }
+
+        /**
+         * {@code value}. A value the client starts from - its default {@code def}, or nothing (zero,
+         * false, empty) - may also travel as nothing: left out, or null.
+         */
+        public Consumer<Object> equalsTo(Object value, Object def) {
             return n -> {
-                if (value == def)
-                    assertThatJson(n).node(field).isAbsent();
-                else
-                    assertThatJson(n).node(field).isEqualTo(value);
+                boolean startsFrom = java.util.Objects.equals(value, def) || nothing(value);
+                if (startsFrom && (!present(n) || value(n) == null)) return;
+                at(n).isEqualTo(value);
             };
         }
 
-        public Consumer<? super Object> equalsTo(Color value, Object def) {
+        private static boolean nothing(Object value) {
+            if (value == null || Boolean.FALSE.equals(value)) return true;
+            if (value instanceof Number number) return number.doubleValue() == 0;
+            if (value instanceof CharSequence text) return text.length() == 0;
+            if (value.getClass().isArray()) return java.lang.reflect.Array.getLength(value) == 0;
+            if (value instanceof java.util.Collection<?> list) return list.isEmpty();
+            return false;
+        }
+
+        /** An array of {@code value}'s length; an empty one may also travel as nothing. */
+        public Consumer<Object> sameSizeAs(Object value) {
             return n -> {
-                if (value == def)
-                    assertThatJson(n).node(field).isAbsent();
-                else
-                    // Colour keys travel abbreviated (ValueCreator#ShortWireNames).
-                    assertThatJson(n).node(field).isObject()
-                            .containsEntry("r", value.getRed())
-                            .containsEntry("g", value.getGreen())
-                            .containsEntry("b", value.getBlue())
-                            .containsEntry("a", value.getAlpha());
+                int length = value == null ? 0 : java.lang.reflect.Array.getLength(value);
+                if (length == 0 && (!present(n) || value(n) == null)) return;
+                at(n).hasSize(length);
             };
         }
 
-        public Consumer<? super Object> equalsTo(Item value, Object def) {
-            return n -> {
-                if (value == def)
-                    assertThatJson(n).node(field).isAbsent();
-                else
-                    // An item travels as a reference to the item, which the client resolves by id.
-                    assertThatJson(n).node(field).isObject()
-                            .containsEntry("id", value.hashCode());
-            };
-        }
-
-        public Consumer<? super Object> equalsTo(Caret value, Object def) {
-            return n -> {
-                if (value == def)
-                    assertThatJson(n).node(field).isAbsent();
-                else
-                    // What the caret is on the wire for: the client paints one of that size.
-                    assertThatJson(n).node(field).isObject()
-                            .containsEntry("swt", "Caret")
-                            .containsKey("bounds");
-            };
-        }
-
-
-        public Consumer<? super Object> equalsTo(Image value, Object def) {
-            return n -> {
-                if (value == def)
-                    assertThatJson(n).node(field).isAbsent();
-                else {
-                    String filename = ((DartImage) value.getImpl())._filename();
-                    if (filename != null) {
-                        assertThatJson(n).node(field).isObject().containsEntry("filename", filename);
-                    } else {
-                        // Use VImage.getImageData() to avoid isDisposed() check in
-                        // DartImage.getImageData() which fails in mock tests on Linux (surface=0).
-                        ImageData imageData = ((DartImage) value.getImpl()).getValue().getImageData();
-                        assertThatJson(n).node(field).isObject().node("imageData").isObject()
-                                .containsEntry("width", imageData.width)
-                                .containsEntry("height", imageData.height);
-
-                    }
-                }
-            };
-        }
-
-        public Consumer<? super Object> equalsTo(ImageData value, Object def) {
-            return n -> {
-                if (value == def)
-                    assertThatJson(n).node(field).isAbsent();
-                else
-                    assertThatJson(n).node(field).isObject()
-                            .containsEntry("scanlinePad", value.scanlinePad)
-                            .containsEntry("height", value.height)
-                            .containsEntry("alphaData", serializeByteArray(value.alphaData))
-                            .containsEntry("bytesPerLine", value.bytesPerLine)
-                            .containsEntry("width", value.width)
-                            .containsEntry("alpha", value.alpha)
-                            .containsEntry("depth", value.depth)
-                            .containsEntry("type", value.type)
-                            .containsEntry("transparentPixel", value.transparentPixel);
-            };
-        }
-
-        public Consumer<? super Object> equalsTo(Control[] value, Object def) {
-            return n -> {
-                if (value == def || value.length == 0)
-                    assertThatJson(n).node(field).isAbsent();
-                else
-                    assertThatJson(n).node(field).isArray().hasSize(value.length);
-            };
-        }
-
-        public Consumer<? super Object> equalsTo(Font value, Object def) {
+        public Consumer<Object> equalsTo(Item value, Object def) {
             return n -> {
                 if (value == def) {
-                    assertThatJson(n).node(field).isAbsent();
+                    if (present(n)) at(n).isNull();
+                    return;
+                }
+                // An item travels as a reference to the item, which the client resolves by id.
+                at(n).containsEntry("id", value.hashCode());
+            };
+        }
+
+        /** A colour travels as its ARGB word. */
+        public Consumer<Object> equalsTo(Color value, Object def) {
+            return n -> {
+                if (value == def) {
+                    if (present(n)) at(n).isNull();
+                    return;
+                }
+                at(n).isEqualTo(String.format("#%02x%02x%02x%02x",
+                        value.getAlpha(), value.getRed(), value.getGreen(), value.getBlue()));
+            };
+        }
+
+        /** A caret travels by id, described by a record of its own. */
+        public Consumer<Object> equalsTo(Caret value, Object def) {
+            return n -> {
+                if (value == def) {
+                    if (present(n)) at(n).isNull();
+                    return;
+                }
+                at(n).containsEntry("id", value.hashCode()).containsEntry("swt", "Caret");
+            };
+        }
+
+        /** An image travels by id, described by a record of its own. */
+        public Consumer<Object> equalsTo(Image value, Object def) {
+            return n -> {
+                if (value == def) {
+                    if (present(n)) at(n).isNull();
+                    return;
+                }
+                at(n).containsEntry("id", value.hashCode());
+            };
+        }
+
+        public Consumer<Object> equalsTo(ImageData value, Object def) {
+            return n -> {
+                if (value == def) {
+                    if (present(n)) at(n).isNull();
+                    return;
+                }
+                at(n).containsEntry("height", value.height)
+                        .containsEntry("width", value.width)
+                        .containsEntry("depth", value.depth);
+            };
+        }
+
+        public Consumer<Object> equalsTo(Control[] value, Object def) {
+            return n -> {
+                if (value == def || value.length == 0) {
+                    if (present(n)) at(n).hasSize(0);
+                    return;
+                }
+                at(n).hasSize(value.length);
+            };
+        }
+
+        public Consumer<Object> equalsTo(Font value, Object def) {
+            return n -> {
+                if (value == def) {
+                    if (present(n)) at(n).isNull();
+                    return;
+                }
+                FontData[] fontData = value.getFontData();
+                if (fontData != null && fontData.length > 0) {
+                    FontData fd = fontData[0];
+                    dev.equo.swt.harness.WireAssert.assertThatWire(n).node(field + ".fontData[0]")
+                            // The wire carries the name the client can actually render, which on
+                            // the web backend is a substitution ("System" travels as "System
+                            // Web"); the getter answers what SWT was given. The table is filled
+                            // by WebFlutterServer's static init, so whether it applies depends
+                            // on whether a renderer test has run first in this JVM — asking for
+                            // the substituted name is right either way.
+                            .containsEntry("name", FontMetricsUtil.substituteFontName(fd.getName()))
+                            .containsEntry("height", fd.getHeight())
+                            .containsEntry("style", fd.getStyle())
+                            .doesNotContainKey("locale");
                 } else {
-                    FontData[] fontData = value.getFontData();
-                    if (fontData != null && fontData.length > 0) {
-                        FontData fd = fontData[0];
-                        assertThatJson(n).node(field + ".fontData[0]")
-                                .isObject()
-                                // The wire carries the name the client can actually render, which on
-                                // the web backend is a substitution ("System" travels as "System
-                                // Web"); the getter answers what SWT was given. The table is filled
-                                // by WebFlutterServer's static init, so whether it applies depends
-                                // on whether a renderer test has run first in this JVM — asking for
-                                // the substituted name is right either way.
-                                .containsEntry("name", FontMetricsUtil.substituteFontName(fd.getName()))
-                                .containsEntry("height", fd.getHeight())
-                                .containsEntry("style", fd.getStyle())
-                                .doesNotContainKey("locale");
-                    } else {
-                        assertThatJson(n).node(field + ".fontData").isArray().isEmpty();
-                    }
+                    dev.equo.swt.harness.WireAssert.assertThatWire(n).node(field + ".fontData").hasSize(0);
                 }
             };
         }

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 import static org.mockito.Mockito.*;
@@ -66,10 +66,10 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
         TableItem item = new TableItem(table, SWT.NONE);
         item.setText(new String[] { "Views", "Package Explorer" });
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("texts[0]").isEqualTo("");
-        assertThatJson(json).node("texts[1]").isEqualTo("Package Explorer");
+        assertThatWire(state).node("texts[0]").isEqualTo("");
+        assertThatWire(state).node("texts[1]").isEqualTo("Package Explorer");
     }
 
     @Test
@@ -87,10 +87,10 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
         TableItem item = new TableItem(table, SWT.NONE);
         item.setText(new String[] { "Views", "Package Explorer" });
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("texts[0]").isEqualTo("Views");
-        assertThatJson(json).node("texts[1]").isEqualTo("Package Explorer");
+        assertThatWire(state).node("texts[0]").isEqualTo("Views");
+        assertThatWire(state).node("texts[1]").isEqualTo("Package Explorer");
     }
 
     @Test
@@ -117,9 +117,9 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
         TableItem item = new TableItem(table, SWT.NONE);
         // No item.setText(...) call -- the model stays null, as a real owner-drawn column's does.
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("texts[0]").isEqualTo("aaaa");
+        assertThatWire(state).node("texts[0]").isEqualTo("aaaa");
     }
 
     @Test
@@ -139,9 +139,9 @@ class TableOwnerDrawSerializeTest extends SerializeTestBase {
 
         TableItem item = new TableItem(table, SWT.NONE);
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("images[1]").isObject()
+        assertThatWire(state).node("images[1]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 16)
                 .containsEntry("height", 16);

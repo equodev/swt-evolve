@@ -1,13 +1,11 @@
 package javafx.embed.swt;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import dev.equo.swt.AutoScalePolicy;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -227,18 +225,16 @@ class FXCanvasPixelDensityNativeTest {
     /** srcWidth, srcHeight, destWidth, destHeight of every recorded nine-argument drawImage. */
     private List<int[]> blits() {
         List<int[]> blits = new ArrayList<>();
-        for (String[] entry : BatchEntries.of(bridge.comm.sent)) {
-            if (!entry[0].startsWith("GC/") || !entry[0].contains("/drawImage")) {
+        for (GcFrames.Entry entry : BatchEntries.of(bridge.comm.sent)) {
+            if (!entry.channel().startsWith("GC/") || !entry.channel().contains("/drawImage")) {
                 continue;
             }
-            JsonElement body = JsonParser.parseString(entry[1]);
-            JsonArray args = body.isJsonArray() ? body.getAsJsonArray() : null;
-            if (args == null || args.size() != 9) {
+            if (!(entry.value() instanceof List<?> args) || args.size() != 9) {
                 continue;
             }
             blits.add(new int[] {
-                    args.get(3).getAsInt(), args.get(4).getAsInt(),
-                    args.get(7).getAsInt(), args.get(8).getAsInt() });
+                    ((Number) args.get(3)).intValue(), ((Number) args.get(4)).intValue(),
+                    ((Number) args.get(7)).intValue(), ((Number) args.get(8)).intValue() });
         }
         return blits;
     }

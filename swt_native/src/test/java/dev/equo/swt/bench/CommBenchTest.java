@@ -67,11 +67,11 @@ public class CommBenchTest {
     @ParameterizedTest(name = "J→D JSON RTT, shape={0}")
     @MethodSource("shapes")
     void j2d_rtt_json(BenchPayloads.Shape shape) {
-        for (int i = 0; i < WARMUP; i++) awaitFuture(bridge.j2dJsonEcho(shape));
+        for (int i = 0; i < WARMUP; i++) awaitFuture(bridge.j2dEcho(shape));
         long[] samples = new long[MEASURED];
         for (int i = 0; i < MEASURED; i++) {
             long t1 = System.nanoTime();
-            Long t2 = awaitFuture(bridge.j2dJsonEcho(shape));
+            Long t2 = awaitFuture(bridge.j2dEcho(shape));
             samples[i] = t2 - t1;
         }
         record("j2d_rtt_json", shape.name, summarize(samples, shape));
@@ -82,11 +82,11 @@ public class CommBenchTest {
     @ParameterizedTest(name = "D→J JSON RTT, shape={0}")
     @ValueSource(strings = {"MOUSE_MOVE", "KEY_DOWN", "SELECTION", "IMG_SMALL", "IMG_LARGE"})
     void d2j_rtt_json(String shape) {
-        for (int i = 0; i < WARMUP; i++) awaitFuture(bridge.d2jJsonEcho(shape));
+        for (int i = 0; i < WARMUP; i++) awaitFuture(bridge.d2jEcho(shape));
         long[] samples = new long[MEASURED];
         for (int i = 0; i < MEASURED; i++) {
-            BenchBridge.EchoResult r = awaitFuture(bridge.d2jJsonEcho(shape));
-            if (r == null) throw new RuntimeException("d2j json echo missing at iter " + i);
+            BenchBridge.EchoResult r = awaitFuture(bridge.d2jEcho(shape));
+            if (r == null) throw new RuntimeException("d2j echo missing at iter " + i);
             samples[i] = r.rttMicros * 1000L;
         }
         record("d2j_rtt_json", shape, summarizeNoShape(samples));

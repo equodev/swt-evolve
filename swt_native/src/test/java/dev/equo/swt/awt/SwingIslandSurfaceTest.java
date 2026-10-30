@@ -122,17 +122,13 @@ class SwingIslandSurfaceTest {
         List<RecordingComm.Frame> frames = bridge.comm.sent.stream()
                 .filter(f -> f.event.equals(channel)).collect(Collectors.toList());
         assertThat(frames).as("frames sent on " + channel).isNotEmpty();
-        return fields(frames.get(frames.size() - 1).json);
+        return fields(frames.get(frames.size() - 1).state());
     }
 
-    /** The JSON object's fields, as text: enough for the flat maps this entry sends. */
-    private static Map<String, String> fields(String json) {
-        String body = json.substring(json.indexOf('{') + 1, json.lastIndexOf('}'));
+    /** The record's fields, as text: enough for the flat maps this entry sends. */
+    private static Map<String, String> fields(Map<String, Object> state) {
         Map<String, String> fields = new LinkedHashMap<>();
-        for (String pair : body.split(",")) {
-            String[] kv = pair.split(":", 2);
-            fields.put(kv[0].trim().replace("\"", ""), kv[1].trim().replace("\"", ""));
-        }
+        state.forEach((key, value) -> fields.put(key, String.valueOf(value)));
         return fields;
     }
 

@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'lineattributes.g.dart';
-
-@JsonSerializable()
-class VLineAttributes {
+class VLineAttributes implements WireReadable, WireWritable, WireVisitable {
   VLineAttributes() : this.empty();
   VLineAttributes.empty();
 
-  factory VLineAttributes.fromJson(Map<String, dynamic> json) =>
-      _$VLineAttributesFromJson(json);
-  Map<String, dynamic> toJson() => _$VLineAttributesToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

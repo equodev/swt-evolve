@@ -4,13 +4,8 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import dev.equo.swt.CharArrayConverter;
 
-@CompiledJson()
-public class VStyledTextRenderer {
+public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
     public VStyledTextRenderer() {
     }
@@ -29,7 +24,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).ascent = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getAverageCharWidth() {
         return ((DartStyledTextRenderer) impl).averageCharWidth;
     }
@@ -38,7 +32,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).averageCharWidth = value;
     }
 
-    @JsonAttribute(ignore = true)
     public float getAverageLineHeight() {
         return ((DartStyledTextRenderer) impl).averageLineHeight;
     }
@@ -47,7 +40,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).averageLineHeight = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getBoldFont() {
         Font val = ((DartStyledTextRenderer) impl).boldFont;
         if (val != null && val.getImpl() instanceof SwtFont)
@@ -61,7 +53,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).boldFont = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getBoldItalicFont() {
         Font val = ((DartStyledTextRenderer) impl).boldItalicFont;
         if (val != null && val.getImpl() instanceof SwtFont)
@@ -75,7 +66,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).boldItalicFont = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Bullet[] getBullets() {
         Bullet[] values = ((DartStyledTextRenderer) impl).bullets;
         if (values == null)
@@ -90,7 +80,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).bullets = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getBulletsIndices() {
         return ((DartStyledTextRenderer) impl).bulletsIndices;
     }
@@ -99,7 +88,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).bulletsIndices = value;
     }
 
-    @JsonAttribute(ignore = true)
     public StyledTextContent getContent() {
         return ((DartStyledTextRenderer) impl).content;
     }
@@ -116,7 +104,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).descent = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getFixedPitch() {
         return ((DartStyledTextRenderer) impl).fixedPitch;
     }
@@ -125,7 +112,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).fixedPitch = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getHasLinks() {
         return ((DartStyledTextRenderer) impl).hasLinks;
     }
@@ -134,7 +120,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).hasLinks = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getIdleRunning() {
         return ((DartStyledTextRenderer) impl).idleRunning;
     }
@@ -143,7 +128,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).idleRunning = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Font getItalicFont() {
         Font val = ((DartStyledTextRenderer) impl).italicFont;
         if (val != null && val.getImpl() instanceof SwtFont)
@@ -157,7 +141,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).italicFont = value;
     }
 
-    @JsonAttribute(ignore = true)
     public TextLayout[] getLayouts() {
         TextLayout[] values = ((DartStyledTextRenderer) impl).layouts;
         if (values == null)
@@ -172,7 +155,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).layouts = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getLineCount() {
         return ((DartStyledTextRenderer) impl).lineCount;
     }
@@ -181,7 +163,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lineCount = value;
     }
 
-    @JsonAttribute(ignore = true)
     public VStyledTextRenderer.VLineSizeInfo[] getLineSizes() {
         DartStyledTextRenderer.LineSizeInfo[] values = ((DartStyledTextRenderer) impl).lineSizes;
         if (values == null)
@@ -208,7 +189,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lineSizes = result;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getLineSpacingComputing() {
         return ((DartStyledTextRenderer) impl).lineSpacingComputing;
     }
@@ -217,7 +197,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).lineSpacingComputing = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getLinesInAverageLineHeight() {
         return ((DartStyledTextRenderer) impl).linesInAverageLineHeight;
     }
@@ -226,7 +205,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).linesInAverageLineHeight = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getMaxWidth() {
         return ((DartStyledTextRenderer) impl).maxWidth;
     }
@@ -235,7 +213,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).maxWidth = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getMaxWidthLineIndex() {
         return ((DartStyledTextRenderer) impl).maxWidthLineIndex;
     }
@@ -244,7 +221,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).maxWidthLineIndex = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getRedrawLines() {
         return ((DartStyledTextRenderer) impl).redrawLines;
     }
@@ -266,7 +242,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).regularFont = value;
     }
 
-    @JsonAttribute(ignore = true)
     public StyledText getStyledText() {
         StyledText val = ((DartStyledTextRenderer) impl).styledText;
         if (val != null && !(val.getImpl() instanceof DartStyledText))
@@ -278,7 +253,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).styledText = value;
     }
 
-    @JsonAttribute(ignore = true)
     public StyleRange[] getStyles() {
         StyleRange[] values = ((DartStyledTextRenderer) impl).styles;
         if (values == null)
@@ -293,7 +267,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).styles = value;
     }
 
-    @JsonAttribute(ignore = true)
     public StyleRange[] getStylesSet() {
         StyleRange[] values = ((DartStyledTextRenderer) impl).stylesSet;
         if (values == null)
@@ -308,7 +281,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).stylesSet = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getStylesSetCount() {
         return ((DartStyledTextRenderer) impl).stylesSetCount;
     }
@@ -317,7 +289,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).stylesSetCount = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTabLength() {
         return ((DartStyledTextRenderer) impl).tabLength;
     }
@@ -326,7 +297,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).tabLength = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTabWidth() {
         return ((DartStyledTextRenderer) impl).tabWidth;
     }
@@ -335,7 +305,6 @@ public class VStyledTextRenderer {
         ((DartStyledTextRenderer) impl).tabWidth = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTopIndex() {
         return ((DartStyledTextRenderer) impl).topIndex;
     }
@@ -348,39 +317,23 @@ public class VStyledTextRenderer {
         return ((DartStyledTextRenderer) impl).wireRanges();
     }
 
-    public void setRanges(int[] value) {
-    }
-
     public int getStyleCount() {
         return ((DartStyledTextRenderer) impl).wireStyleCount();
-    }
-
-    public void setStyleCount(int value) {
     }
 
     public VStyledTextRenderer.VLineInfo[] getLines() {
         return ((DartStyledTextRenderer) impl).wireLines();
     }
 
-    public void setLines(VStyledTextRenderer.VLineInfo[] value) {
-    }
-
     public int[] getLineSpacings() {
         return ((DartStyledTextRenderer) impl).wireLineSpacings();
-    }
-
-    public void setLineSpacings(int[] value) {
     }
 
     public String[] getBulletTexts() {
         return ((DartStyledTextRenderer) impl).wireBulletTexts();
     }
 
-    public void setBulletTexts(String[] value) {
-    }
-
-    @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
-    public static class VLineSizeInfo {
+    public static class VLineSizeInfo implements dev.equo.swt.WireObject {
 
         protected VLineSizeInfo() {
         }
@@ -409,10 +362,22 @@ public class VStyledTextRenderer {
         public void setWidth(int value) {
             this.width = value;
         }
+
+        @Override
+        public int wireTypeId() {
+            return 476;
+        }
+
+        @Override
+        public void writeWireFields(dev.equo.swt.WidgetWire w) {
+            w.key(474);
+            w.write((int) getHeight());
+            w.key(475);
+            w.write((int) getWidth());
+        }
     }
 
-    @CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.MINIMAL)
-    public static class VLineInfo {
+    public static class VLineInfo implements dev.equo.swt.WireObject {
 
         protected VLineInfo() {
         }
@@ -502,7 +467,6 @@ public class VStyledTextRenderer {
 
         private char[] segmentsChars;
 
-        @JsonAttribute(converter = CharArrayConverter.class)
         public char[] getSegmentsChars() {
             return segmentsChars;
         }
@@ -530,32 +494,67 @@ public class VStyledTextRenderer {
         public void setVerticalIndent(int value) {
             this.verticalIndent = value;
         }
-    }
-
-    public static class StyledTextRendererJson implements Configuration {
 
         @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartStyledTextRenderer.class, (JsonWriter.WriteObject<DartStyledTextRenderer>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartStyledTextRenderer.class, (JsonReader.ReadObject<DartStyledTextRenderer>) reader -> {
-                return null;
-            });
+        public int wireTypeId() {
+            return 487;
         }
 
-        public static StyledTextRenderer read(JsonReader<?> reader) throws IOException {
-            return null;
+        @Override
+        public void writeWireFields(dev.equo.swt.WidgetWire w) {
+            w.key(479);
+            w.write((int) getFlags());
+            w.key(478);
+            w.write(getBackground());
+            w.key(477);
+            w.write((int) getAlignment());
+            w.key(480);
+            w.write((int) getIndent());
+            w.key(486);
+            w.write((int) getWrapIndent());
+            w.key(481);
+            w.write(getJustify());
+            w.key(482);
+            w.write(getSegments());
+            w.key(483);
+            w.write(getSegmentsChars());
+            w.key(484);
+            w.write(getTabStops());
+            w.key(485);
+            w.write((int) getVerticalIndent());
         }
+    }
 
-        public static void write(JsonWriter writer, StyledTextRenderer api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    @Override
+    public int wireTypeId() {
+        return 496;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(488);
+        w.write((int) getAscent());
+        w.key(490);
+        w.write((int) getDescent());
+        w.key(494);
+        w.object((getRegularFont() == null || getRegularFont().isDisposed() ? null : getRegularFont().getImpl() instanceof DartFont ? ((DartFont) getRegularFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getRegularFont()).getImpl()).getValue()));
+        w.key(493);
+        w.write(getRanges());
+        w.key(495);
+        w.write((int) getStyleCount());
+        w.key(492);
+        {
+            VStyledTextRenderer.VLineInfo[] a_ = getLines();
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (VStyledTextRenderer.VLineInfo e_ : a_) w.object(e_);
+            }
         }
+        w.key(491);
+        w.write(getLineSpacings());
+        w.key(489);
+        w.write(getBulletTexts());
     }
 }

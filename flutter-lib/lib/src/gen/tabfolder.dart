@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -13,11 +13,10 @@ import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/tabitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tabfolder_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tabfolder.g.dart';
 
 class TabFolderSwt<V extends VTabFolder> extends CompositeSwt<V> {
   const TabFolderSwt({super.key, required super.value});
@@ -34,7 +33,6 @@ class TabFolderSwt<V extends VTabFolder> extends CompositeSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VTabFolder extends VComposite {
   VTabFolder() : this.empty();
   VTabFolder.empty() {
@@ -54,19 +52,43 @@ class VTabFolder extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => VTabItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'selection':
-        selection = (json['selection'] as List<dynamic>?)
-            ?.map((e) => VTabItem.fromJson(e as Map<String, dynamic>))
-            .toList();
+      case 497: // items
+        items = r.refs<VTabItem>();
+        return true;
+      case 498: // selection
+        selection = r.refs<VTabItem>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = items;
+      if (v_ != null && w.wants(497)) {
+        w.key(497);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null && w.wants(498)) {
+        w.key(498);
+        w.refs(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(497, items);
+    visit(498, selection);
   }
 
   @override
@@ -75,8 +97,4 @@ class VTabFolder extends VComposite {
     VWidget.adoptEach(items, adopt);
     VWidget.adoptEach(selection, adopt);
   }
-
-  factory VTabFolder.fromJson(Map<String, dynamic> json) =>
-      _$VTabFolderFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTabFolderToJson(this);
 }

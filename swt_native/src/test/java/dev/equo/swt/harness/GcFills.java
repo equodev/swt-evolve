@@ -1,15 +1,12 @@
 package dev.equo.swt.harness;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The rectangles a GC filled, replayed from its recorded traffic: where each one lands on the drawable and
@@ -41,43 +38,47 @@ public final class GcFills {
         RGB background = null;
         boolean image = false;
         float dx = 0, dy = 0;
-        for (String[] entry : BatchEntries.of(frames)) {
-            String channel = entry[0];
+        for (GcFrames.Entry entry : BatchEntries.of(frames)) {
+            String channel = entry.channel();
             if (!channel.startsWith("GC/"))
                 continue;
-            JsonElement body = JsonParser.parseString(entry[1]);
+            Object body = entry.value();
             if (channel.endsWith("/fillRectangleintintintint")) {
-                JsonArray r = body.getAsJsonArray();
-                Rectangle area = new Rectangle(r.get(0).getAsInt() + Math.round(dx), r.get(1).getAsInt() + Math.round(dy),
-                        r.get(2).getAsInt(), r.get(3).getAsInt());
+                List<?> r = (List<?>) body;
+                Rectangle area = new Rectangle(number(r.get(0)) + Math.round(dx), number(r.get(1)) + Math.round(dy),
+                        number(r.get(2)), number(r.get(3)));
                 fills.add(new Fill(area, image ? null : background, image ? new Point(Math.round(dx), Math.round(dy)) : null));
-            } else if (body.isJsonObject()) {
-                JsonObject state = body.getAsJsonObject();
-                if (state.has("background"))
+            } else if (body instanceof Map) {
+                Map<?, ?> state = (Map<?, ?>) body;
+                if (state.containsKey("background"))
                     background = rgb(state.get("background"));
-                if (state.has("backgroundPattern"))
-                    image = state.get("backgroundPattern").isJsonObject()
-                            && state.getAsJsonObject("backgroundPattern").has("image");
-                if (state.has("transform")) {
-                    JsonElement transform = state.get("transform");
-                    JsonArray elements = transform.isJsonObject() ? transform.getAsJsonObject().getAsJsonArray("elements") : null;
-                    dx = elements == null ? 0 : elements.get(4).getAsFloat();
-                    dy = elements == null ? 0 : elements.get(5).getAsFloat();
+                if (state.containsKey("backgroundPattern"))
+                    image = state.get("backgroundPattern") instanceof Map
+                            && ((Map<?, ?>) state.get("backgroundPattern")).containsKey("image");
+                if (state.containsKey("transform")) {
+                    Object transform = state.get("transform");
+                    List<?> elements = transform instanceof Map ? (List<?>) ((Map<?, ?>) transform).get("elements") : null;
+                    dx = elements == null ? 0 : ((Number) elements.get(4)).floatValue();
+                    dy = elements == null ? 0 : ((Number) elements.get(5)).floatValue();
                 }
             }
         }
         return fills;
     }
 
-    /** A colour as the GC's full state spells it, or as a state change carries it, ARGB in one number. */
-    private static RGB rgb(JsonElement colour) {
-        if (colour.isJsonNull())
+    private static int number(Object v) {
+        return ((Number) v).intValue();
+    }
+
+    /** A colour as the wire reads back: {@code #aarrggbb}, its channels, or ARGB in one number. */
+    private static RGB rgb(Object colour) {
+        if (colour == null)
             return null;
-        if (colour.isJsonObject()) {
-            JsonObject c = colour.getAsJsonObject();
-            return new RGB(c.get("r").getAsInt(), c.get("g").getAsInt(), c.get("b").getAsInt());
+        if (colour instanceof Map) {
+            Map<?, ?> c = (Map<?, ?>) colour;
+            return new RGB(number(c.get("r")), number(c.get("g")), number(c.get("b")));
         }
-        long argb = colour.getAsLong();
+        long argb = colour instanceof String ? Long.parseLong(((String) colour).substring(1), 16) : ((Number) colour).longValue();
         return new RGB((int) (argb >> 16) & 0xFF, (int) (argb >> 8) & 0xFF, (int) argb & 0xFF);
     }
 }

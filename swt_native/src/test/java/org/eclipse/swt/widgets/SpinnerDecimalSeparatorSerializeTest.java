@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
 import static org.mockito.Mockito.when;
@@ -84,7 +84,7 @@ class SpinnerDecimalSeparatorSerializeTest extends SerializeTestBase {
 
     @Test
     void theSpinnerSendsNoSeparator() {
-        assertThatJson(serialize(spinner(Locale.GERMANY))).isObject().doesNotContainKey("decimalSeparator");
+        assertThatWire(serialize(spinner(Locale.GERMANY))).isObject().doesNotContainKey("decimalSeparator");
     }
 
     @Test

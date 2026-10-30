@@ -24,6 +24,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
 
 // DisplaySwt caches the last state it saw per display id, so each test uses its own id —
 // otherwise the second one starts with the first one's popup already mounted.
@@ -68,17 +69,11 @@ VDisplay _display(int base,
       ..shells = shells
       ..activeShellId = activeShellId;
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length,
-/// name, JSON body) so the Display's channel subscription receives it.
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
+/// Java describing the display, as the record its update arrives in: the only way a Display update
+/// reaches a mounted DisplaySwt, which keeps its own state rather than taking it from a parent.
+void _javaDescribesDisplay(String channel, VDisplay display) {
+  final id = int.parse(channel.split('/')[1]);
+  VRegistry.instance.deliverHolderForTesting('Display', id, display);
 }
 
 void main() {
@@ -107,13 +102,13 @@ void main() {
     expect(canvasEditorFocused, isTrue,
         reason: 'sanity: a clicked StyledText holds the keyboard');
 
-    _receiveJson(
+    _javaDescribesDisplay(
       'Display/$base',
       _display(
         base,
         shells: [_mainShell(base), _popupShell(base)],
         activeShellId: popupIsActivated ? base + 2 : base + 1,
-      ).toJson(),
+      ),
     );
     await tester.pumpAndSettle();
 

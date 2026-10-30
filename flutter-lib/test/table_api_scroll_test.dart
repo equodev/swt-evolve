@@ -2,8 +2,6 @@
 // the client reports how far the user scrolled, which Table.getTopIndex, item bounds and getItem(Point)
 // are computed from. The coordinates of a cell click are the table's own, as getItem(Point) reads them.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,9 +9,12 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
+
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'delivery/support/deliver.dart';
 
@@ -60,10 +61,9 @@ double _rowTop(WidgetTester tester, int row) =>
 /// How far below its row's top a cell's text is drawn (the cell's padding).
 const double _textInset = 4.0;
 
-List<Map<String, dynamic>> _sent(String suffix) => EquoCommService.commForTesting.sentFrames
-    .map(EquoCommBase.decodeFrame)
-    .where((f) => f.$1.endsWith(suffix))
-    .map((f) => jsonDecode(f.$2) as Map<String, dynamic>)
+List<VEvent> _sent(String suffix) => EquoCommService.commForTesting.sentFrames
+    .where((frame) => EquoCommBase.decodeFrame(frame).$1.endsWith(suffix))
+    .map(EquoCommBase.decodeEvent)
     .toList();
 
 void main() {
@@ -84,7 +84,7 @@ void main() {
     await _pump(tester, table);
     expect(_rowTop(tester, 0), closeTo(_textInset, 1));
 
-    await deliverChange(_table(topIndex: 30, seq: 10), changed: ['topIndex'], base: 1);
+    await deliverChange(_table(topIndex: 30, seq: 10), keys: [WireKey.k_Table_topIndex], base: 1);
     await tester.pumpAndSettle();
 
     expect(_rowTop(tester, 30), closeTo(_textInset, 1));
@@ -99,7 +99,7 @@ void main() {
 
     final scrolls = _sent('/Scroll/Scroll');
     expect(scrolls, isNotEmpty);
-    expect((scrolls.last['y'] as num).toDouble(), closeTo(_textInset - _rowTop(tester, 0), 1));
+    expect(scrolls.last.y!.toDouble(), closeTo(_textInset - _rowTop(tester, 0), 1));
   });
 
   testWidgets('a click on a row of a scrolled table is in the table\'s own coordinates', (tester) async {
@@ -111,7 +111,7 @@ void main() {
 
     final downs = _sent('/Mouse/MouseDown');
     expect(downs, isNotEmpty);
-    final y = (downs.last['y'] as num).toDouble();
+    final y = downs.last.y!.toDouble();
     final row = tester.getRect(find.text('row 21'));
     expect(y, greaterThanOrEqualTo(_rowTop(tester, 20)));
     expect(y, lessThan(row.bottom - _tableRect.top + 8));

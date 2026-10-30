@@ -3,11 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VCBanner extends VComposite {
 
     protected VCBanner() {
@@ -17,7 +13,6 @@ public class VCBanner extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Control getBottom() {
         Control val = ((DartCBanner) impl).bottom;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -29,7 +24,6 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).bottom = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control getLeft() {
         Control val = ((DartCBanner) impl).left;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -41,7 +35,6 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).left = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control getRight() {
         Control val = ((DartCBanner) impl).right;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -53,7 +46,6 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).right = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Point getRightMinimumSize() {
         return ((DartCBanner) impl).rightMinimumSize;
     }
@@ -62,7 +54,6 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).rightMinimumSize = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getRightWidth() {
         return ((DartCBanner) impl).getRightWidth();
     }
@@ -71,7 +62,6 @@ public class VCBanner extends VComposite {
         ((DartCBanner) impl).rightWidth = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getSimple() {
         return ((DartCBanner) impl).getSimple();
     }
@@ -81,34 +71,44 @@ public class VCBanner extends VComposite {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = CBanner.class)
-    public static class CBannerJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCBanner.class, (JsonWriter.WriteObject<DartCBanner>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCBanner.class, (JsonReader.ReadObject<DartCBanner>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static CBanner read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, CBanner api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

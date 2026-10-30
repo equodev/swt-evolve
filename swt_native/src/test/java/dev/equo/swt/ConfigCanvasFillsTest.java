@@ -1,10 +1,12 @@
 package dev.equo.swt;
 
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.graphics.RGB;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,12 +56,10 @@ class ConfigCanvasFillsTest {
         flags.canvas_hover_fills_by_class = Collections.singletonMap("a.Grid", fills);
         flags.canvas_selection_fills_by_class = Collections.singletonMap("a.Grid", fills);
 
-        String json = new String(new Serializer().to(flags), java.nio.charset.StandardCharsets.UTF_8);
+        Map<String, Object> wire = dev.equo.swt.harness.WireFrames.describe(flags);
 
-        assertThat(json)
+        assertThat(List.of("canvas_hover_fills_by_class", "canvas_selection_fills_by_class", "a.Grid"))
                 .as("the client gets the fills per GC, never the application's class names")
-                .doesNotContain("canvas_hover_fills_by_class")
-                .doesNotContain("canvas_selection_fills_by_class")
-                .doesNotContain("a.Grid");
+                .noneMatch(text -> WireValues.containsText(wire, text));
     }
 }

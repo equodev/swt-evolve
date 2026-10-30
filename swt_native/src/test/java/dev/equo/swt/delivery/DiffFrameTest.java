@@ -4,6 +4,8 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartLabel;
@@ -19,41 +21,28 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * What a partial update looks like on the wire, and what it costs.
+ * What a widget's change record looks like on the wire, and what it costs.
  *
- * <p>The writer is exercised directly rather than through a flushed send, because whether a given
- * flush takes the partial path depends on a system property read once at class-load - which a test
- * cannot flip. What matters here is the shape of the bytes and the size of them; which path a flush
- * chooses is decided by {@link Serializer#canDiff} and asserted separately.
+ * <p>The tape is driven directly rather than through a flushed send, so each record can be read on
+ * its own: what it carries, what it is relative to, and whether there is one at all.
  */
 @ExtendWith(Mocks.class)
 class DiffFrameTest {
 
     /**
-     * The client every frame in this test is written for. Delivery is recorded against a client, so
-     * a test that sends has to say which one; a walk that names nobody credits nobody, which is what
-     * keeps a serialize done only to read a state from telling the next update it can be relative to
-     * something that was never sent.
+     * The client every record in this test is written for. Delivery is recorded against a client:
+     * what one client holds says nothing about what another does.
      */
     private static final int CLIENT = 1;
 
-    @org.junit.jupiter.api.BeforeEach
-    void addressFramesToTheClient() {
-        Serializer.enterConnection(CLIENT);
-    }
-
-    @org.junit.jupiter.api.AfterEach
-    void stopAddressingFrames() {
-        Serializer.exitConnection();
-    }
-
     private RecordingBridge bridge;
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -77,70 +66,65 @@ class DiffFrameTest {
     }
 
     @Test
-    @DisplayName("a partial update carries the changed property, and says what it is relative to")
+    @DisplayName("a change record carries the changed property, and says what it is relative to")
     void diffCarriesOnlyTheChange() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         long sentAt = sendWhole(label);
 
         label.setText("after");
-        String diff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
+        Map<String, Object> diff = WireFrames.record(impl, CLIENT);
 
-        assertThat(diff).contains("\"_d\":[\"text\"]");
-        assertThat(diff).contains("\"text\":\"after\"");
-        assertThat(diff)
+        assertThatWire(diff).node("_d").isEqualTo(List.of("text"));
+        assertThatWire(diff).containsEntry("text", "after");
+        assertThat(((Number) diff.get("_b")).longValue())
                 .as("the state it was computed from, so the far side can check it fits what it holds")
-                .contains("\"_b\":" + sentAt);
-        assertThat(diff)
-                .as("nothing else the widget happens to hold - that is the entire point")
-                .doesNotContain("\"bounds\"")
-                .doesNotContain("\"background\"")
-                .doesNotContain("\"orientation\"");
+                .isEqualTo(sentAt);
+        for (String other : List.of("bounds", "background", "orientation")) {
+            assertThat(WireValues.mentions(diff, other))
+                    .as("nothing else the widget happens to hold - that is the entire point: " + other)
+                    .isFalse();
+        }
     }
 
     @Test
-    @DisplayName("a partial update is a fraction of the whole state")
-    void diffIsSmallerThanTheWhole() throws Exception {
+    @DisplayName("a change record is a fraction of the whole state")
+    void diffIsSmallerThanTheWhole() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
 
         label.setText("after");
-        int diffBytes = serializer.toDiff(impl).length;
-        int wholeBytes = serializer.to(label).length;
+        int diff = WireFrames.record(impl, CLIENT).size();
+        Serializer.forgetDelivery(impl.getValue());
+        int whole = WireFrames.record(impl, CLIENT).size();
 
-        // Half rather than a third, and the ratio is the weaker half of what is being checked. A
-        // Label carries little state now that the properties nothing reads are gone, so most of a
-        // one-property update is the identity and the protocol keys, and the ratio narrows as the
-        // whole state shrinks - it says less the better delivery gets. What the update must not
-        // contain is asserted above, where it does not move with the size of the widget.
-        assertThat(diffBytes)
-                .as("one property of a Label, against the %d bytes of all of them", wholeBytes)
-                .isLessThan(wholeBytes / 2);
+        assertThat(diff)
+                .as("one property of a Label, against the %d entries of all of them", whole)
+                .isLessThan(whole);
     }
 
     @Test
-    @DisplayName("the next update is measured from the one before it, not from the first")
+    @DisplayName("the next change is measured from the one before it, not from the first")
     void baseAdvancesWithEachUpdate() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
 
         label.setText("first");
-        String firstDiff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
-        Serializer.markDelivered();
-        long firstSeq = longAfter(firstDiff, "\"_s\":");
+        Map<String, Object> firstDiff = WireFrames.record(impl, CLIENT);
+        long firstSeq = ((Number) firstDiff.get("_s")).longValue();
 
         label.setText("second");
-        String secondDiff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
+        Map<String, Object> secondDiff = WireFrames.record(impl, CLIENT);
 
-        assertThat(secondDiff)
-                .as("a chain: each update fits the state the one before it produced")
-                .contains("\"_b\":" + firstSeq);
+        assertThat(((Number) secondDiff.get("_b")).longValue())
+                .as("a chain: each change fits the state the one before it produced")
+                .isEqualTo(firstSeq);
     }
 
     @Test
-    @DisplayName("delivering clears what was outstanding")
+    @DisplayName("a change sent leaves nothing outstanding")
     void deliveringClearsTheRecord() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
@@ -148,16 +132,10 @@ class DiffFrameTest {
 
         label.setText("after");
         assertThat(impl.getValue().anyDirty()).isTrue();
-        serializer.toDiff(impl);
-        assertThat(impl.getValue().anyDirty())
-                .as("writing is not delivering: until the bytes are on their way the widget still "
-                        + "owes the far side that property")
-                .isTrue();
-
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
         assertThat(impl.getValue().anyDirty())
                 .as("what has been sent is no longer outstanding; leaving it would put the same "
-                        + "property in every later update forever")
+                        + "property in every later change forever")
                 .isFalse();
     }
 
@@ -169,7 +147,7 @@ class DiffFrameTest {
 
         label.setText("after");
 
-        assertThat(Serializer.canDiff(impl))
+        assertThat(Serializer.canDiff(impl, CLIENT))
                 .as("there is no state on the far side for a change to be relative to")
                 .isFalse();
     }
@@ -181,52 +159,30 @@ class DiffFrameTest {
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
 
-        assertThat(Serializer.canDiff(impl)).isFalse();
+        assertThat(Serializer.canDiff(impl, CLIENT)).isFalse();
     }
 
     @Test
-    @DisplayName("a change back to what an update sent, after a whole description, is sent")
+    @DisplayName("a change back to what a change sent, after a whole description, is sent")
     void changeBackAfterAWholeDescriptionIsSent() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
 
         label.setText("A");
-        serializer.toDiff(impl);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
         // Sent whole, so the client now holds "B".
         label.setText("B");
         sendWhole(label);
 
         label.setText("A");
-        byte[] diff = serializer.toDiff(impl);
+        Map<String, Object> diff = WireFrames.record(impl, CLIENT);
 
         assertThat(diff)
-                .as("the client holds B; skipping A as a repeat of the last update left a resized "
+                .as("the client holds B; skipping A as a repeat of the last change left a resized "
                         + "tree drawn at the size the whole description carried")
                 .isNotNull();
-        assertThat(new String(diff, StandardCharsets.UTF_8)).contains("\"text\":\"A\"");
-    }
-
-    // ---- harness ----
-
-    /** Sends the widget whole and returns the stamp that state carries. */
-    private long sendWhole(Label label) {
-        DartLabel impl = (DartLabel) label.getImpl();
-        try {
-            serializer.to(label);
-            Serializer.markDelivered();
-        } catch (java.io.IOException e) {
-            throw new AssertionError(e);
-        }
-        return impl.getValue().sentSeq(CLIENT);
-    }
-
-    private static long longAfter(String json, String key) {
-        int at = json.indexOf(key) + key.length();
-        int end = at;
-        while (end < json.length() && Character.isDigit(json.charAt(end))) end++;
-        return Long.parseLong(json.substring(at, end));
+        assertThatWire(diff).containsEntry("text", "A");
     }
 
     @Test
@@ -235,16 +191,15 @@ class DiffFrameTest {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
-        // The diff baseline is recorded when a property is sent as a change, so this one travels.
         label.setText("settled");
-        assertThat(serializer.toDiff(impl)).isNotNull();
+        assertThat(WireFrames.record(impl, CLIENT)).isNotNull();
 
-        // As a layout pass does to bounds: dirty, but equal to the baseline by the flush.
+        // As a layout pass does to bounds: dirty, but equal to what was sent by the flush.
         label.setText("mid");
         label.setText("settled");
 
-        assertThat(serializer.toDiff(impl))
-                .as("nothing the client does not hold, so no frame: the message is the whole cost")
+        assertThat(WireFrames.record(impl, CLIENT))
+                .as("nothing the client does not hold, so no record")
                 .isNull();
         assertThat(impl.getValue().anyDirty())
                 .as("and it stops being dirty, or it is reconsidered on every later flush")
@@ -261,30 +216,39 @@ class DiffFrameTest {
         label.setText("mid");
         label.setText("after");
 
-        String diff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
-        assertThat(diff).contains("\"_d\":[\"text\"]").contains("\"after\"");
+        Map<String, Object> diff = WireFrames.record(impl, CLIENT);
+        assertThatWire(diff).node("_d").isEqualTo(List.of("text"));
+        assertThatWire(diff).containsEntry("text", "after");
     }
 
     @Test
-    @DisplayName("a dropped update leaves the write stamp where it was")
+    @DisplayName("a dropped change leaves the write stamp where it was")
     void droppingAnUpdateDoesNotMoveTheBase() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
         label.setText("settled");
-        serializer.toDiff(impl);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
         long sentAt = impl.getValue().sentSeq(CLIENT);
 
         label.setText("mid");
         label.setText("settled");
-        assertThat(serializer.toDiff(impl)).isNull();
+        assertThat(WireFrames.record(impl, CLIENT)).isNull();
 
         label.setText("after");
-        String diff = new String(serializer.toDiff(impl), StandardCharsets.UTF_8);
-        assertThat(diff)
-                .as("the next real update is still measured from the last frame the client received")
-                .contains("\"_b\":" + sentAt);
+        assertThat(((Number) WireFrames.record(impl, CLIENT).get("_b")).longValue())
+                .as("the next real change is still measured from the last record the client received")
+                .isEqualTo(sentAt);
+    }
+
+    // ---- harness ----
+
+    /** Sends the widget whole to the client and returns the stamp that state carries. */
+    private long sendWhole(Label label) {
+        DartLabel impl = (DartLabel) label.getImpl();
+        Serializer.forgetDelivery(impl.getValue());
+        WireFrames.record(impl, CLIENT);
+        return impl.getValue().sentSeq(CLIENT);
     }
 
     private Label newLabel() {

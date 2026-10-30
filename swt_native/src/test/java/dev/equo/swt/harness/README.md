@@ -1,86 +1,88 @@
 # Flutter integration harness
 
-`FlutterHarness` boots a **real Flutter renderer** (web browser, or the native engine) wired to a
-live Java↔Flutter comm — the boot/transport plumbing only, no assumption of a widget tree. It's
-abstract; subclasses either drive a real widget tree via `WidgetFlutterHarness` (below), or exchange
-a custom request/response protocol directly (e.g. a size-measurement bridge with no widget tree at
-all — `GenericSizeBridge`, `FontMeasureBridge`).
+`FlutterHarness` boots a **real Flutter renderer** (headless Chrome, or the desktop engine) wired to a
+live Java↔Flutter comm. It is the boot and transport plumbing only and assumes no widget tree;
+subclasses either drive a widget tree (`WidgetFlutterHarness`, below) or speak a request/response
+protocol of their own (`GenericSizeBridge`, `FontMeasureBridge`).
 
-`WidgetFlutterHarness` is the JUnit 5 extension that adds the widget-tree half: it drives the
-production SWT → bridge → Flutter path end to end for a real `Control` tree and reads back the
-**rendered** widget state for assertions.
+`WidgetFlutterHarness` adds the widget-tree half: it drives the production SWT → bridge → Flutter
+path end to end for a real `Control` tree and reads back the state the client **rendered**.
 
-Boot/transport plumbing is adapted from `dev.equo.swt.bench.BenchBridge`. State read-back uses a
-dormant `evolve.test.query` channel registered by Flutter's `main()`
-(`flutter-lib/lib/test_harness.dart`) — inert in production (nothing sends on it there).
+State is read back on the `evolve.test.*` channels `flutter-lib/lib/test_harness.dart` registers.
+Nothing sends on them in production.
 
 ## How it works
 
 ```
-JUnit test ──creates──▶ Dart-backed SWT widgets (mocked Display/Shell)
-   │                              │ getValue()/dirty
-   │ WidgetFlutterHarness (the bridge) ▼
-   │   show(root) ── boots ──▶ Flutter web build (Chrome) / native engine
-   │   flush()   ── FlutterBridge.update() pushes the tree ──▶ Flutter paints
-   │   queryState(w) ──▶ "evolve.test.query" ──▶ walk element tree ──▶
-   ◀──────────────── "evolve.test.queryResponse" {state: V*.toJson()} ◀─┘
+JUnit test ──creates──▶ Dart-backed SWT widgets (real Display/Shell)
+   │                              │ markDirty
+   │ WidgetFlutterHarness         ▼
+   │   show(shell) ── boots ──▶ Flutter web client (headless Chrome) / desktop engine
+   │   flush()     ── FlutterBridge.update() sends the changed records ──▶ Flutter builds + paints
+   │   queryState(w) ──▶ "evolve.test.query" {queryId, targetId} ──▶ client finds the widget ──▶
+   ◀──────── "evolve.test.queryResponse" {found, state, render} ◀───────────────────────────┘
 ```
 
-`queryState(w)` returns the live `V*.toJson()` of the widget whose id is `w.hashCode()`, so a test
-can assert that state pushed from Java actually reached and updated the rendered widget.
+Requests and replies travel as tagged values (`TaggedValues`), like any other loose payload.
+`queryState(w)` answers for the widget whose id is `w.hashCode()`:
+- `state`: the properties the client holds for it, by name, decoded with the wire definitions;
+- `render`: facts read from the render tree, such as whether it takes input.
+
+So a test asserts that what Java sent actually reached the client and changed what it shows.
 
 ## Usage
 
 ```java
-@RegisterExtension static Mocks mocks = Mocks.withNativeBridge(); // mocked Display/Shell, real bridge
-@RegisterExtension static WidgetFlutterHarness flutter = new WidgetFlutterHarness();
+@Tag("flutter-it")
+class MyWidgetFlutterTest {
+    private WidgetFlutterHarness flutter;
+    private Display display;
+    private Shell shell;
 
-Composite group = new Composite(Mocks.shell(), SWT.NONE);
-Button r1 = new Button(group, SWT.RADIO);
-flutter.show(group);                  // boot renderer, await ClientReady, initial flush
-((DartButton) r1.getImpl()).selectRadio();
-flutter.flush();                      // push pending state, let Flutter paint
-assertThat(flutter.renderedSelection(r1)).isTrue();
+    @BeforeEach
+    void setUp() {
+        flutter = new WidgetFlutterHarness();
+        flutter.init();
+        display = new Display();
+        shell = new Shell(display);
+        shell.setSize(300, 200);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (display != null && !display.isDisposed()) display.dispose();
+        if (flutter != null) flutter.teardown();
+    }
+
+    @Test
+    void checkStaysChecked() {
+        Button check = new Button(shell, SWT.CHECK);
+        flutter.show(shell);                  // boot the client, wait until it is ready, first flush
+        check.setSelection(true);
+        flutter.flush();                      // send what changed, wait until the client painted it
+        assertThat(flutter.renderedSelection(check)).isTrue();
+    }
+}
 ```
 
-Tag such tests `@Tag("flutter-it")` — that tag is excluded from the default test run.
+Besides `queryState`, the harness has shortcuts for common reads (`renderedSelection`,
+`renderedTakesInput`) and waits (`awaitFrame`).
 
 ## Running
 
-The `nativeTest` Gradle task (modelled on `webBenchmark`) builds the Flutter web app and runs the
-`flutter-it`-tagged tests against it in a headless browser by default:
+`flutter-it` tests are part of the default suite, which builds the Flutter web bundle and runs
+against it in headless Chrome:
 
 ```bash
-./gradlew :swt-evolve:swt_native:nativeTest          # builds webFlutterLib first
-# headful: -Dharness.web.headless=false ; custom chrome: -Dequo.swt.browser=/path/to/chrome
-# skip the web rebuild if already built: -DskipFlutterLib
-# desktop Flutter engine instead of a browser: -Dharness.client=native
+./gradlew :swt-evolve:swt_native:test --tests '*MyWidgetFlutterTest'
+# skip the web rebuild when the bundle is current: -DskipFlutterLib
+# a visible browser: -Dharness.web.headless=false ; another browser: -Dequo.swt.browser=<name or path>
+# the desktop Flutter engine instead of a browser: -Dharness.client=native
 ```
-
-Native engine instead of a browser (no web build / Chrome needed):
-
-```bash
-./gradlew :swt-evolve:swt_native:test --tests '*RadioGroupFlutterTest' -DincludeTags=flutter-it -Dharness.client=native
-```
-
-(`flutter-it` is excluded from the default `test` run.)
 
 ## Backend
 
-`nativeTest` compiles the harness + `flutter-it` tests against the **whole-tree-Flutter (native/web)
-Java backend** (`src/main + src/native + src/native<currentOs>`) via its own source set — so the real
-`native` tree server code runs, not the embedded impl. (The rest of `src/test/java` can't compile
-against this backend: `Mocks`/`SerializeTestBase` import embedded-only `Swt*` classes; hence the
-`include` filter.)
-
-## Does it reproduce the radio-group selection race?
-
-No — and that's worth stating plainly. The harness compiles, boots a real Flutter web client, renders
-the widgets, and reads their state back (the sample **passes**). But that bug is an **intermittent timing
-race** in the Display event loop, and the sample passes with **both** the fixed (synchronous) and the
-old (`asyncExec`) `selectRadio` parent-dirty — verified by reverting the fix and re-running. Driving
-`selectRadio()` + a synchronous `flush()` doesn't recreate the async interleaving; even a
-`readAndDispatch` pump self-delivers the deselection either way. So this is solid **infrastructure**
-for deterministic full-stack assertions, but it does not (yet) give a fails-before/passes-after guard
-for that specific race — that would require forcing the lifecycle edge where the deferred parent dirty
-is dropped.
+`test` compiles and runs against the **whole-tree-Flutter Java backend** (`src/main` + `src/native` +
+`src/native<currentOs>`): every widget, Display and Shell included, is Dart-backed. The embedded
+backend, where Dart and native widgets share one Display, has its own source set and task
+(`embedTest`), which excludes `flutter-it`.

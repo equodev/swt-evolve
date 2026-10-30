@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'clabel_theme_extension.tailor.dart';
-part 'clabel_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@TextStyleConverter()
-@TextAlignConverter()
-@MainAxisAlignmentConverter()
-@CrossAxisAlignmentConverter()
 class CLabelThemeExtension extends ThemeExtension<CLabelThemeExtension> with _$CLabelThemeExtensionTailorMixin {
   // Text colors
   final Color primaryTextColor;
@@ -57,9 +48,4 @@ class CLabelThemeExtension extends ThemeExtension<CLabelThemeExtension> with _$C
     required this.crossAxisAlignment,
     required this.minTextContrast,
   });
-
-  factory CLabelThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$CLabelThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CLabelThemeExtensionToJson(this);
 }

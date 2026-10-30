@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/widgets.dart';
 
 import '../comm/comm.dart';
@@ -41,16 +39,14 @@ class FocusRequests extends ChangeNotifier {
   static void listen() {
     if (_listening) return;
     _listening = true;
-    EquoCommService.onRaw(channel, (dynamic args) {
-      final decoded = args is String ? jsonDecode(args) : args;
+    EquoCommService.onRaw(channel, (dynamic decoded) {
       if (decoded is! Map) return;
       final seq = decoded['seq'];
       if (seq is num) EquoCommService.sendPayload(seenChannel, {'seq': seq});
       final id = (decoded['id'] as num?)?.toInt();
       if (id != null) instance.request(id);
     });
-    EquoCommService.onRaw(holderChannel, (dynamic args) {
-      final decoded = args is String ? jsonDecode(args) : args;
+    EquoCommService.onRaw(holderChannel, (dynamic decoded) {
       if (decoded is! Map) return;
       instance._holderId = (decoded['id'] as num?)?.toInt();
     });
@@ -74,7 +70,11 @@ class FocusRequests extends ChangeNotifier {
     return context != null && context.mounted ? context : null;
   }
 
+  /// The latest request, claimed or not.
+  int? _requestedId;
+
   void request(int id) {
+    _requestedId = id;
     _pendingId = id;
     notifyListeners();
   }
@@ -87,9 +87,16 @@ class FocusRequests extends ChangeNotifier {
     return true;
   }
 
+  /// Hands back a request [claim]ed by an element disposed before it could apply it, for whichever
+  /// element now shows that control, unless a later request has replaced it.
+  void giveBack(int id) {
+    if (_pendingId == null && _requestedId == id) request(id);
+  }
+
   @visibleForTesting
   void reset() {
     _pendingId = null;
+    _requestedId = null;
     _holderId = null;
   }
 }

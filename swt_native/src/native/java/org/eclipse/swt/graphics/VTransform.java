@@ -1,11 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VTransform extends VResource {
 
     protected VTransform() {
@@ -25,43 +21,75 @@ public class VTransform extends VResource {
         ((DartTransform) impl).setElements(value[0], value[1], value[2], value[3], value[4], value[5]);
     }
 
-    public static final String ELEMENTS = "elements";
+    public static final int ELEMENTS = 563;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "elements":
-                Serializer.writeKeyValue(writer, "elements", getElements());
-                return;
+            case ELEMENTS:
+                return "elements";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Transform.class)
-    public static class TransformJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTransform.class, (JsonWriter.WriteObject<DartTransform>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartTransform.class, (JsonReader.ReadObject<DartTransform>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 563:
+                w.write(getElements());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Transform read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 563:
+                {
+                    float[] v_ = getElements();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(563);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Transform api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 563 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 626;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(563);
+        w.write(getElements());
     }
 }

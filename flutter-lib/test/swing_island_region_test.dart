@@ -20,6 +20,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 const int islandId = 7;
 const int windowId = 3;
@@ -52,9 +53,7 @@ VComposite _island() => VComposite()
 void _answerIsland({int port = enginePort, bool surface = false}) {
   const channel = 'SwingIsland/$islandId/swingIsland';
   final actionBytes = utf8.encode(channel);
-  final bodyBytes = utf8.encode(
-    json.encode({'windowId': windowId, 'port': port, if (surface) 'surface': true}),
-  );
+  final bodyBytes = TaggedValues.encode({'windowId': windowId, 'port': port, if (surface) 'surface': true});
   final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;

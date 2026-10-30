@@ -4,16 +4,15 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
 
 class ScaleSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_Scale() {
         Scale w = new Scale(shell(), SWT.NONE);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Scale");
     }
@@ -22,11 +21,10 @@ class ScaleSerializeTest extends SerializeTestBase {
     void should_serialize_filled_Scale() {
         Scale w = new Scale(shell(), SWT.NONE);
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Scale")
-               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("maximum").equalsTo(w.getMaximum(), orAbsentIf0));
@@ -41,6 +39,16 @@ class ScaleSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_write_every_property_Scale() throws Exception {
+        assertWritesEveryProperty(style -> {
+            Scale w = new Scale(shell(), style);
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

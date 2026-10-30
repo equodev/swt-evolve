@@ -12,22 +12,17 @@ import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/gc_frames.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/gen/image.dart';
 
 const gutter = Rect.fromLTWH(0, 0, 40, 400);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
+  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 20; i++) {
@@ -47,15 +42,11 @@ void main() {
       final rendered = await createTestImage(
           width: gutter.width.toInt(), height: gutter.height.toInt());
       ImageUtils.registerRemoteImage(ref, rendered);
-      deliver('GC/$id/drawImageImageintint', {
-        'image': {
-          'remoteRef': ref,
-          'width': gutter.width.toInt(),
-          'height': gutter.height.toInt(),
-        },
-        'x': 0,
-        'y': 0,
-      });
+      final buffer = heldImage(VImage()
+        ..remoteRef = ref
+        ..width = gutter.width.toInt()
+        ..height = gutter.height.toInt());
+      receive('GC/$id/b', gcOp('drawImageImageintint', [buffer, 0, 0]));
       // fullRepaint false: the GC was opened outside a Paint dispatch. No damage rectangle,
       // because nothing scoped it.
       deliver('GC/$id/gcDispose', {'fullRepaint': false});
@@ -82,14 +73,14 @@ void main() {
       ..id = id);
 
     // A full-width band across the top, then a later cycle repainting only the top half of it.
-    deliver('GC/$id/setBackgroundColor', {'color': {'r': 0, 'g': 0, 'b': 255}});
-    deliver('GC/$id/fillRectangleintintintint', {'x': 0, 'y': 0, 'width': 40, 'height': 400});
+    receive('GC/$id/b', gcState(VGC.empty()..background = colourOf(0, 0, 255), changed: {WireKey.k_GC_background}));
+    receive('GC/$id/b', gcOp('fillRectangleintintintint', [0, 0, 40, 400]));
     deliver('GC/$id/gcDispose', {'fullRepaint': false});
     await settle();
     expect(drawer.shapes.length, 1);
 
-    deliver('GC/$id/setBackgroundColor', {'color': {'r': 255, 'g': 0, 'b': 0}});
-    deliver('GC/$id/fillRectangleintintintint', {'x': 0, 'y': 0, 'width': 40, 'height': 200});
+    receive('GC/$id/b', gcState(VGC.empty()..background = colourOf(255, 0, 0), changed: {WireKey.k_GC_background}));
+    receive('GC/$id/b', gcOp('fillRectangleintintintint', [0, 0, 40, 200]));
     deliver('GC/$id/gcDispose', {'fullRepaint': false});
     await settle();
 

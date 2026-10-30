@@ -1,13 +1,11 @@
-import 'package:json_annotation/json_annotation.dart';
 import '../impl/config_flags.dart';
 import 'menu.dart';
 import 'shell.dart';
 import 'tooltip.dart';
+import '../comm/widget_wire.dart';
+import 'widgets.dart' show WireKey;
 
-part 'display.g.dart';
-
-@JsonSerializable()
-class VDisplay {
+class VDisplay implements WireReadable {
   String? swt;
   int? id;
   List<VShell>? shells;
@@ -35,8 +33,32 @@ class VDisplay {
 
   VDisplay();
 
-  factory VDisplay.fromJson(Map<String, dynamic> json) =>
-      _$VDisplayFromJson(json);
-
-  Map<String, dynamic> toJson() => _$VDisplayToJson(this);
+  /// The display's record of a binary frame, read property by property.
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case WireKey.k_Display_shells:
+        shells = r.refs<VShell>();
+      case WireKey.k_Display_popups:
+        popups = r.refs<VMenu>();
+      case WireKey.k_Display_systemMenu:
+        systemMenu = r.ref<VMenu>();
+      case WireKey.k_Display_tooltips:
+        tooltips = r.refs<VToolTip>();
+      case WireKey.k_Display_activeShellId:
+        activeShellId = r.int64();
+      case WireKey.k_Display_mainShellId:
+        mainShellId = r.int64();
+      case WireKey.k_Display_windowedShellIds:
+        windowedShellIds = r.longs();
+      case WireKey.k_Display_focusHolderId:
+        focusHolderId = r.int64();
+      case WireKey.k_Display_config:
+        final from = r.pos;
+        config = r.object(ConfigFlags.new)?..wire = r.bytesSince(from);
+      default:
+        return false;
+    }
+    return true;
+  }
 }

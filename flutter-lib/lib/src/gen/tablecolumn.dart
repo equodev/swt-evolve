@@ -1,14 +1,13 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tablecolumn_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tablecolumn.g.dart';
 
 class TableColumnSwt<V extends VTableColumn> extends ItemSwt<V> {
   const TableColumnSwt({super.key, required super.value});
@@ -34,7 +33,6 @@ class TableColumnSwt<V extends VTableColumn> extends ItemSwt<V> {
   }
 }
 
-@JsonSerializable()
 class VTableColumn extends VItem {
   VTableColumn() : this.empty();
   VTableColumn.empty() {
@@ -58,22 +56,64 @@ class VTableColumn extends VItem {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alignment':
-        alignment = (json['alignment'] as num?)?.toInt();
-      case 'moveable':
-        moveable = json['moveable'] as bool?;
-      case 'resizable':
-        resizable = json['resizable'] as bool?;
-      case 'width':
-        width = (json['width'] as num?)?.toInt();
+      case 212: // alignment
+        alignment = r.int32();
+        return true;
+      case 1380: // moveable
+        moveable = r.boolean();
+        return true;
+      case 213: // resizable
+        resizable = r.boolean();
+        return true;
+      case 214: // width
+        width = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VTableColumn.fromJson(Map<String, dynamic> json) =>
-      _$VTableColumnFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTableColumnToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alignment;
+      if (v_ != null && w.wants(212)) {
+        w.key(212);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = moveable;
+      if (v_ != null && w.wants(1380)) {
+        w.key(1380);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = resizable;
+      if (v_ != null && w.wants(213)) {
+        w.key(213);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = width;
+      if (v_ != null && w.wants(214)) {
+        w.key(214);
+        w.int32(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(212, alignment);
+    visit(1380, moveable);
+    visit(213, resizable);
+    visit(214, width);
+  }
 }

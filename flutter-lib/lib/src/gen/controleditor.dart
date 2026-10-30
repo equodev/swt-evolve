@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/control.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/controleditor_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
-
-part 'controleditor.g.dart';
 
 class ControlEditorSwt<V extends VControlEditor> extends WidgetSwt<V> {
   const ControlEditorSwt({super.key, required super.value});
@@ -23,7 +22,6 @@ abstract class ControlEditorState<
 >
     extends WidgetSwtState<T, V> {}
 
-@JsonSerializable()
 class VControlEditor extends VWidget {
   VControlEditor() : this.empty();
   VControlEditor.empty() {
@@ -41,15 +39,32 @@ class VControlEditor extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'editor':
-        editor = json['editor'] == null
-            ? null
-            : VControl.fromJson(json['editor'] as Map<String, dynamic>);
+      case 272: // editor
+        editor = r.ref<VControl>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = editor;
+      if (v_ != null && w.wants(272)) {
+        w.key(272);
+        w.ref(v_.id);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(272, editor);
   }
 
   @override
@@ -57,8 +72,4 @@ class VControlEditor extends VWidget {
     super.adoptChildren(adopt);
     editor = VWidget.adoptOne(editor, adopt);
   }
-
-  factory VControlEditor.fromJson(Map<String, dynamic> json) =>
-      _$VControlEditorFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VControlEditorToJson(this);
 }

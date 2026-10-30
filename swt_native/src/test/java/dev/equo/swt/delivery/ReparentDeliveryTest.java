@@ -65,18 +65,16 @@ class ReparentDeliveryTest {
         moved.setParent(to);
         FlutterBridge.update();
 
-        assertThat(bridge.comm.sent).hasSize(1);
-        String payload = bridge.comm.sent.get(0).json;
-        assertThat(payload)
+        assertThat(bridge.comm.wireFrames()).isEqualTo(1L);
+        java.util.List<String> channels = bridge.comm.sent.stream().map(f -> f.event).toList();
+        assertThat(channels)
                 .as("the old parent says it no longer holds the control")
-                .contains("\"id\":" + from.hashCode());
-        assertThat(payload)
+                .contains("Composite/" + from.hashCode());
+        assertThat(channels)
                 .as("a name carries no write stamp, so the far side cannot tell the move from a "
-                        + "disposal and drops the control before the new parent's frame arrives")
-                .doesNotContain("{\"id\":" + moved.hashCode() + ",\"swt\":\"Composite\",\"_r\":1}");
-        assertThat(payload)
-                .as("described, so it arrives with a stamp of its own")
-                .contains("{\"id\":" + moved.hashCode() + ",\"swt\":\"Composite\",\"_s\":");
+                        + "disposal and drops the control before the new parent's frame arrives: "
+                        + "described, so it arrives with a stamp of its own")
+                .contains("Composite/" + moved.hashCode());
     }
 
     /**

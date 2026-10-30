@@ -10,10 +10,11 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/tracker_session.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 void _deliver(String actionId, Map<String, dynamic> body) {
   final actionBytes = utf8.encode(actionId);
-  final bodyBytes = utf8.encode(json.encode(body));
+  final bodyBytes = TaggedValues.encode(body);
   final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;

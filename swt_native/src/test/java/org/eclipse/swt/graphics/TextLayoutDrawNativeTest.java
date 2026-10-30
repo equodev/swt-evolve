@@ -1,7 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -12,6 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+import java.util.OptionalInt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,8 +60,21 @@ class TextLayoutDrawNativeTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+    private List<GcFrames.Entry> wire() {
+        return BatchEntries.of(bridge.comm.sent);
+    }
+
+    /** What each entry of the GC's traffic carries. */
+    private List<Object> values() {
+        return wire().stream().map(GcFrames.Entry::value).toList();
+    }
+
+    /** The y the first {@code drawLine} of the paint starts at. */
+    private OptionalInt firstLineY() {
+        return wire().stream()
+                .filter(e -> e.channel().contains("drawLineintintintint"))
+                .mapToInt(e -> ((Number) ((List<?>) e.value()).get(1)).intValue())
+                .findFirst();
     }
 
     @Test
@@ -69,8 +88,8 @@ class TextLayoutDrawNativeTest {
         layout.dispose();
         gc.dispose();
 
-        assertThat(wire()).as("the plain cell").contains("Thursday 07:25 PM");
-        assertThat(wire()).as("the styled cell").contains("Fix the commit list");
+        assertThat(WireValues.containsText(values(), "Thursday 07:25 PM")).as("the plain cell").isTrue();
+        assertThat(WireValues.containsText(values(), "Fix the commit list")).as("the styled cell").isTrue();
     }
 
     @Test
@@ -86,8 +105,8 @@ class TextLayoutDrawNativeTest {
         layout.dispose();
         gc.dispose();
 
-        assertThat(wire()).as("the styled run").contains("refactor");
-        assertThat(wire()).as("the unstyled run").contains(" gc");
+        assertThat(WireValues.containsText(values(), "refactor")).as("the styled run").isTrue();
+        assertThat(WireValues.containsText(values(), " gc")).as("the unstyled run").isTrue();
         assertThat(foregrounds()).as("one foreground per run").hasSizeGreaterThan(1);
     }
 
@@ -112,11 +131,10 @@ class TextLayoutDrawNativeTest {
         small.dispose();
         big.dispose();
 
-        java.util.regex.Matcher line = java.util.regex.Pattern
-                .compile("drawLineintintintint\",\\[-?\\d+,(-?\\d+)").matcher(wire());
-        assertThat(line.find()).as("the underline reached the wire").isTrue();
+        OptionalInt line = firstLineY();
+        assertThat(line.isPresent()).as("the underline reached the wire").isTrue();
         assertThat(baseline + 1).as("sanity: the line has room below the run's baseline").isLessThan(lineHeight - 1);
-        assertThat(Integer.parseInt(line.group(1))).isEqualTo(baseline + 1);
+        assertThat(line.getAsInt()).isEqualTo(baseline + 1);
     }
 
     @Test
@@ -145,21 +163,17 @@ class TextLayoutDrawNativeTest {
         small.dispose();
         big.dispose();
 
-        java.util.regex.Matcher line = java.util.regex.Pattern
-                .compile("drawLineintintintint\",\\[-?\\d+,(-?\\d+)").matcher(wire());
-        assertThat(line.find()).as("the strikeout reached the wire").isTrue();
+        OptionalInt line = firstLineY();
+        assertThat(line.isPresent()).as("the strikeout reached the wire").isTrue();
         assertThat(runTop + run.getHeight() / 2).as("sanity: the run's middle is below the line's").isGreaterThan(lineHeight / 2);
-        assertThat(Integer.parseInt(line.group(1))).isEqualTo(runTop + run.getHeight() / 2);
+        assertThat(line.getAsInt()).isEqualTo(runTop + run.getHeight() / 2);
     }
 
     /** The distinct foreground colours the GC state carried over this paint. */
-    private java.util.Set<String> foregrounds() {
-        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
-        String w = wire();
-        String key = "\"foreground\":";
-        for (int i = w.indexOf(key); i >= 0; i = w.indexOf(key, i + 1)) {
-            int end = w.indexOf('}', i);
-            seen.add(w.substring(i, end < 0 ? w.length() : end));
+    private java.util.Set<Object> foregrounds() {
+        java.util.Set<Object> seen = new java.util.LinkedHashSet<>();
+        for (java.util.Map<String, Object> state : WireValues.find(values(), m -> m.containsKey("foreground"))) {
+            seen.add(state.get("foreground"));
         }
         return seen;
     }

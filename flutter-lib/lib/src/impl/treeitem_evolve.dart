@@ -19,6 +19,7 @@ import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
+import '../gen/widgets.dart' show WireKey;
 import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
@@ -52,7 +53,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // The Tree lays every visible row out from one flattened list, so what is under this item is
     // the Tree's to redraw.
     final change = lastChange;
-    if (change == null || change.touches('expanded') || change.touches('items')) {
+    if (change == null || change.touches(WireKey.k_TreeItem_expanded) || change.touches(WireKey.k_TreeItem_items)) {
       _context?.treeImpl?.itemStructureChanged();
     }
   }
@@ -862,13 +863,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // and the area that actually toggles are the same rectangle — when they were two
     // widgets the icon only covered 12x12 of a 34px-tall row, so taps in the gap were
     // swallowed by neither and did nothing at all.
-    return MouseRegion(
+    final arrow = MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: Icon(
         expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
         size: theme.expandIconSize,
         color: arrowColor,
       ),
+    );
+    if (!WidgetsBinding.instance.semanticsEnabled) return arrow;
+    // The row is one tappable node, and the web hands a click on it to the row as a tap at its
+    // centre, which is never on the arrow. A node of the arrow's own is what an assistive
+    // technology, or a test, can expand the item through.
+    return Semantics(
+      container: true,
+      button: true,
+      identifier: 'TreeItemExpander/${state.id}',
+      label: expanded ? 'Collapse' : 'Expand',
+      expanded: expanded,
+      onTap: enabled ? () => _toggleExpand(expanded) : null,
+      child: arrow,
     );
   }
 

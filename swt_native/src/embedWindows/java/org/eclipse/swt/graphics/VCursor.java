@@ -2,11 +2,7 @@ package org.eclipse.swt.graphics;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VCursor extends VResource {
 
     protected VCursor() {
@@ -40,7 +36,6 @@ public class VCursor extends VResource {
         ((DartCursor) impl).hotspotY = value;
     }
 
-    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartCursor) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -52,58 +47,127 @@ public class VCursor extends VResource {
         ((DartCursor) impl).image = value;
     }
 
-    public static final String CURSOR_STYLE = "cursorStyle";
+    public static final int CURSOR_STYLE = 536;
 
-    public static final String HOTSPOT_X = "hotspotX";
+    public static final int HOTSPOT_X = 537;
 
-    public static final String HOTSPOT_Y = "hotspotY";
+    public static final int HOTSPOT_Y = 538;
 
-    public static final String IMAGE = "image";
+    public static final int IMAGE = 539;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "cursorStyle":
-                Serializer.writeKeyValue(writer, "cursorStyle", getCursorStyle());
-                return;
-            case "hotspotX":
-                Serializer.writeKeyValue(writer, "hotspotX", getHotspotX());
-                return;
-            case "hotspotY":
-                Serializer.writeKeyValue(writer, "hotspotY", getHotspotY());
-                return;
-            case "image":
-                Serializer.writeKeyValue(writer, "image", getImage());
-                return;
+            case CURSOR_STYLE:
+                return "cursorStyle";
+            case HOTSPOT_X:
+                return "hotspotX";
+            case HOTSPOT_Y:
+                return "hotspotY";
+            case IMAGE:
+                return "image";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Cursor.class)
-    public static class CursorJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCursor.class, (JsonWriter.WriteObject<DartCursor>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartCursor.class, (JsonReader.ReadObject<DartCursor>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 536:
+                w.write((int) getCursorStyle());
+                return true;
+            case 537:
+                w.write((int) getHotspotX());
+                return true;
+            case 538:
+                w.write((int) getHotspotY());
+                return true;
+            case 539:
+                w.image(getImage());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Cursor read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 536:
+                {
+                    int v_ = getCursorStyle();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(536);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 537:
+                {
+                    int v_ = getHotspotX();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(537);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 538:
+                {
+                    int v_ = getHotspotY();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(538);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 539:
+                {
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(539);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Cursor api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 536, 537, 538, 539 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 540;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(536);
+        w.write((int) getCursorStyle());
+        w.key(537);
+        w.write((int) getHotspotX());
+        w.key(538);
+        w.write((int) getHotspotY());
+        w.key(539);
+        w.image(getImage());
     }
 }

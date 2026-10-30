@@ -6,7 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.junit.jupiter.api.Test;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.eclipse.swt.widgets.Mocks.shell;
 
 /**
@@ -23,7 +23,7 @@ class ControlGCFontTest extends SerializeTestBase {
         GC gc = new GC(composite);
         FontData measured = gc.getFont().getFontData()[0];
 
-        assertThatJson(serialize(gc)).node("font.fontData[0]").isObject()
+        assertThatWire(serialize(gc)).node("font.fontData[0]").isObject()
                 .containsEntry("name", FontMetricsUtil.substituteFontName(measured.getName()))
                 .containsEntry("height", measured.getHeight());
         gc.dispose();
@@ -36,7 +36,7 @@ class ControlGCFontTest extends SerializeTestBase {
         composite.setFont(font);
         GC gc = new GC(composite);
 
-        assertThatJson(serialize(gc)).node("font.fontData[0]").isObject()
+        assertThatWire(serialize(gc)).node("font.fontData[0]").isObject()
                 .containsEntry("name", "Inter")
                 .containsEntry("height", 13);
         gc.dispose();

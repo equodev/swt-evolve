@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'group_theme_extension.tailor.dart';
-part 'group_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@EdgeInsetsConverter()
-@TextStyleConverter()
 class GroupThemeExtension extends ThemeExtension<GroupThemeExtension> with _$GroupThemeExtensionTailorMixin {
 
   final Color backgroundColor;
@@ -63,9 +56,4 @@ class GroupThemeExtension extends ThemeExtension<GroupThemeExtension> with _$Gro
     required this.shadowInBgFactor,
     required this.minTextContrast,
   });
-
-  factory GroupThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$GroupThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$GroupThemeExtensionToJson(this);
 }

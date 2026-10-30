@@ -7,13 +7,9 @@ import java.util.Arrays;
  * A run of frames sent as one. Payloads are carried verbatim, so a batched message is
  * byte-identical to the one it replaces and the far side dispatches it on its own channel.
  *
- * <p><b>JSON payloads only.</b> A raw-bytes payload makes the array unparseable and the client
- * drops the whole batch, so such a frame is sent on its own.
- *
- * <p>The batch is written straight into its wire frame, {@code [header]["channel",payload],…]}, so
- * sending it copies nothing, and {@link #clear()} keeps the buffer for the next run.
- *
- * <p>A repeated channel travels as the index of the entry that named it.
+ * <p>The batch is written straight into its wire frame: the batch's header, then per entry the
+ * entry's channel as a header names it ({@link ChannelHeader}), its payload's length and its payload.
+ * Sending it copies nothing, and {@link #clear()} keeps the buffer for the next run.
  */
 public final class MessageBatch {
 
@@ -21,7 +17,6 @@ public final class MessageBatch {
     public static final String EVENT = "swt.evolve.batch";
 
     private static final byte[] HEADER = CommService.frameHeader(EVENT);
-    private static final byte[] NULL = "null".getBytes(StandardCharsets.UTF_8);
 
     private byte[] buffer = new byte[4096];
     private int size;
@@ -29,8 +24,6 @@ public final class MessageBatch {
     private String firstEvent;
     private int firstPayloadStart;
     private int firstPayloadLength;
-    /** Channel name -> the entry that spelled it out, for the repeats that follow. */
-    private final java.util.HashMap<String, Integer> namedAt = new java.util.HashMap<>();
 
     public MessageBatch() {
         clear();
@@ -42,39 +35,25 @@ public final class MessageBatch {
 
     /** Copies {@code payload[offset, offset + length)} in, so the caller may reuse its buffer after. */
     public void add(String event, byte[] payload, int offset, int length) {
-        byte[] name = event.getBytes(StandardCharsets.UTF_8);
-        // Separator, brackets, quotes, comma and the closing ']' of the whole batch, plus every name
-        // byte escaped and a "null" in place of an empty payload.
-        ensure(size + 2 * name.length + Math.max(length, NULL.length) + 8);
-        if (count > 0) buffer[size++] = ',';
-        buffer[size++] = '[';
-        Integer namedBy = namedAt.get(event);
-        if (namedBy != null) {
-            // Already spelled out by an earlier entry: point at it instead of repeating it.
-            for (byte b : namedBy.toString().getBytes(StandardCharsets.UTF_8)) buffer[size++] = b;
-        } else {
-            namedAt.put(event, count);
-            buffer[size++] = '"';
-            for (byte b : name) {
-                if (b == '"' || b == '\\') buffer[size++] = '\\';
-                buffer[size++] = b;
-            }
-            buffer[size++] = '"';
+        byte[] header = ChannelHeader.encode(event);
+        ensure(size + header.length + 5 + length);
+        System.arraycopy(header, 0, buffer, size, header.length);
+        size += header.length;
+        int v = length;
+        while ((v & ~0x7F) != 0) {
+            buffer[size++] = (byte) ((v & 0x7F) | 0x80);
+            v >>>= 7;
         }
-        buffer[size++] = ',';
+        buffer[size++] = (byte) v;
         if (count == 0) {
             firstEvent = event;
             firstPayloadStart = size;
             firstPayloadLength = length;
         }
-        if (length == 0) {
-            System.arraycopy(NULL, 0, buffer, size, NULL.length);
-            size += NULL.length;
-        } else {
+        if (length > 0) {
             System.arraycopy(payload, offset, buffer, size, length);
             size += length;
         }
-        buffer[size++] = ']';
         count++;
     }
 
@@ -99,11 +78,9 @@ public final class MessageBatch {
     /** Empties the batch, keeping its buffer. */
     public void clear() {
         System.arraycopy(HEADER, 0, buffer, 0, HEADER.length);
-        buffer[HEADER.length] = '[';
-        size = HEADER.length + 1;
+        size = HEADER.length;
         count = 0;
         firstEvent = null;
-        namedAt.clear();
     }
 
     /**
@@ -113,16 +90,15 @@ public final class MessageBatch {
     void sendTo(CommService comm) {
         if (count == 0) return;
         if (count == 1) {
-            // What precedes the payload - the batch header and ["channel", - is always longer than
-            // the frame's own header, so the lone frame is framed in place over it.
+            // What precedes the payload - the batch header, the entry's header and its length - is
+            // always longer than the frame's own header, so the lone frame is framed in place over it.
             byte[] header = CommService.frameHeader(firstEvent);
             int start = firstPayloadStart - header.length;
             System.arraycopy(header, 0, buffer, start, header.length);
             comm.sendFrame(buffer, start, header.length + firstPayloadLength);
             return;
         }
-        buffer[size] = ']';
-        comm.sendFrame(buffer, 0, size + 1);
+        comm.sendFrame(buffer, 0, size);
     }
 
     private void ensure(int needed) {

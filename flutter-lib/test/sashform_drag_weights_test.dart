@@ -1,8 +1,6 @@
 // A drag on a SashForm's divider is its Sash's Selection, sent while the sash moves so Java lays the
 // panes out under the pointer during the drag (DartSashForm.onDragSash), not only at the drop.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,6 +11,7 @@ import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sash.dart';
 import 'package:swtflutter/src/gen/sashform.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
@@ -51,9 +50,8 @@ VSashForm _sashForm(int id) => VSashForm()
 
 /// The x of every Selection the form's sash sent, in order.
 List<int> _sashSelections(int formId) => EquoCommService.commForTesting.sentFrames
-    .map(EquoCommBase.decodeFrame)
-    .where((f) => f.$1 == 'Sash/${formId + 2}/Selection/Selection')
-    .map((f) => (jsonDecode(f.$2) as Map<String, dynamic>)['x'] as int)
+    .where((frame) => EquoCommBase.decodeFrame(frame).$1 == 'Sash/${formId + 2}/Selection/Selection')
+    .map((frame) => EquoCommBase.decodeEvent(frame).x ?? 0)
     .toList();
 
 Future<void> _pumpForm(WidgetTester tester, int id) async {

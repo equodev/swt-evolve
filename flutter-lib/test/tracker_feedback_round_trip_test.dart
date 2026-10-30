@@ -25,6 +25,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/utils/region_clip.dart';
 import 'package:swtflutter/src/impl/utils/tracker_session.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -69,7 +70,7 @@ Future<void> _pump(WidgetTester tester, List<VShell> shells) async {
 
 void _deliver(String actionId, Map<String, dynamic> body) {
   final actionBytes = utf8.encode(actionId);
-  final bodyBytes = utf8.encode(json.encode(body));
+  final bodyBytes = TaggedValues.encode(body);
   final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;

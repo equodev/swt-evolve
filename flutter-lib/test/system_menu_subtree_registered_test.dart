@@ -22,6 +22,7 @@ import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'support/menu_shown_ack.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 
 /// A display of its own per test: DisplaySwt seeds a fresh State from a module-level cache keyed
 /// by display id, so sharing one would hand the next test the payload the previous one ended on.
@@ -34,11 +35,11 @@ const int _separatorId = 7714;
 const int _preferencesId = 7715;
 const int _popupId = 7799;
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body),
-/// which is the only way a Display update reaches a mounted DisplaySwt.
-void _receiveJson(String actionId, Object payload) {
+/// Delivers an inbound frame exactly as the transport would (2-byte name length, name,
+/// tagged-values body), which is the only way a Display update reaches a mounted DisplaySwt.
+void _deliver(String actionId, Object payload) {
   final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
+  final body = TaggedValues.encode(payload);
   final frame = Uint8List(2 + actionBytes.length + body.length);
   frame[0] = (actionBytes.length >> 8) & 0xFF;
   frame[1] = actionBytes.length & 0xFF;
@@ -131,7 +132,7 @@ Future<void> _pumpDisplayThenName(WidgetTester tester) async {
   ));
   await tester.pumpAndSettle();
 
-  _receiveJson('Display/$displayId', _systemMenuNamedNotDescribed(displayId));
+  _deliver('Display/$displayId', _systemMenuNamedNotDescribed(displayId));
   await tester.pumpAndSettle();
 }
 

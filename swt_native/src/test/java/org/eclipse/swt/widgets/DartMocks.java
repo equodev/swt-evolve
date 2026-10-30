@@ -56,6 +56,103 @@ public class DartMocks {
         return shell;
     }
 
+    /**
+     * Gives {@code c} a value for each of the properties a fill through setters cannot reach: the
+     * ones set by another object (cursor, menu, drag source, drop target), by the parent's
+     * background mode, or by the shell's default button.
+     */
+    public static void fillUnsettable(Control c) {
+        c.setCursor(new Cursor(c.getDisplay(), org.eclipse.swt.SWT.CURSOR_HAND));
+        c.setMenu(new Menu(c));
+        if (c.getBackgroundImage() == null)
+            c.setBackgroundImage(new org.eclipse.swt.graphics.Image(c.getDisplay(), 4, 4));
+        new org.eclipse.swt.dnd.DragSource(c, org.eclipse.swt.dnd.DND.DROP_COPY);
+        new org.eclipse.swt.dnd.DropTarget(c, org.eclipse.swt.dnd.DND.DROP_COPY);
+        Composite parent = c.getParent();
+        if (parent != null && org.mockito.Mockito.mockingDetails(parent.getImpl()).isMock()) {
+            when(parent.getImpl()._backgroundMode()).thenReturn(org.eclipse.swt.SWT.INHERIT_FORCE);
+        } else if (parent != null) {
+            parent.setBackgroundMode(org.eclipse.swt.SWT.INHERIT_FORCE);
+        }
+        ((DartControl) c.getImpl()).updateBackgroundMode();
+        if (c instanceof Button b && c.getShell().getImpl() instanceof DartDecorations shell) {
+            shell.defaultButton = b;
+        }
+    }
+
+    /**
+     * Gives {@code w} what its setters take and no generator can build: a child of its host for a
+     * Control setter, a new item of its host for an Item setter, and the first column's value for
+     * an item's indexed setters. Also lifts a minimum off 0, which a random maximum would reject.
+     */
+    public static void fillReferences(Object w) throws ReflectiveOperationException {
+        Composite host = hostOf(w);
+        for (java.lang.reflect.Method m : w.getClass().getMethods()) {
+            Class<?>[] p = m.getParameterTypes();
+            if (!m.getName().startsWith("set") || m.getName().equals("setParent"))
+                continue;
+            if (p.length == 1 && host != null && Control.class.isAssignableFrom(p[0])
+                    && p[0].isAssignableFrom(Composite.class)) {
+                m.invoke(w, new Composite(host, org.eclipse.swt.SWT.NONE));
+            } else if (p.length == 1 && host != null && Item.class.isAssignableFrom(p[0])
+                    && !java.lang.reflect.Modifier.isAbstract(p[0].getModifiers())) {
+                newItem(p[0], host);
+                m.invoke(w, newItem(p[0], host)); // the second, so an index held for it is not 0
+            } else if (p.length == 2 && p[0] == int.class && w instanceof Item) {
+                Object v = sample(p[1]);
+                if (v != null)
+                    m.invoke(w, 0, v);
+            }
+        }
+        liftMinimum(w);
+    }
+
+    private static Composite hostOf(Object w) throws ReflectiveOperationException {
+        if (w instanceof Composite c)
+            return c;
+        if (w instanceof org.eclipse.swt.custom.ControlEditor e)
+            return ((org.eclipse.swt.custom.DartControlEditor) e.getImpl())._parent();
+        if (w instanceof Item && w.getClass().getMethod("getParent").invoke(w) instanceof Composite c)
+            return c;
+        return null;
+    }
+
+    private static Object newItem(Class<?> type, Composite host) throws ReflectiveOperationException {
+        for (java.lang.reflect.Constructor<?> c : type.getConstructors()) {
+            Class<?>[] p = c.getParameterTypes();
+            if (p.length == 2 && p[0].isInstance(host) && p[1] == int.class)
+                return c.newInstance(host, org.eclipse.swt.SWT.NONE);
+        }
+        throw new IllegalArgumentException("no " + type.getSimpleName() + "(" + host.getClass().getSimpleName() + ", int)");
+    }
+
+    private static Object sample(Class<?> type) {
+        if (type == String.class)
+            return "cell";
+        if (type == Color.class)
+            return new Color(Mocks.device(), 10, 20, 30);
+        if (type == Font.class)
+            return new Font(Mocks.device(), Mocks.fontData());
+        if (type == org.eclipse.swt.graphics.Image.class)
+            return new org.eclipse.swt.graphics.Image(Mocks.device(), 4, 4);
+        return null;
+    }
+
+    private static void liftMinimum(Object w) throws ReflectiveOperationException {
+        java.lang.reflect.Method getMinimum, getMaximum;
+        try {
+            getMinimum = w.getClass().getMethod("getMinimum");
+            getMaximum = w.getClass().getMethod("getMaximum");
+        } catch (NoSuchMethodException e) {
+            return;
+        }
+        if ((int) getMinimum.invoke(w) != 0)
+            return;
+        if ((int) getMaximum.invoke(w) < 2)
+            w.getClass().getMethod("setMaximum", int.class).invoke(w, 2);
+        w.getClass().getMethod("setMinimum", int.class).invoke(w, 1);
+    }
+
     public static Display dartDisplay() {
         if (display != null) {
             makeCurrent(display);
@@ -122,6 +219,9 @@ public class DartMocks {
         if (display == null) return;
         org.mockito.Mockito.clearInvocations(display);
         when(display.isDisposed()).thenReturn(false);
+        // What a display with no shells answers; a test that stubbed it otherwise must not leave a
+        // later one disposing a shell against null.
+        when(display.getShells()).thenReturn(new Shell[0]);
     }
 
     /** {@code Font systemFont}/{@code Point dpi} live on {@code DartDevice} (package

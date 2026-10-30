@@ -42,6 +42,72 @@ private func installIsRunningOverride() {
     method_setImplementation(method, imp_implementationWithBlock(override))
 }
 
+// =================================================================================================
+// Lookups the Flutter engine repeats for every paragraph it builds.
+//
+// Each paragraph builder starts from the engine's default text style, which reads its font family
+// from +[NSFont systemFontOfSize:] behind an OS version check. AppKit works both answers out anew on
+// every call -- the version check parses the system version string each time -- and with many
+// labels changing at once that is a measurable share of the frame. Both answers are fixed for the
+// life of the process, so the first one is kept and handed back to every caller.
+// =================================================================================================
+private var engineLookupsCached = false
+
+@MainActor
+private func cacheEngineLookups() {
+    if engineLookupsCached { return }
+    engineLookupsCached = true
+    cacheOperatingSystemVersionCheck()
+    cacheSystemFonts()
+}
+
+/// Answers kept by key, safe to read from any thread. The original is called outside the lock, as it
+/// may itself call back into the cached method.
+private final class KeptAnswers<Key: Hashable, Value> {
+    private var answers = [Key: Value]()
+    private let lock = NSLock()
+
+    func answer(_ key: Key, _ compute: () -> Value) -> Value {
+        lock.lock()
+        let kept = answers[key]
+        lock.unlock()
+        if let kept { return kept }
+        let value = compute()
+        lock.lock()
+        answers[key] = value
+        lock.unlock()
+        return value
+    }
+}
+
+private func cacheOperatingSystemVersionCheck() {
+    let info = ProcessInfo.processInfo
+    let sel = #selector(ProcessInfo.isOperatingSystemAtLeast(_:))
+    // The method of the class the shared instance actually is, which overrides NSProcessInfo's.
+    guard let cls = object_getClass(info), let method = class_getInstanceMethod(cls, sel) else { return }
+    typealias CheckFn = @convention(c) (AnyObject, Selector, OperatingSystemVersion) -> Bool
+    let original = unsafeBitCast(method_getImplementation(method), to: CheckFn.self)
+    let kept = KeptAnswers<Int, Bool>()
+    let override: @convention(block) (AnyObject, OperatingSystemVersion) -> Bool = { receiver, version in
+        kept.answer(version.majorVersion << 40 | version.minorVersion << 20 | version.patchVersion) {
+            original(receiver, sel, version)
+        }
+    }
+    method_setImplementation(method, imp_implementationWithBlock(override))
+}
+
+private func cacheSystemFonts() {
+    let sel = #selector(NSFont.systemFont(ofSize:))
+    guard let method = class_getClassMethod(NSFont.self, sel) else { return }
+    typealias FontFn = @convention(c) (AnyObject, Selector, CGFloat) -> NSFont
+    let original = unsafeBitCast(method_getImplementation(method), to: FontFn.self)
+    let kept = KeptAnswers<CGFloat, NSFont>()
+    let override: @convention(block) (AnyObject, CGFloat) -> NSFont = { receiver, size in
+        kept.answer(size) { original(receiver, sel, size) }
+    }
+    method_setImplementation(method, imp_implementationWithBlock(override))
+}
+
 /// A Flutter "surface" hosted by the native bridge. Two kinds exist — an embedded view inside a
 /// native SWT parent ({@code FlutterBridgeController}) and a standalone top-level window hosting the
 /// whole Display ({@code FlutterDisplayWindowController}). The JNI entry points operate on this base
@@ -254,6 +320,8 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // handshake that would otherwise have corrected it. Restore the size that was asked for.
         win.setContentSize(NSSize(width: CGFloat(width), height: CGFloat(height)))
         win.delegate = self
+        NotificationCenter.default.addObserver(self, selector: #selector(screenParametersChanged(_:)),
+                                               name: NSApplication.didChangeScreenParametersNotification, object: nil)
         win.center()
         win.isReleasedWhenClosed = false
         self.window = win
@@ -316,6 +384,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
                                           until: Date.distantPast,
                                           inMode: .default,
                                           dequeue: true) {
+            // A wake has done its job by ending the wait. Dispatching it would open a Core Animation
+            // transaction that the run loop then commits to the window server, for nothing.
+            if isWakeEvent(event) { continue }
             NSApp.sendEvent(event)
         }
         // Under Flutter 3.35's merged platform/UI thread the engine's UI work (frame scheduling,
@@ -392,11 +463,35 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     /// Content rather than frame, so the title bar is already accounted for and a caller converting
     /// a window-local point needs no further correction. Flips against the primary screen, the one
     /// setBounds places against, so the two round-trip; both share that call's multi-monitor caveat.
+    ///
+    /// The SWT loop asks on every pump, so the answer is kept until the window moves, resizes or
+    /// changes screen, or the screens are rearranged.
     override func origin() -> (Int32, Int32)? {
+        if let kept = keptOrigin { return kept }
         guard let win = window, let screen = NSScreen.screens.first else { return nil }
         let content = win.contentRect(forFrameRect: win.frame)
         let top = screen.frame.height - (content.origin.y + content.height)
-        return (Int32(content.origin.x.rounded()), Int32(top.rounded()))
+        let origin = (Int32(content.origin.x.rounded()), Int32(top.rounded()))
+        keptOrigin = origin
+        return origin
+    }
+
+    private var keptOrigin: (Int32, Int32)?
+
+    func windowDidMove(_ notification: Notification) {
+        keptOrigin = nil
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        keptOrigin = nil
+    }
+
+    func windowDidChangeScreen(_ notification: Notification) {
+        keptOrigin = nil
+    }
+
+    @objc private func screenParametersChanged(_ notification: Notification) {
+        keptOrigin = nil
     }
 
     override func setState(_ state: Int32) {
@@ -609,6 +704,7 @@ private func surfaceFrom(_ context: jlong) -> FlutterSurface? {
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_Initialize")
 public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint, csd_enabled: jboolean, impeller_enabled: jboolean) -> jlong {
     // impeller_enabled is the Windows engine's renderer choice; the macOS engine always renders with Impeller.
+    cacheEngineLookups()
     let name = jstringToSwift(env, widget_name)
     let themeString = jstringToSwift(env, theme)
     let surface: FlutterSurface
@@ -657,6 +753,14 @@ public func FlutterNative_waitEvents(env: UnsafeMutablePointer<JNIEnv?>, cls: jc
     surfaceFrom(context)?.waitForEvent(millis: millis)
 }
 
+/// The subtype that marks the events `FlutterNative_wake` posts, so the pump can drop them.
+private let wakeEventSubtype: Int16 = 0x5741
+
+private func isWakeEvent(_ event: NSEvent) -> Bool {
+    return event.type == .applicationDefined && event.subtype.rawValue == wakeEventSubtype
+        && event.windowNumber == 0
+}
+
 /// Wakes the main run loop so a `waitForEvent` in progress returns now. Called from a non-UI thread
 /// (the comm thread posting an SWT `asyncExec`), hence no `@MainActor`: it only hops to the main
 /// queue, which is what breaks the wait. `nextEvent` needs an event to hand back, so the hop posts
@@ -670,7 +774,7 @@ public func FlutterNative_wake(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, 
                                                  timestamp: ProcessInfo.processInfo.systemUptime,
                                                  windowNumber: 0,
                                                  context: nil,
-                                                 subtype: 0,
+                                                 subtype: wakeEventSubtype,
                                                  data1: 0,
                                                  data2: 0) else { return }
         NSApp.postEvent(wakeEvent, atStart: true)
@@ -796,4 +900,116 @@ class FlippedView: NSView {
         FlippedView.activeViews.remove(self)
         FlippedView.teardownMonitorIfEmpty()
     }
+}
+
+// =================================================================================================
+// In-process channel (dev.equo.swt.comm.InProcessCommService).
+//
+// The engine runs inside the JVM, so frames need no socket: Java's are posted straight to the Dart
+// isolate's receive port, and the client's are handed to Java by a call it makes through dart:ffi.
+// Each channel is identified by the id Java gave it; the client attaches with that id and its port.
+// =================================================================================================
+
+/// Dart_PostCObject, as dart:ffi's `NativeApi.postCObject` hands it over.
+private typealias PostCObject = @convention(c) (Int64, UnsafeMutableRawPointer) -> Bool
+
+private final class InProcessChannel {
+    static let lock = NSLock()
+    static var ports = [Int32: [Int64]]()
+    static var post: PostCObject?
+    static var vm: UnsafeMutablePointer<JavaVM?>?
+    static var receiver: jclass?
+    static var fromClient: jmethodID?
+    static var clientsChanged: jmethodID?
+
+    /// A JNIEnv for the calling thread, which is attached for good if it was not.
+    static func env() -> UnsafeMutablePointer<JNIEnv?>? {
+        guard let vm else { return nil }
+        var env: UnsafeMutableRawPointer? = nil
+        if vm.pointee!.pointee.GetEnv(vm, &env, jint(JNI_VERSION_1_6)) == JNI_OK {
+            return env?.assumingMemoryBound(to: JNIEnv?.self)
+        }
+        var attached: UnsafeMutableRawPointer? = nil
+        guard vm.pointee!.pointee.AttachCurrentThreadAsDaemon(vm, &attached, nil) == JNI_OK else { return nil }
+        return attached?.assumingMemoryBound(to: JNIEnv?.self)
+    }
+
+    static func clientsChanged(_ id: Int32, _ count: Int) {
+        guard let env = env(), let receiver, let clientsChanged else { return }
+        var args = [jvalue(i: id), jvalue(i: jint(count))]
+        env.pointee!.pointee.CallStaticVoidMethodA(env, receiver, clientsChanged, &args)
+    }
+}
+
+@_cdecl("Java_dev_equo_swt_FlutterNative_InProcessOpen")
+public func FlutterNative_inProcessOpen(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, receiver: jclass) -> jboolean {
+    let jni = env.pointee!.pointee
+    var vm: UnsafeMutablePointer<JavaVM?>? = nil
+    guard jni.GetJavaVM(env, &vm) == JNI_OK else { return jboolean(JNI_FALSE) }
+    InProcessChannel.lock.lock()
+    defer { InProcessChannel.lock.unlock() }
+    InProcessChannel.vm = vm
+    InProcessChannel.receiver = jni.NewGlobalRef(env, receiver)
+    InProcessChannel.fromClient = jni.GetStaticMethodID(env, receiver, "fromClient", "(I[B)V")
+    InProcessChannel.clientsChanged = jni.GetStaticMethodID(env, receiver, "clientsChanged", "(II)V")
+    return jboolean(JNI_TRUE)
+}
+
+@_cdecl("Java_dev_equo_swt_FlutterNative_InProcessPost")
+public func FlutterNative_inProcessPost(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, id: jint, frame: jbyteArray,
+                                        offset: jint, length: jint) {
+    InProcessChannel.lock.lock()
+    let ports = InProcessChannel.ports[id] ?? []
+    let post = InProcessChannel.post
+    InProcessChannel.lock.unlock()
+    guard let post, !ports.isEmpty else { return }
+    let jni = env.pointee!.pointee
+    guard let elements = jni.GetPrimitiveArrayCritical(env, frame, nil) else { return }
+    // A Dart_CObject holding Uint8 typed data, which the VM copies into the message.
+    let message = UnsafeMutableRawPointer.allocate(byteCount: 48, alignment: 8)
+    message.initializeMemory(as: UInt8.self, repeating: 0, count: 48)
+    message.storeBytes(of: Int32(7), toByteOffset: 0, as: Int32.self)  // Dart_CObject_kTypedData
+    message.storeBytes(of: Int32(2), toByteOffset: 8, as: Int32.self)  // Dart_TypedData_kUint8
+    message.storeBytes(of: Int(length), toByteOffset: 16, as: Int.self)
+    message.storeBytes(of: elements + Int(offset), toByteOffset: 24, as: UnsafeMutableRawPointer.self)
+    var gone = [Int64]()
+    for port in ports where !post(port, message) {
+        gone.append(port)
+    }
+    jni.ReleasePrimitiveArrayCritical(env, frame, elements, JNI_ABORT)
+    message.deallocate()
+    if gone.isEmpty { return }
+    // A port that takes no message belongs to an isolate that has shut down.
+    InProcessChannel.lock.lock()
+    let left = (InProcessChannel.ports[id] ?? []).filter { !gone.contains($0) }
+    InProcessChannel.ports[id] = left
+    InProcessChannel.lock.unlock()
+    InProcessChannel.clientsChanged(id, left.count)
+}
+
+/// Called by the client, through dart:ffi, to attach its receive port to channel `id`.
+@_cdecl("equo_comm_attach")
+public func equoCommAttach(id: Int32, port: Int64, post: UnsafeMutableRawPointer) {
+    InProcessChannel.lock.lock()
+    InProcessChannel.post = unsafeBitCast(post, to: PostCObject.self)
+    var ports = InProcessChannel.ports[id] ?? []
+    ports.append(port)
+    InProcessChannel.ports[id] = ports
+    InProcessChannel.lock.unlock()
+    InProcessChannel.clientsChanged(id, ports.count)
+}
+
+/// Called by the client, through dart:ffi, with a frame for channel `id`; copied before it returns.
+@_cdecl("equo_comm_send")
+public func equoCommSend(id: Int32, data: UnsafePointer<UInt8>, length: Int) {
+    guard let env = InProcessChannel.env(), let receiver = InProcessChannel.receiver,
+          let fromClient = InProcessChannel.fromClient else { return }
+    let jni = env.pointee!.pointee
+    guard let array = jni.NewByteArray(env, jsize(length)) else { return }
+    data.withMemoryRebound(to: jbyte.self, capacity: length) {
+        jni.SetByteArrayRegion(env, array, 0, jsize(length), $0)
+    }
+    var args = [jvalue(i: id), jvalue(l: array)]
+    jni.CallStaticVoidMethodA(env, receiver, fromClient, &args)
+    jni.DeleteLocalRef(env, array)
 }

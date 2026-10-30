@@ -8,22 +8,15 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'support/gc_frames.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
+  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 20; i++) {
@@ -32,7 +25,7 @@ void main() {
   }
 
   void fill(int id, int x, int y, int width, int height) {
-    deliver('GC/$id/fillRectangleintintintint', {'x': x, 'y': y, 'width': width, 'height': height});
+    receive('GC/$id/b', gcOp('fillRectangleintintintint', [x, y, width, height]));
   }
 
   Future<void> paint(int id, {Map<String, int>? damage}) async {

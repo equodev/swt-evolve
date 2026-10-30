@@ -2,12 +2,8 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import java.util.ArrayList;
 
-@CompiledJson()
 public class VFontDialog extends VDialog {
 
     protected VFontDialog() {
@@ -17,7 +13,6 @@ public class VFontDialog extends VDialog {
         super(impl);
     }
 
-    @JsonAttribute(name = "RGB")
     public RGB getRGB() {
         return ((DartFontDialog) impl).rgb;
     }
@@ -60,31 +55,29 @@ public class VFontDialog extends VDialog {
         ((DartFontDialog) impl).fontList = value;
     }
 
-    @JsonConverter(target = FontDialog.class)
-    public static class FontDialogJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 672;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartFontDialog.class, (JsonWriter.WriteObject<DartFontDialog>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartFontDialog.class, (JsonReader.ReadObject<DartFontDialog>) reader -> {
-                return null;
-            });
-        }
-
-        public static FontDialog read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, FontDialog api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(668);
+        w.write(getRGB());
+        w.key(669);
+        w.write(getEffectsVisible());
+        w.key(670);
+        w.object((getFontData() == null ? null : ((DartFontData) getFontData().getImpl()).getValue()));
+        w.key(671);
+        {
+            FontData[] a_ = getFontList();
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (FontData e_ : a_) w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
+            }
         }
     }
 }

@@ -1097,20 +1097,6 @@ public class DartMenu extends DartWidget implements IMenu {
         return null;
     }
 
-    /**
-     * A menu with an owner control has no channel of its own - it travels as that control's
-     * menu - so a change to it is a change to the control's menu, and saying so is what
-     * keeps the control from being sent whole every time a menu item moves.
-     */
-    @Override
-    protected void dirty() {
-        if (ownerControl != null && ownerControl.getImpl() instanceof DartControl) {
-            ((DartControl) ownerControl.getImpl()).getValue().markDirty(VControl.MENU);
-        } else {
-            super.dirty();
-        }
-    }
-
     public FlutterBridge getBridge() {
         if (bridge != null)
             return bridge;

@@ -3,8 +3,6 @@
 // that moment sends the focus back to whichever control held it before, and Java is told that
 // control took focus: the editor closes as it opens and the keys go to the other control.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +15,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int gridId = 30, lookForId = 31, editorId = 32;
 
@@ -88,9 +88,7 @@ void main() {
 
     // The click opened an editor over a cell: the grid's next update carries it, and Java asks for
     // the editor to be focused.
-    final withEditor = jsonDecode(jsonEncode(
-        _grid([_text(editorId, _rect(40, 20, 100, 22))], 2).toJson())) as Map<String, dynamic>;
-    VRegistry.instance.apply('Canvas/$gridId', withEditor..['_s'] = 2);
+    applyWhole(_grid([_text(editorId, _rect(40, 20, 100, 22))], 2));
     await tester.pump();
 
     expect(lookFor.hasFocus, isFalse,

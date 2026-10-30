@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/gc_wire.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
@@ -11,11 +12,10 @@ import '../gen/rectangle.dart';
 import '../gen/rgb.dart';
 import '../gen/transform.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/gc_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
-
-part 'gc.g.dart';
 
 class GCSwt<V extends VGC> extends WidgetSwt<V> {
   const GCSwt({super.key, required super.value});
@@ -27,7 +27,6 @@ class GCSwt<V extends VGC> extends WidgetSwt<V> {
 abstract class GCState<T extends GCSwt, V extends VGC>
     extends WidgetSwtState<T, V> {}
 
-@JsonSerializable()
 class VGC extends VWidget {
   VGC() : this.empty();
   VGC.empty() {
@@ -94,101 +93,307 @@ class VGC extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'XORMode':
-        XORMode = json['XORMode'] as bool?;
-      case 'alpha':
-        alpha = (json['alpha'] as num?)?.toInt();
-      case 'antialias':
-        antialias = (json['antialias'] as num?)?.toInt();
-      case 'background':
-        background = VColor.read(json['background']);
-      case 'backgroundPattern':
-        backgroundPattern = json['backgroundPattern'] == null
-            ? null
-            : VPattern.fromJson(
-                json['backgroundPattern'] as Map<String, dynamic>,
-              );
-      case 'clipping':
-        clipping = json['clipping'] == null
-            ? null
-            : VRectangle.fromJson(json['clipping'] as Map<String, dynamic>);
-      case 'clippingPath':
-        clippingPath = json['clippingPath'] == null
-            ? null
-            : VPathData.fromJson(json['clippingPath'] as Map<String, dynamic>);
-      case 'clippingRects':
-        clippingRects = (json['clippingRects'] as List<dynamic>?)
-            ?.map((e) => (e as num).toInt())
-            .toList();
-      case 'fillRule':
-        fillRule = (json['fillRule'] as num?)?.toInt();
-      case 'font':
-        font = json['font'] == null
-            ? null
-            : VFont.fromJson(json['font'] as Map<String, dynamic>);
-      case 'foreground':
-        foreground = VColor.read(json['foreground']);
-      case 'foregroundPattern':
-        foregroundPattern = json['foregroundPattern'] == null
-            ? null
-            : VPattern.fromJson(
-                json['foregroundPattern'] as Map<String, dynamic>,
-              );
-      case 'interpolation':
-        interpolation = (json['interpolation'] as num?)?.toInt();
-      case 'lineCap':
-        lineCap = (json['lineCap'] as num?)?.toInt();
-      case 'lineDash':
-        lineDash = (json['lineDash'] as List<dynamic>?)
-            ?.map((e) => (e as num).toInt())
-            .toList();
-      case 'lineJoin':
-        lineJoin = (json['lineJoin'] as num?)?.toInt();
-      case 'lineStyle':
-        lineStyle = (json['lineStyle'] as num?)?.toInt();
-      case 'lineWidth':
-        lineWidth = (json['lineWidth'] as num?)?.toInt();
-      case 'transform':
-        transform = json['transform'] == null
-            ? null
-            : VTransform.fromJson(json['transform'] as Map<String, dynamic>);
-      case 'clippingText':
-        clippingText = json['clippingText'] == null
-            ? null
-            : VPath.fromJson(json['clippingText'] as Map<String, dynamic>);
-      case 'lineDashOffset':
-        lineDashOffset = (json['lineDashOffset'] as num?)?.toDouble();
-      case 'bufferScale':
-        bufferScale = (json['bufferScale'] as num?)?.toDouble();
-      case 'themedCanvas':
-        themedCanvas = json['themedCanvas'] as bool?;
-      case 'hoverFills':
-        hoverFills = (json['hoverFills'] as List<dynamic>?)
-            ?.map(
-              (e) =>
-                  e == null ? null : VRGB.fromJson(e as Map<String, dynamic>),
-            )
-            .toList();
-      case 'selectionFills':
-        selectionFills = (json['selectionFills'] as List<dynamic>?)
-            ?.map(
-              (e) =>
-                  e == null ? null : VRGB.fromJson(e as Map<String, dynamic>),
-            )
-            .toList();
+      case 145: // XORMode
+        XORMode = r.boolean();
+        return true;
+      case 146: // alpha
+        alpha = r.intBoxed();
+        return true;
+      case 147: // antialias
+        antialias = r.int32();
+        return true;
+      case 148: // background
+        background = r.color();
+        return true;
+      case 560: // backgroundPattern
+        backgroundPattern = r.object(VPattern.new);
+        return true;
+      case 150: // clipping
+        clipping = r.rect();
+        return true;
+      case 151: // clippingPath
+        clippingPath = r.object(VPathData.new);
+        return true;
+      case 152: // clippingRects
+        clippingRects = r.ints();
+        return true;
+      case 153: // fillRule
+        fillRule = r.intBoxed();
+        return true;
+      case 154: // font
+        font = r.object(VFont.new);
+        return true;
+      case 155: // foreground
+        foreground = r.color();
+        return true;
+      case 561: // foregroundPattern
+        foregroundPattern = r.object(VPattern.new);
+        return true;
+      case 156: // interpolation
+        interpolation = r.int32();
+        return true;
+      case 157: // lineCap
+        lineCap = r.intBoxed();
+        return true;
+      case 158: // lineDash
+        lineDash = r.ints();
+        return true;
+      case 160: // lineJoin
+        lineJoin = r.intBoxed();
+        return true;
+      case 161: // lineStyle
+        lineStyle = r.intBoxed();
+        return true;
+      case 162: // lineWidth
+        lineWidth = r.int32();
+        return true;
+      case 562: // transform
+        transform = r.object(VTransform.new);
+        return true;
+      case 44: // clippingText
+        clippingText = r.object(VPath.new);
+        return true;
+      case 159: // lineDashOffset
+        lineDashOffset = r.float32();
+        return true;
+      case 149: // bufferScale
+        bufferScale = r.float32();
+        return true;
+      case 1356: // themedCanvas
+        themedCanvas = r.boolBoxed();
+        return true;
+      case 1372: // hoverFills
+        hoverFills = r.list(() => r.rgb());
+        return true;
+      case 1373: // selectionFills
+        selectionFills = r.list(() => r.rgb());
+        return true;
+      case 163: // style
+        style = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VGC.fromJson(Map<String, dynamic> json) =>
-      _$VGCFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VGCToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = XORMode;
+      if (v_ != null && w.wants(145)) {
+        w.key(145);
+        w.boolean(v_);
+      }
+    }
+    {
+      final v_ = alpha;
+      if (v_ != null && w.wants(146)) {
+        w.key(146);
+        w.intBoxed(v_);
+      }
+    }
+    {
+      final v_ = antialias;
+      if (v_ != null && w.wants(147)) {
+        w.key(147);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = background;
+      if (v_ != null && w.wants(148)) {
+        w.key(148);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = backgroundPattern;
+      if (v_ != null && w.wants(560)) {
+        w.key(560);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = clipping;
+      if (v_ != null && w.wants(150)) {
+        w.key(150);
+        w.rectValue(v_);
+      }
+    }
+    {
+      final v_ = clippingPath;
+      if (v_ != null && w.wants(151)) {
+        w.key(151);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = clippingRects;
+      if (v_ != null && w.wants(152)) {
+        w.key(152);
+        w.ints(v_);
+      }
+    }
+    {
+      final v_ = fillRule;
+      if (v_ != null && w.wants(153)) {
+        w.key(153);
+        w.intBoxed(v_);
+      }
+    }
+    {
+      final v_ = font;
+      if (v_ != null && w.wants(154)) {
+        w.key(154);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = foreground;
+      if (v_ != null && w.wants(155)) {
+        w.key(155);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = foregroundPattern;
+      if (v_ != null && w.wants(561)) {
+        w.key(561);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = interpolation;
+      if (v_ != null && w.wants(156)) {
+        w.key(156);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = lineCap;
+      if (v_ != null && w.wants(157)) {
+        w.key(157);
+        w.intBoxed(v_);
+      }
+    }
+    {
+      final v_ = lineDash;
+      if (v_ != null && w.wants(158)) {
+        w.key(158);
+        w.ints(v_);
+      }
+    }
+    {
+      final v_ = lineJoin;
+      if (v_ != null && w.wants(160)) {
+        w.key(160);
+        w.intBoxed(v_);
+      }
+    }
+    {
+      final v_ = lineStyle;
+      if (v_ != null && w.wants(161)) {
+        w.key(161);
+        w.intBoxed(v_);
+      }
+    }
+    {
+      final v_ = lineWidth;
+      if (v_ != null && w.wants(162)) {
+        w.key(162);
+        w.int32(v_);
+      }
+    }
+    {
+      final v_ = transform;
+      if (v_ != null && w.wants(562)) {
+        w.key(562);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = clippingText;
+      if (v_ != null && w.wants(44)) {
+        w.key(44);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = lineDashOffset;
+      if (v_ != null && w.wants(159)) {
+        w.key(159);
+        w.float32(v_.toDouble());
+      }
+    }
+    {
+      final v_ = bufferScale;
+      if (v_ != null && w.wants(149)) {
+        w.key(149);
+        w.float32(v_.toDouble());
+      }
+    }
+    {
+      final v_ = themedCanvas;
+      if (v_ != null && w.wants(1356)) {
+        w.key(1356);
+        w.boolBoxed(v_);
+      }
+    }
+    {
+      final v_ = hoverFills;
+      if (v_ != null && w.wants(1372)) {
+        w.key(1372);
+        w.list(v_, (e) => w.rgbValue(e));
+      }
+    }
+    {
+      final v_ = selectionFills;
+      if (v_ != null && w.wants(1373)) {
+        w.key(1373);
+        w.list(v_, (e) => w.rgbValue(e));
+      }
+    }
+    if (w.wants(163)) {
+      w.key(163);
+      w.int32(style);
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(145, XORMode);
+    visit(146, alpha);
+    visit(147, antialias);
+    visit(148, background);
+    visit(560, backgroundPattern);
+    visit(150, clipping);
+    visit(151, clippingPath);
+    visit(152, clippingRects);
+    visit(153, fillRule);
+    visit(154, font);
+    visit(155, foreground);
+    visit(561, foregroundPattern);
+    visit(156, interpolation);
+    visit(157, lineCap);
+    visit(158, lineDash);
+    visit(160, lineJoin);
+    visit(161, lineStyle);
+    visit(162, lineWidth);
+    visit(562, transform);
+    visit(44, clippingText);
+    visit(159, lineDashOffset);
+    visit(149, bufferScale);
+    visit(1356, themedCanvas);
+    visit(1372, hoverFills);
+    visit(1373, selectionFills);
+    visit(163, style);
+  }
 }
 
-@JsonSerializable()
 class VGCCopyAreaImageintint {
   VImage? image;
   int x;
@@ -196,25 +401,19 @@ class VGCCopyAreaImageintint {
 
   VGCCopyAreaImageintint({this.x = 0, this.y = 0});
 
-  factory VGCCopyAreaImageintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCCopyAreaImageintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCCopyAreaImageintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCCopyAreaImageintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCCopyAreaImageintint.fromJson(json as Map<String, dynamic>);
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCCopyAreaImageintint.fromBinary(GcWireReader r) {
+    final op = VGCCopyAreaImageintint();
+    {
+      final ww = r.wire();
+      op.image = ww.image();
     }
-    return VGCCopyAreaImageintint()
-      ..image = json[0] == null
-          ? null
-          : VImage.fromJson(json[0] as Map<String, dynamic>)
-      ..x = (json[1] as num).toInt()
-      ..y = (json[2] as num).toInt();
+    op.x = r.i();
+    op.y = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCCopyAreaintintintintintintboolean {
   int srcX;
   int srcY;
@@ -234,31 +433,20 @@ class VGCCopyAreaintintintintintintboolean {
     this.paint = false,
   });
 
-  factory VGCCopyAreaintintintintintintboolean.fromJson(
-    Map<String, dynamic> json,
-  ) => _$VGCCopyAreaintintintintintintbooleanFromJson(json);
-  Map<String, dynamic> toJson() =>
-      _$VGCCopyAreaintintintintintintbooleanToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCCopyAreaintintintintintintboolean.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCCopyAreaintintintintintintboolean.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCCopyAreaintintintintintintboolean()
-      ..srcX = (json[0] as num).toInt()
-      ..srcY = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt()
-      ..destX = (json[4] as num).toInt()
-      ..destY = (json[5] as num).toInt()
-      ..paint = json[6] as bool;
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCCopyAreaintintintintintintboolean.fromBinary(GcWireReader r) {
+    final op = VGCCopyAreaintintintintintintboolean();
+    op.srcX = r.i();
+    op.srcY = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    op.destX = r.i();
+    op.destY = r.i();
+    op.paint = r.b();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawArcintintintintintint {
   int x;
   int y;
@@ -276,28 +464,19 @@ class VGCDrawArcintintintintintint {
     this.arcAngle = 0,
   });
 
-  factory VGCDrawArcintintintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawArcintintintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawArcintintintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawArcintintintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawArcintintintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCDrawArcintintintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt()
-      ..startAngle = (json[4] as num).toInt()
-      ..arcAngle = (json[5] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawArcintintintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawArcintintintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    op.startAngle = r.i();
+    op.arcAngle = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawFocusintintintint {
   int x;
   int y;
@@ -311,24 +490,17 @@ class VGCDrawFocusintintintint {
     this.height = 0,
   });
 
-  factory VGCDrawFocusintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawFocusintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawFocusintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawFocusintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawFocusintintintint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawFocusintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawFocusintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawFocusintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawImageImageintint {
   VImage? image;
   int x;
@@ -336,25 +508,19 @@ class VGCDrawImageImageintint {
 
   VGCDrawImageImageintint({this.x = 0, this.y = 0});
 
-  factory VGCDrawImageImageintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawImageImageintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawImageImageintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawImageImageintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawImageImageintint.fromJson(json as Map<String, dynamic>);
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawImageImageintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawImageImageintint();
+    {
+      final ww = r.wire();
+      op.image = ww.image();
     }
-    return VGCDrawImageImageintint()
-      ..image = json[0] == null
-          ? null
-          : VImage.fromJson(json[0] as Map<String, dynamic>)
-      ..x = (json[1] as num).toInt()
-      ..y = (json[2] as num).toInt();
+    op.x = r.i();
+    op.y = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawImageImageintintintint {
   VImage? image;
   int destX;
@@ -369,29 +535,21 @@ class VGCDrawImageImageintintintint {
     this.destHeight = 0,
   });
 
-  factory VGCDrawImageImageintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawImageImageintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawImageImageintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawImageImageintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawImageImageintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawImageImageintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawImageImageintintintint();
+    {
+      final ww = r.wire();
+      op.image = ww.image();
     }
-    return VGCDrawImageImageintintintint()
-      ..image = json[0] == null
-          ? null
-          : VImage.fromJson(json[0] as Map<String, dynamic>)
-      ..destX = (json[1] as num).toInt()
-      ..destY = (json[2] as num).toInt()
-      ..destWidth = (json[3] as num).toInt()
-      ..destHeight = (json[4] as num).toInt();
+    op.destX = r.i();
+    op.destY = r.i();
+    op.destWidth = r.i();
+    op.destHeight = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawImageImageintintintintintintintint {
   VImage? image;
   int srcX;
@@ -414,35 +572,25 @@ class VGCDrawImageImageintintintintintintintint {
     this.destHeight = 0,
   });
 
-  factory VGCDrawImageImageintintintintintintintint.fromJson(
-    Map<String, dynamic> json,
-  ) => _$VGCDrawImageImageintintintintintintintintFromJson(json);
-  Map<String, dynamic> toJson() =>
-      _$VGCDrawImageImageintintintintintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawImageImageintintintintintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawImageImageintintintintintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawImageImageintintintintintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawImageImageintintintintintintintint();
+    {
+      final ww = r.wire();
+      op.image = ww.image();
     }
-    return VGCDrawImageImageintintintintintintintint()
-      ..image = json[0] == null
-          ? null
-          : VImage.fromJson(json[0] as Map<String, dynamic>)
-      ..srcX = (json[1] as num).toInt()
-      ..srcY = (json[2] as num).toInt()
-      ..srcWidth = (json[3] as num).toInt()
-      ..srcHeight = (json[4] as num).toInt()
-      ..destX = (json[5] as num).toInt()
-      ..destY = (json[6] as num).toInt()
-      ..destWidth = (json[7] as num).toInt()
-      ..destHeight = (json[8] as num).toInt();
+    op.srcX = r.i();
+    op.srcY = r.i();
+    op.srcWidth = r.i();
+    op.srcHeight = r.i();
+    op.destX = r.i();
+    op.destY = r.i();
+    op.destWidth = r.i();
+    op.destHeight = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawLineintintintint {
   int x1;
   int y1;
@@ -451,24 +599,17 @@ class VGCDrawLineintintintint {
 
   VGCDrawLineintintintint({this.x1 = 0, this.y1 = 0, this.x2 = 0, this.y2 = 0});
 
-  factory VGCDrawLineintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawLineintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawLineintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawLineintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawLineintintintint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawLineintintintint()
-      ..x1 = (json[0] as num).toInt()
-      ..y1 = (json[1] as num).toInt()
-      ..x2 = (json[2] as num).toInt()
-      ..y2 = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawLineintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawLineintintintint();
+    op.x1 = r.i();
+    op.y1 = r.i();
+    op.x2 = r.i();
+    op.y2 = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawOvalintintintint {
   int x;
   int y;
@@ -482,112 +623,74 @@ class VGCDrawOvalintintintint {
     this.height = 0,
   });
 
-  factory VGCDrawOvalintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawOvalintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawOvalintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawOvalintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawOvalintintintint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawOvalintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawOvalintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawOvalintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawPathPath {
   VPath? path;
 
   VGCDrawPathPath();
 
-  factory VGCDrawPathPath.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPathPathFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPathPathToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawPathPath.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawPathPath.fromJson(json as Map<String, dynamic>);
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawPathPath.fromBinary(GcWireReader r) {
+    final op = VGCDrawPathPath();
+    {
+      final ww = r.wire();
+      op.path = ww.object(VPath.new);
     }
-    return VGCDrawPathPath()
-      ..path = json[0] == null
-          ? null
-          : VPath.fromJson(json[0] as Map<String, dynamic>);
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawPointintint {
   int x;
   int y;
 
   VGCDrawPointintint({this.x = 0, this.y = 0});
 
-  factory VGCDrawPointintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPointintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPointintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawPointintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawPointintint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawPointintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawPointintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawPointintint();
+    op.x = r.i();
+    op.y = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawPolygonint {
   List<int>? pointArray;
 
   VGCDrawPolygonint();
 
-  factory VGCDrawPolygonint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPolygonintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPolygonintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawPolygonint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawPolygonint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawPolygonint()
-      ..pointArray = (json[0] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawPolygonint.fromBinary(GcWireReader r) {
+    final op = VGCDrawPolygonint();
+    op.pointArray = r.ints();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawPolylineint {
   List<int>? pointArray;
 
   VGCDrawPolylineint();
 
-  factory VGCDrawPolylineint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawPolylineintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawPolylineintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawPolylineint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawPolylineint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawPolylineint()
-      ..pointArray = (json[0] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawPolylineint.fromBinary(GcWireReader r) {
+    final op = VGCDrawPolylineint();
+    op.pointArray = r.ints();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawRectangleintintintint {
   int x;
   int y;
@@ -601,26 +704,17 @@ class VGCDrawRectangleintintintint {
     this.height = 0,
   });
 
-  factory VGCDrawRectangleintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawRectangleintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawRectangleintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawRectangleintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawRectangleintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCDrawRectangleintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawRectangleintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawRectangleintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawRoundRectangleintintintintintint {
   int x;
   int y;
@@ -638,30 +732,19 @@ class VGCDrawRoundRectangleintintintintintint {
     this.arcHeight = 0,
   });
 
-  factory VGCDrawRoundRectangleintintintintintint.fromJson(
-    Map<String, dynamic> json,
-  ) => _$VGCDrawRoundRectangleintintintintintintFromJson(json);
-  Map<String, dynamic> toJson() =>
-      _$VGCDrawRoundRectangleintintintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawRoundRectangleintintintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawRoundRectangleintintintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCDrawRoundRectangleintintintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt()
-      ..arcWidth = (json[4] as num).toInt()
-      ..arcHeight = (json[5] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawRoundRectangleintintintintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawRoundRectangleintintintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    op.arcWidth = r.i();
+    op.arcHeight = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCDrawTextStringintintint {
   String string;
   int x;
@@ -675,24 +758,17 @@ class VGCDrawTextStringintintint {
     this.flags = 0,
   });
 
-  factory VGCDrawTextStringintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCDrawTextStringintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCDrawTextStringintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCDrawTextStringintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCDrawTextStringintintint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCDrawTextStringintintint()
-      ..string = json[0] as String
-      ..x = (json[1] as num).toInt()
-      ..y = (json[2] as num).toInt()
-      ..flags = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCDrawTextStringintintint.fromBinary(GcWireReader r) {
+    final op = VGCDrawTextStringintintint();
+    op.string = r.string() ?? '';
+    op.x = r.i();
+    op.y = r.i();
+    op.flags = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillArcintintintintintint {
   int x;
   int y;
@@ -710,28 +786,19 @@ class VGCFillArcintintintintintint {
     this.arcAngle = 0,
   });
 
-  factory VGCFillArcintintintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillArcintintintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillArcintintintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillArcintintintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillArcintintintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCFillArcintintintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt()
-      ..startAngle = (json[4] as num).toInt()
-      ..arcAngle = (json[5] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillArcintintintintintint.fromBinary(GcWireReader r) {
+    final op = VGCFillArcintintintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    op.startAngle = r.i();
+    op.arcAngle = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillGradientRectangleintintintintboolean {
   int x;
   int y;
@@ -747,29 +814,20 @@ class VGCFillGradientRectangleintintintintboolean {
     this.vertical = false,
   });
 
-  factory VGCFillGradientRectangleintintintintboolean.fromJson(
-    Map<String, dynamic> json,
-  ) => _$VGCFillGradientRectangleintintintintbooleanFromJson(json);
-  Map<String, dynamic> toJson() =>
-      _$VGCFillGradientRectangleintintintintbooleanToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillGradientRectangleintintintintboolean.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillGradientRectangleintintintintboolean.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCFillGradientRectangleintintintintboolean()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt()
-      ..vertical = json[4] as bool;
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillGradientRectangleintintintintboolean.fromBinary(
+    GcWireReader r,
+  ) {
+    final op = VGCFillGradientRectangleintintintintboolean();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    op.vertical = r.b();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillOvalintintintint {
   int x;
   int y;
@@ -783,68 +841,46 @@ class VGCFillOvalintintintint {
     this.height = 0,
   });
 
-  factory VGCFillOvalintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillOvalintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillOvalintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillOvalintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillOvalintintintint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCFillOvalintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillOvalintintintint.fromBinary(GcWireReader r) {
+    final op = VGCFillOvalintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillPathPath {
   VPath? path;
 
   VGCFillPathPath();
 
-  factory VGCFillPathPath.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillPathPathFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillPathPathToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillPathPath.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillPathPath.fromJson(json as Map<String, dynamic>);
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillPathPath.fromBinary(GcWireReader r) {
+    final op = VGCFillPathPath();
+    {
+      final ww = r.wire();
+      op.path = ww.object(VPath.new);
     }
-    return VGCFillPathPath()
-      ..path = json[0] == null
-          ? null
-          : VPath.fromJson(json[0] as Map<String, dynamic>);
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillPolygonint {
   List<int>? pointArray;
 
   VGCFillPolygonint();
 
-  factory VGCFillPolygonint.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillPolygonintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillPolygonintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillPolygonint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillPolygonint.fromJson(json as Map<String, dynamic>);
-    }
-    return VGCFillPolygonint()
-      ..pointArray = (json[0] as List<dynamic>?)
-          ?.map((e) => (e as num).toInt())
-          .toList();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillPolygonint.fromBinary(GcWireReader r) {
+    final op = VGCFillPolygonint();
+    op.pointArray = r.ints();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillRectangleintintintint {
   int x;
   int y;
@@ -858,26 +894,17 @@ class VGCFillRectangleintintintint {
     this.height = 0,
   });
 
-  factory VGCFillRectangleintintintint.fromJson(Map<String, dynamic> json) =>
-      _$VGCFillRectangleintintintintFromJson(json);
-  Map<String, dynamic> toJson() => _$VGCFillRectangleintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillRectangleintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillRectangleintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCFillRectangleintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillRectangleintintintint.fromBinary(GcWireReader r) {
+    final op = VGCFillRectangleintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    return op;
   }
 }
 
-@JsonSerializable()
 class VGCFillRoundRectangleintintintintintint {
   int x;
   int y;
@@ -895,25 +922,15 @@ class VGCFillRoundRectangleintintintintintint {
     this.arcHeight = 0,
   });
 
-  factory VGCFillRoundRectangleintintintintintint.fromJson(
-    Map<String, dynamic> json,
-  ) => _$VGCFillRoundRectangleintintintintintintFromJson(json);
-  Map<String, dynamic> toJson() =>
-      _$VGCFillRoundRectangleintintintintintintToJson(this);
-
-  /// The op as Java sends it, its arguments in order, or spelled out by name.
-  factory VGCFillRoundRectangleintintintintintint.fromWire(Object? json) {
-    if (json is! List) {
-      return VGCFillRoundRectangleintintintintintint.fromJson(
-        json as Map<String, dynamic>,
-      );
-    }
-    return VGCFillRoundRectangleintintintintintint()
-      ..x = (json[0] as num).toInt()
-      ..y = (json[1] as num).toInt()
-      ..width = (json[2] as num).toInt()
-      ..height = (json[3] as num).toInt()
-      ..arcWidth = (json[4] as num).toInt()
-      ..arcHeight = (json[5] as num).toInt();
+  /// The op as a GC's binary frame carries it; see GcWireReader.
+  factory VGCFillRoundRectangleintintintintintint.fromBinary(GcWireReader r) {
+    final op = VGCFillRoundRectangleintintintintintint();
+    op.x = r.i();
+    op.y = r.i();
+    op.width = r.i();
+    op.height = r.i();
+    op.arcWidth = r.i();
+    op.arcHeight = r.i();
+    return op;
   }
 }

@@ -78,8 +78,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // Java leaves a zero seq off the wire, so null is 0; a list requested before this mounted is
     // not reopened.
     _lastShowListPopupSeq = state.showListPopupSeq ?? 0;
-    _activationToken = EquoCommService.onRaw(_activationChannel, (args) {
-      final decoded = args is String ? jsonDecode(args) : args;
+    _activationToken = EquoCommService.onRaw(_activationChannel, (decoded) {
       if (mounted && decoded is Map && decoded['active'] is bool) {
         // Kept on the state too, or a rebuild re-reads the last push's stale flag in extraSetState.
         state.highlight = decoded['active'] as bool;

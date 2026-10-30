@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'composite_theme_extension.tailor.dart';
-part 'composite_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
 class CompositeThemeExtension extends ThemeExtension<CompositeThemeExtension> with _$CompositeThemeExtensionTailorMixin {
   final Color backgroundColor;
   final Color disabledBackgroundColor;
@@ -49,9 +43,4 @@ class CompositeThemeExtension extends ThemeExtension<CompositeThemeExtension> wi
     required this.panelShadowDx,
     required this.panelShadowDy,
   });
-
-  factory CompositeThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$CompositeThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CompositeThemeExtensionToJson(this);
 }

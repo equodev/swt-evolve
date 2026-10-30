@@ -3,8 +3,6 @@
 // Not a regression test - a measurement, printed rather than asserted, for deciding whether the
 // shape of what we send is the thing worth changing.
 
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/src/comm/v_registry.dart';
@@ -13,7 +11,9 @@ import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
+import 'support/deliver.dart';
 const int _children = 500;
 
 VLabel _leaf(int id, int y, int seq) => VLabel()
@@ -38,15 +38,6 @@ VComposite _parent(List<VControl> kids, int seq) => VComposite()
     ..width = 400
     ..height = 10000);
 
-Map<String, dynamic> _boundsUpdate(int id, int y, int seq, int base) => {
-      'swt': 'Label',
-      'id': id,
-      '_s': seq,
-      '_b': base,
-      '_d': ['bounds'],
-      'bounds': {'x': 0, 'y': y, 'width': 100, 'height': 18},
-    };
-
 int _timeMicros(void Function() body) {
   final sw = Stopwatch()..start();
   body();
@@ -55,54 +46,19 @@ int _timeMicros(void Function() body) {
 }
 
 void main() {
-  test('MEASURE: applying a layout pass, per-child updates vs one parent update', () {
+  test('MEASURE: applying a layout pass, per-child changes vs one parent change', () {
     final registry = VRegistry();
     final kids = [for (var i = 0; i < _children; i++) _leaf(1000 + i, i * 20, 1)];
-    registry.register(_parent(kids, 1));
+    applyWhole(_parent(kids, 1), registry: registry);
 
-    // What the wire carries today: one batched message holding one update per child.
-    final perChild = [
-      for (var i = 0; i < _children; i++) _boundsUpdate(1000 + i, i * 20 + 1, 100 + i, 1),
-    ];
-    final batchBody = jsonEncode([
-      for (final f in perChild) ['Label/${f['id']}', f],
-    ]);
-    print('MEASURE per-child batch bytes: ${utf8.encode(batchBody).length}');
-
-    // The same information addressed to the parent instead, each child named rather than
-    // re-described - the shape a nested update would take.
-    final nestedBody = jsonEncode({
-      'swt': 'Composite',
-      'id': 1,
-      '_s': 900,
-      '_b': 1,
-      '_d': ['children'],
-      'children': [
-        for (var i = 0; i < _children; i++)
-          {
-            'swt': 'Label',
-            'id': 1000 + i,
-            '_s': 100 + i,
-            '_b': 1,
-            '_d': ['bounds'],
-            'bounds': {'x': 0, 'y': i * 20 + 1, 'width': 100, 'height': 18},
-          }
-      ],
-    });
-    print('MEASURE one-parent nested bytes: ${utf8.encode(nestedBody).length}');
-
-    // Decoding is one pass over the bytes either way; the interesting cost is what applying does.
-    final decodeBatch = _timeMicros(() => jsonDecode(batchBody));
-    final decodeNested = _timeMicros(() => jsonDecode(nestedBody));
-    print('MEASURE decode batch=${decodeBatch}us nested=${decodeNested}us');
-
-    // Applying the per-child updates, which is what the client does now.
+    // One change per child, as a layout pass sends them.
     final applied = _timeMicros(() {
-      for (final f in perChild) {
-        registry.apply('Label/${f['id']}', f);
+      for (var i = 0; i < _children; i++) {
+        applyChange(_leaf(1000 + i, i * 20 + 1, 100 + i),
+            keys: [WireKey.k_Control_bounds], base: 1, registry: registry);
       }
     });
-    print('MEASURE apply 500 per-child updates: ${applied}us '
+    print('MEASURE apply 500 per-child changes: ${applied}us '
         '(${(applied / _children).toStringAsFixed(1)}us each)');
 
     // The same 500 properties written straight onto the held values, with none of the delivery
@@ -115,17 +71,17 @@ void main() {
     });
     print('MEASURE write 500 bounds directly: ${floor}us');
 
-    // What one merge costs on a value that holds a lot: the parent with its 500 children.
-    final oneBigMerge = _timeMicros(() {
-      registry.apply('Composite/1', {
-        'swt': 'Composite',
-        'id': 1,
-        '_s': 950,
-        '_b': 1,
-        '_d': ['bounds'],
-        'bounds': {'x': 0, 'y': 0, 'width': 401, 'height': 10000},
-      });
+    // What one change costs on a value that holds a lot: the parent with its 500 children.
+    final oneBigChange = _timeMicros(() {
+      applyChange(
+          _parent(kids, 950)
+            ..bounds = (VRectangle()
+              ..width = 401
+              ..height = 10000),
+          keys: [WireKey.k_Control_bounds],
+          base: 1,
+          registry: registry);
     });
-    print('MEASURE one update to the 500-child parent: ${oneBigMerge}us');
+    print('MEASURE one change to the 500-child parent: ${oneBigChange}us');
   });
 }

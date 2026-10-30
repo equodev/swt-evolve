@@ -19,11 +19,13 @@ import 'menu_evolve.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
 import 'utils/key_edit_order.dart';
+import 'utils/pending_move.dart';
 import 'focus_requests.dart';
 import 'utils/traversal_veto_scope.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
 import '../comm/v_registry.dart';
+import '../comm/widget_wire.dart' show sendWireWith;
 
 class DisplaySwt extends StatefulWidget {
   final VDisplay value;
@@ -47,7 +49,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     FocusRequests.instance.holderFromDisplay(_display.focusHolderId);
     _publishHoldings();
     applySystemMenu(_heldSystemMenu());
-    EquoCommService.onRaw('Display/${widget.value.id}', _onUpdate);
+    _stopRecords = VRegistry.instance.onHolder<VDisplay>('Display', VDisplay.new, _onRecord);
     // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
     // how Eclipse command shortcuts dispatch). This replaces the per-control forwarders while a
@@ -55,6 +57,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     startDisplayKeyForwarding();
     _traverseGate.attach('Display', widget.value.id ?? 0);
     HardwareKeyboard.instance.addHandler(_forwardKeyToSwt);
+    OpenMenus.forwardHeld = _forwardUnheldKey;
     _listenToClipboardRequests();
   }
 
@@ -73,19 +76,26 @@ class _DisplaySwtState extends State<DisplaySwt> {
       } catch (_) {
         text = null;
       }
-      EquoCommService.sendPayload(
-          'Display/$id/Clipboard/contents', {'reqId': reqId, 'text': text});
+      sendWireWith('Display/$id/Clipboard/contents', (w) {
+        w.string('$reqId');
+        if (text == null) {
+          w.u8(0);
+        } else {
+          w.string(text);
+        }
+      });
     });
   }
 
-  static Map<String, dynamic>? _decode(dynamic args) {
-    final decoded = args is String ? jsonDecode(args) : args;
-    return decoded is Map<String, dynamic> ? decoded : null;
-  }
+  static Map<String, dynamic>? _decode(dynamic args) => args is Map<String, dynamic> ? args : null;
+
+  void Function()? _stopRecords;
 
   @override
   void dispose() {
+    _stopRecords?.call();
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
+    if (OpenMenus.forwardHeld == _forwardUnheldKey) OpenMenus.forwardHeld = null;
     _traverseGate.detach();
     stopDisplayKeyForwarding();
     super.dispose();
@@ -97,17 +107,61 @@ class _DisplaySwtState extends State<DisplaySwt> {
   bool _forwardKeyToSwt(KeyEvent event) {
     // A focused widget with its own keyboard pipeline (a Swing island) forwards its own keys.
     if (keyboardClaimed) return false;
+    // Keys typed while a pop-up opens wait for it, behind the ones already waiting: the menu can
+    // be open a frame before it has the focus.
+    if (OpenMenus.holding) {
+      OpenMenus.hold(event);
+      return false;
+    }
+    return _forwardUnheldKey(event);
+  }
+
+  /// [event] past the keys a pop-up holds: a held key is played here once no menu took it.
+  bool _forwardUnheldKey(KeyEvent event) {
+    if (keyboardClaimed) return false;
     // An open menu owns the keyboard, as the platform's menu loop does: the focused control gets nothing.
-    if (OpenMenus.any) return false;
+    if (event is! KeyUpEvent && OpenMenus.any) return false;
+    // Every handler reads each key of one key message before the menu reads any, so a release can
+    // find open the menu its own press is about to close. It is the menu's only if the menu is
+    // still open once it has read the keys before it; keys read meanwhile wait behind it.
+    final menuMayTakeIt = event is KeyUpEvent && OpenMenus.any;
+    if (menuMayTakeIt || _keysAfterMenus.isNotEmpty) {
+      _keysAfterMenus.add((event: event, menuMayTakeIt: menuMayTakeIt));
+      if (_keysAfterMenus.length == 1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _forwardKeysAfterMenus());
+        WidgetsBinding.instance.ensureVisualUpdate();
+      }
+      return false;
+    }
+    _forwardKey(event);
+    return false;
+  }
+
+  /// Keys waiting for the menus to read the keys before them, in the order they came.
+  final List<({KeyEvent event, bool menuMayTakeIt})> _keysAfterMenus = [];
+
+  void _forwardKeysAfterMenus() {
+    final keys = List.of(_keysAfterMenus);
+    _keysAfterMenus.clear();
+    if (!mounted) return;
+    for (final key in keys) {
+      if (keyboardClaimed || (key.menuMayTakeIt && OpenMenus.any)) continue;
+      _forwardKey(key.event);
+    }
+  }
+
+  void _forwardKey(KeyEvent event) {
     final int id = widget.value.id ?? 0;
-    if (openListClaimsKey(event)) return false;
+    if (openListClaimsKey(event)) return;
+    // A move held back by the throttle happened before this key, so it goes first.
+    PendingMove.flush();
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.contextMenu) {
       EquoCommService.sendPayload('Display/$id/MenuKey', VEvent());
-      return false;
+      return;
     }
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
-      if (compositionOwnsKey(event.character ?? '')) return false;
+      if (compositionOwnsKey(event.character ?? '')) return;
       final v = mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
@@ -124,7 +178,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
         );
       }
     }
-    return false;
   }
 
   /// A printable character with no Ctrl, Alt or Meta held: one a text field types.
@@ -134,9 +187,16 @@ class _DisplaySwtState extends State<DisplaySwt> {
         && !keyboard.isControlPressed && !keyboard.isAltPressed && !keyboard.isMetaPressed;
   }
 
-  void _onUpdate(dynamic raw) {
+  /// The display's record in a binary frame: its shells and the rest, already resolved to held values.
+  void _onRecord(int id, VDisplay updated) {
+    if (id != widget.value.id) return;
+    _apply(updated
+      ..id = id
+      ..swt = 'Display');
+  }
+
+  void _apply(VDisplay updated) {
     try {
-      final updated = VDisplay.fromJson(raw as Map<String, dynamic>);
       applyConfigFlags(updated.config);
       _display = updated;
       FocusRequests.instance.holderFromDisplay(updated.focusHolderId);

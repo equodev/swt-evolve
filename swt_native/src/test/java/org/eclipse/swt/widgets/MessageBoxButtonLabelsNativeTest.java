@@ -1,6 +1,6 @@
 package org.eclipse.swt.widgets;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.MessageBoxOpenNativeTest.defaultLabels;
 import static org.eclipse.swt.widgets.MessageBoxOpenNativeTest.sent;
@@ -28,7 +28,7 @@ class MessageBoxButtonLabelsNativeTest extends DialogBridgeTestBase {
         String[] expected = defaultLabels();
         expected[2] = "Save";
         expected[3] = "Don't Save";
-        assertThatJson(sent(box)).node("buttonLabels").isArray().containsExactly((Object[]) expected);
+        assertThatWire(sent(box)).node("buttonLabels").isEqualTo(expected);
         assertThat(((DartMessageBox) box.getImpl())._labels()).isSameAs(labels);
     }
 
@@ -49,8 +49,8 @@ class MessageBoxButtonLabelsNativeTest extends DialogBridgeTestBase {
         labels.put(SWT.IGNORE, "ignore");
         box.setButtonLabels(labels);
 
-        assertThatJson(sent(box)).node("buttonLabels").isArray()
-                .containsExactly("ok", "cancel", "yes", "no", "abort", "retry", "ignore");
+        assertThatWire(sent(box)).node("buttonLabels")
+                .isEqualTo(new String[] {"ok", "cancel", "yes", "no", "abort", "retry", "ignore"});
     }
 
     @Test

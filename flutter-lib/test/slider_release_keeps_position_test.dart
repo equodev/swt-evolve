@@ -20,6 +20,9 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/slider.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+
+import 'delivery/support/deliver.dart';
 
 const double _sliderWidth = 24;
 const double _sliderHeight = 200;
@@ -54,14 +57,13 @@ int _seq = 0;
 Future<void> _javaReports(WidgetTester tester, int selection) async {
   final base = _seq;
   _seq += 1;
-  VRegistry.instance.apply('Slider/$_id', <String, dynamic>{
-    'id': _id,
-    'swt': 'Slider',
-    '_s': _seq,
-    '_b': base,
-    '_d': <String>['selection'],
-    'selection': selection,
-  });
+  applyChange(
+      VSlider()
+        ..id = _id
+        ..seq = _seq
+        ..selection = selection,
+      keys: [WireKey.k_Slider_selection],
+      base: base);
   // A single frame, so the wait for the replay to go quiet is not advanced:
   // these arrive faster than that.
   await tester.pump();

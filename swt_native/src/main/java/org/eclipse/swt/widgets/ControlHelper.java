@@ -17,8 +17,9 @@ public class ControlHelper {
 
     // The control each native Shell last announced as activated, so the next announcement can end it.
     // Only an embedded Dart control in a native Shell lands here: a Dart Shell tracks its own active
-    // control (FlutterBridge.setActiveControl). Keyed by Shell, which belongs to one Display.
-    private static final Map<Shell, Control> lastActivated =
+    // control (FlutterBridge.setActiveControl). The control is held weakly: it is inside the Shell, so
+    // a strong value would keep its own key alive.
+    private static final Map<Shell, java.lang.ref.WeakReference<Control>> lastActivated =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     // Area the Paint being dispatched is scoped to, null when it covers the whole client area. A GC
@@ -780,6 +781,18 @@ public class ControlHelper {
             dispatchPaint(c);
     }
 
+    /** A held Paint, run now on the control's own thread; whether it was still wanted and ran. */
+    static boolean paintHeldNow(DartControl c) {
+        if (!paintState(c).queued)
+            return false;
+        paintState(c).queued = false;
+        // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
+        if (c.drawCount > 0)
+            return false;
+        firePaint(c);
+        return true;
+    }
+
     private static void dispatchPaint(DartControl c) {
         c.getDisplay().asyncExec(() -> {
             paintState(c).queued = false;
@@ -994,7 +1007,8 @@ public class ControlHelper {
         // drive too. A second tracker here announced every focus change twice, once from each.
         if (control.getBridge().setActiveControl(control, detail))
             return;
-        Control previous = lastActivated.put(shell, now);
+        java.lang.ref.WeakReference<Control> held = lastActivated.put(shell, new java.lang.ref.WeakReference<>(now));
+        Control previous = held == null ? null : held.get();
         // An open shell is the active control of itself until something inside it takes over -- what
         // Shell.setActiveControl(this) establishes natively when the shell activates. Treating an
         // untracked shell as inactive instead makes the first focus inside it announce the shell too.

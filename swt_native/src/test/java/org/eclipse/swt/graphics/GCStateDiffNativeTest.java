@@ -2,7 +2,9 @@ package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,13 +55,26 @@ class GCStateDiffNativeTest {
     }
 
     /** The GC state frames sent on the canvas's channel, batched or not, in order. */
-    private List<String> stateFrames() {
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> stateFrames() {
         String channel = "GC/" + canvas.hashCode();
-        List<String> frames = new ArrayList<>();
-        for (String[] entry : dev.equo.swt.harness.BatchEntries.of(bridge.comm.sent)) {
-            if (channel.equals(entry[0])) frames.add(entry[1]);
+        List<Map<String, Object>> frames = new ArrayList<>();
+        for (GcFrames.Entry entry : dev.equo.swt.harness.BatchEntries.of(bridge.comm.sent)) {
+            if (channel.equals(entry.channel())) frames.add((Map<String, Object>) entry.value());
         }
         return frames;
+    }
+
+    private static void mentions(Map<String, Object> frame, String... keys) {
+        for (String key : keys) assertThat(WireValues.mentions(frame, key)).as("%s in %s", key, frame).isTrue();
+    }
+
+    private static void omits(Map<String, Object> frame, String... keys) {
+        for (String key : keys) assertThat(WireValues.mentions(frame, key)).as("%s in %s", key, frame).isFalse();
+    }
+
+    private static void isAChange(Map<String, Object> frame) {
+        assertThat(WireValues.same(frame.get("_d"), 0)).as("a change: %s", frame).isTrue();
     }
 
     @Test
@@ -70,19 +86,20 @@ class GCStateDiffNativeTest {
         gc.fillRectangle(0, 0, 10, 10);
         gc.dispose();
 
-        List<String> frames = stateFrames();
+        List<Map<String, Object>> frames = stateFrames();
         assertThat(frames).hasSize(2);
-        assertThat(frames.get(0)).doesNotContain("\"_d\"").contains("\"_s\"").contains("\"background\"");
+        omits(frames.get(0), "_d");
+        assertThat(frames.get(0)).containsEntry("_whole", true);
+        mentions(frames.get(0), "background");
         // A change names neither the GC, its properties nor the state it follows: the channel says
         // which GC and delivers in order, and the drawer merges whatever keys arrive.
-        assertThat(frames.get(1)).contains("\"_d\":0").contains("\"clipping\":{")
-                .doesNotContain("\"_b\"").doesNotContain("\"_s\"")
-                .doesNotContain("\"swt\"").doesNotContain("\"id\"")
-                .doesNotContain("\"background\"").doesNotContain("\"foreground\"");
+        isAChange(frames.get(1));
+        assertThat(frames.get(1).get("clipping")).isInstanceOf(Map.class);
+        omits(frames.get(1), "_b", "_s", "swt", "id", "background", "foreground");
     }
 
     @Test
-    @DisplayName("a colour changed inside a paint travels as one ARGB number")
+    @DisplayName("a colour travels as its ARGB word, described whole or changed inside a paint")
     void changedColourIsPacked() {
         GC gc = new GC(canvas);
         gc.fillRectangle(0, 0, 10, 10);
@@ -90,10 +107,48 @@ class GCStateDiffNativeTest {
         gc.drawLine(0, 0, 10, 10);
         gc.dispose();
 
-        List<String> frames = stateFrames();
+        List<Map<String, Object>> frames = stateFrames();
         assertThat(frames).hasSize(2);
-        assertThat(frames.get(0)).contains("\"foreground\":{");
-        assertThat(frames.get(1)).contains("\"foreground\":" + 0xFF123456L);
+        assertThat(frames.get(0)).containsEntry("foreground", "#ff000000");
+        assertThat(frames.get(1)).containsEntry("foreground", "#ff123456");
+    }
+
+    @Test
+    @DisplayName("a colour change does not resend the pattern it clears when there was none")
+    void colourChangeWithoutPatternSendsOnlyTheColour() {
+        GC gc = new GC(canvas);
+        gc.fillRectangle(0, 0, 10, 10);
+        gc.setForeground(new Color(canvas.getDisplay(), 0x12, 0x34, 0x56));
+        gc.setBackground(new Color(canvas.getDisplay(), 0x65, 0x43, 0x21));
+        gc.drawLine(0, 0, 10, 10);
+        gc.dispose();
+
+        List<Map<String, Object>> frames = stateFrames();
+        assertThat(frames).hasSize(2);
+        mentions(frames.get(1), "foreground", "background");
+        assertThat(WireValues.containsText(frames.get(1), "Pattern")).as("%s", frames.get(1)).isFalse();
+    }
+
+    @Test
+    @DisplayName("a colour change after a pattern tells the client the pattern is gone")
+    void colourChangeAfterPatternClearsIt() {
+        Display display = canvas.getDisplay();
+        Pattern pattern = new Pattern(display, 0, 0, 10, 10,
+                new Color(display, 255, 0, 0), new Color(display, 0, 0, 255));
+        GC gc = new GC(canvas);
+        gc.setForegroundPattern(pattern);
+        gc.setBackgroundPattern(pattern);
+        gc.fillRectangle(0, 0, 10, 10);
+        gc.setForeground(new Color(display, 0x12, 0x34, 0x56));
+        gc.setBackground(new Color(display, 0x65, 0x43, 0x21));
+        gc.drawLine(0, 0, 10, 10);
+        gc.dispose();
+
+        List<Map<String, Object>> frames = stateFrames();
+        assertThat(frames).hasSize(2);
+        assertThat(frames.get(0).get("foregroundPattern")).isInstanceOf(Map.class);
+        assertThat(frames.get(0).get("backgroundPattern")).isInstanceOf(Map.class);
+        assertThat(frames.get(1)).containsEntry("foregroundPattern", null).containsEntry("backgroundPattern", null);
     }
 
     @Test
@@ -112,7 +167,8 @@ class GCStateDiffNativeTest {
         second.dispose();
 
         assertThat(stateFrames()).hasSize(1);
-        assertThat(stateFrames().get(0)).doesNotContain("\"_d\"").contains("\"background\"");
+        omits(stateFrames().get(0), "_d");
+        mentions(stateFrames().get(0), "background");
     }
 
     @Test
@@ -129,9 +185,9 @@ class GCStateDiffNativeTest {
         outer.fillRectangle(0, 0, 10, 10);
         outer.dispose();
 
-        List<String> frames = stateFrames();
-        assertThat(frames.get(frames.size() - 1)).doesNotContain("\"_d\"").contains("\"clipping\"")
-                .contains("\"background\"");
+        List<Map<String, Object>> frames = stateFrames();
+        omits(frames.get(frames.size() - 1), "_d");
+        mentions(frames.get(frames.size() - 1), "clipping", "background");
     }
 
     @Test
@@ -147,8 +203,8 @@ class GCStateDiffNativeTest {
         region.dispose();
         gc.dispose();
 
-        List<String> frames = stateFrames();
+        List<Map<String, Object>> frames = stateFrames();
         assertThat(frames).hasSize(2);
-        assertThat(frames.get(1)).contains("\"_d\"").contains("\"clippingRects\"");
+        mentions(frames.get(1), "_d", "clippingRects");
     }
 }

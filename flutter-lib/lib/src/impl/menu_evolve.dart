@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
+import '../comm/v_registry.dart';
 import '../gen/menu.dart';
 import 'utils/window_origin.dart';
 import '../gen/menuitem.dart';
@@ -57,6 +60,42 @@ class OpenPopupMenuTracker {
   }
 }
 
+/// Follows the items of a cascade's menu, which no widget of its own renders. A cascade asks for
+/// its items by sending Show, and JFace fills or changes them in answer; that answer is a delivery
+/// to the menu, so whoever draws the cascade has to listen for it. [onItems] is called once the
+/// delivery has been applied whole, because the items it names are described after it.
+class MenuItemsWatch {
+  MenuItemsWatch(VMenu menu, this.onItems) : _channel = VRegistry.channelOf(menu) {
+    VRegistry.instance.watch(_channel, _changed);
+  }
+
+  final String _channel;
+  final void Function(List<VMenuItem> items) onItems;
+  bool _disposed = false;
+
+  bool watches(VMenu menu) => _channel == VRegistry.channelOf(menu);
+
+  void _changed(VChange change) {
+    scheduleMicrotask(() {
+      if (_disposed) return;
+      final menu = VRegistry.instance.valueOn(_channel);
+      if (menu is! VMenu) return;
+      onItems([
+        for (final item in menu.items ?? const <VMenuItem>[])
+          switch (VRegistry.instance.valueOn(VRegistry.channelOf(item))) {
+            final VMenuItem held => held,
+            _ => item,
+          },
+      ]);
+    });
+  }
+
+  void dispose() {
+    _disposed = true;
+    VRegistry.instance.unwatch(_channel, _changed);
+  }
+}
+
 /// Every mounted menu anchor's controller, so the Display can tell when a menu holds the keyboard.
 class OpenMenus {
   static final Set<MenuController> _controllers = {};
@@ -71,6 +110,49 @@ class OpenMenus {
   static void add(MenuController controller) => _controllers.add(controller);
 
   static void remove(MenuController controller) => _controllers.remove(controller);
+
+  static final Set<Object> _opening = {};
+  static final List<KeyEvent> _held = [];
+
+  /// Where a held key goes when no menu took it: the Display's forwarding to Java.
+  static bool Function(KeyEvent event)? forwardHeld;
+
+  /// True from a pop-up's request to Java until it is open and focused. Natively the menu owns the
+  /// keyboard from the moment it shows; here a key in that window would reach the focused control.
+  static bool get opening => _opening.isNotEmpty;
+
+  /// True while keys wait for a pop-up: while it opens, and until the keys held meanwhile have been
+  /// played. A key that comes in that time waits behind them, so each reaches the menu, or Java once
+  /// the menu is down, in the order it was typed.
+  static bool get holding => _opening.isNotEmpty || _held.isNotEmpty;
+
+  static void startOpening(Object menu) => _opening.add(menu);
+
+  static void hold(KeyEvent event) => _held.add(event);
+
+  /// Ends [menu]'s opening and plays the keys held meanwhile, in order, to the open menu's focus or,
+  /// once none is open (an Escape among them closed it), to Java.
+  static void endOpening(Object menu) {
+    if (!_opening.remove(menu) || _opening.isNotEmpty || _held.isEmpty) return;
+    // A focus requested this frame is applied in a microtask, which runs before this one.
+    scheduleMicrotask(_playNextHeld);
+  }
+
+  /// One key a frame, as typed keys arrive: what the menu does with one (moving the focus, closing)
+  /// settles before the next is read.
+  static void _playNextHeld() {
+    if (_held.isEmpty || opening) return;
+    final event = _held.removeAt(0);
+    if (!any) {
+      forwardHeld?.call(event);
+      _playNextHeld();
+      return;
+    }
+    ServicesBinding.instance.keyEventManager.keyMessageHandler?.call(KeyMessage([event], null));
+    if (_held.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _playNextHeld());
+    WidgetsBinding.instance.ensureVisualUpdate();
+  }
 }
 
 class MenuChangeNotifier extends InheritedWidget {
@@ -196,11 +278,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     copies.add(this);
     if (copies.length > 1) return;
     // A channel holds one handler, so the copies share it: a second subscription would silence the first.
-    EquoCommService.onRaw("$channel/closeMenu", (_) {
-      for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
-        if (copy._menuController.isOpen) copy._menuController.close();
-      }
-    });
     EquoCommService.onRaw("$channel/shown", (_) {
       for (final copy in List.of(_mounted[channel] ?? const <MenuImpl>{})) {
         copy._onMenuShown();
@@ -220,7 +297,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     final copies = _mounted[channel];
     if (copies == null || !copies.remove(this) || copies.isNotEmpty) return;
     _mounted.remove(channel);
-    EquoCommService.remove("$channel/closeMenu");
     EquoCommService.remove("$channel/shown");
   }
 
@@ -230,6 +306,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       OpenPopupMenuTracker._current = null;
     }
     OpenMenus.remove(_menuController);
+    OpenMenus.endOpening(this);
     OpenMenus._activeBars.remove(this);
     _unsubscribeRawChannels();
     _barFocusNode.dispose();
@@ -244,15 +321,22 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     if (_presentingPeer != null) return;
     _pendingContextMenuPosition = position;
     _showSent = true;
+    OpenMenus.startOpening(this);
     widget.sendMenuShow(state, null);
   }
 
   void _onMenuShown() {
     final position = _pendingContextMenuPosition;
-    if (position == null || _menuController.isOpen || !mounted) return;
+    if (position == null || _menuController.isOpen || !mounted) {
+      OpenMenus.endOpening(this);
+      return;
+    }
     _pendingContextMenuPosition = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _menuController.isOpen) return;
+      if (!mounted || _menuController.isOpen) {
+        OpenMenus.endOpening(this);
+        return;
+      }
       _openedFromVisibleFlag = _pendingOpenFromVisibleFlag;
       _pendingOpenFromVisibleFlag = false;
       _menuController.open(position: position);
@@ -268,18 +352,22 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   // Focus(autofocus:) -- relying on either of those alone was a race with no guaranteed winner.
   void _focusFirstItemNextFrame() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_menuController.isOpen) return;
-      if (_firstItemFocusNode.context != null) {
-        _firstItemFocusNode.requestFocus();
-        return;
-      }
-      final items = _itemsFocusNode.traversalDescendants;
-      if (items.isNotEmpty) {
-        items.first.requestFocus();
-      } else {
-        _popupAnchorFocusNode.requestFocus();
-      }
+      if (mounted && _menuController.isOpen) _focusFirstItem();
+      OpenMenus.endOpening(this);
     });
+  }
+
+  void _focusFirstItem() {
+    if (_firstItemFocusNode.context != null) {
+      _firstItemFocusNode.requestFocus();
+      return;
+    }
+    final items = _itemsFocusNode.traversalDescendants;
+    if (items.isNotEmpty) {
+      items.first.requestFocus();
+    } else {
+      _popupAnchorFocusNode.requestFocus();
+    }
   }
 
   @override
@@ -748,6 +836,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   bool _isHovered = false;
   List<Widget> _menuChildren = const [SizedBox.shrink()];
   final MenuController _subMenuController = MenuController();
+  MenuItemsWatch? _itemsWatch;
   final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'MenuBar.items');
   // Opened from the keyboard: the keyboard moves onto the first item once the menu is up.
   bool _focusFirstItemWhenOpen = false;
@@ -764,6 +853,14 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     OpenMenus.add(_subMenuController);
     if (widget.item.menu != null) MenuBarOpeners.add(widget.item, _openFromMnemonic);
     _menuChildren = _childrenOf(widget.item.menu?.items);
+    _watchItems();
+  }
+
+  void _watchItems() {
+    final menu = widget.item.menu;
+    if (menu != null && _itemsWatch?.watches(menu) == true) return;
+    _itemsWatch?.dispose();
+    _itemsWatch = menu == null ? null : MenuItemsWatch(menu, _itemsArrived);
   }
 
   static List<Widget> _childrenOf(List<VMenuItem>? items) => items == null || items.isEmpty
@@ -773,10 +870,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
   @override
   void didUpdateWidget(_MenuBarItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final items = widget.item.menu?.items;
-    if (items != null && !identical(items, oldWidget.item.menu?.items)) {
-      _menuChildren = _childrenOf(items);
-    }
+    _watchItems();
     // Java sends no answer for a drop-down disposed during its Show.
     if (_showingMenuId != null && widget.item.menu?.id != _showingMenuId) _stopShowing();
     if (oldWidget.item.id == widget.item.id && (oldWidget.item.menu == null) == (widget.item.menu == null)) {
@@ -792,7 +886,12 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     if (widget.item.menu != null) MenuBarOpeners.remove(widget.item, _openFromMnemonic);
     _stopShowing();
     _itemsFocusNode.dispose();
+    _itemsWatch?.dispose();
     super.dispose();
+  }
+
+  void _itemsArrived(List<VMenuItem> arrived) {
+    if (mounted) setState(() => _menuChildren = _childrenOf(arrived));
   }
 
   // Every opening asks Java first, as the platform sends SWT.Show before it shows a menu: an
@@ -805,9 +904,6 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     _focusFirstItemWhenOpen = focusFirstItem;
     final channel = 'Menu/${menu.id}';
     _showingMenuId = menu.id;
-    EquoCommService.on<VMenu>(channel, (VMenu updated) {
-      if (mounted) setState(() => _menuChildren = _childrenOf(updated.items ?? const []));
-    });
     EquoCommService.onRaw('$channel/shown', (_) => _onShown());
     MenuSwt<VMenu>(value: menu).sendMenuShow(menu, null);
   }
@@ -816,7 +912,6 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     final id = _showingMenuId;
     if (id == null) return;
     _showingMenuId = null;
-    EquoCommService.remove('Menu/$id');
     EquoCommService.remove('Menu/$id/shown');
   }
 

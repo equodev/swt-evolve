@@ -2484,7 +2484,7 @@ public class DartTree extends DartComposite implements ITree {
     public void setSelection(TreeItem[] items) {
         TreeItem[] newValue = items;
         checkWidget();
-        if (!java.util.Arrays.equals(this.selection, newValue)) {
+        if (!java.util.Arrays.equals(getSelection(), newValue)) {
             getValue().markDirty(VTree.SELECTION);
         }
         if (items == null)
@@ -3208,47 +3208,72 @@ public class DartTree extends DartComposite implements ITree {
                 TreeHelper.recordScrollOffset(this, e);
             });
         });
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Selection/DefaultSelection", "Selection/Selection", "SetData/SetData", "Tree/Collapse", "Tree/Expand");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TreeHelper.handleModify(this, e);
+                    });
                     return;
-                TreeHelper.handleModify(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        TreeHelper.sendSelection(this, e, SWT.DefaultSelection);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TreeHelper.sendSelection(this, e, SWT.Selection);
+                    });
                     return;
-                TreeHelper.sendSelection(this, e, SWT.DefaultSelection);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "SetData/SetData":
+                {
+                    getDisplay().asyncExec(() -> {
+                    });
                     return;
-                TreeHelper.sendSelection(this, e, SWT.Selection);
-            });
-        });
-        FlutterBridge.on(this, "SetData", "SetData", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "Tree", "Collapse", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Tree/Collapse":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TreeHelper.sendExpand(this, e, false);
+                    });
                     return;
-                TreeHelper.sendExpand(this, e, false);
-            });
-        });
-        FlutterBridge.on(this, "Tree", "Expand", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Tree/Expand":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TreeHelper.sendExpand(this, e, true);
+                    });
                     return;
-                TreeHelper.sendExpand(this, e, true);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Tree getApi() {

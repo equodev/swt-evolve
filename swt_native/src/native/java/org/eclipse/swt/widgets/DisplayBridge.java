@@ -45,19 +45,21 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private DartControl focusHolderSent = null;
 
     /**
-     * The control the client was last asked to focus and has not reported back yet, or null.
+     * The controls the client was asked to focus and has not reported back yet, oldest first.
      *
      * <p>The client reports its focus as it changes, so a report can already be in flight when Java
-     * asks for a different control. That report still names the control the client had before the
-     * request; applying it moves the focus straight back off the one just asked for.
+     * asks for a different control: one naming the control the client had before the request, or one
+     * answering an earlier request this one replaced (a dialog closing hands the focus back to an
+     * editor, then the editor it opened takes it). Applying either moves the focus straight back off
+     * the control just asked for.
      */
-    private DartControl pendingClientFocus = null;
+    private final java.util.ArrayDeque<DartControl> unansweredFocusRequests = new java.util.ArrayDeque<>();
     /** The number of the last focus request sent, which the client echoes once it has received it. */
     private long focusRequestSeq;
     /** The control the client last reported focused, whether or not the report was applied. */
     private DartControl clientReportedFocus = null;
-    /** What the client had last reported focused when the pending request went out: the only control
-     *  a report older than that request can name. */
+    /** What the client had last reported focused when the oldest unanswered request went out: a report
+     *  older than every request can name only this control. */
     private DartControl clientFocusAtRequest = null;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
@@ -100,9 +102,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     protected CommService comm() {
         if (comm == null) {
-            comm = newComm();
+            comm = createComm();
         }
         return comm;
+    }
+
+    /** The comm this Display's client talks through, made on first use. */
+    protected CommService createComm() {
+        return newComm();
     }
 
     /** True when the tree should be rendered in a native top-level window instead of a browser. */
@@ -274,7 +281,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             long answered = ((Number) seq).longValue();
             api.asyncExec(() -> {
                 if (answered == focusRequestSeq)
-                    pendingClientFocus = null;
+                    unansweredFocusRequests.clear();
             });
         });
     }
@@ -433,6 +440,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         api.asyncExec(() -> {
             if (api.isDisposed())
                 return;
+            // A shown pop-up owns the keyboard, as natively: Escape takes it down and goes no further.
+            // The key comes here when the client's menu has not taken the focus yet, the gesture that
+            // opened it having been answered before the menu was built.
+            boolean closedPopup = type == org.eclipse.swt.SWT.KeyDown && ev.keyCode == org.eclipse.swt.SWT.ESC
+                    && closeShownPopup(display);
             Control focus = api.getFocusControl();
             boolean dartFocus = focus != null && !focus.isDisposed() && focus.getImpl() instanceof DartControl;
             if (ControlHelper.capturedKey(api, type, ev)) {
@@ -447,20 +459,35 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             DartControl dc = (DartControl) focus.getImpl();
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
-                ControlHelper.RoutedKey routed = ControlHelper.routeKeyDown(dc, ev);
+                ControlHelper.RoutedKey routed = closedPopup ? null : ControlHelper.routeKeyDown(dc, ev);
                 // A modifier press edits nothing, so the client holds no proposal for it to answer.
                 if (vetoable && !ControlHelper.isModifierKey(ev.keyCode)) {
                     dev.equo.swt.FlutterBridge.send(dc, "key/verdict",
-                            dev.equo.swt.Java8.map("doit", routed.delivered && routed.keyDoit));
+                            dev.equo.swt.Java8.map("doit", routed != null && routed.delivered && routed.keyDoit));
                 }
                 // The client traverses at Display level, so the verdict goes there, not to the control.
                 if (ControlHelper.isGatedTraversal(ev)) {
-                    sendDisplayGate(display, "traverse/verdict", "doit", routed.traverseDoit);
+                    sendDisplayGate(display, "traverse/verdict", "doit", routed != null && routed.traverseDoit);
                 }
             } else {
                 ControlHelper.routeKeyUp(dc, ev);
             }
         });
+    }
+
+    /** Takes down the pop-up shown last, as the client does when Escape reaches its menu; false if none is shown. */
+    private static boolean closeShownPopup(DartDisplay display) {
+        Menu[] popups = display.popups;
+        if (popups == null)
+            return false;
+        for (int i = popups.length - 1; i >= 0; i--) {
+            Menu menu = popups[i];
+            if (menu != null && !menu.isDisposed() && display.isPopupAlreadyShown(menu)) {
+                MenuHelper.onClientHid((DartMenu) menu.getImpl(), new Event());
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -650,13 +677,53 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             vd.activeShellId = publishedActiveShell = activeShellId();
             vd.mainShellId = publishedMainShell = mainShellId(display);
             vd.windowedShellIds = windowedShellIds();
+            forgetPopupsNoLongerShown(vd);
             vd.focusHolderId = liveId(focusHolderSent = focused);
-            serializeAndSend("Display/" + vd.id, vd);
+            FlutterBridge.writeTape(comm(), tape ->
+                    tape.describeHolder("Display", vd.id, VDisplay.WIRE_KEYS, vd::writeWire));
             syncShellPopups();
             syncDisplayWindow(display, leftOwnWindow);
             FlutterBridge.displayBootstrapped = true;
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /** The popups and tooltips the last Display update listed: the ones on screen. */
+    private final java.util.Set<Widget> publishedPopups =
+            java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * The Display lists a popup or tooltip only while it is shown, and the client lets go of one the
+     * moment it is no longer listed, with everything under it. One that was only hidden is still
+     * alive here, so what it was sent is forgotten too, or showing it again would name it to a
+     * client that no longer holds it.
+     */
+    private void forgetPopupsNoLongerShown(VDisplay vd) {
+        java.util.Set<Widget> shown = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        if (vd.popups != null) java.util.Collections.addAll(shown, vd.popups);
+        if (vd.tooltips != null) java.util.Collections.addAll(shown, vd.tooltips);
+        synchronized (publishedPopups) {
+            for (Widget gone : publishedPopups) {
+                if (!shown.contains(gone) && !gone.isDisposed()) forgetSubtree(gone);
+            }
+            publishedPopups.clear();
+            publishedPopups.addAll(shown);
+        }
+    }
+
+    /** Forgets what was sent of {@code widget} and of what hangs under it: a menu's items and their cascades. */
+    private static void forgetSubtree(Widget widget) {
+        if (widget.getImpl() instanceof DartWidget) {
+            dev.equo.swt.Serializer.forgetDelivery(((DartWidget) widget.getImpl()).getValue());
+        }
+        if (widget instanceof Menu) {
+            for (MenuItem item : ((Menu) widget).getItems()) {
+                forgetSubtree(item);
+            }
+        } else if (widget instanceof MenuItem) {
+            Menu cascade = ((MenuItem) widget).getMenu();
+            if (cascade != null && !cascade.isDisposed()) forgetSubtree(cascade);
         }
     }
 
@@ -1057,7 +1124,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                         dev.equo.swt.Serializer.forgetDelivery(((DartMenu) menu.getImpl()).getValue());
                     }
                 }
-                serializeAndSend("Shell/" + payload.shellId + "/Popups", payload);
+                FlutterBridge.writeTape(comm(), tape ->
+                        tape.describeHolder("ShellPopups", payload.shellId, VShellPopups.WIRE_KEYS, payload::writeWire));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1152,15 +1220,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private void sendShellState(Shell shell) {
         if (!(shell.getImpl() instanceof DartShell)) return;
         DartShell impl = (DartShell) shell.getImpl();
-        try {
-            dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
-            // The api widget, not its value: that is what carries the id and the type name into the
-            // frame, and a client whose only knowledge of this shell is the frame cannot decode one
-            // without them. The ordinary flush sends the same thing for the same reason.
-            serializeAndSend("Shell/" + shell.hashCode(), shell);
-        } catch (java.io.IOException e) {
-            e.printStackTrace();
-        }
+        dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
+        FlutterBridge.writeTape(comm(), tape -> tape.describe(impl));
     }
 
     /**
@@ -1236,6 +1297,21 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
+     * The longest {@link #sleep(int)} the event loop asks for. Short by default: a plain
+     * {@code Thread.sleep} cannot be woken, so the cap is how soon queued work gets noticed.
+     */
+    public int parkCapMillis() {
+        return 16;
+    }
+
+    /**
+     * Called just before the event loop's last look for pending work ahead of {@link #sleep(int)}:
+     * from here on, a {@link #wake()} has to end that sleep.
+     */
+    public void armWake() {
+    }
+
+    /**
      * Ends an idle {@link #sleep(int)} from another thread. Only a surface parked inside an OS event
      * loop needs it: SWT's wake signal is a Java semaphore, which that wait cannot observe, so the
      * wake has to reach the native loop itself. A surface that parks on the semaphore is already
@@ -1246,6 +1322,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void destroy(DartWidget control) {
+        super.destroy(control);
+        if (focusRequested == control) focusRequested = null;
+        unansweredFocusRequests.remove(control);
+        if (clientActivated == control) clientActivated = null;
+        if (focused == control) focused = null;
         if (control instanceof DartShell && forDisplay != null) {
             Shell shell = (Shell) ((DartShell) control).getApi();
             forDisplay.removeShell(shell);
@@ -1367,10 +1448,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         Control api = widget == null ? null : widget.getApi();
         if (api != null && !api.isDisposed() && !api.isEnabled())
             return;
-        boolean stale = reportPrecedesPendingRequest(widget);
         clientReportedFocus = widget;
-        if (stale)
-            return;
         if (api != null && !api.isDisposed() && declinesClientFocus(api))
             return;
         // The client reports the CCombo it focused; Java's focus is already on the CCombo's field.
@@ -1558,23 +1636,37 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * <p>A focus that started on the client comes back through here too (the FocusIn handler tracks
      * it the same way); the cell-editor guard below is what keeps that from re-pushing anything.
      */
+    @Override
+    public boolean staleFocusReport(DartControl widget) {
+        boolean stale = reportPrecedesPendingRequest(widget);
+        clientReportedFocus = widget;
+        return stale;
+    }
+
     /**
-     * Whether the report naming {@code widget} was sent before the client received the focus request
-     * still standing, in which case it names the focus the client held before it and applying it
-     * would undo the request. Every such report is dropped, however many were in flight; a report
-     * naming any other control -- one built since, say -- came after the request and is applied. The
-     * request stands until the client says it has received it, which it does whether or not any
-     * control takes the focus, or until the requested control itself reports the focus.
+     * Whether a report of {@code widget} was sent before the client received the latest focus request,
+     * so applying it would undo that request: it names the focus the client held before the requests
+     * went out, or answers an earlier request this one replaced. Every such report is dropped, however
+     * many were in flight. The requests stand until the client echoes the latest one, which it does
+     * whether or not any control takes the focus, or until the requested control reports the focus.
      */
     private boolean reportPrecedesPendingRequest(DartControl widget) {
-        DartControl pending = pendingClientFocus;
-        if (pending == null)
+        DartControl latest = unansweredFocusRequests.peekLast();
+        if (latest == null)
             return false;
-        Control api = pending.getApi();
-        if (pending == widget || api == null || api.isDisposed()) {
-            pendingClientFocus = null;
+        Control api = latest.getApi();
+        if (widget == latest || api == null || api.isDisposed()) {
+            unansweredFocusRequests.clear();
             return false;
         }
+        if (unansweredFocusRequests.contains(widget)) {
+            while (unansweredFocusRequests.pollFirst() != widget) {
+            }
+            clientFocusAtRequest = widget;
+            return true;
+        }
+        // A control the client did not hold when the requests went out -- one built since, say -- is a
+        // report that came after them, not one that crossed them.
         return widget == clientFocusAtRequest;
     }
 
@@ -1605,8 +1697,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (widget == focusRequested)
             return;
         focusRequested = widget;
-        pendingClientFocus = widget;
-        clientFocusAtRequest = clientReportedFocus;
+        if (unansweredFocusRequests.isEmpty())
+            clientFocusAtRequest = clientReportedFocus;
+        unansweredFocusRequests.remove(widget);
+        unansweredFocusRequests.addLast(widget);
         sendFocusRequest(widget);
     }
 

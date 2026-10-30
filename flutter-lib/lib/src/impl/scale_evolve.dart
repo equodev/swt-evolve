@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart' show kPrimaryButton;
 import '../gen/color.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../gen/event.dart';
 import '../gen/scale.dart';
 import '../gen/swt.dart';
@@ -173,13 +174,49 @@ class _ThemedScaleState extends State<_ThemedScale> {
   void initState() {
     super.initState();
     widget.focusNode.addListener(_reportFocus);
+    widget.focusNode.onKeyEvent = _handleKey;
   }
 
   @override
   void dispose() {
     _confirmTimeout?.cancel();
     widget.focusNode.removeListener(_reportFocus);
+    if (widget.focusNode.onKeyEvent == _handleKey) widget.focusNode.onKeyEvent = null;
     super.dispose();
+  }
+
+  /// The arrows the Slider would take, stepped by its own unit from the value this Scale last
+  /// reported. The Slider steps from the value it last rendered, so a second key pressed before the
+  /// next frame would step from where the first one started and report nothing new.
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (!widget.enabled || event is KeyUpEvent) return KeyEventResult.ignored;
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isShiftPressed || keyboard.isControlPressed || keyboard.isAltPressed || keyboard.isMetaPressed) {
+      return KeyEventResult.ignored;
+    }
+    final traditional = MediaQuery.maybeNavigationModeOf(context) != NavigationMode.directional;
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final bool increase;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowUp && traditional) {
+      increase = true;
+    } else if (key == LogicalKeyboardKey.arrowDown && traditional) {
+      increase = false;
+    } else if (key == LogicalKeyboardKey.arrowLeft) {
+      increase = rtl;
+    } else if (key == LogicalKeyboardKey.arrowRight) {
+      increase = !rtl;
+    } else {
+      return KeyEventResult.ignored;
+    }
+    final range = widget.max - widget.min;
+    if (range <= 0) return KeyEventResult.ignored;
+    final unit = _sliderKeyUnit(Theme.of(context).platform) * range;
+    final current = (_localValue ?? widget.value).clamp(widget.min, widget.max).toDouble();
+    final next = (current + (increase ? unit : -unit)).clamp(widget.min, widget.max).toDouble();
+    _handleChanged(next);
+    _handleChangeEnd(next);
+    return KeyEventResult.handled;
   }
 
   @override
@@ -402,6 +439,12 @@ class _ThemedScaleState extends State<_ThemedScale> {
     widget.onChangeEnd(value);
   }
 }
+
+/// The share of the range one arrow moves a Slider with no divisions, as Flutter's Slider has it.
+double _sliderKeyUnit(TargetPlatform platform) => switch (platform) {
+      TargetPlatform.iOS || TargetPlatform.macOS => 0.1,
+      _ => 0.05,
+    };
 
 /// Where [value] sits along a track of [length] that the slider insets by [pad] at each end.
 double _valueToX(double value, double min, double max, double length, double pad) =>

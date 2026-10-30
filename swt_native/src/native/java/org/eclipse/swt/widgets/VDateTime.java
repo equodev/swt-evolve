@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VDateTime extends VComposite {
 
     protected VDateTime() {
@@ -25,7 +21,6 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).day = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getHours() {
         return ((DartDateTime) impl).getHours();
     }
@@ -34,7 +29,6 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).hours = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getMinutes() {
         return ((DartDateTime) impl).getMinutes();
     }
@@ -43,7 +37,6 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).minutes = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getMonth() {
         return ((DartDateTime) impl).getMonth();
     }
@@ -52,7 +45,6 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).month = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getSeconds() {
         return ((DartDateTime) impl).getSeconds();
     }
@@ -69,65 +61,140 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).year = value;
     }
 
-    public static final String DAY = "day";
+    public static final int DAY = 281;
 
-    public static final String HOURS = "hours";
+    public static final int HOURS = 282;
 
-    public static final String MINUTES = "minutes";
+    public static final int MINUTES = 283;
 
-    public static final String MONTH = "month";
+    public static final int MONTH = 284;
 
-    public static final String SECONDS = "seconds";
+    public static final int SECONDS = 285;
 
-    public static final String YEAR = "year";
+    public static final int YEAR = 286;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "day":
-                Serializer.writeKeyValue(writer, "day", getDay());
-                return;
-            case "hours":
-                Serializer.writeKeyValue(writer, "hours", getHours());
-                return;
-            case "minutes":
-                Serializer.writeKeyValue(writer, "minutes", getMinutes());
-                return;
-            case "month":
-                Serializer.writeKeyValue(writer, "month", getMonth());
-                return;
-            case "seconds":
-                Serializer.writeKeyValue(writer, "seconds", getSeconds());
-                return;
-            case "year":
-                Serializer.writeKeyValue(writer, "year", getYear());
-                return;
+            case DAY:
+                return "day";
+            case HOURS:
+                return "hours";
+            case MINUTES:
+                return "minutes";
+            case MONTH:
+                return "month";
+            case SECONDS:
+                return "seconds";
+            case YEAR:
+                return "year";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = DateTime.class)
-    public static class DateTimeJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartDateTime.class, (JsonWriter.WriteObject<DartDateTime>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartDateTime.class, (JsonReader.ReadObject<DartDateTime>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 281:
+                w.write((int) getDay());
+                return true;
+            case 282:
+                w.write((int) getHours());
+                return true;
+            case 283:
+                w.write((int) getMinutes());
+                return true;
+            case 284:
+                w.write((int) getMonth());
+                return true;
+            case 285:
+                w.write((int) getSeconds());
+                return true;
+            case 286:
+                w.write((int) getYear());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static DateTime read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 281:
+                {
+                    int v_ = getDay();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(281);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 282:
+                {
+                    int v_ = getHours();
+                    w.key(282);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 283:
+                {
+                    int v_ = getMinutes();
+                    w.key(283);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 284:
+                {
+                    int v_ = getMonth();
+                    w.key(284);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 285:
+                {
+                    int v_ = getSeconds();
+                    w.key(285);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 286:
+                {
+                    int v_ = getYear();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(286);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, DateTime api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 281, 282, 283, 284, 285, 286 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 282:
+            case 283:
+            case 284:
+            case 285:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

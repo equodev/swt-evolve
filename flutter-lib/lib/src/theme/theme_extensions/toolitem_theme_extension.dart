@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'toolitem_theme_extension.tailor.dart';
-part 'toolitem_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
-@DurationConverter()
 class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with _$ToolItemThemeExtensionTailorMixin {
   final Color enabledColor;
   final Color disabledColor;
@@ -123,13 +115,5 @@ class ToolItemThemeExtension extends ThemeExtension<ToolItemThemeExtension> with
     this.fontStyle,
     required this.minTextContrast,
   });
-
-  factory ToolItemThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ToolItemThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ToolItemThemeExtensionToJson(this);
-  
-  static Duration _durationFromJson(int json) => Duration(milliseconds: json);
-  static int _durationToJson(Duration duration) => duration.inMilliseconds;
 }
 

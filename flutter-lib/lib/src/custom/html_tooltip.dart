@@ -58,7 +58,7 @@ class _HtmlTooltipState extends State<HtmlTooltip> {
     if (_entry != null || !_hasHtml || !mounted) return;
     _spans ??= _htmlToSpans(widget.html!, _base, _recognizers, (url) {
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        EquoCommService.sendPayload(_kEvolveUrlOpenChannel, <String, String>{'url': url});
+        EquoCommService.sendPayload(_kEvolveUrlOpenChannel, url);
       }
     });
     _entry = OverlayEntry(

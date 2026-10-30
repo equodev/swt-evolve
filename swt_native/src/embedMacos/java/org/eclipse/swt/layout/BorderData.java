@@ -20,17 +20,13 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Controls the several aspects of a {@link BorderLayout}.
  *
  * @since 3.119
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class BorderData {
+public final class BorderData implements dev.equo.swt.WireObject {
 
     private final Map<Control, Point> cachedSize = new IdentityHashMap<>(1);
 
@@ -128,5 +124,36 @@ public final class BorderData {
             default ->
                 SWT.NONE;
         };
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 511;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(508);
+        w.write((int) hHint);
+        w.key(510);
+        w.write((int) wHint);
+        w.key(509);
+        w.write((int) region);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 508:
+                hHint = r.int32();
+                return true;
+            case 510:
+                wHint = r.int32();
+                return true;
+            case 509:
+                region = r.int32();
+                return true;
+        }
+        return false;
     }
 }

@@ -4,6 +4,7 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,9 +51,9 @@ class DisplayDeliveryNativeTest {
         Shell shell = new Shell(display);
         shell.setVisible(true);
 
-        assertThat(latestDisplayState(web))
+        assertThat(names(latestDisplayState(web), shell.hashCode()))
                 .as("a shell the client has not been told about cannot be rendered")
-                .contains("\"id\":" + shell.hashCode());
+                .isTrue();
     }
 
     @Test
@@ -65,13 +67,13 @@ class DisplayDeliveryNativeTest {
 
         closed.dispose();
 
-        String state = latestDisplayState(web);
-        assertThat(state)
+        Map<String, Object> state = latestDisplayState(web);
+        assertThat(names(state, closed.hashCode()))
                 .as("a closed shell left in the list renders as a window that will not go away")
-                .doesNotContain("\"id\":" + closed.hashCode());
-        assertThat(state)
+                .isFalse();
+        assertThat(names(state, kept.hashCode()))
                 .as("and the shells that remain must still be there")
-                .contains("\"id\":" + kept.hashCode());
+                .isTrue();
     }
 
     @Test
@@ -84,9 +86,10 @@ class DisplayDeliveryNativeTest {
         second.setVisible(true);
         second.setActive();
 
-        assertThat(latestDisplayState(web))
+        assertThat(WireValues.find(latestDisplayState(web), m -> m.get("activeShellId") instanceof Number id
+                        && id.longValue() == second.hashCode()))
                 .as("keyboard focus follows the active shell, so the client has to know which it is")
-                .contains("\"activeShellId\":" + second.hashCode());
+                .isNotEmpty();
     }
 
     @Test
@@ -141,14 +144,14 @@ class DisplayDeliveryNativeTest {
         Menu popup = new Menu(shell, SWT.POP_UP);
 
         ((DartDisplay) display.getImpl()).addPopup(popup);
-        assertThat(latestDisplayState(web))
+        assertThat(names(latestDisplayState(web), popup.hashCode()))
                 .as("a popup renders as an overlay owned by the Display, not by a shell")
-                .contains("\"id\":" + popup.hashCode());
+                .isTrue();
 
         ((DartDisplay) display.getImpl()).removePopup(popup);
-        assertThat(latestDisplayState(web))
+        assertThat(names(latestDisplayState(web), popup.hashCode()))
                 .as("a popup left in the list stays on screen after it was dismissed")
-                .doesNotContain("\"id\":" + popup.hashCode());
+                .isFalse();
     }
 
     @Test
@@ -160,10 +163,10 @@ class DisplayDeliveryNativeTest {
         ToolTip tip = new ToolTip(shell, SWT.BALLOON);
 
         ((DartDisplay) display.getImpl())._addActiveTooltip(tip);
-        assertThat(latestDisplayState(web)).contains("\"id\":" + tip.hashCode());
+        assertThat(names(latestDisplayState(web), tip.hashCode())).isTrue();
 
         ((DartDisplay) display.getImpl())._removeActiveTooltip(tip);
-        assertThat(latestDisplayState(web)).doesNotContain("\"id\":" + tip.hashCode());
+        assertThat(names(latestDisplayState(web), tip.hashCode())).isFalse();
     }
 
     @Test
@@ -179,7 +182,7 @@ class DisplayDeliveryNativeTest {
         assertThat(displayFrames(web))
                 .as("a Display update produced before connect still has to be handed to the comm")
                 .isNotEmpty();
-        assertThat(latestDisplayState(web)).contains("\"id\":" + shell.hashCode());
+        assertThat(names(latestDisplayState(web), shell.hashCode())).isTrue();
     }
 
     @Test
@@ -203,8 +206,7 @@ class DisplayDeliveryNativeTest {
         second.setActive();
         int afterSecond = displayFrames(web).size();
 
-        int bytes = displayFrames(web).stream()
-                .mapToInt(f -> f.json.getBytes(java.nio.charset.StandardCharsets.UTF_8).length).sum();
+        int bytes = displayFrames(web).stream().mapToInt(f -> f.size).sum();
 
         System.out.printf("DISPLAY CENSUS  start=%d  open-shell=+%d  popup-open=+%d  popup-close=+%d  "
                         + "second-shell+activate=+%d  total-bytes=%d%n",
@@ -225,18 +227,25 @@ class DisplayDeliveryNativeTest {
     }
 
     /** The most recent Display payload — what the client would hold after everything so far. */
-    private String latestDisplayState(TestWebBridge web) {
+    private Map<String, Object> latestDisplayState(TestWebBridge web) {
         List<RecordingComm.Frame> frames = displayFrames(web);
         assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
-        return frames.get(frames.size() - 1).json;
+        return frames.get(frames.size() - 1).state();
+    }
+
+    /** Whether {@code state} names the widget {@code id} anywhere. */
+    private static boolean names(Map<String, Object> state, long id) {
+        return !WireValues.describing(state, id).isEmpty();
     }
 
     /** The ids of the Display's shells in the order the client draws them, bottom first. */
     private List<Integer> shellOrder(TestWebBridge web) {
-        String state = latestDisplayState(web);
+        List<Long> named = WireValues.find(latestDisplayState(web), m -> m.get("id") instanceof Number).stream()
+                .map(m -> ((Number) m.get("id")).longValue())
+                .toList();
         return Arrays.stream(display.getShells())
                 .map(Shell::hashCode)
-                .sorted(Comparator.comparingInt(id -> state.indexOf("\"id\":" + id)))
+                .sorted(Comparator.comparingInt(id -> named.indexOf((long) id)))
                 .toList();
     }
 
@@ -246,7 +255,7 @@ class DisplayDeliveryNativeTest {
         TestWebBridge web = install();
         Shell shell = new Shell(display);
         shell.setVisible(true);
-        assertThat(latestDisplayState(web)).contains("\"id\":" + shell.hashCode());
+        assertThat(names(latestDisplayState(web), shell.hashCode())).isTrue();
 
         // A refreshed page holds nothing: it must be told which shells exist, whatever the previous
         // client was told.
@@ -258,9 +267,9 @@ class DisplayDeliveryNativeTest {
         assertThat(displayFrameCount(web))
                 .as("a reconnected client was told nothing, so it has no shells to draw")
                 .isGreaterThan(before);
-        assertThat(latestDisplayState(web))
+        assertThat(names(latestDisplayState(web), shell.hashCode()))
                 .as("and what it is told must still describe the shells that exist")
-                .contains("\"id\":" + shell.hashCode());
+                .isTrue();
     }
 
     private TestWebBridge install() {

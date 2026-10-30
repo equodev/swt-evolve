@@ -16,9 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent glyph metrics.
@@ -40,8 +37,7 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.2
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class GlyphMetrics {
+public final class GlyphMetrics implements dev.equo.swt.WireObject {
 
     /**
      * the ascent of the GlyphMetrics
@@ -123,5 +119,36 @@ public final class GlyphMetrics {
     public String toString() {
         //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
         return "GlyphMetrics {" + ascent + ", " + descent + ", " + width + "}";
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 526;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(523);
+        w.write((int) ascent);
+        w.key(524);
+        w.write((int) descent);
+        w.key(525);
+        w.write((int) width);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 523:
+                ascent = r.int32();
+                return true;
+            case 524:
+                descent = r.int32();
+                return true;
+            case 525:
+                width = r.int32();
+                return true;
+        }
+        return false;
     }
 }

@@ -4,11 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VLink extends VControl {
 
     protected VLink() {
@@ -26,7 +22,6 @@ public class VLink extends VControl {
         ((DartLink) impl).linkColor = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartLink) impl).getText();
     }
@@ -35,45 +30,79 @@ public class VLink extends VControl {
         ((DartLink) impl).text = value;
     }
 
-    public static final String LINK_FOREGROUND = "linkForeground";
+    public static final int LINK_FOREGROUND = 402;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 403;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "linkForeground":
-                Serializer.writeKeyValue(writer, "linkForeground", getLinkForeground());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
+            case LINK_FOREGROUND:
+                return "linkForeground";
+            case TEXT:
+                return "text";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Link.class)
-    public static class LinkJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartLink.class, (JsonWriter.WriteObject<DartLink>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartLink.class, (JsonReader.ReadObject<DartLink>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 402:
+                w.write(getLinkForeground());
+                return true;
+            case 403:
+                w.write(getText());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Link read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 402:
+                {
+                    Color v_ = getLinkForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(402);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 403:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(403);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Link api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 402, 403 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

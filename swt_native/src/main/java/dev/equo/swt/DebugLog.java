@@ -1,7 +1,6 @@
 package dev.equo.swt;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,23 +62,49 @@ final class DebugLog {
     /** Prints a {@code send:} line for this event/payload when debugging is on and the event passes filters. */
     static void logSend(String eventName, byte[] bytes, int offset, int length) {
         if (!shouldLog(eventName)) return;
-        String raw = new String(bytes, offset, length, StandardCharsets.UTF_8);
         String body;
         try {
-            Object tree = new JsonParser(raw).parse();
+            Object tree = decoded(eventName, bytes, offset, length);
             prune(tree);
             StringBuilder sb = new StringBuilder();
             render(tree, 0, sb);
             body = sb.toString();
         } catch (RuntimeException e) {
-            // Never let debug logging break a send; fall back to the raw payload.
-            body = raw;
+            // Never let debug logging break a send; fall back to the payload as text.
+            body = new String(bytes, offset, length, StandardCharsets.UTF_8);
         }
         if (MAX_LEN > 0 && body.length() > MAX_LEN) {
             body = body.substring(0, MAX_LEN) + "…(+" + (body.length() - MAX_LEN) + " chars)";
         }
         String size = SUMMARY ? " (" + length + " B)" : "";
         System.out.println("send: " + eventName + size + ": " + body);
+    }
+
+    /** A GC's binary frame, one {@code send:} line per record. */
+    static void logGcFrame(GcWire frame) {
+        if (!shouldLog(GcWire.frameEvent(frame.channel()))) return;
+        for (GcWire.Entry entry : frame.entries()) {
+            prune(entry.value);
+            StringBuilder sb = new StringBuilder();
+            render(entry.value, 0, sb);
+            System.out.println("send: " + entry.channel + ": " + sb);
+        }
+    }
+
+    /**
+     * A payload as values: a frame of widget records as each record's properties by channel, tagged
+     * values decoded, anything else as its UTF-8 text.
+     */
+    private static Object decoded(String eventName, byte[] bytes, int offset, int length) {
+        if (WidgetWire.CHANNEL.equals(eventName)) {
+            Map<String, Object> records = new java.util.LinkedHashMap<>();
+            for (WireDump.Record r : WireDump.records(bytes, offset, length)) records.put(r.channel(), r.properties);
+            return records;
+        }
+        if (dev.equo.swt.comm.TaggedValues.isTagged(bytes, offset, length)) {
+            return dev.equo.swt.comm.TaggedValues.decode(bytes, offset, length);
+        }
+        return new String(bytes, offset, length, StandardCharsets.UTF_8);
     }
 
     /**
@@ -158,8 +183,12 @@ final class DebugLog {
             renderMap((Map<String, Object>) node, indent, out);
         } else if (node instanceof List) {
             renderList((List<Object>) node, indent, out);
+        } else if (node instanceof String) {
+            out.append('"').append(node).append('"');
+        } else if (node instanceof byte[]) {
+            out.append('"').append(WireDump.describe((byte[]) node)).append('"');
         } else {
-            out.append(((Raw) node).token); // verbatim scalar/string token
+            out.append(node);
         }
     }
 
@@ -229,7 +258,7 @@ final class DebugLog {
     }
 
     private static void appendValue(String key, Object value, int indent, StringBuilder out) {
-        if (value instanceof Raw && REDACT_KEYS.contains(key)) {
+        if (!(value instanceof Map) && !(value instanceof List) && REDACT_KEYS.contains(key)) {
             out.append("\"-ignore-\"");
         } else {
             render(value, indent, out);
@@ -269,123 +298,5 @@ final class DebugLog {
 
     private static Pattern compile(String regex) {
         return (regex == null || regex.isEmpty()) ? null : Pattern.compile(regex);
-    }
-
-    // ---- minimal JSON parser ----------------------------------------------
-    // Produces LinkedHashMap (objects, order preserved), ArrayList (arrays), and Raw (scalars +
-    // strings, kept as their verbatim token so re-emitting needs no re-escaping).
-
-    /** A scalar or string kept as its verbatim JSON token. */
-    private static final class Raw {
-        final String token;
-
-        Raw(String token) {
-            this.token = token;
-        }
-    }
-
-    private static final class JsonParser {
-        private final String s;
-        private int pos;
-
-        JsonParser(String s) {
-            this.s = s;
-        }
-
-        Object parse() {
-            skipWs();
-            Object v = value();
-            return v;
-        }
-
-        private Object value() {
-            skipWs();
-            char c = s.charAt(pos);
-            if (c == '{') return object();
-            if (c == '[') return array();
-            if (c == '"') return new Raw(string());
-            return new Raw(literal());
-        }
-
-        private Map<String, Object> object() {
-            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-            pos++; // {
-            skipWs();
-            if (s.charAt(pos) == '}') {
-                pos++;
-                return map;
-            }
-            while (true) {
-                skipWs();
-                String key = unquote(string());
-                skipWs();
-                pos++; // :
-                map.put(key, value());
-                skipWs();
-                char c = s.charAt(pos++);
-                if (c == ',') continue;
-                if (c == '}') break;
-                throw new IllegalStateException("expected , or } at " + (pos - 1));
-            }
-            return map;
-        }
-
-        private List<Object> array() {
-            ArrayList<Object> list = new ArrayList<>();
-            pos++; // [
-            skipWs();
-            if (s.charAt(pos) == ']') {
-                pos++;
-                return list;
-            }
-            while (true) {
-                list.add(value());
-                skipWs();
-                char c = s.charAt(pos++);
-                if (c == ',') continue;
-                if (c == ']') break;
-                throw new IllegalStateException("expected , or ] at " + (pos - 1));
-            }
-            return list;
-        }
-
-        /** Reads a JSON string, returning the verbatim token including surrounding quotes. */
-        private String string() {
-            int start = pos;
-            pos++; // opening "
-            while (true) {
-                char c = s.charAt(pos++);
-                if (c == '\\') {
-                    pos++; // skip escaped char
-                } else if (c == '"') {
-                    break;
-                }
-            }
-            return s.substring(start, pos);
-        }
-
-        /** Reads a number / true / false / null token verbatim. */
-        private String literal() {
-            int start = pos;
-            while (pos < s.length()) {
-                char c = s.charAt(pos);
-                if (c == ',' || c == '}' || c == ']' || c == ' ' || c == '\n' || c == '\r' || c == '\t') break;
-                pos++;
-            }
-            return s.substring(start, pos);
-        }
-
-        private void skipWs() {
-            while (pos < s.length()) {
-                char c = s.charAt(pos);
-                if (c == ' ' || c == '\n' || c == '\r' || c == '\t') pos++;
-                else break;
-            }
-        }
-
-        private static String unquote(String token) {
-            // Field names in our payloads have no escapes; strip the surrounding quotes.
-            return token.substring(1, token.length() - 1);
-        }
     }
 }

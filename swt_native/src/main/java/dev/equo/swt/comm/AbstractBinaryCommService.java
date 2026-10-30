@@ -19,28 +19,42 @@ import java.util.stream.Collectors;
  * implementation. Subclasses provide only the WebSocket transport (server lifecycle, session
  * tracking, per-session send and {@link #getPort()}); everything wire-format related lives here.
  *
- * <p>Wire format: {@code [2-byte name length BE][name UTF-8][payload]}. Frames sent before the
- * first client connects are buffered and flushed on connect (see {@link #onClientConnected}).
+ * <p>Wire format: the channel as {@link ChannelHeader} writes it, then the payload. Frames sent
+ * before the first client connects are buffered and flushed on connect (see
+ * {@link #onClientConnected}).
  */
 public abstract class AbstractBinaryCommService implements CommService {
 
     protected final Serializer serializer = new Serializer();
     /**
-     * Handlers by owner ({@code Type/id}, the name up to its second slash), then by the rest of the
-     * name: a widget's handlers are all dropped with it in one removal (see {@link #removeOwner}).
+     * Handlers by owner, the first two segments of a name ({@code Shell/42}), then by the rest of the
+     * name ({@code Mouse/MouseDown}); a name with fewer segments is an owner with rest "". Every widget
+     * registers the same few dozen rests, so those strings are shared ({@link #REST_NAMES}).
      */
-    private final Map<String, Map<String, TypedHandler<?>>> typedHandlers = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, TypedHandler<?>>> handlers = new ConcurrentHashMap<>();
+    private static final Map<String, String> REST_NAMES = new ConcurrentHashMap<>();
+    /** One handler for most of an owner's channels; see {@link #onOwner}. */
+    private final Map<String, OwnerHandler<?>> ownerHandlers = new ConcurrentHashMap<>();
     private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
+    /** Set while the first client is handed the held frames; guarded by {@link #pendingFrames}. */
+    private boolean handingOver;
 
     /**
      * The client frames are being written for. Starts at 1, not 0: frames sent before anyone
      * connects are buffered and handed to the first client on connect, so they genuinely reach it
      * and are rightly credited to it. Each session after that gets a fresh id, which is what makes
      * a reconnecting client be described in full rather than referred to by name.
+     *
+     * <p>Drawn from one count for every comm, so an id names one client in the whole JVM: what is
+     * recorded as delivered (an image shared by two Displays, say) is recorded against the client
+     * it reached and no other.
      */
     private final java.util.concurrent.atomic.AtomicInteger connection =
+            new java.util.concurrent.atomic.AtomicInteger(NEXT_CONNECTION.getAndIncrement());
+
+    private static final java.util.concurrent.atomic.AtomicInteger NEXT_CONNECTION =
             new java.util.concurrent.atomic.AtomicInteger(1);
 
     /** Wire bytes each way, for measuring what a paint or an event costs in traffic. */
@@ -106,10 +120,11 @@ public abstract class AbstractBinaryCommService implements CommService {
     @Override
     public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
         int split = ownerEnd(eventName);
+        String rest = REST_NAMES.computeIfAbsent(rest(eventName, split), r -> r);
         TypedHandler<T> handler = new TypedHandler<>(cls, callback);
-        typedHandlers.compute(eventName.substring(0, split), (owner, named) -> {
+        handlers.compute(eventName.substring(0, split), (owner, named) -> {
             if (named == null) named = new ConcurrentHashMap<>(8);
-            named.put(eventName.substring(split), handler);
+            named.put(rest, handler);
             return named;
         });
     }
@@ -117,29 +132,50 @@ public abstract class AbstractBinaryCommService implements CommService {
     @Override
     public void remove(String eventName) {
         int split = ownerEnd(eventName);
-        typedHandlers.computeIfPresent(eventName.substring(0, split), (owner, named) -> {
-            named.remove(eventName.substring(split));
+        String rest = rest(eventName, split);
+        handlers.computeIfPresent(eventName.substring(0, split), (owner, named) -> {
+            named.remove(rest);
             return named.isEmpty() ? null : named;
         });
     }
 
     @Override
     public void removeOwner(String owner) {
-        typedHandlers.remove(owner);
+        handlers.remove(owner);
+        ownerHandlers.remove(owner);
     }
 
-    /** Where the owner part of {@code eventName} ends: at its second slash, or its end. */
+    @Override
+    public <T> void onOwner(String owner, String[] rests, Class<T> cls,
+            java.util.function.BiConsumer<String, T> callback) {
+        ownerHandlers.put(owner, new OwnerHandler<>(new TypedHandler<>(cls, null), rests, callback));
+    }
+
+    private boolean dispatchToOwner(String eventName, byte[] data, int offset, int length) {
+        int split = ownerEnd(eventName);
+        OwnerHandler<?> owner = ownerHandlers.get(eventName.substring(0, split));
+        if (owner == null) return false;
+        String rest = rest(eventName, split);
+        if (!owner.handles(rest)) return false;
+        owner.handle(rest, data, offset, length, serializer, logTag());
+        return true;
+    }
+
+    private TypedHandler<?> handler(String eventName) {
+        int split = ownerEnd(eventName);
+        Map<String, TypedHandler<?>> named = handlers.get(eventName.substring(0, split));
+        return named == null ? null : named.get(rest(eventName, split));
+    }
+
+    /** Where a name's owner ends: at its second '/', or the whole name when it has no second one. */
     private static int ownerEnd(String eventName) {
         int first = eventName.indexOf('/');
-        if (first < 0) return eventName.length();
-        int second = eventName.indexOf('/', first + 1);
+        int second = first < 0 ? -1 : eventName.indexOf('/', first + 1);
         return second < 0 ? eventName.length() : second;
     }
 
-    private TypedHandler<?> handlerFor(String eventName) {
-        int split = ownerEnd(eventName);
-        Map<String, TypedHandler<?>> named = typedHandlers.get(eventName.substring(0, split));
-        return named == null ? null : named.get(eventName.substring(split));
+    private static String rest(String eventName, int ownerEnd) {
+        return ownerEnd >= eventName.length() ? "" : eventName.substring(ownerEnd + 1);
     }
 
     /** State kept for as long as this connection lives, under [key]; [create] makes it on first use. */
@@ -156,18 +192,29 @@ public abstract class AbstractBinaryCommService implements CommService {
         if (firstClientConnected) {
             // A different client from the one everything so far was written for. It holds none of
             // it, so it is given a new id and every widget is described to it in full again.
-            connection.incrementAndGet();
+            connection.set(NEXT_CONNECTION.getAndIncrement());
             return;
         }
-        List<byte[]> drain;
         synchronized (pendingFrames) {
-            if (firstClientConnected) return;
-            firstClientConnected = true;
-            drain = new ArrayList<>(pendingFrames);
-            pendingFrames.clear();
+            if (firstClientConnected || handingOver) return;
+            handingOver = true;
         }
-        for (byte[] frame : drain) {
-            sendToSession.accept(frame);
+        // What is sent while the held frames go out is held behind them, and the comm counts as
+        // connected only once none is left: a frame sent now can be relative to one still held.
+        while (true) {
+            List<byte[]> drain;
+            synchronized (pendingFrames) {
+                if (pendingFrames.isEmpty()) {
+                    firstClientConnected = true;
+                    handingOver = false;
+                    return;
+                }
+                drain = new ArrayList<>(pendingFrames);
+                pendingFrames.clear();
+            }
+            for (byte[] frame : drain) {
+                sendToSession.accept(frame);
+            }
         }
     }
 
@@ -177,13 +224,9 @@ public abstract class AbstractBinaryCommService implements CommService {
      */
     protected void onBinaryMessage(byte[] data, int offset, int length) {
         bytesReceived.add(length);
-        if (length < NAME_LENGTH_BYTES) return;
-        int nameLen = ((data[offset] & 0xFF) << 8) | (data[offset + 1] & 0xFF);
-        if (length < NAME_LENGTH_BYTES + nameLen) return;
-        String eventName = new String(data, offset + NAME_LENGTH_BYTES, nameLen, StandardCharsets.UTF_8);
-        int payloadStart = offset + NAME_LENGTH_BYTES + nameLen;
-        int payloadLen = length - NAME_LENGTH_BYTES - nameLen;
-        dispatch(eventName, data, payloadStart, payloadLen);
+        ChannelHeader.Decoded header = ChannelHeader.decode(data, offset, offset + length);
+        if (header == null) return;
+        dispatch(header.channel(), data, header.payloadStart(), offset + length - header.payloadStart());
     }
 
     /**
@@ -198,22 +241,29 @@ public abstract class AbstractBinaryCommService implements CommService {
     }
 
     private void dispatch(String eventName, byte[] data, int offset, int length) {
-        TypedHandler<?> typed = handlerFor(eventName);
+        TypedHandler<?> typed = handler(eventName);
         if (typed == null) {
             String alternate = alternateName.apply(eventName);
-            if (alternate != null) typed = handlerFor(alternate);
+            if (alternate != null) typed = handler(alternate);
         }
         if (typed != null) {
             typed.handle(data, offset, length, serializer, logTag());
             return;
         }
+        if (dispatchToOwner(eventName, data, offset, length)) return;
+        String alternateOwner = alternateName.apply(eventName);
+        if (alternateOwner != null && dispatchToOwner(alternateOwner, data, offset, length)) return;
         // The same-type count distinguishes "wrong widget id" (siblings exist) from "this widget
         // type never registered" (none). The list itself runs to hundreds of lines per miss, so it
         // is printed only in debug mode.
         String typePrefix = eventName.substring(0, eventName.indexOf('/') + 1);
-        List<String> sameType = typedHandlers.entrySet().stream().filter(e -> e.getKey().startsWith(typePrefix))
-                .flatMap(e -> e.getValue().keySet().stream().map(rest -> e.getKey() + rest)).sorted()
-                .collect(Collectors.toList());
+        List<String> sameType = java.util.stream.Stream.concat(
+                        handlers.entrySet().stream().filter(e -> e.getKey().startsWith(typePrefix))
+                                .flatMap(e -> e.getValue().keySet().stream()
+                                        .map(rest -> rest.isEmpty() ? e.getKey() : e.getKey() + "/" + rest)),
+                        ownerHandlers.entrySet().stream().filter(e -> e.getKey().startsWith(typePrefix))
+                                .flatMap(e -> Arrays.stream(e.getValue().rests).map(rest -> e.getKey() + "/" + rest)))
+                .sorted().collect(Collectors.toList());
         System.err.println(logTag() + " No handler for: " + eventName + " (" + sameType.size() + " registered for "
                 + typePrefix + "*)");
         if (Config.isDebug())
@@ -231,17 +281,61 @@ public abstract class AbstractBinaryCommService implements CommService {
         return "[" + getClass().getSimpleName() + "]";
     }
 
-    private static final class TypedHandler<T> {
-        final Class<T> cls;
-        final Consumer<T> callback;
+    private static final class OwnerHandler<T> {
+        final TypedHandler<T> reader;
+        final String[] rests;
+        final java.util.function.BiConsumer<String, T> callback;
 
-        TypedHandler(Class<T> cls, Consumer<T> callback) {
-            this.cls = cls;
+        OwnerHandler(TypedHandler<T> reader, String[] rests, java.util.function.BiConsumer<String, T> callback) {
+            this.reader = reader;
+            this.rests = rests;
             this.callback = callback;
         }
 
+        boolean handles(String rest) {
+            for (String r : rests) if (r.equals(rest)) return true;
+            return false;
+        }
+
+        void handle(String rest, byte[] data, int offset, int length, Serializer serializer, String tag) {
+            reader.handle(data, offset, length, serializer, tag, value -> callback.accept(rest, value));
+        }
+    }
+
+    private static final class TypedHandler<T> {
+        final Class<T> cls;
+        final Consumer<T> callback;
+        /** Makes an empty value to read into, for a class the client sends in the wire's encoding. */
+        final java.lang.reflect.Constructor<T> wire;
+
+        @SuppressWarnings("unchecked")
+        TypedHandler(Class<T> cls, Consumer<T> callback) {
+            this.cls = cls;
+            this.callback = callback;
+            this.wire = cls == null ? null : (java.lang.reflect.Constructor<T>) WIRE_CONSTRUCTORS.get(cls);
+        }
+
+        /** One per class, shared by every handler of it: there is one handler per widget and event. */
+        private static final ClassValue<java.lang.reflect.Constructor<?>> WIRE_CONSTRUCTORS =
+                new ClassValue<java.lang.reflect.Constructor<?>>() {
+            @Override
+            protected java.lang.reflect.Constructor<?> computeValue(Class<?> cls) {
+                if (!dev.equo.swt.WireReadable.class.isAssignableFrom(cls)) return null;
+                try {
+                    return cls.getConstructor();
+                } catch (NoSuchMethodException e) {
+                    return null;
+                }
+            }
+        };
+
         @SuppressWarnings("unchecked")
         void handle(byte[] data, int offset, int length, Serializer serializer, String tag) {
+            handle(data, offset, length, serializer, tag, callback);
+        }
+
+        @SuppressWarnings("unchecked")
+        void handle(byte[] data, int offset, int length, Serializer serializer, String tag, Consumer<T> callback) {
             // ByteBuffer.class is the passthrough that copies nothing: the frame is ours for the
             // length of the dispatch, so a handler that reads it here and keeps nothing takes a view.
             if (cls == java.nio.ByteBuffer.class) {
@@ -258,17 +352,29 @@ public abstract class AbstractBinaryCommService implements CommService {
                 callback.accept(null);
                 return;
             }
-            try {
-                // dsl-json's byte reader only starts at index 0. The frame is ours and its name has
-                // been read, so blanking everything before the body lets the parser skip it as
-                // whitespace instead of the body being copied out.
-                Arrays.fill(data, 0, offset, (byte) ' ');
-                T value = serializer.from(cls, data, 0, offset + length);
-                callback.accept(value);
-            } catch (IOException e) {
-                System.err.println(tag + " Deserialization failed: " + e.getMessage());
-                callback.accept(null);
+            // A string is sent as its UTF-8 bytes.
+            if (cls == String.class) {
+                callback.accept((T) new String(data, offset, length, StandardCharsets.UTF_8));
+                return;
             }
+            if (wire != null) {
+                T value;
+                try {
+                    value = wire.newInstance();
+                } catch (ReflectiveOperationException e) {
+                    throw new IllegalStateException(e);
+                }
+                new dev.equo.swt.WireReader(data, offset, length).fields((dev.equo.swt.WireReadable) value);
+                callback.accept(value);
+                return;
+            }
+            // Tagged values: maps, lists and scalars, for a handler taking Object or one of those.
+            if (!TaggedValues.isTagged(data, offset, length)) {
+                System.err.println(tag + " no binary form of " + cls.getName() + " to read");
+                callback.accept(null);
+                return;
+            }
+            callback.accept(serializer.from(cls, data, offset, length));
         }
     }
 }

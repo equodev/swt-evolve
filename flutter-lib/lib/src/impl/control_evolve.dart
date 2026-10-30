@@ -22,6 +22,7 @@ import '../impl/image_mouse_cursor.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
+import 'utils/pending_move.dart';
 import 'utils/perf_marks.dart';
 import 'utils/round_trip_timing.dart';
 import 'utils/text_utils.dart';
@@ -139,12 +140,18 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     final node = swtFocusNode;
     if (node == null) return;
     if (!FocusRequests.instance.claim(state.id)) return;
+    _focusClaimed = true;
     // After the next frame: Java often creates or moves the control in the same pass that focuses it,
     // and focusing a text field opens the platform input connection at its current layout position.
     afterNextFrame(() {
-      if (mounted) swtFocusNode?.requestFocus();
+      if (!mounted || !_focusClaimed) return;
+      _focusClaimed = false;
+      swtFocusNode?.requestFocus();
     });
   }
+
+  /// A focus request this element claimed and has not applied yet.
+  bool _focusClaimed = false;
 
   @override
   void setValue(V value) {
@@ -245,14 +252,22 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
 
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
     HoverExclusivityArbiter.instance.flushPending();
+    event.stateMask = moveStateMask(buttons);
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastMouseMoveMs >= _mouseMoveThrottleMs) {
-      _lastMouseMoveMs = now;
-      event.stateMask = moveStateMask(buttons);
-      widget.sendMouseMoveMouseMove(state, event);
-      // After the send, not around it: this times the round trip the move starts.
-      RoundTripTiming.trace();
+    final wait = _lastMouseMoveMs + _mouseMoveThrottleMs - now;
+    if (wait > 0) {
+      // The pointer may stop here: the move is sent when the window ends unless another replaces it.
+      PendingMove.hold(this, () => _sendMouseMove(state, event), Duration(milliseconds: wait));
+      return;
     }
+    _sendMouseMove(state, event);
+  }
+
+  void _sendMouseMove(V state, VEvent event) {
+    _lastMouseMoveMs = DateTime.now().millisecondsSinceEpoch;
+    widget.sendMouseMoveMouseMove(state, event);
+    // After the send, not around it: this times the round trip the move starts.
+    RoundTripTiming.trace();
   }
 
   void _resetHoverTimer(V state, VEvent event) {
@@ -302,8 +317,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   @override
   void dispose() {
     _hoverTimer?.cancel();
+    PendingMove.drop(this);
     _removeTooltip();
     FocusRequests.instance.removeListener(_applyFocusRequest);
+    if (_focusClaimed) {
+      _focusClaimed = false;
+      FocusRequests.instance.giveBack(state.id);
+    }
     FocusRequests.instance.unregister(state.id, context);
     HoverExclusivityArbiter.instance.unregister(this);
     super.dispose();

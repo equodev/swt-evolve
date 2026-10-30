@@ -192,7 +192,7 @@ class ExpandBarFromFlutterNativeTest {
 
         assertThat(seen).containsExactly("expand a");
         assertThat(first.getExpanded()).isTrue();
-        assertThat(((DartWidget) first.getImpl()).getValue().changedKeys()).contains("expanded");
+        assertThat(((DartWidget) first.getImpl()).getValue().changedKeys()).contains(VExpandItem.EXPANDED);
     }
 
     @Test
@@ -204,6 +204,6 @@ class ExpandBarFromFlutterNativeTest {
         bar.notifyListeners(SWT.KeyDown, key(SWT.ARROW_DOWN));
 
         assertThat(first.getExpanded()).isFalse();
-        assertThat(((DartWidget) first.getImpl()).getValue().changedKeys()).doesNotContain("expanded");
+        assertThat(((DartWidget) first.getImpl()).getValue().changedKeys()).doesNotContain(VExpandItem.EXPANDED);
     }
 }

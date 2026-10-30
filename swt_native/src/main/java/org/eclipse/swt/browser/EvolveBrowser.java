@@ -59,6 +59,13 @@ public class EvolveBrowser extends WebBrowser {
         return (DartWidget) browser.getImpl();
     }
 
+    /** The url Browser's value describes is this one, so a change of it reaches the client too. */
+    private void onLocation(String location) {
+        if (browser.isDisposed() || location.equals(url)) return;
+        url = location;
+        ((DartBrowser) browser.getImpl()).getValue().markDirty(VBrowser.URL);
+    }
+
     @Override
     public Object evaluate(String script, boolean trusted) throws SWTException {
         return BrowserScripting.evaluate(getDartWidget(), display, script);
@@ -87,7 +94,8 @@ public class EvolveBrowser extends WebBrowser {
             canGoForward = e.y == 1;
             // The resolved current URL (after history navigation / redirects), so
             // getUrl() reflects where the Browser actually is, not the last setUrl.
-            if (e.text != null && !e.text.isEmpty()) url = e.text;
+            if (e.text == null || e.text.isEmpty() || display == null || display.isDisposed()) return;
+            display.asyncExec(() -> onLocation(e.text));
         });
 
         // A Dart Browser State that came up without ever receiving a navigate op asks for it here.

@@ -17,9 +17,6 @@ package org.eclipse.swt.layout;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are used to define the edges of a control
@@ -84,14 +81,12 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 2.0
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public final class FormAttachment {
+public final class FormAttachment implements dev.equo.swt.WireObject {
 
     /**
      * numerator specifies the numerator of the "a" term in the
      * equation, y = ax + b, which defines the attachment.
      */
-    @JsonAttribute()
     public int numerator;
 
     /**
@@ -100,7 +95,6 @@ public final class FormAttachment {
      *
      * The default value is 100.
      */
-    @JsonAttribute()
     public int denominator = 100;
 
     /**
@@ -114,14 +108,12 @@ public final class FormAttachment {
      * This is equivalent to the "b" term in the equation y = ax + b.
      * The default value is 0.
      */
-    @JsonAttribute()
     public int offset;
 
     /**
      * control specifies the control to which the control side is
      * attached.
      */
-    @JsonAttribute()
     public Control control;
 
     /**
@@ -142,7 +134,6 @@ public final class FormAttachment {
      *    <li>{@link SWT#DEFAULT}: Attach the side to the adjacent side of the specified control.</li>
      * </ul>
      */
-    @JsonAttribute()
     public int alignment;
 
     /**
@@ -330,5 +321,43 @@ public final class FormAttachment {
     public String toString() {
         String string = control != null ? control.toString() : numerator + "/" + denominator;
         return "{y = (" + string + (offset >= 0 ? ")x + " + offset : ")x - " + (-offset)) + "}";
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 94;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(92);
+        w.write((int) numerator);
+        w.key(91);
+        w.write((int) denominator);
+        w.key(93);
+        w.write((int) offset);
+        w.key(90);
+        w.ref(control);
+        w.key(89);
+        w.write((int) alignment);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 92:
+                numerator = r.int32();
+                return true;
+            case 91:
+                denominator = r.int32();
+                return true;
+            case 93:
+                offset = r.int32();
+                return true;
+            case 89:
+                alignment = r.int32();
+                return true;
+        }
+        return false;
     }
 }

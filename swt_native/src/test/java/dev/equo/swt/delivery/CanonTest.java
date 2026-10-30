@@ -1,8 +1,5 @@
 package dev.equo.swt.delivery;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -12,7 +9,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,80 +31,84 @@ class CanonTest {
     private static final Path CASES =
             Paths.get("..", "flutter-lib", "test", "delivery", "canon_cases.json");
 
+    /** The shared case file, whose format the Dart side reads too. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> cases() throws IOException {
+        return new com.google.gson.Gson().fromJson(Files.readString(CASES), Map.class);
+    }
+
     @TestFactory
+    @SuppressWarnings("unchecked")
     List<DynamicTest> sharedContract() throws IOException {
-        JsonObject cases = JsonParser.parseString(Files.readString(CASES)).getAsJsonObject();
+        Map<String, Object> cases = cases();
         List<DynamicTest> tests = new ArrayList<>();
 
-        for (JsonElement element : cases.getAsJsonArray("equal")) {
-            JsonObject c = element.getAsJsonObject();
-            String why = c.get("why").getAsString();
-            String a = c.get("a").toString();
-            String b = c.get("b").toString();
+        for (Object element : (List<Object>) cases.get("equal")) {
+            Map<String, Object> c = (Map<String, Object>) element;
+            String why = (String) c.get("why");
+            Object a = c.get("a");
+            Object b = c.get("b");
             tests.add(DynamicTest.dynamicTest("equal: " + why, () ->
                     assertThat(Canon.canon(a))
-                            .as("these two payloads carry the same state and must canonicalize alike")
+                            .as("these two states are the same and must canonicalize alike")
                             .isEqualTo(Canon.canon(b))));
         }
 
-        for (JsonElement element : cases.getAsJsonArray("differ")) {
-            JsonObject c = element.getAsJsonObject();
-            String why = c.get("why").getAsString();
-            String a = c.get("a").toString();
-            String b = c.get("b").toString();
+        for (Object element : (List<Object>) cases.get("differ")) {
+            Map<String, Object> c = (Map<String, Object>) element;
+            String why = (String) c.get("why");
+            Object a = c.get("a");
+            Object b = c.get("b");
             tests.add(DynamicTest.dynamicTest("differ: " + why, () ->
                     assertThat(Canon.canon(a))
-                            .as("these two payloads carry different state; collapsing them would hide a "
-                                    + "real divergence from every probe that relies on this comparison")
+                            .as("these two states differ; collapsing them would hide a real divergence "
+                                    + "from every probe that relies on this comparison")
                             .isNotEqualTo(Canon.canon(b))));
         }
         return tests;
     }
 
+    private static Map<String, Object> record(Object... keyThenValue) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        for (int i = 0; i < keyThenValue.length; i += 2) m.put((String) keyThenValue[i], keyThenValue[i + 1]);
+        return m;
+    }
+
     @Test
     void isIdempotent() {
-        String once = Canon.canon("{\"swt\":\"Label\",\"id\":1,\"_s\":3,\"text\":\"x\",\"enabled\":false}");
+        Object once = Canon.canon(record("swt", "Label", "id", 1, "_s", 3, "text", "x", "enabled", false));
         assertThat(Canon.canon(once)).isEqualTo(once);
     }
 
     @Test
     void recursesToArbitraryDepth() {
-        StringBuilder nested = new StringBuilder("{\"swt\":\"Label\",\"id\":1,\"_s\":9}");
+        Map<String, Object> nested = record("swt", "Label", "id", 1, "_s", 9);
         for (int depth = 1; depth <= 20; depth++) {
-            nested = new StringBuilder("{\"swt\":\"Composite\",\"id\":" + depth + ",\"_s\":" + depth
-                    + ",\"children\":[" + nested + "]}");
+            nested = record("swt", "Composite", "id", depth, "_s", depth, "children", List.of(nested));
         }
-        assertThat(Canon.canon(nested.toString()))
+        assertThat(Canon.canon((Object) nested).toString())
                 .as("a write stamp buried 20 levels down is still not state")
                 .doesNotContain("_s");
     }
 
     @Test
     void aDeeplyBuriedChangeSurvivesTheReduction() {
-        String a = nest("a");
-        String b = nest("b");
-        assertThat(Canon.canon(a))
+        assertThat(Canon.canon(nest("a")))
                 .as("the reduction must not flatten away a nested difference")
-                .isNotEqualTo(Canon.canon(b));
+                .isNotEqualTo(Canon.canon(nest("b")));
     }
 
-    private static String nest(String leaf) {
-        return "{\"swt\":\"Composite\",\"id\":1,\"children\":[{\"swt\":\"Composite\",\"id\":2,"
-                + "\"children\":[{\"swt\":\"Label\",\"id\":3,\"text\":\"" + leaf + "\"}]}]}";
+    private static Object nest(String leaf) {
+        return record("swt", "Composite", "id", 1, "children", List.of(record("swt", "Composite", "id", 2,
+                "children", List.of(record("swt", "Label", "id", 3, "text", leaf)))));
     }
 
-    /**
-     * The bytes, not just the verdict. Both languages emit compact JSON with sorted keys so an
-     * end-to-end probe can compare Java's view of a widget against the client's directly; if either
-     * side changed its spacing or escaping, that comparison would fail on formatting rather than on
-     * state, and the failure would look like a delivery bug.
-     */
+    /** Keys sorted, protocol keys and defaults gone, a whole number the same whatever type carried it. */
     @Test
-    void emitsTheAgreedByteFormat() {
-        assertThat(Canon.canon("{\"text\":\"x\",\"id\":1,\"swt\":\"Label\",\"_s\":4,\"enabled\":false}"))
-                .isEqualTo("{\"id\":1,\"swt\":\"Label\",\"text\":\"x\"}");
-        assertThat(Canon.canon("{\"a\":\"q\\\"q\",\"b\":\"tab\\there\"}"))
-                .isEqualTo("{\"a\":\"q\\\"q\",\"b\":\"tab\\there\"}");
-        assertThat(Canon.canon("{\"n\":3.0,\"m\":2.5}")).isEqualTo("{\"m\":2.5,\"n\":3}");
+    void sortsKeysAndNormalizesNumbers() {
+        Object canonical = Canon.canon(record("text", "x", "id", 1, "swt", "Label", "_s", 4, "enabled", false));
+        assertThat(new java.util.ArrayList<Object>(((Map<?, ?>) canonical).keySet())).containsExactly("id", "swt", "text");
+        assertThat(Canon.canon(record("n", 3.0, "m", 2.5))).isEqualTo(record("m", 2.5, "n", 3L));
+        assertThat(Canon.canon(record("n", 3))).isEqualTo(Canon.canon(record("n", 3L)));
     }
 }

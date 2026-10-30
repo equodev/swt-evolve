@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 class ShellMenuBarClientAreaNativeTest {
 
     private static final Rectangle SHELL_BOUNDS = new Rectangle(0, 0, 800, 600);
-    private static final String OWN_MENU_STRIP = "ownMenuStrip";
+    private static final int OWN_MENU_STRIP = VDecorations.OWN_MENU_STRIP;
     private static final String SYSTEM_MENU_BAR = "dev.equo.swt.systemMenuBar";
 
     private Shell shell;
@@ -45,6 +45,9 @@ class ShellMenuBarClientAreaNativeTest {
         shell = DartMocks.dartShell();
         dartShell = (DartShell) shell.getImpl();
         shellValue = mock(VShell.class);
+        // The strip is marked by its wire name, which a mocked value has to answer.
+        when(shellValue.wireKeys()).thenReturn(new int[] { OWN_MENU_STRIP });
+        when(shellValue.wireName(OWN_MENU_STRIP)).thenReturn("ownMenuStrip");
         when(dartShell.getValue()).thenReturn(shellValue);
         when(dartShell.getApi()).thenReturn(shell);
         when(dartShell.getBounds()).thenReturn(SHELL_BOUNDS);

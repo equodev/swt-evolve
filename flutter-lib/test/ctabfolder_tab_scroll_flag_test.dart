@@ -69,8 +69,7 @@ Future<void> _loadInter() async {
   await loader.load();
 }
 
-void _useTabScroll(bool? value) => setConfigFlags(ConfigFlags.fromJson(
-    {if (value != null) 'ctabfolder_tab_scroll': value}));
+void _useTabScroll(bool? value) => setConfigFlags(ConfigFlags()..ctabfolder_tab_scroll = value);
 
 Future<void> _pump(WidgetTester tester, double width) async {
   tester.view

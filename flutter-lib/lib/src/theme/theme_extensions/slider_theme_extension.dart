@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'slider_theme_extension.tailor.dart';
-part 'slider_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
 class SliderThemeExtension extends ThemeExtension<SliderThemeExtension> with _$SliderThemeExtensionTailorMixin {
   // Track colors
   final Color activeTrackColor;
@@ -69,9 +64,4 @@ class SliderThemeExtension extends ThemeExtension<SliderThemeExtension> with _$S
     required this.thumb,
     required this.minTextContrast,
   });
-
-  factory SliderThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$SliderThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$SliderThemeExtensionToJson(this);
 }

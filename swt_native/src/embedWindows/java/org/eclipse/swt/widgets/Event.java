@@ -16,11 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
-import dev.equo.swt.IntArrayConverter;
-import dev.equo.swt.CharArrayConverter;
 
 /**
  * Instances of this class provide a description of a particular
@@ -37,21 +32,18 @@ import dev.equo.swt.CharArrayConverter;
  * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ControlExample, Listeners</a>
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public class Event {
+public class Event implements dev.equo.swt.WireObject {
 
     /**
      * the display where the event occurred
      *
      * @since 2.0
      */
-    @JsonAttribute(ignore = true)
     public Display display;
 
     /**
      * the widget that issued the event
      */
-    @JsonAttribute()
     public Widget widget;
 
     /**
@@ -60,7 +52,6 @@ public class Event {
      *
      * @see org.eclipse.swt.SWT
      */
-    @JsonAttribute()
     public int type;
 
     /**
@@ -69,13 +60,11 @@ public class Event {
      *
      * @see org.eclipse.swt.SWT
      */
-    @JsonAttribute()
     public int detail;
 
     /**
      * the item that the event occurred in (can be null)
      */
-    @JsonAttribute()
     public Widget item;
 
     /**
@@ -83,7 +72,6 @@ public class Event {
      *
      * @since 3.2
      */
-    @JsonAttribute()
     public int index;
 
     /**
@@ -92,7 +80,6 @@ public class Event {
      * damaged region of the control.  It is valid
      * only during the paint and must not be disposed
      */
-    @JsonAttribute()
     public GC gc;
 
     /**
@@ -101,7 +88,6 @@ public class Event {
      * widget-relative, x coordinate of the pointer at the
      * time the mouse button was pressed or released
      */
-    @JsonAttribute()
     public int x;
 
     /**
@@ -110,21 +96,18 @@ public class Event {
      * widget-relative, y coordinate of the pointer at the
      * time the mouse button was pressed or released
      */
-    @JsonAttribute()
     public int y;
 
     /**
      * the width of the bounding rectangle of the
      * region that requires painting
      */
-    @JsonAttribute()
     public int width;
 
     /**
      * the height of the bounding rectangle of the
      * region that requires painting
      */
-    @JsonAttribute()
     public int height;
 
     /**
@@ -134,7 +117,6 @@ public class Event {
      * scroll using the mouse wheel, or the number of times the
      * mouse has been clicked
      */
-    @JsonAttribute()
     public int count;
 
     /**
@@ -144,7 +126,6 @@ public class Event {
      * be AND'ed with 0xFFFFFFFFL so that it can be treated
      * as a signed long.
      */
-    @JsonAttribute()
     public int time;
 
     /**
@@ -152,7 +133,6 @@ public class Event {
      * first button, 2 for the second button, and 3 for the
      * third button, etc.
      */
-    @JsonAttribute()
     public int button;
 
     /**
@@ -164,7 +144,6 @@ public class Event {
      * character value based on a stateMask (such as SWT.CTRL) or the
      * resulting character will not be correct.
      */
-    @JsonAttribute()
     public char character;
 
     /**
@@ -233,7 +212,6 @@ public class Event {
 	 *  <li>Files with names containing 'Issue0351_EventKeyCode'</li>
 	 * </ul>
 	 */
-    @JsonAttribute()
     public int keyCode;
 
     /**
@@ -258,7 +236,6 @@ public class Event {
      *
      * @since 3.6
      */
-    @JsonAttribute()
     public int keyLocation;
 
     /**
@@ -268,7 +245,6 @@ public class Event {
      * @see org.eclipse.swt.SWT#MODIFIER_MASK
      * @see org.eclipse.swt.SWT#BUTTON_MASK
      */
-    @JsonAttribute()
     public int stateMask;
 
     /**
@@ -276,7 +252,6 @@ public class Event {
      * Setting these fields only has effect during ImeComposition
      * events.
      */
-    @JsonAttribute()
     public int start, end;
 
     /**
@@ -284,21 +259,18 @@ public class Event {
      * Setting this field will change the text that is about to
      * be inserted or deleted.
      */
-    @JsonAttribute()
     public String text;
 
     /**
      * Bidi segment offsets
      * @since 3.8
      */
-    @JsonAttribute(converter = IntArrayConverter.class)
     public int[] segments;
 
     /**
      * Characters to be applied on the segment boundaries
      * @since 3.8
      */
-    @JsonAttribute(converter = CharArrayConverter.class)
     public char[] segmentsChars;
 
     /**
@@ -306,13 +278,11 @@ public class Event {
      * should be allowed.  Setting this field to false will cancel the
      * operation.
      */
-    @JsonAttribute()
     public boolean doit = true;
 
     /**
      * a field for application use
      */
-    @JsonAttribute(ignore = true)
     public Object data;
 
     /**
@@ -320,7 +290,6 @@ public class Event {
      *
      * @since 3.7
      */
-    @JsonAttribute()
     public Touch[] touches;
 
     /**
@@ -329,7 +298,6 @@ public class Event {
      *
      * @since 3.7
      */
-    @JsonAttribute()
     public int xDirection;
 
     /**
@@ -338,7 +306,6 @@ public class Event {
      *
      * @since 3.7
      */
-    @JsonAttribute()
     public int yDirection;
 
     /**
@@ -347,7 +314,6 @@ public class Event {
      *
      * @since 3.7
      */
-    @JsonAttribute()
     public double magnification;
 
     /**
@@ -355,7 +321,6 @@ public class Event {
      *
      * @since 3.7
      */
-    @JsonAttribute()
     public double rotation;
 
     /**
@@ -400,18 +365,187 @@ public class Event {
         return "Event {type=" + type + " " + widget + " time=" + time + " data=" + data + " x=" + x + " y=" + y + " width=" + width + " height=" + height + " detail=" + detail + "}";
     }
 
-    @JsonAttribute()
     public int feedback;
 
-    @JsonAttribute()
     public int operations;
 
-    @JsonAttribute()
     public int currentDataTypeId;
 
-    @JsonAttribute()
     public Image dragImage;
 
-    @JsonAttribute()
     public long itemId;
+
+    @Override
+    public int wireTypeId() {
+        return 364;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(358);
+        w.ref(widget);
+        w.key(357);
+        w.write((int) type);
+        w.key(335);
+        w.write((int) detail);
+        w.key(343);
+        w.ref(item);
+        w.key(342);
+        w.write((int) index);
+        w.key(340);
+        w.ref(gc);
+        w.key(360);
+        w.write((int) x);
+        w.key(362);
+        w.write((int) y);
+        w.key(359);
+        w.write((int) width);
+        w.key(341);
+        w.write((int) height);
+        w.key(333);
+        w.write((int) count);
+        w.key(355);
+        w.write((int) time);
+        w.key(331);
+        w.write((int) button);
+        w.key(332);
+        w.write(character);
+        w.key(345);
+        w.write((int) keyCode);
+        w.key(346);
+        w.write((int) keyLocation);
+        w.key(353);
+        w.write((int) stateMask);
+        w.key(352);
+        w.write((int) start);
+        w.key(338);
+        w.write((int) end);
+        w.key(354);
+        w.write(text);
+        w.key(350);
+        w.write(segments);
+        w.key(351);
+        w.write(segmentsChars);
+        w.key(336);
+        w.write(doit);
+        w.key(356);
+        {
+            Touch[] a_ = touches;
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (Touch e_ : a_) w.object(e_);
+            }
+        }
+        w.key(361);
+        w.write((int) xDirection);
+        w.key(363);
+        w.write((int) yDirection);
+        w.key(347);
+        w.write(magnification);
+        w.key(349);
+        w.write(rotation);
+        w.key(339);
+        w.write((int) feedback);
+        w.key(348);
+        w.write((int) operations);
+        w.key(334);
+        w.write((int) currentDataTypeId);
+        w.key(337);
+        w.image(dragImage);
+        w.key(344);
+        w.write(itemId);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 357:
+                type = r.int32();
+                return true;
+            case 335:
+                detail = r.int32();
+                return true;
+            case 342:
+                index = r.int32();
+                return true;
+            case 360:
+                x = r.int32();
+                return true;
+            case 362:
+                y = r.int32();
+                return true;
+            case 359:
+                width = r.int32();
+                return true;
+            case 341:
+                height = r.int32();
+                return true;
+            case 333:
+                count = r.int32();
+                return true;
+            case 355:
+                time = r.int32();
+                return true;
+            case 331:
+                button = r.int32();
+                return true;
+            case 332:
+                character = r.char16();
+                return true;
+            case 345:
+                keyCode = r.int32();
+                return true;
+            case 346:
+                keyLocation = r.int32();
+                return true;
+            case 353:
+                stateMask = r.int32();
+                return true;
+            case 352:
+                start = r.int32();
+                return true;
+            case 338:
+                end = r.int32();
+                return true;
+            case 354:
+                text = r.string();
+                return true;
+            case 350:
+                segments = r.ints();
+                return true;
+            case 351:
+                segmentsChars = r.chars();
+                return true;
+            case 336:
+                doit = r.bool();
+                return true;
+            case 361:
+                xDirection = r.int32();
+                return true;
+            case 363:
+                yDirection = r.int32();
+                return true;
+            case 347:
+                magnification = r.float64();
+                return true;
+            case 349:
+                rotation = r.float64();
+                return true;
+            case 339:
+                feedback = r.int32();
+                return true;
+            case 348:
+                operations = r.int32();
+                return true;
+            case 334:
+                currentDataTypeId = r.int32();
+                return true;
+            case 344:
+                itemId = r.int64();
+                return true;
+        }
+        return false;
+    }
 }

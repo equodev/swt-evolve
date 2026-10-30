@@ -1,15 +1,36 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'transform.g.dart';
-
-@JsonSerializable()
-class VTransform {
+class VTransform implements WireReadable, WireWritable, WireVisitable {
   VTransform() : this.empty();
   VTransform.empty();
 
   List<double>? elements;
 
-  factory VTransform.fromJson(Map<String, dynamic> json) =>
-      _$VTransformFromJson(json);
-  Map<String, dynamic> toJson() => _$VTransformToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case 563: // elements
+        elements = r.floats();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    {
+      final v_ = elements;
+      if (v_ != null && w.wants(563)) {
+        w.key(563);
+        w.floats(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    visit(563, elements);
+  }
 }

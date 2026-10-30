@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -79,28 +80,24 @@ class SubtreeDeliveryTest {
         d.setText("D changed");
         FlutterBridge.update();
 
-        assertThat(bridge.comm.sent).as("one flush, one message").hasSize(1);
-        String payload = bridge.comm.sent.get(0).json;
-
-        assertThat(payload)
-                .as("each change described as itself, on its own channel")
-                .contains("\"Composite/" + a.hashCode() + "\"")
-                .contains("\"_d\":[\"toolTipText\"]")
-                .contains("\"Label/" + d.hashCode() + "\"")
-                .contains("\"_d\":[\"text\"]")
-                .contains("\"D changed\"");
-        assertThat(payload)
+        assertThat(bridge.comm.wireFrames()).as("one flush, one message").isEqualTo(1L);
+        assertThat(recordOn(a))
+                .as("each change described as itself")
+                .containsEntry("_d", java.util.List.of("toolTipText"));
+        assertThat(recordOn(d))
+                .containsEntry("_d", java.util.List.of("text"))
+                .containsEntry("text", "D changed");
+        assertThat(channels())
                 .as("B changed nothing and carries nothing, so it is not sent at all - which is "
                         + "the whole saving: an unchanged node between two changed ones costs "
                         + "nothing rather than its entire state")
-                .doesNotContain("\"id\":" + b.hashCode());
-        assertThat(payload)
+                .doesNotContain("Composite/" + b.hashCode())
                 .as("and neither is the unchanged sibling")
-                .doesNotContain("\"id\":" + c.hashCode());
+                .doesNotContain("Label/" + c.hashCode());
     }
 
     @Test
-    @DisplayName("a change under an ancestor that is going whole still travels inside it")
+    @DisplayName("a change under an ancestor that is going whole travels as itself, the rest is named")
     void grandchildUnderAWholeAncestor() {
         Shell shell = Mocks.shell();
         Composite a = new Composite(shell, SWT.NONE);
@@ -117,17 +114,12 @@ class SubtreeDeliveryTest {
         d.setText("D changed");
         FlutterBridge.update();
 
-        assertThat(bridge.comm.sent).hasSize(1);
-        String payload = bridge.comm.sent.get(0).json;
-        assertThat(payload)
-                .as("the deeper change has no other way to arrive")
-                .contains("\"D changed\"");
-        assertThat(sliceFor(payload, b))
-                .as("B changed nothing and is the path D's change travels down")
-                .doesNotContain("\"_r\"");
-        assertThat(sliceFor(payload, c))
-                .as("C changed nothing and nothing travels through it, so it is named")
-                .contains("\"_r\":1");
+        assertThat(bridge.comm.wireFrames()).isEqualTo(1L);
+        assertThat(recordOn(a)).as("A goes whole, naming its children").containsKey("children");
+        assertThat(recordOn(d)).as("the deeper change travels as itself").containsEntry("text", "D changed");
+        assertThat(channels())
+                .as("B and C changed nothing and the client holds them, so they are only named")
+                .doesNotContain("Composite/" + b.hashCode(), "Label/" + c.hashCode());
     }
 
     @Test
@@ -143,31 +135,35 @@ class SubtreeDeliveryTest {
         a.setToolTipText("A changed");
         FlutterBridge.update();
         assertThat(bridge.comm.sent).hasSize(1);
-        assertThat(bridge.comm.sent.get(0).json)
+        assertThat(recordOn(a))
                 .as("nothing under A is involved, so A describes only what moved")
-                .contains("\"_d\":[\"toolTipText\"]")
-                .doesNotContain("children");
+                .containsEntry("_d", java.util.List.of("toolTipText"));
+        assertThat(WireValues.containsText(recordOn(a), "children"))
+                .as("nothing under A is involved, so A describes only what moved")
+                .isFalse();
         bridge.comm.sent.clear();
 
         d.setText("D changed");
         FlutterBridge.update();
         assertThat(bridge.comm.sent).hasSize(1);
         assertThat(bridge.comm.sent.get(0).event).isEqualTo("Label/" + d.hashCode());
-        assertThat(bridge.comm.sent.get(0).json)
+        assertThat(bridge.comm.sent.get(0).state())
                 .as("no dirty ancestor to be folded into, so it goes as itself")
-                .contains("\"_d\":[\"text\"]")
-                .contains("\"D changed\"");
+                .containsEntry("_d", java.util.List.of("text"))
+                .containsEntry("text", "D changed");
     }
 
     // ---- harness ----
 
-    /** The part of a payload describing one widget: from its id up to the next one's. */
-    private String sliceFor(String payload, Widget widget) {
-        String marker = "\"id\":" + widget.hashCode();
-        int start = payload.indexOf(marker);
-        assertThat(start).as("%s is not in the payload at all", widget).isNotNegative();
-        int next = payload.indexOf("\"id\":", start + marker.length());
-        return payload.substring(start, next < 0 ? payload.length() : next);
+    /** The record sent for {@code widget}. */
+    private java.util.Map<String, Object> recordOn(Widget widget) {
+        String channel = widget.getClass().getSimpleName() + "/" + widget.hashCode();
+        return bridge.comm.sent.stream().filter(f -> f.event.equals(channel)).map(RecordingComm.Frame::state).findFirst()
+                .orElseThrow(() -> new AssertionError("nothing sent on " + channel));
+    }
+
+    private java.util.List<String> channels() {
+        return bridge.comm.sent.stream().map(f -> f.event).toList();
     }
 
     private void settle(Widget widget) {
