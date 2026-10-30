@@ -8,7 +8,10 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Up and Down move a List's selection a row, after the KeyDown and only if no listener vetoed it. */
+/**
+ * Up, Down, Page Up, Page Down, Home and End move a List's selection, after the KeyDown and only if no
+ * listener vetoed it.
+ */
 class ListArrowKeyTest extends KeyRoutingTestBase {
 
     private List list() {
@@ -66,14 +69,65 @@ class ListArrowKeyTest extends KeyRoutingTestBase {
     }
 
     @Test
-    @DisplayName("a key that is not Up or Down moves nothing")
+    @DisplayName("Page Down, Page Up, Home and End select the row they reach, as Win32 and GTK do")
+    void pageHomeEndMoveTheSelection() {
+        List list = list();
+        list.setSelection(0);
+        java.util.List<String> events = new ArrayList<>();
+        list.addListener(SWT.Selection, e -> events.add("Selection " + list.getSelectionIndex()));
+
+        press(list, SWT.PAGE_DOWN);
+        press(list, SWT.PAGE_UP);
+        press(list, SWT.HOME);
+        press(list, SWT.END);
+
+        assertThat(list.getSelectionIndex()).isEqualTo(2);
+        assertThat(events).containsExactly("Selection 1", "Selection 0", "Selection 2");
+    }
+
+    @Test
+    @DisplayName("Page Down first goes to the last row in view, and Page Up from the top row goes a page up")
+    void pageKeysStopAtTheEdgeOfTheViewFirst() {
+        List list = new List(shell(), SWT.SINGLE);
+        String[] items = new String[20];
+        for (int i = 0; i < items.length; i++)
+            items[i] = "item " + i;
+        list.setItems(items);
+        list.setBounds(20, 20, 200, list.getItemHeight() * 5);
+        int rows = list.getClientArea().height / list.getItemHeight();
+        assertThat(rows).as("rows in view").isGreaterThan(2);
+
+        list.setSelection(0);
+        press(list, SWT.PAGE_DOWN);
+        assertThat(list.getSelectionIndex()).isEqualTo(rows - 1);
+
+        list.setSelection(10);
+        list.setTopIndex(10);
+        press(list, SWT.PAGE_UP);
+        assertThat(list.getSelectionIndex()).isEqualTo(10 - (rows - 1));
+    }
+
+    @Test
+    @DisplayName("End brings the last row into view")
+    void endShowsTheLastRow() {
+        List list = new List(shell(), SWT.SINGLE);
+        list.setItems(new String[] {"alpha", "bravo", "charlie"});
+        list.setBounds(20, 20, 200, 28);
+        list.setSelection(0);
+
+        press(list, SWT.END);
+
+        assertThat(list.getTopIndex()).isPositive();
+    }
+
+    @Test
+    @DisplayName("a key that does not move a row moves nothing")
     void anotherKeyMovesNothing() {
         List list = list();
         java.util.List<String> events = new ArrayList<>();
         list.addListener(SWT.Selection, e -> events.add("Selection"));
 
         press(list, SWT.ARROW_LEFT);
-        press(list, SWT.END);
         press(list, 'a');
 
         assertThat(list.getSelectionIndex()).isEqualTo(1);

@@ -2,6 +2,7 @@
 // to the top, and the client reports how far the user scrolled, which List.getTopIndex is computed from.
 // The selection is a set of indices, so items with the same text are selected and highlighted apart.
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -23,10 +24,11 @@ VList _list({
   List<int> selection = const [],
   int? topIndex,
   int seq = 1,
+  int style = SWT.SINGLE | SWT.V_SCROLL,
 }) => VList()
   ..id = 1
   ..seq = seq
-  ..style = SWT.SINGLE | SWT.V_SCROLL
+  ..style = style
   ..enabled = true
   ..topIndex = topIndex
   ..items = items ?? [for (var i = 0; i < 60; i++) 'item $i']
@@ -158,6 +160,32 @@ void main() {
       final selections = _sent('/Selection/Selection');
       expect(selections, isNotEmpty);
       expect(selections.last.segments, [1]);
+    },
+  );
+
+  testWidgets('the wheel scrolls a list with a vertical scroll bar', (tester) async {
+    await _pump(tester, _list());
+
+    tester.binding.handlePointerEvent(
+        PointerScrollEvent(position: _listRect.center, scrollDelta: const Offset(0, 100)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('item 0'), findsNothing);
+  });
+
+  testWidgets(
+    'the wheel leaves a list without V_SCROLL where it is, as Win32 and GTK do; Java still scrolls it',
+    (tester) async {
+      await _pump(tester, _list(style: SWT.SINGLE));
+
+      tester.binding.handlePointerEvent(
+          PointerScrollEvent(position: _listRect.center, scrollDelta: const Offset(0, 100)));
+      await tester.pumpAndSettle();
+      expect(_isAtTheTop(tester, 0), isTrue);
+      expect(_sent('/Scroll/Scroll'), isEmpty);
+
+      await _pump(tester, _list(style: SWT.SINGLE, topIndex: 10));
+      expect(_isAtTheTop(tester, 10), isTrue);
     },
   );
 }

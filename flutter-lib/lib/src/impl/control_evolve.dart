@@ -531,14 +531,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   final Set<int> scrollBarPointers = {};
 
   /// Whether this press continues the click chain [registerPointerDown] counts: same button, inside
-  /// the double-click window. Answers before the press is registered, for a handler nested inside
-  /// the control's own, which is reached first.
+  /// the double-click window and distance. Answers before the press is registered, for a handler
+  /// nested inside the control's own, which is reached first.
   bool continuesClickChain(PointerDownEvent e) =>
       _lastClickStamp != null &&
       _lastClickPosition != null &&
       swtButtonOf(e.buttons) == _lastButton &&
       e.timeStamp - _lastClickStamp! <= doubleClickTimeout &&
-      (e.position - _lastClickPosition!).distance <= doubleClickSlop;
+      // A finger keeps Flutter's double-tap slop: two taps rarely land [doubleClickSlop] apart.
+      (e.position - _lastClickPosition!).distance <=
+          (e.kind == PointerDeviceKind.touch ? kDoubleTapSlop : doubleClickSlop);
 
   /// Records the SWT button/count pair a pointer-down carries, chaining consecutive same-button
   /// downs inside the double-click window. Both interaction chromes funnel through here — [wrap]

@@ -1180,6 +1180,10 @@ public class DartList extends DartScrollable implements IList {
 
     int keptFocusIndex = -1;
 
+    boolean pressInFlight;
+
+    Event heldSelection;
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SCROLL_SCROLL, e -> {

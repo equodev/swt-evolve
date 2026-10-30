@@ -924,6 +924,10 @@ public class ControlHelper {
      * a microtask after the press, behind the MouseDown it caused.
      */
     public static void pressed(DartControl control, Event event) {
+        if (control instanceof DartList)
+            ListHelper.pressed((DartList) control, event);
+        if (control.isDisposed())
+            return;
         MenuHelper.forgetLoneAlt(control.getDisplay());
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
@@ -935,6 +939,12 @@ public class ControlHelper {
                 ? control.getApi().setFocus() : control.forceFocus();
         if (focused && !control.isDisposed())
             control.getBridge().focusClient(control);
+    }
+
+    /** What a native release does after SWT.MouseUp reaches listeners: a List reports the click's Selection. */
+    public static void released(DartControl control) {
+        if (control instanceof DartList)
+            ListHelper.released((DartList) control);
     }
 
     /**
