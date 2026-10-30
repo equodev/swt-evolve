@@ -32,7 +32,10 @@ fun download(url: String, target: File): File {
     target.parentFile.mkdirs()
     val tmp = File.createTempFile(target.name, ".part", target.parentFile)
     try {
-        URI(url).toURL().openStream().use { input -> tmp.outputStream().use { input.copyTo(it) } }
+        URI(url).toURL().openConnection().apply {
+            connectTimeout = 30_000
+            readTimeout = 60_000
+        }.getInputStream().use { input -> tmp.outputStream().use { input.copyTo(it) } }
         Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
     } finally {
         tmp.delete()

@@ -367,11 +367,6 @@ sourceSets {
                 exclude("org/eclipse/swt/widgets/LinkImplementationNativeTest.java")
                 exclude("dev/equo/swt/harness/*BrowserKit.java")
                 exclude("dev/equo/swt/test/BrowserSetTextLocalResourceFlutterTest.java")
-                // JFace 3.10, paired with 3.103, has no default IContentProvider methods and no
-                // StructuredViewer.getStructuredSelection.
-                exclude("org/eclipse/swt/widgets/TreeFilterRefreshSelectionFlutterTest.java")
-                exclude("org/eclipse/swt/widgets/TreeViewerFirstColumnClickFlutterTest.java")
-                exclude("org/eclipse/swt/widgets/TableHandRolledCheckColumnFlutterTest.java")
             }
             // Image.getImageData(int zoom) was added in 3.106.
             if (swtMinorNative < 106) {

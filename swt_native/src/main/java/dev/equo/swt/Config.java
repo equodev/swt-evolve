@@ -1044,11 +1044,6 @@ public class Config {
     public static int uiZoom() {
         boolean browserTab = !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode();
         if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom;
-        return deviceZoom();
-    }
-
-    /** SWT's device zoom; 100 on a release from before HiDPI support, which has no DPIUtil. */
-    private static int deviceZoom() {
         return DartWidget.swtDeviceZoom();
     }
 
