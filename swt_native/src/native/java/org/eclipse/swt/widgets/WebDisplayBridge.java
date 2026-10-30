@@ -612,6 +612,7 @@ public class WebDisplayBridge extends DisplayBridge {
             webServer.stop();
             webServer = null;
         }
+        DisplayBridgePlatform.release();
         super.destroyDisplay();
     }
 

@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ConfigFlags;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.Callback;
 import org.eclipse.swt.internal.cocoa.NSApplication;
 import org.eclipse.swt.internal.cocoa.NSEvent;
@@ -29,6 +30,12 @@ final class DisplayBridgePlatform {
 
     private static Callback isRunningCallback;
 
+    /** NSApp's class before {@link #markRunning} swapped it, or 0 when it is not swapped. */
+    private static long applicationClass;
+
+    /** Live browser-surface Displays; {@code isRunning} answers YES while there is one. */
+    private static int webDisplays;
+
     private DisplayBridgePlatform() {
     }
 
@@ -42,7 +49,21 @@ final class DisplayBridgePlatform {
         if (!ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode()) {
             launch();
             pump = launched && appleEventPumpRequested();
+            webDisplays++;
         }
+    }
+
+    /**
+     * Undoes {@link #init()} for a disposed Display: once the last browser-surface Display is gone,
+     * NSApp gets its own class back and stops reporting {@code isRunning}, as native SWT's does.
+     */
+    static void release() {
+        if (nativeLibraryOff() || ConfigFlags.isDesktopMode() || ConfigFlags.isChromiumMode() || webDisplays == 0)
+            return;
+        if (--webDisplays > 0 || applicationClass == 0)
+            return;
+        OS.object_setClass(NSApplication.sharedApplication().id, applicationClass);
+        applicationClass = 0;
     }
 
     /** The application menu as SWT widgets, for the menu bar Evolve draws inside the window. */
@@ -114,7 +135,7 @@ final class DisplayBridgePlatform {
     /**
      * Whether this run asks for the Cocoa pump that delivers NSApp's events
      * ({@code -Ddev.equo.swt.mac.appleEventPump=true}). Off by default: only an application that
-     * blocks its startup on the open-application Apple Event needs them, and the pump costs every
+     * blocks its startup on the open-application Apple Event needs it, and the pump costs every
      * other one its Display thread — {@link #pumpEvents()} blocks indefinitely on an NSApp that was
      * finish-launched but never run, which is every browser-surface run, so the thread never returns
      * from its first {@code readAndDispatch} and nothing posted to it with {@code asyncExec} runs.
@@ -135,35 +156,43 @@ final class DisplayBridgePlatform {
      */
     private static void launch() {
         // NSApp may only be driven from the main thread (-XstartOnFirstThread).
-        if (launched || !NSThread.isMainThread())
+        if (applicationClass != 0 || !NSThread.isMainThread())
             return;
-        launched = true;
         NSApplication application = NSApplication.sharedApplication();
-        // -finishLaunching is a one-time call; a running NSApp has already made it.
-        if (!application.isRunning()) {
-            application.finishLaunching();
-            markRunning(application);
+        if (application.isRunning()) {
+            launched = true;
+            return;
         }
+        // -finishLaunching is a one-time call: a Display made after the last one was disposed only
+        // marks NSApp running again.
+        if (!launched)
+            application.finishLaunching();
+        launched = true;
+        markRunning(application);
     }
 
     /**
-     * Makes {@code [NSApp isRunning]} answer YES, as native SWT's Display does. AWT decides from it
-     * whether to embed in the host's application or to run its own event loop on the main thread,
-     * and this NSApp is never {@code -run}.
+     * Makes {@code [NSApp isRunning]} answer YES while a browser-surface Display is alive, as native
+     * SWT's Display does. AWT decides from it whether to embed in the host's application or to run
+     * its own event loop on the main thread, and this NSApp is never {@code -run}.
      */
     private static void markRunning(NSApplication application) {
         long cls = OS.objc_lookUpClass(APPLICATION_CLASS);
         if (cls == 0) {
             isRunningCallback = new Callback(DisplayBridgePlatform.class, "isRunningProc", 2);
+            long proc = isRunningCallback.getAddress();
+            if (proc == 0)
+                SWT.error(SWT.ERROR_NO_MORE_CALLBACKS);
             cls = OS.objc_allocateClassPair(OS.object_getClass(application.id), APPLICATION_CLASS, 0);
-            OS.class_addMethod(cls, OS.sel_isRunning, isRunningCallback.getAddress(), "c@:");
+            OS.class_addMethod(cls, OS.sel_isRunning, proc, "c@:");
             OS.objc_registerClassPair(cls);
         }
+        applicationClass = OS.object_getClass(application.id);
         OS.object_setClass(application.id, cls);
     }
 
     static long isRunningProc(long id, long sel) {
-        return 1;
+        return webDisplays > 0 ? 1 : 0;
     }
 
     /** NSEventMaskAny: matches every event type. Not declared by every release's OS. */

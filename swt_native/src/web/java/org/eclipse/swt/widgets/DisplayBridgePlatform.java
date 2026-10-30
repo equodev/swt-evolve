@@ -13,6 +13,10 @@ final class DisplayBridgePlatform {
         // Pure web: no Java-side native init.
     }
 
+    /** Nothing {@link #init()} set up outlives the Display on this platform. */
+    static void release() {
+    }
+
     /** No application menu outside macOS: the platform has no such concept. */
     static Menu systemMenu(Display display) {
         return null;
