@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 import 'delivery/support/deliver.dart';
 
@@ -62,7 +63,7 @@ void main() {
   testWidgets('a focused Canvas keeps the focus when an editor is placed over it, and the editor takes it',
       (tester) async {
     final gridEvents = <String>[];
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Row(children: [
         SizedBox(
@@ -76,7 +77,7 @@ void main() {
           child: _RecordingCanvasSwt(sent: gridEvents, value: _grid([], 1)),
         ),
       ]),
-    ));
+    )));
     await tester.pumpAndSettle();
     await tester.showKeyboard(find.byType(EditableText));
     await tester.pumpAndSettle();

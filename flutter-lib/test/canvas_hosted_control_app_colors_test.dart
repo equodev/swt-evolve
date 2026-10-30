@@ -22,6 +22,7 @@ import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 const _editorBackground = Color(0xFFF0F0F0);
 const _editorForeground = Color(0xFF000000);
@@ -74,10 +75,10 @@ VCanvas _gridHosting(VControl editor) => VCanvas()
   ..children = [editor];
 
 Future<void> _pump(WidgetTester tester, VControl editor) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.dark,
     contentWidget: CanvasSwt<VCanvas>(value: _gridHosting(editor)),
-  ));
+  )));
   await tester.pumpAndSettle();
 }
 
@@ -147,7 +148,7 @@ void main() {
     // Decorations exclusion the scope is published inside every window and repaints the fields of
     // every dialog the application opens. Only the real Display mounting shows that -- a Canvas
     // pumped on its own never puts a Shell in the picture.
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.dark,
       contentWidget: DisplaySwt(
         value: VDisplay()
@@ -166,7 +167,7 @@ void main() {
               ..children = [_textEditor()..id = 6],
           ],
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
     final fills = tester

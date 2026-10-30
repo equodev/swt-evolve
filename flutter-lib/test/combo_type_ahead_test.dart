@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/combo_evolve.dart' show ComboValueText;
 import 'package:swtflutter/src/impl/focus_requests.dart';
 
 const int comboId = 7;
@@ -56,7 +57,8 @@ Future<List<(String, VEvent?)>> _pumpFocused(WidgetTester tester, int style) asy
   await tester.pumpAndSettle();
   FocusRequests.instance.request(comboId);
   await tester.pumpAndSettle();
-  expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isTrue,
+  // A READ_ONLY Combo draws its value without an EditableText; its field's node is the Focus around it.
+  expect(Focus.of(tester.element(find.byType(ComboValueText))).hasFocus, isTrue,
       reason: 'Java focusing the Combo must focus its field, where its keys are handled');
   events.clear();
   return events;
@@ -66,7 +68,7 @@ List<String?> _selections(List<(String, VEvent?)> events) =>
     events.where((e) => e.$1 == 'Selection/Selection').map((e) => e.$2?.text).toList();
 
 String _shown(WidgetTester tester) =>
-    tester.widget<EditableText>(find.byType(EditableText)).controller.text;
+    tester.widget<ComboValueText>(find.byType(ComboValueText)).controller.text;
 
 Future<void> _press(WidgetTester tester, LogicalKeyboardKey key) async {
   await tester.sendKeyEvent(key);

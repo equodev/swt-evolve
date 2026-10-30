@@ -89,7 +89,7 @@ void main() {
         find.byWidgetPredicate((w) => w is CTabFolderSwt<VCTabFolder>));
     for (var i = 0; i < _labels.length; i++) {
       final tab = find
-          .ancestor(of: find.text(_labels[i]), matching: find.byType(AnimatedContainer))
+          .ancestor(of: find.text(_labels[i]), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
           .first;
       if (!tab.evaluate().isNotEmpty) continue;
       expect(reported[2 * i], closeTo(tester.getRect(tab).left - folder.left, 1),

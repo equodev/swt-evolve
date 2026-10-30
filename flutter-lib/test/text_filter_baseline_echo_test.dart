@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
@@ -17,10 +18,10 @@ VRectangle _bounds(int w, int h) => VRectangle()
   ..width = w
   ..height = h;
 
-Widget _app(Widget child) => EvolveApp(
+Widget _app(Widget child) => ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: child,
-    );
+    ));
 
 void main() {
   testWidgets(

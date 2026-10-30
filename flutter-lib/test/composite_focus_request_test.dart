@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 import 'delivery/support/deliver.dart';
 
@@ -32,7 +33,7 @@ void main() {
   tearDown(() => FocusRequests.instance.reset());
 
   testWidgets('a focus request for an empty Composite moves focus onto it', (tester) async {
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: SizedBox(
         width: 400,
@@ -61,7 +62,7 @@ void main() {
             ],
         ),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
     await tester.showKeyboard(find.byType(EditableText));
     await tester.pumpAndSettle();
@@ -93,7 +94,7 @@ void main() {
       ..visible = true
       ..enabled = true
       ..bounds = _rect(2, 2, 196, 26);
-    Widget app(VComposite frameValue) => EvolveApp(
+    Widget app(VComposite frameValue) => ForceLive(child: EvolveApp(
           theme: ThemeMode.light,
           contentWidget: Row(children: [
             SizedBox(
@@ -111,7 +112,7 @@ void main() {
             ),
             SizedBox(width: 200, height: 30, child: CompositeSwt<VComposite>(value: frameValue)),
           ]),
-        );
+        ));
 
     await tester.pumpWidget(app(frame([editor], 1)));
     await tester.pumpAndSettle();

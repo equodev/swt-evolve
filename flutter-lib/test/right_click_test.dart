@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/control_evolve.dart' show ControlImpl;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
@@ -22,10 +23,10 @@ VRectangle _bounds(int w, int h) => VRectangle()
   ..width = w
   ..height = h;
 
-Widget _app(Widget child) => EvolveApp(
+Widget _app(Widget child) => ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Align(alignment: Alignment.topLeft, child: child),
-    );
+    ));
 
 class _RecordingScaleSwt extends ScaleSwt<VScale> {
   final List<String> calls;

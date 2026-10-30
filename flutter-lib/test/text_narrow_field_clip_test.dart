@@ -6,6 +6,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VText _text({required int style, required int width, required String value}) => VText()
   ..id = 1
@@ -20,10 +21,10 @@ VText _text({required int style, required int width, required String value}) => 
     ..width = width
     ..height = 28);
 
-Widget _wrap(VText value) => EvolveApp(
+Widget _wrap(VText value) => ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Center(child: TextSwt<VText>(value: value)),
-    );
+    ));
 
 RenderEditable _findEditable(WidgetTester tester) {
   RenderEditable? re;

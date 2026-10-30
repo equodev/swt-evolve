@@ -66,7 +66,7 @@ List<String> _highlighted(WidgetTester tester) {
     for (final label in const ['MD', 'TVD', 'TVDSS', 'TWT'])
       if (tester
           .widgetList<AnimatedContainer>(
-              find.ancestor(of: find.text(label), matching: find.byType(AnimatedContainer)))
+              find.ancestor(of: find.text(label), matching: find.byWidgetPredicate((w) => w is AnimatedContainer)))
           .any((c) => painted.contains((c.decoration as BoxDecoration?)?.color)))
         label,
   ];

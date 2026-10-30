@@ -50,6 +50,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   @override
   void setValue(V value) {
     super.setValue(value);
+    _context?.treeImpl?.itemContentChanged();
     // The Tree lays every visible row out from one flattened list, so what is under this item is
     // the Tree's to redraw.
     final change = lastChange;

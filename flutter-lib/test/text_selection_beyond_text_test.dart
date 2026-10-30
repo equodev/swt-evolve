@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 import 'delivery/support/deliver.dart';
 
@@ -33,14 +34,14 @@ VText _value(String text, int selectionStart, int selectionEnd) => VText()
     ..height = 30);
 
 Future<void> _pump(WidgetTester tester, VText value) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: SizedBox(
       width: 200,
       height: 30,
       child: TextSwt<VText>(value: value),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
 }
 

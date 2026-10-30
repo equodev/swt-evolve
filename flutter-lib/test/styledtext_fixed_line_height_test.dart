@@ -101,8 +101,11 @@ void main() {
   });
 
   test('without a fixed line height every line is still measured', () {
+    // A line whose height is known without laying it out (printable ASCII in one style) is described
+    // by that height; one with a character a fallback font may draw taller has to be laid out.
+    final text = List.generate(4000, (i) => 'line $i of a large file é').join('\n');
     TextShape.debugLayoutLineCalls = 0;
-    _shape(_document(4000), fixed: false).computeGeometry(visibleTop: 0, visibleBottom: 600);
+    _shape(text, fixed: false).computeGeometry(visibleTop: 0, visibleBottom: 600);
 
     expect(TextShape.debugLayoutLineCalls, greaterThanOrEqualTo(4000));
   });

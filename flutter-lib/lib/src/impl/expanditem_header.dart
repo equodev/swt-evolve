@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../gen/expanditem.dart';
 import '../theme/theme_extensions/expanditem_theme_extension.dart';
 import 'utils/image_utils.dart';
+import 'utils/quiet_animations.dart';
 
 /// The header of an ExpandItem: its image, its text and the chevron, inside the theme's header
 /// padding. Java sizes the bar from this row's insets, so it is the one place a header is laid out.
@@ -31,7 +32,7 @@ class ExpandItemHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = _buildImage();
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: theme.animationDuration,
       curve: theme.animationCurve,
       color: color,

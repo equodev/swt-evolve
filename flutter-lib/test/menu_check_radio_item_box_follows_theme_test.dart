@@ -5,6 +5,7 @@
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -110,12 +111,15 @@ bool _inLeadingOf(WidgetTester tester, Rect rect, String label) {
       rect.center.dy <= labelRect.bottom;
 }
 
-/// The bordered box or ring drawn before [label], if any.
+/// The bordered box or ring drawn before [label], if any: read off what paints decorations, which a
+/// [DecoratedBox] or an animated container's own box can be.
 BoxDecoration? _indicatorOf(WidgetTester tester, String label) {
-  for (final element in find.byType(DecoratedBox).evaluate()) {
-    final decoration = (element.widget as DecoratedBox).decoration;
+  for (final element in find.byWidgetPredicate((_) => true).evaluate()) {
+    if (element is! RenderObjectElement) continue;
+    final box = element.renderObject;
+    if (box is! RenderDecoratedBox) continue;
+    final decoration = box.decoration;
     if (decoration is! BoxDecoration || decoration.border == null) continue;
-    final box = element.renderObject as RenderBox;
     if (_inLeadingOf(tester, box.localToGlobal(Offset.zero) & box.size, label)) return decoration;
   }
   return null;

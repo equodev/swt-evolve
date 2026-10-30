@@ -10,6 +10,7 @@ import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 import 'delivery/support/deliver.dart';
 
@@ -43,7 +44,7 @@ Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
   VRegistry.instance.clear();
   _seq = 0;
   final reports = <int?>[];
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Center(
       child: SizedBox(
@@ -57,7 +58,7 @@ Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
         ),
       ),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   return reports;
 }

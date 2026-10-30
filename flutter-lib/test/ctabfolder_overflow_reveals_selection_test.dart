@@ -94,7 +94,7 @@ Rect _strip(WidgetTester tester) => tester.getRect(
 Rect _tab(WidgetTester tester, String label) => tester.getRect(find
     .ancestor(
       of: find.descendant(of: _folderWidget, matching: find.text(label)),
-      matching: find.byType(AnimatedContainer),
+      matching: find.byWidgetPredicate((w) => w is AnimatedContainer),
     )
     .first);
 

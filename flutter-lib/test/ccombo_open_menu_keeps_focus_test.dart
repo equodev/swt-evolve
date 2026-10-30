@@ -12,6 +12,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 /// The generated CComboSwt with sendEvent captured instead of handed to EquoCommService.
 class _CapturingCComboSwt extends CComboSwt<VCCombo> {
@@ -42,7 +43,7 @@ void main() {
   testWidgets('opening the dropdown does not report a FocusOut to Java', (tester) async {
     final events = <String>[];
 
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Center(
         child: SizedBox(
@@ -54,7 +55,7 @@ void main() {
           ),
         ),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
     // The cell editor has just been activated: JFace gives the combo focus.
@@ -78,7 +79,7 @@ void main() {
     final outside = FocusNode();
     addTearDown(outside.dispose);
 
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Column(
         children: [
@@ -93,7 +94,7 @@ void main() {
           SizedBox(width: 200, height: 24, child: TextField(focusNode: outside)),
         ],
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
     await tester.tap(find.descendant(of: find.byType(_CapturingCComboSwt), matching: find.byType(EditableText)));

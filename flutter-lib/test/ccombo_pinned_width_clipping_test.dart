@@ -10,6 +10,8 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/impl/ccombo_evolve.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 const _selected = 'X-Large';
 const _items = ['Small', 'Medium', 'Large', _selected];
@@ -37,13 +39,13 @@ VCCombo _ccombo(int id) => VCCombo()
   ..items = _items;
 
 Future<double> _pumpAndMeasure(WidgetTester tester, VCCombo value) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive.when(true, EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
       alignment: Alignment.topLeft,
       child: CComboSwt<VCCombo>(value: value),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   return tester.getSize(find.byType(EditableText)).width;
 }
@@ -59,6 +61,7 @@ double _textWidth(WidgetTester tester) {
 }
 
 void main() {
+  // What the menu itself draws; the field at rest paints the same (ccombo_rest_matches_menu_test).
   setUpAll(_loadInter);
 
   testWidgets('a CCombo pinned to a narrow width still shows its text',

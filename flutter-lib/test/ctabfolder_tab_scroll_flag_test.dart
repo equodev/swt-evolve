@@ -97,7 +97,7 @@ double _horizontalScrollExtent(WidgetTester tester) {
 /// Each painted tab's background, in strip order.
 List<Color?> _tabBackgrounds(WidgetTester tester) => [
       for (final el in find
-          .descendant(of: find.byWidgetPredicate((w) => w is CTabFolderSwt), matching: find.byType(AnimatedContainer))
+          .descendant(of: find.byWidgetPredicate((w) => w is CTabFolderSwt), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
           .evaluate())
         if ((el.widget as AnimatedContainer).decoration case final BoxDecoration d when d.color != null) d.color,
     ];

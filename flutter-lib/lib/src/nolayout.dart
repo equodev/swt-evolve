@@ -55,12 +55,13 @@ class NoLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildChild(VControl child) {
-    if (childBuilder != null) {
-      return childBuilder!(child);
-    }
-    return customWidgetFromValue(child) ?? gen.mapWidgetFromValue(child);
-  }
+  /// Each child under a TickerMode of its own: every animation listens to its nearest one, and
+  /// leaving a shared one takes as long as it has listeners, so a thousand siblings would leave it in
+  /// quadratic time.
+  Widget _buildChild(VControl child) => TickerMode(
+        enabled: true,
+        child: childBuilder?.call(child) ?? customWidgetFromValue(child) ?? gen.mapWidgetFromValue(child),
+      );
 
   static Widget _wrapAsPanel(Widget child, CompositeThemeExtension theme) {
     final radius = BorderRadius.all(Radius.circular(theme.panelBorderRadius));

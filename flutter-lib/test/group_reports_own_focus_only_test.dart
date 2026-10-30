@@ -10,6 +10,7 @@ import 'package:swtflutter/src/gen/group.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -29,7 +30,7 @@ class _RecordingGroupSwt extends GroupSwt<VGroup> {
 void main() {
   testWidgets('focusing a control inside a Group sends the Group no FocusIn', (tester) async {
     final sent = <String>[];
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: SizedBox(
         width: 300,
@@ -54,7 +55,7 @@ void main() {
             ],
         ),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
     await tester.showKeyboard(find.byType(EditableText));

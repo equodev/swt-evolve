@@ -14,6 +14,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/ccombo_theme_extension.dart';
+import 'package:swtflutter/src/impl/ccombo_evolve.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 /// The light system-color pair a themed application hands its toolbar controls.
 const _appBackground = Color(0xFFF0F0F0);
@@ -48,7 +50,7 @@ VCCombo _appColoredCombo() => VCCombo()
     ..height = 24);
 
 Future<void> _pump(WidgetTester tester) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive.when(true, EvolveApp(
     theme: ThemeMode.dark,
     contentWidget: Center(
       child: SizedBox(
@@ -57,13 +59,13 @@ Future<void> _pump(WidgetTester tester) async {
         child: _SilentCComboSwt(value: _appColoredCombo()),
       ),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
 }
 
 /// The ground the closed field is painted on.
 Color? _fieldBackground(WidgetTester tester) {
-  final container = tester.widget<AnimatedContainer>(find.byType(AnimatedContainer));
+  final container = tester.widget<AnimatedContainer>(find.byWidgetPredicate((w) => w is AnimatedContainer));
   return (container.decoration as BoxDecoration?)?.color;
 }
 
@@ -75,6 +77,7 @@ CComboThemeExtension _theme(WidgetTester tester) =>
         .extension<CComboThemeExtension>()!;
 
 void main() {
+  // What the menu itself draws; the field at rest paints the same (ccombo_rest_matches_menu_test).
   setUp(resetConfigFlags);
   tearDown(resetConfigFlags);
 

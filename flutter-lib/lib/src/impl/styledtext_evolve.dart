@@ -1485,6 +1485,80 @@ class _Delimiters {
 }
 
 
+/// What a style's text lays out to vertically, when every printable ASCII character and a tab lay
+/// out to the same: null for a style where some of them would not (a glyph from a fallback font,
+/// say), whose lines have to be laid out to know their height.
+class _VerticalMetrics {
+  _VerticalMetrics._(this.ascent, this.descent, this.height, this.emptyHeight, this.averageAdvance);
+
+  final double ascent;
+  final double descent;
+  final double height;
+
+  /// The mean width of the printable ASCII characters, for a line's width before it is laid out.
+  final double averageAdvance;
+
+  /// An empty line's height, which comes from the style rather than from any glyph.
+  final double emptyHeight;
+
+  bool sameAs(_VerticalMetrics other) =>
+      ascent == other.ascent && descent == other.descent && height == other.height;
+
+  /// What [of] found for each style, with [_none] for a style it found no metrics for. Kept as
+  /// long as the line layouts measured in the same fonts are ([debugResetLineLayoutCache]).
+  static Expando<Object> _ofStyle = Expando();
+  static final Object _none = Object();
+
+  static _VerticalMetrics? of(TextStyle style) {
+    final known = _ofStyle[style];
+    if (known != null) return known is _VerticalMetrics ? known : null;
+    final metrics = _measure(style);
+    _ofStyle[style] = metrics ?? _none;
+    return metrics;
+  }
+
+  static double _lastWidth = 0;
+
+  static (double, double, double)? _laidOut(InlineSpan span, [List<PlaceholderDimensions>? placeholders]) {
+    final painter = TextPainter(text: span, textDirection: TextDirection.ltr);
+    if (placeholders != null) painter.setPlaceholderDimensions(placeholders);
+    painter.layout();
+    final lines = painter.computeLineMetrics();
+    final result = lines.length == 1 ? (lines.first.ascent, lines.first.descent, painter.height) : null;
+    _lastWidth = painter.width;
+    painter.dispose();
+    return result;
+  }
+
+  static _VerticalMetrics? _measure(TextStyle style) {
+    // As a run inside a line, and as a line's own style: both have to agree.
+    final asRoot = _laidOut(TextSpan(text: 'x', style: style));
+    final reference = _laidOut(TextSpan(children: [TextSpan(text: 'x', style: style)]));
+    if (asRoot == null || reference == null || asRoot != reference) return null;
+    var widths = 0.0;
+    for (var c = 0x20; c <= 0x7E; c++) {
+      if (_laidOut(TextSpan(children: [TextSpan(text: String.fromCharCode(c), style: style)])) != reference) {
+        return null;
+      }
+      widths += _lastWidth;
+    }
+    final tabbed = _laidOut(
+        TextSpan(children: [TextSpan(text: 'x', style: style), _tabPlaceholder]),
+        const [PlaceholderDimensions(
+          size: Size(8, 0),
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          baselineOffset: 0,
+        )]);
+    if (tabbed != reference) return null;
+    final empty = TextPainter(text: TextSpan(text: '', style: style), textDirection: TextDirection.ltr)
+      ..layout();
+    final emptyHeight = empty.height;
+    empty.dispose();
+    return _VerticalMetrics._(reference.$1, reference.$2, reference.$3, emptyHeight, widths / (0x7E - 0x20 + 1));
+  }
+}
+
 // Stands in for one '\t'. Its width comes from the PlaceholderDimensions computed per
 // tab, so the child is never measured or painted.
 const WidgetSpan _tabPlaceholder = WidgetSpan(
@@ -1796,6 +1870,7 @@ void _dropLineCaches() {
   _lineLayoutCache.clear();
   _lineLayoutCacheChars = 0;
   _paintedLineCache.clear();
+  _VerticalMetrics._ofStyle = Expando();
 }
 
 bool _watchingSystemFonts = false;
@@ -2224,15 +2299,58 @@ class TextShape extends Shape {
   List<double> _lineTopsNow(List<String> lines, Size? canvas) {
     final watch = Stopwatch()..start();
     final tops = List<double>.filled(lines.length + 1, 0);
+    final memo = _measuredLineCache;
     double y = 0;
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
-      y += props.vIndent + (_uniformRows ? _rowHeight : _advance(_measuredLine(i, lines[i]).height, i));
+      if (_uniformRows) {
+        y += props.vIndent + _rowHeight;
+      } else {
+        final height = (memo != null && i < memo.length ? memo[i]?.height : null) ??
+            _shapelessHeight(i, lines[i]) ??
+            _measuredLine(i, lines[i]).height;
+        y += props.vIndent + _advance(height, i);
+      }
     }
     tops[lines.length] = y;
     debugLineTopsMicros += watch.elapsedMicroseconds;
     return tops;
+  }
+
+  /// Each line's [_shapelessHeight] beside the height laying it out gives.
+  @visibleForTesting
+  List<(double?, double)> debugShapelessHeights() => [
+        for (final (i, line) in _lines.indexed) (_shapelessHeight(i, line), _measuredLine(i, line).height),
+      ];
+
+  /// The height [lineIndex] lays out to, when that is known without laying it out, else null.
+  ///
+  /// A line's height is the tallest ascent plus the deepest descent of the fonts its characters are
+  /// drawn in. An unwrapped line of printable ASCII and tabs, in styles that all have the same
+  /// vertical metrics for each of those characters ([_VerticalMetrics]), is that height whatever
+  /// its text: the one every line of those styles has.
+  double? _shapelessHeight(int lineIndex, String lineText) {
+    if (wordWrap == true) return null;
+    final base = _VerticalMetrics.of(style);
+    if (base == null) return null;
+    if (lineText.isEmpty) return base.emptyHeight;
+    for (var k = 0; k < lineText.length; k++) {
+      final c = lineText.codeUnitAt(k);
+      if ((c < 0x20 || c > 0x7E) && c != 0x09) return null;
+    }
+    final ranges = lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
+    if (ranges.isEmpty) return base.height;
+    final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
+    final lineEnd = lineStart + lineText.length;
+    for (final range in ranges) {
+      if (range.end <= lineStart || range.start >= lineEnd) continue;
+      if (range.rise != 0 || range.glyphWidth != null) return null;
+      if (identical(range.style, style)) continue;
+      final metrics = _VerticalMetrics.of(range.style);
+      if (metrics == null || !metrics.sameAs(base)) return null;
+    }
+    return base.height;
   }
 
   List<double> _lineTops(List<String> lines) =>
@@ -2723,6 +2841,31 @@ class TextShape extends Shape {
         continue;
       }
 
+      // A line off screen that nothing has laid out yet, whose height is known without laying it
+      // out, is described by that height and a width estimated from its length, and left unmeasured
+      // until it is shown: the native renderer measures a line of fixed height only then, so the
+      // document's width is that of the lines measured so far.
+      if (!wholeDocument && _knownLine(i, line) == null) {
+        final height = _shapelessHeight(i, line);
+        if (height != null && !rowIsVisible(currentY, vIndent + _advance(height, i))) {
+          final advance = vIndent + _advance(height, i);
+          visual.add(GeometryRow(
+            i,
+            docOffset,
+            docOffset + line.length,
+            _roundPx(props.indent.toDouble()),
+            _roundPx(currentY),
+            _roundPx(line.length * _VerticalMetrics.of(style)!.averageAdvance),
+            _roundPx(advance),
+            vIndent != 0 ? vIndent : null,
+            null,
+          ));
+          currentY += advance;
+          docOffset += line.length + 1;
+          continue;
+        }
+      }
+
       var layout = _measuredLine(i, line, wantCaretX: wholeDocument);
       final lineVisible = rowIsVisible(currentY, vIndent + _advance(layout.height, i));
       // A wrapped line sends per-character x for its rows in view only, so only those are measured:
@@ -2812,6 +2955,16 @@ class TextShape extends Shape {
     }
 
     return GeometryTable(text.length, _roundPx(maxWidth), _roundPx(currentY), visual);
+  }
+
+  /// The layout this shape already holds for [lineIndex], or the one the shape before it measured
+  /// for the same line, without laying anything out.
+  _LineLayout? _knownLine(int lineIndex, String lineText) {
+    final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
+    if (lineIndex < memo.length && memo[lineIndex] != null) return memo[lineIndex];
+    final donated = _donatedLine(lineIndex, lineText, false);
+    if (donated != null && lineIndex < memo.length) memo[lineIndex] = donated;
+    return donated;
   }
 
   /// Caret positions asked for to describe the document, for tests asserting their cost.

@@ -1006,6 +1006,16 @@ public class TableHelper {
     }
 
     /**
+     * Flutter's report of the rows it shows: {@code index} is the row at the top, {@code end} how far
+     * it renders. The top row is where the user scrolled the client to, so it is recorded without
+     * being sent back.
+     */
+    public static void rowsShown(DartTable table, Event e) {
+        if (e.index >= 0 && e.index < table.getItemCount()) table.topIndex = e.index;
+        loadVirtualWindow(table, e.end);
+    }
+
+    /**
      * Fires {@code SWT.SetData} for the rows in {@code [0, endExclusive)} that have no data yet.
      *
      * <p>There is no native paint loop here to pull virtual rows in, so Flutter reports how far it

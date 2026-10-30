@@ -1,4 +1,5 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/widgets.dart' show BuildContext, VoidCallback;
 
 import '../comm/comm.dart';
 
@@ -10,7 +11,7 @@ import '../comm/comm.dart';
 /// delivered on the target's own channel: Java can focus a control it created in the same
 /// event-loop pass, and that control only exists client-side one frame after its parent's state
 /// push, so a per-widget listener would not be registered yet when the request lands.
-class FocusRequests extends ChangeNotifier {
+class FocusRequests {
   FocusRequests._();
 
   static final FocusRequests instance = FocusRequests._();
@@ -30,6 +31,20 @@ class FocusRequests extends ChangeNotifier {
   static bool _listening = false;
 
   int? _pendingId;
+
+  /// Who can claim a request, by the id it is for: a request reaches only the widgets of its id, and
+  /// a widget stops watching in constant time however many others are.
+  final _watchers = <int, List<VoidCallback>>{};
+
+  /// Calls [onRequest] whenever a request for [id] arrives.
+  void watch(int id, VoidCallback onRequest) => (_watchers[id] ??= []).add(onRequest);
+
+  void unwatch(int id, VoidCallback onRequest) {
+    final watchers = _watchers[id];
+    if (watchers == null) return;
+    watchers.remove(onRequest);
+    if (watchers.isEmpty) _watchers.remove(id);
+  }
 
   int? _holderId;
 
@@ -76,7 +91,11 @@ class FocusRequests extends ChangeNotifier {
   void request(int id) {
     _requestedId = id;
     _pendingId = id;
-    notifyListeners();
+    final watchers = _watchers[id];
+    if (watchers == null) return;
+    for (final onRequest in [...watchers]) {
+      onRequest();
+    }
   }
 
   /// Whether [id] is the outstanding request, consuming it if so. A request is honoured once, so a

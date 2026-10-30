@@ -20,6 +20,7 @@ import 'utils/menu_mnemonics.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
+import 'utils/quiet_animations.dart';
 
 class MenuState {
   final Map<VMenuItem, void Function(bool)> radioItemCallbacks = {};
@@ -430,7 +431,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
             TextStyle(color: textColor);
 
     final stripHeight = DecorationsMenuData.of(context)?.stripHeight;
-    Widget menuBar = AnimatedContainer(
+    Widget menuBar = QuietAnimatedContainer(
       duration: widgetTheme.animationDuration,
       // The height Java laid the strip out at, which follows the monitor's scale.
       height: stripHeight != null && stripHeight > 0
@@ -1043,7 +1044,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           return MouseRegion(
             onEnter: (_) => setState(() => _isHovered = true),
             onExit: (_) => setState(() => _isHovered = false),
-            child: AnimatedContainer(
+            child: QuietAnimatedContainer(
               duration: widget.widgetTheme.animationDuration,
               color: highlighted
                   ? widget.widgetTheme.hoverBackgroundColor
@@ -1081,7 +1082,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
+      child: QuietAnimatedContainer(
         duration: widget.widgetTheme.animationDuration,
         color: highlighted
             ? widget.widgetTheme.hoverBackgroundColor

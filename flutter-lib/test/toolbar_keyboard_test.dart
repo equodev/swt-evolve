@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/toolbar_evolve.dart';
 import 'package:swtflutter/src/theme/theme_extensions/toolbar_theme_extension.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 final List<String> _sent = [];
 
@@ -88,7 +89,7 @@ int? _focusedItemId() {
 
 Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester, [VToolBar? toolBar]) async {
   final field = FocusNode(debugLabel: 'field');
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +98,7 @@ Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester, [VToolBar? toolBar])
         SizedBox(width: 400, height: 40, child: _RecordingToolBarSwt(value: toolBar ?? _toolBar())),
       ],
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   field.requestFocus();
   await tester.pump();

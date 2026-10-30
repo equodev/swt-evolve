@@ -19,6 +19,7 @@ import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
 
 import 'delivery/support/deliver.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 const _left = 1000;
 const _right = 2000;
@@ -65,7 +66,7 @@ VCTabFolder _folder(int id) => VCTabFolder()
   ];
 
 Future<void> _pump(WidgetTester tester, List<int> ids) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Row(
       children: [
@@ -73,7 +74,7 @@ Future<void> _pump(WidgetTester tester, List<int> ids) async {
           SizedBox(width: 300, height: 120, child: CTabFolderSwt<VCTabFolder>(value: _folder(id))),
       ],
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   while (tester.takeException() != null) {}
 }

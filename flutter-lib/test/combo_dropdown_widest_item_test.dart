@@ -27,6 +27,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/combo_evolve.dart';
 
 const String _selected = 'any prep time';
 const List<String> _items = [
@@ -87,7 +88,7 @@ void main() {
       (WidgetTester tester) async {
     await _pumpCombo(tester);
 
-    final editable = find.byType(EditableText);
+    final editable = find.byType(ComboValueText);
     expect(editable, findsOneWidget);
 
     final double viewportWidth = tester.getSize(editable).width;
@@ -107,7 +108,7 @@ void main() {
     await tester.tap(find.byType(ComboSwt<VCombo>));
     await tester.pumpAndSettle();
 
-    // The list renders one Text per item; the field itself uses EditableText.
+    // The list renders one Text per item; the field draws its value with ComboValueText.
     final items = find.byType(Text);
     expect(items, findsNWidgets(_items.length));
 
@@ -129,12 +130,13 @@ void main() {
       (WidgetTester tester) async {
     await _pumpCombo(tester);
 
-    final EditableText field = tester.widget<EditableText>(
-      find.byType(EditableText),
-    );
-    expect(field.selectionColor?.alpha ?? 0, 0,
-        reason: 'A double-click leaves a word selection behind in the '
-            'controller; painting it shows a highlight a native READ_ONLY '
-            'Combo never has.');
+    await tester.tap(find.byType(ComboValueText));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byType(ComboValueText));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EditableText), findsNothing,
+        reason: 'A double-click on an editable text leaves a word selection '
+            'behind; a native READ_ONLY Combo has none to show.');
   });
 }

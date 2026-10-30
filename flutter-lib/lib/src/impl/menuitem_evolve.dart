@@ -19,6 +19,7 @@ import 'utils/menu_mnemonics.dart';
 import 'utils/pointer.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
+import 'utils/quiet_animations.dart';
 import 'widget_config.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
@@ -382,7 +383,7 @@ class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
               }
             },
             child: GestureDetector(
-            child: AnimatedContainer(
+            child: QuietAnimatedContainer(
               duration: widget.widgetTheme.animationDuration,
               constraints: BoxConstraints(
                 minHeight: widget.widgetTheme.itemHeight,
@@ -811,7 +812,7 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
+      child: QuietAnimatedContainer(
         duration: widget.widgetTheme.animationDuration,
         width: size,
         height: size,
@@ -877,7 +878,7 @@ class _MenuRadioButtonState extends State<_MenuRadioButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
+      child: QuietAnimatedContainer(
         duration: widget.widgetTheme.animationDuration,
         width: size,
         height: size,

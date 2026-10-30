@@ -110,7 +110,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
   void initState() {
     super.initState();
     _node.addListener(_onNodeFocus);
-    FocusRequests.instance.addListener(_applyFocusRequest);
+    FocusRequests.instance.watch(_watchedId = widget.id, _applyFocusRequest);
     _applyFocusRequest();
     _token = EquoCommService.onRaw(_askChannel, _onIsland);
     // Java's push may have gone out before this listener existed.
@@ -136,6 +136,16 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     });
   }
 
+  late int _watchedId;
+
+  @override
+  void didUpdateWidget(covariant SwingIslandRegion oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.id == _watchedId) return;
+    FocusRequests.instance.unwatch(_watchedId, _applyFocusRequest);
+    FocusRequests.instance.watch(_watchedId = widget.id, _applyFocusRequest);
+  }
+
   /// Java focused the island (Control.setFocus, Tab traversal into it): take the node.
   void _applyFocusRequest() {
     if (!FocusRequests.instance.claim(widget.id)) return;
@@ -159,7 +169,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
   @override
   void dispose() {
     claimKeyboard(this, false);
-    FocusRequests.instance.removeListener(_applyFocusRequest);
+    FocusRequests.instance.unwatch(_watchedId, _applyFocusRequest);
     _node.removeListener(_onNodeFocus);
     _node.dispose();
     _focused.dispose();

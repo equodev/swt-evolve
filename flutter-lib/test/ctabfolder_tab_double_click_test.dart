@@ -85,7 +85,7 @@ void main() {
     final doubleClicks = await pumpFolder(tester);
 
     final tab = tester.getRect(
-        find.ancestor(of: find.text(_labels[1]), matching: find.byType(AnimatedContainer)).first);
+        find.ancestor(of: find.text(_labels[1]), matching: find.byWidgetPredicate((w) => w is AnimatedContainer)).first);
     final folder = folderRect(tester);
 
     await click(tester, tab.center);
@@ -110,7 +110,7 @@ void main() {
     final doubleClicks = await pumpFolder(tester);
 
     final lastTab = tester.getRect(
-        find.ancestor(of: find.text(_labels.last), matching: find.byType(AnimatedContainer)).first);
+        find.ancestor(of: find.text(_labels.last), matching: find.byWidgetPredicate((w) => w is AnimatedContainer)).first);
     final folder = folderRect(tester);
     final empty = Offset((lastTab.right + folder.right) / 2, lastTab.center.dy);
 

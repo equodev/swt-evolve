@@ -31,7 +31,9 @@ import 'utils/font_utils.dart';
 import 'utils/item_list_children.dart';
 import 'utils/widget_utils.dart';
 import '../gen/rectangle.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../testing/tree_test_registry.dart';
+import 'utils/text_utils.dart';
 
 class _FlatTreeItem {
   final VTreeItem item;
@@ -135,8 +137,58 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     ));
   }
 
+  /// Whether a delivery that named only the selection asked for the coming build, and whether
+  /// anything else did: see [_reusesItems].
+  bool _selectionAsked = false;
+  bool _beyondSelection = false;
+  bool _deliveringSelection = false;
+
+  /// Whether this build may reuse what the last one made of the items: every rebuild asked for since
+  /// came from a delivery that named only the selection, which changes neither which rows there are
+  /// nor what they measure.
+  bool _reusesItems() {
+    final reuse = _selectionAsked && !_beyondSelection && _lastFlatItems != null;
+    _selectionAsked = false;
+    _beyondSelection = false;
+    return reuse;
+  }
+
+  /// An item changed what it shows: the next build measures the items again.
+  void itemContentChanged() => _beyondSelection = true;
+
+  @override
+  void setState(VoidCallback fn) {
+    if (_deliveringSelection) {
+      _selectionAsked = true;
+    } else {
+      _beyondSelection = true;
+    }
+    super.setState(fn);
+  }
+
+  @override
+  void didUpdateWidget(covariant T oldWidget) {
+    _beyondSelection = true;
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  void didChangeDependencies() {
+    _beyondSelection = true;
+    super.didChangeDependencies();
+  }
+
+  List<_FlatTreeItem>? _lastFlatItems;
+  List<VTreeItem>? _lastAllItems;
+
+  /// The row last built for each item, with what it was built from; see [_buildFlatTreeItemWidget].
+  final Map<Object, (_RowKey, Widget)> _keptRows = {};
+  int _rowsEpoch = 0;
+  Set<Object> _selectedIds = const {};
+
   @override
   void setValue(V value) {
+    final selectionOnly = lastChange?.isOnly(const {WireKey.k_Tree_selection}) ?? false;
     final pending = _pendingSelection;
     if (pending != null && pending.isNotEmpty) {
       final pendingIds = Set.from(pending.map((item) => item.id));
@@ -154,7 +206,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         value.selection = List<VTreeItem>.from(pending);
       }
     }
-    super.setValue(value);
+    _deliveringSelection = selectionOnly;
+    try {
+      super.setValue(value);
+    } finally {
+      _deliveringSelection = false;
+    }
     if (lastChange?.touches(WireKey.k_Tree_topItem) ?? true) _scrollToTopItemAfterLayout();
   }
 
@@ -190,14 +247,25 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         final double screenHeight = MediaQuery.of(context).size.height;
 
         final columns = getTreeColumns();
-        final flatItems = _flattenVisibleItems(state.items, 0);
-        _moreRows = isVirtual() ? _rowsWithMoreAfter(flatItems) : const [];
-        if (_moreRows.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _requestVisibleChildren();
-          });
+        final reuse = _reusesItems();
+        final List<_FlatTreeItem> flatItems;
+        final List<VTreeItem> allItems;
+        if (reuse) {
+          flatItems = _lastFlatItems!;
+          allItems = _lastAllItems!;
+        } else {
+          flatItems = _lastFlatItems = _flattenVisibleItems(state.items, 0);
+          _moreRows = isVirtual() ? _rowsWithMoreAfter(flatItems) : const [];
+          if (_moreRows.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _requestVisibleChildren();
+            });
+          }
+          allItems = _lastAllItems = _collectAllTreeItems(state.items);
+          _rowsEpoch++;
+          _keptRows.clear();
         }
-        final allItems = _collectAllTreeItems(state.items);
+        _selectedIds = {for (final item in state.selection ?? const <VTreeItem>[]) item.id};
         final hasMultiColumn = columns.length > 1;
         _cachedHeaderHeight = hasMultiColumn
             ? widgetTheme!.headerHeightWithCols
@@ -217,8 +285,11 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             ? constraints.maxHeight.clamp(0.0, screenHeight)
             : contentHeight;
 
+        final kept = _preferredColumnWidths;
         final preferredWidths = columns.isEmpty
             ? <double>[]
+            : reuse && kept != null
+            ? List.of(kept.widths)
             : _computePreferredColumnWidths(
                 context,
                 columns,
@@ -259,7 +330,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         final bool hasVScroll = StyleBits(state.style).has(SWT.V_SCROLL);
         final bool hasHScroll = StyleBits(state.style).has(SWT.H_SCROLL);
         _measuredContentWidth = (hasHScroll && columns.isEmpty)
-            ? _computeContentWidthWithoutColumns(
+            ? reuse && _contentWidth != null
+                ? _contentWidth!.width
+                : _computeContentWidthWithoutColumns(
                 context,
                 flatItems,
                 widgetTheme!,
@@ -517,24 +590,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               ? firstText
               : (col < texts.length ? texts[col] ?? '' : '');
           final cellFont = cellValue(item.fonts, col);
-          final painter = TextPainter(
-            text: TextSpan(
-              text: cellText,
-              style: cellFont == null
+          final cellWidth = singleLineTextWidth(
+              cellText,
+              cellFont == null
                   ? textStyle
                   : getTextStyle(
                       context: context,
                       font: cellFont,
                       textColor: theme.itemTextColor,
                       baseTextStyle: theme.itemTextStyle,
-                    ),
-            ),
-            textDirection: TextDirection.ltr,
-            textScaler: FontUtils.textWidgetScaler,
-            maxLines: 1,
-          );
-          painter.layout();
-          double w = painter.width + paddingH;
+                    ));
+          double w = cellWidth + paddingH;
           if (col == 0) {
             w += theme.itemIndent * level + prefixBase;
             if (isCheckMode) w += checkboxWidth;
@@ -593,29 +659,23 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       final item = flat.item;
       final texts = item.texts ?? [];
       final text = item.text ?? (texts.isNotEmpty ? texts[0] ?? '' : '');
-      final painter = TextPainter(
-        text: TextSpan(
-          text: text,
-          style: getTextStyle(
-            context: context,
-            font: cellValue(item.fonts, 0) ?? item.font ?? state.font,
-            // The item's own colour, else the Tree's -- the same cascade the font above uses.
+      final textWidth = singleLineTextWidth(
+        text,
+        getTextStyle(
+          context: context,
+          font: cellValue(item.fonts, 0) ?? item.font ?? state.font,
+          // The item's own colour, else the Tree's -- the same cascade the font above uses.
           textColor: getForegroundColor(
             foreground: item.foreground ?? state.foreground,
             defaultColor: theme.itemTextColor,
             context: context,
             minContrast: theme.minTextContrast,
           ),
-            baseTextStyle: theme.itemTextStyle,
-          ),
+          baseTextStyle: theme.itemTextStyle,
         ),
-        textDirection: TextDirection.ltr,
-        textScaler: FontUtils.textWidgetScaler,
-        maxLines: 1,
       );
-      painter.layout();
       double width =
-          painter.width +
+          textWidth +
           paddingH +
           prefixBase +
           checkboxWidth +
@@ -814,9 +874,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       key: _rowsKey,
       controller: _verticalController,
       itemCount: flatItems.length,
-      itemBuilder: (context, index) {
-        return _buildFlatTreeItemWidget(flatItems[index]);
-      },
+      itemBuilder: (context, index) => _buildFlatTreeItemWidget(flatItems, index),
     );
 
     if (!linesVisible || columns.isEmpty || hasMultiColumn) {
@@ -1123,11 +1181,26 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     return order.isNotEmpty && order.last == columnIndex;
   }
 
-  Widget _buildFlatTreeItemWidget(_FlatTreeItem flatItem) {
+  Widget _buildFlatTreeItemWidget(List<_FlatTreeItem> flatItems, int index) {
+    final flatItem = flatItems[index];
 
     final treeWidth = _hScrollContentWidth ?? state.bounds?.width?.toDouble();
 
-    return TreeItemSwtWrapper(
+    // What the row reads of the Tree besides what a build of the Tree for anything other than the
+    // selection changes, which starts a new epoch: a row a new selection leaves alone is kept.
+    final id = flatItem.item.id;
+    final key = _RowKey(
+      flatItem.item,
+      flatItem.level,
+      _rowsEpoch,
+      treeWidth,
+      _selectedIds.contains(id),
+      index + 1 < flatItems.length && _selectedIds.contains(flatItems[index + 1].item.id),
+      hasFocus,
+    );
+    final kept = _keptRows[id];
+    if (kept != null && kept.$1 == key) return kept.$2;
+    final row = TreeItemSwtWrapper(
       key: ValueKey('tree_item_${flatItem.item.id}'),
       treeItem: flatItem.item,
       level: flatItem.level,
@@ -1139,6 +1212,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       treeWidth: treeWidth,
       renderChildItems: false,
     );
+    _keptRows[id] = (key, row);
+    return row;
   }
 
   bool getTreeViewSelectionMode() {
@@ -2120,6 +2195,34 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     dropFeedback.dispose();
     super.dispose();
   }
+}
+
+/// What a kept row was built from: the item by identity, the rest by value.
+class _RowKey {
+  const _RowKey(this.item, this.level, this.epoch, this.width, this.selected, this.nextSelected,
+      this.treeFocused);
+
+  final VTreeItem item;
+  final int level;
+  final int epoch;
+  final double? width;
+  final bool selected;
+  final bool nextSelected;
+  final bool treeFocused;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _RowKey &&
+      identical(other.item, item) &&
+      other.level == level &&
+      other.epoch == epoch &&
+      other.width == width &&
+      other.selected == selected &&
+      other.nextSelected == nextSelected &&
+      other.treeFocused == treeFocused;
+
+  @override
+  int get hashCode => Object.hash(identityHashCode(item), level, epoch, width, selected, nextSelected, treeFocused);
 }
 
 class TreeItemSwtWrapper extends StatelessWidget {

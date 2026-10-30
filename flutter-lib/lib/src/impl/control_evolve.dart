@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderOpacity, RenderProxyBox;
+import 'package:flutter/semantics.dart' show SemanticsBinding;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../comm/v_registry.dart';
@@ -16,6 +18,7 @@ import '../gen/event.dart';
 import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../styles.dart';
 import '../impl/focus_requests.dart';
 import '../impl/image_mouse_cursor.dart';
@@ -34,6 +37,7 @@ import 'utils/dnd_session.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/region_clip.dart';
+import 'utils/kept_rebuild.dart';
 import 'utils/wheel_input.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
@@ -98,9 +102,25 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
+  /// The mounted controls, which build again when semantics are turned on or off: what a control
+  /// builds and tags depends on whether they are on.
+  static final Set<ControlImpl> _mounted = {};
+  static bool _watchingSemantics = false;
+
+  static void _semanticsToggled() {
+    for (final control in _mounted) {
+      if (control.mounted) control.setState(() {});
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _mounted.add(this);
+    if (!_watchingSemantics) {
+      SemanticsBinding.instance.addSemanticsEnabledListener(_semanticsToggled);
+      _watchingSemantics = true;
+    }
     _resolveSentinelBounds(state);
     HoverExclusivityArbiter.instance.register(this, (hovering) {
       final global = HoverExclusivityArbiter.instance.pointerPosition;
@@ -123,7 +143,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         widget.sendMouseTrackMouseExit(state, event);
       }
     }, onLeftWhileHeld: () => _hoverTimer?.cancel());
-    FocusRequests.instance.addListener(_applyFocusRequest);
+    _watchFocusRequests();
     _applyFocusRequest();
     FocusRequests.instance.register(state.id, context);
     ActiveDragTracker.ensureInitialized();
@@ -135,6 +155,22 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// It must be readable from [initState] -- the request is usually already waiting by the time the
   /// control is built -- so it has to be a field initializer, not something [initState] assigns.
   FocusNode? get swtFocusNode => null;
+
+  int? _focusRequestId;
+
+  void _watchFocusRequests() {
+    final id = state.id;
+    if (id == _focusRequestId) return;
+    _unwatchFocusRequests();
+    FocusRequests.instance.watch(id, _applyFocusRequest);
+    _focusRequestId = id;
+  }
+
+  void _unwatchFocusRequests() {
+    final id = _focusRequestId;
+    if (id != null) FocusRequests.instance.unwatch(id, _applyFocusRequest);
+    _focusRequestId = null;
+  }
 
   void _applyFocusRequest() {
     final node = swtFocusNode;
@@ -153,13 +189,29 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// A focus request this element claimed and has not applied yet.
   bool _focusClaimed = false;
 
+  /// Properties this control's build does not read, so a change naming only these needs no
+  /// rebuild. The tooltip is read when it opens.
+  Set<int> get unrenderedProperties => const {WireKey.k_Control_toolTipText};
+
+  /// Whether this control draws anything of the widgets it holds. A control that mirrors its parts
+  /// in its own state (a CCombo's text field and list) needs no rebuild when only one of them changed.
+  bool get drawsHeldWidgets => true;
+
   @override
   void setValue(V value) {
     _resolveSentinelBounds(value);
+    if (!drawsHeldWidgets && (lastChange?.ofHeld ?? false)) return;
+    if (_onlyMoved()) return;
+    if (lastChange?.isOnly(unrenderedProperties) ?? false) {
+      // A tooltip on screen shows the new text, as the platform's does.
+      if (_tooltipEntry != null) _showTooltipAtPointer();
+      return;
+    }
+    _settleBlockNode();
     super.setValue(value);
     // Bounds arrive here, not through didUpdateWidget: a parent's copy of a child carries identity
     // only, so a changed value reaches the widget on its own channel.
-    if (_gcOverlaySubscribed) _requestInitialPaint();
+    if (_gcOverlaySubscribed || awaitsGC) _requestInitialPaint();
     // Hiding drops the MouseRegion without an exit, so nothing else would end the hover.
     if (state.visible == false) {
       _hoverTimer?.cancel();
@@ -173,6 +225,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // actually holds.
     _resolveSentinelBounds(state);
     super.didUpdateWidget(oldWidget);
+    _watchFocusRequests();
   }
 
   // Java schedules every later repaint; it cannot schedule the first, having no mount event. Every
@@ -188,15 +241,26 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   // StyledText's text geometry); the same ordered channel carries both, so it lands first.
   void beforePaintRequest() {}
 
-  // The overlay registers the GC op channels in its own initState, a build after this one. A run of
-  // ops that lands before that is buffered one-per-channel and replayed out of order, which is not a
-  // display list -- so the request waits until the overlay says it is listening.
+  // An overlay mounted from the start registers the GC op channels in its own initState, a build
+  // after this one, and the request waits until it says it is listening.
   bool _gcOverlaySubscribed = false;
+
+  /// A control whose GC waits for its first message asks for its paint without it: Java answers
+  /// only a control that has something to paint, and what it sends mounts the GC.
+  @override
+  void onGCAwaited() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && awaitsGC) _requestInitialPaint();
+    });
+  }
 
   void onGCOverlaySubscribed() {
     // A second subscription is a new, empty overlay: the previous one was dropped along with a
-    // hidden subtree, and Java does not know its drawing went with it.
-    if (_gcOverlaySubscribed) {
+    // hidden subtree, and Java does not know its drawing went with it. One mounted by what an
+    // earlier request brought is painted once more, so what it shows does not rest on what was held
+    // for it before it listened.
+    if (_gcOverlaySubscribed || _sentInitialPaintRequest) {
+      _gcOverlaySubscribed = true;
       requestFullRepaint();
       return;
     }
@@ -319,14 +383,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _hoverTimer?.cancel();
     PendingMove.drop(this);
     _removeTooltip();
-    FocusRequests.instance.removeListener(_applyFocusRequest);
+    _unwatchFocusRequests();
     if (_focusClaimed) {
       _focusClaimed = false;
       FocusRequests.instance.giveBack(state.id);
     }
     FocusRequests.instance.unregister(state.id, context);
     HoverExclusivityArbiter.instance.unregister(this);
+    _mounted.remove(this);
     super.dispose();
+    _blockNode?.dispose();
   }
 
   void sendThrottledDragMove(V state, VEvent event, PointerMoveEvent e) {
@@ -786,26 +852,179 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// the widget type at the root of the subtree, deactivating every descendant element, which is
   /// then rebuilt from the copy of its state nested in the parent's payload — an older snapshot
   /// than what the descendant may already have applied from its own channel.
-  Widget blockWhenDisabled(Widget child) {
-    final effective = enabledEffective;
+  ///
+  /// With [onKeyEvent], the focus node that excludes the subtree is also the control's own, which
+  /// forwards the keys reaching it: one node instead of two nested ones.
+  ///
+  /// Its focus node is this control's, so that the control's own enablement reaches it as the change
+  /// arrives (see [setValue]): a focus node tells the Focus widgets depending on it in a microtask,
+  /// and one changed during the build makes them rebuild in a frame of their own, which lays out and
+  /// repaints everything around them again.
+  Widget blockWhenDisabled(Widget child, {bool? effective, FocusOnKeyEventCallback? onKeyEvent}) {
+    effective ??= enabledEffective;
+    final node = _blockNode ??= FocusNode();
+    _blockForwardsKeys = onKeyEvent != null;
+    _configureBlockNode(node, effective);
+    node.onKeyEvent = onKeyEvent;
     return EnabledScope(
       enabled: effective,
-      child: ExcludeFocus(
-        excluding: !effective,
+      child: Focus(
+        focusNode: node,
+        includeSemantics: onKeyEvent != null,
         child: IgnorePointer(ignoring: !effective, child: child),
       ),
     );
   }
 
-  Widget wrap(Widget widget) {
+  FocusNode? _blockNode;
+  bool _blockForwardsKeys = false;
+
+  /// What [ExcludeFocus] makes of its node, or with keys to forward, what a [Focus] that takes focus
+  /// while enabled does.
+  void _configureBlockNode(FocusNode node, bool effective) {
+    node
+      ..canRequestFocus = _blockForwardsKeys && effective
+      ..skipTraversal = !_blockForwardsKeys
+      ..descendantsAreFocusable = effective
+      ..descendantsAreTraversable = effective;
+  }
+
+  /// [blockWhenDisabled]'s node set for the enablement that just arrived, before the build. The
+  /// ancestors' part is read without depending on it: the build that follows does.
+  void _settleBlockNode() {
+    final node = _blockNode;
+    if (node == null || !mounted) return;
+    final ancestors = context.getInheritedWidgetOfExactType<EnabledScope>()?.enabled ?? true;
+    final effective = (state.enabled ?? true) && ancestors;
+    if (node.descendantsAreFocusable == effective) return;
+    _configureBlockNode(node, effective);
+    // The Focus widgets below depend on the node through the scope its Focus publishes, which tells
+    // them in the middle of the build; marked now, they are already waiting to rebuild by then.
+    void mark(Element e) {
+      final widget = e.widget;
+      if (widget is Focus && !identical(widget.focusNode, node)) {
+        e.markNeedsBuild();
+        return;
+      }
+      e.visitChildren(mark);
+    }
+
+    final scope = _blockScopeOf(node);
+    if (scope != null) {
+      scope.visitChildren(mark);
+    } else {
+      context.visitChildElements(mark);
+    }
+  }
+
+  /// The scope the Focus of [blockWhenDisabled] publishes for [node], kept once found.
+  InheritedElement? _blockScope;
+
+  InheritedElement? _blockScopeOf(FocusNode node) {
+    final kept = _blockScope;
+    if (kept != null && kept.mounted && identical((kept.widget as InheritedNotifier).notifier, node)) {
+      return kept;
+    }
+    InheritedElement? found;
+    void find(Element e) {
+      if (found != null) return;
+      final widget = e.widget;
+      if (e is InheritedElement && widget is InheritedNotifier && identical(widget.notifier, node)) {
+        found = e;
+        return;
+      }
+      e.visitChildren(find);
+    }
+
+    context.visitChildElements(find);
+    return _blockScope = found;
+  }
+
+  KeyEventResult _forwardKeyDown(FocusNode node, KeyEvent event) {
+    if (event is KeyDownEvent) {
+      final vEvent = mapNewKeyEventToSwt(event);
+      if (vEvent.keyCode != 0 || vEvent.character != 0) {
+        widget.sendKeyKeyDown(state, vEvent);
+      }
+    }
+    return KeyEventResult.ignored;
+  }
+
+  /// The control's own chrome around [widget]. [opacity] is the impl's own fade, folded into the
+  /// one layer the control already has.
+  Widget wrap(Widget widget, {double opacity = 1}) {
     // Every Control build ends here, so this counts real rebuilds, which a duration mark cannot see.
-    perfCount('${state.swt}.build');
+    if (perfMarksEnabled) perfCount('${state.swt}.build');
     final hoverDepth = ControlNestingScope.depthOf(context);
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
     }
+    if (state.visible == false) {
+      _wrapped = null;
+      _inner = null;
+      return const SizedBox.shrink();
+    }
+    final bounds = state.bounds;
+    _builtSize = bounds == null ? null : Size(bounds.width.toDouble(), bounds.height.toDouble());
 
+    // The chain below is the same for most rebuilds, which change only what the control shows: the
+    // previous chain is returned as it is and only its innermost slot rebuilds, with [widget].
+    _slotChild = widget;
     final mouseCursor = mouseCursorOf(state.cursor);
+    final forwardKeys = forwardsKeysFromWrap && !displayLevelKeyForwardingActive;
+    final menu = state.menu;
+    final semantics = WidgetsBinding.instance.semanticsEnabled;
+    final disabled = state.enabled == false;
+    final effective = enabledEffective;
+    final innerKey = (
+      hoverDepth,
+      mouseCursor,
+      state.style.has(SWT.BORDER),
+      menu == null ? null : VRegistry.channelOf(menu),
+      gcOverlay,
+      paintsGCOverlay,
+      gcMounted,
+      state.id,
+      semantics,
+      semantics ? state.semanticsTooltip : null,
+      semantics ? state.semanticsEnabled : null,
+      forwardKeys,
+      opacity,
+    );
+    final key = (innerKey, disabled, effective);
+    // The slot is normally marked with this control (see [setState]); marking it during the build
+    // makes the build owner re-sort its dirty list, once per control.
+    _slotRebuild.mark();
+    final wrapped = _wrapped;
+    final reusable = _slotRebuild.built && state.region == null;
+    if (wrapped != null && reusable && key == _wrappedKey) return wrapped;
+    _wrappedKey = key;
+    // Enabled and disabled share one structure, so toggling enablement rebuilds rather than
+    // remounts the control, and rebuilds only the outer wrappers: what they wrap is the same
+    // instance. A disabled control still paints (Java dispatches SWT.Paint whatever its enablement,
+    // so its GC stays mounted); [blockWhenDisabled] keeps the input below from it.
+    var inner = _inner;
+    if (inner == null || !reusable || innerKey != _innerKey) {
+      _innerKey = innerKey;
+      inner = _inner = _innerChain(KeptSlot(_slotRebuild, () => _slotChild), hoverDepth, mouseCursor);
+    }
+    return _wrapped = SwtControlScope(
+      swt: state.swt,
+      child: ControlNestingScope(
+        depth: hoverDepth + 1,
+        child: RegionClip.maybe(
+            state.region,
+            blockWhenDisabled(
+                _FadeOpacity(
+                    opacity: (disabled ? AppOpacities.disabled : 1) * opacity,
+                    child: semantics ? _SemanticsGeneration(generation: effective, child: inner) : inner),
+                effective: effective,
+                onKeyEvent: forwardKeys ? _forwardKeyDown : null)),
+      ),
+    );
+  }
+
+  Widget _innerChain(Widget widget, int hoverDepth, MouseCursor? mouseCursor) {
     if (mouseCursor != null) {
       widget = MouseRegion(cursor: mouseCursor, child: widget);
     }
@@ -819,25 +1038,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       );
     }
 
-    if (state.visible != null && !state.visible!) {
-      // See CompositeImpl: a hidden control's state lives in the registry and keeps up without it.
-      return const SizedBox.shrink();
-    }
-    if (state.enabled != null && !state.enabled!) {
-      // A disabled control still paints: Java dispatches SWT.Paint and emits the draw ops on this
-      // widget's GC channels whatever its enablement, so the GC has to be mounted and subscribed on
-      // this branch too. Without it, everything a Canvas draws for itself is dropped -- a ui.forms
-      // Hyperlink, which applications create disabled, renders as an empty row.
-      return SwtControlScope(
-          swt: state.swt,
-          child: RegionClip.maybe(
-              state.region,
-              blockWhenDisabled(
-                  Opacity(
-                      opacity: AppOpacities.disabled,
-                      child: tagSemantics(wrapWithGCOverlay(widget))))));
-    }
-
     if (state.menu != null) {
       widget = applyMenu(widget);
     }
@@ -847,33 +1047,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // Tagged outside the GC overlay: the text the GC draws is the node's name only as a descendant.
     widget = tagSemantics(widget);
 
-    // Skipped when a whole-tree Display forwards keys from a single top-level handler (see
-    // [displayLevelKeyForwardingActive]) — otherwise the same key would reach Java twice. Still
+    // [forwardKeys] is off when a whole-tree Display forwards keys from a single top-level handler
+    // (see [displayLevelKeyForwardingActive]) — otherwise the same key would reach Java twice. Still
     // the sole path in the embedded backend, which has no whole-tree Display.
-    if (forwardsKeysFromWrap && !displayLevelKeyForwardingActive) {
-      widget = Focus(
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent) {
-            final vEvent = mapNewKeyEventToSwt(event);
-            if (vEvent.keyCode != 0 || vEvent.character != 0) {
-              this.widget.sendKeyKeyDown(state, vEvent);
-            }
-          }
-          return KeyEventResult.ignored;
-        },
-        child: widget,
-      );
-    }
-
-    widget = _pointerListener(_pointerRegion(hoverDepth, widget));
-
-    return SwtControlScope(
-      swt: state.swt,
-      child: ControlNestingScope(
-        depth: hoverDepth + 1,
-        child: RegionClip.maybe(state.region, blockWhenDisabled(widget)),
-      ),
-    );
+    return _pointerListener(_pointerRegion(hoverDepth, widget));
   }
 
   /// The pointer events a native control reports on its own: MouseDown and MouseUp, MouseEnter and
@@ -965,6 +1142,40 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       },
       child: child,
     );
+  }
+
+  /// Whether this control's build reads where it stands and not only its size. Where a control
+  /// stands is otherwise its parent's layout, which follows the move on its own.
+  bool get buildsFromPosition => false;
+
+  /// The size the last build that went through [wrap] was made for.
+  Size? _builtSize;
+
+  bool _onlyMoved() {
+    final built = _builtSize;
+    final b = state.bounds;
+    return built != null &&
+        b != null &&
+        !buildsFromPosition &&
+        (lastChange?.isOnly(const {WireKey.k_Control_bounds}) ?? false) &&
+        built.width == b.width &&
+        built.height == b.height;
+  }
+
+  /// The chain [wrap] last built, what it was built from, and the content its slot shows.
+  Widget? _wrapped;
+  Object? _wrappedKey;
+  Widget? _inner;
+  Object? _innerKey;
+  Widget? _slotChild;
+  final KeptRebuild _slotRebuild = KeptRebuild();
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    // Set again by the build if it goes through wrap.
+    _builtSize = null;
+    _slotRebuild.mark();
   }
 
   Widget _pointerRegion(int hoverDepth, Widget child) {
@@ -1102,6 +1313,39 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   ({String channel, Widget widget})? _contextMenu;
 }
 
+
+/// Gives the semantics nodes of [child] new ids whenever [generation] changes, without remounting it.
+///
+/// Enablement decides whether a control's node is tappable, and with that its role on the web, where
+/// the engine builds a new element for a node whose role changes without the identifier the node
+/// already had. A new node is created with it.
+class _SemanticsGeneration extends SingleChildRenderObjectWidget {
+  const _SemanticsGeneration({required this.generation, required super.child});
+
+  final Object generation;
+
+  @override
+  _RenderSemanticsGeneration createRenderObject(BuildContext context) => _RenderSemanticsGeneration(generation);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderSemanticsGeneration renderObject) =>
+      renderObject.generation = generation;
+}
+
+class _RenderSemanticsGeneration extends RenderProxyBox {
+  _RenderSemanticsGeneration(this._generation);
+
+  Object _generation;
+
+  set generation(Object value) {
+    if (value == _generation) return;
+    _generation = value;
+    if (!attached) return;
+    clearSemantics();
+    markNeedsSemanticsUpdate();
+  }
+}
+
 /// Places a tooltip the way the platform does: top-left corner just below and right of the
 /// pointer, pulled back inside the window rather than clipped, and flipped above the pointer when
 /// there is no room underneath.
@@ -1140,4 +1384,25 @@ class _PointerTooltipLayout extends SingleChildLayoutDelegate {
       oldDelegate.pointer != pointer ||
       oldDelegate.cursorOffset != cursorOffset ||
       oldDelegate.screenMargin != screenMargin;
+}
+
+/// The control's [Opacity]: a layer of its own only while it is see-through, so that a fade or a
+/// change of enablement updates that layer without repainting, while a control at full opacity
+/// paints into its parent's layer and many of them changing at once are not composited one by one.
+class _FadeOpacity extends Opacity {
+  const _FadeOpacity({required super.opacity, super.child});
+
+  @override
+  RenderOpacity createRenderObject(BuildContext context) =>
+      _RenderFadeOpacity(opacity: opacity, alwaysIncludeSemantics: alwaysIncludeSemantics);
+}
+
+class _RenderFadeOpacity extends RenderOpacity {
+  _RenderFadeOpacity({super.opacity, super.alwaysIncludeSemantics});
+
+  @override
+  bool get alwaysNeedsCompositing {
+    final alpha = Color.getAlphaFromOpacity(opacity);
+    return child != null && alpha > 0 && alpha < 255;
+  }
 }

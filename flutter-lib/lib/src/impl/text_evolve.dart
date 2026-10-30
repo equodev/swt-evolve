@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show SemanticsInputType;
 
 import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show PipelineOwner;
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
 import '../gen/event.dart';
@@ -10,27 +12,52 @@ import '../gen/point.dart';
 import '../gen/swt.dart';
 import '../gen/text.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/scrollable_evolve.dart';
 import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import 'utils/key_edit_order.dart';
+import 'utils/at_rest.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
+import 'utils/hover_arbiter.dart';
 import 'control_evolve.dart' show ControlImpl;
 
 class TextImpl<T extends TextSwt, V extends VText>
-    extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport {
+    extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover {
   late TextEditingController _controller;
 
   final FocusNode _focusNode = FocusNode();
+  /// Stands in for [_focusNode] while the field is drawn at rest: focus arriving here, by traversal or
+  /// from Java, mounts the TextField and is handed to it.
+  final FocusNode _restFocus = FocusNode(debugLabel: 'Text at rest');
+
+  /// Whether the field shows no text, which decides whether the decoration shows the hint.
+  final ValueNotifier<bool> _isEmpty = ValueNotifier(true);
+
+  /// Once focused, a field keeps its TextField: what it shows of a long value is where its editing
+  /// scrolled it, which only the TextField knows.
+  bool _everFocused = false;
+
+  /// Whether the TextField is mounted. A field nobody is interacting with is drawn without it, with
+  /// the same decoration around its text; mounting it is a hover, a focus or a tap away.
+  bool get _live => !_restable || _everFocused || handingOver || hovered || _focusNode.hasFocus || forcedLive;
+
+  /// The fields drawn at rest: single-line text shown as it is.
+  bool get _restable =>
+      !hasStyle(state.style, SWT.MULTI) &&
+      !hasStyle(state.style, SWT.PASSWORD) &&
+      _obscuringCharacter(state.echoCharacter) == null &&
+      hasBounds(state.bounds);
 
   @override
-  FocusNode get swtFocusNode => _focusNode;
+  FocusNode get swtFocusNode => _live ? _focusNode : _restFocus;
+
 
   // A VerifyListener runs before the character is displayed, so edits are held un-rendered.
   final VetoGate _modifyGate = VetoGate('modify');
@@ -39,8 +66,11 @@ class TextImpl<T extends TextSwt, V extends VText>
   void initState() {
     super.initState();
     _controller = TextEditingController(text: state.text);
+    _isEmpty.value = _controller.text.isEmpty;
     _controller.addListener(_updateCaretPosition);
+    _controller.addListener(_trackEmptiness);
     _focusNode.addListener(_handleFocusChange);
+    _restFocus.addListener(_handleRestFocus);
     KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping);
     _modifyGate.attach(state.swt, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
@@ -94,6 +124,19 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
   }
 
+  /// What this field shows through its controller rather than its build: a change naming only
+  /// these is handed to the controller, which rebuilds the editable text and nothing else.
+  static const _controllerProperties = {WireKey.k_Text_text, WireKey.k_Text_selection};
+
+  @override
+  void setValue(V value) {
+    if (mounted && (lastChange?.isOnly(_controllerProperties) ?? false)) {
+      extraSetState();
+      return;
+    }
+    super.setValue(value);
+  }
+
   @override
   void extraSetState() => fromJava(_applyJavaState);
 
@@ -136,6 +179,44 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
   }
 
+  void _trackEmptiness() => _isEmpty.value = _controller.text.isEmpty;
+
+  void _handleRestFocus() {
+    if (_restFocus.hasPrimaryFocus && !_live) _handOver();
+  }
+
+  /// Mounts the TextField and gives it the focus the field at rest received, with the caret at
+  /// [tapped] when a press brought it, else with the selection Java holds.
+  void _handOver([int? tapped]) => handOver(() {
+        final end = _controller.text.length;
+        if (tapped != null) {
+          _controller.selection = TextSelection.collapsed(offset: tapped.clamp(0, end));
+        } else {
+          fromJava(() => _controller.selection = _javaSelection(end));
+        }
+        _focusNode.requestFocus();
+      });
+
+  /// What getSelection() answers in Java, within a text [end] characters long.
+  TextSelection _javaSelection(int end) {
+    final selection = state.selection;
+    if (selection != null) {
+      return TextSelection(baseOffset: selection.x.clamp(0, end), extentOffset: selection.y.clamp(0, end));
+    }
+    return TextSelection.collapsed(offset: (state.caretPosition ?? 0).clamp(0, end));
+  }
+
+  /// A press puts the caret where it landed; a press that opens the context menu leaves it where Java
+  /// has it, as a native Text does.
+  void _handOverOnPress(PointerDownEvent event) {
+    final text = _atRestText.currentContext?.findRenderObject();
+    final menu = ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(event.buttons));
+    _handOver(!menu && text is _RenderTextAtRest ? text.offsetAt(event.position) : null);
+  }
+
+  /// The text of the field at rest, which maps a press to the offset the caret goes to.
+  final GlobalKey _atRestText = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TextThemeExtension>();
@@ -154,14 +235,16 @@ class TextImpl<T extends TextSwt, V extends VText>
     final editable = state.editable ?? true;
     final hasValidBounds = hasBounds(state.bounds);
 
-    final textField = _buildTextField(
-      context,
-      widgetTheme,
-      enabled,
-      textAlign,
-      isMultiLine,
-      hasValidBounds,
-    );
+    final textField = _live
+        ? _buildTextField(
+            context,
+            widgetTheme,
+            enabled,
+            textAlign,
+            isMultiLine,
+            hasValidBounds,
+          )
+        : _buildAtRest(context, widgetTheme, enabled, textAlign);
 
     final fieldWrapper = _buildTextFieldWrapper(
       textField,
@@ -175,8 +258,12 @@ class TextImpl<T extends TextSwt, V extends VText>
         // already delivers shortcuts to Java while a Text has focus, so skip the per-field wrapper
         // to avoid double-dispatch. In the embedded backend (no whole-tree Display) it is the only
         // path — Text builds its own field via [wrapDnd] and never routes through [ControlImpl.wrap].
-        trackPointer(
-          displayLevelKeyForwardingActive ? fieldWrapper : _forwardShortcutKeys(fieldWrapper),
+        MouseRegion(
+          onEnter: (_) => setHovered(true),
+          onExit: (_) => setHovered(false),
+          child: trackPointer(
+            displayLevelKeyForwardingActive ? fieldWrapper : _forwardShortcutKeys(fieldWrapper),
+          ),
         ),
       ),
     );
@@ -204,15 +291,12 @@ class TextImpl<T extends TextSwt, V extends VText>
     );
   }
 
-  Widget _buildTextField(
+  InputDecoration _decoration(
     BuildContext context,
     TextThemeExtension widgetTheme,
-    bool enabled,
-    TextAlign textAlign,
     bool isMultiLine,
     bool hasValidBounds,
   ) {
-    final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
     var decoration = getInputDecoration(
       context,
       state,
@@ -234,12 +318,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
 
     final isPassword = hasStyle(state.style, SWT.PASSWORD);
-    final echoChar = (isPassword || isMultiLine)
-        ? null
-        : _obscuringCharacter(state.echoCharacter);
-    final isObscured = isPassword || echoChar != null;
     final singleLine = !isMultiLine || isPassword;
-    final shouldExpand = hasValidBounds && !singleLine;
 
     if (hasValidBounds) {
       if (singleLine) {
@@ -264,6 +343,29 @@ class TextImpl<T extends TextSwt, V extends VText>
       }
     }
 
+    return decoration;
+  }
+
+  Widget _buildTextField(
+    BuildContext context,
+    TextThemeExtension widgetTheme,
+    bool enabled,
+    TextAlign textAlign,
+    bool isMultiLine,
+    bool hasValidBounds,
+  ) {
+    final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
+    final decoration = _decoration(context, widgetTheme, isMultiLine, hasValidBounds);
+    final isReadOnly =
+        !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
+    final isPassword = hasStyle(state.style, SWT.PASSWORD);
+    final echoChar = (isPassword || isMultiLine)
+        ? null
+        : _obscuringCharacter(state.echoCharacter);
+    final isObscured = isPassword || echoChar != null;
+    final singleLine = !isMultiLine || isPassword;
+    final shouldExpand = hasValidBounds && !singleLine;
+
     final cursorColor = getForegroundColor(
       foreground: state.foreground,
       defaultColor: widgetTheme.textColor,
@@ -274,6 +376,9 @@ class TextImpl<T extends TextSwt, V extends VText>
     final textField = TextField(
       controller: _controller,
       focusNode: _focusNode,
+      // The focus a field at rest hands over keeps the selection it hands over with, as a native
+      // single-line Text keeps its selection when it takes focus.
+      selectAllOnFocus: handingOver ? false : null,
       enabled: enabled,
       obscureText: isObscured,
       obscuringCharacter: echoChar ?? _defaultObscuringCharacter,
@@ -304,7 +409,6 @@ class TextImpl<T extends TextSwt, V extends VText>
     return DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
-      text: state.text ?? '',
       // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
       // as a selection report, through _updateCaretPosition.
       onWordSelected: (start, end) {
@@ -337,6 +441,69 @@ class TextImpl<T extends TextSwt, V extends VText>
           });
         },
         child: textField,
+      ),
+    );
+  }
+
+  /// The field at rest: the decoration a TextField puts around its text, around the text drawn the
+  /// way its EditableText draws it unfocused.
+  Widget _buildAtRest(
+    BuildContext context,
+    TextThemeExtension widgetTheme,
+    bool enabled,
+    TextAlign textAlign,
+  ) {
+    final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
+    final decorationTheme = InputDecorationTheme.of(context);
+    final own = _decoration(context, widgetTheme, false, true);
+    // What TextField makes of its decoration and of its style.
+    final decoration = own.applyDefaults(decorationTheme).copyWith(
+          enabled: enabled,
+          hintMaxLines: own.hintMaxLines ?? decorationTheme.hintMaxLines ?? 1,
+        );
+    final inputStyle = Theme.of(context).textTheme.bodyLarge!;
+    final style = inputStyle
+        .merge(TextStyle(color: enabled ? inputStyle.color : inputStyle.color?.withOpacity(0.38)))
+        .merge(textStyle);
+    final editable = enabled && (state.editable ?? true);
+    // A text field to assistive technology, as the TextField is: tapping or focusing it hands over.
+    return Semantics(
+      container: true,
+      textField: true,
+      enabled: enabled,
+      readOnly: !editable,
+      inputType: SemanticsInputType.text,
+      maxValueLength: state.textLimit,
+      onTap: editable ? _handOver : null,
+      child: Focus(
+        focusNode: _restFocus,
+        // On the press, not the tap: a press that arrives without a hover first brings one, which
+        // mounts the TextField before the release and would take the tap with it.
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: _handOverOnPress,
+          child: ValueListenableBuilder<bool>(
+            valueListenable: _isEmpty,
+            builder: (context, isEmpty, text) => InputDecorator(
+              decoration: decoration,
+              baseStyle: textStyle,
+              textAlign: textAlign,
+              textAlignVertical: TextAlignVertical.center,
+              isEmpty: isEmpty,
+              child: text,
+            ),
+            child: RepaintBoundary(
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, value, _) => Semantics(
+                  value: value.text,
+                  currentValueLength: value.text.length,
+                  child: _TextAtRest(key: _atRestText, text: value.text, style: style, textAlign: textAlign),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -402,6 +569,12 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   void _handleFocusChange() {
     if (_focusNode.hasFocus) {
+      _everFocused = true;
+      if (handingOver) {
+        handedOver();
+        // Builds the TextField without what only the handover needed.
+        setState(() {});
+      }
       // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
       seedTextEchoBaseline(_controller.text);
@@ -429,10 +602,187 @@ class TextImpl<T extends TextSwt, V extends VText>
   void dispose() {
     _modifyGate.detach();
     _controller.removeListener(_updateCaretPosition);
+    _controller.removeListener(_trackEmptiness);
     _controller.dispose();
+    _isEmpty.dispose();
     _focusNode.removeListener(_handleFocusChange);
     KeyEditOrder.instance.unregisterEditor(_focusNode);
     _focusNode.dispose();
+    _restFocus.removeListener(_handleRestFocus);
+    _restFocus.dispose();
+    super.dispose();
+  }
+}
+
+/// One line of text laid out and painted the way an unfocused, unscrolled single-line EditableText
+/// lays out and paints it.
+class _TextAtRest extends LeafRenderObjectWidget {
+  const _TextAtRest({super.key, required this.text, required this.style, required this.textAlign});
+
+  final String text;
+  final TextStyle style;
+  final TextAlign textAlign;
+
+  @override
+  _RenderTextAtRest createRenderObject(BuildContext context) => _RenderTextAtRest()..configure(this, context);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderTextAtRest renderObject) =>
+      renderObject.configure(this, context);
+}
+
+class _RenderTextAtRest extends RenderBox {
+  /// What RenderEditable keeps free for the caret: its gap and a TextField's cursor width.
+  static const _caretMargin = 1.0 + 2.0;
+
+  final TextPainter _painter = TextPainter(maxLines: 1);
+  double? _laidOutAt;
+
+  /// The scaler last given, which [TextPainter.textScaler] does not hand back as it was given.
+  TextScaler? _textScaler;
+
+  void configure(_TextAtRest widget, BuildContext context) {
+    final text = TextSpan(text: widget.text, style: widget.style);
+    final strut = StrutStyle.fromTextStyle(widget.style, forceStrutHeight: true)
+        .merge(StrutStyle(height: MediaQuery.maybeLineHeightScaleFactorOverrideOf(context)));
+    final textDirection = Directionality.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+    final textHeightBehavior = DefaultTextHeightBehavior.maybeOf(context);
+    if (_painter.text == text &&
+        _painter.textAlign == widget.textAlign &&
+        _painter.strutStyle == strut &&
+        _painter.textDirection == textDirection &&
+        _textScaler == textScaler &&
+        _painter.textHeightBehavior == textHeightBehavior) {
+      return;
+    }
+    final comparison = _painter.text?.compareTo(text) ?? RenderComparison.layout;
+    final textAlone = _painter.text is TextSpan &&
+        (_painter.text! as TextSpan).style == widget.style &&
+        _painter.textAlign == widget.textAlign &&
+        _painter.strutStyle == strut &&
+        _painter.textDirection == textDirection &&
+        _textScaler == textScaler &&
+        _painter.textHeightBehavior == textHeightBehavior;
+    _painter
+      ..text = text
+      ..textAlign = widget.textAlign
+      ..strutStyle = strut
+      ..textDirection = textDirection
+      ..textScaler = textScaler
+      ..textHeightBehavior = textHeightBehavior;
+    _textScaler = textScaler;
+    if (comparison == RenderComparison.paint && _laidOutAt != null) {
+      markNeedsPaint();
+    } else if (textAlone && hasSize) {
+      // This box's size is the width it is given and the height of its strut, and its baseline is
+      // the strut's: a new text alone changes none of them, so it is laid out where it is painted,
+      // without a layout that would lay out the field around it again.
+      _laidOutAt = null;
+      markNeedsPaint();
+    } else {
+      _laidOutAt = null;
+      markNeedsLayout();
+    }
+  }
+
+  void _layout(double maxWidth) {
+    final minWidth = (maxWidth - _caretMargin).clamp(0.0, double.infinity);
+    if (_laidOutAt == minWidth) return;
+    _painter.layout(minWidth: minWidth, maxWidth: double.infinity);
+    _laidOutAt = minWidth;
+  }
+
+  @override
+  void performLayout() {
+    _layout(constraints.maxWidth);
+    size = Size(constraints.maxWidth, constraints.constrainHeight(_painter.height));
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    _layout(constraints.maxWidth);
+    final size = Size(constraints.maxWidth, constraints.constrainHeight(_painter.height));
+    if (hasSize) _layout(this.size.width);
+    return size;
+  }
+
+  @override
+  double? computeDryBaseline(BoxConstraints constraints, TextBaseline baseline) {
+    _layout(constraints.maxWidth);
+    final distance = _painter.computeDistanceToActualBaseline(baseline);
+    if (hasSize) _layout(size.width);
+    return distance;
+  }
+
+  @override
+  double computeDistanceToActualBaseline(TextBaseline baseline) {
+    _layout(size.width);
+    return _painter.computeDistanceToActualBaseline(baseline);
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) => computeMaxIntrinsicWidth(height);
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    _painter.layout();
+    final width = _painter.maxIntrinsicWidth + _caretMargin;
+    _laidOutAt = null;
+    return width;
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) => computeMaxIntrinsicHeight(width);
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    _layout(width);
+    return _painter.height;
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    PaintingBinding.instance.systemFonts.addListener(_fontsChanged);
+  }
+
+  @override
+  void detach() {
+    PaintingBinding.instance.systemFonts.removeListener(_fontsChanged);
+    super.detach();
+  }
+
+  /// A font that finishes loading changes how the text lays out, as it does for an EditableText.
+  void _fontsChanged() {
+    _painter.markNeedsLayout();
+    _laidOutAt = null;
+    markNeedsLayout();
+  }
+
+  @override
+  bool hitTestSelf(Offset position) => true;
+
+  /// The offset in the text the caret goes to for a press at [global].
+  int offsetAt(Offset global) {
+    _layout(size.width);
+    return _painter.getPositionForOffset(globalToLocal(global)).offset;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    _layout(size.width);
+    if (_painter.width + _caretMargin > size.width) {
+      context.pushClipRect(needsCompositing, offset, Offset.zero & size,
+          (context, offset) => _painter.paint(context.canvas, offset));
+    } else {
+      _painter.paint(context.canvas, offset);
+    }
+  }
+
+  @override
+  void dispose() {
+    _painter.dispose();
     super.dispose();
   }
 }

@@ -104,7 +104,45 @@ class VRegistry {
   /// control of its item — survives one of them letting go.
   ///
   /// Also which way to look when a widget nothing renders changes: see [_notify].
-  final Map<String, Set<String>> _referrers = {};
+  ///
+  /// A channel's one holder is kept as that holder's channel, and a [Set] only once a second one
+  /// refers to it: nearly every widget has a single parent.
+  final Map<String, Object> _referrers = {};
+
+  void _addReferrer(String channel, String holder) {
+    final held = _referrers[channel];
+    if (held == null) {
+      _referrers[channel] = holder;
+    } else if (held is String) {
+      if (held != holder) _referrers[channel] = <String>{held, holder};
+    } else {
+      (held as Set<String>).add(holder);
+    }
+  }
+
+  /// Takes [holder] off what refers to [channel]; true when something still does.
+  bool _removeReferrer(String channel, String holder) {
+    final held = _referrers[channel];
+    if (held == null) return false;
+    if (held is String) {
+      if (held != holder) return true;
+      _referrers.remove(channel);
+      return false;
+    }
+    final holders = held as Set<String>;
+    holders.remove(holder);
+    if (holders.isNotEmpty) return true;
+    _referrers.remove(channel);
+    return false;
+  }
+
+  /// What refers to [channel], as a list taken now: a holder may let go while being told.
+  List<String> _referrersOf(String channel) {
+    final held = _referrers[channel];
+    if (held == null) return const [];
+    if (held is String) return [held];
+    return List.of(held as Set<String>);
+  }
 
   /// What each holder that is not itself a registered value refers to. See [holds].
   final Map<String, Set<String>> _holdings = {};
@@ -385,7 +423,7 @@ class VRegistry {
       entry.listeners.addAll(node.listeners);
       entry.asked = node.asked;
     }
-    _nodes[channel] = entry;
+    _nodes.putIndexed(channel, entry, id);
     return true;
   }
 
@@ -649,7 +687,7 @@ class VRegistry {
       String holder, Set<String> before, Set<String> after, int? writtenAt) {
     for (final channel in after) {
       if (!before.contains(channel)) {
-        (_referrers[channel] ??= <String>{}).add(holder);
+        _addReferrer(channel, holder);
       }
     }
     for (final channel in before) {
@@ -678,7 +716,7 @@ class VRegistry {
   }
 
   void _evictIfUnheld(String channel, int? writtenAt) {
-    if (_referrers[channel]?.isNotEmpty ?? false) return;
+    if (_referrers.containsKey(channel)) return;
     final node = _nodes[channel];
     if (node == null || _movedSince(node, writtenAt)) return;
     final held = node.references;
@@ -690,12 +728,7 @@ class VRegistry {
 
   /// Takes [holder] off [channel]'s holders; whether that left [channel] held by nothing.
   bool _letGo(String holder, String channel, int? writtenAt) {
-    final holders = _referrers[channel];
-    if (holders != null) {
-      holders.remove(holder);
-      if (holders.isNotEmpty) return false;
-      _referrers.remove(channel);
-    }
+    if (_removeReferrer(channel, holder)) return false;
     final node = _nodes[channel];
     return node != null && !_movedSince(node, writtenAt);
   }
@@ -709,12 +742,20 @@ class VRegistry {
   /// The channels a value refers to directly. Handed the identity of each widget it holds, which
   /// is all this needs — the values themselves are already the ones the registry holds.
   Set<String> _referencesOf(VWidget value) {
-    final channels = <String>{};
+    Set<String>? channels;
     value.adoptChildren((child) {
-      channels.add(channelOf(child));
+      (channels ??= <String>{}).add(_heldChannelOf(child));
       return child;
     });
-    return channels;
+    return channels ?? const <String>{};
+  }
+
+  /// [child]'s channel, as the string its entry is held under when it is the held value: that one
+  /// is already hashed, and compares by identity, where a new string would be built and hashed.
+  String _heldChannelOf(VWidget child) {
+    final held = _nodes.indexedOf(child.id);
+    if (held != null && identical(held.node.value, child)) return held.channel;
+    return channelOf(child);
   }
 
   void _notify(String channel, VNode node, VChange change) {
@@ -723,8 +764,10 @@ class VRegistry {
     }
     // Copied before iterating: a listener may unwatch itself while being told, and a widget
     // disposing in response to an update is an ordinary thing rather than an error.
-    for (final listener in List<void Function(VChange)>.of(node.listeners)) {
-      listener(change);
+    if (node.listeners.isNotEmpty) {
+      for (final listener in List<void Function(VChange)>.of(node.listeners)) {
+        listener(change);
+      }
     }
     if (node.listeners.isEmpty) {
       final inFrame = _heldChangedInFrame;
@@ -747,7 +790,7 @@ class VRegistry {
   /// This is what Java used to arrange by dirtying the ancestor, which re-sent the whole table to
   /// redraw one cell.
   void _notifyHolders(String channel, Set<String> seen) {
-    for (final holder in _referrers[channel] ?? const <String>{}) {
+    for (final holder in _referrersOf(channel)) {
       if (!seen.add(holder)) continue;
       final node = _nodes[holder];
       if (node == null) continue;
@@ -807,7 +850,18 @@ class _NodeMap extends MapBase<String, VNode> {
     _map[key] = value;
     epoch++;
     final id = _idOf(key);
-    if (id == null) return;
+    if (id != null) _index(id, key, value);
+  }
+
+  /// [operator []=] for an entry whose [id] the caller has in hand, as a frame naming it does:
+  /// not parsed back out of the channel. Never a GC's, which a frame does not name.
+  void putIndexed(String key, VNode value, int id) {
+    _map[key] = value;
+    epoch++;
+    _index(id, key, value);
+  }
+
+  void _index(int id, String key, VNode value) {
     final held = _byId[id];
     if (held == null || held.channel == key) {
       _byId[id] = _Indexed(key, value);

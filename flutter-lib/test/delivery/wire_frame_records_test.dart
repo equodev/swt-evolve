@@ -14,6 +14,7 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/label.dart';
+import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/widgets.dart';
 
 const int _labelType = 703;
@@ -203,6 +204,24 @@ void main() {
 
     expect(_refreshesAsked(), contains('$_labelId'));
     expect((registry.valueOn('Label/${_labelId + 1}') as VLabel?)?.text, 'next');
+  });
+
+  test('a widget a frame makes on an id the client already holds leaves that value found by the id', () {
+    final menu = registry.register(VMenu()
+      ..swt = 'Menu'
+      ..id = _labelId) as VMenu;
+
+    registry.applyWire(_frame([
+      _whole(10, (w) => w
+        ..key(WireKey.k_Label_text)
+        ..string('shares the id')),
+      _whole(1, id: _labelId + 1, (w) => w
+        ..key(WireKey.k_Control_menu)
+        ..ref(_labelId)),
+    ]));
+
+    expect(held()?.text, 'shares the id');
+    expect((registry.valueOn('Label/${_labelId + 1}') as VLabel?)?.menu, same(menu));
   });
 
   test('a widget named but neither held nor described is asked for, then what named it', () {

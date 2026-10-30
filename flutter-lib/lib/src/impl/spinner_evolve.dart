@@ -13,6 +13,7 @@ import 'utils/client_locale.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
+import 'utils/quiet_animations.dart';
 
 class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     extends CompositeImpl<T, V> {
@@ -262,7 +263,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   Widget build(BuildContext context) {
     final isInteractive = widget.enabled && !widget.readOnly;
 
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.width,
       height: widget.height,
@@ -280,7 +281,6 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
             child: DoubleClickWordSelector(
               controller: _controller,
               focusNode: _focusNode,
-              text: _controller.text,
               onWordSelected: (_, __) {},
               child: _buildTextField(isInteractive),
             ),
@@ -325,7 +325,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   Widget _buildButtonColumn(bool isInteractive) {
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.widgetTheme.buttonWidth,
       decoration: BoxDecoration(
@@ -541,7 +541,7 @@ class _SpinnerButton extends StatelessWidget {
         onTapUp: enabled ? (_) => onPressedChanged(false) : null,
         onTapCancel: enabled ? () => onPressedChanged(false) : null,
         onTap: onTap,
-        child: AnimatedContainer(
+        child: QuietAnimatedContainer(
           duration: animationDuration,
           decoration: BoxDecoration(
             color: backgroundColor,

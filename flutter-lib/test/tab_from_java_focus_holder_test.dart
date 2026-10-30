@@ -18,6 +18,7 @@ import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/traversal_veto_scope.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 import 'support/batch.dart';
 
@@ -42,7 +43,7 @@ VText _text(int id, int y, String text) => VText()
 Future<void> _pumpTextButtonText(WidgetTester tester) async {
   final gate = VetoGate('traverse')..attach('Display', 950);
   addTearDown(gate.detach);
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: TraversalVetoScope(
       gate: gate,
@@ -70,7 +71,7 @@ Future<void> _pumpTextButtonText(WidgetTester tester) async {
         ),
       ),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
 }
 

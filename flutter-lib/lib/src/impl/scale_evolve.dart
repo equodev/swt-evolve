@@ -12,6 +12,7 @@ import '../impl/control_evolve.dart';
 import '../theme/theme_extensions/scale_theme_extension.dart';
 import '../theme/theme_settings/scale_theme_settings.dart';
 import 'utils/widget_utils.dart';
+import 'utils/quiet_animations.dart';
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
@@ -372,7 +373,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
   }
 
   Widget _buildHorizontalScale(Widget scale) {
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.width,
       height: widget.height,
@@ -389,7 +390,7 @@ class _ThemedScaleState extends State<_ThemedScale> {
       );
 
   Widget _buildVerticalScale(Widget scale) {
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.width,
       height: widget.height,

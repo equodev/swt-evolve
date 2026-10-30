@@ -35,6 +35,7 @@ import 'utils/tracker_session.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
+import 'utils/quiet_animations.dart';
 
 /// Width of the frame a folder draws around its page, on the three edges the tab strip does not
 /// take. Java reserves the same width in `Sizes.getClientArea(DartCTabFolder)`, so a page laid out
@@ -1186,7 +1187,7 @@ class _CTabBarState extends State<_CTabBar> {
             widget.onSecondaryTap?.call(details.globalPosition),
         child: CustomPaint(
           foregroundPainter: _RectangularSides(border),
-          child: AnimatedContainer(
+          child: QuietAnimatedContainer(
           duration: widgetTheme.hoverRevealDuration,
           curve: Curves.easeOut,
           height: double.infinity,
@@ -1418,7 +1419,7 @@ class _CTabBarState extends State<_CTabBar> {
               active: active,
             ),
           ),
-          child: AnimatedContainer(
+          child: QuietAnimatedContainer(
           duration: widgetTheme.hoverRevealDuration,
           curve: Curves.easeOut,
           height: double.infinity,
@@ -2437,7 +2438,7 @@ class _TabDragRowState extends State<TabDragRow> {
                 children: [
                   // Tinted while this folder is the one under the pointer: with several folders
                   // on screen the marker alone says where in a row the tab lands, not which row.
-                  AnimatedContainer(
+                  QuietAnimatedContainer(
                     duration: const Duration(milliseconds: 90),
                     color: index == null
                         ? null

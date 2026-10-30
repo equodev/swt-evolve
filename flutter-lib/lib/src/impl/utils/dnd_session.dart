@@ -70,12 +70,11 @@ class DndSession {
     if (_subscribed[dropTargetId] == true) return;
     _subscribed[dropTargetId] = true;
     EquoCommService.onRaw("DropTarget/$dropTargetId/Drop/negotiationResult", (payload) {
-      // DropTarget's answer, as the map Java builds it.
-      final answer = payload as Map;
+      final result = payload as Map;
       final state = DndNegotiationState(
-        detail: (answer['detail'] as num?)?.toInt() ?? 0,
-        feedback: (answer['feedback'] as num?)?.toInt() ?? 0,
-        currentDataTypeId: (answer['currentDataTypeId'] as num?)?.toInt() ?? 0,
+        detail: result['detail'] as int? ?? 0,
+        feedback: result['feedback'] as int? ?? 0,
+        currentDataTypeId: result['currentDataTypeId'] as int? ?? 0,
       );
       _state[dropTargetId] = state;
       for (final listener in List.of(_listeners[dropTargetId] ?? const [])) {

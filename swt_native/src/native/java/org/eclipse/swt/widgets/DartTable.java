@@ -2611,7 +2611,7 @@ public class DartTable extends DartComposite implements ITable {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        TableHelper.loadVirtualWindow(this, e.end);
+                        TableHelper.rowsShown(this, e);
                     });
                     return;
                 }

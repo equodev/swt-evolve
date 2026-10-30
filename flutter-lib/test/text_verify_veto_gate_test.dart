@@ -24,6 +24,7 @@ import 'package:swtflutter/src/gen/text.dart';
 
 import 'delivery/support/deliver.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
@@ -31,10 +32,10 @@ VRectangle _bounds(int w, int h) => VRectangle()
   ..width = w
   ..height = h;
 
-Widget _app(Widget child) => EvolveApp(
+Widget _app(Widget child) => ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: child,
-    );
+    ));
 
 VText _value(String text) => VText()
   ..swt = 'Text'

@@ -69,7 +69,7 @@ void main() {
         find.byWidgetPredicate((w) => w is CTabFolderSwt<VCTabFolder>));
     for (var i = 0; i < labels.length; i++) {
       final tab = tester.getRect(find
-          .ancestor(of: find.text(labels[i]), matching: find.byType(AnimatedContainer))
+          .ancestor(of: find.text(labels[i]), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
           .first);
       expect(reported[2 * i], closeTo(tab.left - folder.left, 1),
           reason: '${labels[i]} starts here, measured from the folder\'s left edge');

@@ -31,8 +31,12 @@ import '../gen/widgets.dart';
 import '../gen/rectangle.dart';
 import 'utils/double_tap_detector.dart';
 import 'owner_draw_overlay.dart';
+import 'utils/cached_text.dart';
+import 'utils/text_utils.dart';
 
-/// Below this many rows a table is built whole, so short tables keep every row's semantics node.
+/// Below this many rows a table is built whole while semantics are on, so short tables keep every
+/// row's semantics node. Otherwise only the rows around what is visible are built, whatever the
+/// table's length.
 const int _rowWindowFloor = 200;
 
 
@@ -64,6 +68,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
   int _lastRowTapCount = 1;
 
   int _requestedRowEnd = 0;
+
+  /// The top row Java and the client last agreed on: what Java asked for, or what the client told
+  /// it after a scroll. A [VTable.topIndex] that differs is a request to scroll.
+  int? _agreedTopIndex;
+  bool _topReportScheduled = false;
 
   /// Width the dragged column had when its resize started; the drag applies a
   /// delta to this instead of to the live width, so rounding can't accumulate.
@@ -111,7 +120,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   void initState() {
     super.initState();
-    _verticalScrollController.addListener(() => setState(() {}));
+    _verticalScrollController.addListener(_verticalScrolled);
     _verticalScrollController.addListener(_reportScrollOffset);
     if (state.topIndex != null) _scrollToTopIndexAfterLayout();
   }
@@ -469,7 +478,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 },
               ),
             Expanded(
-              child: Text(
+              child: ColorCachedText(
                 headerText,
                 style: textStyle,
                 overflow: TextOverflow.ellipsis,
@@ -591,6 +600,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
               builder: (context, constraints) {
                 final window = _rowWindow(constraints, rowHeight, totalRows);
                 _requestRows(window.end);
+                _followTopIndex(rowHeight);
                 return SingleChildScrollView(
                   controller: _verticalScrollController,
                   child: Padding(
@@ -608,7 +618,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
                             i < items.length
                                 ? buildRow(context, i, items[i], columns.length, theme,
                                     showLines: showLines)
-                                : buildPendingRow(columns, rowHeight, showLines, theme),
+                                : buildPendingRow(i, columns, rowHeight, showLines, theme),
                         ],
                       ),
                       items,
@@ -667,16 +677,19 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   /// The row range to build; everything outside it costs height only.
   _RowWindow _rowWindow(BoxConstraints constraints, double rowHeight, int totalRows) {
-    if (totalRows <= _rowWindowFloor || rowHeight <= 0) {
+    if (rowHeight <= 0 || (totalRows <= _rowWindowFloor && SemanticsBinding.instance.semanticsEnabled)) {
       return _RowWindow(0, totalRows);
     }
     final viewport =
         constraints.maxHeight.isFinite ? constraints.maxHeight : totalRows * rowHeight;
     final offset = verticalScrollOffset;
     final visibleRows = (viewport / rowHeight).ceil() + 1;
-    // Half a screenful each side: enough that a small scroll shows no blank frame, and proportional
-    // so the window stays inside SWT's budget of three times the visible rows of SetData.
-    final overscan = visibleRows ~/ 2;
+    // A VIRTUAL table asks Java for rows ahead of the viewport, half a screenful each side: enough
+    // that a small scroll finds them loaded, and proportional so the window stays inside SWT's budget
+    // of three times the visible rows of SetData. Any other table holds every row already, and a
+    // scroll rebuilds the window in the frame that shows it, so rows out of view would only be built
+    // again with every change to them.
+    final overscan = StyleBits(state.style).has(SWT.VIRTUAL) ? visibleRows ~/ 2 : 0;
     final span = visibleRows + 2 * overscan;
     var start = (offset / rowHeight).floor() - overscan;
     if (start < 0) start = 0;
@@ -688,6 +701,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// A row whose SWT.SetData has not run yet. Its cell count must match the populated rows, or
   /// Flutter's Table asserts.
   TableRow buildPendingRow(
+    int rowIndex,
     List<VTableColumn> columns,
     double rowHeight,
     bool showLines,
@@ -695,6 +709,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   ) {
     final cellCount = columns.isNotEmpty ? columns.length : 1;
     return TableRow(
+      key: ValueKey(('pending', rowIndex)),
       decoration: BoxDecoration(
         border: getTableRowBorder(false, theme, showLines: showLines),
       ),
@@ -713,7 +728,45 @@ class TableImpl<T extends TableSwt, V extends VTable>
     _requestedRowEnd = end;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      widget.sendSetDataSetData(state, VEvent()..end = end);
+      final top = _topRow();
+      if (top != null) _agreedTopIndex = top;
+      widget.sendSetDataSetData(state, VEvent()..index = top ?? -1..end = end);
+    });
+  }
+
+  void _verticalScrolled() {
+    setState(() {});
+    if (_topReportScheduled) return;
+    _topReportScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _topReportScheduled = false;
+      if (!mounted) return;
+      final top = _topRow();
+      if (top == null || top == _agreedTopIndex) return;
+      // Java takes this as its top index without describing the table again, so this side's copy
+      // follows too, or the next build would scroll back to the one Java set before.
+      _agreedTopIndex = top;
+      state.topIndex = top;
+      widget.sendSetDataSetData(state, VEvent()..index = top..end = _requestedRowEnd);
+    });
+  }
+
+  /// The row at the top of the viewport, or null before the table has laid out.
+  int? _topRow() {
+    final rowHeight = _cachedRowHeight;
+    if (rowHeight == null || rowHeight <= 0 || !_verticalScrollController.hasClients) return null;
+    return (_verticalScrollController.offset / rowHeight).floor();
+  }
+
+  /// Scrolls to Java's top row once it asks for one the client is not already at.
+  void _followTopIndex(double rowHeight) {
+    final wanted = state.topIndex ?? 0;
+    if (wanted == _agreedTopIndex) return;
+    _agreedTopIndex = wanted;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_verticalScrollController.hasClients) return;
+      final position = _verticalScrollController.position;
+      position.jumpTo((wanted * rowHeight).clamp(0.0, position.maxScrollExtent));
     });
   }
 
@@ -751,9 +804,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
       tableForeground: state.foreground,
     ).buildCells(context, theme);
 
+    // Keyed by item, so that a scroll keeps the cells of the rows still in the window, laid-out text
+    // and all, rather than handing each row position the next item's content.
     final order = displayOrder;
     final shown = order.length == cells.length ? [for (final i in order) cells[i]] : cells;
     return TableRow(
+      key: ValueKey(item.id),
       decoration: BoxDecoration(
         color: backgroundColor,
         border: getTableRowBorder(isSelected, theme, showLines: showLines),
@@ -1033,16 +1089,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return totalWidth;
   }
 
-  double calculateHeaderHeight(TextStyle textStyle, TableThemeExtension theme) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: 'Ag', style: textStyle),
-      textDirection: TextDirection.ltr,
-      textScaler: FontUtils.textWidgetScaler,
-      maxLines: 1,
-    );
-    textPainter.layout();
-    return textPainter.height + theme.headerPadding.vertical;
-  }
+  double calculateHeaderHeight(TextStyle textStyle, TableThemeExtension theme) =>
+      singleLineTextSize('Ag', textStyle).height + theme.headerPadding.vertical;
 
 
 
@@ -1101,16 +1149,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return rowCount * rowHeight;
   }
 
-  double calculateRowHeight(TextStyle textStyle, TableThemeExtension theme) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: 'Ag', style: textStyle),
-      textDirection: TextDirection.ltr,
-      textScaler: FontUtils.textWidgetScaler,
-      maxLines: 1,
-    );
-    textPainter.layout();
-    return textPainter.height + theme.cellPadding.vertical;
-  }
+  double calculateRowHeight(TextStyle textStyle, TableThemeExtension theme) =>
+      singleLineTextSize('Ag', textStyle).height + theme.cellPadding.vertical;
 
   Map<int, TableColumnWidth>? calculateColumnWidths(
     BuildContext context,
@@ -1313,13 +1353,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerText = stripAccelerators(column.text);
     if (headerText.isEmpty) return 0.0;
 
-    final headerPainter = TextPainter(
-      text: TextSpan(text: headerText, style: headerTextStyle),
-      textDirection: TextDirection.ltr,
-      textScaler: FontUtils.textWidgetScaler,
-    );
-    headerPainter.layout();
-    return headerPainter.width + theme.headerPadding.horizontal;
+    return textSize(headerText, headerTextStyle).width + theme.headerPadding.horizontal;
   }
 
   double _calculateCellWidth(
@@ -1348,13 +1382,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double cellWidth = theme.cellPadding.horizontal;
 
     if (cellText.isNotEmpty) {
-      final cellPainter = TextPainter(
-        text: TextSpan(text: cellText, style: cellTextStyle),
-        textDirection: TextDirection.ltr,
-        textScaler: FontUtils.textWidgetScaler,
-      );
-      cellPainter.layout();
-      cellWidth += cellPainter.width;
+      cellWidth += textSize(cellText, cellTextStyle).width;
     }
 
     // Account for the image icon width + gap if this column has an image
@@ -1428,6 +1456,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
     return StyleBits(state.style).has(style);
   }
 
+  /// The cells last built for each item, by column, with what each was built from (see
+  /// TableItemImpl.buildCells). Held by the item, so they go when it does.
+  final _keptCells = Expando<List<(Object, Widget)?>>();
+
+  List<(Object, Widget)?> keptCells(VTableItem item, int columns) {
+    final kept = _keptCells[item];
+    if (kept != null && kept.length == columns) return kept;
+    return _keptCells[item] = List<(Object, Widget)?>.filled(columns, null);
+  }
+
   bool isItemSelected(VTableItem item) {
     return state.selection?.contains(getItems().indexOf(item)) ?? false;
   }
@@ -1482,7 +1520,7 @@ class TableItemSwtWrapper {
 
 double measureTableText(String text, TextStyle style) {
   if (text.isEmpty) return 0.0;
-  return FontUtils.measureTextWidget(text, style).width;
+  return singleLineTextWidth(text, style);
 }
 
 EdgeInsets fitTableCellPadding(

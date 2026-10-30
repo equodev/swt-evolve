@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 
 import '../comm/comm.dart';
 import '../comm/v_registry.dart';
+import '../comm/widget_wire.dart';
 import '../gen/menu.dart';
 import '../gen/widgets.dart' as gen;
 import '../gen/colordialog.dart';
@@ -27,6 +28,7 @@ import '../impl/utils/window_origin.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
+import 'utils/quiet_animations.dart';
 
 /// `VEvent.detail` of the bounds a shell reports once it is first drawn (Java's
 /// `DisplayBridge.INITIAL_CLIENT_BOUNDS`).
@@ -763,7 +765,7 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
+        child: QuietAnimatedContainer(
           duration: theme.titleBarButtonAnimationDuration,
           width: theme.titleBarButtonSize,
           height: theme.titleBarButtonSize,
