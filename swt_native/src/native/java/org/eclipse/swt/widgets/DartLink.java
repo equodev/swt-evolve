@@ -626,6 +626,10 @@ public class DartLink extends DartControl implements ILink {
         return _linkForeground;
     }
 
+    int resolveTextDirection() {
+        return ControlHelper.resolveTextDirection(LinkHelper.displayText(text));
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

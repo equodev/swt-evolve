@@ -340,6 +340,10 @@ public class DartGroup extends DartComposite implements IGroup {
         return Sizes.getClientArea(this);
     }
 
+    int resolveTextDirection() {
+        return ControlHelper.resolveTextDirection(text);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

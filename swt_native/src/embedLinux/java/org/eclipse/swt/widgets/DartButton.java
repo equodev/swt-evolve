@@ -854,6 +854,10 @@ public class DartButton extends DartControl implements IButton {
         return selection;
     }
 
+    int resolveTextDirection() {
+        return (getApi().style & SWT.ARROW) != 0 ? SWT.NONE : ControlHelper.resolveTextDirection(text);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

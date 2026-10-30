@@ -124,7 +124,7 @@ public class BidiUtil {
  * Not implemented. Returns SWT.NONE.
  */
     public static int resolveTextDirection(String text) {
-        return SWT.NONE;
+        return text == null ? SWT.NONE : org.eclipse.swt.widgets.ControlHelper.resolveTextDirection(text);
     }
 
     /*

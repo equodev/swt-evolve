@@ -1929,6 +1929,10 @@ public class DartText extends DartScrollable implements IText {
     void updateAutoTextDirectionIfNeeded() {
     }
 
+    int resolveTextDirection() {
+        return ControlHelper.resolveTextDirection(text);
+    }
+
     int clearSegmentsCount;
 
     boolean ignoreCharacter;

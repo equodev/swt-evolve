@@ -431,6 +431,26 @@ public class ControlHelper {
         return false;
     }
 
+    /**
+     * The direction {@link SWT#AUTO_TEXT_DIRECTION} gives {@code text}: that of its first strong Bidi
+     * character, or {@link SWT#NONE} when it has none.
+     */
+    public static int resolveTextDirection(String text) {
+        for (int i = 0; i < text.length(); ) {
+            int codePoint = text.codePointAt(i);
+            switch (Character.getDirectionality(codePoint)) {
+                case Character.DIRECTIONALITY_LEFT_TO_RIGHT:
+                    return SWT.LEFT_TO_RIGHT;
+                case Character.DIRECTIONALITY_RIGHT_TO_LEFT:
+                case Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC:
+                    return SWT.RIGHT_TO_LEFT;
+                default:
+                    i += Character.charCount(codePoint);
+            }
+        }
+        return SWT.NONE;
+    }
+
     public static boolean isModifierKey(int keyCode) {
         return keyCode == SWT.SHIFT || keyCode == SWT.CTRL || keyCode == SWT.ALT || keyCode == SWT.COMMAND;
     }

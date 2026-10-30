@@ -531,6 +531,10 @@ public class DartLabel extends DartControl implements ILabel {
         return image;
     }
 
+    int resolveTextDirection() {
+        return (getApi().style & SWT.SEPARATOR) != 0 ? SWT.NONE : ControlHelper.resolveTextDirection(text);
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }
