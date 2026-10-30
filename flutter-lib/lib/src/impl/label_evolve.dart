@@ -165,7 +165,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
             alignment: Alignment(
                 _horizontalOf(getMainAxisAlignmentFromTextAlign(
                     textAlign, widgetTheme.mainAxisAlignment)),
-                getAlignmentFromTextAlign(textAlign).y),
+                -1), // From the top, as in _contentAlignment.
             child: _lineTextFor(widgetTheme, enabled, textAlign),
           )
         : _buildLabelContent(
@@ -210,7 +210,7 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
                 : null,
             child: hasValidBounds && !singleLine
                 ? Align(
-                    alignment: getAlignmentFromTextAlign(textAlign),
+                    alignment: _contentAlignment(textAlign),
                     child: child,
                   )
                 : child,
@@ -261,6 +261,13 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     _lineStyleFont = font;
     _lineStyleForeground = foreground;
     return _lineStyle = _labelTextStyle(context, widgetTheme, enabled);
+  }
+
+  /// A Label's text starts at the top of its bounds on every native (unlike CLabel, which centres
+  /// it); an image keeps its vertical centre.
+  Alignment _contentAlignment(TextAlign textAlign) {
+    final centred = getAlignmentFromTextAlign(textAlign);
+    return state.image != null ? centred : Alignment(centred.x, -1);
   }
 
   /// Where a row aligned by [alignment] puts its one child across its width.

@@ -29,6 +29,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.*;
 
@@ -151,6 +152,10 @@ public class GallerySnippet {
         labelGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Label label = new Label(labelGroup, SWT.NONE);
         label.setText("A plain label");
+        // Taller than its text, which every native draws from the top of the bounds.
+        Label tallLabel = new Label(labelGroup, SWT.WRAP);
+        tallLabel.setText("Text from the top");
+        tallLabel.setLayoutData(new RowData(120, 90));
         // Mixed anchor + plain text: "Click" is the tappable anchor, " not-this" is plain
         // text that must NOT trigger it — proves per-span hit-testing, not just "the widget".
         Link link = new Link(labelGroup, SWT.NONE);
