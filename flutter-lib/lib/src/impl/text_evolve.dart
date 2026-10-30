@@ -18,19 +18,67 @@ import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
+import 'utils/hover_arbiter.dart';
 import 'utils/key_edit_order.dart';
 import 'utils/at_rest.dart';
+import 'utils/line_editor.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
-import 'utils/hover_arbiter.dart';
 import 'control_evolve.dart' show ControlImpl;
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover {
   late TextEditingController _controller;
+
+  /// The text of a multi-line field, which a [LineEditor] edits: laid out a line at a time and only
+  /// where it shows, so a long text costs what its visible lines cost.
+  LineEditorController? _lines;
+
+  final GlobalKey<LineEditorState> _lineEditor = GlobalKey<LineEditorState>();
+
+  /// Whether this field should be a [LineEditor]: every multi-line field with bounds but a password
+  /// one. Assistive technology, and the tests that drive the field through it, use the TextField's
+  /// own semantics, so it stays a TextField for them.
+  bool get _wantsLines =>
+      hasStyle(state.style, SWT.MULTI) &&
+      !hasStyle(state.style, SWT.PASSWORD) &&
+      hasBounds(state.bounds) &&
+      !WidgetsBinding.instance.semanticsEnabled;
+
+  /// Which editor the last build showed. Bounds arrive and semantics turn on after the field is
+  /// made, so it can change; each editor's controller is updated only while it shows, so the value
+  /// is carried over when it does ([_chooseEditor]).
+  bool? _shownLines;
+
+  /// Whether this field is a [LineEditor].
+  bool get _usesLines => _shownLines ?? _wantsLines;
+
+  void _chooseEditor() {
+    final lines = _wantsLines;
+    final shown = _shownLines;
+    _shownLines = lines;
+    if (shown == null || shown == lines) return;
+    fromJava(() {
+      if (lines) {
+        final selection = _controller.selection;
+        _lineController.value = _lineController.value.editedTo(
+          _controller.text,
+          selection.isValid ? selection : TextSelection.collapsed(offset: _controller.text.length),
+        );
+      } else {
+        _controller.value = TextEditingValue(text: _lineController.text, selection: _lineController.selection);
+      }
+    });
+  }
+
+  LineEditorController get _lineController =>
+      _lines ??= LineEditorController(state.text ?? '')..addListener(_updateCaretPosition);
+
+  /// The text on display, whichever editor shows it.
+  String get _currentText => _usesLines ? _lineController.text : _controller.text;
 
   final FocusNode _focusNode = FocusNode();
   /// Stands in for [_focusNode] while the field is drawn at rest: focus arriving here, by traversal or
@@ -56,7 +104,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       hasBounds(state.bounds);
 
   @override
-  FocusNode get swtFocusNode => _live ? _focusNode : _restFocus;
+  FocusNode get swtFocusNode => _usesLines || _live ? _focusNode : _restFocus;
 
 
   // A VerifyListener runs before the character is displayed, so edits are held un-rendered.
@@ -87,6 +135,12 @@ class TextImpl<T extends TextSwt, V extends VText>
     final isSingleLineExpand =
         hasBounds(state.bounds) && !hasStyle(state.style, SWT.MULTI);
     if (isSingleLineExpand && newValue.text.contains('\n')) return newValue;
+    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _controller.value = newValue);
+    return oldValue;
+  }
+
+  /// Sends [text] to Java as the Modify proposal it decides on, and shows it with [apply] once allowed.
+  void _proposeModify(String text, int start, void Function() apply) {
     _modifyGate.propose((doit) {
       if (!doit) {
         // The held edit was never rendered, so it just drops; stop suppressing Java's echoes.
@@ -94,19 +148,24 @@ class TextImpl<T extends TextSwt, V extends VText>
         return;
       }
       if (!mounted) return;
-      _controller.value = newValue;
-      state.text = newValue.text;
+      apply();
+      state.text = text;
     });
-    recordSentText(newValue.text);
+    _sendModify(text, start);
+  }
+
+  void _sendModify(String text, int start) {
+    recordSentText(text);
     widget.sendModifyModify(
       state,
       VEvent()
-        ..text = newValue.text
-        ..start = newValue.selection.baseOffset,
+        ..text = text
+        ..start = start,
     );
     KeyEditOrder.instance.editApplied();
-    return oldValue;
   }
+
+  bool get _isReadOnly => !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
 
   /// Rejection for an edit that was never held (the embedded backend never arms the gate), so it is
   /// already on screen. Clearing the echo guard lets Java's corrective push through.
@@ -115,6 +174,13 @@ class TextImpl<T extends TextSwt, V extends VText>
     clearSentTextEchoes();
     if (!mounted) return;
     final authoritative = state.text ?? '';
+    if (_usesLines) {
+      final lines = _lineController;
+      if (lines.text != authoritative) {
+        lines.value = lines.value.editedTo(authoritative, TextSelection.collapsed(offset: authoritative.length));
+      }
+      return;
+    }
     if (_controller.text != authoritative) {
       fromJava(() => _controller.value = _controller.value.copyWith(
             text: authoritative,
@@ -141,6 +207,10 @@ class TextImpl<T extends TextSwt, V extends VText>
   void extraSetState() => fromJava(_applyJavaState);
 
   void _applyJavaState() {
+    if (_usesLines) {
+      _pushToLines();
+      return;
+    }
     String newText = state.text ?? "";
     // A Java value push may be the echo of a Modify this field sent moments ago. If the user
     // has typed further in the meantime, resetting the controller to the echoed (older) text
@@ -150,9 +220,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     bool textChanged = _controller.text != newText;
 
     if (textChanged) {
-      final isReadOnly =
-          !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
-      final cursorOffset = isReadOnly ? 0 : newText.length;
+      final cursorOffset = _isReadOnly ? 0 : newText.length;
 
       _controller.value = _controller.value.copyWith(
         text: newText,
@@ -180,6 +248,120 @@ class TextImpl<T extends TextSwt, V extends VText>
   }
 
   void _trackEmptiness() => _isEmpty.value = _controller.text.isEmpty;
+
+  /// What Java pushed, shown in the [LineEditor], as [extraSetState] shows it in the TextField.
+  void _pushToLines() {
+    final lines = _lineController;
+    final newText = state.text ?? '';
+    if (isStaleTextEcho(newText, lines.text)) return;
+    if (lines.text != newText) {
+      var selection = TextSelection.collapsed(offset: _isReadOnly ? 0 : newText.length);
+      final pushed = state.selection;
+      if (pushed != null) selection = TextSelection(baseOffset: pushed.x, extentOffset: pushed.y);
+      lines.value = lines.value.editedTo(newText, selection);
+    }
+    final sel = state.selection;
+    if (sel != null && sel.x != sel.y && sel.y <= lines.text.length) {
+      final desired = TextSelection(baseOffset: sel.x, extentOffset: sel.y);
+      if (lines.selection != desired) lines.selection = desired;
+    }
+  }
+
+  /// [_gateEdit] for the [LineEditor]: while the field is vetoable the edit goes to Java as the
+  /// Modify and the field keeps showing the old value until the verdict.
+  LineEditValue _gateLines(LineEditValue oldValue, LineEditValue newValue) {
+    if (!_modifyGate.armed) return newValue;
+    if (newValue.text == oldValue.text) return newValue;
+    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _lineController.value = newValue);
+    return oldValue;
+  }
+
+  void _handleLinesChanged(String value) {
+    state.text = value;
+    _sendModify(value, _lineController.selection.baseOffset);
+  }
+
+  /// A multi-line field drawn by a [LineEditor] in the decoration a TextField puts around its text.
+  Widget _buildLineEditor(
+    BuildContext context,
+    TextThemeExtension widgetTheme,
+    bool enabled,
+    TextAlign textAlign,
+  ) {
+    final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
+    final decorationTheme = InputDecorationTheme.of(context);
+    final own = _decoration(context, widgetTheme, true, true);
+    // What TextField makes of its decoration and of its style.
+    final decoration = own.applyDefaults(decorationTheme).copyWith(
+          enabled: enabled,
+          hintMaxLines: own.hintMaxLines ?? decorationTheme.hintMaxLines,
+        );
+    final inputStyle = Theme.of(context).textTheme.bodyLarge!;
+    final style = inputStyle
+        .merge(TextStyle(color: enabled ? inputStyle.color : inputStyle.color?.withOpacity(0.38)))
+        .merge(textStyle);
+    final lines = _lineController;
+    final editor = RepaintBoundary(
+      child: LineEditor(
+        key: _lineEditor,
+        controller: lines,
+        focusNode: _focusNode,
+        style: style,
+        textAlign: textAlign,
+        readOnly: _isReadOnly,
+        enabled: enabled,
+        cursorColor: getForegroundColor(
+          foreground: state.foreground,
+          defaultColor: widgetTheme.textColor,
+          context: context,
+          minContrast: widgetTheme.minTextContrast,
+        ),
+        maxLength: state.textLimit,
+        formatter: _gateLines,
+        onChanged: _handleLinesChanged,
+        handlesPointer: false,
+        // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
+        // as a selection report, through _updateCaretPosition.
+        onWordSelected: (start, end) {
+          state.selection = VPoint()
+            ..x = start
+            ..y = end;
+        },
+      ),
+    );
+    // A press anywhere in the decoration is a press on the text, as a TextField takes it.
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.text : SystemMouseCursors.basic,
+      child: Listener(
+        onPointerDown: (e) {
+          _noteSecondaryPress(e, lines.selection, lines.text.length);
+          _lineEditor.currentState?.handlePointerDown(e);
+        },
+        onPointerMove: (e) => _lineEditor.currentState?.handlePointerMove(e),
+        onPointerUp: (e) {
+          _lineEditor.currentState?.handlePointerUp(e);
+          // The application Menu opens through ControlImpl.applyMenu(): nothing in the LineEditor
+          // competes for the secondary tap.
+          _endSecondaryPress((before) => lines.selection = before, () => lines.selection);
+        },
+        child: ListenableBuilder(
+          listenable: Listenable.merge([_focusNode, lines]),
+          builder: (context, child) => InputDecorator(
+            decoration: decoration,
+            baseStyle: textStyle,
+            textAlign: textAlign,
+            textAlignVertical: TextAlignVertical.top,
+            isHovering: hovered,
+            isFocused: _focusNode.hasFocus,
+            isEmpty: lines.text.isEmpty,
+            expands: true,
+            child: child,
+          ),
+          child: editor,
+        ),
+      ),
+    );
+  }
 
   void _handleRestFocus() {
     if (_restFocus.hasPrimaryFocus && !_live) _handOver();
@@ -235,7 +417,10 @@ class TextImpl<T extends TextSwt, V extends VText>
     final editable = state.editable ?? true;
     final hasValidBounds = hasBounds(state.bounds);
 
-    final textField = _live
+    _chooseEditor();
+    final textField = _usesLines
+        ? _buildLineEditor(context, widgetTheme, enabled, textAlign)
+        : _live
         ? _buildTextField(
             context,
             widgetTheme,
@@ -309,11 +494,9 @@ class TextImpl<T extends TextSwt, V extends VText>
       },
     );
 
-    final isReadOnly =
-        !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
     final hasBorderStyle = hasStyle(state.style, SWT.BORDER);
     final parentBg = ParentBackgroundScope.backgroundOf(context);
-    if (parentBg != null && isReadOnly && !hasBorderStyle) {
+    if (parentBg != null && _isReadOnly && !hasBorderStyle) {
       decoration = decoration.copyWith(filled: true, fillColor: parentBg);
     }
 
@@ -356,8 +539,6 @@ class TextImpl<T extends TextSwt, V extends VText>
   ) {
     final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
     final decoration = _decoration(context, widgetTheme, isMultiLine, hasValidBounds);
-    final isReadOnly =
-        !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
     final isPassword = hasStyle(state.style, SWT.PASSWORD);
     final echoChar = (isPassword || isMultiLine)
         ? null
@@ -384,7 +565,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       obscuringCharacter: echoChar ?? _defaultObscuringCharacter,
       enableSuggestions: !isObscured,
       autocorrect: !isObscured,
-      readOnly: isReadOnly,
+      readOnly: _isReadOnly,
       maxLines: singleLine ? 1 : null,
       expands: shouldExpand,
       textAlignVertical:
@@ -417,28 +598,14 @@ class TextImpl<T extends TextSwt, V extends VText>
           ..y = end;
       },
       child: Listener(
-        onPointerDown: (e) {
-          if (!ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(e.buttons))) return;
-          // A field that never held a caret has Java's, which the focus this press brings would
-          // otherwise move to the end.
-          final selection = _controller.selection;
-          _selectionBeforeSecondary = selection.isValid
-              ? selection
-              : TextSelection.collapsed(
-                  offset: (state.caretPosition ?? 0).clamp(0, _controller.text.length));
-        },
+        onPointerDown: (e) => _noteSecondaryPress(e, _controller.selection, _controller.text.length),
         onPointerUp: (e) {
-          final before = _selectionBeforeSecondary;
-          _selectionBeforeSecondary = null;
-          if (before == null) return;
           // The field's own secondary-tap recognizer wins the gesture arena over the one
           // ControlImpl.applyMenu() adds, so the release opens the application Menu here.
-          if (state.menu != null) openContextMenu(e.position);
-          // Flutter's field places the caret on a secondary tap, which the gesture delivers after
-          // this release; a native Text leaves it where it was, as on Win32 and GTK.
-          scheduleMicrotask(() {
-            if (mounted && _controller.selection != before) _controller.selection = before;
-          });
+          if (_endSecondaryPress((before) => _controller.selection = before, () => _controller.selection) &&
+              state.menu != null) {
+            openContextMenu(e.position);
+          }
         },
         child: textField,
       ),
@@ -511,6 +678,28 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// The selection when a secondary press began, put back once its click is done.
   TextSelection? _selectionBeforeSecondary;
 
+  void _noteSecondaryPress(PointerDownEvent e, TextSelection selection, int length) {
+    if (!ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(e.buttons))) return;
+    // A field that never held a caret has Java's, which the focus this press brings would
+    // otherwise move to the end.
+    _selectionBeforeSecondary = selection.isValid
+        ? selection
+        : TextSelection.collapsed(offset: (state.caretPosition ?? 0).clamp(0, length));
+  }
+
+  /// Ends a secondary click: puts back the selection it began on. False when it was no such click.
+  bool _endSecondaryPress(void Function(TextSelection) restore, TextSelection Function() current) {
+    final before = _selectionBeforeSecondary;
+    _selectionBeforeSecondary = null;
+    if (before == null) return false;
+    // The focus the press brings, and a TextField's secondary tap after this release, place the
+    // caret; a native Text leaves it where it was, as on Win32 and GTK.
+    scheduleMicrotask(() {
+      if (mounted && current() != before) restore(before);
+    });
+    return true;
+  }
+
   Widget _buildTextFieldWrapper(
     Widget textField,
     TextThemeExtension widgetTheme,
@@ -577,7 +766,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       }
       // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
-      seedTextEchoBaseline(_controller.text);
+      seedTextEchoBaseline(_currentText);
       widget.sendFocusFocusIn(state, null);
     } else {
       // Java re-arms per focus (DisplayBridge.setFocus).
@@ -596,7 +785,8 @@ class TextImpl<T extends TextSwt, V extends VText>
   @override
   void sendCaretReport(VEvent event) => widget.sendVerifyVerify(state, event);
 
-  void _updateCaretPosition() => reportCaret(_controller);
+  /// The caret is the selection's moving end, in whichever controller holds the text.
+  void _updateCaretPosition() => reportSelection(_usesLines ? _lineController.selection : _controller.selection);
 
   @override
   void dispose() {
@@ -604,6 +794,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller.removeListener(_updateCaretPosition);
     _controller.removeListener(_trackEmptiness);
     _controller.dispose();
+    _lines?.dispose();
     _isEmpty.dispose();
     _focusNode.removeListener(_handleFocusChange);
     KeyEditOrder.instance.unregisterEditor(_focusNode);

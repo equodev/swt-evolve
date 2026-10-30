@@ -33,9 +33,12 @@ mixin ClientCaretReport {
   /// Reports [controller]'s caret and anchor when they moved. [editPending] holds the report back
   /// for a widget whose edit reaches Java later and resets its selection there; the widget reports
   /// again once it has sent that edit.
-  void reportCaret(TextEditingController controller, {bool editPending = false}) {
+  void reportCaret(TextEditingController controller, {bool editPending = false}) =>
+      reportSelection(controller.selection, editPending: editPending);
+
+  /// [reportCaret] for a field whose controller is not a [TextEditingController].
+  void reportSelection(TextSelection selection, {bool editPending = false}) {
     if (!mounted || editPending) return;
-    final selection = controller.selection;
     final caret = selection.extentOffset;
     final anchor = selection.baseOffset;
     if (caret < 0 || anchor < 0) return;
