@@ -154,7 +154,6 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     widget.controller.addListener(_valueChanged);
     widget.focusNode.addListener(_focusChanged);
     if (widget.focusNode.hasFocus) _focusChanged();
-    _undoPush();
   }
 
   @override
@@ -180,7 +179,6 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     widget.focusNode.removeListener(_focusChanged);
     _closeConnection();
     _blink?.cancel();
-    _undoTimer?.cancel();
     _cursorVisible.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -194,7 +192,6 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     final value = _value;
     if (value == _lastValue) return;
     _lastValue = value;
-    _undoPush();
     setState(() {});
     if (_connection != null && !_applyingInput) _sendEditingState();
     if (widget.focusNode.hasFocus) _restartBlink();
@@ -243,80 +240,23 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     _userEdit(_value.copyWith(selection: clamped, composing: TextRange.empty), reveal: reveal);
   }
 
-  // --- undo, as a TextField's UndoHistory keeps it: what the value was at most every half second ---
-
-  static const Duration _undoThrottle = Duration(milliseconds: 500);
-
-  /// Entries kept; each holds a whole text, and UndoHistory, which keeps them all, grows without end.
-  static const int _undoLimit = 100;
-
-  final List<LineEditValue> _undoStack = [];
-  int _undoIndex = -1;
-  LineEditValue? _undoLast;
-  LineEditValue? _undoPending;
-  Timer? _undoTimer;
-  bool _undoTriggering = false;
-
-  static bool _sameValue(LineEditValue a, LineEditValue b) =>
-      a.selection == b.selection && a.composing == b.composing && (identical(a.document, b.document) || a.text == b.text);
-
-  /// Every change of the value comes here, as UndoHistory listens to a TextField's controller.
-  void _undoPush() {
-    final value = _value;
-    final last = _undoLast;
-    if (last != null && _sameValue(value, last)) return;
-    if (_undoTriggering) return;
-    if (!value.selection.isValid) return;
-    if (last != null) {
-      // Composing text is not counted, and a change of the selection alone is no entry.
-      if (!value.composing.isCollapsed) return;
-      if (last.composing == value.composing && (identical(last.document, value.document) || last.text == value.text)) return;
+  /// [current] edited into [target]'s text, with [target]'s selection: the one edit that differs.
+  LineEditValue _replacedTo(LineEditValue current, LineEditValue target) {
+    final a = current.text, b = target.text;
+    var prefix = 0;
+    final max = math.min(a.length, b.length);
+    while (prefix < max && a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
+      prefix++;
     }
-    _undoLast = value;
-    _undoPending = value;
-    if (_undoTimer?.isActive ?? false) return;
-    _undoTimer = Timer(_undoThrottle, () => _stackPush(_undoPending!));
-  }
-
-  void _stackPush(LineEditValue value) {
-    if (_undoStack.isEmpty) {
-      _undoStack.add(value);
-      _undoIndex = 0;
-      return;
+    var suffix = 0;
+    while (suffix < max - prefix && a.codeUnitAt(a.length - 1 - suffix) == b.codeUnitAt(b.length - 1 - suffix)) {
+      suffix++;
     }
-    if (_sameValue(value, _undoStack[_undoIndex])) return;
-    if (_undoIndex != _undoStack.length - 1) _undoStack.removeRange(_undoIndex + 1, _undoStack.length);
-    _undoStack.add(value);
-    if (_undoStack.length > _undoLimit) _undoStack.removeAt(0);
-    _undoIndex = _undoStack.length - 1;
-  }
-
-  void _undo() {
-    if (_undoStack.isEmpty) return;
-    if (_undoTimer?.isActive ?? false) {
-      _undoTimer!.cancel();
-    } else if (_undoIndex > 0) {
-      _undoIndex--;
-    }
-    _undoUpdate(_undoStack[_undoIndex]);
-  }
-
-  void _redo() {
-    if (_undoStack.isEmpty) return;
-    if (_undoIndex < _undoStack.length - 1) _undoIndex++;
-    _undoUpdate(_undoStack[_undoIndex]);
-  }
-
-  void _undoUpdate(LineEditValue next) {
-    final last = _undoLast;
-    if (last != null && _sameValue(next, last)) return;
-    _undoLast = next;
-    _undoTriggering = true;
-    try {
-      _userEdit(_value.editedTo(next.text, next.selection));
-    } finally {
-      _undoTriggering = false;
-    }
+    return current.replaced(
+      TextRange(start: prefix, end: a.length - suffix),
+      b.substring(prefix, b.length - suffix),
+      selection: target.selection,
+    );
   }
 
   // --- focus, caret blink ---
@@ -724,14 +664,6 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     }),
     PasteTextIntent: CallbackAction<PasteTextIntent>(onInvoke: (intent) {
       pasteText(intent.cause);
-      return null;
-    }),
-    UndoTextIntent: CallbackAction<UndoTextIntent>(onInvoke: (_) {
-      _undo();
-      return null;
-    }),
-    RedoTextIntent: CallbackAction<RedoTextIntent>(onInvoke: (_) {
-      _redo();
       return null;
     }),
     TransposeCharactersIntent: CallbackAction<TransposeCharactersIntent>(onInvoke: (_) {

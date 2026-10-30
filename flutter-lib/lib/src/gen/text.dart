@@ -50,6 +50,8 @@ class VText extends VScrollable {
     swt = "Text";
   }
 
+  List<int>? edits;
+  List<String>? editTexts;
   int? caretPosition;
   int? echoCharacter;
   bool? editable;
@@ -69,6 +71,8 @@ class VText extends VScrollable {
       selection = other.selection;
       text = other.text;
       textLimit = other.textLimit;
+      edits = other.edits;
+      editTexts = other.editTexts;
     }
   }
 
@@ -95,6 +99,12 @@ class VText extends VScrollable {
         return true;
       case 521: // textLimit
         textLimit = r.int32();
+        return true;
+      case 1354: // edits
+        edits = r.ints();
+        return true;
+      case 1430: // editTexts
+        editTexts = r.strings()?.map((e) => e ?? '').toList();
         return true;
       default:
         return super.readWire(key, r);
@@ -153,6 +163,20 @@ class VText extends VScrollable {
         w.int32(v_);
       }
     }
+    {
+      final v_ = edits;
+      if (v_ != null && w.wants(1354)) {
+        w.key(1354);
+        w.ints(v_);
+      }
+    }
+    {
+      final v_ = editTexts;
+      if (v_ != null && w.wants(1430)) {
+        w.key(1430);
+        w.strings(v_);
+      }
+    }
   }
 
   @override
@@ -165,6 +189,8 @@ class VText extends VScrollable {
     visit(519, selection);
     visit(520, text);
     visit(521, textLimit);
+    visit(1354, edits);
+    visit(1430, editTexts);
   }
 
   @override

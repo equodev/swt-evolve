@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:ui' show SemanticsInputType;
 
 import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
@@ -17,11 +18,13 @@ import '../impl/scrollable_evolve.dart';
 import '../theme/theme_extensions/text_theme_extension.dart';
 import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
+import 'shell_evolve.dart';
 import 'key_mapping.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/key_edit_order.dart';
 import 'utils/at_rest.dart';
 import 'utils/line_editor.dart';
+import 'utils/text_undo.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
@@ -30,7 +33,7 @@ import 'utils/pending_text_echoes.dart';
 import 'control_evolve.dart' show ControlImpl;
 
 class TextImpl<T extends TextSwt, V extends VText>
-    extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover {
+    extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover implements UndoableTextField {
   late TextEditingController _controller;
 
   /// The text of a multi-line field, which a [LineEditor] edits: laid out a line at a time and only
@@ -124,23 +127,206 @@ class TextImpl<T extends TextSwt, V extends VText>
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
     WidgetsBinding.instance.addPostFrameCallback((_) => fromJava(_updateCaretPosition));
+    // What the API did before this field was shown is nothing its undo has seen.
+    _apiEditsSeen = _lastApiEdit(state.edits);
+  }
+
+  // --- undo, as the platform's control keeps it (see TextUndo) ---
+
+  final TextEditKindDispatcher _kinds = TextEditKindDispatcher();
+
+  /// The window this field is in, whose undo Cocoa's fields share.
+  ShellImpl? _shell;
+
+  TextUndo get _undo => TextUndo.of(this, _shell, TextUndoFlavor.current);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _shell = context.findAncestorStateOfType<ShellImpl>();
+  }
+
+  /// While an undo applies, its edit is no edit of the user's to record.
+  bool _applyingUndo = false;
+
+  /// What the field held when an input method began composing: the composition is recorded once,
+  /// as the text it commits.
+  ({String text, TextSelection selection})? _compositionBase;
+
+  /// The number of the last API edit undo has been told about.
+  int _apiEditsSeen = 0;
+
+  static int _lastApiEdit(List<int>? edits) {
+    var last = 0;
+    if (edits == null) return last;
+    for (var i = 0; i + 2 < edits.length; i += 3) {
+      last = math.max(last, edits[i]);
+    }
+    return last;
+  }
+
+  /// Hands undo the API edits it has not seen: [VText.edits] holds number, kind and start per
+  /// edit, [VText.editTexts] the text each replaced and inserted.
+  void _applyApiEdits() {
+    final edits = state.edits;
+    final texts = state.editTexts ?? const <String>[];
+    if (edits == null) return;
+    for (var i = 0, t = 0; i + 2 < edits.length; i += 3, t += 2) {
+      final number = edits[i];
+      if (number <= _apiEditsSeen) continue;
+      _apiEditsSeen = number;
+      final edit = TextApiEdit.of(edits[i + 1]);
+      if (edit == null) continue;
+      _undo.api(this, edit, edits[i + 2], t < texts.length ? texts[t] : '', t + 1 < texts.length ? texts[t + 1] : '');
+    }
+  }
+
+  @override
+  String get undoText => _currentText;
+
+  @override
+  bool get undoSingleLine => !hasStyle(state.style, SWT.MULTI);
+
+  @override
+  bool get undoFocused => _focusNode.hasFocus;
+
+  @override
+  bool get undoReadOnly => !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
+
+  @override
+  bool get undoAlive => mounted;
+
+  @override
+  void applyUndo(int start, int end, String replacement, TextSelection selection) {
+    _applyingUndo = true;
+    try {
+      if (_usesLines) {
+        final old = _lineController.value;
+        final next = old.replaced(TextRange(start: start, end: end), replacement, selection: selection);
+        if (identical(_gateLines(old, next), next)) {
+          _lineController.value = next;
+          _handleLinesChanged(next.text);
+        }
+      } else {
+        final old = _controller.value;
+        final next = TextEditingValue(text: old.text.replaceRange(start, end, replacement), selection: selection);
+        if (identical(_gateEdit(old, next), next)) {
+          _controller.value = next;
+          _handleTextChanged(next.text);
+        }
+      }
+    } finally {
+      _applyingUndo = false;
+    }
+  }
+
+  /// What records the edit from [oldText] to [newText] once it is shown, or null when it is none of
+  /// the user's: an undo, a composition still going, or no change of the text.
+  VoidCallback? _undoRecorder(String oldText, TextSelection oldSelection, String newText,
+      TextSelection newSelection, TextRange composing, {int? start, int? end, int? inserted}) {
+    if (_applyingUndo) return null;
+    if (composing.isValid && !composing.isCollapsed) {
+      _compositionBase ??= (text: oldText, selection: oldSelection);
+      return null;
+    }
+    final base = _compositionBase;
+    _compositionBase = null;
+    final fromText = base?.text ?? oldText;
+    final fromSelection = base?.selection ?? oldSelection;
+    if (fromText == newText) return null;
+    final int at;
+    final String deleted, added;
+    if (base == null && start != null && end != null && inserted != null) {
+      at = start;
+      deleted = fromText.substring(start, end);
+      added = newText.substring(start, start + inserted);
+    } else {
+      (at, deleted, added) = _editBetween(fromText, fromSelection, newText, newSelection);
+    }
+    final fromCaret = !fromSelection.isValid || fromSelection.isCollapsed;
+    final endsAtCaret = fromSelection.isValid && at + deleted.length == fromSelection.end;
+    final kind = _kinds.kindOfEdit(deleted, added,
+        composing: base != null, fromCaret: fromCaret, endsAtCaret: endsAtCaret);
+    return () {
+      if (mounted) _undo.edited(this, at, deleted, added, kind, fromCaret: fromCaret);
+    };
+  }
+
+  /// The one range [from] and [to] differ in, placed where the selections say the edit was: an
+  /// edit happens at the selection, so a run of equal characters around it does not move it.
+  static (int, String, String) _editBetween(
+      String from, TextSelection fromSelection, String to, TextSelection toSelection) {
+    final max = math.min(from.length, to.length);
+    var prefixLimit = max;
+    var suffixLimit = max;
+    if (fromSelection.isValid && toSelection.isValid) {
+      prefixLimit = math.min(prefixLimit, math.min(fromSelection.start, toSelection.start));
+      suffixLimit = math.min(suffixLimit, math.min(from.length - fromSelection.end, to.length - toSelection.end));
+    }
+    var prefix = 0;
+    while (prefix < prefixLimit && from.codeUnitAt(prefix) == to.codeUnitAt(prefix)) {
+      prefix++;
+    }
+    var suffix = 0;
+    suffixLimit = math.min(suffixLimit, max - prefix);
+    while (suffix < suffixLimit &&
+        from.codeUnitAt(from.length - 1 - suffix) == to.codeUnitAt(to.length - 1 - suffix)) {
+      suffix++;
+    }
+    return (prefix, from.substring(prefix, from.length - suffix), to.substring(prefix, to.length - suffix));
+  }
+
+  /// The field with its platform's undo keys, and with what its edits are made by watched.
+  Widget _withUndo(Widget field) {
+    return Shortcuts(
+      shortcuts: textUndoShortcuts(TextUndoFlavor.current),
+      child: Actions(
+        dispatcher: _kinds,
+        actions: <Type, Action<Intent>>{
+          TextUndoIntent: CallbackAction<TextUndoIntent>(onInvoke: (_) {
+            _undo.undo(this);
+            return null;
+          }),
+          TextRedoIntent: CallbackAction<TextRedoIntent>(onInvoke: (_) {
+            _undo.redo(this);
+            return null;
+          }),
+          TextNoUndoIntent: DoNothingAction(),
+        },
+        child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onKeyEvent: (node, event) {
+            if (event is KeyDownEvent || event is KeyRepeatEvent) _kinds.keyDown(event);
+            return KeyEventResult.ignored;
+          },
+          child: field,
+        ),
+      ),
+    );
   }
 
   /// Holds an edit while the field is vetoable: the proposal goes to Java as the Modify, the
   /// controller keeps the old value until the verdict. Selection-only changes and the
   /// single-line newline path (submit semantics, see [_handleTextChanged]) stay optimistic.
   TextEditingValue _gateEdit(TextEditingValue oldValue, TextEditingValue newValue) {
-    if (!_modifyGate.armed) return newValue;
     if (newValue.text == oldValue.text) return newValue;
     final isSingleLineExpand =
         hasBounds(state.bounds) && !hasStyle(state.style, SWT.MULTI);
     if (isSingleLineExpand && newValue.text.contains('\n')) return newValue;
-    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _controller.value = newValue);
+    final record = _undoRecorder(
+        oldValue.text, oldValue.selection, newValue.text, newValue.selection, newValue.composing);
+    if (!_modifyGate.armed) {
+      record?.call();
+      return newValue;
+    }
+    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _controller.value = newValue, record);
     return oldValue;
   }
 
-  /// Sends [text] to Java as the Modify proposal it decides on, and shows it with [apply] once allowed.
-  void _proposeModify(String text, int start, void Function() apply) {
+  /// Sends [text] to Java as the Modify proposal it decides on, and shows it with [apply] once
+  /// allowed; [record] then takes the undo step.
+  void _proposeModify(String text, int start, void Function() apply, VoidCallback? record) {
     _modifyGate.propose((doit) {
       if (!doit) {
         // The held edit was never rendered, so it just drops; stop suppressing Java's echoes.
@@ -150,6 +336,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       if (!mounted) return;
       apply();
       state.text = text;
+      record?.call();
     });
     _sendModify(text, start);
   }
@@ -192,7 +379,7 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   /// What this field shows through its controller rather than its build: a change naming only
   /// these is handed to the controller, which rebuilds the editable text and nothing else.
-  static const _controllerProperties = {WireKey.k_Text_text, WireKey.k_Text_selection};
+  static const _controllerProperties = {WireKey.k_Text_text, WireKey.k_Text_selection, WireKey.k_Text_edits};
 
   @override
   void setValue(V value) {
@@ -207,6 +394,7 @@ class TextImpl<T extends TextSwt, V extends VText>
   void extraSetState() => fromJava(_applyJavaState);
 
   void _applyJavaState() {
+    _applyApiEdits();
     if (_usesLines) {
       _pushToLines();
       return;
@@ -270,9 +458,19 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// [_gateEdit] for the [LineEditor]: while the field is vetoable the edit goes to Java as the
   /// Modify and the field keeps showing the old value until the verdict.
   LineEditValue _gateLines(LineEditValue oldValue, LineEditValue newValue) {
-    if (!_modifyGate.armed) return newValue;
-    if (newValue.text == oldValue.text) return newValue;
-    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _lineController.value = newValue);
+    if (identical(newValue.document, oldValue.document) || newValue.text == oldValue.text) return newValue;
+    final doc = newValue.document;
+    final direct = doc.isEditOf(oldValue.document);
+    final record = _undoRecorder(
+        oldValue.text, oldValue.selection, newValue.text, newValue.selection, newValue.composing,
+        start: direct ? doc.editStart : null,
+        end: direct ? doc.editEnd : null,
+        inserted: direct ? doc.insertedLength : null);
+    if (!_modifyGate.armed) {
+      record?.call();
+      return newValue;
+    }
+    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _lineController.value = newValue, record);
     return oldValue;
   }
 
@@ -432,7 +630,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         : _buildAtRest(context, widgetTheme, enabled, textAlign);
 
     final fieldWrapper = _buildTextFieldWrapper(
-      textField,
+      _withUndo(textField),
       widgetTheme,
       isMultiLine,
       hasValidBounds,
@@ -767,6 +965,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
       seedTextEchoBaseline(_currentText);
+      _undo.focused(this);
       widget.sendFocusFocusIn(state, null);
     } else {
       // Java re-arms per focus (DisplayBridge.setFocus).

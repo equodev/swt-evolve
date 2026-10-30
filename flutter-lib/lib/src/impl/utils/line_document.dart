@@ -11,9 +11,13 @@ class LineDocument {
         _madeFrom = null,
         editLine = 0,
         removedLines = 0,
-        insertedLines = 0;
+        insertedLines = 0,
+        editStart = 0,
+        editEnd = 0,
+        insertedLength = 0;
 
-  LineDocument._edited(this.text, this.starts, this._madeFrom, this.editLine, this.removedLines, this.insertedLines);
+  LineDocument._edited(this.text, this.starts, this._madeFrom, this.editLine, this.removedLines, this.insertedLines,
+      this.editStart, this.editEnd, this.insertedLength);
 
   static final LineDocument empty = LineDocument('');
 
@@ -38,6 +42,10 @@ class LineDocument {
 
   /// How many lines, from [editLine], replace them here.
   final int insertedLines;
+
+  /// The range of the document this one was made from that the edit replaced, and how long its
+  /// replacement is here.
+  final int editStart, editEnd, insertedLength;
 
   int get length => text.length;
 
@@ -81,7 +89,7 @@ class LineDocument {
     for (var i = 0; i < keptAfter; i++) {
       out[first + inserted.length + i] = starts[last + 1 + i] + delta;
     }
-    return LineDocument._edited(newText, out, _identity, first, last - first + 1, inserted.length);
+    return LineDocument._edited(newText, out, _identity, first, last - first + 1, inserted.length, start, end, insert.length);
   }
 
   /// The starts of the lines of `text[from, to)`, offset by [base], its own start first.

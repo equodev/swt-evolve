@@ -586,6 +586,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/TrackerHelper.java",
     "**/ShellActivation.java",
     "**/NativeCursorHotspot.java",
+    "**/TextApiEdits.java",
 )
 
 // The oldest JDK any enabled release runs on. Hand-written code is shared by every one of them, so

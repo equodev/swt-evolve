@@ -277,6 +277,7 @@ public class DartText extends DartScrollable implements IText {
                 return;
         }
         setSelection(getCharCount());
+        apiEdits.record(this, TextApiEdits.APPEND, "");
         insertEditText(string);
         if (string.length() != 0) {
             getValue().markDirty(VText.TEXT);
@@ -406,6 +407,7 @@ public class DartText extends DartScrollable implements IText {
                 return;
         }
         copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
+        apiEdits.record(this, TextApiEdits.CUT, newText);
         insertEditText(newText);
         if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
@@ -1004,6 +1006,7 @@ public class DartText extends DartScrollable implements IText {
             if (string == null)
                 return;
         }
+        apiEdits.record(this, TextApiEdits.INSERT, "");
         insertEditText(string);
     }
 
@@ -1095,6 +1098,7 @@ public class DartText extends DartScrollable implements IText {
                 newText = newText.substring(0, Math.max(0, textLimit - charCount + (sel.y - sel.x)));
             }
         }
+        apiEdits.record(this, TextApiEdits.PASTE, newText);
         _insertEditText(newText, enableUndo);
         sendEvent(SWT.Modify);
     }
@@ -1600,6 +1604,7 @@ public class DartText extends DartScrollable implements IText {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         TextHelper.setText(this, string);
+        apiEdits.record(this, TextApiEdits.SET_TEXT, "");
     }
 
     /**
@@ -1861,6 +1866,8 @@ public class DartText extends DartScrollable implements IText {
     void applySegments() {
         TextHelper.sendSegments(this);
     }
+
+    final TextApiEdits apiEdits = new TextApiEdits();
 
     protected void _hookEvents() {
         super._hookEvents();

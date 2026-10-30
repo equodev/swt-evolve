@@ -809,6 +809,7 @@ abstract final class WireKey {
   static const int k_List_topIndex = 1422;
   static const int k_Table_ownerDrawItemHeight = 1423;
   static const int k_MessageBox_buttonLabels = 1428;
+  static const int k_Text_editTexts = 1430;
 }
 
 /// The properties whose values name widgets.
@@ -1640,6 +1641,7 @@ const Map<int, String> wireMapKeyNames = {
   1426: 'headerHeight',
   1427: 'ownerDrawItemHeight',
   1429: 'buttonLabels',
+  1431: 'editTexts',
 };
 
 /// The empty value of each widget type a frame can name.

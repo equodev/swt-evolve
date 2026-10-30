@@ -1,6 +1,6 @@
 // A multi-line Text with bounds is drawn by a LineEditor while semantics are off, as in production.
 // What Text does around the TextField it does around the LineEditor too: Java's pushes, the
-// VerifyListener's veto, the text limit, read-only, alignment, undo, and the mouse.
+// VerifyListener's veto, the text limit, read-only, alignment, and the mouse.
 
 import 'dart:convert';
 import 'dart:typed_data';
@@ -157,29 +157,6 @@ void main() {
       expect(tester.widget<LineEditor>(find.byType(LineEditor)).textAlign, align);
     });
   }
-
-  testWidgets('undo and redo step through what was typed', semanticsEnabled: false, (tester) async {
-    await _pump(tester, _value(''));
-    await _focus(tester);
-    _type(tester, 'a');
-    await tester.pump(const Duration(milliseconds: 600));
-    _type(tester, 'ab');
-    await tester.pump(const Duration(milliseconds: 600));
-
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-    await tester.pump();
-    expect(_lines(tester).text, 'a');
-
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
-    await tester.sendKeyEvent(LogicalKeyboardKey.keyZ);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-    await tester.pump();
-    expect(_lines(tester).text, 'ab');
-  });
 
   testWidgets('a double click reports one MouseDoubleClick', semanticsEnabled: false, (tester) async {
     setConfigFlags(ConfigFlags()..double_click_timeout_ms = 60000);

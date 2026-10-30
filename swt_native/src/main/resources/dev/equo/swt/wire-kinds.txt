@@ -546,7 +546,7 @@
 670 object:VFontData FontDialog.fontData
 671 object:VFontData[] FontDialog.fontList
 1353 int Table.topIndex
-1354 string[] Text.edits
+1354 int[] Text.edits
 1356 bool? GC.themedCanvas
 1357 color[] CLabel.gradientColors
 1358 int[] CLabel.gradientPercents
@@ -578,3 +578,4 @@
 1422 int List.topIndex
 1423 int Table.ownerDrawItemHeight
 1428 string[] MessageBox.buttonLabels
+1430 string[] Text.editTexts
