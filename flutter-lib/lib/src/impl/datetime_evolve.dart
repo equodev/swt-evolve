@@ -23,11 +23,22 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
   bool _isUpHovered = false;
   bool _isDownHovered = false;
   final _focusNode = FocusNode();
+  final _fieldKeys = <GlobalKey>[];
   String _digitBuffer = '';
   OverlayEntry? _calendarOverlay;
   bool _calendarDropped = false;
 
   int _maxDigits(_FieldDef f) => f.max >= 1000 ? 4 : 2;
+
+  // A date or time takes its keys on [_focusNode], so a press anywhere in it (the stepper and the
+  // drop-down button too) focuses that node; a CALENDAR keeps the composite's focus.
+  bool get _hasFields => !hasStyle(state.style, SWT.CALENDAR);
+
+  @override
+  FocusNode? get swtFocusNode => _hasFields ? _focusNode : super.swtFocusNode;
+
+  @override
+  void takeFocusOnPress() => _hasFields ? _focusNode.requestFocus() : super.takeFocusOnPress();
 
   // The calendar popup is an OverlayEntry outside this subtree, so it is rebuilt with the control.
   @override
@@ -330,34 +341,33 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         enabled ? _ink(context, theme.textColor) : theme.disabledTextColor;
     final iconColor = enabled ? theme.iconColor : theme.disabledIconColor;
 
+    while (_fieldKeys.length < fields.length) {
+      _fieldKeys.add(GlobalKey());
+    }
+
     Widget fieldRow() => Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         for (int i = 0; i < fields.length; i++) ...[
           if (i > 0) _FieldSeparator(text: separator, theme: theme),
-          GestureDetector(
-            onTap: () {
-              _focusNode.requestFocus();
-              setState(() { _digitBuffer = ''; _selectedField = i; });
-            },
-            child: ColoredBox(
-              color: i == selIdx && enabled
-                  ? theme.focusedBorderColor.withOpacity(0.15)
-                  : Colors.transparent,
-              child: Padding(
-                // Less padding on the separator side so numbers sit tight to the separator
-                padding: EdgeInsets.only(
-                  left: i == 0 ? 2 : 0,
-                  right: i == fields.length - 1 ? 2 : 0,
-                ),
-                child: Text(
-                  fields[i].format(fields[i].value),
-                  style: getTextStyle(
-                    context: context,
-                    font: state.font,
-                    textColor: textColor,
-                    baseTextStyle: theme.textStyle,
-                  ),
+          ColoredBox(
+            key: _fieldKeys[i],
+            color: i == selIdx && enabled
+                ? theme.focusedBorderColor.withOpacity(0.15)
+                : Colors.transparent,
+            child: Padding(
+              // Less padding on the separator side so numbers sit tight to the separator
+              padding: EdgeInsets.only(
+                left: i == 0 ? 2 : 0,
+                right: i == fields.length - 1 ? 2 : 0,
+              ),
+              child: Text(
+                fields[i].format(fields[i].value),
+                style: getTextStyle(
+                  context: context,
+                  font: state.font,
+                  textColor: textColor,
+                  baseTextStyle: theme.textStyle,
                 ),
               ),
             ),
@@ -419,6 +429,14 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
           _digitBuffer = '';
           _adjust(fields, idx, -1);
           return KeyEventResult.handled;
+        } else if (event.logicalKey == LogicalKeyboardKey.home ||
+            event.logicalKey == LogicalKeyboardKey.end) {
+          _digitBuffer = '';
+          final f = fields[idx];
+          final next = event.logicalKey == LogicalKeyboardKey.home ? f.min : f.max;
+          // Selection reports a change of value, so a field already at its limit fires none.
+          if (next != f.value) f.onChanged(next);
+          return KeyEventResult.handled;
         } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
           if (_selectedField > 0) setState(() { _digitBuffer = ''; _selectedField--; });
           return KeyEventResult.handled;
@@ -449,40 +467,72 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         }
         return KeyEventResult.ignored;
       },
-      child: LayeredLayoutBuilder(
-        builder: (ctx, constraints) {
-          final isBounded = constraints.hasBoundedWidth;
-          return Container(
-            decoration: BoxDecoration(
-              color: background,
-              border: Border.all(
-                color: enabled ? theme.borderColor : theme.disabledBorderColor,
-                width: theme.borderWidth,
-              ),
-              borderRadius: BorderRadius.circular(theme.borderRadius),
-            ),
-            child: IntrinsicHeight(
-              child: Row(
-                mainAxisSize: isBounded ? MainAxisSize.max : MainAxisSize.min,
-                children: [
-                  if (isBounded)
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: fieldRow(),
-                      ),
-                    )
-                  else
-                    fieldRow(),
-                  // A drop-down date is set from its calendar, so the button replaces the stepper.
-                  calendarButton ?? spinnerButtons(),
-                ],
-              ),
-            ),
-          );
+      // The whole control takes the click, as a native date field does; the buttons keep theirs.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (details) {
+          setState(() {
+            _digitBuffer = '';
+            _selectedField = _fieldNearest(details.globalPosition.dx, fields.length);
+          });
         },
+        // Fills the bounds Java gave the control, so a click below the drawn field still lands.
+        child: Align(
+          alignment: AlignmentDirectional.topStart,
+          child: LayeredLayoutBuilder(
+            builder: (ctx, constraints) {
+              final isBounded = constraints.hasBoundedWidth;
+              return Container(
+                decoration: BoxDecoration(
+                  color: background,
+                  border: Border.all(
+                    color: enabled ? theme.borderColor : theme.disabledBorderColor,
+                    width: theme.borderWidth,
+                  ),
+                  borderRadius: BorderRadius.circular(theme.borderRadius),
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    mainAxisSize: isBounded ? MainAxisSize.max : MainAxisSize.min,
+                    children: [
+                      if (isBounded)
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: fieldRow(),
+                          ),
+                        )
+                      else
+                        fieldRow(),
+                      // A drop-down date is set from its calendar, so the button replaces the stepper.
+                      calendarButton ?? spinnerButtons(),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
+  }
+
+  /// The field whose span is closest to the global [x]; the last one past the end.
+  int _fieldNearest(double x, int count) {
+    var nearest = 0;
+    var best = double.infinity;
+    for (int i = 0; i < count; i++) {
+      final box = _fieldKeys[i].currentContext?.findRenderObject() as RenderBox?;
+      if (box == null) continue;
+      final left = box.localToGlobal(Offset.zero).dx;
+      final right = left + box.size.width;
+      final distance = x < left ? left - x : (x > right ? x - right : 0.0);
+      if (distance <= best) {
+        best = distance;
+        nearest = i;
+      }
+    }
+    return nearest;
   }
 
   void _adjust(List<_FieldDef> fields, int idx, int delta) {
