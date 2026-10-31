@@ -16,6 +16,10 @@ final class DisplayBridgePlatform {
     private DisplayBridgePlatform() {
     }
 
+    /** Nothing to load ahead of {@link #init}: it is cheap here. */
+    static void preload() {
+    }
+
     static void init() {
         // When the native SWT library isn't loaded (headless web/test, e.g. -Ddev.equo.swt.loadLibrary=false)
         // the native call below would throw UnsatisfiedLinkError; pure-web/browser needs no OLE init anyway.

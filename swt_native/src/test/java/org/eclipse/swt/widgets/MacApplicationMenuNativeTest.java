@@ -134,8 +134,9 @@ public class MacApplicationMenuNativeTest {
     }
 
     /**
-     * Runs {@code init()} as the desktop surface does. On the web surface it also launches NSApp,
-     * whose {@code -finishLaunching} retitles items of the menu under test.
+     * Runs {@code init()} and the first event-loop pass as the desktop surface does. On the web
+     * surface it also launches NSApp, whose {@code -finishLaunching} retitles items of the menu under
+     * test.
      */
     private static void initDesktopSurface() {
         // The suite runs with the native library switched off, which is exactly what init() skips on.
@@ -145,6 +146,7 @@ public class MacApplicationMenuNativeTest {
         ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
         try {
             DisplayBridgePlatform.init();
+            DisplayBridgePlatform.syncMenuBar();
         } finally {
             if (loadLibrary != null)
                 System.setProperty(LOAD_LIBRARY, loadLibrary);

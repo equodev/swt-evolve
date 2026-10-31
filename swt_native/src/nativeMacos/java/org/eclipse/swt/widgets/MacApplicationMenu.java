@@ -64,14 +64,6 @@ final class MacApplicationMenu {
             return;
         installed = true;
 
-        if (BootTrace.enabled()) {
-            // Loads SWT's Cocoa library on its own, so its time is told apart from AppKit's start.
-            try (BootTrace.Span span = BootTrace.span("load SWT Cocoa library")) {
-                Class.forName("org.eclipse.swt.internal.cocoa.OS", true, MacApplicationMenu.class.getClassLoader());
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException(e);
-            }
-        }
         NSApplication application;
         try (BootTrace.Span span = BootTrace.span("NSApplication.sharedApplication")) {
             application = NSApplication.sharedApplication();
@@ -136,6 +128,11 @@ final class MacApplicationMenu {
         }
     }
 
+    /** Whether {@link #install} has put the application menu in the system menu bar. */
+    static boolean isInstalled() {
+        return installed;
+    }
+
     /**
      * The application menu as SWT widgets, so it serializes to the Flutter side like any other menu.
      * Services is left out: its content is filled in by Cocoa and only exists in the native bar.
@@ -158,7 +155,6 @@ final class MacApplicationMenu {
         Menu appMenu = new Menu(appItem);
         appItem.setMenu(appMenu);
 
-        NSApplication application = NSApplication.sharedApplication();
         // About, Preferences and Quit carry no action of their own: they are the three the
         // application contributes to, keyed by the ids below, and native SWT leaves them alone for
         // the same reason. The window actions are the opposite case — only Cocoa can perform them
@@ -168,11 +164,11 @@ final class MacApplicationMenu {
         action(appMenu, AppMenuMessages.label("SWT_Preferences"), SWT.ID_PREFERENCES, null);
         new MenuItem(appMenu, SWT.SEPARATOR);
         action(appMenu, AppMenuMessages.label("SWT_Hide") + " " + appName, SWT.ID_HIDE,
-                () -> application.hide(null));
+                () -> NSApplication.sharedApplication().hide(null));
         action(appMenu, AppMenuMessages.label("SWT_HideOthers"), SWT.ID_HIDE_OTHERS,
-                () -> application.hideOtherApplications(null));
+                () -> NSApplication.sharedApplication().hideOtherApplications(null));
         action(appMenu, AppMenuMessages.label("SWT_ShowAll"), SWT.ID_SHOW_ALL,
-                () -> application.unhideAllApplications(null));
+                () -> NSApplication.sharedApplication().unhideAllApplications(null));
         new MenuItem(appMenu, SWT.SEPARATOR);
         action(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName, SWT.ID_QUIT, null);
 

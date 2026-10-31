@@ -274,7 +274,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     func initialize(port: Int32, owner: NSWindow?, displayId: Int64, widgetName: String, theme: String, backgroundColor: Int32, width: Int32, height: Int32, csdEnabled: Bool) {
         print("FlutterDisplayWindowController.initialize port:\(port) id:\(displayId) name:\(widgetName) \(width)x\(height)")
 
-        let app = NSApplication.shared
+        let app = bootStep("NSApplication.shared") { NSApplication.shared }
         // Application-level bootstrap, once per process rather than once per window. A second window
         // must not repeat it: -finishLaunching is documented as a one-time call, and running it again
         // re-posts the launch notifications and re-runs AppKit's launch bookkeeping. Doing that while

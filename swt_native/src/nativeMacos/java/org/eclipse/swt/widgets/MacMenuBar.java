@@ -153,6 +153,10 @@ final class MacMenuBar {
      * driven by {@link #sync} from the event loop, so there is no open menu to preserve.
      */
     private static void rebuildTopLevel(boolean force) {
+        // Until then the main menu is not ours: there is none yet, or the native window's stand-in.
+        // The bar then still differs from the last one mirrored, so the first sync after it rebuilds.
+        if (!MacApplicationMenu.isInstalled())
+            return;
         NSMenu main = NSApplication.sharedApplication().mainMenu();
         if (main == null)
             return;

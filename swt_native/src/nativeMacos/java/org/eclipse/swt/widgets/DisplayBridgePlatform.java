@@ -1,5 +1,7 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.BootTrace;
+import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -20,7 +22,9 @@ import org.eclipse.swt.internal.cocoa.OS;
  * window itself needs nothing from Java (the desktop-native window sets up {@code NSApp} natively
  * in {@code bridge.swift}, and the web surface drives a browser/Chromium), but the application menu
  * in the system menu bar is owned by the OS and has to be built here — see
- * {@link MacApplicationMenu}.
+ * {@link MacApplicationMenu}. None of it is on the way to the first frame: SWT's Cocoa library loads
+ * on a thread of its own ({@link #preload}) and the menu is installed from the event loop
+ * ({@link #syncMenuBar}).
  */
 final class DisplayBridgePlatform {
 
@@ -45,12 +49,23 @@ final class DisplayBridgePlatform {
     private DisplayBridgePlatform() {
     }
 
+    /**
+     * Starts loading SWT's Cocoa library on a thread of its own, so that the Display is created while
+     * it loads. Its static init resolves thousands of Objective-C classes and selectors, which is most
+     * of what the menu bar and the browser launch cost; the first Cocoa call on the Display thread
+     * waits for it to finish, which the JVM's class initialization guarantees.
+     */
+    static void preload() {
+        if (nativeLibraryOff())
+            return;
+        CocoaPreload.start();
+    }
+
     static void init() {
         // When the native SWT library isn't loaded (headless web/test, e.g. -Ddev.equo.swt.loadLibrary=false)
         // the Cocoa calls below would throw UnsatisfiedLinkError, and a headless run has no menu bar anyway.
         if (nativeLibraryOff())
             return;
-        MacApplicationMenu.install();
         // The desktop window and a Chromium window bring their own native application loop.
         if (!ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode()) {
             launch();
@@ -72,15 +87,11 @@ final class DisplayBridgePlatform {
         applicationClass = 0;
     }
 
-    /** Loads the native library the system browser is opened through ({@code Program.launch}, NSWorkspace). */
+    /**
+     * Nothing to ready: {@code Program.launch} opens the system browser through NSWorkspace, and its
+     * first Cocoa call waits for the library {@link #preload} is loading.
+     */
     static void beforeBrowserLaunch() {
-        if (nativeLibraryOff())
-            return;
-        try {
-            Class.forName("org.eclipse.swt.internal.cocoa.OS", true, DisplayBridgePlatform.class.getClassLoader());
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     /** The application menu as SWT widgets, for the menu bar Evolve draws inside the window. */
@@ -101,10 +112,16 @@ final class DisplayBridgePlatform {
      * Brings the system menu bar in step with the Shell's — see {@link MacMenuBar#sync}. Runs once
      * per {@code readAndDispatch}, so it also drains the Cocoa queue of an NSApp {@link #launch()}
      * started.
+     *
+     * <p>Where this process owns the OS menu bar, the first pass installs the application menu, so it
+     * is not built inside Display creation, before the first frame; nothing can open the menu before
+     * the event loop runs anyway. In a browser tab the bar is the browser's, so nothing is installed.
      */
     static void syncMenuBar() {
         if (nativeLibraryOff())
             return;
+        if (Config.getConfigFlags().system_menu_bar)
+            MacApplicationMenu.install();
         MacMenuBar.sync();
         pumpEvents();
     }
@@ -269,5 +286,24 @@ final class DisplayBridgePlatform {
      */
     static Point defaultShellSize(Rectangle screen, DartShell shell) {
         return new Point((int) Math.round(screen.width * 0.625), (int) Math.round(screen.height * 0.625));
+    }
+
+    /** Starts the preload thread when first initialized: once per process, as the library is process-wide. */
+    private static final class CocoaPreload {
+
+        static {
+            Thread thread = new Thread(() -> {
+                try (BootTrace.Span span = BootTrace.span("load SWT Cocoa library")) {
+                    Class.forName("org.eclipse.swt.internal.cocoa.OS", true, DisplayBridgePlatform.class.getClassLoader());
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalStateException(e);
+                }
+            }, "SWT Cocoa preload");
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+        static void start() {
+        }
     }
 }

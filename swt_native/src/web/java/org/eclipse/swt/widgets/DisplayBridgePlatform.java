@@ -12,6 +12,10 @@ final class DisplayBridgePlatform {
     private DisplayBridgePlatform() {
     }
 
+    /** Pure web: no native library to load ahead of {@link #init}. */
+    static void preload() {
+    }
+
     static void init() {
         // Pure web: no Java-side native init.
     }

@@ -1925,6 +1925,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public void init() {
+        DisplayBridgePlatform.preload();
         webPageServer = dev.equo.swt.WebPageLaunch.start(this.getApi(), DisplayBridgePlatform::beforeBrowserLaunch);
         super.init();
         if ("true".equalsIgnoreCase(System.getProperty(USE_SYSTEM_THEME))) {
