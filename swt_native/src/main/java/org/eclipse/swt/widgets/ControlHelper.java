@@ -1026,7 +1026,8 @@ public class ControlHelper {
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
-     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out.
+     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out, and
+     * so is a READ_ONLY Combo, which no native focuses on a right press.
      */
     static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
@@ -1037,7 +1038,7 @@ public class ControlHelper {
         boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
                 || api instanceof Tree || api instanceof Text;
         if (button == 3)
-            return fieldOrItemView;
+            return fieldOrItemView && !(api instanceof Combo && (api.getStyle() & SWT.READ_ONLY) != 0);
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
                 || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
                 || api instanceof org.eclipse.swt.custom.StyledText);

@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons, Icon, Divider, Theme;
@@ -623,11 +624,11 @@ class _DropdownComboLayout extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: isEnabled && !isReadOnly
-                    ? () => focusNode.requestFocus()
-                    : (isEnabled ? onToggleOverlay : null),
+              child: _ComboHitArea(
+                onPress: isEnabled && isReadOnly ? onToggleOverlay : null,
+                onTap: isEnabled && !isReadOnly ? focusNode.requestFocus : null,
+                listGroup: overlayController,
+                onDismiss: onDismiss,
                 child: Padding(
                   padding: textPadding,
                   // The DOM <input> Flutter Web builds for a text field's semantics node is
@@ -646,6 +647,9 @@ class _DropdownComboLayout extends StatelessWidget {
                             controller: controller,
                             focusNode: focusNode,
                             onChanged: onTextChanged,
+                            // A press outside the text (the arrow, the Shell) keeps the focus, as
+                            // natively; a mouse press would otherwise unfocus it.
+                            onTapOutside: (_) {},
                             style: textStyle,
                             cursorColor: textStyle.color ?? theme.textColor,
                             backgroundCursorColor: bgColor,
@@ -656,9 +660,10 @@ class _DropdownComboLayout extends StatelessWidget {
                 ),
               ),
             ),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: isEnabled ? onToggleOverlay : null,
+            _ComboHitArea(
+              onPress: isEnabled ? onToggleOverlay : null,
+              listGroup: overlayController,
+              onDismiss: onDismiss,
               child: Padding(
                 // Right-only: the text field's own right padding already
                 // separates text from arrow; a left inset here eats viewport
@@ -682,6 +687,7 @@ class _DropdownComboLayout extends StatelessWidget {
     return CustomSingleChildLayout(
       delegate: _ComboListLayout(field),
       child: pointerInterceptor(TapRegion(
+        groupId: overlayController,
         onTapOutside: (_) => onDismiss(),
         // SWT sizes the list to its widest item and never narrower than the
         // field. Pinning it to the field's width wraps every item of a Combo
@@ -727,6 +733,43 @@ class _DropdownComboLayout extends StatelessWidget {
           ),
         ),
       )),
+    );
+  }
+}
+
+/// A part of the field: [onPress] runs on the primary press, as a native drop-down opens and closes
+/// its list, so a drag that starts on it leaves the list open; [onTap] on the click.
+///
+/// A part with [onPress] shares the list's tap region [listGroup], so its press toggles the list
+/// instead of closing it as a press outside; any other button's press there closes it ([onDismiss]).
+class _ComboHitArea extends StatelessWidget {
+  final VoidCallback? onPress;
+  final VoidCallback? onTap;
+  final Object? listGroup;
+  final VoidCallback? onDismiss;
+  final Widget child;
+
+  const _ComboHitArea({this.onPress, this.onTap, this.listGroup, this.onDismiss, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final VoidCallback? press = onPress;
+    if (press == null) {
+      return GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: child);
+    }
+    return TapRegion(
+      groupId: listGroup,
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (e) {
+          if (e.buttons == kPrimaryButton) {
+            press();
+          } else {
+            onDismiss?.call();
+          }
+        },
+        child: child,
+      ),
     );
   }
 }
