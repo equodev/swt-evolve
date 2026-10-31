@@ -36,7 +36,7 @@ final class ShellActivation {
             return;
         Shell returnTo = bridge != null ? bridge.shellToReturnTo(api) : null;
         Composite parent = api.getParent();
-        if (returnTo == null && parent instanceof Shell && parent.isVisible())
+        if (returnTo == null && parent instanceof Shell && parent.isVisible() && (parent.state & DartWidget.DISPOSE_SENT) == 0)
             returnTo = (Shell) parent;
         deactivate(shell);
         if (api.isDisposed() || returnTo == null || returnTo.isDisposed() || !returnTo.isVisible())

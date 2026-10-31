@@ -1624,15 +1624,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /**
      * The shell to return to when {@code shell} goes away, or null when it was not the active one:
-     * the one active most recently before it that is neither gone nor hidden, as a window manager does;
-     * the shells going with it are disposed by then.
+     * the one active most recently before it that is neither going nor hidden, as a window manager does.
+     * A shell going with it is disposed by then when it is a child, and has only sent its Dispose when
+     * it is the parent being disposed.
      */
     public Shell shellToReturnTo(Shell shell) {
         if (!isActiveShell(shell))
             return null;
         for (int i = activationOrder.size() - 1; i >= 0; i--) {
             Shell before = activationOrder.get(i).get();
-            if (before != null && before != shell && !before.isDisposed() && before.isVisible())
+            if (before != null && before != shell && !before.isDisposed() && (before.state & DartWidget.DISPOSE_SENT) == 0
+                    && before.isVisible())
                 return before;
         }
         return null;

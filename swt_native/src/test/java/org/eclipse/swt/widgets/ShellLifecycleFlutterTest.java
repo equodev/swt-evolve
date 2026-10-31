@@ -366,6 +366,52 @@ class ShellLifecycleFlutterTest {
     }
 
     @Test
+    void aShellGoingWithItsActiveChildHandsActivationToTheShellBeforeIt() {
+        Shell parent = dialog();
+        parent.open();
+        runLoop();
+        Shell child = new Shell(parent, SWT.DIALOG_TRIM);
+        child.open();
+        runLoop();
+        assertThat(display.getActiveShell()).isSameAs(child);
+        List<String> events = new ArrayList<>();
+        logShellEvents(events, "main", main);
+        logShellEvents(events, "parent", parent);
+        logShellEvents(events, "child", child);
+        parent.dispose();
+        events.add("(disposed)");
+        runLoop();
+        assertThat(events).containsExactly("parent:Dispose", "child:Dispose", "main:Activate", "(disposed)");
+        assertThat(display.getActiveShell()).isSameAs(main);
+    }
+
+    @Test
+    void anActiveChildHiddenWhileItsParentGoesDoesNotActivateTheParent() {
+        Shell parent = dialog();
+        parent.open();
+        runLoop();
+        Shell child = new Shell(parent, SWT.DIALOG_TRIM);
+        child.open();
+        runLoop();
+        main.setVisible(false);
+        runLoop();
+        assertThat(display.getActiveShell()).isSameAs(child);
+        List<String> events = new ArrayList<>();
+        logShellEvents(events, "parent", parent);
+        logShellEvents(events, "child", child);
+        parent.addListener(SWT.Dispose, e -> child.setVisible(false));
+        parent.dispose();
+        runLoop();
+        assertThat(events).doesNotContain("parent:Activate");
+    }
+
+    private static void logShellEvents(List<String> events, String name, Shell shell) {
+        shell.addListener(SWT.Activate, e -> events.add(name + ":Activate"));
+        shell.addListener(SWT.Deactivate, e -> events.add(name + ":Deactivate"));
+        shell.addListener(SWT.Dispose, e -> events.add(name + ":Dispose"));
+    }
+
+    @Test
     void aShellGoingWhileAnotherIsActiveActivatesNothing() {
         Shell shell = dialog();
         shell.open();
