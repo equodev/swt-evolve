@@ -185,7 +185,8 @@ Color getForegroundColor({
   return defaultColor;
 }
 
-/// Gets TextStyle with SWT font support
+/// The style a widget's text draws with. With `use_swt_fonts` off the theme keeps its family and size and
+/// [font] adds only weight and slant; the `*Sizes` classes `tool/measure.dart` emits follow the same rule.
 TextStyle getTextStyle({
   required BuildContext context,
   required VFont? font,

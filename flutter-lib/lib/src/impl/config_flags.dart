@@ -24,6 +24,9 @@ class ConfigFlags implements WireReadable {
   /// Drops what an application paints over a control through its GC, so only what the control draws
   /// for itself shows. Controls whose GC content is the control (Canvas, StyledText) ignore it.
   bool? disable_control_gc_overlay;
+
+  /// Text in the application's font. Off, the theme keeps its family and size and the font adds only
+  /// weight and slant; see `getTextStyle`.
   bool? use_swt_fonts;
 
   /// Text in the foreground the application set rather than the theme's. Null follows

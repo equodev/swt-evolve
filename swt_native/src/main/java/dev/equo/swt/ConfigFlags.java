@@ -105,6 +105,8 @@ public class ConfigFlags implements WireObject {
      *  painting their GC content whatever this says. */
     public boolean disable_control_gc_overlay;
 
+    /** Text in the application's font ({@code -Dswt.use_swt_fonts=true}). Off, the theme keeps its family and
+     *  size and the font adds only weight and slant; {@code getTextStyle} and the {@code *Sizes} follow this. */
     public boolean use_swt_fonts;
 
     /**
