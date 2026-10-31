@@ -26,6 +26,14 @@ public class ControlHelper {
     // opened during that dispatch carries it to Flutter, which composites within it.
     private static Rectangle paintDamage;
 
+    /** The outline Evolve draws inside the bounds of a control created with BORDER. */
+    static final int BORDER_WIDTH = 1;
+
+    /** The border Evolve draws on each side of a control created with BORDER, 0 without one. */
+    static int borderWidth(DartControl control) {
+        return (control.getApi().style & SWT.BORDER) != 0 ? BORDER_WIDTH : 0;
+    }
+
     /**
      * The id of the live DragSource or DropTarget a control holds under {@code key} ({@code DND.DRAG_SOURCE_KEY}
      * or {@code DND.DROP_TARGET_KEY}), or null, for the client to address it by.

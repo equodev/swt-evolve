@@ -1121,6 +1121,11 @@ public class DartComposite extends DartScrollable implements IComposite {
         return false;
     }
 
+    public int getBorderWidth() {
+        checkWidget();
+        return CompositeHelper.getBorderWidth(this);
+    }
+
     private boolean hasLayoutableClientArea() {
         Rectangle client = getApi().getClientArea();
         return client == null || client.width > 0 || client.height > 0;

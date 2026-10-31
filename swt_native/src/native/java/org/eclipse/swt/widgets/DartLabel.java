@@ -387,6 +387,11 @@ public class DartLabel extends DartControl implements ILabel {
         return isImage ? image : null;
     }
 
+    public int getBorderWidth() {
+        checkWidget();
+        return ControlHelper.borderWidth(this);
+    }
+
     int resolveTextDirection() {
         return (getApi().style & SWT.SEPARATOR) != 0 ? SWT.NONE : ControlHelper.resolveTextDirection(text);
     }

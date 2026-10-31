@@ -290,8 +290,11 @@ public class Sizes {
         return dev.equo.swt.size.ExpandBarSizes.bandHeight(dartExpandBar.getApi());
     }
 
+    /** The hints size the content, and the border goes around it, as on Win32 and GTK. */
     public static Point computeSize(DartLabel c, int wHint, int hHint, boolean changed) {
-        return LabelSizes.computeSize(c, wHint, hHint, changed);
+        Point size = LabelSizes.computeSize(c, wHint, hHint, changed);
+        int border = ControlHelper.borderWidth(c);
+        return new Point(size.x + 2 * border, size.y + 2 * border);
     }
 
     /**

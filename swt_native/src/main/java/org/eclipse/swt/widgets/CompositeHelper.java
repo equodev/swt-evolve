@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.GC;
@@ -12,9 +11,6 @@ import org.eclipse.swt.graphics.Transform;
 
 /** What a Composite does that its generated implementation cannot say by itself. */
 public final class CompositeHelper {
-
-    /** The outline composite_evolve.dart draws inside the bounds of a BORDER composite. */
-    static final int BORDER_WIDTH = 1;
 
     private CompositeHelper() {
     }
@@ -28,9 +24,14 @@ public final class CompositeHelper {
         return type == DartComposite.class || type == DartCanvas.class;
     }
 
+    /** The border on each side of a composite that frames its content; one that does not keeps upstream's 0. */
+    static int getBorderWidth(DartComposite composite) {
+        return framesItsContent(composite) ? ControlHelper.borderWidth(composite) : 0;
+    }
+
     /** The border on each side, then the thickness of the vertical bar and of the horizontal one. */
     private static int[] frame(DartComposite composite, boolean shownBarsOnly) {
-        int border = (composite.getApi().style & SWT.BORDER) != 0 ? BORDER_WIDTH : 0;
+        int border = ControlHelper.borderWidth(composite);
         return new int[] {border, bar(composite.verticalBar, shownBarsOnly), bar(composite.horizontalBar, shownBarsOnly)};
     }
 

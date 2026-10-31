@@ -1841,6 +1841,11 @@ public class DartText extends DartScrollable implements IText {
     void updateAutoTextDirectionIfNeeded() {
     }
 
+    public int getBorderWidth() {
+        checkWidget();
+        return ControlHelper.borderWidth(this);
+    }
+
     int resolveTextDirection() {
         return ControlHelper.resolveTextDirection(text);
     }
