@@ -122,7 +122,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void initState() {
     super.initState();
     _verticalScrollController.addListener(_verticalScrolled);
-    _verticalScrollController.addListener(_reportScrollOffset);
+    _verticalScrollController.addListener(_reportUserScroll);
     if (state.topIndex != null) _scrollToTopIndexAfterLayout();
   }
 
@@ -166,15 +166,23 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double get verticalScrollOffset => _verticalScrollController.scrolledBy;
 
   int _reportedScrollOffset = 0;
+  bool _scrollingToTopIndex = false;
+
+  void _reportUserScroll() => _reportScrollOffset(byUser: !_scrollingToTopIndex);
 
   /// Java keeps how far the rows are scrolled: the row at the top, a row's bounds and API scrolling
-  /// are computed from it.
-  void _reportScrollOffset() {
+  /// are computed from it. A scroll the user made carries the detail Java's vertical ScrollBar
+  /// Selection reports: [SWT.PAGE_UP] or [SWT.PAGE_DOWN], as Win32 names a wheel notch. A thumb drag
+  /// is reported the same way. Any other scroll carries [SWT.NONE].
+  void _reportScrollOffset({bool byUser = false}) {
     if (!_verticalScrollController.hasClients) return;
     final offset = _verticalScrollController.offset.round();
     if (offset == _reportedScrollOffset) return;
+    final previous = _reportedScrollOffset;
     _reportedScrollOffset = offset;
-    widget.sendEvent(state, WireChannel.scrollScroll, VEvent()..y = offset);
+    widget.sendEvent(state, WireChannel.scrollScroll, VEvent()
+      ..y = offset
+      ..detail = !byUser ? SWT.NONE : (offset < previous ? SWT.PAGE_UP : SWT.PAGE_DOWN));
   }
 
   /// Brings the row Java asked for to the top, once the rows are laid out. Flutter clamps the distance
@@ -189,9 +197,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
       if (rowHeight == null || rowHeight <= 0) return;
       final position = _verticalScrollController.position;
       if ((position.pixels / rowHeight).floor() == target) return;
-      _verticalScrollController.jumpTo(
-        (target * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
-      );
+      _scrollingToTopIndex = true;
+      try {
+        _verticalScrollController.jumpTo(
+          (target * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
+        );
+      } finally {
+        _scrollingToTopIndex = false;
+      }
     });
   }
 

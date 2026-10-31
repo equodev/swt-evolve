@@ -2,6 +2,7 @@
 // the client reports how far the user scrolled, which Table.getTopIndex, item bounds and getItem(Point)
 // are computed from. The coordinates of a cell click are the table's own, as getItem(Point) reads them.
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -100,6 +101,33 @@ void main() {
     final scrolls = _sent('/Scroll/Scroll');
     expect(scrolls, isNotEmpty);
     expect(scrolls.last.y!.toDouble(), closeTo(_textInset - _rowTop(tester, 0), 1));
+    expect(scrolls.map((s) => s.detail), everyElement(SWT.PAGE_DOWN));
+  });
+
+  testWidgets('a scroll by the wheel is reported with its direction, as Win32 names a wheel notch', (tester) async {
+    await _pump(tester, _table());
+    EquoCommService.commForTesting.clearSentFrames();
+    final centre = tester.getCenter(find.text('row 2'));
+
+    await tester.sendEventToBinding(PointerScrollEvent(position: centre, scrollDelta: const Offset(0, 60)));
+    await tester.pumpAndSettle();
+    await tester.sendEventToBinding(PointerScrollEvent(position: centre, scrollDelta: const Offset(0, -30)));
+    await tester.pumpAndSettle();
+
+    final scrolls = _sent('/Scroll/Scroll');
+    expect(scrolls.map((s) => s.detail), [SWT.PAGE_DOWN, SWT.PAGE_UP]);
+  });
+
+  testWidgets('a scroll to the top index Java names is not reported as the user\'s', (tester) async {
+    await _pump(tester, _table());
+    EquoCommService.commForTesting.clearSentFrames();
+
+    await deliverChange(_table(topIndex: 30, seq: 10), keys: [WireKey.k_Table_topIndex], base: 1);
+    await tester.pumpAndSettle();
+
+    final scrolls = _sent('/Scroll/Scroll');
+    expect(scrolls, isNotEmpty);
+    expect(scrolls.map((s) => s.detail ?? SWT.NONE), everyElement(SWT.NONE));
   });
 
   testWidgets('a click on a row of a scrolled table is in the table\'s own coordinates', (tester) async {

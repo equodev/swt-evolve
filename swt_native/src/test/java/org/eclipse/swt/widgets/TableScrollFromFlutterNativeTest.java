@@ -99,6 +99,87 @@ class TableScrollFromFlutterNativeTest {
         assertThat(table.getItem(new Point(5, table.getHeaderHeight() + 1))).isSameAs(table.getItem(7));
     }
 
+    private static Event userScrolledTo(int y, int detail) {
+        Event event = scrolledTo(y);
+        event.detail = detail;
+        return event;
+    }
+
+    /** Each Selection on the vertical ScrollBar as its detail and the bar's selection when it fires. */
+    private static List<String> scrollBarSelections(Table table) {
+        List<String> selections = new ArrayList<>();
+        ScrollBar bar = table.getVerticalBar();
+        bar.addListener(SWT.Selection, e -> selections.add(e.detail + "@" + bar.getSelection()));
+        return selections;
+    }
+
+    @Test
+    @DisplayName("a scroll the user makes is a Selection on the vertical ScrollBar with its direction, the bar at the top index")
+    void aUserScrollSelectsTheVerticalBar() {
+        Table table = table(40);
+        List<String> selections = scrollBarSelections(table);
+
+        fromFlutter(table, "Scroll/Scroll", userScrolledTo(6 * table.getItemHeight(), SWT.PAGE_DOWN));
+        runQueued();
+        fromFlutter(table, "Scroll/Scroll", userScrolledTo(3 * table.getItemHeight(), SWT.PAGE_UP));
+        runQueued();
+
+        assertThat(selections).containsExactly(SWT.PAGE_DOWN + "@6", SWT.PAGE_UP + "@3");
+    }
+
+    @Test
+    @DisplayName("a scroll the API asked for, or one that does not move the rows, selects nothing on the ScrollBar")
+    void aScrollTheApiAskedForSelectsNoBar() {
+        Table table = table(40);
+        List<String> selections = scrollBarSelections(table);
+
+        table.setTopIndex(10);
+        fromFlutter(table, "Scroll/Scroll", scrolledTo(10 * table.getItemHeight()));
+        runQueued();
+        fromFlutter(table, "Scroll/Scroll", userScrolledTo(10 * table.getItemHeight(), SWT.PAGE_DOWN));
+        runQueued();
+
+        assertThat(selections).isEmpty();
+    }
+
+    @Test
+    @DisplayName("the vertical ScrollBar's selection is the top index after any scroll, the API's included")
+    void theVerticalBarFollowsTheTopIndex() {
+        Table table = table(40);
+
+        table.setTopIndex(10);
+        int afterApi = table.getVerticalBar().getSelection();
+        fromFlutter(table, "Scroll/Scroll", scrolledTo(4 * table.getItemHeight()));
+        runQueued();
+
+        assertThat(afterApi).isEqualTo(10);
+        assertThat(table.getVerticalBar().getSelection()).isEqualTo(4).isEqualTo(table.getTopIndex());
+    }
+
+    @Test
+    @DisplayName("rows removed from under the top index take the vertical ScrollBar's selection up with it")
+    void theVerticalBarFollowsRemovedRows() {
+        Table table = table(40);
+        table.setTopIndex(30);
+
+        table.remove(10, 39);
+
+        assertThat(table.getTopIndex()).isLessThan(10);
+        assertThat(table.getVerticalBar().getSelection()).isEqualTo(table.getTopIndex());
+    }
+
+    @Test
+    @DisplayName("a table without scroll bars still records where the user scrolled it")
+    void aTableWithoutScrollBarsRecordsAUserScroll() {
+        Table table = table(40, SWT.NO_SCROLL);
+
+        fromFlutter(table, "Scroll/Scroll", userScrolledTo(5 * table.getItemHeight(), SWT.PAGE_DOWN));
+        runQueued();
+
+        assertThat(table.getVerticalBar()).isNull();
+        assertThat(table.getTopIndex()).isEqualTo(5);
+    }
+
     @Test
     @DisplayName("the top index the client reports is the one the next description names, without asking it to scroll")
     void aClientScrollIsNotSentBack() {
