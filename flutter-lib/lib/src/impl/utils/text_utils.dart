@@ -1,7 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../../gen/event.dart';
 import '../../gen/point.dart';
+import '../control_evolve.dart';
 import 'double_tap_detector.dart';
 import 'font_utils.dart';
 
@@ -74,6 +76,13 @@ class DoubleClickWordSelector extends StatefulWidget {
   final void Function(int start, int end) onWordSelected;
   final VoidCallback? onTripleTap;
 
+  /// Runs on a secondary press (right button, or Ctrl+Click on macOS), before it focuses the field.
+  final VoidCallback? onSecondaryPress;
+
+  /// The clicks counted so far, when the owner also counts presses that arrive before this field is
+  /// mounted; positions are global.
+  final DoubleTapDetector? clicks;
+
   const DoubleClickWordSelector({
     super.key,
     required this.child,
@@ -81,6 +90,8 @@ class DoubleClickWordSelector extends StatefulWidget {
     this.focusNode,
     required this.onWordSelected,
     this.onTripleTap,
+    this.onSecondaryPress,
+    this.clicks,
   });
 
   @override
@@ -89,7 +100,9 @@ class DoubleClickWordSelector extends StatefulWidget {
 }
 
 class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
-  final _detector = DoubleTapDetector(slop: 20.0);
+  final _ownClicks = DoubleTapDetector(slop: 20.0);
+
+  DoubleTapDetector get _detector => widget.clicks ?? _ownClicks;
   bool _pendingWordSelect = false;
   bool _tripleClickPending = false;
   bool _guardSelectAll = false;
@@ -150,7 +163,7 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
   }
 
   void _trackTap(PointerDownEvent e) {
-    final count = _detector.registerTap(position: e.localPosition);
+    final count = _detector.registerTap(position: e.position);
     if (count == 3) {
       _pendingWordSelect = false;
       _tripleClickPending = true;
@@ -205,9 +218,81 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
     });
   }
 
+  EditableTextState? _editableText() {
+    EditableTextState? found;
+    void visit(Element element) {
+      if (found != null) return;
+      if (element is StatefulElement && element.state is EditableTextState) {
+        found = element.state as EditableTextState;
+        return;
+      }
+      element.visitChildren(visit);
+    }
+
+    context.visitChildElements(visit);
+    return found;
+  }
+
+  /// A secondary press focuses the field as a click does, with no select-all and no caret move.
+  void _secondaryPress(PointerDownEvent e) {
+    widget.onSecondaryPress?.call();
+    if (widget.focusNode?.hasFocus ?? true) return;
+    _editableText()?.requestKeyboard();
+  }
+
+  void _secondaryClick(PointerUpEvent e) {
+    final control = context.findAncestorStateOfType<ControlImpl>();
+    if (control != null && control.state.menu != null) control.openContextMenu(e.position);
+  }
+
   @override
-  Widget build(BuildContext context) =>
-      Listener(onPointerDown: _trackTap, child: widget.child);
+  Widget build(BuildContext context) => Listener(
+        onPointerDown: _trackTap,
+        child: RawGestureDetector(
+          gestures: {
+            _SecondaryClickClaim: GestureRecognizerFactoryWithHandlers<_SecondaryClickClaim>(
+              () => _SecondaryClickClaim(debugOwner: this),
+              (claim) => claim
+                ..onPress = _secondaryPress
+                ..onRelease = _secondaryClick,
+            ),
+          },
+          child: widget.child,
+        ),
+      );
+}
+
+/// Wins every secondary click (a right press, or Ctrl+Click on macOS) on the spot, so the field's own
+/// recognizer never gets it: Flutter's field moves the caret on it and opens its own toolbar, while a
+/// native edit field keeps its caret and opens the control's Menu.
+class _SecondaryClickClaim extends OneSequenceGestureRecognizer {
+  _SecondaryClickClaim({super.debugOwner})
+      : super(
+            allowedButtonsFilter: (buttons) =>
+                (buttons == kPrimaryButton || buttons == kSecondaryButton) &&
+                ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(buttons)));
+
+  ValueChanged<PointerDownEvent>? onPress;
+  ValueChanged<PointerUpEvent>? onRelease;
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
+    onPress?.call(event);
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event is PointerUpEvent) onRelease?.call(event);
+    if (event is PointerUpEvent || event is PointerCancelEvent) stopTrackingPointer(event.pointer);
+  }
+
+  @override
+  void didStopTrackingLastPointer(int pointer) {}
+
+  @override
+  String get debugDescription => 'secondary click claim';
 }
 
 /// Splits "Label\tShortcut" into (label, shortcut). [label] keeps its `&` marker, for a

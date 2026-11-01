@@ -1,6 +1,8 @@
 // A field at rest that hands over to its TextField keeps the selection a native Text would have: a
 // click puts the caret where it landed, a focus from the keyboard or from Java keeps the selection
-// Java holds. Neither selects the whole text, as a TextField focused on desktop and web does.
+// Java holds. Neither selects the whole text, as a TextField focused on desktop and web does. A press
+// that arrives before the pointer's hover has mounted the TextField still starts a double click or a
+// drag.
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +68,9 @@ Future<void> _type(WidgetTester tester, String character) async {
   await tester.pump();
 }
 
+TextSelection _selection(WidgetTester tester) =>
+    tester.widget<EditableText>(find.byType(EditableText)).controller.selection;
+
 final _desktop = TargetPlatformVariant(const {TargetPlatform.linux, TargetPlatform.windows, TargetPlatform.macOS});
 
 void main() {
@@ -88,6 +93,50 @@ void main() {
     await tester.pumpAndSettle();
     await _type(tester, 'a');
     expect(modified, ['aedit']);
+  }, variant: _desktop);
+
+  testWidgets('a double click on the text at rest, with no hover first, selects the word', (tester) async {
+    await _mount(tester);
+    final at = tester.getCenter(find.byWidgetPredicate((w) => '${w.runtimeType}' == '_TextAtRest'));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: at);
+    await mouse.down(at);
+    await mouse.up();
+    await tester.pump(const Duration(milliseconds: 50));
+    await mouse.down(at);
+    await mouse.up();
+    await tester.pumpAndSettle();
+    expect(_selection(tester), const TextSelection(baseOffset: 0, extentOffset: 4));
+  }, variant: _desktop);
+
+  testWidgets('a double click on the text at rest whose presses both come before a frame selects the word',
+      (tester) async {
+    await _mount(tester);
+    final at = tester.getCenter(find.byWidgetPredicate((w) => '${w.runtimeType}' == '_TextAtRest'));
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: at);
+    await mouse.down(at);
+    await mouse.up();
+    await mouse.down(at);
+    await mouse.up();
+    await tester.pumpAndSettle();
+    expect(_selection(tester), const TextSelection(baseOffset: 0, extentOffset: 4));
+  }, variant: _desktop);
+
+  testWidgets('a drag from the text at rest, with no hover first, selects to where it ends', (tester) async {
+    await _mount(tester);
+    final text = tester.getTopLeft(find.byWidgetPredicate((w) => '${w.runtimeType}' == '_TextAtRest'));
+    final from = text + const Offset(1, 8);
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: from);
+    await mouse.down(from);
+    for (var x = 10.0; x <= 120; x += 10) {
+      await mouse.moveTo(from + Offset(x, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await mouse.up();
+    await tester.pumpAndSettle();
+    expect(_selection(tester), const TextSelection(baseOffset: 0, extentOffset: 4));
   }, variant: _desktop);
 
   testWidgets('a right-click on the text at rest leaves the caret where Java has it', (tester) async {

@@ -30,6 +30,13 @@ mixin ClientCaretReport {
     }
   }
 
+  /// A field that never held a caret takes Java's before a secondary press focuses it, which would
+  /// otherwise move the caret to the end.
+  void keepCaretOnSecondaryPress(TextSelection selection, void Function(TextSelection) select, int length) {
+    if (selection.isValid) return;
+    fromJava(() => select(TextSelection.collapsed(offset: (reportedCaret ?? 0).clamp(0, length))));
+  }
+
   /// Reports [controller]'s caret and anchor when they moved. [editPending] holds the report back
   /// for a widget whose edit reaches Java later and resets its selection there; the widget reports
   /// again once it has sent that edit.

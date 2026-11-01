@@ -343,10 +343,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     }
   }
 
-  /// Every native's field takes the focus on a right press too.
-  @override
-  bool get takesFocusOnSecondaryPress => (state.style & SWT.READ_ONLY) == 0;
-
   void onChanged(String? value) {
     setState(() {
       state.text = value;

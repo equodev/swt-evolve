@@ -515,6 +515,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       focusNode: _focusNode,
       // The MouseDoubleClick itself is the press's, sent by trackPointer below.
       onWordSelected: (start, end) => _focusNode.requestFocus(),
+      onSecondaryPress: () => keepCaretOnSecondaryPress(
+          _controller.selection, (caret) => _controller.selection = caret, _controller.text.length),
       child: trackPointer(SizedBox(width: width, height: height, child: content)),
     ));
   }

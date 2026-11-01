@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show SemanticsInputType;
 
-import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show PipelineOwner;
 import 'package:flutter/services.dart';
@@ -20,9 +19,11 @@ import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'shell_evolve.dart';
 import 'key_mapping.dart';
+import 'menu_evolve.dart' show MenuImpl, OpenMenus;
 import 'utils/hover_arbiter.dart';
 import 'utils/key_edit_order.dart';
 import 'utils/at_rest.dart';
+import 'utils/double_tap_detector.dart';
 import 'utils/line_editor.dart';
 import 'utils/text_undo.dart';
 import 'utils/text_utils.dart';
@@ -532,16 +533,17 @@ class TextImpl<T extends TextSwt, V extends VText>
       cursor: enabled ? SystemMouseCursors.text : SystemMouseCursors.basic,
       child: Listener(
         onPointerDown: (e) {
-          _noteSecondaryPress(e, lines.selection, lines.text.length);
+          // The application Menu opens through ControlImpl.applyMenu(): the editor never sees the
+          // secondary press, which focuses the field and leaves its caret, as a native Text does.
+          if (ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(e.buttons))) {
+            keepCaretOnSecondaryPress(lines.selection, (caret) => lines.selection = caret, lines.text.length);
+            if (!_focusNode.hasFocus) _focusNode.requestFocus();
+            return;
+          }
           _lineEditor.currentState?.handlePointerDown(e);
         },
         onPointerMove: (e) => _lineEditor.currentState?.handlePointerMove(e),
-        onPointerUp: (e) {
-          _lineEditor.currentState?.handlePointerUp(e);
-          // The application Menu opens through ControlImpl.applyMenu(): nothing in the LineEditor
-          // competes for the secondary tap.
-          _endSecondaryPress((before) => lines.selection = before, () => lines.selection);
-        },
+        onPointerUp: (e) => _lineEditor.currentState?.handlePointerUp(e),
         child: ListenableBuilder(
           listenable: Listenable.merge([_focusNode, lines]),
           builder: (context, child) => InputDecorator(
@@ -567,10 +569,11 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   /// Mounts the TextField and gives it the focus the field at rest received, with the caret at
   /// [tapped] when a press brought it, else with the selection Java holds.
-  void _handOver([int? tapped]) => handOver(() {
+  void _handOver([int? tapped, int clicks = 1]) => handOver(() {
         final end = _controller.text.length;
         if (tapped != null) {
-          _controller.selection = TextSelection.collapsed(offset: tapped.clamp(0, end));
+          _controller.selection = _clickSelection(tapped.clamp(0, end), clicks);
+          _selectDragFromRest(tapped);
         } else {
           fromJava(() => _controller.selection = _javaSelection(end));
         }
@@ -589,9 +592,63 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// A press puts the caret where it landed; a press that opens the context menu leaves it where Java
   /// has it, as a native Text does.
   void _handOverOnPress(PointerDownEvent event) {
+    final clicks = _clicks.registerTap(position: event.position);
     final text = _atRestText.currentContext?.findRenderObject();
     final menu = ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(event.buttons));
-    _handOver(!menu && text is _RenderTextAtRest ? text.offsetAt(event.position) : null);
+    final tapped = !menu && text is _RenderTextAtRest ? text.offsetAt(event.position) : null;
+    _restPress = tapped == null ? null : (pointer: event.pointer, offset: tapped);
+    _restDragTo = null;
+    _handOver(tapped, clicks);
+  }
+
+  /// What the [clicks]-th click of a sequence at [offset] selects, as the field's own clicks do: the
+  /// caret there, the word under it on a second click, the whole line on a third. A double click
+  /// whose presses both come before the field is mounted reaches the field at rest twice.
+  TextSelection _clickSelection(int offset, int clicks) {
+    final text = _controller.text;
+    if (clicks >= 3) return TextSelection(baseOffset: 0, extentOffset: text.length);
+    if (clicks == 2) {
+      final (start, end) = getWordBoundaries(text, offset);
+      _wordSelected(start, end);
+      return TextSelection(baseOffset: start, extentOffset: end);
+    }
+    return TextSelection.collapsed(offset: offset);
+  }
+
+  void _wordSelected(int start, int end) {
+    state.selection = VPoint()
+      ..x = start
+      ..y = end;
+  }
+
+  /// The clicks on this field, the one on the field at rest included: the TextField it hands over to
+  /// is mounted after that press, so a second click pairs with it here.
+  final DoubleTapDetector _clicks = DoubleTapDetector(slop: 20.0);
+
+  /// The press on the field at rest, until its release, and where its drag got to. The TextField is
+  /// mounted after the press and never sees that pointer, so the drag selects from here.
+  ({int pointer, int offset})? _restPress;
+  Offset? _restDragTo;
+
+  void _dragFromRest(PointerMoveEvent event) {
+    final press = _restPress;
+    if (press == null || press.pointer != event.pointer) return;
+    _restDragTo = event.position;
+    _selectDragFromRest(press.offset);
+  }
+
+  void _releaseFromRest(PointerEvent event) {
+    if (_restPress?.pointer == event.pointer) _restPress = null;
+  }
+
+  /// Selects from [base] to where the drag from the field at rest got to, once the TextField is there.
+  void _selectDragFromRest(int base) {
+    final to = _restDragTo;
+    final editable = _focusNode.context?.findAncestorStateOfType<EditableTextState>()?.renderEditable;
+    if (to == null || editable == null || !editable.attached) return;
+    final end = _controller.text.length;
+    _controller.selection = TextSelection(
+        baseOffset: base.clamp(0, end), extentOffset: editable.getPositionForPoint(to).offset.clamp(0, end));
   }
 
   /// The text of the field at rest, which maps a press to the offset the caret goes to.
@@ -757,7 +814,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       focusNode: _focusNode,
       // The focus a field at rest hands over keeps the selection it hands over with, as a native
       // single-line Text keeps its selection when it takes focus.
-      selectAllOnFocus: handingOver ? false : null,
+      selectAllOnFocus: handingOver || _focusLentToMenu ? false : null,
       enabled: enabled,
       obscureText: isObscured,
       obscuringCharacter: echoChar ?? _defaultObscuringCharacter,
@@ -788,25 +845,13 @@ class TextImpl<T extends TextSwt, V extends VText>
     return DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
+      clicks: _clicks,
       // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
       // as a selection report, through _updateCaretPosition.
-      onWordSelected: (start, end) {
-        state.selection = VPoint()
-          ..x = start
-          ..y = end;
-      },
-      child: Listener(
-        onPointerDown: (e) => _noteSecondaryPress(e, _controller.selection, _controller.text.length),
-        onPointerUp: (e) {
-          // The field's own secondary-tap recognizer wins the gesture arena over the one
-          // ControlImpl.applyMenu() adds, so the release opens the application Menu here.
-          if (_endSecondaryPress((before) => _controller.selection = before, () => _controller.selection) &&
-              state.menu != null) {
-            openContextMenu(e.position);
-          }
-        },
-        child: textField,
-      ),
+      onWordSelected: _wordSelected,
+      onSecondaryPress: () => keepCaretOnSecondaryPress(
+          _controller.selection, (caret) => _controller.selection = caret, _controller.text.length),
+      child: textField,
     );
   }
 
@@ -847,6 +892,9 @@ class TextImpl<T extends TextSwt, V extends VText>
         child: Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: _handOverOnPress,
+          onPointerMove: _dragFromRest,
+          onPointerUp: _releaseFromRest,
+          onPointerCancel: _releaseFromRest,
           child: ValueListenableBuilder<bool>(
             valueListenable: _isEmpty,
             builder: (context, isEmpty, text) => InputDecorator(
@@ -871,31 +919,6 @@ class TextImpl<T extends TextSwt, V extends VText>
         ),
       ),
     );
-  }
-
-  /// The selection when a secondary press began, put back once its click is done.
-  TextSelection? _selectionBeforeSecondary;
-
-  void _noteSecondaryPress(PointerDownEvent e, TextSelection selection, int length) {
-    if (!ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(e.buttons))) return;
-    // A field that never held a caret has Java's, which the focus this press brings would
-    // otherwise move to the end.
-    _selectionBeforeSecondary = selection.isValid
-        ? selection
-        : TextSelection.collapsed(offset: (state.caretPosition ?? 0).clamp(0, length));
-  }
-
-  /// Ends a secondary click: puts back the selection it began on. False when it was no such click.
-  bool _endSecondaryPress(void Function(TextSelection) restore, TextSelection Function() current) {
-    final before = _selectionBeforeSecondary;
-    _selectionBeforeSecondary = null;
-    if (before == null) return false;
-    // The focus the press brings, and a TextField's secondary tap after this release, place the
-    // caret; a native Text leaves it where it was, as on Win32 and GTK.
-    scheduleMicrotask(() {
-      if (mounted && current() != before) restore(before);
-    });
-    return true;
   }
 
   Widget _buildTextFieldWrapper(
@@ -967,12 +990,37 @@ class TextImpl<T extends TextSwt, V extends VText>
       seedTextEchoBaseline(_currentText);
       _undo.focused(this);
       widget.sendFocusFocusIn(state, null);
+      // After the TextField has read selectAllOnFocus for this focus.
+      if (_focusLentToMenu) WidgetsBinding.instance.addPostFrameCallback((_) => _endMenuLoan());
     } else {
       // Java re-arms per focus (DisplayBridge.setFocus).
       _modifyGate.armed = false;
       clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
+      if (OpenMenus.any || OpenMenus.opening) _lendFocusToMenu();
     }
+  }
+
+  /// True while a menu holds the focus this field had: a native Text keeps the focus under its
+  /// menu, so getting it back when the menu closes selects nothing.
+  bool _focusLentToMenu = false;
+
+  void _lendFocusToMenu() {
+    if (_focusLentToMenu) return;
+    setState(() => _focusLentToMenu = true);
+    FocusManager.instance.addListener(_followFocusAfterMenu);
+  }
+
+  /// The focus went on from the menu to another control: the next focus this field gets is its own.
+  void _followFocusAfterMenu() {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus == _focusNode || focus?.context?.findAncestorStateOfType<MenuImpl>() != null) return;
+    _endMenuLoan();
+  }
+
+  void _endMenuLoan() {
+    FocusManager.instance.removeListener(_followFocusAfterMenu);
+    if (mounted && _focusLentToMenu) setState(() => _focusLentToMenu = false);
   }
 
   @override
@@ -996,6 +1044,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _lines?.dispose();
     _isEmpty.dispose();
     _focusNode.removeListener(_handleFocusChange);
+    FocusManager.instance.removeListener(_followFocusAfterMenu);
     KeyEditOrder.instance.unregisterEditor(_focusNode);
     _focusNode.dispose();
     _restFocus.removeListener(_handleRestFocus);
