@@ -2,11 +2,7 @@ package org.eclipse.swt.opengl;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VGLCanvas extends VCanvas {
 
     protected VGLCanvas() {
@@ -16,7 +12,6 @@ public class VGLCanvas extends VCanvas {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public GLData getGLData() {
         return ((DartGLCanvas) impl).GLData;
     }
@@ -26,34 +21,44 @@ public class VGLCanvas extends VCanvas {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = GLCanvas.class)
-    public static class GLCanvasJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartGLCanvas.class, (JsonWriter.WriteObject<DartGLCanvas>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartGLCanvas.class, (JsonReader.ReadObject<DartGLCanvas>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static GLCanvas read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, GLCanvas api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

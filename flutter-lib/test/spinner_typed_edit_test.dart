@@ -3,12 +3,10 @@
 // notifies Modify. The edit goes up with the text it left, the range of the previous text it replaced and
 // how many characters it put there, so Java can ask its Verify listeners about exactly those.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -16,6 +14,8 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/spinner.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+
+import 'support/batch.dart';
 
 /// The generated SpinnerSwt, except sendEvent captures outgoing events instead of handing them to
 /// EquoCommService, which needs a live transport.
@@ -25,8 +25,8 @@ class _CapturingSpinnerSwt extends SpinnerSwt<VSpinner> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VSpinner val, String ev, VEvent? payload) =>
-      onEvent(ev, payload);
+  void sendEvent(VSpinner val, int channel, VEvent? payload) =>
+      onEvent(wireChannelNames[channel]!, payload);
 }
 
 VSpinner _spinner({int selection = 123}) => VSpinner()
@@ -44,13 +44,14 @@ VSpinner _spinner({int selection = 123}) => VSpinner()
     ..width = 160
     ..height = 32);
 
-Future<void> _pump(WidgetTester tester, List<(String, VEvent?)> sent) async {
+Future<void> _pump(WidgetTester tester, List<(String, VEvent?)> sent,
+    {VSpinner? spinner}) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
       alignment: Alignment.topLeft,
       child: _CapturingSpinnerSwt(
-        value: _spinner(),
+        value: spinner ?? _spinner(),
         onEvent: (ev, payload) => sent.add((ev, payload)),
       ),
     ),
@@ -61,20 +62,17 @@ Future<void> _pump(WidgetTester tester, List<(String, VEvent?)> sent) async {
 String _shown(WidgetTester tester) =>
     tester.widget<EditableText>(find.byType(EditableText)).controller.text;
 
+// The direction of each arrow click sent, SWT.ARROW_UP or SWT.ARROW_DOWN.
+List<int?> _arrows(List<(String, VEvent?)> sent) => [
+      for (final (ev, payload) in sent)
+        if (ev == 'Selection/Selection') payload!.detail
+    ];
+
 List<VEvent> _edits(List<(String, VEvent?)> sent) =>
     [for (final (ev, payload) in sent) if (ev == 'Modify/Modify') payload!];
 
 // What Java answers to an edit it was asked to verify.
-void _verdict(bool doit) {
-  final actionBytes = utf8.encode('Spinner/41/modify/verdict');
-  final body = utf8.encode(json.encode({'doit': doit}));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
+void _verdict(bool doit) => receiveTagged('Spinner/41/modify/verdict', {'doit': doit});
 
 void main() {
   testWidgets('typing over the text sends the edit, not a commit',
@@ -147,20 +145,32 @@ void main() {
     expect(edits[1].count, 1);
   });
 
-  testWidgets('an arrow sends the new value as a Selection and no edit',
+  testWidgets('an arrow sends its direction as a Selection and no edit',
       (WidgetTester tester) async {
     final sent = <(String, VEvent?)>[];
     await _pump(tester, sent);
 
     await tester.tap(find.byIcon(Icons.arrow_drop_up));
+    await tester.tap(find.byIcon(Icons.arrow_drop_down));
     await tester.pump();
 
     expect(_edits(sent), isEmpty, reason: 'Java notifies Modify for an arrow');
-    final selections = [
-      for (final (ev, payload) in sent)
-        if (ev == 'Selection/Selection') payload!.index
-    ];
-    expect(selections, [124]);
+    expect(_arrows(sent), [SWT.ARROW_UP, SWT.ARROW_DOWN]);
+  });
+
+  // Java steps the value as for the arrow keys: it wraps a WRAP spinner, and a step that moves nothing
+  // notifies nothing. The field shows what Java sends back.
+  testWidgets('an arrow leaves the value to Java, even at the end of the range',
+      (WidgetTester tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pump(tester, sent,
+        spinner: _spinner(selection: 100000)..style = SWT.BORDER | SWT.WRAP);
+
+    await tester.tap(find.byIcon(Icons.arrow_drop_up));
+    await tester.pump();
+
+    expect(_arrows(sent), [SWT.ARROW_UP]);
+    expect(_shown(tester), '100000');
   });
 
   testWidgets('Enter after typing still commits the value',

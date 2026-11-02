@@ -12,7 +12,7 @@ import java.util.List;
 
 import dev.equo.swt.SerializeTestBase;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 import static org.mockito.Mockito.*;
@@ -72,11 +72,11 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         item.setText(1, "1.16.2+fsp.6.5.0");
         item.setText(2, "Arm DSP Library Source");
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("texts[0]").isEqualTo("Arm DSP Library Source");
-        assertThatJson(json).node("texts[1]").isEqualTo("1.16.2+fsp.6.5.0");
-        assertThatJson(json).node("texts[2]").isEqualTo("Arm DSP Library Source");
+        assertThatWire(state).node("texts[0]").isEqualTo("Arm DSP Library Source");
+        assertThatWire(state).node("texts[1]").isEqualTo("1.16.2+fsp.6.5.0");
+        assertThatWire(state).node("texts[2]").isEqualTo("Arm DSP Library Source");
     }
 
     @Test
@@ -96,9 +96,9 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
 
         TreeItem item = new TreeItem(tree, SWT.NONE);
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("images[0]").isObject()
+        assertThatWire(state).node("images[0]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 16)
                 .containsEntry("height", 16);
@@ -114,10 +114,10 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         TreeItem item = new TreeItem(tree, SWT.NONE);
         item.setText(new String[] { "Vendor", "6.5.0" });
 
-        String json = serialize(item);
+        java.util.Map<String, Object> state = serialize(item);
 
-        assertThatJson(json).node("texts[0]").isEqualTo("Vendor");
-        assertThatJson(json).node("texts[1]").isEqualTo("6.5.0");
+        assertThatWire(state).node("texts[0]").isEqualTo("Vendor");
+        assertThatWire(state).node("texts[1]").isEqualTo("6.5.0");
     }
 
     /**

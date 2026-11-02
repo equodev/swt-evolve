@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VCaret extends VWidget {
 
     protected VCaret() {
@@ -16,7 +12,6 @@ public class VCaret extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Font getFont() {
         Font val = ((DartCaret) impl).font;
         if (val != null && !(val.getImpl() instanceof DartFont))
@@ -28,7 +23,6 @@ public class VCaret extends VWidget {
         ((DartCaret) impl).font = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartCaret) impl).getVisible();
     }
@@ -41,84 +35,139 @@ public class VCaret extends VWidget {
         return ((DartCaret) impl).getBounds();
     }
 
-    public void setBounds(Rectangle value) {
-    }
-
     public Image getImage() {
         return ((DartCaret) impl).image;
-    }
-
-    public void setImage(Image value) {
     }
 
     public boolean getFocused() {
         return ((DartCaret) impl).isFocusCaret();
     }
 
-    public void setFocused(boolean value) {
-    }
-
     public int getBlinkRate() {
         return ((DartCaret) impl).blinkRate;
     }
 
-    public void setBlinkRate(int value) {
-    }
+    public static final int BLINK_RATE = 69;
 
-    public static final String BLINK_RATE = "blinkRate";
+    public static final int BOUNDS = 70;
 
-    public static final String BOUNDS = "bounds";
+    public static final int FOCUSED = 71;
 
-    public static final String FOCUSED = "focused";
+    public static final int IMAGE = 72;
 
-    public static final String IMAGE = "image";
-
-    public static final String VISIBLE = "visible";
+    public static final int VISIBLE = 73;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "visible":
-                Serializer.writeKeyValue(writer, "visible", getVisible());
-                return;
-            case "bounds":
-                Serializer.writeKeyValue(writer, "bounds", getBounds());
-                return;
-            case "image":
-                Serializer.writeKeyValue(writer, "image", getImage());
-                return;
-            case "focused":
-                Serializer.writeKeyValue(writer, "focused", getFocused());
-                return;
-            case "blinkRate":
-                Serializer.writeKeyValue(writer, "blinkRate", getBlinkRate());
-                return;
+            case VISIBLE:
+                return "visible";
+            case BOUNDS:
+                return "bounds";
+            case IMAGE:
+                return "image";
+            case FOCUSED:
+                return "focused";
+            case BLINK_RATE:
+                return "blinkRate";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Caret.class)
-    public static class CaretJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCaret.class, (JsonWriter.WriteObject<DartCaret>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCaret.class, (JsonReader.ReadObject<DartCaret>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 73:
+                w.write(getVisible());
+                return true;
+            case 70:
+                w.write(getBounds());
+                return true;
+            case 72:
+                w.image(getImage());
+                return true;
+            case 71:
+                w.write(getFocused());
+                return true;
+            case 69:
+                w.write((int) getBlinkRate());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Caret read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 73:
+                {
+                    boolean v_ = getVisible();
+                    w.key(73);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 70:
+                {
+                    Rectangle v_ = getBounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(70);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 72:
+                {
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(72);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 71:
+                {
+                    boolean v_ = getFocused();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(71);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 69:
+                {
+                    int v_ = getBlinkRate();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(69);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Caret api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 73, 70, 72, 71, 69 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 73:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

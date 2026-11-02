@@ -4,8 +4,6 @@
 // count is not the one it acted on, once: a rebuild, or the widget described again, leaves the view where
 // it is. The live state's origin is where the view is.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -17,7 +15,10 @@ import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/scrollbar.dart';
 import 'package:swtflutter/src/gen/scrolledcomposite.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'delivery/support/deliver.dart';
 
@@ -66,7 +67,7 @@ VScrolledComposite _sc({int seq = 1, int request = 0, int x = 0, int y = 0}) => 
 /// What Java sends when the application calls `setOrigin`: the origin and the count of requests.
 Future<void> _setOrigin(int seq, int request, int x, int y) => deliverChange(
       _sc(seq: seq, request: request, x: x, y: y),
-      changed: ['origin', 'originRequest'],
+      keys: [WireKey.k_ScrolledComposite_origin, WireKey.k_ScrolledComposite_originRequest],
       base: seq - 1,
     );
 
@@ -122,9 +123,8 @@ Future<_Harness> _pump(WidgetTester tester) async {
 
 /// The offsets the client has told Java, as the selection of [bar], in the order they were sent.
 List<int> _reported(int bar) => EquoCommService.commForTesting.sentFrames
-    .map(EquoCommBase.decodeFrame)
-    .where((f) => f.$1 == 'ScrollBar/$bar/Selection/Selection')
-    .map((f) => (jsonDecode(f.$2) as Map<String, dynamic>)['index'] as int)
+    .where((frame) => EquoCommBase.decodeFrame(frame).$1 == 'ScrollBar/$bar/Selection/Selection')
+    .map((frame) => EquoCommBase.decodeEvent(frame).index ?? 0)
     .toList();
 
 void main() {
@@ -215,7 +215,7 @@ void main() {
     expect(h.vertical, lessThan(300), reason: 'sanity: the user moved away from the origin');
 
     // The same origin: Java does not send it again, only that it was asked for once more.
-    await deliverChange(_sc(seq: 3, request: 2, x: 0, y: 300), changed: ['originRequest'], base: 2);
+    await deliverChange(_sc(seq: 3, request: 2, x: 0, y: 300), keys: [WireKey.k_ScrolledComposite_originRequest], base: 2);
     await h.settled();
 
     expect(h.vertical, 300);
@@ -227,7 +227,7 @@ void main() {
     await h.userDrags(-120);
     final scrolled = h.vertical;
 
-    await deliverChange(_sc(seq: 2)..minHeight = 400, changed: ['minHeight'], base: 1);
+    await deliverChange(_sc(seq: 2)..minHeight = 400, keys: [WireKey.k_ScrolledComposite_minHeight], base: 1);
     await h.settled();
 
     expect(h.vertical, scrolled);
@@ -274,7 +274,7 @@ void main() {
       expect(h.liveOrigin, (0, h.vertical.round()));
       EquoCommService.commForTesting.clearSentFrames();
 
-      await deliverChange(_sc(seq: 3, request: 2, x: 0, y: 300), changed: ['originRequest'], base: 2);
+      await deliverChange(_sc(seq: 3, request: 2, x: 0, y: 300), keys: [WireKey.k_ScrolledComposite_originRequest], base: 2);
       await h.settled();
 
       expect(h.vertical, 300);

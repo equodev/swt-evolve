@@ -36,6 +36,7 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
     );
 
     final child = StyledLink(
+      tabStop: state.tabStop,
       text: text,
       enabled: enabled,
       foreground: state.foreground,
@@ -84,6 +85,9 @@ class StyledLink extends StatefulWidget {
   final VoidCallback? onFocusIn;
   final VoidCallback? onFocusOut;
 
+  /// Java's VControl.tabStop, absent when false.
+  final bool? tabStop;
+
   const StyledLink({
     Key? key,
     required this.text,
@@ -96,6 +100,7 @@ class StyledLink extends StatefulWidget {
     required this.onTap,
     this.onFocusIn,
     this.onFocusOut,
+    this.tabStop,
   }) : super(key: key);
 
   @override
@@ -134,7 +139,7 @@ class _StyledLinkState extends State<StyledLink> {
       },
       child: Focus(
         // A tab stop only while it holds a link, as natively.
-        skipTraversal: !_hasLinks,
+        skipTraversal: !(widget.tabStop ?? false),
         onFocusChange: (hasFocus) {
           setState(() => _isFocused = hasFocus);
           if (hasFocus) {

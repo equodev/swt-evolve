@@ -3,11 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VScrolledComposite extends VComposite {
 
     protected VScrolledComposite() {
@@ -60,7 +56,6 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).minHeight = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getMinSize() {
         return ((DartScrolledComposite) impl).minWidth;
     }
@@ -85,7 +80,6 @@ public class VScrolledComposite extends VComposite {
         ((DartScrolledComposite) impl).origin = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getShowFocusedControl() {
         return ((DartScrolledComposite) impl).getShowFocusedControl();
     }
@@ -98,78 +92,173 @@ public class VScrolledComposite extends VComposite {
         return ((DartScrolledComposite) impl).wireOriginRequest();
     }
 
-    public void setOriginRequest(int value) {
-    }
+    public static final int ALWAYS_SHOW_SCROLL_BARS = 441;
 
-    public static final String ALWAYS_SHOW_SCROLL_BARS = "alwaysShowScrollBars";
+    public static final int CONTENT = 442;
 
-    public static final String CONTENT = "content";
+    public static final int EXPAND_HORIZONTAL = 443;
 
-    public static final String EXPAND_HORIZONTAL = "expandHorizontal";
+    public static final int EXPAND_VERTICAL = 444;
 
-    public static final String EXPAND_VERTICAL = "expandVertical";
+    public static final int MIN_HEIGHT = 445;
 
-    public static final String MIN_HEIGHT = "minHeight";
+    public static final int MIN_WIDTH = 446;
 
-    public static final String MIN_WIDTH = "minWidth";
+    public static final int ORIGIN = 447;
 
-    public static final String ORIGIN = "origin";
-
-    public static final String ORIGIN_REQUEST = "originRequest";
+    public static final int ORIGIN_REQUEST = 448;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "alwaysShowScrollBars":
-                Serializer.writeKeyValue(writer, "alwaysShowScrollBars", getAlwaysShowScrollBars());
-                return;
-            case "content":
-                Serializer.writeKeyValue(writer, "content", getContent());
-                return;
-            case "expandHorizontal":
-                Serializer.writeKeyValue(writer, "expandHorizontal", getExpandHorizontal());
-                return;
-            case "expandVertical":
-                Serializer.writeKeyValue(writer, "expandVertical", getExpandVertical());
-                return;
-            case "minHeight":
-                Serializer.writeKeyValue(writer, "minHeight", getMinHeight());
-                return;
-            case "minWidth":
-                Serializer.writeKeyValue(writer, "minWidth", getMinWidth());
-                return;
-            case "origin":
-                Serializer.writeKeyValue(writer, "origin", getOrigin());
-                return;
-            case "originRequest":
-                Serializer.writeKeyValue(writer, "originRequest", getOriginRequest());
-                return;
+            case ALWAYS_SHOW_SCROLL_BARS:
+                return "alwaysShowScrollBars";
+            case CONTENT:
+                return "content";
+            case EXPAND_HORIZONTAL:
+                return "expandHorizontal";
+            case EXPAND_VERTICAL:
+                return "expandVertical";
+            case MIN_HEIGHT:
+                return "minHeight";
+            case MIN_WIDTH:
+                return "minWidth";
+            case ORIGIN:
+                return "origin";
+            case ORIGIN_REQUEST:
+                return "originRequest";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = ScrolledComposite.class)
-    public static class ScrolledCompositeJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartScrolledComposite.class, (JsonWriter.WriteObject<DartScrolledComposite>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartScrolledComposite.class, (JsonReader.ReadObject<DartScrolledComposite>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 441:
+                w.write(getAlwaysShowScrollBars());
+                return true;
+            case 442:
+                w.ref(getContent());
+                return true;
+            case 443:
+                w.write(getExpandHorizontal());
+                return true;
+            case 444:
+                w.write(getExpandVertical());
+                return true;
+            case 445:
+                w.write((int) getMinHeight());
+                return true;
+            case 446:
+                w.write((int) getMinWidth());
+                return true;
+            case 447:
+                w.write(getOrigin());
+                return true;
+            case 448:
+                w.write((int) getOriginRequest());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static ScrolledComposite read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 441:
+                {
+                    boolean v_ = getAlwaysShowScrollBars();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(441);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 442:
+                {
+                    Control v_ = getContent();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(442);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 443:
+                {
+                    boolean v_ = getExpandHorizontal();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(443);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 444:
+                {
+                    boolean v_ = getExpandVertical();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(444);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 445:
+                {
+                    int v_ = getMinHeight();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(445);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 446:
+                {
+                    int v_ = getMinWidth();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(446);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 447:
+                {
+                    Point v_ = getOrigin();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(447);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 448:
+                {
+                    int v_ = getOriginRequest();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(448);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, ScrolledComposite api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 441, 442, 443, 444, 445, 446, 447, 448 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

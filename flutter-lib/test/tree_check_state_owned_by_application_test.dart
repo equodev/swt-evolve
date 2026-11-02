@@ -2,15 +2,12 @@
 // children or parents, and a click only toggles the clicked item before the Selection listener
 // runs — the listener may then set any item to anything, including putting the clicked one back.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/button.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/image.dart';
@@ -19,6 +16,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 import 'package:swtflutter/src/impl/button_evolve.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int _treeId = 9100;
 const int _parentId = 9110;
@@ -77,21 +76,8 @@ Widget _wrap(VTree value, List<VEvent> checks) => EvolveApp(
   ),
 );
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
-
 /// What Java sends when the application calls setChecked/setGrayed on one item.
-void _javaSets(VTreeItem item, {required int seq}) =>
-    _receive('TreeItem/${item.id}', {...item.toJson(), '_s': seq});
+void _javaSets(VTreeItem item, {required int seq}) => applyWhole(item..seq = seq);
 
 /// A legend swatch, the colour square an inventory row shows next to its name.
 VImage _swatch() => VImage()
@@ -161,7 +147,6 @@ void main() {
       seq: 11,
     );
     await tester.pumpAndSettle();
-
     expect(_drawn(tester, _childAId), (true, false));
     expect(_drawn(tester, _parentId), (true, true));
 
@@ -306,13 +291,12 @@ void main() {
     expect(_icon(_childAId), findsOneWidget);
     expect(_icon(_childBId), findsOneWidget);
 
-    _receive('Tree/$_treeId', {
-      ...(_tree([
-        _item(_childAId, 'Report A', image: _swatch()),
-        _item(_childBId, 'Report B', image: _swatch()),
-      ])..selection = [_item(_childBId, 'Report B', image: _swatch())]).toJson(),
-      '_s': 10,
-    });
+    applyWhole(_tree([
+      _item(_childAId, 'Report A', image: _swatch()),
+      _item(_childBId, 'Report B', image: _swatch()),
+    ])
+      ..selection = [_item(_childBId, 'Report B', image: _swatch())]
+      ..seq = 10);
     await _iconsDrawnEveryFrame(tester, [_childAId, _childBId]);
 
     expect(tree.selection?.map((item) => item.id), [_childBId]);

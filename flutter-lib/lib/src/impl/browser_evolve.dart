@@ -7,10 +7,14 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter/widgets.dart';
 import 'package:webview_all/webview_all.dart';
 
+import '../comm/channel_header.dart';
 import '../comm/comm.dart';
+import '../comm/comm_api.dart' show WidgetOpHandler;
+import '../comm/tagged_values.dart';
 import '../gen/browser.dart';
 import '../gen/event.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 import '../impl/composite_evolve.dart';
 import 'browser_app_base.dart';
 import 'browser_inline_documents.dart';
@@ -18,6 +22,7 @@ import 'widget_config.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
 import 'key_mapping.dart';
+import 'utils/layered_layout_builder.dart';
 
 /// Browser implementation backed by the `webview_all` plugin (the federated
 /// `webview_flutter` API), which provides a real embedded webview on every
@@ -127,6 +132,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
             },
             onUrlChange: (change) {
               if (_isPlaceholderLoad(change.url)) return;
+              if (!_urlChangeIsLive()) return;
               final real = _resolveReportedUrl(change.url);
               if (real != null) {
                 widget.sendLocationchanged(state, VEvent()..text = real);
@@ -168,7 +174,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       ).catchError((e) {});
     }
 
-    _onOp("locationchanging/result", (args) {
+    _onOp(WireChannel.locationchangingResult, (args) {
       final doit = (args as Map)['doit'] as bool? ?? true;
       final c = _locationChangingCompleter;
       _locationChangingCompleter = null;
@@ -176,7 +182,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     });
     // Explicit navigation command (one per setUrl/setText, even same-URL).
     // Bypasses the state-driven dedup so re-navigation actually reloads.
-    _onOp("navigate", (args) {
+    _onOp(WireChannel.navigate, (args) {
       final m = args as Map;
       final seq = (m["seq"] as num?)?.toInt() ?? 0;
       if (seq <= _lastNavSeq) return;
@@ -233,16 +239,16 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         }
       }
     });
-    _onOp("back", (_) {
+    _onOp(WireChannel.back, (_) {
       _controller.goBack();
     });
-    _onOp("forward", (_) {
+    _onOp(WireChannel.forward, (_) {
       _controller.goForward();
     });
-    _onOp("reload", (_) {
+    _onOp(WireChannel.reload, (_) {
       _controller.reload();
     });
-    _onOp("execute", (args) {
+    _onOp(WireChannel.execute, (args) {
       final script = (args as Map)["script"] as String?;
       if (script == null) return;
       if (_params != null) {
@@ -256,50 +262,35 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         _controller.runJavaScript(script);
       }
     });
-    _onOp("evaluate", (args) async {
+    _onOp(WireChannel.evaluate, (args) async {
       final map = args as Map;
       final script = map["script"] as String?;
-      final reqId = map["reqId"] as String?;
+      final reqId = map["reqId"] as int?;
       if (script == null || reqId == null) return;
       try {
         final Object? result = _params != null
             ? browserEvalInFrame(_params, script)
             : await _controller.runJavaScriptReturningResult(script);
-        // Carry the value as JSON so Java can restore the SWT evaluate() type
-        // contract (null/Boolean/Double/String/Object[]); a plain toString()
-        // would collapse every result to a String.
-        String encoded;
-        try {
-          encoded = jsonEncode(result);
-        } catch (_) {
-          // Not JSON-representable (DOM node, function, cyclic): the SWT
-          // contract has no mapping for it, so report JS null.
-          encoded = 'null';
-        }
-        EquoCommService.sendPayload(
-          "${state.swt}/${state.id}/evaluate/$reqId",
-          VEvent()..text = encoded,
-        );
+        // The value as it is, so Java can restore the SWT evaluate() type contract
+        // (null/Boolean/Double/String/Object[]).
+        EquoCommService.sendTo(state.wireType, state.id, WireChannel.evaluateResult,
+            {'reqId': reqId, 'value': _plainValue(result)});
       } catch (e) {
-        EquoCommService.sendPayload(
-          "${state.swt}/${state.id}/evaluate/$reqId",
-          VEvent()..text = '__error__:$e',
-        );
+        EquoCommService.sendTo(
+            state.wireType, state.id, WireChannel.evaluateResult, {'reqId': reqId, 'error': '$e'});
       }
     });
 
     // The static Browser.getCookie/setCookie, routed through whichever Browser Java picked: cookies
     // belong to the webview profile, not to this Browser.
-    _onOp("getCookie", (args) async {
+    _onOp(WireChannel.getCookie, (args) async {
       final map = args as Map;
       final value =
           await browserGetCookie(map["name"] as String, map["url"] as String);
-      EquoCommService.sendPayload(
-        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
-        VEvent()..text = value,
-      );
+      EquoCommService.sendTo(state.wireType, state.id, WireChannel.cookie,
+          VEvent()..detail = map["reqId"] as int..text = value);
     });
-    _onOp("setCookie", (args) async {
+    _onOp(WireChannel.setCookie, (args) async {
       final map = args as Map;
       final set = await browserSetCookie(
         map["name"] as String,
@@ -310,10 +301,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
         secure: map["secure"] as bool? ?? false,
         httpOnly: map["httpOnly"] as bool? ?? false,
       );
-      EquoCommService.sendPayload(
-        "${state.swt}/${state.id}/cookie/${map["reqId"]}",
-        VEvent()..text = '$set',
-      );
+      EquoCommService.sendTo(state.wireType, state.id, WireChannel.cookie,
+          VEvent()..detail = map["reqId"] as int..text = '$set');
     });
 
     _applyContent();
@@ -330,8 +319,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_opNavigated) {
-        EquoCommService.sendPayload(
-            "${state.swt}/${state.id}/navigateRequest", VEvent());
+        EquoCommService.sendTo(state.wireType, state.id, WireChannel.navigateRequest, VEvent());
       }
     });
   }
@@ -363,6 +351,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       Map<String, String> headers = const <String, String>{},
       Uint8List? body}) async {
     if (!_asksNavigationRequests && !await _locationChanging(uri.toString())) return;
+    _awaitedFrameUrl = _expectSameOrigin ? uri : null;
     await _controller.loadRequest(uri, method: method, headers: headers, body: body);
   }
 
@@ -387,7 +376,6 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     appScaleNotifier.removeListener(_applyContentZoom);
     _inlineDocuments.dispose();
     unawaited(browserReleaseWebView(_controller));
-    _opTokens.forEach(EquoCommService.remove);
     super.dispose();
   }
 
@@ -418,10 +406,37 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (!_expectSameOrigin || _params == null) return true;
     try {
       final href = browserEvalInFrame(_params, 'location.href');
+      if (!_isAwaitedDocument(href)) return false;
       // The placeholder about:blank shares our origin, so being readable does
       // not make it the setText document.
       final inline = _loadedText != null ? _inlineDocuments.current : null;
-      return inline == null || href == inline;
+      if (inline != null && href != inline) return false;
+      _awaitedFrameUrl = null;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// The same-origin URL the frame was last sent to, until a load shows the frame holding it. A load
+  /// event in between comes from the document being replaced, which then still answers to the
+  /// requested url; reporting it hands the new navigation a completion that is not its own.
+  Uri? _awaitedFrameUrl;
+
+  /// Whether the frame, at [href], holds the document the last navigation is waiting for, or none is.
+  bool _isAwaitedDocument(Object? href) {
+    final awaited = _awaitedFrameUrl;
+    if (awaited == null) return true;
+    final at = href is String ? Uri.tryParse(href) : null;
+    return at != null && at.removeFragment() == awaited.removeFragment();
+  }
+
+  /// Whether a url change the webview reports is the frame moving to the awaited document: a change
+  /// reported while the frame still holds another one belongs to that one, not to the navigation.
+  bool _urlChangeIsLive() {
+    if (!_expectSameOrigin || _params == null || _awaitedFrameUrl == null) return true;
+    try {
+      return _isAwaitedDocument(browserEvalInFrame(_params, 'location.href'));
     } catch (_) {
       return false;
     }
@@ -502,17 +517,43 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     return _unproxyUrl(rawUrl);
   }
 
-  /// Registers an op handler. The generated [onOp] assumes the comm payload is
-  /// a JSON string, but the current comm layer delivers already-decoded objects
-  /// for Map payloads (`FlutterBridge.send(..., Map.of(...))`). This variant
-  /// tolerates either form.
-  void _onOp(String op, void Function(dynamic) handler) {
-    final channel = "${state.swt}/${state.id}/$op";
-    _opTokens[channel] = EquoCommService.onRaw(
-        channel, (raw) => handler(raw is String ? jsonDecode(raw) : raw));
+  /// The mounted browsers by id, where an op's handler finds the browser a frame addresses.
+  static final Map<int, BrowserImpl> _live = {};
+
+  @override
+  Map<int, WidgetSwtState> get liveOfKind => _live;
+
+  /// The channels of the ops Java sends a browser, each answered by the handler at its index in [_ops].
+  static const List<int> _opChannels = [
+    WireChannel.locationchangingResult, WireChannel.navigate, WireChannel.back, WireChannel.forward,
+    WireChannel.reload, WireChannel.stop, WireChannel.execute, WireChannel.evaluate,
+    WireChannel.getCookie, WireChannel.setCookie,
+  ];
+
+  /// This browser's handler per op, by its index in [_opChannels].
+  final List<FutureOr<void> Function(dynamic)?> _ops = List.filled(_opChannels.length, null);
+
+  /// Registers what every browser answers (see `registerWidgetOps`).
+  static void registerOps() {
+    for (var slot = 0; slot < _opChannels.length; slot++) {
+      EquoCommService.onWidgetOp(WireType.browser, _opChannels[slot], _opHandler(slot));
+    }
   }
 
-  final Map<String, Object> _opTokens = {};
+  static WidgetOpHandler _opHandler(int slot) => (int id, Uint8List frame, int start, int end) {
+        final handler = _live[id]?._ops[slot];
+        if (handler == null) return false;
+        final applied = handler(TaggedValues.decodeAt(frame, start));
+        return applied is Future ? applied.then((_) => true) : true;
+      };
+
+  /// Sets this browser's handler for the op on [channel], one of [_opChannels]; its payload arrives
+  /// decoded.
+  void _onOp(int channel, FutureOr<void> Function(dynamic) handler) {
+    final slot = _opChannels.indexOf(channel);
+    assert(slot >= 0, 'channel $channel is not a browser op');
+    if (slot >= 0) _ops[slot] = handler;
+  }
 
   /// Parses SWT-style request headers (a list of "Name: value" strings, as
   /// passed to Browser.setUrl(url, postData, headers)) into a header map.
@@ -627,6 +668,19 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     _controller.runJavaScript(script).catchError((e) {});
   }
 
+  /// [value] when it is made of maps, lists and scalars only, else null: what a script returns that
+  /// is none of those (a DOM node, a function) has no SWT type to map to.
+  static Object? _plainValue(Object? value) {
+    bool plain(Object? v) =>
+        v == null ||
+        v is bool ||
+        v is num ||
+        v is String ||
+        (v is List && v.every(plain)) ||
+        (v is Map && v.keys.every((k) => k is String) && v.values.every(plain));
+    return plain(value) ? value : null;
+  }
+
   /// Handles a call posted to [_kFunctionChannel] (desktop only, see
   /// [_injectBrowserFunction]). Forwards it to Java as a one-way event; no
   /// result travels back to JS.
@@ -637,10 +691,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       final name = data['name'];
       if (name is! String) return;
       final args = data['args'] is List ? data['args'] as List : const [];
-      EquoCommService.sendPayload(
-        "${state.swt}/${state.id}/browserFunctionCall",
-        VEvent()..text = jsonEncode({'name': name, 'args': args}),
-      );
+      EquoCommService.sendTo(state.wireType, state.id, WireChannel.browserFunctionCall,
+          {'name': name, 'args': _plainValue(args)});
     } catch (_) {}
   }
 
@@ -682,8 +734,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   Future<void> _pushNavState([String? url]) async {
     final back = await _controller.canGoBack();
     final forward = await _controller.canGoForward();
-    EquoCommService.sendPayload(
-      "${state.swt}/${state.id}/navigationState",
+    EquoCommService.sendTo(
+      state.wireType,
+      state.id,
+      WireChannel.navigationState,
       VEvent()..x = back ? 1 : 0..y = forward ? 1 : 0..text = url,
     );
   }
@@ -743,10 +797,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   @override
   Widget build(BuildContext context) {
-    return tagSemantics(ValueListenableBuilder<double>(
+    return inOwnLayer(tagSemantics(ValueListenableBuilder<double>(
       valueListenable: appScaleNotifier,
       builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
-    ));
+    )));
   }
 
   /// Renders the page at the pixel count it is displayed with, instead of stretching it.
@@ -762,7 +816,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// under the transform rather than a texture.
   Widget _unzoomed(Widget webview, double zoom) {
     if (kIsWeb || zoom <= 0 || zoom == 1.0) return webview;
-    return LayoutBuilder(builder: (context, constraints) {
+    return LayeredLayoutBuilder(builder: (context, constraints) {
       if (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight) return webview;
       // OverflowBox, not a plain SizedBox: a Transform does not change layout, so a child sized
       // past its parent's constraints would simply be clamped back to them and then scaled down --

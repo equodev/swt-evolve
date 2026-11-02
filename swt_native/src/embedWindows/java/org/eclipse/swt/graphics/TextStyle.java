@@ -16,9 +16,6 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * <code>TextStyle</code> defines a set of styles that can be applied
@@ -43,25 +40,21 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.0
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public class TextStyle {
+public class TextStyle implements dev.equo.swt.WireObject {
 
     /**
      * the font of the style
      */
-    @JsonAttribute()
     public Font font;
 
     /**
      * the foreground of the style
      */
-    @JsonAttribute()
     public Color foreground;
 
     /**
      * the background of the style
      */
-    @JsonAttribute()
     public Color background;
 
     /**
@@ -70,7 +63,6 @@ public class TextStyle {
      *
      * @since 3.1
      */
-    @JsonAttribute()
     public boolean underline;
 
     /**
@@ -78,7 +70,6 @@ public class TextStyle {
      *
      * @since 3.4
      */
-    @JsonAttribute()
     public Color underlineColor;
 
     /**
@@ -98,7 +89,6 @@ public class TextStyle {
      *
      * @since 3.4
      */
-    @JsonAttribute()
     public int underlineStyle;
 
     /**
@@ -106,7 +96,6 @@ public class TextStyle {
      *
      * @since 3.1
      */
-    @JsonAttribute()
     public boolean strikeout;
 
     /**
@@ -114,7 +103,6 @@ public class TextStyle {
      *
      * @since 3.4
      */
-    @JsonAttribute()
     public Color strikeoutColor;
 
     /**
@@ -132,7 +120,6 @@ public class TextStyle {
      *
      * @since 3.4
      */
-    @JsonAttribute()
     public int borderStyle;
 
     /**
@@ -140,7 +127,6 @@ public class TextStyle {
      *
      * @since 3.4
      */
-    @JsonAttribute()
     public Color borderColor;
 
     /**
@@ -148,7 +134,6 @@ public class TextStyle {
      *
      * @since 3.2
      */
-    @JsonAttribute()
     public GlyphMetrics metrics;
 
     /**
@@ -156,7 +141,6 @@ public class TextStyle {
      *
      * @since 3.2
      */
-    @JsonAttribute()
     public int rise;
 
     /**
@@ -165,7 +149,6 @@ public class TextStyle {
      *
      * @since 3.5
      */
-    @JsonAttribute(ignore = true)
     public Object data;
 
     /**
@@ -524,5 +507,60 @@ public class TextStyle {
         //$NON-NLS-1$
         buffer.append("}");
         return buffer.toString();
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 113;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(588);
+        w.object((font == null || font.isDisposed() ? null : font.getImpl() instanceof DartFont ? ((DartFont) font.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(font).getImpl()).getValue()));
+        w.key(589);
+        w.write(foreground);
+        w.key(585);
+        w.write(background);
+        w.key(594);
+        w.write(underline);
+        w.key(595);
+        w.write(underlineColor);
+        w.key(596);
+        w.write((int) underlineStyle);
+        w.key(592);
+        w.write(strikeout);
+        w.key(593);
+        w.write(strikeoutColor);
+        w.key(587);
+        w.write((int) borderStyle);
+        w.key(586);
+        w.write(borderColor);
+        w.key(590);
+        w.object(metrics);
+        w.key(591);
+        w.write((int) rise);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 594:
+                underline = r.bool();
+                return true;
+            case 596:
+                underlineStyle = r.int32();
+                return true;
+            case 592:
+                strikeout = r.bool();
+                return true;
+            case 587:
+                borderStyle = r.int32();
+                return true;
+            case 591:
+                rise = r.int32();
+                return true;
+        }
+        return false;
     }
 }

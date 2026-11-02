@@ -1,14 +1,13 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tablecolumn_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tablecolumn.g.dart';
 
 class TableColumnSwt<V extends VTableColumn> extends ItemSwt<V> {
   const TableColumnSwt({super.key, required super.value});
@@ -18,23 +17,22 @@ class TableColumnSwt<V extends VTableColumn> extends ItemSwt<V> {
       TableColumnImpl<TableColumnSwt<VTableColumn>, VTableColumn>();
 
   void sendControlMove(V val, VEvent? payload) {
-    sendEvent(val, "Control/Move", payload);
+    sendEvent(val, 20, payload); // Control/Move
   }
 
   void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
+    sendEvent(val, 21, payload); // Control/Resize
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
-@JsonSerializable()
 class VTableColumn extends VItem {
   VTableColumn() : this.empty();
   VTableColumn.empty() {
@@ -58,22 +56,60 @@ class VTableColumn extends VItem {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alignment':
-        alignment = (json['alignment'] as num?)?.toInt();
-      case 'moveable':
-        moveable = json['moveable'] as bool?;
-      case 'resizable':
-        resizable = json['resizable'] as bool?;
-      case 'width':
-        width = (json['width'] as num?)?.toInt();
+      case 559: // alignment
+        alignment = r.int32();
+        return true;
+      case 560: // moveable
+        moveable = r.boolean();
+        return true;
+      case 561: // resizable
+        resizable = r.boolean();
+        return true;
+      case 562: // width
+        width = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VTableColumn.fromJson(Map<String, dynamic> json) =>
-      _$VTableColumnFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTableColumnToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alignment;
+      if (v_ != null) {
+        w.keyInt32(559, v_);
+      }
+    }
+    {
+      final v_ = moveable;
+      if (v_ != null) {
+        w.keyBoolean(560, v_);
+      }
+    }
+    {
+      final v_ = resizable;
+      if (v_ != null) {
+        w.keyBoolean(561, v_);
+      }
+    }
+    {
+      final v_ = width;
+      if (v_ != null) {
+        w.keyInt32(562, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(559, alignment);
+    visit(560, moveable);
+    visit(561, resizable);
+    visit(562, width);
+  }
 }

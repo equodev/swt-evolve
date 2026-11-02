@@ -1,15 +1,14 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/menu.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/menuitem_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'menuitem.g.dart';
 
 class MenuItemSwt<V extends VMenuItem> extends ItemSwt<V> {
   const MenuItemSwt({super.key, required super.value});
@@ -18,23 +17,22 @@ class MenuItemSwt<V extends VMenuItem> extends ItemSwt<V> {
   State createState() => MenuItemImpl<MenuItemSwt<VMenuItem>, VMenuItem>();
 
   void sendArmArm(V val, VEvent? payload) {
-    sendEvent(val, "Arm/Arm", payload);
+    sendEvent(val, 2, payload); // Arm/Arm
   }
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, "Help/Help", payload);
+    sendEvent(val, 49, payload); // Help/Help
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
-@JsonSerializable()
 class VMenuItem extends VItem {
   VMenuItem() : this.empty();
   VMenuItem.empty() {
@@ -60,23 +58,72 @@ class VMenuItem extends VItem {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'accelerator':
-        accelerator = (json['accelerator'] as num?)?.toInt();
-      case 'enabled':
-        enabled = json['enabled'] as bool?;
-      case 'menu':
-        menu = json['menu'] == null
-            ? null
-            : VMenu.fromJson(json['menu'] as Map<String, dynamic>);
-      case 'selection':
-        selection = json['selection'] as bool?;
-      case 'toolTipText':
-        toolTipText = json['toolTipText'] as String?;
+      case 370: // accelerator
+        accelerator = r.int32();
+        return true;
+      case 371: // enabled
+        enabled = r.boolean();
+        return true;
+      case 372: // menu
+        menu = r.ref<VMenu>();
+        return true;
+      case 373: // selection
+        selection = r.boolean();
+        return true;
+      case 374: // toolTipText
+        toolTipText = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = accelerator;
+      if (v_ != null) {
+        w.keyInt32(370, v_);
+      }
+    }
+    {
+      final v_ = enabled;
+      if (v_ != null) {
+        w.keyBoolean(371, v_);
+      }
+    }
+    {
+      final v_ = menu;
+      if (v_ != null) {
+        w.keyRef(372, v_.id);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null) {
+        w.keyBoolean(373, v_);
+      }
+    }
+    {
+      final v_ = toolTipText;
+      if (v_ != null) {
+        w.key(374);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(370, accelerator);
+    visit(371, enabled);
+    visit(372, menu);
+    visit(373, selection);
+    visit(374, toolTipText);
   }
 
   @override
@@ -85,7 +132,9 @@ class VMenuItem extends VItem {
     menu = VWidget.adoptOne(menu, adopt);
   }
 
-  factory VMenuItem.fromJson(Map<String, dynamic> json) =>
-      _$VMenuItemFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VMenuItemToJson(this);
+  @override
+  String? get semanticsTooltip => toolTipText;
+
+  @override
+  bool? get semanticsEnabled => enabled;
 }

@@ -38,10 +38,27 @@ public class TableHelper {
 
     /**
      * Flutter scrolled the table. The top index Flutter is sent is read from here, so describing the table
-     * again does not move it back to where the API last put it.
+     * again does not move it back to where the API last put it. A scroll the user made carries the detail
+     * Flutter gives it ({@code SWT.PAGE_UP} or {@code SWT.PAGE_DOWN}, as Win32 reports the wheel) and is a
+     * Selection on the vertical ScrollBar; a scroll the API asked for carries {@code SWT.NONE} and is not.
      */
     public static void recordScrollOffset(DartTable table, Event event) {
+        int before = table.scrollOffset;
         table.scrollOffset = Math.max(0, event.y);
+        if (table.scrollOffset == before) return;
+        DartScrollBar bar = followTopIndex(table);
+        if (bar == null || event.detail == SWT.NONE) return;
+        Event selection = new Event();
+        selection.detail = event.detail;
+        bar.sendSelectionEvent(SWT.Selection, selection, true);
+    }
+
+    /** The vertical ScrollBar's selection is the top index, as Win32 counts a table's bar in rows. */
+    private static DartScrollBar followTopIndex(DartTable table) {
+        if (table.verticalBar == null) return null;
+        DartScrollBar bar = (DartScrollBar) table.verticalBar.getImpl();
+        bar.selection = getTopIndex(table);
+        return bar;
     }
 
     /**
@@ -66,7 +83,9 @@ public class TableHelper {
 
     /** The rows changed: a scroll past where they now end stops at their end. */
     public static void keepScrollInRows(DartTable table) {
-        if (table.scrollOffset > 0) table.scrollOffset = scrollOffsetY(table);
+        if (table.scrollOffset == 0) return;
+        table.scrollOffset = scrollOffsetY(table);
+        followTopIndex(table);
     }
 
     /** The index of the row at the top; 0 for an empty table. */
@@ -119,6 +138,7 @@ public class TableHelper {
     private static void scrollToRow(DartTable table, int row) {
         int itemHeight = Math.max(1, table.getItemHeight());
         table.scrollOffset = Math.min(row * itemHeight, maxScrollOffset(table, itemHeight));
+        followTopIndex(table);
         table.getValue().markDirty(VTable.TOP_INDEX);
     }
 
@@ -1003,6 +1023,16 @@ public class TableHelper {
     /** Seeds the first page, keeping any larger window Flutter already asked for. */
     public static void loadVirtualItems(DartTable table) {
         loadVirtualWindow(table, VIRTUAL_INITIAL_ROWS);
+    }
+
+    /**
+     * Flutter's report of the rows it shows: {@code index} is the row at the top, {@code end} how far
+     * it renders. The top row is where the user scrolled the client to, so it is recorded without
+     * being sent back.
+     */
+    public static void rowsShown(DartTable table, Event e) {
+        if (e.index >= 0 && e.index < table.getItemCount()) table.topIndex = e.index;
+        loadVirtualWindow(table, e.end);
     }
 
     /**

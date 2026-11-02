@@ -4,11 +4,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VShell extends VDecorations {
 
     protected VShell() {
@@ -18,7 +14,6 @@ public class VShell extends VDecorations {
         super(impl);
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getAlpha() {
         return ((DartShell) impl).getAlpha();
     }
@@ -27,7 +22,6 @@ public class VShell extends VDecorations {
         ((DartShell) impl).alpha = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getDarkThemePreferred() {
         return ((DartShell) impl).darkThemePreferred;
     }
@@ -36,7 +30,6 @@ public class VShell extends VDecorations {
         ((DartShell) impl).darkThemePreferred = value;
     }
 
-    @JsonAttribute(nullable = true)
     public Dialog[] getDialogs() {
         return ((DartShell) impl).getDialogs();
     }
@@ -53,7 +46,6 @@ public class VShell extends VDecorations {
         ((DartShell) impl).fullScreen = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getImeInputMode() {
         return ((DartShell) impl).getImeInputMode();
     }
@@ -86,80 +78,181 @@ public class VShell extends VDecorations {
         ((DartShell) impl).modified = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Shell[] getShells() {
         Shell[] values = ((DartShell) impl).shells;
         if (values == null)
             return null;
-        ArrayList<Shell> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Shell v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Shell[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Shell[] result = new Shell[kept];
+        kept = 0;
+        for (Shell v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setShells(Shell[] value) {
         ((DartShell) impl).shells = value;
     }
 
-    public static final String ALPHA = "alpha";
+    public static final int ALPHA = 449;
 
-    public static final String DIALOGS = "dialogs";
+    public static final int DIALOGS = 450;
 
-    public static final String FULL_SCREEN = "fullScreen";
+    public static final int FULL_SCREEN = 451;
 
-    public static final String MAXIMUM_SIZE = "maximumSize";
+    public static final int MAXIMUM_SIZE = 452;
 
-    public static final String MINIMUM_SIZE = "minimumSize";
+    public static final int MINIMUM_SIZE = 453;
 
-    public static final String MODIFIED = "modified";
+    public static final int MODIFIED = 454;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "alpha":
-                Serializer.writeKeyValue(writer, "alpha", getAlpha());
-                return;
-            case "dialogs":
-                Serializer.writeKeyValue(writer, "dialogs", getDialogs());
-                return;
-            case "fullScreen":
-                Serializer.writeKeyValue(writer, "fullScreen", getFullScreen());
-                return;
-            case "maximumSize":
-                Serializer.writeKeyValue(writer, "maximumSize", getMaximumSize());
-                return;
-            case "minimumSize":
-                Serializer.writeKeyValue(writer, "minimumSize", getMinimumSize());
-                return;
-            case "modified":
-                Serializer.writeKeyValue(writer, "modified", getModified());
-                return;
+            case ALPHA:
+                return "alpha";
+            case DIALOGS:
+                return "dialogs";
+            case FULL_SCREEN:
+                return "fullScreen";
+            case MAXIMUM_SIZE:
+                return "maximumSize";
+            case MINIMUM_SIZE:
+                return "minimumSize";
+            case MODIFIED:
+                return "modified";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Shell.class)
-    public static class ShellJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartShell.class, (JsonWriter.WriteObject<DartShell>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartShell.class, (JsonReader.ReadObject<DartShell>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 449:
+                w.write((int) getAlpha());
+                return true;
+            case 450:
+                {
+                    Dialog[] a_ = getDialogs();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Dialog e_ : a_) w.poly(e_ == null ? null : ((DartDialog) e_.getImpl()).getValue());
+                    }
+                }
+                return true;
+            case 451:
+                w.write(getFullScreen());
+                return true;
+            case 452:
+                w.write(getMaximumSize());
+                return true;
+            case 453:
+                w.write(getMinimumSize());
+                return true;
+            case 454:
+                w.write(getModified());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Shell read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 449:
+                {
+                    int v_ = getAlpha();
+                    w.key(449);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 450:
+                {
+                    Dialog[] v_ = getDialogs();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(450);
+                    {
+                        Dialog[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Dialog e_ : a_) w.poly(e_ == null ? null : ((DartDialog) e_.getImpl()).getValue());
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 451:
+                {
+                    boolean v_ = getFullScreen();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(451);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 452:
+                {
+                    Point v_ = getMaximumSize();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(452);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 453:
+                {
+                    Point v_ = getMinimumSize();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(453);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 454:
+                {
+                    boolean v_ = getModified();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(454);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Shell api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VDecorations.allWireKeys_(), new int[] { 449, 450, 451, 452, 453, 454 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 449:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

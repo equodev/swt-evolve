@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
@@ -79,7 +80,7 @@ class VirtualTableWindowFlutterTest {
     void theRowCountIsSerialized_notJustReadableFromJava() {
         AtomicInteger setData = new AtomicInteger();
         Table table = openTestDataStyleViewer(setData).getTable();
-        // A getter alone is not enough: read-only properties are left out of the JSON converter, and
+        // A getter alone is not enough: read-only properties are left out of the wire encoding, and
         // Flutter then sees no count at all and renders only the rows it was sent.
         table.setData("dev.equo.swt.new", false);
         bridge.comm.sent.clear();
@@ -87,10 +88,11 @@ class VirtualTableWindowFlutterTest {
         FlutterBridge.update();
 
         // Whichever channel carries the table -- its own, or an ancestor's payload -- the count has
-        // to be in the JSON, or Flutter renders only the rows it was sent.
+        // to be in the payload, or Flutter renders only the rows it was sent.
         assertThat(bridge.comm.sent)
                 .as("the payload must carry the row count over the bridge")
-                .anySatisfy(frame -> assertThat(frame.json).contains("\"itemCount\":" + ROWS));
+                .anySatisfy(frame -> assertThat(WireValues.find(frame.value,
+                        m -> m.containsKey("itemCount") && WireValues.same(m.get("itemCount"), ROWS))).isNotEmpty());
     }
 
     @Test

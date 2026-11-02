@@ -1,9 +1,7 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'color.g.dart';
-
-@JsonSerializable()
-class VColor {
+class VColor implements WireReadable, WireWritable, WireVisitable {
   VColor() : this.empty();
   VColor.empty();
 
@@ -14,22 +12,56 @@ class VColor {
     ..green = (argb >> 8) & 0xFF
     ..blue = argb & 0xFF;
 
-  /// A colour as either wire form: packed, or spelled out.
-  static VColor? read(Object? json) => json == null
-      ? null
-      : json is num
-      ? VColor.fromArgb(json.toInt())
-      : VColor.fromJson(json as Map<String, dynamic>);
-
-  @JsonKey(name: 'a')
   int alpha = 0;
-  @JsonKey(name: 'b')
   int blue = 0;
-  @JsonKey(name: 'g')
   int green = 0;
-  @JsonKey(name: 'r')
   int red = 0;
 
-  factory VColor.fromJson(Map<String, dynamic> json) => _$VColorFromJson(json);
-  Map<String, dynamic> toJson() => _$VColorToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case 75: // a
+        alpha = r.int32();
+        return true;
+      case 76: // b
+        blue = r.int32();
+        return true;
+      case 77: // g
+        green = r.int32();
+        return true;
+      case 78: // r
+        red = r.int32();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    {
+      final v_ = alpha;
+      w.keyInt32(75, v_);
+    }
+    {
+      final v_ = blue;
+      w.keyInt32(76, v_);
+    }
+    {
+      final v_ = green;
+      w.keyInt32(77, v_);
+    }
+    {
+      final v_ = red;
+      w.keyInt32(78, v_);
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    visit(75, alpha);
+    visit(76, blue);
+    visit(77, green);
+    visit(78, red);
+  }
 }

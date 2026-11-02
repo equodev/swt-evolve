@@ -11,6 +11,9 @@ import 'package:swtflutter/src/gen/ctabfolder.dart';
 import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey, wireChannelNames;
+
+import 'delivery/support/deliver.dart';
 
 class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   const _CapturingCTabFolderSwt({required super.value, required this.onEvent});
@@ -18,7 +21,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCTabFolder _folder(int count) => VCTabFolder()
@@ -98,14 +101,14 @@ void main() {
 
     // An editor marked dirty, or a label emphasised once its folder takes focus, widens the tab
     // after it was scrolled into view.
-    VRegistry.instance.apply('CTabItem/111', <String, dynamic>{
-      'id': 111,
-      'swt': 'CTabItem',
-      '_s': 1,
-      '_b': 0,
-      '_d': <String>['text'],
-      'text': '*Untitled 12',
-    });
+    applyChange(
+        VCTabItem()
+          ..id = 111
+          ..swt = 'CTabItem'
+          ..seq = 1
+          ..text = '*Untitled 12',
+        keys: [WireKey.k_Item_text],
+        base: 0);
     await tester.pumpAndSettle();
     while (tester.takeException() != null) {}
 

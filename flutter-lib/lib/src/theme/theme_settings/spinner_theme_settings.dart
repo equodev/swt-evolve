@@ -81,8 +81,6 @@ SpinnerThemeExtension _getSpinnerTheme({
     defaultMinimum: 0,
     defaultMaximum: 100,
     defaultSelection: 0,
-    defaultIncrement: 1,
-    defaultPageIncrement: 10,
     defaultDigits: 0,
     defaultTextLimit: 10,
 

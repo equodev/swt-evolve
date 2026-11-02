@@ -1,11 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VPath extends VResource {
 
     protected VPath() {
@@ -27,75 +23,166 @@ public class VPath extends VResource {
         return ((DartPath) impl).wireTextStrings();
     }
 
-    public void setTextStrings(String[] value) {
-    }
-
     public float[] getTextOrigins() {
         return ((DartPath) impl).wireTextOrigins();
-    }
-
-    public void setTextOrigins(float[] value) {
     }
 
     public Font[] getTextFonts() {
         return ((DartPath) impl).wireTextFonts();
     }
 
-    public void setTextFonts(Font[] value) {
-    }
+    public static final int PATH_DATA = 389;
 
-    public static final String PATH_DATA = "pathData";
+    public static final int TEXT_FONTS = 390;
 
-    public static final String TEXT_FONTS = "textFonts";
+    public static final int TEXT_ORIGINS = 391;
 
-    public static final String TEXT_ORIGINS = "textOrigins";
-
-    public static final String TEXT_STRINGS = "textStrings";
+    public static final int TEXT_STRINGS = 392;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "pathData":
-                Serializer.writeKeyValue(writer, "pathData", getPathData());
-                return;
-            case "textStrings":
-                Serializer.writeKeyValue(writer, "textStrings", getTextStrings());
-                return;
-            case "textOrigins":
-                Serializer.writeKeyValue(writer, "textOrigins", getTextOrigins());
-                return;
-            case "textFonts":
-                Serializer.writeKeyValue(writer, "textFonts", getTextFonts());
-                return;
+            case PATH_DATA:
+                return "pathData";
+            case TEXT_STRINGS:
+                return "textStrings";
+            case TEXT_ORIGINS:
+                return "textOrigins";
+            case TEXT_FONTS:
+                return "textFonts";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Path.class)
-    public static class PathJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartPath.class, (JsonWriter.WriteObject<DartPath>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartPath.class, (JsonReader.ReadObject<DartPath>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 389:
+                w.object(getPathData());
+                return true;
+            case 392:
+                w.write(getTextStrings());
+                return true;
+            case 391:
+                w.write(getTextOrigins());
+                return true;
+            case 390:
+                {
+                    Font[] a_ = getTextFonts();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                    }
+                }
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Path read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 389:
+                {
+                    PathData v_ = getPathData();
+                    dev.equo.swt.WireObject o_ = v_;
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(389);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 392:
+                {
+                    String[] v_ = getTextStrings();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(392);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 391:
+                {
+                    float[] v_ = getTextOrigins();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(391);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 390:
+                {
+                    Font[] v_ = getTextFonts();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(390);
+                    {
+                        Font[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Path api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 389, 392, 391, 390 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 72;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(389);
+        w.object(getPathData());
+        w.key(392);
+        w.write(getTextStrings());
+        w.key(391);
+        w.write(getTextOrigins());
+        w.key(390);
+        {
+            Font[] a_ = getTextFonts();
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+            }
         }
     }
 }

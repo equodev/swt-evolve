@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/shell.dart';
@@ -19,31 +20,25 @@ import 'delivery/support/deliver.dart';
 const int _shellId = 2002;
 const int _childId = 2003;
 
-Map<String, dynamic> _rect(int x, int y, int w, int h) => {'x': x, 'y': y, 'width': w, 'height': h};
+VRectangle _rect(int x, int y, int w, int h) => VRectangle()
+  ..x = x
+  ..y = y
+  ..width = w
+  ..height = h;
 
-Map<String, dynamic> _shell(
-  Map<String, dynamic> child, {
-  required int seq,
-  required bool visible,
-}) => {
-  'swt': 'Shell',
-  'id': _shellId,
-  '_s': seq,
-  'style': SWT.NO_TRIM,
-  'bounds': _rect(450, 360, 140, 63),
-  'visible': visible,
-  'children': [child],
-};
+VShell _shell(VComposite child, {required int seq, required bool visible}) => VShell()
+  ..id = _shellId
+  ..seq = seq
+  ..style = SWT.NO_TRIM
+  ..bounds = _rect(450, 360, 140, 63)
+  ..visible = visible
+  ..children = [child];
 
 VShell _main() => VShell()
   ..id = 1001
   ..style = SWT.SHELL_TRIM
   ..text = 'Main'
-  ..bounds = (VRectangle()
-    ..x = 0
-    ..y = 0
-    ..width = 1200
-    ..height = 900)
+  ..bounds = _rect(0, 0, 1200, 900)
   ..visible = true
   ..children = [];
 
@@ -57,27 +52,24 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await deliverFrame(
-      'Shell/$_shellId',
-      _shell(
-        {
-          'swt': 'Composite',
-          'id': _childId,
-          '_s': 45,
-          'style': SWT.NONE,
-          'bounds': _rect(0, 0, 140, 63),
-        },
-        seq: 44,
-        visible: false,
-      ),
-    );
+    await deliverWhole(_shell(
+      VComposite()
+        ..id = _childId
+        ..seq = 45
+        ..style = SWT.NONE
+        ..bounds = _rect(0, 0, 140, 63),
+      seq: 44,
+      visible: false,
+    ));
 
-    final shown = VShell.fromJson(
-      _shell(
-        {'swt': 'Composite', 'id': _childId, 'style': SWT.NONE, '_r': 1},
-        seq: 47,
-        visible: true,
-      ),
+    // The display's copy names the child it already sent rather than describing it.
+    final shown = _shell(
+      VComposite()
+        ..id = _childId
+        ..style = SWT.NONE
+        ..isReference = true,
+      seq: 47,
+      visible: true,
     );
     await tester.pumpWidget(
       EvolveApp(

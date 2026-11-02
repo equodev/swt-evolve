@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -11,10 +11,9 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/viewform_evolve.dart';
 import 'widgets.dart';
-
-part 'viewform.g.dart';
 
 class ViewFormSwt<V extends VViewForm> extends CompositeSwt<V> {
   const ViewFormSwt({super.key, required super.value});
@@ -23,14 +22,9 @@ class ViewFormSwt<V extends VViewForm> extends CompositeSwt<V> {
   State createState() => ViewFormImpl<ViewFormSwt<VViewForm>, VViewForm>();
 }
 
-@JsonSerializable()
 class VViewForm extends VComposite {
   VViewForm() : this.empty();
   VViewForm.empty() {
     swt = "ViewForm";
   }
-
-  factory VViewForm.fromJson(Map<String, dynamic> json) =>
-      _$VViewFormFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VViewFormToJson(this);
 }

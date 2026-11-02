@@ -306,9 +306,9 @@ public abstract class DartDialog implements IDialog {
         // Dialogs aren't DartWidgets and have no bridge of their own — register the close
         // handler on the owning Display's comm via its bridge.
         DisplayBridge bridge = display != null ? ((DartDisplay) display.getImpl()).displayBridge : null;
-        String closeChannel = type + "/" + id + "/close";
+        int closeType = dev.equo.swt.comm.ChannelHeader.requireType(type);
         if (bridge != null) {
-            bridge.onChannel(closeChannel, p -> {
+            bridge.onChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_CLOSE, p -> {
                 if (p != null && !p.isEmpty()) {
                     try {
                         response[0] = Integer.parseInt(p.trim());
@@ -329,7 +329,7 @@ public abstract class DartDialog implements IDialog {
                 display.sleep();
         }
         if (bridge != null)
-            bridge.offChannel(closeChannel);
+            bridge.offChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_CLOSE);
         // A disposed host has already released the dialogs it was drawing, and marking a disposed
         // Shell dirty would send Flutter a value for a Shell it does not draw.
         if (shell != null && !host.isDisposed())

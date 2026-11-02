@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -11,10 +11,9 @@ import '../gen/region.dart';
 import '../gen/scrollable.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/composite_evolve.dart';
 import 'widgets.dart';
-
-part 'composite.g.dart';
 
 class CompositeSwt<V extends VComposite> extends ScrollableSwt<V> {
   const CompositeSwt({super.key, required super.value});
@@ -23,7 +22,6 @@ class CompositeSwt<V extends VComposite> extends ScrollableSwt<V> {
   State createState() => CompositeImpl<CompositeSwt<VComposite>, VComposite>();
 }
 
-@JsonSerializable()
 class VComposite extends VScrollable {
   VComposite() : this.empty();
   VComposite.empty() {
@@ -43,17 +41,42 @@ class VComposite extends VScrollable {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'backgroundMode':
-        backgroundMode = (json['backgroundMode'] as num?)?.toInt();
-      case 'children':
-        children = (json['children'] as List<dynamic>?)
-            ?.map((e) => VControl.fromJson(e as Map<String, dynamic>))
-            .toList();
+      case 85: // backgroundMode
+        backgroundMode = r.int32();
+        return true;
+      case 86: // children
+        children = r.refs<VControl>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = backgroundMode;
+      if (v_ != null) {
+        w.keyInt32(85, v_);
+      }
+    }
+    {
+      final v_ = children;
+      if (v_ != null) {
+        w.key(86);
+        w.refs(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(85, backgroundMode);
+    visit(86, children);
   }
 
   @override
@@ -61,8 +84,4 @@ class VComposite extends VScrollable {
     super.adoptChildren(adopt);
     VWidget.adoptEach(children, adopt);
   }
-
-  factory VComposite.fromJson(Map<String, dynamic> json) =>
-      _$VCompositeFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VCompositeToJson(this);
 }

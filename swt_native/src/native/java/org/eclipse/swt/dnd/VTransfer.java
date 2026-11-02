@@ -1,10 +1,6 @@
 package org.eclipse.swt.dnd;
 
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-
-public class VTransfer {
+public class VTransfer implements dev.equo.swt.WireObject {
 
     protected VTransfer() {
     }
@@ -15,31 +11,12 @@ public class VTransfer {
 
     protected ITransfer impl;
 
-    @JsonConverter(target = Transfer.class)
-    public static class TransferJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 121;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTransfer.class, (JsonWriter.WriteObject<DartTransfer>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartTransfer.class, (JsonReader.ReadObject<DartTransfer>) reader -> {
-                return null;
-            });
-        }
-
-        public static Transfer read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, Transfer api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
     }
 }

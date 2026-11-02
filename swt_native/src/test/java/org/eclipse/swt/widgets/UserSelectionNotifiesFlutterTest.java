@@ -15,8 +15,8 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 /**
- * A Spinner's arrows and a Scale's drag change the value on the client, which reports it with a
- * Selection event. Natively that change notifies the application's Selection listeners; applying
+ * A Spinner's arrow click and a Scale's drag reach Java as a Selection event from the client, which
+ * carries the arrow or the dragged value. Natively that change notifies the application's Selection listeners; applying
  * the value without notifying leaves a listener that repaints from it never called.
  */
 @Tag("flutter-it")
@@ -54,9 +54,11 @@ class UserSelectionNotifiesFlutterTest {
         return shell;
     }
 
-    private void fireUserSelection(int value) {
+    /** The client's Selection: a Spinner sends the arrow clicked in {@code detail}, a Scale its new value in {@code index}. */
+    private void fireUserSelection(int detail, int index) {
         Event e = new Event();
-        e.index = value;
+        e.detail = detail;
+        e.index = index;
         bridge.comm.fireContaining("/Selection/Selection", e);
     }
 
@@ -69,7 +71,7 @@ class UserSelectionNotifiesFlutterTest {
         List<Integer> seen = new ArrayList<>();
         spinner.addListener(SWT.Selection, e -> seen.add(spinner.getSelection()));
 
-        fireUserSelection(26);
+        fireUserSelection(SWT.ARROW_UP, 0);
 
         assertThat(seen).containsExactly(26);
     }
@@ -83,7 +85,7 @@ class UserSelectionNotifiesFlutterTest {
         List<Integer> seen = new ArrayList<>();
         scale.addListener(SWT.Selection, e -> seen.add(scale.getSelection()));
 
-        fireUserSelection(40);
+        fireUserSelection(SWT.NONE, 40);
 
         assertThat(seen).containsExactly(40);
     }

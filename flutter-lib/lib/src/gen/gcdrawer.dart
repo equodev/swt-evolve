@@ -1,169 +1,472 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import '../comm/channel_header.dart';
 import '../comm/comm.dart';
 import '../comm/delivery_gate.dart';
+import '../comm/gc_wire.dart';
+import '../comm/tagged_values.dart';
 import '../gen/gc.dart';
 import '../gen/widgets.dart';
+
+/// Each op's argument types, by the number a frame defines it with (see GcWireReader).
+const Map<int, String> gcOpSignatures = {
+  136: 'wii',
+  138: 'iiiiiib',
+  139: 'iiiiii',
+  140: 'iiii',
+  141: 'wii',
+  142: 'wiiii',
+  143: 'wiiiiiiii',
+  144: 'iiii',
+  145: 'iiii',
+  146: 'w',
+  147: 'ii',
+  148: 'I',
+  149: 'I',
+  150: 'iiii',
+  151: 'iiiiii',
+  152: 'siii',
+  171: 'iiiiii',
+  172: 'iiiib',
+  173: 'iiii',
+  174: 'w',
+  175: 'I',
+  176: 'iiii',
+  177: 'iiiiii',
+};
 
 abstract class GCDrawerBase {
   VGC state;
 
-  // Channel -> token, so teardown removes only handlers this drawer registered and never a newer
-  // drawer's live handler for the same id.
-  final Map<String, Object> _handlerTokens = {};
-
   GCDrawerBase(this.state) {
-    final stateChannel = "${state.swt}/${state.id}";
-    _handlerTokens[stateChannel] = EquoCommService.onRaw(stateChannel, (raw) {
-      try {
-        final map = raw is String
-            ? jsonDecode(raw) as Map<String, dynamic>
-            : raw as Map<String, dynamic>;
-        _trackChanges(map);
-      } catch (e) {
-        print('[GC DrawerBase] Error in state: $e');
-      }
-    });
-    _registerOps();
+    live[state.id] = this;
+    EquoCommService.replayWidgetOps(state.id);
   }
 
-  /// Takes a whole description of the GC, or a change to the one already held.
-  ///
-  /// Java sends a change only when this channel still holds the state it was computed from: the
-  /// same GC described it last, and the channel delivers in order.
-  void _trackChanges(Map<String, dynamic> frame) {
-    if (frame.containsKey(kChangedKeys)) {
-      state.mergeJson(frame);
-    } else {
-      state = mapWidgetValue(frame) as VGC;
+  /// Registers what every drawer of the kind numbered [type] answers: its paint frames.
+  static void registerOps(int type) {
+    EquoCommService.onWidgetOp(type, WireChannel.b, _frameOp);
+  }
+
+  /// The drawers by id, where a frame's handler finds the drawer it addresses. A drawer is in it
+  /// from its creation to [dispose].
+  static final Map<int, GCDrawerBase> live = {};
+
+  static FutureOr<bool> _frameOp(int id, Uint8List frame, int start, int end) {
+    final drawer = live[id];
+    if (drawer == null) return false;
+    // One reader for every paint, unless a paint waiting on an escape still holds it.
+    if (_readerBusy) {
+      final applied = drawer._applyFrame(GcWireReader(frame, start, end));
+      return applied is Future ? applied.then(_handled) : true;
     }
-    onStateChanged(state);
+    _readerBusy = true;
+    FutureOr<void> applied;
+    try {
+      applied = drawer._applyFrame(_reader..reset(frame, start, end));
+    } catch (_) {
+      _readerBusy = false;
+      rethrow;
+    }
+    if (applied is Future) {
+      return applied.whenComplete(_freeReader).then(_handled);
+    }
+    _readerBusy = false;
+    return true;
+  }
+
+  static final GcWireReader _reader = GcWireReader(Uint8List(0));
+  static bool _readerBusy = false;
+  static void _freeReader() => _readerBusy = false;
+  static bool _handled(void _) => true;
+
+  /// A paint as one binary frame: ops, the state they draw with, and entries that travel on channels
+  /// of their own, in the order they were drawn.
+  FutureOr<void> _applyFrame(GcWireReader r) {
+    while (r.hasMore) {
+      final tag = r.varint();
+      if (tag == GcWireReader.state) {
+        // A change to the state already held: each property goes straight to it.
+        r.wire().fields(state);
+        onStateChanged(state);
+      } else if (tag == GcWireReader.whole) {
+        // The whole state, from the value class's defaults: what it leaves out is at its default.
+        state = r.wire().fields(
+          VGC.empty()
+            ..id = state.id
+            ..swt = state.swt
+            ..style = state.style,
+        );
+        onStateChanged(state);
+      } else if (tag == GcWireReader.escape) {
+        r.readEscape();
+        final delivered = EquoCommService.deliverEscape(
+          r.bytes,
+          r.escapeHeaderAt,
+          r.escapePayloadStart,
+          r.escapePayloadEnd,
+        );
+        // Anything after it waits, as the ops behind a frame that awaits do.
+        if (delivered is Future) return _resume(delivered, r);
+      } else {
+        final number = r.opNumber(tag);
+        final apply = number >= 0 && number < _binaryOps.length
+            ? _binaryOps[number]
+            : null;
+        if (apply == null) {
+          r.skip(r.signatureOf(tag));
+        } else {
+          apply(this, r);
+        }
+      }
+    }
+    return null;
+  }
+
+  /// The rest of a paint, once the escape it waits on is delivered. A method of its own: a closure
+  /// in [_applyFrame] would make every paint allocate the context it captures.
+  Future<void> _resume(Future<void> delivered, GcWireReader r) async {
+    await delivered;
+    await _applyFrame(r);
+  }
+
+  /// How a drawer applies each op, by the op's number: made once, for every drawer of the kind.
+  static final List<void Function(GCDrawerBase, GcWireReader)?> _binaryOps =
+      () {
+        final ops = List<void Function(GCDrawerBase, GcWireReader)?>.filled(
+          178,
+          null,
+        );
+        ops[136] = _opCopyAreaImageintint;
+        ops[138] = _opCopyAreaintintintintintintboolean;
+        ops[139] = _opDrawArcintintintintintint;
+        ops[140] = _opDrawFocusintintintint;
+        ops[141] = _opDrawImageImageintint;
+        ops[142] = _opDrawImageImageintintintint;
+        ops[143] = _opDrawImageImageintintintintintintintint;
+        ops[144] = _opDrawLineintintintint;
+        ops[145] = _opDrawOvalintintintint;
+        ops[146] = _opDrawPathPath;
+        ops[147] = _opDrawPointintint;
+        ops[148] = _opDrawPolygonint;
+        ops[149] = _opDrawPolylineint;
+        ops[150] = _opDrawRectangleintintintint;
+        ops[151] = _opDrawRoundRectangleintintintintintint;
+        ops[152] = _opDrawTextStringintintint;
+        ops[171] = _opFillArcintintintintintint;
+        ops[172] = _opFillGradientRectangleintintintintboolean;
+        ops[173] = _opFillOvalintintintint;
+        ops[174] = _opFillPathPath;
+        ops[175] = _opFillPolygonint;
+        ops[176] = _opFillRectangleintintintint;
+        ops[177] = _opFillRoundRectangleintintintintintint;
+        return ops;
+      }();
+
+  static final VGCCopyAreaImageintint _keptCopyAreaImageintint =
+      VGCCopyAreaImageintint();
+
+  static void _opCopyAreaImageintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptCopyAreaImageintint..readBinary(r);
+    try {
+      d.onCopyAreaImageintint(op);
+    } catch (e) {
+      d._failed("copyAreaImageintint", e);
+    }
+  }
+
+  static final VGCCopyAreaintintintintintintboolean
+  _keptCopyAreaintintintintintintboolean =
+      VGCCopyAreaintintintintintintboolean();
+
+  static void _opCopyAreaintintintintintintboolean(
+    GCDrawerBase d,
+    GcWireReader r,
+  ) {
+    final op = _keptCopyAreaintintintintintintboolean..readBinary(r);
+    try {
+      d.onCopyAreaintintintintintintboolean(op);
+    } catch (e) {
+      d._failed("copyAreaintintintintintintboolean", e);
+    }
+  }
+
+  static final VGCDrawArcintintintintintint _keptDrawArcintintintintintint =
+      VGCDrawArcintintintintintint();
+
+  static void _opDrawArcintintintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawArcintintintintintint..readBinary(r);
+    try {
+      d.onDrawArcintintintintintint(op);
+    } catch (e) {
+      d._failed("drawArcintintintintintint", e);
+    }
+  }
+
+  static final VGCDrawFocusintintintint _keptDrawFocusintintintint =
+      VGCDrawFocusintintintint();
+
+  static void _opDrawFocusintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawFocusintintintint..readBinary(r);
+    try {
+      d.onDrawFocusintintintint(op);
+    } catch (e) {
+      d._failed("drawFocusintintintint", e);
+    }
+  }
+
+  static final VGCDrawImageImageintint _keptDrawImageImageintint =
+      VGCDrawImageImageintint();
+
+  static void _opDrawImageImageintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawImageImageintint..readBinary(r);
+    try {
+      d.onDrawImageImageintint(op);
+    } catch (e) {
+      d._failed("drawImageImageintint", e);
+    }
+  }
+
+  static final VGCDrawImageImageintintintint _keptDrawImageImageintintintint =
+      VGCDrawImageImageintintintint();
+
+  static void _opDrawImageImageintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawImageImageintintintint..readBinary(r);
+    try {
+      d.onDrawImageImageintintintint(op);
+    } catch (e) {
+      d._failed("drawImageImageintintintint", e);
+    }
+  }
+
+  static final VGCDrawImageImageintintintintintintintint
+  _keptDrawImageImageintintintintintintintint =
+      VGCDrawImageImageintintintintintintintint();
+
+  static void _opDrawImageImageintintintintintintintint(
+    GCDrawerBase d,
+    GcWireReader r,
+  ) {
+    final op = _keptDrawImageImageintintintintintintintint..readBinary(r);
+    try {
+      d.onDrawImageImageintintintintintintintint(op);
+    } catch (e) {
+      d._failed("drawImageImageintintintintintintintint", e);
+    }
+  }
+
+  static final VGCDrawLineintintintint _keptDrawLineintintintint =
+      VGCDrawLineintintintint();
+
+  static void _opDrawLineintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawLineintintintint..readBinary(r);
+    try {
+      d.onDrawLineintintintint(op);
+    } catch (e) {
+      d._failed("drawLineintintintint", e);
+    }
+  }
+
+  static final VGCDrawOvalintintintint _keptDrawOvalintintintint =
+      VGCDrawOvalintintintint();
+
+  static void _opDrawOvalintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawOvalintintintint..readBinary(r);
+    try {
+      d.onDrawOvalintintintint(op);
+    } catch (e) {
+      d._failed("drawOvalintintintint", e);
+    }
+  }
+
+  static final VGCDrawPathPath _keptDrawPathPath = VGCDrawPathPath();
+
+  static void _opDrawPathPath(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawPathPath..readBinary(r);
+    try {
+      d.onDrawPathPath(op);
+    } catch (e) {
+      d._failed("drawPathPath", e);
+    }
+  }
+
+  static final VGCDrawPointintint _keptDrawPointintint = VGCDrawPointintint();
+
+  static void _opDrawPointintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawPointintint..readBinary(r);
+    try {
+      d.onDrawPointintint(op);
+    } catch (e) {
+      d._failed("drawPointintint", e);
+    }
+  }
+
+  static final VGCDrawPolygonint _keptDrawPolygonint = VGCDrawPolygonint();
+
+  static void _opDrawPolygonint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawPolygonint..readBinary(r);
+    try {
+      d.onDrawPolygonint(op);
+    } catch (e) {
+      d._failed("drawPolygonint", e);
+    }
+  }
+
+  static final VGCDrawPolylineint _keptDrawPolylineint = VGCDrawPolylineint();
+
+  static void _opDrawPolylineint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawPolylineint..readBinary(r);
+    try {
+      d.onDrawPolylineint(op);
+    } catch (e) {
+      d._failed("drawPolylineint", e);
+    }
+  }
+
+  static final VGCDrawRectangleintintintint _keptDrawRectangleintintintint =
+      VGCDrawRectangleintintintint();
+
+  static void _opDrawRectangleintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawRectangleintintintint..readBinary(r);
+    try {
+      d.onDrawRectangleintintintint(op);
+    } catch (e) {
+      d._failed("drawRectangleintintintint", e);
+    }
+  }
+
+  static final VGCDrawRoundRectangleintintintintintint
+  _keptDrawRoundRectangleintintintintintint =
+      VGCDrawRoundRectangleintintintintintint();
+
+  static void _opDrawRoundRectangleintintintintintint(
+    GCDrawerBase d,
+    GcWireReader r,
+  ) {
+    final op = _keptDrawRoundRectangleintintintintintint..readBinary(r);
+    try {
+      d.onDrawRoundRectangleintintintintintint(op);
+    } catch (e) {
+      d._failed("drawRoundRectangleintintintintintint", e);
+    }
+  }
+
+  static final VGCDrawTextStringintintint _keptDrawTextStringintintint =
+      VGCDrawTextStringintintint();
+
+  static void _opDrawTextStringintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptDrawTextStringintintint..readBinary(r);
+    try {
+      d.onDrawTextStringintintint(op);
+    } catch (e) {
+      d._failed("drawTextStringintintint", e);
+    }
+  }
+
+  static final VGCFillArcintintintintintint _keptFillArcintintintintintint =
+      VGCFillArcintintintintintint();
+
+  static void _opFillArcintintintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptFillArcintintintintintint..readBinary(r);
+    try {
+      d.onFillArcintintintintintint(op);
+    } catch (e) {
+      d._failed("fillArcintintintintintint", e);
+    }
+  }
+
+  static final VGCFillGradientRectangleintintintintboolean
+  _keptFillGradientRectangleintintintintboolean =
+      VGCFillGradientRectangleintintintintboolean();
+
+  static void _opFillGradientRectangleintintintintboolean(
+    GCDrawerBase d,
+    GcWireReader r,
+  ) {
+    final op = _keptFillGradientRectangleintintintintboolean..readBinary(r);
+    try {
+      d.onFillGradientRectangleintintintintboolean(op);
+    } catch (e) {
+      d._failed("fillGradientRectangleintintintintboolean", e);
+    }
+  }
+
+  static final VGCFillOvalintintintint _keptFillOvalintintintint =
+      VGCFillOvalintintintint();
+
+  static void _opFillOvalintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptFillOvalintintintint..readBinary(r);
+    try {
+      d.onFillOvalintintintint(op);
+    } catch (e) {
+      d._failed("fillOvalintintintint", e);
+    }
+  }
+
+  static final VGCFillPathPath _keptFillPathPath = VGCFillPathPath();
+
+  static void _opFillPathPath(GCDrawerBase d, GcWireReader r) {
+    final op = _keptFillPathPath..readBinary(r);
+    try {
+      d.onFillPathPath(op);
+    } catch (e) {
+      d._failed("fillPathPath", e);
+    }
+  }
+
+  static final VGCFillPolygonint _keptFillPolygonint = VGCFillPolygonint();
+
+  static void _opFillPolygonint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptFillPolygonint..readBinary(r);
+    try {
+      d.onFillPolygonint(op);
+    } catch (e) {
+      d._failed("fillPolygonint", e);
+    }
+  }
+
+  static final VGCFillRectangleintintintint _keptFillRectangleintintintint =
+      VGCFillRectangleintintintint();
+
+  static void _opFillRectangleintintintint(GCDrawerBase d, GcWireReader r) {
+    final op = _keptFillRectangleintintintint..readBinary(r);
+    try {
+      d.onFillRectangleintintintint(op);
+    } catch (e) {
+      d._failed("fillRectangleintintintint", e);
+    }
+  }
+
+  static final VGCFillRoundRectangleintintintintintint
+  _keptFillRoundRectangleintintintintintint =
+      VGCFillRoundRectangleintintintintintint();
+
+  static void _opFillRoundRectangleintintintintintint(
+    GCDrawerBase d,
+    GcWireReader r,
+  ) {
+    final op = _keptFillRoundRectangleintintintintintint..readBinary(r);
+    try {
+      d.onFillRoundRectangleintintintintintint(op);
+    } catch (e) {
+      d._failed("fillRoundRectangleintintintintintint", e);
+    }
+  }
+
+  /// An op that threw is reported and skipped: the rest of the paint still draws.
+  void _failed(String name, Object e) {
+    print('[GC DrawerBase] Error in $name: $e');
   }
 
   void onStateChanged(VGC newState) {}
 
-  void _op(String name, void Function(Object?) fn) {
-    final channel = "${state.swt}/${state.id}/$name";
-    _handlerTokens[channel] = EquoCommService.onRaw(channel, (raw) {
-      try {
-        fn(raw is String ? jsonDecode(raw) : raw);
-      } catch (e) {
-        print('[GC DrawerBase] Error in $name: $e');
-      }
-    });
-  }
-
-  void _registerOps() {
-    _op(
-      "copyAreaImageintint",
-      (p) => onCopyAreaImageintint(VGCCopyAreaImageintint.fromWire(p)),
-    );
-    _op(
-      "copyAreaintintintintintintboolean",
-      (p) => onCopyAreaintintintintintintboolean(
-        VGCCopyAreaintintintintintintboolean.fromWire(p),
-      ),
-    );
-    _op(
-      "drawArcintintintintintint",
-      (p) =>
-          onDrawArcintintintintintint(VGCDrawArcintintintintintint.fromWire(p)),
-    );
-    _op(
-      "drawFocusintintintint",
-      (p) => onDrawFocusintintintint(VGCDrawFocusintintintint.fromWire(p)),
-    );
-    _op(
-      "drawImageImageintint",
-      (p) => onDrawImageImageintint(VGCDrawImageImageintint.fromWire(p)),
-    );
-    _op(
-      "drawImageImageintintintint",
-      (p) => onDrawImageImageintintintint(
-        VGCDrawImageImageintintintint.fromWire(p),
-      ),
-    );
-    _op(
-      "drawImageImageintintintintintintintint",
-      (p) => onDrawImageImageintintintintintintintint(
-        VGCDrawImageImageintintintintintintintint.fromWire(p),
-      ),
-    );
-    _op(
-      "drawLineintintintint",
-      (p) => onDrawLineintintintint(VGCDrawLineintintintint.fromWire(p)),
-    );
-    _op(
-      "drawOvalintintintint",
-      (p) => onDrawOvalintintintint(VGCDrawOvalintintintint.fromWire(p)),
-    );
-    _op("drawPathPath", (p) => onDrawPathPath(VGCDrawPathPath.fromWire(p)));
-    _op(
-      "drawPointintint",
-      (p) => onDrawPointintint(VGCDrawPointintint.fromWire(p)),
-    );
-    _op(
-      "drawPolygonint",
-      (p) => onDrawPolygonint(VGCDrawPolygonint.fromWire(p)),
-    );
-    _op(
-      "drawPolylineint",
-      (p) => onDrawPolylineint(VGCDrawPolylineint.fromWire(p)),
-    );
-    _op(
-      "drawRectangleintintintint",
-      (p) =>
-          onDrawRectangleintintintint(VGCDrawRectangleintintintint.fromWire(p)),
-    );
-    _op(
-      "drawRoundRectangleintintintintintint",
-      (p) => onDrawRoundRectangleintintintintintint(
-        VGCDrawRoundRectangleintintintintintint.fromWire(p),
-      ),
-    );
-    _op(
-      "drawTextStringintintint",
-      (p) => onDrawTextStringintintint(VGCDrawTextStringintintint.fromWire(p)),
-    );
-    _op(
-      "fillArcintintintintintint",
-      (p) =>
-          onFillArcintintintintintint(VGCFillArcintintintintintint.fromWire(p)),
-    );
-    _op(
-      "fillGradientRectangleintintintintboolean",
-      (p) => onFillGradientRectangleintintintintboolean(
-        VGCFillGradientRectangleintintintintboolean.fromWire(p),
-      ),
-    );
-    _op(
-      "fillOvalintintintint",
-      (p) => onFillOvalintintintint(VGCFillOvalintintintint.fromWire(p)),
-    );
-    _op("fillPathPath", (p) => onFillPathPath(VGCFillPathPath.fromWire(p)));
-    _op(
-      "fillPolygonint",
-      (p) => onFillPolygonint(VGCFillPolygonint.fromWire(p)),
-    );
-    _op(
-      "fillRectangleintintintint",
-      (p) =>
-          onFillRectangleintintintint(VGCFillRectangleintintintint.fromWire(p)),
-    );
-    _op(
-      "fillRoundRectangleintintintintintint",
-      (p) => onFillRoundRectangleintintintintintint(
-        VGCFillRoundRectangleintintintintintint.fromWire(p),
-      ),
-    );
-  }
-
   void dispose() {
-    _handlerTokens.forEach((channel, token) {
-      EquoCommService.remove(channel, token);
-    });
-    _handlerTokens.clear();
+    if (identical(live[state.id], this)) live.remove(state.id);
   }
 
+  // Each op's object is refilled for the next op of its kind: a handler reads what it needs before
+  // it returns or awaits, and copies the op to keep it.
   void onCopyAreaImageintint(VGCCopyAreaImageintint opArgs);
   void onCopyAreaintintintintintintboolean(
     VGCCopyAreaintintintintintintboolean opArgs,

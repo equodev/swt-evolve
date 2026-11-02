@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,7 +53,7 @@ class GCImplementationNativeTest {
     }
 
     private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).collect(Collectors.joining());
+        return String.join(" ", dev.equo.swt.harness.GcFrames.channels(bridge.comm.sent));
     }
 
     /** A drawable that is neither a control nor an image nor a device. */

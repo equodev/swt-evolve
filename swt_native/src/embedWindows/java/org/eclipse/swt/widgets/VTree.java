@@ -3,13 +3,8 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 import org.eclipse.swt.custom.*;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VTree extends VComposite {
 
     protected VTree() {
@@ -31,10 +26,16 @@ public class VTree extends VComposite {
         TreeColumn[] values = ((DartTree) impl).columns;
         if (values == null)
             return null;
-        ArrayList<TreeColumn> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TreeColumn v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TreeColumn[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TreeColumn[] result = new TreeColumn[kept];
+        kept = 0;
+        for (TreeColumn v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setColumns(TreeColumn[] value) {
@@ -77,10 +78,16 @@ public class VTree extends VComposite {
         TreeItem[] values = ((DartTree) impl).items;
         if (values == null)
             return null;
-        ArrayList<TreeItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TreeItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TreeItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TreeItem[] result = new TreeItem[kept];
+        kept = 0;
+        for (TreeItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(TreeItem[] value) {
@@ -99,10 +106,16 @@ public class VTree extends VComposite {
         TreeItem[] values = ((DartTree) impl).selection;
         if (values == null)
             return null;
-        ArrayList<TreeItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TreeItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TreeItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TreeItem[] result = new TreeItem[kept];
+        kept = 0;
+        for (TreeItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setSelection(TreeItem[] value) {
@@ -143,103 +156,263 @@ public class VTree extends VComposite {
         return ((DartTree) impl).wireOwnerDrawItemHeight();
     }
 
-    public void setOwnerDrawItemHeight(int value) {
-    }
+    public static final int COLUMN_ORDER = 621;
 
-    public static final String COLUMN_ORDER = "columnOrder";
+    public static final int COLUMNS = 622;
 
-    public static final String COLUMNS = "columns";
+    public static final int EDITORS = 623;
 
-    public static final String EDITORS = "editors";
+    public static final int HEADER_BACKGROUND = 624;
 
-    public static final String HEADER_BACKGROUND = "headerBackground";
+    public static final int HEADER_FOREGROUND = 625;
 
-    public static final String HEADER_FOREGROUND = "headerForeground";
+    public static final int HEADER_VISIBLE = 626;
 
-    public static final String HEADER_VISIBLE = "headerVisible";
+    public static final int ITEMS = 627;
 
-    public static final String ITEMS = "items";
+    public static final int LINES_VISIBLE = 628;
 
-    public static final String LINES_VISIBLE = "linesVisible";
+    public static final int OWNER_DRAW_ITEM_HEIGHT = 629;
 
-    public static final String OWNER_DRAW_ITEM_HEIGHT = "ownerDrawItemHeight";
+    public static final int SELECTION = 630;
 
-    public static final String SELECTION = "selection";
+    public static final int SORT_COLUMN = 631;
 
-    public static final String SORT_COLUMN = "sortColumn";
+    public static final int SORT_DIRECTION = 632;
 
-    public static final String SORT_DIRECTION = "sortDirection";
-
-    public static final String TOP_ITEM = "topItem";
+    public static final int TOP_ITEM = 633;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "columnOrder":
-                Serializer.writeKeyValue(writer, "columnOrder", getColumnOrder());
-                return;
-            case "columns":
-                Serializer.writeKeyValue(writer, "columns", getColumns());
-                return;
-            case "editors":
-                Serializer.writeKeyValue(writer, "editors", getEditors());
-                return;
-            case "headerBackground":
-                Serializer.writeKeyValue(writer, "headerBackground", getHeaderBackground());
-                return;
-            case "headerForeground":
-                Serializer.writeKeyValue(writer, "headerForeground", getHeaderForeground());
-                return;
-            case "headerVisible":
-                Serializer.writeKeyValue(writer, "headerVisible", getHeaderVisible());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "linesVisible":
-                Serializer.writeKeyValue(writer, "linesVisible", getLinesVisible());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "sortColumn":
-                Serializer.writeKeyValue(writer, "sortColumn", getSortColumn());
-                return;
-            case "sortDirection":
-                Serializer.writeKeyValue(writer, "sortDirection", getSortDirection());
-                return;
-            case "topItem":
-                Serializer.writeKeyValue(writer, "topItem", getTopItem());
-                return;
-            case "ownerDrawItemHeight":
-                Serializer.writeKeyValue(writer, "ownerDrawItemHeight", getOwnerDrawItemHeight());
-                return;
+            case COLUMN_ORDER:
+                return "columnOrder";
+            case COLUMNS:
+                return "columns";
+            case EDITORS:
+                return "editors";
+            case HEADER_BACKGROUND:
+                return "headerBackground";
+            case HEADER_FOREGROUND:
+                return "headerForeground";
+            case HEADER_VISIBLE:
+                return "headerVisible";
+            case ITEMS:
+                return "items";
+            case LINES_VISIBLE:
+                return "linesVisible";
+            case SELECTION:
+                return "selection";
+            case SORT_COLUMN:
+                return "sortColumn";
+            case SORT_DIRECTION:
+                return "sortDirection";
+            case TOP_ITEM:
+                return "topItem";
+            case OWNER_DRAW_ITEM_HEIGHT:
+                return "ownerDrawItemHeight";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Tree.class)
-    public static class TreeJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTree.class, (JsonWriter.WriteObject<DartTree>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTree.class, (JsonReader.ReadObject<DartTree>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 621:
+                w.write(getColumnOrder());
+                return true;
+            case 622:
+                w.refs(getColumns());
+                return true;
+            case 623:
+                w.refs(getEditors());
+                return true;
+            case 624:
+                w.write(getHeaderBackground());
+                return true;
+            case 625:
+                w.write(getHeaderForeground());
+                return true;
+            case 626:
+                w.write(getHeaderVisible());
+                return true;
+            case 627:
+                w.refs(getItems());
+                return true;
+            case 628:
+                w.write(getLinesVisible());
+                return true;
+            case 630:
+                w.refs(getSelection());
+                return true;
+            case 631:
+                w.ref(getSortColumn());
+                return true;
+            case 632:
+                w.write((int) getSortDirection());
+                return true;
+            case 633:
+                w.ref(getTopItem());
+                return true;
+            case 629:
+                w.write((int) getOwnerDrawItemHeight());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Tree read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 621:
+                {
+                    int[] v_ = getColumnOrder();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(621);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 622:
+                {
+                    TreeColumn[] v_ = getColumns();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(622);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 623:
+                {
+                    TreeEditor[] v_ = getEditors();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(623);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 624:
+                {
+                    Color v_ = getHeaderBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(624);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 625:
+                {
+                    Color v_ = getHeaderForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(625);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 626:
+                {
+                    boolean v_ = getHeaderVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(626);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 627:
+                {
+                    TreeItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(627);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 628:
+                {
+                    boolean v_ = getLinesVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(628);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 630:
+                {
+                    TreeItem[] v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(630);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 631:
+                {
+                    TreeColumn v_ = getSortColumn();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(631);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 632:
+                {
+                    int v_ = getSortDirection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(632);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 633:
+                {
+                    TreeItem v_ = getTopItem();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(633);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 629:
+                {
+                    int v_ = getOwnerDrawItemHeight();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(629);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Tree api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 621, 622, 623, 624, 625, 626, 627, 628, 630, 631, 632, 633, 629 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

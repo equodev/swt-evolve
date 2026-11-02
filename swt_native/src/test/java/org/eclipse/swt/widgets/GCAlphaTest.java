@@ -2,7 +2,10 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.graphics.GC;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,9 +76,15 @@ class GCAlphaTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wireAfterDisposing(GC gc) {
+    private List<GcFrames.Entry> wireAfterDisposing(GC gc) {
         gc.dispose();
-        return bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+        return BatchEntries.of(bridge.comm.sent);
+    }
+
+    /** Whether any value in [wire] sets the alpha to [alpha]. */
+    private static boolean carriesAlpha(List<GcFrames.Entry> wire, int alpha) {
+        List<Object> values = wire.stream().map(GcFrames.Entry::value).toList();
+        return !WireValues.find(values, m -> m.containsKey("alpha") && WireValues.same(m.get("alpha"), alpha)).isEmpty();
     }
 
     @Test
@@ -83,9 +93,9 @@ class GCAlphaTest {
         GC gc = freshGc();
         gc.setAlpha(0);
         gc.fillRectangle(0, 0, 75, 75);
-        assertThat(wireAfterDisposing(gc))
+        assertThat(carriesAlpha(wireAfterDisposing(gc), 0))
                 .as("a shape the application made fully transparent must not travel as opaque")
-                .contains("\"alpha\":0");
+                .isTrue();
     }
 
     @Test
@@ -96,13 +106,13 @@ class GCAlphaTest {
         gc.fillOval(0, 0, 50, 50);
         gc.setAlpha(200);
         gc.fillOval(50, 0, 50, 50);
-        String wire = wireAfterDisposing(gc);
-        assertThat(wire).as("sanity: both ops reached the wire").contains("fillOval");
-        assertThat(wire)
+        List<GcFrames.Entry> wire = wireAfterDisposing(gc);
+        assertThat(wire).as("sanity: both ops reached the wire").anyMatch(e -> e.channel().contains("fillOval"));
+        assertThat(carriesAlpha(wire, 20))
                 .as("the first oval's alpha")
-                .contains("\"alpha\":20");
-        assertThat(wire)
+                .isTrue();
+        assertThat(carriesAlpha(wire, 200))
                 .as("the second oval's alpha")
-                .contains("\"alpha\":200");
+                .isTrue();
     }
 }

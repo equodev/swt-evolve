@@ -63,7 +63,7 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
 /// itself (which carries a border) and the radio's dot (which is a circle).
 bool _hasPartialMark(WidgetTester tester) => tester
     .widgetList<Container>(find.descendant(
-      of: find.byType(AnimatedContainer),
+      of: find.byWidgetPredicate((w) => w is AnimatedContainer),
       matching: find.byType(Container),
     ))
     .map((c) => c.decoration)
@@ -73,7 +73,7 @@ bool _hasPartialMark(WidgetTester tester) => tester
 
 /// The checkbox box itself, as opposed to the marks drawn inside it.
 BoxDecoration _boxDecoration(WidgetTester tester) => tester
-    .widget<AnimatedContainer>(find.byType(AnimatedContainer).first)
+    .widget<AnimatedContainer>(find.byWidgetPredicate((w) => w is AnimatedContainer).first)
     .decoration as BoxDecoration;
 
 void main() {

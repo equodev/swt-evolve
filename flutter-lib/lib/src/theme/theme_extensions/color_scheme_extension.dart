@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'color_scheme_extension.tailor.dart';
-part 'color_scheme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
 class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$ColorSchemeExtensionTailorMixin {
   // Primary colors adicionales
   final Color primaryHovered; // sys.color.primary.hovered #1E30CC
@@ -280,9 +275,4 @@ class ColorSchemeExtension extends ThemeExtension<ColorSchemeExtension> with _$C
     required this.toolbarDivider,
     required this.compositePanelBorderColor,
   });
-
-  factory ColorSchemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ColorSchemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ColorSchemeExtensionToJson(this);
 }

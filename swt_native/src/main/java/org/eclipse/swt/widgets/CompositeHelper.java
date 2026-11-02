@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Device;
 import org.eclipse.swt.graphics.GC;
@@ -12,9 +11,6 @@ import org.eclipse.swt.graphics.Transform;
 
 /** What a Composite does that its generated implementation cannot say by itself. */
 public final class CompositeHelper {
-
-    /** The outline composite_evolve.dart draws inside the bounds of a BORDER composite. */
-    static final int BORDER_WIDTH = 1;
 
     private CompositeHelper() {
     }
@@ -28,19 +24,32 @@ public final class CompositeHelper {
         return type == DartComposite.class || type == DartCanvas.class;
     }
 
+    /** The border on each side of a composite that frames its content; one that does not keeps upstream's 0. */
+    static int getBorderWidth(DartComposite composite) {
+        return framesItsContent(composite) ? ControlHelper.borderWidth(composite) : 0;
+    }
+
     /** The border on each side, then the thickness of the vertical bar and of the horizontal one. */
     private static int[] frame(DartComposite composite, boolean shownBarsOnly) {
-        int border = (composite.getApi().style & SWT.BORDER) != 0 ? BORDER_WIDTH : 0;
+        int border = ControlHelper.borderWidth(composite);
         return new int[] {border, bar(composite.verticalBar, shownBarsOnly), bar(composite.horizontalBar, shownBarsOnly)};
     }
 
     private static int bar(ScrollBar bar, boolean shownOnly) {
-        return bar != null && (!shownOnly || bar.getVisible()) ? Sizes.SCROLL_BAR_SIZE : 0;
+        return bar != null && (!shownOnly || bar.getVisible() && hasRange(bar)) ? Sizes.SCROLL_BAR_SIZE : 0;
+    }
+
+    /**
+     * The client draws a visible bar only while it has a range to scroll; the content takes the place of one it
+     * does not. A Dart composite's bars are Dart bars on every backend (DartScrollable.createScrollBar).
+     */
+    private static boolean hasRange(ScrollBar bar) {
+        return ((DartScrollBar) bar.getImpl()).hasRange;
     }
 
     /**
      * The bounds less the border and the bars that are shown, at the origin. A bar counts while it is set
-     * visible, whether or not its window is on screen yet.
+     * visible, whether or not its window is on screen yet, and has a range to scroll.
      */
     static Rectangle getClientArea(DartComposite composite) {
         Rectangle bounds = composite.getBounds();

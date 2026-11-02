@@ -327,13 +327,15 @@ class _RowGeometry {
 /// What a tab costs beyond its label, measured rather than copied from the theme it is drawn from.
 class _TabGeometry {
   final double surround;
-  final double closeExtra;
+
+  /// Null for a widget whose tabs have no close button.
+  final double? closeExtra;
   final double imageExtra;
   final double imageHeight;
 
   const _TabGeometry({
     required this.surround,
-    required this.closeExtra,
+    this.closeExtra,
     required this.imageExtra,
     required this.imageHeight,
   });
@@ -574,15 +576,19 @@ class WidgetMeasurer {
       );
       resultsMap[testCase.name] = result;
     } else {
-      // Phase 2: a widget measured for its chrome keeps the frame it drew under this theme.
+      // Phase 2: a widget measured for its chrome keeps the frame it drew under this theme, and
+      // the tab it drew, if it has tabs.
       final page = discoveredComponents['page'];
-      if (page is Map) {
+      final chrome = {
+        if (page is Map) ..._frameAround(page, size),
+        ..._tabProbe(discoveredComponents),
+      };
+      if (chrome.isNotEmpty) {
         final widgetType = widgetName(testCase.fqn);
-        extractedChrome.putIfAbsent(getCurrentThemeName(), () => {})[
-            '$widgetType:${testCase.style}'] = _frameAround(
-          page,
-          size,
-        );
+        extractedChrome.putIfAbsent(
+          getCurrentThemeName(),
+          () => {},
+        )['$widgetType:${testCase.style}'] = chrome;
       }
       // Otherwise it keeps its TextStyle only
       if (discoveredComponents.containsKey('text')) {
@@ -1087,10 +1093,17 @@ class WidgetMeasurer {
     // TextStyle.def().
     final widgetTypesWithThemeCases = themeCaseFqnByWidget;
 
+    // A widget measured for its chrome gets a theme of frames rather than of text styles.
+    final chromeWidgetTypes = {
+      for (final byStyle in extractedChrome.values)
+        for (final key in byStyle.keys) key.split(':').first,
+    };
+
     // Generate theme file per widget type
     for (var entry in byWidgetType.entries) {
       final widgetType = entry.key;
       final themesByStyle = entry.value;
+      if (chromeWidgetTypes.contains(widgetType)) continue;
 
       // Get FQN from first result
       final fqn = results.firstWhere((r) => r.name.startsWith(widgetType)).fqn;
@@ -1098,11 +1111,6 @@ class WidgetMeasurer {
       _generateJavaWidgetThemeFromExtracted(fqn, widgetType, themesByStyle);
     }
 
-    // A widget measured for its chrome gets a theme of frames rather than of text styles.
-    final chromeWidgetTypes = {
-      for (final byStyle in extractedChrome.values)
-        for (final key in byStyle.keys) key.split(':').first,
-    };
     for (final widgetType in chromeWidgetTypes) {
       _generateJavaChromeTheme(widgetType);
     }
@@ -3216,6 +3224,10 @@ public class ${widgetType}Sizes {
       return;
     }
 
+    // Measured per theme instead, into {Widget}Theme: the theme sets the label's font, and with it
+    // the tab and the strip.
+    if (themeCaseFqnByWidget.containsKey(widgetType)) return;
+
     final strip = <String, double>{};
     final frame = <String, double>{};
     final frameStyled = <String, double>{};
@@ -3247,6 +3259,12 @@ public class ${widgetType}Sizes {
 
     final tab = _tabGeometry(widgetType, analyses);
     if (tab == null) return;
+    if (tab.closeExtra == null) {
+      print(
+        'SKIPPED ${widgetType}Sizes.java: no tab with a close button measured.',
+      );
+      return;
+    }
 
     final buffer = StringBuffer()
       ..writeln('package dev.equo.swt.size;')
@@ -3289,7 +3307,7 @@ public class ${widgetType}Sizes {
         '    /** What a close button adds to a tab\'s width, including its gap to the label. */',
       )
       ..writeln(
-        '    public static final int TAB_CLOSE_EXTRA = ${tab.closeExtra.round()};',
+        '    public static final int TAB_CLOSE_EXTRA = ${tab.closeExtra!.round()};',
       )
       ..writeln()
       ..writeln('    /** What an image adds to a tab\'s width, including its gap to the label. */')
@@ -3455,6 +3473,16 @@ public class CoolBarSizes {
   /// Emits `{Widget}Theme` for a widget measured for its chrome: the frame it draws, per theme.
   /// Every style has to draw one frame within a theme; themes are free to differ.
   void _generateJavaChromeTheme(String widgetType) {
+    final hasTabs = extractedChrome.values.any(
+      (byStyle) => byStyle.entries.any(
+        (e) =>
+            e.key.startsWith('$widgetType:') && e.value.containsKey('tabWidth'),
+      ),
+    );
+    if (hasTabs) {
+      _generateJavaTabbedTheme(widgetType);
+      return;
+    }
     final byTheme = <String, Map<String, double>>{};
     for (final themeName in themeOrder) {
       final byStyle = extractedChrome[themeName];
@@ -3523,33 +3551,48 @@ public class CoolBarSizes {
   /// not the decomposition the theme is written in, whose several constants only ever reach a tab's
   /// width as a sum.
   ///
-  _TabGeometry? _tabGeometry(String widgetType, List<WidgetAnalysis> analyses) {
+  _TabGeometry? _tabGeometry(
+    String widgetType,
+    List<WidgetAnalysis> analyses,
+  ) => _tabGeometryOf(widgetType, '${widgetType}Sizes.java', {
+    for (final m in analyses.expand((a) => a.measurements))
+      m.style: _tabProbe(m.discoveredComponents),
+  });
+
+  /// [_tabGeometry] over the [_tabProbe] of each case, by style. A tab without a close shape
+  /// measured has no close extra.
+  _TabGeometry? _tabGeometryOf(
+    String widgetType,
+    String file,
+    Map<String, Map<String, double>> probesByStyle,
+  ) {
     final surround = <String, double>{};
     final widths = <String, double>{};
     double? imageHeight;
-    for (final m in analyses.expand((a) => a.measurements)) {
-      final tabs = m.discoveredComponents['tab'];
-      final text = m.discoveredComponents['text'];
-      if (tabs is! List || tabs.isEmpty || text is! Map) continue;
-      final width = ((tabs.first as Map)['width'] as num).toDouble();
-      widths[m.style] = width;
-      if (!m.style.startsWith('tab:')) {
-        surround[m.style] = width - (text['width'] as num).toDouble();
+    for (final entry in probesByStyle.entries) {
+      final width = entry.value['tabWidth'];
+      if (width == null) continue;
+      widths[entry.key] = width;
+      if (!entry.key.startsWith('tab:')) {
+        surround[entry.key] = width - entry.value['labelWidth']!;
       }
-      final image = m.discoveredComponents['image'];
-      if (image is Map) imageHeight = (image['height'] as num).toDouble();
+      imageHeight = entry.value['imageHeight'] ?? imageHeight;
     }
 
-    final agreed =
-        _agreedMeasurement(surround, widgetType, 'what a tab draws around its label');
+    final agreed = _agreedMeasurement(
+      surround,
+      widgetType,
+      'what a tab draws around its label',
+      file: file,
+    );
     final plain = widths['tab:plain'];
     final withClose = widths['tab:close'];
     final withImage = widths['tab:image'];
     if (agreed == null) return null;
-    if (plain == null || withClose == null || withImage == null || imageHeight == null) {
+    if (plain == null || withImage == null || imageHeight == null) {
       print(
-        'SKIPPED ${widgetType}Sizes.java: the tab shapes did not all measure — '
-        'plain=$plain close=$withClose image=$withImage imageHeight=$imageHeight',
+        'SKIPPED $file: the tab shapes did not all measure — '
+        'plain=$plain image=$withImage imageHeight=$imageHeight',
       );
       return null;
     }
@@ -3560,7 +3603,7 @@ public class CoolBarSizes {
     final imageExtra = withImage - plain;
     if (imageExtra < imageHeight) {
       print(
-        'SKIPPED ${widgetType}Sizes.java: the tab with an image is only ${imageExtra}px wider than '
+        'SKIPPED $file: the tab with an image is only ${imageExtra}px wider than '
         'the one without, for an icon $imageHeight tall — it was not drawn.',
       );
       return null;
@@ -3568,10 +3611,165 @@ public class CoolBarSizes {
 
     return _TabGeometry(
       surround: agreed,
-      closeExtra: withClose - plain,
+      closeExtra: withClose == null ? null : withClose - plain,
       imageExtra: imageExtra,
       imageHeight: imageHeight,
     );
+  }
+
+  /// The first tab a case drew, the label inside it and the image beside that: what Java adds up to
+  /// size a tab. Empty for a case without tabs.
+  Map<String, double> _tabProbe(Map<String, dynamic> discovered) {
+    final tabs = discovered['tab'];
+    final text = discovered['text'];
+    if (tabs is! List || tabs.isEmpty || text is! Map) return const {};
+    final tab = tabs.first as Map;
+    final image = discovered['image'];
+    return {
+      'tabWidth': (tab['width'] as num).toDouble(),
+      'tabHeight': (tab['height'] as num).toDouble(),
+      'labelWidth': (text['width'] as num).toDouble(),
+      if (image is Map) 'imageHeight': (image['height'] as num).toDouble(),
+    };
+  }
+
+  /// Emits `{Widget}Theme` for a widget with tabs: the strip, the frame and the tab, per theme,
+  /// with the style the theme draws the tab's label in. Within a theme every style has to agree.
+  void _generateJavaTabbedTheme(String widgetType) {
+    final file = '${widgetType}Theme.java';
+    final byTheme = <String, String>{};
+    for (final themeName in themeOrder) {
+      final probesByStyle = <String, Map<String, double>>{
+        for (final e in (extractedChrome[themeName] ?? const {}).entries)
+          if (e.key.startsWith('$widgetType:'))
+            e.key.substring(widgetType.length + 1): e.value,
+      };
+      if (probesByStyle.isEmpty) continue;
+
+      final strip = <String, double>{};
+      final frame = <String, double>{};
+      final tabHeight = <String, double>{};
+      for (final e in probesByStyle.entries) {
+        final probe = e.value;
+        final height = probe['tabHeight'];
+        // The image is drawn at the theme's icon size, which can make its tab the taller one.
+        if (height != null && e.key != 'tab:image') tabHeight[e.key] = height;
+        if (!probe.containsKey('left')) continue;
+        // Which edge the strip is on is the style's to say; the other three carry the frame.
+        final onBottom = e.key.contains('BOTTOM');
+        strip[e.key] = onBottom ? probe['bottom']! : probe['top']!;
+        frame['${e.key} left'] = probe['left']!;
+        frame['${e.key} right'] = probe['right']!;
+        frame['${e.key} ${onBottom ? 'top' : 'bottom'}'] = onBottom
+            ? probe['top']!
+            : probe['bottom']!;
+      }
+
+      final where = 'in the $themeName theme';
+      final stripHeight = _agreedMeasurement(
+        strip,
+        widgetType,
+        'the tab strip height $where',
+        file: file,
+      );
+      final border = _agreedMeasurement(
+        frame,
+        widgetType,
+        'the body frame $where',
+        file: file,
+      );
+      final height = _agreedMeasurement(
+        tabHeight,
+        widgetType,
+        'the tab height $where',
+        file: file,
+      );
+      final tab = _tabGeometryOf(widgetType, file, probesByStyle);
+      final heightWithImage = probesByStyle['tab:image']?['tabHeight'];
+      final labelStyles = {
+        for (final e in (extractedThemes[themeName] ?? const {}).entries)
+          if (e.key.startsWith('$widgetType:'))
+            _javaThemeTextStyle(e.value, themeName),
+      };
+      if (labelStyles.length != 1) {
+        print(
+          'SKIPPED $file: the label is not drawn in one style $where: $labelStyles',
+        );
+        return;
+      }
+      if (stripHeight == null ||
+          border == null ||
+          height == null ||
+          tab == null ||
+          heightWithImage == null) {
+        print('SKIPPED $file: see above.');
+        return;
+      }
+      byTheme[themeName] =
+          '${stripHeight.round()}, ${height.round()}, ${border.round()}, '
+          '${tab.surround.round()}, ${tab.imageExtra.round()}, ${heightWithImage.round()}, '
+          '${labelStyles.single}';
+    }
+
+    final buffer = StringBuffer()
+      ..writeln('package dev.equo.swt.size;')
+      ..writeln()
+      ..writeln('/**')
+      ..writeln(
+        ' * What a $widgetType draws around the page it shows and around each tab\'s label, per theme.',
+      )
+      ..writeln(
+        ' * Java hands the page the area these leave and sizes a tab from its label, so the numbers',
+      )
+      ..writeln(' * are the render side\'s rather than a second copy.')
+      ..writeln(' *')
+      ..writeln(
+        ' * DO NOT EDIT MANUALLY - regenerate from measure_${widgetType.toLowerCase()}.dart',
+      )
+      ..writeln(' */')
+      ..write(
+        javaValueClass('${widgetType}Theme', const [
+          ('int', 'tabStripHeight'),
+          ('int', 'tabHeight'),
+          ('int', 'bodyBorder'),
+          ('int', 'tabLabelSurround'),
+          ('int', 'tabImageExtra'),
+          ('int', 'tabHeightWithImage'),
+          ('TextStyle', 'tabLabelStyle'),
+        ]),
+      )
+      ..writeln('    public static ${widgetType}Theme get() {')
+      ..writeln('        return Themes.getTheme().${widgetField(widgetType)};')
+      ..writeln('    }')
+      ..writeln();
+    for (final entry in byTheme.entries) {
+      buffer
+        ..writeln(
+          '    public static ${widgetType}Theme get${entry.key}Theme() {',
+        )
+        ..writeln('        return new ${widgetType}Theme(${entry.value});')
+        ..writeln('    }')
+        ..writeln();
+    }
+    buffer.writeln('}');
+
+    final themeFile = File('$outputDir/$file');
+    themeFile.writeAsStringSync(buffer.toString());
+    print('Generated: ${themeFile.path}');
+  }
+
+  /// A text style sampled under [themeName], as the `new TextStyle(...)` that theme's Java holds.
+  String _javaThemeTextStyle(Map textStyle, String themeName) {
+    final fontFamily = ((textStyle['fontFamily'] ?? 'System') as String)
+        .replaceAll(".AppleSystemUIFont", "System")
+        .replaceAll("Roboto", "System")
+        .replaceAll("Segoe UI", "System");
+    final fontSize = textStyle['fontSize'] ?? 12;
+    final fontWeight = textStyle['fontWeight'] ?? 400;
+    final fontItalic = textStyle['fontItalic'] ?? false;
+    final height = textStyle['height'] ?? 0.0;
+    return 'new TextStyle("$fontFamily", $fontSize, $fontItalic, $fontWeight'
+        '${themeName != 'Default' && height != 0.0 ? ', $height' : ''})';
   }
 
   /// The style the label on this container's own chrome is drawn in, as the `new TextStyle(...)`
@@ -3614,17 +3812,19 @@ public class CoolBarSizes {
   double? _agreedMeasurement(
     Map<String, double> edges,
     String widgetType,
-    String what,
-  ) {
+    String what, {
+    String? file,
+  }) {
+    file ??= '${widgetType}Sizes.java';
     if (edges.isEmpty) {
       print(
-        'SKIPPED ${widgetType}Sizes.java: nothing measured $what — no style case produced it.',
+        'SKIPPED $file: nothing measured $what — no style case produced it.',
       );
       return null;
     }
     final distinct = edges.values.toSet();
     if (distinct.length != 1) {
-      print('SKIPPED ${widgetType}Sizes.java: $what is not one number: $edges');
+      print('SKIPPED $file: $what is not one number: $edges');
       return null;
     }
     return distinct.single;

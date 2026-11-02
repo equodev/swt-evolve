@@ -2,12 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VColorDialog extends VDialog {
 
     protected VColorDialog() {
@@ -17,7 +12,6 @@ public class VColorDialog extends VDialog {
         super(impl);
     }
 
-    @JsonAttribute(name = "RGB")
     public RGB getRGB() {
         return ((DartColorDialog) impl).rgb;
     }
@@ -26,46 +20,45 @@ public class VColorDialog extends VDialog {
         ((DartColorDialog) impl).rgb = value;
     }
 
-    @JsonAttribute(name = "RGBs")
     public RGB[] getRGBs() {
         RGB[] values = ((DartColorDialog) impl).rgbs;
         if (values == null)
             return null;
-        ArrayList<RGB> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (RGB v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new RGB[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        RGB[] result = new RGB[kept];
+        kept = 0;
+        for (RGB v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setRGBs(RGB[] value) {
         ((DartColorDialog) impl).rgbs = value;
     }
 
-    @JsonConverter(target = ColorDialog.class)
-    public static class ColorDialogJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 19;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartColorDialog.class, (JsonWriter.WriteObject<DartColorDialog>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartColorDialog.class, (JsonReader.ReadObject<DartColorDialog>) reader -> {
-                return null;
-            });
-        }
-
-        public static ColorDialog read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, ColorDialog api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(79);
+        w.write(getRGB());
+        w.key(80);
+        {
+            RGB[] a_ = getRGBs();
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (RGB e_ : a_) w.write(e_);
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'src/impl/widget_ops.dart';
 import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
@@ -34,6 +35,7 @@ import 'src/impl/window_commands_native.dart'
     if (dart.library.js_interop) 'src/impl/window_commands_web.dart';
 
 import 'src/comm/comm.dart';
+import 'src/comm/v_registry.dart';
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
 import 'src/impl/client_ready.dart';
@@ -49,8 +51,10 @@ import 'semantics_ghost_guard_stub.dart'
 import 'src/gen/gc.dart';
 import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
+import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
+import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
 
 /// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
@@ -75,6 +79,9 @@ void main(List<String> args) async {
 
   // Dormant test-support channel (no-op in production; see test_harness.dart).
   test_harness.registerTestQueryChannel();
+  // Every client holds widgets, whatever it was opened to show, so every client takes their changes.
+  EquoCommService.onBytesAt(gen.WireChannel.swtEvolveWire, VRegistry.instance.applyWire);
+  registerWidgetOps();
 
   int? widgetId = getWidgetId(args);
   String? widgetName = getWidgetName(args);
@@ -94,6 +101,7 @@ void main(List<String> args) async {
   }
 
   WidgetsFlutterBinding.ensureInitialized();
+  FramePresentation.ensureTracking();
   final fallbackFonts = _loadWebFallbackFonts();
   // Registered before the first await: Java hands a client what it sent before the comm connected
   // (setPort) as soon as it connects, possibly while the fonts load, and a frame nothing listens to is
@@ -109,6 +117,7 @@ void main(List<String> args) async {
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
+  reloadOnRendererCrash();
   // Forces the semantics tree on so Flutter Web emits real <flt-semantics> DOM nodes (with our
   // Semantics identifiers, see ControlImpl.wrap) for E2E tools like Playwright to find and click.
   // Off by default: building the semantics tree has a real runtime cost, so production must not pay
@@ -206,15 +215,22 @@ final Map<int, GCDrawer> _activeGcDrawers = {};
 int _readInt64BE(ByteData v, int offset) =>
     v.getInt32(offset, Endian.big) * 0x100000000 + v.getUint32(offset + 4, Endian.big);
 
+/// [_readInt64BE] of the 8 bytes at [at] in [d], read in place.
+int _int64At(Uint8List d, int at) {
+  final hi = ((d[at] << 24) | (d[at + 1] << 16) | (d[at + 2] << 8) | d[at + 3]).toSigned(32);
+  final lo = d[at + 4] * 0x1000000 + ((d[at + 5] << 16) | (d[at + 6] << 8) | d[at + 7]);
+  return hi * 0x100000000 + lo;
+}
+
 /// Listens for the drawers of Images' GCs. One that arrives before [fallbackFonts] are in waits for
 /// them, as it did when it could not arrive any earlier: what it draws is laid out in those fonts.
 /// Waiting here holds the frames behind it too, so its state and ops still apply in order after it.
 void _registerGcCreateListener(Future<void> fallbackFonts) {
   var fontsIn = false;
   fallbackFonts.then((_) => fontsIn = true, onError: (Object _) => fontsIn = true);
-  // Raw-bytes path: Java sends the gcId as 8 big-endian bytes, no JSON round-trip.
-  EquoCommService.onBytes("GC/create", (bytes) {
-    final gcId = _readInt64BE(ByteData.sublistView(bytes), 0);
+  // Raw-bytes path: Java sends the gcId as 8 big-endian bytes.
+  EquoCommService.onBytesAt(gen.WireChannel.gcCreate, (data, start, end) {
+    final gcId = _int64At(data, start);
     void create() {
       final state = VGC()
         ..swt = "GC"
@@ -238,34 +254,35 @@ void _registerGcCreateListener(Future<void> fallbackFonts) {
 void registerImagePixelsListener() {
   Future<void> answer(int ref) async {
     final png = await ImageUtils.encodeRemoteImagePng(ref);
-    EquoCommService.sendBytes("Image/$ref/pixelsResult", png ?? Uint8List(0));
+    EquoCommService.sendTo(gen.WireType.image, ref, gen.WireChannel.pixelsResult, png ?? Uint8List(0));
   }
 
   // The caller blocks on this with a timeout, so making it wait out a queue of unrelated frames is
   // what turns a read into a timeout — and an unanswered read is indistinguishable from a black
   // image. When the picture is already rendered, answer without queueing; the encode runs detached
   // so it does not hold the queue either.
-  EquoCommService.onArrival("Image/requestPixels", (bytes) {
+  EquoCommService.onArrival(0, 0, gen.WireChannel.imageRequestPixels, (bytes) {
     final ref = _readInt64BE(ByteData.sublistView(bytes), 0);
     if (!ImageUtils.hasRemoteImage(ref)) return false;
     unawaited(answer(ref));
     return true;
   });
 
-  // Not rendered yet: the render is a frame still in the queue, so this has to take its turn.
-  EquoCommService.onBytes("Image/requestPixels", (bytes) async {
-    await answer(_readInt64BE(ByteData.sublistView(bytes), 0));
+  // Not rendered yet: the render is a frame still in the queue, so this takes its turn, then waits
+  // for the render without holding the queue the render may still be behind.
+  EquoCommService.onBytes(0, 0, gen.WireChannel.imageRequestPixels, (bytes) {
+    unawaited(answer(_readInt64BE(ByteData.sublistView(bytes), 0)));
   });
 }
 
 void _registerImageReleaseListener() {
   // Raw-bytes path: Java sends the remoteRef as 8 big-endian bytes when it disposes an Image
   // whose offscreen render was cached here (see GCImageDrawer.java / DartImage#destroy()).
-  EquoCommService.onBytes("Image/releaseRemoteRef", (bytes) {
-    ImageUtils.releaseRemoteImage(_readInt64BE(ByteData.sublistView(bytes), 0));
+  EquoCommService.onBytesAt(gen.WireChannel.imageReleaseRemoteRef, (data, start, end) {
+    ImageUtils.releaseRemoteImage(_int64At(data, start));
   });
-  EquoCommService.onBytes("Image/forget", (bytes) {
-    forgetImage(_readInt64BE(ByteData.sublistView(bytes), 0));
+  EquoCommService.onBytesAt(gen.WireChannel.imageForget, (data, start, end) {
+    forgetImage(_int64At(data, start));
   });
 }
 
@@ -275,7 +292,7 @@ void sendClientReady(String widgetName, int widgetId, {bool sendWindowSize = fal
       _sendWindowSizedClientReady(widgetName, widgetId);
     });
   } else {
-    EquoCommService.send("${widgetName}/${widgetId}/ClientReady");
+    EquoCommService.sendTo(WidgetKey.typeOf(widgetName), widgetId, gen.WireChannel.clientReady);
   }
 }
 
@@ -321,7 +338,7 @@ class _WindowMetricsReporter {
     if (_windowCloseSent) return;
     _windowCloseSent = true;
     print('[WinUnload] $widgetName/$widgetId');
-    EquoCommService.send("$widgetName/$widgetId/WinUnload");
+    EquoCommService.sendTo(WidgetKey.typeOf(widgetName), widgetId, gen.WireChannel.winUnload);
   }
 
   void _sendCurrentSize() {
@@ -404,7 +421,7 @@ void _sendWindowSizedClientReady(String widgetName, int widgetId, {Size? sizeOve
   final size = sizeOverride ?? currentSwtViewSize();
   // The monitor the window is on (0 when unknown → Java keeps its default/viewport).
   final monitor = _currentLogicalMonitorSize();
-  _clientReady.report(widgetName, widgetId,
+  _clientReady.report(WidgetKey.typeOf(widgetName), widgetId,
       width: size?.width.toInt() ?? 1280,
       height: size?.height.toInt() ?? 720,
       displayWidth: monitor?.width.toInt() ?? 0,
@@ -418,9 +435,10 @@ Future<void> initSwtEvolveProperties() async {
 
   if (!_swtEvolvePropertiesListenerRegistered) {
     _swtEvolvePropertiesListenerRegistered = true;
-    EquoCommService.onRaw("swt.evolve.properties", (dynamic data) {
+    // The flags as the widget wire writes an object's fields.
+    EquoCommService.onBytes(0, 0, gen.WireChannel.swtEvolveProperties, (bytes) {
       try {
-        applyConfigFlags(ConfigFlags.fromJson(data as Map<String, dynamic>));
+        applyConfigFlags(ConfigFlags.read(bytes));
       } catch (e) {
         print('Error parsing properties: $e');
       } finally {
@@ -439,29 +457,24 @@ Future<void> initSwtEvolveProperties() async {
   );
 }
 
-Widget createContentWidget(String widgetName, int widgetId) {
-  Map<String, dynamic> child = {
-    'swt': widgetName,
-    'id': widgetId,
-    'style': 0,
-  };
-  return customWidget(child) ?? gen.mapWidget(child);
-}
+Widget createContentWidget(String widgetName, int widgetId) =>
+    customWidget(widgetName, widgetId) ?? gen.mapWidget(widgetName, widgetId);
 
-Widget? customWidget(Map<String, dynamic> child) {
-  var type = child['swt'];
-  var id = child['id'];
+Widget? customWidget(String type, int id) {
+  VComposite composite() => VComposite()
+    ..swt = type
+    ..id = id;
   return switch (type) {
     "MainToolbar" => ToolbarComposite(
         key: ValueKey(id),
-        value: VComposite.fromJson(child),
+        value: composite(),
         useBoundsLayout: true,
     ),
-    "SideBar" => SideBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "StatusBar" => StatusBarComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "MainComposite" => MainComposite(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
-    "SwingIsland" => SwingIslandSwt(key: ValueKey(id), value: VComposite.fromJson(child)),
+    "SideBar" => SideBarComposite(key: ValueKey(id), value: composite()),
+    "StatusBar" => StatusBarComposite(key: ValueKey(id), value: composite()),
+    "MainComposite" => MainComposite(key: ValueKey(id), value: composite()),
+    "EwtWidget" => EwtWidgetSwt(key: ValueKey(id), value: composite()),
+    "SwingIsland" => SwingIslandSwt(key: ValueKey(id), value: composite()),
     "Display" => DisplaySwt(key: ValueKey(id), value: VDisplay()..swt = "Display"..id = id),
     _ => null
   };
@@ -509,6 +522,7 @@ class EvolveApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    registerWidgetOps();
     return AnimatedBuilder(
       animation: configFlagsVersion,
       builder: (context, _) {
@@ -574,7 +588,9 @@ class EvolveApp extends StatelessWidget {
           themeMode: effectiveThemeMode,
           debugShowCheckedModeBanner: false,
           actions: {...WidgetsApp.defaultActions, ...TraversalVetoScope.appActions},
-          builder: (ctx, navigator) => SwtZoomScale(child: navigator!),
+          // The navigator's overlay is repainted whenever one of its entries moves, a drag image
+          // with every frame of a drag; the layer stops that at the overlay, not the whole window.
+          builder: (ctx, navigator) => SwtZoomScale(child: RepaintBoundary(child: navigator!)),
           home: Scaffold(
             backgroundColor: effectiveThemeMode == ThemeMode.dark
                 ? darkTheme.scaffoldBackgroundColor

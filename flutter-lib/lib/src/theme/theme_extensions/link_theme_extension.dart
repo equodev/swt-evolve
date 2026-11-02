@@ -1,21 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'link_theme_extension.tailor.dart';
-part 'link_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
-@TextDecorationConverter()
-@TextAlignConverter()
-@MainAxisAlignmentConverter()
-@CrossAxisAlignmentConverter()
 class LinkThemeExtension extends ThemeExtension<LinkThemeExtension> with _$LinkThemeExtensionTailorMixin {
   // Text colors
   final Color textColor;
@@ -66,9 +54,4 @@ class LinkThemeExtension extends ThemeExtension<LinkThemeExtension> with _$LinkT
     required this.textAlign,
     required this.minTextContrast,
   });
-
-  factory LinkThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$LinkThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$LinkThemeExtensionToJson(this);
 }

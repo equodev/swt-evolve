@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/event.dart';
@@ -14,6 +15,7 @@ import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/toolbar_evolve.dart';
 import 'package:swtflutter/src/theme/theme_extensions/toolbar_theme_extension.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 final List<String> _sent = [];
 
@@ -21,14 +23,14 @@ class _RecordingToolItemSwt extends ToolItemSwt<VToolItem> {
   const _RecordingToolItemSwt({required super.value});
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) => _sent.add('${val.id} $ev');
+  void sendEvent(VToolItem val, int channel, VEvent? payload) => _sent.add('${val.id} ${wireChannelNames[channel]}');
 }
 
 class _RecordingToolBarSwt extends ToolBarSwt<VToolBar> {
   const _RecordingToolBarSwt({required super.value});
 
   @override
-  void sendEvent(VToolBar val, String ev, VEvent? payload) => _sent.add('${val.id} $ev');
+  void sendEvent(VToolBar val, int channel, VEvent? payload) => _sent.add('${val.id} ${wireChannelNames[channel]}');
 
   @override
   State createState() => _RecordingToolBarImpl();
@@ -57,6 +59,8 @@ VToolItem _item(int id, int style, String text) => VToolItem()
 VToolBar _toolBar({int style = 0, List<VToolItem>? items}) => VToolBar()
   ..id = 1
   ..style = SWT.HORIZONTAL | SWT.FLAT | style
+  // Java names a FLAT ToolBar one Tab stop.
+  ..tabStop = true
   ..enabled = true
   ..visible = true
   ..items = items ??
@@ -88,7 +92,7 @@ int? _focusedItemId() {
 
 Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester, [VToolBar? toolBar]) async {
   final field = FocusNode(debugLabel: 'field');
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +101,7 @@ Future<FocusNode> _pumpFieldAndToolBar(WidgetTester tester, [VToolBar? toolBar])
         SizedBox(width: 400, height: 40, child: _RecordingToolBarSwt(value: toolBar ?? _toolBar())),
       ],
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   field.requestFocus();
   await tester.pump();
@@ -148,8 +152,10 @@ void main() {
   testWidgets('Down on a focused DROP_DOWN item opens its menu', (tester) async {
     final field = await _pumpFieldAndToolBar(tester);
 
+    // Tab enters the bar on its first item; Right reaches the DROP_DOWN item, as on Win32.
+    await _tabUntil(tester, () => _focusedItemId() != null);
     for (var i = 0; i < 5 && _focusedItemId() != 3; i++) {
-      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pump();
     }
     expect(_focusedItemId(), 3);
@@ -211,7 +217,8 @@ void main() {
     field.dispose();
   });
 
-  testWidgets('Left and Right from a DROP_DOWN arrow move to the neighbouring items', (tester) async {
+  testWidgets('A FLAT ToolBar is one Tab stop: Right walks its items, a DROP_DOWN arrow included in its item, and Tab leaves',
+      (tester) async {
     final field = await _pumpFieldAndToolBar(
         tester,
         _toolBar(items: [
@@ -220,20 +227,16 @@ void main() {
           _item(4, SWT.PUSH, 'After'),
         ]));
 
-    await _tabUntil(tester, _arrowFocused);
+    await _tabUntil(tester, () => _focusedItemId() != null);
+    expect(_focusedItemId(), 2);
+    await _press(tester, LogicalKeyboardKey.arrowRight);
     expect(_focusedItemId(), 3);
-    expect(_arrowFocused(), isTrue);
+    expect(_arrowFocused(), isFalse);
     await _press(tester, LogicalKeyboardKey.arrowRight);
     expect(_focusedItemId(), 4);
 
-    await _press(tester, LogicalKeyboardKey.arrowLeft);
-    expect(_focusedItemId(), 3);
-    expect(_arrowFocused(), isFalse);
-
     await _press(tester, LogicalKeyboardKey.tab);
-    expect(_arrowFocused(), isTrue);
-    await _press(tester, LogicalKeyboardKey.arrowLeft);
-    expect(_focusedItemId(), 2);
+    expect(_focusedItemId(), isNull, reason: 'the next Tab leaves the bar');
 
     field.dispose();
   });

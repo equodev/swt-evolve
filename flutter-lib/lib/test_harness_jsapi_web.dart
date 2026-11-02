@@ -12,6 +12,7 @@ import 'dart:js_interop_unsafe';
 ///   const all  = window.evolveTest.queryAllStates();        // String, JSON map {swt/id: V*}
 ///   const some = window.evolveTest.queryStates(['Label/9']); // String, the same map for those ids
 ///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
+///   window.evolveTest.pickTheme('hb', 'dark');              // as picking it on the toolbar palette
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
 void registerTestQueryJsApi({
   required String Function() styledTextPerfJson,
@@ -23,6 +24,7 @@ void registerTestQueryJsApi({
   required String Function() queryTreeItemsJson,
   required bool Function(String) expandTreeItem,
   required String Function() queryPrimaryFocus,
+  required void Function(String, String?) pickTheme,
   required void Function(void Function()) scheduleFrameSync,
 }) {
   final api = JSObject();
@@ -65,6 +67,11 @@ void registerTestQueryJsApi({
   api.setProperty(
     'queryPrimaryFocus'.toJS,
     (() => queryPrimaryFocus().toJS).toJS,
+  );
+  api.setProperty(
+    'pickTheme'.toJS,
+    ((JSString themeName, JSString? forceTheme) =>
+        pickTheme(themeName.toDart, forceTheme?.toDart)).toJS,
   );
   api.setProperty(
     'waitForFrame'.toJS,

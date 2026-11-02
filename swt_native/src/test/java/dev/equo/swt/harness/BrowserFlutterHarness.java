@@ -23,9 +23,9 @@ public class BrowserFlutterHarness extends WidgetFlutterHarness {
     protected void registerCommHandlers() {
         super.registerCommHandlers();
         // On-load pings from embedded pages (posted by the page itself; see test_harness_iframe_web.dart).
-        comm().on(IFRAME_LOADED, byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm(), IFRAME_LOADED, byte[].class, bytes -> {
             if (bytes == null) return;
-            Map<String, Object> m = parseJson(bytes);
+            Map<String, Object> m = decode(bytes);
             Object page = m == null ? null : m.get("page");
             if (page != null) iframeLoads.add(String.valueOf(page));
         });

@@ -1,13 +1,16 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.SerializeTestBase;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.junit.jupiter.api.Test;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import java.util.Map;
+
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 
@@ -30,15 +33,14 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         item.setBackground(0, new Color(device(), 1, 2, 3));
         item.setFont(1, bold);
 
-        String json = serialize(item);
-        assertThatJson(json).node("backgrounds[0]").isObject().containsEntry("b", 3);
-        assertThatJson(json).node("backgrounds[1]").isEqualTo(null);
-        assertThatJson(json).node("foregrounds").isArray().hasSize(2);
-        assertThatJson(json).node("foregrounds[0]").isEqualTo(null);
-        assertThatJson(json).node("foregrounds[1]").isObject()
-                .containsEntry("r", 10).containsEntry("g", 100).containsEntry("b", 200);
-        assertThatJson(json).node("fonts[0]").isEqualTo(null);
-        assertThatJson(json).node("fonts[1]").isObject();
+        Map<String, Object> state = serialize(item);
+        assertThat(WireValues.at(state, "backgrounds[0]")).isInstanceOf(String.class).asString().endsWith("03");
+        assertThatWire(state).node("backgrounds[1]").isNull();
+        assertThatWire(state).node("foregrounds").hasSize(2);
+        assertThatWire(state).node("foregrounds[0]").isNull();
+        assertThat(WireValues.at(state, "foregrounds[1]")).isEqualTo("#ff0a64c8");
+        assertThatWire(state).node("fonts[0]").isNull();
+        assertThatWire(state).node("fonts[1]").isObject();
     }
 
     @Test
@@ -52,7 +54,7 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         item.setBackground(0, new Color(device(), 1, 2, 3));
         item.setFont(0, new Font(device(), "Arial", 10, SWT.ITALIC));
 
-        assertThat(value.changedKeys()).contains("foregrounds", "backgrounds", "fonts");
+        assertThat(value.changedNames()).contains("foregrounds", "backgrounds", "fonts");
     }
 
     @Test
@@ -65,19 +67,19 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         item.setBackground(1, new Color(device(), 1, 2, 3));
         item.setFont(1, new Font(device(), "Arial", 10, SWT.BOLD));
 
-        String json = serialize(item);
-        assertThatJson(json).node("foregrounds[0]").isObject().containsEntry("b", 200);
-        assertThatJson(json).node("backgrounds[0]").isEqualTo(null);
-        assertThatJson(json).node("backgrounds[1]").isObject().containsEntry("b", 3);
-        assertThatJson(json).node("fonts[1]").isObject();
+        Map<String, Object> state = serialize(item);
+        assertThat(WireValues.at(state, "foregrounds[0]")).isInstanceOf(String.class).asString().endsWith("c8");
+        assertThatWire(state).node("backgrounds[0]").isNull();
+        assertThat(WireValues.at(state, "backgrounds[1]")).isInstanceOf(String.class).asString().endsWith("03");
+        assertThatWire(state).node("fonts[1]").isObject();
     }
 
     @Test
     void an_item_with_no_cell_values_sends_no_cell_lists() {
         TreeItem item = new TreeItem(tree(), SWT.NONE);
 
-        String json = serialize(item);
-        assertThatJson(json).isObject()
+        Map<String, Object> state = serialize(item);
+        assertThatWire(state).isObject()
                 .doesNotContainKey("foregrounds")
                 .doesNotContainKey("backgrounds")
                 .doesNotContainKey("fonts");
@@ -97,7 +99,7 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         item.setText("new");
         item.setFont(0, null);
 
-        assertThat(value.changedKeys()).contains("fonts");
+        assertThat(value.changedKeys()).contains(VTableItem.FONTS);
     }
 
     /** Without {@code images}, a row draws {@code image}: a cleared row that had one names it, or keeps the old icon. */
@@ -113,7 +115,7 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         ((DartTableItem) item.getImpl()).clear();
         item.setFont(0, null);
 
-        assertThat(value.changedKeys()).contains("image", "text");
+        assertThat(value.changedKeys()).contains(VTableItem.IMAGE, VTableItem.TEXT);
     }
 
     @Test
@@ -129,6 +131,6 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         ((DartTreeItem) item.getImpl()).clear();
         item.setFont(0, null);
 
-        assertThat(value.changedKeys()).contains("image", "text", "fonts");
+        assertThat(value.changedKeys()).contains(VTreeItem.IMAGE, VTreeItem.TEXT, VTreeItem.FONTS);
     }
 }

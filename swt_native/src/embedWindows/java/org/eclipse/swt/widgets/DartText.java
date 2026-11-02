@@ -381,6 +381,7 @@ public class DartText extends DartScrollable implements IText {
     void createWidget() {
         super.createWidget();
         message = "";
+        getValue().markDirty(VText.MESSAGE);
         doubleClick = true;
         setTabStops(tabs = 8);
         fixAlignment();
@@ -1251,6 +1252,7 @@ public class DartText extends DartScrollable implements IText {
             getValue().markDirty(VText.EDITABLE);
         }
         getApi().style &= ~SWT.READ_ONLY;
+        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         if (!editable)
             getApi().style |= SWT.READ_ONLY;
         this.editable = newValue;
@@ -1924,64 +1926,87 @@ public class DartText extends DartScrollable implements IText {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    TextHelper.handleModify(this, e);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Segment", "Segments", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    sendEvent(SWT.Segments, e);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (!isActive())
-                    return;
-                if (e.detail == SWT.ICON_CANCEL) {
-                    if (getCharCount() != 0) {
-                        setText("");
-                    }
-                    if (!isDisposed()) {
-                        sendEvent(SWT.DefaultSelection, e);
-                    }
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Segment/Segments", "Selection/DefaultSelection", "Selection/Selection", "Verify/Verify");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                            TextHelper.handleModify(this, e);
+                        }
+                    });
                     return;
                 }
-                if (!traverse(SWT.TRAVERSE_RETURN)) {
-                    Event crEvent = new Event();
-                    crEvent.keyCode = SWT.CR;
-                    crEvent.character = '\r';
-                    sendEvent(SWT.KeyDown, crEvent);
-                }
-                if (!isDisposed()) {
-                    sendEvent(SWT.DefaultSelection, e);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    setSelection(e.index);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Verify", "Verify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (TextHelper.proposesNoChange(e)) {
-                    TextHelper.clientCaretMoved(this, e.start, e.index);
+            case "Segment/Segments":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                            sendEvent(SWT.Segments, e);
+                        }
+                    });
                     return;
                 }
-                sendEvent(SWT.Verify, e);
-            });
-        });
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        if (e.detail == SWT.ICON_CANCEL) {
+                            if (getCharCount() != 0) {
+                                setText("");
+                            }
+                            if (!isDisposed()) {
+                                sendEvent(SWT.DefaultSelection, e);
+                            }
+                            return;
+                        }
+                        if (!traverse(SWT.TRAVERSE_RETURN)) {
+                            Event crEvent = new Event();
+                            crEvent.keyCode = SWT.CR;
+                            crEvent.character = '\r';
+                            sendEvent(SWT.KeyDown, crEvent);
+                        }
+                        if (!isDisposed()) {
+                            sendEvent(SWT.DefaultSelection, e);
+                        }
+                    });
+                    return;
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                            setSelection(e.index);
+                        }
+                    });
+                    return;
+                }
+            case "Verify/Verify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (TextHelper.proposesNoChange(e)) {
+                            TextHelper.clientCaretMoved(this, e.start, e.index);
+                            return;
+                        }
+                        sendEvent(SWT.Verify, e);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Text getApi() {

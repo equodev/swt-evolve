@@ -19,38 +19,29 @@ void main() {
       java,
       contains('    public TextStyle textStyle() { return textStyle; }'),
     );
-    expect(
-      java,
-      contains(
-        '        return java.util.Objects.equals(textStyle, other.textStyle);',
-      ),
-    );
   });
 
-  test('primitive components are compared by value and joined across lines', () {
-    final java = javaValueClass('CanvasTheme', const [
-      ('int', 'red'),
-      ('int', 'green'),
-      ('int', 'blue'),
-    ]);
+  test(
+    'a theme has fields, a constructor and accessors, no equals, hashCode or toString',
+    () {
+      final java = javaValueClass('CanvasTheme', const [
+        ('int', 'red'),
+        ('int', 'green'),
+        ('int', 'blue'),
+      ]);
 
-    expect(
-      java,
-      contains('    public CanvasTheme(int red, int green, int blue) {'),
-    );
-    expect(
-      java,
-      contains(
-        '        return red == other.red\n'
-        '            && green == other.green\n'
-        '            && blue == other.blue;',
-      ),
-    );
-    expect(
-      java,
-      contains(
-        '    public String toString() { return "CanvasTheme[red=" + red + ", green=" + green + ", blue=" + blue + "]"; }',
-      ),
-    );
-  });
+      expect(
+        java,
+        contains('    public CanvasTheme(int red, int green, int blue) {'),
+      );
+      for (final name in const ['red', 'green', 'blue']) {
+        expect(java, contains('    private final int $name;'));
+        expect(java, contains('        this.$name = $name;'));
+        expect(java, contains('    public int $name() { return $name; }'));
+      }
+      expect(java, isNot(contains('equals(')));
+      expect(java, isNot(contains('hashCode(')));
+      expect(java, isNot(contains('toString(')));
+    },
+  );
 }

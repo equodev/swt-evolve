@@ -11,6 +11,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -20,6 +21,9 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'support/channels.dart' as channels;
 
 const int islandId = 7;
 const int windowId = 3;
@@ -33,7 +37,7 @@ class _CapturingIsland extends SwingIslandSwt {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VComposite val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VComposite val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VComposite _island() => VComposite()
@@ -51,15 +55,8 @@ VComposite _island() => VComposite()
 /// What Java sends on the island's channel once the frame exists.
 void _answerIsland({int port = enginePort, bool surface = false}) {
   const channel = 'SwingIsland/$islandId/swingIsland';
-  final actionBytes = utf8.encode(channel);
-  final bodyBytes = utf8.encode(
-    json.encode({'windowId': windowId, 'port': port, if (surface) 'surface': true}),
-  );
-  final frame = Uint8List(2 + actionBytes.length + bodyBytes.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, bodyBytes);
+  final bodyBytes = TaggedValues.encode({'windowId': windowId, 'port': port, if (surface) 'surface': true});
+  final frame = channels.frame(channel, bodyBytes);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 

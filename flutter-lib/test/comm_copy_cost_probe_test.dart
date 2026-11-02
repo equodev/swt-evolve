@@ -9,14 +9,20 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
+import 'package:swtflutter/src/gen/image.dart';
+import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/gen/label.dart';
-import 'package:swtflutter/src/gen/widgets.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireTypeNames;
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
 
 const List<int> _sizes = [64 << 10, 256 << 10, 1 << 20];
 const int _rounds = 5;
@@ -27,10 +33,10 @@ void main() {
   test('MEASURE: time per message by payload size, Dart side of the comm', () async {
     final comm = _LocalComm();
 
-    await _report('send JSON (D->J)', (chars) async {
+    await _report('send tagged values (D->J)', (chars) async {
       final payload = {'text': 'x' * chars};
       return () async {
-        comm.send('Probe/1/response', payload);
+        comm.sendNamed('evolve.test.queryResponse', payload);
         return comm.lastSent!.length;
       };
     });
@@ -38,29 +44,15 @@ void main() {
     await _report('sendBytes (D->J)', (bytes) async {
       final png = _imageBytes(bytes);
       return () async {
-        comm.sendBytes('Image/1/pixelsResult', png);
+        comm.sendNamed('Image/1/pixelsResult', png);
         return comm.lastSent!.length;
       };
     });
 
     await _report('receive widget frame (J->D)', (chars) async {
-      final frame = _frame('Label/1', _jsonBytes(_label(1, text: 'y' * chars)));
+      final frame = _tape([_label(1, text: 'y' * chars)]);
       return () async {
-        final handled = comm.expect(['Label/1']);
-        comm.receiveBinary(frame);
-        await handled;
-        return frame.length;
-      };
-    });
-
-    await _report('receive batch of 2 (J->D)', (chars) async {
-      final half = chars ~/ 2;
-      final frame = _frame(EquoCommBase.batchEvent, _jsonBytes([
-        ['Label/2', _label(2, text: 'y' * half)],
-        ['Label/3', _label(3, text: 'z' * half)],
-      ]));
-      return () async {
-        final handled = comm.expect(['Label/2', 'Label/3']);
+        final handled = comm.nextFrame();
         comm.receiveBinary(frame);
         await handled;
         return frame.length;
@@ -68,11 +60,9 @@ void main() {
     });
 
     await _report('receive widget image (J->D)', (imageBytes) async {
-      final json = _label(4, image: _imageBytes(imageBytes));
-      expect((mapWidgetValue(json) as VLabel).image?.imageData?.data?.length, imageBytes);
-      final frame = _frame('Label/4', _jsonBytes(json));
+      final frame = _tape([_label(4, image: _image(4004, _imageBytes(imageBytes)))]);
       return () async {
-        final handled = comm.expect(['Label/4']);
+        final handled = comm.nextFrame();
         comm.receiveBinary(frame);
         await handled;
         return frame.length;
@@ -80,7 +70,7 @@ void main() {
     });
 
     await _report('build widget image, per build (size = image bytes)', (imageBytes) async {
-      final image = (mapWidgetValue(_label(5, image: _imageBytes(imageBytes))) as VLabel).image!;
+      final image = _image(4005, _imageBytes(imageBytes));
       return () async {
         ImageUtils.buildVImage(image);
         return imageBytes;
@@ -128,16 +118,20 @@ Future<double> _medianMicros(Future<int> Function() once) async {
   return means[_rounds ~/ 2];
 }
 
-Map<String, dynamic> _label(int id, {String? text, Uint8List? image}) => {
-      'swt': 'Label',
-      'id': id,
-      'style': 0,
-      if (text != null) 'text': text,
-      if (image != null)
-        'image': {
-          'imageData': {'data': base64Encode(image), 'width': 16, 'height': 16, 'depth': 32},
-        },
-    };
+VLabel _label(int id, {String? text, VImage? image}) => VLabel()
+  ..id = id
+  ..seq = 1
+  ..style = 0
+  ..text = text
+  ..image = image;
+
+VImage _image(int id, Uint8List bytes) => VImage()
+  ..id = id
+  ..imageData = (VImageData()
+    ..data = bytes
+    ..width = 16
+    ..height = 16
+    ..depth = 32);
 
 /// Stands in for encoded image bytes: what is measured is how they travel, not what they draw.
 Uint8List _imageBytes(int n) {
@@ -148,41 +142,66 @@ Uint8List _imageBytes(int n) {
   return out;
 }
 
-Uint8List _jsonBytes(Object value) => utf8.encode(jsonEncode(value));
+final Map<String, int> _typeNumbers = {
+  for (final MapEntry(:key, :value) in wireTypeNames.entries) value: key,
+};
 
-/// A frame as the Java side writes it: `[name length, 2 bytes BE][name UTF-8][payload]`.
-Uint8List _frame(String name, Uint8List body) {
-  final nameBytes = utf8.encode(name);
-  final out = Uint8List(2 + nameBytes.length + body.length);
-  out[0] = (nameBytes.length >> 8) & 0xFF;
-  out[1] = nameBytes.length & 0xFF;
-  out.setRange(2, 2 + nameBytes.length, nameBytes);
-  out.setRange(2 + nameBytes.length, out.length, body);
-  return out;
+/// A widget frame as Java writes it: an image record for each image the labels show, then a whole
+/// record per label.
+Uint8List _tape(List<VLabel> labels) {
+  final records = <Uint8List>[];
+  Uint8List record(int kind, void Function(WidgetWireWriter w) write) {
+    final rest = Uint8List.fromList(WidgetWireWriter.encodeWith(write));
+    final head = Uint8List.fromList(WidgetWireWriter.encodeWith((w) => w
+      ..u8(kind)
+      ..varint(rest.length)));
+    return Uint8List.fromList([...head, ...rest]);
+  }
+
+  for (final label in labels) {
+    final image = label.image;
+    if (image != null) {
+      records.add(record(wireImage, (w) {
+        w.int64(image.id!);
+        image.writeWire(w);
+      }));
+    }
+  }
+  var last = 0;
+  for (final label in labels) {
+    records.add(record(wireWhole, (w) {
+      w
+        ..varint(_typeNumbers['Label']! * 2 + 1)
+        ..int64(label.id)
+        ..varint(label.seq - last);
+      last = label.seq;
+      label.writeWire(w);
+    }));
+  }
+  final count = ByteData(4)..setUint32(0, records.length, Endian.little);
+  return channels.frame('swt.evolve.wire',
+      Uint8List.fromList([...count.buffer.asUint8List(), for (final r in records) ...r]));
 }
 
-/// The comm with its socket left out: a sent frame is kept, a received one is delivered in place.
+/// The comm with its socket left out: a sent frame is kept, a received one is delivered in place and
+/// applied to a registry of its own.
 class _LocalComm extends EquoCommBase {
   Uint8List? lastSent;
+  final VRegistry _registry = VRegistry();
+  Completer<void>? _applied;
 
   _LocalComm() {
     markOpen();
+    onBytesNamed('swt.evolve.wire', (frame) {
+      _registry.applyWire(frame);
+      _registry.clear();
+      _applied?.complete();
+    });
   }
 
   @override
   void rawSend(Uint8List frame) => lastSent = frame;
 
-  /// Completes once every one of [channels] has been handled, decoded as a widget value.
-  Future<void> expect(List<String> channels) {
-    final waiting = channels.toSet();
-    final pending = Completer<void>();
-    for (final channel in channels) {
-      on(channel, (payload) {
-        mapWidgetValue(payload as Map<String, dynamic>);
-        waiting.remove(channel);
-        if (waiting.isEmpty && !pending.isCompleted) pending.complete();
-      });
-    }
-    return pending.future;
-  }
+  /// Completes once the next widget frame has been applied.
+  Future<void> nextFrame() => (_applied = Completer<void>()).future;
 }

@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
 
-import 'json_converters.dart';
 
 part 'theme_color_palette_theme_extension.tailor.dart';
-part 'theme_color_palette_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@EdgeInsetsConverter()
 class ThemeColorPaletteThemeExtension
     extends ThemeExtension<ThemeColorPaletteThemeExtension>
     with _$ThemeColorPaletteThemeExtensionTailorMixin {
@@ -39,9 +33,4 @@ class ThemeColorPaletteThemeExtension
     required this.collapseTooltip,
     required this.sampleHexCsv,
   });
-
-  factory ThemeColorPaletteThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ThemeColorPaletteThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ThemeColorPaletteThemeExtensionToJson(this);
 }

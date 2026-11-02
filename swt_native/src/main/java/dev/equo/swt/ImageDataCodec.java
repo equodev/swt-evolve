@@ -30,7 +30,13 @@ public final class ImageDataCodec {
         }
     };
 
-    private static long cacheKey(ImageData img) {
+    /**
+     * A key equal for images whose pixels, palette and transparency are identical, so the same icon
+     * loaded into many distinct {@link org.eclipse.swt.graphics.Image} objects shares one. Used both
+     * to cache the PNG encode below and, in the wire, to send a repeated icon's pixels once and name
+     * it thereafter.
+     */
+    public static long contentKey(ImageData img) {
         CRC32 crc = new CRC32();
         crc.update(img.data);
         // On an indexed image the pixel bytes are palette indices, so two different images can share
@@ -64,6 +70,16 @@ public final class ImageDataCodec {
         crc.update((value >>> 8) & 0xFF);
         crc.update((value >>> 16) & 0xFF);
         crc.update((value >>> 24) & 0xFF);
+    }
+
+    /**
+     * The {@link #contentKey(ImageData)} counterpart for an SVG image. The high bit keeps it clear of
+     * the raster key space so a raster image and an SVG can never be taken for one another.
+     */
+    public static long contentKey(String svg) {
+        CRC32 crc = new CRC32();
+        crc.update(svg.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return (1L << 63) | crc.getValue();
     }
 
     /**
@@ -152,7 +168,7 @@ public final class ImageDataCodec {
     public static byte[] encode(ImageData img) {
         if (img.data == null) return null;
 
-        long key = cacheKey(img);
+        long key = contentKey(img);
         synchronized (encodedCache) {
             byte[] cached = encodedCache.get(key);
             if (cached != null) return cached;

@@ -9,6 +9,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/scrolledcomposite.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 VRectangle _r() => VRectangle()
   ..x = 0
@@ -20,8 +21,8 @@ class _AP extends AnimatedProgressSwt<VAnimatedProgress> {
   const _AP({required super.value, required this.out});
   final List<String> out;
   @override
-  void sendEvent(VAnimatedProgress v, String ev, VEvent? p) {
-    if (ev.startsWith('Focus/')) out.add(ev);
+  void sendEvent(VAnimatedProgress v, int channel, VEvent? p) {
+    if (wireChannelNames[channel]!.startsWith('Focus/')) out.add(wireChannelNames[channel]!);
   }
 }
 
@@ -29,8 +30,8 @@ class _SC extends ScrolledCompositeSwt<VScrolledComposite> {
   const _SC({required super.value, required this.out});
   final List<String> out;
   @override
-  void sendEvent(VScrolledComposite v, String ev, VEvent? p) {
-    if (ev.startsWith('Focus/')) out.add(ev);
+  void sendEvent(VScrolledComposite v, int channel, VEvent? p) {
+    if (wireChannelNames[channel]!.startsWith('Focus/')) out.add(wireChannelNames[channel]!);
   }
 }
 

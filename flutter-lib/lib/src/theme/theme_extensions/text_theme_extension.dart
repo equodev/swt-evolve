@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'text_theme_extension.tailor.dart';
-part 'text_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@EdgeInsetsConverter()
-@FontWeightConverter()
-@CurveConverter()
 class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextThemeExtensionTailorMixin {
   // Text colors
   final Color textColor;
@@ -109,9 +100,4 @@ class TextThemeExtension extends ThemeExtension<TextThemeExtension> with _$TextT
     required this.searchIconSize,
     required this.minTextContrast,
   });
-
-  factory TextThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$TextThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$TextThemeExtensionToJson(this);
 }

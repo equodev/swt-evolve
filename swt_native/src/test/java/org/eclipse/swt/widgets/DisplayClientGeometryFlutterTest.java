@@ -200,6 +200,7 @@ class DisplayClientGeometryFlutterTest {
     /** Fired on the Display thread, so the report is applied before this returns. */
     private static void clientReady(RecordingComm comm, int width, int height) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = true;

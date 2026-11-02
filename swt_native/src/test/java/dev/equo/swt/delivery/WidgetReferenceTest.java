@@ -4,6 +4,9 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireFrames;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartWidget;
@@ -19,7 +22,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -27,19 +31,17 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * When a widget travels as a name rather than as a description.
  *
- * <p>A payload carries every widget beneath the one it is about, and most of them have not changed:
- * adding one child to a composite of five hundred re-described all five hundred. A widget the far
- * side already holds, and that has not changed, is written as identity only - which widget it is,
- * and nothing about what it holds.
- *
- * <p>The rule is about the frame, not the widget: the same Label is a full description when the
- * frame is about it, and a reference when it appears inside its parent's.
+ * <p>A record names the widgets it holds by id. One the client already holds, and that has not
+ * changed, gets no record of its own: adding one child to a composite of five hundred describes the
+ * one, not the five hundred.
  */
 @ExtendWith(Mocks.class)
 class WidgetReferenceTest {
 
+    /** The client these frames are written for, and the one {@link RecordingComm} answers with. */
+    private static final int CLIENT = 1;
+
     private RecordingBridge bridge;
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -51,25 +53,15 @@ class WidgetReferenceTest {
         Config.defaultToEclipse();
     }
 
-    /**
-     * The client these frames are written for, and the one {@link RecordingComm} answers with.
-     * Whether a widget can be named rather than described is a question about one client, so a test
-     * that writes a frame outside a send has to say which - a walk addressed to nobody describes
-     * everything, which is the safe answer and not the one under test here.
-     */
-    private static final int CLIENT = 1;
-
     @BeforeEach
     void setUp() {
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
-        Serializer.enterConnection(CLIENT);
         assumeTrue(Serializer.diffEnabled, "references are part of partial delivery");
     }
 
     @AfterEach
     void tearDown() {
-        Serializer.exitConnection();
         FlutterBridge.set(null);
     }
 
@@ -82,29 +74,16 @@ class WidgetReferenceTest {
         child.setText("established");
         deliver(parent);
 
-        String payload = write(parent);
+        List<WireFrames.Record> frame = write(parent);
 
-        assertThat(sliceFor(payload, child))
+        assertThat(WireValues.describing(recordOf(frame, parent), child.hashCode())).as("the parent names it").isNotEmpty();
+        assertThat(recordOf(frame, child))
                 .as("the child is on the far side already and has not moved since")
-                .contains("\"_r\":1")
-                .doesNotContain("\"text\"");
+                .isNull();
     }
 
     @Test
-    @DisplayName("a reference carries no write stamp, so it cannot displace what is held")
-    void aReferenceCarriesNoStamp() {
-        Shell shell = Mocks.shell();
-        Composite parent = new Composite(shell, SWT.NONE);
-        Label child = new Label(parent, SWT.NONE);
-        deliver(parent);
-
-        assertThat(sliceFor(write(parent), child))
-                .as("a stamp would make an empty shell look newer than the real state behind it")
-                .doesNotContain("\"_s\"");
-    }
-
-    @Test
-    @DisplayName("a child that changed is described in full")
+    @DisplayName("a child that changed tells the client so in a record of its own")
     void changedChildIsWrittenWhole() {
         Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
@@ -113,11 +92,11 @@ class WidgetReferenceTest {
         deliver(parent);
 
         child.setText("after");
+        FlutterBridge.update();
 
-        assertThat(sliceFor(write(parent), child))
-                .as("a reference would be the only mention of this change, and it says nothing")
-                .contains("\"after\"")
-                .doesNotContain("\"_r\"");
+        assertThat(bridge.comm.sent)
+                .as("its record is the mention of this change")
+                .anyMatch(f -> f.event.equals("Label/" + child.hashCode()) && holds(f.value, "after"));
     }
 
     @Test
@@ -130,14 +109,13 @@ class WidgetReferenceTest {
         Label added = new Label(parent, SWT.NONE);
         added.setText("added");
 
-        assertThat(sliceFor(write(parent), added))
-                .as("there is nothing on the far side for a reference to resolve to")
-                .contains("\"added\"")
-                .doesNotContain("\"_r\"");
+        Map<String, Object> record = recordOf(write(parent), added);
+        assertThat(record).as("there is nothing on the far side for a name to resolve to").isNotNull();
+        assertThat(holds(record, "added")).as("there is nothing on the far side for a name to resolve to").isTrue();
     }
 
     @Test
-    @DisplayName("the widget a frame is about is always described in full")
+    @DisplayName("the widget a frame is about is always described")
     void theSubjectOfAFrameIsNeverAReference() {
         Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
@@ -145,12 +123,11 @@ class WidgetReferenceTest {
         label.setText("established");
         deliver(parent);
 
-        String payload = write(label);
-
-        assertThat(payload)
-                .as("a frame whose subject is a reference says nothing at all")
-                .doesNotContain("\"_r\"")
-                .contains("\"established\"");
+        Map<String, Object> record = recordOf(write(label), label);
+        assertThat(record).as("a frame about a widget that says nothing of it says nothing at all").isNotNull();
+        assertThat(holds(record, "established"))
+                .as("a frame about a widget that says nothing of it says nothing at all")
+                .isTrue();
     }
 
     @Test
@@ -163,27 +140,21 @@ class WidgetReferenceTest {
 
         Label added = new Label(parent, SWT.NONE);
         added.setText("the one that changed");
-        String payload = write(parent);
+        List<WireFrames.Record> frame = write(parent);
 
-        assertThat(payload).contains("the one that changed");
-        assertThat(countOf(payload, "\"_r\":1"))
-                .as("every sibling named, none re-described")
-                .isEqualTo(50);
-        assertThat(countOf(payload, "\"row "))
-                .as("the text of a sibling is state, and no sibling's state changed")
-                .isZero();
+        assertThat(WireValues.containsText(states(frame), "the one that changed")).isTrue();
+        assertThat(frame)
+                .as("the parent's record and the new child's: every sibling named, none re-described")
+                .hasSize(2);
+        assertThat(WireValues.find(states(frame), m -> m.values().stream()
+                .anyMatch(v -> v instanceof String text && text.startsWith("row ")))).isEmpty();
     }
 
     // ---- harness ----
 
-    /** Puts the whole subtree on the wire, so later writes have something to refer back to. */
+    /** Puts the whole subtree on the wire, so later frames have something to refer back to. */
     private void deliver(Widget widget) {
-        // Building the tree leaves its host Shell dirty, and this backend has the host Dart-backed
-        // too: a widget with a dirty ancestor is expected to travel inside it, so its own frame is
-        // suppressed and nothing is ever stamped delivered. Drain that first.
         FlutterBridge.update();
-        // A widget the client has never seen is not sent on its own channel - it is expected to
-        // arrive inside its parent - so the tree is declared known before the flush that stamps it.
         markKnown(widget);
         bridge.dirty((DartWidget) widget.getImpl());
         FlutterBridge.update();
@@ -196,29 +167,26 @@ class WidgetReferenceTest {
             for (Widget child : composite.getChildren()) markKnown(child);
     }
 
-    /** The bytes for [widget], read without marking anything delivered. */
-    private String write(Widget widget) {
-        try {
-            String json = new String(serializer.to(widget), StandardCharsets.UTF_8);
-            Serializer.discardWritten();
-            return json;
-        } catch (java.io.IOException e) {
-            throw new AssertionError("could not write " + widget, e);
+    /** The frame describing [widget] to the client: its records, each with its channel. */
+    private List<WireFrames.Record> write(Widget widget) {
+        return WireFrames.frame((DartWidget) widget.getImpl(), CLIENT);
+    }
+
+    /** The record [frame] carries for [widget], or null when it has none. */
+    private static Map<String, Object> recordOf(List<WireFrames.Record> frame, Widget widget) {
+        String channel = "/" + widget.hashCode();
+        for (WireFrames.Record record : frame) {
+            if (record.channel().endsWith(channel)) return record.state();
         }
+        return null;
     }
 
-    /** The part of a payload describing one widget: from its id up to the next one's. */
-    private String sliceFor(String payload, Widget widget) {
-        String marker = "\"id\":" + widget.hashCode();
-        int start = payload.indexOf(marker);
-        assertThat(start).as("%s is not in the payload at all", widget).isNotNegative();
-        int next = payload.indexOf("\"id\":", start + marker.length());
-        return payload.substring(start, next < 0 ? payload.length() : next);
+    private static List<Map<String, Object>> states(List<WireFrames.Record> frame) {
+        return frame.stream().map(WireFrames.Record::state).toList();
     }
 
-    private int countOf(String haystack, String needle) {
-        int count = 0;
-        for (int at = haystack.indexOf(needle); at >= 0; at = haystack.indexOf(needle, at + 1)) count++;
-        return count;
+    /** Whether [tree] holds the string [value] as a property's value, at any depth. */
+    private static boolean holds(Object tree, String value) {
+        return !WireValues.find(tree, m -> m.containsValue(value)).isEmpty();
     }
 }

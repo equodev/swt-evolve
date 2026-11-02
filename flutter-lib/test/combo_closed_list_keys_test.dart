@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
@@ -13,6 +14,7 @@ import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/combo_evolve.dart' show ComboValueText;
 import 'package:swtflutter/src/impl/focus_requests.dart';
 
 const int comboId = 7;
@@ -24,7 +26,7 @@ class _CapturingComboSwt extends ComboSwt<VCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 Future<List<(String, VEvent?)>> _pumpFocused(WidgetTester tester, int style) async {
@@ -56,17 +58,33 @@ Future<List<(String, VEvent?)>> _pumpFocused(WidgetTester tester, int style) asy
   await tester.pumpAndSettle();
   FocusRequests.instance.request(comboId);
   await tester.pumpAndSettle();
-  expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isTrue,
+  expect(_fieldFocus(tester).hasFocus, isTrue,
       reason: 'Java focusing the Combo must focus its field, where its keys are handled');
   events.clear();
   return events;
+}
+
+/// The node of the Combo's field: an editable one's, or the one a READ_ONLY Combo's value is drawn under.
+FocusNode _fieldFocus(WidgetTester tester) {
+  final editable = find.byType(EditableText);
+  if (editable.evaluate().isNotEmpty) return tester.widget<EditableText>(editable).focusNode;
+  return tester
+      .widget<Focus>(find.ancestor(of: find.byType(ComboValueText), matching: find.byType(Focus)).first)
+      .focusNode!;
+}
+
+/// The text the Combo's field shows.
+String _fieldText(WidgetTester tester) {
+  final editable = find.byType(EditableText);
+  if (editable.evaluate().isNotEmpty) return tester.widget<EditableText>(editable).controller.text;
+  return tester.widget<ComboValueText>(find.byType(ComboValueText)).controller.text;
 }
 
 List<String?> _selections(List<(String, VEvent?)> events) =>
     events.where((e) => e.$1 == 'Selection/Selection').map((e) => e.$2?.text).toList();
 
 String _shown(WidgetTester tester) =>
-    tester.widget<EditableText>(find.byType(EditableText)).controller.text;
+    _fieldText(tester);
 
 Future<void> _press(WidgetTester tester, LogicalKeyboardKey key) async {
   await tester.sendKeyEvent(key);

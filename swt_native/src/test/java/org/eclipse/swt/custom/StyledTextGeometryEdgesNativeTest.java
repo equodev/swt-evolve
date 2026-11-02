@@ -134,27 +134,6 @@ public class StyledTextGeometryEdgesNativeTest {
     }
 
     @Test
-    public void a_payload_that_is_not_json_is_ignored() {
-        DartStyledText st = widget(5);
-
-        StyledTextHelper.processTextGeometry(st, "this is not json");
-        StyledTextHelper.processTextGeometry(st, "null");
-
-        assertThat(StyledTextHelper.geometryLinePixel(st, 0)).isNull();
-    }
-
-    @Test
-    public void a_payload_with_a_table_is_applied() {
-        DartStyledText st = widget(5);
-
-        StyledTextHelper.processTextGeometry(st, "{\"charCount\":5,\"contentWidth\":20,\"contentHeight\":30,\"v\":1,"
-                + "\"lines\":[{\"l\":0,\"s\":0,\"e\":2,\"x\":0,\"y\":0,\"w\":20,\"h\":15,\"cx\":[0,10,20]},"
-                + "{\"l\":1,\"s\":3,\"e\":5,\"x\":0,\"y\":15,\"w\":20,\"h\":15,\"cx\":[0,10,20]}]}");
-
-        assertThat(StyledTextHelper.geometryLinePixel(st, 1)).isEqualTo(15);
-    }
-
-    @Test
     public void a_change_without_a_table_to_change_asks_for_the_whole_table() {
         DartStyledText st = widget(5);
         Map<String, Object> change = new HashMap<>();

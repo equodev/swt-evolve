@@ -185,7 +185,8 @@ Color getForegroundColor({
   return defaultColor;
 }
 
-/// Gets TextStyle with SWT font support
+/// The style a widget's text draws with. With `use_swt_fonts` off the theme keeps its family and size and
+/// [font] adds only weight and slant; the `*Sizes` classes `tool/measure.dart` emits follow the same rule.
 TextStyle getTextStyle({
   required BuildContext context,
   required VFont? font,
@@ -478,4 +479,12 @@ class ControlNestingScope extends InheritedWidget {
   @override
   bool updateShouldNotify(ControlNestingScope oldWidget) =>
       depth != oldWidget.depth;
+}
+
+extension ScrolledBy on ScrollController? {
+  /// How far the controller's view is scrolled; 0 while no view is attached.
+  double get scrolledBy {
+    final controller = this;
+    return controller != null && controller.hasClients ? controller.offset : 0.0;
+  }
 }

@@ -3,16 +3,11 @@
 // one walks it round the Shell's controls, so a field being typed into loses the keyboard between
 // keystrokes.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
-// The io transport directly: `flutter test` runs on the VM, where comm.dart resolves to it —
-// but the analyzer resolves the conditional export to the web variant, which has no test hook.
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/button.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
@@ -20,6 +15,8 @@ import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int _base = 8400;
 const int _shellId = _base + 1;
@@ -66,19 +63,6 @@ VDisplay _display() => VDisplay()
   ..shells = [_dialogShell()]
   ..activeShellId = _shellId;
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length,
-/// name, JSON body) so the channel subscription receives it.
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
-
 bool _fieldHasFocus(WidgetTester tester, int index) =>
     tester.widget<TextField>(find.byType(TextField).at(index)).focusNode!.hasFocus;
 
@@ -99,7 +83,7 @@ void main() {
     // What Java sends whenever anything about the Shell changes — here, twice, because one push
     // per keystroke is exactly the traffic a field being typed into produces.
     for (var i = 0; i < 2; i++) {
-      _receiveJson('Shell/$_shellId', _dialogShell().toJson());
+      await deliverWhole(_dialogShell());
       await tester.pumpAndSettle();
     }
 

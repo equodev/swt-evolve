@@ -6,6 +6,7 @@ import '../gen/event.dart';
 import '../gen/gc.dart';
 import '../gen/widget.dart';
 import 'control_evolve.dart';
+import '../gen/widgets.dart' show WireChannel;
 
 /// What an owner-drawing Table or Tree paints into one row: its SWT.EraseItem and SWT.PaintItem
 /// drawing, addressed to the row's item id and laid over the row.
@@ -65,7 +66,7 @@ class _OwnerDrawRequests {
     if (ids == null || ids.isEmpty || !parent.mounted) return;
     (parent.widget as WidgetSwt).sendEvent(
       parent.state,
-      "PaintItem/PaintItem",
+      WireChannel.paintItemPaintItem,
       VEvent()..segments = ids.toList(),
     );
   }

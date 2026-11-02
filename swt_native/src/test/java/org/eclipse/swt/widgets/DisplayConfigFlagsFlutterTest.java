@@ -6,6 +6,7 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -68,11 +69,21 @@ class DisplayConfigFlagsFlutterTest {
         web.comm.sent.clear();
         web.sendDisplayUpdate(dartDisplay());
 
-        assertThat(lastFrameOn(web, "Display/" + dartDisplay().getApi().hashCode()))
-                .as("the flags ride with the shells, so Flutter applies both in the same frame")
-                .contains("\"config\":")
-                .contains("\"force_theme\":\"light\"")
-                .contains("\"theme_name\":\"marketplace\"");
+        Object update = lastFrameOn(web, "Display/" + dartDisplay().getApi().hashCode());
+        assertThat(WireValues.mentions(update, "config")
+                && !WireValues.find(update, m -> "light".equals(m.get("force_theme"))).isEmpty()
+                && !WireValues.find(update, m -> "marketplace".equals(m.get("theme_name"))).isEmpty())
+                .as("the flags ride with the shells, so Flutter applies both in the same frame: " + update)
+                .isTrue();
+    }
+
+    @Test
+    void theClientPairsClicksWithinTheDisplaysDoubleClickTime() {
+        install(TestWebBridge::new);
+
+        assertThat(savedFlags.double_click_timeout_ms)
+                .as("a double-click the application counts is one the client pairs")
+                .isEqualTo(display.getDoubleClickTime());
     }
 
     @Test
@@ -94,12 +105,12 @@ class DisplayConfigFlagsFlutterTest {
         return (DartDisplay) display.getImpl();
     }
 
-    private static String lastFrameOn(TestWebBridge web, String event) {
+    private static Object lastFrameOn(TestWebBridge web, String event) {
         return web.comm.sent.stream()
                 .filter(f -> f.event.equals(event))
                 .reduce((a, b) -> b)
                 .orElseThrow(() -> new AssertionError("no frame on '" + event + "'"))
-                .json;
+                .value;
     }
 
     /** See {@code DisplayResizeFlutterTest.install} — a Display whose bridge is the test bridge. */
@@ -121,6 +132,7 @@ class DisplayConfigFlagsFlutterTest {
 
     private static void clientReady(RecordingComm comm, int width, int height, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;

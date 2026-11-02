@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
@@ -12,10 +12,9 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/canvas_evolve.dart';
 import 'widgets.dart';
-
-part 'canvas.g.dart';
 
 class CanvasSwt<V extends VCanvas> extends CompositeSwt<V> {
   const CanvasSwt({super.key, required super.value});
@@ -24,7 +23,6 @@ class CanvasSwt<V extends VCanvas> extends CompositeSwt<V> {
   State createState() => CanvasImpl<CanvasSwt<VCanvas>, VCanvas>();
 }
 
-@JsonSerializable()
 class VCanvas extends VComposite {
   VCanvas() : this.empty();
   VCanvas.empty() {
@@ -42,15 +40,31 @@ class VCanvas extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'caret':
-        caret = json['caret'] == null
-            ? null
-            : VCaret.fromJson(json['caret'] as Map<String, dynamic>);
+      case 68: // caret
+        caret = r.ref<VCaret>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = caret;
+      if (v_ != null) {
+        w.keyRef(68, v_.id);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(68, caret);
   }
 
   @override
@@ -58,8 +72,4 @@ class VCanvas extends VComposite {
     super.adoptChildren(adopt);
     caret = VWidget.adoptOne(caret, adopt);
   }
-
-  factory VCanvas.fromJson(Map<String, dynamic> json) =>
-      _$VCanvasFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VCanvasToJson(this);
 }

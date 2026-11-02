@@ -5,10 +5,8 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
 
-public class VProgram {
+public class VProgram implements dev.equo.swt.WireObject {
 
     protected VProgram() {
     }
@@ -19,49 +17,12 @@ public class VProgram {
 
     protected DartProgram impl;
 
-    @JsonConverter(target = Program.class)
-    public static class ProgramJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartProgram.class, (JsonWriter.WriteObject<DartProgram>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartProgram.class, (JsonReader.ReadObject<DartProgram>) reader -> {
-                return null;
-            });
-        }
-
-        public static Program read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, Program api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public int wireTypeId() {
+        return 79;
     }
 
-    @JsonConverter(target = VProgram.class)
-    public static class EmptyJson {
-
-        public static VProgram read(JsonReader<?> reader) throws IOException {
-            if (reader.wasNull())
-                return null;
-            reader.skip();
-            return new VProgram();
-        }
-
-        public static void write(JsonWriter writer, VProgram value) {
-            if (value == null)
-                writer.writeNull();
-            else
-                writer.writeAscii("{}");
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
     }
 }

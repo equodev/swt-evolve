@@ -17,6 +17,7 @@ import 'package:swtflutter/src/gen/widget.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 const _appBackground = Color(0xFFF0F0F0);
 
@@ -66,13 +67,13 @@ VCanvas _canvasHostingAnEditor() => VCanvas()
 /// The app's context, from which a drawer resolves the Canvas theme.
 Future<BuildContext> _pumpApp(WidgetTester tester) async {
   late BuildContext context;
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.dark,
     contentWidget: Builder(builder: (c) {
       context = c;
       return const SizedBox();
     }),
-  ));
+  )));
   return context;
 }
 
@@ -85,10 +86,10 @@ GCDrawer _drawer(BuildContext context, VGC state) {
 
 /// Mounts [canvas] and delivers its GC's state, as the GC overlay does once Java paints.
 Future<void> _pumpCanvas(WidgetTester tester, VCanvas canvas, {required bool? themed}) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.dark,
     contentWidget: SizedBox(width: 200, height: 200, child: CanvasSwt<VCanvas>(value: canvas)),
-  ));
+  )));
   await tester.pumpAndSettle();
   tester
       .state<WidgetSwtState>(find.byWidgetPredicate((w) => w is CanvasSwt && w.value.id == canvas.id))

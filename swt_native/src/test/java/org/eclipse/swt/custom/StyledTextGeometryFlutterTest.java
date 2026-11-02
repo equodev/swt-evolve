@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -90,6 +91,28 @@ class StyledTextGeometryFlutterTest {
             assertThat(rect[0]).as("x of offset %d", offset).isCloseTo(location.x, within(1.0));
             assertThat(rect[1]).as("y of offset %d", offset).isCloseTo(location.y, within(1.0));
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 60 })
+    @DisplayName("each line is painted where getLinePixel says, in an editor's monospaced font")
+    void linesArePaintedWhereSwtPlacesThem(int topIndex) {
+        StringBuilder doc = new StringBuilder();
+        for (int i = 0; i < 100; i++) doc.append("line ").append(i).append('\n');
+        stage.fresh(SWT.MULTI | SWT.V_SCROLL, doc.toString());
+        text = stage.subject;
+        Font font = new Font(text.getDisplay(), new FontData("Liberation Mono", 12, SWT.NORMAL));
+        text.setFont(font);
+        text.setTopIndex(topIndex);
+        stage.pushState();
+
+        java.util.Map<Integer, Double> painted = stage.paintedRowY(text);
+        assertThat(painted).as("painted rows").isNotEmpty();
+        // A click is mapped to a line by these pixels, so a row painted off them takes clicks for the
+        // line above or below it; the error grows by the difference in line height on every line.
+        painted.forEach((line, y) ->
+                assertThat(y).as("y of line %d", line).isCloseTo(text.getLinePixel(line), within(1.0)));
+        font.dispose();
     }
 
     @ParameterizedTest
@@ -218,7 +241,7 @@ class StyledTextGeometryFlutterTest {
     }
 
     @Test
-    @DisplayName("the top index is the first line the client shows, whatever the line heights")
+    @DisplayName("the top index is the first line the client shows whole, whatever the line heights")
     void topIndexIsTheFirstShownLine() {
         StringBuilder doc = new StringBuilder();
         for (int i = 0; i < 80; i++) doc.append("line ").append(i).append('\n');
@@ -237,11 +260,31 @@ class StyledTextGeometryFlutterTest {
             text.setTopPixel(301);
             stage.pushState();
 
-            assertThat(text.getTopIndex()).isEqualTo(text.getLineIndex(0));
+            int top = text.getTopIndex();
+            assertThat(text.getLinePixel(top)).as("the top line is shown whole").isGreaterThanOrEqualTo(0);
+            assertThat(text.getLinePixel(top - 1)).as("the line before it is not").isLessThan(0);
             assertThat(stage.renderedScroll(text)[1]).isEqualTo(text.getTopPixel());
         } finally {
             big.dispose();
         }
+    }
+
+    @Test
+    @DisplayName("scrolled to the middle of a line, the top index is the next line, as natively")
+    void topIndexScrolledMidLine() {
+        // JFace's rulers count from the top index: one that was the half-shown line numbered
+        // every line of an editor's ruler one too low.
+        StringBuilder doc = new StringBuilder();
+        for (int i = 0; i < 200; i++) doc.append("line ").append(i).append('\n');
+        stage.fresh(SWT.MULTI | SWT.V_SCROLL, doc.toString());
+        text = stage.subject;
+        int lineHeight = text.getLineHeight();
+        text.setTopPixel(lineHeight * 120 + lineHeight / 2);
+        stage.pushState();
+
+        assertThat(text.getTopIndex()).as("the first line shown whole").isEqualTo(121);
+        assertThat(text.getLinePixel(text.getTopIndex())).isEqualTo(lineHeight - lineHeight / 2);
+        assertThat(text.getLineIndex(0)).as("the line at the top edge is still the half-shown one").isEqualTo(120);
     }
 
     @ParameterizedTest

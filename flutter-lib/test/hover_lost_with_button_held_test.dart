@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/impl/control_evolve.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -25,7 +26,7 @@ class _RecordingCompositeSwt extends CompositeSwt<VComposite> {
   final List<(String, VEvent?)> sent;
 
   @override
-  void sendEvent(VComposite val, String ev, VEvent? payload) => sent.add((ev, payload));
+  void sendEvent(VComposite val, int channel, VEvent? payload) => sent.add((wireChannelNames[channel]!, payload));
 }
 
 Future<void> _pumpCompositeWithCanvas(WidgetTester tester, List<(String, VEvent?)> sent) async {

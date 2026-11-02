@@ -3,6 +3,7 @@
 // SWT's own), laid out the same on every OS, and pressing one answers that id.
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/messagebox.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
@@ -97,12 +99,15 @@ void main() {
   });
 
   test('the labels travel in the value', () {
-    final value = VMessageBox.fromJson({
-      'swt': 'MessageBox',
-      'id': 7,
-      'style': SWT.YES | SWT.NO,
-      'buttonLabels': ['OK', 'Cancel', 'Save', "Don't Save", 'Abort', 'Retry', 'Ignore'],
-    });
+    final written = VMessageBox()
+      ..swt = 'MessageBox'
+      ..id = 7
+      ..style = SWT.YES | SWT.NO
+      ..buttonLabels = ['OK', 'Cancel', 'Save', "Don't Save", 'Abort', 'Retry', 'Ignore'];
+    final value = WidgetWireReader(Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
+      written.writeWire(w);
+      w.u8(0);
+    }))).fields(VMessageBox());
     expect(value.buttonLabels?[2], 'Save');
   });
 

@@ -3,11 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VSashForm extends VComposite {
 
     protected VSashForm() {
@@ -44,50 +40,95 @@ public class VSashForm extends VComposite {
         ((DartSashForm) impl).weights = value;
     }
 
-    public static final String MAXIMIZED_CONTROL = "maximizedControl";
+    public static final int MAXIMIZED_CONTROL = 426;
 
-    public static final String SASH_WIDTH = "sashWidth";
+    public static final int SASH_WIDTH = 427;
 
-    public static final String WEIGHTS = "weights";
+    public static final int WEIGHTS = 428;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "maximizedControl":
-                Serializer.writeKeyValue(writer, "maximizedControl", getMaximizedControl());
-                return;
-            case "sashWidth":
-                Serializer.writeKeyValue(writer, "sashWidth", getSashWidth());
-                return;
-            case "weights":
-                Serializer.writeKeyValue(writer, "weights", getWeights());
-                return;
+            case MAXIMIZED_CONTROL:
+                return "maximizedControl";
+            case SASH_WIDTH:
+                return "sashWidth";
+            case WEIGHTS:
+                return "weights";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = SashForm.class)
-    public static class SashFormJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartSashForm.class, (JsonWriter.WriteObject<DartSashForm>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartSashForm.class, (JsonReader.ReadObject<DartSashForm>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 426:
+                w.ref(getMaximizedControl());
+                return true;
+            case 427:
+                w.write((int) getSashWidth());
+                return true;
+            case 428:
+                w.write(getWeights());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static SashForm read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 426:
+                {
+                    Control v_ = getMaximizedControl();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(426);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 427:
+                {
+                    int v_ = getSashWidth();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(427);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 428:
+                {
+                    int[] v_ = getWeights();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(428);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, SashForm api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 426, 427, 428 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

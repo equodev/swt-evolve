@@ -2927,50 +2927,71 @@ public class DartTable extends DartComposite implements ITable {
     protected void _hookEvents() {
         super._hookEvents();
         getApi().addListener(SWT.MouseDown, event -> TableHelper.handleMouseDownSelection(this, event));
-        FlutterBridge.on(this, "PaintItem", "PaintItem", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_PAINT_ITEM_PAINT_ITEM, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
                 OwnerDrawOverlay.rowsListening(this, e.segments);
             });
         });
-        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SCROLL_SCROLL, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
                 TableHelper.recordScrollOffset(this, e);
             });
         });
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Selection/DefaultSelection", "Selection/Selection", "SetData/SetData");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TableHelper.handleModify(this, e);
+                    });
                     return;
-                TableHelper.handleModify(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        TableHelper.sendSelection(this, e, SWT.DefaultSelection);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TableHelper.sendSelection(this, e, SWT.Selection);
+                    });
                     return;
-                TableHelper.sendSelection(this, e, SWT.DefaultSelection);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "SetData/SetData":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TableHelper.rowsShown(this, e);
+                    });
                     return;
-                TableHelper.sendSelection(this, e, SWT.Selection);
-            });
-        });
-        FlutterBridge.on(this, "SetData", "SetData", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                TableHelper.loadVirtualWindow(this, e.end);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Table getApi() {

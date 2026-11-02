@@ -115,12 +115,12 @@ class FlagsMatchChangesTest {
         // The two states, taken from the widget itself rather than from frames. Comparing states
         // directly means a change that turns out to be a no-op - a value clamped straight back to
         // what it already was - reads as "nothing changed" on both sides instead of as a failure.
-        String before = Canon.canon(serialize(widget));
+        java.util.Map<String, Object> before = Canon.canon(serialize(widget));
         c.change().accept(widget);
         // Read the flags before serializing again: writing a widget whole is what marks it as no
         // longer outstanding, so the second serialize clears the very thing being measured.
         Set<String> flagged = new LinkedHashSet<>(flags(widget));
-        String after = Canon.canon(serialize(widget));
+        java.util.Map<String, Object> after = Canon.canon(serialize(widget));
 
         Set<String> derived = DeliveryAudit.changedKeys(before, after);
 
@@ -129,18 +129,14 @@ class FlagsMatchChangesTest {
                 .isEqualTo(derived);
     }
 
-    private String serialize(Widget widget) {
-        try {
-            return new String(new Serializer().to(widget), java.nio.charset.StandardCharsets.UTF_8);
-        } catch (java.io.IOException e) {
-            throw new AssertionError("could not serialize " + widget, e);
-        }
+    private java.util.Map<String, Object> serialize(Widget widget) {
+        return dev.equo.swt.harness.WireFrames.describe(widget);
     }
 
     // ---- harness ----
 
     private static Set<String> flags(Widget widget) {
-        return ((DartWidget) widget.getImpl()).getValue().changedKeys();
+        return ((DartWidget) widget.getImpl()).getValue().changedNames();
     }
 
     private static void clearFlags(Widget widget) {

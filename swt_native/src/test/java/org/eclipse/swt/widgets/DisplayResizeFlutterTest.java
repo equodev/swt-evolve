@@ -4,6 +4,8 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -39,6 +41,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("flutter-it")
 class DisplayResizeFlutterTest {
+
+    private static final boolean WIN32 = "win32".equals(SWT.getPlatform());
+    private static final boolean GTK = "gtk".equals(SWT.getPlatform());
 
     private Display display;
     private String savedMode;
@@ -229,16 +234,19 @@ class DisplayResizeFlutterTest {
 
         clientReady(desk.comm, 1280, 800, 2560, 1440, true); // the window as created, on the real monitor
 
+        // Native SWT's default on the reported monitor: 5/8 of it on Cocoa, plus the trim on GTK, Win32's on Windows.
+        Rectangle sized = WIN32 ? new Rectangle(320, 208, 1920, 1023)
+                : GTK ? new Rectangle(477, 255, 1606, 929) : new Rectangle(480, 270, 1600, 900);
         assertThat(shell.getBounds())
-                .as("5/8 of the monitor the client reported, not of the placeholder, centered on it")
-                .isEqualTo(new Rectangle(480, 270, 1600, 900));
+                .as("the default size on the monitor the client reported, not on the placeholder, centered on it")
+                .isEqualTo(sized);
         assertThat(desk.forwarded)
                 .as("the window opens at the size of the shell nobody sized, as a native window does")
                 .extracting(r -> r.width + "x" + r.height)
-                .containsExactly("1600x900");
+                .containsExactly(sized.width + "x" + sized.height);
 
-        clientReady(desk.comm, 1600, 900, 2560, 1440, false); // the window followed
-        assertThat(shell.getBounds()).isEqualTo(new Rectangle(480, 270, 1600, 900));
+        clientReady(desk.comm, sized.width, sized.height, 2560, 1440, false); // the window followed
+        assertThat(shell.getBounds()).isEqualTo(sized);
         assertThat(desk.forwarded).as("and nothing more is forwarded once it has").hasSize(1);
     }
 
@@ -251,12 +259,14 @@ class DisplayResizeFlutterTest {
 
         Shell second = newUnsizedShell();
 
+        Rectangle sized = WIN32 ? new Rectangle(200, 153, 1200, 693)
+                : GTK ? new Rectangle(297, 173, 1006, 654) : new Rectangle(300, 187, 1000, 625);
         assertThat(second.getBounds())
                 .as("a top-level shell nobody sized has the size a new native shell opens at, centered")
-                .isEqualTo(new Rectangle(300, 187, 1000, 625));
+                .isEqualTo(sized);
         assertThat(((DartShell) second.getImpl()).getValue().getBounds())
                 .as("sent to the client sized, or it draws a placeholder and reports that back as the size")
-                .isEqualTo(new Rectangle(300, 187, 1000, 625));
+                .isEqualTo(sized);
     }
 
     @Test
@@ -418,9 +428,10 @@ class DisplayResizeFlutterTest {
         assertThat(neverShown.getBounds())
                 .as("a shell that is never shown does not take the viewport")
                 .isNotEqualTo(new Rectangle(0, 0, 2560, 1271));
-        assertThat(lastDisplayFrame(web.comm))
+        assertThat(WireValues.find(lastDisplayFrame(web.comm),
+                        m -> m.containsKey("mainShellId") && WireValues.same(m.get("mainShellId"), workbench.hashCode())))
                 .as("the client is told which shell is main, so it does not float it")
-                .contains("\"mainShellId\":" + workbench.hashCode());
+                .isNotEmpty();
     }
 
     @Test
@@ -488,9 +499,10 @@ class DisplayResizeFlutterTest {
                 // Ctrl+ to 125%: the client's first report still divides by the zoom it was last told.
                 clientReady(web.comm, 1384, 855, 125, false);
 
-                assertThat(lastPropertiesFrame(web.comm))
+                assertThat(WireValues.find(lastPropertiesFrame(web.comm),
+                                m -> m.containsKey("ui_zoom") && WireValues.same(m.get("ui_zoom"), 125)))
                         .as("the render side learns it now draws at 125, so it stops shrinking the page")
-                        .contains("\"ui_zoom\":125");
+                        .isNotEmpty();
 
                 clientReady(web.comm, 1107, 684, 125, false);
 
@@ -562,24 +574,25 @@ class DisplayResizeFlutterTest {
         return bridge;
     }
 
-    private static String lastDisplayFrame(RecordingComm comm) {
-        String last = null;
+    private static Object lastDisplayFrame(RecordingComm comm) {
+        Object last = null;
         for (RecordingComm.Frame frame : comm.sent) {
-            if (frame.json != null && frame.json.contains("\"mainShellId\"")) last = frame.json;
+            if (frame.value != null && WireValues.mentions(frame.value, "mainShellId")) last = frame.value;
         }
         return last;
     }
 
-    private static String lastPropertiesFrame(RecordingComm comm) {
-        String last = null;
+    private static Object lastPropertiesFrame(RecordingComm comm) {
+        Object last = null;
         for (RecordingComm.Frame frame : comm.sent) {
-            if ("swt.evolve.properties".equals(frame.event)) last = frame.json;
+            if ("swt.evolve.properties".equals(frame.event)) last = frame.value;
         }
         return last;
     }
 
     private static void clientReady(RecordingComm comm, int width, int height, int zoom, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;
@@ -605,6 +618,7 @@ class DisplayResizeFlutterTest {
 
     private static void clientReady(RecordingComm comm, int width, int height, int monitorW, int monitorH, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = width;
         p.height = height;
         p.isFirst = isFirst;

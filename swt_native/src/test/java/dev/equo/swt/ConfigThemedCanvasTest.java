@@ -1,5 +1,7 @@
 package dev.equo.swt;
 
+import dev.equo.swt.harness.WireFrames;
+import dev.equo.swt.harness.WireValues;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -47,11 +49,13 @@ class ConfigThemedCanvasTest {
         ConfigFlags flags = new ConfigFlags();
         flags.disable_swt_canvas_colors_by_class = Map.of("a.Grid", true);
 
-        String json = new String(new Serializer().to(flags), java.nio.charset.StandardCharsets.UTF_8);
+        Map<String, Object> described = WireFrames.describe(flags);
 
-        assertThat(json)
+        assertThat(WireValues.containsText(described, "disable_swt_canvas_colors_by_class"))
                 .as("the client gets the outcome per GC, never the application's class names")
-                .doesNotContain("disable_swt_canvas_colors_by_class")
-                .doesNotContain("a.Grid");
+                .isFalse();
+        assertThat(WireValues.containsText(described, "a.Grid"))
+                .as("the client gets the outcome per GC, never the application's class names")
+                .isFalse();
     }
 }

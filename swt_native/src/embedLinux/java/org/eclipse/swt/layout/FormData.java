@@ -18,9 +18,6 @@ package org.eclipse.swt.layout;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are used to define the attachments
@@ -50,8 +47,7 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 2.0
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public final class FormData {
+public final class FormData implements dev.equo.swt.WireObject {
 
     /**
      * width specifies the preferred width in points. This value
@@ -62,7 +58,6 @@ public final class FormData {
      *
      * @see Control#computeSize(int, int, boolean)
      */
-    @JsonAttribute()
     public int width = SWT.DEFAULT;
 
     /**
@@ -74,34 +69,29 @@ public final class FormData {
      *
      * @see Control#computeSize(int, int, boolean)
      */
-    @JsonAttribute()
     public int height = SWT.DEFAULT;
 
     /**
      * left specifies the attachment of the left side of
      * the control.
      */
-    @JsonAttribute()
     public FormAttachment left;
 
     /**
      * right specifies the attachment of the right side of
      * the control.
      */
-    @JsonAttribute()
     public FormAttachment right;
 
     /**
      * top specifies the attachment of the top of the control.
      */
-    @JsonAttribute()
     public FormAttachment top;
 
     /**
      * bottom specifies the attachment of the bottom of the
      * control.
      */
-    @JsonAttribute()
     public FormAttachment bottom;
 
     int cacheWidth = -1, cacheHeight = -1;
@@ -396,5 +386,107 @@ public final class FormData {
         string = string.trim();
         string += "}";
         return string;
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 46;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(265);
+        w.write((int) width);
+        w.key(259);
+        w.write((int) height);
+        w.key(261);
+        w.object(left);
+        w.key(263);
+        w.object(right);
+        w.key(264);
+        w.object(top);
+        w.key(244);
+        w.object(bottom);
+        w.key(250);
+        w.write((int) cacheWidth);
+        w.key(246);
+        w.write((int) cacheHeight);
+        w.key(257);
+        w.write((int) defaultWhint);
+        w.key(256);
+        w.write((int) defaultHhint);
+        w.key(258);
+        w.write((int) defaultWidth);
+        w.key(255);
+        w.write((int) defaultHeight);
+        w.key(253);
+        w.write((int) currentWhint);
+        w.key(252);
+        w.write((int) currentHhint);
+        w.key(254);
+        w.write((int) currentWidth);
+        w.key(251);
+        w.write((int) currentHeight);
+        w.key(247);
+        w.object(cacheLeft);
+        w.key(248);
+        w.object(cacheRight);
+        w.key(249);
+        w.object(cacheTop);
+        w.key(245);
+        w.object(cacheBottom);
+        w.key(260);
+        w.write(isVisited);
+        w.key(262);
+        w.write(needed);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 265:
+                width = r.int32();
+                return true;
+            case 259:
+                height = r.int32();
+                return true;
+            case 250:
+                cacheWidth = r.int32();
+                return true;
+            case 246:
+                cacheHeight = r.int32();
+                return true;
+            case 257:
+                defaultWhint = r.int32();
+                return true;
+            case 256:
+                defaultHhint = r.int32();
+                return true;
+            case 258:
+                defaultWidth = r.int32();
+                return true;
+            case 255:
+                defaultHeight = r.int32();
+                return true;
+            case 253:
+                currentWhint = r.int32();
+                return true;
+            case 252:
+                currentHhint = r.int32();
+                return true;
+            case 254:
+                currentWidth = r.int32();
+                return true;
+            case 251:
+                currentHeight = r.int32();
+                return true;
+            case 260:
+                isVisited = r.bool();
+                return true;
+            case 262:
+                needed = r.bool();
+                return true;
+        }
+        return false;
     }
 }

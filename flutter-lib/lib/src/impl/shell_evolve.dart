@@ -7,6 +7,8 @@ import 'package:flutter/widgets.dart';
 
 import '../comm/comm.dart';
 import '../comm/v_registry.dart';
+import '../comm/widget_key.dart';
+import '../comm/widget_wire.dart';
 import '../gen/menu.dart';
 import '../gen/widgets.dart' as gen;
 import '../gen/colordialog.dart';
@@ -27,6 +29,7 @@ import '../impl/utils/window_origin.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'utils/pointer.dart';
+import 'utils/quiet_animations.dart';
 
 /// `VEvent.detail` of the bounds a shell reports once it is first drawn (Java's
 /// `DisplayBridge.INITIAL_CLIENT_BOUNDS`).
@@ -60,6 +63,10 @@ class FloatingShellChromeScope extends InheritedWidget {
       activeShellId != oldWidget.activeShellId;
 }
 
+/// A shell is placed on whole pixels: its position goes to Java as integers and comes back as the
+/// shell's bounds, so a half pixel here would move the shell once Java repeats it.
+Offset wholePixels(Offset offset) => Offset(offset.dx.roundToDouble(), offset.dy.roundToDouble());
+
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
   Offset? _offset;
   Size? _size;
@@ -88,32 +95,25 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     _focusScopeNode.addListener(_handleFocusScopeChange);
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
-    TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
-    _popupsToken = EquoCommService.onRaw(_popupsChannel, _receivePopups);
+    _attachTrackerHost();
+    _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('ShellPopups', VShellPopups.new, (id, record) {
+      if (id == state.id) _showPopups(record.popups ?? const []);
+    });
   }
+
+  void Function()? _stopPopupRecords;
 
   /// Popups opened over this shell, when this client is the window drawing it. Empty in every other
   /// client: Java sends them only to the window that owns the control they were opened for (see
   /// `DisplayBridge.syncShellPopups`), because a popup hangs off the Display rather than off this
   /// shell's widget tree and nothing else would carry it here.
   List<VMenu> _popups = const [];
-  Object? _popupsToken;
 
-  String get _popupsChannel => 'Shell/${state.id}/Popups';
+  /// What holds this shell's popup menus: the shell's popups record, keyed apart from the shell.
+  int get _popupsKey => WidgetKey.of(gen.WireType.shellPopups, state.id);
 
-  void _receivePopups(dynamic payload) {
-    final menus = <VMenu>[];
-    if (payload is Map && payload['popups'] is List) {
-      for (final raw in payload['popups'] as List) {
-        if (raw is Map<String, dynamic>) menus.add(VMenu.fromJson(raw));
-      }
-    }
-    // Registering is what puts the menu and its items in the registry; holding is what lets a popup
-    // that closed stop being held, instead of being kept for the life of the session.
-    for (final menu in menus) {
-      VRegistry.instance.register(menu);
-    }
-    VRegistry.instance.holds(_popupsChannel, menus);
+  void _showPopups(List<VMenu> menus) {
+    VRegistry.instance.holdsAt(_popupsKey, menus);
     if (!mounted) return;
     setState(() => _popups = menus);
   }
@@ -141,14 +141,25 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // Again on every update, because the channel is keyed by id and this State outlives a change
     // of it: subscribing once at mount leaves the Shell listening on an id Java no longer sends
     // to, and a Tracker opened after that is never driven -- it just times out and its drop is
-    // discarded. attachHost is a no-op for an id already subscribed.
-    TrackerSession.attachHost(state.swt, state.id, toDisplay: _toDisplay);
+    // discarded.
+    _attachTrackerHost();
+  }
+
+  int? _trackerHostId;
+
+  void _attachTrackerHost() {
+    final id = state.id;
+    if (_trackerHostId != null && _trackerHostId != id) TrackerSession.detachHost(_trackerHostId!);
+    _trackerHostId = id;
+    TrackerSession.attachHost(state.swt, id, toDisplay: _toDisplay);
   }
 
   @override
   void dispose() {
-    EquoCommService.remove(_popupsChannel, _popupsToken);
-    VRegistry.instance.holds(_popupsChannel, const []);
+    final trackerHost = _trackerHostId;
+    if (trackerHost != null) TrackerSession.detachHost(trackerHost);
+    _stopPopupRecords?.call();
+    VRegistry.instance.holdsAt(_popupsKey, const []);
     _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
     _focusScopeNode.dispose();
@@ -187,12 +198,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final change = lastChange;
     // An alpha-only delivery is an animation frame: the notifier above has already carried it, and
     // rebuilding the shell for each one is the cost this bypass exists to avoid.
-    if (change != null && change.isOnly(const {'alpha'})) return;
+    if (change != null && change.isOnly(const {gen.WireKey.k_Shell_alpha})) return;
     // A value is changed in place, so there is no earlier copy to compare against - what the
     // delivery named is all there is to reason with. A delivery that never mentioned the dialogs
     // did not change them; one that mentions nothing was a whole widget, and then anything may have.
     final prevDialogs =
-        (change != null && !change.touches('dialogs')) ? (value.dialogs ?? []) : const <VDialog>[];
+        (change != null && !change.touches(gen.WireKey.k_Shell_dialogs)) ? (value.dialogs ?? []) : const <VDialog>[];
     super.setValue(value);
     final newDialogs = value.dialogs ?? [];
     _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));
@@ -385,7 +396,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       if (!viewport.maxWidth.isFinite || !viewport.maxHeight.isFinite) return wanted;
       final maxX = math.max(0.0, viewport.maxWidth - w - chromeEdge);
       final maxY = math.max(0.0, viewport.maxHeight - frameH - chromeEdge);
-      return Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY));
+      return wholePixels(Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY)));
     }
 
     // A floating shell's bounds are a SCREEN position; this offset is measured from the window
@@ -412,10 +423,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         return Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
       }
       // What is left is a shell nobody placed: a dialog opened at the platform's default.
-      return Offset(
+      return wholePixels(Offset(
         (viewport.maxWidth - bodyW) / 2,
         (viewport.maxHeight - headerH - bodyH) / 2,
-      );
+      ));
     }
 
     final offset = resolvedOffset();
@@ -771,7 +782,7 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
       onExit: (_) => setState(() => _hovering = false),
       child: GestureDetector(
         onTap: widget.onTap,
-        child: AnimatedContainer(
+        child: QuietAnimatedContainer(
           duration: theme.titleBarButtonAnimationDuration,
           width: theme.titleBarButtonSize,
           height: theme.titleBarButtonSize,

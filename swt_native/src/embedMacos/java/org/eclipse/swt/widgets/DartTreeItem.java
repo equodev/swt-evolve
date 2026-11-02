@@ -938,6 +938,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             if (isDisposed())
                 return;
             expanded = expand;
+            getValue().markDirty(VTreeItem.EXPANDED);
         }
         if (recurse) {
             for (int i = 0; i < itemCount; i++) {

@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/slider.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 /// Same as the generated SliderSwt, except sendEvent captures outgoing events
 /// instead of handing them to EquoCommService, which needs a live transport.
@@ -23,8 +24,8 @@ class _CapturingSliderSwt extends SliderSwt<VSlider> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VSlider val, String ev, VEvent? payload) =>
-      onEvent(ev, payload);
+  void sendEvent(VSlider val, int channel, VEvent? payload) =>
+      onEvent(wireChannelNames[channel]!, payload);
 }
 
 VSlider _scrollbar() => VSlider()

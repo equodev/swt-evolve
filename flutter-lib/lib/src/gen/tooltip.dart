@@ -1,13 +1,12 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/point.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tooltip_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tooltip.g.dart';
 
 class ToolTipSwt<V extends VToolTip> extends WidgetSwt<V> {
   const ToolTipSwt({super.key, required super.value});
@@ -16,15 +15,14 @@ class ToolTipSwt<V extends VToolTip> extends WidgetSwt<V> {
   State createState() => ToolTipImpl<ToolTipSwt<VToolTip>, VToolTip>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
-@JsonSerializable()
 class VToolTip extends VWidget {
   VToolTip() : this.empty();
   VToolTip.empty() {
@@ -48,24 +46,66 @@ class VToolTip extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'location':
-        location = json['location'] == null
-            ? null
-            : VPoint.fromJson(json['location'] as Map<String, dynamic>);
-      case 'message':
-        message = json['message'] as String?;
-      case 'text':
-        text = json['text'] as String?;
-      case 'visible':
-        visible = json['visible'] as bool?;
+      case 607: // location
+        location = r.point();
+        return true;
+      case 608: // message
+        message = r.string();
+        return true;
+      case 609: // text
+        text = r.string();
+        return true;
+      case 610: // visible
+        visible = r.boolean();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VToolTip.fromJson(Map<String, dynamic> json) =>
-      _$VToolTipFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VToolTipToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = location;
+      if (v_ != null) {
+        w.key(607);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = message;
+      if (v_ != null) {
+        w.key(608);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null) {
+        w.key(609);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = visible;
+      if (v_ != null) {
+        w.keyBoolean(610, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(607, location);
+    visit(608, message);
+    visit(609, text);
+    visit(610, visible);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

@@ -1,5 +1,99 @@
 {
-  "chrome": {},
+  "chrome": {
+    "Compact": {
+      "TabFolder:BOTTOM": {
+        "bottom": 18.0,
+        "labelWidth": 41.958984375,
+        "left": 0.0,
+        "right": 0.0,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375,
+        "top": 0.0
+      },
+      "TabFolder:TOP": {
+        "bottom": 0.0,
+        "labelWidth": 41.958984375,
+        "left": 0.0,
+        "right": 0.0,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375,
+        "top": 18.0
+      },
+      "TabFolder:tab:image": {
+        "imageHeight": 16.0,
+        "labelWidth": 41.958984375,
+        "tabHeight": 18.0,
+        "tabWidth": 79.958984375
+      },
+      "TabFolder:tab:plain": {
+        "labelWidth": 41.958984375,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375
+      }
+    },
+    "Default": {
+      "TabFolder:BOTTOM": {
+        "bottom": 18.0,
+        "labelWidth": 41.958984375,
+        "left": 0.0,
+        "right": 0.0,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375,
+        "top": 0.0
+      },
+      "TabFolder:TOP": {
+        "bottom": 0.0,
+        "labelWidth": 41.958984375,
+        "left": 0.0,
+        "right": 0.0,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375,
+        "top": 18.0
+      },
+      "TabFolder:tab:image": {
+        "imageHeight": 16.0,
+        "labelWidth": 41.958984375,
+        "tabHeight": 18.0,
+        "tabWidth": 79.958984375
+      },
+      "TabFolder:tab:plain": {
+        "labelWidth": 41.958984375,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375
+      }
+    },
+    "NonDefault": {
+      "TabFolder:BOTTOM": {
+        "bottom": 18.0,
+        "labelWidth": 41.958984375,
+        "left": 0.0,
+        "right": 0.0,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375,
+        "top": 0.0
+      },
+      "TabFolder:TOP": {
+        "bottom": 0.0,
+        "labelWidth": 41.958984375,
+        "left": 0.0,
+        "right": 0.0,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375,
+        "top": 18.0
+      },
+      "TabFolder:tab:image": {
+        "imageHeight": 16.0,
+        "labelWidth": 41.958984375,
+        "tabHeight": 18.0,
+        "tabWidth": 79.958984375
+      },
+      "TabFolder:tab:plain": {
+        "labelWidth": 41.958984375,
+        "tabHeight": 17.0,
+        "tabWidth": 60.958984375
+      }
+    }
+  },
   "themeCaseFqnByWidget": {
     "Button": "org.eclipse.swt.widgets.Button",
     "CCombo": "org.eclipse.swt.custom.CCombo",
@@ -11,6 +105,7 @@
     "Sash": "org.eclipse.swt.widgets.Sash",
     "Scale": "org.eclipse.swt.widgets.Scale",
     "Slider": "org.eclipse.swt.widgets.Slider",
+    "TabFolder": "org.eclipse.swt.widgets.TabFolder",
     "TableItem": "org.eclipse.swt.widgets.TableItem",
     "Text": "org.eclipse.swt.widgets.Text",
     "ToolItem": "org.eclipse.swt.widgets.ToolItem",
@@ -247,6 +342,34 @@
         "fontItalic": false,
         "fontSize": 10,
         "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:BOTTOM": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:TOP": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:tab:image": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:tab:plain": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
         "height": 1.1428571428571428
       },
       "TableItem:NONE": {
@@ -1147,6 +1270,34 @@
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
+      "TabFolder:BOTTOM": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:TOP": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:tab:image": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:tab:plain": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
       "TableItem:NONE": {
         "fontFamily": "Inter",
         "fontItalic": false,
@@ -2043,6 +2194,34 @@
         "fontItalic": false,
         "fontSize": 14,
         "fontWeight": 500,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:BOTTOM": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:TOP": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:tab:image": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
+        "height": 1.1428571428571428
+      },
+      "TabFolder:tab:plain": {
+        "fontFamily": "Inter",
+        "fontItalic": false,
+        "fontSize": 12,
+        "fontWeight": 400,
         "height": 1.1428571428571428
       },
       "TableItem:NONE": {
@@ -16433,6 +16612,176 @@
           "style": "VERTICAL",
           "useFontTheme": false,
           "width": 24.0
+        }
+      ]
+    },
+    "org.eclipse.swt.widgets.TabFolder": {
+      "cases": [
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 382.0,
+              "left": 0.0,
+              "top": 18.0,
+              "width": 600.0
+            },
+            "tab": [
+              {
+                "height": 17.0,
+                "left": 0.0,
+                "paddingHorizontal": 17.0,
+                "paddingVertical": 1.0,
+                "top": 0.0,
+                "width": 60.958984375
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 14.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 12.0,
+                "fontStyle": null,
+                "fontWeight": 3,
+                "height": 1.1428571428571428
+              },
+              "width": 41.958984375
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "_TabRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "TabFolder_TOP_",
+          "style": "TOP",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 382.0,
+              "left": 0.0,
+              "top": 0.0,
+              "width": 600.0
+            },
+            "tab": [
+              {
+                "height": 17.0,
+                "left": 0.0,
+                "paddingHorizontal": 17.0,
+                "paddingVertical": 1.0,
+                "top": 383.0,
+                "width": 60.958984375
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 14.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 12.0,
+                "fontStyle": null,
+                "fontWeight": 3,
+                "height": 1.1428571428571428
+              },
+              "width": 41.958984375
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "_TabRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "TabFolder_BOTTOM_",
+          "style": "BOTTOM",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "tab": [
+              {
+                "height": 17.0,
+                "left": 0.0,
+                "paddingHorizontal": 17.0,
+                "paddingVertical": 1.0,
+                "top": 0.0,
+                "width": 60.958984375
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 14.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 12.0,
+                "fontStyle": null,
+                "fontWeight": 3,
+                "height": 1.1428571428571428
+              },
+              "width": 41.958984375
+            }
+          },
+          "expectedComponents": {
+            "tabsOf": "_TabRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "TabFolder_tab:plain_",
+          "style": "tab:plain",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 16.0,
+              "width": 16.0
+            },
+            "tab": [
+              {
+                "height": 18.0,
+                "left": 0.0,
+                "paddingHorizontal": 17.0,
+                "paddingVertical": 1.0,
+                "top": 0.0,
+                "width": 79.958984375
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 14.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 12.0,
+                "fontStyle": null,
+                "fontWeight": 3,
+                "height": 1.1428571428571428
+              },
+              "width": 41.958984375
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "tabsOf": "_TabRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "TabFolder_tab:image_",
+          "style": "tab:image",
+          "useFontTheme": false,
+          "width": 600.0
         }
       ]
     },

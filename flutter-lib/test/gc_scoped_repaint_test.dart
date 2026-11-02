@@ -11,9 +11,13 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/gc_frames.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 const Size canvasSize = Size(200, 80);
 const Color canvasBg = Color(0xFFFFFFFF);
@@ -24,16 +28,8 @@ const Rect cellBounds = Rect.fromLTWH(100, 0, 100, 40);
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
+  void deliver(String actionId, Map<String, dynamic> payload) =>
+      receive(actionId, actionId.endsWith('/gcDispose') ? gcDisposeOf(payload) : tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 20; i++) {
@@ -48,17 +44,14 @@ void main() {
       [199, 0, 199, 40],
       [0, 39, 200, 39],
     ]) {
-      deliver('GC/$id/drawLineintintintint',
-          {'x1': line[0], 'y1': line[1], 'x2': line[2], 'y2': line[3]});
+      receive('GC/$id/b', gcOp('drawLineintintintint', [line[0], line[1], line[2], line[3]]));
     }
-    deliver('GC/$id/setBackgroundColor', {'color': {'r': 221, 'g': 221, 'b': 221}});
-    deliver('GC/$id/fillRectangleintintintint',
-        {'x': 0, 'y': 0, 'width': 99, 'height': 39});
+    receive('GC/$id/b', gcState(VGC.empty()..background = colourOf(221, 221, 221), changed: {WireKey.k_GC_background}));
+    receive('GC/$id/b', gcOp('fillRectangleintintintint', [0, 0, 99, 39]));
     if (hover) {
-      deliver('GC/$id/setBackgroundColor', {'color': {'r': 51, 'g': 153, 'b': 255}});
+      receive('GC/$id/b', gcState(VGC.empty()..background = colourOf(51, 153, 255), changed: {WireKey.k_GC_background}));
     }
-    deliver('GC/$id/fillRectangleintintintint',
-        {'x': 100, 'y': 0, 'width': 99, 'height': 39});
+    receive('GC/$id/b', gcOp('fillRectangleintintintint', [100, 0, 99, 39]));
   }
 
   Future<Uint8List> rasterize(List<Shape> shapes, {Color bg = canvasBg}) async {
@@ -120,9 +113,8 @@ void main() {
     // frames composite on top of each other there.
     const transparent = Color(0x00000000);
     void fillCell(int id, {required int width, required int height}) {
-      deliver('GC/$id/setBackgroundColor', {'color': {'r': 200, 'g': 0, 'b': 0}});
-      deliver('GC/$id/fillRectangleintintintint',
-          {'x': 100, 'y': 0, 'width': width, 'height': height});
+      receive('GC/$id/b', gcState(VGC.empty()..background = colourOf(200, 0, 0), changed: {WireKey.k_GC_background}));
+      receive('GC/$id/b', gcOp('fillRectangleintintintint', [100, 0, width, height]));
     }
 
     Future<List<Shape>> cycles(int id, {required bool fullCellFirst}) async {

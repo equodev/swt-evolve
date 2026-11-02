@@ -10,6 +10,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sashform.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -23,7 +25,7 @@ class _RecordingSashFormSwt extends SashFormSwt<VSashForm> {
   final List<String> sent;
 
   @override
-  void sendEvent(VSashForm val, String ev, VEvent? payload) => sent.add(ev);
+  void sendEvent(VSashForm val, int channel, VEvent? payload) => sent.add(wireChannelNames[channel]!);
 }
 
 VText _text(int id, int x) => VText()
@@ -37,7 +39,7 @@ VText _text(int id, int x) => VText()
 void main() {
   testWidgets('focusing a control inside a SashForm sends the SashForm no FocusIn', (tester) async {
     final sent = <String>[];
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: SizedBox(
         width: 300,
@@ -54,7 +56,7 @@ void main() {
             ..children = [_text(2, 0), _text(3, 150)],
         ),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
     await tester.showKeyboard(find.byType(EditableText).first);

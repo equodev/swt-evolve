@@ -290,8 +290,11 @@ public class Sizes {
         return dev.equo.swt.size.ExpandBarSizes.bandHeight(dartExpandBar.getApi());
     }
 
+    /** The hints size the content, and the border goes around it, as on Win32 and GTK. */
     public static Point computeSize(DartLabel c, int wHint, int hHint, boolean changed) {
-        return LabelSizes.computeSize(c, wHint, hHint, changed);
+        Point size = LabelSizes.computeSize(c, wHint, hHint, changed);
+        int border = ControlHelper.borderWidth(c);
+        return new Point(size.x + 2 * border, size.y + 2 * border);
     }
 
     /**
@@ -387,6 +390,10 @@ public class Sizes {
                 height = Math.max(height, size.y);
             }
         }
+        if (width == 0)
+            width = DartWidget.DEFAULT_WIDTH;
+        if (height == 0)
+            height = DartWidget.DEFAULT_HEIGHT;
         if (wHint != SWT.DEFAULT)
             width = wHint;
         if (hHint != SWT.DEFAULT)
@@ -649,7 +656,7 @@ public class Sizes {
         if (!(decorations.getImpl() instanceof DartComposite)) return;
         if (ownMenuStripHeight(decorations) == before) return;
         DartComposite impl = (DartComposite) decorations.getImpl();
-        impl.getValue().markDirty("ownMenuStrip");
+        markOwnMenuStrip(impl.getValue());
         impl.sendEvent(SWT.Resize);
         if (decorations.isDisposed()) return;
         if (impl.layout != null) {
@@ -665,7 +672,21 @@ public class Sizes {
     static void resendMenuStrip(Decorations decorations) {
         if (!DartMainToolbar.hasMenuBarItems(decorations)) return;
         if (decorations.getImpl() instanceof DartWidget)
-            ((DartWidget) decorations.getImpl()).getValue().markDirty("ownMenuStrip");
+            markOwnMenuStrip(((DartWidget) decorations.getImpl()).getValue());
+    }
+
+    /** {@code ownMenuStrip}'s number; only the desktop and web Decorations have it, so it is looked up. */
+    private static final int OWN_MENU_STRIP =
+            java.util.Arrays.asList(dev.equo.swt.WireTable.PROPERTIES).indexOf("Decorations.ownMenuStrip");
+
+    /** Marks {@code ownMenuStrip} changed on a value that has it: only the desktop and web Decorations draw their own strip. */
+    private static void markOwnMenuStrip(VWidget value) {
+        for (int key : value.wireKeys()) {
+            if (key == OWN_MENU_STRIP) {
+                value.markDirty(key);
+                return;
+            }
+        }
     }
 
     /** Where the text of the first cell is: after the image, as wide as the text, and no wider than the cell. */
@@ -992,23 +1013,20 @@ public class Sizes {
                 width + border * 2, height + top + bottom);
     }
 
-    /**
-     * Height of the tab strip a TabFolder renders above its content: the tallest tab (label text
-     * plus its bottom padding, plus the tab's own bottom border) plus the strip's bottom border.
-     * Measured against the render side, which pins the same number from a rendering test so the two
-     * cannot silently drift apart.
-     */
-    public static final int TAB_FOLDER_TAB_STRIP_HEIGHT = 18;
-
+    /** The page gets the folder less the tab strip on one edge and the body's frame on the other three. */
     public static Rectangle getClientArea(DartTabFolder widget) {
         Rectangle b = widget.getBounds();
-        return new Rectangle(0, TAB_FOLDER_TAB_STRIP_HEIGHT, b.width,
-                Math.max(0, b.height - TAB_FOLDER_TAB_STRIP_HEIGHT));
+        int border = TabFolderTheme.get().bodyBorder();
+        int strip = TabFolderHelper.stripHeight(widget.getApi());
+        return new Rectangle(border, TabFolderHelper.pageTop(widget),
+                Math.max(0, b.width - 2 * border), Math.max(0, b.height - strip - border));
     }
 
     public static Rectangle computeTrim(DartTabFolder widget, int x, int y, int width, int height) {
-        return new Rectangle(x, y - TAB_FOLDER_TAB_STRIP_HEIGHT, width,
-                height + TAB_FOLDER_TAB_STRIP_HEIGHT);
+        int border = TabFolderTheme.get().bodyBorder();
+        int strip = TabFolderHelper.stripHeight(widget.getApi());
+        return new Rectangle(x - border, y - TabFolderHelper.pageTop(widget),
+                width + 2 * border, height + strip + border);
     }
 
     public static Rectangle getClientArea(DartGroup widget) {
@@ -1032,10 +1050,20 @@ public class Sizes {
         if (widget instanceof DartCoolBar) return getClientArea((DartCoolBar) widget);
         if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.getClientArea((DartComposite) widget);
         Rectangle b = widget.getBounds();
-        int vBarWidth = (widget.verticalBar != null && widget.verticalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
-        int hBarHeight = (widget.horizontalBar != null && widget.horizontalBar.isVisible()) ? SCROLL_BAR_SIZE : 0;
+        int vBarWidth = takesRoom(widget.verticalBar) ? SCROLL_BAR_SIZE : 0;
+        int hBarHeight = takesRoom(widget.horizontalBar) ? SCROLL_BAR_SIZE : 0;
         int menuBar = menuStripOutsideClientArea(widget);
         return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
+    }
+
+    /**
+     * Whether a scroll bar takes room from its parent's client area. The client draws a visible bar
+     * only while it has a range to scroll, and the content fills the place of one it does not draw.
+     */
+    static boolean takesRoom(ScrollBar bar) {
+        if (bar == null || !bar.isVisible()) return false;
+        Object impl = bar.getImpl();
+        return !(impl instanceof DartScrollBar) || ((DartScrollBar) impl).hasRange;
     }
 
     public static Point getSize(DartScrollBar scrollBar) {

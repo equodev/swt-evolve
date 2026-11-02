@@ -29,11 +29,16 @@ import 'widget_config.dart';
 import 'utils/wheel_input.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
 import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
+import 'utils/layered_layout_builder.dart';
 
 const double _kBarSize = 17.0;
 
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
+  // Its layer is on the Focus around wrap(), which is further out.
+  @override
+  bool get drawsInOwnLayer => false;
+
   @override
   bool get forwardsWheelFromWrap => false;
 
@@ -114,6 +119,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // hosting a JavaFX TextField). A bare Focus doesn't grab focus on tap, so we take
   // it on pointer-down and forward keystrokes to SWT below.
   final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
+
+  @override
+  bool get surfaceTakesTab => false;
 
   /// Whether a press gives this Canvas the keyboard focus; false for a Canvas that only paints, which
   /// no native focuses on a click.
@@ -218,9 +226,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     }
 
     final hasActiveChildren = children != null && children.isNotEmpty;
-    // A Canvas hosting children -- a Shell is one -- is no Tab stop of its own: Tab moves between its
-    // children, and stays on the last one when there is nowhere else to go.
-    _keyboardFocus.skipTraversal = hasActiveChildren;
+    // Java decides whether Tab stops here (VControl.tabStop, absent when false): a Canvas that hooks a
+    // key event, children or not.
+    _keyboardFocus.skipTraversal = !(state.tabStop ?? false);
 
     final content = Listener(
       behavior: HitTestBehavior.translucent,
@@ -236,11 +244,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     // Always mounted: unmounting it when a child appears would drop a held focus to the previous holder.
     // Forwards only the Canvas's own keys to SWT; a child's key is left to the child. Checked per event,
     // since an external node keeps the callback from its first build.
-    return Focus(
+    return inOwnLayer(Focus(
       focusNode: _keyboardFocus,
       onKeyEvent: (node, event) {
-        final kids = state.children;
-        if (!node.hasPrimaryFocus || (kids != null && kids.isNotEmpty)) {
+        if (!node.hasPrimaryFocus) {
           return KeyEventResult.ignored;
         }
         final vEvent = mapNewKeyEventToSwt(event);
@@ -263,7 +270,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         return KeyEventResult.ignored;
       },
       child: content,
-    );
+    ));
   }
 
   // From Flutter 3.41 a semantics node with no action of its own is unreliable in the web DOM:
@@ -725,7 +732,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     final thickness = scrollTheme.scrollbarThickness;
     final radius = scrollTheme.scrollbarRadius;
 
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         final trackSize =
             widget.vertical ? constraints.maxHeight : constraints.maxWidth;

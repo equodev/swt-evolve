@@ -3,12 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VCombo extends VComposite {
 
     protected VCombo() {
@@ -30,10 +25,16 @@ public class VCombo extends VComposite {
         String[] values = ((DartCombo) impl).items;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(String[] value) {
@@ -48,7 +49,6 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).listVisible = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Point getSelection() {
         return ((DartCombo) impl).selection;
     }
@@ -57,7 +57,6 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).selection = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartCombo) impl).getText();
     }
@@ -66,7 +65,6 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).text = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTextLimit() {
         return ((DartCombo) impl).getTextLimit();
     }
@@ -75,7 +73,6 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).textLimit = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getVisibleItemCount() {
         return ((DartCombo) impl).getVisibleItemCount();
     }
@@ -84,55 +81,113 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).visibleItemCount = value;
     }
 
-    public static final String CARET_POSITION = "caretPosition";
+    public static final int CARET_POSITION = 81;
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 82;
 
-    public static final String LIST_VISIBLE = "listVisible";
+    public static final int LIST_VISIBLE = 83;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 84;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "caretPosition":
-                Serializer.writeKeyValue(writer, "caretPosition", getCaretPosition());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "listVisible":
-                Serializer.writeKeyValue(writer, "listVisible", getListVisible());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
+            case CARET_POSITION:
+                return "caretPosition";
+            case ITEMS:
+                return "items";
+            case LIST_VISIBLE:
+                return "listVisible";
+            case TEXT:
+                return "text";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Combo.class)
-    public static class ComboJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCombo.class, (JsonWriter.WriteObject<DartCombo>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCombo.class, (JsonReader.ReadObject<DartCombo>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 81:
+                w.write((int) getCaretPosition());
+                return true;
+            case 82:
+                w.write(getItems());
+                return true;
+            case 83:
+                w.write(getListVisible());
+                return true;
+            case 84:
+                w.write(getText());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Combo read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 81:
+                {
+                    int v_ = getCaretPosition();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(81);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 82:
+                {
+                    String[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(82);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 83:
+                {
+                    boolean v_ = getListVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(83);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 84:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(84);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Combo api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 81, 82, 83, 84 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

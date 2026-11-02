@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CompositeTrimTest {
 
     private static final int BAR = Sizes.SCROLL_BAR_SIZE;
-    private static final int LINE = CompositeHelper.BORDER_WIDTH;
+    private static final int LINE = ControlHelper.BORDER_WIDTH;
 
     @BeforeAll
     static void useEquo() {

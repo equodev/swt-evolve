@@ -12,6 +12,8 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 /// The generated CComboSwt with sendEvent captured instead of handed to EquoCommService.
 class _CapturingCComboSwt extends CComboSwt<VCCombo> {
@@ -20,7 +22,7 @@ class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 /// A JFace ComboBoxCellEditor combo as the reported application builds it: style 0, i.e. editable
@@ -42,7 +44,7 @@ void main() {
   testWidgets('opening the dropdown does not report a FocusOut to Java', (tester) async {
     final events = <String>[];
 
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Center(
         child: SizedBox(
@@ -54,11 +56,11 @@ void main() {
           ),
         ),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
     // The cell editor has just been activated: JFace gives the combo focus.
-    await tester.tap(find.byType(EditableText));
+    await tester.tap(find.descendant(of: find.byType(_CapturingCComboSwt), matching: find.byType(EditableText)));
     await tester.pumpAndSettle();
     expect(events, contains('Focus/FocusIn'), reason: 'sanity: the editor took focus');
     events.clear();
@@ -78,7 +80,7 @@ void main() {
     final outside = FocusNode();
     addTearDown(outside.dispose);
 
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Column(
         children: [
@@ -93,10 +95,10 @@ void main() {
           SizedBox(width: 200, height: 24, child: TextField(focusNode: outside)),
         ],
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(EditableText).first);
+    await tester.tap(find.descendant(of: find.byType(_CapturingCComboSwt), matching: find.byType(EditableText)));
     await tester.pumpAndSettle();
     events.clear();
 

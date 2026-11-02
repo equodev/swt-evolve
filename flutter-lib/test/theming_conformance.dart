@@ -451,7 +451,7 @@ int _opaquePixels(Map<int, int> colors) {
 }
 
 Iterable<TextStyle> _textStyles(WidgetTester tester) sync* {
-  for (final t in tester.widgetList<Text>(find.byType(Text))) {
+  for (final t in tester.widgetList<Text>(find.byWidgetPredicate((w) => w is Text))) {
     if (t.style != null) yield t.style!;
     // A Text built from a span tree (Text.rich) keeps its styling in the spans.
     if (t.textSpan != null) yield* _spanStyles(t.textSpan!);

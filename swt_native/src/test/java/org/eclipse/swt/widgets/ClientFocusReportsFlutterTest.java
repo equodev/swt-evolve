@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.NoopBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
 import org.junit.jupiter.api.AfterEach;
@@ -163,7 +164,34 @@ class ClientFocusReportsFlutterTest {
         assertThat(display.getFocusControl()).isSameAs(tree);
     }
 
+    @Test
+    void aReportAnsweringARequestANewerOneReplacedNeitherActivatesNorFocusesItsControl() {
+        web = install(TestWebBridge::new);
+        Shell shell = openBareShell();
+        Composite oldPart = new Composite(shell, SWT.NONE);
+        Composite newPart = new Composite(shell, SWT.NONE);
+        org.eclipse.swt.custom.StyledText oldEditor = new org.eclipse.swt.custom.StyledText(oldPart, SWT.NONE);
+        org.eclipse.swt.custom.StyledText newEditor = new org.eclipse.swt.custom.StyledText(newPart, SWT.NONE);
+        clientReports(new Text(shell, SWT.SINGLE), "Focus/FocusIn");
+
+        // A dialog closing hands the focus back to the old editor; the editor it opened then takes it.
+        oldEditor.setFocus();
+        newEditor.setFocus();
+        oldPart.addListener(SWT.Activate, e -> events.add("old part Activate"));
+        // The client honoured the first request before the second reached it.
+        clientReports(oldEditor, "Focus/FocusIn");
+
+        assertThat(display.getFocusControl()).isSameAs(newEditor);
+        assertThat(events).isEmpty();
+
+        clientReports(newEditor, "Focus/FocusIn");
+        clientReports(oldEditor, "Focus/FocusIn");
+
+        assertThat(display.getFocusControl()).as("a click once the requests are answered").isSameAs(oldEditor);
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
+
 
     private Shell openBareShell() {
         Shell bare = new Shell(display);
@@ -189,11 +217,13 @@ class ClientFocusReportsFlutterTest {
 
     /** The {@code seq} of the last {@code swt.evolve.focus} request sent. */
     private long lastFocusRequestSeq() {
-        String json = web.comm.sent.stream()
+        Object request = web.comm.sent.stream()
                 .filter(f -> f.event.equals("swt.evolve.focus"))
                 .reduce((a, b) -> b)
-                .orElseThrow(() -> new AssertionError("no focus request was sent")).json;
-        return Long.parseLong(json.replaceAll(".*\"seq\"\\s*:\\s*(\\d+).*", "$1"));
+                .orElseThrow(() -> new AssertionError("no focus request was sent")).value;
+        Object seq = WireValues.at(request, "seq");
+        if (!(seq instanceof Number)) throw new AssertionError("the focus request carries no seq: " + request);
+        return ((Number) seq).longValue();
     }
 
     private void clientSaw(long seq) {

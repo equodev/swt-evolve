@@ -3,6 +3,7 @@ import '../comm/comm.dart';
 import '../gen/event.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 
 class ScrollBarImpl<T extends ScrollBarSwt, V extends VScrollBar>
     extends WidgetSwtState<T, V> {
@@ -18,11 +19,12 @@ void sendScrollBarSelectionEvent(
   int selection, {
   int detail = 0,
 }) {
-  EquoCommService.sendPayload(
-    'ScrollBar/${bar.id}/Selection/Selection',
-    (VEvent()
-          ..index = selection
-          ..detail = detail)
-        .toJson(),
+  EquoCommService.sendTo(
+    WireType.scrollBar,
+    bar.id,
+    WireChannel.selectionSelection,
+    VEvent()
+      ..index = selection
+      ..detail = detail,
   );
 }

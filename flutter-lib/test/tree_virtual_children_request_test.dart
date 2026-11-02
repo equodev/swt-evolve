@@ -12,6 +12,7 @@ import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const int _treeId = 710;
 const int _groupId = 711;
@@ -22,7 +23,7 @@ class _CapturingTreeSwt extends TreeSwt<VTree> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VTree val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VTree val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VTree _virtualTreeWithOpenGroup({required int childCount, required int loaded, int seq = 1}) =>

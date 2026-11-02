@@ -4,11 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VTableEditor extends VControlEditor {
 
     protected VTableEditor() {
@@ -37,28 +33,62 @@ public class VTableEditor extends VControlEditor {
         ((DartTableEditor) impl).item = value;
     }
 
-    @JsonConverter(target = TableEditor.class)
-    public static class TableEditorJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTableEditor.class, (JsonWriter.WriteObject<DartTableEditor>) (writer, impl) -> {
-                Serializer.writeEditorWithId(json, writer, impl);
-            });
-            json.registerReader(DartTableEditor.class, (JsonReader.ReadObject<DartTableEditor>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 563:
+                w.write((int) getColumn());
+                return true;
+            case 564:
+                w.ref(getItem());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TableEditor read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 563:
+                {
+                    int v_ = getColumn();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(563);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 564:
+                {
+                    TableItem v_ = getItem();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(564);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TableEditor api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControlEditor.allWireKeys_(), new int[] { 563, 564 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

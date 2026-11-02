@@ -56,16 +56,16 @@ bool refreshAppScale() {
 /// Bumped when the flags change; the root [MaterialApp] listens to it and rebuilds with the new theme.
 final ValueNotifier<int> configFlagsVersion = ValueNotifier<int>(0);
 
-Map<String, dynamic>? _lastAppliedConfig;
+Uint8List? _lastAppliedConfig;
 
 /// Applies config flags from either source: the `config` field of a `Display/{id}` update, or the
 /// `swt.evolve.properties` message. The flags repeat in every Display update, so the dedup keeps an
 /// unchanged payload from rebuilding the whole [MaterialApp].
 void applyConfigFlags(ConfigFlags? flags) {
   if (flags == null) return;
-  final json = flags.toJson();
-  if (mapEquals(json, _lastAppliedConfig)) return;
-  _lastAppliedConfig = json;
+  final wire = flags.wire;
+  if (wire != null && listEquals(wire, _lastAppliedConfig)) return;
+  _lastAppliedConfig = wire;
   setConfigFlags(flags);
   refreshAppScale();
   configFlagsVersion.value++;
@@ -219,6 +219,11 @@ Duration get doubleClickTimeout {
   final ms = getConfigFlags().double_click_timeout_ms ?? 0;
   return ms > 0 ? Duration(milliseconds: ms) : kDoubleTapTimeout;
 }
+
+/// How far apart, in logical pixels, two clicks of a double-click may land: a mouse's tolerance, as
+/// the platforms use (GTK 5, Windows 4). Flutter's [kDoubleTapSlop] is a finger's, 100px, which pairs
+/// clicks on neighbouring characters of a text.
+const double doubleClickSlop = 5.0;
 
 void setConfigFlags(ConfigFlags newFlags) {
   final prev = configFlags;

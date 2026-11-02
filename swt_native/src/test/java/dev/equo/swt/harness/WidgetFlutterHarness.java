@@ -1,12 +1,9 @@
 package dev.equo.swt.harness;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import org.eclipse.swt.widgets.*;
 
-import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +41,6 @@ public class WidgetFlutterHarness extends FlutterHarness {
     private static final String FRAME_SYNC = "evolve.test.frameSync";
     private static final String FRAME_SYNCED = "evolve.test.frameSynced";
 
-    private final Gson gson = new Gson();
     private final AtomicInteger queryGen = new AtomicInteger();
     private final AtomicInteger syncGen = new AtomicInteger();
     private final Map<Integer, CompletableFuture<Map<String, Object>>> pendingQueries = new ConcurrentHashMap<>();
@@ -69,19 +65,20 @@ public class WidgetFlutterHarness extends FlutterHarness {
 
     /** Register the generic query + frame-sync handlers. Subclasses may override to add more. */
     protected void registerCommHandlers() {
-        // Query-response handler (persistent). The far side replies with the live V*.toJson().
-        comm().on(Q_RESPONSE, byte[].class, bytes -> {
+        // Query-response handler (persistent). The far side replies with the live state by number.
+        dev.equo.swt.harness.Channels.on(comm(), Q_RESPONSE, byte[].class, bytes -> {
             if (bytes == null) return;
-            Map<String, Object> resp = parseJson(bytes);
+            Map<String, Object> resp = new java.util.HashMap<>(decode(bytes));
+            resp.put("state", WireFrames.named(resp.get("state")));
             Integer qid = ((Number) resp.get("queryId")).intValue();
             CompletableFuture<Map<String, Object>> f = pendingQueries.remove(qid);
             if (f != null) f.complete(resp);
         });
         // Post-frame ack: completes the future for the matching syncId once Flutter has built +
         // painted the frame requested by flush() (see test_harness.dart).
-        comm().on(FRAME_SYNCED, byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm(), FRAME_SYNCED, byte[].class, bytes -> {
             if (bytes == null) return;
-            Map<String, Object> m = parseJson(bytes);
+            Map<String, Object> m = decode(bytes);
             Object sid = m == null ? null : m.get("syncId");
             if (sid == null) return;
             CompletableFuture<Void> f = pendingSyncs.remove(((Number) sid).intValue());
@@ -89,9 +86,11 @@ public class WidgetFlutterHarness extends FlutterHarness {
         });
     }
 
-    protected Map<String, Object> parseJson(byte[] bytes) {
-        Type t = new TypeToken<Map<String, Object>>() {}.getType();
-        return gson.fromJson(new String(bytes, StandardCharsets.UTF_8), t);
+    /** A reply from the client: tagged values, a map at the top. */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> decode(byte[] bytes) {
+        Object value = GcFrames.value(bytes);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
     // ---------------- public API ----------------
@@ -125,21 +124,20 @@ public class WidgetFlutterHarness extends FlutterHarness {
         int sid = syncGen.incrementAndGet();
         CompletableFuture<Void> f = new CompletableFuture<>();
         pendingSyncs.put(sid, f);
-        comm().send(FRAME_SYNC, ("{\"syncId\":" + sid + "}").getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.send(comm(), FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", sid), null));
         awaitQuiet(f, QUERY_TIMEOUT_MS);
         pendingSyncs.remove(sid);
     }
 
     /**
-     * Returns the live Flutter state (the widget's {@code V*.toJson()}) of {@code w}, by id. The map
+     * Returns the live Flutter state of {@code w}, by id. The map
      * contains {@code found} plus the serialized fields under {@code state} (e.g. {@code selection}).
      */
     public Map<String, Object> queryState(Widget w) {
         int qid = queryGen.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pendingQueries.put(qid, f);
-        String json = "{\"queryId\":" + qid + ",\"targetId\":" + w.hashCode() + "}";
-        comm().send(Q_REQUEST, json.getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.send(comm(), Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", qid, "targetId", w.hashCode()), null));
         return awaitFuture(f, QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
     }
 

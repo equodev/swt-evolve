@@ -197,6 +197,43 @@ public class StyledTextGeometryNativeTest {
                 .isFalse();
     }
 
+    // The client's table laid the text out in the font it had; a new font of the same document keeps
+    // its length, so the staleness check passes and every position would come from the old layout
+    // until the next push. A font with other metrics drops the table; the same metrics keep it.
+    @Test
+    public void a_font_with_other_metrics_drops_the_table_the_previous_one_was_laid_out_in() {
+        DartStyledText st = widget(5);
+        StyledText api = mock(StyledText.class);
+        when(api.getImpl()).thenReturn(st);
+        DartStyledTextRenderer renderer = mock(DartStyledTextRenderer.class);
+        renderer.styledText = api;
+        StyledTextHelper.updateRendererFontMetrics(renderer, null, 4);
+        StyledTextHelper.applyTextGeometry(st, table());
+        assertThat(StyledTextHelper.freshGeometry(st)).isNotNull();
+
+        StyledTextHelper.updateRendererFontMetrics(renderer, null, 4);
+        assertThat(StyledTextHelper.freshGeometry(st)).as("same metrics").isNotNull();
+
+        renderer.ascent = 20;
+        StyledTextHelper.updateRendererFontMetrics(renderer, null, 4);
+        assertThat(StyledTextHelper.freshGeometry(st)).as("other metrics").isNull();
+    }
+
+    // The ruler columns draw at the rows' heights. A line that only got wider -- the one being typed
+    // into, on every keystroke -- is a different layout for the scroll bars, but asking the rulers
+    // to paint again for it would repaint the gutter, and the editor beside it, at every key.
+    @Test
+    public void only_a_table_that_moves_the_rows_asks_the_rulers_to_paint_again() {
+        StyledTextHelper.TextGeometry before = geometry(2, 30.0, 20.0);
+        StyledTextHelper.TextGeometry wider = geometry(2, 30.0, 26.0);
+
+        assertThat(StyledTextHelper.describesADifferentLayout(before, wider)).isTrue();
+        assertThat(StyledTextHelper.movesTheRows(before, wider)).isFalse();
+        assertThat(StyledTextHelper.movesTheRows(before, geometry(3, 45.0, 20.0))).isTrue();
+        assertThat(StyledTextHelper.movesTheRows(before, geometry(2, 32.0, 20.0))).isTrue();
+        assertThat(StyledTextHelper.movesTheRows(null, before)).isTrue();
+    }
+
     // The table is applied through asyncExec: the editor can be disposed by the time it lands, and
     // an exception thrown out of that runnable takes the Display's own teardown down with it.
     @Test

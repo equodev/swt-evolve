@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -12,10 +12,9 @@ import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/toolbar_evolve.dart';
 import 'widgets.dart';
-
-part 'toolbar.g.dart';
 
 class ToolBarSwt<V extends VToolBar> extends CompositeSwt<V> {
   const ToolBarSwt({super.key, required super.value});
@@ -24,7 +23,6 @@ class ToolBarSwt<V extends VToolBar> extends CompositeSwt<V> {
   State createState() => ToolBarImpl<ToolBarSwt<VToolBar>, VToolBar>();
 }
 
-@JsonSerializable()
 class VToolBar extends VComposite {
   VToolBar() : this.empty();
   VToolBar.empty() {
@@ -42,15 +40,32 @@ class VToolBar extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => VToolItem.fromJson(e as Map<String, dynamic>))
-            .toList();
+      case 597: // items
+        items = r.refs<VToolItem>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(597);
+        w.refs(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(597, items);
   }
 
   @override
@@ -58,8 +73,4 @@ class VToolBar extends VComposite {
     super.adoptChildren(adopt);
     VWidget.adoptEach(items, adopt);
   }
-
-  factory VToolBar.fromJson(Map<String, dynamic> json) =>
-      _$VToolBarFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VToolBarToJson(this);
 }

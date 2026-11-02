@@ -3,7 +3,7 @@ package dev.equo.swt.delivery;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
-import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -28,17 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Everything a flush sends belongs to the same moment — a layout pass over a composite touches
  * every child of it — and sending them one at a time costs the client a socket frame, a decode, a
- * dispatch and a rebuild for each. Fused, the run arrives together and each entry is still
- * delivered on its own channel, in order, exactly as if it had come alone.
- *
- * <p>The saving is real from the second frame on and not before, so a flush with one thing to say
- * still says it directly rather than paying for a wrapper around nothing.
+ * dispatch and a rebuild for each. A flush is one binary frame of records, one per widget.
  */
 @ExtendWith(Mocks.class)
 class FlushBatchTest {
-
-    /** The channel a fused run travels on; a protocol contract shared with the client. */
-    private static final String BATCH = "swt.evolve.batch";
 
     private RecordingBridge bridge;
 
@@ -75,21 +68,21 @@ class FlushBatchTest {
         for (int i = 0; i < rows.size(); i++) rows.get(i).setText("row " + i);
         FlutterBridge.update();
 
-        assertThat(bridge.comm.sent)
+        assertThat(bridge.comm.wireFrames())
                 .as("eight changes in one moment, one message")
-                .hasSize(1);
-        RecordingComm.Frame frame = bridge.comm.sent.get(0);
-        assertThat(frame.event).isEqualTo(BATCH);
+                .isEqualTo(1L);
         for (int i = 0; i < rows.size(); i++) {
-            assertThat(frame.json)
-                    .as("every change is in it, and named by the channel it belongs to")
-                    .contains("\"Label/" + rows.get(i).hashCode() + "\"")
-                    .contains("row " + i);
+            String channel = "Label/" + rows.get(i).hashCode();
+            String text = "row " + i;
+            assertThat(bridge.comm.sent)
+                    .as("every change is in it, as the record of the widget it belongs to")
+                    .anyMatch(f -> f.event.equals(channel)
+                            && !WireValues.find(f.value, m -> text.equals(m.get("text"))).isEmpty());
         }
     }
 
     @Test
-    @DisplayName("a flush with one thing to say sends it as itself")
+    @DisplayName("a flush with one thing to say sends one record")
     void oneFrameTravelsAlone() {
         Shell shell = Mocks.shell();
         Composite parent = new Composite(shell, SWT.NONE);
@@ -99,10 +92,9 @@ class FlushBatchTest {
         only.setText("alone");
         FlutterBridge.update();
 
+        assertThat(bridge.comm.wireFrames()).isEqualTo(1L);
         assertThat(bridge.comm.sent).hasSize(1);
-        assertThat(bridge.comm.sent.get(0).event)
-                .as("wrapping a lone frame would be paying the framing for nothing")
-                .isEqualTo("Label/" + only.hashCode());
+        assertThat(bridge.comm.sent.get(0).event).isEqualTo("Label/" + only.hashCode());
     }
 
     @Test

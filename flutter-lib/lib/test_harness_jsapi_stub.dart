@@ -10,5 +10,6 @@ void registerTestQueryJsApi({
   required String Function() queryTreeItemsJson,
   required bool Function(String) expandTreeItem,
   required String Function() queryPrimaryFocus,
+  required void Function(String, String?) pickTheme,
   required void Function(void Function()) scheduleFrameSync,
 }) {}

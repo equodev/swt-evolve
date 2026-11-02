@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'gldata.g.dart';
-
-@JsonSerializable()
-class VGLData {
+class VGLData implements WireReadable, WireWritable, WireVisitable {
   VGLData() : this.empty();
   VGLData.empty();
 
-  factory VGLData.fromJson(Map<String, dynamic> json) =>
-      _$VGLDataFromJson(json);
-  Map<String, dynamic> toJson() => _$VGLDataToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
 }

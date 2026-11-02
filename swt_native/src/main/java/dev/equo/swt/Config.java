@@ -35,7 +35,7 @@ public class Config {
     private static final String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
     static final Map<Class<?>, Impl> equoEnabled;
     static boolean forceEclipse = Boolean.getBoolean("dev.equo.swt.forceEclipse");
-    static boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
+    static final boolean debug = Boolean.getBoolean("dev.equo.swt.debug");
     static boolean idTracker = Boolean.getBoolean("dev.equo.swt.tracker");
     static IdWidgetTracker widgetTracker;
 
@@ -625,6 +625,8 @@ public class Config {
      * class name instead reaches nothing.
      */
     public static String presentedName(DartWidget impl, String name) {
+        // Only a composite is ever presented under another name, or filed by describedAs.
+        if (!(impl instanceof DartComposite)) return name;
         String filed = presented.get(impl);
         if (filed != null) return filed;
         return "Composite".equals(name) && impl instanceof DartComposite && !impl.isDisposed()
@@ -643,7 +645,7 @@ public class Config {
      * listening on a channel nothing is addressed to.
      */
     static void describedAs(DartWidget impl, String name) {
-        presented.put(impl, name);
+        if (impl instanceof DartComposite) presented.put(impl, name);
     }
 
     private static final Map<DartWidget, String> presented =

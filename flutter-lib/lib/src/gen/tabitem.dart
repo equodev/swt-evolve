@@ -1,13 +1,12 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/control.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tabitem_evolve.dart';
 import 'widgets.dart';
-
-part 'tabitem.g.dart';
 
 class TabItemSwt<V extends VTabItem> extends ItemSwt<V> {
   const TabItemSwt({super.key, required super.value});
@@ -16,7 +15,6 @@ class TabItemSwt<V extends VTabItem> extends ItemSwt<V> {
   State createState() => TabItemImpl<TabItemSwt<VTabItem>, VTabItem>();
 }
 
-@JsonSerializable()
 class VTabItem extends VItem {
   VTabItem() : this.empty();
   VTabItem.empty() {
@@ -36,17 +34,42 @@ class VTabItem extends VItem {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'control':
-        control = json['control'] == null
-            ? null
-            : VControl.fromJson(json['control'] as Map<String, dynamic>);
-      case 'toolTipText':
-        toolTipText = json['toolTipText'] as String?;
+      case 545: // control
+        control = r.ref<VControl>();
+        return true;
+      case 546: // toolTipText
+        toolTipText = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = control;
+      if (v_ != null) {
+        w.keyRef(545, v_.id);
+      }
+    }
+    {
+      final v_ = toolTipText;
+      if (v_ != null) {
+        w.key(546);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(545, control);
+    visit(546, toolTipText);
   }
 
   @override
@@ -55,7 +78,6 @@ class VTabItem extends VItem {
     control = VWidget.adoptOne(control, adopt);
   }
 
-  factory VTabItem.fromJson(Map<String, dynamic> json) =>
-      _$VTabItemFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTabItemToJson(this);
+  @override
+  String? get semanticsTooltip => toolTipText;
 }

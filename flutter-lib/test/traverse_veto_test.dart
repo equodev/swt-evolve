@@ -7,22 +7,21 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/traversal_veto_scope.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
+import 'package:swtflutter/src/gen/widgets.dart' show WireType;
 
 const int _displayId = 900;
 
 late VetoGate _gate;
 
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
+void _deliver(String actionId, Object payload) {
+  final body = TaggedValues.encode(payload);
+  final frame = channels.frame(actionId, body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 
@@ -31,7 +30,7 @@ void _receiveJson(String actionId, Object payload) {
 Future<List<FocusNode>> _pumpDisplayWithTwoFields(WidgetTester tester) async {
   final first = FocusNode(debugLabel: 'first');
   final second = FocusNode(debugLabel: 'second');
-  _gate = VetoGate('traverse')..attach('Display', _displayId);
+  _gate = VetoGate.traverse()..attach(WireType.display, _displayId);
   addTearDown(first.dispose);
   addTearDown(second.dispose);
   addTearDown(_gate.detach);
@@ -64,7 +63,7 @@ void main() {
 
   testWidgets('a vetoed Tab leaves focus where it was', (tester) async {
     final nodes = await _pumpDisplayWithTwoFields(tester);
-    _receiveJson('Display/$_displayId/traverse/vetoable', {'value': true});
+    _deliver('Display/$_displayId/traverse/vetoable', {'value': true});
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -72,28 +71,28 @@ void main() {
     expect(nodes[0].hasFocus, isTrue,
         reason: 'focus must not move before Java has answered');
 
-    _receiveJson('Display/$_displayId/traverse/verdict', {'doit': false});
+    _deliver('Display/$_displayId/traverse/verdict', {'doit': false});
     await tester.pump();
     expect(nodes[0].hasFocus, isTrue, reason: 'the listener vetoed the traversal');
   });
 
   testWidgets('an allowed Tab traverses once Java answers', (tester) async {
     final nodes = await _pumpDisplayWithTwoFields(tester);
-    _receiveJson('Display/$_displayId/traverse/vetoable', {'value': true});
+    _deliver('Display/$_displayId/traverse/vetoable', {'value': true});
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await tester.pump();
     expect(nodes[0].hasFocus, isTrue, reason: 'held while Java is thinking');
 
-    _receiveJson('Display/$_displayId/traverse/verdict', {'doit': true});
+    _deliver('Display/$_displayId/traverse/verdict', {'doit': true});
     await tester.pump();
     expect(nodes[1].hasFocus, isTrue);
   });
 
   testWidgets('a Tab whose verdict never arrives still traverses', (tester) async {
     final nodes = await _pumpDisplayWithTwoFields(tester);
-    _receiveJson('Display/$_displayId/traverse/vetoable', {'value': true});
+    _deliver('Display/$_displayId/traverse/vetoable', {'value': true});
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -105,11 +104,11 @@ void main() {
 
   testWidgets('focus moving to a control with no listener disarms the gate', (tester) async {
     final nodes = await _pumpDisplayWithTwoFields(tester);
-    _receiveJson('Display/$_displayId/traverse/vetoable', {'value': true});
+    _deliver('Display/$_displayId/traverse/vetoable', {'value': true});
     await tester.pump();
     // Java publishes the disarming false on every focus change, because the Display never hears
     // that the focused control changed.
-    _receiveJson('Display/$_displayId/traverse/vetoable', {'value': false});
+    _deliver('Display/$_displayId/traverse/vetoable', {'value': false});
     await tester.pump();
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);

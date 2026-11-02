@@ -28,10 +28,12 @@ class SpinnerBrowserLocaleFlutterTest {
     @Test
     void aSpinnerWritesItsDecimalsInTheBrowsersLanguage() {
         Display display = flutter.boot();
-        flutter.settle();
         Locale browser = Locale.forLanguageTag(flutter.devTools().evaluate("navigator.language").getAsString());
+        // The language comes with the client's ClientReady, which the Display applies as it gets to it.
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        flutter.pumpUntil(() -> browser.equals(impl.clientLocale), 10_000);
 
-        assertThat(((DartDisplay) display.getImpl()).clientLocale).isEqualTo(browser);
+        assertThat(impl.clientLocale).isEqualTo(browser);
 
         Shell shell = new Shell(display);
         Spinner spinner = new Spinner(shell, SWT.NONE);

@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const double _kWidth = 300;
 const double _kHeight = 120;
@@ -25,7 +26,7 @@ class _CapturingStyledTextSwt extends StyledTextSwt<VStyledText> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VStyledText val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VStyledText val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 void main() {

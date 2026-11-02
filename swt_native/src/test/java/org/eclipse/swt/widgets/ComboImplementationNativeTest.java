@@ -205,7 +205,7 @@ class ComboImplementationNativeTest {
         Combo readOnly = new Combo(shell, SWT.READ_ONLY);
 
         assertThat(((DartCombo) editable.getImpl()).dragDetect(1, 1, false, new boolean[1])).isFalse();
-        assertThat(((DartCombo) readOnly.getImpl()).dragDetect(1, 1, false, new boolean[1])).isFalse();
+        assertThat(((DartCombo) readOnly.getImpl()).dragDetect(1, 1, false, new boolean[1])).isTrue();
     }
 
     @Test

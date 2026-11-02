@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingCComboSwt extends CComboSwt<VCCombo> {
   const _RecordingCComboSwt({required super.value, required this.calls});
@@ -21,9 +22,9 @@ class _RecordingCComboSwt extends CComboSwt<VCCombo> {
   final List<String> calls;
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) {
-    if (ev.startsWith('Mouse/') || ev.startsWith('MouseTrack/') || ev.startsWith('Focus/')) {
-      calls.add('$ev:${payload?.count}@${payload?.x},${payload?.y}');
+  void sendEvent(VCCombo val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]!.startsWith('Mouse/') || wireChannelNames[channel]!.startsWith('MouseTrack/') || wireChannelNames[channel]!.startsWith('Focus/')) {
+      calls.add('${wireChannelNames[channel]!}:${payload?.count}@${payload?.x},${payload?.y}');
     }
   }
 }

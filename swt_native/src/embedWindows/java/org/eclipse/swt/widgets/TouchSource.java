@@ -16,9 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent sources of touch input that generate <code>Touch</code> objects.
@@ -44,10 +41,9 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.7
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class TouchSource {
+public final class TouchSource implements dev.equo.swt.WireObject {
 
-    public long handle;
+    long handle;
 
     boolean direct;
 
@@ -96,5 +92,33 @@ public final class TouchSource {
     @Override
     public String toString() {
         return "TouchSource {handle=" + handle + " direct=" + direct + " bounds=" + bounds + "}";
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 119;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(619);
+        w.write(handle);
+        w.key(618);
+        w.write(direct);
+        w.key(617);
+        w.write(bounds);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 619:
+                handle = r.int64();
+                return true;
+            case 618:
+                direct = r.bool();
+                return true;
+        }
+        return false;
     }
 }

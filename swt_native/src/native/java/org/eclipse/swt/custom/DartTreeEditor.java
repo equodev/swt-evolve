@@ -318,6 +318,7 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
         super.setEditor(editor);
         this.editor = newValue;
         resize();
+        dirtyTree();
     }
 
     /**
@@ -378,6 +379,12 @@ public class DartTreeEditor extends DartControlEditor implements ITreeEditor {
 
     public Control _editor() {
         return editor;
+    }
+
+    private void dirtyTree() {
+        if (tree != null && !tree.isDisposed() && tree.getImpl() instanceof DartTree) {
+            ((DartTree) tree.getImpl())._dirty();
+        }
     }
 
     public TreeEditor getApi() {

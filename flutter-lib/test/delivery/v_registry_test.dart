@@ -5,19 +5,20 @@
 // while nothing renders it. The last of those is the one the old model could not do at all, and the
 // reason a hidden subtree used to come back empty.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
-import 'package:swtflutter/src/comm/comm_frame.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/label.dart';
+import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/widget.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+
+import 'support/deliver.dart';
 
 const int _id = 42;
 const String _channel = 'Label/$_id';
@@ -28,46 +29,21 @@ VLabel _label(String text, {int seq = 1}) => VLabel()
   ..style = SWT.NONE
   ..text = text;
 
-Map<String, dynamic> _whole(String text, int seq) =>
-    {'swt': 'Label', 'id': _id, '_s': seq, 'style': SWT.NONE, 'text': text};
-
-Map<String, dynamic> _partial(String text, {required int seq, required int base}) =>
-    {'swt': 'Label', 'id': _id, '_s': seq, '_b': base, '_d': ['text'], 'text': text};
-
-/// Delivers a frame exactly as the transport would, so the registry's own subscription carries it.
-///
-/// Awaited, because a handler runs off the current call stack: the comm defers delivery to a
-/// microtask so a handler never runs synchronously inside receive. Asserting before that has run
-/// would be asserting on a frame that has not been handled yet.
-Future<void> _deliver(String actionId, Object payload) async {
-  _receive(actionId, payload);
-  await Future<void>.delayed(Duration.zero);
-}
-
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
-
 void main() {
   late VRegistry registry;
+
+  /// [text] described whole, stamped [seq].
+  void whole(String text, int seq) => applyWhole(_label(text, seq: seq), registry: registry);
+
+  /// A change to [text], stamped [seq] and computed from [base].
+  void partial(String text, {required int seq, required int base}) =>
+      applyChange(_label(text, seq: seq), keys: [WireKey.k_Label_text], base: base, registry: registry);
 
   setUp(() {
     deliveryGate.reset();
     registry = VRegistry();
   });
 
-  // The registry subscribes on a comm shared by the whole file, and a frame that arrives with
-  // nothing listening is held until something does. Left in place, one test's leftovers are
-  // replayed into the next registry that subscribes to the same channel - which is a test reading
-  // another test's frame, not a delivery this one made. Clearing drops both the subscriptions and
-  // what was held for them.
   tearDown(() => registry.clear());
 
   group('identity', () {
@@ -102,7 +78,7 @@ void main() {
       expect((canonical as VLabel).text, 'carried in a holder payload');
       expect(deliveryGate.heldSeq(_channel), 20);
 
-      await _deliver(_channel, _partial('and the next update fits', seq: 21, base: 20));
+      partial('and the next update fits', seq: 21, base: 20);
 
       expect(deliveryGate.recoveries, 0,
           reason: 'the update after it is computed from the state that was handed over, so a '
@@ -122,11 +98,11 @@ void main() {
     });
   });
 
-  group('applying frames', () {
-    test('a whole frame changes the value everyone reads', () async {
+  group('applying records', () {
+    test('a whole record changes the value everyone reads', () async {
       final held = registry.register(_label('before'));
 
-      await _deliver(_channel, _whole('after', 10));
+      whole('after', 10);
 
       expect((registry.valueOn(_channel) as VLabel).text, 'after');
       expect(identical(registry.valueOn(_channel), held), isTrue,
@@ -135,30 +111,24 @@ void main() {
               'was true when it took the reference');
     });
 
-    test('a partial frame changes only what it names', () async {
+    test('a change changes only what it names', () async {
       registry.register(_label('before'));
-      await _deliver(_channel, _whole('whole', 10));
+      whole('whole', 10);
 
-      await _deliver(_channel, _partial('partial', seq: 11, base: 10));
+      partial('partial', seq: 11, base: 10);
 
       expect((registry.valueOn(_channel) as VLabel).text, 'partial');
       expect(deliveryGate.recoveries, 0);
     });
 
-    test('a partial frame that does not fit is refused, not guessed at', () async {
+    test('a change that does not fit is refused, not guessed at', () async {
       registry.register(_label('before'));
-      await _deliver(_channel, _whole('whole', 10));
+      whole('whole', 10);
 
-      await _deliver(_channel, _partial('never applied', seq: 30, base: 29));
+      partial('never applied', seq: 30, base: 29);
 
       expect((registry.valueOn(_channel) as VLabel).text, 'whole');
       expect(deliveryGate.recoveries, 1);
-    });
-
-    test('a frame for a widget this registry never knew is ignored', () async {
-      await _deliver('Label/12345', _whole('nobody', 10));
-
-      expect(registry.valueOn('Label/12345'), isNull);
     });
   });
 
@@ -168,7 +138,7 @@ void main() {
       var told = 0;
       registry.watch(_channel, (_) => told++);
 
-      await _deliver(_channel, _whole('after', 10));
+      whole('after', 10);
 
       expect(told, 1);
     });
@@ -180,7 +150,7 @@ void main() {
       registry.watch(_channel, (_) => first++);
       registry.watch(_channel, (_) => second++);
 
-      await _deliver(_channel, _whole('after', 10));
+      whole('after', 10);
 
       expect([first, second], [1, 1],
           reason: 'this is the defect the registry exists for: one widget rendered in two places '
@@ -194,7 +164,7 @@ void main() {
       registry.watch(_channel, listener);
       registry.unwatch(_channel, listener);
 
-      await _deliver(_channel, _whole('after', 10));
+      whole('after', 10);
 
       expect(told, 0);
       expect((registry.valueOn(_channel) as VLabel).text, 'after',
@@ -208,7 +178,7 @@ void main() {
       listener = (_) => registry.unwatch(_channel, listener);
       registry.watch(_channel, listener);
 
-      await expectLater(_deliver(_channel, _whole('after', 10)), completes,
+      expect(() => whole('after', 10), returnsNormally,
           reason: 'a widget disposing in response to an update is ordinary, not an error');
     });
   });
@@ -217,42 +187,42 @@ void main() {
   // this; one that has to tell what actually moved - the shell, for an alpha-only animation frame -
   // has nothing else to go on once an update stops carrying the whole widget.
   group('what a delivery reports', () {
-    test('a whole frame claims nothing about what moved', () async {
+    test('a whole record claims nothing about what moved', () async {
       registry.register(_label('before'));
       VChange? seen;
       registry.watch(_channel, (change) => seen = change);
 
-      await _deliver(_channel, _whole('after', 10));
+      whole('after', 10);
 
-      expect(seen!.changed, isNull,
+      expect(seen!.keys, isNull,
           reason: 'the whole widget arrived, so naming what changed would be claiming to know '
-              'something the frame never said');
-      expect(seen!.touches('text'), isTrue,
+              'something the record never said');
+      expect(seen!.touches(WireKey.k_Label_text), isTrue,
           reason: 'anything it carries may have moved, and a listener has to assume so');
     });
 
-    test('a partial frame names what it carried', () async {
+    test('a change names what it carried', () async {
       registry.register(_label('before'));
-      await _deliver(_channel, _whole('whole', 10));
+      whole('whole', 10);
       VChange? seen;
       registry.watch(_channel, (change) => seen = change);
 
-      await _deliver(_channel, _partial('partial', seq: 11, base: 10));
+      partial('partial', seq: 11, base: 10);
 
-      expect(seen!.changed, {'text'});
-      expect(seen!.touches('text'), isTrue);
-      expect(seen!.touches('toolTipText'), isFalse);
-      expect(seen!.isOnly(const {'text'}), isTrue);
-      expect(seen!.isOnly(const {'toolTipText'}), isFalse);
+      expect(seen!.keys, [WireKey.k_Label_text]);
+      expect(seen!.touches(WireKey.k_Label_text), isTrue);
+      expect(seen!.touches(WireKey.k_Control_toolTipText), isFalse);
+      expect(seen!.isOnly(const {WireKey.k_Label_text}), isTrue);
+      expect(seen!.isOnly(const {WireKey.k_Control_toolTipText}), isFalse);
     });
 
-    test('a refused frame tells nobody', () async {
+    test('a refused change tells nobody', () async {
       registry.register(_label('before'));
-      await _deliver(_channel, _whole('whole', 10));
+      whole('whole', 10);
       var told = 0;
       registry.watch(_channel, (_) => told++);
 
-      await _deliver(_channel, _partial('never applied', seq: 30, base: 29));
+      partial('never applied', seq: 30, base: 29);
 
       expect(told, 0,
           reason: 'nothing was applied, so a rebuild would draw the same state and a listener '
@@ -311,7 +281,7 @@ void main() {
         ..style = SWT.NONE
         ..children = [_label('inside a parent', seq: 5)]);
 
-      await _deliver(_channel, _partial('updated', seq: 6, base: 5));
+      partial('updated', seq: 6, base: 5);
 
       expect((registry.valueOn(_channel) as VLabel).text, 'updated');
       expect(deliveryGate.recoveries, 0,
@@ -332,26 +302,30 @@ void main() {
       return ticks;
     }
 
-    Map<String, dynamic> bounds(int width, {required int seq, required int base}) => {
-          'swt': 'Label', 'id': _id, '_s': seq, '_b': base, '_d': ['bounds'],
-          'bounds': {'x': 0, 'y': 0, 'width': width, 'height': 20},
-        };
+    void bounds(int width, {required int seq, required int base}) => applyChange(
+        _label('label', seq: seq)
+          ..bounds = (VRectangle()
+            ..width = width
+            ..height = 20),
+        keys: [WireKey.k_Control_bounds],
+        base: base,
+        registry: registry);
 
     test('is not asked to run again for a change that moves nothing', () async {
       registry.register(_label('before'));
-      final ticks = await ticksDuring(() => _deliver(_channel, _partial('after', seq: 2, base: 1)));
+      final ticks = await ticksDuring(() async => partial('after', seq: 2, base: 1));
       expect(ticks, 0, reason: 'the text changed; where the label is did not');
     });
 
     test('is asked to run again when a child moves', () async {
       registry.register(_label('label'));
-      final ticks = await ticksDuring(() => _deliver(_channel, bounds(80, seq: 2, base: 1)));
+      final ticks = await ticksDuring(() async => bounds(80, seq: 2, base: 1));
       expect(ticks, 1);
     });
 
     test('is asked to run again when a child arrives whole', () async {
       registry.register(_label('label'));
-      final ticks = await ticksDuring(() => _deliver(_channel, _whole('replaced', 2)));
+      final ticks = await ticksDuring(() async => whole('replaced', 2));
       expect(ticks, 1, reason: 'a whole widget may have moved as well');
     });
 
@@ -367,7 +341,7 @@ void main() {
       void count() => ticks++;
       holder.addListener(count);
       // Nothing renders the label on its own, so the parent is told on its behalf.
-      await _deliver(_channel, _partial('changed', seq: 2, base: 1));
+      partial('changed', seq: 2, base: 1);
       holder.removeListener(count);
       expect(ticks, 0, reason: 'what the holder draws changed, not where the holder is');
     });
@@ -379,7 +353,7 @@ void main() {
       registry.watch(_channel, (_) => told++);
 
       registry.register(_label('arrived'));
-      await _deliver(_channel, _whole('and then updated', 10));
+      whole('and then updated', 10);
 
       expect(told, 1);
       expect((registry.valueOn(_channel) as VLabel).text, 'and then updated');
@@ -399,19 +373,17 @@ void main() {
   // holds it and that it has not changed, so it says which widget it is and nothing else. Without
   // this, adding one row to a table re-describes every other row.
   group('a value that arrives as a reference', () {
-    Map<String, dynamic> reference() =>
-        {'swt': 'Label', 'id': _id, 'style': SWT.NONE, '_r': 1};
+    /// The parent carrying [children], [_label] among them only named, as Java names a widget it
+    /// counts delivered.
+    void parentCarrying(List<VControl> children, int seq) => applyWhole(
+        VComposite()
+          ..id = 7
+          ..seq = seq
+          ..style = SWT.NONE
+          ..children = children,
+        registry: registry,
+        named: {_id});
 
-    Map<String, dynamic> parentCarrying(List<Map<String, dynamic>> children, int seq) => {
-          'swt': 'Composite',
-          'id': 7,
-          '_s': seq,
-          'style': SWT.NONE,
-          'children': children,
-        };
-
-    /// The parent has to be known here, or its frame is for a widget this registry never saw and
-    /// is dropped before any of this is reached.
     void registerParent() {
       registry.register(VComposite()
         ..id = 7
@@ -423,7 +395,7 @@ void main() {
       registerParent();
       final held = registry.register(_label('the real state'));
 
-      await _deliver('Composite/7', parentCarrying([reference()], 30));
+      parentCarrying([_label('named')], 30);
 
       expect(identical(registry.valueOn(_channel), held), isTrue);
       expect((registry.valueOn(_channel) as VLabel).text, 'the real state',
@@ -435,7 +407,7 @@ void main() {
       registerParent();
       final held = registry.register(_label('the real state'));
 
-      await _deliver('Composite/7', parentCarrying([reference()], 30));
+      parentCarrying([_label('named')], 30);
 
       final children = (registry.valueOn('Composite/7') as VComposite).children!;
       expect(identical(children.single, held), isTrue,
@@ -445,7 +417,7 @@ void main() {
     test('for a widget this client does not hold, asks for it', () async {
       registerParent();
 
-      await _deliver('Composite/7', parentCarrying([reference()], 30));
+      parentCarrying([_label('named')], 30);
 
       expect(registry.valueOn(_channel), isNull,
           reason: 'the empty shell that arrived is not the widget and must not be held as it - the '
@@ -456,12 +428,14 @@ void main() {
       registerParent();
       registry.register(_label('unchanged'));
 
-      await _deliver(
-          'Composite/7',
-          parentCarrying([
-            reference(),
-            {'swt': 'Label', 'id': 99, '_s': 31, 'style': SWT.NONE, 'text': 'the new one'},
-          ], 30));
+      parentCarrying([
+        _label('named'),
+        VLabel()
+          ..id = 99
+          ..seq = 31
+          ..style = SWT.NONE
+          ..text = 'the new one',
+      ], 30);
 
       expect((registry.valueOn(_channel) as VLabel).text, 'unchanged');
       expect((registry.valueOn('Label/99') as VLabel).text, 'the new one');
@@ -479,48 +453,17 @@ void main() {
       expect(registry.valueOn(_channel), isNull);
     });
 
-    test('an evicted widget stops receiving', () async {
+    test('eviction forgets what the widget held, so a later change is refused', () async {
       registry.register(_label('before'));
-      registry.evict(_channel);
-
-      await _deliver(_channel, _whole('after', 10));
-
-      expect(registry.valueOn(_channel), isNull,
-          reason: 'the subscription belongs to the value; letting it outlive eviction would keep '
-              'the widget alive in the one place that matters');
-    });
-
-    test('eviction forgets what the widget held, so a later partial frame is refused', () async {
-      registry.register(_label('before'));
-      await _deliver(_channel, _whole('whole', 10));
+      whole('whole', 10);
       registry.evict(_channel);
 
       registry.register(_label('fresh'));
-      await _deliver(_channel, _partial('partial', seq: 11, base: 10));
+      partial('partial', seq: 11, base: 10);
 
       expect(deliveryGate.recoveries, 1,
           reason: 'a new widget under a recycled id holds none of the old state, so an update '
               'computed against that state does not fit it');
-    });
-  });
-
-  // A resource's change names neither the resource nor its type: its channel says which. One that
-  // reaches a GC whose description has not arrived cannot be applied, and is not a widget either.
-  group("a resource's change before its description", () {
-    test('asks for the resource again without decoding the change as a widget', () {
-      EquoCommBase.recordSentFrames = true;
-      addTearDown(() => EquoCommBase.recordSentFrames = false);
-      EquoCommService.commForTesting.clearSentFrames();
-      registry.watch('GC/7', (_) {});
-
-      expect(() => registry.apply('GC/7', {'_d': 0, 'background': 0xFF0000FF}), returnsNormally);
-      expect(deliveryGate.recoveries, 1);
-      final asked = EquoCommService.commForTesting.sentFrames
-          .map(EquoCommBase.decodeFrame)
-          .where((frame) => frame.$1 == widgetRefreshChannel)
-          .map((frame) => frame.$2)
-          .toList();
-      expect(asked, ['"7"'], reason: 'the request names the resource, not the stand-in watch() holds');
     });
   });
 }

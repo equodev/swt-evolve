@@ -469,7 +469,7 @@ public class DartDragSource extends DartWidget implements IDragSource {
         }
         // Save off the drag operations -- AppKit will call back to us to request them during the drag.
         dragOperations = opToOsOp(getStyle());
-        activeDrag = this;
+        ActiveDrag.begin(getApi());
         return event;
     }
 
@@ -501,14 +501,10 @@ public class DartDragSource extends DartWidget implements IDragSource {
         return dragImageFromListener;
     }
 
-    static DartDragSource activeDrag;
-
     private void sendDragStartResult(boolean doit) {
         if (control == null)
             return;
-        Event response = new Event();
-        response.doit = doit;
-        FlutterBridge.send((DartWidget) control.getImpl(), "DragDetect/dragStartResult", response);
+        FlutterBridge.send((DartWidget) control.getImpl(), dev.equo.swt.WireTable.CHANNEL_DRAG_DETECT_DRAG_START_RESULT, dev.equo.swt.Java8.map("doit", doit));
     }
 
     Object lastDragData;
@@ -529,11 +525,11 @@ public class DartDragSource extends DartWidget implements IDragSource {
         DNDEvent event = new DNDEvent();
         event.widget = this.getApi();
         event.detail = detail;
-        event.doit = true;
+        // As every platform reports it: true only when something was dropped.
+        event.doit = detail != DND.DROP_NONE;
         notifyListeners(DND.DragEnd, event);
         lastDragData = null;
-        if (activeDrag == this)
-            activeDrag = null;
+        ActiveDrag.end(getApi());
     }
 
     public Object _lastDragData() {
@@ -542,27 +538,47 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Drag", "dragFinished", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Drag/dragFinished", "Drag/dragSetData", "Drag/dragStart");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Drag/dragFinished":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (ActiveDrag.is(getApi()))
+                            fireDragEnd(DND.DROP_NONE);
+                    });
                     return;
-                sendEvent(DND.DragEnd, e);
-            });
-        });
-        FlutterBridge.on(this, "Drag", "dragSetData", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drag/dragSetData":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DragSetData, e);
+                    });
                     return;
-                sendEvent(DND.DragSetData, e);
-            });
-        });
-        FlutterBridge.on(this, "Drag", "dragStart", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Drag/dragStart":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(DND.DragStart, e);
+                    });
                     return;
-                sendEvent(DND.DragStart, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public DragSource getApi() {

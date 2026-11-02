@@ -7,6 +7,7 @@ import '../nolayout.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/coolbar_theme_extension.dart';
 import 'utils/widget_utils.dart';
+import 'utils/quiet_animations.dart';
 
 class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
     extends CompositeImpl<T, V> {
@@ -155,7 +156,7 @@ class _CoolBarContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: theme.animationDuration,
       width: isVertical
           ? crossAxisSize

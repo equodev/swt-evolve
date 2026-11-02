@@ -31,7 +31,7 @@ public class ExpandBarHelper {
      */
     static void openedByKey(Event event, ExpandItem focusItem) {
         if (event.keyCode == SWT.CR || event.keyCode == ' ') {
-            ((DartExpandItem) focusItem.getImpl()).getValue().markDirty("expanded");
+            ((DartExpandItem) focusItem.getImpl()).getValue().markDirty(VExpandItem.EXPANDED);
         }
     }
 
@@ -41,7 +41,7 @@ public class ExpandBarHelper {
     static void headersChanged(DartExpandBar bar) {
         for (ExpandItem item : bar.items) {
             if (item != null) {
-                ((DartExpandItem) item.getImpl()).getValue().markDirty("headerHeight");
+                ((DartExpandItem) item.getImpl()).getValue().markDirty(VExpandItem.HEADER_HEIGHT);
             }
         }
     }

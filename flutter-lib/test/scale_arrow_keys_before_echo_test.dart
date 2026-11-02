@@ -78,6 +78,30 @@ void main() {
     });
   }
 
+  // Keys come faster than frames on a loaded machine. The Slider steps from the value it last
+  // rendered, which a key pressed before the next frame does not see.
+  for (final vertical in [false, true]) {
+    testWidgets('arrows pressed within one frame each step from the one before${vertical ? ' (vertical)' : ''}',
+        (tester) async {
+      final selections = <int?>[];
+      await _pumpScale(tester, _scale(50, vertical: vertical), selections, vertical: vertical);
+      tester.widget<Slider>(find.byType(Slider)).focusNode!.requestFocus();
+      await tester.pump();
+
+      for (final key in [
+        LogicalKeyboardKey.arrowLeft,
+        LogicalKeyboardKey.arrowRight,
+        LogicalKeyboardKey.arrowUp,
+        LogicalKeyboardKey.arrowDown,
+      ]) {
+        await tester.sendKeyEvent(key);
+      }
+      await tester.pump();
+
+      expect(selections, [45, 50, 55, 50]);
+    });
+  }
+
   testWidgets('a value the application sets after the arrows is shown', (tester) async {
     final selections = <int?>[];
     final value = _scale(50);

@@ -2,7 +2,7 @@ package org.eclipse.swt.custom;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.SerializeTestBase;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import dev.equo.swt.harness.WireAssert;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GraphicsUtils;
@@ -10,7 +10,7 @@ import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.eclipse.swt.widgets.Mocks.*;
 
 class CTabFolderColorSerializeTest extends SerializeTestBase {
@@ -27,16 +27,12 @@ class CTabFolderColorSerializeTest extends SerializeTestBase {
         Config.useEclipse(Color.class);
         Color color = new Color(device(), red(), green(), blue());
         w.setSelectionBackground(color);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        java.util.Map<String, Object> state = serialize(w);
+        WireAssert assertJ = assertThatWire(state).isObject();
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabFolder")
                .containsEntry("style", w.getStyle())
-               .node("selectionBackground").isObject()
-                    .containsEntry("r", color.getRed())
-                    .containsEntry("g", color.getGreen())
-                    .containsEntry("b", color.getBlue())
-                    .containsEntry("a", GraphicsUtils.getAlpha(color));
+               .node("selectionBackground").isEqualTo(String.format("#%02x%02x%02x%02x", GraphicsUtils.getAlpha(color), color.getRed(), color.getGreen(), color.getBlue()));
     }
 
 }

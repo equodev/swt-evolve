@@ -139,10 +139,14 @@ public abstract class DartScrollable extends DartControl implements IScrollable 
     @Override
     void createWidget() {
         super.createWidget();
-        if ((getApi().style & SWT.H_SCROLL) != 0)
+        if ((getApi().style & SWT.H_SCROLL) != 0) {
             horizontalBar = createScrollBar(SWT.H_SCROLL);
-        if ((getApi().style & SWT.V_SCROLL) != 0)
+            getValue().markDirty(VScrollable.HORIZONTAL_BAR);
+        }
+        if ((getApi().style & SWT.V_SCROLL) != 0) {
             verticalBar = createScrollBar(SWT.V_SCROLL);
+            getValue().markDirty(VScrollable.VERTICAL_BAR);
+        }
     }
 
     @Override

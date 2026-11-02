@@ -2,8 +2,6 @@
 // column keeps the expander wherever it is shown. A moveable column dragged in the header reports where it
 // was dropped; the reorder itself is Java's.
 
-import 'dart:convert';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +10,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treecolumn.dart';
@@ -70,10 +69,9 @@ Future<void> _pump(WidgetTester tester, VTree tree) async {
 
 double _left(WidgetTester tester, String text) => tester.getRect(find.text(text)).left;
 
-List<(String, Map<String, dynamic>)> _moves() => EquoCommService.commForTesting.sentFrames
-    .map(EquoCommBase.decodeFrame)
-    .where((f) => f.$1.endsWith('/Control/Move'))
-    .map((f) => (f.$1, jsonDecode(f.$2) as Map<String, dynamic>))
+List<(String, VEvent)> _moves() => EquoCommService.commForTesting.sentFrames
+    .where((frame) => EquoCommBase.decodeFrame(frame).$1.endsWith('/Control/Move'))
+    .map((frame) => (EquoCommBase.decodeFrame(frame).$1, EquoCommBase.decodeEvent(frame)))
     .toList();
 
 void main() {
@@ -137,7 +135,7 @@ void main() {
       final moves = _moves();
       expect(moves, hasLength(1));
       expect(moves.single.$1, contains('TreeColumn/2/'));
-      expect(moves.single.$2['index'], 2);
+      expect(moves.single.$2.index, 2);
     });
 
     testWidgets('places the drop by the order the columns are shown in', (tester) async {
@@ -145,7 +143,7 @@ void main() {
 
       await drag(tester, 'SECOND', 'THIRD');
 
-      expect(_moves().single.$2['index'], 0);
+      expect(_moves().single.$2.index, 0);
     });
 
     testWidgets('of a column that is not moveable reports nothing', (tester) async {

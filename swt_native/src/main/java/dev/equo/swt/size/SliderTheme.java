@@ -9,20 +9,6 @@ public final class SliderTheme {
 
     public TextStyle textStyle() { return textStyle; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SliderTheme)) return false;
-        SliderTheme other = (SliderTheme) o;
-        return java.util.Objects.equals(textStyle, other.textStyle);
-    }
-
-    @Override
-    public int hashCode() { return java.util.Objects.hash(textStyle); }
-
-    @Override
-    public String toString() { return "SliderTheme[textStyle=" + textStyle + "]"; }
-
     public static SliderTheme get() {
         return Themes.getTheme().slider;
     }

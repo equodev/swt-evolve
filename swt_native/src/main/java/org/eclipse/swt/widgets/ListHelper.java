@@ -104,9 +104,10 @@ public class ListHelper {
     }
 
     /**
-     * Up and Down move the selection to the row above or below, as the platform's list does for a
-     * key no listener vetoed, and report it as a Selection. A MULTI list moves from its first
-     * selected row and ends with that one row selected; Shift and Ctrl with an arrow are not handled.
+     * Up, Down, Page Up, Page Down, Home and End move the selection to the row they reach, as Win32's and
+     * GTK's list do for a key no listener vetoed, and report it as a Selection; the last four also bring
+     * that row into view. A page is the rows in view less one, and at least one. A MULTI list moves from
+     * its first selected row and ends with that one row selected; Shift and Ctrl are not handled.
      */
     public static void moveSelectionByKey(DartList list, Event key) {
         if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
@@ -123,6 +124,22 @@ public class ListHelper {
             case SWT.ARROW_DOWN:
                 next = current < 0 ? 0 : current + 1;
                 break;
+            case SWT.HOME:
+                next = 0;
+                break;
+            case SWT.END:
+                next = count - 1;
+                break;
+            case SWT.PAGE_DOWN: {
+                int bottom = list.getTopIndex() + visibleRows(list) - 1;
+                next = current < bottom ? bottom : current + page(list);
+                break;
+            }
+            case SWT.PAGE_UP: {
+                int top = list.getTopIndex();
+                next = current > top ? top : current - page(list);
+                break;
+            }
             default:
                 return;
         }
@@ -131,12 +148,53 @@ public class ListHelper {
             return;
         Event selection = new Event();
         selection.segments = new int[] { next };
-        sendSelection(list, selection, SWT.Selection);
+        list.setSelection(selection.segments);
+        if (key.keyCode != SWT.ARROW_UP && key.keyCode != SWT.ARROW_DOWN)
+            showIndex(list, next);
+        list.sendSelectionEvent(SWT.Selection, selection, true);
     }
 
+    private static int visibleRows(DartList list) {
+        return Math.max(1, viewportHeight(list) / pitch(list));
+    }
+
+    private static int page(DartList list) {
+        return Math.max(1, visibleRows(list) - 1);
+    }
+
+    /**
+     * A pick from Flutter. The items are selected at once, so a MouseUp listener reads the new selection;
+     * a Selection made while button 1 is down is told after the MouseUp, as Win32 and Cocoa do (GTK tells
+     * it at the press).
+     */
     public static void sendSelection(DartList list, Event event, int selectionType) {
         list.setSelection(event.segments);
-        list.sendSelectionEvent(selectionType, event, true);
+        sendHeldSelection(list);
+        if (list.isDisposed())
+            return;
+        if (selectionType == SWT.Selection && list.pressInFlight)
+            list.heldSelection = event;
+        else
+            list.sendSelectionEvent(selectionType, event, true);
+    }
+
+    /** A press starts; a Selection still held from a press whose release never came is told first. */
+    public static void pressed(DartList list, Event event) {
+        sendHeldSelection(list);
+        list.pressInFlight = event.button == 1;
+    }
+
+    /** The MouseUp listeners have run: the click's Selection is told. */
+    public static void released(DartList list) {
+        list.pressInFlight = false;
+        sendHeldSelection(list);
+    }
+
+    private static void sendHeldSelection(DartList list) {
+        Event held = list.heldSelection;
+        list.heldSelection = null;
+        if (held != null)
+            list.sendSelectionEvent(SWT.Selection, held, true);
     }
 
     public static void deselectIndex(DartList list, int index) {

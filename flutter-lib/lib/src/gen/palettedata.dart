@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'palettedata.g.dart';
-
-@JsonSerializable()
-class VPaletteData {
+class VPaletteData implements WireReadable, WireWritable, WireVisitable {
   VPaletteData() : this.empty();
   VPaletteData.empty();
 
-  factory VPaletteData.fromJson(Map<String, dynamic> json) =>
-      _$VPaletteDataFromJson(json);
-  Map<String, dynamic> toJson() => _$VPaletteDataToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

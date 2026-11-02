@@ -1,32 +1,33 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/comm_frame.dart';
 import '../comm/v_registry.dart';
+import '../comm/widget_key.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/gc_evolve.dart';
+import '../impl/utils/pending_move.dart';
 import '../impl/utils/perf_marks.dart';
 import '../impl/widget_config.dart';
 import 'event.dart';
 import 'gc.dart';
 import 'widgets.dart';
 
-part 'widget.g.dart';
-
 abstract class WidgetSwt<V extends VWidget> extends StatefulWidget {
   final V value;
   const WidgetSwt({super.key, required this.value});
 
-  void sendEvent(V val, String ev, VEvent? payload) {
-    if (payload == null) {
-      EquoCommService.send("${val.swt}/${val.id}/$ev");
-    } else {
-      EquoCommService.sendPayload("${val.swt}/${val.id}/$ev", payload);
-    }
+  /// Sends [payload] to Java on [val]'s channel numbered [channel] (see [WireChannel]).
+  void sendEvent(V val, int channel, VEvent? payload) {
+    // A move held back by the throttle happened before this event, so it goes first.
+    PendingMove.flush();
+    EquoCommService.sendTo(val.wireType, val.id, channel, payload);
   }
 
   void sendDisposeDispose(V val, VEvent? payload) {
-    sendEvent(val, "Dispose/Dispose", payload);
+    sendEvent(val, 22, payload); // Dispose/Dispose
   }
 }
 
@@ -43,10 +44,27 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   /// directly. Reading through the registry makes the passed value carry identity only:
   /// which widget this is, never what it holds. A parent rebuilding, by update or by
   /// remount, then has nothing stale to hand over.
-  V get state =>
-      _override ??
-      (VRegistry.instance.valueOn(_onChangeChannel ?? '') as V?) ??
-      (widget.value as V);
+  V get state {
+    final override = _override;
+    if (override != null) return override;
+    // A build reads the state dozens of times; the registry is asked again only once what it holds
+    // has changed shape.
+    final registry = VRegistry.instance;
+    final key = _registryKey;
+    if (_heldEpoch == registry.epoch && _heldKey == key) {
+      return _held!;
+    }
+    final held = (key == null ? null : registry.valueAt(key)) as V?;
+    if (held == null) return widget.value as V;
+    _held = held;
+    _heldEpoch = registry.epoch;
+    _heldKey = key;
+    return held;
+  }
+
+  V? _held;
+  int _heldEpoch = -1;
+  int? _heldKey;
 
   set state(V value) => _override = value;
 
@@ -54,7 +72,8 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   VGC? gcOverlay;
   final GlobalKey<GCImpl> gcOverlayKey = GlobalKey<GCImpl>();
 
-  String? _onChangeChannel;
+  /// The [VRegistry.keyOf] this widget's value is held and watched under.
+  int? _registryKey;
 
   @override
   void initState() {
@@ -64,13 +83,41 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
   /// Puts this widget's value where values live, and asks to be told when it changes.
   ///
-  /// The channel is remembered rather than derived on demand: [state] resolves through
-  /// it, so deriving it from the state would be circular.
+  /// The key is remembered rather than derived on demand: [state] resolves through it, so
+  /// deriving it from the state would be circular.
   void _register() {
     final value = widget.value as V;
-    _onChangeChannel = VRegistry.channelOf(value);
+    final key = _registryKey = VRegistry.keyOf(value);
     VRegistry.instance.register(value);
-    VRegistry.instance.watch(_onChangeChannel!, _onRegistryChanged);
+    VRegistry.instance.watchAt(key, _onRegistryChanged);
+    _enterLive(value.id);
+  }
+
+  /// The mounted widgets of this one's kind by id, for a kind that answers channels of its
+  /// own (see `EquoCommService.onWidgetOp`): where the handler finds the widget a frame
+  /// addresses. Per kind, as the channel names it: ids of different kinds can coincide. This
+  /// widget is in it from mount to dispose, so nothing registered for it can outlive it.
+  Map<int, WidgetSwtState>? get liveOfKind => null;
+
+  int? _liveId;
+
+  void _enterLive(int id) {
+    final live = liveOfKind;
+    if (live == null) return;
+    _leaveLive();
+    _liveId = id;
+    live[id] = this;
+    // Queued, not applied here: they run once this widget has finished initialising.
+    EquoCommService.replayWidgetOps(id);
+  }
+
+  void _leaveLive() {
+    final id = _liveId;
+    final live = liveOfKind;
+    if (id != null && live != null && identical(live[id], this)) {
+      live.remove(id);
+    }
+    _liveId = null;
   }
 
   /// The value this widget renders changed. Nothing is adopted here - the registry has
@@ -93,11 +140,12 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   /// is not. A hidden subtree keeps receiving while nothing renders it, which is the
   /// whole reason the value does not live here.
   void _unsubscribeFromState() {
-    final channel = _onChangeChannel;
-    if (channel != null) {
-      VRegistry.instance.unwatch(channel, _onRegistryChanged);
+    final key = _registryKey;
+    if (key != null) {
+      VRegistry.instance.unwatchAt(key, _onRegistryChanged);
     }
-    _onChangeChannel = null;
+    _registryKey = null;
+    _leaveLive();
   }
 
   /// Called by GCSwt when it receives state from Java.
@@ -122,23 +170,76 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
       !(getConfigFlags().disable_control_gc_overlay ?? false);
 
   /// Wrap child widget with GC overlay.
-  /// GC is always created so it can listen for events from Java immediately.
-  /// Uses Offstage when GC has no state yet, or when the overlay is opted out of
-  /// (listening but not rendering).
+  /// The GC is mounted when the first thing Java sends it arrives: most controls are never
+  /// drawn through, and a mounted GC costs each of them its channels and its subtree. What
+  /// arrives before it is mounted is held and replayed to it. Uses Offstage when GC has no
+  /// state yet, or when the overlay is opted out of (listening but not rendering).
   Widget wrapWithGCOverlay(Widget child) {
-    final gc = gcOverlay ?? (VGC()..id = state.id);
-    final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
-
-    return Stack(
-      children: [
-        child,
-        if (gcOverlay != null && paintsGCOverlay)
-          Positioned.fill(child: IgnorePointer(child: gcWidget))
-        else
-          Offstage(child: gcWidget),
-      ],
-    );
+    if (!_gcMounted && gcOverlay == null) {
+      _awaitGC();
+      // The same structure as with the GC, so that mounting it keeps [child].
+      return Stack(children: [child, const SizedBox.shrink()]);
+    }
+    final painted = gcOverlay != null && paintsGCOverlay;
+    // The same layer instance while nothing it is made of changed, so a rebuild of the
+    // control does not rebuild its GC: what the GC draws reaches it on its own channel.
+    if (_gcLayer == null ||
+        !identical(_gcLayerValue, gcOverlay) ||
+        _gcLayerPainted != painted ||
+        _gcLayerId != state.id) {
+      final gcWidget = GCSwt<VGC>(
+        key: gcOverlayKey,
+        value: gcOverlay ?? (VGC()..id = state.id),
+      );
+      _gcLayer = painted
+          ? Positioned.fill(child: IgnorePointer(child: gcWidget))
+          : Offstage(child: gcWidget);
+      _gcLayerValue = gcOverlay;
+      _gcLayerPainted = painted;
+      _gcLayerId = state.id;
+    }
+    return Stack(children: [child, _gcLayer!]);
   }
+
+  Widget? _gcLayer;
+  VGC? _gcLayerValue;
+  bool? _gcLayerPainted;
+  int? _gcLayerId;
+
+  bool _gcMounted = false;
+  void Function()? _gcArrival;
+  int? _gcAwaitedId;
+
+  /// Whether this widget waits for its GC's first message rather than having the GC mounted.
+  bool get awaitsGC => _gcArrival != null;
+
+  /// Whether this widget's GC is mounted, or will be by its next build.
+  bool get gcMounted => _gcMounted || gcOverlay != null;
+
+  void _awaitGC() {
+    final id = state.id;
+    if (_gcArrival != null && _gcAwaitedId == id) return;
+    _cancelGCWait();
+    _gcAwaitedId = id;
+    final arrival = _gcArrival = () {
+      _gcArrival = null;
+      if (mounted) setState(() => _gcMounted = true);
+    };
+    EquoCommService.onFirstGcMessage(id, arrival);
+    onGCAwaited();
+  }
+
+  void _cancelGCWait() {
+    final arrival = _gcArrival;
+    final id = _gcAwaitedId;
+    if (arrival != null && id != null) {
+      EquoCommService.cancelFirstGcMessage(id, arrival);
+    }
+    _gcArrival = null;
+  }
+
+  /// Called when this widget starts waiting for its GC's first message.
+  void onGCAwaited() {}
 
   @override
   void didUpdateWidget(covariant T oldWidget) {
@@ -147,18 +248,20 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     // Nothing is adopted from the parent any more. The value it hands down is its own
     // copy of this widget, as of whenever Java last described the parent - which is why
     // a rebuild used to be able to push a child backwards. Only the identity is taken.
-    final channel = VRegistry.channelOf(incoming);
-    if (channel != _onChangeChannel) {
+    final key = VRegistry.keyOf(incoming);
+    if (key != _registryKey) {
       _unsubscribeFromState();
-      _onChangeChannel = channel;
+      _registryKey = key;
       VRegistry.instance.register(incoming);
-      VRegistry.instance.watch(channel, _onRegistryChanged);
+      VRegistry.instance.watchAt(key, _onRegistryChanged);
+      _enterLive(incoming.id);
     }
     extraSetState();
   }
 
   @override
   void dispose() {
+    _cancelGCWait();
     _unsubscribeFromState();
     super.dispose();
   }
@@ -169,23 +272,24 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   @protected
   void setValue(V value) {
     if (!mounted) return;
-    // Profiler mark per widget kind; free unless the page asked for marks (window.evolve.perf).
-    perfMarkDetail('${state.swt}.apply', () {
-      setState(() {
-        extraSetState();
-      });
-    });
+    // Profiler mark per widget kind, only when the page asked for marks (window.evolve.perf):
+    // every update comes through here, so its name is built only then.
+    if (perfMarksEnabled) {
+      perfMarkDetail('${state.swt}.apply', _rebuild);
+    } else {
+      _rebuild();
+    }
   }
+
+  /// [_rebuildNow] and [extraSetState], torn off once: an update rebuilds without a closure
+  /// made for it.
+  late final void Function() _rebuild = _rebuildNow;
+  late final void Function() _extraSetState = extraSetState;
+
+  void _rebuildNow() => setState(_extraSetState);
 
   /// An impl's chance to react to the state it is about to render.
   void extraSetState() {}
-
-  void onOp(String op, void Function(dynamic) handler) {
-    EquoCommService.onRaw("${state.swt}/${state.id}/$op", (opArgs) {
-      print('OnOp: "${state.swt}/${state.id}/$op" args: ${opArgs}');
-      handler(jsonDecode(opArgs as String));
-    });
-  }
 
   /// Stable id for E2E tooling. Flutter Web exposes this as
   /// `flt-semantics-identifier`, keyed by the same swt/id pair as the comm channel.
@@ -210,43 +314,38 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
   Widget _taggedSemantics(VWidget node, Widget child) {
     final identifier = '${node.swt}/${node.id}';
-    // Only pay the toJson() cost when the semantics tree is actually being built
-    // (screen reader, or test mode forcing it on). Normal rendering stays cheap.
-    if (!WidgetsBinding.instance.semanticsEnabled) {
-      // No semantics tree is being built, so the identifier would never surface in the
-      // DOM anyway — skip the Semantics wrapper entirely and keep rendering cheap.
-      return child;
-    }
-    Map<String, dynamic> json;
-    try {
-      json = (node as dynamic).toJson() as Map<String, dynamic>;
-    } catch (_) {
-      json = const {};
-    }
-    final toolTipText = json['toolTipText'];
-    final text = json['text'];
-    final enabled = json['enabled'];
-    final tooltip = (toolTipText is String && toolTipText.isNotEmpty)
-        ? toolTipText
-        : null;
+    // No semantics tree is being built, so the identifier would never surface in the
+    // DOM anyway — skip the Semantics wrapper entirely and keep rendering cheap.
+    if (!WidgetsBinding.instance.semanticsEnabled) return child;
+    final tooltip = node.semanticsTooltip;
+    final text = node.semanticsText;
     final namedByOwnText =
         !_valueTextSwt.contains(node.swt) &&
-        text is String &&
+        text != null &&
         text.trim().isNotEmpty;
-    // Do not set label from json['text']: the child already contributes that text to
-    // semantics, and Flutter Web would expose duplicated DOM text.
+    // Do not set a label from the widget's text: the child already contributes that
+    // text to semantics, and Flutter Web would expose duplicated DOM text.
     return Semantics(
       identifier: identifier,
-      tooltip: namedByOwnText ? null : tooltip,
-      hint: namedByOwnText ? tooltip : null,
-      enabled: enabled is bool ? enabled : null,
+      // A tooltip-only-named node has no accessible name, so Flutter Web collapses it
+      // into its unnamed child leaf and drops the flt-semantics-identifier; keep it an
+      // explicit container instead. Nodes named by their own text, or by a child's
+      // merged label (a GC-drawn Canvas), rely on that merge and are left alone.
+      explicitChildNodes:
+          !namedByOwnText && tooltip != null && tooltip.isNotEmpty,
+      tooltip: namedByOwnText || tooltip == null || tooltip.isEmpty
+          ? null
+          : tooltip,
+      hint: namedByOwnText && tooltip != null && tooltip.isNotEmpty
+          ? tooltip
+          : null,
+      enabled: node.semanticsEnabled,
       child: child,
     );
   }
 }
 
-@JsonSerializable()
-class VWidget {
+class VWidget implements WireReadable, WireWritable, WireVisitable {
   VWidget() : this.empty();
   VWidget.empty() : swt = "Widget", id = 1, style = 0;
 
@@ -254,44 +353,38 @@ class VWidget {
   int id;
 
   /// Write stamp from the Java serializer; a lower value is an older snapshot.
-  /// Out of toJson so it never affects value equality or round-trips.
-  @JsonKey(name: '_s', includeToJson: false, defaultValue: 0)
   int seq = 0;
+
+  /// The number of this widget's type on the wire, worked out once.
+  int get wireType => _wireType ??= WidgetKey.typeOf(swt);
+  int? _wireType;
 
   /// True when this object arrived as a name rather than as a description: the sender said
   /// which widget it is and nothing about what it holds, because the widget was already
   /// delivered and had not changed. Read by the registry, which answers with the object it
   /// already holds; nothing here is state, so copying any of it over that would be a loss.
-  ///
-  /// Out of the JSON both ways: it is a fact about one message, not about the widget.
-  @JsonKey(includeToJson: false, includeFromJson: false)
   bool isReference = false;
-  @JsonKey(defaultValue: 0)
   int style;
 
-  /// Applies a partial update: the properties it names replace what is held here, in place.
-  ///
-  /// Costs what the update names, not what the widget holds. Reading the whole value back
-  /// to write one field made a change on a widget with many children cost the children.
-  void mergeJson(Map<String, dynamic> json) {
-    for (final key in json.keys) {
-      readProperty(key, json);
-    }
+  /// Sets one property from a binary frame: [key] is its [WireKey], [type] the type Java wrote
+  /// its value with. False, with nothing read, when no class up to this one declares the
+  /// property as something that type can be read into.
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    if (key != 655) return false; // style
+    style = r.int32();
+    return true;
   }
 
-  /// Reads one named property out of [json] into this object.
-  ///
-  /// A key this class does not declare goes up to the class that does; one nothing declares
-  /// - a protocol key, or a property this build has never heard of - is ignored.
-  void readProperty(String key, Map<String, dynamic> json) {
-    switch (key) {
-      case 'swt':
-        swt = json['swt'] as String;
-      case 'id':
-        id = (json['id'] as num).toInt();
-      case 'style':
-        style = (json['style'] as num).toInt();
-    }
+  /// Writes every property this value holds, as Java writes them.
+  @override
+  void writeWire(WidgetWireWriter w) {
+    w.keyInt32(655, style);
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    visit(655, style);
   }
 
   /// Copies the properties this class declares from [other].
@@ -325,7 +418,12 @@ class VWidget {
     }
   }
 
-  factory VWidget.fromJson(Map<String, dynamic> json) => mapWidgetValue(json);
-  Map<String, dynamic> toJson() =>
-      throw UnsupportedError("Unsupported toJson in Widget");
+  /// The tooltip the semantics tree announces; see `WidgetSwtState.tagSemantics`.
+  String? get semanticsTooltip => null;
+
+  /// Whether the semantics tree announces this widget as enabled, when it says.
+  bool? get semanticsEnabled => null;
+
+  /// The caption the widget draws, which names it in the semantics tree before its tooltip.
+  String? get semanticsText => null;
 }

@@ -1,11 +1,15 @@
-import 'package:json_annotation/json_annotation.dart';
+import 'dart:typed_data';
+
 import 'decorations_align.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart' show WireKey;
 
-part 'config_flags.g.dart';
-
-@JsonSerializable()
-class ConfigFlags {
+class ConfigFlags implements WireReadable {
   ConfigFlags();
+
+  /// The bytes these flags were read from, or null for flags made here: the flags repeat in every
+  /// display record, and this is what tells one that changed nothing apart.
+  Uint8List? wire;
 
   bool? ctabfolder_visible_controls;
   bool? ctabfolder_topright_auto_hide;
@@ -20,6 +24,9 @@ class ConfigFlags {
   /// Drops what an application paints over a control through its GC, so only what the control draws
   /// for itself shows. Controls whose GC content is the control (Canvas, StyledText) ignore it.
   bool? disable_control_gc_overlay;
+
+  /// Text in the application's font. Off, the theme keeps its family and size and the font adds only
+  /// weight and slant; see `getTextStyle`.
   bool? use_swt_fonts;
 
   /// Text in the foreground the application set rather than the theme's. Null follows
@@ -45,7 +52,6 @@ class ConfigFlags {
   /// own zoom. This side draws at the monitor's zoom, so the ratio between them is what the whole
   /// app has to be scaled by for both halves of a mixed tree to come out the same size.
   int? ui_zoom;
-  @JsonKey(fromJson: DecorationsAlign.fromJson, toJson: DecorationsAlign.toJson)
   DecorationsAlign? decorations_align;
   bool? print_move;
   String? csd_placement;
@@ -82,7 +88,100 @@ class ConfigFlags {
   /// (`swt.use_swt_border`). Off by default: the theme's flat frame is drawn.
   bool? use_swt_border;
 
-  factory ConfigFlags.fromJson(Map<String, dynamic> json) =>
-      _$ConfigFlagsFromJson(json);
-  Map<String, dynamic> toJson() => _$ConfigFlagsToJson(this);
+  /// The flags as an object of a binary frame, read field by field.
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case WireKey.k_ConfigFlags_ctabfolder_visible_controls:
+        ctabfolder_visible_controls = r.boolean();
+      case WireKey.k_ConfigFlags_ctabfolder_topright_auto_hide:
+        ctabfolder_topright_auto_hide = r.boolean();
+      case WireKey.k_ConfigFlags_image_disable_icons_replacement:
+        image_disable_icons_replacement = r.boolean();
+      case WireKey.k_ConfigFlags_assets_path:
+        assets_path = r.string();
+      case WireKey.k_ConfigFlags_disable_evolve_icons:
+        disable_evolve_icons = r.boolean();
+      case WireKey.k_ConfigFlags_gc_icons_replacement:
+        gc_icons_replacement = r.boolean();
+      case WireKey.k_ConfigFlags_use_swt_colors:
+        use_swt_colors = r.boolean();
+      case WireKey.k_ConfigFlags_disable_swt_canvas_colors:
+        disable_swt_canvas_colors = r.boolean();
+      case WireKey.k_ConfigFlags_disable_control_gc_overlay:
+        disable_control_gc_overlay = r.boolean();
+      case WireKey.k_ConfigFlags_use_swt_fonts:
+        use_swt_fonts = r.boolean();
+      case WireKey.k_ConfigFlags_use_swt_font_colors:
+        use_swt_font_colors = r.boolBoxed();
+      case WireKey.k_ConfigFlags_use_swt_font_colors_by_widget:
+        use_swt_font_colors_by_widget = r.boolMap();
+      case WireKey.k_ConfigFlags_theme_name:
+        theme_name = r.string();
+      case WireKey.k_ConfigFlags_force_theme:
+        force_theme = r.string();
+      case WireKey.k_ConfigFlags_theme_color:
+        theme_color = r.string();
+      case WireKey.k_ConfigFlags_theme_colors_by_widget:
+        theme_colors_by_widget = r.stringMap();
+      case WireKey.k_ConfigFlags_show_theme_color_palette:
+        show_theme_color_palette = r.boolean();
+      case WireKey.k_ConfigFlags_focus_indicators:
+        focus_indicators = r.boolBoxed();
+      case WireKey.k_ConfigFlags_use_special_dropdown_button:
+        use_special_dropdown_button = r.boolean();
+      case WireKey.k_ConfigFlags_preserve_icon_colors:
+        preserve_icon_colors = r.boolean();
+      case WireKey.k_ConfigFlags_disable_hover_zoom:
+        disable_hover_zoom = r.boolean();
+      case WireKey.k_ConfigFlags_custom_tooltip:
+        custom_tooltip = r.boolean();
+      case WireKey.k_ConfigFlags_notification_popup:
+        notification_popup = r.boolean();
+      case WireKey.k_ConfigFlags_show_scaling_control:
+        show_scaling_control = r.boolean();
+      case WireKey.k_ConfigFlags_ui_zoom:
+        ui_zoom = r.int32();
+      case WireKey.k_ConfigFlags_decorations_align:
+        final align = r.string();
+        decorations_align = align == null ? null : DecorationsAlign.fromString(align);
+      case WireKey.k_ConfigFlags_print_move:
+        print_move = r.boolean();
+      case WireKey.k_ConfigFlags_csd_placement:
+        csd_placement = r.string();
+      case WireKey.k_ConfigFlags_csd_os:
+        csd_os = r.string();
+      case WireKey.k_ConfigFlags_csd_maximize:
+        csd_maximize = r.string();
+      case WireKey.k_ConfigFlags_double_click_timeout_ms:
+        double_click_timeout_ms = r.int32();
+      case WireKey.k_ConfigFlags_csd_titlebar_color:
+        csd_titlebar_color = r.string();
+      case WireKey.k_ConfigFlags_system_menu_bar:
+        system_menu_bar = r.boolean();
+      case WireKey.k_ConfigFlags_font_point_scale:
+        font_point_scale = r.float64();
+      case WireKey.k_ConfigFlags_push_button_margin:
+        push_button_margin = r.int32();
+      case WireKey.k_ConfigFlags_hover_delay_ms:
+        hover_delay_ms = r.int32();
+      case WireKey.k_ConfigFlags_ctabfolder_tab_scroll:
+        ctabfolder_tab_scroll = r.boolean();
+      case WireKey.k_ConfigFlags_decimal_separator:
+        decimal_separator = r.string();
+      case WireKey.k_ConfigFlags_locale:
+        locale = r.string();
+      case WireKey.k_ConfigFlags_transparent_menu_check_box:
+        transparent_menu_check_box = r.boolean();
+      case WireKey.k_ConfigFlags_use_swt_border:
+        use_swt_border = r.boolean();
+      default:
+        return false;
+    }
+    return true;
+  }
+
+  /// Flags read from [bytes], a flags object's fields, keeping them as [wire].
+  static ConfigFlags read(Uint8List bytes) =>
+      WidgetWireReader(bytes).fields(ConfigFlags())..wire = Uint8List.fromList(bytes);
 }

@@ -1,11 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
 public class VColor extends VResource {
 
     protected VColor() {
@@ -15,7 +11,6 @@ public class VColor extends VResource {
         super(impl);
     }
 
-    @JsonAttribute(name = "a")
     public int getAlpha() {
         return ((IColor) impl).getAlpha();
     }
@@ -23,7 +18,6 @@ public class VColor extends VResource {
     public void setAlpha(int value) {
     }
 
-    @JsonAttribute(name = "b")
     public int getBlue() {
         return ((IColor) impl).getBlue();
     }
@@ -31,7 +25,6 @@ public class VColor extends VResource {
     public void setBlue(int value) {
     }
 
-    @JsonAttribute(name = "g")
     public int getGreen() {
         return ((IColor) impl).getGreen();
     }
@@ -39,7 +32,6 @@ public class VColor extends VResource {
     public void setGreen(int value) {
     }
 
-    @JsonAttribute(name = "r")
     public int getRed() {
         return ((IColor) impl).getRed();
     }
@@ -47,58 +39,127 @@ public class VColor extends VResource {
     public void setRed(int value) {
     }
 
-    public static final String A = "a";
+    public static final int A = 75;
 
-    public static final String B = "b";
+    public static final int B = 76;
 
-    public static final String G = "g";
+    public static final int G = 77;
 
-    public static final String R = "r";
+    public static final int R = 78;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "a":
-                Serializer.writeKeyValue(writer, "a", getAlpha());
-                return;
-            case "b":
-                Serializer.writeKeyValue(writer, "b", getBlue());
-                return;
-            case "g":
-                Serializer.writeKeyValue(writer, "g", getGreen());
-                return;
-            case "r":
-                Serializer.writeKeyValue(writer, "r", getRed());
-                return;
+            case A:
+                return "a";
+            case B:
+                return "b";
+            case G:
+                return "g";
+            case R:
+                return "r";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Color.class)
-    public static class ColorJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartColor.class, (JsonWriter.WriteObject<DartColor>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartColor.class, (JsonReader.ReadObject<DartColor>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 75:
+                w.write((int) getAlpha());
+                return true;
+            case 76:
+                w.write((int) getBlue());
+                return true;
+            case 77:
+                w.write((int) getGreen());
+                return true;
+            case 78:
+                w.write((int) getRed());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Color read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 75:
+                {
+                    int v_ = getAlpha();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(75);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 76:
+                {
+                    int v_ = getBlue();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(76);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 77:
+                {
+                    int v_ = getGreen();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(77);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 78:
+                {
+                    int v_ = getRed();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(78);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Color api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 75, 76, 77, 78 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 18;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(75);
+        w.write((int) getAlpha());
+        w.key(76);
+        w.write((int) getBlue());
+        w.key(77);
+        w.write((int) getGreen());
+        w.key(78);
+        w.write((int) getRed());
     }
 }

@@ -555,20 +555,7 @@ public class DartSlider extends DartControl implements ISlider {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (!isActive())
-                    return;
-                Event event = new Event();
-                event.detail = SWT.NONE;
-                event.widget = getApi();
-                setSelection(e.index);
-                sendSelectionEvent(SWT.Selection, event, true);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", sent -> dragSelection.post(getDisplay(), sent, e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SELECTION_SELECTION, sent -> dragSelection.post(getDisplay(), sent, e -> {
             if (isDisposed())
                 return;
             Event event = new Event();
@@ -577,6 +564,34 @@ public class DartSlider extends DartControl implements ISlider {
             setSelection(e.index);
             sendSelectionEvent(SWT.Selection, event, true);
         }));
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        Event event = new Event();
+                        event.detail = SWT.NONE;
+                        event.widget = getApi();
+                        setSelection(e.index);
+                        sendSelectionEvent(SWT.Selection, event, true);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Slider getApi() {

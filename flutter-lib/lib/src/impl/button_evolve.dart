@@ -1,22 +1,26 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart' show kPrimaryButton;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show BoxHitTestResult;
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import '../gen/button.dart';
 import '../gen/color.dart';
 import '../gen/swt.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/composite_evolve.dart';
 import '../impl/control_evolve.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/kept_rebuild.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
+import 'utils/quiet_animations.dart';
+import 'utils/cached_text.dart';
 
 class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
@@ -37,6 +41,55 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
+  /// What a check box or radio draws of its selection is the box alone: a change of nothing else
+  /// rebuilds only the box, which follows [_selectionTicks].
+  static const _selectionOnly = {WireKey.k_Button_selection, WireKey.k_Button_grayed};
+  final _selectionTicks = ValueNotifier<int>(0);
+
+  /// The check box's tick, the same instance while it looks the same, so that a selection change
+  /// does not rebuild it.
+  CachedIcon? _tick;
+
+  CachedIcon _tickOf(double size, Color color) {
+    final tick = _tick;
+    if (tick != null && tick.size == size && tick.color == color) return tick;
+    return _tick = CachedIcon(Icons.check, size: size, color: color);
+  }
+
+  @override
+  void setValue(V value) {
+    if (mounted &&
+        (lastChange?.isOnly(_selectionOnly) ?? false) &&
+        (hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO))) {
+      _selectionTicks.value++;
+      return;
+    }
+    super.setValue(value);
+  }
+
+  @override
+  void dispose() {
+    _selectionTicks.dispose();
+    super.dispose();
+  }
+
+  /// A push button's surface: its border, padding and label, built with the button and shown by
+  /// [KeptSlot] inside the InkWell. A rebuild from this button's own [setState] has marked the
+  /// slot already, so the InkWell and all it builds are kept as they were and only the surface
+  /// rebuilds; any other rebuild builds them anew, with a new slot.
+  Widget? _surface;
+  final KeptRebuild _surfaceRebuild = KeptRebuild();
+
+  /// The enablement the surface was last built with.
+  bool? _surfaceEnabled;
+
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _surfaceRebuild.mark();
+    _hoverableRebuild.mark();
+  }
+
   /// A push, toggle or arrow button draws its own surface, which stays the theme's (SWT calls
   /// setBackground a hint and Win32 ignores it on buttons), so its text stays the theme's too:
   /// the application's foreground was chosen against the application's background, and applying
@@ -47,20 +100,24 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
           ? state.foreground
           : null;
 
-  Widget _wrapWithSwtBackground(BuildContext context, Widget button) {
-    final useSwtColors = getConfigFlags().use_swt_colors ?? false;
+  /// The ground [_wrapWithSwtBackground] fills behind the button, or null when it fills none.
+  Color? _swtBackground(BuildContext context) {
+    if (getConfigFlags().use_swt_colors ?? false) return null;
+    final defaultBg = _widgetTheme.controlBackgroundColor;
+    final parentBg = ParentBackgroundScope.backgroundOf(context);
+    final bg = getBackgroundColor(
+      background: state.background,
+      defaultColor: parentBg ?? defaultBg,
+      context: context,
+    );
+    return bg ?? parentBg ?? defaultBg;
+  }
 
-    if (!useSwtColors) {
-      final defaultBg =
-          Theme.of(context).extension<ButtonThemeExtension>()!.controlBackgroundColor;
-      final parentBg = ParentBackgroundScope.backgroundOf(context);
-      final bg = getBackgroundColor(
-        background: state.background,
-        defaultColor: parentBg ?? defaultBg,
-        context: context,
-      );
+  Widget _wrapWithSwtBackground(BuildContext context, Widget button) {
+    final ground = _swtBackground(context);
+    if (ground != null) {
       return Container(
-        color: bg ?? parentBg ?? defaultBg,
+        color: ground,
         child: button,
       );
     }
@@ -73,9 +130,19 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     return button;
   }
 
+  /// Looked up when the theme changes rather than on every build: Theme.of localizes the theme
+  /// each time it is called.
+  late ButtonThemeExtension _widgetTheme;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _widgetTheme = Theme.of(context).extension<ButtonThemeExtension>()!;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final widgetTheme = Theme.of(context).extension<ButtonThemeExtension>()!;
+    final widgetTheme = _widgetTheme;
 
     final enabled = state.enabled ?? false;
     final text = stripAccelerators(state.text);
@@ -112,8 +179,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   bool _selectedThisPress = false;
 
   /// A check box's or radio's box, the gap after it and its label: the part of it that is the
-  /// button, as on GTK, whose check button is exactly that wide.
-  final GlobalKey _indicatorRowKey = GlobalKey();
+  /// button, as on GTK, whose check button is exactly that wide. Handed over by [_RowBox] rather than
+  /// found through a GlobalKey, which schedules builds during the build that changes enablement.
+  RenderBox? _indicatorRow;
 
   bool get _selectsOverIndicatorRow => hasStyle(state.style, SWT.CHECK) || hasStyle(state.style, SWT.RADIO);
 
@@ -122,8 +190,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   /// row, above or below a label shorter than the box too.
   bool _isOverButton(PointerEvent e) {
     if (!_selectsOverIndicatorRow) return isOverSelf(e);
-    final row = _indicatorRowKey.currentContext?.findRenderObject();
-    if (row is! RenderBox || !row.hasSize) return false;
+    final row = _indicatorRow;
+    if (row == null || !row.attached || !row.hasSize) return false;
     final local = row.globalToLocal(e.position);
     if (local.dy < 0 || local.dy >= row.size.height) return false;
     return row.hitTest(BoxHitTestResult(), position: Offset(local.dx, row.size.height / 2));
@@ -149,6 +217,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         onPointerCancel: (_) => _primaryPressed = false,
         child: button,
       );
+
 
   // Always a DecoratedBox, so gaining focus never remounts the button and drops that focus.
   Widget _withFocusRing(ButtonThemeExtension widgetTheme, Widget button) => DecoratedBox(
@@ -224,15 +293,22 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       secondaryBorderDisabled: widgetTheme.pushButtonDisabledColor,
     );
 
-    Widget button = _HoverableButton(
-      baseBackgroundColor: baseBackgroundColor,
-      hoverBackgroundColor: hoverBackgroundColor,
-      pressedBackgroundColor: pressedBackgroundColor,
-      borderColor: borderColor,
-      isPressed: isPressed,
-      hasFlat: hasFlat,
-      enabled: enabled,
+    final enablementChanged = _surfaceEnabled != null && _surfaceEnabled != enabled;
+    _surfaceEnabled = enabled;
+    _surface = QuietAnimatedContainer(
+      // The border changes at once with the enablement, as the fill, the label and the control's
+      // opacity do.
+      duration: enablementChanged ? Duration.zero : widgetTheme.buttonPressDelay,
       constraints: constraints,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(
+          widgetTheme.pushButtonBorderRadius,
+        ),
+        border: Border.all(
+          color: borderColor,
+          width: widgetTheme.pushButtonBorderWidth,
+        ),
+      ),
       padding: _fitContentPadding(
         widgetTheme.pushButtonPadding,
         horizontalRoom: hasValidBounds
@@ -247,10 +323,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
                   )
             : null,
       ),
-      widgetTheme: widgetTheme,
-      onPressed: enabled ? _onPressed : null,
-      onFocusChange: _onFocusChange,
-      isPrimary: isPrimary,
       child: _buildButtonContent(
         context,
         text,
@@ -262,9 +334,41 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       ),
     );
 
-    return wrap(_wrapWithSwtBackground(
-        context, _insideBezelMargin(widgetTheme, button, margin)));
+    _pushLook = (
+      base: baseBackgroundColor,
+      hover: hoverBackgroundColor,
+      pressed: pressedBackgroundColor,
+      isPressed: isPressed,
+      enabled: enabled,
+      keepsInk: _surfaceRebuild.marked,
+      surface: KeptSlot(_surfaceRebuild, () => _surface),
+    );
+
+    // The chain around the hoverable surface changes with none of the above, so it is kept while
+    // what it is built from is; the surface then rebuilds on its own (see [_hoverableRebuild]), as it does
+    // from this button's own setState. Any other rebuild builds it anew.
+    final key = (
+      _swtBackground(context),
+      _hasFocus,
+      margin,
+      widgetTheme,
+      getConfigFlags(),
+    );
+    var chain = _pushChain;
+    if (chain == null || !_hoverableRebuild.marked || key != _pushChainKey) {
+      _pushChainKey = key;
+      chain = _pushChain = _wrapWithSwtBackground(
+          context, _insideBezelMargin(widgetTheme, _HoverableButton(widgetTheme: widgetTheme), margin));
+    }
+    return wrap(chain);
   }
+
+  /// What a push button's [_HoverableButton] draws that changes with the state, read by it when it
+  /// builds.
+  _PushLook? _pushLook;
+  Widget? _pushChain;
+  Object? _pushChainKey;
+  final KeptRebuild _hoverableRebuild = KeptRebuild();
 
   /// The width the content row wants: the label in the style it will actually
   /// be painted in, plus the image cell the row puts before it.
@@ -280,18 +384,41 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       width += imageData.width?.toDouble() ?? 0;
     }
     if (text != null && text.isNotEmpty) {
-      width += FontUtils.measureTextWidget(
-        text,
-        getTextStyle(
-          context: context,
-          font: state.font,
-          textColor: textColor,
-          baseTextStyle: baseTextStyle,
-        ),
-      ).width;
+      // The colour does not change the width.
+      final key = (text, state.font, baseTextStyle, getConfigFlags(), textMeasureEpoch);
+      if (key != _textWidthKey) {
+        _textWidthKey = key;
+        _textWidth = singleLineTextWidth(text, _labelStyle(context, textColor, baseTextStyle));
+      }
+      width += _textWidth;
     }
     return width;
   }
+
+  Object? _textWidthKey;
+  double _textWidth = 0;
+
+  /// The label's style, the same instance while what it is made from is: a style compared with an
+  /// equal one that is not the same object, or hashed as a cache key, is compared property by
+  /// property. The last two are kept, so that a button toggling its enablement finds both.
+  TextStyle _labelStyle(BuildContext context, Color textColor, TextStyle? baseTextStyle) {
+    final font = state.font;
+    final flags = getConfigFlags();
+    // From the application's own font, the style depends on where the button is.
+    if ((flags.use_swt_fonts ?? false) && font != null) {
+      return getTextStyle(context: context, font: font, textColor: textColor, baseTextStyle: baseTextStyle);
+    }
+    final key = (font, textColor, baseTextStyle, flags);
+    for (final (kept, style) in _labelStyles) {
+      if (kept == key) return style;
+    }
+    final style = getTextStyle(context: context, font: font, textColor: textColor, baseTextStyle: baseTextStyle);
+    if (_labelStyles.length >= 2) _labelStyles.removeAt(0);
+    _labelStyles.add((key, style));
+    return style;
+  }
+
+  final _labelStyles = <(Object, TextStyle)>[];
 
   /// The padding is a fixed inset, so a width an application pins below the
   /// preferred one leaves the label a viewport narrower than the text and it
@@ -338,7 +465,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       color: backgroundColor,
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
-        onTap: enabled ? _onPressed : null,
+        onTap: _onPressed,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         splashColor: widgetTheme.splashColor,
@@ -379,10 +506,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     bool enabled,
     String? text,
   ) {
-    final isChecked = state.selection ?? false;
-    // As on every native platform, grayed only shows on a checked box; grayed but unchecked
-    // draws as an empty box.
-    final isGrayed = isChecked && (state.grayed ?? false);
     final checkboxBackgroundColor = getButtonBackgroundColor(
       state,
       widgetTheme,
@@ -409,34 +532,46 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       hasImage: state.image != null && state.image?.imageData != null,
     );
 
+    // checkboxCheckmarkColor is picked to contrast with the selected fill; on the
+    // light disabled fill it would be invisible, so a disabled tick uses the
+    // disabled foreground instead — as the radio's inner dot already does.
+    final checkmarkColor = enabled
+        ? widgetTheme.checkboxCheckmarkColor
+        : widgetTheme.disabledForegroundColor;
     final checkboxWidget = _HoverableCheckboxRadio(
-      size: checkboxSize,
       enabled: enabled,
-      isSelected: isChecked,
-      isGrayed: isGrayed,
-      baseColor: enabled
-          ? (isChecked
-                ? widgetTheme.checkboxSelectedColor
-                : checkboxBackgroundColor)
-          : widgetTheme.disabledBackgroundColor,
-      hoverColor: widgetTheme.checkboxHoverColor,
-      borderColor: enabled
-          ? (isChecked
-                ? widgetTheme.checkboxSelectedColor
-                : widgetTheme.checkboxBorderColor)
-          : widgetTheme.disabledForegroundColor,
-      borderRadius: widgetTheme.checkboxBorderRadius,
-      borderWidth: widgetTheme.checkboxBorderWidth,
-      checkmarkSize: checkboxSize * widgetTheme.checkboxCheckmarkSizeMultiplier,
-      // checkboxCheckmarkColor is picked to contrast with the selected fill; on the
-      // light disabled fill it would be invisible, so a disabled tick uses the
-      // disabled foreground instead — as the radio's inner dot already does.
-      checkmarkColor: enabled
-          ? widgetTheme.checkboxCheckmarkColor
-          : widgetTheme.disabledForegroundColor,
-      grayedMargin: checkboxSize * widgetTheme.checkboxGrayedMarginMultiplier,
-      grayedBorderRadius: widgetTheme.checkboxGrayedBorderRadius,
-      duration: widgetTheme.buttonPressDelay,
+      selection: _selectionTicks,
+      box: (hovering) {
+        final isChecked = state.selection ?? false;
+        // As on every native platform, grayed only shows on a checked box; grayed but unchecked
+        // draws as an empty box.
+        final isGrayed = isChecked && (state.grayed ?? false);
+        return _CheckboxRadioBox(
+          size: checkboxSize,
+          enabled: enabled,
+          hovering: hovering,
+          isSelected: isChecked,
+          isGrayed: isGrayed,
+          baseColor: enabled
+              ? (isChecked
+                    ? widgetTheme.checkboxSelectedColor
+                    : checkboxBackgroundColor)
+              : widgetTheme.disabledBackgroundColor,
+          hoverColor: widgetTheme.checkboxHoverColor,
+          borderColor: enabled
+              ? (isChecked
+                    ? widgetTheme.checkboxSelectedColor
+                    : widgetTheme.checkboxBorderColor)
+              : widgetTheme.disabledForegroundColor,
+          borderRadius: widgetTheme.checkboxBorderRadius,
+          borderWidth: widgetTheme.checkboxBorderWidth,
+          tick: _tickOf(checkboxSize * widgetTheme.checkboxCheckmarkSizeMultiplier, checkmarkColor),
+          checkmarkColor: checkmarkColor,
+          grayedMargin: checkboxSize * widgetTheme.checkboxGrayedMarginMultiplier,
+          grayedBorderRadius: widgetTheme.checkboxGrayedBorderRadius,
+          duration: widgetTheme.buttonPressDelay,
+        );
+      },
       onTap: enabled ? _onPressed : null,
       onFocusChange: _onFocusChange,
     );
@@ -473,7 +608,6 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     bool enabled,
     String? text,
   ) {
-    final isSelected = state.selection ?? false;
     final radioBackgroundColor = getButtonBackgroundColor(
       state,
       widgetTheme,
@@ -502,32 +636,40 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final radioButtonBorderRadius = widgetTheme.radioButtonBorderRadius;
 
     final radioWidget = _HoverableCheckboxRadio(
-      size: radioButtonSize,
       enabled: enabled,
-      isSelected: isSelected,
-      isGrayed: false,
-      baseColor: enabled
-          ? (isSelected
-                ? widgetTheme.radioButtonSelectedColor
-                : radioBackgroundColor)
-          : widgetTheme.disabledBackgroundColor,
-      hoverColor: widgetTheme.radioButtonHoverColor,
-      selectedHoverColor: widgetTheme.radioButtonSelectedHoverColor,
-      borderColor: enabled
-          ? (isSelected
-                ? widgetTheme.radioButtonSelectedColor
-                : widgetTheme.radioButtonBorderColor)
-          : widgetTheme.disabledForegroundColor,
-      borderRadius: radioButtonBorderRadius,
-      borderWidth: isSelected
-          ? widgetTheme.radioButtonSelectedBorderWidth
-          : widgetTheme.radioButtonBorderWidth,
-      isCircle: true,
-      innerSize: isSelected ? radioButtonInnerSize : null,
-      innerColor: enabled
-          ? radioBackgroundColor
-          : widgetTheme.disabledForegroundColor,
-      duration: widgetTheme.buttonPressDelay,
+      selection: _selectionTicks,
+      box: (hovering) {
+        final isSelected = state.selection ?? false;
+        return _CheckboxRadioBox(
+          size: radioButtonSize,
+          enabled: enabled,
+          hovering: hovering,
+          isSelected: isSelected,
+          isGrayed: false,
+          baseColor: enabled
+              ? (isSelected
+                    ? widgetTheme.radioButtonSelectedColor
+                    : radioBackgroundColor)
+              : widgetTheme.disabledBackgroundColor,
+          hoverColor: widgetTheme.radioButtonHoverColor,
+          selectedHoverColor: widgetTheme.radioButtonSelectedHoverColor,
+          borderColor: enabled
+              ? (isSelected
+                    ? widgetTheme.radioButtonSelectedColor
+                    : widgetTheme.radioButtonBorderColor)
+              : widgetTheme.disabledForegroundColor,
+          borderRadius: radioButtonBorderRadius,
+          borderWidth: isSelected
+              ? widgetTheme.radioButtonSelectedBorderWidth
+              : widgetTheme.radioButtonBorderWidth,
+          isCircle: true,
+          innerSize: isSelected ? radioButtonInnerSize : null,
+          innerColor: enabled
+              ? radioBackgroundColor
+              : widgetTheme.disabledForegroundColor,
+          duration: widgetTheme.buttonPressDelay,
+        );
+      },
       onTap: enabled ? _onPressed : null,
       onFocusChange: _onFocusChange,
     );
@@ -573,10 +715,10 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     Widget button = Material(
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
-        onTap: enabled ? _onPressed : null,
+        onTap: _onPressed,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
-        child: AnimatedContainer(
+        child: QuietAnimatedContainer(
           duration: widgetTheme.buttonPressDelay,
           constraints: constraints,
           decoration: BoxDecoration(
@@ -666,12 +808,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       minContrast: widgetTheme.minTextContrast,
     );
 
-    final textStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      textColor: textColor,
-      baseTextStyle: baseTextStyle,
-    );
+    final textStyle = _labelStyle(context, textColor, baseTextStyle);
 
     final shouldWrap = shouldWrapText(
       style: state.style,
@@ -716,14 +853,22 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     );
 
     if (leadingWidget != null) {
-      return IntrinsicHeight(key: _indicatorRowKey, child: rowContent);
+      return _RowBox(onBox: (box) => _indicatorRow = box, child: IntrinsicHeight(child: rowContent));
     }
 
     return rowContent;
   }
 
+  /// Kept on the InkWell whatever the enablement: [wrap] already keeps pointer and focus from a
+  /// disabled button, and an InkWell whose enablement flips sets its own state in the middle of the
+  /// build, which makes the build owner re-sort every widget waiting to rebuild.
+  ///
+  /// The button's own focus nodes stay focusable for the same reason: [wrap]'s node, set before the
+  /// build, keeps focus from them while the button is disabled. One that followed the enablement
+  /// would change during the build and rebuild in a frame of its own.
   void _onPressed() {
     _selectedThisPress = true;
+    if (!(state.enabled ?? false)) return;
     final isRadio = hasStyle(state.style, SWT.RADIO);
     if (isRadio ||
         hasStyle(state.style, SWT.CHECK) ||
@@ -782,8 +927,15 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
+  /// Called on every change of a focus node's properties, such as its enablement, and not only of
+  /// its focus.
   void _onFocusChange(bool hasFocus) {
-    if (mounted && _hasFocus != hasFocus) setState(() => _hasFocus = hasFocus);
+    if (_hasFocus == hasFocus) return;
+    if (mounted) {
+      setState(() => _hasFocus = hasFocus);
+    } else {
+      _hasFocus = hasFocus;
+    }
     if (hasFocus) {
       widget.sendFocusFocusIn(state, null);
     } else {
@@ -792,38 +944,25 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 }
 
-class _HoverableButton extends StatefulWidget {
-  final Color baseBackgroundColor;
-  final Color hoverBackgroundColor;
-  final Color pressedBackgroundColor;
-  final Color borderColor;
-  final bool isPressed;
-  final bool hasFlat;
-  final bool enabled;
-  final BoxConstraints? constraints;
-  final EdgeInsets padding;
-  final ButtonThemeExtension widgetTheme;
-  final VoidCallback? onPressed;
-  final ValueChanged<bool> onFocusChange;
-  final bool isPrimary;
-  final Widget child;
+/// What a push button draws of its state, as of its last build.
+///
+/// [keepsInk] says whether the InkWell built last can be kept: [surface] rebuilds by itself.
+typedef _PushLook = ({
+  Color base,
+  Color hover,
+  Color pressed,
+  bool isPressed,
+  bool enabled,
+  bool keepsInk,
+  Widget surface,
+});
 
-  const _HoverableButton({
-    required this.baseBackgroundColor,
-    required this.hoverBackgroundColor,
-    required this.pressedBackgroundColor,
-    required this.borderColor,
-    required this.isPressed,
-    required this.hasFlat,
-    required this.enabled,
-    this.constraints,
-    required this.padding,
-    required this.widgetTheme,
-    this.onPressed,
-    required this.onFocusChange,
-    required this.isPrimary,
-    required this.child,
-  });
+/// A push button's surface and what it reacts to. It reads what it draws from the [ButtonImpl]
+/// above it, which marks it when that changes, so that the widgets between them stay the same.
+class _HoverableButton extends StatefulWidget {
+  final ButtonThemeExtension widgetTheme;
+
+  const _HoverableButton({required this.widgetTheme});
 
   @override
   State<_HoverableButton> createState() => _HoverableButtonState();
@@ -832,98 +971,160 @@ class _HoverableButton extends StatefulWidget {
 class _HoverableButtonState extends State<_HoverableButton> {
   bool _isHovering = false;
 
+  late final ButtonImpl _host = context.findAncestorStateOfType<ButtonImpl>()!;
+
+  @override
+  void dispose() {
+    _host._hoverableRebuild.disposed(context);
+    super.dispose();
+  }
+
+  /// The Material and the InkWell in it, kept while [_HoverableButton.keepsInk] and what they are
+  /// built from stay the same. The fill that changes with the enablement, a hover or a press is
+  /// [_ShapeFill]'s, under them, so that none of those changes rebuilds them.
+  Widget? _ink;
+  Object? _inkKey;
+
+  Widget _material(_PushLook look) {
+    final kept = _ink;
+    if (kept != null && look.keepsInk && identical(widget.widgetTheme, _inkKey)) return kept;
+    _inkKey = widget.widgetTheme;
+    final radius = BorderRadius.circular(widget.widgetTheme.pushButtonBorderRadius);
+    return _ink = Material(
+      type: MaterialType.transparency,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: _host._onPressed,
+        onFocusChange: _host._onFocusChange,
+        borderRadius: radius,
+        splashColor: widget.widgetTheme.splashColor,
+        highlightColor: widget.widgetTheme.highlightColor,
+        child: look.surface,
+      ),
+    );
+  }
+
+  void _entered(PointerEnterEvent _) {
+    setState(() => _isHovering = true);
+  }
+
+  void _exited(PointerExitEvent _) {
+    setState(() => _isHovering = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = widget.enabled
-        ? (widget.isPressed
-              ? widget.pressedBackgroundColor
+    _host._hoverableRebuild.builds(context);
+    final look = _host._pushLook!;
+    final backgroundColor = look.enabled
+        ? (look.isPressed
+              ? look.pressed
               : (_isHovering
-                    ? widget.hoverBackgroundColor
-                    : widget.baseBackgroundColor))
+                    ? look.hover
+                    : look.base))
         : widget.widgetTheme.pushButtonDisabledColor;
 
     return MouseRegion(
-      onEnter: (_) {
-        setState(() => _isHovering = true);
-      },
-      onExit: (_) {
-        setState(() => _isHovering = false);
-      },
-      child: Material(
+      onEnter: _entered,
+      onExit: _exited,
+      child: _ShapeFill(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(
-          widget.widgetTheme.pushButtonBorderRadius,
-        ),
-        child: InkWell(
-          onTap: widget.onPressed,
-          onFocusChange: widget.onFocusChange,
-          borderRadius: BorderRadius.circular(
-            widget.widgetTheme.pushButtonBorderRadius,
-          ),
-          splashColor: widget.widgetTheme.splashColor,
-          highlightColor: widget.widgetTheme.highlightColor,
-          child: AnimatedContainer(
-            duration: widget.widgetTheme.buttonPressDelay,
-            constraints: widget.constraints,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                widget.widgetTheme.pushButtonBorderRadius,
-              ),
-              border: Border.all(
-                color: widget.borderColor,
-                width: widget.widgetTheme.pushButtonBorderWidth,
-              ),
-            ),
-            padding: widget.padding,
-            child: widget.child,
-          ),
-        ),
+        radius: widget.widgetTheme.pushButtonBorderRadius,
+        child: _material(look),
       ),
     );
   }
 }
 
+/// Fills a rounded rectangle under its child, as a canvas [Material] of that colour and radius fills
+/// its shape under the ink and the content it holds: the same path, drawn the same way, and taking
+/// pointers only inside it.
+class _ShapeFill extends SingleChildRenderObjectWidget {
+  const _ShapeFill({required this.color, required this.radius, super.child});
+
+  final Color color;
+  final double radius;
+
+  @override
+  _RenderShapeFill createRenderObject(BuildContext context) =>
+      _RenderShapeFill(color, radius, Directionality.maybeOf(context));
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderShapeFill renderObject) {
+    renderObject
+      ..color = color
+      ..radius = radius
+      ..textDirection = Directionality.maybeOf(context);
+  }
+}
+
+class _RenderShapeFill extends RenderProxyBox {
+  _RenderShapeFill(this._color, this._radius, this._textDirection);
+
+  Color _color;
+  set color(Color value) {
+    if (value == _color) return;
+    _color = value;
+    markNeedsPaint();
+  }
+
+  double _radius;
+  set radius(double value) {
+    if (value == _radius) return;
+    _radius = value;
+    _clip = null;
+    markNeedsPaint();
+  }
+
+  TextDirection? _textDirection;
+  set textDirection(TextDirection? value) {
+    if (value == _textDirection) return;
+    _textDirection = value;
+    _clip = null;
+    markNeedsPaint();
+  }
+
+  Path? _clip;
+  Size? _clipSize;
+
+  Path _shape() {
+    if (_clip == null || _clipSize != size) {
+      _clipSize = size;
+      _clip = ShapeBorderClipper(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_radius)),
+        textDirection: _textDirection,
+      ).getClip(size);
+    }
+    return _clip!;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (child == null) return;
+    context.canvas.drawPath(_shape().shift(offset), Paint()..color = _color);
+    super.paint(context, offset);
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_shape().contains(position)) return false;
+    return super.hitTest(result, position: position);
+  }
+}
+
+/// The check box or radio's box: what it reacts to, around [box], which draws it and alone follows
+/// [selection].
 class _HoverableCheckboxRadio extends StatefulWidget {
-  final double size;
   final bool enabled;
-  final bool isSelected;
-  final bool isGrayed;
-  final Color baseColor;
-  final Color hoverColor;
-  final Color? selectedHoverColor;
-  final Color borderColor;
-  final double borderRadius;
-  final double borderWidth;
-  final double? checkmarkSize;
-  final Color? checkmarkColor;
-  final double? grayedMargin;
-  final double? grayedBorderRadius;
-  final bool isCircle;
-  final double? innerSize;
-  final Color? innerColor;
-  final Duration duration;
+  final Listenable selection;
+  final _CheckboxRadioBox Function(bool hovering) box;
   final VoidCallback? onTap;
   final ValueChanged<bool> onFocusChange;
 
   const _HoverableCheckboxRadio({
-    required this.size,
     required this.enabled,
-    required this.isSelected,
-    required this.isGrayed,
-    required this.baseColor,
-    required this.hoverColor,
-    this.selectedHoverColor,
-    required this.borderColor,
-    required this.borderRadius,
-    required this.borderWidth,
-    this.checkmarkSize,
-    this.checkmarkColor,
-    this.grayedMargin,
-    this.grayedBorderRadius,
-    this.isCircle = false,
-    this.innerSize,
-    this.innerColor,
-    required this.duration,
+    required this.selection,
+    required this.box,
     this.onTap,
     required this.onFocusChange,
   });
@@ -938,84 +1139,6 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
 
   @override
   Widget build(BuildContext context) {
-    Color backgroundColor;
-    if (widget.enabled && _isHovering) {
-      if (widget.isSelected && widget.selectedHoverColor != null) {
-        backgroundColor = widget.selectedHoverColor!;
-      } else if (!widget.isSelected) {
-        backgroundColor = widget.hoverColor;
-      } else {
-        backgroundColor = widget.baseColor;
-      }
-    } else {
-      backgroundColor = widget.baseColor;
-    }
-
-    Widget content;
-
-    if (widget.isCircle) {
-      // Radio button
-      content = AnimatedContainer(
-        duration: widget.duration,
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: widget.borderColor,
-            width: widget.borderWidth,
-          ),
-        ),
-        child: widget.isSelected && widget.innerSize != null
-            ? Center(
-                child: Container(
-                  width: widget.innerSize,
-                  height: widget.innerSize,
-                  decoration: BoxDecoration(
-                    color: widget.innerColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              )
-            : null,
-      );
-    } else {
-      // Checkbox
-      content = AnimatedContainer(
-        duration: widget.duration,
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          border: Border.all(
-            color: widget.borderColor,
-            width: widget.borderWidth,
-          ),
-        ),
-        // Grayed outranks checked: the partial mark is all that separates a partially-checked
-        // box from a fully-checked one.
-        child: widget.isGrayed
-            ? Container(
-                margin: EdgeInsets.all(widget.grayedMargin ?? 0),
-                decoration: BoxDecoration(
-                  color: widget.checkmarkColor,
-                  borderRadius: BorderRadius.circular(
-                    widget.grayedBorderRadius ?? 0,
-                  ),
-                ),
-              )
-            : (widget.isSelected
-                  ? Icon(
-                      Icons.check,
-                      size: widget.checkmarkSize,
-                      color: widget.checkmarkColor,
-                    )
-                  : null),
-      );
-    }
-
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovering = true);
@@ -1025,8 +1148,151 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
       },
       child: GestureDetector(
         onTap: widget.onTap,
-        child: Focus(onFocusChange: widget.onFocusChange, child: content),
+        child: Focus(
+          onFocusChange: widget.onFocusChange,
+          // The box animates on every selection or hover change; the label beside it need not
+          // repaint with each step.
+          child: RepaintBoundary(
+            child: ListenableBuilder(
+              listenable: widget.selection,
+              builder: (context, _) => widget.box(_isHovering),
+            ),
+          ),
+        ),
       ),
     );
   }
+}
+
+class _CheckboxRadioBox extends StatelessWidget {
+  final double size;
+  final bool enabled;
+  final bool hovering;
+  final bool isSelected;
+  final bool isGrayed;
+  final Color baseColor;
+  final Color hoverColor;
+  final Color? selectedHoverColor;
+  final Color borderColor;
+  final double borderRadius;
+  final double borderWidth;
+  final Widget? tick;
+  final Color? checkmarkColor;
+  final double? grayedMargin;
+  final double? grayedBorderRadius;
+  final bool isCircle;
+  final double? innerSize;
+  final Color? innerColor;
+  final Duration duration;
+
+  const _CheckboxRadioBox({
+    required this.size,
+    required this.enabled,
+    required this.hovering,
+    required this.isSelected,
+    required this.isGrayed,
+    required this.baseColor,
+    required this.hoverColor,
+    this.selectedHoverColor,
+    required this.borderColor,
+    required this.borderRadius,
+    required this.borderWidth,
+    this.tick,
+    this.checkmarkColor,
+    this.grayedMargin,
+    this.grayedBorderRadius,
+    this.isCircle = false,
+    this.innerSize,
+    this.innerColor,
+    required this.duration,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color backgroundColor;
+    if (enabled && hovering) {
+      if (isSelected && selectedHoverColor != null) {
+        backgroundColor = selectedHoverColor!;
+      } else if (!isSelected) {
+        backgroundColor = hoverColor;
+      } else {
+        backgroundColor = baseColor;
+      }
+    } else {
+      backgroundColor = baseColor;
+    }
+
+    if (isCircle) {
+      return QuietAnimatedContainer(
+        duration: duration,
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: borderColor,
+            width: borderWidth,
+          ),
+        ),
+        child: isSelected && innerSize != null
+            ? Center(
+                child: Container(
+                  width: innerSize,
+                  height: innerSize,
+                  decoration: BoxDecoration(
+                    color: innerColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              )
+            : null,
+      );
+    }
+    return QuietAnimatedContainer(
+      duration: duration,
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: borderColor,
+          width: borderWidth,
+        ),
+      ),
+      // Grayed outranks checked: the partial mark is all that separates a partially-checked
+      // box from a fully-checked one.
+      child: isGrayed
+          ? Container(
+              margin: EdgeInsets.all(grayedMargin ?? 0),
+              decoration: BoxDecoration(
+                color: checkmarkColor,
+                borderRadius: BorderRadius.circular(
+                  grayedBorderRadius ?? 0,
+                ),
+              ),
+            )
+          // The mark stays mounted while hidden: a check toggles it, and mounting it shapes its glyph.
+          // Offstage, not Opacity: an Opacity going to or from zero changes what is composited.
+          : Offstage(offstage: !isSelected, child: tick),
+    );
+  }
+}
+
+/// Hands [onBox] the render box its child is laid out in, so its owner can read where it is drawn.
+class _RowBox extends SingleChildRenderObjectWidget {
+  const _RowBox({required this.onBox, required super.child});
+
+  final void Function(RenderBox box) onBox;
+
+  @override
+  RenderProxyBox createRenderObject(BuildContext context) {
+    final box = RenderProxyBox();
+    onBox(box);
+    return box;
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, RenderProxyBox renderObject) => onBox(renderObject);
 }

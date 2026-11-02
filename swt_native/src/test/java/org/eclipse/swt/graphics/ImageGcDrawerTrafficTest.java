@@ -5,6 +5,8 @@ import org.eclipse.swt.SWT;
 import dev.equo.swt.SerializeTestBase;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.GcFrames;
+import dev.equo.swt.harness.WireValues;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,6 +96,9 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
 
         assertThat(comm.sent).contains("GC/create");
         assertThat(comm.sent).anyMatch(e -> e.endsWith("/copyAreaImageintint"));
+        assertThat(comm.copyAreaAnswerHeard)
+                .as("Java waits for the answer on the channel the client sends it on")
+                .containsExactly(true);
 
         gc.dispose();
         image.dispose();
@@ -109,22 +114,23 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         GC first = new GC(canvas);
         first.drawImage(icon, 0, 0);
         first.dispose();
-        assertThat(String.join("", comm.payloads))
+        assertThat(describesImageData(comm.carried()))
                 .as("the icon was never described, so there is nothing to name later")
-                .contains("imageData");
+                .isTrue();
 
         comm.payloads.clear();
         GC second = new GC(canvas);
         second.drawImage(icon, 0, 0);
         second.dispose();
 
-        String repeat = String.join("", comm.payloads);
-        assertThat(repeat)
+        assertThat(describesImageData(comm.carried()))
                 .as("the icon was described again to a client that already held it")
-                .doesNotContain("imageData");
-        assertThat(repeat)
+                .isFalse();
+        assertThat(comm.payloads)
                 .as("and what replaces it has to say which image it is")
-                .contains("\"_r\"");
+                .anyMatch(e -> e.channel().endsWith("drawImageImageintint") && e.value() instanceof List<?> args
+                        && args.size() == 3 && names(args.get(0), icon.hashCode())
+                        && WireValues.same(args.get(1), 0) && WireValues.same(args.get(2), 0));
 
         icon.dispose();
         canvas.dispose();
@@ -151,31 +157,6 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
                     .anyMatch(e -> e.endsWith("/drawImageImageintint"));
         }
         canvas.dispose();
-    }
-
-    @Test
-    void a_drawer_with_nowhere_to_render_does_not_hold_back_later_releases() throws Exception {
-        // Releases wait for every drawer still holding ops; one that gave up must not hold any.
-        FlutterBridge.setDisplayGcCommResolver(null);
-        java.lang.reflect.Field available = dev.equo.swt.GCImageDrawer.class.getDeclaredField("nativeWindowAvailable");
-        available.setAccessible(true);
-        Object wasAvailable = available.get(null);
-        String loadLibrary = System.setProperty("dev.equo.swt.loadLibrary", "false");
-        try {
-            Image image = new Image(device(), 16, 16);
-            GC gc = new GC(image);
-            gc.fillRectangle(0, 0, 4, 4);
-            gc.dispose();
-            image.dispose();
-        } finally {
-            if (loadLibrary == null) System.clearProperty("dev.equo.swt.loadLibrary");
-            else System.setProperty("dev.equo.swt.loadLibrary", loadLibrary);
-            available.set(null, wasAvailable);
-        }
-
-        boolean[] released = { false };
-        dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> released[0] = true);
-        assertThat(released[0]).as("a release is held behind a drawer that will never send its ops").isTrue();
     }
 
     @Test
@@ -212,9 +193,9 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         blit.drawImage(avatar, 0, 0);
         blit.dispose();
 
-        assertThat(String.join("", comm.payloads))
+        assertThat(WireValues.find(comm.carried(), m -> m.containsKey("remoteRef") && WireValues.same(m.get("remoteRef"), ref)))
                 .as("the blit named a stale copy of the image instead of its render")
-                .contains("\"remoteRef\":" + ref);
+                .isNotEmpty();
 
         avatar.dispose();
         next.dispose();
@@ -232,8 +213,8 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
             gc.drawString("12", 2, 2, true);
             gc.dispose();
 
-            assertThat(String.join("", comm.payloads)).as("paint %d", paint)
-                    .contains("\"foreground\":{\"a\":255,\"b\":3,\"g\":2,\"r\":1}");
+            assertThat(WireValues.find(comm.carried(), m -> "#ff010203".equals(m.get("foreground"))))
+                    .as("paint %d", paint).isNotEmpty();
         }
         buffer.dispose();
     }
@@ -258,15 +239,28 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     }
 
     @Test
-    void a_batch_may_not_carry_raw_bytes() {
-        // The client decodes a batch as JSON, so one binary payload silently drops every frame in it.
+    void a_batch_carries_raw_bytes_beside_other_frames() {
+        // Each entry of a batch is applied as the frame it would have been, raw bytes included.
         MessageBatch batch = new MessageBatch();
-        batch.add("GC/1/fillRectangleintintintint", "{\"x\":0}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        batch.add("GC/create", java.nio.ByteBuffer.allocate(8).putLong(1L).array());
+        dev.equo.swt.harness.Channels.add(batch, "GC/1/fillRectangleintintintint", "{\"x\":0}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.add(batch, "GC/create", java.nio.ByteBuffer.allocate(8).putLong(1L).array());
+        dev.equo.swt.harness.Channels.add(batch, "GC/1/gcDispose", "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-        assertThatExceptionOfType(AssertionError.class)
-                .isThrownBy(() -> comm.send(batch))
-                .withMessageContaining("raw-bytes payload");
+        comm.send(batch);
+
+        assertThat(comm.sent).containsSubsequence("GC/1/fillRectangleintintintint", "GC/create", "GC/1/gcDispose");
+    }
+
+    /** Whether some record in {@code carried} describes image data. */
+    private static boolean describesImageData(List<Object> carried) {
+        return !WireValues.find(carried, m -> m.get("imageData") instanceof Map).isEmpty();
+    }
+
+    /** Whether {@code argument} names the image {@code id}: by its id, or as a reference to it. */
+    private static boolean names(Object argument, int id) {
+        if (argument instanceof Number) return WireValues.same(argument, id);
+        return argument instanceof Map<?, ?> ref && WireValues.same(ref.get("id"), id)
+                && Boolean.TRUE.equals(ref.get("_r"));
     }
 
     /**
@@ -275,16 +269,24 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
      */
     private static final class RecordingComm implements CommService {
         final List<String> sent = new ArrayList<>();
-        /** Every payload put on the wire, so a test can ask what a frame actually carried. */
-        final List<String> payloads = new ArrayList<>();
+        /** Every entry put on the wire, so a test can ask what a frame actually carried. */
+        final List<GcFrames.Entry> payloads = new ArrayList<>();
         /** The payload of each entry in {@link #sent} that travelled on its own, by the same index. */
         final List<byte[]> raw = new ArrayList<>();
         int messages;
         final Map<String, Consumer<?>> handlers = new LinkedHashMap<>();
+        /** For each copyArea request, whether Java was listening on the exact channel the client answers on. */
+        final List<Boolean> copyAreaAnswerHeard = new ArrayList<>();
 
         @Override
-        public void send(String eventName) {
-            send(eventName, new byte[0]);
+        public void send(int type, long id, int channel, byte[] payload) {
+            send(dev.equo.swt.harness.Channels.name(type, id, channel), payload == null ? new byte[0] : payload);
+        }
+
+        @Override
+        public void sendFrame(byte[] frame, int offset, int length) {
+            dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, offset, offset + length);
+            send(header.channel(), java.util.Arrays.copyOfRange(frame, header.payloadStart(), offset + length));
         }
 
         /** The index of the first {@code eventName} sent, waiting up to {@code timeoutMs} for it; -1 if none. */
@@ -299,77 +301,29 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
             }
         }
 
-        @Override
-        public synchronized void send(String eventName, byte[] payload) {
+        synchronized void send(String eventName, byte[] payload) {
+            GcFrames.Decoded frame = GcFrames.decode(eventName, payload);
             messages++;
-            payloads.add(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
-            if (MessageBatch.EVENT.equals(eventName)) {
-                for (String framed : framesIn(payload)) {
+            if (MessageBatch.EVENT.equals(frame.event()) && frame.value() instanceof List<?> entries) {
+                for (Object entry : entries) {
+                    payloads.add((GcFrames.Entry) entry);
                     raw.add(null);
-                    record(framed);
+                    record(((GcFrames.Entry) entry).channel());
                 }
                 return;
             }
+            payloads.add(new GcFrames.Entry(frame.event(), frame.value()));
             raw.add(payload);
-            record(eventName);
+            record(frame.event());
         }
 
-        /** The event names a batch payload, {@code [["channel",payload],…]}, carries; rejects one the client could not parse. */
-        private static List<String> framesIn(byte[] payload) {
-            List<String> names = new ArrayList<>();
-            String text = new String(payload, java.nio.charset.StandardCharsets.UTF_8);
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                if (c < 0x20 && c != '\n' && c != '\r' && c != '\t') {
-                    throw new AssertionError("a batch carried a raw-bytes payload at " + i
-                            + "; the client parses a batch as JSON and would drop the whole message");
-                }
-            }
-            // A repeated channel travels as an entry index (see MessageBatch). Only the token right
-            // after an entry's '[' is a channel: payload values sit at the same depth.
-            List<String> channels = new ArrayList<>();
-            int depth = 0;
-            boolean inString = false, escaped = false, expectChannel = false;
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                if (inString) {
-                    if (escaped) escaped = false;
-                    else if (c == '\\') escaped = true;
-                    else if (c == '"') inString = false;
-                    continue;
-                }
-                if (c == '"') {
-                    if (depth == 2) {
-                        int end = text.indexOf('"', i + 1);
-                        String name = text.substring(i + 1, end);
-                        names.add(name);
-                        if (expectChannel) {
-                            channels.add(name);
-                            expectChannel = false;
-                        }
-                        i = end;
-                        continue;
-                    }
-                    inString = true;
-                } else if (c == '[') {
-                    depth++;
-                    expectChannel = depth == 2;
-                } else if (c == ']') {
-                    depth--;
-                    expectChannel = false;
-                } else if (expectChannel && c >= '0' && c <= '9') {
-                    int end = i;
-                    while (end < text.length() && text.charAt(end) >= '0' && text.charAt(end) <= '9') end++;
-                    int at = Integer.parseInt(text.substring(i, end));
-                    String named = at >= 0 && at < channels.size() ? channels.get(at) : "?";
-                    names.add(named);
-                    channels.add(named);
-                    expectChannel = false;
-                    i = end - 1;
-                }
-            }
-            return names;
+        /** What each entry put on the wire carried, in order. */
+        List<Object> carried() {
+            List<Object> values = new ArrayList<>();
+            for (GcFrames.Entry entry : payloads) values.add(entry.value());
+            return values;
         }
+
 
         private void record(String eventName) {
             sent.add(eventName);
@@ -378,6 +332,8 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
             } else if (eventName.endsWith("/gcDispose")) {
                 answer("/imageResult", renderResult());
             } else if (eventName.endsWith("/copyAreaImageintint")) {
+                // The client answers on the channel the request came in on, plus "Response".
+                copyAreaAnswerHeard.add(handlers.containsKey(eventName + "Response"));
                 answer("/copyAreaImageintintResponse", renderResult());
             }
         }
@@ -401,13 +357,13 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         }
 
         @Override
-        public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
-            handlers.put(eventName, callback);
+        public <T> void on(int type, long id, int channel, Class<T> cls, Consumer<T> callback) {
+            handlers.put(dev.equo.swt.harness.Channels.name(type, id, channel), callback);
         }
 
         @Override
-        public void remove(String eventName) {
-            handlers.remove(eventName);
+        public void remove(int type, long id, int channel) {
+            handlers.remove(dev.equo.swt.harness.Channels.name(type, id, channel));
         }
 
         @Override

@@ -25,6 +25,7 @@ import '../nolayout.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'controls_item.dart';
+import '../impl/utils/text_utils.dart';
 
 class HorizontalMenuBar extends StatelessWidget {
   const HorizontalMenuBar({super.key});

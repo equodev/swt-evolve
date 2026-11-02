@@ -780,7 +780,7 @@ public class DartTableItem extends DartItem implements ITableItem {
     public void setChecked(boolean checked) {
         boolean newValue = checked;
         checkWidget();
-        if (this.checked != newValue) {
+        if (getChecked() != newValue) {
             getValue().markDirty(VTableItem.CHECKED);
         }
         if ((parent.style & SWT.CHECK) == 0)

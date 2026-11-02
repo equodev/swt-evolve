@@ -340,7 +340,7 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.image = GraphicsUtils.copyImage(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        GCHelper.callOnDisplayBytes(this, "copyAreaImageintint", drawOp, p -> GCHelper.updateImageFromPngBytes(image, null, p), 10_000);
+        GCHelper.callOnDisplayBytes(this, dev.equo.swt.WireTable.CHANNEL_COPY_AREA_IMAGEINTINT, dev.equo.swt.WireTable.CHANNEL_COPY_AREA_IMAGEINTINT_RESPONSE, drawOp, p -> GCHelper.updateImageFromPngBytes(image, null, p), GCHelper.READ_BACK_TIMEOUT_MS);
     }
 
     void copyArea(Image image, int x, int y, long srcImage) {
@@ -390,7 +390,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (width <= 0 || height <= 0)
             return;
-        VGCCopyAreaintintintintintintboolean drawOp = new VGCCopyAreaintintintintintintboolean();
+        VGCCopyAreaintintintintintintboolean drawOp = VGCCopyAreaintintintintintintboolean.reused();
         drawOp.srcX = srcX;
         drawOp.srcY = srcY;
         drawOp.width = width;
@@ -398,7 +398,7 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destX = destX;
         drawOp.destY = destY;
         drawOp.paint = paint;
-        FlutterBridge.send(this, "copyAreaintintintintintintboolean", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_COPY_AREAINTINTINTINTINTINTBOOLEAN, drawOp);
     }
 
     void createLayout() {
@@ -430,18 +430,8 @@ public final class DartGC extends DartResource implements IGC {
             }
         }
         textDataCache.release();
-        if (drawable instanceof Control && !silentDispose) {
-            java.util.Map<String, Object> gcDisposePayload = new java.util.HashMap<>();
-            gcDisposePayload.put("fullRepaint", fullRepaint);
-            if (paintDamage != null) {
-                java.util.Map<String, Object> gcDisposeDamage = new java.util.HashMap<>();
-                gcDisposeDamage.put("x", paintDamage.x);
-                gcDisposeDamage.put("y", paintDamage.y);
-                gcDisposeDamage.put("width", paintDamage.width);
-                gcDisposeDamage.put("height", paintDamage.height);
-                gcDisposePayload.put("damage", gcDisposeDamage);
-            }
-            FlutterBridge.send(this, "gcDispose", gcDisposePayload);
+        if (drawable instanceof Control) {
+            FlutterBridge.endPaint(this, fullRepaint, paintDamage);
         }
         drawable = null;
         data.image = null;
@@ -484,14 +474,14 @@ public final class DartGC extends DartResource implements IGC {
     public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawArcintintintintintint drawOp = new VGCDrawArcintintintintintint();
+        VGCDrawArcintintintintintint drawOp = VGCDrawArcintintintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.startAngle = startAngle;
         drawOp.arcAngle = arcAngle;
-        FlutterBridge.send(this, "drawArcintintintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_ARCINTINTINTINTINTINT, drawOp);
     }
 
     /**
@@ -514,12 +504,12 @@ public final class DartGC extends DartResource implements IGC {
     public void drawFocus(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawFocusintintintint drawOp = new VGCDrawFocusintintintint();
+        VGCDrawFocusintintintint drawOp = VGCDrawFocusintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawFocusintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_FOCUSINTINTINTINT, drawOp);
     }
 
     /**
@@ -568,7 +558,7 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
         drawOp.x = x;
         drawOp.y = y;
-        FlutterBridge.send(this, "drawImageImageintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINT, drawOp);
     }
 
     /**
@@ -685,13 +675,14 @@ public final class DartGC extends DartResource implements IGC {
                 return;
             }
         }
-        VGCDrawImageImageintintintint drawOp = new VGCDrawImageImageintintintint();
+        VGCDrawImageImageintintintint drawOp = VGCDrawImageImageintintintint.reused();
         drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
         drawOp.destX = destX;
         drawOp.destY = destY;
         drawOp.destWidth = destWidth;
         drawOp.destHeight = destHeight;
-        FlutterBridge.send(this, "drawImageImageintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINT, drawOp);
+        drawOp.image = null;
     }
 
     void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple) {
@@ -724,7 +715,7 @@ public final class DartGC extends DartResource implements IGC {
         drawOp.destY = destY;
         drawOp.destWidth = destWidth;
         drawOp.destHeight = destHeight;
-        FlutterBridge.send(this, "drawImageImageintintintintintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT, drawOp);
     }
 
     /**
@@ -743,12 +734,12 @@ public final class DartGC extends DartResource implements IGC {
     public void drawLine(int x1, int y1, int x2, int y2) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawLineintintintint drawOp = new VGCDrawLineintintintint();
+        VGCDrawLineintintintint drawOp = VGCDrawLineintintintint.reused();
         drawOp.x1 = x1;
         drawOp.y1 = y1;
         drawOp.x2 = x2;
         drawOp.y2 = y2;
-        FlutterBridge.send(this, "drawLineintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_LINEINTINTINTINT, drawOp);
     }
 
     /**
@@ -775,12 +766,12 @@ public final class DartGC extends DartResource implements IGC {
     public void drawOval(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawOvalintintintint drawOp = new VGCDrawOvalintintintint();
+        VGCDrawOvalintintintint drawOp = VGCDrawOvalintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawOvalintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_OVALINTINTINTINT, drawOp);
     }
 
     /**
@@ -813,9 +804,10 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        VGCDrawPathPath drawOp = new VGCDrawPathPath();
+        VGCDrawPathPath drawOp = VGCDrawPathPath.reused();
         drawOp.path = path;
-        FlutterBridge.send(this, "drawPathPath", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_PATH_PATH, drawOp);
+        drawOp.path = null;
     }
 
     /**
@@ -838,10 +830,10 @@ public final class DartGC extends DartResource implements IGC {
     public void drawPoint(int x, int y) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawPointintint drawOp = new VGCDrawPointintint();
+        VGCDrawPointintint drawOp = VGCDrawPointintint.reused();
         drawOp.x = x;
         drawOp.y = y;
-        FlutterBridge.send(this, "drawPointintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_POINTINTINT, drawOp);
     }
 
     /**
@@ -868,9 +860,10 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (pointArray.length < 4)
             return;
-        VGCDrawPolygonint drawOp = new VGCDrawPolygonint();
+        VGCDrawPolygonint drawOp = VGCDrawPolygonint.reused();
         drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "drawPolygonint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_POLYGONINT, drawOp);
+        drawOp.pointArray = null;
     }
 
     /**
@@ -897,9 +890,10 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (pointArray.length < 4)
             return;
-        VGCDrawPolylineint drawOp = new VGCDrawPolylineint();
+        VGCDrawPolylineint drawOp = VGCDrawPolylineint.reused();
         drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "drawPolylineint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_POLYLINEINT, drawOp);
+        drawOp.pointArray = null;
     }
 
     /**
@@ -920,12 +914,12 @@ public final class DartGC extends DartResource implements IGC {
     public void drawRectangle(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawRectangleintintintint drawOp = new VGCDrawRectangleintintintint();
+        VGCDrawRectangleintintintint drawOp = VGCDrawRectangleintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "drawRectangleintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_RECTANGLEINTINTINTINT, drawOp);
     }
 
     /**
@@ -976,14 +970,14 @@ public final class DartGC extends DartResource implements IGC {
     public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCDrawRoundRectangleintintintintintint drawOp = new VGCDrawRoundRectangleintintintintintint();
+        VGCDrawRoundRectangleintintintintintint drawOp = VGCDrawRoundRectangleintintintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
-        FlutterBridge.send(this, "drawRoundRectangleintintintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_ROUND_RECTANGLEINTINTINTINTINTINT, drawOp);
     }
 
     /**
@@ -1151,12 +1145,13 @@ public final class DartGC extends DartResource implements IGC {
         if (imageCapture != null) {
             return;
         }
-        VGCDrawTextStringintintint drawOp = new VGCDrawTextStringintintint();
+        VGCDrawTextStringintintint drawOp = VGCDrawTextStringintintint.reused();
         drawOp.string = string;
         drawOp.x = x;
         drawOp.y = y;
         drawOp.flags = flags;
-        FlutterBridge.send(this, "drawTextStringintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_TEXT_STRINGINTINTINT, drawOp);
+        drawOp.string = null;
     }
 
     private void doFastDrawText(String string, int x, int y) {
@@ -1229,14 +1224,14 @@ public final class DartGC extends DartResource implements IGC {
     public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCFillArcintintintintintint drawOp = new VGCFillArcintintintintintint();
+        VGCFillArcintintintintintint drawOp = VGCFillArcintintintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.startAngle = startAngle;
         drawOp.arcAngle = arcAngle;
-        FlutterBridge.send(this, "fillArcintintintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_ARCINTINTINTINTINTINT, drawOp);
     }
 
     /**
@@ -1264,13 +1259,13 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if ((width == 0) || (height == 0))
             return;
-        VGCFillGradientRectangleintintintintboolean drawOp = new VGCFillGradientRectangleintintintintboolean();
+        VGCFillGradientRectangleintintintintboolean drawOp = VGCFillGradientRectangleintintintintboolean.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.vertical = vertical;
-        FlutterBridge.send(this, "fillGradientRectangleintintintintboolean", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN, drawOp);
     }
 
     /**
@@ -1292,12 +1287,12 @@ public final class DartGC extends DartResource implements IGC {
     public void fillOval(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCFillOvalintintintint drawOp = new VGCFillOvalintintintint();
+        VGCFillOvalintintintint drawOp = VGCFillOvalintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "fillOvalintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_OVALINTINTINTINT, drawOp);
     }
 
     /**
@@ -1330,9 +1325,10 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (path.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        VGCFillPathPath drawOp = new VGCFillPathPath();
+        VGCFillPathPath drawOp = VGCFillPathPath.reused();
         drawOp.path = path;
-        FlutterBridge.send(this, "fillPathPath", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_PATH_PATH, drawOp);
+        drawOp.path = null;
     }
 
     /**
@@ -1361,9 +1357,10 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (pointArray.length < 4)
             return;
-        VGCFillPolygonint drawOp = new VGCFillPolygonint();
+        VGCFillPolygonint drawOp = VGCFillPolygonint.reused();
         drawOp.pointArray = pointArray;
-        FlutterBridge.send(this, "fillPolygonint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_POLYGONINT, drawOp);
+        drawOp.pointArray = null;
     }
 
     /**
@@ -1384,12 +1381,12 @@ public final class DartGC extends DartResource implements IGC {
     public void fillRectangle(int x, int y, int width, int height) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCFillRectangleintintintint drawOp = new VGCFillRectangleintintintint();
+        VGCFillRectangleintintintint drawOp = VGCFillRectangleintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
-        FlutterBridge.send(this, "fillRectangleintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_RECTANGLEINTINTINTINT, drawOp);
     }
 
     /**
@@ -1435,14 +1432,14 @@ public final class DartGC extends DartResource implements IGC {
     public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth, int arcHeight) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        VGCFillRoundRectangleintintintintintint drawOp = new VGCFillRoundRectangleintintintintintint();
+        VGCFillRoundRectangleintintintintintint drawOp = VGCFillRoundRectangleintintintintintint.reused();
         drawOp.x = x;
         drawOp.y = y;
         drawOp.width = width;
         drawOp.height = height;
         drawOp.arcWidth = arcWidth;
         drawOp.arcHeight = arcHeight;
-        FlutterBridge.send(this, "fillRoundRectangleintintintintintint", drawOp);
+        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT, drawOp);
     }
 
     void flush() {
@@ -2391,9 +2388,10 @@ public final class DartGC extends DartResource implements IGC {
         }
         this.background = newValue;
         data.backgroundPattern = null;
-        getValue().markDirty(VGC.BACKGROUND_PATTERN);
-        this.backgroundPattern = data.backgroundPattern;
-        getValue().markDirty(VGC.BACKGROUND_PATTERN);
+        if (!java.util.Objects.deepEquals(this.backgroundPattern, data.backgroundPattern)) {
+            this.backgroundPattern = data.backgroundPattern;
+            getValue().markDirty(VGC.BACKGROUND_PATTERN);
+        }
         data.state &= ~BACKGROUND;
     }
 
@@ -2667,9 +2665,10 @@ public final class DartGC extends DartResource implements IGC {
         }
         this.foreground = newValue;
         data.foregroundPattern = null;
-        getValue().markDirty(VGC.FOREGROUND_PATTERN);
-        this.foregroundPattern = data.foregroundPattern;
-        getValue().markDirty(VGC.FOREGROUND_PATTERN);
+        if (!java.util.Objects.deepEquals(this.foregroundPattern, data.foregroundPattern)) {
+            this.foregroundPattern = data.foregroundPattern;
+            getValue().markDirty(VGC.FOREGROUND_PATTERN);
+        }
         data.state &= ~(FOREGROUND | FOREGROUND_FILL);
     }
 
@@ -2875,24 +2874,30 @@ public final class DartGC extends DartResource implements IGC {
         if (mask == 0)
             return;
         data.lineWidth = lineWidth;
-        getValue().markDirty(VGC.LINE_WIDTH);
-        this.lineWidth = (int) data.lineWidth;
-        getValue().markDirty(VGC.LINE_WIDTH);
+        if (!java.util.Objects.deepEquals(this.lineWidth, (int) data.lineWidth)) {
+            this.lineWidth = (int) data.lineWidth;
+            getValue().markDirty(VGC.LINE_WIDTH);
+        }
         data.lineStyle = lineStyle;
-        getValue().markDirty(VGC.LINE_STYLE);
-        this.lineStyle = data.lineStyle;
-        getValue().markDirty(VGC.LINE_STYLE);
+        if (!java.util.Objects.deepEquals(this.lineStyle, data.lineStyle)) {
+            this.lineStyle = data.lineStyle;
+            getValue().markDirty(VGC.LINE_STYLE);
+        }
         data.lineCap = cap;
-        getValue().markDirty(VGC.LINE_CAP);
-        this.lineCap = data.lineCap;
-        getValue().markDirty(VGC.LINE_CAP);
+        if (!java.util.Objects.deepEquals(this.lineCap, data.lineCap)) {
+            this.lineCap = data.lineCap;
+            getValue().markDirty(VGC.LINE_CAP);
+        }
         data.lineJoin = join;
-        getValue().markDirty(VGC.LINE_JOIN);
-        this.lineJoin = data.lineJoin;
-        getValue().markDirty(VGC.LINE_JOIN);
+        if (!java.util.Objects.deepEquals(this.lineJoin, data.lineJoin)) {
+            this.lineJoin = data.lineJoin;
+            getValue().markDirty(VGC.LINE_JOIN);
+        }
         data.lineDashes = dashes;
-        this.lineDash = GCHelper.toIntDashes(data.lineDashes);
-        getValue().markDirty(VGC.LINE_DASH);
+        if (!java.util.Objects.deepEquals(this.lineDash, GCHelper.toIntDashes(data.lineDashes))) {
+            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+            getValue().markDirty(VGC.LINE_DASH);
+        }
         data.lineDashesOffset = dashOffset;
         getValue().markDirty(VGC.LINE_DASH_OFFSET);
         data.lineMiterLimit = miterLimit;
@@ -2976,25 +2981,31 @@ public final class DartGC extends DartResource implements IGC {
             if (!changed)
                 return;
             data.lineDashes = new float[dashes.length];
-            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
-            getValue().markDirty(VGC.LINE_DASH);
+            if (!java.util.Objects.deepEquals(this.lineDash, GCHelper.toIntDashes(data.lineDashes))) {
+                this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+                getValue().markDirty(VGC.LINE_DASH);
+            }
             for (int i = 0; i < dashes.length; i++) {
                 data.lineDashes[i] = dashes[i];
             }
             data.lineStyle = SWT.LINE_CUSTOM;
-            getValue().markDirty(VGC.LINE_STYLE);
-            this.lineStyle = data.lineStyle;
-            getValue().markDirty(VGC.LINE_STYLE);
+            if (!java.util.Objects.deepEquals(this.lineStyle, data.lineStyle)) {
+                this.lineStyle = data.lineStyle;
+                getValue().markDirty(VGC.LINE_STYLE);
+            }
         } else {
             if (data.lineStyle == SWT.LINE_SOLID && (lineDashes == null || lineDashes.length == 0))
                 return;
             data.lineDashes = null;
-            this.lineDash = GCHelper.toIntDashes(data.lineDashes);
-            getValue().markDirty(VGC.LINE_DASH);
+            if (!java.util.Objects.deepEquals(this.lineDash, GCHelper.toIntDashes(data.lineDashes))) {
+                this.lineDash = GCHelper.toIntDashes(data.lineDashes);
+                getValue().markDirty(VGC.LINE_DASH);
+            }
             data.lineStyle = SWT.LINE_SOLID;
-            getValue().markDirty(VGC.LINE_STYLE);
-            this.lineStyle = data.lineStyle;
-            getValue().markDirty(VGC.LINE_STYLE);
+            if (!java.util.Objects.deepEquals(this.lineStyle, data.lineStyle)) {
+                this.lineStyle = data.lineStyle;
+                getValue().markDirty(VGC.LINE_STYLE);
+            }
         }
         this.lineDash = newValue;
         data.state &= ~LINE_STYLE;
@@ -3524,7 +3535,7 @@ public final class DartGC extends DartResource implements IGC {
         if (logical <= 0 || pixels <= logical)
             return;
         bufferScale = (float) pixels / logical;
-        getValue().markDirty("bufferScale");
+        getValue().markDirty(VGC.BUFFER_SCALE);
     }
 
     float wireBufferScale() {
@@ -3590,7 +3601,7 @@ public final class DartGC extends DartResource implements IGC {
         DartPath source = path == null ? null : (DartPath) path.getImpl();
         if (source != null && source.hasText()) {
             clippingText = new Path(path.getDevice(), path, 0);
-            getValue().markDirty("clippingText");
+            getValue().markDirty(275);
             Rectangle bounds = source.textBounds();
             if (data != null && data.types.length > 0)
                 bounds = bounds.union(pathBounds(data));
@@ -3639,7 +3650,7 @@ public final class DartGC extends DartResource implements IGC {
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
         if (clippingText != null) {
-            getValue().markDirty("clippingText");
+            getValue().markDirty(275);
             clippingText.dispose();
         }
         clippingPath = null;

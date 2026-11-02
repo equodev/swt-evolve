@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VTaskItem extends VItem {
 
     protected VTaskItem() {
@@ -16,7 +12,6 @@ public class VTaskItem extends VItem {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Menu getMenu() {
         Menu val = ((DartTaskItem) impl).menu;
         if (val != null && !(val.getImpl() instanceof DartMenu))
@@ -28,7 +23,6 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).menu = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getOverlayImage() {
         Image val = ((DartTaskItem) impl).overlayImage;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -40,7 +34,6 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).overlayImage = value;
     }
 
-    @JsonAttribute(ignore = true)
     public String getOverlayText() {
         return ((DartTaskItem) impl).getOverlayText();
     }
@@ -49,7 +42,6 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).overlayText = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getProgress() {
         return ((DartTaskItem) impl).getProgress();
     }
@@ -58,7 +50,6 @@ public class VTaskItem extends VItem {
         ((DartTaskItem) impl).progress = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getProgressState() {
         return ((DartTaskItem) impl).getProgressState();
     }
@@ -68,34 +59,44 @@ public class VTaskItem extends VItem {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = TaskItem.class)
-    public static class TaskItemJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTaskItem.class, (JsonWriter.WriteObject<DartTaskItem>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTaskItem.class, (JsonReader.ReadObject<DartTaskItem>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TaskItem read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TaskItem api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

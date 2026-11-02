@@ -13,16 +13,24 @@ import 'utils/text_utils.dart';
 
 class TabItemImpl<T extends TabItemSwt, V extends VTabItem>
     extends ItemImpl<T, V> {
-  /// Helper method to build an image widget from VImage using ImageUtils
+  /// The async path, because an image painted with a GC arrives as a render reference only.
   Widget? _buildImageWidget(TabItemThemeExtension widgetTheme) {
-    if (state.image == null) return null;
-
-    return ImageUtils.buildVImage(
-      state.image,
-      size: widgetTheme.iconSize,
+    final image = state.image;
+    if (image == null) return null;
+    final size = widgetTheme.iconSize;
+    final render = ImageUtils.buildVImageAsync(
+      image,
+      size: size,
       enabled: true,
-      useBinaryImage: false,
+      useBinaryImage: true,
       renderAsIcon: true,
+    );
+    final placeholder = SizedBox(width: size, height: size);
+    return FutureBuilder<Widget?>(
+      key: ValueKey('${ImageUtils.stableImageKey(image)}_$size'),
+      future: render,
+      initialData: ImageUtils.resolvedRender(render),
+      builder: (context, snapshot) => snapshot.data ?? placeholder,
     );
   }
 

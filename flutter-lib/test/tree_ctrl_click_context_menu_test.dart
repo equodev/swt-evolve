@@ -68,6 +68,17 @@ Future<void> _modifierClick(
   await tester.pump();
 }
 
+/// A Cmd+click whose press carries the timestamp [at], as a platform's pointer events do.
+Future<void> _stampedCmdClick(WidgetTester tester, Finder target, Duration at) async {
+  await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+  final gesture = await tester.createGesture();
+  await gesture.down(tester.getCenter(target), timeStamp: at);
+  await gesture.up(timeStamp: at + const Duration(milliseconds: 50));
+  await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+  await tester.pump();
+  await tester.pump();
+}
+
 void main() {
   final macOS = TargetPlatformVariant.only(TargetPlatform.macOS);
 
@@ -117,22 +128,14 @@ void main() {
     await tester.tap(find.text('Node 0'));
     await tester.pump();
 
-    await _modifierClick(
-        tester, find.text('Node 2'), LogicalKeyboardKey.metaLeft);
-    await tester.pump();
+    await _stampedCmdClick(tester, find.text('Node 2'), const Duration(milliseconds: 100));
 
     expect(_selectedIds(value), equals([10, 12]));
     expect(find.text('Menu Action'), findsNothing);
 
-    // A second click a second after the first, by the presses' own timestamps, which is what a
-    // row counts its clicks by: not a double click.
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
-    final gesture = await tester.createGesture();
-    await gesture.down(tester.getCenter(find.text('Node 2')), timeStamp: const Duration(seconds: 1));
-    await gesture.up(timeStamp: const Duration(seconds: 1, milliseconds: 50));
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
-    await tester.pump();
-    await tester.pump();
+    // A second click 900ms after the first, by the presses' own timestamps, which is what a row
+    // counts its clicks by: not a double click.
+    await _stampedCmdClick(tester, find.text('Node 2'), const Duration(seconds: 1));
 
     expect(_selectedIds(value), equals([10]));
     expect(find.text('Menu Action'), findsNothing);

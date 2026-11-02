@@ -58,10 +58,10 @@ bool _isTypeDefault(Object? value) {
 /// Compact and not pretty because Java's `Canon` emits the same bytes for the same state: when an
 /// end-to-end probe compares Java's view of a widget against the client's, the two strings are
 /// produced by different languages and must still match character for character.
-String canonJson(Object? value) => json.encode(canon(value));
+String canonText(Object? value) => json.encode(canon(value));
 
 /// Canonical form indented, for a failure message only. Never compare with this.
 String canonPretty(Object? value) => const JsonEncoder.withIndent('  ').convert(canon(value));
 
 /// Whether two payloads carry the same state.
-bool canonEquals(Object? a, Object? b) => canonJson(a) == canonJson(b);
+bool canonEquals(Object? a, Object? b) => canonText(a) == canonText(b);

@@ -35,7 +35,7 @@ Widget _wrap(VLabel value, {required double width, required double height}) =>
     );
 
 Text _text(WidgetTester tester) =>
-    tester.widget<Text>(find.byType(Text).first);
+    tester.widget<Text>(find.byWidgetPredicate((w) => w is Text).first);
 
 void main() {
   testWidgets('a label keeps every line of a multi-line text', (tester) async {
@@ -64,7 +64,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Two lines of text must be taller than a single line of the same style.
-    final multiline = tester.getSize(find.byType(Text).first);
+    final multiline = tester.getSize(find.byWidgetPredicate((w) => w is Text).first);
 
     // A separate label rendered from scratch, not an update to the one above: the two are being
     // compared, and a widget's state does not come from whoever last built a tree around it.
@@ -75,7 +75,7 @@ void main() {
       height: 60,
     ));
     await tester.pumpAndSettle();
-    final single = tester.getSize(find.byType(Text).first);
+    final single = tester.getSize(find.byWidgetPredicate((w) => w is Text).first);
 
     expect(multiline.height, greaterThan(single.height),
         reason: 'the leading newline must produce a second, rendered line');
@@ -94,7 +94,7 @@ void main() {
 
     final text = _text(tester);
     expect(text.softWrap, isFalse);
-    expect(tester.getSize(find.byType(Text).first).height, lessThan(30),
+    expect(tester.getSize(find.byWidgetPredicate((w) => w is Text).first).height, lessThan(30),
         reason: 'a non-WRAP label must stay on one line when the text has no '
             'delimiters of its own');
   });

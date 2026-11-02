@@ -43,12 +43,11 @@ Widget _placed(VLabel label) {
 /// The point the last drop told Java it landed at.
 Offset? _lastDrop() {
   final drops = EquoCommService.commForTesting.sentFrames
-      .map(EquoCommBase.decodeFrame)
-      .where((f) => f.$1.endsWith('/Drop/drop'))
-      .map((f) => jsonDecode(f.$2) as Map<String, dynamic>)
+      .where((frame) => EquoCommBase.decodeFrame(frame).$1.endsWith('/Drop/drop'))
+      .map(EquoCommBase.decodeEvent)
       .toList();
   if (drops.isEmpty) return null;
-  return Offset((drops.last['x'] as num).toDouble(), (drops.last['y'] as num).toDouble());
+  return Offset((drops.last.x ?? 0).toDouble(), (drops.last.y ?? 0).toDouble());
 }
 
 void main() {

@@ -84,7 +84,7 @@ class MenuImplementationNativeTest {
     }
 
     /** The properties {@code change} marks to be sent, in the order it marks them. */
-    private static List<String> changesAfter(Menu menu, Runnable change) {
+    private static List<Integer> changesAfter(Menu menu, Runnable change) {
         VMenu value = ((DartMenu) menu.getImpl()).getValue();
         value.clearDirty();
         change.run();

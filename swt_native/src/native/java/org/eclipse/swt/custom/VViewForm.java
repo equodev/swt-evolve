@@ -3,11 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VViewForm extends VComposite {
 
     protected VViewForm() {
@@ -17,7 +13,6 @@ public class VViewForm extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getBorderVisible() {
         return ((DartViewForm) impl).showBorder;
     }
@@ -26,7 +21,6 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).showBorder = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control getContent() {
         Control val = ((DartViewForm) impl).content;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -38,7 +32,6 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).content = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control getTopCenter() {
         Control val = ((DartViewForm) impl).topCenter;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -50,7 +43,6 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).topCenter = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getTopCenterSeparate() {
         return ((DartViewForm) impl).separateTopCenter;
     }
@@ -59,7 +51,6 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).separateTopCenter = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control getTopLeft() {
         Control val = ((DartViewForm) impl).topLeft;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -71,7 +62,6 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).topLeft = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control getTopRight() {
         Control val = ((DartViewForm) impl).topRight;
         if (val != null && !(val.getImpl() instanceof DartControl))
@@ -84,34 +74,44 @@ public class VViewForm extends VComposite {
     }
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = ViewForm.class)
-    public static class ViewFormJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartViewForm.class, (JsonWriter.WriteObject<DartViewForm>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartViewForm.class, (JsonReader.ReadObject<DartViewForm>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWire(w, key);
+    }
 
-        public static ViewForm read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, ViewForm api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] {});
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

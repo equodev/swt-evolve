@@ -120,6 +120,7 @@ class SpinnerClientLocaleFlutterTest {
         p.width = 1280;
         p.height = 800;
         p.isFirst = isFirst;
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.locale = locale;
         comm.fireContaining("ClientReady", p);
     }

@@ -362,7 +362,10 @@ public class DartTransform extends DartResource implements ITransform {
     public void shear(float shearX, float shearY) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        multiplyBy(1, shearY, shearX, 1, 0, 0);
+        if ("win32".equals(SWT.getPlatform()))
+            multiplyBy(1, shearY, shearX, 1, 0, 0);
+        else
+            multiplyBy(1, shearX, shearY, 1, 0, 0);
     }
 
     /**

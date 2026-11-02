@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/owner_draw_overlay.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingTableSwt extends TableSwt<VTable> {
   const _CapturingTableSwt({required super.value, required this.onEvent});
@@ -22,7 +23,7 @@ class _CapturingTableSwt extends TableSwt<VTable> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VTable val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VTable val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VTable _table(List<int>? paintedTexts) => VTable()

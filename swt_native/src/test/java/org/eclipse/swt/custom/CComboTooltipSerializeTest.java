@@ -4,7 +4,7 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.*;
 import static org.eclipse.swt.widgets.Mocks.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 
 /**
  * Regression test for issue #610. Per-item tooltips handed to CCombo via
@@ -23,10 +23,10 @@ class CComboTooltipSerializeTest extends SerializeTestBase {
         String[] tooltips = {"<h4>click</h4><p>Clicks it.</p>", "Types keys."};
         w.setData(ITEM_TOOLTIPS_KEY, tooltips);
 
-        String json = serialize(w);
-        assertThatJson(json).node("itemTooltips").isArray().hasSize(2);
-        assertThatJson(json).node("itemTooltips[0]").isEqualTo(tooltips[0]);
-        assertThatJson(json).node("itemTooltips[1]").isEqualTo(tooltips[1]);
+        java.util.Map<String, Object> state = serialize(w);
+        assertThatWire(state).node("itemTooltips").hasSize(2);
+        assertThatWire(state).node("itemTooltips[0]").isEqualTo(tooltips[0]);
+        assertThatWire(state).node("itemTooltips[1]").isEqualTo(tooltips[1]);
     }
 
     @Test
@@ -35,8 +35,8 @@ class CComboTooltipSerializeTest extends SerializeTestBase {
         w.setData(ITEM_TOOLTIPS_KEY, new String[] {"first"});
         w.setData(ITEM_TOOLTIPS_KEY, new String[] {"second", "third"});
 
-        String json = serialize(w);
-        assertThatJson(json).node("itemTooltips").isArray().hasSize(2);
-        assertThatJson(json).node("itemTooltips[0]").isEqualTo("second");
+        java.util.Map<String, Object> state = serialize(w);
+        assertThatWire(state).node("itemTooltips").hasSize(2);
+        assertThatWire(state).node("itemTooltips[0]").isEqualTo("second");
     }
 }

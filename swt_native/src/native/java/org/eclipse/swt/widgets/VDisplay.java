@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import com.dslplatform.json.*;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.Serializer;
@@ -110,100 +109,54 @@ public class VDisplay {
         return v;
     }
 
-    @JsonConverter(target = VDisplay.class)
-    public static class DisplayJson implements Configuration {
+    /** Property numbers, as the generated wire table gives them. */
+    static final int SHELLS = dev.equo.swt.WireTable.DISPLAY_SHELLS;
+    static final int POPUPS = dev.equo.swt.WireTable.DISPLAY_POPUPS;
+    static final int SYSTEM_MENU = dev.equo.swt.WireTable.DISPLAY_SYSTEM_MENU;
+    static final int TOOLTIPS = dev.equo.swt.WireTable.DISPLAY_TOOLTIPS;
+    static final int ACTIVE_SHELL_ID = dev.equo.swt.WireTable.DISPLAY_ACTIVE_SHELL_ID;
+    static final int MAIN_SHELL_ID = dev.equo.swt.WireTable.DISPLAY_MAIN_SHELL_ID;
+    static final int WINDOWED_SHELL_IDS = dev.equo.swt.WireTable.DISPLAY_WINDOWED_SHELL_IDS;
+    static final int CONFIG = dev.equo.swt.WireTable.DISPLAY_CONFIG;
+    static final int FOCUS_HOLDER_ID = dev.equo.swt.WireTable.DISPLAY_FOCUS_HOLDER_ID;
 
-        private static volatile DslJson<?> dslJson;
+    /** The properties a record of the binary widget wire describes the display by. */
+    public static final int[] WIRE_KEYS = {
+            SHELLS, POPUPS, SYSTEM_MENU, TOOLTIPS, ACTIVE_SHELL_ID, MAIN_SHELL_ID, WINDOWED_SHELL_IDS, CONFIG, FOCUS_HOLDER_ID,
+    };
 
-        @Override
-        public void configure(DslJson json) {
-            dslJson = json;
-            json.registerWriter(VDisplay.class, (JsonWriter.WriteObject<VDisplay>) (writer, v) -> write(writer, v));
-            json.registerReader(VDisplay.class, (JsonReader.ReadObject<VDisplay>) reader -> null);
+    /** Writes one of {@link #WIRE_KEYS}, as a widget's keyed writer does. */
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch (key) {
+            case SHELLS:
+                w.refs(shells);
+                return true;
+            case POPUPS:
+                w.refs(popups);
+                return true;
+            case SYSTEM_MENU:
+                w.ref(systemMenu);
+                return true;
+            case TOOLTIPS:
+                w.refs(tooltips);
+                return true;
+            case ACTIVE_SHELL_ID:
+                w.write(activeShellId);
+                return true;
+            case MAIN_SHELL_ID:
+                w.write(mainShellId);
+                return true;
+            case WINDOWED_SHELL_IDS:
+                w.write(windowedShellIds);
+                return true;
+            case CONFIG:
+                w.object(config);
+                return true;
+            case FOCUS_HOLDER_ID:
+                w.write(focusHolderId);
+                return true;
         }
-
-        public static VDisplay read(JsonReader<?> reader) {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, VDisplay v) {
-            if (v == null) {
-                writer.writeNull();
-                return;
-            }
-            writer.writeByte((byte) '{');
-            writer.writeAscii("\"id\":");
-            com.dslplatform.json.NumberConverter.serialize(v.id, writer);
-            writer.writeAscii(",\"swt\":");
-            com.dslplatform.json.StringConverter.serialize(v.swt, writer);
-            writer.writeAscii(",\"shells\":");
-            if (v.shells == null || v.shells.length == 0) {
-                writer.writeAscii("[]");
-            } else {
-                writer.writeByte((byte) '[');
-                for (int i = 0; i < v.shells.length; i++) {
-                    if (i > 0) writer.writeByte((byte) ',');
-                    VShell.ShellJson.write(writer, v.shells[i]);
-                }
-                writer.writeByte((byte) ']');
-            }
-            writer.writeAscii(",\"popups\":");
-            if (v.popups == null || v.popups.length == 0) {
-                writer.writeAscii("[]");
-            } else {
-                writer.writeByte((byte) '[');
-                for (int i = 0; i < v.popups.length; i++) {
-                    if (i > 0) writer.writeByte((byte) ',');
-                    VMenu.MenuJson.write(writer, v.popups[i]);
-                }
-                writer.writeByte((byte) ']');
-            }
-            if (v.systemMenu != null) {
-                writer.writeAscii(",\"systemMenu\":");
-                VMenu.MenuJson.write(writer, v.systemMenu);
-            }
-            writer.writeAscii(",\"tooltips\":");
-            if (v.tooltips == null || v.tooltips.length == 0) {
-                writer.writeAscii("[]");
-            } else {
-                writer.writeByte((byte) '[');
-                for (int i = 0; i < v.tooltips.length; i++) {
-                    if (i > 0) writer.writeByte((byte) ',');
-                    VToolTip.ToolTipJson.write(writer, v.tooltips[i]);
-                }
-                writer.writeByte((byte) ']');
-            }
-            writer.writeAscii(",\"activeShellId\":");
-            com.dslplatform.json.NumberConverter.serialize(v.activeShellId, writer);
-            writer.writeAscii(",\"mainShellId\":");
-            com.dslplatform.json.NumberConverter.serialize(v.mainShellId, writer);
-            writer.writeAscii(",\"focusHolderId\":");
-            com.dslplatform.json.NumberConverter.serialize(v.focusHolderId, writer);
-            if (v.windowedShellIds != null && v.windowedShellIds.length > 0) {
-                writer.writeAscii(",\"windowedShellIds\":");
-                writer.writeByte((byte) '[');
-                for (int i = 0; i < v.windowedShellIds.length; i++) {
-                    if (i > 0) writer.writeByte((byte) ',');
-                    com.dslplatform.json.NumberConverter.serialize(v.windowedShellIds[i], writer);
-                }
-                writer.writeByte((byte) ']');
-            }
-            writeConfig(writer, v.config);
-            writer.writeByte((byte) '}');
-        }
-
-        @SuppressWarnings("unchecked")
-        private static void writeConfig(JsonWriter writer, ConfigFlags config) {
-            DslJson<?> json = dslJson;
-            if (config == null) return;
-            JsonWriter.WriteObject<ConfigFlags> converter = json == null ? null
-                    : (JsonWriter.WriteObject<ConfigFlags>) json.tryFindWriter(ConfigFlags.class);
-            if (converter == null) {
-                System.err.println("[VDisplay] no ConfigFlags converter; the client will render unthemed");
-                return;
-            }
-            writer.writeAscii(",\"config\":");
-            converter.write(writer, config);
-        }
+        return false;
     }
+
 }

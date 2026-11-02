@@ -166,10 +166,15 @@ class CompressedTabRow extends MultiChildRenderObjectWidget {
     required this.selectedIndex,
     required this.onOverflowChanged,
     required this.onTabsMoved,
+    this.overflowReserve = 0,
     super.children,
   });
 
   final int selectedIndex;
+
+  /// Width the header takes from this row only because the tabs overflow (the chevron). Overflow is
+  /// decided as if that width were free, as SWT reserves the chevron only once it shows.
+  final double overflowReserve;
 
   /// Called after layout when the tabs stop or start fitting at their minimum widths, which is when
   /// SWT shows the chevron.
@@ -181,12 +186,13 @@ class CompressedTabRow extends MultiChildRenderObjectWidget {
 
   @override
   RenderCompressedTabRow createRenderObject(BuildContext context) =>
-      RenderCompressedTabRow(selectedIndex, onOverflowChanged, onTabsMoved);
+      RenderCompressedTabRow(selectedIndex, onOverflowChanged, onTabsMoved, overflowReserve);
 
   @override
   void updateRenderObject(BuildContext context, RenderCompressedTabRow renderObject) {
     renderObject
       ..selectedIndex = selectedIndex
+      ..overflowReserve = overflowReserve
       ..onOverflowChanged = onOverflowChanged
       ..onTabsMoved = onTabsMoved;
   }
@@ -200,12 +206,20 @@ class RenderCompressedTabRow extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, _TabSlot>,
         RenderBoxContainerDefaultsMixin<RenderBox, _TabSlot> {
-  RenderCompressedTabRow(this._selectedIndex, this.onOverflowChanged, this.onTabsMoved);
+  RenderCompressedTabRow(
+      this._selectedIndex, this.onOverflowChanged, this.onTabsMoved, this._overflowReserve);
 
   int _selectedIndex;
   set selectedIndex(int value) {
     if (value == _selectedIndex) return;
     _selectedIndex = value;
+    markNeedsLayout();
+  }
+
+  double _overflowReserve;
+  set overflowReserve(double value) {
+    if (value == _overflowReserve) return;
+    _overflowReserve = value;
     markNeedsLayout();
   }
 
@@ -253,7 +267,7 @@ class RenderCompressedTabRow extends RenderBox
   void performLayout() {
     final tabs = _tabs;
     final count = tabs.length;
-    final area = constraints.maxWidth;
+    final free = constraints.maxWidth + _overflowReserve;
     final intrinsicHeight = constraints.hasBoundedHeight ? constraints.maxHeight : double.infinity;
     final selected = _selectedIndex >= 0 && _selectedIndex < count ? _selectedIndex : 0;
     final priority = [if (count > 0) selected, for (var i = 0; i < count; i++) if (i != selected) i];
@@ -263,9 +277,10 @@ class RenderCompressedTabRow extends RenderBox
     for (final i in priority) {
       minWidths[i] = tabs[i].getMinIntrinsicWidth(intrinsicHeight);
       minSum += minWidths[i];
-      if (minSum > area) break;
+      if (minSum > free) break;
     }
-    final overflow = count > 0 && minSum > area;
+    final overflow = count > 0 && minSum > free;
+    final area = overflow ? constraints.maxWidth : free;
     final List<double> widths;
     final showing = List<bool>.filled(count, true);
     if (overflow) {
@@ -336,6 +351,7 @@ class RenderCompressedTabRow extends RenderBox
       slot.offset = Offset(slot.offset.dx, (height - tab.size.height) / 2);
     }
     size = constraints.constrain(Size(x, height));
+    _overrunsSize = x > size.width;
 
     final placed = [for (final tab in tabs) (tab.parentData! as _TabSlot).offset & tab.size];
     if (!listEquals(placed, _reportedTabs)) {
@@ -351,8 +367,28 @@ class RenderCompressedTabRow extends RenderBox
     }
   }
 
+  // Set for the frame the tabs stop overflowing: laid out for the chevron's width, still drawn.
+  bool _overrunsSize = false;
+  final LayerHandle<ClipRectLayer> _clipLayer = LayerHandle<ClipRectLayer>();
+
+  @override
+  void dispose() {
+    _clipLayer.layer = null;
+    super.dispose();
+  }
+
   @override
   void paint(PaintingContext context, Offset offset) {
+    if (_overrunsSize) {
+      _clipLayer.layer = context.pushClipRect(needsCompositing, offset, Offset.zero & size, _paintTabs,
+          oldLayer: _clipLayer.layer);
+    } else {
+      _clipLayer.layer = null;
+      _paintTabs(context, offset);
+    }
+  }
+
+  void _paintTabs(PaintingContext context, Offset offset) {
     var child = firstChild;
     while (child != null) {
       final slot = child.parentData! as _TabSlot;

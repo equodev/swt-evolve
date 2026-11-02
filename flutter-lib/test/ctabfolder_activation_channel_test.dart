@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -18,18 +19,16 @@ import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 const _left = 1000;
 const _right = 2000;
 
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
+void _deliver(String actionId, Object payload) {
+  final body = TaggedValues.encode(payload);
+  final frame = channels.frame(actionId, body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 
@@ -64,7 +63,7 @@ VCTabFolder _folder(int id) => VCTabFolder()
   ];
 
 Future<void> _pump(WidgetTester tester, List<int> ids) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Row(
       children: [
@@ -72,7 +71,7 @@ Future<void> _pump(WidgetTester tester, List<int> ids) async {
           SizedBox(width: 300, height: 120, child: CTabFolderSwt<VCTabFolder>(value: _folder(id))),
       ],
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   while (tester.takeException() != null) {}
 }
@@ -101,7 +100,7 @@ Future<void> _focus(WidgetTester tester, int textId) async {
 }
 
 Future<void> _activate(WidgetTester tester, int folderId, bool active) async {
-  _receiveJson('CTabFolder/$folderId/activation', {'active': active});
+  _deliver('CTabFolder/$folderId/activation', {'active': active});
   await tester.pump();
   await tester.pump();
   while (tester.takeException() != null) {}

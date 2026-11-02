@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/ctabfolder.dart';
 import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   const _CapturingCTabFolderSwt({required super.value, required this.onEvent});
@@ -21,7 +22,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 const _labels = [
@@ -73,7 +74,7 @@ void main() {
 
     // The second tab, wherever the scroll has left it.
     final tab = find
-        .ancestor(of: find.text(_labels[1]), matching: find.byType(AnimatedContainer))
+        .ancestor(of: find.text(_labels[1]), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
         .first;
     final drawn = tester.getRect(tab);
     final folder = tester.getRect(
@@ -132,7 +133,7 @@ void main() {
     Rect? drawn;
     for (final label in _labels) {
       final finder = find
-          .ancestor(of: find.text(label), matching: find.byType(AnimatedContainer))
+          .ancestor(of: find.text(label), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
           .first;
       if (finder.evaluate().isEmpty) continue;
       final rect = tester.getRect(finder).intersect(folder);
@@ -182,7 +183,7 @@ void main() {
     while (tester.takeException() != null) {}
 
     final firstTab = find
-        .ancestor(of: find.text(_labels.first), matching: find.byType(AnimatedContainer))
+        .ancestor(of: find.text(_labels.first), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
         .first;
     // Scrolled so most of the first tab is off the left edge, leaving a sliver drawn.
     final scrolled = tester.getRect(firstTab).width - 20;

@@ -1,8 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import '../../gen/event.dart';
 import '../../gen/point.dart';
+import '../control_evolve.dart';
 import 'double_tap_detector.dart';
+import 'font_utils.dart';
 
 /// The code unit of '&'.
 const _ampersand = 0x26;
@@ -70,18 +73,25 @@ class DoubleClickWordSelector extends StatefulWidget {
   final Widget child;
   final TextEditingController controller;
   final FocusNode? focusNode;
-  final String text;
   final void Function(int start, int end) onWordSelected;
   final VoidCallback? onTripleTap;
+
+  /// Runs on a secondary press (right button, or Ctrl+Click on macOS), before it focuses the field.
+  final VoidCallback? onSecondaryPress;
+
+  /// The clicks counted so far, when the owner also counts presses that arrive before this field is
+  /// mounted; positions are global.
+  final DoubleTapDetector? clicks;
 
   const DoubleClickWordSelector({
     super.key,
     required this.child,
     required this.controller,
     this.focusNode,
-    required this.text,
     required this.onWordSelected,
     this.onTripleTap,
+    this.onSecondaryPress,
+    this.clicks,
   });
 
   @override
@@ -90,7 +100,9 @@ class DoubleClickWordSelector extends StatefulWidget {
 }
 
 class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
-  final _detector = DoubleTapDetector(slop: 20.0);
+  final _ownClicks = DoubleTapDetector(slop: 20.0);
+
+  DoubleTapDetector get _detector => widget.clicks ?? _ownClicks;
   bool _pendingWordSelect = false;
   bool _tripleClickPending = false;
   bool _guardSelectAll = false;
@@ -144,14 +156,14 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
       final re = _findRenderEditable(renderBox);
       if (re != null) {
         final textPos = re.getPositionForPoint(renderBox.localToGlobal(localPos));
-        return textPos.offset.clamp(0, widget.text.length);
+        return textPos.offset.clamp(0, widget.controller.text.length);
       }
     }
-    return widget.controller.selection.baseOffset.clamp(0, widget.text.length);
+    return widget.controller.selection.baseOffset.clamp(0, widget.controller.text.length);
   }
 
   void _trackTap(PointerDownEvent e) {
-    final count = _detector.registerTap(position: e.localPosition);
+    final count = _detector.registerTap(position: e.position);
     if (count == 3) {
       _pendingWordSelect = false;
       _tripleClickPending = true;
@@ -177,7 +189,7 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
     if (!mounted) return;
     _applyAfterFocus(() {
       _tripleClickPending = false;
-      final len = widget.text.length;
+      final len = widget.controller.text.length;
       _selectAllLen = len;
       _guardSelectAll = true;
       widget.controller.selection =
@@ -200,15 +212,87 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
     _applyAfterFocus(() {
       if (_tripleClickPending) return;
       final offset = _offsetAt(localPos);
-      final (start, end) = getWordBoundaries(widget.text, offset);
+      final (start, end) = getWordBoundaries(widget.controller.text, offset);
       widget.controller.selection = TextSelection(baseOffset: start, extentOffset: end);
       widget.onWordSelected(start, end);
     });
   }
 
+  EditableTextState? _editableText() {
+    EditableTextState? found;
+    void visit(Element element) {
+      if (found != null) return;
+      if (element is StatefulElement && element.state is EditableTextState) {
+        found = element.state as EditableTextState;
+        return;
+      }
+      element.visitChildren(visit);
+    }
+
+    context.visitChildElements(visit);
+    return found;
+  }
+
+  /// A secondary press focuses the field as a click does, with no select-all and no caret move.
+  void _secondaryPress(PointerDownEvent e) {
+    widget.onSecondaryPress?.call();
+    if (widget.focusNode?.hasFocus ?? true) return;
+    _editableText()?.requestKeyboard();
+  }
+
+  void _secondaryClick(PointerUpEvent e) {
+    final control = context.findAncestorStateOfType<ControlImpl>();
+    if (control != null && control.state.menu != null) control.openContextMenu(e.position);
+  }
+
   @override
-  Widget build(BuildContext context) =>
-      Listener(onPointerDown: _trackTap, child: widget.child);
+  Widget build(BuildContext context) => Listener(
+        onPointerDown: _trackTap,
+        child: RawGestureDetector(
+          gestures: {
+            _SecondaryClickClaim: GestureRecognizerFactoryWithHandlers<_SecondaryClickClaim>(
+              () => _SecondaryClickClaim(debugOwner: this),
+              (claim) => claim
+                ..onPress = _secondaryPress
+                ..onRelease = _secondaryClick,
+            ),
+          },
+          child: widget.child,
+        ),
+      );
+}
+
+/// Wins every secondary click (a right press, or Ctrl+Click on macOS) on the spot, so the field's own
+/// recognizer never gets it: Flutter's field moves the caret on it and opens its own toolbar, while a
+/// native edit field keeps its caret and opens the control's Menu.
+class _SecondaryClickClaim extends OneSequenceGestureRecognizer {
+  _SecondaryClickClaim({super.debugOwner})
+      : super(
+            allowedButtonsFilter: (buttons) =>
+                (buttons == kPrimaryButton || buttons == kSecondaryButton) &&
+                ControlImpl.isMenuDetectTrigger(ControlImpl.swtButtonOf(buttons)));
+
+  ValueChanged<PointerDownEvent>? onPress;
+  ValueChanged<PointerUpEvent>? onRelease;
+
+  @override
+  void addAllowedPointer(PointerDownEvent event) {
+    super.addAllowedPointer(event);
+    resolve(GestureDisposition.accepted);
+    onPress?.call(event);
+  }
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event is PointerUpEvent) onRelease?.call(event);
+    if (event is PointerUpEvent || event is PointerCancelEvent) stopTrackingPointer(event.pointer);
+  }
+
+  @override
+  void didStopTrackingLastPointer(int pointer) {}
+
+  @override
+  String get debugDescription => 'secondary click claim';
 }
 
 /// Splits "Label\tShortcut" into (label, shortcut). [label] keeps its `&` marker, for a
@@ -219,3 +303,119 @@ class _DoubleClickWordSelectorState extends State<DoubleClickWordSelector> {
   if (idx < 0) return (label: text, shortcut: null);
   return (label: text.substring(0, idx), shortcut: text.substring(idx + 1));
 }
+
+/// The laid-out width of [text] on one line in [style], measured once per text and style.
+///
+/// A build that checks whether its text fits its bounds would otherwise shape the paragraph on every
+/// rebuild, whatever changed; most rebuilds leave both the same.
+double singleLineTextWidth(String text, TextStyle? style) => singleLineTextSize(text, style).width;
+
+/// The laid-out size of [text] on one line in [style]; see [singleLineTextWidth].
+Size singleLineTextSize(String text, TextStyle? style) => _measure(text, style, 1);
+
+/// The laid-out size of [text] in [style] with no width limit: its widest line, and all its lines.
+Size textSize(String text, TextStyle? style) => _measure(text, style, null);
+
+/// [singleLineTextSize] for many texts in one [style]: the style is looked up once, not per text.
+Size Function(String text) singleLineTextSizes(TextStyle? style) {
+  final measures = _measuresFor(style);
+  return (text) => _measureIn(measures, text, style, 1);
+}
+
+/// [singleLineTextWidth], asking [shaped] first: the width text about to be drawn reports when it is
+/// shaped exactly as this measure would shape it, or null when it is not. Remembered like a measure.
+double shapedSingleLineTextWidth(String text, TextStyle style, double? Function() shaped) {
+  var measures = _measuresFor(style);
+  final known = measures.shapedWidths[text];
+  if (known != null) return known;
+  final width = shaped() ?? _measureIn(measures, text, style, 1).width;
+  _listenForFonts();
+  if (_keptSizes >= _maxTextSizes) _dropMeasures();
+  measures = _measuresFor(style);
+  _keptSizes++;
+  return measures.shapedWidths[text] = width;
+}
+
+void _listenForFonts() {
+  if (_listeningForFonts) return;
+  _listeningForFonts = FontUtils.listenToSystemFonts(() {
+    _dropMeasures();
+    textMeasureEpoch++;
+  });
+}
+
+/// Moves on whenever the fonts change, and with them what text measures: a width kept outside these
+/// caches is valid only for the epoch it was measured in.
+int textMeasureEpoch = 0;
+
+Size _measure(String text, TextStyle? style, int? maxLines) =>
+    _measureIn(_measuresFor(style), text, style, maxLines);
+
+Size _measureIn(_Measures measures, String text, TextStyle? style, int? maxLines) {
+  final key = (text, maxLines);
+  final cached = measures.sizes[key];
+  if (cached != null) return cached;
+  _listenForFonts();
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    maxLines: maxLines,
+    textDirection: TextDirection.ltr,
+    // As the Text widget that paints it scales it under the zoom, or box and text disagree by it.
+    textScaler: FontUtils.textWidgetScaler,
+  )..layout();
+  final size = Size(painter.width, painter.height);
+  painter.dispose();
+  // Emptied rather than trimmed one entry at a time: removing from the front of an ordered map
+  // leaves holes that every later trim has to step over.
+  if (_keptSizes >= _maxTextSizes) {
+    _dropMeasures();
+    measures = _measuresFor(style);
+  }
+  _keptSizes++;
+  measures.sizes[key] = size;
+  return size;
+}
+
+/// The sizes kept for one style, from the [_generation] they were measured in.
+class _Measures {
+  _Measures(this.generation);
+
+  final int generation;
+  final Map<(String, int?), Size> sizes = {};
+
+  /// See [shapedSingleLineTextWidth].
+  final Map<String, double> shapedWidths = {};
+}
+
+/// The kept sizes for [style]. A style is hashed and compared field by field, so the instance asked
+/// about remembers its entry: callers that keep their style find it without either.
+_Measures _measuresFor(TextStyle? style) {
+  // A size measured at another zoom is not this one's.
+  final scale = FontUtils.uiScale;
+  if (scale != _measuredScale) {
+    _measuredScale = scale;
+    _dropMeasures();
+    textMeasureEpoch++;
+  }
+  if (style != null) {
+    final known = _measuresOfStyle[style];
+    if (known != null && known.generation == _generation) return known;
+  }
+  final measures = _measuresByStyle[style] ??= _Measures(_generation);
+  if (style != null) _measuresOfStyle[style] = measures;
+  return measures;
+}
+
+void _dropMeasures() {
+  _measuresByStyle.clear();
+  _keptSizes = 0;
+  _generation++;
+}
+
+const _maxTextSizes = 4096;
+final Map<TextStyle?, _Measures> _measuresByStyle = {};
+final Expando<_Measures> _measuresOfStyle = Expando();
+int _keptSizes = 0;
+int _generation = 0;
+double _measuredScale = 1.0;
+bool _listeningForFonts = false;

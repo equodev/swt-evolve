@@ -17,8 +17,6 @@ import org.eclipse.swt.widgets.ControlHelper;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +26,6 @@ import java.util.Map;
  */
 public class StyledTextHelper {
 
-    private static final Serializer serializer = new Serializer();
     private static final int FONT_METRICS_BASE = 10;
     private static final int GLYPH_START = 32;
 
@@ -152,15 +149,109 @@ public class StyledTextHelper {
         change.put("text", text);
         change.put("charCount", styledText.content.getCharCount() - event.replaceCharCount + text.length());
         carriedAcross(styledText, event.start, event.replaceCharCount, text.length());
-        FlutterBridge.sendNow(styledText, "TextChange", change);
+        FlutterBridge.sendNow(styledText, dev.equo.swt.WireTable.CHANNEL_TEXT_CHANGE, change);
     }
 
     /** Answers a client whose text replica drifted: the whole document, once. */
     public static void registerResendTextHandler(DartStyledText styledText) {
-        FlutterBridge.onPayload(styledText, "ResendText", payload ->
+        FlutterBridge.onPayload(styledText, dev.equo.swt.WireTable.CHANNEL_RESEND_TEXT, payload ->
                 styledText.getDisplay().asyncExec(() -> {
                     if (!styledText.isDisposed()) styledText.getValue().markDirty(VStyledText.TEXT);
                 }));
+    }
+
+    /**
+     * One push of the client's table: the whole table ({@link #lines}), or a change to the one held
+     * ({@link #rows} replacing {@link #rowsReplaced} rows from {@link #rowStart}, the rows after them
+     * shifted). A row the client described in a way this cannot read is null.
+     */
+    static final class GeometryPush {
+        int version;
+        int base = -1;
+        int charCount = -1;
+        double contentWidth, contentHeight;
+        VisualLine[] lines;
+        int rowStart = -1, rowsReplaced = -1, lineDelta, offsetDelta;
+        double yDelta;
+        VisualLine[] rows;
+    }
+
+    /** The binary push: see the client's {@code _writeGeometry}. */
+    static GeometryPush readPush(byte[] bytes) {
+        dev.equo.swt.WireReader r = new dev.equo.swt.WireReader(bytes, 0, bytes.length);
+        GeometryPush p = new GeometryPush();
+        boolean splice = r.u8() == 1;
+        p.version = r.int32();
+        if (splice) p.base = r.int32();
+        p.charCount = r.int32();
+        p.contentWidth = r.float64();
+        p.contentHeight = r.float64();
+        if (splice) {
+            p.rowStart = r.int32();
+            p.rowsReplaced = r.int32();
+            p.lineDelta = r.int32();
+            p.offsetDelta = r.int32();
+            p.yDelta = r.float64();
+        }
+        VisualLine[] rows = new VisualLine[r.varint()];
+        for (int i = 0; i < rows.length; i++) rows[i] = readRow(r);
+        if (splice) p.rows = rows;
+        else p.lines = rows;
+        return p;
+    }
+
+    private static VisualLine readRow(dev.equo.swt.WireReader r) {
+        VisualLine v = new VisualLine();
+        v.logicalLine = r.int32();
+        v.start = r.int32();
+        v.end = r.int32();
+        v.x = r.float64();
+        v.y = r.float64();
+        v.w = r.float64();
+        v.h = r.float64();
+        v.vi = r.int32();
+        int charX = r.u8();
+        int count = v.end - v.start + 1;
+        boolean valid = v.logicalLine >= 0 && v.start >= 0 && count > 0;
+        if (charX == 1) {
+            int n = r.varint();
+            double[] cx = new double[n];
+            for (int i = 0; i < n; i++) cx[i] = r.float64();
+            valid &= n == count;
+            v.charX = cx;
+        } else if (charX == 2) {
+            // A uniform-advance row (monospace) travels as origin and step; multiplying out keeps
+            // positions exact, where summing rounded advances would accumulate error.
+            double origin = r.float64();
+            double advance = r.float64();
+            if (valid) {
+                v.charX = new double[count];
+                for (int i = 0; i < count; i++) v.charX[i] = origin + i * advance;
+            }
+        }
+        return valid ? v : null;
+    }
+
+    /** A push given as a map of the properties the client's table holds. */
+    static GeometryPush pushOf(Map<String, Object> map) {
+        GeometryPush p = new GeometryPush();
+        p.charCount = asInt(map.get("charCount"), -1);
+        p.contentWidth = asDouble(map.get("contentWidth"), 0);
+        p.contentHeight = asDouble(map.get("contentHeight"), 0);
+        p.version = asInt(map.get("v"), 0);
+        if (map.get("lines") instanceof List<?>) {
+            p.lines = ((List<?>) map.get("lines")).stream().map(StyledTextHelper::readVisualLine).toArray(VisualLine[]::new);
+            return p;
+        }
+        p.base = asInt(map.get("base"), -1);
+        p.rowStart = asInt(map.get("rowStart"), -1);
+        p.rowsReplaced = asInt(map.get("rowsReplaced"), -1);
+        p.lineDelta = asInt(map.get("lineDelta"), 0);
+        p.offsetDelta = asInt(map.get("offsetDelta"), 0);
+        p.yDelta = asDouble(map.get("yDelta"), 0);
+        if (map.get("rows") instanceof List<?>)
+            p.rows = ((List<?>) map.get("rows")).stream().map(StyledTextHelper::readVisualLine).toArray(VisualLine[]::new);
+        return p;
     }
 
     /** One row of the pushed table, or null when the client described it in a way this cannot read. */
@@ -201,27 +292,22 @@ public class StyledTextHelper {
      * The held table with one run of rows replaced and the rows after it shifted. Null, after asking
      * for the whole table, when the change does not fit what is held.
      */
-    private static VisualLine[] splicedLines(DartStyledText styledText, Map<String, Object> map,
-                                             int[] changedLines) {
+    private static VisualLine[] splicedLines(DartStyledText styledText, GeometryPush p, int[] changedLines) {
         TextGeometry held = textGeometries.get(styledText);
-        Object rowsObj = map.get("rows");
-        int rowStart = asInt(map.get("rowStart"), -1);
-        int replaced = asInt(map.get("rowsReplaced"), -1);
-        if (held == null || held.lines == null || !(rowsObj instanceof List<?>)
-                || held.version != asInt(map.get("base"), -1)
+        int rowStart = p.rowStart;
+        int replaced = p.rowsReplaced;
+        if (held == null || held.lines == null || p.rows == null || held.version != p.base
                 || rowStart < 0 || replaced < 0 || rowStart + replaced > held.lines.length) {
             requestWholeGeometry(styledText);
             return null;
         }
-        List<?> rows = (List<?>) rowsObj;
-        int lineDelta = asInt(map.get("lineDelta"), 0);
-        int offsetDelta = asInt(map.get("offsetDelta"), 0);
-        double yDelta = asDouble(map.get("yDelta"), 0);
-        VisualLine[] merged = new VisualLine[held.lines.length - replaced + rows.size()];
+        int lineDelta = p.lineDelta;
+        int offsetDelta = p.offsetDelta;
+        double yDelta = p.yDelta;
+        VisualLine[] merged = new VisualLine[held.lines.length - replaced + p.rows.length];
         System.arraycopy(held.lines, 0, merged, 0, rowStart);
         int at = rowStart;
-        for (Object o : rows) {
-            VisualLine v = readVisualLine(o);
+        for (VisualLine v : p.rows) {
             if (v == null) {
                 requestWholeGeometry(styledText);
                 return null;
@@ -258,7 +344,7 @@ public class StyledTextHelper {
     /** Asks the client for the whole table: what it holds here cannot be changed into the new one. */
     private static void requestWholeGeometry(DartStyledText styledText) {
         textGeometries.remove(styledText);
-        FlutterBridge.sendNow(styledText, "ResendGeometry", java.util.Collections.emptyMap());
+        FlutterBridge.sendNow(styledText, dev.equo.swt.WireTable.CHANNEL_RESEND_GEOMETRY, java.util.Collections.emptyMap());
     }
 
     private static final Map<DartStyledText, TextGeometry> textGeometries =
@@ -266,54 +352,37 @@ public class StyledTextHelper {
 
     /** Registers the TextGeometry handler; mirrors {@link #registerStateUpdateHandler}. */
     public static void registerTextGeometryHandler(DartStyledText styledText) {
-        FlutterBridge.onPayload(styledText, "TextGeometry", payload -> {
+        FlutterBridge.onPayload(styledText, dev.equo.swt.WireTable.CHANNEL_TEXT_GEOMETRY, payload -> {
             if (payload == null) return;
-            styledText.getDisplay().asyncExec(() ->
-                    processTextGeometry(styledText, new String(payload, StandardCharsets.UTF_8)));
+            GeometryPush push = readPush(payload);
+            styledText.getDisplay().asyncExec(() -> applyTextGeometry(styledText, push));
         });
     }
 
-    static void processTextGeometry(DartStyledText styledText, String payload) {
-        try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = serializer.from(Map.class, payload.getBytes(StandardCharsets.UTF_8));
-            if (map == null) return;
-            applyTextGeometry(styledText, map);
-        } catch (IOException ex) {
-            // Ignore deserialization errors
-        }
+    static void applyTextGeometry(DartStyledText styledText, Map<String, Object> map) {
+        applyTextGeometry(styledText, pushOf(map));
     }
 
-    static void applyTextGeometry(DartStyledText styledText, Map<String, Object> map) {
+    static void applyTextGeometry(DartStyledText styledText, GeometryPush p) {
         TextGeometry g = new TextGeometry();
-        g.charCount = asInt(map.get("charCount"), -1);
-        g.contentWidth = asDouble(map.get("contentWidth"), 0);
-        g.contentHeight = asDouble(map.get("contentHeight"), 0);
-        g.version = asInt(map.get("v"), 0);
+        g.charCount = p.charCount;
+        g.contentWidth = p.contentWidth;
+        g.contentHeight = p.contentHeight;
+        g.version = p.version;
         // The logical lines this push changed, or null when it describes the whole layout.
         int[] changedLines = null;
-        Object linesObj = map.get("lines");
-        if (linesObj instanceof List<?>) {
-            List<?> lineMaps = (List<?>) linesObj;
-            List<VisualLine> lines = new ArrayList<>(lineMaps.size());
-            for (Object o : lineMaps) {
-                VisualLine v = readVisualLine(o);
+        if (p.lines != null) {
+            for (VisualLine v : p.lines) {
                 if (v == null) return;
-                lines.add(v);
             }
-            g.lines = lines.toArray(new VisualLine[0]);
+            g.lines = p.lines;
         } else {
             changedLines = new int[] { -1, -1 };
-            VisualLine[] spliced = splicedLines(styledText, map, changedLines);
+            VisualLine[] spliced = splicedLines(styledText, p, changedLines);
             if (spliced == null) return;
             g.lines = spliced;
         }
         TextGeometry previous = textGeometries.put(styledText, g);
-        // A layout change reaches the render side first and only lands here afterwards: the
-        // painters that answer from this table (JFace's ruler columns) have already drawn
-        // against the previous one and nothing would ask again. A wrap toggle is the visible
-        // case — the text rewraps while the gutter keeps the numbering it computed from the
-        // unwrapped table.
         if (describesADifferentLayout(previous, g)) {
             // A change naming its rows invalidates only those lines; a whole table, the document.
             // Not resetCache(): it marks half the widget dirty, a round trip on every keystroke.
@@ -331,16 +400,26 @@ public class StyledTextHelper {
                 if (widestLine >= 0 && widestLine < lineCount) renderer.calculate(widestLine, 1);
                 styledText.setScrollBars(true);
             }
-            repaintRulerSiblings(styledText);
+            // A layout change reaches the render side first and only lands here afterwards: the
+            // painters that answer from this table (JFace's ruler columns) have already drawn
+            // against the previous one and nothing would ask again. A wrap toggle is the visible
+            // case — the text rewraps while the gutter keeps the numbering it computed from the
+            // unwrapped table. They draw at the rows' heights, so a line that only got wider, as
+            // the one being typed into does, leaves them as they are.
+            if (movesTheRows(previous, g)) repaintRulerSiblings(styledText);
         }
     }
 
     /** Whether the newly applied table lays the document out differently from the previous one. */
     static boolean describesADifferentLayout(TextGeometry previous, TextGeometry next) {
+        return movesTheRows(previous, next) || previous.contentWidth != next.contentWidth;
+    }
+
+    /** Whether the newly applied table puts the rows at other heights than the previous one. */
+    static boolean movesTheRows(TextGeometry previous, TextGeometry next) {
         return previous == null
                 || previous.lines.length != next.lines.length
-                || previous.contentHeight != next.contentHeight
-                || previous.contentWidth != next.contentWidth;
+                || previous.contentHeight != next.contentHeight;
     }
 
     /**
@@ -458,6 +537,33 @@ public class StyledTextHelper {
         }
         if (y < 0) return null;
         return (int) Math.round(y) - styledText.getVerticalScrollOffset() + styledText.topMargin;
+    }
+
+    /**
+     * The top index as the native widget computes it: the first line shown whole, or the one shown
+     * in part when none fits whole. Scrolled to the middle of a line, the line at the top edge is
+     * the one before it. JFace's rulers count from the top index.
+     */
+    public static Integer geometryTopIndex(DartStyledText styledText) {
+        TextGeometry g = freshGeometry(styledText);
+        if (g == null) return null;
+        double top = styledText.getVerticalScrollOffset();
+        double viewHeight = styledText.clientAreaHeight - styledText.topMargin - styledText.bottomMargin;
+        for (int i = 0; i < g.lines.length; i++) {
+            VisualLine v = g.lines[i];
+            boolean firstRow = i == 0 || g.lines[i - 1].logicalLine != v.logicalLine;
+            if (!firstRow || Math.round(v.y) < top) continue;
+            double bottom = g.contentHeight;
+            for (int k = i + 1; k < g.lines.length; k++) {
+                if (g.lines[k].logicalLine != v.logicalLine) {
+                    bottom = g.lines[k].y;
+                    break;
+                }
+            }
+            if (bottom - top <= viewHeight) return v.logicalLine;
+            break;
+        }
+        return geometryLineIndex(styledText, 0);
     }
 
     /** Logical line at a widget-space y, clamped to the content like the estimate path. */
@@ -740,6 +846,12 @@ public class StyledTextHelper {
     /** The style ranges to paint: the renderer's own, or what a LineStyleListener answers. */
     public static StyleRange[] wireStyles(DartStyledTextRenderer renderer) {
         return banded(renderer).styles;
+    }
+
+    /** Test seam: the band held for {@code text}, as {from, to, line count, visible lines}, or null. */
+    static int[] heldBandForTesting(StyledText text) {
+        int[] held = heldBands.get((DartStyledTextRenderer) ((DartStyledText) text.getImpl()).renderer.getImpl());
+        return held == null ? null : held.clone();
     }
 
     /** Test seam: the palette a band of {@code runs} travels as. */
@@ -1372,11 +1484,21 @@ public class StyledTextHelper {
      */
     public static void updateRendererFontMetrics(DartStyledTextRenderer renderer, Font font, int tabLength) {
         RendererFontMetrics metrics = calculateFontMetrics(font, tabLength);
+        boolean fixedPitch = isFixedPitch(font);
+        boolean changed = renderer.ascent != metrics.ascent || renderer.descent != metrics.descent
+                || renderer.averageCharWidth != metrics.averageCharWidth || renderer.tabWidth != metrics.tabWidth
+                || renderer.fixedPitch != fixedPitch;
         renderer.ascent = metrics.ascent;
         renderer.descent = metrics.descent;
         renderer.averageCharWidth = metrics.averageCharWidth;
         renderer.tabWidth = metrics.tabWidth;
-        renderer.fixedPitch = isFixedPitch(font);
+        renderer.fixedPitch = fixedPitch;
+        // The client's table laid the text out in the previous font, and a document of the same
+        // length passes its staleness check: positions come from these metrics until the next push.
+        if (changed) {
+            DartStyledText styledText = widgetOf(renderer);
+            if (styledText != null) textGeometries.remove(styledText);
+        }
     }
 
     /** Whether "l" and "W" are as wide as each other in the font, which is how SWT tells a fixed pitch font. */
@@ -1400,52 +1522,10 @@ public class StyledTextHelper {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        if (font == null) {
+        if (font == null || font.isDisposed()) {
             return text.length() * 8;
         }
-
-        FontData[] fontDatas = font.getFontData();
-        if (fontDatas == null || fontDatas.length == 0) {
-            return text.length() * 8;
-        }
-
-        FontData fd = fontDatas[0];
-        String fontId = FontMetricsUtil.getId(fd);
-        int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * dpiScale();
-
-        Metrics metrics = FontMetricsUtil.metrics(fontId);
-        if (metrics == null) {
-            String baseFontId = fd.getName() + "-0-3";
-            metrics = FontMetricsUtil.metrics(baseFontId);
-        }
-
-        if (metrics == null) {
-            return text.length() * (int) Math.round(fontSizePixels * 0.5);
-        }
-
-        double scale = fontSizePixels / FONT_METRICS_BASE;
-        double width = 0;
-
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            i += Character.charCount(cp);
-
-            double glyphWidth;
-            if (metrics.glyphWidths() != null) {
-                int index = cp - GLYPH_START;
-                if (index >= 0 && index < metrics.glyphWidths().length) {
-                    glyphWidth = metrics.glyphWidths()[index];
-                } else {
-                    glyphWidth = metrics.avgCharWidth();
-                }
-            } else {
-                glyphWidth = metrics.avgCharWidth();
-            }
-            width += glyphWidth * scale;
-        }
-
-        return (int) Math.round(width);
+        return (int) Math.round(FontMetricsUtil.getFontSize(text, font).x() * dpiScale());
     }
 
     /**

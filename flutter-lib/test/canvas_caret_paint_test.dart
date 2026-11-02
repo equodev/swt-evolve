@@ -11,6 +11,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/canvas.dart';
 import 'package:swtflutter/src/gen/caret.dart';
 import 'package:swtflutter/src/gen/image.dart';
@@ -18,6 +19,8 @@ import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/caret_evolve.dart';
+
+import 'support/gc_frames.dart' show describeImage;
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -96,12 +99,25 @@ Future<void> _unmount(WidgetTester tester) => tester.pumpWidget(const SizedBox()
 
 void main() {
   test('the image travels in the value', () {
-    final value = VCaret.fromJson({
-      'swt': 'Caret',
-      'id': 21,
-      'style': SWT.NONE,
-      'image': <String, dynamic>{'filename': 'caret.png'},
-    });
+    // Held by the client as an image Java describes is: with the pixels it draws by.
+    final image = VImage()
+      ..id = 2101
+      ..filename = 'caret.png'
+      ..width = 2
+      ..height = 2
+      ..imageData = (VImageData()
+        ..width = 2
+        ..height = 2
+        ..depth = 24);
+    describeImage(image);
+    final written = VCaret()
+      ..id = 21
+      ..style = SWT.NONE
+      ..image = image;
+    final value = WidgetWireReader(Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
+      written.writeWire(w);
+      w.u8(0);
+    }))).fields(VCaret()..id = 21);
     expect(value.image?.filename, 'caret.png');
   });
 

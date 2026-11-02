@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'toast_theme_extension.tailor.dart';
-part 'toast_theme_extension.g.dart';
 
 /// The transient card `Toasts.show` raises over the main-toolbar window. SWT has no widget for it,
 /// so none of this comes from a platform: every value here is ours to choose, and an application
 /// that wants a different look changes them rather than the code.
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class ToastThemeExtension extends ThemeExtension<ToastThemeExtension>
     with _$ToastThemeExtensionTailorMixin {
   final Color backgroundColor;
@@ -93,9 +85,4 @@ class ToastThemeExtension extends ThemeExtension<ToastThemeExtension>
     required this.shadowBlurRadius,
     required this.shadowOffsetY,
   });
-
-  factory ToastThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ToastThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ToastThemeExtensionToJson(this);
 }

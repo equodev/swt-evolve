@@ -1,12 +1,7 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VFont extends VResource {
 
     protected VFont() {
@@ -20,55 +15,115 @@ public class VFont extends VResource {
         FontData[] values = ((DartFont) impl).fontData;
         if (values == null)
             return null;
-        ArrayList<FontData> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (FontData v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new FontData[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        FontData[] result = new FontData[kept];
+        kept = 0;
+        for (FontData v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFontData(FontData[] value) {
         ((DartFont) impl).fontData = value;
     }
 
-    public static final String FONT_DATA = "fontData";
+    public static final int FONT_DATA = 231;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "fontData":
-                Serializer.writeKeyValue(writer, "fontData", getFontData());
-                return;
+            case FONT_DATA:
+                return "fontData";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Font.class)
-    public static class FontJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartFont.class, (JsonWriter.WriteObject<DartFont>) (writer, impl) -> {
-                if (impl == null || impl.isDisposed())
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartFont.class, (JsonReader.ReadObject<DartFont>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 231:
+                {
+                    FontData[] a_ = getFontData();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (FontData e_ : a_) w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                    }
+                }
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Font read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 231:
+                {
+                    FontData[] v_ = getFontData();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(231);
+                    {
+                        FontData[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (FontData e_ : a_) w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Font api) {
-            if (api == null)
-                writer.writeNull();
-            else if (api.getImpl() instanceof SwtFont)
-                writer.serializeObject(org.eclipse.swt.graphics.GraphicsUtils.copyFont(api).getImpl());
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 231 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 40;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(231);
+        {
+            FontData[] a_ = getFontData();
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (FontData e_ : a_) w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+            }
         }
     }
 }

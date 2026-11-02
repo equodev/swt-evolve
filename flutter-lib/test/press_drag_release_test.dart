@@ -10,14 +10,15 @@ import 'package:swtflutter/src/gen/button.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingButtonSwt extends ButtonSwt<VButton> {
   final List<String> calls;
   const _RecordingButtonSwt({required VButton value, required this.calls}) : super(value: value);
 
   @override
-  void sendEvent(VButton val, String ev, VEvent? payload) =>
-      calls.add('$ev@${payload?.x},${payload?.y}');
+  void sendEvent(VButton val, int channel, VEvent? payload) =>
+      calls.add('${wireChannelNames[channel]!}@${payload?.x},${payload?.y}');
 }
 
 VButton _button() => VButton()

@@ -12,6 +12,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -25,6 +26,8 @@ import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/gc_frames.dart';
 
 const _canvasId = 835773570;
 
@@ -54,22 +57,12 @@ VCanvas _link() => VCanvas()
   ..hasOwnBackground = true
   ..bounds = _rect(20, 260, 120, 18);
 
-void _deliver(String actionId, Map<String, dynamic> json) {
-  final action = utf8.encode(actionId);
-  final body = utf8.encode(jsonEncode(json));
-  final out = Uint8List(2 + action.length + body.length);
-  out[0] = (action.length >> 8) & 0xFF;
-  out[1] = action.length & 0xFF;
-  out.setRange(2, 2 + action.length, action);
-  out.setRange(2 + action.length, out.length, body);
-  EquoCommService.commForTesting.receiveBinary(out);
-}
+void _deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
 
 /// `Hyperlink.paintText` ends in `GC.drawText(text, x, y, true)` -- transparent, so the GC itself
 /// never fills a background.
 void _paintLinkLabel() {
-  _deliver('GC/$_canvasId/drawTextStringintintint',
-      {'string': 'Forgot My Password', 'x': 0, 'y': 0, 'flags': 7}); // DRAW_DELIMITER | DRAW_TAB | DRAW_TRANSPARENT
+  receive('GC/$_canvasId/b', gcOp('drawTextStringintintint', ['Forgot My Password', 0, 0, 7])); // DRAW_DELIMITER | DRAW_TAB | DRAW_TRANSPARENT
   _deliver('GC/$_canvasId/gcDispose', {'fullRepaint': true});
 }
 

@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'expandbar_theme_extension.tailor.dart';
-part 'expandbar_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@EdgeInsetsConverter()
-@TextStyleConverter()
-@CurveConverter()
 class ExpandBarThemeExtension extends ThemeExtension<ExpandBarThemeExtension> with _$ExpandBarThemeExtensionTailorMixin {
   // Colors
   final Color backgroundColor;
@@ -72,9 +63,4 @@ class ExpandBarThemeExtension extends ThemeExtension<ExpandBarThemeExtension> wi
     required this.animationCurve,
     required this.iconSize,
   });
-
-  factory ExpandBarThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ExpandBarThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ExpandBarThemeExtensionToJson(this);
 }

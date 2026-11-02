@@ -107,7 +107,7 @@ class OverReportingCensusTest {
                     settle(parent);
                     clearFlags(widget);
 
-                    String before = Canon.canon(serialize(widget));
+                    java.util.Map<String, Object> before = Canon.canon(serialize(widget));
                     try {
                         setter.invoke(widget, argument);
                     } catch (Throwable ignored) {
@@ -178,16 +178,12 @@ class OverReportingCensusTest {
         return null;
     }
 
-    private String serialize(Widget widget) {
-        try {
-            return new String(new Serializer().to(widget), java.nio.charset.StandardCharsets.UTF_8);
-        } catch (java.io.IOException e) {
-            throw new AssertionError("could not serialize " + widget, e);
-        }
+    private java.util.Map<String, Object> serialize(Widget widget) {
+        return dev.equo.swt.harness.WireFrames.describe(widget);
     }
 
     private static Set<String> flags(Widget widget) {
-        return ((DartWidget) widget.getImpl()).getValue().changedKeys();
+        return ((DartWidget) widget.getImpl()).getValue().changedNames();
     }
 
     private static void clearFlags(Widget widget) {

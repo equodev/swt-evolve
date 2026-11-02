@@ -46,7 +46,7 @@ void main() {
   testWidgets('a label as tall as its line draws the whole line', (tester) async {
     await tester.pumpWidget(_wrap(LabelSwt<VLabel>(value: _label(height: 40))));
     await tester.pumpAndSettle();
-    final line = tester.getSize(find.byType(RichText).first).height;
+    final line = tester.getSize(find.byWidgetPredicate((w) => w is Text).first).height;
 
     final height = line.ceil();
     freshClient();
@@ -55,7 +55,7 @@ void main() {
 
     final bounds = tester.getRect(find.byWidgetPredicate(
         (w) => w is Container && w.constraints?.maxHeight == height.toDouble()));
-    final drawn = tester.getRect(find.byType(RichText).first);
+    final drawn = tester.getRect(find.byWidgetPredicate((w) => w is Text).first);
     expect(drawn.height, greaterThanOrEqualTo(line),
         reason: 'the vertical padding leaves the line less room than it needs, clipping the glyphs');
     expect(drawn.top, greaterThanOrEqualTo(bounds.top),

@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.SerializeTestBase;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -10,8 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.shell;
@@ -62,14 +63,14 @@ class DateTimeStartsAtNowTest extends SerializeTestBase {
         DateTime w = new DateTime(shell(), SWT.DATE | SWT.DROP_DOWN | SWT.MEDIUM);
         LocalDate after = LocalDate.now();
 
-        String json = serialize(w);
-        LocalDate sent = LocalDate.of(field(json, "year"), field(json, "month") + 1, field(json, "day"));
+        Map<String, Object> state = serialize(w);
+        LocalDate sent = LocalDate.of(field(state, "year"), field(state, "month") + 1, field(state, "day"));
         assertThat(sent).isBetween(before, after);
     }
 
-    private static int field(String json, String name) {
-        Matcher m = Pattern.compile("\"" + name + "\":(\\d+)").matcher(json);
-        assertThat(m.find()).as("%s in %s", name, json).isTrue();
-        return Integer.parseInt(m.group(1));
+    private static int field(Map<String, Object> state, String name) {
+        List<Map<String, Object>> holders = WireValues.find(state, m -> m.get(name) instanceof Number);
+        assertThat(holders).as("%s in %s", name, state).isNotEmpty();
+        return ((Number) holders.get(0).get(name)).intValue();
     }
 }

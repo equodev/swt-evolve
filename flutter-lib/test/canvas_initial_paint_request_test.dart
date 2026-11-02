@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCanvasSwt extends CanvasSwt<VCanvas> {
   const _CapturingCanvasSwt({required super.value, required this.onEvent});
@@ -20,7 +21,7 @@ class _CapturingCanvasSwt extends CanvasSwt<VCanvas> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()

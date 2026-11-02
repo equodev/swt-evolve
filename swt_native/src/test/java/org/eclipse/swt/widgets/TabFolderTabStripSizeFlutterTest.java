@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.size.TabFolderTheme;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -111,10 +112,10 @@ class TabFolderTabStripSizeFlutterTest {
         assertThat(client.height)
                 .as("the tab strip sits above the content, so the client area must be shorter than "
                         + "the folder by exactly the strip height")
-                .isEqualTo(bounds.height - Sizes.TAB_FOLDER_TAB_STRIP_HEIGHT);
+                .isEqualTo(bounds.height - TabFolderTheme.get().tabStripHeight() - TabFolderTheme.get().bodyBorder());
         assertThat(client.y)
                 .as("the content starts below the tab strip")
-                .isEqualTo(Sizes.TAB_FOLDER_TAB_STRIP_HEIGHT);
+                .isEqualTo(TabFolderTheme.get().tabStripHeight());
     }
 
     @Test
@@ -126,7 +127,7 @@ class TabFolderTabStripSizeFlutterTest {
 
         assertThat(folderSize.y)
                 .as("a folder must ask for room for its content AND its tab strip")
-                .isEqualTo(contentSize.y + Sizes.TAB_FOLDER_TAB_STRIP_HEIGHT);
+                .isEqualTo(contentSize.y + TabFolderTheme.get().tabStripHeight() + TabFolderTheme.get().bodyBorder());
     }
 
     @Test
@@ -134,7 +135,7 @@ class TabFolderTabStripSizeFlutterTest {
         Page page = buildPage();
 
         int paintedContentHeight =
-                page.folder.getBounds().height - Sizes.TAB_FOLDER_TAB_STRIP_HEIGHT;
+                page.folder.getBounds().height - TabFolderTheme.get().tabStripHeight();
         Rectangle lastRow = page.lastRowButton.getBounds();
 
         assertThat(lastRow.y + lastRow.height)

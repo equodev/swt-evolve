@@ -29,6 +29,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.*;
 
@@ -60,6 +61,16 @@ public class GallerySnippet {
 
     /** Baseline Value cells of the OwnerDraw Table, restored by the "Reset Gallery" listener. */
     private static final String[] OWNER_DRAW_BASELINE = {"alpha", "beta"};
+
+    /** Hint of the identifier-validating Text, which starts empty. */
+    private static final String IDENTIFIER_TEXT_MESSAGE = "Identifier";
+
+    /**
+     * How long the identifier Text's VerifyListener takes over each keystroke: longer than the
+     * E2E driver's 80 ms between keystrokes, so a typed word outruns its verdicts, and short
+     * enough that a short word's verdicts all arrive before the client stops waiting (400 ms).
+     */
+    private static final long IDENTIFIER_VERIFY_DELAY_MS = 100;
     public static void main(String[] args) throws IOException {
         Config.forceEquo();
 
@@ -151,6 +162,10 @@ public class GallerySnippet {
         labelGroup.setLayout(new RowLayout(SWT.HORIZONTAL));
         Label label = new Label(labelGroup, SWT.NONE);
         label.setText("A plain label");
+        // Taller than its text, which every native draws from the top of the bounds.
+        Label tallLabel = new Label(labelGroup, SWT.WRAP);
+        tallLabel.setText("Text from the top");
+        tallLabel.setLayoutData(new RowData(120, 90));
         // Mixed anchor + plain text: "Click" is the tappable anchor, " not-this" is plain
         // text that must NOT trigger it — proves per-span hit-testing, not just "the widget".
         Link link = new Link(labelGroup, SWT.NONE);
@@ -174,6 +189,26 @@ public class GallerySnippet {
         GridData styledTextData = new GridData(SWT.FILL, SWT.CENTER, true, false);
         styledTextData.heightHint = 60;
         styledText.setLayoutData(styledTextData);
+        // Validates every keystroke as an identifier, slowly enough that a fast burst is typed
+        // before its first verdicts arrive: each keystroke must still land, and only the
+        // rejected ones must be dropped.
+        Text identifierText = new Text(textGroup, SWT.BORDER);
+        identifierText.setMessage(IDENTIFIER_TEXT_MESSAGE);
+        identifierText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        identifierText.addVerifyListener(e -> {
+            try {
+                Thread.sleep(IDENTIFIER_VERIFY_DELAY_MS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            for (char c : e.text.toCharArray()) {
+                if (!Character.isJavaIdentifierPart(c)) {
+                    e.doit = false;
+                    return;
+                }
+            }
+        });
+        identifierText.addModifyListener(e -> status.setText("Identifier: " + identifierText.getText()));
 
         // Combo / CCombo / List
         Group selectGroup = section(root, "Combo / CCombo / List");
@@ -327,6 +362,8 @@ public class GallerySnippet {
         tree.getItem(0).setExpanded(true);
         tree.addSelectionListener(widgetSelectedAdapter(e ->
                 status.setText("Tree item selected: " + tree.getSelection()[0].getText())));
+        tree.addSelectionListener(widgetDefaultSelectedAdapter(e ->
+                status.setText("Tree item default-selected: " + ((TreeItem) e.item).getText())));
 
         // CTabFolder
         Group ctabGroup = section(root, "CTabFolder");
@@ -493,6 +530,12 @@ public class GallerySnippet {
         spinner.setMaximum(100);
         spinner.setSelection(25);
         spinner.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Spinner at " + spinner.getSelection())));
+        // Starts at its maximum, so its up arrow wraps to the minimum.
+        Spinner wrapSpinner = new Spinner(valueGroup, SWT.BORDER | SWT.WRAP);
+        wrapSpinner.setMinimum(0);
+        wrapSpinner.setMaximum(10);
+        wrapSpinner.setSelection(10);
+        wrapSpinner.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Wrap Spinner at " + wrapSpinner.getSelection())));
 
         // ProgressBar / DateTime — the ProgressBar is display-only, so a Button advances it from
         // the Java side and the suite asserts the state render; the DateTime starts on a fixed
@@ -747,6 +790,10 @@ public class GallerySnippet {
             if (!styledBaseline.equals(styledText.getText())) {
                 styledText.setText(styledBaseline);
             }
+            // Same echo concern as the StyledText above.
+            if (!identifierText.getText().isEmpty()) {
+                identifierText.setText("");
+            }
             table.deselectAll();
             // A scenario may leave the cell editor open, and its ticks toggled; both are this
             // section's whole observable state, so the next scenario needs them back.
@@ -775,6 +822,7 @@ public class GallerySnippet {
             slider.setSelection(25);
             scale.setSelection(25);
             spinner.setSelection(25);
+            wrapSpinner.setSelection(10);
             progressBar.setSelection(30);
             date.setDate(2026, 6, 15);
             dropDownDate.setDate(2026, 6, 15);

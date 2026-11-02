@@ -1,7 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
@@ -14,6 +12,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,15 +92,15 @@ class StaleChildBoundsFlutterTest {
         FlutterBridge.update();
     }
 
-    /** The last frame whose payload has this widget's id at its root, parsed. */
-    private Optional<JsonObject> lastPayloadFor(Widget widget) {
+    /** The last frame whose payload has this widget's id at its root. */
+    private Optional<Map<String, Object>> lastPayloadFor(Widget widget) {
         // Payload ids are the API widget's identity hash -- that is what FlutterBridge keys on.
         long id = widget.hashCode();
-        JsonObject found = null;
+        Map<String, Object> found = null;
         for (RecordingComm.Frame frame : comm.sent) {
-            if (frame.json == null || frame.json.isEmpty()) continue;
-            JsonObject root = JsonParser.parseString(frame.json).getAsJsonObject();
-            if (root.has("id") && root.get("id").getAsLong() == id) {
+            if (!(frame.value instanceof Map)) continue;
+            Map<String, Object> root = frame.state();
+            if (hasId(root, id)) {
                 found = root;
             }
         }
@@ -112,32 +112,38 @@ class StaleChildBoundsFlutterTest {
      * INSIDE an ancestor's payload rather than on its own channel (the dirty-ancestor filter drops
      * the child's own send when its parent is dirty too), and Flutter reads it from there.
      */
-    private Optional<JsonObject> lastStateAnywhereFor(Widget widget) {
+    private Optional<Map<String, Object>> lastStateAnywhereFor(Widget widget) {
         long id = widget.hashCode();
-        JsonObject found = null;
+        Map<String, Object> found = null;
         for (RecordingComm.Frame frame : comm.sent) {
-            if (frame.json == null || frame.json.isEmpty()) continue;
-            JsonObject hit = findById(JsonParser.parseString(frame.json).getAsJsonObject(), id);
+            if (!(frame.value instanceof Map)) continue;
+            Map<String, Object> hit = findById(frame.state(), id);
             if (hit != null) found = hit;
         }
         return Optional.ofNullable(found);
     }
 
-    private static JsonObject findById(JsonObject node, long id) {
-        if (node.has("id") && node.get("id").getAsLong() == id) return node;
-        if (!node.has("children")) return null;
-        for (var element : node.getAsJsonArray("children")) {
-            JsonObject hit = findById(element.getAsJsonObject(), id);
+    private static boolean hasId(Map<String, Object> node, long id) {
+        return node.get("id") instanceof Number n && n.longValue() == id;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> findById(Map<String, Object> node, long id) {
+        if (hasId(node, id)) return node;
+        if (!(node.get("children") instanceof List<?> children)) return null;
+        for (Object element : children) {
+            Map<String, Object> hit = findById((Map<String, Object>) element, id);
             if (hit != null) return hit;
         }
         return null;
     }
 
-    private static JsonObject childOf(JsonObject parent, long childId) {
-        if (!parent.has("children")) return null;
-        for (var element : parent.getAsJsonArray("children")) {
-            JsonObject child = element.getAsJsonObject();
-            if (child.has("id") && child.get("id").getAsLong() == childId) return child;
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> childOf(Map<String, Object> parent, long childId) {
+        if (!(parent.get("children") instanceof List<?> children)) return null;
+        for (Object element : children) {
+            Map<String, Object> child = (Map<String, Object>) element;
+            if (hasId(child, childId)) return child;
         }
         return null;
     }
@@ -154,13 +160,13 @@ class StaleChildBoundsFlutterTest {
         grid.setBounds(5, 5, 960, 816); // what the example's own layout does, after that first send
         pump();
 
-        JsonObject state = lastStateAnywhereFor(grid)
+        Map<String, Object> state = lastStateAnywhereFor(grid)
                 .orElseThrow(() -> new AssertionError("the child's bounds never reached Dart; frames: "
-                        + comm.sent.stream().map(f -> f.event + "=" + f.json).toList()));
-        JsonObject bounds = state.getAsJsonObject("bounds");
+                        + comm.sent.stream().map(f -> f.event + "=" + f.value).toList()));
+        Map<?, ?> bounds = (Map<?, ?>) state.get("bounds");
         assertThat(bounds).as("child bounds as Dart last saw them").isNotNull();
-        assertThat(bounds.get("width").getAsInt()).as("child width as Flutter will lay it out").isEqualTo(960);
-        assertThat(bounds.get("height").getAsInt()).as("child height as Flutter will lay it out").isEqualTo(816);
+        assertThat(((Number) bounds.get("width")).intValue()).as("child width as Flutter will lay it out").isEqualTo(960);
+        assertThat(((Number) bounds.get("height")).intValue()).as("child height as Flutter will lay it out").isEqualTo(816);
     }
 
     /**
@@ -185,11 +191,11 @@ class StaleChildBoundsFlutterTest {
         // A later turn of the event loop must still deliver `second`'s new bounds -- on its own
         // channel or inside an ancestor's payload, whichever the filter chose.
         FlutterBridge.update();
-        JsonObject state = lastStateAnywhereFor(second)
+        Map<String, Object> state = lastStateAnywhereFor(second)
                 .orElseThrow(() -> new AssertionError("`second` never reached Dart at all"));
-        JsonObject bounds = state.getAsJsonObject("bounds");
+        Map<?, ?> bounds = (Map<?, ?>) state.get("bounds");
         assertThat(bounds).as("`second` bounds as Dart last saw them").isNotNull();
-        assertThat(bounds.get("width").getAsInt())
+        assertThat(((Number) bounds.get("width")).intValue())
                 .as("a widget dirtied while a flush was running must still reach Dart")
                 .isEqualTo(300);
     }

@@ -1,10 +1,9 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tray_evolve.dart';
 import 'widgets.dart';
-
-part 'tray.g.dart';
 
 class TraySwt<V extends VTray> extends WidgetSwt<V> {
   const TraySwt({super.key, required super.value});
@@ -13,14 +12,9 @@ class TraySwt<V extends VTray> extends WidgetSwt<V> {
   State createState() => TrayImpl<TraySwt<VTray>, VTray>();
 }
 
-@JsonSerializable()
 class VTray extends VWidget {
   VTray() : this.empty();
   VTray.empty() {
     swt = "Tray";
   }
-
-  factory VTray.fromJson(Map<String, dynamic> json) =>
-      _$VTrayFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTrayToJson(this);
 }

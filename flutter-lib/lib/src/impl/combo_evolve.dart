@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/rendering.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart' show Icons, Icon, Divider, Theme;
@@ -9,6 +12,7 @@ import '../gen/combo.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireChannel, WireKey;
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/combo_theme_extension.dart';
@@ -20,6 +24,7 @@ import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
 import 'utils/pointer.dart';
+import 'utils/quiet_animations.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes, ClientCaretReport {
@@ -55,21 +60,28 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     _lastJavaListVisible = state.listVisible;
   }
 
+  /// The largest of the value's and the items' single-line sizes, kept until any of them or the
+  /// style changes: a combo rebuilds for much more than its list.
   Size _maxTextSize(TextStyle style) {
-    final List<String> allStrings = [state.text ?? "", ...(state.items ?? [])];
+    final text = state.text ?? "";
+    final items = state.items ?? const <String>[];
+    final held = _measured;
+    if (held != null && held.$1 == text && held.$3 == style && listEquals(held.$2, items)) return held.$4;
 
     double maxTextWidth = 0;
     double maxTextHeight = 0;
-
-    for (var s in allStrings) {
-      final size = FontUtils.measureTextWidget(s, style);
-
+    final measure = singleLineTextSizes(style);
+    for (final s in [text, ...items]) {
+      final size = measure(s);
       if (size.width > maxTextWidth) maxTextWidth = size.width + 2;
       if (size.height > maxTextHeight) maxTextHeight = size.height + 2;
     }
-
-    return Size(maxTextWidth, maxTextHeight);
+    final result = Size(maxTextWidth, maxTextHeight);
+    _measured = (text, List<String>.of(items), style, result);
+    return result;
   }
+
+  (String, List<String>, TextStyle, Size)? _measured;
 
   /// The arrow's own cell in the Row: the icon plus the gap that separates it
   /// from the text.
@@ -82,8 +94,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       isSimple ? 0 : theme.iconSize;
 
   /// The width of the value on display, with the slack [_maxTextSize] leaves.
-  double _selectedTextWidth(TextStyle style) =>
-      FontUtils.measureTextWidget(state.text ?? "", style).width + 2;
+  double _selectedTextWidth(TextStyle style) => singleLineTextWidth(state.text ?? "", style) + 2;
 
   Size _calculatePreferredSize(
     Size textSize,
@@ -333,6 +344,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     _reportCaret();
   }
 
+  /// A closed drop-down shows the value through its controller and the items not at all: a change
+  /// naming only these needs no rebuild while the field keeps its layout. A SIMPLE combo shows its
+  /// list.
+  static const _fieldProperties = {WireKey.k_Combo_items, WireKey.k_Combo_text};
+
   @override
   int? get reportedCaret => state.caretPosition;
 
@@ -348,35 +364,41 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       reportCaret(_controller, editPending: _controller.text != (state.text ?? ""));
 
   @override
-  Widget build(BuildContext context) {
+  void setValue(V value) {
+    final change = lastChange;
+    if (mounted &&
+        change != null &&
+        change.isOnly(_fieldProperties) &&
+        !_overlayController.isShowing &&
+        !StyleBits(state.style).has(SWT.SIMPLE) &&
+        _built != null &&
+        _built == _layout(_builtTheme!, _builtTextStyle!)) {
+      extraSetState();
+      return;
+    }
+    super.setValue(value);
+  }
+
+  /// The layout of the last build, which a change of the value or the items may leave as it is.
+  _ComboLayout? _built;
+
+  /// The theme and text style the last build laid out with. Only a build changes them.
+  ComboThemeExtension? _builtTheme;
+  TextStyle? _builtTextStyle;
+
+  TextStyle _textStyle(BuildContext context) {
     final theme = Theme.of(context).extension<ComboThemeExtension>()!;
-    final bool isEnabled = state.enabled ?? false;
-    final styleBits = StyleBits(state.style);
-    final bool isSimple = styleBits.has(SWT.SIMPLE);
-    final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
-    final bool hasFixedSize = hasBounds(state.bounds);
-
-    final Color bgColor = getComboBackgroundColor(
-      context,
-      state,
-      theme,
-      enabled: isEnabled,
-    );
-    final Color textColor = getComboTextColor(context, state, theme, enabled: isEnabled);
-    final Color borderColor = !isEnabled
-        ? theme.disabledBorderColor
-        : (_isFocused
-            ? theme.focusedBorderColor
-            : (_isHovered ? theme.borderColor : theme.dividerColor));
-    final Color iconColor = getComboIconColor(theme, enabled: isEnabled);
-
-    final textStyle = getTextStyle(
+    return getTextStyle(
       context: context,
       font: state.font,
-      textColor: textColor,
+      textColor: getComboTextColor(context, state, theme, enabled: state.enabled ?? false),
       baseTextStyle: theme.textStyle,
     );
+  }
 
+  _ComboLayout _layout(ComboThemeExtension theme, TextStyle textStyle) {
+    final bool isSimple = StyleBits(state.style).has(SWT.SIMPLE);
+    final bool hasFixedSize = hasBounds(state.bounds);
     final Size textSize = _maxTextSize(textStyle);
     final Size preferredSize = _calculatePreferredSize(
       textSize,
@@ -414,6 +436,37 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
           : height - theme.borderWidth * 2 - textSize.height,
       horizontalRoom: insetRoom == null ? null : insetRoom - arrowSpacing,
     );
+    return (width: width, height: height, textPadding: textPadding, arrowSpacing: arrowSpacing);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context).extension<ComboThemeExtension>()!;
+    final bool isEnabled = state.enabled ?? false;
+    final styleBits = StyleBits(state.style);
+    final bool isSimple = styleBits.has(SWT.SIMPLE);
+    final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
+    final bool hasFixedSize = hasBounds(state.bounds);
+
+    final Color bgColor = getComboBackgroundColor(
+      context,
+      state,
+      theme,
+      enabled: isEnabled,
+    );
+    final Color borderColor = !isEnabled
+        ? theme.disabledBorderColor
+        : (_isFocused
+            ? theme.focusedBorderColor
+            : (_isHovered ? theme.borderColor : theme.dividerColor));
+    final Color iconColor = getComboIconColor(theme, enabled: isEnabled);
+
+    final textStyle = _textStyle(context);
+    final layout = _layout(theme, textStyle);
+    _built = layout;
+    _builtTheme = theme;
+    _builtTextStyle = textStyle;
+    final (:width, :height, :textPadding, :arrowSpacing) = layout;
 
     final Widget content = isSimple
         ? _SimpleComboLayout(
@@ -460,9 +513,10 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     return tagSemantics(DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
-      text: _controller.text,
       // The MouseDoubleClick itself is the press's, sent by trackPointer below.
       onWordSelected: (start, end) => _focusNode.requestFocus(),
+      onSecondaryPress: () => keepCaretOnSecondaryPress(
+          _controller.selection, (caret) => _controller.selection = caret, _controller.text.length),
       child: trackPointer(SizedBox(width: width, height: height, child: content)),
     ));
   }
@@ -483,7 +537,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       state.listVisible = open;
       _showList(open);
     });
-    widget.sendEvent(state, "List/Visible", VEvent()..detail = open ? 1 : 0);
+    widget.sendEvent(state, WireChannel.listVisible, VEvent()..detail = open ? 1 : 0);
   }
 
   void _onItemSelected(String? value) {
@@ -508,6 +562,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     super.dispose();
   }
 }
+
+typedef _ComboLayout = ({double width, double? height, EdgeInsets textPadding, double arrowSpacing});
 
 class _DropdownComboLayout extends StatelessWidget {
   final VCombo state;
@@ -570,11 +626,11 @@ class _DropdownComboLayout extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: isEnabled && !isReadOnly
-                    ? () => focusNode.requestFocus()
-                    : (isEnabled ? onToggleOverlay : null),
+              child: _ComboHitArea(
+                onPress: isEnabled && isReadOnly ? onToggleOverlay : null,
+                onTap: isEnabled && !isReadOnly ? focusNode.requestFocus : null,
+                listGroup: overlayController,
+                onDismiss: onDismiss,
                 child: Padding(
                   padding: textPadding,
                   // The DOM <input> Flutter Web builds for a text field's semantics node is
@@ -582,34 +638,34 @@ class _DropdownComboLayout extends StatelessWidget {
                   // input can never take DOM focus, so no keystroke ever reaches the field. A
                   // bare EditableText does not set the flag (TextField is what normally does),
                   // hence this annotation.
-                  child: IgnorePointer(
-                    ignoring: isReadOnly,
-                    child: Semantics(
-                      enabled: isEnabled,
-                      child: EditableText(
-                        controller: controller,
-                        focusNode: focusNode,
-                        readOnly: isReadOnly,
-                        onChanged: onTextChanged,
-                        style: textStyle,
-                        cursorColor: textStyle.color ?? theme.textColor,
-                        backgroundCursorColor: bgColor,
-                        // A READ_ONLY Combo has no editable text to select,
-                        // so the word selection a double-click leaves behind
-                        // must not be painted: native SWT shows none.
-                        selectionColor: isReadOnly
-                            ? const Color(0x00000000)
-                            : (DefaultSelectionStyle.of(context).selectionColor ??
-                                Theme.of(context).colorScheme.primary.withOpacity(0.4)),
-                      ),
-                    ),
-                  ),
+                  child: isReadOnly
+                      ? Focus(
+                          focusNode: focusNode,
+                          child: ComboValueText(controller: controller, style: textStyle),
+                        )
+                      : Semantics(
+                          enabled: isEnabled,
+                          child: EditableText(
+                            controller: controller,
+                            focusNode: focusNode,
+                            onChanged: onTextChanged,
+                            // A press outside the text (the arrow, the Shell) keeps the focus, as
+                            // natively; a mouse press would otherwise unfocus it.
+                            onTapOutside: (_) {},
+                            style: textStyle,
+                            cursorColor: textStyle.color ?? theme.textColor,
+                            backgroundCursorColor: bgColor,
+                            selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
+                                Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                          ),
+                        ),
                 ),
               ),
             ),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: isEnabled ? onToggleOverlay : null,
+            _ComboHitArea(
+              onPress: isEnabled ? onToggleOverlay : null,
+              listGroup: overlayController,
+              onDismiss: onDismiss,
               child: Padding(
                 // Right-only: the text field's own right padding already
                 // separates text from arrow; a left inset here eats viewport
@@ -633,6 +689,7 @@ class _DropdownComboLayout extends StatelessWidget {
     return CustomSingleChildLayout(
       delegate: _ComboListLayout(field),
       child: pointerInterceptor(TapRegion(
+        groupId: overlayController,
         onTapOutside: (_) => onDismiss(),
         // SWT sizes the list to its widest item and never narrower than the
         // field. Pinning it to the field's width wraps every item of a Combo
@@ -678,6 +735,43 @@ class _DropdownComboLayout extends StatelessWidget {
           ),
         ),
       )),
+    );
+  }
+}
+
+/// A part of the field: [onPress] runs on the primary press, as a native drop-down opens and closes
+/// its list, so a drag that starts on it leaves the list open; [onTap] on the click.
+///
+/// A part with [onPress] shares the list's tap region [listGroup], so its press toggles the list
+/// instead of closing it as a press outside; any other button's press there closes it ([onDismiss]).
+class _ComboHitArea extends StatelessWidget {
+  final VoidCallback? onPress;
+  final VoidCallback? onTap;
+  final Object? listGroup;
+  final VoidCallback? onDismiss;
+  final Widget child;
+
+  const _ComboHitArea({this.onPress, this.onTap, this.listGroup, this.onDismiss, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final VoidCallback? press = onPress;
+    if (press == null) {
+      return GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: child);
+    }
+    return TapRegion(
+      groupId: listGroup,
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (e) {
+          if (e.buttons == kPrimaryButton) {
+            press();
+          } else {
+            onDismiss?.call();
+          }
+        },
+        child: child,
+      ),
     );
   }
 }
@@ -834,7 +928,7 @@ class _ComboItemState extends State<_ComboItem> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
-        child: AnimatedContainer(
+        child: QuietAnimatedContainer(
           duration: widget.theme.animationDuration,
           padding: widget.theme.itemPadding,
           color: bgColor,
@@ -849,5 +943,70 @@ class _ComboItemState extends State<_ComboItem> {
         ),
       ),
     );
+  }
+}
+
+/// The value of a READ_ONLY Combo, laid out and drawn as a read-only [EditableText] of one line
+/// draws it: on a strut the style forces, unwrapped, in the style as given, and clipped as it clips. Nothing in
+/// it can be edited or selected, so it carries none of an editable text's machinery.
+class ComboValueText extends StatelessWidget {
+  const ComboValueText({super.key, required this.controller, required this.style});
+
+  final TextEditingController controller;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveStyle =
+        MediaQuery.boldTextOf(context) ? style.merge(const TextStyle(fontWeight: FontWeight.bold)) : style;
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) => _ClipOverflowingText(
+        child: RichText(
+          text: TextSpan(text: value.text, style: effectiveStyle),
+          strutStyle: StrutStyle.fromTextStyle(effectiveStyle, forceStrutHeight: true),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.visible,
+          textScaler: MediaQuery.textScalerOf(context),
+          textHeightBehavior: DefaultTextHeightBehavior.maybeOf(context),
+        ),
+      ),
+    );
+  }
+}
+
+/// Clips its text as [RenderEditable] clips a line: with a hard edge, and only when the text and the
+/// room it keeps after it for the caret are wider than the field.
+class _ClipOverflowingText extends SingleChildRenderObjectWidget {
+  const _ClipOverflowingText({required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderClipOverflowingText();
+}
+
+class _RenderClipOverflowingText extends RenderProxyBox {
+  /// [RenderEditable]'s gap before the caret plus [EditableText]'s default cursor width.
+  static const double _caretMargin = 1.0 + 2.0;
+
+  final LayerHandle<ClipRectLayer> _clip = LayerHandle<ClipRectLayer>();
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child == null) return;
+    if (child.getMaxIntrinsicWidth(double.infinity) + _caretMargin > size.width) {
+      _clip.layer = context.pushClipRect(needsCompositing, offset, Offset.zero & size, super.paint,
+          clipBehavior: Clip.hardEdge, oldLayer: _clip.layer);
+    } else {
+      _clip.layer = null;
+      super.paint(context, offset);
+    }
+  }
+
+  @override
+  void dispose() {
+    _clip.layer = null;
+    super.dispose();
   }
 }

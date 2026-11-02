@@ -12,23 +12,21 @@
 // its parent rebuilds around it. There is one value per widget now, so a parent's child list is a
 // list of the actual children rather than of copies, and there is nothing stale left to hand down.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
+import 'support/deliver.dart';
+
 const int _parentId = 500;
 const int _childId = 501;
-const String _childChannel = 'Label/$_childId';
 
 VLabel _child(String text, {required int seq}) => VLabel()
   ..id = _childId
@@ -42,21 +40,6 @@ VComposite _parent(List<VControl> children, {required int seq}) => VComposite()
   ..style = SWT.NONE
   ..children = children;
 
-/// Delivers a frame exactly as the transport would: 2-byte name length, name, JSON body.
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
-
-Map<String, dynamic> _childFrame(String text, int seq) =>
-    {'swt': 'Label', 'id': _childId, '_s': seq, 'style': SWT.NONE, 'text': text};
-
 void main() {
   setUp(() => deliveryGate.reset());
 
@@ -64,7 +47,7 @@ void main() {
       (WidgetTester tester) async {
     // The parent's value, holding the child as Java last described it to the parent. This object is
     // what a Flutter-side rebuild hands back down - it never changes again in this test, because
-    // nothing arrives on the parent's channel.
+    // nothing arrives about the parent.
     final parentValue = _parent([_child('collapsed', seq: 10)], seq: 10);
 
     Widget host(Key key) => EvolveApp(
@@ -81,8 +64,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('collapsed'), findsOneWidget);
 
-    // Java tells the child directly, on its own channel. The parent hears nothing.
-    _receive(_childChannel, _childFrame('expanded', 20));
+    // Java tells the child directly, in a record of its own. The parent hears nothing.
+    await deliverWhole(_child('expanded', seq: 20));
     await tester.pumpAndSettle();
     expect(find.text('expanded'), findsOneWidget);
 
@@ -122,7 +105,7 @@ void main() {
     await tester.pumpWidget(host(const ValueKey('before')));
     await tester.pumpAndSettle();
 
-    _receive(_childChannel, _childFrame('expanded', 20));
+    await deliverWhole(_child('expanded', seq: 20));
     await tester.pumpAndSettle();
     expect(find.text('expanded'), findsOneWidget);
 
@@ -149,7 +132,7 @@ void main() {
 
     await tester.pumpWidget(host(0));
     await tester.pumpAndSettle();
-    _receive(_childChannel, _childFrame('expanded', 20));
+    await deliverWhole(_child('expanded', seq: 20));
     await tester.pumpAndSettle();
 
     for (int build = 1; build <= 5; build++) {
@@ -177,20 +160,14 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    _receive(_childChannel, _childFrame('expanded', 20));
+    await deliverWhole(_child('expanded', seq: 20));
     await tester.pumpAndSettle();
     expect(find.text('expanded'), findsOneWidget);
 
     // Java describes the parent again, carrying a child written after the child's own update - the
     // shape of a folded delivery, where a dirty child is sent inside the dirty ancestor above it
-    // rather than on its own channel.
-    _receive('Composite/$_parentId', {
-      'swt': 'Composite',
-      'id': _parentId,
-      '_s': 30,
-      'style': SWT.NONE,
-      'children': [_childFrame('from the parent', 31)],
-    });
+    // rather than in a record of its own.
+    await deliverWhole(_parent([_child('from the parent', seq: 31)], seq: 30));
     await tester.pumpAndSettle();
 
     expect(find.text('from the parent'), findsOneWidget,
@@ -213,16 +190,10 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    _receive(_childChannel, _childFrame('expanded', 20));
+    await deliverWhole(_child('expanded', seq: 20));
     await tester.pumpAndSettle();
 
-    _receive('Composite/$_parentId', {
-      'swt': 'Composite',
-      'id': _parentId,
-      '_s': 30,
-      'style': SWT.NONE,
-      'children': [_childFrame('collapsed', 10)],
-    });
+    await deliverWhole(_parent([_child('collapsed', seq: 10)], seq: 30));
     await tester.pumpAndSettle();
 
     expect(find.text('expanded'), findsOneWidget,

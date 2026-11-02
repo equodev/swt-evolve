@@ -16,9 +16,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are descriptions of monitors.
@@ -29,10 +26,9 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.0
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class Monitor {
+public final class Monitor implements dev.equo.swt.WireObject {
 
-    public long handle;
+    long handle;
 
     int x, y, width, height;
 
@@ -124,5 +120,71 @@ public final class Monitor {
     @Override
     public int hashCode() {
         return (int) handle;
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 70;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(381);
+        w.write(handle);
+        w.key(384);
+        w.write((int) x);
+        w.key(385);
+        w.write((int) y);
+        w.key(383);
+        w.write((int) width);
+        w.key(382);
+        w.write((int) height);
+        w.key(379);
+        w.write((int) clientX);
+        w.key(380);
+        w.write((int) clientY);
+        w.key(378);
+        w.write((int) clientWidth);
+        w.key(377);
+        w.write((int) clientHeight);
+        w.key(386);
+        w.write((int) zoom);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 381:
+                handle = r.int64();
+                return true;
+            case 384:
+                x = r.int32();
+                return true;
+            case 385:
+                y = r.int32();
+                return true;
+            case 383:
+                width = r.int32();
+                return true;
+            case 382:
+                height = r.int32();
+                return true;
+            case 379:
+                clientX = r.int32();
+                return true;
+            case 380:
+                clientY = r.int32();
+                return true;
+            case 378:
+                clientWidth = r.int32();
+                return true;
+            case 377:
+                clientHeight = r.int32();
+                return true;
+            case 386:
+                zoom = r.int32();
+                return true;
+        }
+        return false;
     }
 }

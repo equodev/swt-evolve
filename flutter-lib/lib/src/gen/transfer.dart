@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'transfer.g.dart';
-
-@JsonSerializable()
-class VTransfer {
+class VTransfer implements WireReadable, WireWritable, WireVisitable {
   VTransfer() : this.empty();
   VTransfer.empty();
 
-  factory VTransfer.fromJson(Map<String, dynamic> json) =>
-      _$VTransferFromJson(json);
-  Map<String, dynamic> toJson() => _$VTransferToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

@@ -4,16 +4,16 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
+import org.eclipse.swt.widgets.*;
 
 class StyledTextSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_StyledText() {
         StyledText w = new StyledText(shell(), SWT.NONE);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "StyledText");
     }
@@ -23,12 +23,11 @@ class StyledTextSerializeTest extends SerializeTestBase {
     void should_serialize_filled_StyledText() {
         StyledText w = new StyledText(shell(), SWT.NONE);
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "StyledText")
-               .containsEntry("text", json(w.getText()))
-               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("text", w.getText())
+               .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
@@ -67,6 +66,17 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
+    }
+
+    @Test
+    @Disabled
+    void should_write_every_property_StyledText() throws Exception {
+        assertWritesEveryProperty(style -> {
+            StyledText w = new StyledText(shell(), style);
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

@@ -5,11 +5,7 @@ import java.util.function.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.Image.*;
 import org.eclipse.swt.graphics.Region.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VGC extends VResource {
 
     protected VGC() {
@@ -19,7 +15,6 @@ public class VGC extends VResource {
         super(impl);
     }
 
-    @JsonAttribute(name = "XORMode")
     public boolean getXORMode() {
         return ((DartGC) impl).getXORMode();
     }
@@ -28,7 +23,6 @@ public class VGC extends VResource {
         ((DartGC) impl).XORMode = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getAdvanced() {
         return ((DartGC) impl).getAdvanced();
     }
@@ -62,7 +56,6 @@ public class VGC extends VResource {
         ((DartGC) impl).background = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Pattern getBackgroundPattern() {
         return ((DartGC) impl).backgroundPattern;
     }
@@ -125,7 +118,6 @@ public class VGC extends VResource {
         ((DartGC) impl).foreground = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Pattern getForegroundPattern() {
         return ((DartGC) impl).foregroundPattern;
     }
@@ -142,7 +134,6 @@ public class VGC extends VResource {
         ((DartGC) impl).interpolation = value;
     }
 
-    @JsonAttribute(ignore = true)
     public LineAttributes getLineAttributes() {
         return ((DartGC) impl).lineAttributes;
     }
@@ -194,7 +185,6 @@ public class VGC extends VResource {
         ((DartGC) impl).lineWidth = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getStyle() {
         return ((DartGC) impl).getStyle();
     }
@@ -203,7 +193,6 @@ public class VGC extends VResource {
         ((DartGC) impl).style = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int getTextAntialias() {
         return ((DartGC) impl).getTextAntialias();
     }
@@ -212,7 +201,6 @@ public class VGC extends VResource {
         ((DartGC) impl).textAntialias = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Transform getTransform() {
         return ((DartGC) impl).transform;
     }
@@ -221,633 +209,1310 @@ public class VGC extends VResource {
         ((DartGC) impl).transform = value;
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCCopyAreaImageintint {
+    public static class VGCCopyAreaImageintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public Image image;
 
-        @JsonAttribute(index = 1)
         public int x;
 
-        @JsonAttribute(index = 2)
         public int y;
+
+        private static final ThreadLocal<VGCCopyAreaImageintint> REUSED = ThreadLocal.withInitial(VGCCopyAreaImageintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCCopyAreaImageintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "wii";
+        }
+
+        @Override
+        public int number() {
+            return 136;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            {
+                dev.equo.swt.WidgetWire ww = w.scratch();
+                ww.image(image);
+                w.w(ww);
+            }
+            w.i(x);
+            w.i(y);
+        }
+
+        @Override
+        public String[] wireKinds() {
+            return new String[] { "image" };
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCCopyAreaintintintintintint {
+    public static class VGCCopyAreaintintintintintintboolean implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int srcX;
 
-        @JsonAttribute(index = 1)
         public int srcY;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
 
-        @JsonAttribute(index = 4)
         public int destX;
 
-        @JsonAttribute(index = 5)
-        public int destY;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCCopyAreaintintintintintintboolean {
-
-        @JsonAttribute(index = 0)
-        public int srcX;
-
-        @JsonAttribute(index = 1)
-        public int srcY;
-
-        @JsonAttribute(index = 2)
-        public int width;
-
-        @JsonAttribute(index = 3)
-        public int height;
-
-        @JsonAttribute(index = 4)
-        public int destX;
-
-        @JsonAttribute(index = 5)
         public int destY;
 
-        @JsonAttribute(index = 6)
         public boolean paint;
+
+        private static final ThreadLocal<VGCCopyAreaintintintintintintboolean> REUSED = ThreadLocal.withInitial(VGCCopyAreaintintintintintintboolean::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCCopyAreaintintintintintintboolean reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiiiiib";
+        }
+
+        @Override
+        public int number() {
+            return 138;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(srcX);
+            w.i(srcY);
+            w.i(width);
+            w.i(height);
+            w.i(destX);
+            w.i(destY);
+            w.b(paint);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawArcintintintintintint {
+    public static class VGCDrawArcintintintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
 
-        @JsonAttribute(index = 4)
         public int startAngle;
 
-        @JsonAttribute(index = 5)
         public int arcAngle;
+
+        private static final ThreadLocal<VGCDrawArcintintintintintint> REUSED = ThreadLocal.withInitial(VGCDrawArcintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawArcintintintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 139;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+            w.i(startAngle);
+            w.i(arcAngle);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawFocusintintintint {
+    public static class VGCDrawFocusintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
+
+        private static final ThreadLocal<VGCDrawFocusintintintint> REUSED = ThreadLocal.withInitial(VGCDrawFocusintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawFocusintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 140;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawImageImageintint {
+    public static class VGCDrawImageImageintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public Image image;
 
-        @JsonAttribute(index = 1)
         public int x;
 
-        @JsonAttribute(index = 2)
         public int y;
+
+        private static final ThreadLocal<VGCDrawImageImageintint> REUSED = ThreadLocal.withInitial(VGCDrawImageImageintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawImageImageintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "wii";
+        }
+
+        @Override
+        public int number() {
+            return 141;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            {
+                dev.equo.swt.WidgetWire ww = w.scratch();
+                ww.image(image);
+                w.w(ww);
+            }
+            w.i(x);
+            w.i(y);
+        }
+
+        @Override
+        public String[] wireKinds() {
+            return new String[] { "image" };
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawImageImageintintintint {
+    public static class VGCDrawImageImageintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public Image image;
 
-        @JsonAttribute(index = 1)
         public int destX;
 
-        @JsonAttribute(index = 2)
         public int destY;
 
-        @JsonAttribute(index = 3)
         public int destWidth;
 
-        @JsonAttribute(index = 4)
         public int destHeight;
+
+        private static final ThreadLocal<VGCDrawImageImageintintintint> REUSED = ThreadLocal.withInitial(VGCDrawImageImageintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawImageImageintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "wiiii";
+        }
+
+        @Override
+        public int number() {
+            return 142;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            {
+                dev.equo.swt.WidgetWire ww = w.scratch();
+                ww.image(image);
+                w.w(ww);
+            }
+            w.i(destX);
+            w.i(destY);
+            w.i(destWidth);
+            w.i(destHeight);
+        }
+
+        @Override
+        public String[] wireKinds() {
+            return new String[] { "image" };
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawImageImageintintintintintintintint {
+    public static class VGCDrawImageImageintintintintintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public Image image;
 
-        @JsonAttribute(index = 1)
         public int srcX;
 
-        @JsonAttribute(index = 2)
         public int srcY;
 
-        @JsonAttribute(index = 3)
         public int srcWidth;
 
-        @JsonAttribute(index = 4)
         public int srcHeight;
 
-        @JsonAttribute(index = 5)
         public int destX;
 
-        @JsonAttribute(index = 6)
         public int destY;
 
-        @JsonAttribute(index = 7)
         public int destWidth;
 
-        @JsonAttribute(index = 8)
         public int destHeight;
+
+        private static final ThreadLocal<VGCDrawImageImageintintintintintintintint> REUSED = ThreadLocal.withInitial(VGCDrawImageImageintintintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawImageImageintintintintintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "wiiiiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 143;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            {
+                dev.equo.swt.WidgetWire ww = w.scratch();
+                ww.image(image);
+                w.w(ww);
+            }
+            w.i(srcX);
+            w.i(srcY);
+            w.i(srcWidth);
+            w.i(srcHeight);
+            w.i(destX);
+            w.i(destY);
+            w.i(destWidth);
+            w.i(destHeight);
+        }
+
+        @Override
+        public String[] wireKinds() {
+            return new String[] { "image" };
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawLineintintintint {
+    public static class VGCDrawLineintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x1;
 
-        @JsonAttribute(index = 1)
         public int y1;
 
-        @JsonAttribute(index = 2)
         public int x2;
 
-        @JsonAttribute(index = 3)
         public int y2;
+
+        private static final ThreadLocal<VGCDrawLineintintintint> REUSED = ThreadLocal.withInitial(VGCDrawLineintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawLineintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 144;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x1);
+            w.i(y1);
+            w.i(x2);
+            w.i(y2);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawOvalintintintint {
+    public static class VGCDrawOvalintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
+
+        private static final ThreadLocal<VGCDrawOvalintintintint> REUSED = ThreadLocal.withInitial(VGCDrawOvalintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawOvalintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 145;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawPointintint {
+    public static class VGCDrawPointintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
+
+        private static final ThreadLocal<VGCDrawPointintint> REUSED = ThreadLocal.withInitial(VGCDrawPointintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPointintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "ii";
+        }
+
+        @Override
+        public int number() {
+            return 147;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawPolygonint {
+    public static class VGCDrawPolygonint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int[] pointArray;
+
+        private static final ThreadLocal<VGCDrawPolygonint> REUSED = ThreadLocal.withInitial(VGCDrawPolygonint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPolygonint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "I";
+        }
+
+        @Override
+        public int number() {
+            return 148;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.ints(pointArray);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawPolylineint {
+    public static class VGCDrawPolylineint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int[] pointArray;
+
+        private static final ThreadLocal<VGCDrawPolylineint> REUSED = ThreadLocal.withInitial(VGCDrawPolylineint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawPolylineint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "I";
+        }
+
+        @Override
+        public int number() {
+            return 149;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.ints(pointArray);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawRectangleRectangle {
+    public static class VGCDrawRectangleintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
-        public Rectangle rect;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawRectangleintintintint {
-
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
+
+        private static final ThreadLocal<VGCDrawRectangleintintintint> REUSED = ThreadLocal.withInitial(VGCDrawRectangleintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawRectangleintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 150;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawRoundRectangleintintintintintint {
+    public static class VGCDrawRoundRectangleintintintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
 
-        @JsonAttribute(index = 4)
         public int arcWidth;
 
-        @JsonAttribute(index = 5)
         public int arcHeight;
+
+        private static final ThreadLocal<VGCDrawRoundRectangleintintintintintint> REUSED = ThreadLocal.withInitial(VGCDrawRoundRectangleintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawRoundRectangleintintintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 151;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+            w.i(arcWidth);
+            w.i(arcHeight);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawStringStringintint {
+    public static class VGCDrawTextStringintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public String string;
 
-        @JsonAttribute(index = 1)
         public int x;
 
-        @JsonAttribute(index = 2)
-        public int y;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawStringStringintintboolean {
-
-        @JsonAttribute(index = 0)
-        public String string;
-
-        @JsonAttribute(index = 1)
-        public int x;
-
-        @JsonAttribute(index = 2)
         public int y;
 
-        @JsonAttribute(index = 3)
-        public boolean isTransparent;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawTextStringintint {
-
-        @JsonAttribute(index = 0)
-        public String string;
-
-        @JsonAttribute(index = 1)
-        public int x;
-
-        @JsonAttribute(index = 2)
-        public int y;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawTextStringintintboolean {
-
-        @JsonAttribute(index = 0)
-        public String string;
-
-        @JsonAttribute(index = 1)
-        public int x;
-
-        @JsonAttribute(index = 2)
-        public int y;
-
-        @JsonAttribute(index = 3)
-        public boolean isTransparent;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCDrawTextStringintintint {
-
-        @JsonAttribute(index = 0)
-        public String string;
-
-        @JsonAttribute(index = 1)
-        public int x;
-
-        @JsonAttribute(index = 2)
-        public int y;
-
-        @JsonAttribute(index = 3)
         public int flags;
+
+        private static final ThreadLocal<VGCDrawTextStringintintint> REUSED = ThreadLocal.withInitial(VGCDrawTextStringintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCDrawTextStringintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "siii";
+        }
+
+        @Override
+        public int number() {
+            return 152;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.s(string);
+            w.i(x);
+            w.i(y);
+            w.i(flags);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillArcintintintintintint {
+    public static class VGCFillArcintintintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
 
-        @JsonAttribute(index = 4)
         public int startAngle;
 
-        @JsonAttribute(index = 5)
         public int arcAngle;
+
+        private static final ThreadLocal<VGCFillArcintintintintintint> REUSED = ThreadLocal.withInitial(VGCFillArcintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillArcintintintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 171;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+            w.i(startAngle);
+            w.i(arcAngle);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillGradientRectangleintintintintboolean {
+    public static class VGCFillGradientRectangleintintintintboolean implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
 
-        @JsonAttribute(index = 4)
         public boolean vertical;
+
+        private static final ThreadLocal<VGCFillGradientRectangleintintintintboolean> REUSED = ThreadLocal.withInitial(VGCFillGradientRectangleintintintintboolean::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillGradientRectangleintintintintboolean reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiiib";
+        }
+
+        @Override
+        public int number() {
+            return 172;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+            w.b(vertical);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillOvalintintintint {
+    public static class VGCFillOvalintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
+
+        private static final ThreadLocal<VGCFillOvalintintintint> REUSED = ThreadLocal.withInitial(VGCFillOvalintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillOvalintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 173;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillPolygonint {
+    public static class VGCFillPolygonint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int[] pointArray;
+
+        private static final ThreadLocal<VGCFillPolygonint> REUSED = ThreadLocal.withInitial(VGCFillPolygonint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillPolygonint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "I";
+        }
+
+        @Override
+        public int number() {
+            return 175;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.ints(pointArray);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillRectangleRectangle {
+    public static class VGCFillRectangleintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
-        public Rectangle rect;
-    }
-
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillRectangleintintintint {
-
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
+
+        private static final ThreadLocal<VGCFillRectangleintintintint> REUSED = ThreadLocal.withInitial(VGCFillRectangleintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillRectangleintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiii";
+        }
+
+        @Override
+        public int number() {
+            return 176;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+        }
     }
 
-    @CompiledJson(formats = CompiledJson.Format.ARRAY)
-    public static class VGCFillRoundRectangleintintintintintint {
+    public static class VGCFillRoundRectangleintintintintintint implements dev.equo.swt.GcWire.Op {
 
-        @JsonAttribute(index = 0)
         public int x;
 
-        @JsonAttribute(index = 1)
         public int y;
 
-        @JsonAttribute(index = 2)
         public int width;
 
-        @JsonAttribute(index = 3)
         public int height;
 
-        @JsonAttribute(index = 4)
         public int arcWidth;
 
-        @JsonAttribute(index = 5)
         public int arcHeight;
+
+        private static final ThreadLocal<VGCFillRoundRectangleintintintintintint> REUSED = ThreadLocal.withInitial(VGCFillRoundRectangleintintintintintint::new);
+
+        public static /**
+         * This thread's op to fill and send.
+         */
+        VGCFillRoundRectangleintintintintintint reused() {
+            return REUSED.get();
+        }
+
+        @Override
+        public String signature() {
+            return "iiiiii";
+        }
+
+        @Override
+        public int number() {
+            return 177;
+        }
+
+        @Override
+        public void writeBinary(dev.equo.swt.GcWire w) {
+            w.i(x);
+            w.i(y);
+            w.i(width);
+            w.i(height);
+            w.i(arcWidth);
+            w.i(arcHeight);
+        }
     }
 
-    @JsonAttribute(ignore = true)
     public Path getClippingText() {
         return ((DartGC) impl).wireClippingText();
-    }
-
-    public void setClippingText(Path value) {
     }
 
     public float getLineDashOffset() {
         return ((DartGC) impl).wireLineDashOffset();
     }
 
-    public void setLineDashOffset(float value) {
-    }
-
     public float getBufferScale() {
         return ((DartGC) impl).wireBufferScale();
-    }
-
-    public void setBufferScale(float value) {
     }
 
     public Boolean getThemedCanvas() {
         return ((DartGC) impl).wireThemedCanvas();
     }
 
-    public void setThemedCanvas(Boolean value) {
-    }
-
     public RGB[] getHoverFills() {
         return ((DartGC) impl).wireHoverFills();
-    }
-
-    public void setHoverFills(RGB[] value) {
     }
 
     public RGB[] getSelectionFills() {
         return ((DartGC) impl).wireSelectionFills();
     }
 
-    public void setSelectionFills(RGB[] value) {
-    }
+    public static final int XORMODE = 266;
 
-    public static final String XORMODE = "XORMode";
+    public static final int ALPHA = 267;
 
-    public static final String ALPHA = "alpha";
+    public static final int ANTIALIAS = 268;
 
-    public static final String ANTIALIAS = "antialias";
+    public static final int BACKGROUND = 269;
 
-    public static final String BACKGROUND = "background";
+    public static final int BUFFER_SCALE = 271;
 
-    public static final String BUFFER_SCALE = "bufferScale";
+    public static final int CLIPPING = 272;
 
-    public static final String CLIPPING = "clipping";
+    public static final int CLIPPING_PATH = 273;
 
-    public static final String CLIPPING_PATH = "clippingPath";
+    public static final int CLIPPING_RECTS = 274;
 
-    public static final String CLIPPING_RECTS = "clippingRects";
+    public static final int FILL_RULE = 276;
 
-    public static final String FILL_RULE = "fillRule";
+    public static final int FONT = 277;
 
-    public static final String FONT = "font";
+    public static final int FOREGROUND = 278;
 
-    public static final String FOREGROUND = "foreground";
+    public static final int HOVER_FILLS = 280;
 
-    public static final String HOVER_FILLS = "hoverFills";
+    public static final int INTERPOLATION = 281;
 
-    public static final String INTERPOLATION = "interpolation";
+    public static final int LINE_CAP = 282;
 
-    public static final String LINE_CAP = "lineCap";
+    public static final int LINE_DASH = 283;
 
-    public static final String LINE_DASH = "lineDash";
+    public static final int LINE_DASH_OFFSET = 284;
 
-    public static final String LINE_DASH_OFFSET = "lineDashOffset";
+    public static final int LINE_JOIN = 285;
 
-    public static final String LINE_JOIN = "lineJoin";
+    public static final int LINE_STYLE = 286;
 
-    public static final String LINE_STYLE = "lineStyle";
+    public static final int LINE_WIDTH = 287;
 
-    public static final String LINE_WIDTH = "lineWidth";
+    public static final int SELECTION_FILLS = 288;
 
-    public static final String SELECTION_FILLS = "selectionFills";
+    public static final int STYLE = 289;
 
-    public static final String STYLE = "style";
-
-    public static final String THEMED_CANVAS = "themedCanvas";
+    public static final int THEMED_CANVAS = 290;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "XORMode":
-                Serializer.writeKeyValue(writer, "XORMode", getXORMode());
-                return;
-            case "alpha":
-                Serializer.writeKeyValue(writer, "alpha", getAlpha());
-                return;
-            case "antialias":
-                Serializer.writeKeyValue(writer, "antialias", getAntialias());
-                return;
-            case "background":
-                Serializer.writeKeyValue(writer, "background", getBackground());
-                return;
-            case "clipping":
-                Serializer.writeKeyValue(writer, "clipping", getClipping());
-                return;
-            case "clippingPath":
-                Serializer.writeKeyValue(writer, "clippingPath", getClippingPath());
-                return;
-            case "clippingRects":
-                Serializer.writeKeyValue(writer, "clippingRects", getClippingRects());
-                return;
-            case "fillRule":
-                Serializer.writeKeyValue(writer, "fillRule", getFillRule());
-                return;
-            case "font":
-                Serializer.writeKeyValue(writer, "font", getFont());
-                return;
-            case "foreground":
-                Serializer.writeKeyValue(writer, "foreground", getForeground());
-                return;
-            case "interpolation":
-                Serializer.writeKeyValue(writer, "interpolation", getInterpolation());
-                return;
-            case "lineCap":
-                Serializer.writeKeyValue(writer, "lineCap", getLineCap());
-                return;
-            case "lineDash":
-                Serializer.writeKeyValue(writer, "lineDash", getLineDash());
-                return;
-            case "lineJoin":
-                Serializer.writeKeyValue(writer, "lineJoin", getLineJoin());
-                return;
-            case "lineStyle":
-                Serializer.writeKeyValue(writer, "lineStyle", getLineStyle());
-                return;
-            case "lineWidth":
-                Serializer.writeKeyValue(writer, "lineWidth", getLineWidth());
-                return;
-            case "style":
-                Serializer.writeKeyValue(writer, "style", getStyle());
-                return;
-            case "lineDashOffset":
-                Serializer.writeKeyValue(writer, "lineDashOffset", getLineDashOffset());
-                return;
-            case "bufferScale":
-                Serializer.writeKeyValue(writer, "bufferScale", getBufferScale());
-                return;
-            case "themedCanvas":
-                Serializer.writeKeyValue(writer, "themedCanvas", getThemedCanvas());
-                return;
-            case "hoverFills":
-                Serializer.writeKeyValue(writer, "hoverFills", getHoverFills());
-                return;
-            case "selectionFills":
-                Serializer.writeKeyValue(writer, "selectionFills", getSelectionFills());
-                return;
+            case XORMODE:
+                return "XORMode";
+            case ALPHA:
+                return "alpha";
+            case ANTIALIAS:
+                return "antialias";
+            case BACKGROUND:
+                return "background";
+            case CLIPPING:
+                return "clipping";
+            case CLIPPING_PATH:
+                return "clippingPath";
+            case CLIPPING_RECTS:
+                return "clippingRects";
+            case FILL_RULE:
+                return "fillRule";
+            case FONT:
+                return "font";
+            case FOREGROUND:
+                return "foreground";
+            case INTERPOLATION:
+                return "interpolation";
+            case LINE_CAP:
+                return "lineCap";
+            case LINE_DASH:
+                return "lineDash";
+            case LINE_JOIN:
+                return "lineJoin";
+            case LINE_STYLE:
+                return "lineStyle";
+            case LINE_WIDTH:
+                return "lineWidth";
+            case STYLE:
+                return "style";
+            case LINE_DASH_OFFSET:
+                return "lineDashOffset";
+            case BUFFER_SCALE:
+                return "bufferScale";
+            case THEMED_CANVAS:
+                return "themedCanvas";
+            case HOVER_FILLS:
+                return "hoverFills";
+            case SELECTION_FILLS:
+                return "selectionFills";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = GC.class)
-    public static class GCJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartGC.class, (JsonWriter.WriteObject<DartGC>) (writer, impl) -> {
-                Serializer.writeResourceWithId(json, writer, impl);
-            });
-            json.registerReader(DartGC.class, (JsonReader.ReadObject<DartGC>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 266:
+                w.write(getXORMode());
+                return true;
+            case 267:
+                w.write(getAlpha());
+                return true;
+            case 268:
+                w.write((int) getAntialias());
+                return true;
+            case 269:
+                w.write(getBackground());
+                return true;
+            case 272:
+                w.write(getClipping());
+                return true;
+            case 273:
+                w.object(getClippingPath());
+                return true;
+            case 274:
+                w.write(getClippingRects());
+                return true;
+            case 276:
+                w.write(getFillRule());
+                return true;
+            case 277:
+                w.object((getFont() == null || getFont().isDisposed() ? null : getFont().getImpl() instanceof DartFont ? ((DartFont) getFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getFont()).getImpl()).getValue()));
+                return true;
+            case 278:
+                w.write(getForeground());
+                return true;
+            case 281:
+                w.write((int) getInterpolation());
+                return true;
+            case 282:
+                w.write(getLineCap());
+                return true;
+            case 283:
+                w.write(getLineDash());
+                return true;
+            case 285:
+                w.write(getLineJoin());
+                return true;
+            case 286:
+                w.write(getLineStyle());
+                return true;
+            case 287:
+                w.write((int) getLineWidth());
+                return true;
+            case 289:
+                w.write((int) getStyle());
+                return true;
+            case 284:
+                w.write(getLineDashOffset());
+                return true;
+            case 271:
+                w.write(getBufferScale());
+                return true;
+            case 290:
+                w.write(getThemedCanvas());
+                return true;
+            case 280:
+                {
+                    RGB[] a_ = getHoverFills();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (RGB e_ : a_) w.write(e_);
+                    }
+                }
+                return true;
+            case 288:
+                {
+                    RGB[] a_ = getSelectionFills();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (RGB e_ : a_) w.write(e_);
+                    }
+                }
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static GC read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 266:
+                {
+                    boolean v_ = getXORMode();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(266);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 267:
+                {
+                    Integer v_ = getAlpha();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(267);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 268:
+                {
+                    int v_ = getAntialias();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(268);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 269:
+                {
+                    Color v_ = getBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(269);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 272:
+                {
+                    Rectangle v_ = getClipping();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(272);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 273:
+                {
+                    PathData v_ = getClippingPath();
+                    dev.equo.swt.WireObject o_ = v_;
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(273);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 274:
+                {
+                    int[] v_ = getClippingRects();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(274);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 276:
+                {
+                    Integer v_ = getFillRule();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(276);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 277:
+                {
+                    Font v_ = getFont();
+                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(277);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 278:
+                {
+                    Color v_ = getForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(278);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 281:
+                {
+                    int v_ = getInterpolation();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(281);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 282:
+                {
+                    Integer v_ = getLineCap();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(282);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 283:
+                {
+                    int[] v_ = getLineDash();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(283);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 285:
+                {
+                    Integer v_ = getLineJoin();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(285);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 286:
+                {
+                    Integer v_ = getLineStyle();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(286);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 287:
+                {
+                    int v_ = getLineWidth();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(287);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 289:
+                {
+                    int v_ = getStyle();
+                    w.key(289);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 284:
+                {
+                    float v_ = getLineDashOffset();
+                    w.key(284);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 271:
+                {
+                    float v_ = getBufferScale();
+                    w.key(271);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 290:
+                {
+                    Boolean v_ = getThemedCanvas();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(290);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 280:
+                {
+                    RGB[] v_ = getHoverFills();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(280);
+                    {
+                        RGB[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (RGB e_ : a_) w.write(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 288:
+                {
+                    RGB[] v_ = getSelectionFills();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(288);
+                    {
+                        RGB[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (RGB e_ : a_) w.write(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, GC api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 266, 267, 268, 269, 272, 273, 274, 276, 277, 278, 281, 282, 283, 285, 286, 287, 289, 284, 271, 290, 280, 288 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 289:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

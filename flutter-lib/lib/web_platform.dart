@@ -38,6 +38,26 @@ external void _addWindowEventListenerCapture(
 @JS('window.requestAnimationFrame')
 external JSNumber _requestAnimationFrame(JSFunction callback);
 
+/// Minimal view of a DOM ErrorEvent: what tells a renderer crash from any other uncaught error.
+extension type _ErrorEvent(JSObject _) implements JSObject {
+  external String? get message;
+  external String? get filename;
+  external _JsError? get error;
+}
+
+extension type _JsError(JSObject _) implements JSObject {
+  external String? get stack;
+}
+
+@JS('window.location.reload')
+external void _reloadPage();
+
+@JS('window.sessionStorage.getItem')
+external JSString? _sessionGet(JSString key);
+
+@JS('window.sessionStorage.setItem')
+external void _sessionSet(JSString key, JSString value);
+
 /// Minimal view of a DOM KeyboardEvent — just what shortcut suppression needs.
 extension type _KeyboardEvent(JSObject _) implements JSObject {
   external String get key;
@@ -175,6 +195,42 @@ void suppressBrowserShortcuts() {
       }
     }).toJS,
     true.toJS,
+  );
+}
+
+/// Reloads the page when the renderer's own wasm traps. A trapped Skwasm or CanvasKit draws and
+/// reads back nothing from then on, so the page is dead; a reload reconnects as a refresh does, and
+/// Java re-sends the whole Display. At most twice a minute, so a renderer that traps on every boot
+/// does not reload forever.
+void reloadOnRendererCrash() {
+  const key = 'evolve.rendererReloads';
+  _addWindowEventListener(
+    'error'.toJS,
+    ((_ErrorEvent event) {
+      final source = event.filename ?? '';
+      final fromRenderer = source.contains('skwasm') || source.contains('canvaskit');
+      if (!fromRenderer || !(event.message ?? '').contains('RuntimeError')) return;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      String? stored;
+      try {
+        stored = _sessionGet(key.toJS)?.toDart;
+      } catch (_) {}
+      final recent = (stored ?? '')
+          .split(',')
+          .map(int.tryParse)
+          .whereType<int>()
+          .where((t) => now - t < 60000)
+          .toList();
+      if (recent.length >= 2) return;
+      try {
+        _sessionSet(key.toJS, [...recent, now].join(',').toJS);
+      } catch (_) {
+        // Without storage there is no bound on the reloads, so none happens.
+        return;
+      }
+      print('[Renderer] trapped ($source): reloading the page\n${event.error?.stack ?? ''}');
+      _reloadPage();
+    }).toJS,
   );
 }
 

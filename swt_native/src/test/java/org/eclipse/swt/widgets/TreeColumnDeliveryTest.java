@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,8 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TreeColumnDeliveryTest {
 
     private static final int CLIENT = 1;
-
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -61,7 +60,7 @@ class TreeColumnDeliveryTest {
         name.setText("Name");
         tree.setHeaderVisible(true);
 
-        assertThat(diffOf(tree)).contains("\"columns\"").contains("\"headerVisible\"");
+        assertThat(diffOf(tree)).containsKey("columns").containsKey("headerVisible");
     }
 
     @Test
@@ -75,7 +74,7 @@ class TreeColumnDeliveryTest {
 
         value.dispose();
 
-        assertThat(diffOf(tree)).contains("\"columns\"");
+        assertThat(diffOf(tree)).containsKey("columns");
     }
 
     @Test
@@ -91,31 +90,39 @@ class TreeColumnDeliveryTest {
 
         assertThat(second.getAlignment()).isEqualTo(SWT.LEFT);
         assertThat(second.getStyle() & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)).isEqualTo(SWT.LEFT);
-        assertThat(diffOf(second)).contains("\"alignment\"");
+        assertThat(diffOf(second)).containsKey("alignment");
         second.setAlignment(SWT.CENTER);
         assertThat(second.getAlignment()).as("the first column refuses a new alignment").isEqualTo(SWT.LEFT);
     }
 
     /** The update the tree is due, or empty when it has nothing to say. */
-    private String diffOf(Tree tree) {
+    private Map<String, Object> diffOf(Tree tree) {
         return diffOf((DartWidget) tree.getImpl());
     }
 
-    private String diffOf(TreeColumn column) {
+    private Map<String, Object> diffOf(TreeColumn column) {
         return diffOf((DartWidget) column.getImpl());
     }
 
-    private String diffOf(DartWidget impl) {
-        byte[] update = serializer.toDiff(impl);
-        return update == null ? "" : new String(update, StandardCharsets.UTF_8);
+    private Map<String, Object> diffOf(DartWidget impl) {
+        return changeOf(impl);
+    }
+
+    /**
+     * What changed in {@code impl} since the client last heard of it, as its record names it; empty
+     * when nothing did. A widget with nothing changed is described whole on request, which says
+     * nothing about what an update names, so only a changed one is asked for, and it has to come back
+     * as a change: a whole record would hold every property, named or not.
+     */
+    private static Map<String, Object> changeOf(DartWidget impl) {
+        if (!impl.getValue().anyDirty()) return Map.of();
+        Map<String, Object> update = WireFrames.record(impl, CLIENT);
+        if (update == null) return Map.of();
+        if (!update.containsKey("_d")) throw new AssertionError("described whole, not as a change: " + update);
+        return update;
     }
 
     private void sendWhole(Tree tree) {
-        try {
-            serializer.to(tree);
-            Serializer.markDelivered();
-        } catch (java.io.IOException e) {
-            throw new AssertionError(e);
-        }
+        WireFrames.record((DartWidget) tree.getImpl(), CLIENT);
     }
 }

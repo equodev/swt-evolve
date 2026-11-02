@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'cached_text.dart';
 import 'text_utils.dart';
 
 /// Whether mnemonic characters are drawn underlined right now: while Alt is held, except on
@@ -94,7 +95,7 @@ class MnemonicText extends StatelessWidget {
     );
   }
 
-  Widget _plain(String text) => Text(
+  Widget _plain(String text) => ColorCachedText(
         text,
         style: style,
         textAlign: textAlign,

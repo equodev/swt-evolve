@@ -335,15 +335,21 @@ public abstract class DartWidget implements IWidget {
 
     void checkOrientation(Widget parent) {
         getApi().style &= ~SWT.MIRRORED;
+        getValue().markDirty(VWidget.STYLE);
         if ((getApi().style & (SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT)) == 0) {
             if (parent != null) {
-                if ((parent.style & SWT.LEFT_TO_RIGHT) != 0)
+                if ((parent.style & SWT.LEFT_TO_RIGHT) != 0) {
                     getApi().style |= SWT.LEFT_TO_RIGHT;
-                if ((parent.style & SWT.RIGHT_TO_LEFT) != 0)
+                    getValue().markDirty(VWidget.STYLE);
+                }
+                if ((parent.style & SWT.RIGHT_TO_LEFT) != 0) {
                     getApi().style |= SWT.RIGHT_TO_LEFT;
+                    getValue().markDirty(VWidget.STYLE);
+                }
             }
         }
         getApi().style = checkBits(getApi().style, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, 0, 0, 0, 0);
+        getValue().markDirty(VWidget.STYLE);
     }
 
     public void checkOpened() {
@@ -1631,13 +1637,30 @@ public abstract class DartWidget implements IWidget {
     }
 
     protected void _hookEvents() {
-        FlutterBridge.on(this, "Dispose", "Dispose", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+        FlutterBridge.onClientEvents(this, FlutterBridge.clientEvents(getClass(), this::_clientEvents));
+    }
+
+    protected String[] _clientEvents() {
+        return new String[] { "Dispose/Dispose" };
+    }
+
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Dispose/Dispose":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Dispose, e);
+                    });
                     return;
-                sendEvent(SWT.Dispose, e);
-            });
-        });
+                }
+            default:
+        }
+    }
+
+    public final void clientEvent(String channel, org.eclipse.swt.widgets.Event e) {
+        _onClientEvent(channel, e);
     }
 
     public Widget getApi() {

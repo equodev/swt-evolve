@@ -12,7 +12,6 @@ import 'package:swtflutter/src/gen/stylerange.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
 
-import 'delivery/support/deliver.dart';
 
 const _lines = 12;
 final _text = List.generate(_lines, (i) => 'line $i: some text').join('\n');
@@ -61,6 +60,20 @@ void main() {
         ),
       );
 
+  testWidgets('palette entries that differ only in what they draw keep their own colours', (tester) async {
+    final key = GlobalKey<StyledTextImpl>();
+    await tester.pumpWidget(app(key, _value([_entry(255, 0, 0), _entry(0, 0, 255)], 1)));
+    await tester.pump(Duration.zero);
+
+    final colours = key.currentState!.debugCharacterRanges!
+        .where((r) => r.style.color != null)
+        .map((r) => r.style.color!.toARGB32())
+        .take(4)
+        .toList();
+    expect(colours, [0xFFFF0000, 0xFF0000FF, 0xFFFF0000, 0xFF0000FF],
+        reason: 'entries alike in where they lie are told apart by what they draw');
+  });
+
   testWidgets('a keystroke that brings a new palette re-lays out only the line it edited',
       (tester) async {
     final key = GlobalKey<StyledTextImpl>();
@@ -70,11 +83,18 @@ void main() {
     await tester.pump(Duration.zero);
     expect(TextShape.debugPaintersLastDraw, greaterThan(0), reason: 'the first paint lays out');
 
-    // Equal entries as new objects, plus one no run uses yet.
+    // Equal entries as new objects, plus one no run uses yet, applied as the registry applies a
+    // frame: into the held state, then setValue. Not encoded: a style range's client writer holds
+    // only what Java reads back, not its colours.
     TextShape.debugPainterLayouts = 0;
-    await deliverWhole(_value([_entry(255, 0, 0), _entry(0, 0, 255), _entry(0, 128, 0)], 2,
-        text: '${_text}x')
-      ..seq = 2);
+    final impl = key.currentState!;
+    final next = _value([_entry(255, 0, 0), _entry(0, 0, 255), _entry(0, 128, 0)], 2, text: '${_text}x');
+    impl.state
+      ..text = next.text
+      ..styles = next.styles
+      ..styleIndex = next.styleIndex;
+    // ignore: invalid_use_of_protected_member
+    impl.setValue(impl.state);
     await tester.pump(Duration.zero);
 
     expect(TextShape.debugPainterLayouts, 1,

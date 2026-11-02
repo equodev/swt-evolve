@@ -1,13 +1,16 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'devicedata.g.dart';
-
-@JsonSerializable()
-class VDeviceData {
+class VDeviceData implements WireReadable, WireWritable, WireVisitable {
   VDeviceData() : this.empty();
   VDeviceData.empty();
 
-  factory VDeviceData.fromJson(Map<String, dynamic> json) =>
-      _$VDeviceDataFromJson(json);
-  Map<String, dynamic> toJson() => _$VDeviceDataToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
 }

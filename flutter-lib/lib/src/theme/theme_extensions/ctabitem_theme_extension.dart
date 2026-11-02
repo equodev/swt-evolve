@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'ctabitem_theme_extension.tailor.dart';
-part 'ctabitem_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@FontWeightConverter()
 class CTabItemThemeExtension extends ThemeExtension<CTabItemThemeExtension> with _$CTabItemThemeExtensionTailorMixin {
   // Tab item text colors
   final Color tabItemTextColor;
@@ -48,10 +40,5 @@ class CTabItemThemeExtension extends ThemeExtension<CTabItemThemeExtension> with
     required this.tabItemImageTextSpacing,
     required this.minTextContrast,
   });
-
-  factory CTabItemThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$CTabItemThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CTabItemThemeExtensionToJson(this);
 }
 

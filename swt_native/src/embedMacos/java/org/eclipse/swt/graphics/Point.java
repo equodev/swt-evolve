@@ -17,9 +17,6 @@ package org.eclipse.swt.graphics;
 
 import java.io.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent places on the (x, y)
@@ -45,8 +42,7 @@ import com.dslplatform.json.JsonAttribute;
  * @see Rectangle
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public sealed class Point implements Serializable, Cloneable permits Point.OfFloat {
+public sealed class Point implements Serializable, Cloneable, dev.equo.swt.WireObject permits Point.OfFloat {
 
     /**
      * the x coordinate of the point
@@ -239,5 +235,31 @@ public sealed class Point implements Serializable, Cloneable permits Point.OfFlo
         public Point.WithMonitor clone() {
             return new WithMonitor(getX(), getY(), monitor);
         }
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 75;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(402);
+        w.write((int) x);
+        w.key(403);
+        w.write((int) y);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 402:
+                x = r.int32();
+                return true;
+            case 403:
+                y = r.int32();
+                return true;
+        }
+        return false;
     }
 }

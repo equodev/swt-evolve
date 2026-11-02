@@ -681,6 +681,34 @@ class BrowserFlutterTest {
     @DisplayName("LocationListener")
     class Location {
 
+        /**
+         * A local file is served from a URL of the app's own; the frame's load events of the page it
+         * replaces still answer to the requested one. Neither the served URL nor those events may
+         * reach a listener: the file reports its own location, and the next page finds nothing left.
+         */
+        @Test
+        void aLocalFileReportsItsOwnLocationAndLeavesNothingForTheNextPage() throws Exception {
+            File dir = Files.createTempDirectory("equo-local-order").toFile();
+            File html = new File(dir, "local.html");
+            Files.writeString(html.toPath(), "<!doctype html><html><head><title>Local</title></head><body>local</body></html>",
+                    StandardCharsets.UTF_8);
+            List<String> locations = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+            LocationListener listener = LocationListener.changedAdapter(e -> locations.add(e.location));
+            browser.addLocationListener(listener);
+            try {
+                load(browser, url("/a"));
+                load(browser, html.toURI().toString());
+                load(browser, url("/b"));
+                pumpUntil(() -> false, 500);
+                assertThat(locations).as("locations reported").noneMatch(l -> l.contains("/local-file/"));
+                assertThat(locations.get(locations.size() - 1)).as("the last location reported").contains("/b");
+            } finally {
+                browser.removeLocationListener(listener);
+                html.delete();
+                dir.delete();
+            }
+        }
+
         // The assertion is a negative one - that /b is NOT reached - so it can only wait a bounded
         // time and call the silence a pass. When the navigation is merely slower than that wait, the
         // listener fires afterwards and the test reads it as a navigation that was never blocked.

@@ -1128,7 +1128,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Point getCursorLocation() {
         checkDevice();
-        return this.cursorLocation;
+        return DisplayBridge.cursorLocation(this);
     }
 
     /**
@@ -1397,7 +1397,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     int getLastEventTime() {
-        return (int) (System.nanoTime() / 1000_000L);
+        return DisplayBridge.lastEventTime(this);
     }
 
     Menu[] getMenus(Decorations shell) {
@@ -2898,11 +2898,24 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     boolean runTimers() {
+        if (_timerDeadlines.isEmpty())
+            return false;
+        long now = System.nanoTime();
+        java.util.List<Runnable> due = new java.util.ArrayList<>();
+        for (Map.Entry<Runnable, Long> e : _timerDeadlines.entrySet()) {
+            if (e.getValue() - now <= 0)
+                due.add(e.getKey());
+        }
+        if (due.isEmpty())
+            return false;
+        due.sort(java.util.Comparator.comparingLong(_timerDeadlines::get));
         boolean result = false;
-        for (int n = _dueTimers.size(); n > 0; n--) {
-            Runnable r = _dueTimers.poll();
-            if (r == null)
-                break;
+        for (Runnable r : due) {
+            // An earlier runnable in this batch may have cancelled or rescheduled this one.
+            Long deadline = _timerDeadlines.get(r);
+            if (deadline == null || deadline - now > 0)
+                continue;
+            _timerDeadlines.remove(r);
             result = true;
             sendPreEvent(SWT.None);
             try {
@@ -3115,14 +3128,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 2.1
      */
     public void setCursorLocation(int x, int y) {
-        Point newValue = new Point(x, y);
         checkDevice();
-        Event e = new Event();
-        e.type = SWT.MouseMove;
-        e.x = x;
-        e.y = y;
-        this.cursorLocation = newValue;
-        post(e);
+        DisplayBridge.setCursorLocation(this, x, y);
     }
 
     /**
@@ -3417,11 +3424,13 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         sendPreExternalEventDispatchEvent();
         try {
             _wakeSignal.drainPermits();
+            if (displayBridge != null && displayBridge.needsPump())
+                displayBridge.armWake();
             if (!hasPendingWork()) {
                 if (displayBridge != null && displayBridge.needsPump()) {
-                    displayBridge.sleep(16);
+                    displayBridge.sleep((int) untilNextTimer(displayBridge.parkCapMillis()));
                 } else {
-                    _wakeSignal.tryAcquire(WEB_PARK_CAP_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    _wakeSignal.tryAcquire(untilNextTimer(WEB_PARK_CAP_MS), java.util.concurrent.TimeUnit.MILLISECONDS);
                 }
             }
         } catch (InterruptedException e) {
@@ -3544,22 +3553,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         checkDevice();
         if (runnable == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        TimerTask existing = _timerExecTasks.remove(runnable);
-        if (existing != null)
-            existing.cancel();
+        _timerDeadlines.remove(runnable);
         if (milliseconds < 0)
             return;
-        TimerTask task = new TimerTask() {
-
-            @Override
-            public void run() {
-                _timerExecTasks.remove(runnable);
-                _dueTimers.add(runnable);
-                wakeThread();
-            }
-        };
-        _timerExecTasks.put(runnable, task);
-        _timerExecTimer.schedule(task, milliseconds);
+        _timerDeadlines.put(runnable, System.nanoTime() + milliseconds * 1_000_000L);
     }
 
     /**
@@ -3986,6 +3983,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return shells;
     }
 
+    volatile int lastEventTime;
+
     Menu[] shownPopups = new Menu[0];
 
     boolean isPopupAlreadyShown(Menu menu) {
@@ -4091,7 +4090,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     private boolean hasPendingWork() {
-        return !_dueTimers.isEmpty() || !((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty() || (displayBridge != null && displayBridge.hasDirty());
+        return untilNextTimer(1) == 0 || !((DartSynchronizer) synchronizer.getImpl()).isMessagesEmpty() || (displayBridge != null && displayBridge.hasDirty());
     }
 
     void addShell(Shell shell) {
@@ -4153,11 +4152,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return false;
     }
 
-    Map<Runnable, TimerTask> _timerExecTasks = new HashMap<>();
+    final Map<Runnable, Long> _timerDeadlines = new HashMap<>();
 
-    Timer _timerExecTimer = new Timer(true);
-
-    final java.util.concurrent.ConcurrentLinkedQueue<Runnable> _dueTimers = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    long untilNextTimer(long cap) {
+        return DisplayHelper.untilNextTimer(_timerDeadlines, cap);
+    }
 
     final java.util.concurrent.Semaphore _wakeSignal = new java.util.concurrent.Semaphore(0);
 

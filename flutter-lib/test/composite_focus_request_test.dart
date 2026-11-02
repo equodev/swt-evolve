@@ -3,8 +3,6 @@
 // the request, the focus the field held would fall back to whatever control was focused before it,
 // and Java would be told that control took focus.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -15,6 +13,9 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int frameId = 3;
 
@@ -32,7 +33,7 @@ void main() {
   tearDown(() => FocusRequests.instance.reset());
 
   testWidgets('a focus request for an empty Composite moves focus onto it', (tester) async {
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: SizedBox(
         width: 400,
@@ -61,7 +62,7 @@ void main() {
             ],
         ),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
     await tester.showKeyboard(find.byType(EditableText));
     await tester.pumpAndSettle();
@@ -93,7 +94,7 @@ void main() {
       ..visible = true
       ..enabled = true
       ..bounds = _rect(2, 2, 196, 26);
-    Widget app(VComposite frameValue) => EvolveApp(
+    Widget app(VComposite frameValue) => ForceLive(child: EvolveApp(
           theme: ThemeMode.light,
           contentWidget: Row(children: [
             SizedBox(
@@ -111,7 +112,7 @@ void main() {
             ),
             SizedBox(width: 200, height: 30, child: CompositeSwt<VComposite>(value: frameValue)),
           ]),
-        );
+        ));
 
     await tester.pumpWidget(app(frame([editor], 1)));
     await tester.pumpAndSettle();
@@ -125,8 +126,7 @@ void main() {
     // field is removed by the next update.
     FocusRequests.instance.request(frameId);
     await tester.pumpAndSettle();
-    final emptied = jsonDecode(jsonEncode(frame([], 2).toJson())) as Map<String, dynamic>;
-    VRegistry.instance.apply('Composite/$frameId', emptied..['_s'] = 2);
+    applyWhole(frame([], 2));
     await tester.pumpAndSettle();
     await tester.pump();
 

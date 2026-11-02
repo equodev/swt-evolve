@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../comm/comm.dart';
+import '../comm/channel_header.dart';
 import '../comm/comm_frame.dart' show EquoCommBase;
-import '../comm/delivery_gate.dart' show deliveryGate, widgetRefreshChannel;
+import '../comm/delivery_gate.dart' show deliveryGate;
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
@@ -22,6 +23,7 @@ import '../gen/styledtext.dart';
 import '../gen/styledtextrenderer.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey, WireChannel, WireType;
 import '../impl/canvas_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
@@ -35,6 +37,8 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
 import 'utils/wheel_input.dart';
+import '../comm/widget_wire.dart' show WidgetWireWriter, WireVisitable;
+import '../comm/tagged_values.dart';
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
@@ -62,8 +66,33 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextShape? _shape;
   bool _shapeStale = true;
   _Delimiters _delimiters = _Delimiters.none;
-  Object? _textChangeToken;
-  Object? _resendGeometryToken;
+  /// The mounted StyledTexts by id, where the handlers below find the editor a frame addresses.
+  static final Map<int, StyledTextImpl> _live = {};
+
+  @override
+  Map<int, WidgetSwtState> get liveOfKind => _live;
+
+  /// Registers what every StyledText answers (see `registerWidgetOps`).
+  static void registerOps() {
+    final type = WireType.styledText;
+    EquoCommService.onWidgetOp(type, WireChannel.textChange, _textChangeOp);
+    EquoCommService.onWidgetOp(type, WireChannel.resendGeometry, _resendGeometryOp);
+  }
+
+  /// What Java sends a StyledText: one handler per channel for every StyledText.
+  static FutureOr<bool> _textChangeOp(int id, Uint8List frame, int start, int end) {
+    final editor = _live[id];
+    if (editor == null) return false;
+    editor._onTextChange(TaggedValues.decodeAt(frame, start));
+    return true;
+  }
+
+  static FutureOr<bool> _resendGeometryOp(int id, Uint8List frame, int start, int end) {
+    final editor = _live[id];
+    if (editor == null) return false;
+    editor._sendWholeGeometry();
+    return true;
+  }
 
   static const int _caretBlinkMs = 560;
   Timer? _caretBlinkTimer;
@@ -78,10 +107,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   );
 
   void _sendComposition(String text, int caret, {required bool commit}) {
-    EquoCommService.sendPayload(
-      "${state.swt}/${state.id}/ImeComposition",
-      {'text': text, 'caret': caret, 'commit': commit},
-    );
+    EquoCommService.sendWritten(WidgetWireWriter.startTo(state.wireType, state.id, WireChannel.imeComposition)
+          ..string(text)
+          ..int32(caret)
+          ..boolean(commit));
   }
 
   String? _metricsSource;
@@ -128,10 +157,6 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   void initState() {
     super.initState();
     _focusNode.addListener(_onFocusChange);
-    _textChangeToken =
-        EquoCommService.onRaw("StyledText/${state.id}/TextChange", _onTextChange);
-    _resendGeometryToken = EquoCommService.onRaw(
-        "StyledText/${state.id}/ResendGeometry", (_) => _sendWholeGeometry());
     // Updates that arrived while nothing showed this editor were merged with no one to resolve
     // them; a change among them is relative to an index this state never held.
     _takeStyleIndex(state);
@@ -196,7 +221,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         value.styleIndex = _heldStyleIndex;
         deliveryGate.recoveries++;
         print('[delivery] style index change does not fit StyledText/${value.id}: asking for it again');
-        EquoCommService.sendPayload(widgetRefreshChannel, '${value.id}');
+        EquoCommService.sendOn(WireChannel.swtEvolveWidgetRefresh, '${value.id}');
         return;
       }
       value.styleIndex = resolved;
@@ -212,7 +237,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _appliedSeq = value.seq;
       // A frame without the index leaves the one carried across the edits standing, which is also
       // what Java takes this side to hold until it sends the index again.
-      if (lastChange?.touches('styleIndex') ?? true) {
+      if (lastChange?.touches(WireKey.k_StyledText_styleIndex) ?? true) {
         _takeStyleIndex(value);
         _splicedStyleIndex = null;
       }
@@ -227,7 +252,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   int? _appliedSeq;
 
   void _requestText() {
-    EquoCommService.sendPayload("StyledText/${state.id}/ResendText", const {});
+    EquoCommService.sendTo(WireType.styledText, state.id, WireChannel.resendText);
   }
 
   @override
@@ -239,9 +264,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   @override
   void dispose() {
-    EquoCommService.remove("StyledText/${state.id}/TextChange", _textChangeToken);
     _geometryTimer?.cancel();
-    EquoCommService.remove("StyledText/${state.id}/ResendGeometry", _resendGeometryToken);
     _composedInput.detach();
     setCanvasEditorFocus(this, false);
     _focusNode.removeListener(_onFocusChange);
@@ -483,6 +506,38 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// cached under that object's identity.
   final Map<String, _PaletteStyle> _paletteByContent = {};
 
+  /// What [range] draws as, as a key: every property but where it lies. Read through [visitWire],
+  /// which holds every field; a range's writer holds only what Java reads back from the client.
+  static String _drawnAs(VStyleRange range) {
+    final out = StringBuffer();
+    void add(Object? value) {
+      if (value is WireVisitable) {
+        out.write('{');
+        value.visitWire((key, field) {
+          if (key == WireKey.k_StyleRange_start || key == WireKey.k_StyleRange_length) return;
+          out
+            ..write(key)
+            ..write(':');
+          add(field);
+          out.write(',');
+        });
+        out.write('}');
+      } else if (value is List) {
+        out.write('[');
+        for (final e in value) {
+          add(e);
+          out.write(',');
+        }
+        out.write(']');
+      } else {
+        out.write(value);
+      }
+    }
+
+    add(range);
+    return out.toString();
+  }
+
   /// What a decoded entry also depends on besides its own fields.
   Object? _paletteBasis;
 
@@ -557,7 +612,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         if (named < 0 || named >= styles.length) continue;
         final vRange = styles[named];
         if (vRange == null) continue;
-        final entry = decoded[named] ??= _paletteByContent[jsonEncode(vRange.toJson())] ??= _PaletteStyle(
+        final entry = decoded[named] ??= _paletteByContent[_drawnAs(vRange)] ??= _PaletteStyle(
           style: _convertVStyleRangeToTextStyle(vRange),
           underlineStyle:
               vRange.underline == true ? (vRange.underlineStyle ?? SWT.UNDERLINE_SINGLE) : null,
@@ -643,13 +698,17 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       const Color(0xFF3399FF);
 
   /// StyledText#setSelectionForeground, the CSS engine's other selection setter: the selected
-  /// glyphs are repainted in it over the highlight. Null keeps the glyphs as they are.
+  /// glyphs are drawn in it over the highlight. Null leaves [SelectionInfo]'s default.
   Color? get _selectionForeground => state.selectionForeground == null
       ? null
       : colorFromVColor(state.selectionForeground);
 
   @visibleForTesting
   TextStyle debugRangeStyle(VStyleRange vRange) => _convertVStyleRangeToTextStyle(vRange);
+
+  /// The runs the text is drawn in, as last built.
+  @visibleForTesting
+  List<StyleRange>? get debugCharacterRanges => _heldEditingState?.editingState.characterRanges;
 
   TextStyle _convertVStyleRangeToTextStyle(VStyleRange vRange) {
     final defaultTextColor = _textColor;
@@ -1022,7 +1081,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   double? _geometrySentBandBottom;
   GeometryTable? _geometrySent;
 
-  /// Comparing the widget's text style is expensive, so layout keys carry a count of its changes.
+  /// Comparing the widget's text style is expensive, so layout keys carry a token for it instead. The
+  /// layout cache is shared by every StyledText, so the token stands for the style's value: equal
+  /// styles share a token, and with it the lines another editor already laid out; any other style,
+  /// a font or a colour apart, has its own.
+  static final Map<TextStyle, int> _styleTokens = {};
+  static int _nextStyleToken = 0;
   TextStyle? _lastDefaultStyle;
   int _styleToken = 0;
 
@@ -1031,7 +1095,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final last = _lastDefaultStyle;
     if (last == null || built != last) {
       _lastDefaultStyle = built;
-      _styleToken++;
+      // Tokens keep counting up, so one handed out before a clear is never reused for another style.
+      if (_styleTokens.length >= 256) _styleTokens.clear();
+      _styleToken = _styleTokens[built] ??= ++_nextStyleToken;
       return built;
     }
     return last;
@@ -1053,7 +1119,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   static int debugGeometryPushes = 0;
   static GeometryTable? _debugLastTable;
   @visibleForTesting
-  static Map<String, dynamic>? get debugLastGeometry => _debugLastTable?.toJson();
+  static Map<String, dynamic>? get debugLastGeometry => _debugLastTable?.toMap();
   @visibleForTesting
   static set debugLastGeometry(Map<String, dynamic>? cleared) {
     assert(cleared == null, 'only clearing is supported');
@@ -1094,14 +1160,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         previous!.sameExtentsAs(geometry)) {
       return;
     }
-    final payload = _geometryPayload(geometry, splice);
     _geometrySent = geometry;
     debugGeometryPushes++;
     _debugLastTable = geometry;
-    EquoCommService.sendPayload(
-      "${state.swt}/${state.id}/TextGeometry",
-      payload,
-    );
+    final w = WidgetWireWriter.startTo(state.wireType, state.id, WireChannel.textGeometry);
+    _writeGeometry(w, geometry, splice);
+    EquoCommService.sendWritten(w);
   }
 
   /// Worked out after the frame, since the table only answers Java's position queries: owed ahead
@@ -1131,26 +1195,35 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   }
 
   /// What to send for [table]: the splice from the table the other side holds, or the whole thing.
-  Map<String, dynamic> _geometryPayload(GeometryTable table, _GeometrySplice? splice) {
+  ///
+  /// `u8 splice, version, [base], charCount, contentWidth, contentHeight, [rowStart, rowsReplaced,
+  /// lineDelta, offsetDelta, yDelta], rows`, as Java's `StyledTextHelper.readPush` reads it.
+  void _writeGeometry(WidgetWireWriter w, GeometryTable table, _GeometrySplice? splice) {
     final version = ++_geometryVersion;
     // A splice that rewrites most of the table (a resize, a wrap toggle) is the table.
-    if (splice == null || splice.rows.length * 2 > table.rows.length) {
-      if (splice == null) _geometryFullNeeded = false;
-      return <String, dynamic>{...table.toJson(), 'v': version};
+    final whole = splice == null || splice.rows.length * 2 > table.rows.length;
+    if (splice == null) _geometryFullNeeded = false;
+    w
+      ..u8(whole ? 0 : 1)
+      ..int32(version);
+    if (!whole) w.int32(version - 1);
+    w
+      ..int32(table.charCount)
+      ..float64(table.contentWidth)
+      ..float64(table.contentHeight);
+    final rows = whole ? table.rows : splice!.rows;
+    if (!whole) {
+      w
+        ..int32(splice!.rowStart)
+        ..int32(splice.rowsReplaced)
+        ..int32(splice.lineDelta)
+        ..int32(splice.offsetDelta)
+        ..float64(splice.yDelta);
     }
-    return <String, dynamic>{
-      'v': version,
-      'base': version - 1,
-      'charCount': table.charCount,
-      'contentWidth': table.contentWidth,
-      'contentHeight': table.contentHeight,
-      'rowStart': splice.rowStart,
-      'rowsReplaced': splice.rowsReplaced,
-      'lineDelta': splice.lineDelta,
-      'offsetDelta': splice.offsetDelta,
-      'yDelta': splice.yDelta,
-      'rows': [for (final row in splice.rows) row.toJson()],
-    };
+    w.varint(rows.length);
+    for (final row in rows) {
+      row.writeWire(w);
+    }
   }
 
   /// The rows that changed between [before] and [after], as a replacement of one run of rows plus
@@ -1432,6 +1505,80 @@ class _Delimiters {
   }
 }
 
+
+/// What a style's text lays out to vertically, when every printable ASCII character and a tab lay
+/// out to the same: null for a style where some of them would not (a glyph from a fallback font,
+/// say), whose lines have to be laid out to know their height.
+class _VerticalMetrics {
+  _VerticalMetrics._(this.ascent, this.descent, this.height, this.emptyHeight, this.averageAdvance);
+
+  final double ascent;
+  final double descent;
+  final double height;
+
+  /// The mean width of the printable ASCII characters, for a line's width before it is laid out.
+  final double averageAdvance;
+
+  /// An empty line's height, which comes from the style rather than from any glyph.
+  final double emptyHeight;
+
+  bool sameAs(_VerticalMetrics other) =>
+      ascent == other.ascent && descent == other.descent && height == other.height;
+
+  /// What [of] found for each style, with [_none] for a style it found no metrics for. Kept as
+  /// long as the line layouts measured in the same fonts are ([debugResetLineLayoutCache]).
+  static Expando<Object> _ofStyle = Expando();
+  static final Object _none = Object();
+
+  static _VerticalMetrics? of(TextStyle style) {
+    final known = _ofStyle[style];
+    if (known != null) return known is _VerticalMetrics ? known : null;
+    final metrics = _measure(style);
+    _ofStyle[style] = metrics ?? _none;
+    return metrics;
+  }
+
+  static double _lastWidth = 0;
+
+  static (double, double, double)? _laidOut(InlineSpan span, [List<PlaceholderDimensions>? placeholders]) {
+    final painter = TextPainter(text: span, textDirection: TextDirection.ltr);
+    if (placeholders != null) painter.setPlaceholderDimensions(placeholders);
+    painter.layout();
+    final lines = painter.computeLineMetrics();
+    final result = lines.length == 1 ? (lines.first.ascent, lines.first.descent, painter.height) : null;
+    _lastWidth = painter.width;
+    painter.dispose();
+    return result;
+  }
+
+  static _VerticalMetrics? _measure(TextStyle style) {
+    // As a run inside a line, and as a line's own style: both have to agree.
+    final asRoot = _laidOut(TextSpan(text: 'x', style: style));
+    final reference = _laidOut(TextSpan(children: [TextSpan(text: 'x', style: style)]));
+    if (asRoot == null || reference == null || asRoot != reference) return null;
+    var widths = 0.0;
+    for (var c = 0x20; c <= 0x7E; c++) {
+      if (_laidOut(TextSpan(children: [TextSpan(text: String.fromCharCode(c), style: style)])) != reference) {
+        return null;
+      }
+      widths += _lastWidth;
+    }
+    final tabbed = _laidOut(
+        TextSpan(children: [TextSpan(text: 'x', style: style), _tabPlaceholder]),
+        const [PlaceholderDimensions(
+          size: Size(8, 0),
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          baselineOffset: 0,
+        )]);
+    if (tabbed != reference) return null;
+    final empty = TextPainter(text: TextSpan(text: '', style: style), textDirection: TextDirection.ltr)
+      ..layout();
+    final emptyHeight = empty.height;
+    empty.dispose();
+    return _VerticalMetrics._(reference.$1, reference.$2, reference.$3, emptyHeight, widths / (0x7E - 0x20 + 1));
+  }
+}
 
 // Stands in for one '\t'. Its width comes from the PlaceholderDimensions computed per
 // tab, so the child is never measured or painted.
@@ -1741,10 +1888,17 @@ void debugResetLineLayoutCache() {
 /// and on the web a disposed paragraph draws as garbage there. The engine frees it once nothing
 /// references it.
 void _dropLineCaches() {
+  _fontEpoch++;
   _lineLayoutCache.clear();
   _lineLayoutCacheChars = 0;
   _paintedLineCache.clear();
+  _VerticalMetrics._ofStyle = Expando();
 }
+
+/// Moves on whenever the line caches are dropped because the fonts changed: what a shape measured
+/// before then is not what its lines lay out to now. A font that finishes loading after the first
+/// layout is the case that matters: an empty line measured in the stand-in font kept that height.
+int _fontEpoch = 0;
 
 bool _watchingSystemFonts = false;
 
@@ -1909,6 +2063,8 @@ class TextShape extends Shape {
   /// Takes over what [other] measured when both lay out the same way. After an edit, [other] answers
   /// for the lines the edit did not reach ([_donatedLine]).
   void inheritMeasurementsFrom(TextShape other) {
+    // Measured in fonts that have changed since: nothing of it carries over.
+    if (other._measuredEpoch != _fontEpoch) return;
     if (other._frameSignature == _frameSignature) {
       _tallestLine = math.max(_tallestLine, other._tallestLine);
     }
@@ -1967,7 +2123,7 @@ class TextShape extends Shape {
   /// and tab stops are unchanged.
   _LineLayout? _donatedLine(int lineIndex, String lineText, bool wantCaretX) {
     final donor = _lineDonor;
-    if (donor == null) return null;
+    if (donor == null || donor._measuredEpoch != _fontEpoch) return null;
     if (_donorPrefix < 0) _matchDonorLines(donor);
     final int theirs;
     if (lineIndex < _donorPrefix) {
@@ -2020,6 +2176,19 @@ class TextShape extends Shape {
 
   _LineTopsCache _lineTopsCache = _LineTopsCache();
 
+  /// The [_fontEpoch] this shape's own measurements were taken in.
+  int _measuredEpoch = _fontEpoch;
+
+  /// Drops what this shape measured in fonts that have changed since: its line layouts, the line
+  /// tops summed from them and the shape it would take lines from.
+  void _forgetStaleMeasurements() {
+    if (_measuredEpoch == _fontEpoch) return;
+    _measuredEpoch = _fontEpoch;
+    _measuredLineCache = null;
+    _lineTopsCache = _LineTopsCache();
+    _lineDonor = null;
+  }
+
   /// Per-line properties that affect layout, from [editingState] when present.
   /// Computed once and shared by every pass over the document.
   List<({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})?>?
@@ -2041,6 +2210,7 @@ class TextShape extends Shape {
 
   /// The layout of [lineIndex] as this shape lays it out, measured once.
   _LineLayout _measuredLine(int lineIndex, String lineText, {bool wantCaretX = false}) {
+    _forgetStaleMeasurements();
     final layout = _measuredLineNow(lineIndex, lineText, wantCaretX);
     if (_uniformRows) _noteLineHeight(_tallestRowOf(layout));
     return layout;
@@ -2172,19 +2342,64 @@ class TextShape extends Shape {
   List<double> _lineTopsNow(List<String> lines, Size? canvas) {
     final watch = Stopwatch()..start();
     final tops = List<double>.filled(lines.length + 1, 0);
+    final memo = _measuredLineCache;
     double y = 0;
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
-      y += props.vIndent + (_uniformRows ? _rowHeight : _advance(_measuredLine(i, lines[i]).height, i));
+      if (_uniformRows) {
+        y += props.vIndent + _rowHeight;
+      } else {
+        final height = (memo != null && i < memo.length ? memo[i]?.height : null) ??
+            _shapelessHeight(i, lines[i]) ??
+            _measuredLine(i, lines[i]).height;
+        y += props.vIndent + _advance(height, i);
+      }
     }
     tops[lines.length] = y;
     debugLineTopsMicros += watch.elapsedMicroseconds;
     return tops;
   }
 
-  List<double> _lineTops(List<String> lines) =>
-      _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+  /// Each line's [_shapelessHeight] beside the height laying it out gives.
+  @visibleForTesting
+  List<(double?, double)> debugShapelessHeights() => [
+        for (final (i, line) in _lines.indexed) (_shapelessHeight(i, line), _measuredLine(i, line).height),
+      ];
+
+  /// The height [lineIndex] lays out to, when that is known without laying it out, else null.
+  ///
+  /// A line's height is the tallest ascent plus the deepest descent of the fonts its characters are
+  /// drawn in. An unwrapped line of printable ASCII and tabs, in styles that all have the same
+  /// vertical metrics for each of those characters ([_VerticalMetrics]), is that height whatever
+  /// its text: the one every line of those styles has.
+  double? _shapelessHeight(int lineIndex, String lineText) {
+    if (wordWrap == true) return null;
+    final base = _VerticalMetrics.of(style);
+    if (base == null) return null;
+    if (lineText.isEmpty) return base.emptyHeight;
+    for (var k = 0; k < lineText.length; k++) {
+      final c = lineText.codeUnitAt(k);
+      if ((c < 0x20 || c > 0x7E) && c != 0x09) return null;
+    }
+    final ranges = lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
+    if (ranges.isEmpty) return base.height;
+    final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
+    final lineEnd = lineStart + lineText.length;
+    for (final range in ranges) {
+      if (range.end <= lineStart || range.start >= lineEnd) continue;
+      if (range.rise != 0 || range.glyphWidth != null) return null;
+      if (identical(range.style, style)) continue;
+      final metrics = _VerticalMetrics.of(range.style);
+      if (metrics == null || !metrics.sameAs(base)) return null;
+    }
+    return base.height;
+  }
+
+  List<double> _lineTops(List<String> lines) {
+    _forgetStaleMeasurements();
+    return _lineTopsCache.tops ??= _lineTopsFor(lines, canvasSize);
+  }
 
   /// Height of the laid-out text, wrapped rows included, from the top of its first line.
   double get textHeight => _lineTops(_lines).last;
@@ -2253,6 +2468,8 @@ class TextShape extends Shape {
     // Running line tops, kept with the layout; the paint starts and stops at the band's lines.
     final tops = _lineTops(lines);
     int firstLine = _lineAtTop(tops, cullTop - paintOffset.dy);
+    final selections = [for (final s in allSelections) if (s.hasSelection) s];
+    debugPaintedSelectionRects.clear();
 
     for (int i = firstLine; i < lines.length; i++) {
       currentY = paintOffset.dy + tops[i];
@@ -2292,15 +2509,20 @@ class TextShape extends Shape {
       // A wrap indent shifts only the rows the line continues on, so the layout is painted
       // once per indent, each pass clipped to the rows it applies to.
       final wrapShift = props.wrapIndent - props.indent;
+      final selected = _selectionsOnLine(selections, i, line);
       void paintRows(double x, Rect? band) {
         if (band != null) {
           c.save();
           c.clipRect(band);
         }
-        _drawRangeBackgrounds(c, i, line, tp, Offset(x, currentY + vIndent), currentY + advance);
-        _paintLineWithRises(c, tp, i, line, Offset(x, currentY + vIndent));
-        _drawRangeBorders(c, i, line, tp, Offset(x, currentY + vIndent));
-        _drawSeparateStrikeouts(c, i, line, tp, Offset(x, currentY + vIndent));
+        final origin = Offset(x, currentY + vIndent);
+        _drawRangeBackgrounds(c, i, line, tp, origin, currentY + advance);
+        _paintLineWithRises(c, tp, i, line, origin);
+        _drawRangeBorders(c, i, line, tp, origin);
+        _drawSeparateStrikeouts(c, i, line, tp, origin);
+        for (final run in selected) {
+          if (run.from < run.to) _drawSelectedRun(c, run, i, line, tp, maxW, origin, band);
+        }
         if (band != null) c.restore();
       }
       _drawBullet(c, props, paintOffset.dx, currentY + vIndent);
@@ -2316,11 +2538,9 @@ class TextShape extends Shape {
         paintRows(originX + wrapShift,
             Rect.fromLTRB(0, split, width, currentY + vIndent + tp.height));
       }
-    }
-
-    debugPaintedSelectionRects.clear();
-    for (final selection in allSelections) {
-      if (selection.hasSelection) _drawSelection(c, selection);
+      for (final run in selected) {
+        if (run.delimiter) _drawSelectedDelimiter(c, run.selection, tp, originX, currentY + vIndent);
+      }
     }
 
     debugPaintersLastDraw = debugPainterLayouts - paintersAtStart;
@@ -2629,9 +2849,10 @@ class TextShape extends Shape {
   static double _roundPx(double v) => (v * 100).roundToDouble() / 100;
 
   Map<String, dynamic>? computeGeometry({double? visibleTop, double? visibleBottom}) =>
-      computeGeometryTable(visibleTop: visibleTop, visibleBottom: visibleBottom).toJson();
+      computeGeometryTable(visibleTop: visibleTop, visibleBottom: visibleBottom).toMap();
 
   GeometryTable computeGeometryTable({double? visibleTop, double? visibleBottom}) {
+    _forgetStaleMeasurements();
     final lines = _lines;
     final wholeDocument = text.length <= _charXPayloadLimit || visibleTop == null;
     final top = visibleTop ?? 0;
@@ -2671,12 +2892,43 @@ class TextShape extends Shape {
         continue;
       }
 
+      // A line off screen that nothing has laid out yet, whose height is known without laying it
+      // out, is described by that height and a width estimated from its length, and left unmeasured
+      // until it is shown: the native renderer measures a line of fixed height only then, so the
+      // document's width is that of the lines measured so far.
+      if (!wholeDocument && _knownLine(i, line) == null) {
+        final height = _shapelessHeight(i, line);
+        if (height != null && !rowIsVisible(currentY, vIndent + _advance(height, i))) {
+          final advance = vIndent + _advance(height, i);
+          visual.add(GeometryRow(
+            i,
+            docOffset,
+            docOffset + line.length,
+            _roundPx(props.indent.toDouble()),
+            _roundPx(currentY),
+            _roundPx(line.length * _VerticalMetrics.of(style)!.averageAdvance),
+            _roundPx(advance),
+            vIndent != 0 ? vIndent : null,
+            null,
+          ));
+          currentY += advance;
+          docOffset += line.length + 1;
+          continue;
+        }
+      }
+
       var layout = _measuredLine(i, line, wantCaretX: wholeDocument);
+      final lineVisible = rowIsVisible(currentY, vIndent + _advance(layout.height, i));
+      // A wrapped line sends per-character x for its rows in view only, so only those are measured:
+      // one caret query per character is most of what describing a long line costs.
+      final caretsByRow = !wholeDocument &&
+          layout.caretX == null &&
+          lineVisible &&
+          layout.metrics.length > 1 &&
+          !_uniformRows;
       // Per-character x is worth its weight only for the rows someone can see; the line has to
       // be laid out to know where it ends, so the decision comes after.
-      if (!wholeDocument &&
-          layout.caretX == null &&
-          rowIsVisible(currentY, vIndent + _advance(layout.height, i))) {
+      if (!wholeDocument && layout.caretX == null && lineVisible && !caretsByRow) {
         layout = _measuredLine(i, line, wantCaretX: true);
       }
 
@@ -2684,17 +2936,20 @@ class TextShape extends Shape {
           props.indent, props.align, layout.width, canvasSize == null ? double.infinity : maxW);
 
       final caretX = layout.caretX;
+      TextPainter? rowCarets;
       // Rounded to a hundredth of a pixel: far below what changes Java's answers, and shorter to send.
-      List<double> charX(int from, int to, double base) => [
-        for (int k = from; k <= to; k++) base + caretX![k],
-      ];
+      List<double> charX(int from, int to, double base) {
+        if (caretX != null) return [for (int k = from; k <= to; k++) base + caretX[k]];
+        final tp = rowCarets ??= _measuringPainter(line, i, align: props.align, maxWidth: maxW);
+        return [for (int k = from; k <= to; k++) base + _caretXOf(tp, k)];
+      }
 
       // The visual line's box: `y`/`h` include the line's vertical indent so bands
       // stay contiguous; `vi` (first visual row only) is the indent within the box,
       // i.e. the glyphs sit at y + vi. The Java side adds `vi` when answering
       // text-position queries and uses the box for line/pixel queries.
       final metrics = layout.metrics;
-      final includeCharX = caretX != null;
+      final includeCharX = caretX != null || caretsByRow;
       // Uniform rows hold one line each, whatever rows its layout broke into.
       if (metrics.length <= 1 || _uniformRows) {
         maxWidth = math.max(maxWidth, finalX + layout.width);
@@ -2744,12 +2999,33 @@ class TextShape extends Shape {
           top = bottom;
         }
       }
+      rowCarets?.dispose();
 
       currentY += vIndent + _advance(layout.height, i);
       docOffset += line.length + 1;
     }
 
     return GeometryTable(text.length, _roundPx(maxWidth), _roundPx(currentY), visual);
+  }
+
+  /// The layout this shape already holds for [lineIndex], or the one the shape before it measured
+  /// for the same line, without laying anything out.
+  _LineLayout? _knownLine(int lineIndex, String lineText) {
+    final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
+    if (lineIndex < memo.length && memo[lineIndex] != null) return memo[lineIndex];
+    final donated = _donatedLine(lineIndex, lineText, false);
+    if (donated != null && lineIndex < memo.length) memo[lineIndex] = donated;
+    return donated;
+  }
+
+  /// Caret positions asked for to describe the document, for tests asserting their cost.
+  @visibleForTesting
+  static int debugCaretQueries = 0;
+
+  /// x of the character boundary at [offset] in [tp], relative to the line's own origin.
+  static double _caretXOf(TextPainter tp, int offset) {
+    debugCaretQueries++;
+    return tp.getOffsetForCaret(TextPosition(offset: offset), Rect.zero).dx;
   }
 
   /// The span for one logical line. Deliberately built per line rather than sliced out
@@ -2876,17 +3152,7 @@ class TextShape extends Shape {
       } else {
         debugLineCaretMisses++;
       }
-      final expanded = _expandTabStops(_getTextSpanForLine(lineText, lineIndex), lineIndex);
-      debugLayoutLineCalls++;
-      final tp = TextPainter(
-        text: expanded.span,
-        textAlign: align,
-        textDirection: TextDirection.ltr,
-      );
-      if (expanded.tabStops.isNotEmpty) {
-        tp.setPlaceholderDimensions(expanded.tabStops);
-      }
-      tp.layout(maxWidth: maxWidth);
+      final tp = _measuringPainter(lineText, lineIndex, align: align, maxWidth: maxWidth);
 
       final metrics = tp.computeLineMetrics();
       final rowEnds = <int>[];
@@ -2911,16 +3177,30 @@ class TextShape extends Shape {
         rowEnds,
       );
       if (wantCaretX) {
-        layout.caretX = [
-          for (int k = 0; k <= lineText.length; k++)
-            tp.getOffsetForCaret(TextPosition(offset: k), Rect.zero).dx,
-        ];
+        layout.caretX = [for (int k = 0; k <= lineText.length; k++) _caretXOf(tp, k)];
       }
       tp.dispose();
     }
     // Re-inserting on a hit puts the entry back at the young end of the eviction order.
     _cacheLineLayout(key, layout);
     return layout;
+  }
+
+  /// [lineText] laid out as the geometry measures it, for the caller to dispose.
+  TextPainter _measuringPainter(String lineText, int lineIndex,
+      {required TextAlign align, required double maxWidth}) {
+    final expanded = _expandTabStops(_getTextSpanForLine(lineText, lineIndex), lineIndex);
+    debugLayoutLineCalls++;
+    final tp = TextPainter(
+      text: expanded.span,
+      textAlign: align,
+      textDirection: TextDirection.ltr,
+    );
+    if (expanded.tabStops.isNotEmpty) {
+      tp.setPlaceholderDimensions(expanded.tabStops);
+    }
+    tp.layout(maxWidth: maxWidth);
+    return tp;
   }
 
   // Every per-line TextPainter goes through here so painting, caret placement and
@@ -3380,135 +3660,84 @@ class TextShape extends Shape {
   /// The highlight rectangles the last paint drew, for [StyledTextImpl.debugRenderFacts].
   final List<Rect> debugPaintedSelectionRects = [];
 
-  void _drawSelection(Canvas c, SelectionInfo selection) {
-    final startOffset = selection.normalizedStart.clamp(0, text.length);
-    final endOffset = selection.normalizedEnd.clamp(0, text.length);
-
-    if (startOffset == endOffset) return;
-
-    final lines = _lines;
-
-    int currentLineStartOffset = 0;
-    int startLineIndex = 0;
-    int endLineIndex = 0;
-    int startPositionInLine = 0;
-    int endPositionInLine = 0;
-
-    for (int i = 0; i < lines.length; i++) {
-      final lineLength = lines[i].length;
-      final lineEndOffset = currentLineStartOffset + lineLength;
-
-      if (startOffset >= currentLineStartOffset &&
-          startOffset <= lineEndOffset) {
-        startLineIndex = i;
-        startPositionInLine = startOffset - currentLineStartOffset;
-      }
-
-      if (endOffset >= currentLineStartOffset && endOffset <= lineEndOffset) {
-        endLineIndex = i;
-        endPositionInLine = endOffset - currentLineStartOffset;
-        break;
-      }
-
-      currentLineStartOffset = lineEndOffset + 1;
-    }
-
-    final tops = _lineTops(lines);
-
-    for (
-      int lineIndex = startLineIndex;
-      lineIndex <= endLineIndex;
-      lineIndex++
-    ) {
-      final line = lines[lineIndex];
-      final props = _linePropsFor(lineIndex);
-
-      final tp = _layoutLine(
-        line,
-        lineIndex,
-          align: props.align,
-        maxWidth: _lineMaxWidth(props.layoutIndent),
-      );
-
-      final currentY = off.dy + tops[lineIndex] + props.vIndent;
-
-      int lineSelectionStart = 0;
-      int lineSelectionEnd = line.length;
-
-      if (lineIndex == startLineIndex) {
-        lineSelectionStart = startPositionInLine;
-      }
-      if (lineIndex == endLineIndex) {
-        lineSelectionEnd = endPositionInLine;
-      }
-
-      // A line whose delimiter is inside the selection is highlighted past its last character:
-      // to the right edge with FULL_SELECTION, by the delimiter's own extent otherwise. It is the
-      // only highlight an empty line inside a selection gets.
-      if (lineIndex < endLineIndex) {
-        final tail = tp.width + off.dx + props.indent;
-        final right = fullSelection
-            ? math.max(tail, canvasSize?.width ?? tail)
-            : tail + _measureRun(' ', style);
-        final rect = Rect.fromLTRB(tail, currentY, right, currentY + _advance(tp.height));
-        debugPaintedSelectionRects.add(rect);
-        c.drawRect(rect, Paint()..color = selection.selectionColor);
-      }
-
-      if (lineSelectionStart < lineSelectionEnd) {
-        final boxes = tp.getBoxesForSelection(
-          TextSelection(
-            baseOffset: lineSelectionStart.clamp(0, line.length),
-            extentOffset: lineSelectionEnd.clamp(0, line.length),
+  /// What each selection covers of line [lineIndex]: the columns of its glyphs, and whether it
+  /// goes on past the line's delimiter.
+  List<({SelectionInfo selection, int from, int to, bool delimiter})> _selectionsOnLine(
+      List<SelectionInfo> selections, int lineIndex, String line) {
+    if (selections.isEmpty) return const [];
+    final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
+    final lineEnd = lineStart + line.length;
+    return [
+      for (final selection in selections)
+        if (selection.normalizedStart.clamp(0, text.length) <= lineEnd &&
+            selection.normalizedEnd.clamp(0, text.length) >= lineStart)
+          (
+            selection: selection,
+            from: math.max(selection.normalizedStart.clamp(0, text.length), lineStart) - lineStart,
+            to: math.min(selection.normalizedEnd.clamp(0, text.length), lineEnd) - lineStart,
+            delimiter: selection.normalizedEnd.clamp(0, text.length) > lineEnd,
           ),
-        );
+    ];
+  }
 
-        for (final box in boxes) {
-          final selectionRect = Rect.fromLTWH(
-            off.dx + props.indent.toDouble() + box.left,
-            currentY + box.top,
-            box.right - box.left,
-            box.bottom - box.top,
-          );
-          debugPaintedSelectionRects.add(selectionRect);
-
-          c.drawRect(
-            selectionRect,
-            Paint()
-              ..color = selection.selectionColor
-              ..style = PaintingStyle.fill,
-          );
-        }
-
-        final selectionForeground = selection.selectionForeground;
-        if (selectionForeground != null && boxes.isNotEmpty) {
-          final recoloured = TextPainter(
-            text: _recolour(tp.text!, selectionForeground),
-            textAlign: tp.textAlign,
-            textDirection: TextDirection.ltr,
-          );
-          if (tp.inlinePlaceholderBoxes != null) {
-            recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
-          }
-          recoloured.layout(maxWidth: _lineMaxWidth(props.layoutIndent));
-          c.save();
-          c.clipRect(boxes
-              .map((b) => Rect.fromLTRB(
-                  off.dx + props.indent + b.left, currentY + b.top,
-                  off.dx + props.indent + b.right, currentY + b.bottom))
-              .reduce((a, b) => a.expandToInclude(b)));
-          recoloured.paint(c, Offset(off.dx + props.indent.toDouble(), currentY));
-          c.restore();
-        }
-      }
+  /// TextLayout.draw's order for a selected run: the highlight over whatever the run painted
+  /// behind and under its glyphs, then the glyphs again on top in the selection foreground, laid
+  /// out and placed as the line's own so they land on the glyphs they replace.
+  void _drawSelectedRun(
+      Canvas c,
+      ({SelectionInfo selection, int from, int to, bool delimiter}) run,
+      int lineIndex,
+      String line,
+      TextPainter tp,
+      double maxWidth,
+      Offset origin,
+      Rect? band) {
+    final boxes = tp.getBoxesForSelection(TextSelection(baseOffset: run.from, extentOffset: run.to));
+    if (boxes.isEmpty) return;
+    final highlight = Paint()..color = run.selection.selectionColor;
+    final selected = Path();
+    for (final box in boxes) {
+      final rect = box.toRect().shift(origin);
+      if (band == null || rect.overlaps(band)) debugPaintedSelectionRects.add(rect);
+      c.drawRect(rect, highlight);
+      selected.addRect(rect);
     }
+    final recoloured = TextPainter(
+      text: _recolour(tp.text!, run.selection.selectionForeground),
+      textAlign: tp.textAlign,
+      textDirection: direction,
+    );
+    if (tp.inlinePlaceholderBoxes != null) {
+      recoloured.setPlaceholderDimensions(_placeholderDimensionsOf(tp));
+    }
+    recoloured.layout(maxWidth: maxWidth);
+    c.save();
+    c.clipPath(selected);
+    _paintLineWithRises(c, recoloured, lineIndex, line, origin);
+    c.restore();
+    recoloured.dispose();
+  }
+
+  /// A line whose delimiter is inside the selection is highlighted past its last character: to
+  /// the right edge with FULL_SELECTION, by the delimiter's own extent otherwise. It is the only
+  /// highlight an empty line inside a selection gets.
+  void _drawSelectedDelimiter(Canvas c, SelectionInfo selection, TextPainter tp, double originX, double top) {
+    final tail = originX + tp.width;
+    final right = fullSelection
+        ? math.max(tail, canvasSize?.width ?? tail)
+        : tail + _measureRun(' ', style);
+    final rect = Rect.fromLTRB(tail, top, right, top + _advance(tp.height));
+    debugPaintedSelectionRects.add(rect);
+    c.drawRect(rect, Paint()..color = selection.selectionColor);
   }
 
   InlineSpan _recolour(InlineSpan span, Color color) {
     if (span is! TextSpan) return span;
     return TextSpan(
       text: span.text,
-      style: (span.style ?? const TextStyle()).copyWith(color: color),
+      // The highlight is the selected run's background: a range's own would cover it again.
+      style: (span.style ?? const TextStyle())
+          .copyWith(color: color, background: Paint()..color = const Color(0x00000000)),
       children: span.children?.map((s) => _recolour(s, color)).toList(),
     );
   }
@@ -4097,16 +4326,19 @@ class StyleRange {
 class SelectionInfo {
   final int start;
   final int end;
+  /// The highlight behind the selected run. The default is the Display's COLOR_LIST_SELECTION,
+  /// what StyledText#getSelectionBackground answers while none is set.
   final Color selectionColor;
-  /// Colour the selected glyphs are repainted in; null leaves them in their own colour.
-  final Color? selectionForeground;
+  /// The colour the selected glyphs are drawn in over the highlight. The default is the Display's
+  /// COLOR_LIST_SELECTION_TEXT, what StyledText#getSelectionForeground answers while none is set.
+  final Color selectionForeground;
   final bool isActive;
 
   SelectionInfo({
     required this.start,
     required this.end,
     this.selectionColor = const Color(0xFF3399FF),
-    this.selectionForeground,
+    this.selectionForeground = const Color(0xFFFFFFFF),
     this.isActive = false,
   });
 
@@ -4391,11 +4623,11 @@ class GeometryTable {
       contentWidth == other.contentWidth &&
       contentHeight == other.contentHeight;
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
         'charCount': charCount,
         'contentWidth': contentWidth,
         'contentHeight': contentHeight,
-        'lines': [for (final row in rows) row.toJson()],
+        'lines': [for (final row in rows) row.toMap()],
       };
 }
 
@@ -4444,7 +4676,7 @@ class GeometryRow {
     return true;
   }
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
         'l': l,
         's': s,
         'e': e,
@@ -4455,6 +4687,37 @@ class GeometryRow {
         if (vi != null) 'vi': vi,
         ...?charX,
       };
+
+  /// `l s e x y w h vi`, then the character positions: `u8 0` none, `1` each one, `2` origin and
+  /// advance.
+  void writeWire(WidgetWireWriter out) {
+    out
+      ..int32(l)
+      ..int32(s)
+      ..int32(e)
+      ..float64(x)
+      ..float64(y)
+      ..float64(w)
+      ..float64(h)
+      ..int32(vi ?? 0);
+    final cx = charX?['cx'];
+    final cxu = charX?['cxu'];
+    if (cx is List) {
+      out
+        ..u8(1)
+        ..varint(cx.length);
+      for (final v in cx) {
+        out.float64((v as num).toDouble());
+      }
+    } else if (cxu is List && cxu.length == 2) {
+      out
+        ..u8(2)
+        ..float64((cxu[0] as num).toDouble())
+        ..float64((cxu[1] as num).toDouble());
+    } else {
+      out.u8(0);
+    }
+  }
 }
 
 /// The change from one table to the next: [rowsReplaced] rows from [rowStart] became [rows], and

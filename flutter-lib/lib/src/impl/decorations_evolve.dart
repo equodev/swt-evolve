@@ -238,6 +238,10 @@ class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
   @override
   bool get hostsAppColoredContent => false;
 
+  /// A shell's bounds place its window.
+  @override
+  bool get buildsFromPosition => true;
+
   /// A Decorations is a Canvas only by SWT's class hierarchy: it hosts controls, it is not a
   /// drawing surface. Falling back to the Canvas drawing surface would paint a colour no Composite
   /// inside ever falls back to, so every one of them would read as an opaque block on it.

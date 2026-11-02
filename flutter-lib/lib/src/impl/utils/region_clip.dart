@@ -19,10 +19,11 @@ class RegionClip extends StatelessWidget {
   final Widget child;
 
   /// Wraps [child] only when there is a region to honour. A control with no region set has none.
+  /// A region with no rectangles arrives without its `rects` -- the wire leaves an empty list out
+  /// of a whole description -- and is still a region: it hides the control.
   static Widget maybe(VRegion? region, Widget child) {
-    final rects = region?.rects;
-    if (rects == null) return child;
-    return RegionClip(rects: rects, child: child);
+    if (region == null) return child;
+    return RegionClip(rects: region.rects ?? const [], child: child);
   }
 
   @override

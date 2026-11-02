@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -13,11 +13,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/ccombo_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'ccombo.g.dart';
 
 class CComboSwt<V extends VCCombo> extends CompositeSwt<V> {
   const CComboSwt({super.key, required super.value});
@@ -26,23 +25,22 @@ class CComboSwt<V extends VCCombo> extends CompositeSwt<V> {
   State createState() => CComboImpl<CComboSwt<VCCombo>, VCCombo>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, "Modify/Modify", payload);
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, "Verify/Verify", payload);
+    sendEvent(val, 107, payload); // Verify/Verify
   }
 }
 
-@JsonSerializable()
 class VCCombo extends VComposite {
   VCCombo() : this.empty();
   VCCombo.empty() {
@@ -72,34 +70,97 @@ class VCCombo extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alignment':
-        alignment = (json['alignment'] as num?)?.toInt();
-      case 'itemTooltips':
-        itemTooltips = (json['itemTooltips'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
-      case 'listVisible':
-        listVisible = json['listVisible'] as bool?;
-      case 'selection':
-        selection = json['selection'] == null
-            ? null
-            : VPoint.fromJson(json['selection'] as Map<String, dynamic>);
-      case 'text':
-        text = json['text'] as String?;
-      case 'textLimit':
-        textLimit = (json['textLimit'] as num?)?.toInt();
+      case 18: // alignment
+        alignment = r.int32();
+        return true;
+      case 19: // itemTooltips
+        itemTooltips = r.strings()?.map((e) => e ?? '').toList();
+        return true;
+      case 20: // items
+        items = r.strings()?.map((e) => e ?? '').toList();
+        return true;
+      case 21: // listVisible
+        listVisible = r.boolean();
+        return true;
+      case 22: // selection
+        selection = r.point();
+        return true;
+      case 23: // text
+        text = r.string();
+        return true;
+      case 24: // textLimit
+        textLimit = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VCCombo.fromJson(Map<String, dynamic> json) =>
-      _$VCComboFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VCComboToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alignment;
+      if (v_ != null) {
+        w.keyInt32(18, v_);
+      }
+    }
+    {
+      final v_ = itemTooltips;
+      if (v_ != null) {
+        w.key(19);
+        w.strings(v_);
+      }
+    }
+    {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(20);
+        w.strings(v_);
+      }
+    }
+    {
+      final v_ = listVisible;
+      if (v_ != null) {
+        w.keyBoolean(21, v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null) {
+        w.key(22);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null) {
+        w.key(23);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = textLimit;
+      if (v_ != null) {
+        w.keyInt32(24, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(18, alignment);
+    visit(19, itemTooltips);
+    visit(20, items);
+    visit(21, listVisible);
+    visit(22, selection);
+    visit(23, text);
+    visit(24, textLimit);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

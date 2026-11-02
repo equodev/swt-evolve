@@ -2,9 +2,8 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonParser;
 import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.comm.MessageBatch;
 import dev.equo.swt.harness.RecordingComm;
@@ -122,54 +121,56 @@ class CanvasPaintOpBatchingTest {
         return canvas;
     }
 
-    private String paintOnce(Canvas canvas) {
+    private List<GcFrames.Entry> paintOnce(Canvas canvas) {
         bridge.comm.sent.clear();
         canvas.redraw();
         pumpAsync();
-        return gcFrames().stream().map(f -> f.json).reduce("", String::concat);
+        return BatchEntries.of(gcFrames());
     }
 
     @Test
     @DisplayName("one paint costs one op frame, not one per draw call")
     void onePaintSendsOneOpFrame() {
         Canvas canvas = paintingCanvas();
-        String wire = paintOnce(canvas);
+        List<GcFrames.Entry> wire = paintOnce(canvas);
 
         assertThat(gcFrames())
                 .as("frames for a single %d-op paint", OPS_PER_PAINT)
                 .hasSize(1);
-        // Counted by payload, as a repeated channel is named once (MessageBatch). An op is its
-        // arguments in order: drawLine(i, 0, i, 10) travels as [i,0,i,10].
-        assertThat(java.util.regex.Pattern.compile("\\[(\\d+),0,\\1,10]").matcher(wire).results().count())
+        // An op is its arguments in order: drawLine(i, 0, i, 10) travels as [i,0,i,10].
+        assertThat(wire.stream().filter(e -> isLine(e.value())).count())
                 .as("draw ops that reached the wire")
                 .isEqualTo(OPS_PER_PAINT);
-        assertThat(countOccurrences(wire, "drawLineintintintint"))
-                .as("and the channel they share is named once, not once per op")
-                .isEqualTo(1);
+        assertThat(GcFrames.opsNamed(gcFrames()))
+                .as("and the op they share is named once, not once per op")
+                .containsOnlyOnce("drawLineintintintint");
     }
 
     @Test
     @DisplayName("a batched op keeps its own channel, and its place in the run")
     void batchCarriesEveryOpInOrder() {
         Canvas canvas = paintingCanvas();
-        String wire = paintOnce(canvas);
+        List<GcFrames.Entry> wire = paintOnce(canvas);
 
         assertThat(wire).as("each op keeps its own channel inside the batch")
-                .contains("[\"GC/");
-        assertThat(wire.indexOf("[0,0,0,10]")).as("first op precedes the last")
+                .filteredOn(e -> e.channel().endsWith("/drawLineintintintint"))
+                .isNotEmpty()
+                .allMatch(e -> e.channel().startsWith("GC/"));
+        assertThat(indexOf(wire, List.of(0, 0, 0, 10))).as("first op precedes the last")
                 .isNotNegative()
-                .isLessThan(wire.indexOf("[" + (OPS_PER_PAINT - 1) + ",0," + (OPS_PER_PAINT - 1) + ",10]"));
+                .isLessThan(indexOf(wire, List.of(OPS_PER_PAINT - 1, 0, OPS_PER_PAINT - 1, 10)));
     }
 
     @Test
     @DisplayName("the paint still ends with gcDispose, after its ops")
     void gcDisposeStillTerminatesThePaint() {
         Canvas canvas = paintingCanvas();
-        String wire = paintOnce(canvas);
+        List<GcFrames.Entry> wire = paintOnce(canvas);
 
-        assertThat(wire).as("the paint's wire traffic").contains("gcDispose");
-        assertThat(wire.indexOf("drawLineintintintint")).as("ops precede gcDispose")
-                .isLessThan(wire.indexOf("gcDispose"));
+        assertThat(channelIndex(wire, "/gcDispose")).as("the paint's wire traffic carries gcDispose").isNotNegative();
+        assertThat(channelIndex(wire, "/drawLineintintintint")).as("ops precede gcDispose")
+                .isNotNegative()
+                .isLessThan(channelIndex(wire, "/gcDispose"));
     }
 
     @Test
@@ -225,18 +226,16 @@ class CanvasPaintOpBatchingTest {
         FlutterBridge.updateFrame();
 
         assertThat(failure[0]).as("disposing on the other thread").isNull();
-        // A frame sent on its own carries its channel as the event, not in the payload.
-        String wire = gcFrames().stream().map(f -> f.event + f.json).reduce("", String::concat);
-        assertThat(wire).as("the paint's wire traffic").contains("drawLineintintintint", "gcDispose");
-        assertThat(wire.indexOf("drawLineintintintint")).as("the op drawn before the hand-over precedes gcDispose")
-                .isLessThan(wire.indexOf("gcDispose"));
+        List<GcFrames.Entry> wire = BatchEntries.of(gcFrames());
+        assertThat(channelIndex(wire, "/drawLineintintintint")).as("the paint's wire traffic carries the op").isNotNegative();
+        assertThat(channelIndex(wire, "/gcDispose")).as("the paint's wire traffic carries gcDispose").isNotNegative();
+        assertThat(channelIndex(wire, "/drawLineintintintint")).as("the op drawn before the hand-over precedes gcDispose")
+                .isLessThan(channelIndex(wire, "/gcDispose"));
     }
 
     @Test
     @DisplayName("a batch that fills up right after a hand-over goes out in order, every op once")
     void capFlushAfterHandOverKeepsEveryOpInOrder() throws Exception {
-        // Enough ops to pass FlutterBridge's 1 MB cap on one batch.
-        int ops = 100_000;
         Canvas canvas = canvas();
         GC gc = new GC(canvas);
         gc.drawLine(0, 7, 5, 12345);
@@ -244,9 +243,14 @@ class CanvasPaintOpBatchingTest {
 
         Throwable[] failure = { null };
         int[] framesBeforeDispose = { 0 };
+        int[] drawn = { 0 };
         Thread worker = new Thread(() -> {
             try {
-                for (int i = 1; i <= ops; i++) gc.drawLine(i, 0, i, 10);
+                // Until FlutterBridge's cap on one batch sends it: the hand-over's frame, then that one.
+                while (gcFrames().size() < 2 && drawn[0] < 10_000_000) {
+                    drawn[0]++;
+                    gc.drawLine(drawn[0], 0, drawn[0], 10);
+                }
                 framesBeforeDispose[0] = gcFrames().size();
                 gc.dispose();
             } catch (Throwable t) {
@@ -255,21 +259,22 @@ class CanvasPaintOpBatchingTest {
         });
         worker.start();
         worker.join();
+        int ops = drawn[0];
 
         assertThat(failure[0]).as("drawing on the other thread").isNull();
         assertThat(framesBeforeDispose[0])
                 .as("frames sent before gcDispose, the hand-over's then the full batch's: fewer means "
                         + "the scenario never reached the cap right after a hand-over")
                 .isGreaterThanOrEqualTo(2);
-        List<JsonArray> lines = drawLines();
+        List<List<?>> lines = drawLines();
         assertThat(lines).as("draw ops on the wire").hasSize(ops + 1);
-        assertThat(lines.get(0).get(3).getAsInt()).as("the op drawn before the hand-over goes first")
+        assertThat(arg(lines.get(0), 3)).as("the op drawn before the hand-over goes first")
                 .isEqualTo(12345);
         List<Integer> x1 = new ArrayList<>();
-        for (JsonArray line : lines.subList(1, lines.size())) x1.add(line.get(0).getAsInt());
+        for (List<?> line : lines.subList(1, lines.size())) x1.add(arg(line, 0));
         assertThat(x1).as("the other thread's ops, each once and in order").isEqualTo(sequence(ops));
-        List<String[]> entries = BatchEntries.of(gcFrames());
-        assertThat(entries.get(entries.size() - 1)[0]).as("the last frame").endsWith("/gcDispose");
+        List<GcFrames.Entry> entries = BatchEntries.of(gcFrames());
+        assertThat(entries.get(entries.size() - 1).channel()).as("the last frame").endsWith("/gcDispose");
     }
 
     @Test
@@ -324,8 +329,8 @@ class CanvasPaintOpBatchingTest {
 
         assertThat(failures).as("exceptions thrown while painting or flushing").isEmpty();
         Map<Integer, List<Integer>> drawnBy = new TreeMap<>();
-        for (JsonArray line : drawLines()) {
-            drawnBy.computeIfAbsent(line.get(1).getAsInt(), k -> new ArrayList<>()).add(line.get(0).getAsInt());
+        for (List<?> line : drawLines()) {
+            drawnBy.computeIfAbsent(arg(line, 1), k -> new ArrayList<>()).add(arg(line, 0));
         }
         assertThat(drawnBy.keySet()).as("painters whose ops reached the wire").hasSize(painters);
         for (Map.Entry<Integer, List<Integer>> painter : drawnBy.entrySet()) {
@@ -336,29 +341,48 @@ class CanvasPaintOpBatchingTest {
 
     /**
      * Every drawLine on the wire in send order, as its arguments: drawLine(x1, y1, x2, y2) travels as
-     * [x1,y1,x2,y2]. Parsing each frame also fails on a torn one.
+     * [x1,y1,x2,y2]. Decoding each frame also fails on a torn one.
      */
-    private List<JsonArray> drawLines() {
-        List<JsonArray> lines = new ArrayList<>();
-        for (String[] entry : BatchEntries.of(gcFrames())) {
-            if (entry[0].endsWith("/drawLineintintintint")) {
-                lines.add(JsonParser.parseString(entry[1]).getAsJsonArray());
+    private List<List<?>> drawLines() {
+        List<List<?>> lines = new ArrayList<>();
+        for (GcFrames.Entry entry : BatchEntries.of(gcFrames())) {
+            if (entry.channel().endsWith("/drawLineintintintint")) {
+                lines.add((List<?>) entry.value());
             }
         }
         return lines;
+    }
+
+    private static int arg(List<?> line, int index) {
+        return ((Number) line.get(index)).intValue();
+    }
+
+    /** Whether [value] is the arguments of a drawLine(i, 0, i, 10). */
+    private static boolean isLine(Object value) {
+        if (!(value instanceof List<?> args) || args.size() != 4) return false;
+        if (!args.stream().allMatch(a -> a instanceof Number)) return false;
+        return arg(args, 1) == 0 && arg(args, 0) == arg(args, 2) && arg(args, 3) == 10;
+    }
+
+    /** Where the entry carrying [args] is in [entries], or -1. */
+    private static int indexOf(List<GcFrames.Entry> entries, List<Integer> args) {
+        for (int i = 0; i < entries.size(); i++) {
+            if (dev.equo.swt.harness.WireValues.same(entries.get(i).value(), args)) return i;
+        }
+        return -1;
+    }
+
+    /** Where the first entry on a channel ending in [suffix] is in [entries], or -1. */
+    private static int channelIndex(List<GcFrames.Entry> entries, String suffix) {
+        for (int i = 0; i < entries.size(); i++) {
+            if (entries.get(i).channel().endsWith(suffix)) return i;
+        }
+        return -1;
     }
 
     private static List<Integer> sequence(int count) {
         List<Integer> out = new ArrayList<>(count);
         for (int i = 1; i <= count; i++) out.add(i);
         return out;
-    }
-
-    private static int countOccurrences(String haystack, String needle) {
-        int count = 0;
-        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + needle.length())) {
-            count++;
-        }
-        return count;
     }
 }

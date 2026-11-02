@@ -1,12 +1,8 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-public class VDevice {
+public class VDevice implements dev.equo.swt.WireObject {
 
     protected VDevice() {
     }
@@ -17,7 +13,6 @@ public class VDevice {
 
     protected IDevice impl;
 
-    @JsonAttribute(ignore = true)
     public DeviceData getDeviceData() {
         return ((DartDevice) impl).deviceData;
     }
@@ -30,10 +25,16 @@ public class VDevice {
         FontData[] values = ((DartDevice) impl).fontList;
         if (values == null)
             return null;
-        ArrayList<FontData> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (FontData v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new FontData[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        FontData[] result = new FontData[kept];
+        kept = 0;
+        for (FontData v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFontList(FontData[] value) {
@@ -56,31 +57,26 @@ public class VDevice {
         ((DartDevice) impl).warnings = value;
     }
 
-    @JsonConverter(target = Device.class)
-    public static class DeviceJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 28;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartDevice.class, (JsonWriter.WriteObject<DartDevice>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartDevice.class, (JsonReader.ReadObject<DartDevice>) reader -> {
-                return null;
-            });
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(167);
+        {
+            FontData[] a_ = getFontList();
+            if (a_ == null)
+                w.listSize(-1);
+            else {
+                w.listSize(a_.length);
+                for (FontData e_ : a_) w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
+            }
         }
-
-        public static Device read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, Device api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+        w.key(168);
+        w.write(getTracking());
+        w.key(169);
+        w.write(getWarnings());
     }
 }

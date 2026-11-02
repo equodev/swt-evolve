@@ -1090,34 +1090,55 @@ public class DartMenuItem extends DartItem implements IMenuItem {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Arm", "Arm", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Arm/Arm", "Help/Help", "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Arm/Arm":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Arm, e);
+                    });
                     return;
-                sendEvent(SWT.Arm, e);
-            });
-        });
-        FlutterBridge.on(this, "Help", "Help", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Help/Help":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Help, e);
+                    });
                     return;
-                sendEvent(SWT.Help, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
                     return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        MenuItemHelper.pick(this, e);
+                    });
                     return;
-                MenuItemHelper.pick(this, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public MenuItem getApi() {

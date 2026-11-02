@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import java.util.*;
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VFileDialog extends VDialog {
 
     protected VFileDialog() {
@@ -28,10 +24,16 @@ public class VFileDialog extends VDialog {
         String[] values = ((DartFileDialog) impl).fileNames;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFileNames(String[] value) {
@@ -42,10 +44,16 @@ public class VFileDialog extends VDialog {
         String[] values = ((DartFileDialog) impl).filterExtensions;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFilterExtensions(String[] value) {
@@ -64,10 +72,16 @@ public class VFileDialog extends VDialog {
         String[] values = ((DartFileDialog) impl).filterNames;
         if (values == null)
             return null;
-        ArrayList<String> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (String v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new String[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        String[] result = new String[kept];
+        kept = 0;
+        for (String v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setFilterNames(String[] value) {
@@ -90,31 +104,27 @@ public class VFileDialog extends VDialog {
         ((DartFileDialog) impl).overwrite = value;
     }
 
-    @JsonConverter(target = FileDialog.class)
-    public static class FileDialogJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 38;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartFileDialog.class, (JsonWriter.WriteObject<DartFileDialog>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartFileDialog.class, (JsonReader.ReadObject<DartFileDialog>) reader -> {
-                return null;
-            });
-        }
-
-        public static FileDialog read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, FileDialog api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(224);
+        w.write(getFileName());
+        w.key(225);
+        w.write(getFileNames());
+        w.key(226);
+        w.write(getFilterExtensions());
+        w.key(227);
+        w.write((int) getFilterIndex());
+        w.key(228);
+        w.write(getFilterNames());
+        w.key(229);
+        w.write(getFilterPath());
+        w.key(230);
+        w.write(getOverwrite());
     }
 }

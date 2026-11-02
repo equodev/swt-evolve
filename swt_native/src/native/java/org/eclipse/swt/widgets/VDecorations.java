@@ -2,12 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VDecorations extends VCanvas {
 
     protected VDecorations() {
@@ -17,7 +12,6 @@ public class VDecorations extends VCanvas {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public Button getDefaultButton() {
         Button val = ((DartDecorations) impl).defaultButton;
         if (val != null && !(val.getImpl() instanceof DartButton))
@@ -29,7 +23,6 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).defaultButton = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image getImage() {
         Image val = ((DartDecorations) impl).image;
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -41,22 +34,26 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).image = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Image[] getImages() {
         Image[] values = ((DartDecorations) impl).images;
         if (values == null)
             return null;
-        ArrayList<Image> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Image v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Image[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Image[] result = new Image[kept];
+        kept = 0;
+        for (Image v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setImages(Image[] value) {
         ((DartDecorations) impl).images = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getMaximized() {
         return ((DartDecorations) impl).getMaximized();
     }
@@ -76,7 +73,6 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).menuBar = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getMinimized() {
         return ((DartDecorations) impl).getMinimized();
     }
@@ -85,7 +81,6 @@ public class VDecorations extends VCanvas {
         ((DartDecorations) impl).minimized = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartDecorations) impl).getText();
     }
@@ -98,65 +93,115 @@ public class VDecorations extends VCanvas {
         return ((DartDecorations) impl).wireMenuStripHeight();
     }
 
-    public void setMenuStripHeight(int value) {
-    }
-
     public boolean getOwnMenuStrip() {
         return ((DartDecorations) impl).wireOwnMenuStrip();
     }
 
-    public void setOwnMenuStrip(boolean value) {
-    }
+    public static final int MENU_BAR = 163;
 
-    public static final String MENU_BAR = "menuBar";
+    public static final int MENU_STRIP_HEIGHT = 164;
 
-    public static final String MENU_STRIP_HEIGHT = "menuStripHeight";
+    public static final int OWN_MENU_STRIP = 165;
 
-    public static final String OWN_MENU_STRIP = "ownMenuStrip";
-
-    public static final String TEXT = "text";
+    public static final int TEXT = 166;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "menuBar":
-                Serializer.writeKeyValue(writer, "menuBar", getMenuBar());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
-            case "menuStripHeight":
-                Serializer.writeKeyValue(writer, "menuStripHeight", getMenuStripHeight());
-                return;
-            case "ownMenuStrip":
-                Serializer.writeKeyValue(writer, "ownMenuStrip", getOwnMenuStrip());
-                return;
+            case MENU_BAR:
+                return "menuBar";
+            case TEXT:
+                return "text";
+            case MENU_STRIP_HEIGHT:
+                return "menuStripHeight";
+            case OWN_MENU_STRIP:
+                return "ownMenuStrip";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Decorations.class)
-    public static class DecorationsJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartDecorations.class, (JsonWriter.WriteObject<DartDecorations>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartDecorations.class, (JsonReader.ReadObject<DartDecorations>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 163:
+                w.ref(getMenuBar());
+                return true;
+            case 166:
+                w.write(getText());
+                return true;
+            case 164:
+                w.write((int) getMenuStripHeight());
+                return true;
+            case 165:
+                w.write(getOwnMenuStrip());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Decorations read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 163:
+                {
+                    Menu v_ = getMenuBar();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(163);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 166:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(166);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 164:
+                {
+                    int v_ = getMenuStripHeight();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(164);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 165:
+                {
+                    boolean v_ = getOwnMenuStrip();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(165);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Decorations api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 163, 166, 164, 165 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

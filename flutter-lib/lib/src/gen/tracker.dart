@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tracker_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tracker.g.dart';
 
 class TrackerSwt<V extends VTracker> extends WidgetSwt<V> {
   const TrackerSwt({super.key, required super.value});
@@ -15,30 +14,25 @@ class TrackerSwt<V extends VTracker> extends WidgetSwt<V> {
   State createState() => TrackerImpl<TrackerSwt<VTracker>, VTracker>();
 
   void sendControlMove(V val, VEvent? payload) {
-    sendEvent(val, "Control/Move", payload);
+    sendEvent(val, 20, payload); // Control/Move
   }
 
   void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
+    sendEvent(val, 21, payload); // Control/Resize
   }
 
   void sendKeyKeyDown(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyDown", payload);
+    sendEvent(val, 54, payload); // Key/KeyDown
   }
 
   void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyUp", payload);
+    sendEvent(val, 55, payload); // Key/KeyUp
   }
 }
 
-@JsonSerializable()
 class VTracker extends VWidget {
   VTracker() : this.empty();
   VTracker.empty() {
     swt = "Tracker";
   }
-
-  factory VTracker.fromJson(Map<String, dynamic> json) =>
-      _$VTrackerFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTrackerToJson(this);
 }

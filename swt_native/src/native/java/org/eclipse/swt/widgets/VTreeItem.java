@@ -2,12 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VTreeItem extends VItem {
 
     protected VTreeItem() {
@@ -134,10 +129,16 @@ public class VTreeItem extends VItem {
         TreeItem[] values = ((DartTreeItem) impl).items;
         if (values == null)
             return null;
-        ArrayList<TreeItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TreeItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TreeItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TreeItem[] result = new TreeItem[kept];
+        kept = 0;
+        for (TreeItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(TreeItem[] value) {
@@ -163,108 +164,350 @@ public class VTreeItem extends VItem {
         return ((DartTreeItem) impl)._itemCount();
     }
 
-    public void setItemCount(int value) {
-    }
+    public static final int BACKGROUND = 641;
 
-    public static final String BACKGROUND = "background";
+    public static final int BACKGROUNDS = 642;
 
-    public static final String BACKGROUNDS = "backgrounds";
+    public static final int CHECKED = 643;
 
-    public static final String CHECKED = "checked";
+    public static final int EXPANDED = 644;
 
-    public static final String EXPANDED = "expanded";
+    public static final int FONT = 645;
 
-    public static final String FONT = "font";
+    public static final int FONTS = 646;
 
-    public static final String FONTS = "fonts";
+    public static final int FOREGROUND = 647;
 
-    public static final String FOREGROUND = "foreground";
+    public static final int FOREGROUNDS = 648;
 
-    public static final String FOREGROUNDS = "foregrounds";
+    public static final int GRAYED = 649;
 
-    public static final String GRAYED = "grayed";
+    public static final int IMAGES = 650;
 
-    public static final String IMAGES = "images";
+    public static final int ITEM_COUNT = 651;
 
-    public static final String ITEM_COUNT = "itemCount";
+    public static final int ITEMS = 652;
 
-    public static final String ITEMS = "items";
+    public static final int PAINTED_TEXTS = 653;
 
-    public static final String PAINTED_TEXTS = "paintedTexts";
-
-    public static final String TEXTS = "texts";
+    public static final int TEXTS = 654;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "background":
-                Serializer.writeKeyValue(writer, "background", getBackground());
-                return;
-            case "backgrounds":
-                Serializer.writeKeyValue(writer, "backgrounds", getBackgrounds());
-                return;
-            case "checked":
-                Serializer.writeKeyValue(writer, "checked", getChecked());
-                return;
-            case "expanded":
-                Serializer.writeKeyValue(writer, "expanded", getExpanded());
-                return;
-            case "font":
-                Serializer.writeKeyValue(writer, "font", getFont());
-                return;
-            case "fonts":
-                Serializer.writeKeyValue(writer, "fonts", getFonts());
-                return;
-            case "foreground":
-                Serializer.writeKeyValue(writer, "foreground", getForeground());
-                return;
-            case "foregrounds":
-                Serializer.writeKeyValue(writer, "foregrounds", getForegrounds());
-                return;
-            case "grayed":
-                Serializer.writeKeyValue(writer, "grayed", getGrayed());
-                return;
-            case "images":
-                Serializer.writeKeyValue(writer, "images", getImages());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "paintedTexts":
-                Serializer.writeKeyValue(writer, "paintedTexts", getPaintedTexts());
-                return;
-            case "texts":
-                Serializer.writeKeyValue(writer, "texts", getTexts());
-                return;
-            case "itemCount":
-                Serializer.writeKeyValue(writer, "itemCount", getItemCount());
-                return;
+            case BACKGROUND:
+                return "background";
+            case BACKGROUNDS:
+                return "backgrounds";
+            case CHECKED:
+                return "checked";
+            case EXPANDED:
+                return "expanded";
+            case FONT:
+                return "font";
+            case FONTS:
+                return "fonts";
+            case FOREGROUND:
+                return "foreground";
+            case FOREGROUNDS:
+                return "foregrounds";
+            case GRAYED:
+                return "grayed";
+            case IMAGES:
+                return "images";
+            case ITEMS:
+                return "items";
+            case PAINTED_TEXTS:
+                return "paintedTexts";
+            case TEXTS:
+                return "texts";
+            case ITEM_COUNT:
+                return "itemCount";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = TreeItem.class)
-    public static class TreeItemJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTreeItem.class, (JsonWriter.WriteObject<DartTreeItem>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTreeItem.class, (JsonReader.ReadObject<DartTreeItem>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 641:
+                w.write(getBackground());
+                return true;
+            case 642:
+                {
+                    Color[] a_ = getBackgrounds();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Color e_ : a_) w.write(e_);
+                    }
+                }
+                return true;
+            case 643:
+                w.write(getChecked());
+                return true;
+            case 644:
+                w.write(getExpanded());
+                return true;
+            case 645:
+                w.object((getFont() == null || getFont().isDisposed() ? null : ((DartFont) getFont().getImpl()).getValue()));
+                return true;
+            case 646:
+                {
+                    Font[] a_ = getFonts();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                    }
+                }
+                return true;
+            case 647:
+                w.write(getForeground());
+                return true;
+            case 648:
+                {
+                    Color[] a_ = getForegrounds();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Color e_ : a_) w.write(e_);
+                    }
+                }
+                return true;
+            case 649:
+                w.write(getGrayed());
+                return true;
+            case 650:
+                {
+                    Image[] a_ = getImages();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Image e_ : a_) w.image(e_);
+                    }
+                }
+                return true;
+            case 652:
+                w.refs(getItems());
+                return true;
+            case 653:
+                w.write(getPaintedTexts());
+                return true;
+            case 654:
+                w.write(getTexts());
+                return true;
+            case 651:
+                w.write((int) getItemCount());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TreeItem read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 641:
+                {
+                    Color v_ = getBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(641);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 642:
+                {
+                    Color[] v_ = getBackgrounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(642);
+                    {
+                        Color[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Color e_ : a_) w.write(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 643:
+                {
+                    boolean v_ = getChecked();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(643);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 644:
+                {
+                    boolean v_ = getExpanded();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(644);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 645:
+                {
+                    Font v_ = getFont();
+                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartFont) v_.getImpl()).getValue());
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(645);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 646:
+                {
+                    Font[] v_ = getFonts();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(646);
+                    {
+                        Font[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 647:
+                {
+                    Color v_ = getForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(647);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 648:
+                {
+                    Color[] v_ = getForegrounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(648);
+                    {
+                        Color[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Color e_ : a_) w.write(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 649:
+                {
+                    boolean v_ = getGrayed();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(649);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 650:
+                {
+                    Image[] v_ = getImages();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(650);
+                    {
+                        Image[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Image e_ : a_) w.image(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 652:
+                {
+                    TreeItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(652);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 653:
+                {
+                    int[] v_ = getPaintedTexts();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(653);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 654:
+                {
+                    String[] v_ = getTexts();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(654);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 651:
+                {
+                    int v_ = getItemCount();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(651);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TreeItem api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 641, 642, 643, 644, 645, 646, 647, 648, 649, 650, 652, 653, 654, 651 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        switch(key) {
+            case 653:
+                return true;
         }
+        return super.wireKeepsEmpty(key);
     }
 }

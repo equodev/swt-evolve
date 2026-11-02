@@ -37,10 +37,11 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
         return event;
     }
 
-    private List<String> verdicts() {
-        List<String> verdicts = new ArrayList<>();
+    /** The {@code doit} of each modify verdict sent, in order. */
+    private List<Object> verdicts() {
+        List<Object> verdicts = new ArrayList<>();
         for (RecordingComm.Frame frame : bridge.comm.sent) {
-            if (frame.event.contains("modify/verdict")) verdicts.add(frame.json);
+            if (frame.event.contains("modify/verdict")) verdicts.add(frame.state().get("doit"));
         }
         return verdicts;
     }
@@ -167,7 +168,7 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
         runQueued();
 
         assertThat(text.getText()).isEqualTo("old");
-        assertThat(verdicts()).singleElement().asString().contains("false");
+        assertThat(verdicts()).singleElement().isEqualTo(false);
     }
 
     @Test
@@ -180,7 +181,7 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
         runQueued();
 
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(verdicts()).singleElement().asString().contains("true");
+        assertThat(verdicts()).singleElement().isEqualTo(true);
     }
 
     @Test
@@ -194,7 +195,7 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
         assertThat(text.getText()).isEqualTo("TYPED");
         assertThat(text.getSelection()).isEqualTo(new Point(5, 5));
-        assertThat(verdicts()).singleElement().asString().contains("false");
+        assertThat(verdicts()).singleElement().isEqualTo(false);
     }
 
     @Test
@@ -222,7 +223,7 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
         assertThat(text.getText()).isEqualTo("old");
         assertThat(text.getSelection()).isEqualTo(new Point(1, 2));
-        assertThat(verdicts()).singleElement().asString().contains("false");
+        assertThat(verdicts()).singleElement().isEqualTo(false);
     }
 
     @Test
@@ -252,7 +253,7 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
         assertThat(text.getText()).isEqualTo("type");
         assertThat(text.getSelection()).isEqualTo(new Point(4, 4));
-        assertThat(verdicts()).singleElement().asString().contains("false");
+        assertThat(verdicts()).singleElement().isEqualTo(false);
     }
 
     @Test
@@ -311,7 +312,7 @@ class TextEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
         }
 
         assertThat(text.getText()).isEqualTo("typed");
-        assertThat(verdicts()).singleElement().asString().contains("true");
+        assertThat(verdicts()).singleElement().isEqualTo(true);
     }
 
     @Test

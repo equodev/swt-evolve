@@ -79,6 +79,34 @@ public class GTKWrapper {
         GDK.gdk_window_set_cursor(window, cursor);
     }
 
+    public static long gdk_get_default_root_window() {
+        return GDK.gdk_get_default_root_window();
+    }
+
+    public static long gdk_display_get_default() {
+        return GDK.gdk_display_get_default();
+    }
+
+    public static long gdk_screen_get_default() {
+        return GDK.gdk_screen_get_default();
+    }
+
+    public static long gdk_window_get_device_position(long window, long device, int[] x, int[] y, int[] mask) {
+        return GDK.gdk_window_get_device_position(window, device, x, y, mask);
+    }
+
+    public static void gdk_device_warp(long device, long screen, int x, int y) {
+        GDK.gdk_device_warp(device, screen, x, y);
+    }
+
+    public static long gdk_get_pointer(long display) {
+        return GDK.gdk_get_pointer(display);
+    }
+
+    public static boolean isX11() {
+        return OS.isX11();
+    }
+
     public static boolean gtk_widget_translate_coordinates(long src_widget, long dest_widget, double src_x, double src_y, double[] dest_x, double[] dest_y) {
         return GTK4.gtk_widget_translate_coordinates(src_widget, dest_widget, src_x, src_y, dest_x, dest_y);
     }

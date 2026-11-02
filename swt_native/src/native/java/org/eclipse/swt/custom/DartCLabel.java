@@ -400,8 +400,11 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         gradientPercents = null;
         backgroundImage = null;
         text = null;
+        getValue().markDirty(VCLabel.TEXT);
         image = null;
+        getValue().markDirty(VCLabel.IMAGE);
         appToolTipText = null;
+        getValue().markDirty(VCLabel.TOOL_TIP_TEXT);
     }
 
     void onMnemonic(TraverseEvent event) {

@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
@@ -12,10 +12,9 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/animatedprogress_evolve.dart';
 import 'widgets.dart';
-
-part 'animatedprogress.g.dart';
 
 class AnimatedProgressSwt<V extends VAnimatedProgress> extends CanvasSwt<V> {
   const AnimatedProgressSwt({super.key, required super.value});
@@ -28,14 +27,9 @@ class AnimatedProgressSwt<V extends VAnimatedProgress> extends CanvasSwt<V> {
       >();
 }
 
-@JsonSerializable()
 class VAnimatedProgress extends VCanvas {
   VAnimatedProgress() : this.empty();
   VAnimatedProgress.empty() {
     swt = "AnimatedProgress";
   }
-
-  factory VAnimatedProgress.fromJson(Map<String, dynamic> json) =>
-      _$VAnimatedProgressFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VAnimatedProgressToJson(this);
 }

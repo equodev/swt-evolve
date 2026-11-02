@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VLabel extends VControl {
 
     protected VLabel() {
@@ -16,7 +12,6 @@ public class VLabel extends VControl {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public int getAlignment() {
         return ((DartLabel) impl).getAlignment();
     }
@@ -25,7 +20,6 @@ public class VLabel extends VControl {
         ((DartLabel) impl).setAlignment(value);
     }
 
-    @JsonAttribute(nullable = true)
     public Image getImage() {
         Image val = ((DartLabel) impl)._displayedImage();
         if (val != null && !(val.getImpl() instanceof DartImage))
@@ -37,7 +31,6 @@ public class VLabel extends VControl {
         ((DartLabel) impl).image = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartLabel) impl)._displayedText();
     }
@@ -46,45 +39,79 @@ public class VLabel extends VControl {
         ((DartLabel) impl).text = value;
     }
 
-    public static final String IMAGE = "image";
+    public static final int IMAGE = 346;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 347;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "image":
-                Serializer.writeKeyValue(writer, "image", getImage());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
+            case IMAGE:
+                return "image";
+            case TEXT:
+                return "text";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Label.class)
-    public static class LabelJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartLabel.class, (JsonWriter.WriteObject<DartLabel>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartLabel.class, (JsonReader.ReadObject<DartLabel>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 346:
+                w.image(getImage());
+                return true;
+            case 347:
+                w.write(getText());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Label read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 346:
+                {
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(346);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 347:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(347);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Label api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 346, 347 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

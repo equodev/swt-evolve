@@ -4,16 +4,15 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
 
 class ListSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_List() {
         List w = new List(shell(), SWT.NONE);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "List");
     }
@@ -22,15 +21,13 @@ class ListSerializeTest extends SerializeTestBase {
     void should_serialize_filled_List() {
         List w = new List(shell(), SWT.NONE);
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "List")
-               .hasEntrySatisfying("items", p -> assertThatJson(p).isArray()
-                                                                  .hasSameSizeAs(w.getItems()))
-               .containsEntry("toolTipText", json(w.getToolTipText()))
+               .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
+        assertJ.satisfies(node("items").sameSizeAs(w.getItems()));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
         assertJ.satisfies(node("topIndex").equalsTo(w.getTopIndex(), orAbsentIf0));
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
@@ -42,6 +39,16 @@ class ListSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_write_every_property_List() throws Exception {
+        assertWritesEveryProperty(style -> {
+            List w = new List(shell(), style);
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE, SWT.SINGLE, SWT.MULTI, SWT.NO_SEARCH, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

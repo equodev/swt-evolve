@@ -11,6 +11,8 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_settings/scrolledcomposite_theme_settings.dart';
 import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import 'utils/widget_utils.dart';
+import 'utils/layered_layout_builder.dart';
+import 'utils/quiet_animations.dart';
 
 class ScrolledCompositeImpl<
   T extends ScrolledCompositeSwt,
@@ -59,7 +61,7 @@ class ScrolledCompositeImpl<
   /// afterwards the view keeps its own offset as it does after a scroll by the user.
   @override
   void setValue(V value) {
-    if (lastChange?.touches('origin') ?? true) _requestedOrigin = state.origin;
+    if (lastChange?.touches(WireKey.k_ScrolledComposite_origin) ?? true) _requestedOrigin = state.origin;
     super.setValue(value);
     if (!mounted) return;
     _showOrigin();
@@ -227,7 +229,7 @@ class ScrolledCompositeImpl<
     Size minContentSize,
     Color backgroundColor,
   ) {
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widgetTheme.animationDuration,
       width: minContentSize.width > 0 ? minContentSize.width : null,
       height: minContentSize.height > 0 ? minContentSize.height : null,
@@ -283,7 +285,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
+    return LayeredLayoutBuilder(
       builder: (context, constraints) {
         final vpW = constraints.maxWidth;
         final vpH = constraints.maxHeight;
@@ -329,7 +331,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
           result = _buildHorizontalScrollbar(context, result);
         }
 
-        return AnimatedContainer(
+        return QuietAnimatedContainer(
           duration: widgetTheme.animationDuration,
           decoration: BoxDecoration(
             color: backgroundColor,

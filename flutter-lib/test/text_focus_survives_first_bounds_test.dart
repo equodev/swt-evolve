@@ -9,8 +9,12 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+
+import 'delivery/support/deliver.dart';
 
 const int _editorId = 7311;
 
@@ -24,16 +28,19 @@ VText _unplacedEditor() => VText()
   ..visible = true
   ..text = '';
 
-/// The bounds, on the Text's own channel, one frame after it was created and focused.
+/// The bounds, as a change to the Text, one frame after it was created and focused.
 Future<void> _javaPlacesTheEditor(WidgetTester tester) async {
-  VRegistry.instance.apply('Text/$_editorId', <String, dynamic>{
-    'id': _editorId,
-    'swt': 'Text',
-    '_s': 1,
-    '_b': 0,
-    '_d': <String>['bounds'],
-    'bounds': <String, dynamic>{'x': 40, 'y': 300, 'width': 99, 'height': 19},
-  });
+  applyChange(
+      VText()
+        ..id = _editorId
+        ..seq = 1
+        ..bounds = (VRectangle()
+          ..x = 40
+          ..y = 300
+          ..width = 99
+          ..height = 19),
+      keys: [WireKey.k_Control_bounds],
+      base: 0);
   await tester.pump();
 }
 

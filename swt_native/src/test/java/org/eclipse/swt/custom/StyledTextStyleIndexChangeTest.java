@@ -1,15 +1,16 @@
 package org.eclipse.swt.custom;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import dev.equo.swt.harness.WireFrames;
+import dev.equo.swt.harness.WireValues;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Mocks;
@@ -81,20 +82,32 @@ class StyledTextStyleIndexChangeTest {
         return (DartStyledText) text.getImpl();
     }
 
-    private void sendWhole(StyledText text) throws Exception {
-        serializer.to(text);
-        Serializer.markDelivered();
+    private void sendWhole(StyledText text) {
+        Serializer.forgetDelivery(impl(text).getValue());
+        WireFrames.record(impl(text), CLIENT);
     }
 
     /** The style index a partial update carries, or null when it carries none. */
     private int[] sentIndex(StyledText text) {
-        byte[] diff = serializer.toDiff(impl(text));
-        Serializer.markDelivered();
+        Map<String, Object> diff = WireFrames.record(impl(text), CLIENT);
         if (diff == null) return null;
-        Matcher m = Pattern.compile("\"styleIndex\":\\[([^\\]]*)\\]")
-                .matcher(new String(diff, StandardCharsets.UTF_8));
-        if (!m.find()) return null;
-        return Arrays.stream(m.group(1).split(",")).mapToInt(Integer::parseInt).toArray();
+        List<int[]> indexes = styleIndexes(diff);
+        return indexes.isEmpty() ? null : indexes.get(0);
+    }
+
+    /** Every style index [tree] carries, at any depth. */
+    private static List<int[]> styleIndexes(Object tree) {
+        List<int[]> out = new ArrayList<>();
+        for (Map<String, Object> m : WireValues.find(tree, candidate -> candidate.get("styleIndex") instanceof List)) {
+            out.add(((List<?>) m.get("styleIndex")).stream().mapToInt(v -> ((Number) v).intValue()).toArray());
+        }
+        return out;
+    }
+
+    /** Whether any style index in [tree] is a change rather than a whole index. */
+    private static boolean carriesAChange(Object tree) {
+        return styleIndexes(tree).stream()
+                .anyMatch(index -> index.length > 0 && index[0] == StyledTextHelper.STYLE_INDEX_EDIT);
     }
 
     /** What the client does with a change: the same arithmetic, written again here. */
@@ -146,33 +159,15 @@ class StyledTextStyleIndexChangeTest {
     }
 
     @Test
-    void an_update_that_never_went_out_does_not_become_what_the_client_holds() throws Exception {
-        StyledText text = highlighted();
-        sendWhole(text);
-        int[] held = StyledTextHelper.wireStyleIndex(impl(text));
-
-        text.setStyleRange(new StyleRange(10 * 6, 5, new Color(Mocks.device(), 0, 128, 0), null));
-        serializer.toDiff(impl(text));
-        Serializer.discardWritten();
-        text.setStyleRange(new StyleRange(12 * 6, 5, new Color(Mocks.device(), 0, 128, 0), null));
-        int[] sent = sentIndex(text);
-
-        assertThat(sent[0]).isEqualTo(StyledTextHelper.STYLE_INDEX_EDIT);
-        assertThat(apply(held, sent))
-                .as("both restyles, relative to the index the client was last sent")
-                .containsExactly(StyledTextHelper.wireStyleIndex(impl(text)));
-    }
-
-    @Test
     void a_whole_description_carries_the_whole_index() throws Exception {
         StyledText text = highlighted();
         sendWhole(text);
         text.setStyleRange(new StyleRange(6, 5, new Color(Mocks.device(), 0, 128, 0), null));
 
-        String whole = new String(serializer.to(text), StandardCharsets.UTF_8);
-        Serializer.markDelivered();
+        Serializer.forgetDelivery(impl(text).getValue());
+        Map<String, Object> whole = WireFrames.record(impl(text), CLIENT);
 
-        assertThat(whole).doesNotContain("\"styleIndex\":[" + StyledTextHelper.STYLE_INDEX_EDIT);
+        assertThat(carriesAChange(whole)).isFalse();
     }
 
     @Test
@@ -180,21 +175,20 @@ class StyledTextStyleIndexChangeTest {
         org.eclipse.swt.widgets.Composite parent =
                 new org.eclipse.swt.widgets.Composite(Mocks.shell(), SWT.NONE);
         StyledText text = highlighted(parent);
-        serializer.to(parent);
-        Serializer.markDelivered();
+        WireFrames.frame((org.eclipse.swt.widgets.DartWidget) parent.getImpl(), CLIENT);
         text.setStyleRange(new StyleRange(6, 5, new Color(Mocks.device(), 0, 128, 0), null));
         // Asked for again, so the next time the parent names it, it is described in full there.
         Serializer.forgetDelivery(impl(text).getValue());
         new org.eclipse.swt.widgets.Label(parent, SWT.NONE);
 
-        byte[] diff = serializer.toDiff((org.eclipse.swt.widgets.DartWidget) parent.getImpl());
-        Serializer.markDelivered();
-        String frame = new String(diff, StandardCharsets.UTF_8);
+        List<Map<String, Object>> frame = WireFrames.frame((org.eclipse.swt.widgets.DartWidget) parent.getImpl(), CLIENT)
+                .stream().map(WireFrames.Record::state).toList();
 
-        assertThat(frame).contains("\"swt\":\"StyledText\"").contains("\"styleIndex\":[");
-        assertThat(frame)
+        assertThat(WireValues.find(frame, m -> "StyledText".equals(m.get("swt")))).isNotEmpty();
+        assertThat(styleIndexes(frame)).isNotEmpty();
+        assertThat(carriesAChange(frame))
                 .as("a whole description replaces what the client holds, so it cannot be a change")
-                .doesNotContain("\"styleIndex\":[" + StyledTextHelper.STYLE_INDEX_EDIT);
+                .isFalse();
     }
 
     @Test

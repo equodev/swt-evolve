@@ -19,6 +19,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sash.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 /// Same as the generated SashSwt, except sendEvent captures outgoing events
 /// instead of handing them to EquoCommService (which needs a live transport
@@ -30,7 +31,7 @@ class _CapturingSashSwt extends SashSwt<VSash> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VSash val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VSash val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VSash _verticalSash() => VSash()

@@ -2035,7 +2035,8 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     org.eclipse.swt.graphics.TextLayoutMeasurement _measured() {
         computeRuns();
-        return measured != null && measured.fits(text) && getSegmentsText().length() == text.length() ? measured : null;
+        // The client measures plain paragraphs; indents and justification are laid out here.
+        return indent == 0 && wrapIndent == 0 && !justify && measured != null && measured.fits(text) && getSegmentsText().length() == text.length() ? measured : null;
     }
 
     void _layoutLines() {
@@ -2156,9 +2157,11 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
 
     double _xAt(int line, int offset) {
         int ls = _lines[line];
+        double extra = _lineSpaceExtra[line];
+        if (extra > 0 && offset >= TextLayoutHelper.visibleEnd(text, ls, TextLayoutHelper.contentEnd(text, ls, _lines[line + 1])))
+            return _lineX[line] + _lineWidth[line];
         int indent = _startsParagraph(ls) ? getIndent() : getWrapIndent();
         double x = _lineX[line] + _advance(ls, ls, offset, indent);
-        double extra = _lineSpaceExtra[line];
         if (extra > 0) {
             for (int i = ls; i < offset; i++) if (text.charAt(i) == ' ')
                 x += extra;
@@ -2203,10 +2206,14 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         double[] left = new double[n], right = new double[n], rtl = new double[n];
         int indent = _startsParagraph(ls) ? getIndent() : getWrapIndent();
         double extra = _lineSpaceExtra[line];
+        int hanging = extra > 0 ? TextLayoutHelper.visibleEnd(text, ls, le) - ls : n;
         double[] width = new double[n];
-        for (int c = 0; c < n; c++) {
+        // Measured after the character before it, so a box carries the pair's kerning as _xAt does.
+        for (int c = 0, previous = -1; c < n; c++) {
             int after = _nextChar(ls + c, le);
-            width[c] = _advance(ls, ls + c, after, indent) + (text.charAt(ls + c) == ' ' ? extra : 0);
+            double advance = previous < 0 ? _advance(ls, ls + c, after, indent) : _advance(ls, ls + previous, after, indent) - _advance(ls, ls + previous, ls + c, indent);
+            width[c] = c >= hanging ? 0 : advance + (text.charAt(ls + c) == ' ' ? extra : 0);
+            previous = c;
             if (after - ls == c + 2)
                 c++;
         }

@@ -6,8 +6,8 @@ import static org.eclipse.swt.widgets.Mocks.*;
 
 import org.eclipse.swt.graphics.Image;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
 
 import java.io.IOException;
 
@@ -24,8 +24,8 @@ class ToolItemWithImageSerializeTest extends SerializeTestBase {
 
         w.setDisabledImage(new Image(w.getDisplay(), getClass().getClassLoader().getResourceAsStream("collapseall.png")));
 
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        java.util.Map<String, Object> state = serialize(w);
+        WireAssert assertJ = assertThatWire(state).isObject();
         assertJ.containsEntry("id", w.hashCode())
                 .containsEntry("swt", "ToolItem")
                 .containsEntry("text", w.getText());

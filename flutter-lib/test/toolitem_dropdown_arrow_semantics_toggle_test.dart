@@ -5,15 +5,12 @@
 // pointer routing, so such a tap never sees this popup as "outside" -- the arrow's own onTap fires
 // again and asks Java to re-show an already-visible menu, which is a no-op: the popup never closes.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/menuitem.dart';
@@ -24,19 +21,9 @@ import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/toolbar_evolve.dart';
 import 'package:swtflutter/src/theme/theme_extensions/toolbar_theme_extension.dart';
 
+import 'delivery/support/deliver.dart';
 import 'support/menu_shown_ack.dart';
-
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(String channel, Map<String, dynamic> payload) {
-  final channelBytes = utf8.encode(channel);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + channelBytes.length + body.length);
-  frame[0] = (channelBytes.length >> 8) & 0xFF;
-  frame[1] = channelBytes.length & 0xFF;
-  frame.setRange(2, 2 + channelBytes.length, channelBytes);
-  frame.setRange(2 + channelBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   const _CapturingToolItemSwt({required super.value, required this.onOpenMenu});
@@ -44,8 +31,8 @@ class _CapturingToolItemSwt extends ToolItemSwt<VToolItem> {
   final VoidCallback onOpenMenu;
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) {
-    if (ev == "Selection/OpenMenu") onOpenMenu();
+  void sendEvent(VToolItem val, int channel, VEvent? payload) {
+    if (wireChannelNames[channel]! == "Selection/OpenMenu") onOpenMenu();
   }
 }
 
@@ -186,7 +173,7 @@ void main() {
       if (javaVisible) return;
       javaVisible = true;
       seq++;
-      _receive('Menu/10', {..._popup(seq: seq, visible: true).toJson(), '_s': seq});
+      applyWhole(_popup(seq: seq, visible: true));
     }
 
     await tester.pumpWidget(_harness(onOpenMenu: onOpenMenu));

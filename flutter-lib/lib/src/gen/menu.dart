@@ -1,14 +1,13 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/menuitem.dart';
 import '../gen/point.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/menu_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'menu.g.dart';
 
 class MenuSwt<V extends VMenu> extends WidgetSwt<V> {
   const MenuSwt({super.key, required super.value});
@@ -17,19 +16,18 @@ class MenuSwt<V extends VMenu> extends WidgetSwt<V> {
   State createState() => MenuImpl<MenuSwt<VMenu>, VMenu>();
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, "Help/Help", payload);
+    sendEvent(val, 49, payload); // Help/Help
   }
 
   void sendMenuHide(V val, VEvent? payload) {
-    sendEvent(val, "Menu/Hide", payload);
+    sendEvent(val, 61, payload); // Menu/Hide
   }
 
   void sendMenuShow(V val, VEvent? payload) {
-    sendEvent(val, "Menu/Show", payload);
+    sendEvent(val, 62, payload); // Menu/Show
   }
 }
 
-@JsonSerializable()
 class VMenu extends VWidget {
   VMenu() : this.empty();
   VMenu.empty() {
@@ -55,25 +53,73 @@ class VMenu extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'enabled':
-        enabled = json['enabled'] as bool?;
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => VMenuItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'location':
-        location = json['location'] == null
-            ? null
-            : VPoint.fromJson(json['location'] as Map<String, dynamic>);
-      case 'orientation':
-        orientation = (json['orientation'] as num?)?.toInt();
-      case 'visible':
-        visible = json['visible'] as bool?;
+      case 365: // enabled
+        enabled = r.boolean();
+        return true;
+      case 366: // items
+        items = r.refs<VMenuItem>();
+        return true;
+      case 367: // location
+        location = r.point();
+        return true;
+      case 368: // orientation
+        orientation = r.int32();
+        return true;
+      case 369: // visible
+        visible = r.boolean();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = enabled;
+      if (v_ != null) {
+        w.keyBoolean(365, v_);
+      }
+    }
+    {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(366);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = location;
+      if (v_ != null) {
+        w.key(367);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = orientation;
+      if (v_ != null) {
+        w.keyInt32(368, v_);
+      }
+    }
+    {
+      final v_ = visible;
+      if (v_ != null) {
+        w.keyBoolean(369, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(365, enabled);
+    visit(366, items);
+    visit(367, location);
+    visit(368, orientation);
+    visit(369, visible);
   }
 
   @override
@@ -82,7 +128,6 @@ class VMenu extends VWidget {
     VWidget.adoptEach(items, adopt);
   }
 
-  factory VMenu.fromJson(Map<String, dynamic> json) =>
-      _$VMenuFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VMenuToJson(this);
+  @override
+  bool? get semanticsEnabled => enabled;
 }

@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'colordialog_theme_extension.tailor.dart';
-part 'colordialog_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class ColorDialogThemeExtension extends ThemeExtension<ColorDialogThemeExtension>
     with _$ColorDialogThemeExtensionTailorMixin {
   // Dialog chrome
@@ -91,9 +84,4 @@ class ColorDialogThemeExtension extends ThemeExtension<ColorDialogThemeExtension
     required this.previewSpacing,
     required this.hexFieldWidth,
   });
-
-  factory ColorDialogThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ColorDialogThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ColorDialogThemeExtensionToJson(this);
 }

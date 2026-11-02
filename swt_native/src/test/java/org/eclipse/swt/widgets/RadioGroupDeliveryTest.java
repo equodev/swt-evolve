@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,12 +56,11 @@ class RadioGroupDeliveryTest {
         FlutterBridge.update();
 
         System.out.println("=== frames sent after selecting r2 (web path) ===");
-        for (RecordingComm.Frame f : bridge.comm.sent) System.out.println(f.event + " -> " + f.json);
+        for (RecordingComm.Frame f : bridge.comm.sent) System.out.println(f.event + " -> " + f.value);
 
         assertThat(r1.getSelection()).as("r1 deselected in Java").isFalse();
 
         String r1Id = String.valueOf(r1.hashCode());
-        String r2Id = String.valueOf(r2.hashCode());
 
         // r1's deselection reaches Flutter iff either r1 is sent on its own channel,
         // or the parent payload carries r1 (and r1 is NOT marked selected there).
@@ -70,13 +70,10 @@ class RadioGroupDeliveryTest {
                 .reduce((a, b) -> b).orElse(null);
 
         boolean parentCarriesR1Deselected = false;
-        if (parentFrame != null && parentFrame.json.contains("\"id\":" + r1Id)) {
-            // The serializer omits selection when false, so r1's slice must not say selection:true.
-            int r1Slice = parentFrame.json.indexOf("\"id\":" + r1Id);
-            int r2Slice = parentFrame.json.indexOf("\"id\":" + r2Id);
-            int end = r2Slice > r1Slice ? r2Slice : parentFrame.json.length();
-            String r1Json = parentFrame.json.substring(r1Slice, end);
-            parentCarriesR1Deselected = !r1Json.contains("\"selection\":true");
+        if (parentFrame != null && !WireValues.describing(parentFrame.value, r1.hashCode()).isEmpty()) {
+            // The serializer omits selection when false, so r1's description must not say selection:true.
+            parentCarriesR1Deselected = WireValues.describing(parentFrame.value, r1.hashCode()).stream()
+                    .noneMatch(m -> Boolean.TRUE.equals(m.get("selection")));
         }
 
         assertThat(r1OwnChannel || parentCarriesR1Deselected)
@@ -111,14 +108,13 @@ class RadioGroupDeliveryTest {
         String r1Id = String.valueOf(r1.hashCode());
         boolean ownChannelSaysSelected = bridge.comm.sent.stream()
                 .filter(f -> f.event.startsWith("Button/" + r1Id))
-                .anyMatch(f -> f.json.contains("\"selection\":true"));
+                .anyMatch(f -> !WireValues.find(f.value, m -> Boolean.TRUE.equals(m.get("selection"))).isEmpty());
         RecordingComm.Frame parentFrame = bridge.comm.sent.stream()
                 .filter(f -> f.event.startsWith("Composite/" + group.hashCode()))
                 .reduce((a, b) -> b).orElse(null);
         boolean parentCarriesR1Selected = parentFrame != null
-                && parentFrame.json.contains("\"id\":" + r1Id)
-                && parentFrame.json.substring(parentFrame.json.indexOf("\"id\":" + r1Id))
-                        .contains("\"selection\":true");
+                && WireValues.describing(parentFrame.value, r1.hashCode()).stream()
+                        .anyMatch(m -> Boolean.TRUE.equals(m.get("selection")));
 
         assertThat(ownChannelSaysSelected || parentCarriesR1Selected)
                 .as("the radio the user picked must be communicated as selected (own channel, or "

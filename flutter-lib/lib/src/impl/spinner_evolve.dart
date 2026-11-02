@@ -13,22 +13,23 @@ import 'utils/client_locale.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
+import 'utils/quiet_animations.dart';
 
 class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     extends CompositeImpl<T, V> {
   bool _isFocused = false;
 
   // A KeyDown listener may veto the keystroke, so an edit is held un-rendered until Java answers.
-  final VetoGate _keyGate = VetoGate('key');
+  final VetoGate _keyGate = VetoGate.key();
 
   // Java answers an edit it was asked to Verify; a veto sends the field back to the value Java holds.
-  final VetoGate _modifyGate = VetoGate('modify');
+  final VetoGate _modifyGate = VetoGate.modify();
 
   @override
   void initState() {
     super.initState();
-    _keyGate.attach(state.swt, state.id);
-    _modifyGate.attach(state.swt, state.id);
+    _keyGate.attach(state.wireType, state.id);
+    _modifyGate.attach(state.wireType, state.id);
   }
 
   @override
@@ -45,9 +46,6 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     final minimum = state.minimum ?? widgetTheme.defaultMinimum;
     final maximum = state.maximum ?? widgetTheme.defaultMaximum;
     final selection = state.selection ?? widgetTheme.defaultSelection;
-    final increment = state.increment ?? widgetTheme.defaultIncrement;
-    final pageIncrement =
-        state.pageIncrement ?? widgetTheme.defaultPageIncrement;
     final digits = state.digits ?? widgetTheme.defaultDigits;
     final textLimit = state.textLimit ?? widgetTheme.defaultTextLimit;
 
@@ -89,11 +87,9 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         value: currentValue,
         min: minimum,
         max: maximum,
-        increment: increment,
         digits: digits,
         decimalSeparator: decimalSeparator(),
         keptText: state.keptText,
-        pageIncrement: pageIncrement,
         textLimit: textLimit,
         enabled: enabled,
         readOnly: readOnly,
@@ -106,13 +102,8 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         textColor: textColor,
         borderColor: borderColor,
         textStyle: textStyle,
-        onChanged: (value) {
-          state.selection = value;
-          widget.sendSelectionSelection(
-            state,
-            VEvent()..index = state.selection,
-          );
-        },
+        onArrow: (direction) =>
+            widget.sendSelectionSelection(state, VEvent()..detail = direction),
         onEdited: (edit) => widget.sendModifyModify(state, edit),
         onSubmitted: (value) {
           state.selection = value;
@@ -140,12 +131,10 @@ class _ThemedSpinner extends StatefulWidget {
   final int value;
   final int min;
   final int max;
-  final int increment;
   final int digits;
   final String decimalSeparator;
   // The text a refused Verify kept over the selection; null while the text follows the value.
   final String? keptText;
-  final int pageIncrement;
   final int textLimit;
   final bool enabled;
   final bool readOnly;
@@ -159,7 +148,8 @@ class _ThemedSpinner extends StatefulWidget {
   final Color textColor;
   final Color borderColor;
   final TextStyle textStyle;
-  final ValueChanged<int> onChanged;
+  // An arrow click, as SWT.ARROW_UP or SWT.ARROW_DOWN: Java steps the value and sends it back.
+  final ValueChanged<int> onArrow;
   final ValueChanged<VEvent> onEdited;
   final ValueChanged<int> onSubmitted;
   final ValueChanged<bool> onFocusChanged;
@@ -168,11 +158,9 @@ class _ThemedSpinner extends StatefulWidget {
     required this.value,
     required this.min,
     required this.max,
-    required this.increment,
     required this.digits,
     required this.decimalSeparator,
     this.keptText,
-    required this.pageIncrement,
     required this.textLimit,
     required this.enabled,
     required this.readOnly,
@@ -185,7 +173,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.textColor,
     required this.borderColor,
     required this.textStyle,
-    required this.onChanged,
+    required this.onArrow,
     required this.onEdited,
     required this.onSubmitted,
     required this.onFocusChanged,
@@ -262,7 +250,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   Widget build(BuildContext context) {
     final isInteractive = widget.enabled && !widget.readOnly;
 
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.width,
       height: widget.height,
@@ -280,7 +268,6 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
             child: DoubleClickWordSelector(
               controller: _controller,
               focusNode: _focusNode,
-              text: _controller.text,
               onWordSelected: (_, __) {},
               child: _buildTextField(isInteractive),
             ),
@@ -325,7 +312,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 
   Widget _buildButtonColumn(bool isInteractive) {
-    return AnimatedContainer(
+    return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
       width: widget.widgetTheme.buttonWidth,
       decoration: BoxDecoration(
@@ -366,7 +353,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       animationDuration: widget.widgetTheme.animationDuration,
       enabled: isInteractive,
       showBottomBorder: true,
-      onTap: isInteractive ? _incrementValue : null,
+      onTap: isInteractive ? () => widget.onArrow(SWT.ARROW_UP) : null,
       onHoverChanged: (isHovered) => setState(() => _isUpHovered = isHovered),
       onPressedChanged: (isPressed) => setState(() => _isUpPressed = isPressed),
     );
@@ -393,7 +380,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       animationDuration: widget.widgetTheme.animationDuration,
       enabled: isInteractive,
       showBottomBorder: false,
-      onTap: isInteractive ? _decrementValue : null,
+      onTap: isInteractive ? () => widget.onArrow(SWT.ARROW_DOWN) : null,
       onHoverChanged: (isHovered) => setState(() => _isDownHovered = isHovered),
       onPressedChanged: (isPressed) =>
           setState(() => _isDownPressed = isPressed),
@@ -423,25 +410,6 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       multiplier *= 10;
     }
     return multiplier;
-  }
-
-  // Value manipulation
-  void _incrementValue() {
-    final newValue = (widget.value + widget.increment).clamp(
-      widget.min,
-      widget.max,
-    );
-    _controller.text = _formatValue(newValue);
-    widget.onChanged(newValue);
-  }
-
-  void _decrementValue() {
-    final newValue = (widget.value - widget.increment).clamp(
-      widget.min,
-      widget.max,
-    );
-    _controller.text = _formatValue(newValue);
-    widget.onChanged(newValue);
   }
 
   // Event handlers
@@ -541,7 +509,7 @@ class _SpinnerButton extends StatelessWidget {
         onTapUp: enabled ? (_) => onPressedChanged(false) : null,
         onTapCancel: enabled ? () => onPressedChanged(false) : null,
         onTap: onTap,
-        child: AnimatedContainer(
+        child: QuietAnimatedContainer(
           duration: animationDuration,
           decoration: BoxDecoration(
             color: backgroundColor,

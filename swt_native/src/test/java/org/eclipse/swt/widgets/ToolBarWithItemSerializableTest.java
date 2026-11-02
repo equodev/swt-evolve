@@ -3,8 +3,8 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import dev.equo.swt.harness.WireAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 
 import static org.eclipse.swt.widgets.Mocks.shell;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,15 +25,14 @@ class ToolBarWithItemSerializableTest extends SerializeTestBase {
         item2.setText("Item 2");
         item2.setToolTipText("Second item");
         
-        String json = serialize(toolBar);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(toolBar)).isObject();
         
         // Verify ToolBar properties
         assertJ.containsEntry("id", toolBar.hashCode())
                .containsEntry("swt", "ToolBar");
         
         // Verify that items array exists and contains 2 items
-        assertJ.node("items").isArray().hasSize(2);
+        assertJ.node("items").hasSize(2);
         
         // Verify first item
         assertJ.node("items[0]").isObject()

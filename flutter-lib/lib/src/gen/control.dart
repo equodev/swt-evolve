@@ -1,5 +1,5 @@
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/cursor.dart';
 import '../gen/font.dart';
@@ -8,100 +8,98 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'control.g.dart';
 
 abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
   const ControlSwt({super.key, required super.value});
 
   void sendControlMove(V val, VEvent? payload) {
-    sendEvent(val, "Control/Move", payload);
+    sendEvent(val, 20, payload); // Control/Move
   }
 
   void sendControlResize(V val, VEvent? payload) {
-    sendEvent(val, "Control/Resize", payload);
+    sendEvent(val, 21, payload); // Control/Resize
   }
 
   void sendDragDetectDragDetect(V val, VEvent? payload) {
-    sendEvent(val, "DragDetect/DragDetect", payload);
+    sendEvent(val, 26, payload); // DragDetect/DragDetect
   }
 
   void sendFocusFocusIn(V val, VEvent? payload) {
-    sendEvent(val, "Focus/FocusIn", payload);
+    sendEvent(val, 38, payload); // Focus/FocusIn
   }
 
   void sendFocusFocusOut(V val, VEvent? payload) {
-    sendEvent(val, "Focus/FocusOut", payload);
+    sendEvent(val, 39, payload); // Focus/FocusOut
   }
 
   void sendGestureGesture(V val, VEvent? payload) {
-    sendEvent(val, "Gesture/Gesture", payload);
+    sendEvent(val, 42, payload); // Gesture/Gesture
   }
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, "Help/Help", payload);
+    sendEvent(val, 49, payload); // Help/Help
   }
 
   void sendKeyKeyDown(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyDown", payload);
+    sendEvent(val, 54, payload); // Key/KeyDown
   }
 
   void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, "Key/KeyUp", payload);
+    sendEvent(val, 55, payload); // Key/KeyUp
   }
 
   void sendMenuDetectMenuDetect(V val, VEvent? payload) {
-    sendEvent(val, "MenuDetect/MenuDetect", payload);
+    sendEvent(val, 63, payload); // MenuDetect/MenuDetect
   }
 
   void sendMouseMouseDoubleClick(V val, VEvent? payload) {
-    sendEvent(val, "Mouse/MouseDoubleClick", payload);
+    sendEvent(val, 66, payload); // Mouse/MouseDoubleClick
   }
 
   void sendMouseMouseDown(V val, VEvent? payload) {
-    sendEvent(val, "Mouse/MouseDown", payload);
+    sendEvent(val, 67, payload); // Mouse/MouseDown
   }
 
   void sendMouseMouseUp(V val, VEvent? payload) {
-    sendEvent(val, "Mouse/MouseUp", payload);
+    sendEvent(val, 68, payload); // Mouse/MouseUp
   }
 
   void sendMouseMoveMouseMove(V val, VEvent? payload) {
-    sendEvent(val, "MouseMove/MouseMove", payload);
+    sendEvent(val, 69, payload); // MouseMove/MouseMove
   }
 
   void sendMouseTrackMouseEnter(V val, VEvent? payload) {
-    sendEvent(val, "MouseTrack/MouseEnter", payload);
+    sendEvent(val, 70, payload); // MouseTrack/MouseEnter
   }
 
   void sendMouseTrackMouseExit(V val, VEvent? payload) {
-    sendEvent(val, "MouseTrack/MouseExit", payload);
+    sendEvent(val, 71, payload); // MouseTrack/MouseExit
   }
 
   void sendMouseTrackMouseHover(V val, VEvent? payload) {
-    sendEvent(val, "MouseTrack/MouseHover", payload);
+    sendEvent(val, 72, payload); // MouseTrack/MouseHover
   }
 
   void sendMouseWheelMouseWheel(V val, VEvent? payload) {
-    sendEvent(val, "MouseWheel/MouseWheel", payload);
+    sendEvent(val, 73, payload); // MouseWheel/MouseWheel
   }
 
   void sendPaintPaint(V val, VEvent? payload) {
-    sendEvent(val, "Paint/Paint", payload);
+    sendEvent(val, 76, payload); // Paint/Paint
   }
 
   void sendTouchTouch(V val, VEvent? payload) {
-    sendEvent(val, "Touch/Touch", payload);
+    sendEvent(val, 100, payload); // Touch/Touch
   }
 
   void sendTraverseTraverse(V val, VEvent? payload) {
-    sendEvent(val, "Traverse/Traverse", payload);
+    sendEvent(val, 104, payload); // Traverse/Traverse
   }
 }
 
-@JsonSerializable()
 class VControl extends VWidget {
   VControl() : this.empty();
   VControl.empty() {
@@ -114,6 +112,7 @@ class VControl extends VWidget {
   VCursor? cursor;
   bool? dragDetect;
   bool? dragSource;
+  int? dragSourceId;
   int? dropTargetId;
   bool? enabled;
   VFont? font;
@@ -122,6 +121,7 @@ class VControl extends VWidget {
   bool? inheritsBackground;
   VMenu? menu;
   VRegion? region;
+  bool? tabStop;
   String? toolTipText;
   bool? visible;
 
@@ -135,6 +135,7 @@ class VControl extends VWidget {
       cursor = other.cursor;
       dragDetect = other.dragDetect;
       dragSource = other.dragSource;
+      dragSourceId = other.dragSourceId;
       dropTargetId = other.dropTargetId;
       enabled = other.enabled;
       font = other.font;
@@ -143,61 +144,219 @@ class VControl extends VWidget {
       inheritsBackground = other.inheritsBackground;
       menu = other.menu;
       region = other.region;
+      tabStop = other.tabStop;
       toolTipText = other.toolTipText;
       visible = other.visible;
     }
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'background':
-        background = VColor.read(json['background']);
-      case 'backgroundImage':
-        backgroundImage = json['backgroundImage'] == null
-            ? null
-            : VImage.fromJson(json['backgroundImage'] as Map<String, dynamic>);
-      case 'bounds':
-        bounds = json['bounds'] == null
-            ? null
-            : VRectangle.fromJson(json['bounds'] as Map<String, dynamic>);
-      case 'cursor':
-        cursor = json['cursor'] == null
-            ? null
-            : VCursor.fromJson(json['cursor'] as Map<String, dynamic>);
-      case 'dragDetect':
-        dragDetect = json['dragDetect'] as bool?;
-      case 'dragSource':
-        dragSource = json['dragSource'] as bool?;
-      case 'dropTargetId':
-        dropTargetId = (json['dropTargetId'] as num?)?.toInt();
-      case 'enabled':
-        enabled = json['enabled'] as bool?;
-      case 'font':
-        font = json['font'] == null
-            ? null
-            : VFont.fromJson(json['font'] as Map<String, dynamic>);
-      case 'foreground':
-        foreground = VColor.read(json['foreground']);
-      case 'hasOwnBackground':
-        hasOwnBackground = json['hasOwnBackground'] as bool?;
-      case 'inheritsBackground':
-        inheritsBackground = json['inheritsBackground'] as bool?;
-      case 'menu':
-        menu = json['menu'] == null
-            ? null
-            : VMenu.fromJson(json['menu'] as Map<String, dynamic>);
-      case 'region':
-        region = json['region'] == null
-            ? null
-            : VRegion.fromJson(json['region'] as Map<String, dynamic>);
-      case 'toolTipText':
-        toolTipText = json['toolTipText'] as String?;
-      case 'visible':
-        visible = json['visible'] as bool?;
+      case 128: // background
+        background = r.color();
+        return true;
+      case 129: // backgroundImage
+        backgroundImage = r.image();
+        return true;
+      case 130: // bounds
+        bounds = r.rect();
+        return true;
+      case 131: // cursor
+        cursor = r.object(VCursor.new);
+        return true;
+      case 132: // dragDetect
+        dragDetect = r.boolean();
+        return true;
+      case 133: // dragSource
+        dragSource = r.boolean();
+        return true;
+      case 134: // dragSourceId
+        dragSourceId = r.longBoxed();
+        return true;
+      case 135: // dropTargetId
+        dropTargetId = r.longBoxed();
+        return true;
+      case 136: // enabled
+        enabled = r.boolBoxed();
+        return true;
+      case 137: // font
+        font = r.object(VFont.new);
+        return true;
+      case 138: // foreground
+        foreground = r.color();
+        return true;
+      case 139: // hasOwnBackground
+        hasOwnBackground = r.boolean();
+        return true;
+      case 140: // inheritsBackground
+        inheritsBackground = r.boolean();
+        return true;
+      case 141: // menu
+        menu = r.ref<VMenu>();
+        return true;
+      case 142: // region
+        region = r.object(VRegion.new);
+        return true;
+      case 143: // tabStop
+        tabStop = r.boolean();
+        return true;
+      case 144: // toolTipText
+        toolTipText = r.string();
+        return true;
+      case 145: // visible
+        visible = r.boolBoxed();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = background;
+      if (v_ != null) {
+        w.key(128);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = backgroundImage;
+      if (v_ != null) {
+        w.keyRef(129, v_.id);
+      }
+    }
+    {
+      final v_ = bounds;
+      if (v_ != null) {
+        w.key(130);
+        w.rectValue(v_);
+      }
+    }
+    {
+      final v_ = cursor;
+      if (v_ != null) {
+        w.key(131);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = dragDetect;
+      if (v_ != null) {
+        w.keyBoolean(132, v_);
+      }
+    }
+    {
+      final v_ = dragSource;
+      if (v_ != null) {
+        w.keyBoolean(133, v_);
+      }
+    }
+    {
+      final v_ = dragSourceId;
+      if (v_ != null) {
+        w.key(134);
+        w.longBoxed(v_);
+      }
+    }
+    {
+      final v_ = dropTargetId;
+      if (v_ != null) {
+        w.key(135);
+        w.longBoxed(v_);
+      }
+    }
+    {
+      final v_ = enabled;
+      if (v_ != null) {
+        w.key(136);
+        w.boolBoxed(v_);
+      }
+    }
+    {
+      final v_ = font;
+      if (v_ != null) {
+        w.key(137);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = foreground;
+      if (v_ != null) {
+        w.key(138);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = hasOwnBackground;
+      if (v_ != null) {
+        w.keyBoolean(139, v_);
+      }
+    }
+    {
+      final v_ = inheritsBackground;
+      if (v_ != null) {
+        w.keyBoolean(140, v_);
+      }
+    }
+    {
+      final v_ = menu;
+      if (v_ != null) {
+        w.keyRef(141, v_.id);
+      }
+    }
+    {
+      final v_ = region;
+      if (v_ != null) {
+        w.key(142);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = tabStop;
+      if (v_ != null) {
+        w.keyBoolean(143, v_);
+      }
+    }
+    {
+      final v_ = toolTipText;
+      if (v_ != null) {
+        w.key(144);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = visible;
+      if (v_ != null) {
+        w.key(145);
+        w.boolBoxed(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(128, background);
+    visit(129, backgroundImage);
+    visit(130, bounds);
+    visit(131, cursor);
+    visit(132, dragDetect);
+    visit(133, dragSource);
+    visit(134, dragSourceId);
+    visit(135, dropTargetId);
+    visit(136, enabled);
+    visit(137, font);
+    visit(138, foreground);
+    visit(139, hasOwnBackground);
+    visit(140, inheritsBackground);
+    visit(141, menu);
+    visit(142, region);
+    visit(143, tabStop);
+    visit(144, toolTipText);
+    visit(145, visible);
   }
 
   @override
@@ -206,8 +365,9 @@ class VControl extends VWidget {
     menu = VWidget.adoptOne(menu, adopt);
   }
 
-  factory VControl.fromJson(Map<String, dynamic> json) =>
-      mapWidgetValue(json) as VControl;
-  Map<String, dynamic> toJson() =>
-      throw UnsupportedError("Unsupported toJson in Control");
+  @override
+  String? get semanticsTooltip => toolTipText;
+
+  @override
+  bool? get semanticsEnabled => enabled;
 }

@@ -4,6 +4,7 @@ import dev.equo.swt.size.TextStyle;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.widgets.Display;
 
 public final class FontMetricsUtil {
@@ -134,7 +135,7 @@ public final class FontMetricsUtil {
     /**
      * The DPI Win32 and GTK render a point-sized font at. Upstream GTK writes the same literal
      * ({@code SwtDevice#getScreenDPI}); Win32 normalises {@code GetDeviceCaps} by the autoscale
-     * zoom and lands on it too, the display's own scaling being carried by {@code DPIUtil}.
+     * zoom and lands on it whenever that zoom is the monitor's own ({@link #screenDPI}).
      */
     private static final int WIN32_GTK_DPI = 96;
 
@@ -144,12 +145,36 @@ public final class FontMetricsUtil {
      * platform is the browser's, not the one the application is laid out for.
      */
     public static org.eclipse.swt.graphics.Point hostScreenDPI() {
-        return hostScreenDPI(System.getProperty("os.name"));
+        return new org.eclipse.swt.graphics.Point(HOST_DPI, HOST_DPI);
     }
 
     public static org.eclipse.swt.graphics.Point hostScreenDPI(String osName) {
+        int dpi = hostDpi(osName);
+        return new org.eclipse.swt.graphics.Point(dpi, dpi);
+    }
+
+    private static int hostDpi(String osName) {
         String n = osName == null ? "" : osName.toLowerCase(java.util.Locale.ROOT);
-        int dpi = (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
+        return (n.startsWith("mac") || n.contains("darwin")) ? MACOS_DPI : WIN32_GTK_DPI;
+    }
+
+    /** {@link #hostScreenDPI()}'s figure: the host does not change while the process runs. */
+    private static final int HOST_DPI = hostDpi(System.getProperty("os.name"));
+
+    /**
+     * The DPI {@code Device#getDPI} reports: the host's DPI over the zoom SWT draws at, as Win32
+     * scales {@code GetDeviceCaps(LOGPIXELSX)} down by it. That zoom is the monitor's own unless
+     * {@code swt.autoScale} rounds it: a 150 % monitor reports 144 under {@code integer}, whose zoom
+     * is 100. Applications size what holds text by this figure, NatTable its rows and columns, so it
+     * carries the zoom on every host; native GTK and Cocoa keep their base DPI at any zoom.
+     */
+    public static org.eclipse.swt.graphics.Point screenDPI() {
+        return screenDPI(HOST_DPI, Config.uiScale());
+    }
+
+    /** {@code uiScale} as {@link Config#uiScale} gives it. */
+    public static org.eclipse.swt.graphics.Point screenDPI(int hostDpi, double uiScale) {
+        int dpi = uiScale > 0 ? (int) Math.round(hostDpi / uiScale) : hostDpi;
         return new org.eclipse.swt.graphics.Point(dpi, dpi);
     }
 
@@ -170,14 +195,11 @@ public final class FontMetricsUtil {
      * <p>This is what travels to the render side in {@code ConfigFlags.font_point_scale}, because
      * the zoom does not travel with it: the client learns the monitor late, and a flag carrying the
      * ratio would be read there before that and again after, with no way to tell one from the other.
-     * Each side divides by the zoom it currently holds instead.
+     * Each side divides by the zoom it currently holds instead. For the same reason this reads the
+     * host's DPI rather than {@code Display#getDPI}, which carries the zoom.
      */
     public static double rawDpiScale() {
-        Display display = Display.getCurrent();
-        double dpi = (display != null && display.getDPI().x > 0)
-                ? display.getDPI().x
-                : hostScreenDPI().x;
-        return dpi / POINTS_PER_INCH;
+        return HOST_DPI / POINTS_PER_INCH;
     }
 
     /**
@@ -205,10 +227,9 @@ public final class FontMetricsUtil {
     public static int[] computeFontMetrics(Font font) {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
-        Metrics m = metrics(getId(fd));
         // The same fallback text is measured with (lineHeight, measureLine), so a line's extent and
         // the font's height agree for a family without metrics of its own.
-        if (m == null) m = metrics("System-0-3");
+        Metrics m = measuredMetrics(getId(fd));
         if (m == null) m = metrics("Verdana-0-3");
         if (m == null) return null;
         Display display = Display.getCurrent();
@@ -296,6 +317,20 @@ public final class FontMetricsUtil {
         return textScale == 1.0 ? size : new PointD(size.x() * textScale, size.y() * textScale);
     }
 
+    /**
+     * A label's size as the render side draws it: in {@code style} with {@code font} applied over it, or as
+     * GC measures it with {@code flags} under {@code use_swt_fonts}. A disposed font counts as none: a
+     * resize can reach this from an async runnable after the widget's font was disposed.
+     */
+    public static org.eclipse.swt.graphics.Point labelSize(String text, int flags, TextStyle style, Font font) {
+        if (font != null && font.isDisposed())
+            font = null;
+        if (Config.getConfigFlags().use_swt_fonts)
+            return GCHelper.textExtent(text, flags, font);
+        PointD size = getFontSize(text, style.withStyleFrom(font));
+        return new org.eclipse.swt.graphics.Point((int) Math.ceil(size.x()), (int) Math.ceil(size.y()));
+    }
+
     public static PointD getFontSize(String text, String fontId, int fontSize){
         return getFontSize(text, fontId, fontSize, 0);
     }
@@ -380,23 +415,37 @@ public final class FontMetricsUtil {
         return new PointD(w, h);
     }
 
-    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+    /**
+     * A family without metrics is painted in the default face at the requested weight and slant, so
+     * it is measured as "System" of the same style (substituted: "System Web" on the web).
+     */
+    private static Metrics measuredMetrics(String fontId) {
         Metrics metrics = metrics(fontId);
+        if (metrics != null) return metrics;
+        String system = substituteFontName("System");
+        int styleAt = fontId.lastIndexOf('-', fontId.lastIndexOf('-') - 1);
+        if (styleAt >= 0) metrics = metrics(system + fontId.substring(styleAt));
+        if (metrics == null) metrics = metrics(system + "-0-3");
         if (metrics == null) metrics = metrics("System-0-3");
+        return metrics;
+    }
+
+    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+        Metrics metrics = measuredMetrics(fontId);
         if (metrics == null) return fontSize;
         return fontHeight != 0 ? fontHeight * fontSize : metrics.height() * fontSize;
     }
 
     private static double measureLine(String text, String fontId, int fontSize) {
-        Metrics metrics = metrics(fontId);
-        if (metrics == null)
-            metrics = metrics("System-0-3");
+        Metrics metrics = measuredMetrics(fontId);
         if (metrics == null)
             return 0;
 
         double scale = (double) fontSize / GenFontMetrics.BASE;
 
+        // Add each pair's kerning, as the run is painted with it.
         double w = 0.0;
+        int previous = -1;
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
@@ -410,7 +459,9 @@ public final class FontMetricsUtil {
             } else {
                 glyphWidth = metrics.avgCharWidth();
             }
+            if (previous >= 0) glyphWidth += metrics.kerning(previous, cp);
             w += glyphWidth * scale;
+            previous = cp;
         }
         return w;
     }

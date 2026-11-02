@@ -59,6 +59,16 @@ public class TextHelper {
         }
     }
 
+    /** The part of {@code string} that fits the text limit when it replaces {@code selection}. */
+    static String clipToLimit(DartText text, String string, Point selection) {
+        if (text.textLimit == Text.LIMIT)
+            return string;
+        int kept = text.getCharCount() - (selection.y - selection.x);
+        if (kept + string.length() <= text.textLimit)
+            return string;
+        return string.substring(0, Math.max(0, text.textLimit - kept));
+    }
+
     /**
      * Asks the Segments listeners for the segments of the current text, as GTK does after every edit.
      * The separators are not drawn: the rendered text is the text without them.
@@ -317,7 +327,7 @@ public class TextHelper {
             return;
         boolean applied = proposed.equals(text.getText());
         if (text.hooks(SWT.Verify) || text.filters(SWT.Verify)) {
-            dev.equo.swt.FlutterBridge.send(text, "modify/verdict",
+            dev.equo.swt.FlutterBridge.send(text, dev.equo.swt.WireTable.CHANNEL_MODIFY_VERDICT,
                     dev.equo.swt.Java8.map("doit", applied));
         }
     }

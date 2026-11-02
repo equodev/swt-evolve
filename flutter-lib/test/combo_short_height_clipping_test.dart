@@ -4,9 +4,9 @@
 // An application is free to pin a control's height through GridData.heightHint,
 // and real ones do: a preference page hints 18px for its READ_ONLY combos --
 // enough for a native combo cell, well under the ~34px this one prefers. The
-// text-field padding is a fixed inset, so the Row leaves EditableText a 2px
+// text-field padding is a fixed inset, so the Row leaves the field a 2px
 // viewport and the glyphs are cut off at the bottom. (Measured live on that
-// page: combo render box 364x20, EditableText viewport 310x2, line height 16.)
+// page: combo render box 364x20, field viewport 310x2, line height 16.)
 //
 // The chrome must yield to the text, not the other way round: the text keeps a
 // full line height (centred in whatever height it was given) and the vertical
@@ -19,6 +19,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/impl/combo_evolve.dart';
 
 VRectangle _rect(int x, int y, int width, int height) => VRectangle()
   ..x = x
@@ -49,11 +50,11 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final editable = find.byType(EditableText);
+    final editable = find.byType(ComboValueText);
     expect(editable, findsOneWidget);
 
     final double viewportHeight = tester.getSize(editable).height;
-    final TextStyle style = tester.widget<EditableText>(editable).style;
+    final TextStyle style = tester.widget<ComboValueText>(editable).style;
     final painter = TextPainter(
       text: TextSpan(text: selected, style: style),
       maxLines: 1,
@@ -87,7 +88,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final editable = find.byType(EditableText);
+    final editable = find.byType(ComboValueText);
     final double boxHeight = tester.getSize(find.byType(ComboSwt<VCombo>)).height;
     final double viewportHeight = tester.getSize(editable).height;
 

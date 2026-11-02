@@ -21,21 +21,15 @@ import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/shell_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
 
 const _viewport = Size(1280, 800);
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body)
-/// so the channel subscription receives it -- the only way a Display update reaches a mounted
-/// DisplaySwt, which keeps its own state rather than taking it from a rebuilding parent.
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
+/// Java describing the display, as the record its update arrives in: the only way a Display update
+/// reaches a mounted DisplaySwt, which keeps its own state rather than taking it from a parent.
+void _javaDescribesDisplay(String channel, VDisplay display) {
+  final id = int.parse(channel.split('/')[1]);
+  VRegistry.instance.deliverHolderForTesting('Display', id, display);
 }
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -200,14 +194,13 @@ void main() {
     expect(find.text('Detached View'), findsNothing);
 
     // The browser refused the window, or the policy changed: Java stops naming it, and the shell
-    // has to be drawn here again or it exists nowhere at all. Delivered as a real frame, because
-    // that is the only way a Display update reaches a mounted DisplaySwt.
-    _receiveJson('Display/8', (VDisplay()
+    // has to be drawn here again or it exists nowhere at all.
+    _javaDescribesDisplay('Display/8', (VDisplay()
           ..swt = 'Display'
           ..id = 8
           ..shells = [_mainShell(), _detachedShell()]
           ..mainShellId = main.id)
-        .toJson());
+        );
     await tester.pumpAndSettle();
 
     expect(find.text('Detached View'), findsOneWidget);
@@ -227,13 +220,13 @@ void main() {
           ..mainShellId = main.id);
     expect(find.text('Detached View'), findsOneWidget);
 
-    _receiveJson('Display/9', (VDisplay()
+    _javaDescribesDisplay('Display/9', (VDisplay()
           ..swt = 'Display'
           ..id = 9
           ..shells = [_mainShell(), _detachedShell()]
           ..mainShellId = main.id
           ..windowedShellIds = [inline.id!])
-        .toJson());
+        );
     await tester.pumpAndSettle();
 
     expect(

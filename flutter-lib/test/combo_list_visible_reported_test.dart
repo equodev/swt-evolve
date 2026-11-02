@@ -3,12 +3,11 @@
 // click outside. What Java itself asked for is not reported back, and neither a push that left Java
 // before it heard the report nor Java's echo of it changes the list the user is working in.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
@@ -19,6 +18,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 
+import 'delivery/support/deliver.dart';
+
 const int comboId = 92;
 
 class _CapturingComboSwt extends ComboSwt<VCombo> {
@@ -27,14 +28,14 @@ class _CapturingComboSwt extends ComboSwt<VCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
-VCombo _combo({int seq = 1, bool listVisible = false}) => VCombo()
+VCombo _combo({int seq = 1, bool listVisible = false, int style = SWT.READ_ONLY}) => VCombo()
   ..swt = 'Combo'
   ..id = comboId
   ..seq = seq
-  ..style = SWT.READ_ONLY
+  ..style = style
   ..enabled = true
   ..items = const ['Alpha', 'Bravo', 'Charlie']
   ..text = 'Alpha'
@@ -45,19 +46,11 @@ VCombo _combo({int seq = 1, bool listVisible = false}) => VCombo()
     ..width = 120
     ..height = 30);
 
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(VCombo value) {
-  final actionBytes = utf8.encode('Combo/$comboId');
-  final body = utf8.encode(json.encode({...value.toJson(), '_s': value.seq}));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
+/// Delivers [value] as Java describes it whole.
+void _receive(VCombo value) => applyWhole(value);
 
-Future<List<(String, VEvent?)>> _pump(WidgetTester tester) async {
+Future<List<(String, VEvent?)>> _pump(WidgetTester tester,
+    {bool focus = true, int style = SWT.READ_ONLY}) async {
   final events = <(String, VEvent?)>[];
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
@@ -67,15 +60,17 @@ Future<List<(String, VEvent?)>> _pump(WidgetTester tester) async {
         width: 120,
         height: 30,
         child: _CapturingComboSwt(
-          value: _combo(),
+          value: _combo(style: style),
           onEvent: (ev, payload) => events.add((ev, payload)),
         ),
       ),
     ),
   ));
   await tester.pumpAndSettle();
-  FocusRequests.instance.request(comboId);
-  await tester.pumpAndSettle();
+  if (focus) {
+    FocusRequests.instance.request(comboId);
+    await tester.pumpAndSettle();
+  }
   events.clear();
   return events;
 }
@@ -139,6 +134,104 @@ void main() {
             .map((e) => e.$1)
             .where((ev) => ev == 'List/Visible' || ev.startsWith('Selection/')),
         ['List/Visible', 'List/Visible', 'Selection/Selection']);
+  });
+
+  testWidgets('a click on the text of a read-only Combo opens its list and reports it',
+      (tester) async {
+    final events = await _pump(tester, focus: false);
+
+    await tester.tapAt(const Offset(30, 15));
+    await tester.pumpAndSettle();
+
+    expect(_listOpen(), isTrue);
+    expect(_reports(events), [1]);
+  });
+
+  testWidgets('a second click on the text of a read-only Combo closes its list', (tester) async {
+    final events = await _pump(tester, focus: false);
+
+    await tester.tapAt(const Offset(30, 15));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(30, 15));
+    await tester.pumpAndSettle();
+
+    expect(_listOpen(), isFalse);
+    expect(_reports(events), [1, 0]);
+  });
+
+  testWidgets('a press dragged across a read-only Combo leaves its list open', (tester) async {
+    final events = await _pump(tester, focus: false);
+
+    final TestGesture drag = await tester.startGesture(const Offset(5, 15));
+    await tester.pump();
+    for (double x = 25; x <= 115; x += 30) {
+      await drag.moveTo(Offset(x, 15));
+      await tester.pump();
+    }
+    await drag.up();
+    await tester.pumpAndSettle();
+
+    expect(_listOpen(), isTrue);
+    expect(_reports(events), [1]);
+  });
+
+  testWidgets('a right-click does not focus a read-only Combo', (tester) async {
+    final events = await _pump(tester, focus: false);
+
+    await tester.tapAt(const Offset(30, 15), buttons: kSecondaryButton);
+    await tester.pumpAndSettle();
+
+    expect(events.map((e) => e.$1), isNot(contains(startsWith('Focus/'))));
+    expect(_listOpen(), isFalse);
+  });
+
+  testWidgets('a right press on a read-only Combo closes its open list', (tester) async {
+    final events = await _pump(tester, focus: false);
+
+    await tester.tapAt(const Offset(30, 15));
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(30, 15), buttons: kSecondaryButton);
+    await tester.pumpAndSettle();
+
+    expect(_listOpen(), isFalse);
+    expect(_reports(events), [1, 0]);
+  });
+
+  testWidgets('the mouse click that closes a read-only Combo\'s list keeps its focus',
+      (tester) async {
+    final events = await _pump(tester, focus: false);
+
+    await tester.tapAt(const Offset(30, 15), kind: PointerDeviceKind.mouse);
+    await tester.pumpAndSettle();
+    events.clear();
+    await tester.tapAt(const Offset(30, 15), kind: PointerDeviceKind.mouse);
+    await tester.pumpAndSettle();
+
+    expect(_listOpen(), isFalse);
+    expect(events.map((e) => e.$1), isNot(contains('Focus/FocusOut')));
+  });
+
+  testWidgets('a mouse right-click on a focused read-only Combo keeps its focus', (tester) async {
+    final events = await _pump(tester);
+
+    await tester.tapAt(const Offset(30, 15),
+        kind: PointerDeviceKind.mouse, buttons: kSecondaryButton);
+    await tester.pumpAndSettle();
+
+    expect(events.map((e) => e.$1), isNot(contains('Focus/FocusOut')));
+  });
+
+  testWidgets('a click on the text of a DROP_DOWN Combo closes its open list', (tester) async {
+    final events = await _pump(tester, style: SWT.DROP_DOWN);
+
+    await tester.tap(find.byIcon(Icons.arrow_drop_down));
+    await tester.pumpAndSettle();
+    expect(_listOpen(), isTrue);
+    await tester.tapAt(const Offset(30, 15));
+    await tester.pumpAndSettle();
+
+    expect(_listOpen(), isFalse);
+    expect(_reports(events), [1, 0]);
   });
 
   testWidgets('a click outside the open list closing it is reported', (tester) async {

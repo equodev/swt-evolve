@@ -8,6 +8,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.DartLabel;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.VLabel;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
@@ -100,7 +101,7 @@ class ConvergenceAuditTest {
             // consistent with themselves - they simply never mention the text.
             label.setText("changed behind the audit's back");
             ((DartLabel) label.getImpl()).getValue().clearDirty();
-            ((DartLabel) label.getImpl()).getValue().markDirty("toolTipText");
+            ((DartLabel) label.getImpl()).getValue().markDirty(VLabel.TOOL_TIP_TEXT);
             FlutterBridge.update();
 
             assertThatThrownBy(() -> audit.assertConverged(channel, truth(label)))
@@ -152,14 +153,8 @@ class ConvergenceAuditTest {
     // ---- harness ----
 
     /** Java's own state for the widget, read without marking anything delivered. */
-    private String truth(Widget widget) {
-        try {
-            String json = new String(serializer.to(widget), StandardCharsets.UTF_8);
-            Serializer.discardWritten();
-            return json;
-        } catch (java.io.IOException e) {
-            throw new AssertionError("could not read the state of " + widget, e);
-        }
+    private java.util.Map<String, Object> truth(Widget widget) {
+        return dev.equo.swt.harness.WireFrames.whole(widget);
     }
 
     /** Puts the widget on the wire whole, so later updates have something to be relative to. */

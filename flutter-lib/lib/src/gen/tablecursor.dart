@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/canvas.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
@@ -13,11 +13,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tablecursor_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tablecursor.g.dart';
 
 class TableCursorSwt<V extends VTableCursor> extends CanvasSwt<V> {
   const TableCursorSwt({super.key, required super.value});
@@ -27,22 +26,17 @@ class TableCursorSwt<V extends VTableCursor> extends CanvasSwt<V> {
       TableCursorImpl<TableCursorSwt<VTableCursor>, VTableCursor>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
-@JsonSerializable()
 class VTableCursor extends VCanvas {
   VTableCursor() : this.empty();
   VTableCursor.empty() {
     swt = "TableCursor";
   }
-
-  factory VTableCursor.fromJson(Map<String, dynamic> json) =>
-      _$VTableCursorFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTableCursorToJson(this);
 }

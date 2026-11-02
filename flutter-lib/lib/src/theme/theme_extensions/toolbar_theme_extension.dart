@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'toolbar_theme_extension.tailor.dart';
-part 'toolbar_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@EdgeInsetsConverter()
-@OffsetConverter()
 class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _$ToolBarThemeExtensionTailorMixin {
   final Color backgroundColor;
   final Color borderColor;
@@ -45,11 +38,5 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
     this.separatorWidth = 8.0,
     this.separatorHeight = 24.0,
   });
-
-
-  factory ToolBarThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ToolBarThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ToolBarThemeExtensionToJson(this);
 }
 

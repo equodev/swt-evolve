@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind, kPrimaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import '../gen/tableitem.dart';
 import '../gen/widget.dart';
@@ -15,13 +16,18 @@ import '../impl/table_evolve.dart';
 import '../theme/theme_extensions/table_theme_extension.dart';
 import '../theme/theme_settings/table_theme_settings.dart';
 import '../impl/color_utils.dart';
+import '../impl/widget_config.dart';
 import 'utils/column_order.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/font_utils.dart';
 import 'utils/viewport_clip.dart';
 import 'utils/widget_utils.dart';
 import 'utils/image_utils.dart';
+import 'utils/dnd_session.dart' show ActiveDragTracker;
+import 'utils/cached_text.dart';
+import 'utils/text_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
+import '../gen/widgets.dart' show WireChannel;
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
@@ -89,6 +95,9 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final effectiveColumnCount = columnCount > 0 ? columnCount : 1;
 
     final columns = _context?.parentTableValue.columns ?? [];
+    final kept = _context?.tableImpl?.keptCells(state, effectiveColumnCount);
+    final widths = _context?.tableImpl?.cachedColumnWidths;
+    final semantics = WidgetsBinding.instance.semanticsEnabled;
     final rowGround = Color.alphaBlend(
         _context?.tableImpl?.rowBackgroundColor(rowIndex, state, theme) ?? Colors.transparent,
         enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
@@ -109,16 +118,44 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       // painted twice.
       final paintedByOverlay =
           state.paintedTexts?.contains(columnIndex) ?? false;
-      final cellTextStyle = getTextStyle(
-        context: context,
-        font: cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.tableFont,
-        textColor: paintedByOverlay ? Colors.transparent : cellTextColor,
-        baseTextStyle: theme.rowTextStyle,
-      );
+      final font = cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.tableFont;
+      final textColor = paintedByOverlay ? Colors.transparent : cellTextColor;
       final columnAlignment = columnIndex < columns.length
           ? (columns[columnIndex].alignment ?? SWT.LEFT)
           : SWT.LEFT;
-      return buildCell(
+      final width = widths?[columnIndex];
+      // Everything the cell is built from: a row rebuilt for a change to one cell keeps the others
+      // as they were, without building their styles and widgets again only to find them equal.
+      final key = (
+        cellText,
+        font,
+        textColor,
+        columnAlignment,
+        rowIndex,
+        enabled,
+        isSelected,
+        hasCheckStyle,
+        hasCheckStyle && columnIndex == 0 ? (state.checked, state.grayed) : null,
+        _cellImageForColumn(columnIndex),
+        // An image can arrive as a reference whose data fills it in place later.
+        _cellImageForColumn(columnIndex)?.imageData,
+        getCellBackgroundColor(columnIndex, theme),
+        width is FixedColumnWidth ? width.value : null,
+        theme,
+        semantics,
+        getConfigFlags(),
+        textMeasureEpoch,
+        _context?.parentTable,
+      );
+      final hit = kept?[columnIndex];
+      if (hit != null && hit.$1 == key) return hit.$2;
+      final cellTextStyle = getTextStyle(
+        context: context,
+        font: font,
+        textColor: textColor,
+        baseTextStyle: theme.rowTextStyle,
+      );
+      final cell = buildCell(
         context,
         columnIndex,
         cellText,
@@ -128,17 +165,21 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         hasCheckStyle && columnIndex == 0,
         columnAlignment,
       );
+      kept?[columnIndex] = (key, cell);
+      return cell;
     });
   }
 
   EdgeInsets _fitCellPadding(
+    BuildContext context,
     int columnIndex,
-    String cellText,
+    ColorCachedText label,
     TextStyle textStyle,
     TableThemeExtension theme,
     bool showCheckbox,
     VImage? cellImage,
   ) {
+    final cellText = label.data!;
     if (cellText.isEmpty) return theme.cellPadding;
     final widths = _context?.tableImpl?.cachedColumnWidths;
     final width = widths == null ? null : widths[columnIndex];
@@ -152,7 +193,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     return fitTableCellPadding(
       theme.cellPadding,
       available: width.value - chrome,
-      contentWidth: measureTableText(cellText, textStyle),
+      // Read off the label's own shaped text where it shapes as the measure would.
+      contentWidth: shapedSingleLineTextWidth(cellText, textStyle, () => label.measuredWidth(context, textStyle)),
     );
   }
 
@@ -187,8 +229,18 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final checkboxOnly = showCheckbox && cellText.isEmpty && cellImage == null;
     final imageOnly = !showCheckbox && cellText.isEmpty && cellImage != null;
     final cellAlignment = _swtToAlignment(columnAlignment);
+    final label = ColorCachedText(
+      cellText,
+      style: textStyle,
+      overflow: TextOverflow.ellipsis,
+      textAlign: columnAlignment == SWT.CENTER
+          ? TextAlign.center
+          : columnAlignment == SWT.RIGHT
+              ? TextAlign.right
+              : TextAlign.left,
+    );
     final cellPadding = _fitCellPadding(
-        columnIndex, cellText, textStyle, theme, showCheckbox, cellImage);
+        context, columnIndex, label, textStyle, theme, showCheckbox, cellImage);
 
     // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in only
     // for a press that carries no position.
@@ -217,7 +269,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         e.segments = [rowIndex];
         _context!.parentTable.sendEvent(
           _context!.parentTableValue,
-          "Mouse/MouseDown",
+          WireChannel.mouseMouseDown,
           e,
         );
       }
@@ -229,7 +281,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       sendMouseDown(button, 1, globalPosition);
       if (enabled && _context?.tableImpl != null) {
         MenuDetectGate.withhold(
-          _context!.parentTableValue.swt,
+          _context!.parentTableValue.wireType,
           _context!.parentTableValue.id,
           () => _context!.tableImpl!.openContextMenu(globalPosition),
         );
@@ -250,7 +302,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         e.button = button;
         _context!.parentTable.sendEvent(
           _context!.parentTableValue,
-          "Mouse/MouseDoubleClick",
+          WireChannel.mouseMouseDoubleClick,
           e,
         );
         _context!.tableImpl!.handleRowDoubleTap(rowIndex, state);
@@ -309,18 +361,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
                         if (showCheckbox) buildCheckbox(theme, enabled),
                         if (cellImage != null)
                           buildImageIcon(cellImage, enabled, textStyle, theme),
-                        Expanded(
-                          child: Text(
-                            cellText,
-                            style: textStyle,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: columnAlignment == SWT.CENTER
-                                ? TextAlign.center
-                                : columnAlignment == SWT.RIGHT
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                          ),
-                        ),
+                        Expanded(child: label),
                       ],
                     ),
           ),
@@ -467,16 +508,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         Colors.transparent;
   }
 
-  double calculateRowHeight(TextStyle textStyle, TableThemeExtension theme) {
-    final textPainter = TextPainter(
-      text: TextSpan(text: 'Ag', style: textStyle),
-      textDirection: TextDirection.ltr,
-      textScaler: FontUtils.textWidgetScaler,
-      maxLines: 1,
-    );
-    textPainter.layout();
-    return textPainter.height + theme.cellPadding.vertical;
-  }
+  double calculateRowHeight(TextStyle textStyle, TableThemeExtension theme) =>
+      singleLineTextSize('Ag', textStyle).height + theme.cellPadding.vertical;
 
   VColor? getCellForeground(int columnIndex) =>
       cellValue(state.foregrounds, columnIndex);
@@ -664,20 +697,103 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
   @override
   Widget build(BuildContext context) {
     if (!widget.theme.cellHoverZoomEnabled) return widget.child;
+    // A held button keeps the mouse with the control it was pressed on, so a drag passing over the
+    // cells grows none of them; the first move after release does.
     return MouseRegion(
-      onEnter: (_) => _show(),
+      onEnter: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) _show();
+      },
+      onHover: (_) {
+        if (!ActiveDragTracker.isSuppressingHover) _show();
+      },
       onExit: (_) => _hide(),
-      child: CompositedTransformTarget(
-        link: _link,
-        // Keeps the cell's box -- and so the row's layout -- while the grown copy is on screen.
-        child: Opacity(
-          opacity: _showing ? 0.0 : 1.0,
-          alwaysIncludeSemantics: true,
-          child: widget.child,
-        ),
-      ),
+      child: _HoverAnchor(link: _link, showing: _showing, child: widget.child),
     );
   }
+}
+
+/// What `CompositedTransformTarget(link: link, child: Opacity(opacity: showing ? 0 : 1,
+/// alwaysIncludeSemantics: true, child: child))` lays out and draws, composited only while [showing].
+///
+/// Both of those always add a layer of their own, and a table shows hundreds of cells, most of which
+/// are never hovered: at rest the cell paints into its row's picture, and only while the copy is on
+/// screen does it lead the copy's follower and hide, keeping its box and its semantics.
+class _HoverAnchor extends SingleChildRenderObjectWidget {
+  const _HoverAnchor({required this.link, required this.showing, super.child});
+
+  final LayerLink link;
+  final bool showing;
+
+  @override
+  _RenderHoverAnchor createRenderObject(BuildContext context) => _RenderHoverAnchor(link, showing);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderHoverAnchor renderObject) {
+    renderObject
+      ..link = link
+      ..showing = showing;
+  }
+}
+
+class _RenderHoverAnchor extends RenderProxyBox {
+  _RenderHoverAnchor(this._link, this._showing);
+
+  LayerLink _link;
+  set link(LayerLink value) {
+    if (identical(value, _link)) return;
+    _link.leaderSize = null;
+    _link = value;
+    if (hasSize) _link.leaderSize = size;
+    markNeedsPaint();
+  }
+
+  bool _showing;
+  set showing(bool value) {
+    if (value == _showing) return;
+    _showing = value;
+    markNeedsCompositingBitsUpdate();
+    markNeedsPaint();
+  }
+
+  @override
+  bool get alwaysNeedsCompositing => _showing;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    _link.leaderSize = size;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (!_showing) {
+      layer = null;
+      super.paint(context, offset);
+      return;
+    }
+    final leader = layer as LeaderLayer?;
+    if (leader == null) {
+      layer = LeaderLayer(link: _link, offset: offset);
+    } else {
+      leader
+        ..link = _link
+        ..offset = offset;
+    }
+    // The cell itself is hidden behind its copy.
+    context.pushLayer(layer!, (context, offset) {}, Offset.zero);
+  }
+}
+
+class _FixedRect extends CustomClipper<Rect> {
+  const _FixedRect(this.rect);
+
+  final Rect rect;
+
+  @override
+  Rect getClip(Size size) => rect;
+
+  @override
+  bool shouldReclip(_FixedRect oldClipper) => oldClipper.rect != rect;
 }
 
 /// Animates from the cell's own size up to [scale] as soon as it is mounted, so the overlay copy

@@ -333,6 +333,11 @@ public class WebFlutterServer {
         LOG.info("Launched headless Chrome: " + chrome + " -> " + url);
     }
 
+    /** Whether {@link #launchBrowser()} started a headless browser, which then connects as this server's client. */
+    public boolean launchedHeadlessBrowser() {
+        return headlessChrome != null;
+    }
+
     private void reapHeadlessBrowser() {
         if (headlessChrome != null) {
             headlessChrome.close();

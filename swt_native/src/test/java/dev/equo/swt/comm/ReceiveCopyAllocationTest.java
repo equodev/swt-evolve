@@ -56,36 +56,55 @@ class ReceiveCopyAllocationTest {
 
     @Test
     void rawBytes_copies() throws Exception {
-        comm.on("Probe/1/raw", byte[].class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm, "Label/1/Mouse/MouseDown", byte[].class, bytes -> {
             lastLength = bytes.length;
             handled.release();
         });
-        double copies = copiesPerPayloadByte(size -> frame("Probe/1/raw", new byte[size]));
+        double copies = copiesPerPayloadByte(size -> frame("Label/1/Mouse/MouseDown", new byte[size]));
         assertThat(lastLength).isEqualTo(2 * PAYLOAD);
         System.out.printf("[receive-copies] raw bytes: %.2f%n", copies);
     }
 
     @Test
     void byteBuffer_copies() throws Exception {
-        comm.on("Probe/1/buffer", java.nio.ByteBuffer.class, bytes -> {
+        dev.equo.swt.harness.Channels.on(comm, "Label/1/Mouse/MouseUp", java.nio.ByteBuffer.class, bytes -> {
             lastLength = bytes.remaining();
             handled.release();
         });
-        double copies = copiesPerPayloadByte(size -> frame("Probe/1/buffer", new byte[size]));
+        double copies = copiesPerPayloadByte(size -> frame("Label/1/Mouse/MouseUp", new byte[size]));
         assertThat(lastLength).isEqualTo(2 * PAYLOAD);
         System.out.printf("[receive-copies] byte buffer: %.2f%n", copies);
     }
 
     @Test
     void typedEvent_copies() throws Exception {
-        comm.on("Probe/1/event", Event.class, event -> {
+        dev.equo.swt.harness.Channels.on(comm, "Label/1/Mouse/MouseDoubleClick", Event.class, event -> {
             lastLength = event.text.length();
             handled.release();
         });
-        double copies = copiesPerPayloadByte(size -> frame("Probe/1/event",
-                ("{\"text\":\"" + "x".repeat(size - 11) + "\"}").getBytes(StandardCharsets.UTF_8)));
+        double copies = copiesPerPayloadByte(size -> frame("Label/1/Mouse/MouseDoubleClick", eventWithText(size - 11)));
         assertThat(lastLength).isEqualTo(2 * PAYLOAD - 11);
         System.out.printf("[receive-copies] typed event: %.2f%n", copies);
+    }
+
+    /** An event whose text is {@code length} x's, as the client writes it: the text's key, then the text. */
+    private static byte[] eventWithText(int length) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        int key = dev.equo.swt.harness.WireFrames.property("Event.text") * 2;
+        while ((key & ~0x7F) != 0) {
+            out.write((key & 0x7F) | 0x80);
+            key >>>= 7;
+        }
+        out.write(key);
+        int n = (length << 1) + 1;
+        while ((n & ~0x7F) != 0) {
+            out.write((n & 0x7F) | 0x80);
+            n >>>= 7;
+        }
+        out.write(n);
+        out.writeBytes("x".repeat(length).getBytes(StandardCharsets.UTF_8));
+        out.write(0);
+        return out.toByteArray();
     }
 
     /** Extra bytes the server threads allocated per extra payload byte, between two payload sizes. */
@@ -137,7 +156,7 @@ class ReceiveCopyAllocationTest {
     }
 
     private static byte[] frame(String event, byte[] payload) {
-        byte[] header = CommService.frameHeader(event);
+        byte[] header = dev.equo.swt.harness.Channels.header(event);
         byte[] frame = java.util.Arrays.copyOf(header, header.length + payload.length);
         System.arraycopy(payload, 0, frame, header.length, payload.length);
         return frame;

@@ -1,7 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -12,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,8 +58,13 @@ class GCPatternNativeTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+    private List<Object> wire() {
+        return BatchEntries.of(bridge.comm.sent).stream().map(GcFrames.Entry::value).toList();
+    }
+
+    /** Whether any record on {@code wire} holds {@code expected} under {@code key}. */
+    private static boolean carries(List<Object> wire, String key, Object expected) {
+        return !WireValues.find(wire, m -> m.containsKey(key) && WireValues.same(m.get(key), expected)).isEmpty();
     }
 
     /**
@@ -85,9 +95,11 @@ class GCPatternNativeTest {
         gc.fillRectangle(0, 0, 40, 40);
         gc.dispose();
 
-        assertThat(wire())
-                .contains("\"color1\":{\"a\":255,\"b\":0,\"g\":0,\"r\":255}")
-                .contains("\"startX\":1.0").contains("\"startY\":2.0")
-                .contains("\"endX\":30.0").contains("\"endY\":40.0");
+        List<Object> wire = wire();
+        assertThat(carries(wire, "color1", "#ffff0000")).as("color1").isTrue();
+        assertThat(carries(wire, "startX", 1.0)).as("startX").isTrue();
+        assertThat(carries(wire, "startY", 2.0)).as("startY").isTrue();
+        assertThat(carries(wire, "endX", 30.0)).as("endX").isTrue();
+        assertThat(carries(wire, "endY", 40.0)).as("endY").isTrue();
     }
 }

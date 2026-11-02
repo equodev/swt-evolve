@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingButtonSwt extends ButtonSwt<VButton> {
   const _RecordingButtonSwt({required super.value, required this.sent});
@@ -21,7 +22,7 @@ class _RecordingButtonSwt extends ButtonSwt<VButton> {
   final List<String> sent;
 
   @override
-  void sendEvent(VButton val, String ev, VEvent? payload) => sent.add(ev);
+  void sendEvent(VButton val, int channel, VEvent? payload) => sent.add(wireChannelNames[channel]!);
 }
 
 VButton _button(int id, int style) => VButton()

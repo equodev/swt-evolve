@@ -8,7 +8,8 @@ import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -28,10 +29,10 @@ class DialogHiddenParentNativeTest {
     private static void answerClose(Display display, String closePayload) {
         DisplayBridge bridge = mock(DisplayBridge.class);
         doAnswer(invocation -> {
-            Consumer<String> handler = invocation.getArgument(1);
+            Consumer<String> handler = invocation.getArgument(3);
             handler.accept(closePayload);
             return null;
-        }).when(bridge).onChannel(anyString(), any());
+        }).when(bridge).onChannel(anyInt(), anyLong(), anyInt(), any());
         ((DartDisplay) display.getImpl()).displayBridge = bridge;
     }
 

@@ -26,8 +26,10 @@ VCombo _combo([List<String> items = _items]) => VCombo()
     ..height = 30);
 
 Future<void> _open(WidgetTester tester, Widget content) async {
-  await tester.binding.setSurfaceSize(const Size(400, 300));
-  addTearDown(() => tester.binding.setSurfaceSize(null));
+  // The window is the view: the app is laid out to the view's size, as a real window gives it.
+  tester.view.physicalSize = const Size(400, 300);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(EvolveApp(theme: ThemeMode.light, contentWidget: content));
   await tester.pumpAndSettle();
   await tester.tap(find.byType(ComboSwt<VCombo>));

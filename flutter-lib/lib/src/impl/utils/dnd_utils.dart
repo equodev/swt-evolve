@@ -1,10 +1,14 @@
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import '../../gen/control.dart';
+import '../../gen/dragsource.dart';
 import '../../gen/droptarget.dart';
 import '../../gen/event.dart';
 import '../../gen/widget.dart';
 import 'dnd_session.dart';
+import '../../gen/widgets.dart' show WireChannel;
+import 'widget_utils.dart';
 
 class DndDragPayload {
   final int sourceControlId;
@@ -20,6 +24,122 @@ class HoverTracker<T> {
   void update(T? newValue) {
     if (notifier.value == newValue) return;
     notifier.value = newValue;
+  }
+}
+
+/// The row a drag is over and the DND.FEEDBACK_* bits the drop target's listener answered for it.
+class DropRowFeedback extends ChangeNotifier {
+  int? _row;
+  int _feedback = Dnd.feedbackNone;
+
+  int? get row => _row;
+  int get feedback => _feedback;
+
+  void hover(int? row) {
+    if (row == _row) return;
+    _row = row;
+    notifyListeners();
+  }
+
+  void answer(int feedback) {
+    if (feedback == _feedback) return;
+    _feedback = feedback;
+    notifyListeners();
+  }
+}
+
+/// The drop feedback over the row a drag is on, painted in a layer of its own laid over the rows,
+/// so a change of row or of answer repaints this layer and no row.
+///
+/// Rows are [rowHeight] tall from the top of the layer, less [scroll]'s offset when the rows scroll
+/// under it; scrolling repaints the layer only while there is feedback on it.
+class DropRowLayer extends StatelessWidget {
+  const DropRowLayer({
+    super.key,
+    required this.rows,
+    required this.rowHeight,
+    required this.rowCount,
+    required this.decoration,
+    this.scroll,
+  });
+
+  final DropRowFeedback rows;
+  final double rowHeight;
+  final int rowCount;
+  final BoxDecoration? Function(int feedback) decoration;
+  final ScrollController? scroll;
+
+  /// Where row [row] is drawn, in this layer's coordinates.
+  Rect rowRect(int row, double width) {
+    return Rect.fromLTWH(0, row * rowHeight - scroll.scrolledBy, width, rowHeight);
+  }
+
+  /// What is drawn over row [row]: nothing unless the drag is over it.
+  BoxDecoration? decorationOver(int row) =>
+      rows.row == row && row < rowCount ? decoration(rows.feedback) : null;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: RepaintBoundary(
+          child: CustomPaint(
+            painter: _DropRowPainter(this, _WhileOverRows(rows, scroll)),
+            child: const SizedBox.expand(),
+          ),
+        ),
+      );
+}
+
+class _DropRowPainter extends CustomPainter {
+  _DropRowPainter(this.layer, Listenable repaint) : super(repaint: repaint);
+
+  final DropRowLayer layer;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final row = layer.rows.row;
+    if (row == null) return;
+    final decoration = layer.decorationOver(row);
+    if (decoration == null) return;
+    final rect = layer.rowRect(row, size.width);
+    final painter = decoration.createBoxPainter();
+    painter.paint(canvas, rect.topLeft, ImageConfiguration(size: rect.size));
+    painter.dispose();
+  }
+
+  @override
+  bool shouldRepaint(_DropRowPainter old) =>
+      old.layer.rowHeight != layer.rowHeight ||
+      old.layer.rowCount != layer.rowCount ||
+      !identical(old.layer.rows, layer.rows) ||
+      old.layer.decoration(layer.rows.feedback) != layer.decoration(layer.rows.feedback);
+}
+
+/// The feedback's changes, and the scroll's while there is feedback to scroll.
+class _WhileOverRows implements Listenable {
+  _WhileOverRows(this._rows, this._scroll);
+
+  final DropRowFeedback _rows;
+  final ScrollController? _scroll;
+  final Map<VoidCallback, VoidCallback> _onScroll = {};
+
+  @override
+  void addListener(VoidCallback listener) {
+    _rows.addListener(listener);
+    final scroll = _scroll;
+    if (scroll == null) return;
+    void scrolled() {
+      if (_rows.row != null) listener();
+    }
+
+    _onScroll[listener] = scrolled;
+    scroll.addListener(scrolled);
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    _rows.removeListener(listener);
+    final scrolled = _onScroll.remove(listener);
+    if (scrolled != null) _scroll?.removeListener(scrolled);
   }
 }
 
@@ -89,41 +209,25 @@ class DndDropAnswer {
   }
 }
 
-/// The DND.FEEDBACK_* a drop target draws over one of its items.
-class DropFeedbackBox extends StatelessWidget {
-  const DropFeedbackBox({super.key, required this.decoration, required this.child});
-
-  final BoxDecoration decoration;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-        position: DecorationPosition.foreground,
-        decoration: decoration,
-        child: child,
-      );
-}
-
-/// Draws the feedback a drop target's listener asked for over one of its items, as SWT's
-/// Tree/TableDropTargetEffect does: an insertion line before or after it, or it highlighted.
-Widget decorateDropFeedback({
+/// The feedback a drop target's listener asked for over one of its items, as SWT's
+/// Tree/TableDropTargetEffect draws it: an insertion line before or after it, or it highlighted.
+/// Null when it asked for none.
+BoxDecoration? dropFeedbackDecoration({
   required int feedback,
   required Color color,
   required double lineWidth,
   required int highlightAlpha,
-  required Widget child,
 }) {
-  final BoxDecoration decoration;
   if (feedback & Dnd.feedbackInsertBefore != 0) {
-    decoration = BoxDecoration(border: Border(top: BorderSide(color: color, width: lineWidth)));
-  } else if (feedback & Dnd.feedbackInsertAfter != 0) {
-    decoration = BoxDecoration(border: Border(bottom: BorderSide(color: color, width: lineWidth)));
-  } else if (feedback & Dnd.feedbackSelect != 0) {
-    decoration = BoxDecoration(color: color.withAlpha(highlightAlpha), border: Border.all(color: color));
-  } else {
-    return child;
+    return BoxDecoration(border: Border(top: BorderSide(color: color, width: lineWidth)));
   }
-  return DropFeedbackBox(decoration: decoration, child: child);
+  if (feedback & Dnd.feedbackInsertAfter != 0) {
+    return BoxDecoration(border: Border(bottom: BorderSide(color: color, width: lineWidth)));
+  }
+  if (feedback & Dnd.feedbackSelect != 0) {
+    return BoxDecoration(color: color.withAlpha(highlightAlpha), border: Border.all(color: color));
+  }
+  return null;
 }
 
 /// The operation glyph drawn next to the arrow while dragging on Windows: a plus for copy, an
@@ -159,31 +263,15 @@ class DropOperationBadge extends StatelessWidget {
 /// dragged image keeps its top-left corner at the pointer.
 const double _cursorSlop = 8.0;
 
-/// The drag image with a region on top that carries the drag cursor. The region lets hit testing
-/// through, so the drop targets underneath are still found.
+/// The drag image, with the drag cursor over the whole overlay for as long as the image is up.
 Widget _withDropCursor(Widget visual) {
-  return ConstrainedBox(
-    constraints: const BoxConstraints(minWidth: 2 * _cursorSlop, minHeight: 2 * _cursorSlop),
+  return _DropCursor(
     child: Stack(
       clipBehavior: Clip.none,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: _cursorSlop, top: _cursorSlop),
-          child: IgnorePointer(child: visual),
-        ),
-        Positioned(
-          left: 0,
-          top: 0,
-          width: 2 * _cursorSlop,
-          height: 2 * _cursorSlop,
-          child: ValueListenableBuilder<int>(
-            valueListenable: DndDropAnswer.operation,
-            builder: (_, op, __) => MouseRegion(
-              opaque: false,
-              cursor: DndDropAnswer.cursorFor(op),
-              child: const SizedBox.expand(),
-            ),
-          ),
+          child: visual,
         ),
         if (DndDropAnswer.drawsOperationBadge)
           // Below and right of the arrow's tip, clear of the arrow itself.
@@ -202,6 +290,40 @@ Widget _withDropCursor(Widget visual) {
       ],
     ),
   );
+}
+
+/// Shows the drop answer's cursor wherever the pointer is, not only over the drag image, which a
+/// pointer moving faster than frames leaves behind. The region lets hit testing through, so the drop
+/// targets underneath are still found.
+class _DropCursor extends StatefulWidget {
+  const _DropCursor({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DropCursor> createState() => _DropCursorState();
+}
+
+class _DropCursorState extends State<_DropCursor> {
+  final _portal = OverlayPortalController()..show();
+
+  @override
+  Widget build(BuildContext context) {
+    return OverlayPortal(
+      controller: _portal,
+      overlayChildBuilder: (_) => RepaintBoundary(
+        child: ValueListenableBuilder<int>(
+          valueListenable: DndDropAnswer.operation,
+          builder: (_, op, __) => MouseRegion(
+            opaque: false,
+            cursor: DndDropAnswer.cursorFor(op),
+            child: const SizedBox.expand(),
+          ),
+        ),
+      ),
+      child: widget.child,
+    );
+  }
 }
 
 class DragDetectGate {
@@ -234,7 +356,6 @@ Widget wrapDraggable<T extends Object>({
   // a Tree or Table selects the item under the pointer before DragDetect is raised.
   VoidCallback? beforeDragDetect,
   Widget Function(Widget child)? feedbackBuilder,
-  Widget Function(Widget child)? childWhenDraggingBuilder,
   bool useLongPress = false,
   bool alwaysDraggable = false,
   VEvent Function()? dragDetectEvent,
@@ -255,7 +376,7 @@ Widget wrapDraggable<T extends Object>({
 
   void fireDragDetect() {
     if (hasDragSource) {
-      DragStartVeto.begin(state.swt, state.id);
+      DragStartVeto.begin(state.wireType, state.id);
     } else {
       DragStartVeto.reset();
     }
@@ -272,47 +393,112 @@ Widget wrapDraggable<T extends Object>({
     onDragStarted?.call();
   }
 
-  final visual = feedbackBuilder != null
-      ? feedbackBuilder(child)
-      : Opacity(
-          opacity: 0.85,
-          child: Material(type: MaterialType.transparency, child: child),
-        );
+  // Natively the DragSource hears every drag end, a cancelled one or one dropped on nothing
+  // included. Told of each, Java tells a drop on a DropTarget, which has ended the drag already,
+  // from any other end.
+  void sendDragFinished(DraggableDetails _) {
+    final id = state.dragSourceId;
+    if (!hasDragSource || id == null) return;
+    final source = VDragSource()..id = id;
+    DragSourceSwt<VDragSource>(value: source).sendDragdragFinished(source, null);
+  }
+
+  // The image under the pointer is a copy of the control and only a picture of it: nothing to
+  // announce, and it must not stand in the semantics tree as a second node with the control's id.
+  final visual = ExcludeSemantics(
+    child: feedbackBuilder != null
+        ? feedbackBuilder(child)
+        : Opacity(
+            opacity: 0.85,
+            child: Material(type: MaterialType.transparency, child: child),
+          ),
+  );
   // A drag with no SWT DragSource behind it (a CTabFolder reordering its own tabs, a workbench
   // moving a view) is not an SWT DnD operation and has no drop answer to show.
   // Drawn shifted back by the slop rather than anchored away from the pointer: a drag target reads
-  // the feedback's offset as where the drop happens, so its origin has to stay at the pointer.
-  final feedback = hasDragSource
-      ? Transform.translate(
-          offset: const Offset(-_cursorSlop, -_cursorSlop),
-          child: _withDropCursor(visual),
-        )
-      : visual;
-  final childWhenDragging = childWhenDraggingBuilder != null
-      ? childWhenDraggingBuilder(child)
-      : Opacity(opacity: 0.3, child: child);
+  // the feedback's offset as where the drop happens, so its origin has to stay at the pointer. A
+  // layer of its own: the image moves with every frame of the drag, and moving a layer does not
+  // paint what is in it again.
+  final feedback = RepaintBoundary(
+    child: hasDragSource
+        ? Transform.translate(
+            offset: const Offset(-_cursorSlop, -_cursorSlop),
+            child: _withDropCursor(visual),
+          )
+        : visual,
+  );
+  // The same widget dragged or not, so that what is dragged is dimmed rather than built again.
+  final atRest = _DimmedWhileDragged(dimmed: false, child: child);
+  final childWhenDragging = _DimmedWhileDragged(dimmed: true, child: child);
 
   return useLongPress
       ? LongPressDraggable<T>(
           data: data,
           dragAnchorStrategy: pointerDragAnchorStrategy,
-          ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
           onDragStarted: fireDragDetect,
           onDragUpdate: dragDetectGate == null ? null : onUpdate,
-          child: child,
+          onDragEnd: sendDragFinished,
+          child: atRest,
         )
       : Draggable<T>(
           data: data,
           dragAnchorStrategy: pointerDragAnchorStrategy,
-          ignoringFeedbackPointer: !hasDragSource,
           feedback: feedback,
           childWhenDragging: childWhenDragging,
           onDragStarted: fireDragDetect,
           onDragUpdate: dragDetectGate == null ? null : onUpdate,
-          child: child,
+          onDragEnd: sendDragFinished,
+          child: atRest,
         );
+}
+
+/// What a drag picked up, faded to [_alpha] while it is being dragged. Not an [Opacity]: one at
+/// full opacity still gives the item a layer of its own, and every draggable item has one of these.
+class _DimmedWhileDragged extends SingleChildRenderObjectWidget {
+  const _DimmedWhileDragged({required this.dimmed, required super.child});
+
+  static const int _alpha = 77;
+
+  final bool dimmed;
+
+  @override
+  _RenderDimmedWhileDragged createRenderObject(BuildContext context) => _RenderDimmedWhileDragged(dimmed);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderDimmedWhileDragged renderObject) {
+    renderObject.dimmed = dimmed;
+  }
+}
+
+class _RenderDimmedWhileDragged extends RenderProxyBox {
+  _RenderDimmedWhileDragged(this._dimmed);
+
+  bool _dimmed;
+
+  set dimmed(bool value) {
+    if (value == _dimmed) return;
+    _dimmed = value;
+    markNeedsCompositingBitsUpdate();
+    markNeedsPaint();
+  }
+
+  @override
+  bool get alwaysNeedsCompositing => _dimmed && child != null;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child == null) return;
+    if (!_dimmed) {
+      layer = null;
+      context.paintChild(child, offset);
+      return;
+    }
+    layer = context.pushOpacity(offset, _DimmedWhileDragged._alpha, super.paint,
+        oldLayer: layer as OpacityLayer?);
+  }
 }
 
 Widget wrapDropTarget<T extends Object>({
@@ -324,7 +510,9 @@ Widget wrapDropTarget<T extends Object>({
   /// The drop point in SWT units; when it is null, or answers null, the pointer's global position
   /// converted to SWT units.
   Offset? Function(DragTargetDetails<T> details)? resolvePosition,
-  Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder,
+  Widget Function(BuildContext context, Widget child, bool isHovering)? builder,
+  void Function(DndNegotiationState answer)? onAnswer,
+  VoidCallback? onLeave,
   bool alwaysAccepts = false,
   bool alwaysResolves = false,
 }) {
@@ -339,6 +527,8 @@ Widget wrapDropTarget<T extends Object>({
     resolvePosition: resolvePosition,
     onDrop: onDrop,
     builder: builder,
+    onAnswer: onAnswer,
+    onLeave: onLeave,
     alwaysAccepts: alwaysAccepts,
     alwaysResolves: alwaysResolves,
     child: child,
@@ -351,7 +541,13 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
   final int Function(DragTargetDetails<T> details)? resolveItemId;
   final Offset? Function(DragTargetDetails<T> details)? resolvePosition;
   final void Function(T data, int? index, int? itemId, Offset position) onDrop;
-  final Widget Function(BuildContext context, Widget child, DndNegotiationState negotiation, bool isHovering)? builder;
+  final Widget Function(BuildContext context, Widget child, bool isHovering)? builder;
+
+  /// What the drop target's listener answered for the drag over this widget.
+  final void Function(DndNegotiationState answer)? onAnswer;
+
+  /// The drag is no longer over this widget: it left, was dropped or was cancelled.
+  final VoidCallback? onLeave;
 
   /// Accept the drag and call [onDrop] even with no SWT DropTarget attached, for a widget that
   /// handles some drops itself (a CTabFolder reordering its own tabs).
@@ -372,6 +568,8 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
     required this.resolvePosition,
     required this.onDrop,
     required this.builder,
+    required this.onAnswer,
+    required this.onLeave,
     required this.alwaysAccepts,
     required this.alwaysResolves,
     required this.child,
@@ -415,7 +613,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
 
   void _onNegotiationUpdate(DndNegotiationState state) {
     DndDropAnswer.update(this, state.detail);
-    if (mounted) setState(() {});
+    if (mounted) widget.onAnswer?.call(state);
   }
 
   @override
@@ -434,7 +632,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     return box is RenderBox ? box.globalToLocal(details.offset) : Offset.zero;
   }
 
-  void _sendNegotiation(String ev, DragTargetDetails<T>? details) {
+  void _sendNegotiation(int channel, DragTargetDetails<T>? details) {
     final id = widget.dropTargetId;
     // Nothing to tell Java, and the resolvers have side effects, so run them only for a widget
     // that asked to draw its own feedback without a DropTarget of its own.
@@ -454,7 +652,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
     if (id == null) return;
     final dropTargetValue = VDropTarget()..id = id;
     DropTargetSwt<VDropTarget>(value: dropTargetValue)
-        .sendEvent(dropTargetValue, "Drop/$ev", event);
+        .sendEvent(dropTargetValue, channel, event);
   }
 
   @override
@@ -470,30 +668,28 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
         // A previous drag's answer would otherwise show until Java answers this one.
         DndSession.clear(id);
         DndDropAnswer.enter(this, Dnd.dropDefault);
-        _sendNegotiation("dragEnter", details);
+        _sendNegotiation(WireChannel.dropDragEnter, details);
         return true;
       },
-      onMove: (details) => _sendNegotiation("dragOver", details),
+      onMove: (details) => _sendNegotiation(WireChannel.dropDragOver, details),
       onLeave: (_) {
         DndDropAnswer.leave(this);
+        widget.onLeave?.call();
         if (widget.dropTargetId == null) return;
-        _sendNegotiation("dragLeave", null);
+        _sendNegotiation(WireChannel.dropDragLeave, null);
       },
       onAcceptWithDetails: (details) {
         DndDropAnswer.leave(this);
+        widget.onLeave?.call();
         if (widget.dropTargetId == null && !widget.alwaysAccepts) return;
         if (DragStartVeto.isVetoed) return;
         final index = widget.resolveIndex != null ? widget.resolveIndex!(details) : null;
         final itemId = widget.resolveItemId != null ? widget.resolveItemId!(details) : null;
         widget.onDrop(details.data, index, itemId, _resolvePosition(details));
       },
-      builder: (context, candidateData, rejectedData) {
-        final id = widget.dropTargetId;
-        final negotiation = id != null ? DndSession.stateFor(id) : DndNegotiationState.none;
-        return widget.builder != null
-            ? widget.builder!(context, widget.child, negotiation, candidateData.isNotEmpty)
-            : widget.child;
-      },
+      builder: (context, candidateData, rejectedData) => widget.builder != null
+          ? widget.builder!(context, widget.child, candidateData.isNotEmpty)
+          : widget.child,
     );
   }
 }

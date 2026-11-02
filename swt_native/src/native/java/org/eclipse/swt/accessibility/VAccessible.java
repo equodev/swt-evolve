@@ -5,12 +5,8 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
-public class VAccessible {
+public class VAccessible implements dev.equo.swt.WireObject {
 
     protected VAccessible() {
     }
@@ -40,31 +36,16 @@ public class VAccessible {
         ((DartAccessible) impl).focus = value;
     }
 
-    @JsonConverter(target = Accessible.class)
-    public static class AccessibleJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 1;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartAccessible.class, (JsonWriter.WriteObject<DartAccessible>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartAccessible.class, (JsonReader.ReadObject<DartAccessible>) reader -> {
-                return null;
-            });
-        }
-
-        public static Accessible read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, Accessible api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(1);
+        w.ref(getControl());
+        w.key(2);
+        w.write((int) getFocus());
     }
 }

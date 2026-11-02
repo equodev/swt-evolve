@@ -9,7 +9,9 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.junit.jupiter.api.Test;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import java.util.Map;
+
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.eclipse.swt.widgets.Mocks.*;
 import static org.mockito.Mockito.*;
 
@@ -30,10 +32,11 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
 
         TableItem item = new TableItem(table, SWT.NONE);
 
-        String json = serialize(item);
+        Map<String, Object> wire = serialize(item);
 
-        assertThatJson(json).node("images").isArray().hasSize(2)
-                .allSatisfy(value -> assertThatJson(value).isEqualTo(null));
+        assertThatWire(wire).node("images").hasSize(2);
+        assertThatWire(wire).node("images[0]").isNull();
+        assertThatWire(wire).node("images[1]").isNull();
         verify(tableImpl, never()).sendEvent(eq(SWT.PaintItem), any(Event.class));
     }
 
@@ -56,10 +59,10 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
 
         TableItem item = new TableItem(table, SWT.NONE);
 
-        String json = serialize(item);
+        Map<String, Object> wire = serialize(item);
 
-        assertThatJson(json).node("images[0]").isEqualTo(null);
-        assertThatJson(json).node("images[1]").isObject()
+        assertThatWire(wire).node("images[0]").isEqualTo(null);
+        assertThatWire(wire).node("images[1]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 16)
                 .containsEntry("height", 16);
@@ -86,13 +89,13 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
         TableItem item = new TableItem(table, SWT.NONE);
         ((DartTableItem) item.getImpl()).images = new Image[] { existingImage, null };
 
-        String json = serialize(item);
+        Map<String, Object> wire = serialize(item);
 
-        assertThatJson(json).node("images[0]").isObject()
+        assertThatWire(wire).node("images[0]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 24)
                 .containsEntry("height", 24);
-        assertThatJson(json).node("images[1]").isObject()
+        assertThatWire(wire).node("images[1]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 16)
                 .containsEntry("height", 16);
@@ -131,13 +134,13 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
         TableItem item = new TableItem(table, SWT.NONE);
         item.setText(0, "Profile value");
 
-        String json = serialize(item);
+        Map<String, Object> wire = serialize(item);
 
-        assertThatJson(json).node("images[0]").isObject()
+        assertThatWire(wire).node("images[0]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 12)
                 .containsEntry("height", 12);
-        verify(comm, never()).send(anyString(), any(byte[].class));
+        verify(comm, never()).send(anyInt(), anyLong(), anyInt(), any(byte[].class));
     }
 
     @Test
@@ -164,15 +167,15 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
         dartItem.images = new Image[] { solidImage(24, 24), null };
         dartItem.images[0] = null;
 
-        String json = serialize(item);
+        Map<String, Object> wire = serialize(item);
 
         // Cleared column must still trigger PaintItem and capture the drawn icon.
-        assertThatJson(json).node("images[0]").isObject()
+        assertThatWire(wire).node("images[0]").isObject()
                 .node("imageData").isObject()
                 .containsEntry("width", 16)
                 .containsEntry("height", 16);
         // Column 1 has no image and PaintItem draws nothing for it → stays null.
-        assertThatJson(json).node("images[1]").isEqualTo(null);
+        assertThatWire(wire).node("images[1]").isEqualTo(null);
     }
 
     @Test
@@ -188,9 +191,9 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
 
         TableItem item = new TableItem(table, SWT.NONE);
 
-        String json = serialize(item);
+        Map<String, Object> wire = serialize(item);
 
-        assertThatJson(json).node("images[0]").isEqualTo(null);
+        assertThatWire(wire).node("images[0]").isEqualTo(null);
     }
 
     private Image solidImage(int width, int height) {

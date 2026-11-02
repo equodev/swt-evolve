@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.DartTable;
 import org.eclipse.swt.widgets.DartTree;
@@ -13,6 +14,8 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
+import org.eclipse.swt.widgets.VTable;
+import org.eclipse.swt.widgets.VTree;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,8 +23,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,8 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ColumnsAfterDeliveryTest {
 
     private static final int CLIENT = 1;
-
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -65,74 +64,72 @@ class ColumnsAfterDeliveryTest {
 
     @Test
     @DisplayName("a TreeColumn created after the Tree was delivered is sent with the Tree")
-    void treeColumnAddedAfterDelivery() throws java.io.IOException {
+    void treeColumnAddedAfterDelivery() {
         Shell shell = Mocks.shell();
         Tree tree = new Tree(shell, SWT.NONE);
         DartTree impl = (DartTree) tree.getImpl();
-        serializer.to(tree);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
 
         TreeColumn name = new TreeColumn(tree, SWT.NONE);
         TreeColumn owner = new TreeColumn(tree, SWT.NONE);
 
         assertThat(impl.getValue().changedKeys())
                 .as("the column list changed, so the Tree has to say so")
-                .contains("columns");
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
+                .contains(VTree.COLUMNS);
+        assertThat(names(WireFrames.frame(impl, CLIENT), name))
                 .as("and the update carries both new columns")
-                .contains(String.valueOf(name.hashCode()))
-                .contains(String.valueOf(owner.hashCode()));
+                .isTrue();
+        assertThat(names(WireFrames.frame(impl, CLIENT), owner)).isTrue();
     }
 
     @Test
     @DisplayName("a TreeColumn disposed after the Tree was delivered leaves the Tree's list")
-    void treeColumnDisposedAfterDelivery() throws java.io.IOException {
+    void treeColumnDisposedAfterDelivery() {
         Shell shell = Mocks.shell();
         Tree tree = new Tree(shell, SWT.NONE);
         DartTree impl = (DartTree) tree.getImpl();
         TreeColumn gone = new TreeColumn(tree, SWT.NONE);
         new TreeColumn(tree, SWT.NONE);
-        serializer.to(tree);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
 
         gone.dispose();
 
-        assertThat(impl.getValue().changedKeys()).contains("columns");
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
-                .doesNotContain(String.valueOf(gone.hashCode()));
+        assertThat(impl.getValue().changedKeys()).contains(VTree.COLUMNS);
+        assertThat(names(WireFrames.frame(impl, CLIENT), gone)).isFalse();
     }
 
     @Test
     @DisplayName("a TableColumn created after the Table was delivered is sent with the Table")
-    void tableColumnAddedAfterDelivery() throws java.io.IOException {
+    void tableColumnAddedAfterDelivery() {
         Shell shell = Mocks.shell();
         Table table = new Table(shell, SWT.NONE);
         DartTable impl = (DartTable) table.getImpl();
-        serializer.to(table);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
 
         TableColumn column = new TableColumn(table, SWT.NONE);
 
-        assertThat(impl.getValue().changedKeys()).contains("columns");
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
-                .contains(String.valueOf(column.hashCode()));
+        assertThat(impl.getValue().changedKeys()).contains(VTable.COLUMNS);
+        assertThat(names(WireFrames.frame(impl, CLIENT), column)).isTrue();
     }
 
     @Test
     @DisplayName("a TableColumn disposed after the Table was delivered leaves the Table's list")
-    void tableColumnDisposedAfterDelivery() throws java.io.IOException {
+    void tableColumnDisposedAfterDelivery() {
         Shell shell = Mocks.shell();
         Table table = new Table(shell, SWT.NONE);
         DartTable impl = (DartTable) table.getImpl();
         TableColumn gone = new TableColumn(table, SWT.NONE);
         new TableColumn(table, SWT.NONE);
-        serializer.to(table);
-        Serializer.markDelivered();
+        WireFrames.record(impl, CLIENT);
 
         gone.dispose();
 
-        assertThat(impl.getValue().changedKeys()).contains("columns");
-        assertThat(new String(serializer.toDiff(impl), StandardCharsets.UTF_8))
-                .doesNotContain(String.valueOf(gone.hashCode()));
+        assertThat(impl.getValue().changedKeys()).contains(VTable.COLUMNS);
+        assertThat(names(WireFrames.frame(impl, CLIENT), gone)).isFalse();
+    }
+
+    /** Whether some record of {@code frame} names {@code widget}. */
+    private static boolean names(java.util.List<WireFrames.Record> frame, org.eclipse.swt.widgets.Widget widget) {
+        return frame.stream().anyMatch(r -> !dev.equo.swt.harness.WireValues.describing(r.state(), widget.hashCode()).isEmpty());
     }
 }

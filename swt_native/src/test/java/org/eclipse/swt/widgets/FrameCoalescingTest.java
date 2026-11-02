@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * A push carries the whole widget, so a Table changed once per event-loop turn would ship the whole
@@ -26,7 +27,7 @@ class FrameCoalescingTest {
 
     private static final int BURST = 200;
 
-    /** FlutterBridge's push interval: a Table is pushed at most once per this many nanoseconds. */
+    /** FlutterBridge's push interval. */
     private static final long FRAME_NANOS = 16_000_000L;
 
     private RecordingBridge bridge;
@@ -58,23 +59,23 @@ class FrameCoalescingTest {
         Table table = newTable();
         Thread.sleep(PAST_THE_FRAME_MS);
 
-        // Taken before the first push, so every push of the burst is at least a frame past it.
-        long burstStart = System.nanoTime();
         table.setSelection(0);
         FlutterBridge.updateFrame();
         int afterFirst = framesFor(table);
         assertThat(afterFirst).as("the first change goes out on the turn it happened").isPositive();
 
+        long burstStart = System.nanoTime();
         for (int i = 1; i <= BURST; i++) {
             table.setSelection(i % 29);
             FlutterBridge.updateFrame();
         }
-        long burstFrames = (System.nanoTime() - burstStart) / FRAME_NANOS;
-        // Bounded by the frames the burst spanned, which depends on the machine's speed.
+        // At most a push per frame the burst spanned, and one more for the frame it straddles at
+        // each end: how many it spans is the machine's, not the bridge's.
+        long spanned = (System.nanoTime() - burstStart) / FRAME_NANOS + 2;
+        assumeTrue(spanned < BURST / 2, "the burst took too long to tell a push per frame from one per change");
         assertThat(framesFor(table) - afterFirst)
-                .as("%d changes spanning %d frames must cost at most a push per frame",
-                        BURST, burstFrames)
-                .isLessThanOrEqualTo((int) burstFrames);
+                .as("%d changes over %d frames must cost a push per frame", BURST, spanned)
+                .isLessThanOrEqualTo((int) spanned);
 
         int beforeHeld = framesFor(table);
         // A value the burst never set: one the client already holds is rightly not sent again.

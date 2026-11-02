@@ -10,6 +10,17 @@ public class DisplayHelper {
     /** Display data: the OS the display's client runs on, as Flutter's {@code TargetPlatform} name, from its ClientReady. */
     private static final String CLIENT_PLATFORM = "org.eclipse.swt.internal.clientPlatform";
 
+    /** Milliseconds until the first of {@code deadlines} (System.nanoTime) is due, 0 if one is, at most {@code cap}. */
+    public static long untilNextTimer(java.util.Map<Runnable, Long> deadlines, long cap) {
+        long wait = cap;
+        long now = System.nanoTime();
+        for (long deadline : deadlines.values()) {
+            long ms = Math.max(0, (deadline - now + 999_999) / 1_000_000);
+            if (ms < wait) wait = ms;
+        }
+        return wait;
+    }
+
     /** Display data is written on the display's thread; a ClientReady that arrives on another one is posted to it. */
     public static void clientReady(Display display, String targetPlatform) {
         if (targetPlatform == null || display.isDisposed())

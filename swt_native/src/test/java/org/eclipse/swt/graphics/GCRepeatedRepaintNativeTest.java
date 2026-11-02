@@ -1,6 +1,8 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
@@ -13,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,18 +65,23 @@ class GCRepeatedRepaintNativeTest {
         }
     }
 
-    private String drain() {
-        String wire = bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+    /** The entries sent since the last drain that carry anything. */
+    private List<GcFrames.Entry> drain() {
+        List<GcFrames.Entry> wire = BatchEntries.of(bridge.comm.sent).stream().filter(e -> e.value() != null).toList();
         bridge.comm.sent.clear();
         return wire;
+    }
+
+    private static boolean fills(List<GcFrames.Entry> wire) {
+        return wire.stream().anyMatch(e -> e.channel().contains("fillRectangle"));
     }
 
     @Test
     @DisplayName("a repaint that draws what the last one drew is not sent")
     void repeatedPaintIsDropped() {
         repaint(200);
-        assertThat(drain()).as("the first paint is what puts the fill on the control")
-                .contains("fillRectangle");
+        assertThat(fills(drain())).as("the first paint is what puts the fill on the control")
+                .isTrue();
 
         repaint(200);
 
@@ -87,7 +96,7 @@ class GCRepeatedRepaintNativeTest {
 
         repaint(120);
 
-        assertThat(drain()).contains("fillRectangle");
+        assertThat(fills(drain())).isTrue();
     }
 
     @Test
@@ -121,9 +130,9 @@ class GCRepeatedRepaintNativeTest {
             ControlHelper.inPaintDepth--;
         }
 
-        assertThat(drain())
+        assertThat(fills(drain()))
                 .as("the colour the next clear will clear to is part of what the client holds")
-                .contains("fillRectangle");
+                .isTrue();
     }
 
     @Test
@@ -135,7 +144,7 @@ class GCRepeatedRepaintNativeTest {
         FlutterBridge.forgetWhatIsShown(canvas);
         repaint(200);
 
-        assertThat(drain()).as("the client asked because what it shows is not what was last sent")
-                .contains("fillRectangle");
+        assertThat(fills(drain())).as("the client asked because what it shows is not what was last sent")
+                .isTrue();
     }
 }

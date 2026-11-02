@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'message_box_theme_extension.tailor.dart';
-part 'message_box_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class MessageBoxThemeExtension extends ThemeExtension<MessageBoxThemeExtension>
     with _$MessageBoxThemeExtensionTailorMixin {
   final TextStyle? titleStyle;
@@ -48,9 +41,4 @@ class MessageBoxThemeExtension extends ThemeExtension<MessageBoxThemeExtension>
     required this.contentButtonsSpacing,
     required this.buttonSpacing,
   });
-
-  factory MessageBoxThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$MessageBoxThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MessageBoxThemeExtensionToJson(this);
 }

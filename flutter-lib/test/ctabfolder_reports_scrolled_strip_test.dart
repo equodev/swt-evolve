@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/ctabfolder.dart';
 import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   const _CapturingCTabFolderSwt({required super.value, required this.onEvent});
@@ -21,7 +22,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCTabFolder _folder(List<String> labels) => VCTabFolder()
@@ -89,7 +90,7 @@ void main() {
         find.byWidgetPredicate((w) => w is CTabFolderSwt<VCTabFolder>));
     for (var i = 0; i < _labels.length; i++) {
       final tab = find
-          .ancestor(of: find.text(_labels[i]), matching: find.byType(AnimatedContainer))
+          .ancestor(of: find.text(_labels[i]), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
           .first;
       if (!tab.evaluate().isNotEmpty) continue;
       expect(reported[2 * i], closeTo(tester.getRect(tab).left - folder.left, 1),

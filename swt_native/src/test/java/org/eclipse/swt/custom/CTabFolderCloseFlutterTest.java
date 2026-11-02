@@ -106,6 +106,22 @@ class CTabFolderCloseFlutterTest {
     }
 
     @Test
+    @DisplayName("closing a tab before the selected one keeps the client on the same tab")
+    void closingATabBeforeTheSelectedOne() {
+        CTabFolder folder = folderWithTabs("one", "two", "three");
+        folder.setSelection(2);
+        flutter.settle();
+
+        folder.getItem(0).dispose();
+        flutter.settle();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> state = (Map<String, Object>) flutter.queryState(folder).get("state");
+        assertThat(folder.getSelectionIndex()).as("sanity").isEqualTo(1);
+        assertThat(((Number) state.get("selection")).intValue()).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("closing the only tab leaves the client drawing none")
     void closingTheOnlyTab() {
         CTabFolder folder = folderWithTabs("only");

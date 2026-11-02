@@ -23,23 +23,6 @@ public final class CoolBarTheme {
     public int frameRight() { return frameRight; }
     public int frameBottom() { return frameBottom; }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CoolBarTheme)) return false;
-        CoolBarTheme other = (CoolBarTheme) o;
-        return frameLeft == other.frameLeft
-            && frameTop == other.frameTop
-            && frameRight == other.frameRight
-            && frameBottom == other.frameBottom;
-    }
-
-    @Override
-    public int hashCode() { return java.util.Objects.hash(frameLeft, frameTop, frameRight, frameBottom); }
-
-    @Override
-    public String toString() { return "CoolBarTheme[frameLeft=" + frameLeft + ", frameTop=" + frameTop + ", frameRight=" + frameRight + ", frameBottom=" + frameBottom + "]"; }
-
     public static CoolBarTheme get() {
         return Themes.getTheme().coolBar;
     }

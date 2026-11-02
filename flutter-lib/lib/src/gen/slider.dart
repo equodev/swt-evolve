@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/cursor.dart';
@@ -10,11 +10,10 @@ import '../gen/menu.dart';
 import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/slider_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'slider.g.dart';
 
 class SliderSwt<V extends VSlider> extends ControlSwt<V> {
   const SliderSwt({super.key, required super.value});
@@ -23,15 +22,14 @@ class SliderSwt<V extends VSlider> extends ControlSwt<V> {
   State createState() => SliderImpl<SliderSwt<VSlider>, VSlider>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
-@JsonSerializable()
 class VSlider extends VControl {
   VSlider() : this.empty();
   VSlider.empty() {
@@ -59,26 +57,80 @@ class VSlider extends VControl {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'increment':
-        increment = (json['increment'] as num?)?.toInt();
-      case 'maximum':
-        maximum = (json['maximum'] as num?)?.toInt();
-      case 'minimum':
-        minimum = (json['minimum'] as num?)?.toInt();
-      case 'pageIncrement':
-        pageIncrement = (json['pageIncrement'] as num?)?.toInt();
-      case 'selection':
-        selection = (json['selection'] as num?)?.toInt();
-      case 'thumb':
-        thumb = (json['thumb'] as num?)?.toInt();
+      case 455: // increment
+        increment = r.int32();
+        return true;
+      case 456: // maximum
+        maximum = r.int32();
+        return true;
+      case 457: // minimum
+        minimum = r.int32();
+        return true;
+      case 458: // pageIncrement
+        pageIncrement = r.int32();
+        return true;
+      case 459: // selection
+        selection = r.int32();
+        return true;
+      case 460: // thumb
+        thumb = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VSlider.fromJson(Map<String, dynamic> json) =>
-      _$VSliderFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VSliderToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = increment;
+      if (v_ != null) {
+        w.keyInt32(455, v_);
+      }
+    }
+    {
+      final v_ = maximum;
+      if (v_ != null) {
+        w.keyInt32(456, v_);
+      }
+    }
+    {
+      final v_ = minimum;
+      if (v_ != null) {
+        w.keyInt32(457, v_);
+      }
+    }
+    {
+      final v_ = pageIncrement;
+      if (v_ != null) {
+        w.keyInt32(458, v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null) {
+        w.keyInt32(459, v_);
+      }
+    }
+    {
+      final v_ = thumb;
+      if (v_ != null) {
+        w.keyInt32(460, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(455, increment);
+    visit(456, maximum);
+    visit(457, minimum);
+    visit(458, pageIncrement);
+    visit(459, selection);
+    visit(460, thumb);
+  }
 }

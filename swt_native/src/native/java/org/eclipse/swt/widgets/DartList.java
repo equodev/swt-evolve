@@ -1195,31 +1195,52 @@ public class DartList extends DartScrollable implements IList {
 
     int keptFocusIndex = -1;
 
+    boolean pressInFlight;
+
+    Event heldSelection;
+
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Scroll", "Scroll", e -> {
+        FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SCROLL_SCROLL, e -> {
             getDisplay().asyncExec(() -> {
                 if (isDisposed())
                     return;
                 ListHelper.recordScrollOffset(this, e);
             });
         });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        ListHelper.sendSelection(this, e, SWT.DefaultSelection);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ListHelper.sendSelection(this, e, SWT.Selection);
+                    });
                     return;
-                ListHelper.sendSelection(this, e, SWT.DefaultSelection);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                ListHelper.sendSelection(this, e, SWT.Selection);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public List getApi() {

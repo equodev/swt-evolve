@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VComposite extends VScrollable {
 
     protected VComposite() {
@@ -33,7 +29,6 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).children = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getLayoutDeferred() {
         return ((DartComposite) impl).getLayoutDeferred();
     }
@@ -42,7 +37,6 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).layoutDeferred = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Control[] getTabList() {
         return ((DartComposite) impl).tabList;
     }
@@ -51,45 +45,79 @@ public class VComposite extends VScrollable {
         ((DartComposite) impl).tabList = value;
     }
 
-    public static final String BACKGROUND_MODE = "backgroundMode";
+    public static final int BACKGROUND_MODE = 85;
 
-    public static final String CHILDREN = "children";
+    public static final int CHILDREN = 86;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "backgroundMode":
-                Serializer.writeKeyValue(writer, "backgroundMode", getBackgroundMode());
-                return;
-            case "children":
-                Serializer.writeKeyValue(writer, "children", getChildren());
-                return;
+            case BACKGROUND_MODE:
+                return "backgroundMode";
+            case CHILDREN:
+                return "children";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Composite.class)
-    public static class CompositeJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartComposite.class, (JsonWriter.WriteObject<DartComposite>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartComposite.class, (JsonReader.ReadObject<DartComposite>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 85:
+                w.write((int) getBackgroundMode());
+                return true;
+            case 86:
+                w.refs(getChildren());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Composite read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 85:
+                {
+                    int v_ = getBackgroundMode();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(85);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 86:
+                {
+                    Control[] v_ = getChildren();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(86);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Composite api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 85, 86 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

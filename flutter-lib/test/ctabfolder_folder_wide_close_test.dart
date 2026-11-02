@@ -35,7 +35,7 @@ void main() {
     while (tester.takeException() != null) {}
     return tester
         .getSize(find
-            .ancestor(of: find.text('One tab'), matching: find.byType(AnimatedContainer))
+            .ancestor(of: find.text('One tab'), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
             .first)
         .width;
   }

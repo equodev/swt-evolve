@@ -1,14 +1,8 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/devicedata.dart';
+import '../gen/widgets.dart';
 
-part 'printerdata.g.dart';
-
-@JsonSerializable()
 class VPrinterData extends VDeviceData {
   VPrinterData() : this.empty();
   VPrinterData.empty() : super.empty();
-
-  factory VPrinterData.fromJson(Map<String, dynamic> json) =>
-      _$VPrinterDataFromJson(json);
-  Map<String, dynamic> toJson() => _$VPrinterDataToJson(this);
 }

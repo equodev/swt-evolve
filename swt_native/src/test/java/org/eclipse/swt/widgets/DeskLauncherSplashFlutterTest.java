@@ -5,8 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
@@ -108,9 +107,9 @@ class DeskLauncherSplashFlutterTest {
         List<RecordingComm.Frame> frames =
                 comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
         assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
-        Matcher ids = Pattern.compile("\"windowedShellIds\":\\[([^\\]]*)\\]")
-                .matcher(frames.get(frames.size() - 1).json);
-        return ids.find() ? ids.group(1) : "";
+        Object ids = frames.get(frames.size() - 1).state().get("windowedShellIds");
+        if (!(ids instanceof List<?> list)) return "";
+        return list.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 
     private TestDeskBridge install() {

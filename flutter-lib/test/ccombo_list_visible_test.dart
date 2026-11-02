@@ -9,6 +9,11 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
+
+import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   const _CapturingCComboSwt({required super.value, required this.onEvent});
@@ -16,7 +21,7 @@ class _CapturingCComboSwt extends CComboSwt<VCCombo> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCCombo val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 const _id = 12;
@@ -40,7 +45,7 @@ Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
   VRegistry.instance.clear();
   _seq = 0;
   final reports = <int?>[];
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Center(
       child: SizedBox(
@@ -54,7 +59,7 @@ Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
         ),
       ),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
   return reports;
 }
@@ -62,14 +67,13 @@ Future<List<int?>> _pump(WidgetTester tester, {List<String>? items}) async {
 Future<void> _javaSends(WidgetTester tester, bool listVisible) async {
   final base = _seq;
   _seq += 1;
-  VRegistry.instance.apply('CCombo/$_id', <String, dynamic>{
-    'id': _id,
-    'swt': 'CCombo',
-    '_s': _seq,
-    '_b': base,
-    '_d': <String>['listVisible'],
-    'listVisible': listVisible,
-  });
+  applyChange(
+      VCCombo()
+        ..id = _id
+        ..seq = _seq
+        ..listVisible = listVisible,
+      keys: [WireKey.k_CCombo_listVisible],
+      base: base);
   await tester.pumpAndSettle();
 }
 

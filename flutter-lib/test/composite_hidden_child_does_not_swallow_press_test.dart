@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCompositeSwt extends CompositeSwt<VComposite> {
   const _CapturingCompositeSwt({required super.value, required this.onEvent});
@@ -20,7 +21,7 @@ class _CapturingCompositeSwt extends CompositeSwt<VComposite> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VComposite val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VComposite val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()

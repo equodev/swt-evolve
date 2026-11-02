@@ -10,6 +10,10 @@ import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
+
+import 'delivery/support/deliver.dart';
 
 const _id = 1;
 
@@ -30,29 +34,30 @@ VText _value(String text, int selectionStart, int selectionEnd) => VText()
     ..height = 30);
 
 Future<void> _pump(WidgetTester tester, VText value) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: SizedBox(
       width: 200,
       height: 30,
       child: TextSwt<VText>(value: value),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
 }
 
 /// A new text and selection arriving from Java by the route they really travel.
 Future<void> _javaSets(
     WidgetTester tester, String text, int selectionStart, int selectionEnd) async {
-  VRegistry.instance.apply('Text/$_id', <String, dynamic>{
-    'id': _id,
-    'swt': 'Text',
-    '_s': 1,
-    '_b': 0,
-    '_d': <String>['text', 'selection'],
-    'text': text,
-    'selection': <String, dynamic>{'x': selectionStart, 'y': selectionEnd},
-  });
+  applyChange(
+      VText()
+        ..id = _id
+        ..seq = 1
+        ..text = text
+        ..selection = (VPoint()
+          ..x = selectionStart
+          ..y = selectionEnd),
+      keys: [WireKey.k_Text_text, WireKey.k_Text_selection],
+      base: 0);
   await tester.pumpAndSettle();
 }
 

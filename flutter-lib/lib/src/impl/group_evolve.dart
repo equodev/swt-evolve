@@ -36,7 +36,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
     final widgetTheme = Theme.of(context).extension<GroupThemeExtension>()!;
     final children = state.children;
 
-    return SwtControlScope(
+    return inOwnLayer(SwtControlScope(
       swt: state.swt,
       child: tagSemantics(trackPointer(Focus(
         focusNode: _focusNode,
@@ -53,7 +53,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
           style: state.style,
         ),
       ))),
-    );
+    ));
   }
 
   final FocusReport _focusReport = FocusReport();

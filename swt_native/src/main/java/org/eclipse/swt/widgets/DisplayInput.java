@@ -7,7 +7,7 @@ import org.eclipse.swt.graphics.Rectangle;
 /** Input the Display synthesizes itself: {@link Display#post} and the control under the pointer. */
 public final class DisplayInput {
 
-    /** Where posted moves put the pointer; setCursorLocation posts a MouseMove itself, so it cannot. */
+    /** Where posted moves and setCursorLocation put the pointer, for the posted events that follow. */
     private static final java.util.Map<Display, Point> postedPointer =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
@@ -49,6 +49,11 @@ public final class DisplayInput {
         Point origin = control.toDisplay(0, 0);
         Point far = control.toDisplay(size.x, size.y);
         return new Rectangle(origin.x, origin.y, far.x - origin.x, far.y - origin.y).contains(x, y);
+    }
+
+    /** Records a pointer the OS moved itself, which posts no MouseMove, as a posted move would. */
+    static void pointerMoved(Display display, int x, int y) {
+        postedPointer.put(display, new Point(x, y));
     }
 
     /** Queues a synthetic event where the platform would deliver one; false for what cannot be posted. */

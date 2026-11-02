@@ -15,12 +15,16 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'package:swtflutter/src/impl/combo_evolve.dart';
 import 'package:swtflutter/src/impl/table_evolve.dart';
+import 'package:swtflutter/src/impl/utils/cached_text.dart';
+import 'package:swtflutter/src/impl/utils/quiet_animations.dart';
 import 'package:swtflutter/src/impl/utils/swt_zoom_scale.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/button_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/label_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/toolitem_theme_extension.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 const _textKey = Key('text');
 const _style = TextStyle(fontSize: 14);
@@ -50,7 +54,7 @@ VRectangle _rect(int width, int height) => VRectangle()
 /// Mounts [control]; with [bounds], held to them the way its parent Composite would. A widget keeps
 /// the first value pumped for its id, so a second mount needs an id of its own.
 Future<void> _pump(WidgetTester tester, Widget control, {VRectangle? bounds}) async {
-  await tester.pumpWidget(EvolveApp(
+  await tester.pumpWidget(ForceLive(child: EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
       alignment: Alignment.topLeft,
@@ -59,7 +63,7 @@ Future<void> _pump(WidgetTester tester, Widget control, {VRectangle? bounds}) as
           : SizedBox(
               width: bounds.width!.toDouble(), height: bounds.height!.toDouble(), child: control),
     ),
-  ));
+  )));
   await tester.pumpAndSettle();
 }
 
@@ -73,8 +77,18 @@ double _paintedWidth(WidgetTester tester, Finder at, String text, TextStyle styl
     )..layout())
         .width;
 
-bool _ellipsized(WidgetTester tester, String text) =>
-    tester.renderObject<RenderParagraph>(find.text(text)).didExceedMaxLines;
+/// The style [at] is painted in.
+TextStyle _paintedStyle(WidgetTester tester, Finder at) {
+  final painted = tester.renderObject(at);
+  return painted is RenderCachedText ? painted.style : DefaultTextStyle.of(tester.element(at)).style;
+}
+
+bool _ellipsized(WidgetTester tester, String text) {
+  final painted = tester.renderObject(find.text(text));
+  return painted is RenderCachedText
+      ? painted.didExceedMaxLines
+      : (painted as RenderParagraph).didExceedMaxLines;
+}
 
 void main() {
   tearDown(() => appScaleNotifier.value = 1.0);
@@ -113,9 +127,9 @@ void _measuredAtScale(double scale, int ids) {
                 ..text = longest
                 ..items = ['AVI', longest]));
 
-      final editable = find.byType(EditableText);
+      final editable = find.byType(ComboValueText);
       final needed =
-          _paintedWidth(tester, editable, longest, tester.widget<EditableText>(editable).style);
+          _paintedWidth(tester, editable, longest, tester.widget<ComboValueText>(editable).style);
       expect(tester.getSize(editable).width, greaterThanOrEqualTo(needed));
     });
 
@@ -203,15 +217,13 @@ void _measuredAtScale(double scale, int ids) {
                 ..bounds = _rect(400, 40)));
 
       final keyword = find.text('Keyword');
-      final needed = _paintedWidth(
-          tester, keyword, 'Keyword', DefaultTextStyle.of(tester.element(keyword)).style);
+      final needed = _paintedWidth(tester, keyword, 'Keyword', _paintedStyle(tester, keyword));
       final padding = Theme.of(tester.element(keyword))
           .extension<ToolItemThemeExtension>()!
           .segmentPadding
           .horizontal;
-      final highlight =
-          find.descendant(of: find.byType(AnimatedPositioned), matching: find.byType(Container));
-      expect(tester.getSize(highlight).width, closeTo(needed + padding, 0.5));
+      final highlight = tester.widget<SlidingBox>(find.byType(SlidingBox));
+      expect(highlight.width, closeTo(needed + padding, 0.5));
     });
   });
 }

@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'progressbar_theme_extension.tailor.dart';
-part 'progressbar_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@CurveConverter()
 class ProgressBarThemeExtension extends ThemeExtension<ProgressBarThemeExtension> with _$ProgressBarThemeExtensionTailorMixin {
   // Colors
   final Color backgroundColor;
@@ -68,9 +61,4 @@ class ProgressBarThemeExtension extends ThemeExtension<ProgressBarThemeExtension
     required this.indeterminateSpeedFirstB,
     required this.indeterminateSpeedSecondB,
   });
-
-  factory ProgressBarThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ProgressBarThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ProgressBarThemeExtensionToJson(this);
 }

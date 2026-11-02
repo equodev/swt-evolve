@@ -2,12 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VCoolBar extends VComposite {
 
     protected VCoolBar() {
@@ -29,10 +24,16 @@ public class VCoolBar extends VComposite {
         Point[] values = ((DartCoolBar) impl).itemSizes;
         if (values == null)
             return null;
-        ArrayList<Point> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Point v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Point[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Point[] result = new Point[kept];
+        kept = 0;
+        for (Point v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItemSizes(Point[] value) {
@@ -43,17 +44,22 @@ public class VCoolBar extends VComposite {
         CoolItem[] values = ((DartCoolBar) impl).getItems();
         if (values == null)
             return null;
-        ArrayList<CoolItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (CoolItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new CoolItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        CoolItem[] result = new CoolItem[kept];
+        kept = 0;
+        for (CoolItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(CoolItem[] value) {
         ((DartCoolBar) impl).items = new CoolItem[][] { value };
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getLocked() {
         return ((DartCoolBar) impl).getLocked();
     }
@@ -70,55 +76,133 @@ public class VCoolBar extends VComposite {
         ((DartCoolBar) impl).wrapIndices = value;
     }
 
-    public static final String ITEM_ORDER = "itemOrder";
+    public static final int ITEM_ORDER = 147;
 
-    public static final String ITEM_SIZES = "itemSizes";
+    public static final int ITEM_SIZES = 148;
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 149;
 
-    public static final String WRAP_INDICES = "wrapIndices";
+    public static final int WRAP_INDICES = 150;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "itemOrder":
-                Serializer.writeKeyValue(writer, "itemOrder", getItemOrder());
-                return;
-            case "itemSizes":
-                Serializer.writeKeyValue(writer, "itemSizes", getItemSizes());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "wrapIndices":
-                Serializer.writeKeyValue(writer, "wrapIndices", getWrapIndices());
-                return;
+            case ITEM_ORDER:
+                return "itemOrder";
+            case ITEM_SIZES:
+                return "itemSizes";
+            case ITEMS:
+                return "items";
+            case WRAP_INDICES:
+                return "wrapIndices";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = CoolBar.class)
-    public static class CoolBarJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCoolBar.class, (JsonWriter.WriteObject<DartCoolBar>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCoolBar.class, (JsonReader.ReadObject<DartCoolBar>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 147:
+                w.write(getItemOrder());
+                return true;
+            case 148:
+                {
+                    Point[] a_ = getItemSizes();
+                    if (a_ == null)
+                        w.listSize(-1);
+                    else {
+                        w.listSize(a_.length);
+                        for (Point e_ : a_) w.write(e_);
+                    }
+                }
+                return true;
+            case 149:
+                w.refs(getItems());
+                return true;
+            case 150:
+                w.write(getWrapIndices());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static CoolBar read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 147:
+                {
+                    int[] v_ = getItemOrder();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(147);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 148:
+                {
+                    Point[] v_ = getItemSizes();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(148);
+                    {
+                        Point[] a_ = v_;
+                        if (a_ == null)
+                            w.listSize(-1);
+                        else {
+                            w.listSize(a_.length);
+                            for (Point e_ : a_) w.write(e_);
+                        }
+                    }
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 149:
+                {
+                    CoolItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(149);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 150:
+                {
+                    int[] v_ = getWrapIndices();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(150);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, CoolBar api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 147, 148, 149, 150 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

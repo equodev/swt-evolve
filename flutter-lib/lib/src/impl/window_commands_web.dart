@@ -15,6 +15,8 @@ import 'dart:async';
 import 'dart:js_interop';
 
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart' show WidgetWireWriter;
+import '../gen/widgets.dart' show WireChannel, WireType;
 
 @JS('window.open')
 external JSObject? _open(JSString url, JSString target, JSString features);
@@ -32,7 +34,16 @@ extension type _BrowserWindow(JSObject _) implements JSObject {
   external void moveTo(int x, int y);
   external void resizeTo(int width, int height);
   external void focus();
+  external _BrowserDocument get document;
+  external void addEventListener(String type, JSFunction listener);
 }
+
+extension type _BrowserDocument(JSObject _) implements JSObject {
+  external set title(String value);
+}
+
+/// Each window's title, held so it can be set again once the window's page has loaded its own.
+final Map<int, String> _titles = <int, String>{};
 
 final Map<int, _BrowserWindow> _windows = <int, _BrowserWindow>{};
 
@@ -47,13 +58,19 @@ final List<Object> _tokens = <Object>[];
 
 Map<int, Object> get openedWindows => Map.unmodifiable(_windows);
 
+const _commands = [
+  (WireChannel.openWindow, _onOpenWindow),
+  (WireChannel.closeWindow, _onCloseWindow),
+  (WireChannel.windowBounds, _onWindowBounds),
+  (WireChannel.windowState, _onWindowState),
+  (WireChannel.windowTitle, _onWindowTitle),
+];
+
 void registerWindowCommands(int displayId) {
   _displayId = displayId;
-  final prefix = 'Display/$displayId';
-  _tokens.add(EquoCommService.onRaw('$prefix/OpenWindow', _onOpenWindow));
-  _tokens.add(EquoCommService.onRaw('$prefix/CloseWindow', _onCloseWindow));
-  _tokens.add(EquoCommService.onRaw('$prefix/WindowBounds', _onWindowBounds));
-  _tokens.add(EquoCommService.onRaw('$prefix/WindowState', _onWindowState));
+  for (final (channel, handler) in _commands) {
+    _tokens.add(EquoCommService.on(WireType.display, displayId, channel, handler));
+  }
 }
 
 void disposeWindowCommands() {
@@ -61,12 +78,13 @@ void disposeWindowCommands() {
   _closePoll = null;
   final displayId = _displayId;
   if (displayId != null) {
-    for (final name in const ['OpenWindow', 'CloseWindow', 'WindowBounds', 'WindowState']) {
-      EquoCommService.remove('Display/$displayId/$name');
+    for (final (channel, _) in _commands) {
+      EquoCommService.remove(WireType.display, displayId, channel);
     }
   }
   _tokens.clear();
   _windows.clear();
+  _titles.clear();
   _displayId = null;
 }
 
@@ -152,14 +170,34 @@ bool _openOne(int shellId, Map<String, dynamic> data) {
 
   final opened = _open(url.toJS, 'equo-shell-$shellId'.toJS, features.toJS);
   if (opened == null) return false;
-  _windows[shellId] = _BrowserWindow(opened);
+  final window = _BrowserWindow(opened);
+  _windows[shellId] = window;
+  // The window's page brings a title of its own when it loads, replacing any set before.
+  window.addEventListener('load', (() => _applyTitle(shellId)).toJS);
   _startClosePoll();
   return true;
+}
+
+void _onWindowTitle(Object? raw) {
+  final data = _asMap(raw);
+  final shellId = (data?['shellId'] as num?)?.toInt();
+  final title = data?['title'];
+  if (shellId == null || title is! String) return;
+  _titles[shellId] = title;
+  _applyTitle(shellId);
+}
+
+void _applyTitle(int shellId) {
+  final window = _windows[shellId];
+  final title = _titles[shellId];
+  if (window == null || window.closed || title == null) return;
+  window.document.title = title;
 }
 
 void _onCloseWindow(Object? raw) {
   final shellId = _shellIdOf(raw);
   if (shellId == null) return;
+  _titles.remove(shellId);
   final window = _windows.remove(shellId);
   if (window != null && !window.closed) window.close();
 }
@@ -201,8 +239,7 @@ void _onWindowState(Object? raw) {
 void _reportOpenFailed(int shellId) {
   final displayId = _displayId;
   if (displayId == null) return;
-  EquoCommService.sendPayload(
-      'Display/$displayId/WindowOpenFailed', {'shellId': shellId});
+  EquoCommService.sendWritten(WidgetWireWriter.startTo(WireType.display, displayId, WireChannel.windowOpenFailed)..int64(shellId));
 }
 
 void _startClosePoll() {
@@ -218,7 +255,7 @@ void _startClosePoll() {
     });
     for (final shellId in gone) {
       _windows.remove(shellId);
-      EquoCommService.send('Shell/$shellId/WinUnload');
+      EquoCommService.sendTo(WireType.shell, shellId, WireChannel.winUnload);
     }
   });
 }

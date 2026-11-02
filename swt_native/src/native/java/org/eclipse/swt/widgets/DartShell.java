@@ -934,7 +934,8 @@ public class DartShell extends DartDecorations implements IShell {
 
     void makeKeyAndOrderFront() {
         ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
-        boolean wasActive = display.getActiveShell() == this.getApi();
+        Shell previous = display.getActiveShell();
+        boolean wasActive = previous == this.getApi();
         if (wasActive) {
             _takeFocusHolder(true);
             return;
@@ -1702,7 +1703,10 @@ public class DartShell extends DartDecorations implements IShell {
         ((DartDisplay) display.getImpl()).updateQuitMenu();
         if (isDisposed())
             return;
-        getBridge().setVisible(this, visible);
+        {
+            getValue().markDirty(VControl.VISIBLE);
+            getBridge().setVisible(this, visible);
+        }
     }
 
     @Override
@@ -2013,82 +2017,109 @@ public class DartShell extends DartDecorations implements IShell {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Shell", "Activate", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                _suppressNextFlutterDeactivate = false;
-                if (getBridge() instanceof DisplayBridge)
-                    ((DisplayBridge) getBridge()).noteClientActivated(this);
-                DartDisplay _dd = (DartDisplay) display.getImpl();
-                boolean _awaited = _dd.awaitedActivation == getApi();
-                _dd.awaitedActivation = null;
-                if (_awaited) {
-                    _takeFocusHolder(false);
-                    return;
-                }
-                sendEvent(SWT.Activate, e);
-                if (!isDisposed())
-                    _takeFocusHolder(false);
-            });
-        });
-        FlutterBridge.on(this, "Shell", "Close", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                closeWidget(false);
-            });
-        });
-        FlutterBridge.on(this, "Shell", "Deactivate", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (((DartDisplay) display.getImpl()).awaitedActivation == getApi())
-                    ((DartDisplay) display.getImpl()).awaitedActivation = null;
-                Control _focus = display.getFocusControl();
-                if (_focus != null && _focus != getApi() && _focus.getShell() == getApi())
-                    setSavedFocus(_focus);
-                if (getBridge() instanceof DisplayBridge)
-                    ((DisplayBridge) getBridge()).noteClientDeactivated(this);
-                if (_suppressNextFlutterDeactivate) {
-                    _suppressNextFlutterDeactivate = false;
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Shell/Activate", "Shell/Close", "Shell/Deactivate", "Shell/Deiconify", "Shell/Iconify", "Shell/SetBounds");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Shell/Activate":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        _suppressNextFlutterDeactivate = false;
+                        if (getBridge() instanceof DisplayBridge)
+                            ((DisplayBridge) getBridge()).noteClientActivated(this);
+                        DartDisplay _dd = (DartDisplay) display.getImpl();
+                        boolean _awaited = _dd.awaitedActivation == getApi();
+                        _dd.awaitedActivation = null;
+                        if (_awaited) {
+                            _takeFocusHolder(false);
+                            return;
+                        }
+                        sendEvent(SWT.Activate, e);
+                        if (!isDisposed())
+                            _takeFocusHolder(false);
+                    });
                     return;
                 }
-                sendEvent(SWT.Deactivate, e);
-            });
-        });
-        FlutterBridge.on(this, "Shell", "Deiconify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+            case "Shell/Close":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        closeWidget(false);
+                    });
                     return;
-                sendEvent(SWT.Deiconify, e);
-            });
-        });
-        FlutterBridge.on(this, "Shell", "Iconify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Iconify, e);
-            });
-        });
-        FlutterBridge.on(this, "Shell", "SetBounds", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (e == null)
-                    return;
-                if (getBridge() instanceof DisplayBridge && ((DisplayBridge) getBridge()).ignoresClientPosition(getApi(), e.detail)) {
-                    org.eclipse.swt.graphics.Point _at = getApi().getLocation();
-                    e.x = _at.x;
-                    e.y = _at.y;
                 }
-                org.eclipse.swt.graphics.Rectangle _before = getApi().getBounds();
-                getApi().setBounds(e.x, e.y, e.width, e.height);
-                if (_before != null && _before.x == e.x && _before.y == e.y && _before.width == e.width && _before.height == e.height)
+            case "Shell/Deactivate":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (((DartDisplay) display.getImpl()).awaitedActivation == getApi())
+                            ((DartDisplay) display.getImpl()).awaitedActivation = null;
+                        Control _focus = display.getFocusControl();
+                        if (_focus != null && _focus != getApi() && _focus.getShell() == getApi())
+                            setSavedFocus(_focus);
+                        if (getBridge() instanceof DisplayBridge)
+                            ((DisplayBridge) getBridge()).noteClientDeactivated(this);
+                        if (_suppressNextFlutterDeactivate) {
+                            _suppressNextFlutterDeactivate = false;
+                            return;
+                        }
+                        sendEvent(SWT.Deactivate, e);
+                        if (!isDisposed() && getBridge() instanceof DisplayBridge)
+                            ((DisplayBridge) getBridge()).releaseFocusOf(this);
+                    });
                     return;
-                ((DisplayBridge) getBridge()).sendDisplayUpdate((DartDisplay) display.getImpl());
-            });
-        });
+                }
+            case "Shell/Deiconify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Deiconify, e);
+                    });
+                    return;
+                }
+            case "Shell/Iconify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Iconify, e);
+                    });
+                    return;
+                }
+            case "Shell/SetBounds":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (e == null)
+                            return;
+                        if (getBridge() instanceof DisplayBridge && ((DisplayBridge) getBridge()).ignoresClientPosition(getApi(), e.detail)) {
+                            org.eclipse.swt.graphics.Point _at = getApi().getLocation();
+                            e.x = _at.x;
+                            e.y = _at.y;
+                        }
+                        org.eclipse.swt.graphics.Rectangle _before = getApi().getBounds();
+                        getApi().setBounds(e.x, e.y, e.width, e.height);
+                        if (_before != null && _before.x == e.x && _before.y == e.y && _before.width == e.width && _before.height == e.height)
+                            return;
+                        ((DisplayBridge) getBridge()).sendDisplayUpdate((DartDisplay) display.getImpl());
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Shell getApi() {

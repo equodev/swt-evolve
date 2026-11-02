@@ -21,6 +21,7 @@ import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/event.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 VTableColumn _col(int id, {int? width}) => VTableColumn()
   ..id = id
@@ -41,7 +42,7 @@ class _CapturingTableSwt extends TableSwt<VTable> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VTable val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VTable val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 void main() {

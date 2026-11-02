@@ -17,9 +17,6 @@ package org.eclipse.swt.layout;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Each control controlled by a <code>RowLayout</code> can have its initial
@@ -41,8 +38,7 @@ import com.dslplatform.json.JsonAttribute;
  * @see RowLayout
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public final class RowData {
+public final class RowData implements dev.equo.swt.WireObject {
 
     /**
      * width specifies the desired width in points. This value
@@ -137,5 +133,36 @@ public final class RowData {
         string = string.trim();
         string += "}";
         return string;
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 86;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(425);
+        w.write((int) width);
+        w.key(424);
+        w.write((int) height);
+        w.key(423);
+        w.write(exclude);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 425:
+                width = r.int32();
+                return true;
+            case 424:
+                height = r.int32();
+                return true;
+            case 423:
+                exclude = r.bool();
+                return true;
+        }
+        return false;
     }
 }

@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import com.dslplatform.json.*;
 
 /**
  * The popup menus a shell must draw itself, sent on {@code Shell/{id}/Popups}.
@@ -20,41 +19,14 @@ public class VShellPopups {
     public long shellId;
     public Menu[] popups;
 
-    @JsonConverter(target = VShellPopups.class)
-    public static class ShellPopupsJson implements Configuration {
+    /** The property a record of the binary widget wire describes the popups by: the display's "popups". */
+    public static final int[] WIRE_KEYS = { VDisplay.POPUPS };
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(VShellPopups.class,
-                    (JsonWriter.WriteObject<VShellPopups>) (writer, v) -> write(writer, v));
-            json.registerReader(VShellPopups.class,
-                    (JsonReader.ReadObject<VShellPopups>) reader -> null);
-        }
-
-        public static VShellPopups read(JsonReader<?> reader) {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, VShellPopups v) {
-            if (v == null) {
-                writer.writeNull();
-                return;
-            }
-            writer.writeByte((byte) '{');
-            writer.writeAscii("\"shellId\":");
-            com.dslplatform.json.NumberConverter.serialize(v.shellId, writer);
-            writer.writeAscii(",\"popups\":");
-            if (v.popups == null || v.popups.length == 0) {
-                writer.writeAscii("[]");
-            } else {
-                writer.writeByte((byte) '[');
-                for (int i = 0; i < v.popups.length; i++) {
-                    if (i > 0) writer.writeByte((byte) ',');
-                    VMenu.MenuJson.write(writer, v.popups[i]);
-                }
-                writer.writeByte((byte) ']');
-            }
-            writer.writeByte((byte) '}');
-        }
+    /** Writes one of {@link #WIRE_KEYS}, as a widget's keyed writer does. */
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        if (key != VDisplay.POPUPS) return false;
+        w.refs(popups);
+        return true;
     }
+
 }

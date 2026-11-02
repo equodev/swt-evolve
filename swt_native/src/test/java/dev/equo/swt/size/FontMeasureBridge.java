@@ -53,9 +53,9 @@ class FontMeasureBridge extends FlutterHarness implements BeforeAllCallback, Aft
     private void initFlutterView() {
         onReady(this, Void.class);
         bootRenderer(id(this), widgetName(this));
-        onPayload(this, "fontSizeResponse", p -> {
+        onPayload(this, dev.equo.swt.comm.ChannelHeader.requireChannel("fontSizeResponse"), p -> {
             try {
-                double[] arr = serializer.from(double[].class, p);
+                double[] arr = dev.equo.swt.harness.Trees.read(double[].class, p);
                 CompletableFuture<double[]> awaiting = pendingResults.poll();
                 if (awaiting != null) awaiting.complete(arr);
             } catch (Exception e) {
@@ -77,7 +77,7 @@ class FontMeasureBridge extends FlutterHarness implements BeforeAllCallback, Aft
 
     private void sendRequest(Map<String, Object> request) {
         try {
-            serializeAndSend(eventName(this, "fontSizeRequest"), request);
+            serializeAndSend(dev.equo.swt.comm.ChannelHeader.requireType(widgetName(this)), id(this), dev.equo.swt.comm.ChannelHeader.requireChannel("fontSizeRequest"), request);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

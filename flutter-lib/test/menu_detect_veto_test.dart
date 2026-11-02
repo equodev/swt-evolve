@@ -5,25 +5,24 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/menu_detect_gate.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/channels.dart' as channels;
+import 'package:swtflutter/src/gen/widgets.dart' show WireType;
 
 void _verdict(String swt, int id, bool doit) {
   final actionId = '$swt/$id/menu/verdict';
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode({'doit': doit}));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
+  final body = TaggedValues.encode({'doit': doit});
+  final frame = channels.frame(actionId, body);
   EquoCommService.commForTesting.receiveBinary(frame);
 }
 
 void main() {
   testWidgets('the menu does not open before Java has answered', (tester) async {
     var opened = false;
-    MenuDetectGate.withhold('Table', 201, () => opened = true);
+    MenuDetectGate.withhold(WireType.table, 201, () => opened = true);
     await tester.pump();
     expect(opened, isFalse, reason: 'a listener could still veto it');
 
@@ -34,7 +33,7 @@ void main() {
 
   testWidgets('a vetoed MenuDetect never opens the menu', (tester) async {
     var opened = false;
-    MenuDetectGate.withhold('Table', 202, () => opened = true);
+    MenuDetectGate.withhold(WireType.table, 202, () => opened = true);
     _verdict('Table', 202, false);
     await tester.pump();
     expect(opened, isFalse);
@@ -46,7 +45,7 @@ void main() {
 
   testWidgets('the menu still opens if Java never answers', (tester) async {
     var opened = false;
-    MenuDetectGate.withhold('Table', 203, () => opened = true);
+    MenuDetectGate.withhold(WireType.table, 203, () => opened = true);
     await tester.pump(const Duration(milliseconds: 400));
     expect(opened, isTrue,
         reason: 'failing open: a lost verdict must not make right-click dead');
@@ -56,8 +55,8 @@ void main() {
       (tester) async {
     var treeOpened = false;
     var tableOpened = false;
-    MenuDetectGate.withhold('Tree', 204, () => treeOpened = true);
-    MenuDetectGate.withhold('Table', 205, () => tableOpened = true);
+    MenuDetectGate.withhold(WireType.tree, 204, () => treeOpened = true);
+    MenuDetectGate.withhold(WireType.table, 205, () => tableOpened = true);
 
     _verdict('Tree', 204, false);
     _verdict('Table', 205, true);

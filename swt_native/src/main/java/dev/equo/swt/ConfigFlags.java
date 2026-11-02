@@ -1,7 +1,5 @@
 package dev.equo.swt;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.JsonAttribute;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -9,8 +7,7 @@ import java.util.TreeMap;
 import dev.equo.swt.DecorationsAlign;
 import org.eclipse.swt.graphics.RGB;
 
-@CompiledJson(objectFormatPolicy = CompiledJson.ObjectFormatPolicy.FULL)
-public class ConfigFlags {
+public class ConfigFlags implements WireObject {
 
     /**
      * System property selecting the rendering surface: {@link #MODE_DESKTOP} (a native top-level
@@ -89,7 +86,6 @@ public class ConfigFlags {
      * control they contain; the nearest listed control wins, and a control under none follows the
      * global flag. Java-only: the client gets the outcome per GC as {@code VGC.themedCanvas}.
      */
-    @JsonAttribute(ignore = true)
     public Map<String, Boolean> disable_swt_canvas_colors_by_class;
 
     /**
@@ -98,11 +94,9 @@ public class ConfigFlags {
      * class name as written; resolved like {@link #disable_swt_canvas_colors_by_class}. Java-only:
      * the client gets the outcome per GC as {@code VGC.hoverFills}.
      */
-    @JsonAttribute(ignore = true)
     public Map<String, RGB[]> canvas_hover_fills_by_class;
 
     /** Like {@link #canvas_hover_fills_by_class}, for a selection ({@code canvas_selection_fills_<Class>}). */
-    @JsonAttribute(ignore = true)
     public Map<String, RGB[]> canvas_selection_fills_by_class;
 
     /** Drops what an application paints through a Control's own GC, leaving the control's own
@@ -111,6 +105,8 @@ public class ConfigFlags {
      *  painting their GC content whatever this says. */
     public boolean disable_control_gc_overlay;
 
+    /** Text in the application's font ({@code -Dswt.use_swt_fonts=true}). Off, the theme keeps its family and
+     *  size and the font adds only weight and slant; {@code getTextStyle} and the {@code *Sizes} follow this. */
     public boolean use_swt_fonts;
 
     /**
@@ -237,6 +233,124 @@ public class ConfigFlags {
      *  Set with {@code -Dswt.use_swt_border=true}. */
     public boolean use_swt_border;
 
+    /** Not a type a value names at runtime: the flags only ever travel as the display's. */
+    @Override
+    public int wireTypeId() {
+        return 0;
+    }
+
+    /** The fields {@link #writeWireFields} writes: the generator numbers them from this list (WireTable.CONFIG_FLAGS_*). */
+    private static final String[] WIRE_FIELDS = {
+            "ctabfolder_visible_controls", "ctabfolder_topright_auto_hide", "image_disable_icons_replacement",
+            "assets_path", "disable_evolve_icons", "gc_icons_replacement", "use_swt_colors",
+            "disable_swt_canvas_colors", "disable_control_gc_overlay", "use_swt_fonts", "use_swt_font_colors",
+            "use_swt_font_colors_by_widget", "use_special_dropdown_button", "preserve_icon_colors",
+            "disable_hover_zoom", "custom_tooltip", "notification_popup", "force_theme", "theme_name",
+            "theme_color", "theme_colors_by_widget", "show_theme_color_palette", "focus_indicators",
+            "show_scaling_control", "ui_zoom", "decorations_align", "print_move", "csd_placement", "csd_os",
+            "csd_maximize", "system_menu_bar", "double_click_timeout_ms", "csd_titlebar_color",
+            "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
+            "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
+    };
+
+    /** The flags the client sets (a theme picked on its side). */
+    @Override
+    public boolean readWire(int key, WireReader r) {
+        switch (key) {
+            case WireTable.CONFIG_FLAGS_FORCE_THEME: force_theme = r.string(); return true;
+            case WireTable.CONFIG_FLAGS_THEME_NAME: theme_name = r.string(); return true;
+            case WireTable.CONFIG_FLAGS_THEME_COLOR: theme_color = r.string(); return true;
+        }
+        return false;
+    }
+
+    /** The flags as an object of the binary widget wire. */
+    @Override
+    public void writeWireFields(WidgetWire w) {
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS);
+        w.write(ctabfolder_visible_controls);
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE);
+        w.write(ctabfolder_topright_auto_hide);
+        w.key(WireTable.CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT);
+        w.write(image_disable_icons_replacement);
+        w.key(WireTable.CONFIG_FLAGS_ASSETS_PATH);
+        w.write(assets_path);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_EVOLVE_ICONS);
+        w.write(disable_evolve_icons);
+        w.key(WireTable.CONFIG_FLAGS_GC_ICONS_REPLACEMENT);
+        w.write(gc_icons_replacement);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_COLORS);
+        w.write(use_swt_colors);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS);
+        w.write(disable_swt_canvas_colors);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY);
+        w.write(disable_control_gc_overlay);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_FONTS);
+        w.write(use_swt_fonts);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_FONT_COLORS);
+        w.write(use_swt_font_colors);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET);
+        w.writeBooleans(use_swt_font_colors_by_widget);
+        w.key(WireTable.CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON);
+        w.write(use_special_dropdown_button);
+        w.key(WireTable.CONFIG_FLAGS_PRESERVE_ICON_COLORS);
+        w.write(preserve_icon_colors);
+        w.key(WireTable.CONFIG_FLAGS_DISABLE_HOVER_ZOOM);
+        w.write(disable_hover_zoom);
+        w.key(WireTable.CONFIG_FLAGS_CUSTOM_TOOLTIP);
+        w.write(custom_tooltip);
+        w.key(WireTable.CONFIG_FLAGS_NOTIFICATION_POPUP);
+        w.write(notification_popup);
+        w.key(WireTable.CONFIG_FLAGS_FORCE_THEME);
+        w.write(force_theme);
+        w.key(WireTable.CONFIG_FLAGS_THEME_NAME);
+        w.write(theme_name);
+        w.key(WireTable.CONFIG_FLAGS_THEME_COLOR);
+        w.write(theme_color);
+        w.key(WireTable.CONFIG_FLAGS_THEME_COLORS_BY_WIDGET);
+        w.writeStrings(theme_colors_by_widget);
+        w.key(WireTable.CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE);
+        w.write(show_theme_color_palette);
+        w.key(WireTable.CONFIG_FLAGS_FOCUS_INDICATORS);
+        w.write(focus_indicators);
+        w.key(WireTable.CONFIG_FLAGS_SHOW_SCALING_CONTROL);
+        w.write(show_scaling_control);
+        w.key(WireTable.CONFIG_FLAGS_UI_ZOOM);
+        w.write(ui_zoom);
+        w.key(WireTable.CONFIG_FLAGS_DECORATIONS_ALIGN);
+        w.write(decorations_align == null ? null : decorations_align.name());
+        w.key(WireTable.CONFIG_FLAGS_PRINT_MOVE);
+        w.write(print_move);
+        w.key(WireTable.CONFIG_FLAGS_CSD_PLACEMENT);
+        w.write(csd_placement);
+        w.key(WireTable.CONFIG_FLAGS_CSD_OS);
+        w.write(csd_os);
+        w.key(WireTable.CONFIG_FLAGS_CSD_MAXIMIZE);
+        w.write(csd_maximize);
+        w.key(WireTable.CONFIG_FLAGS_SYSTEM_MENU_BAR);
+        w.write(system_menu_bar);
+        w.key(WireTable.CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS);
+        w.write(double_click_timeout_ms);
+        w.key(WireTable.CONFIG_FLAGS_CSD_TITLEBAR_COLOR);
+        w.write(csd_titlebar_color);
+        w.key(WireTable.CONFIG_FLAGS_FONT_POINT_SCALE);
+        w.write(font_point_scale);
+        w.key(WireTable.CONFIG_FLAGS_PUSH_BUTTON_MARGIN);
+        w.write(push_button_margin);
+        w.key(WireTable.CONFIG_FLAGS_HOVER_DELAY_MS);
+        w.write(hover_delay_ms);
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL);
+        w.write(ctabfolder_tab_scroll);
+        w.key(WireTable.CONFIG_FLAGS_DECIMAL_SEPARATOR);
+        w.write(decimal_separator);
+        w.key(WireTable.CONFIG_FLAGS_LOCALE);
+        w.write(locale);
+        w.key(WireTable.CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX);
+        w.write(transparent_menu_check_box);
+        w.key(WireTable.CONFIG_FLAGS_USE_SWT_BORDER);
+        w.write(use_swt_border);
+    }
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;
@@ -262,7 +376,6 @@ public class ConfigFlags {
                 ", use_swt_fonts=" + use_swt_fonts +
                 ", use_swt_font_colors=" + use_swt_font_colors +
                 ", use_swt_font_colors_by_widget=" + use_swt_font_colors_by_widget +
-                ", use_swt_border=" + use_swt_border +
                 ", force_theme='" + force_theme + '\'' +
                 ", theme_name='" + theme_name + '\'' +
                 ", theme_color='" + theme_color + '\'' +
@@ -285,6 +398,7 @@ public class ConfigFlags {
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
+                ", use_swt_border=" + use_swt_border +
                 ", system_menu_bar=" + system_menu_bar +
                 ", decimal_separator='" + decimal_separator + '\'' +
                 ", locale='" + locale + '\'' +

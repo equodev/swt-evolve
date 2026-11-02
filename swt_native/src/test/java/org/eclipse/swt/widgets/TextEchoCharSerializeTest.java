@@ -1,15 +1,19 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.SerializeTestBase;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
+
+import java.util.Map;
+
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The "Show Password" toggle scenario: a plain single-line Text re-masked at runtime via
- * setEchoChar after text was typed. echoCharacter must serialize as a number - a JSON string
+ * setEchoChar after text was typed. echoCharacter must serialize as a number - a string
  * makes the whole state push fail to deserialize and the re-mask silently never happens.
  * The masked text itself does not travel: the far side already has the real text and the
  * character to mask it with, and derives the masked form where it draws it.
@@ -22,17 +26,17 @@ class TextEchoCharSerializeTest extends SerializeTestBase {
         w.setText("secret");
         w.setEchoChar((char) 8226);
 
-        String json = serialize(w);
+        Map<String, Object> wire = serialize(w);
 
-        assertThatJson(json).isObject()
+        assertThatWire(wire).isObject()
                 .containsEntry("text", "secret")
                 .containsEntry("echoCharacter", 8226);
-        assertThat(json)
-                .as("char[] state must never serialize as a JSON string")
-                .doesNotContain("\"hiddenText\":\"");
-        assertThat(json)
+        assertThat(WireValues.find(wire, m -> m.get("hiddenText") instanceof String))
+                .as("char[] state must never serialize as a string")
+                .isEmpty();
+        assertThat(WireValues.mentions(wire, "hiddenText"))
                 .as("the masked form is derived where it is drawn, so sending it is redundant")
-                .doesNotContain("\"hiddenText\"");
+                .isFalse();
     }
 
     @Test
@@ -42,8 +46,8 @@ class TextEchoCharSerializeTest extends SerializeTestBase {
         w.setText("secret");
         w.setEchoChar((char) 0);
 
-        String json = serialize(w);
+        Map<String, Object> wire = serialize(w);
 
-        assertThatJson(json).isObject().containsEntry("text", "secret");
+        assertThatWire(wire).isObject().containsEntry("text", "secret");
     }
 }

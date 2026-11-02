@@ -4,6 +4,7 @@ import '../gen/color.dart';
 import '../gen/widget.dart';
 import '../gen/image.dart';
 import '../gen/swt.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/canvas_evolve.dart';
 import '../impl/color_utils.dart';
 import './utils/image_utils.dart';
@@ -29,6 +30,10 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       state.image != null &&
       ((state.text?.isNotEmpty == true && state.text != '<none>') ||
           state.toolTipText?.isNotEmpty == true);
+
+  /// The tooltip decides whether this draws as a chip.
+  @override
+  Set<int> get unrenderedProperties => const {};
 
   @override
   Widget wrapWithGCOverlay(Widget child) {

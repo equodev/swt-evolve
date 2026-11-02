@@ -105,7 +105,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       result = IntrinsicWidth(child: IntrinsicHeight(child: result));
     }
 
-    return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result)));
+    return inOwnLayer(SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result))));
   }
 
   List<Widget> getExpandItems(

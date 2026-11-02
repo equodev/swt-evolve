@@ -77,14 +77,7 @@ public class SpinnerHelper {
             default:
                 return;
         }
-        int value = c.selection + delta;
-        if ((c.getApi().getStyle() & SWT.WRAP) != 0) {
-            if (value > c.maximum)
-                value = c.minimum;
-            else if (value < c.minimum)
-                value = c.maximum;
-        }
-        value = Math.max(c.minimum, Math.min(c.maximum, value));
+        int value = stepped(c, delta);
         if (value == c.selection)
             return;
         Event verify = new Event();
@@ -95,6 +88,18 @@ public class SpinnerHelper {
         if (!verify.doit || c.isDisposed())
             return;
         applySelection(c, value, true, true, rewritten(c, value, verify));
+    }
+
+    /** The value a step of {@code delta} reaches: a WRAP spinner wraps past either end, a plain one stops there. */
+    private static int stepped(DartSpinner c, int delta) {
+        int value = c.selection + delta;
+        if ((c.getApi().getStyle() & SWT.WRAP) != 0) {
+            if (value > c.maximum)
+                value = c.minimum;
+            else if (value < c.minimum)
+                value = c.maximum;
+        }
+        return Math.max(c.minimum, Math.min(c.maximum, value));
     }
 
     /**
@@ -203,11 +208,15 @@ public class SpinnerHelper {
     }
 
     /**
-     * A value the user chose with the arrows of the client. The text follows it, so listeners hear Modify and then
-     * Selection, in the order a native spinner sends them; a refused text sends neither.
+     * A click on the client's up or down arrow, {@code e.detail} {@link SWT#ARROW_UP} or {@link SWT#ARROW_DOWN}: it
+     * steps by the increment as the arrow keys do, and a step that doesn't move the value notifies nothing. The text
+     * follows the value: listeners hear Verify, then Modify and Selection unless the Verify refused the text. Any
+     * other detail is not a step.
      */
-    static void selectedInFlutter(DartSpinner c, int value) {
-        if (!setSelection(c, Math.max(c.minimum, Math.min(c.maximum, value)), true, true, false) || c.isDisposed()) {
+    static void selectedInFlutter(DartSpinner c, Event e) {
+        int delta = e.detail == SWT.ARROW_UP ? c.increment : e.detail == SWT.ARROW_DOWN ? -c.increment : 0;
+        int value = stepped(c, delta);
+        if (value == c.selection || !setSelection(c, value, true, true, false) || c.isDisposed()) {
             return;
         }
         c.sendSelectionEvent(SWT.Selection, null, true);
@@ -304,7 +313,7 @@ public class SpinnerHelper {
             boolean accepted = typed.equals(verified);
             // The client shows what was typed until told otherwise: a veto, or text a listener changed, sends it
             // back to the value Java holds.
-            dev.equo.swt.FlutterBridge.send(c, "modify/verdict", dev.equo.swt.Java8.map("doit", accepted));
+            dev.equo.swt.FlutterBridge.send(c, dev.equo.swt.WireTable.CHANNEL_MODIFY_VERDICT, dev.equo.swt.Java8.map("doit", accepted));
             if (verified == null) {
                 return;
             }

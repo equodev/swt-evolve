@@ -2,19 +2,22 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -46,7 +49,7 @@ class FramedToolBarHandlePaintNativeTest {
     }
 
     private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).collect(Collectors.joining());
+        return String.join(" ", GcFrames.channels(bridge.comm.sent));
     }
 
     @Test
@@ -84,8 +87,10 @@ class FramedToolBarHandlePaintNativeTest {
         String wire = wire();
         int dy = (bar.getSize().y - 20) / 2;
         assertThat(wire).as("the paint ran and its GC was disposed").contains("/gcDispose");
-        assertThat(wire.split("drawImageImageintintintintintintintint", -1)).as("exactly one blit: the handle").hasSize(2);
-        assertThat(wire).as("the handle at its own size in the strip").contains(",0,0,5,20,0," + dy + ",5,20]");
+        List<List<?>> blits = GcFrames.argsOf(bridge.comm.sent, "drawImageImageintintintintintintintint");
+        assertThat(blits).as("exactly one blit: the handle").hasSize(1);
+        assertThat(WireValues.same(blits.get(0).subList(1, 9), List.of(0, 0, 5, 20, 0, dy, 5, 20)))
+                .as("the handle at its own size in the strip").isTrue();
         handle.dispose();
     }
 }

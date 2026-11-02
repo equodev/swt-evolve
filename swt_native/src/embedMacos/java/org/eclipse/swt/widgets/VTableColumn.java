@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VTableColumn extends VItem {
 
     protected VTableColumn() {
@@ -41,7 +37,6 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).resizable = value;
     }
 
-    @JsonAttribute(ignore = true)
     public String getToolTipText() {
         return ((DartTableColumn) impl).getToolTipText();
     }
@@ -58,55 +53,109 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).width = value;
     }
 
-    public static final String ALIGNMENT = "alignment";
+    public static final int ALIGNMENT = 559;
 
-    public static final String MOVEABLE = "moveable";
+    public static final int MOVEABLE = 560;
 
-    public static final String RESIZABLE = "resizable";
+    public static final int RESIZABLE = 561;
 
-    public static final String WIDTH = "width";
+    public static final int WIDTH = 562;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "alignment":
-                Serializer.writeKeyValue(writer, "alignment", getAlignment());
-                return;
-            case "moveable":
-                Serializer.writeKeyValue(writer, "moveable", getMoveable());
-                return;
-            case "resizable":
-                Serializer.writeKeyValue(writer, "resizable", getResizable());
-                return;
-            case "width":
-                Serializer.writeKeyValue(writer, "width", getWidth());
-                return;
+            case ALIGNMENT:
+                return "alignment";
+            case MOVEABLE:
+                return "moveable";
+            case RESIZABLE:
+                return "resizable";
+            case WIDTH:
+                return "width";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = TableColumn.class)
-    public static class TableColumnJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTableColumn.class, (JsonWriter.WriteObject<DartTableColumn>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTableColumn.class, (JsonReader.ReadObject<DartTableColumn>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 559:
+                w.write((int) getAlignment());
+                return true;
+            case 560:
+                w.write(getMoveable());
+                return true;
+            case 561:
+                w.write(getResizable());
+                return true;
+            case 562:
+                w.write((int) getWidth());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TableColumn read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 559:
+                {
+                    int v_ = getAlignment();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(559);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 560:
+                {
+                    boolean v_ = getMoveable();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(560);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 561:
+                {
+                    boolean v_ = getResizable();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(561);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 562:
+                {
+                    int v_ = getWidth();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(562);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TableColumn api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 559, 560, 561, 562 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

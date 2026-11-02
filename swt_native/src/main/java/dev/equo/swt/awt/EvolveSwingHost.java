@@ -261,11 +261,31 @@ public final class EvolveSwingHost {
 
     /**
      * Never below 1x1: a component added to a 0x0 frame is never laid out. {@code root} paints only
-     * once the area is real.
+     * once the area is real, and is placed only after the frame is laid out at it: placed content
+     * revalidates from the root pane at the bounds the frame last gave it, and a {@code JSplitPane}
+     * laid out and painted at the placeholder 1x1 collapses its top component for good.
      */
     static void sizeBlitFrame(Component frame, ContentRoot root, Rectangle area) {
-        if (area.width > 0 && area.height > 0) root.place();
         frame.setSize(Math.max(1, area.width), Math.max(1, area.height));
+        if (area.width > 0 && area.height > 0 && !root.isPlaced()) {
+            frame.validate();
+            root.place();
+        }
+    }
+
+    /**
+     * Lays the frame's tree out at {@code area}. An empty area leaves it as it is: the frame is then
+     * at its 1x1 floor, and a {@code JSplitPane} laid out there doesn't get its divider back when the
+     * area does.
+     */
+    static void layOutBlitContent(JComponent rootPane, ContentRoot contentRoot, Rectangle area) {
+        if (area.width <= 0 || area.height <= 0) return;
+        if (rootPane != null) {
+            rootPane.setBounds(0, 0, area.width, area.height);
+            rootPane.revalidate();
+        }
+        contentRoot.revalidate();
+        contentRoot.repaint();
     }
 
     /**
@@ -906,6 +926,10 @@ public final class EvolveSwingHost {
             attach.forEach(this::attach);
         }
 
+        boolean isPlaced() {
+            return placed;
+        }
+
         /**
          * Adds application content, held out of the tree until {@link #place}: an applet repaints
          * from itself rather than through {@link #paintChildren}, and a {@code JSplitPane} painted at
@@ -1043,21 +1067,12 @@ public final class EvolveSwingHost {
                 Rectangle a = canvas.getClientArea();
                 EventQueue.invokeLater(() -> {
                     sizeBlitFrame(frame, contentRoot, a);
-                    final int w = frame.getWidth(), h = frame.getHeight();
                     // JLightweightFrame.reshape() reallocates the off-screen buffer and repaints
                     // immediately, but the content tree is still laid out for the old size, so that
                     // repaint fills the new buffer with background and drops the components — they
                     // stay invisible until some later event repaints them. Lay the tree out and ask
                     // for the repaint on a following EDT pass, once the reallocation has settled.
-                    EventQueue.invokeLater(() -> {
-                        javax.swing.JRootPane root = frame.getRootPane();
-                        if (root != null) {
-                            root.setBounds(0, 0, w, h);
-                            root.revalidate();
-                        }
-                        contentRoot.revalidate();
-                        contentRoot.repaint();
-                    });
+                    EventQueue.invokeLater(() -> layOutBlitContent(frame.getRootPane(), contentRoot, a));
                 });
                 syncFrameLocation(canvas, frame);
                 syncOwner();

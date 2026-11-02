@@ -5,7 +5,7 @@
 /// applying it to any other state is silent corruption, and dropping it loses the change for good.
 /// Neither of the things you can do with a stale snapshot works on a partial update.
 ///
-/// So a partial frame names the state it was computed from, in `_b`, and this gate compares that
+/// So a change names the state it was computed from, its base, and this gate compares that
 /// against what the widget holds. On a mismatch it neither applies nor discards: it asks for the
 /// widget to be re-sent whole, which is correct whatever the cause — a frame lost, delivered twice,
 /// or overtaken by one from another path.
@@ -15,6 +15,8 @@
 /// suites assert this counter is zero. A recovery firing is a defect that has already been contained
 /// — the point is to hear about it, not to survive it quietly.
 library;
+
+import 'widget_key.dart';
 
 /// What to do with a frame.
 enum FrameAction {
@@ -35,18 +37,13 @@ enum FrameAction {
 /// update cannot be applied to the state held here.
 const String widgetRefreshChannel = 'swt.evolve.widget.refresh';
 
-/// Protocol keys. Underscore-prefixed so they cannot collide with a widget property name.
-const String kChangedKeys = '_d';
-const String kBase = '_b';
-const String kSeq = '_s';
-
 /// The client's gate. One per client, because "what state does this widget hold" is a fact about
 /// the client as a whole rather than about any widget that happens to be mounted.
 final DeliveryGate deliveryGate = DeliveryGate();
 
 class DeliveryGate {
-  /// Write stamp of the state currently held, per channel.
-  final Map<String, int> _held = <String, int>{};
+  /// Write stamp of the state currently held, per widget (see [WidgetKey]).
+  final Map<int, int> _held = <int, int>{};
 
   /// Mismatches that had to be repaired by re-sending a widget. Expected to stay at zero.
   int recoveries = 0;
@@ -54,93 +51,64 @@ class DeliveryGate {
   /// Frames that arrived twice and were dropped as already-applied. Wasteful, not wrong.
   int duplicates = 0;
 
-  /// What should be done with [frame] on [channel], given what that channel already holds.
-  ///
-  /// Recording the outcome is the caller's job ([applied]), because a frame that fails to decode or
-  /// that the caller declines to apply must not advance what we believe is held.
-  FrameAction decide(String channel, Map<String, dynamic> frame) {
-    final int? held = _held[channel];
-    final int seq = _intOf(frame[kSeq]) ?? 0;
+  /// What should be done with a whole description of [channel] stamped [seq]: Java stamps every
+  /// write from one counter, so one written no later than the state held describes the past.
+  FrameAction decideWhole(String channel, int seq) =>
+      decideWholeAt(WidgetKey.ofChannel(channel), seq);
 
-    if (!frame.containsKey(kChangedKeys)) {
-      // A whole widget, but not necessarily news of one. Java stamps every write from one counter,
-      // so a description written no later than the state already held describes the past: a frame
-      // buffered before anything was listening and replayed on arrival, or the same one delivered
-      // twice. Taking it would rewind the widget. This is the rule a value arriving inside its
-      // parent is held to as well - what decides is when it was written, never where it came from.
-      if (held != null && seq != 0 && seq <= held) {
-        duplicates++;
-        return FrameAction.ignore;
-      }
-      return FrameAction.replace;
+  /// [decideWhole] for the widget [key].
+  FrameAction decideWholeAt(int key, int seq) {
+    final int? held = _held[key];
+    if (held != null && seq <= held) {
+      duplicates++;
+      return FrameAction.ignore;
     }
+    return FrameAction.replace;
+  }
 
-    // A partial update for a widget we have never seen whole. There is nothing to merge into, and
-    // guessing at a starting state is exactly the corruption this gate exists to prevent.
+  /// What should be done with a change to [channel] stamped [seq] and computed from [base]: merged
+  /// only into exactly the state it was computed from.
+  FrameAction decideChange(String channel, int seq, int base) =>
+      decideChangeAt(WidgetKey.ofChannel(channel), seq, base);
+
+  /// [decideChange] for the widget [key].
+  FrameAction decideChangeAt(int key, int seq, int base) {
+    final int? held = _held[key];
     if (held == null) {
       recoveries++;
       return FrameAction.recover;
     }
-
-    // It extends whatever its channel last described - a GC's state changes within a paint. It
-    // reaches this gate only when replayed from frames held before anything listened.
-    if (isResourceChange(frame)) return FrameAction.merge;
-
-    // A change written no later than the state already held, which is the same rule a whole frame
-    // is judged by above and for the same reason: the counter is one, so the held state was written
-    // afterwards and already describes the widget more recently. Equal is that frame delivered
-    // twice; older is one that lost its race - a frame batched to the end of a flush while a whole
-    // description of the same widget went straight out, and a widget written twice in a flush is
-    // ordinary. Neither is news, and neither is a reason to ask for the widget again.
-    if (seq != 0 && seq <= held) {
+    if (seq <= held) {
       duplicates++;
       return FrameAction.ignore;
     }
-
-    final int? base = _intOf(frame[kBase]);
-    if (base != null && base == held) return FrameAction.merge;
-
-    // Computed from a state this widget does not hold: something was lost, reordered, or arrived
-    // from a path that had a different idea of the widget's state.
+    if (base == held) return FrameAction.merge;
     recoveries++;
     return FrameAction.recover;
   }
 
   /// Records that [channel] now holds the state stamped [seq]. Call only after applying.
-  void applied(String channel, int seq) {
-    _held[channel] = seq;
+  void applied(String channel, int seq) => appliedAt(WidgetKey.ofChannel(channel), seq);
+
+  /// [applied] for the widget [key].
+  void appliedAt(int key, int seq) {
+    _held[key] = seq;
   }
 
   /// Forgets [channel] — the widget is gone, or its state must be re-established from a full frame.
-  void forget(String channel) {
-    _held.remove(channel);
+  void forget(String channel) => forgetAt(WidgetKey.ofChannel(channel));
+
+  /// [forget] for the widget [key].
+  void forgetAt(int key) {
+    _held.remove(key);
   }
 
   /// The write stamp of the state [channel] holds, or null if it holds none.
-  int? heldSeq(String channel) => _held[channel];
-
-  /// The stamp a frame carries — the state it leaves the widget in once applied.
-  ///
-  /// Read from the frame rather than from the widget afterwards: a partial update changes the
-  /// properties it names and nothing else, so the widget's own stamp is still the one from before
-  /// it. Recording that would tell the next update to fit a state that has already moved on.
-  static int seqOf(Map<String, dynamic> frame) => _intOf(frame[kSeq]) ?? 0;
-
-  /// Whether [frame] is a resource's change rather than a widget's. A resource's channel names it
-  /// and delivers in order, so its change carries no widget, no stamps and no base.
-  static bool isResourceChange(Map<String, dynamic> frame) =>
-      frame.containsKey(kChangedKeys) && seqOf(frame) == 0 && !frame.containsKey(kBase);
+  int? heldSeq(String channel) => _held[WidgetKey.ofChannel(channel)];
 
   void reset() {
     _held.clear();
     recoveries = 0;
     duplicates = 0;
-  }
-
-  /// Numbers survive JSON as int or double depending on how they were written.
-  static int? _intOf(Object? value) {
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    return null;
   }
 }

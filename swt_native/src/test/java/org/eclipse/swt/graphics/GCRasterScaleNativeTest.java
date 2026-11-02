@@ -2,7 +2,9 @@ package org.eclipse.swt.graphics;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -15,7 +17,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,8 +59,10 @@ class GCRasterScaleNativeTest {
             System.setProperty("swt.autoScale", autoScale);
     }
 
-    private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).collect(Collectors.joining());
+    /** Whether a nine-argument drawImage went out with {@code area} after its image. */
+    private boolean blitted(Object... area) {
+        return GcFrames.argsOf(bridge.comm.sent, "drawImageImageintintintintintintintint").stream()
+                .anyMatch(args -> WireValues.same(args.subList(1, args.size()), java.util.Arrays.asList(area)));
     }
 
     @Test
@@ -89,7 +92,8 @@ class GCRasterScaleNativeTest {
         gc.drawImage(image, 0, 0, 5, 5, 0, 0, 5, 5);
         gc.dispose();
 
-        assertThat(wire()).contains(",0,0,20,20,5,5,10,10]").contains(",0,0,10,10,0,0,5,5]");
+        assertThat(blitted(0, 0, 20, 20, 5, 5, 10, 10)).isTrue();
+        assertThat(blitted(0, 0, 10, 10, 0, 0, 5, 5)).isTrue();
         image.dispose();
     }
 

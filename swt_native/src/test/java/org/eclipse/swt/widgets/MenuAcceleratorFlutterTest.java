@@ -234,6 +234,22 @@ class MenuAcceleratorFlutterTest {
     }
 
     @Test
+    @DisplayName("Escape while a pop-up is shown takes it down, and the focused Text does not get the key")
+    void escapeClosesAShownPopup() {
+        Menu popup = new Menu(shell, SWT.POP_UP);
+        new MenuItem(popup, SWT.PUSH).setText("One");
+        popup.addListener(SWT.Hide, e -> events.add("Hide"));
+        popup.setVisible(true);
+        drain();
+        events.clear();
+
+        press(0, (char) SWT.ESC);
+
+        assertThat(popup.isVisible()).isFalse();
+        assertThat(events).containsExactly("Hide");
+    }
+
+    @Test
     @DisplayName("another shell's menu bar does not take the key")
     void otherShell() {
         Text field = openDialog();

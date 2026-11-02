@@ -17,13 +17,34 @@ public class ControlHelper {
 
     // The control each native Shell last announced as activated, so the next announcement can end it.
     // Only an embedded Dart control in a native Shell lands here: a Dart Shell tracks its own active
-    // control (FlutterBridge.setActiveControl). Keyed by Shell, which belongs to one Display.
-    private static final Map<Shell, Control> lastActivated =
+    // control (FlutterBridge.setActiveControl). The control is held weakly: it is inside the Shell, so
+    // a strong value would keep its own key alive.
+    private static final Map<Shell, java.lang.ref.WeakReference<Control>> lastActivated =
             Collections.synchronizedMap(new WeakHashMap<>());
 
     // Area the Paint being dispatched is scoped to, null when it covers the whole client area. A GC
     // opened during that dispatch carries it to Flutter, which composites within it.
     private static Rectangle paintDamage;
+
+    /** The outline Evolve draws inside the bounds of a control created with BORDER. */
+    static final int BORDER_WIDTH = 1;
+
+    /** The border Evolve draws on each side of a control created with BORDER, 0 without one. */
+    static int borderWidth(DartControl control) {
+        return (control.getApi().style & SWT.BORDER) != 0 ? BORDER_WIDTH : 0;
+    }
+
+    /**
+     * The id of the live DragSource or DropTarget a control holds under {@code key} ({@code DND.DRAG_SOURCE_KEY}
+     * or {@code DND.DROP_TARGET_KEY}), or null, for the client to address it by.
+     */
+    public static Long dndId(Widget control, String key) {
+        Object held = control.isDisposed() ? null : control.getData(key);
+        if (!(held instanceof org.eclipse.swt.dnd.DragSource || held instanceof org.eclipse.swt.dnd.DropTarget)
+                || ((Widget) held).isDisposed())
+            return null;
+        return FlutterBridge.id(((Widget) held).getImpl());
+    }
 
     /** The damage the in-flight Paint is scoped to, or null outside one / for a full-area Paint. */
     public static Rectangle currentPaintDamage() {
@@ -189,6 +210,11 @@ public class ControlHelper {
                     case SWT.TRAVERSE_MNEMONIC:
                         traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
                         break;
+                    // A lone radio has no sibling to move to and keeps the key, as natively.
+                    case SWT.TRAVERSE_ARROW_NEXT:
+                    case SWT.TRAVERSE_ARROW_PREVIOUS:
+                        traversed = control.traverseItem(e.detail == SWT.TRAVERSE_ARROW_NEXT);
+                        break;
                     default:
                         break;
                 }
@@ -313,8 +339,8 @@ public class ControlHelper {
 
     /**
      * Mirrors the natives' {@code traversalCode}: arrows stay in the control except in a radio
-     * button, a key-listening Canvas keeps every key, and an editable multi-line Text keeps Enter,
-     * unless a Traverse listener lets it go.
+     * button, a key-listening canvas Composite keeps every key, and an editable multi-line Text
+     * keeps Enter, unless a Traverse listener lets it go.
      */
     private static boolean traversesByDefault(DartControl control, int detail) {
         if (detail == SWT.TRAVERSE_ARROW_NEXT || detail == SWT.TRAVERSE_ARROW_PREVIOUS)
@@ -324,19 +350,31 @@ public class ControlHelper {
             if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)
                 return false;
         }
-        if (control.getApi() instanceof Canvas) {
-            if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0)
-                return false;
-            if (control.hooks(SWT.KeyDown) || control.hooks(SWT.KeyUp))
-                return false;
-        }
+        // Composite.traversalCode on GTK and Cocoa: a canvas that is NO_FOCUS or hooks a key keeps it.
+        if (isCanvasComposite(control.getApi()) && ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0
+                || control.hooks(SWT.KeyDown) || control.hooks(SWT.KeyUp)))
+            return false;
         return true;
+    }
+
+    /**
+     * Whether the natives create {@code control} as a plain canvas (their CANVAS state): every
+     * Composite but the subclasses that wrap a native control of their own.
+     */
+    private static boolean isCanvasComposite(Control control) {
+        return control instanceof Composite && !(control instanceof Combo || control instanceof CoolBar
+                || control instanceof DateTime || control instanceof ExpandBar || control instanceof Group
+                || control instanceof Spinner || control instanceof TabFolder || control instanceof Table
+                || control instanceof ToolBar || control instanceof Tree);
     }
 
     /** Whether {@code control} or a control inside it takes the focus from Tab, as natively. */
     static boolean hasTabStop(Control control) {
         if (control == null || control.isDisposed() || !control.getVisible() || !control.getEnabled())
             return false;
+        // A ToolBar with no enabled item has nowhere for Tab to stop, on every native.
+        if (control instanceof ToolBar)
+            return hasEnabledItem((ToolBar) control);
         if (isTabStop(control))
             return true;
         if (control instanceof Composite) {
@@ -348,8 +386,11 @@ public class ControlHelper {
         return false;
     }
 
-    /** The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. */
-    private static boolean isTabStop(Control control) {
+    /**
+     * The controls Tab focuses on every native; a Label, Group, Sash, bar or gauge never is one. The one
+     * rule: the client reads it as {@code VControl.tabStop}.
+     */
+    static boolean isTabStop(Control control) {
         if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control))
             return true;
         if ((control.getStyle() & SWT.NO_FOCUS) != 0)
@@ -361,11 +402,31 @@ public class ControlHelper {
             return true;
         if (control instanceof Link)
             return holdsLink(((Link) control).getText());
-        if (control instanceof Canvas && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
+        // A ToolBar is one stop, entered on its first enabled item, which the client picks: GTK's bar is
+        // one tab group and Cocoa focuses its first item. Win32 alone makes one that is not FLAT NO_FOCUS.
+        if (control instanceof ToolBar)
+            return true;
+        // Composite.setTabGroupFocus: a Canvas or plain Composite takes Tab when it hooks a key event,
+        // children or not.
+        if (isCanvasComposite(control) && !(control instanceof Decorations) && control.getImpl() instanceof DartWidget) {
             DartWidget impl = (DartWidget) control.getImpl();
             return impl.hooks(SWT.KeyDown) || impl.hooks(SWT.KeyUp);
         }
         return false;
+    }
+
+    private static boolean hasEnabledItem(ToolBar bar) {
+        for (ToolItem item : bar.getItems()) {
+            if ((item.getStyle() & SWT.SEPARATOR) == 0 && item.getEnabled())
+                return true;
+        }
+        return false;
+    }
+
+    /** A key listener added or removed can change whether the control is a Tab stop. */
+    static void keyHooksChanged(DartWidget widget, int eventType) {
+        if ((eventType == SWT.KeyDown || eventType == SWT.KeyUp) && widget instanceof DartControl)
+            ((DartControl) widget).getValue().markDirty(VControl.TAB_STOP);
     }
 
     /** Whether a Link's text holds a link: {@code <a} followed by {@code >} or whitespace, as Link.parse reads one. */
@@ -376,6 +437,26 @@ public class ControlHelper {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * The direction {@link SWT#AUTO_TEXT_DIRECTION} gives {@code text}: that of its first strong Bidi
+     * character, or {@link SWT#NONE} when it has none.
+     */
+    public static int resolveTextDirection(String text) {
+        for (int i = 0; i < text.length(); ) {
+            int codePoint = text.codePointAt(i);
+            switch (Character.getDirectionality(codePoint)) {
+                case Character.DIRECTIONALITY_LEFT_TO_RIGHT:
+                    return SWT.LEFT_TO_RIGHT;
+                case Character.DIRECTIONALITY_RIGHT_TO_LEFT:
+                case Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC:
+                    return SWT.RIGHT_TO_LEFT;
+                default:
+                    i += Character.charCount(codePoint);
+            }
+        }
+        return SWT.NONE;
     }
 
     public static boolean isModifierKey(int keyCode) {
@@ -448,7 +529,7 @@ public class ControlHelper {
 
     /** Answers the client's held context menu after the MenuDetect listeners have run. */
     public static void sendMenuDetectVerdict(DartWidget widget, Event e) {
-        dev.equo.swt.FlutterBridge.send(widget, "menu/verdict", dev.equo.swt.Java8.map("doit", e.doit));
+        dev.equo.swt.FlutterBridge.send(widget, dev.equo.swt.WireTable.CHANNEL_MENU_VERDICT, dev.equo.swt.Java8.map("doit", e.doit));
     }
 
     /**
@@ -458,6 +539,14 @@ public class ControlHelper {
      */
     public static boolean isGatedTraversal(Event keyEvent) {
         return keyEvent.keyCode == SWT.TAB;
+    }
+
+    /**
+     * Whether Java's Tab verdict for the focused {@code control} can be false, so the client waits
+     * for it: a Traverse listener may veto the Tab, or the control keeps Tab by default.
+     */
+    static boolean mayKeepTab(DartControl control) {
+        return control.hooks(SWT.Traverse) || !traversesByDefault(control, SWT.TRAVERSE_TAB_NEXT);
     }
 
     /** True when the key event is an {@code Alt+<letter/digit>} mnemonic trigger (no Ctrl/Command). */
@@ -780,6 +869,18 @@ public class ControlHelper {
             dispatchPaint(c);
     }
 
+    /** A held Paint, run now on the control's own thread; whether it was still wanted and ran. */
+    static boolean paintHeldNow(DartControl c) {
+        if (!paintState(c).queued)
+            return false;
+        paintState(c).queued = false;
+        // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
+        if (c.drawCount > 0)
+            return false;
+        firePaint(c);
+        return true;
+    }
+
     private static void dispatchPaint(DartControl c) {
         c.getDisplay().asyncExec(() -> {
             paintState(c).queued = false;
@@ -899,7 +1000,12 @@ public class ControlHelper {
      * a microtask after the press, behind the MouseDown it caused.
      */
     public static void pressed(DartControl control, Event event) {
+        if (control instanceof DartList)
+            ListHelper.pressed((DartList) control, event);
+        if (control.isDisposed())
+            return;
         MenuHelper.forgetLoneAlt(control.getDisplay());
+        DragDetectHelper.forgetAnswer(control.getDisplay());
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;
@@ -912,6 +1018,12 @@ public class ControlHelper {
             control.getBridge().focusClient(control);
     }
 
+    /** What a native release does after SWT.MouseUp reaches listeners: a List reports the click's Selection. */
+    public static void released(DartControl control) {
+        if (control instanceof DartList)
+            ListHelper.released((DartList) control);
+    }
+
     /**
      * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
      * <p>
@@ -922,7 +1034,8 @@ public class ControlHelper {
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
-     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out.
+     * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out, and
+     * so is a READ_ONLY Combo, which no native focuses on a right press.
      */
     static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
@@ -933,7 +1046,7 @@ public class ControlHelper {
         boolean fieldOrItemView = api instanceof Combo || api instanceof Spinner || api instanceof Table
                 || api instanceof Tree || api instanceof Text;
         if (button == 3)
-            return fieldOrItemView;
+            return fieldOrItemView && !(api instanceof Combo && (api.getStyle() & SWT.READ_ONLY) != 0);
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
                 || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
                 || api instanceof org.eclipse.swt.custom.StyledText);
@@ -994,7 +1107,8 @@ public class ControlHelper {
         // drive too. A second tracker here announced every focus change twice, once from each.
         if (control.getBridge().setActiveControl(control, detail))
             return;
-        Control previous = lastActivated.put(shell, now);
+        java.lang.ref.WeakReference<Control> held = lastActivated.put(shell, new java.lang.ref.WeakReference<>(now));
+        Control previous = held == null ? null : held.get();
         // An open shell is the active control of itself until something inside it takes over -- what
         // Shell.setActiveControl(this) establishes natively when the shell activates. Treating an
         // untracked shell as inactive instead makes the first focus inside it announce the shell too.

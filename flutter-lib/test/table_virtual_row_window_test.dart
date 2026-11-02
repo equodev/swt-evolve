@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const int _declaredRows = 50000;
 const int _loadedRows = 5000;
@@ -50,7 +51,7 @@ class _CapturingTableSwt extends TableSwt<VTable> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VTable val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VTable val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 Widget _wrap(VTable value,

@@ -1,36 +1,26 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.Serializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The web surface's inbound window payloads, decoded the way the comm really decodes them.
- *
- * <p>This exists because a test double that hands a handler an object it built itself cannot see the
- * step that actually failed: a payload class of our own has no generated reader, so the frame was
- * rejected at deserialization and the handler never ran at all. A browser that refuses to open a
- * window then went unheard, and the shell it was for was drawn in no window and no page — the one
- * outcome the fallback exists to prevent. So the assertion here is on a real decode of the real
- * bytes the client sends.
+ * The web surface's inbound window payloads, decoded from the bytes the client sends: a refusal the
+ * handler cannot read leaves the shell drawn in no window and no page.
  */
 @Tag("native-unit")
 class WebWindowPayloadNativeTest {
-
-    private final Serializer serializer = new Serializer();
 
     @Test
     @DisplayName("the shell id survives a real decode of what the client sends")
     void windowOpenFailedDecodes() throws Exception {
         long shellId = 195801026L;
-        Object decoded = decode("{\"shellId\":" + shellId + "}");
-
-        assertThat(WebDisplayBridge.shellIdOf(decoded))
+        assertThat(WebDisplayBridge.shellIdOf(wire(shellId)))
                 .as("a payload that cannot be decoded is a window refusal nobody hears")
                 .isEqualTo(shellId);
     }
@@ -38,10 +28,7 @@ class WebWindowPayloadNativeTest {
     @Test
     @DisplayName("a payload with no shell id names no shell, rather than naming shell 0")
     void missingShellIdIsNotZeroShell() throws Exception {
-        assertThat(WebDisplayBridge.shellIdOf(decode("{}"))).isZero();
-        assertThat(WebDisplayBridge.shellIdOf(decode("{\"other\":1}"))).isZero();
-        assertThat(WebDisplayBridge.shellIdOf(null)).isZero();
-        assertThat(WebDisplayBridge.shellIdOf("not a payload")).isZero();
+        assertThat(WebDisplayBridge.shellIdOf(ByteBuffer.wrap(new byte[0]))).isZero();
     }
 
     @Test
@@ -68,8 +55,15 @@ class WebWindowPayloadNativeTest {
                 .contains("enableTestSemantics=true");
     }
 
-    private Object decode(String json) throws Exception {
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        return serializer.from(Object.class, bytes, 0, bytes.length);
+    /** {@code v} as the client writes an id: a zigzag varint. */
+    private static ByteBuffer wire(long v) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        long z = (v << 1) ^ (v >> 63);
+        while ((z & ~0x7FL) != 0) {
+            out.write((int) ((z & 0x7F) | 0x80));
+            z >>>= 7;
+        }
+        out.write((int) z);
+        return ByteBuffer.wrap(out.toByteArray());
     }
 }

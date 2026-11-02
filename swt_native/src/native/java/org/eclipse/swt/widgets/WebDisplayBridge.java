@@ -68,10 +68,11 @@ public class WebDisplayBridge extends DisplayBridge {
 
     private void registerClipboard(long displayId) {
         clipboardDisplayId = displayId;
-        comm().on("Display/" + displayId + "/Clipboard/contents", java.util.Map.class, reply -> {
-            if (reply == null) return;
-            java.util.concurrent.CompletableFuture<String> read = clipboardReads.remove(String.valueOf(reply.get("reqId")));
-            if (read != null) read.complete(reply.get("text") instanceof String ? (String) reply.get("text") : null);
+        // The request's id, then the text (absent when the browser handed over none).
+        comm().on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_CLIPBOARD_CONTENTS, java.nio.ByteBuffer.class, reply -> {
+            dev.equo.swt.WireReader r = new dev.equo.swt.WireReader(reply);
+            java.util.concurrent.CompletableFuture<String> read = clipboardReads.remove(r.string());
+            if (read != null) read.complete(r.string());
         });
     }
 
@@ -79,7 +80,7 @@ public class WebDisplayBridge extends DisplayBridge {
     @Override
     public void writeClipboardText(String text) {
         try {
-            serializeAndSend("Display/" + clipboardDisplayId + "/Clipboard/write", dev.equo.swt.Java8.map("text", text));
+            serializeAndSend(dev.equo.swt.WireTable.TYPE_DISPLAY, clipboardDisplayId, dev.equo.swt.WireTable.CHANNEL_CLIPBOARD_WRITE, dev.equo.swt.Java8.map("text", text));
         } catch (java.io.IOException e) {
             e.printStackTrace();
         }
@@ -95,7 +96,7 @@ public class WebDisplayBridge extends DisplayBridge {
         java.util.concurrent.CompletableFuture<String> read = new java.util.concurrent.CompletableFuture<>();
         clipboardReads.put(reqId, read);
         try {
-            serializeAndSend("Display/" + clipboardDisplayId + "/Clipboard/read", dev.equo.swt.Java8.map("reqId", reqId));
+            serializeAndSend(dev.equo.swt.WireTable.TYPE_DISPLAY, clipboardDisplayId, dev.equo.swt.WireTable.CHANNEL_CLIPBOARD_READ, dev.equo.swt.Java8.map("reqId", reqId));
         } catch (java.io.IOException e) {
             clipboardReads.remove(reqId);
             return null;
@@ -214,6 +215,7 @@ public class WebDisplayBridge extends DisplayBridge {
                 launchBrowserUnlessThePageReturns(webServer);
             } else {
                 webServer.launchBrowser();
+                if (webServer.launchedHeadlessBrowser()) awaitHeadlessClient(comm);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to start web server for Display", e);
@@ -223,6 +225,24 @@ public class WebDisplayBridge extends DisplayBridge {
         FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
         dev.equo.swt.ProxyCookieJar.registerDisplayLookup(WebDisplayBridge::lookupProxyCookies);
         FlutterBridgeSpi.notifyDisplayCreated(display.getApi());
+    }
+
+    /** How long a Display waits for the headless browser it launched to connect, on a loaded machine. */
+    private static final long HEADLESS_CONNECT_WAIT_MS = 60_000;
+
+    /**
+     * The headless browser is this Display's own, so the Display is ready once it has connected.
+     * Until then every frame waits in the comm, and an answer a caller waits on, a pixel read-back
+     * say, spends its budget on the browser starting.
+     */
+    private static void awaitHeadlessClient(CommService comm) throws InterruptedException {
+        if (!(comm instanceof dev.equo.swt.comm.AbstractBinaryCommService)) return;
+        dev.equo.swt.comm.AbstractBinaryCommService binary = (dev.equo.swt.comm.AbstractBinaryCommService) comm;
+        long deadline = System.currentTimeMillis() + HEADLESS_CONNECT_WAIT_MS;
+        while (!binary.hasClient() && System.currentTimeMillis() < deadline) Thread.sleep(10);
+        if (!binary.hasClient()) {
+            System.err.println("[WebDisplayBridge] The headless browser did not connect within " + HEADLESS_CONNECT_WAIT_MS + "ms");
+        }
     }
 
     /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */
@@ -263,21 +283,18 @@ public class WebDisplayBridge extends DisplayBridge {
     protected void registerWindowControls(DartDisplay display) {
         long displayId = display.getApi().hashCode();
         CommService comm = comm();
-        String win = "Display/" + displayId + "/";
         Display winApi = display.getApi();
-        comm.on(win + "WinMinimize", String.class, s -> winApi.asyncExec(() -> {
+        comm.on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_WIN_MINIMIZE, String.class, s -> winApi.asyncExec(() -> {
             if (chromiumLauncher != null) chromiumLauncher.minimizeWindow();
         }));
         csdMaxStrategy = System.getProperty("dev.equo.swt.csd.maximize", "direct");
-        comm.on(win + "WinMaximize", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, true));
-        comm.on(win + "WinRestore", Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
-        comm.on(win + "WinClose", String.class, s -> onClientWindowClosed());
-        comm.on(win + "WinUnload", String.class, s -> scheduleDeferredClose());
+        comm.on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_WIN_MAXIMIZE, Rectangle.class, rect -> applyCsdMaximize(winApi, rect, true));
+        comm.on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_WIN_RESTORE, Rectangle.class, rect -> applyCsdMaximize(winApi, rect, false));
+        comm.on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_WIN_CLOSE, String.class, s -> onClientWindowClosed());
+        comm.on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_WIN_UNLOAD, String.class, s -> scheduleDeferredClose());
         // A browser refused the window (popup blocker, or the user's browser opened nothing). The
         // shell has to go back to being drawn inside this one, or it would exist nowhere at all.
-        // Read as a plain Object: that reader is registered for every comm, whereas a payload class
-        // of our own needs one generated for it, and without it this never arrives at all.
-        comm.on(win + "WindowOpenFailed", Object.class, payload -> {
+        comm.on(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, dev.equo.swt.WireTable.CHANNEL_WINDOW_OPEN_FAILED, java.nio.ByteBuffer.class, payload -> {
             long shellId = shellIdOf(payload);
             if (shellId != 0) winApi.asyncExec(() -> onShellWindowRejected(shellId));
         });
@@ -285,14 +302,9 @@ public class WebDisplayBridge extends DisplayBridge {
 
     // ---- one browser window per detached shell (see WindowPolicy) ---------------------------------
 
-    /** The {@code shellId} in a window payload, or 0 when it carries none. Package-private so a test
-     *  can put a really-decoded payload through it. */
-    static long shellIdOf(Object payload) {
-        if (payload instanceof java.util.Map<?, ?>) {
-            Object shellId = ((java.util.Map<?, ?>) payload).get("shellId");
-            if (shellId instanceof Number) return ((Number) shellId).longValue();
-        }
-        return 0;
+    /** The shell id a window payload carries, or 0 when it carries none. */
+    static long shellIdOf(java.nio.ByteBuffer payload) {
+        return payload.hasRemaining() ? new dev.equo.swt.WireReader(payload).int64() : 0;
     }
 
     /** Shells whose window the browser refused, so the policy is not asked about them again. */
@@ -320,7 +332,7 @@ public class WebDisplayBridge extends DisplayBridge {
         String url = shellWindowUrl(webServer.getApplicationUrl(), shell.hashCode(),
                 effectiveTheme(), isTestSemanticsEnabled());
         WebShellWindow window = new WebShellWindow(shell);
-        window.command("OpenWindow", Java8.map(
+        window.command(dev.equo.swt.WireTable.CHANNEL_OPEN_WINDOW, Java8.map(
                 "shellId", (long) shell.hashCode(),
                 "url", url,
                 "x", bounds.x,
@@ -329,7 +341,7 @@ public class WebDisplayBridge extends DisplayBridge {
                 "height", bounds.height > 0 ? bounds.height : 480,
                 "title", shell.getText() == null ? "" : shell.getText()));
         // The window the user closes is the one that tells us; the shell has no other way to hear it.
-        comm().on("Shell/" + shell.hashCode() + "/WinUnload", String.class,
+        comm().on(dev.equo.swt.WireTable.TYPE_SHELL, shell.hashCode(), dev.equo.swt.WireTable.CHANNEL_WIN_UNLOAD, String.class,
                 s -> closeShellFromWindow(shell));
         return window;
     }
@@ -393,10 +405,11 @@ public class WebDisplayBridge extends DisplayBridge {
             this.shell = shell;
         }
 
-        void command(String name, java.util.Map<String, Object> payload) {
+        /** Sends {@code payload} on the display's window channel numbered {@code channel}. */
+        void command(int channel, java.util.Map<String, Object> payload) {
             if (forDisplay == null) return;
             try {
-                serializeAndSend("Display/" + forDisplay.getApi().hashCode() + "/" + name, payload);
+                serializeAndSend(dev.equo.swt.WireTable.TYPE_DISPLAY, forDisplay.getApi().hashCode(), channel, payload);
             } catch (java.io.IOException e) {
                 e.printStackTrace();
             }
@@ -409,12 +422,12 @@ public class WebDisplayBridge extends DisplayBridge {
 
         @Override
         public void setTitle(String title) {
-            command("WindowTitle", Java8.map("shellId", (long) shell.hashCode(), "title", title));
+            command(dev.equo.swt.WireTable.CHANNEL_WINDOW_TITLE, Java8.map("shellId", (long) shell.hashCode(), "title", title));
         }
 
         @Override
         public void setBounds(Rectangle bounds) {
-            command("WindowBounds", Java8.map(
+            command(dev.equo.swt.WireTable.CHANNEL_WINDOW_BOUNDS, Java8.map(
                     "shellId", (long) shell.hashCode(),
                     "x", bounds.x, "y", bounds.y,
                     "width", bounds.width, "height", bounds.height));
@@ -422,7 +435,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
         @Override
         public void setState(int state) {
-            command("WindowState", Java8.map(
+            command(dev.equo.swt.WireTable.CHANNEL_WINDOW_STATE, Java8.map(
                     "shellId", (long) shell.hashCode(), "state", state));
         }
 
@@ -431,7 +444,7 @@ public class WebDisplayBridge extends DisplayBridge {
             // A browser window cannot be hidden and brought back: the platform has no such gesture,
             // and a tab that is closed is gone. Left showing, which is the lesser wrong -- the shell
             // it renders is hidden, so the window is empty rather than stale.
-            if (visible) command("WindowState", Java8.map(
+            if (visible) command(dev.equo.swt.WireTable.CHANNEL_WINDOW_STATE, Java8.map(
                     "shellId", (long) shell.hashCode(), "state", ShellWindow.STATE_NORMAL));
         }
 
@@ -439,8 +452,8 @@ public class WebDisplayBridge extends DisplayBridge {
         public void close() {
             if (!open) return;
             open = false;
-            comm().remove("Shell/" + shell.hashCode() + "/WinUnload");
-            command("CloseWindow", Java8.map("shellId", (long) shell.hashCode()));
+            comm().remove(dev.equo.swt.WireTable.TYPE_SHELL, shell.hashCode(), dev.equo.swt.WireTable.CHANNEL_WIN_UNLOAD);
+            command(dev.equo.swt.WireTable.CHANNEL_CLOSE_WINDOW, Java8.map("shellId", (long) shell.hashCode()));
         }
     }
 
@@ -511,7 +524,9 @@ public class WebDisplayBridge extends DisplayBridge {
     @Override
     protected void wakeForDirty() {
         DartDisplay display = forDisplay;
-        if (display != null)
+        // The UI thread is not waiting while it dirties state, and sleep() does not wait while state
+        // is dirty; a paint dirties state once per GC call.
+        if (display != null && display.thread != Thread.currentThread())
             display.wakeThread();
     }
 

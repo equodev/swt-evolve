@@ -480,6 +480,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         /*
 	* Bug in Windows.  When LVM_SETCOLUMN is used to change
 	* the alignment of a column, the column is not redrawn
@@ -735,34 +736,55 @@ public class DartTableColumn extends DartItem implements ITableColumn {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Control", "Move", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Control/Move", "Control/Resize", "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Control/Move":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ColumnHelper.movedByUser(getApi(), e.index);
+                    });
                     return;
-                ColumnHelper.movedByUser(getApi(), e.index);
-            });
-        });
-        FlutterBridge.on(this, "Control", "Resize", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Control/Resize":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        setWidth(e.width);
+                    });
                     return;
-                setWidth(e.width);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
                     return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Selection, e);
+                    });
                     return;
-                sendEvent(SWT.Selection, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public TableColumn getApi() {

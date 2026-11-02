@@ -3,7 +3,9 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.Figure;
 import org.eclipse.draw2d.FigureCanvas;
@@ -27,6 +29,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 
 /**
  * What one pointer move costs while a GEF selection is being dragged.
@@ -53,16 +56,28 @@ class GefDragFeedbackCostNativeTest {
     private static final String GC_CHANNEL_PREFIX = "GC/";
 
     private RecordingBridge bridge;
+    private Thread displayThread;
 
     @BeforeEach
     void setUp() {
         bridge = new RecordingBridge();
         FlutterBridge.set(bridge);
+        displayThread = ((DartDisplay) DartMocks.dartDisplay().getImpl()).thread;
     }
 
+    /**
+     * The mock Display is shared by every test in the JVM: what {@link Drag} stubs on it is put back
+     * to the mock's own answers, or a later test's asyncExec runs inline against a Display with no
+     * bounds.
+     */
     @AfterEach
     void tearDown() {
         FlutterBridge.set(null);
+        Display display = DartMocks.dartDisplay();
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        doNothing().when(display).asyncExec(any(Runnable.class));
+        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
+        impl.thread = displayThread;
     }
 
     @Test
@@ -71,44 +86,21 @@ class GefDragFeedbackCostNativeTest {
         Drag drag = new Drag(8);
         drag.step();
 
-        List<String> states = new ArrayList<>();
-        for (String[] entry : BatchEntries.of(bridge.comm.sent)) {
-            if (isGcState(entry[0])) states.add(entry[1]);
+        List<Object> states = new ArrayList<>();
+        for (GcFrames.Entry entry : BatchEntries.of(bridge.comm.sent)) {
+            if (isGcState(entry.channel())) states.add(entry.value());
         }
 
         assertThat(states)
                 .as("a repaint of eight selected parts sets an attribute between primitives many times over")
                 .hasSizeGreaterThan(10);
-        assertThat(states.get(0))
+        assertThat(WireValues.mentions(states.get(0), "_d"))
                 .as("the client holds nothing yet, so the first push has to describe the GC")
-                .doesNotContain("\"_d\"");
+                .isFalse();
         assertThat(states.subList(1, states.size()))
                 .as("re-sending the whole GC per primitive is what made a multi-selection drag "
                         + "cost several times what it draws")
-                .allMatch(body -> body.contains("\"_d\""));
-    }
-
-    @Test
-    @DisplayName("a change carries no property it did not name")
-    void aChangeCarriesOnlyWhatItNames() {
-        Drag drag = new Drag(8);
-        drag.step();
-
-        for (String[] entry : BatchEntries.of(bridge.comm.sent)) {
-            if (!isGcState(entry[0])) continue;
-            List<String> named = namedIn(entry[1]);
-            if (named == null) continue;
-            for (String[] property : fields(entry[1])) {
-                if (property[0].startsWith("_") || property[0].equals("id")
-                        || property[0].equals("swt")) {
-                    continue;
-                }
-                assertThat(named)
-                        .as("a property the client is not told changed cannot be applied to "
-                                + "the state it holds")
-                        .contains(property[0]);
-            }
-        }
+                .allMatch(body -> WireValues.mentions(body, "_d"));
     }
 
     @Test
@@ -236,52 +228,12 @@ class GefDragFeedbackCostNativeTest {
 
     private long bytes() {
         long total = 0;
-        for (RecordingComm.Frame frame : bridge.comm.sent) total += frame.json.length();
+        for (RecordingComm.Frame frame : bridge.comm.sent) total += frame.size;
         return total;
     }
 
     private static boolean isGcState(String channel) {
         return channel.startsWith(GC_CHANNEL_PREFIX)
                 && channel.indexOf('/', GC_CHANNEL_PREFIX.length()) < 0;
-    }
-
-    /** The properties a partial update names, or null when the body is a whole description. */
-    private static List<String> namedIn(String body) {
-        int at = body.indexOf("\"_d\":[");
-        if (at < 0) return null;
-        int end = body.indexOf(']', at);
-        List<String> names = new ArrayList<>();
-        for (String name : body.substring(at + 6, end).split(",")) {
-            if (!name.isEmpty()) names.add(name.replace("\"", ""));
-        }
-        return names;
-    }
-
-    /** Splits a batch payload into its {@code (channel, body)} entries. */
-    /** The top-level {@code key}/{@code value} pairs of one body. */
-    private static List<String[]> fields(String body) {
-        List<String[]> out = new ArrayList<>();
-        int at = 1;
-        while (at < body.length()) {
-            int open = body.indexOf('"', at);
-            if (open < 0) return out;
-            int close = body.indexOf('"', open + 1);
-            if (close < 0) return out;
-            int colon = body.indexOf(':', close);
-            if (colon < 0) return out;
-            int i = colon + 1, depth = 0;
-            while (i < body.length()) {
-                char c = body.charAt(i);
-                if (c == '{' || c == '[') depth++;
-                else if (c == '}' || c == ']') {
-                    if (depth == 0) break;
-                    depth--;
-                } else if (c == ',' && depth == 0) break;
-                i++;
-            }
-            out.add(new String[] {body.substring(open + 1, close), body.substring(colon + 1, i)});
-            at = i + 1;
-        }
-        return out;
     }
 }

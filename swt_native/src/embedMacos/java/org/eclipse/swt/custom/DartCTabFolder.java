@@ -309,11 +309,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         //	showMin = (style2 & SWT.MIN) != 0; - conflicts with SWT.TOP
         //	showMax = (style2 & SWT.MAX) != 0; - conflicts with SWT.BOTTOM
         single = (style2 & SWT.SINGLE) != 0;
+        getValue().markDirty(VCTabFolder.SINGLE);
         borderVisible = (style & SWT.BORDER) != 0;
+        getValue().markDirty(VCTabFolder.BORDER_VISIBLE);
         //set up default colors
         Display display = getDisplay();
         selectionForeground = display.getSystemColor(SELECTION_FOREGROUND);
+        getValue().markDirty(VCTabFolder.SELECTION_FOREGROUND);
         selectionBackground = display.getSystemColor(SELECTION_BACKGROUND);
+        getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         renderer = new CTabFolderRenderer(this.getApi());
         useDefaultRenderer = true;
         controls = new Control[0];
@@ -765,8 +769,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         newItems[index] = item;
         System.arraycopy(items, index, newItems, index + 1, items.length - index);
         items = newItems;
-        if (selectedIndex >= index)
+        if (selectedIndex >= index) {
             selectedIndex++;
+            getValue().markDirty(VCTabFolder.SELECTION);
+        }
         int[] newPriority = new int[priority.length + 1];
         int next = 0, priorityIndex = priority.length;
         for (int element : priority) {
@@ -797,6 +803,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             priority = new int[0];
             firstIndex = -1;
             selectedIndex = -1;
+            getValue().markDirty(VCTabFolder.SELECTION);
             Control control = ((DartCTabItem) item.getImpl()).control;
             if (control != null && !control.isDisposed()) {
                 control.setVisible(false);
@@ -827,6 +834,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (selectedIndex == index) {
             Control control = item.getControl();
             selectedIndex = -1;
+            getValue().markDirty(VCTabFolder.SELECTION);
             int nextSelection = mru ? priority[0] : Math.max(0, index - 1);
             setSelection(nextSelection, true);
             getValue().markDirty(VCTabFolder.ITEMS);
@@ -835,6 +843,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             }
         } else if (selectedIndex > index) {
             selectedIndex--;
+            getValue().markDirty(VCTabFolder.SELECTION);
         }
         requestLayout();
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
@@ -1744,7 +1753,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         selectionGradientPercents = null;
         selectionBgImage = null;
         selectionBackground = null;
+        getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         selectionForeground = null;
+        getValue().markDirty(VCTabFolder.SELECTION_FOREGROUND);
         if (controlBkImages != null) {
             for (int i = 0; i < controlBkImages.length; i++) {
                 if (controlBkImages[i] != null) {
@@ -2952,6 +2963,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         items = temp;
         selectedIndex = newSelectedIndex;
+        getValue().markDirty(VCTabFolder.SELECTION);
         // priority[] and firstIndex hold indices into items[], so remap them to the
         // items' new positions to keep the chevron/visible-tab state correct.
         for (int i = 0; i < priority.length; i++) {
@@ -4807,78 +4819,111 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "CTabFolder", "itemClosed", e -> {
-            getDisplay().asyncExec(() -> {
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder", "reorderItems", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "CTabFolder/itemClosed", "CTabFolder/reorderItems", "CTabFolder/stripLaidOut", "CTabFolder2/close", "CTabFolder2/maximize", "CTabFolder2/minimize", "CTabFolder2/restore", "CTabFolder2/showList", "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "CTabFolder/itemClosed":
+                {
+                    getDisplay().asyncExec(() -> {
+                    });
                     return;
-                CTabFolderHelper.handleReorderItems(this, e);
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder", "stripLaidOut", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                CTabFolderHelper.handleStripLaidOut(this, e);
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder2", "close", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                CTabFolderHelper.handleClose(this, e);
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder2", "maximize", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                CTabFolderHelper.handleMaximize(this, e);
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder2", "minimize", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                CTabFolderHelper.handleMinimize(this, e);
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder2", "restore", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                CTabFolderHelper.handleRestore(this, e);
-            });
-        });
-        FlutterBridge.on(this, "CTabFolder2", "showList", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
                 }
-                CTabFolderHelper.handleShowList(this, e);
-                dirty();
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+            case "CTabFolder/reorderItems":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleReorderItems(this, e);
+                    });
                     return;
-                if (!isActive())
-                    return;
-                if (!isDisposed()) {
-                    sendEvent(SWT.DefaultSelection, e);
                 }
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+            case "CTabFolder/stripLaidOut":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleStripLaidOut(this, e);
+                    });
                     return;
-                CTabFolderHelper.handleTabClick(this, e);
-            });
-        });
+                }
+            case "CTabFolder2/close":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleClose(this, e);
+                    });
+                    return;
+                }
+            case "CTabFolder2/maximize":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleMaximize(this, e);
+                    });
+                    return;
+                }
+            case "CTabFolder2/minimize":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleMinimize(this, e);
+                    });
+                    return;
+                }
+            case "CTabFolder2/restore":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleRestore(this, e);
+                    });
+                    return;
+                }
+            case "CTabFolder2/showList":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                        }
+                        CTabFolderHelper.handleShowList(this, e);
+                        dirty();
+                    });
+                    return;
+                }
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        if (!isDisposed()) {
+                            sendEvent(SWT.DefaultSelection, e);
+                        }
+                    });
+                    return;
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        CTabFolderHelper.handleTabClick(this, e);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public CTabFolder getApi() {

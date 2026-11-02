@@ -1,6 +1,5 @@
 package dev.equo.swt;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -63,23 +62,71 @@ final class DebugLog {
     /** Prints a {@code send:} line for this event/payload when debugging is on and the event passes filters. */
     static void logSend(String eventName, byte[] bytes, int offset, int length) {
         if (!shouldLog(eventName)) return;
-        String raw = new String(bytes, offset, length, StandardCharsets.UTF_8);
-        String body;
-        try {
-            Object tree = new JsonParser(raw).parse();
-            prune(tree);
-            StringBuilder sb = new StringBuilder();
-            render(tree, 0, sb);
-            body = sb.toString();
-        } catch (RuntimeException e) {
-            // Never let debug logging break a send; fall back to the raw payload.
-            body = raw;
+        if (!dev.equo.swt.comm.TaggedValues.isTagged(bytes, offset, length)) {
+            // Bytes with a form of their own (an image's, a widget frame's): only their size says anything here.
+            System.out.println("send: " + eventName + ": <" + length + " B>");
+            return;
         }
+        Object tree;
+        try {
+            tree = dev.equo.swt.comm.TaggedValues.decode(bytes, offset, length);
+        } catch (RuntimeException e) {
+            // Never let debug logging break a send.
+            System.out.println("send: " + eventName + ": <" + length + " B, unreadable: " + e + ">");
+            return;
+        }
+        print("send: " + eventName + (SUMMARY ? " (" + length + " B)" : ""), tree);
+    }
+
+    /**
+     * A frame of widget records, one {@code send:} line per record: what it is ({@code whole}, a
+     * {@code change} with the stamp it was computed from), the widget, and its properties by name.
+     * A whole record leaves out every property still at the client's default.
+     */
+    static void logWidgetFrame(byte[] payload) {
+        List<WireDump.Record> records;
+        try {
+            records = WireDump.records(payload, 0, payload.length);
+        } catch (RuntimeException e) {
+            System.out.println("send: " + WidgetWire.CHANNEL + ": <" + payload.length + " B, unreadable: " + e + ">");
+            return;
+        }
+        for (WireDump.Record r : records) {
+            String channel = r.channel();
+            if (!shouldLog(channel)) continue;
+            String kind;
+            switch (r.kind) {
+                case WidgetWire.WHOLE: kind = "whole _s=" + r.stamp; break;
+                case WidgetWire.CHANGE: kind = "change _s=" + r.stamp + " _b=" + r.base; break;
+                case WidgetWire.IMAGE: kind = "image"; break;
+                case WidgetWire.HOLDER: kind = "holder"; break;
+                default: kind = "kind " + r.kind;
+            }
+            print("send: " + channel + " (" + kind + ")", new LinkedHashMap<String, Object>(r.properties));
+        }
+    }
+
+    private static void print(String header, Object decoded) {
+        Object tree = mutableCopy(decoded);
+        prune(tree);
+        StringBuilder sb = new StringBuilder();
+        render(tree, 0, sb);
+        String body = sb.toString();
         if (MAX_LEN > 0 && body.length() > MAX_LEN) {
             body = body.substring(0, MAX_LEN) + "…(+" + (body.length() - MAX_LEN) + " chars)";
         }
-        String size = SUMMARY ? " (" + length + " B)" : "";
-        System.out.println("send: " + eventName + size + ": " + body);
+        System.out.println(header + ": " + body);
+    }
+
+    /** A GC's binary frame, one {@code send:} line per record. */
+    static void logGcFrame(GcWire frame) {
+        if (!shouldLog(GcWire.frameEvent(frame.channel()))) return;
+        for (GcWire.Entry entry : frame.entries()) {
+            prune(entry.value);
+            StringBuilder sb = new StringBuilder();
+            render(entry.value, 0, sb);
+            System.out.println("send: " + entry.channel + ": " + sb);
+        }
     }
 
     /**
@@ -121,8 +168,8 @@ final class DebugLog {
         System.out.println(sb);
     }
 
+    /** Whether the name filters let {@code eventName} through; reached only from {@link DebugTap}. */
     private static boolean shouldLog(String eventName) {
-        if (!Config.isDebug()) return false;
         if (EXCLUDE != null && EXCLUDE.matcher(eventName).find()) return false;
         if (FILTER != null && !FILTER.matcher(eventName).find()) return false;
         return true;
@@ -138,6 +185,21 @@ final class DebugLog {
     }
 
     // ---- tree pruning ------------------------------------------------------
+
+    /** {@code node} with every map and list in it copied, so pruning leaves what was decoded alone. */
+    private static Object mutableCopy(Object node) {
+        if (node instanceof Map) {
+            Map<String, Object> copy = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> e : ((Map<?, ?>) node).entrySet()) copy.put(String.valueOf(e.getKey()), mutableCopy(e.getValue()));
+            return copy;
+        }
+        if (node instanceof List) {
+            List<Object> copy = new ArrayList<>();
+            for (Object v : (List<?>) node) copy.add(mutableCopy(v));
+            return copy;
+        }
+        return node;
+    }
 
     @SuppressWarnings("unchecked")
     private static void prune(Object node) {
@@ -159,8 +221,21 @@ final class DebugLog {
         } else if (node instanceof List) {
             renderList((List<Object>) node, indent, out);
         } else {
-            out.append(((Raw) node).token); // verbatim scalar/string token
+            out.append(scalar(node));
         }
+    }
+
+    /** A decoded value that is no map or list, as the log prints it. */
+    private static String scalar(Object v) {
+        if (v == null) return "null";
+        if (v instanceof CharSequence) return "\"" + v + "\"";
+        if (v instanceof byte[]) return "\"" + WireDump.describe((byte[]) v) + "\"";
+        if (v instanceof int[]) return java.util.Arrays.toString((int[]) v);
+        if (v instanceof long[]) return java.util.Arrays.toString((long[]) v);
+        if (v instanceof double[]) return java.util.Arrays.toString((double[]) v);
+        if (v instanceof boolean[]) return java.util.Arrays.toString((boolean[]) v);
+        if (v instanceof Object[]) return java.util.Arrays.deepToString((Object[]) v);
+        return String.valueOf(v);
     }
 
     private static void renderMap(Map<String, Object> map, int indent, StringBuilder out) {
@@ -229,7 +304,7 @@ final class DebugLog {
     }
 
     private static void appendValue(String key, Object value, int indent, StringBuilder out) {
-        if (value instanceof Raw && REDACT_KEYS.contains(key)) {
+        if (!(value instanceof Map) && !(value instanceof List) && REDACT_KEYS.contains(key)) {
             out.append("\"-ignore-\"");
         } else {
             render(value, indent, out);
@@ -269,123 +344,5 @@ final class DebugLog {
 
     private static Pattern compile(String regex) {
         return (regex == null || regex.isEmpty()) ? null : Pattern.compile(regex);
-    }
-
-    // ---- minimal JSON parser ----------------------------------------------
-    // Produces LinkedHashMap (objects, order preserved), ArrayList (arrays), and Raw (scalars +
-    // strings, kept as their verbatim token so re-emitting needs no re-escaping).
-
-    /** A scalar or string kept as its verbatim JSON token. */
-    private static final class Raw {
-        final String token;
-
-        Raw(String token) {
-            this.token = token;
-        }
-    }
-
-    private static final class JsonParser {
-        private final String s;
-        private int pos;
-
-        JsonParser(String s) {
-            this.s = s;
-        }
-
-        Object parse() {
-            skipWs();
-            Object v = value();
-            return v;
-        }
-
-        private Object value() {
-            skipWs();
-            char c = s.charAt(pos);
-            if (c == '{') return object();
-            if (c == '[') return array();
-            if (c == '"') return new Raw(string());
-            return new Raw(literal());
-        }
-
-        private Map<String, Object> object() {
-            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-            pos++; // {
-            skipWs();
-            if (s.charAt(pos) == '}') {
-                pos++;
-                return map;
-            }
-            while (true) {
-                skipWs();
-                String key = unquote(string());
-                skipWs();
-                pos++; // :
-                map.put(key, value());
-                skipWs();
-                char c = s.charAt(pos++);
-                if (c == ',') continue;
-                if (c == '}') break;
-                throw new IllegalStateException("expected , or } at " + (pos - 1));
-            }
-            return map;
-        }
-
-        private List<Object> array() {
-            ArrayList<Object> list = new ArrayList<>();
-            pos++; // [
-            skipWs();
-            if (s.charAt(pos) == ']') {
-                pos++;
-                return list;
-            }
-            while (true) {
-                list.add(value());
-                skipWs();
-                char c = s.charAt(pos++);
-                if (c == ',') continue;
-                if (c == ']') break;
-                throw new IllegalStateException("expected , or ] at " + (pos - 1));
-            }
-            return list;
-        }
-
-        /** Reads a JSON string, returning the verbatim token including surrounding quotes. */
-        private String string() {
-            int start = pos;
-            pos++; // opening "
-            while (true) {
-                char c = s.charAt(pos++);
-                if (c == '\\') {
-                    pos++; // skip escaped char
-                } else if (c == '"') {
-                    break;
-                }
-            }
-            return s.substring(start, pos);
-        }
-
-        /** Reads a number / true / false / null token verbatim. */
-        private String literal() {
-            int start = pos;
-            while (pos < s.length()) {
-                char c = s.charAt(pos);
-                if (c == ',' || c == '}' || c == ']' || c == ' ' || c == '\n' || c == '\r' || c == '\t') break;
-                pos++;
-            }
-            return s.substring(start, pos);
-        }
-
-        private void skipWs() {
-            while (pos < s.length()) {
-                char c = s.charAt(pos);
-                if (c == ' ' || c == '\n' || c == '\r' || c == '\t') pos++;
-                else break;
-            }
-        }
-
-        private static String unquote(String token) {
-            // Field names in our payloads have no escapes; strip the surrounding quotes.
-            return token.substring(1, token.length() - 1);
-        }
     }
 }

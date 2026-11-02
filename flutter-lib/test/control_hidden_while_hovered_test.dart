@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const String _message = 'Show the filter field';
 const Offset _hover = Offset(10, 10);
@@ -23,7 +24,7 @@ class _CapturingCompositeSwt extends CompositeSwt<VComposite> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VComposite val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VComposite val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VComposite _toolbar({required bool visible, int seq = 0}) => VComposite()

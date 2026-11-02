@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -12,10 +12,9 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/scrolledcomposite_evolve.dart';
 import 'widgets.dart';
-
-part 'scrolledcomposite.g.dart';
 
 class ScrolledCompositeSwt<V extends VScrolledComposite>
     extends CompositeSwt<V> {
@@ -29,7 +28,6 @@ class ScrolledCompositeSwt<V extends VScrolledComposite>
       >();
 }
 
-@JsonSerializable()
 class VScrolledComposite extends VComposite {
   VScrolledComposite() : this.empty();
   VScrolledComposite.empty() {
@@ -62,31 +60,102 @@ class VScrolledComposite extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alwaysShowScrollBars':
-        alwaysShowScrollBars = json['alwaysShowScrollBars'] as bool?;
-      case 'content':
-        content = json['content'] == null
-            ? null
-            : VControl.fromJson(json['content'] as Map<String, dynamic>);
-      case 'expandHorizontal':
-        expandHorizontal = json['expandHorizontal'] as bool?;
-      case 'expandVertical':
-        expandVertical = json['expandVertical'] as bool?;
-      case 'minHeight':
-        minHeight = (json['minHeight'] as num?)?.toInt();
-      case 'minWidth':
-        minWidth = (json['minWidth'] as num?)?.toInt();
-      case 'origin':
-        origin = json['origin'] == null
-            ? null
-            : VPoint.fromJson(json['origin'] as Map<String, dynamic>);
-      case 'originRequest':
-        originRequest = (json['originRequest'] as num?)?.toInt();
+      case 441: // alwaysShowScrollBars
+        alwaysShowScrollBars = r.boolean();
+        return true;
+      case 442: // content
+        content = r.ref<VControl>();
+        return true;
+      case 443: // expandHorizontal
+        expandHorizontal = r.boolean();
+        return true;
+      case 444: // expandVertical
+        expandVertical = r.boolean();
+        return true;
+      case 445: // minHeight
+        minHeight = r.int32();
+        return true;
+      case 446: // minWidth
+        minWidth = r.int32();
+        return true;
+      case 447: // origin
+        origin = r.point();
+        return true;
+      case 448: // originRequest
+        originRequest = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alwaysShowScrollBars;
+      if (v_ != null) {
+        w.keyBoolean(441, v_);
+      }
+    }
+    {
+      final v_ = content;
+      if (v_ != null) {
+        w.keyRef(442, v_.id);
+      }
+    }
+    {
+      final v_ = expandHorizontal;
+      if (v_ != null) {
+        w.keyBoolean(443, v_);
+      }
+    }
+    {
+      final v_ = expandVertical;
+      if (v_ != null) {
+        w.keyBoolean(444, v_);
+      }
+    }
+    {
+      final v_ = minHeight;
+      if (v_ != null) {
+        w.keyInt32(445, v_);
+      }
+    }
+    {
+      final v_ = minWidth;
+      if (v_ != null) {
+        w.keyInt32(446, v_);
+      }
+    }
+    {
+      final v_ = origin;
+      if (v_ != null) {
+        w.key(447);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = originRequest;
+      if (v_ != null) {
+        w.keyInt32(448, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(441, alwaysShowScrollBars);
+    visit(442, content);
+    visit(443, expandHorizontal);
+    visit(444, expandVertical);
+    visit(445, minHeight);
+    visit(446, minWidth);
+    visit(447, origin);
+    visit(448, originRequest);
   }
 
   @override
@@ -94,8 +163,4 @@ class VScrolledComposite extends VComposite {
     super.adoptChildren(adopt);
     content = VWidget.adoptOne(content, adopt);
   }
-
-  factory VScrolledComposite.fromJson(Map<String, dynamic> json) =>
-      _$VScrolledCompositeFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VScrolledCompositeToJson(this);
 }

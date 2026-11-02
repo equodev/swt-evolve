@@ -8,9 +8,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/gc_frames.dart';
+import 'package:swtflutter/src/gen/image.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -20,16 +24,8 @@ void main() {
 
   /// Deliver one framed message, exactly as the wire transport would:
   /// [2-byte actionId length BE][actionId][body].
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
+  void deliver(String actionId, Map<String, dynamic> payload) =>
+      receive(actionId, actionId.endsWith('/gcDispose') ? gcDisposeOf(payload) : tagged(payload));
 
   /// Handlers dispatch on a microtask and a gcDispose cycle awaits its pending image decodes.
   Future<void> settle() async {
@@ -38,14 +34,7 @@ void main() {
     }
   }
 
-  void drawIcon(int id, int x) => deliver(
-        'GC/$id/drawImageImageintintintintintintintint',
-        {
-          'image': {'svgContent': svgIcon},
-          'srcX': 0, 'srcY': 0, 'srcWidth': 8, 'srcHeight': 8,
-          'destX': x, 'destY': 0, 'destWidth': 8, 'destHeight': 8,
-        },
-      );
+  void drawIcon(int id, int x) => receive('GC/$id/b', gcOp('drawImageImageintintintintintintintint', [heldImage(VImage()..svgContent = svgIcon), 0, 0, 8, 8, x, 0, 8, 8]));
 
   test('a full repaint drops the images the previous cycle committed', () async {
     final state = VGC.empty()..id = 719701;

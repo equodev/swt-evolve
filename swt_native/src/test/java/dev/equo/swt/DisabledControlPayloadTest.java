@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.nio.charset.StandardCharsets;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.eclipse.swt.widgets.Mocks.shell;
 
 @ExtendWith(Mocks.class)
@@ -28,12 +28,8 @@ public class DisabledControlPayloadTest {
         Config.defaultToEclipse();
     }
 
-    private String payloadOf(Widget w) {
-        try {
-            return new String(serializer.to(((DartWidget) w.getImpl()).getValue()), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private java.util.Map<String, Object> payloadOf(Widget w) {
+        return dev.equo.swt.harness.WireFrames.describe(w);
     }
 
     @Test
@@ -44,7 +40,7 @@ public class DisabledControlPayloadTest {
 
         table.setEnabled(false);
 
-        assertThatJson(payloadOf(table)).node("enabled").isEqualTo(false);
+        assertThatWire(payloadOf(table)).node("enabled").isEqualTo(false);
     }
 
     @Test
@@ -54,7 +50,7 @@ public class DisabledControlPayloadTest {
 
         text.setEnabled(false);
 
-        assertThatJson(payloadOf(text)).node("enabled").isEqualTo(false);
+        assertThatWire(payloadOf(text)).node("enabled").isEqualTo(false);
     }
 
     @Test
@@ -64,7 +60,7 @@ public class DisabledControlPayloadTest {
 
         parent.setEnabled(false);
 
-        assertThatJson(payloadOf(table)).node("enabled").isEqualTo(true);
+        assertThatWire(payloadOf(table)).node("enabled").isEqualTo(true);
     }
 
     @Test
@@ -72,6 +68,6 @@ public class DisabledControlPayloadTest {
         Composite parent = new Composite(shell(), SWT.NONE);
         Table table = new Table(parent, SWT.CHECK);
 
-        assertThatJson(payloadOf(table)).node("enabled").isEqualTo(true);
+        assertThatWire(payloadOf(table)).node("enabled").isEqualTo(true);
     }
 }

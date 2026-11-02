@@ -14,6 +14,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -27,7 +29,7 @@ class _RecordingCanvasSwt extends CanvasSwt<VCanvas> {
   final List<String> sent;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) => sent.add(ev);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) => sent.add(wireChannelNames[channel]!);
 }
 
 void main() {
@@ -54,13 +56,13 @@ void main() {
           ..enabled = true
           ..bounds = _rect(20, 20, 160, 30),
       ];
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Align(
         alignment: Alignment.topLeft,
         child: SizedBox(width: 300, height: 200, child: _RecordingCanvasSwt(sent: canvasEvents, value: canvas)),
       ),
-    ));
+    )));
     await tester.pumpAndSettle();
     await tester.showKeyboard(find.byType(EditableText));
     await tester.pumpAndSettle();

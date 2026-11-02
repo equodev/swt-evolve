@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VSpinner extends VComposite {
 
     protected VSpinner() {
@@ -77,78 +73,175 @@ public class VSpinner extends VComposite {
         return ((DartSpinner) impl).wireKeptText();
     }
 
-    public void setKeptText(String value) {
-    }
+    public static final int DIGITS = 461;
 
-    public static final String DIGITS = "digits";
+    public static final int INCREMENT = 462;
 
-    public static final String INCREMENT = "increment";
+    public static final int KEPT_TEXT = 463;
 
-    public static final String KEPT_TEXT = "keptText";
+    public static final int MAXIMUM = 464;
 
-    public static final String MAXIMUM = "maximum";
+    public static final int MINIMUM = 465;
 
-    public static final String MINIMUM = "minimum";
+    public static final int PAGE_INCREMENT = 466;
 
-    public static final String PAGE_INCREMENT = "pageIncrement";
+    public static final int SELECTION = 467;
 
-    public static final String SELECTION = "selection";
-
-    public static final String TEXT_LIMIT = "textLimit";
+    public static final int TEXT_LIMIT = 468;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "digits":
-                Serializer.writeKeyValue(writer, "digits", getDigits());
-                return;
-            case "increment":
-                Serializer.writeKeyValue(writer, "increment", getIncrement());
-                return;
-            case "maximum":
-                Serializer.writeKeyValue(writer, "maximum", getMaximum());
-                return;
-            case "minimum":
-                Serializer.writeKeyValue(writer, "minimum", getMinimum());
-                return;
-            case "pageIncrement":
-                Serializer.writeKeyValue(writer, "pageIncrement", getPageIncrement());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "textLimit":
-                Serializer.writeKeyValue(writer, "textLimit", getTextLimit());
-                return;
-            case "keptText":
-                Serializer.writeKeyValue(writer, "keptText", getKeptText());
-                return;
+            case DIGITS:
+                return "digits";
+            case INCREMENT:
+                return "increment";
+            case MAXIMUM:
+                return "maximum";
+            case MINIMUM:
+                return "minimum";
+            case PAGE_INCREMENT:
+                return "pageIncrement";
+            case SELECTION:
+                return "selection";
+            case TEXT_LIMIT:
+                return "textLimit";
+            case KEPT_TEXT:
+                return "keptText";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Spinner.class)
-    public static class SpinnerJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartSpinner.class, (JsonWriter.WriteObject<DartSpinner>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartSpinner.class, (JsonReader.ReadObject<DartSpinner>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 461:
+                w.write((int) getDigits());
+                return true;
+            case 462:
+                w.write((int) getIncrement());
+                return true;
+            case 464:
+                w.write((int) getMaximum());
+                return true;
+            case 465:
+                w.write((int) getMinimum());
+                return true;
+            case 466:
+                w.write((int) getPageIncrement());
+                return true;
+            case 467:
+                w.write((int) getSelection());
+                return true;
+            case 468:
+                w.write((int) getTextLimit());
+                return true;
+            case 463:
+                w.write(getKeptText());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Spinner read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 461:
+                {
+                    int v_ = getDigits();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(461);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 462:
+                {
+                    int v_ = getIncrement();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(462);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 464:
+                {
+                    int v_ = getMaximum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(464);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 465:
+                {
+                    int v_ = getMinimum();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(465);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 466:
+                {
+                    int v_ = getPageIncrement();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(466);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 467:
+                {
+                    int v_ = getSelection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(467);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 468:
+                {
+                    int v_ = getTextLimit();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(468);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 463:
+                {
+                    String v_ = getKeptText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(463);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Spinner api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 461, 462, 464, 465, 466, 467, 468, 463 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

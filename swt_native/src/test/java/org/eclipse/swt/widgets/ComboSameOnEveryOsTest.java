@@ -107,6 +107,52 @@ class ComboSameOnEveryOsTest {
     }
 
     @Test
+    @DisplayName("removing the selected item of an editable combo asks the Verify listeners about emptying its text, then tells the Modify listeners, as GTK does")
+    void removeOfTheSelectedItemVerifiesAndModifies() {
+        for (int style : new int[] {SWT.NONE, SWT.SIMPLE}) {
+            Combo combo = abc(style, 1);
+            List<String> events = new ArrayList<>();
+            combo.addListener(SWT.Verify, e -> events.add("Verify " + e.start + ".." + e.end + " '" + e.text + "'"));
+            combo.addListener(SWT.Modify, e -> events.add("Modify"));
+
+            combo.remove(1);
+
+            assertThat(events).as("style %d", style).containsExactly("Verify 0..2 ''", "Modify");
+            assertThat(combo.getText()).as("style %d", style).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("a Verify listener that vetoes emptying the text keeps it when the selected item is removed, and no Modify follows")
+    void removeOfTheSelectedItemVetoedKeepsTheText() {
+        Combo combo = abc(SWT.NONE, 1);
+        List<Event> modifies = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> e.doit = false);
+        combo.addListener(SWT.Modify, modifies::add);
+
+        combo.remove(1);
+
+        assertThat(combo.getItems()).containsExactly("a", "ccc");
+        assertThat(combo.getSelectionIndex()).isEqualTo(-1);
+        assertThat(combo.getText()).isEqualTo("bb");
+        assertThat(modifies).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Verify listener that rewrites the emptied text sets its own text when the selected item is removed")
+    void removeOfTheSelectedItemTakesARewrite() {
+        Combo combo = abc(SWT.NONE, 1);
+        List<Event> modifies = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> e.text = "zz");
+        combo.addListener(SWT.Modify, modifies::add);
+
+        combo.remove(1);
+
+        assertThat(combo.getText()).isEqualTo("zz");
+        assertThat(modifies).hasSize(1);
+    }
+
+    @Test
     @DisplayName("removing an item before the selection moves the index along with its item")
     void removeBeforeTheSelectionMovesTheIndex() {
         for (int style : new int[] {SWT.NONE, SWT.READ_ONLY}) {

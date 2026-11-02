@@ -223,6 +223,8 @@ public class DartDecorations extends DartCanvas implements IDecorations {
             savedFocus = null;
         if (control == defaultButton)
             defaultButton = null;
+        if (control == saveDefault)
+            saveDefault = null;
         if (menus == null)
             return;
         Menu menu = ((DartControl) control.getImpl()).menu;
@@ -447,6 +449,7 @@ public class DartDecorations extends DartCanvas implements IDecorations {
         images = null;
         savedFocus = null;
         defaultButton = null;
+        saveDefault = null;
     }
 
     @Override
@@ -510,11 +513,10 @@ public class DartDecorations extends DartCanvas implements IDecorations {
             if ((button.style & SWT.PUSH) == 0)
                 return;
         }
+        saveDefault = button;
         if (button == defaultButton)
             return;
         defaultButton = button;
-        if (defaultButton != null && (defaultButton.style & SWT.PUSH) != 0) {
-        }
         ((DartDisplay) display.getImpl()).updateDefaultButton();
     }
 
@@ -776,6 +778,12 @@ public class DartDecorations extends DartCanvas implements IDecorations {
 
     public Button _defaultButton() {
         return defaultButton;
+    }
+
+    Button saveDefault;
+
+    void defaultFollowsFocus(Button button, int type) {
+        defaultButton = ButtonHelper.defaultAfterFocus(button, type, defaultButton, saveDefault);
     }
 
     int wireMenuStripHeight() {

@@ -1,7 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -12,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,12 +61,17 @@ class GCClipShapeNativeTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wireAfterDisposing(GC gc) {
+    private List<Object> wireAfterDisposing(GC gc) {
         gc.drawLine(0, 0, 10, 10);
         gc.dispose();
-        String wire = bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
-        assertThat(wire).as("sanity: the GC's ops reached the wire").contains("drawLine");
-        return wire;
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
+        assertThat(entries).as("sanity: the GC's ops reached the wire").anyMatch(e -> e.channel().contains("drawLine"));
+        return entries.stream().map(GcFrames.Entry::value).toList();
+    }
+
+    /** Whether any record on {@code wire} holds {@code expected} under {@code key}. */
+    private static boolean carries(List<Object> wire, String key, Object expected) {
+        return !WireValues.find(wire, m -> m.containsKey(key) && WireValues.same(m.get(key), expected)).isEmpty();
     }
 
     private Path rectanglePath(GC gc, int x, int y, int width, int height) {
@@ -145,8 +155,8 @@ class GCClipShapeNativeTest {
         Path path = rectanglePath(gc, 10, 20, 30, 40);
         gc.setClipping(path);
         path.dispose();
-        assertThat(wireAfterDisposing(gc))
-                .contains("\"points\":[10.0,20.0,40.0,20.0,40.0,60.0,10.0,60.0]");
+        assertThat(carries(wireAfterDisposing(gc), "points", List.of(10.0, 20.0, 40.0, 20.0, 40.0, 60.0, 10.0, 60.0)))
+                .isTrue();
     }
 
     @Test
@@ -157,10 +167,10 @@ class GCClipShapeNativeTest {
         gc.setClipping(path);
         path.dispose();
         gc.setClipping((Rectangle) null);
-        assertThat(wireAfterDisposing(gc))
+        assertThat(WireValues.containsText(wireAfterDisposing(gc), "clippingPath"))
                 .as("a shape clip left behind would keep narrowing everything drawn after the "
                         + "application restored the full clip")
-                .doesNotContain("clippingPath");
+                .isFalse();
     }
 
     @Test
@@ -172,10 +182,10 @@ class GCClipShapeNativeTest {
         region.add(new Rectangle(60, 20, 30, 40));
         gc.setClipping(region);
         region.dispose();
-        assertThat(wireAfterDisposing(gc))
+        assertThat(carries(wireAfterDisposing(gc), "clippingRects", List.of(10, 20, 30, 40, 60, 20, 30, 40)))
                 .as("the gap between the two rectangles is the whole point of a region clip; a "
                         + "bounding box would let drawing through it")
-                .contains("\"clippingRects\":[10,20,30,40,60,20,30,40]");
+                .isTrue();
     }
 
     @Test
@@ -186,12 +196,12 @@ class GCClipShapeNativeTest {
         path.addArc(0, 0, 100, 100, 0, 360);
         gc.setClipping(path);
         path.dispose();
-        // Move, four cubics, close — base64, the way a byte[] travels: [1, 4, 4, 4, 4, 5].
-        assertThat(wireAfterDisposing(gc))
+        // Move, four cubics, close — base64, the way a byte[] reads: [1, 4, 4, 4, 4, 5].
+        List<Object> wire = wireAfterDisposing(gc);
+        assertThat(WireValues.mentions(wire, "clippingPath") && carries(wire, "types", "AQQEBAQF"))
                 .as("a full circle is four cubic segments; a clip that arrived as line segments "
                         + "would have squared off the shape")
-                .contains("\"clippingPath\"")
-                .contains("\"types\":\"AQQEBAQF\"");
+                .isTrue();
     }
 
     @Test
@@ -202,9 +212,9 @@ class GCClipShapeNativeTest {
         path.addString("SWT", 10, 10, gc.getFont());
         gc.setClipping(path);
         path.dispose();
-        assertThat(wireAfterDisposing(gc))
+        assertThat(WireValues.containsText(wireAfterDisposing(gc), "clippingPath"))
                 .as("glyph outlines have no representation on this backend; clipping to the empty "
                         + "shape they leave behind would blank everything drawn afterwards")
-                .doesNotContain("clippingPath");
+                .isFalse();
     }
 }

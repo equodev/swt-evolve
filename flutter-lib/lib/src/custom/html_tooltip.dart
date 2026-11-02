@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../comm/comm.dart';
+import '../gen/widgets.dart' show WireChannel;
 
 const String _kEvolveUrlOpenChannel = 'swt.evolve.url.open';
 
@@ -58,7 +59,7 @@ class _HtmlTooltipState extends State<HtmlTooltip> {
     if (_entry != null || !_hasHtml || !mounted) return;
     _spans ??= _htmlToSpans(widget.html!, _base, _recognizers, (url) {
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        EquoCommService.sendPayload(_kEvolveUrlOpenChannel, <String, String>{'url': url});
+        EquoCommService.sendOn(WireChannel.swtEvolveUrlOpen, url);
       }
     });
     _entry = OverlayEntry(

@@ -18,9 +18,6 @@ package org.eclipse.swt.graphics;
 import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class represent rectangular areas in an
@@ -48,8 +45,7 @@ import com.dslplatform.json.JsonAttribute;
  * @see Point
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public sealed class Rectangle implements Serializable, Cloneable permits Rectangle.OfFloat {
+public sealed class Rectangle implements Serializable, Cloneable, dev.equo.swt.WireObject permits Rectangle.OfFloat {
 
     /**
      * the x coordinate of the rectangle
@@ -578,5 +574,41 @@ public sealed class Rectangle implements Serializable, Cloneable permits Rectang
         public Rectangle.WithMonitor clone() {
             return new Rectangle.WithMonitor(getX(), getY(), getWidth(), getHeight(), monitor);
         }
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 83;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(420);
+        w.write((int) x);
+        w.key(421);
+        w.write((int) y);
+        w.key(419);
+        w.write((int) width);
+        w.key(418);
+        w.write((int) height);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 420:
+                x = r.int32();
+                return true;
+            case 421:
+                y = r.int32();
+                return true;
+            case 419:
+                width = r.int32();
+                return true;
+            case 418:
+                height = r.int32();
+                return true;
+        }
+        return false;
     }
 }

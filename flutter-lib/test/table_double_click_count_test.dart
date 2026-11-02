@@ -21,6 +21,7 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/utils/double_tap_detector.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _RecordingTableSwt extends TableSwt<VTable> {
   final List<String> calls;
@@ -28,8 +29,8 @@ class _RecordingTableSwt extends TableSwt<VTable> {
       : super(value: value);
 
   @override
-  void sendEvent(VTable val, String ev, VEvent? payload) =>
-      calls.add('$ev:${payload?.count}');
+  void sendEvent(VTable val, int channel, VEvent? payload) =>
+      calls.add('${wireChannelNames[channel]!}:${payload?.count}');
 }
 
 VTable _table({int rows = 2}) => VTable()

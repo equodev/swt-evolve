@@ -4,8 +4,8 @@
 // An application is free to pin a control's width through GridData.widthHint,
 // and real ones do: a preference page hints 150px for its READ_ONLY combos --
 // enough for a native combo, well under the ~157px this one prefers. The
-// text-field padding and the arrow cell are fixed insets, so the Row leaves
-// EditableText a 96px viewport for ~103px of text and the last glyph is cut
+// text-field padding and the arrow cell are fixed insets, so the Row leaves the
+// field a 96px viewport for ~103px of text and the last glyph is cut
 // off. What makes it read as a rendering fault rather than a tight fit is the
 // slack it leaves: the right-hand padding and the arrow glyph's own inset sit
 // between the truncated text and the visible arrow.
@@ -21,6 +21,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/combo.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
+import 'package:swtflutter/src/impl/combo_evolve.dart';
 
 VRectangle _rect(int x, int y, int width, int height) => VRectangle()
   ..x = x
@@ -61,11 +62,11 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final editable = find.byType(EditableText);
+    final editable = find.byType(ComboValueText);
     expect(editable, findsOneWidget);
 
     final double viewportWidth = tester.getSize(editable).width;
-    final TextStyle style = tester.widget<EditableText>(editable).style;
+    final TextStyle style = tester.widget<ComboValueText>(editable).style;
     final painter = TextPainter(
       text: TextSpan(text: selected, style: style),
       maxLines: 1,
@@ -99,7 +100,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final editable = find.byType(EditableText);
+    final editable = find.byType(ComboValueText);
     final double boxWidth = tester.getSize(find.byType(ComboSwt<VCombo>)).width;
     final double viewportWidth = tester.getSize(editable).width;
 

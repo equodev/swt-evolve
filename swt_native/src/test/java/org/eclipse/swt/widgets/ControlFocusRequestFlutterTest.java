@@ -133,7 +133,8 @@ class ControlFocusRequestFlutterTest {
         web.sendDisplayUpdate((DartDisplay) display.getImpl());
 
         assertThat(web.comm.sent.stream().filter(f -> f.event.startsWith("Display/")
-                        && f.json.contains("\"focusHolderId\":" + first.hashCode())))
+                        && dev.equo.swt.harness.WireValues.same(
+                                dev.equo.swt.harness.WireValues.at(f.value, "focusHolderId"), first.hashCode())))
                 .as("the Display state names the focus holder")
                 .isNotEmpty();
         assertThat(ids(web, FOCUS_HOLDER_CHANNEL))
@@ -155,6 +156,30 @@ class ControlFocusRequestFlutterTest {
         assertThat(focusRequests(web))
                 .as("only the newly focused editor is requested")
                 .containsExactly(String.valueOf(second.hashCode()));
+    }
+
+    @Test
+    void aClearedFocusReturnsToTheControlTheUserLastFocused() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        org.eclipse.swt.custom.StyledText editor = new org.eclipse.swt.custom.StyledText(shell, SWT.MULTI);
+        Tree tree = new Tree(shell, SWT.NONE);
+        web.noteClientActivated((DartShell) shell.getImpl());
+        // A StyledText takes the focus from Java on its own mouse-down, and the client follows.
+        editor.forceFocus();
+        web.clientFocused((DartControl) editor.getImpl());
+        // The user then clicks the tree, and then something that holds no focus on the client.
+        web.clientFocused((DartControl) tree.getImpl());
+        web.comm.sent.clear();
+
+        web.clearFocus((DartControl) tree.getImpl());
+
+        assertThat(display.getFocusControl())
+                .as("the shell gives its focus back to the tree, not to the editor focused before it")
+                .isSameAs(tree);
+        assertThat(focusRequests(web))
+                .as("the client is not told to move its keys onto the editor")
+                .isEmpty();
     }
 
     @Test
@@ -283,7 +308,7 @@ class ControlFocusRequestFlutterTest {
     private static java.util.List<String> ids(TestWebBridge web, String channel) {
         return web.comm.sent.stream()
                 .filter(f -> f.event.equals(channel))
-                .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
+                .map(f -> String.valueOf(((Number) dev.equo.swt.harness.WireValues.at(f.value, "id")).longValue()))
                 .toList();
     }
 

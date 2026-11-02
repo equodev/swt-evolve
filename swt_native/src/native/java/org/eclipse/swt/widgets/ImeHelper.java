@@ -1,25 +1,20 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
-import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 
-import java.io.IOException;
-import java.util.Map;
 
 /**
- * Delivers the client's composition ({@code {text, caret, commit}}) to a Canvas's {@link IME} as
+ * Delivers the client's composition (text, caret, commit) to a Canvas's {@link IME} as
  * {@link SWT#ImeComposition} events, the way the platform's text-input client does.
  */
 public final class ImeHelper {
-
-    private static final Serializer serializer = new Serializer();
 
     private ImeHelper() {
     }
 
     public static void hookComposition(DartCanvas canvas) {
-        FlutterBridge.onPayload(canvas, "ImeComposition", payload -> {
+        FlutterBridge.onPayload(canvas, dev.equo.swt.WireTable.CHANNEL_IME_COMPOSITION, payload -> {
             if (payload == null)
                 return;
             canvas.getDisplay().asyncExec(() -> apply(canvas, payload));
@@ -32,21 +27,18 @@ public final class ImeHelper {
         IME ime = canvas.getApi().getIME();
         if (ime == null || ime.isDisposed() || !(ime.getImpl() instanceof DartIME))
             return;
-        Map<?, ?> report;
-        try {
-            report = serializer.from(Map.class, payload);
-        } catch (IOException e) {
+        // The text, the caret within it, and whether it is committed.
+        dev.equo.swt.WireReader r = new dev.equo.swt.WireReader(payload, 0, payload.length);
+        String text = r.string();
+        int caret = r.int32();
+        boolean commit = r.bool();
+        if (text == null)
             return;
-        }
-        if (report == null || !(report.get("text") instanceof String))
-            return;
-        String text = (String) report.get("text");
         DartIME impl = (DartIME) ime.getImpl();
-        if (Boolean.TRUE.equals(report.get("commit"))) {
+        if (commit) {
             if (commit(impl, text))
                 insertCommitted(canvas, text);
         } else {
-            int caret = report.get("caret") instanceof Number ? ((Number) report.get("caret")).intValue() : text.length();
             compose(impl, text, caret);
         }
     }

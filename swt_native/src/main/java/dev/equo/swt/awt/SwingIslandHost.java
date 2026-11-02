@@ -199,11 +199,11 @@ public final class SwingIslandHost {
         if (surface) info.put("surface", true);
         // The region asks when it mounts (it may not exist yet, and a push nobody listens to is
         // dropped) and is answered on its own channel; the push covers a region already there.
-        FlutterBridge.onPayload(island, ISLAND_EVENT, p -> {
-            FlutterBridge.send(island, ISLAND_EVENT, info);
+        FlutterBridge.onPayload(island, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND, p -> {
+            FlutterBridge.send(island, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND, info);
             sayWhereItIs(child, windowId);
         });
-        FlutterBridge.send(island, ISLAND_EVENT, info);
+        FlutterBridge.send(island, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND, info);
 
         islands.put(windowId, child);
         child.addListener(SWT.Dispose, e -> islands.remove(windowId, child));
@@ -282,7 +282,7 @@ public final class SwingIslandHost {
             say("window " + windowId + " is already mirrored by live island " + idOf(held)
                     + "; refusing to build the Shell the client asked for, and telling it the "
                     + "window is an island so it is not drawn inside another one");
-            FlutterBridge.send(comm, IS_ISLAND_EVENT, Map.of("windowId", windowId));
+            FlutterBridge.send(comm, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_ISLAND, Map.of("windowId", windowId));
             return false;
         }
         return true;
@@ -357,23 +357,23 @@ public final class SwingIslandHost {
                 onDisplay(display, () -> raiseModalSurfaceOver(display, shown));
             }
         });
-        comm.on(SURFACE_EVENT, Object.class, p -> {
+        comm.on(0, 0, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_SURFACE, Object.class, p -> {
             if (p instanceof Map) onDisplay(display, () -> openSurface(display, comm, (Map<?, ?>) p));
         });
-        comm.on(DISPOSE_EVENT, Object.class, p -> {
+        comm.on(0, 0, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_DISPOSE, Object.class, p -> {
             if (p instanceof Map) onDisplay(display, () -> {
                 Shell shell = surfaceShell(display, intOf((Map<?, ?>) p, "windowId"));
                 if (shell != null) shell.dispose();
             });
         });
-        comm.on(RESIZE_EVENT, Object.class, p -> {
+        comm.on(0, 0, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_RESIZE, Object.class, p -> {
             if (p instanceof Map) onDisplay(display, () -> {
                 Map<?, ?> resize = (Map<?, ?>) p;
                 Shell shell = surfaceShell(display, intOf(resize, "windowId"));
                 if (shell != null) setClientSize(shell, intOf(resize, "w"), intOf(resize, "h"));
             });
         });
-        comm.on(TITLE_EVENT, Object.class, p -> {
+        comm.on(0, 0, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_TITLE, Object.class, p -> {
             if (p instanceof Map) onDisplay(display, () -> {
                 Map<?, ?> title = (Map<?, ?>) p;
                 Shell shell = surfaceShell(display, intOf(title, "windowId"));
@@ -466,12 +466,12 @@ public final class SwingIslandHost {
         // may refuse. Only the mirror bundle's teardown, once Java has hidden it, disposes the Shell.
         shell.addListener(SWT.Close, e -> {
             e.doit = false;
-            FlutterBridge.send(comm, CLOSE_EVENT, Map.of("windowId", windowId));
+            FlutterBridge.send(comm, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_CLOSE, Map.of("windowId", windowId));
         });
         mount(island, windowId, intOf(request, "port"), true);
         shell.layout(true);
         shell.open();
-        FlutterBridge.send(comm, OPENED_EVENT, Map.of("windowId", windowId));
+        FlutterBridge.send(comm, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_OPENED, Map.of("windowId", windowId));
     }
 
     /**

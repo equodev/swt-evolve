@@ -1,19 +1,26 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/gen/image.dart';
+import 'package:swtflutter/src/gen/imagedata.dart';
 
 /// The client keeps every described image so Java can name it later. An application that makes a
 /// fresh Image per paint and disposes it would grow that store by a frame's pixels on every paint,
 /// so an image Java disposed has to leave it.
 void main() {
-  VImage describe(int id) => VImage.fromJson({
-        'id': id,
-        'swt': 'Image',
-        'width': 64,
-        'height': 64,
-        'imageData': {'width': 64, 'height': 64, 'depth': 32, 'data': List.filled(64 * 64 * 4, 7)},
-      });
+  /// An image described in full, as a frame's image record leaves it.
+  VImage describe(int id) => rememberOrResolveImage(VImage()
+    ..id = id
+    ..width = 64
+    ..height = 64
+    ..imageData = (VImageData()
+      ..width = 64
+      ..height = 64
+      ..depth = 32
+      ..data = List.filled(64 * 64 * 4, 7)));
 
-  VImage name(int id) => VImage.fromJson({'id': id, 'swt': 'Image', '_r': 1});
+  /// An image a frame only names by id.
+  VImage name(int id) => rememberOrResolveImage(VImage()
+    ..id = id
+    ..isReference = true);
 
   Future<void> nextTurn() => Future<void>.delayed(Duration.zero);
 

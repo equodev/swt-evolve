@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/gen/item.dart';
@@ -7,6 +9,7 @@ import '../gen/swt.dart';
 import '../gen/toolbar.dart';
 import '../gen/toolitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey;
 import '../impl/composite_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
@@ -18,6 +21,12 @@ import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/focus_report.dart';
 import 'utils/tab_only_focus_node.dart';
+import 'utils/layered_layout_builder.dart';
+import 'utils/text_utils.dart';
+import 'utils/cached_text.dart';
+import 'utils/quiet_animations.dart';
+import 'package:flutter/foundation.dart' show listEquals;
+import '../comm/v_registry.dart';
 
 VEvent? toolItemGeometryEvent(BuildContext context) {
   final itemBox = context.findRenderObject();
@@ -88,15 +97,43 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   final FocusReport _focusReport = FocusReport();
   final FocusNode _barNode = FocusNode(debugLabel: 'ToolBar', canRequestFocus: false, skipTraversal: true);
 
+  /// The bar's stop is its entry item, not the Composite surface.
+  @override
+  bool get surfaceTakesTab => false;
+
   bool _ownsItem(FocusNode? node) =>
       node is ToolItemFocusNode && node.context?.findAncestorStateOfType<ToolBarImpl>() == this;
 
   /// The ToolBar holds the focus while one of its own items does; a control hosted in a separator
   /// item reports its own focus.
   void _onFocusChange() {
-    _focusReport.update(_ownsItem(FocusManager.instance.primaryFocus),
+    final primary = FocusManager.instance.primaryFocus;
+    if (_ownsItem(primary) && !(primary as ToolItemFocusNode).arrow) {
+      if (_hotItem != primary) {
+        _hotItem = primary;
+        _updateTabStops();
+      }
+    }
+    _focusReport.update(_ownsItem(primary),
         focusIn: () => widget.sendFocusFocusIn(state, null),
         focusOut: () => widget.sendFocusFocusOut(state, null));
+  }
+
+  /// The item Tab enters the bar on: the one last focused, as Win32's hot item.
+  ToolItemFocusNode? _hotItem;
+
+  /// One Tab stop per bar, when Java names the bar one (VControl.tabStop): Tab enters on the hot
+  /// item, or the first enabled one, and the next Tab leaves the bar; Left/Right move between items.
+  void _updateTabStops() {
+    if (!mounted) return;
+    final stops = _barNode.descendants.where(_ownsItem).cast<ToolItemFocusNode>().toList();
+    final items = stops.where((s) => !s.arrow && s.focusableStop).toList();
+    final entry = state.tabStop ?? false
+        ? (items.contains(_hotItem) ? _hotItem : (items.isEmpty ? null : items.first))
+        : null;
+    for (final stop in stops) {
+      stop.skipTraversal = stop != entry;
+    }
   }
 
   /// With an item focused, Left/Right move to the previous/next enabled item, wrapping around as on
@@ -147,6 +184,10 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
 
   @override
   Widget build(BuildContext context) {
+    _itemWidgets = _builtItemWidgets;
+    _builtItemWidgets = Map<VToolItem, Widget>.identity();
+    // The items' nodes are attached once this frame is laid out.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateTabStops());
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
     final style = StyleBits(state.style);
     final isVertical = style.has(SWT.VERTICAL);
@@ -200,7 +241,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           if (hasBounds(state.bounds)) {
             final allocatedHeight = state.bounds!.height.toDouble();
             final unscaledBar = bar;
-            bar = LayoutBuilder(
+            bar = LayeredLayoutBuilder(
               builder: (context, incoming) {
                 if (incoming.maxWidth <= 0) return unscaledBar;
                 return ConstrainedBox(
@@ -260,37 +301,19 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
                   children: toolItems,
                 );
 
-          bar = LayoutBuilder(
-            builder: (context, incoming) {
-              Widget scaled = FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment:
-                    isRightToLeft ? Alignment.centerRight : Alignment.centerLeft,
-                child: itemRow,
-              );
-
-              // Items paint at fixed theme sizes, so the row only reaches the scale the size
-              // model measured because this FittedBox squeezes it into the box the parent
-              // allotted. A parent that sizes children to their content instead (the CTabFolder
-              // topRight slot) leaves the axis unbounded, so on that axis fall back to the
-              // measured bounds -- otherwise the items paint at the raw theme size.
-              final measured = getConstraintsFromBounds(state.bounds);
-              if (measured != null &&
-                  (!incoming.hasBoundedWidth || !incoming.hasBoundedHeight)) {
-                scaled = ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: incoming.hasBoundedWidth
-                        ? double.infinity
-                        : measured.maxWidth,
-                    maxHeight: incoming.hasBoundedHeight
-                        ? double.infinity
-                        : measured.maxHeight,
-                  ),
-                  child: scaled,
-                );
-              }
-              return scaled;
-            },
+          // Items paint at fixed theme sizes, so the row only reaches the scale the size
+          // model measured because this FittedBox squeezes it into the box the parent
+          // allotted. A parent that sizes children to their content instead (the CTabFolder
+          // topRight slot) leaves the axis unbounded, so on that axis fall back to the
+          // measured bounds -- otherwise the items paint at the raw theme size.
+          bar = _CapUnbounded(
+            measured: getConstraintsFromBounds(state.bounds),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment:
+                  isRightToLeft ? Alignment.centerRight : Alignment.centerLeft,
+              child: itemRow,
+            ),
           );
         }
 
@@ -531,6 +554,11 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     return result;
   }
 
+  /// An item drawn by this bar rather than by a widget of its own changed in a way the bar lays out.
+  void itemChanged() {
+    if (mounted) setState(() {});
+  }
+
   Widget _buildSegmentControl(
     BuildContext context,
     VToolItem keywordItem,
@@ -546,13 +574,21 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     return _SpecialDropdownWidget(toolItem: toolItem);
   }
 
+  /// The widget of each item, kept while the item is the same value. What an item shows reaches it
+  /// on its own channel, so the same widget lets a rebuild of the bar pass an item by.
+  var _itemWidgets = Map<VToolItem, Widget>.identity();
+  var _builtItemWidgets = Map<VToolItem, Widget>.identity();
+
+  Widget _itemWidget(VToolItem item) =>
+      _builtItemWidgets[item] = _itemWidgets[item] ?? ToolItemSwt(value: item);
+
   Widget getWidgetForToolItem(
     VToolItem toolItem,
     ToolBarThemeExtension widgetTheme, {
     bool shouldLimitSize = false,
     double? maxSize,
   }) {
-    final itemWidget = ToolItemSwt(value: toolItem);
+    final itemWidget = _itemWidget(toolItem);
 
     Widget result = Padding(
       padding: widgetTheme.itemPadding,
@@ -580,6 +616,57 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
   }
 }
 
+/// Lays its child out within the parent's constraints, except that an axis the parent leaves
+/// unbounded is capped at [measured].
+class _CapUnbounded extends SingleChildRenderObjectWidget {
+  const _CapUnbounded({required this.measured, required super.child});
+
+  final BoxConstraints? measured;
+
+  @override
+  _RenderCapUnbounded createRenderObject(BuildContext context) => _RenderCapUnbounded(measured);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderCapUnbounded renderObject) {
+    renderObject.measured = measured;
+  }
+}
+
+class _RenderCapUnbounded extends RenderProxyBox {
+  _RenderCapUnbounded(this._measured);
+
+  BoxConstraints? _measured;
+  set measured(BoxConstraints? value) {
+    if (value == _measured) return;
+    _measured = value;
+    markNeedsLayout();
+  }
+
+  BoxConstraints _childConstraints(BoxConstraints constraints) {
+    final measured = _measured;
+    if (measured == null) return constraints;
+    return BoxConstraints(
+      maxWidth: constraints.hasBoundedWidth ? double.infinity : measured.maxWidth,
+      maxHeight: constraints.hasBoundedHeight ? double.infinity : measured.maxHeight,
+    ).enforce(constraints);
+  }
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = constraints.smallest;
+      return;
+    }
+    child.layout(_childConstraints(constraints), parentUsesSize: true);
+    size = child.size;
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) =>
+      child?.getDryLayout(_childConstraints(constraints)) ?? constraints.smallest;
+}
+
 class _SegmentControlWidget extends StatefulWidget {
   final VToolItem keywordItem;
   final VToolItem debugItem;
@@ -594,15 +681,82 @@ class _SegmentControlWidget extends StatefulWidget {
 }
 
 class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
+  /// The two items are drawn here rather than by widgets of their own, so this listens to them: a
+  /// change of what only this control shows redraws it alone, and anything else rebuilds the bar.
+  static const _drawnHere = {WireKey.k_ToolItem_selection, WireKey.k_ToolItem_enabled};
+  static const _selectionOnly = {WireKey.k_ToolItem_selection};
+  List<int> _watched = const [];
+
+  /// Ticks on a change of selection alone: only the parts that show it rebuild.
+  final _selectionChanges = ValueNotifier<int>(0);
+
+  void _watch() {
+    final keys = [
+      VRegistry.keyOf(widget.keywordItem),
+      VRegistry.keyOf(widget.debugItem),
+    ];
+    if (listEquals(keys, _watched)) return;
+    _unwatch();
+    for (final key in keys) {
+      VRegistry.instance.watchAt(key, _itemChanged);
+    }
+    _watched = keys;
+  }
+
+  void _unwatch() {
+    for (final key in _watched) {
+      VRegistry.instance.unwatchAt(key, _itemChanged);
+    }
+    _watched = const [];
+  }
+
+  void _itemChanged(VChange change) {
+    if (!mounted) return;
+    if (change.isOnly(_selectionOnly)) {
+      _selectionChanges.value++;
+    } else if (change.isOnly(_drawnHere)) {
+      setState(() {});
+    } else {
+      context.findAncestorStateOfType<ToolBarImpl>()?.itemChanged();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _watch();
+  }
+
+  @override
+  void didUpdateWidget(_SegmentControlWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _watch();
+  }
+
+  @override
+  void dispose() {
+    _unwatch();
+    _selectionChanges.dispose();
+    super.dispose();
+  }
+
+  Widget _followingSelection(Widget Function() build) => ValueListenableBuilder<int>(
+        valueListenable: _selectionChanges,
+        builder: (context, _, __) => build(),
+      );
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
 
-    return _buildSegmentControlContent(
-      context: context,
-      widgetTheme: widgetTheme,
-      keywordItem: widget.keywordItem,
-      debugItem: widget.debugItem,
+    // A selection animates the control for a while; the rest of the bar need not repaint with it.
+    return RepaintBoundary(
+      child: _buildSegmentControlContent(
+        context: context,
+        widgetTheme: widgetTheme,
+        keywordItem: widget.keywordItem,
+        debugItem: widget.debugItem,
+      ),
     );
   }
 
@@ -623,11 +777,6 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
         ? debugItem
         : keywordItem;
 
-    final keywordSelected = keywordText.selection ?? false;
-    final debugSelected = debugText.selection ?? false;
-    final keywordEnabled = keywordText.enabled ?? true;
-    final debugEnabled = debugText.enabled ?? true;
-
     final textStyle = getTextStyle(
       context: context,
       font: null,
@@ -635,22 +784,13 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
       baseTextStyle: widgetTheme.fontStyle,
     );
 
-    final keywordTextSize = FontUtils.measureTextWidget(
-        widgetTheme.segmentKeywordText, textStyle,
-        maxLines: null);
-    final debugTextSize = FontUtils.measureTextWidget(
-        widgetTheme.segmentDebugText, textStyle,
-        maxLines: null);
+    final keywordTextSize = textSize(widgetTheme.segmentKeywordText, textStyle);
+    final debugTextSize = textSize(widgetTheme.segmentDebugText, textStyle);
 
     final keywordWidth =
         keywordTextSize.width + widgetTheme.segmentPadding.horizontal;
     final debugWidth =
         debugTextSize.width + widgetTheme.segmentPadding.horizontal;
-    final backgroundHeight =
-        keywordTextSize.height + widgetTheme.segmentPadding.vertical;
-
-    final selectedWidth = keywordSelected ? keywordWidth : debugWidth;
-    final leftPosition = keywordSelected ? 0.0 : keywordWidth;
 
     final toolbarTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor =
@@ -671,21 +811,22 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
           ),
           child: Stack(
             children: [
-              AnimatedPositioned(
-                duration: widgetTheme.segmentAnimationDuration,
-                curve: Curves.easeInOut,
-                left: leftPosition,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  width: selectedWidth,
-                  decoration: BoxDecoration(
-                    color: widgetTheme.segmentInnerColor,
-                    borderRadius: BorderRadius.circular(
-                      widgetTheme.segmentBorderRadius,
+              Positioned.fill(
+                child: _followingSelection(() {
+                  final keywordSelected = keywordText.selection ?? false;
+                  return SlidingBox(
+                    duration: widgetTheme.segmentAnimationDuration,
+                    curve: Curves.easeInOut,
+                    left: keywordSelected ? 0.0 : keywordWidth,
+                    width: keywordSelected ? keywordWidth : debugWidth,
+                    decoration: BoxDecoration(
+                      color: widgetTheme.segmentInnerColor,
+                      borderRadius: BorderRadius.circular(
+                        widgetTheme.segmentBorderRadius,
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -694,18 +835,12 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
                     context: context,
                     widgetTheme: widgetTheme,
                     toolItem: keywordText,
-                    otherToolItem: debugText,
-                    isSelected: keywordSelected,
-                    enabled: keywordEnabled,
                     text: widgetTheme.segmentKeywordText,
                   ),
                   _buildSegmentButtonWrapper(
                     context: context,
                     widgetTheme: widgetTheme,
                     toolItem: debugText,
-                    otherToolItem: keywordText,
-                    isSelected: debugSelected,
-                    enabled: debugEnabled,
                     text: widgetTheme.segmentDebugText,
                   ),
                 ],
@@ -721,20 +856,9 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
     required BuildContext context,
     required ToolItemThemeExtension widgetTheme,
     required VToolItem toolItem,
-    required VToolItem otherToolItem,
-    required bool isSelected,
-    required bool enabled,
     required String text,
   }) {
-    final textColor = getSegmentTextColor(widgetTheme, isSelected);
-
-    final textStyle = getTextStyle(
-      context: context,
-      font: null,
-      textColor: textColor,
-      baseTextStyle: widgetTheme.fontStyle,
-    );
-
+    final enabled = toolItem.enabled ?? true;
     return GestureDetector(
       onTap: enabled
           ? () {
@@ -746,11 +870,17 @@ class _SegmentControlWidgetState extends State<_SegmentControlWidget> {
       child: Container(
         padding: widgetTheme.segmentPadding,
         child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: widgetTheme.segmentAnimationDuration,
-            style: textStyle,
-            child: Text(text, textAlign: TextAlign.center),
-          ),
+          child: _followingSelection(() => AnimatedStyledText(
+                text,
+                duration: widgetTheme.segmentAnimationDuration,
+                style: getTextStyle(
+                  context: context,
+                  font: null,
+                  textColor: getSegmentTextColor(widgetTheme, toolItem.selection ?? false),
+                  baseTextStyle: widgetTheme.fontStyle,
+                ),
+                textAlign: TextAlign.center,
+              )),
         ),
       ),
     );
@@ -890,3 +1020,4 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
     );
   }
 }
+

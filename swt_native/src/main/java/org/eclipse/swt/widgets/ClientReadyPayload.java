@@ -1,10 +1,10 @@
 package org.eclipse.swt.widgets;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.ObjectFormatPolicy;
+import dev.equo.swt.WireReader;
+import dev.equo.swt.WireReadable;
 
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.FULL)
-public class ClientReadyPayload {
+/** What the client reports when it is ready: its fields numbered 1 to 10, in declaration order. */
+public class ClientReadyPayload implements WireReadable {
     /** The client viewport (window content) logical size — drives the main shell on desk, the Display on web. */
     public int width;
     public int height;
@@ -21,6 +21,8 @@ public class ClientReadyPayload {
     public int zoom;
     /** Height of the chrome the client draws inside the window above the app content -- the CSD title strip. */
     public int insetTop;
+    /** The fingerprint of the wire table the client was generated with; 0 when it sent none. */
+    public int wireFingerprint;
     /**
      * The client's locale as a BCP 47 tag ({@code es-AR}): the browser's on web, the OS's on desktop. Null from a
      * client that does not report it.
@@ -31,4 +33,32 @@ public class ClientReadyPayload {
      * {@code linux}, {@code iOS}, {@code android}). Null from a client that does not report it.
      */
     public String targetPlatform;
+
+    @Override
+    public boolean readWire(int key, WireReader r) {
+        switch (key) {
+            case 1: width = r.int32(); return true;
+            case 2: height = r.int32(); return true;
+            case 3: isFirst = r.bool(); return true;
+            case 4: displayWidth = r.int32(); return true;
+            case 5: displayHeight = r.int32(); return true;
+            case 6: zoom = r.int32(); return true;
+            case 7: insetTop = r.int32(); return true;
+            case 8: wireFingerprint = r.int32(); return true;
+            case 9: locale = r.string(); return true;
+            case 10: targetPlatform = r.string(); return true;
+        }
+        return false;
+    }
+
+    /**
+     * Fails unless the client numbers the wire as this Java does: generated from another table, every
+     * number either side sends could mean something else to the other.
+     */
+    public void requireSameWireTable() {
+        if (wireFingerprint != dev.equo.swt.WireTable.FINGERPRINT) {
+            throw new IllegalStateException("the client's wire table (" + wireFingerprint + ") is not this Java's ("
+                    + dev.equo.swt.WireTable.FINGERPRINT + "): the client and this Java were not generated together");
+        }
+    }
 }

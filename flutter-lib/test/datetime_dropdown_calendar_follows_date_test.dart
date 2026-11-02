@@ -1,17 +1,16 @@
 // An open DateTime(SWT.DATE | SWT.DROP_DOWN) calendar follows every change of the control's date.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/datetime.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int _dateTimeId = 93;
 
@@ -30,18 +29,6 @@ VDateTime _dropDownDate({required int seq, required int year, required int month
         ..y = 0
         ..width = 120
         ..height = 24);
-
-/// Delivers an inbound frame exactly as the transport would (2-byte name length, name, JSON body).
-void _receive(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
 
 Future<void> _pumpAndOpenCalendar(WidgetTester tester, {String? selectField}) async {
   await tester.pumpWidget(EvolveApp(
@@ -84,10 +71,7 @@ void main() {
   testWidgets('a Java setDate moves the open calendar and its selected day', (tester) async {
     await _pumpAndOpenCalendar(tester);
 
-    _receive('DateTime/$_dateTimeId', {
-      ..._dropDownDate(seq: 2, year: 2024, month: 5, day: 20).toJson(),
-      '_s': 2,
-    });
+    await deliverWhole(_dropDownDate(seq: 2, year: 2024, month: 5, day: 20));
     await tester.pumpAndSettle();
 
     expect(find.text('June 2024'), findsOneWidget,
@@ -102,10 +86,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('February 2026'), findsOneWidget, reason: 'sanity: the calendar paged');
 
-    _receive('DateTime/$_dateTimeId', {
-      ..._dropDownDate(seq: 2, year: 2026, month: 0, day: 16).toJson(),
-      '_s': 2,
-    });
+    await deliverWhole(_dropDownDate(seq: 2, year: 2026, month: 0, day: 16));
     await tester.pumpAndSettle();
 
     expect(find.text('January 2026'), findsOneWidget,

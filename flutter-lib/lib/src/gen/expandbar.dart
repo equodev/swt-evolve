@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -13,11 +13,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/expandbar_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'expandbar.g.dart';
 
 class ExpandBarSwt<V extends VExpandBar> extends CompositeSwt<V> {
   const ExpandBarSwt({super.key, required super.value});
@@ -26,15 +25,14 @@ class ExpandBarSwt<V extends VExpandBar> extends CompositeSwt<V> {
   State createState() => ExpandBarImpl<ExpandBarSwt<VExpandBar>, VExpandBar>();
 
   void sendExpandCollapse(V val, VEvent? payload) {
-    sendEvent(val, "Expand/Collapse", payload);
+    sendEvent(val, 35, payload); // Expand/Collapse
   }
 
   void sendExpandExpand(V val, VEvent? payload) {
-    sendEvent(val, "Expand/Expand", payload);
+    sendEvent(val, 36, payload); // Expand/Expand
   }
 }
 
-@JsonSerializable()
 class VExpandBar extends VComposite {
   VExpandBar() : this.empty();
   VExpandBar.empty() {
@@ -54,17 +52,42 @@ class VExpandBar extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => VExpandItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'spacing':
-        spacing = (json['spacing'] as num?)?.toInt();
+      case 218: // items
+        items = r.refs<VExpandItem>();
+        return true;
+      case 219: // spacing
+        spacing = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(218);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = spacing;
+      if (v_ != null) {
+        w.keyInt32(219, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(218, items);
+    visit(219, spacing);
   }
 
   @override
@@ -72,8 +95,4 @@ class VExpandBar extends VComposite {
     super.adoptChildren(adopt);
     VWidget.adoptEach(items, adopt);
   }
-
-  factory VExpandBar.fromJson(Map<String, dynamic> json) =>
-      _$VExpandBarFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VExpandBarToJson(this);
 }

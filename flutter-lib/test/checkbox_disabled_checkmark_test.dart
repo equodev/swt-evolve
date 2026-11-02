@@ -56,7 +56,7 @@ Color _boxColor(WidgetTester tester) {
   final box = tester.widgetList<AnimatedContainer>(
     find.descendant(
       of: find.byType(ButtonSwt<VButton>),
-      matching: find.byType(AnimatedContainer),
+      matching: find.byWidgetPredicate((w) => w is AnimatedContainer),
     ),
   ).first;
   return (box.decoration as BoxDecoration).color!;
@@ -97,7 +97,7 @@ void main() {
     // — the box itself is a bordered circle.
     final dot = tester
         .widgetList<Container>(find.descendant(
-          of: find.byType(AnimatedContainer),
+          of: find.byWidgetPredicate((w) => w is AnimatedContainer),
           matching: find.byType(Container),
         ))
         .map((c) => c.decoration)

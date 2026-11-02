@@ -17,6 +17,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'support/deliver.dart';
 
@@ -72,7 +73,7 @@ void main() {
 
     // Only the row is described. Nothing is sent about the table, which is the whole point: a row
     // changing must not cost a re-send of every other row.
-    await deliverChange(_row(101, 'edited', seq: 10), changed: ['texts'], base: 1);
+    await deliverChange(_row(101, 'edited', seq: 10), keys: [WireKey.k_TableItem_texts], base: 1);
     await tester.pumpAndSettle();
 
     expect(find.text('edited'), findsOneWidget,
@@ -94,7 +95,7 @@ void main() {
           ..width = 200
           ..alignment = SWT.LEFT
           ..text = 'Renamed',
-        changed: ['text'],
+        keys: [WireKey.k_Item_text],
         base: 1);
     await tester.pumpAndSettle();
 

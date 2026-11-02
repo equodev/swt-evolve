@@ -32,28 +32,40 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     super.initState();
     _drawer = GCDrawer.embedded(
       state,
-      onShapesUpdated: (_) {
-        if (!mounted) return;
-        setState(() {});
-        // Promote the overlay onstage once it has painted content (a constructor-only paint
-        // sends no VGC state push that would otherwise do it).
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _notifyParentGCReady();
-        });
-      },
-      onGCDispose: (finalShapes) {
-        if (mounted) {
-          setState(() {
-            _snapshot = finalShapes;
-          });
-        }
-      },
+      onShapesUpdated: _onShapesUpdated,
+      onGCDispose: _onGCDispose,
       onFullRepaintNeeded: _requestFullRepaintFromParent,
     );
     // The op channels are registered now; tell the owner it may ask Java to paint.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _notifyParentGCSubscribed();
     });
+  }
+
+  // Called on every paint, so they rebuild without a closure for setState and schedule the parent's
+  // notice once per frame.
+  void _onShapesUpdated(List<Shape> _) {
+    if (!mounted) return;
+    (context as Element).markNeedsBuild();
+    // Promote the overlay onstage once it has painted content (a constructor-only paint
+    // sends no VGC state push that would otherwise do it).
+    if (_readyNoticeDue) return;
+    _readyNoticeDue = true;
+    WidgetsBinding.instance.addPostFrameCallback(_readyNotice);
+  }
+
+  bool _readyNoticeDue = false;
+  late final void Function(Duration) _readyNotice = _noticeReady;
+
+  void _noticeReady(Duration _) {
+    _readyNoticeDue = false;
+    if (mounted) _notifyParentGCReady();
+  }
+
+  void _onGCDispose(List<Shape> finalShapes) {
+    if (!mounted) return;
+    _snapshot = finalShapes;
+    (context as Element).markNeedsBuild();
   }
 
   void _notifyParentGCSubscribed() {

@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/image.dart';
+import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 
@@ -10,18 +13,15 @@ const _png8bpp =
 const _png24bpp =
     'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEUlEQVR4nGP4zzAKSAPAEAMAOA0B/w2tcokAAAAASUVORK5CYII=';
 
-VImage _image(String base64Png, int depth) => VImage.fromJson({
-      'id': 7,
-      'swt': 'Image',
-      'width': 10,
-      'height': 10,
-      'imageData': {
-        'width': 10,
-        'height': 10,
-        'depth': depth,
-        'data': base64Png,
-      },
-    });
+VImage _image(String base64Png, int depth) => VImage()
+  ..id = 7
+  ..width = 10
+  ..height = 10
+  ..imageData = (VImageData()
+    ..width = 10
+    ..height = 10
+    ..depth = depth
+    ..data = base64Decode(base64Png));
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -5,12 +5,7 @@ import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VCTabFolder extends VComposite {
 
     protected VCTabFolder() {
@@ -20,7 +15,6 @@ public class VCTabFolder extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getMRUVisible() {
         return ((DartCTabFolder) impl).getMRUVisible();
     }
@@ -37,7 +31,6 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).borderVisible = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getChevronVisible() {
         return ((DartCTabFolder) impl).chevronVisible;
     }
@@ -45,7 +38,6 @@ public class VCTabFolder extends VComposite {
     public void setChevronVisible(boolean value) {
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getDirtyIndicatorStyle() {
         return ((DartCTabFolder) impl).getDirtyIndicatorStyle();
     }
@@ -54,22 +46,26 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).dirtyIndicatorStyle = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Color[] getGradientColors() {
         Color[] values = ((DartCTabFolder) impl).gradientColors;
         if (values == null)
             return null;
-        ArrayList<Color> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Color v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Color[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Color[] result = new Color[kept];
+        kept = 0;
+        for (Color v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setGradientColors(Color[] value) {
         ((DartCTabFolder) impl).gradientColors = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getGradientPercents() {
         return ((DartCTabFolder) impl).gradientPercents;
     }
@@ -78,7 +74,6 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).gradientPercents = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getGradientVertical() {
         return ((DartCTabFolder) impl).gradientVertical;
     }
@@ -106,10 +101,16 @@ public class VCTabFolder extends VComposite {
         CTabItem[] values = ((DartCTabFolder) impl).getItems();
         if (values == null)
             return null;
-        ArrayList<CTabItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (CTabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new CTabItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        CTabItem[] result = new CTabItem[kept];
+        kept = 0;
+        for (CTabItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(CTabItem[] value) {
@@ -207,22 +208,26 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionForeground = value;
     }
 
-    @JsonAttribute(ignore = true)
     public Color[] getSelectionGradientColors() {
         Color[] values = ((DartCTabFolder) impl).selectionGradientColors;
         if (values == null)
             return null;
-        ArrayList<Color> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (Color v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new Color[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        Color[] result = new Color[kept];
+        kept = 0;
+        for (Color v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setSelectionGradientColors(Color[] value) {
         ((DartCTabFolder) impl).selectionGradientColors = value;
     }
 
-    @JsonAttribute(ignore = true)
     public int[] getSelectionGradientPercents() {
         return ((DartCTabFolder) impl).selectionGradientPercents;
     }
@@ -231,7 +236,6 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).selectionGradientPercents = value;
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getSelectionGradientVertical() {
         return ((DartCTabFolder) impl).selectionGradientVertical;
     }
@@ -254,7 +258,6 @@ public class VCTabFolder extends VComposite {
     public void setShowListPopupSeq(int value) {
     }
 
-    @JsonAttribute(ignore = true)
     @SuppressWarnings("removal")
     public boolean getSimple() {
         return ((DartCTabFolder) impl).getSimple();
@@ -324,160 +327,449 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).showUnselectedImage = value;
     }
 
-    public static final String BORDER_VISIBLE = "borderVisible";
+    public static final int BORDER_VISIBLE = 36;
 
-    public static final String CHEVRON_VISIBLE = "chevronVisible";
+    public static final int CHEVRON_VISIBLE = 37;
 
-    public static final String HIGHLIGHT = "highlight";
+    public static final int HIGHLIGHT = 38;
 
-    public static final String HIGHLIGHT_ENABLED = "highlightEnabled";
+    public static final int HIGHLIGHT_ENABLED = 39;
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 40;
 
-    public static final String MAXIMIZE_VISIBLE = "maximizeVisible";
+    public static final int MAXIMIZE_VISIBLE = 41;
 
-    public static final String MAXIMIZED = "maximized";
+    public static final int MAXIMIZED = 42;
 
-    public static final String MINIMIZE_VISIBLE = "minimizeVisible";
+    public static final int MINIMIZE_VISIBLE = 43;
 
-    public static final String MINIMIZED = "minimized";
+    public static final int MINIMIZED = 44;
 
-    public static final String MINIMUM_CHARACTERS = "minimumCharacters";
+    public static final int MINIMUM_CHARACTERS = 45;
 
-    public static final String SELECTED_IMAGE_VISIBLE = "selectedImageVisible";
+    public static final int SELECTED_IMAGE_VISIBLE = 46;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 47;
 
-    public static final String SELECTION_BACKGROUND = "selectionBackground";
+    public static final int SELECTION_BACKGROUND = 48;
 
-    public static final String SELECTION_BAR_THICKNESS = "selectionBarThickness";
+    public static final int SELECTION_BAR_THICKNESS = 49;
 
-    public static final String SELECTION_BG_IMAGE = "selectionBgImage";
+    public static final int SELECTION_BG_IMAGE = 50;
 
-    public static final String SELECTION_FOREGROUND = "selectionForeground";
+    public static final int SELECTION_FOREGROUND = 51;
 
-    public static final String SHOW_CHEVRON = "showChevron";
+    public static final int SHOW_CHEVRON = 52;
 
-    public static final String SHOW_LIST_POPUP_SEQ = "showListPopupSeq";
+    public static final int SHOW_LIST_POPUP_SEQ = 53;
 
-    public static final String SINGLE = "single";
+    public static final int SINGLE = 54;
 
-    public static final String TAB_HEIGHT = "tabHeight";
+    public static final int TAB_HEIGHT = 55;
 
-    public static final String TAB_POSITION = "tabPosition";
+    public static final int TAB_POSITION = 56;
 
-    public static final String TOP_RIGHT = "topRight";
+    public static final int TOP_RIGHT = 57;
 
-    public static final String TOP_RIGHT_ALIGNMENT = "topRightAlignment";
+    public static final int TOP_RIGHT_ALIGNMENT = 58;
 
-    public static final String UNSELECTED_CLOSE_VISIBLE = "unselectedCloseVisible";
+    public static final int UNSELECTED_CLOSE_VISIBLE = 59;
 
-    public static final String UNSELECTED_IMAGE_VISIBLE = "unselectedImageVisible";
+    public static final int UNSELECTED_IMAGE_VISIBLE = 60;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "borderVisible":
-                Serializer.writeKeyValue(writer, "borderVisible", getBorderVisible());
-                return;
-            case "chevronVisible":
-                Serializer.writeKeyValue(writer, "chevronVisible", getChevronVisible());
-                return;
-            case "highlight":
-                Serializer.writeKeyValue(writer, "highlight", getHighlight());
-                return;
-            case "highlightEnabled":
-                Serializer.writeKeyValue(writer, "highlightEnabled", getHighlightEnabled());
-                return;
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "maximizeVisible":
-                Serializer.writeKeyValue(writer, "maximizeVisible", getMaximizeVisible());
-                return;
-            case "maximized":
-                Serializer.writeKeyValue(writer, "maximized", getMaximized());
-                return;
-            case "minimizeVisible":
-                Serializer.writeKeyValue(writer, "minimizeVisible", getMinimizeVisible());
-                return;
-            case "minimized":
-                Serializer.writeKeyValue(writer, "minimized", getMinimized());
-                return;
-            case "minimumCharacters":
-                Serializer.writeKeyValue(writer, "minimumCharacters", getMinimumCharacters());
-                return;
-            case "selectedImageVisible":
-                Serializer.writeKeyValue(writer, "selectedImageVisible", getSelectedImageVisible());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "selectionBackground":
-                Serializer.writeKeyValue(writer, "selectionBackground", getSelectionBackground());
-                return;
-            case "selectionBarThickness":
-                Serializer.writeKeyValue(writer, "selectionBarThickness", getSelectionBarThickness());
-                return;
-            case "selectionBgImage":
-                Serializer.writeKeyValue(writer, "selectionBgImage", getSelectionBgImage());
-                return;
-            case "selectionForeground":
-                Serializer.writeKeyValue(writer, "selectionForeground", getSelectionForeground());
-                return;
-            case "showChevron":
-                Serializer.writeKeyValue(writer, "showChevron", getShowChevron());
-                return;
-            case "showListPopupSeq":
-                Serializer.writeKeyValue(writer, "showListPopupSeq", getShowListPopupSeq());
-                return;
-            case "single":
-                Serializer.writeKeyValue(writer, "single", getSingle());
-                return;
-            case "tabHeight":
-                Serializer.writeKeyValue(writer, "tabHeight", getTabHeight());
-                return;
-            case "tabPosition":
-                Serializer.writeKeyValue(writer, "tabPosition", getTabPosition());
-                return;
-            case "topRight":
-                Serializer.writeKeyValue(writer, "topRight", getTopRight());
-                return;
-            case "topRightAlignment":
-                Serializer.writeKeyValue(writer, "topRightAlignment", getTopRightAlignment());
-                return;
-            case "unselectedCloseVisible":
-                Serializer.writeKeyValue(writer, "unselectedCloseVisible", getUnselectedCloseVisible());
-                return;
-            case "unselectedImageVisible":
-                Serializer.writeKeyValue(writer, "unselectedImageVisible", getUnselectedImageVisible());
-                return;
+            case BORDER_VISIBLE:
+                return "borderVisible";
+            case CHEVRON_VISIBLE:
+                return "chevronVisible";
+            case HIGHLIGHT:
+                return "highlight";
+            case HIGHLIGHT_ENABLED:
+                return "highlightEnabled";
+            case ITEMS:
+                return "items";
+            case MAXIMIZE_VISIBLE:
+                return "maximizeVisible";
+            case MAXIMIZED:
+                return "maximized";
+            case MINIMIZE_VISIBLE:
+                return "minimizeVisible";
+            case MINIMIZED:
+                return "minimized";
+            case MINIMUM_CHARACTERS:
+                return "minimumCharacters";
+            case SELECTED_IMAGE_VISIBLE:
+                return "selectedImageVisible";
+            case SELECTION:
+                return "selection";
+            case SELECTION_BACKGROUND:
+                return "selectionBackground";
+            case SELECTION_BAR_THICKNESS:
+                return "selectionBarThickness";
+            case SELECTION_BG_IMAGE:
+                return "selectionBgImage";
+            case SELECTION_FOREGROUND:
+                return "selectionForeground";
+            case SHOW_CHEVRON:
+                return "showChevron";
+            case SHOW_LIST_POPUP_SEQ:
+                return "showListPopupSeq";
+            case SINGLE:
+                return "single";
+            case TAB_HEIGHT:
+                return "tabHeight";
+            case TAB_POSITION:
+                return "tabPosition";
+            case TOP_RIGHT:
+                return "topRight";
+            case TOP_RIGHT_ALIGNMENT:
+                return "topRightAlignment";
+            case UNSELECTED_CLOSE_VISIBLE:
+                return "unselectedCloseVisible";
+            case UNSELECTED_IMAGE_VISIBLE:
+                return "unselectedImageVisible";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = CTabFolder.class)
-    public static class CTabFolderJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCTabFolder.class, (JsonWriter.WriteObject<DartCTabFolder>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCTabFolder.class, (JsonReader.ReadObject<DartCTabFolder>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 36:
+                w.write(getBorderVisible());
+                return true;
+            case 37:
+                w.write(getChevronVisible());
+                return true;
+            case 38:
+                w.write(getHighlight());
+                return true;
+            case 39:
+                w.write(getHighlightEnabled());
+                return true;
+            case 40:
+                w.refs(getItems());
+                return true;
+            case 41:
+                w.write(getMaximizeVisible());
+                return true;
+            case 42:
+                w.write(getMaximized());
+                return true;
+            case 43:
+                w.write(getMinimizeVisible());
+                return true;
+            case 44:
+                w.write(getMinimized());
+                return true;
+            case 45:
+                w.write((int) getMinimumCharacters());
+                return true;
+            case 46:
+                w.write(getSelectedImageVisible());
+                return true;
+            case 47:
+                w.write((int) getSelection());
+                return true;
+            case 48:
+                w.write(getSelectionBackground());
+                return true;
+            case 49:
+                w.write((int) getSelectionBarThickness());
+                return true;
+            case 50:
+                w.image(getSelectionBgImage());
+                return true;
+            case 51:
+                w.write(getSelectionForeground());
+                return true;
+            case 52:
+                w.write(getShowChevron());
+                return true;
+            case 53:
+                w.write((int) getShowListPopupSeq());
+                return true;
+            case 54:
+                w.write(getSingle());
+                return true;
+            case 55:
+                w.write(getTabHeight());
+                return true;
+            case 56:
+                w.write((int) getTabPosition());
+                return true;
+            case 57:
+                w.ref(getTopRight());
+                return true;
+            case 58:
+                w.write((int) getTopRightAlignment());
+                return true;
+            case 59:
+                w.write(getUnselectedCloseVisible());
+                return true;
+            case 60:
+                w.write(getUnselectedImageVisible());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static CTabFolder read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 36:
+                {
+                    boolean v_ = getBorderVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(36);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 37:
+                {
+                    boolean v_ = getChevronVisible();
+                    w.key(37);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 38:
+                {
+                    boolean v_ = getHighlight();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(38);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 39:
+                {
+                    boolean v_ = getHighlightEnabled();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(39);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 40:
+                {
+                    CTabItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(40);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 41:
+                {
+                    boolean v_ = getMaximizeVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(41);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 42:
+                {
+                    boolean v_ = getMaximized();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(42);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 43:
+                {
+                    boolean v_ = getMinimizeVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(43);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 44:
+                {
+                    boolean v_ = getMinimized();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(44);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 45:
+                {
+                    int v_ = getMinimumCharacters();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(45);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 46:
+                {
+                    boolean v_ = getSelectedImageVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(46);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 47:
+                {
+                    int v_ = getSelection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(47);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 48:
+                {
+                    Color v_ = getSelectionBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(48);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 49:
+                {
+                    int v_ = getSelectionBarThickness();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(49);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 50:
+                {
+                    Image v_ = getSelectionBgImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(50);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 51:
+                {
+                    Color v_ = getSelectionForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(51);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 52:
+                {
+                    boolean v_ = getShowChevron();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(52);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 53:
+                {
+                    int v_ = getShowListPopupSeq();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(53);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 54:
+                {
+                    boolean v_ = getSingle();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(54);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 55:
+                {
+                    Integer v_ = getTabHeight();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(55);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 56:
+                {
+                    int v_ = getTabPosition();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(56);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 57:
+                {
+                    Control v_ = getTopRight();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(57);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 58:
+                {
+                    int v_ = getTopRightAlignment();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(58);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 59:
+                {
+                    boolean v_ = getUnselectedCloseVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(59);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 60:
+                {
+                    boolean v_ = getUnselectedImageVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(60);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, CTabFolder api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 37:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

@@ -3,11 +3,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VControlEditor {
 
     protected VControlEditor() {
@@ -32,28 +28,60 @@ public class VControlEditor {
         ((DartControlEditor) impl).editor = value;
     }
 
-    @JsonConverter(target = ControlEditor.class)
-    public static class ControlEditorJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartControlEditor.class, (JsonWriter.WriteObject<DartControlEditor>) (writer, impl) -> {
-                Serializer.writeEditorWithId(json, writer, impl);
-            });
-            json.registerReader(DartControlEditor.class, (JsonReader.ReadObject<DartControlEditor>) reader -> {
-                return null;
-            });
+    /**
+     * Writes one property's value into a frame of the binary wire by its number; false for a number no class up to this one writes.
+     */
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 146:
+                w.ref(getEditor());
+                return true;
         }
+        return false;
+    }
 
-        public static ControlEditor read(JsonReader<?> reader) throws IOException {
-            return null;
+    /**
+     * Writes one property of a whole description, key and value, unless it is at a default the client starts from, which is recognised without writing it; returns which (dev.equo.swt.WidgetWire.WRITTEN, AT_ZERO, AT_EMPTY or UNHANDLED).
+     */
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 146:
+                {
+                    Control v_ = getEditor();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(146);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return dev.equo.swt.WidgetWire.UNHANDLED;
+    }
 
-        public static void write(JsonWriter writer, ControlEditor api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = new int[] { 146 };
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    /**
+     * The number of every property a whole description writes.
+     */
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    /**
+     * Whether a whole description writes this property even at its default.
+     */
+    public boolean wireAlways(int key) {
+        return false;
+    }
+
+    /**
+     * Whether this property is written when empty: empty is not its default, null is.
+     */
+    public boolean wireKeepsEmpty(int key) {
+        return false;
     }
 }

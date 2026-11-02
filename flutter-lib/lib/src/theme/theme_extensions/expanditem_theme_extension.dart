@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'expanditem_theme_extension.tailor.dart';
-part 'expanditem_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@EdgeInsetsConverter()
-@TextStyleConverter()
-@CurveConverter()
 class ExpandItemThemeExtension extends ThemeExtension<ExpandItemThemeExtension> with _$ExpandItemThemeExtensionTailorMixin {
   // Colors
   final Color backgroundColor;
@@ -75,9 +66,4 @@ class ExpandItemThemeExtension extends ThemeExtension<ExpandItemThemeExtension> 
     required this.imageTextSpacing,
     required this.minTextContrast,
   });
-
-  factory ExpandItemThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ExpandItemThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ExpandItemThemeExtensionToJson(this);
 }

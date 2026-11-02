@@ -1,7 +1,10 @@
 package org.eclipse.swt.custom;
 
 import dev.equo.swt.harness.UserInput.Key;
+import dev.equo.swt.harness.WireFrames;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Canvas;
@@ -56,10 +59,20 @@ class StyledTextScrollFlutterTest {
         text = stage.subject;
     }
 
-    private static boolean sentIn(List<String> frames, String... parts) {
+    private static boolean sentIn(List<WireFrames.Travelled> frames, java.util.function.Predicate<WireFrames.Travelled> what) {
         synchronized (frames) {
-            return frames.stream().anyMatch(f -> java.util.Arrays.stream(parts).allMatch(f::contains));
+            return frames.stream().anyMatch(what);
         }
+    }
+
+    private static boolean scrolls(WireFrames.Travelled frame, Object text) {
+        Map<String, Object> state = frame.stateOf(text);
+        return state != null && state.containsKey("topPixel");
+    }
+
+    private static boolean drawsOn(WireFrames.Travelled frame, Object canvas) {
+        String channel = "GC/" + canvas.hashCode();
+        return frame.channels().stream().anyMatch(c -> c.equals(channel) || c.startsWith(channel + "/"));
     }
 
     @Test
@@ -108,12 +121,12 @@ class StyledTextScrollFlutterTest {
         text.addListener(SWT.Paint, e -> ruler.redraw());
         stage.settle();
 
-        List<String> frames = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        List<WireFrames.Travelled> frames = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         stage.flutter.devTools().onEvent("Network.webSocketFrameReceived", params -> {
             com.google.gson.JsonObject response = params.getAsJsonObject("response");
             if (response == null || response.get("opcode").getAsInt() != 2) return;
-            frames.add(new String(java.util.Base64.getDecoder().decode(response.get("payloadData").getAsString()),
-                    java.nio.charset.StandardCharsets.UTF_8));
+            frames.add(WireFrames.travelled(
+                    java.util.Base64.getDecoder().decode(response.get("payloadData").getAsString())));
         });
         stage.flutter.devTools().send("Network.enable", null);
 
@@ -125,16 +138,15 @@ class StyledTextScrollFlutterTest {
                 // DevTools reports the frames on its own socket, so they can trail the flush's
                 // acknowledgement. Nothing is dispatched while waiting, so no later flush can add to them.
                 long deadline = System.currentTimeMillis() + 2_000;
-                while (System.currentTimeMillis() < deadline && !(sentIn(frames, "\"topPixel\"", String.valueOf(text.hashCode()))
-                        && sentIn(frames, "GC/" + ruler.hashCode()))) {
+                while (System.currentTimeMillis() < deadline
+                        && !(sentIn(frames, f -> scrolls(f, text)) && sentIn(frames, f -> drawsOn(f, ruler)))) {
                     Thread.sleep(5);
                 }
 
-                List<String> sent = new java.util.ArrayList<>(frames);
-                assertThat(sent).as("frames for tick %d", tick)
-                        .anyMatch(f -> f.contains("\"topPixel\"") && f.contains(String.valueOf(text.hashCode())));
+                List<WireFrames.Travelled> sent = new java.util.ArrayList<>(frames);
+                assertThat(sent).as("frames for tick %d", tick).anyMatch(f -> scrolls(f, text));
                 assertThat(sent).as("the ruler's drawing goes out with the scroll, tick %d", tick)
-                        .anyMatch(f -> f.contains("GC/" + ruler.hashCode()));
+                        .anyMatch(f -> drawsOn(f, ruler));
             }
         } finally {
             ruler.dispose();
@@ -153,12 +165,12 @@ class StyledTextScrollFlutterTest {
         text.setTopIndex(900);
         stage.settle();
 
-        List<String> frames = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        List<WireFrames.Travelled> frames = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         stage.flutter.devTools().onEvent("Network.webSocketFrameReceived", params -> {
             com.google.gson.JsonObject response = params.getAsJsonObject("response");
             if (response == null || response.get("opcode").getAsInt() != 2) return;
-            frames.add(new String(java.util.Base64.getDecoder().decode(response.get("payloadData").getAsString()),
-                    java.nio.charset.StandardCharsets.UTF_8));
+            frames.add(WireFrames.travelled(
+                    java.util.Base64.getDecoder().decode(response.get("payloadData").getAsString())));
         });
         stage.flutter.devTools().send("Network.enable", null);
 
@@ -168,7 +180,7 @@ class StyledTextScrollFlutterTest {
             frames.clear();
             text.setTopIndex(top);
             stage.flutter.flush();
-            if (new java.util.ArrayList<>(frames).stream().anyMatch(f -> f.contains("\"styleIndex\""))) {
+            if (new java.util.ArrayList<>(frames).stream().anyMatch(f -> f.mentions("styleIndex"))) {
                 boundary = top;
             }
         }
@@ -178,18 +190,21 @@ class StyledTextScrollFlutterTest {
         // Crossing the edge back and forth must not rebuild the band each time.
         for (int tick = 0; tick < 4; tick++) {
             frames.clear();
+            String before = java.util.Arrays.toString(StyledTextHelper.heldBandForTesting(text));
             text.setTopIndex(tick % 2 == 0 ? boundary - 2 : boundary);
             stage.flutter.flush();
 
             assertThat(new java.util.ArrayList<>(frames))
-                    .as("tick %d: two lines either side of the edge is the same band", tick)
-                    .noneMatch(f -> f.contains("\"styleIndex\""));
+                    .as("tick %d: two lines either side of the edge %d is the same band (held %s, then %s; client area %s, line height %d)",
+                            tick, boundary, before, java.util.Arrays.toString(StyledTextHelper.heldBandForTesting(text)),
+                            text.getClientArea(), text.getLineHeight())
+                    .noneMatch(f -> f.mentions("styleIndex"));
         }
     }
 
     @Test
     @DisplayName("a line added inside the band keeps the band, so its styles travel as a small change")
-    void aNewLineKeepsTheBand() {
+    void aNewLineKeepsTheBand() throws InterruptedException {
         fresh(SWT.MULTI | SWT.V_SCROLL, lines(2000));
         for (int line = 0; line < 2000; line += 2) {
             int start = text.getOffsetAtLine(line);
@@ -204,12 +219,12 @@ class StyledTextScrollFlutterTest {
         text.setTopIndex(top);
         stage.settle();
 
-        List<String> frames = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        List<WireFrames.Travelled> frames = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
         stage.flutter.devTools().onEvent("Network.webSocketFrameReceived", params -> {
             com.google.gson.JsonObject response = params.getAsJsonObject("response");
             if (response == null || response.get("opcode").getAsInt() != 2) return;
-            frames.add(new String(java.util.Base64.getDecoder().decode(response.get("payloadData").getAsString()),
-                    java.nio.charset.StandardCharsets.UTF_8));
+            frames.add(WireFrames.travelled(
+                    java.util.Base64.getDecoder().decode(response.get("payloadData").getAsString())));
         });
         stage.flutter.devTools().send("Network.enable", null);
 
@@ -217,16 +232,42 @@ class StyledTextScrollFlutterTest {
         text.replaceTextRange(text.getOffsetAtLine(top + 5), 0, "\n");
         stage.flutter.flush();
 
-        java.util.regex.Matcher index = java.util.regex.Pattern.compile("\"styleIndex\":\\[([^\\]]*)\\]")
-                .matcher(String.join("", new java.util.ArrayList<>(frames)));
-        assertThat(index.find()).as("the edit moved the runs after it, so the index travels").isTrue();
-        String[] ints = index.group(1).split(",");
-        assertThat(Integer.parseInt(ints[0].trim()))
+        // DevTools reports the frames on its own socket, so they can trail the flush's acknowledgement.
+        List<?> ints = null;
+        long deadline = System.currentTimeMillis() + 2_000;
+        while (ints == null && System.currentTimeMillis() < deadline) {
+            ints = new java.util.ArrayList<>(frames).stream()
+                    .flatMap(f -> f.records().stream())
+                    .flatMap(r -> WireValues.find(r.state(), m -> m.get("styleIndex") instanceof List).stream())
+                    .map(m -> (List<?>) m.get("styleIndex"))
+                    .findFirst().orElse(null);
+            if (ints == null) Thread.sleep(5);
+        }
+        assertThat(ints).as("the edit moved the runs after it, so the index travels").isNotNull();
+        assertThat(((Number) ints.get(0)).intValue())
                 .as("as a change from what the client holds")
                 .isEqualTo(StyledTextHelper.STYLE_INDEX_EDIT);
-        assertThat(ints.length)
+        assertThat(ints.size())
                 .as("a handful of ints, not the band rebuilt at another quantum")
                 .isLessThan(100);
+    }
+
+    @Test
+    @DisplayName("the bar follows a scroll made before it had its range")
+    void theBarFollowsAScrollMadeBeforeItHadItsRange() {
+        // An editor restoring its position as it opens scrolls before its bar has a range, and the bar
+        // clamps the selection it is given to 0. The first wheel step starts from the bar, so it went to
+        // the top of the document. Once the bar has its range again it is where the text is.
+        fresh(SWT.MULTI | SWT.V_SCROLL, lines(400));
+        text.setTopPixel(2000);
+        ScrollBar bar = text.getVerticalBar();
+        bar.setSelection(0);
+
+        text.setBounds(0, 0, StyledTextFlutterStage.WIDTH, StyledTextFlutterStage.HEIGHT - 1);
+        stage.settle();
+
+        assertThat(text.getTopPixel()).as("still scrolled").isEqualTo(2000);
+        assertThat(bar.getSelection()).as("the bar where the text is").isEqualTo(2000);
     }
 
     @Test
@@ -321,10 +362,14 @@ class StyledTextScrollFlutterTest {
 
     /** What a line-number ruler asks: which line is at the top, and where does each line sit. */
     private void assertTopLineIsConsistent(String when) {
+        // The top index is the first line shown whole (StyledText#getTopIndex), which is what
+        // JFace's rulers count from; the line at the top edge may be the one before it, in part.
         int top = text.getTopIndex();
-        assertThat(text.getLineIndex(0)).as("line at the top of the client area, %s", when).isEqualTo(top);
-        assertThat(text.getLinePixel(top)).as("where the top line sits, %s", when)
-                .isBetween(-text.getLineHeight(text.getOffsetAtLine(top)), 0);
+        assertThat(text.getLinePixel(top)).as("the top line is shown whole, %s", when).isGreaterThanOrEqualTo(0);
+        if (top > 0) {
+            assertThat(text.getLinePixel(top - 1)).as("the line before it is not, %s", when).isLessThan(0);
+        }
+        assertThat(text.getLineIndex(0)).as("line at the top of the client area, %s", when).isBetween(top - 1, top);
         Map<Integer, Double> painted = stage.paintedRowY(text);
         assertThat(painted).as("painted lines %s", when).containsKey(top);
         assertThat(painted.get(top)).as("the client painted the top line where the widget says, %s", when)

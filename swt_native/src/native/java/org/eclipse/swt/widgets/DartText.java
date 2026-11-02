@@ -277,6 +277,7 @@ public class DartText extends DartScrollable implements IText {
                 return;
         }
         setSelection(getCharCount());
+        apiEdits.record(this, TextApiEdits.APPEND, "");
         insertEditText(string);
         if (string.length() != 0) {
             getValue().markDirty(VText.TEXT);
@@ -366,12 +367,15 @@ public class DartText extends DartScrollable implements IText {
     @Override
     void createWidget() {
         super.createWidget();
-        if ((getApi().style & SWT.PASSWORD) != 0)
+        if ((getApi().style & SWT.PASSWORD) != 0) {
             echoCharacter = PASSWORD;
+            getValue().markDirty(VText.ECHO_CHARACTER);
+        }
         if ((getApi().style & SWT.PASSWORD) != 0) {
         }
         doubleClick = true;
         message = "";
+        getValue().markDirty(VText.MESSAGE);
     }
 
     /**
@@ -403,6 +407,7 @@ public class DartText extends DartScrollable implements IText {
                 return;
         }
         copyToClipboard(getEditText(oldSelection.x, oldSelection.y - 1));
+        apiEdits.record(this, TextApiEdits.CUT, newText);
         insertEditText(newText);
         if (!oldSelection.equals(getSelection()))
             sendEvent(SWT.Modify);
@@ -1001,23 +1006,18 @@ public class DartText extends DartScrollable implements IText {
             if (string == null)
                 return;
         }
+        apiEdits.record(this, TextApiEdits.INSERT, "");
         insertEditText(string);
     }
 
     void insertEditText(String string) {
-        int length = string.length();
         Point selection = getSelection();
         if (selection.x > getCharCount() || selection.y > getCharCount()) {
             int _l = getCharCount();
             selection = new Point(Math.min(selection.x, _l), Math.min(selection.y, _l));
         }
         String oldText = getText();
-        if (textLimit != Text.LIMIT) {
-            int charCount = oldText.length();
-            if (charCount - (selection.y - selection.x) + length > textLimit) {
-                string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
-            }
-        }
+        string = TextHelper.clipToLimit(this, string, selection);
         String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
         clearSegments(false);
         setEditText(newText);
@@ -1074,26 +1074,7 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void _paste(boolean enableUndo) {
-        if ((getApi().style & SWT.READ_ONLY) != 0)
-            return;
-        String newText = getClipboardText();
-        if (newText == null)
-            return;
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            Point selection = getSelection();
-            newText = verifyText(newText, selection.x, selection.y);
-            if (newText == null)
-                return;
-        }
-        if (textLimit != Text.LIMIT) {
-            Point sel = getSelection();
-            int charCount = getCharCount();
-            if (charCount - (sel.y - sel.x) + newText.length() > textLimit) {
-                newText = newText.substring(0, Math.max(0, textLimit - charCount + (sel.y - sel.x)));
-            }
-        }
-        _insertEditText(newText, enableUndo);
-        sendEvent(SWT.Modify);
+        TextPasteHelper.paste(this);
     }
 
     @Override
@@ -1335,13 +1316,15 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
-        if (this.editable != newValue) {
+        if (getEditable() != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
         if (editable) {
             getApi().style &= ~SWT.READ_ONLY;
+            getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         } else {
             getApi().style |= SWT.READ_ONLY;
+            getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         }
         this.editable = newValue;
         if ((getApi().style & SWT.SINGLE) != 0) {
@@ -1595,6 +1578,7 @@ public class DartText extends DartScrollable implements IText {
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         TextHelper.setText(this, string);
+        apiEdits.record(this, TextApiEdits.SET_TEXT, "");
     }
 
     /**
@@ -1831,6 +1815,15 @@ public class DartText extends DartScrollable implements IText {
     void updateAutoTextDirectionIfNeeded() {
     }
 
+    public int getBorderWidth() {
+        checkWidget();
+        return ControlHelper.borderWidth(this);
+    }
+
+    int resolveTextDirection() {
+        return ControlHelper.resolveTextDirection(text);
+    }
+
     int clearSegmentsCount;
 
     boolean ignoreCharacter;
@@ -1857,69 +1850,94 @@ public class DartText extends DartScrollable implements IText {
         TextHelper.sendSegments(this);
     }
 
+    final TextApiEdits apiEdits = new TextApiEdits();
+
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Modify", "Modify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    TextHelper.handleModify(this, e);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Segment", "Segments", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    sendEvent(SWT.Segments, e);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (!isActive())
-                    return;
-                if (e.detail == SWT.ICON_CANCEL) {
-                    if (getCharCount() != 0) {
-                        setText("");
-                    }
-                    if (!isDisposed()) {
-                        sendEvent(SWT.DefaultSelection, e);
-                    }
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Modify/Modify", "Segment/Segments", "Selection/DefaultSelection", "Selection/Selection", "Verify/Verify");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Modify/Modify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                            TextHelper.handleModify(this, e);
+                        }
+                    });
                     return;
                 }
-                if (!traverse(SWT.TRAVERSE_RETURN)) {
-                    Event crEvent = new Event();
-                    crEvent.keyCode = SWT.CR;
-                    crEvent.character = '\r';
-                    sendEvent(SWT.KeyDown, crEvent);
-                }
-                if (!isDisposed()) {
-                    sendEvent(SWT.DefaultSelection, e);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (!isDisposed()) {
-                    setSelection(e.index);
-                }
-            });
-        });
-        FlutterBridge.on(this, "Verify", "Verify", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (TextHelper.proposesNoChange(e)) {
-                    TextHelper.clientCaretMoved(this, e.start, e.index);
+            case "Segment/Segments":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                            sendEvent(SWT.Segments, e);
+                        }
+                    });
                     return;
                 }
-                int textLen = getCharCount();
-                e.start = Math.min(e.start, textLen);
-                e.end = Math.min(e.end, textLen);
-                sendEvent(SWT.Verify, e);
-            });
-        });
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        if (e.detail == SWT.ICON_CANCEL) {
+                            if (getCharCount() != 0) {
+                                setText("");
+                            }
+                            if (!isDisposed()) {
+                                sendEvent(SWT.DefaultSelection, e);
+                            }
+                            return;
+                        }
+                        if (!traverse(SWT.TRAVERSE_RETURN)) {
+                            Event crEvent = new Event();
+                            crEvent.keyCode = SWT.CR;
+                            crEvent.character = '\r';
+                            sendEvent(SWT.KeyDown, crEvent);
+                        }
+                        if (!isDisposed()) {
+                            sendEvent(SWT.DefaultSelection, e);
+                        }
+                    });
+                    return;
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (!isDisposed()) {
+                            setSelection(e.index);
+                        }
+                    });
+                    return;
+                }
+            case "Verify/Verify":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (TextHelper.proposesNoChange(e)) {
+                            TextHelper.clientCaretMoved(this, e.start, e.index);
+                            return;
+                        }
+                        int textLen = getCharCount();
+                        e.start = Math.min(e.start, textLen);
+                        e.end = Math.min(e.end, textLen);
+                        sendEvent(SWT.Verify, e);
+                    });
+                    return;
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Text getApi() {

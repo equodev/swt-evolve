@@ -277,7 +277,7 @@ class StyledTextRenderingFlutterTest {
         text.setLineBackground(1, 1, green);
         show();
 
-        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 1.0, "color", hex(green.getRGB())));
+        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 1L, "color", hex(green.getRGB())));
     }
 
     @Test
@@ -291,12 +291,16 @@ class StyledTextRenderingFlutterTest {
         text.redraw();
         show();
 
-        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 0.0, "color", hex(yellow.getRGB())));
+        assertThat(lineBackgrounds()).containsExactly(Map.of("line", 0L, "color", hex(yellow.getRGB())));
     }
 
+    /** Each painted line background, its line as a whole number whichever way the client's number arrived. */
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> lineBackgrounds() {
-        return (List<Map<String, Object>>) stage.facts(text).get("lineBackgrounds");
+        List<Map<String, Object>> painted = new java.util.ArrayList<>();
+        for (Map<String, Object> m : (List<Map<String, Object>>) stage.facts(text).get("lineBackgrounds"))
+            painted.add(Map.of("line", ((Number) m.get("line")).longValue(), "color", m.get("color")));
+        return painted;
     }
 
     // ---------------- line attributes ----------------
@@ -437,6 +441,19 @@ class StyledTextRenderingFlutterTest {
         Map<String, Object> facts = stage.facts(text);
         assertThat(facts.get("selectionBackground")).isEqualTo(hex(background.getRGB()));
         assertThat(facts.get("selectionForeground")).isEqualTo(hex(foreground.getRGB()));
+    }
+
+    @Test
+    @DisplayName("with no selection colours set, the selection is painted in the ones StyledText answers")
+    void defaultSelectionColours() {
+        fresh(SWT.MULTI, "alpha beta gamma");
+        stage.focusAt(0);
+        text.setSelection(6, 10);
+        show();
+
+        Map<String, Object> facts = stage.facts(text);
+        assertThat(facts.get("selectionBackground")).isEqualTo(hex(text.getSelectionBackground().getRGB()));
+        assertThat(facts.get("selectionForeground")).isEqualTo(hex(text.getSelectionForeground().getRGB()));
     }
 
     @Test

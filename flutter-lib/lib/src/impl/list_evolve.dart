@@ -7,6 +7,7 @@ import '../gen/event.dart';
 import '../gen/list.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireChannel, WireKey;
 import '../impl/scrollable_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/list_theme_extension.dart';
@@ -43,7 +44,7 @@ class ListImpl<T extends ListSwt, V extends VList>
   @override
   void setValue(V value) {
     super.setValue(value);
-    if (lastChange?.touches('topIndex') ?? true) _scrollToTopIndexAfterLayout();
+    if (lastChange?.touches(WireKey.k_List_topIndex) ?? true) _scrollToTopIndexAfterLayout();
   }
 
   /// Java keeps how far the items are scrolled: getTopIndex and API scrolling are computed from it.
@@ -53,7 +54,7 @@ class ListImpl<T extends ListSwt, V extends VList>
     final offset = _scrollController.offset.round();
     if (offset == _reportedScrollOffset) return;
     _reportedScrollOffset = offset;
-    widget.sendEvent(state, "Scroll/Scroll", VEvent()
+    widget.sendEvent(state, WireChannel.scrollScroll, VEvent()
       ..y = offset
       ..height = extent.round());
   }
@@ -116,8 +117,12 @@ class ListImpl<T extends ListSwt, V extends VList>
         var e = VEvent()..segments = state.selection;
         widget.sendSelectionSelection(state, e);
       },
-      onItemDoubleClick: () {
-        var e = VEvent()..segments = state.selection;
+      pressIsDoubleClick: () => swtClickCount == 2,
+      onItemDoubleClick: (buttonHeld) {
+        // Sent on the second press, which still holds its button, as Win32 and GTK report it.
+        var e = VEvent()
+          ..segments = state.selection
+          ..stateMask = swtStateMask(released: buttonHeld);
         widget.sendSelectionDefaultSelection(state, e);
       },
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
@@ -138,7 +143,10 @@ class _StyledList extends StatefulWidget {
   final bool enabled;
   final bool isMultiSelect;
   final Function(List<int>) onSelectionChanged;
-  final VoidCallback onItemDoubleClick;
+  /// Whether the press in flight is the second of a double click.
+  final bool Function() pressIsDoubleClick;
+  /// A double click on the selected item; [buttonHeld] when it came from a press.
+  final void Function(bool buttonHeld) onItemDoubleClick;
   final VoidCallback onFocusIn;
   final VoidCallback onFocusOut;
   final double? width;
@@ -154,6 +162,7 @@ class _StyledList extends StatefulWidget {
     required this.enabled,
     required this.isMultiSelect,
     required this.onSelectionChanged,
+    required this.pressIsDoubleClick,
     required this.onItemDoubleClick,
     required this.onFocusIn,
     required this.onFocusOut,
@@ -170,6 +179,10 @@ class _StyledListState extends State<_StyledList> {
 
   /// Anchor for Shift+click range extension — the item a plain or Ctrl click last landed on.
   int? _anchorIndex;
+
+  int? _lastPressedIndex;
+
+  final DoubleTapDetector _tapsWithoutPress = DoubleTapDetector();
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +223,11 @@ class _StyledListState extends State<_StyledList> {
               ? const SizedBox.shrink()
               : ListView.builder(
                   controller: widget.scrollController,
+                  // Win32's and GTK's list take no wheel without a vertical scroll bar; Java's
+                  // top index still scrolls it.
+                  physics: StyleBits(widget.state.style).has(SWT.V_SCROLL)
+                      ? null
+                      : const NeverScrollableScrollPhysics(),
                   itemCount: widget.items.length,
                   itemExtent: widget.itemExtent,
                   itemBuilder: (context, index) {
@@ -221,14 +239,36 @@ class _StyledListState extends State<_StyledList> {
                       index: index,
                       isSelected: widget.selection.contains(index),
                       enabled: widget.enabled,
-                      onTap: () => _handleItemTap(index),
-                      onDoubleTap: widget.onItemDoubleClick,
+                      onPress: () => _handleItemPress(index),
+                      onTap: () => _handleItemTapWithoutPress(index),
                     );
                   },
                 ),
         ),
       ),
     );
+  }
+
+  /// A double click is two presses on the same item; the control's click chain alone also joins
+  /// presses on neighbouring items.
+  void _handleItemPress(int pressedIndex) {
+    final doubleClick = widget.pressIsDoubleClick() && _lastPressedIndex == pressedIndex;
+    _lastPressedIndex = pressedIndex;
+    if (doubleClick) {
+      widget.onItemDoubleClick(true);
+    } else {
+      _handleItemTap(pressedIndex);
+    }
+  }
+
+  /// A tap through the semantics tree, which the web engine also makes of a pointer click on the
+  /// item: a second one on the same item inside the double-click window is a double click.
+  void _handleItemTapWithoutPress(int tappedIndex) {
+    if (_tapsWithoutPress.registerTap(key: tappedIndex) == 2) {
+      widget.onItemDoubleClick(false);
+    } else {
+      _handleItemTap(tappedIndex);
+    }
   }
 
   void _handleItemTap(int tappedIndex) {
@@ -275,8 +315,10 @@ class _ListItem extends StatefulWidget {
   final int index;
   final bool isSelected;
   final bool enabled;
+  /// A primary press on the item.
+  final VoidCallback onPress;
+  /// A tap with no press before it.
   final VoidCallback onTap;
-  final VoidCallback onDoubleTap;
 
   const _ListItem({
     required this.widgetTheme,
@@ -286,8 +328,8 @@ class _ListItem extends StatefulWidget {
     required this.index,
     required this.isSelected,
     required this.enabled,
+    required this.onPress,
     required this.onTap,
-    required this.onDoubleTap,
   });
 
   @override
@@ -296,9 +338,9 @@ class _ListItem extends StatefulWidget {
 
 class _ListItemState extends State<_ListItem> {
   bool _isHovered = false;
-  // Set when a pointer press has already selected the item, so the tap the same click completes
-  // does not select it a second time.
-  bool _selectedByPress = false;
+  // Set while a pointer press is in flight: the press already answered the click, so the tap the
+  // same click completes does not answer it a second time.
+  bool _handledByPress = false;
 
   @override
   Widget build(BuildContext context) {
@@ -330,34 +372,28 @@ class _ListItemState extends State<_ListItem> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      // Selects on the press, as a native list does, so the Selection lands between MouseDown and
-      // MouseUp: a tap is only recognised once the release has been reported. On a microtask, as
-      // the press reaches the control's own MouseDown listener after this one.
+      // Answered on the press, as natively, so the selection is in place for the MouseUp; on a
+      // microtask, as the control's own MouseDown listener runs after this one.
       child: Listener(
         onPointerDown: (e) {
           if (e.buttons != kPrimaryButton) return;
-          _selectedByPress = true;
-          scheduleMicrotask(widget.onTap);
+          _handledByPress = true;
+          scheduleMicrotask(widget.onPress);
         },
-        // A press that never became a tap (dragged off the item, cancelled) reaches neither tap
+        // A press that never became a tap (dragged off the item, cancelled) reaches no tap
         // callback; once the arena has settled on the release, the press is over either way.
-        onPointerUp: (_) => scheduleMicrotask(() => _selectedByPress = false),
-        onPointerCancel: (_) => scheduleMicrotask(() => _selectedByPress = false),
+        onPointerUp: (_) => scheduleMicrotask(() => _handledByPress = false),
+        onPointerCancel: (_) => scheduleMicrotask(() => _handledByPress = false),
         // A tap with no press before it -- an accessibility or test tap through the semantics
         // tree -- still selects.
-        child: InstantDoubleTapDetector(
+        child: GestureDetector(
           onTap: () {
-            if (_selectedByPress) {
-              _selectedByPress = false;
+            if (_handledByPress) {
+              _handledByPress = false;
             } else {
               widget.onTap();
             }
           },
-          onDoubleTap: () {
-            _selectedByPress = false;
-            widget.onDoubleTap();
-          },
-          identity: widget.index,
           child: Stack(
             children: [
               Container(

@@ -1,13 +1,17 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
+import '../gen/widgets.dart';
 
-part 'styledtextprintoptions.g.dart';
-
-@JsonSerializable()
-class VStyledTextPrintOptions {
+class VStyledTextPrintOptions
+    implements WireReadable, WireWritable, WireVisitable {
   VStyledTextPrintOptions() : this.empty();
   VStyledTextPrintOptions.empty();
 
-  factory VStyledTextPrintOptions.fromJson(Map<String, dynamic> json) =>
-      _$VStyledTextPrintOptionsFromJson(json);
-  Map<String, dynamic> toJson() => _$VStyledTextPrintOptionsToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) => false;
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {}
+
+  @override
+  void writeWire(WidgetWireWriter w) {}
 }

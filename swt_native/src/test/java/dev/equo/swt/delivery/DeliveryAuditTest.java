@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -71,7 +72,7 @@ class DeliveryAuditTest {
             FlutterBridge.update();
 
             assertThat(audit.framesOn("Label/")).hasSize(1);
-            assertThat(audit.frames().get(0).json()).contains("\"text\":\"after\"");
+            assertThat(WireValues.find(audit.frames().get(0).value(), m -> "after".equals(m.get("text")))).isNotEmpty();
         }
     }
 

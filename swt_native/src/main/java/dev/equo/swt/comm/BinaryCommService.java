@@ -63,9 +63,13 @@ public class BinaryCommService extends AbstractBinaryCommService {
     @Override
     protected void broadcast(byte[] frame, int offset, int length) {
         for (WebSocket s : sessions) {
-            if (s.isOpen()) {
+            if (!s.isOpen()) continue;
+            try {
                 // Java-WebSocket copies the bytes into its own frame before send returns.
                 s.send(ByteBuffer.wrap(frame, offset, length));
+            } catch (RuntimeException e) {
+                // Closed between the check and the send: that client is gone, and the others still get the frame.
+                System.err.println(logTag() + " A frame could not reach a client: " + e);
             }
         }
         checkWritesSoon();

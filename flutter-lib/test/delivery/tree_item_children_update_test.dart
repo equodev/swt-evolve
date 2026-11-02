@@ -9,6 +9,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'support/deliver.dart';
 
@@ -58,7 +59,7 @@ void main() {
           _item(11, 'Data', seq: 10),
           _item(12, 'Configuration', seq: 10),
         ]),
-        changed: ['expanded', 'items'],
+        keys: [WireKey.k_TreeItem_expanded, WireKey.k_TreeItem_items],
         base: 1);
     await tester.pumpAndSettle();
 

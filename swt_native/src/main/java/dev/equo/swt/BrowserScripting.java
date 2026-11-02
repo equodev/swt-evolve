@@ -1,7 +1,6 @@
 package dev.equo.swt;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -10,7 +9,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 
 /**
  * Shared Browser scripting bridge used by both {@code EvolveBrowser}
@@ -26,7 +24,6 @@ public final class BrowserScripting {
     }
 
     /** Prefix the Dart side stamps on a reply carrying a JS exception instead of a value. */
-    private static final String ERROR_PREFIX = "__error__:";
 
     /** How long a synchronous evaluate() waits for the Flutter side before giving up. */
     private static final long TIMEOUT_MS = 5000;
@@ -47,20 +44,16 @@ public final class BrowserScripting {
      */
     public static Object evaluate(DartWidget widget, Display display, String script)
             throws SWTException {
-        String reqId = UUID.randomUUID().toString();
+        int reqId = NEXT_REQUEST.incrementAndGet();
         CompletableFuture<Object> future = new CompletableFuture<>();
-        FlutterBridge.onPayload(widget, "evaluate/" + reqId, Event.class, result -> {
-            String text = result != null ? result.text : null;
-            if (text != null && text.startsWith(ERROR_PREFIX)) {
-                future.completeExceptionally(
-                        failed(text.substring(ERROR_PREFIX.length())));
-            } else {
-                future.complete(EvalJson.parse(text));
-            }
-        });
-        FlutterBridge.send(widget, "evaluate",
+        PENDING.put(reqId, future);
+        // One channel for every reply; each names the request it answers.
+        FlutterBridge.onPayload(widget, dev.equo.swt.WireTable.CHANNEL_EVALUATE_RESULT, Object.class, BrowserScripting::completeEvaluate);
+        FlutterBridge.send(widget, dev.equo.swt.WireTable.CHANNEL_EVALUATE,
                 Java8.map("script", asFunctionBody(script), "reqId", reqId));
-        if (!awaitReply(display, future)) throw failed("no reply from the browser within " + TIMEOUT_MS + "ms");
+        boolean answered = awaitReply(display, future);
+        PENDING.remove(reqId);
+        if (!answered) throw failed("no reply from the browser within " + TIMEOUT_MS + "ms");
         try {
             return future.get();
         } catch (ExecutionException ex) {
@@ -70,6 +63,22 @@ public final class BrowserScripting {
             Thread.currentThread().interrupt();
             throw failed("interrupted while awaiting the result");
         }
+    }
+
+    private static final java.util.concurrent.atomic.AtomicInteger NEXT_REQUEST = new java.util.concurrent.atomic.AtomicInteger();
+
+    /** The evaluate() calls waiting for their reply, by request number. */
+    private static final Map<Integer, CompletableFuture<Object>> PENDING = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** A reply, {@code {reqId, value}} or {@code {reqId, error}}: completes the call it names. */
+    private static void completeEvaluate(Object reply) {
+        if (!(reply instanceof Map)) return;
+        Map<?, ?> m = (Map<?, ?>) reply;
+        if (!(m.get("reqId") instanceof Number)) return;
+        CompletableFuture<Object> future = PENDING.remove(((Number) m.get("reqId")).intValue());
+        if (future == null) return;
+        if (m.get("error") != null) future.completeExceptionally(failed(String.valueOf(m.get("error"))));
+        else future.complete(EvalJson.toSwt(m.get("value")));
     }
 
     /**
@@ -135,11 +144,9 @@ public final class BrowserScripting {
      */
     public static void listenForFunctionCalls(DartWidget widget, Display display) {
         long id = FlutterBridge.id(widget);
-        FlutterBridge.onPayload(widget, "browserFunctionCall", Event.class, e -> {
-            if (e == null || e.text == null) return;
-            Object parsed = EvalJson.parse(e.text);
-            if (!(parsed instanceof Map)) return;
-            Map<?, ?> m = (Map<?, ?>) parsed;
+        FlutterBridge.onPayload(widget, dev.equo.swt.WireTable.CHANNEL_BROWSER_FUNCTION_CALL, Object.class, call -> {
+            if (!(call instanceof Map)) return;
+            Map<?, ?> m = (Map<?, ?>) EvalJson.toSwt(call);
             Object nameObj = m.get("name");
             if (!(nameObj instanceof String)) return;
             Object argsObj = m.get("args");

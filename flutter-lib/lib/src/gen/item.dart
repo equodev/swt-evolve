@@ -1,15 +1,13 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/image.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import 'widgets.dart';
-
-part 'item.g.dart';
 
 abstract class ItemSwt<V extends VItem> extends WidgetSwt<V> {
   const ItemSwt({super.key, required super.value});
 }
 
-@JsonSerializable()
 class VItem extends VWidget {
   VItem() : this.empty();
   VItem.empty() {
@@ -29,20 +27,44 @@ class VItem extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'image':
-        image = json['image'] == null
-            ? null
-            : VImage.fromJson(json['image'] as Map<String, dynamic>);
-      case 'text':
-        text = json['text'] as String?;
+      case 344: // image
+        image = r.image();
+        return true;
+      case 345: // text
+        text = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VItem.fromJson(Map<String, dynamic> json) =>
-      _$VItemFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VItemToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = image;
+      if (v_ != null) {
+        w.keyRef(344, v_.id);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null) {
+        w.key(345);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(344, image);
+    visit(345, text);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

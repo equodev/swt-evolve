@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,8 +28,6 @@ class ComboUpdateTest {
 
     /** Delivery is recorded against a client, so a test that sends has to name one. */
     private static final int CLIENT = 1;
-
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -58,18 +57,27 @@ class ComboUpdateTest {
         combo.setItems(new String[] {"a", "bb", "ccc"});
         if (selected != -1)
             combo.select(selected);
-        try {
-            serializer.to(combo);
-            Serializer.markDelivered();
-        } catch (java.io.IOException e) {
-            throw new AssertionError(e);
-        }
+        WireFrames.record((DartWidget) combo.getImpl(), CLIENT);
         return combo;
     }
 
-    private String update(Combo combo) {
-        byte[] diff = serializer.toDiff((DartWidget) combo.getImpl());
-        return diff == null ? "" : new String(diff, StandardCharsets.UTF_8);
+    /** The properties the next update for the client names, by name; empty when there is nothing to send. */
+    private Map<String, Object> update(Combo combo) {
+        return changeOf((DartWidget) combo.getImpl());
+    }
+
+    /**
+     * What changed in {@code impl} since the client last heard of it, as its record names it; empty
+     * when nothing did. A widget with nothing changed is described whole on request, which says
+     * nothing about what an update names, so only a changed one is asked for, and it has to come back
+     * as a change: a whole record would hold every property, named or not.
+     */
+    private static Map<String, Object> changeOf(DartWidget impl) {
+        if (!impl.getValue().anyDirty()) return Map.of();
+        Map<String, Object> update = WireFrames.record(impl, CLIENT);
+        if (update == null) return Map.of();
+        if (!update.containsKey("_d")) throw new AssertionError("described whole, not as a change: " + update);
+        return update;
     }
 
     @Test
@@ -79,7 +87,7 @@ class ComboUpdateTest {
 
         combo.select(2);
 
-        assertThat(update(combo)).as("the client shows the text, not the index").contains("\"text\"").contains("ccc");
+        assertThat(update(combo)).as("the client shows the text, not the index").containsEntry("text", "ccc");
     }
 
     @Test
@@ -89,7 +97,7 @@ class ComboUpdateTest {
 
         combo.select(1);
 
-        assertThat(update(combo)).contains("\"text\"").contains("bb");
+        assertThat(update(combo)).containsEntry("text", "bb");
     }
 
     @Test
@@ -97,11 +105,11 @@ class ComboUpdateTest {
     void deselectNamesTheText() {
         Combo combo = delivered(SWT.READ_ONLY, 1);
         combo.deselect(1);
-        assertThat(update(combo)).contains("\"text\"");
+        assertThat(update(combo)).containsKey("text");
 
         combo = delivered(SWT.READ_ONLY, 1);
         combo.deselectAll();
-        assertThat(update(combo)).contains("\"text\"");
+        assertThat(update(combo)).containsKey("text");
     }
 
     @Test
@@ -109,11 +117,11 @@ class ComboUpdateTest {
     void removeAllNamesTheText() {
         Combo combo = delivered(SWT.READ_ONLY, 1);
         combo.removeAll();
-        assertThat(update(combo)).contains("\"text\"");
+        assertThat(update(combo)).containsKey("text");
 
         combo = delivered(SWT.READ_ONLY, 1);
         combo.setItems(new String[] {"m", "n"});
-        assertThat(update(combo)).contains("\"text\"");
+        assertThat(update(combo)).containsKey("text");
     }
 
     @Test
@@ -123,7 +131,7 @@ class ComboUpdateTest {
 
         combo.setItem(1, "NN");
 
-        assertThat(update(combo)).contains("\"text\"").contains("NN");
+        assertThat(update(combo)).containsEntry("text", "NN");
     }
 
     @Test
@@ -133,7 +141,7 @@ class ComboUpdateTest {
 
         combo.setItem(0, "AA");
 
-        assertThat(update(combo)).doesNotContain("\"text\"");
+        assertThat(update(combo)).doesNotContainKey("text");
     }
 
     @Test
@@ -143,7 +151,7 @@ class ComboUpdateTest {
 
         combo.select(1);
 
-        assertThat(update(combo)).doesNotContain("\"text\"");
+        assertThat(update(combo)).doesNotContainKey("text");
     }
 
     @Test
@@ -153,7 +161,7 @@ class ComboUpdateTest {
 
         combo.remove(1);
 
-        assertThat(update(combo)).contains("\"text\"");
+        assertThat(update(combo)).containsKey("text");
     }
 
     @Test
@@ -161,11 +169,11 @@ class ComboUpdateTest {
     void editableTextIsNamed() {
         Combo combo = delivered(SWT.NONE, -1);
         combo.setText("typed");
-        assertThat(update(combo)).contains("\"text\"").contains("typed");
+        assertThat(update(combo)).containsEntry("text", "typed");
 
         combo = delivered(SWT.NONE, -1);
         combo.select(2);
-        assertThat(update(combo)).contains("\"text\"").contains("ccc");
+        assertThat(update(combo)).containsEntry("text", "ccc");
     }
 
     @Test
@@ -175,7 +183,7 @@ class ComboUpdateTest {
 
         combo.setText("bb");
 
-        assertThat(update(combo)).doesNotContain("\"text\"");
+        assertThat(update(combo)).doesNotContainKey("text");
     }
 
     @Test

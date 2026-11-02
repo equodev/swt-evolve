@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 /**
  * What an event arriving from Flutter does to a Spinner. Every one hops through {@code asyncExec}, so by the time
  * it runs the spinner may be gone or a modal shell may have opened: Modify and Verify reach the listeners of a
- * live spinner, a Selection moves the value (clamped to the range), and a DefaultSelection moves it and reaches
+ * live spinner, a Selection (an arrow click) steps the value as the arrow keys do, and a DefaultSelection moves it and reaches
  * the listeners of a spinner that nothing blocks.
  */
 @Tag("native-unit")
@@ -64,6 +64,13 @@ class SpinnerEventsFromFlutterNativeTest {
         bridge.comm.fireContaining("Spinner/" + spinner.hashCode() + "/" + channel, e);
     }
 
+    /** A click on the client's up ({@link SWT#ARROW_UP}) or down ({@link SWT#ARROW_DOWN}) button. */
+    private void arrow(Spinner spinner, int direction) {
+        Event e = new Event();
+        e.detail = direction;
+        bridge.comm.fireContaining("Spinner/" + spinner.hashCode() + "/Selection/Selection", e);
+    }
+
     private void runQueued() {
         List<Runnable> now = new ArrayList<>(queued);
         queued.clear();
@@ -76,8 +83,21 @@ class SpinnerEventsFromFlutterNativeTest {
         return events;
     }
 
+    /** The names of the Verify, Modify and Selection events the spinner notifies, in order. */
+    private static List<String> recordStep(Spinner spinner) {
+        List<String> order = new ArrayList<>();
+        spinner.addListener(SWT.Verify, e -> order.add("Verify"));
+        spinner.addListener(SWT.Modify, e -> order.add("Modify"));
+        spinner.addListener(SWT.Selection, e -> order.add("Selection"));
+        return order;
+    }
+
     private Spinner spinner() {
-        return new Spinner(DartMocks.dartShell(display), SWT.NONE);
+        return spinner(SWT.NONE);
+    }
+
+    private Spinner spinner(int style) {
+        return new Spinner(DartMocks.dartShell(display), style);
     }
 
     @Test
@@ -132,23 +152,32 @@ class SpinnerEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("a Selection from Flutter moves the value, clamped to the range")
-    void selectionMovesTheValue() {
+    @DisplayName("an arrow from Flutter steps the value by the increment, clamped to the range")
+    void anArrowStepsTheValue() {
         Spinner spinner = spinner();
+        spinner.setIncrement(5);
+        spinner.setSelection(50);
 
-        fromFlutter(spinner, "Selection/Selection", 60);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
-        assertThat(spinner.getSelection()).isEqualTo(60);
+        assertThat(spinner.getSelection()).isEqualTo(55);
 
-        fromFlutter(spinner, "Selection/Selection", 500);
+        arrow(spinner, SWT.ARROW_DOWN);
+        arrow(spinner, SWT.ARROW_DOWN);
+        runQueued();
+        assertThat(spinner.getSelection()).isEqualTo(45);
+
+        spinner.setSelection(98);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
         assertThat(spinner.getSelection()).isEqualTo(100);
     }
 
     @Test
-    @DisplayName("a Selection from Flutter notifies Modify then Selection, once each, with the value already moved")
-    void selectionNotifiesModifyThenSelection() {
+    @DisplayName("an arrow from Flutter notifies Modify then Selection, once each, with the value already moved")
+    void anArrowNotifiesModifyThenSelection() {
         Spinner spinner = spinner();
+        spinner.setSelection(59);
         List<String> order = new ArrayList<>();
         List<Integer> valueSeenBySelection = new ArrayList<>();
         spinner.addListener(SWT.Modify, e -> order.add("Modify"));
@@ -157,7 +186,7 @@ class SpinnerEventsFromFlutterNativeTest {
             valueSeenBySelection.add(spinner.getSelection());
         });
 
-        fromFlutter(spinner, "Selection/Selection", 60);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
 
         assertThat(order).containsExactly("Modify", "Selection");
@@ -165,8 +194,22 @@ class SpinnerEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("a Selection from Flutter whose text Verify refuses moves the value and notifies neither Modify nor Selection")
-    void aRefusedSelectionFromFlutterNotifiesNothing() {
+    @DisplayName("a Selection from Flutter with no arrow in its detail neither moves the value nor notifies")
+    void aSelectionWithNoArrowIsNotAStep() {
+        Spinner spinner = spinner();
+        spinner.setSelection(50);
+        List<Event> events = record(spinner, SWT.Selection);
+
+        fromFlutter(spinner, "Selection/Selection", 51);
+        runQueued();
+
+        assertThat(events).isEmpty();
+        assertThat(spinner.getSelection()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("an arrow from Flutter whose text Verify refuses moves the value and notifies neither Modify nor Selection")
+    void aRefusedArrowFromFlutterNotifiesNothing() {
         Spinner spinner = spinner();
         spinner.setSelection(20);
         List<String> order = new ArrayList<>();
@@ -174,7 +217,7 @@ class SpinnerEventsFromFlutterNativeTest {
         spinner.addListener(SWT.Modify, e -> order.add("Modify"));
         spinner.addListener(SWT.Selection, e -> order.add("Selection"));
 
-        fromFlutter(spinner, "Selection/Selection", 21);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
 
         assertThat(order).isEmpty();
@@ -183,39 +226,84 @@ class SpinnerEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("each Selection from Flutter notifies the Selection listeners")
-    void everySelectionNotifies() {
+    @DisplayName("an arrow at either end of the range leaves the value and notifies nothing, as Win32 and GTK")
+    void anArrowAtTheEndNotifiesNothing() {
+        Spinner spinner = spinner();
+        spinner.setSelection(100);
+        List<String> order = recordStep(spinner);
+
+        arrow(spinner, SWT.ARROW_UP);
+        runQueued();
+        assertThat(order).isEmpty();
+        assertThat(spinner.getSelection()).isEqualTo(100);
+
+        spinner.setSelection(0);
+        order.clear();
+        arrow(spinner, SWT.ARROW_DOWN);
+        runQueued();
+        assertThat(order).isEmpty();
+        assertThat(spinner.getSelection()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("the up arrow of a WRAP spinner at its maximum goes to the minimum and notifies the step")
+    void theUpArrowOfAWrapSpinnerWraps() {
+        Spinner spinner = spinner(SWT.WRAP);
+        spinner.setSelection(100);
+        List<String> order = recordStep(spinner);
+
+        arrow(spinner, SWT.ARROW_UP);
+        runQueued();
+
+        assertThat(spinner.getSelection()).isEqualTo(0);
+        assertThat(order).containsExactly("Verify", "Modify", "Selection");
+    }
+
+    @Test
+    @DisplayName("the down arrow of a WRAP spinner at its minimum goes to the maximum")
+    void theDownArrowOfAWrapSpinnerWraps() {
+        Spinner spinner = spinner(SWT.WRAP);
+
+        arrow(spinner, SWT.ARROW_DOWN);
+        runQueued();
+
+        assertThat(spinner.getSelection()).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("each arrow from Flutter steps from the value Java holds and notifies the Selection listeners")
+    void everyArrowNotifies() {
         Spinner spinner = spinner();
         List<Integer> seen = new ArrayList<>();
         spinner.addListener(SWT.Selection, e -> seen.add(spinner.getSelection()));
 
-        fromFlutter(spinner, "Selection/Selection", 1);
-        fromFlutter(spinner, "Selection/Selection", 2);
-        fromFlutter(spinner, "Selection/Selection", 3);
+        arrow(spinner, SWT.ARROW_UP);
+        arrow(spinner, SWT.ARROW_UP);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
 
         assertThat(seen).containsExactly(1, 2, 3);
     }
 
     @Test
-    @DisplayName("a Selection from Flutter does not reach the DefaultSelection listeners")
-    void selectionDoesNotNotifyDefaultSelection() {
+    @DisplayName("an arrow from Flutter does not reach the DefaultSelection listeners")
+    void anArrowDoesNotNotifyDefaultSelection() {
         Spinner spinner = spinner();
         List<Event> events = record(spinner, SWT.DefaultSelection);
 
-        fromFlutter(spinner, "Selection/Selection", 60);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
 
         assertThat(events).isEmpty();
     }
 
     @Test
-    @DisplayName("a Selection that arrives after the spinner was disposed notifies nothing")
-    void selectionToADisposedSpinnerNotifiesNothing() {
+    @DisplayName("an arrow that arrives after the spinner was disposed notifies nothing")
+    void anArrowToADisposedSpinnerNotifiesNothing() {
         Spinner spinner = spinner();
         List<Event> events = record(spinner, SWT.Selection);
 
-        fromFlutter(spinner, "Selection/Selection", 60);
+        arrow(spinner, SWT.ARROW_UP);
         spinner.dispose();
         runQueued();
 
@@ -229,7 +317,7 @@ class SpinnerEventsFromFlutterNativeTest {
         spinner.addListener(SWT.Modify, e -> spinner.dispose());
         List<Event> events = record(spinner, SWT.Selection);
 
-        fromFlutter(spinner, "Selection/Selection", 60);
+        arrow(spinner, SWT.ARROW_UP);
         runQueued();
 
         assertThat(spinner.isDisposed()).isTrue();
@@ -237,11 +325,11 @@ class SpinnerEventsFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("a Selection that arrives after the spinner was disposed is dropped")
-    void selectionToADisposedSpinnerIsDropped() {
+    @DisplayName("an arrow that arrives after the spinner was disposed is dropped")
+    void anArrowToADisposedSpinnerIsDropped() {
         Spinner spinner = spinner();
 
-        fromFlutter(spinner, "Selection/Selection", 60);
+        arrow(spinner, SWT.ARROW_UP);
         spinner.dispose();
         runQueued();
 

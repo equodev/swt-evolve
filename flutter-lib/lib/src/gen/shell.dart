@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/caret.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
@@ -16,11 +16,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/shell_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'shell.g.dart';
 
 class ShellSwt<V extends VShell> extends DecorationsSwt<V> {
   const ShellSwt({super.key, required super.value});
@@ -29,38 +28,36 @@ class ShellSwt<V extends VShell> extends DecorationsSwt<V> {
   State createState() => ShellImpl<ShellSwt<VShell>, VShell>();
 
   void sendShellActivate(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Activate", payload);
+    sendEvent(val, 90, payload); // Shell/Activate
   }
 
   void sendShellClose(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Close", payload);
+    sendEvent(val, 91, payload); // Shell/Close
   }
 
   void sendShellDeactivate(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Deactivate", payload);
+    sendEvent(val, 92, payload); // Shell/Deactivate
   }
 
   void sendShellDeiconify(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Deiconify", payload);
+    sendEvent(val, 93, payload); // Shell/Deiconify
   }
 
   void sendShellIconify(V val, VEvent? payload) {
-    sendEvent(val, "Shell/Iconify", payload);
+    sendEvent(val, 94, payload); // Shell/Iconify
   }
 
   void sendShellSetBounds(V val, VEvent? payload) {
-    sendEvent(val, "Shell/SetBounds", payload);
+    sendEvent(val, 95, payload); // Shell/SetBounds
   }
 }
 
-@JsonSerializable()
 class VShell extends VDecorations {
   VShell() : this.empty();
   VShell.empty() {
     swt = "Shell";
   }
 
-  @JsonKey(fromJson: parseDialogs)
   List<VDialog>? dialogs;
   int? alpha;
   bool? fullScreen;
@@ -82,30 +79,83 @@ class VShell extends VDecorations {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'alpha':
-        alpha = (json['alpha'] as num?)?.toInt();
-      case 'fullScreen':
-        fullScreen = json['fullScreen'] as bool?;
-      case 'maximumSize':
-        maximumSize = json['maximumSize'] == null
-            ? null
-            : VPoint.fromJson(json['maximumSize'] as Map<String, dynamic>);
-      case 'minimumSize':
-        minimumSize = json['minimumSize'] == null
-            ? null
-            : VPoint.fromJson(json['minimumSize'] as Map<String, dynamic>);
-      case 'modified':
-        modified = json['modified'] as bool?;
-      case 'dialogs':
-        dialogs = parseDialogs(json['dialogs']);
+      case 449: // alpha
+        alpha = r.int32();
+        return true;
+      case 451: // fullScreen
+        fullScreen = r.boolean();
+        return true;
+      case 452: // maximumSize
+        maximumSize = r.point();
+        return true;
+      case 453: // minimumSize
+        minimumSize = r.point();
+        return true;
+      case 454: // modified
+        modified = r.boolean();
+        return true;
+      case 450: // dialogs
+        dialogs = r.polys<VDialog>(newDialogValue);
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VShell.fromJson(Map<String, dynamic> json) =>
-      _$VShellFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VShellToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = alpha;
+      if (v_ != null) {
+        w.keyInt32(449, v_);
+      }
+    }
+    {
+      final v_ = fullScreen;
+      if (v_ != null) {
+        w.keyBoolean(451, v_);
+      }
+    }
+    {
+      final v_ = maximumSize;
+      if (v_ != null) {
+        w.key(452);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = minimumSize;
+      if (v_ != null) {
+        w.key(453);
+        w.pointValue(v_);
+      }
+    }
+    {
+      final v_ = modified;
+      if (v_ != null) {
+        w.keyBoolean(454, v_);
+      }
+    }
+    {
+      final v_ = dialogs;
+      if (v_ != null) {
+        w.key(450);
+        w.polys(v_, (e) => e.swt);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(449, alpha);
+    visit(451, fullScreen);
+    visit(452, maximumSize);
+    visit(453, minimumSize);
+    visit(454, modified);
+    visit(450, dialogs);
+  }
 }

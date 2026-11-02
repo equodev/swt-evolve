@@ -10,7 +10,9 @@
 // image caches and the asset bundle's: they hold futures created in the previous test's fake-async
 // zone, which never complete in the next one and leave its image loading forever. And so does the
 // display config (flags, light/dark, color scheme), which drawing outside a build reads. And so do
-// the frames the comm recorded as sent: a test that reads them must see only its own.
+// the focus requests: one a test left pending, or gave back as its field went away, would be
+// claimed by the next test's widget of the same id. And so do the frames a test recorded as sent,
+// which a later test reading what it sent would read too.
 
 import 'dart:async';
 
@@ -19,16 +21,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/impl/widget_ops.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  // As the app does before any frame arrives: a frame for a widget not created yet is held for it
+  // only when its kind is listening.
+  registerWidgetOps();
   setUp(() {
     VRegistry.instance.clear();
     deliveryGate.reset();
     ImageUtils.clearCache();
     rootBundle.clear();
     resetConfigFlags();
+    FocusRequests.instance.reset();
     EquoCommService.commForTesting.clearSentFrames();
   });
   await testMain();

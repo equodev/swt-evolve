@@ -8,9 +8,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
+import 'package:swtflutter/src/comm/tagged_values.dart';
+import 'support/gc_frames.dart';
+import 'package:swtflutter/src/gen/image.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,16 +23,7 @@ void main() {
       '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8">'
       '<rect width="8" height="8" fill="$color"/></svg>';
 
-  void deliver(String actionId, Map<String, dynamic> json) {
-    final action = utf8.encode(actionId);
-    final body = utf8.encode(jsonEncode(json));
-    final out = Uint8List(2 + action.length + body.length);
-    out[0] = (action.length >> 8) & 0xFF;
-    out[1] = action.length & 0xFF;
-    out.setRange(2, 2 + action.length, action);
-    out.setRange(2 + action.length, out.length, body);
-    EquoCommService.commForTesting.receiveBinary(out);
-  }
+  void deliver(String actionId, Map<String, dynamic> payload) => receive(actionId, tagged(payload));
 
   Future<void> settle() async {
     for (var i = 0; i < 20; i++) {
@@ -36,14 +31,7 @@ void main() {
     }
   }
 
-  void drawFrame(int id, String color) => deliver(
-        'GC/$id/drawImageImageintintintintintintintint',
-        {
-          'image': {'svgContent': svgSquare(color)},
-          'srcX': 0, 'srcY': 0, 'srcWidth': 8, 'srcHeight': 8,
-          'destX': 0, 'destY': 0, 'destWidth': 8, 'destHeight': 8,
-        },
-      );
+  void drawFrame(int id, String color) => receive('GC/$id/b', gcOp('drawImageImageintintintintintintintint', [heldImage(VImage()..svgContent = svgSquare(color)), 0, 0, 8, 8, 0, 0, 8, 8]));
 
   void fullRepaintDispose(int id) => deliver('GC/$id/gcDispose', {'fullRepaint': true});
 

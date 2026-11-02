@@ -1,7 +1,9 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -18,7 +20,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -94,10 +95,9 @@ class ImageAtSizeDrawNativeTest {
         gc.drawImage(image, 5, 6, 40, 30);
         gc.dispose();
 
-        String wire = bridge.comm.sent.stream().map(f -> f.json).collect(Collectors.joining());
         assertThat(asked).containsExactly(px(40) + "x" + px(30));
-        assertThat(wire).contains("drawImageImageintintintintintintintint").contains(",0,0," + px(40) + "," + px(30) + ",5,6,40,30]");
-        assertThat(wire).doesNotContain("drawImageImageintintintint\"");
+        assertThat(blitted(0, 0, px(40), px(30), 5, 6, 40, 30)).isTrue();
+        assertThat(GcFrames.channels(bridge.comm.sent)).noneMatch(c -> c.endsWith("/drawImageImageintintintint"));
         image.dispose();
     }
 
@@ -116,7 +116,7 @@ class ImageAtSizeDrawNativeTest {
         gc.dispose();
 
         assertThat(captured).containsExactly(image);
-        assertThat(bridge.comm.sent.stream().map(f -> f.json).collect(Collectors.joining())).doesNotContain("drawImage");
+        assertThat(GcFrames.channels(bridge.comm.sent)).noneMatch(c -> c.contains("drawImage"));
         image.dispose();
     }
 
@@ -188,5 +188,11 @@ class ImageAtSizeDrawNativeTest {
         assertThat(found).isNotSameAs(image);
         assertThat(found.getBounds().width).isEqualTo(px(16));
         image.dispose();
+    }
+
+    /** Whether a nine-argument drawImage went out with {@code area} after its image. */
+    private boolean blitted(Object... area) {
+        return GcFrames.argsOf(bridge.comm.sent, "drawImageImageintintintintintintintint").stream()
+                .anyMatch(args -> WireValues.same(args.subList(1, args.size()), java.util.Arrays.asList(area)));
     }
 }

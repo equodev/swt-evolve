@@ -13,6 +13,7 @@ import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/utils/double_tap_detector.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   const _CapturingCTabFolderSwt({required super.value, required this.onEvent});
@@ -20,7 +21,7 @@ class _CapturingCTabFolderSwt extends CTabFolderSwt<VCTabFolder> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCTabFolder val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCTabFolder val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 const _labels = ['Cube 1', 'Map 2', 'Section 3'];
@@ -85,7 +86,7 @@ void main() {
     final doubleClicks = await pumpFolder(tester);
 
     final tab = tester.getRect(
-        find.ancestor(of: find.text(_labels[1]), matching: find.byType(AnimatedContainer)).first);
+        find.ancestor(of: find.text(_labels[1]), matching: find.byWidgetPredicate((w) => w is AnimatedContainer)).first);
     final folder = folderRect(tester);
 
     await click(tester, tab.center);
@@ -110,7 +111,7 @@ void main() {
     final doubleClicks = await pumpFolder(tester);
 
     final lastTab = tester.getRect(
-        find.ancestor(of: find.text(_labels.last), matching: find.byType(AnimatedContainer)).first);
+        find.ancestor(of: find.text(_labels.last), matching: find.byWidgetPredicate((w) => w is AnimatedContainer)).first);
     final folder = folderRect(tester);
     final empty = Offset((lastTab.right + folder.right) / 2, lastTab.center.dy);
 

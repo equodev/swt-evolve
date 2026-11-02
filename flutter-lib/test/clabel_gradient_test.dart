@@ -4,11 +4,13 @@
 // background, not the last colour. A tiled background image is painted as well.
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/clabel.dart';
 import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/image.dart';
@@ -177,18 +179,24 @@ void main() {
   });
 
   testWidgets('the gradient is read from the wire form Java writes', (tester) async {
-    final label = VCLabel()
+    final written = VCLabel()
+      ..gradientColors = [
+        VColor()
+          ..red = 255
+          ..green = 0
+          ..blue = 0
+          ..alpha = 255,
+        VColor.fromArgb(0xFF00FF00),
+      ]
+      ..gradientPercents = [100]
+      ..gradientVertical = true;
+    final label = WidgetWireReader(Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
+      written.writeWire(w);
+      w.u8(0);
+    }))).fields(VCLabel()
       ..id = 22
       ..style = SWT.NONE
-      ..text = 'Wire';
-    label.readProperty('gradientColors', {
-      'gradientColors': [
-        {'r': 255, 'g': 0, 'b': 0, 'a': 255},
-        0xFF00FF00,
-      ],
-    });
-    label.readProperty('gradientPercents', {'gradientPercents': [100]});
-    label.readProperty('gradientVertical', {'gradientVertical': true});
+      ..text = 'Wire');
 
     final gradient = await _gradient(tester, label);
     expect(gradient.colors, [_red, _green]);

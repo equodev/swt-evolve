@@ -2,11 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VCanvas extends VComposite {
 
     protected VCanvas() {
@@ -16,7 +12,6 @@ public class VCanvas extends VComposite {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public IME getIME() {
         return ((DartCanvas) impl).ime;
     }
@@ -36,40 +31,61 @@ public class VCanvas extends VComposite {
         ((DartCanvas) impl).caret = value;
     }
 
-    public static final String CARET = "caret";
+    public static final int CARET = 68;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "caret":
-                Serializer.writeKeyValue(writer, "caret", getCaret());
-                return;
+            case CARET:
+                return "caret";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = Canvas.class)
-    public static class CanvasJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartCanvas.class, (JsonWriter.WriteObject<DartCanvas>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartCanvas.class, (JsonReader.ReadObject<DartCanvas>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 68:
+                w.ref(getCaret());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static Canvas read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 68:
+                {
+                    Caret v_ = getCaret();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(68);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, Canvas api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 68 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

@@ -4,16 +4,16 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
+import org.eclipse.swt.widgets.*;
 
 class FontDataSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_FontData() {
         FontData w = new FontData();
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.isNotEmpty();
     }
 
@@ -21,11 +21,20 @@ class FontDataSerializeTest extends SerializeTestBase {
     void should_serialize_filled_FontData() {
         FontData w = new FontData();
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
-        assertJ.containsEntry("name", json(w.getName()))
+        WireAssert assertJ = assertThatWire(serialize(w));
+        assertJ.containsEntry("name", w.getName())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("height").equalsTo(w.getHeight(), orAbsentIf0));
+    }
+
+    @Test
+    void should_write_every_property_FontData() throws Exception {
+        assertWritesEveryProperty(style -> {
+            FontData w = new FontData();
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE);
     }
 
     VFontData value(FontData w) {

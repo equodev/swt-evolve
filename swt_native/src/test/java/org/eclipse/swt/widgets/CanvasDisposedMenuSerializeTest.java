@@ -4,8 +4,8 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import java.util.Map;
 
 class CanvasDisposedMenuSerializeTest extends SerializeTestBase {
 
@@ -19,13 +19,13 @@ class CanvasDisposedMenuSerializeTest extends SerializeTestBase {
         w.setMenu(menu);
         menu.dispose();
 
-        String json = serialize(w);
+        Map<String, Object> wire = serialize(w);
 
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
-        assertJ.containsEntry("id", w.hashCode())
+        assertThatWire(wire).isObject()
+               .containsEntry("id", w.hashCode())
                .containsEntry("swt", "Canvas");
-        assertThatJson(json).node("menu").isObject()
-               .containsOnlyKeys("id", "swt", "style")
-               .containsEntry("swt", "Menu");
+        // Named by id, as any widget is; there is nothing of a disposed one to describe.
+        assertThatWire(wire).node("menu").isObject()
+               .containsEntry("id", menu.hashCode());
     }
 }

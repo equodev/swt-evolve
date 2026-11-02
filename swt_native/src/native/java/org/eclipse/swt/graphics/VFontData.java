@@ -1,12 +1,8 @@
 package org.eclipse.swt.graphics;
 
 import org.eclipse.swt.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
-public class VFontData {
+public class VFontData implements dev.equo.swt.WireObject {
 
     protected VFontData() {
     }
@@ -25,7 +21,6 @@ public class VFontData {
         ((DartFontData) impl).getApi().height = value;
     }
 
-    @JsonAttribute(ignore = true)
     public String getLocale() {
         return ((DartFontData) impl).getLocale();
     }
@@ -42,7 +37,6 @@ public class VFontData {
         ((DartFontData) impl).getApi().name = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public int getStyle() {
         return ((DartFontData) impl).getStyle();
     }
@@ -51,31 +45,18 @@ public class VFontData {
         ((DartFontData) impl).setStyle(value);
     }
 
-    @JsonConverter(target = FontData.class)
-    public static class FontDataJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 41;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartFontData.class, (JsonWriter.WriteObject<DartFontData>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartFontData.class, (JsonReader.ReadObject<DartFontData>) reader -> {
-                return null;
-            });
-        }
-
-        public static FontData read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, FontData api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(232);
+        w.write((int) getHeight());
+        w.key(233);
+        w.write(getName());
+        w.key(234);
+        w.write((int) getStyle());
     }
 }

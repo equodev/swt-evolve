@@ -39,6 +39,14 @@ class FocusOnPressTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("button 3 does not focus a read-only Combo; button 1 does")
+    void readOnlyComboPress() {
+        Combo combo = new Combo(shell(), SWT.READ_ONLY);
+        assertThat(focuses(combo, 3)).isFalse();
+        assertThat(focuses(combo, 1)).isTrue();
+    }
+
+    @Test
     @DisplayName("button 1 focuses a StyledText; button 3 leaves it to the StyledText's own press handling")
     void styledTextPress() {
         Shell shell = shell();

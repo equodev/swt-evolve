@@ -4,11 +4,7 @@ import java.util.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VToolItem extends VItem {
 
     protected VToolItem() {
@@ -48,7 +44,6 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).disabledImage = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getEnabled() {
         return ((DartToolItem) impl).getEnabled();
     }
@@ -100,80 +95,193 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).width = value;
     }
 
-    public static final String BACKGROUND = "background";
+    public static final int BACKGROUND = 598;
 
-    public static final String CONTROL = "control";
+    public static final int CONTROL = 599;
 
-    public static final String DISABLED_IMAGE = "disabledImage";
+    public static final int DISABLED_IMAGE = 600;
 
-    public static final String ENABLED = "enabled";
+    public static final int ENABLED = 601;
 
-    public static final String FOREGROUND = "foreground";
+    public static final int FOREGROUND = 602;
 
-    public static final String HOT_IMAGE = "hotImage";
+    public static final int HOT_IMAGE = 603;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 604;
 
-    public static final String TOOL_TIP_TEXT = "toolTipText";
+    public static final int TOOL_TIP_TEXT = 605;
 
-    public static final String WIDTH = "width";
+    public static final int WIDTH = 606;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "background":
-                Serializer.writeKeyValue(writer, "background", getBackground());
-                return;
-            case "control":
-                Serializer.writeKeyValue(writer, "control", getControl());
-                return;
-            case "disabledImage":
-                Serializer.writeKeyValue(writer, "disabledImage", getDisabledImage());
-                return;
-            case "enabled":
-                Serializer.writeKeyValue(writer, "enabled", getEnabled());
-                return;
-            case "foreground":
-                Serializer.writeKeyValue(writer, "foreground", getForeground());
-                return;
-            case "hotImage":
-                Serializer.writeKeyValue(writer, "hotImage", getHotImage());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
-            case "toolTipText":
-                Serializer.writeKeyValue(writer, "toolTipText", getToolTipText());
-                return;
-            case "width":
-                Serializer.writeKeyValue(writer, "width", getWidth());
-                return;
+            case BACKGROUND:
+                return "background";
+            case CONTROL:
+                return "control";
+            case DISABLED_IMAGE:
+                return "disabledImage";
+            case ENABLED:
+                return "enabled";
+            case FOREGROUND:
+                return "foreground";
+            case HOT_IMAGE:
+                return "hotImage";
+            case SELECTION:
+                return "selection";
+            case TOOL_TIP_TEXT:
+                return "toolTipText";
+            case WIDTH:
+                return "width";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = ToolItem.class)
-    public static class ToolItemJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartToolItem.class, (JsonWriter.WriteObject<DartToolItem>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartToolItem.class, (JsonReader.ReadObject<DartToolItem>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 598:
+                w.write(getBackground());
+                return true;
+            case 599:
+                w.ref(getControl());
+                return true;
+            case 600:
+                w.image(getDisabledImage());
+                return true;
+            case 601:
+                w.write(getEnabled());
+                return true;
+            case 602:
+                w.write(getForeground());
+                return true;
+            case 603:
+                w.image(getHotImage());
+                return true;
+            case 604:
+                w.write(getSelection());
+                return true;
+            case 605:
+                w.write(getToolTipText());
+                return true;
+            case 606:
+                w.write((int) getWidth());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static ToolItem read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 598:
+                {
+                    Color v_ = getBackground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(598);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 599:
+                {
+                    Control v_ = getControl();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(599);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 600:
+                {
+                    Image v_ = getDisabledImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(600);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 601:
+                {
+                    boolean v_ = getEnabled();
+                    w.key(601);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 602:
+                {
+                    Color v_ = getForeground();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(602);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 603:
+                {
+                    Image v_ = getHotImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(603);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 604:
+                {
+                    boolean v_ = getSelection();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(604);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 605:
+                {
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(605);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 606:
+                {
+                    int v_ = getWidth();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(606);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, ToolItem api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 598, 599, 600, 601, 602, 603, 604, 605, 606 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 601:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

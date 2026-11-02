@@ -19,10 +19,12 @@ import 'utils/image_utils.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import '../theme/theme_settings/tree_theme_settings.dart';
 import '../gen/button.dart';
+import '../gen/widgets.dart' show WireKey, WireChannel;
 import 'utils/column_order.dart';
 import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
 import 'owner_draw_overlay.dart';
+import 'utils/dnd_session.dart' show ActiveDragTracker;
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
@@ -49,23 +51,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   @override
   void setValue(V value) {
     super.setValue(value);
+    _context?.treeImpl?.itemContentChanged();
     // The Tree lays every visible row out from one flattened list, so what is under this item is
     // the Tree's to redraw.
     final change = lastChange;
-    if (change == null || change.touches('expanded') || change.touches('items')) {
+    if (change == null || change.touches(WireKey.k_TreeItem_expanded) || change.touches(WireKey.k_TreeItem_items)) {
       _context?.treeImpl?.itemStructureChanged();
     }
-  }
-
-  Widget _decorateDropFeedback(BuildContext context, int feedback, Widget row) {
-    final theme = Theme.of(context).extension<TreeThemeExtension>();
-    return decorateDropFeedback(
-      feedback: feedback,
-      color: theme?.selectedBackgroundColor ?? Theme.of(context).colorScheme.primary,
-      lineWidth: theme?.dropFeedbackLineWidth ?? 2.0,
-      highlightAlpha: theme?.dropFeedbackHighlightAlpha ?? 90,
-      child: row,
-    );
   }
 
   Widget _wrapItemForDrag(Widget row) {
@@ -73,21 +65,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     if (ctx == null) return row;
     final parentTree = ctx.parentTree;
     final parentTreeValue = ctx.parentTreeValue;
-
     final treeImpl = ctx.treeImpl;
-    final content = treeImpl == null
-        ? row
-        : ListenableBuilder(
-            listenable: Listenable.merge(
-                [treeImpl.dragHover.notifier, treeImpl.dropFeedback]),
-            builder: (context, child) => treeImpl.dragHover.value == state.id
-                ? _decorateDropFeedback(context, treeImpl.dropFeedback.value, child!)
-                : child!,
-            child: row,
-          );
 
     return wrapDraggable<DndDragPayload>(
-      child: content,
+      child: row,
       data: DndDragPayload(sourceControlId: parentTreeValue.id, itemId: state.id),
       widget: parentTree,
       state: parentTreeValue,
@@ -97,7 +78,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         opacity: Theme.of(context).extension<TreeThemeExtension>()?.dragImageOpacity ?? 0.85,
         child: Material(type: MaterialType.transparency, child: row),
       ),
-      dragDetectEvent: () => ctx.treeImpl?.dragDetectPayload() ?? VEvent(),
+      dragDetectEvent: () => treeImpl?.dragDetectPayload() ?? VEvent(),
       beforeDragDetect: () {
         // A drag carries the selection: starting one on a selected row keeps the rows selected
         // with it, and only a row outside the selection replaces it.
@@ -152,7 +133,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       e.button = 1;
       _context!.parentTree.sendEvent(
         _context!.parentTreeValue,
-        "Mouse/MouseDoubleClick",
+        WireChannel.mouseMouseDoubleClick,
         e,
       );
     }
@@ -310,7 +291,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     }
 
     final String text = state.text ?? "";
-    final List<String?>? texts = state.texts;
+    // Java leaves texts out when it would only repeat text.
+    final List<String?>? texts = state.texts ?? (state.text != null ? [state.text] : null);
     final bool expanded = state.expanded ?? false;
     final bool hasChildren = state.hasChildItems;
     final bool isCheckMode = _context?.isCheckMode ?? false;
@@ -862,13 +844,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // and the area that actually toggles are the same rectangle — when they were two
     // widgets the icon only covered 12x12 of a 34px-tall row, so taps in the gap were
     // swallowed by neither and did nothing at all.
-    return MouseRegion(
+    final arrow = MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: Icon(
         expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
         size: theme.expandIconSize,
         color: arrowColor,
       ),
+    );
+    if (!WidgetsBinding.instance.semanticsEnabled) return arrow;
+    // The row is one tappable node, and the web hands a click on it to the row as a tap at its
+    // centre, which is never on the arrow. A node of the arrow's own is what an assistive
+    // technology, or a test, can expand the item through. It carries no label: the web writes a
+    // label as text that overflows the 12px node over the row's own text, and takes clicks there.
+    return Semantics(
+      container: true,
+      button: true,
+      identifier: 'TreeItemExpander/${state.id}',
+      expanded: expanded,
+      onTap: enabled ? () => _toggleExpand(expanded) : null,
+      child: arrow,
     );
   }
 
@@ -1112,8 +1107,20 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       // The tree reports the pointer entering and leaving it; a row's hover is its own paint only.
       child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
+        // A held button keeps the mouse with the control it was pressed on, so a drag passing over
+        // the rows lights none of them; the first move after release does.
+        onEnter: (_) {
+          if (ActiveDragTracker.isSuppressingHover) return;
+          setState(() => _isHovered = true);
+        },
+        onHover: (_) {
+          if (_isHovered || ActiveDragTracker.isSuppressingHover) return;
+          setState(() => _isHovered = true);
+        },
+        onExit: (_) {
+          if (!_isHovered) return;
+          setState(() => _isHovered = false);
+        },
         child: _notingContextMenuPress(Listener(
           // The tree sends its MouseDown from the same press after this listener, so the row's
           // events go out once that press has been handled.
@@ -1167,6 +1174,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             child: Container(
               width: double.infinity,
               constraints: BoxConstraints(minHeight: effectiveItemHeight),
+              // Never null: a Container with no margin leaves out the box that applies one, and the
+              // row would be built again from scratch each time it was selected or deselected.
               margin: selected
                   ? EdgeInsets.only(
                       left: -widgetTheme.itemSelectedBorderWidth,
@@ -1176,7 +1185,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                           ? 0.0
                           : -widgetTheme.itemSelectedBorderWidth,
                     )
-                  : null,
+                  : EdgeInsets.zero,
               foregroundDecoration: getTreeItemFocusRingDecoration(
                 widgetTheme,
                 selected: selected,

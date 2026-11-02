@@ -1,14 +1,10 @@
 package org.eclipse.swt.widgets;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-
-import dev.equo.swt.Serializer;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -36,12 +32,8 @@ class MessageBoxOpenNativeTest extends DialogBridgeTestBase {
         return labels;
     }
 
-    static String sent(MessageBox box) {
-        try {
-            return new String(new Serializer().to(((DartMessageBox) box.getImpl()).getValue()), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    static Object sent(MessageBox box) {
+        return WireValues.written(((DartMessageBox) box.getImpl()).getValue());
     }
 
     @Test
@@ -68,18 +60,18 @@ class MessageBoxOpenNativeTest extends DialogBridgeTestBase {
         box.setMessage("Message");
         box.open();
 
-        String json = sent(box);
-        assertThatJson(json).node("swt").isEqualTo("MessageBox");
-        assertThatJson(json).node("text").isEqualTo("Title");
-        assertThatJson(json).node("message").isEqualTo("Message");
-        assertThatJson(json).node("style").isEqualTo(box.getStyle());
+        Object json = sent(box);
+        assertThatWire(json).node("swt").isEqualTo("MessageBox");
+        assertThatWire(json).node("text").isEqualTo("Title");
+        assertThatWire(json).node("message").isEqualTo("Message");
+        assertThatWire(json).node("style").isEqualTo(box.getStyle());
     }
 
     @Test
     void theBoxSendsSwtsLabelForEveryButtonByDefault() {
         MessageBox box = new MessageBox(shellAnswering(String.valueOf(SWT.OK)));
 
-        assertThatJson(sent(box)).node("buttonLabels").isArray().containsExactly((Object[]) defaultLabels());
+        assertThatWire(sent(box)).node("buttonLabels").isEqualTo(defaultLabels());
     }
 
     @Test

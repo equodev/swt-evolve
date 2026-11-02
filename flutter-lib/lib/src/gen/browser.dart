@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -12,11 +12,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/browser_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'browser.g.dart';
 
 class BrowserSwt<V extends VBrowser> extends CompositeSwt<V> {
   const BrowserSwt({super.key, required super.value});
@@ -25,51 +24,50 @@ class BrowserSwt<V extends VBrowser> extends CompositeSwt<V> {
   State createState() => BrowserImpl<BrowserSwt<VBrowser>, VBrowser>();
 
   void sendAuthenticationauthenticate(V val, VEvent? payload) {
-    sendEvent(val, "Authentication/authenticate", payload);
+    sendEvent(val, 3, payload); // Authentication/authenticate
   }
 
   void sendCloseWindowclose(V val, VEvent? payload) {
-    sendEvent(val, "CloseWindow/close", payload);
+    sendEvent(val, 19, payload); // CloseWindow/close
   }
 
   void sendLocationchanged(V val, VEvent? payload) {
-    sendEvent(val, "Location/changed", payload);
+    sendEvent(val, 59, payload); // Location/changed
   }
 
   void sendLocationchanging(V val, VEvent? payload) {
-    sendEvent(val, "Location/changing", payload);
+    sendEvent(val, 60, payload); // Location/changing
   }
 
   void sendOpenWindowopen(V val, VEvent? payload) {
-    sendEvent(val, "OpenWindow/open", payload);
+    sendEvent(val, 75, payload); // OpenWindow/open
   }
 
   void sendProgresschanged(V val, VEvent? payload) {
-    sendEvent(val, "Progress/changed", payload);
+    sendEvent(val, 80, payload); // Progress/changed
   }
 
   void sendProgresscompleted(V val, VEvent? payload) {
-    sendEvent(val, "Progress/completed", payload);
+    sendEvent(val, 81, payload); // Progress/completed
   }
 
   void sendStatusTextchanged(V val, VEvent? payload) {
-    sendEvent(val, "StatusText/changed", payload);
+    sendEvent(val, 96, payload); // StatusText/changed
   }
 
   void sendTitlechanged(V val, VEvent? payload) {
-    sendEvent(val, "Title/changed", payload);
+    sendEvent(val, 99, payload); // Title/changed
   }
 
   void sendVisibilityWindowhide(V val, VEvent? payload) {
-    sendEvent(val, "VisibilityWindow/hide", payload);
+    sendEvent(val, 109, payload); // VisibilityWindow/hide
   }
 
   void sendVisibilityWindowshow(V val, VEvent? payload) {
-    sendEvent(val, "VisibilityWindow/show", payload);
+    sendEvent(val, 110, payload); // VisibilityWindow/show
   }
 }
 
-@JsonSerializable()
 class VBrowser extends VComposite {
   VBrowser() : this.empty();
   VBrowser.empty() {
@@ -93,24 +91,66 @@ class VBrowser extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'javascriptEnabled':
-        javascriptEnabled = json['javascriptEnabled'] as bool?;
-      case 'text':
-        text = json['text'] as String?;
-      case 'url':
-        url = json['url'] as String?;
-      case 'functionNames':
-        functionNames = (json['functionNames'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
+      case 7: // javascriptEnabled
+        javascriptEnabled = r.boolean();
+        return true;
+      case 8: // text
+        text = r.string();
+        return true;
+      case 9: // url
+        url = r.string();
+        return true;
+      case 6: // functionNames
+        functionNames = r.strings()?.map((e) => e ?? '').toList();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VBrowser.fromJson(Map<String, dynamic> json) =>
-      _$VBrowserFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VBrowserToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = javascriptEnabled;
+      if (v_ != null) {
+        w.keyBoolean(7, v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null) {
+        w.key(8);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = url;
+      if (v_ != null) {
+        w.key(9);
+        w.string(v_);
+      }
+    }
+    {
+      final v_ = functionNames;
+      if (v_ != null) {
+        w.key(6);
+        w.strings(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(7, javascriptEnabled);
+    visit(8, text);
+    visit(9, url);
+    visit(6, functionNames);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

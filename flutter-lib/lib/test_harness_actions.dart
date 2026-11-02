@@ -203,6 +203,41 @@ void _pointerTapAt(Offset global) {
   binding.handlePointerEvent(PointerUpEvent(pointer: pointer, position: global));
 }
 
+/// Drags with the primary mouse button from the centre of [from] to the centre of [to] (each
+/// `{swt}/{id}`) in [steps] moves [intervalMs] apart, then releases where it lands: a drop when a
+/// drop target is there. Answers how many moves were made and how long the drag took.
+Future<Map<String, Object?>> dragByIds(String from, String to, int steps, int intervalMs) async {
+  final source = _renderBoxByIdentifier(from);
+  final target = _renderBoxByIdentifier(to);
+  if (source == null || target == null) return {'error': 'not mounted: ${source == null ? from : to}'};
+  final start = source.localToGlobal(source.size.center(Offset.zero));
+  final end = target.localToGlobal(target.size.center(Offset.zero));
+  final int pointer = _pointerSeq++;
+  final binding = GestureBinding.instance;
+  final clock = Stopwatch()..start();
+  binding.handlePointerEvent(PointerDownEvent(
+      pointer: pointer, position: start, kind: PointerDeviceKind.mouse, buttons: kPrimaryButton));
+  var at = start;
+  var dispatched = 0;
+  for (var i = 1; i <= steps; i++) {
+    await Future<void>.delayed(Duration(milliseconds: intervalMs));
+    final next = Offset.lerp(start, end, i / steps)!;
+    // Drag recognizers follow the delta, not the position.
+    final t0 = clock.elapsedMicroseconds;
+    binding.handlePointerEvent(PointerMoveEvent(
+        pointer: pointer,
+        position: next,
+        delta: next - at,
+        kind: PointerDeviceKind.mouse,
+        buttons: kPrimaryButton));
+    dispatched += clock.elapsedMicroseconds - t0;
+    at = next;
+  }
+  await Future<void>.delayed(Duration(milliseconds: intervalMs));
+  binding.handlePointerEvent(PointerUpEvent(pointer: pointer, position: end, kind: PointerDeviceKind.mouse));
+  return {'moves': steps, 'elapsedMicros': clock.elapsedMicroseconds, 'dispatchMicros': dispatched};
+}
+
 // ---- public actions --------------------------------------------------------
 
 String _tid(String swt, int id) => '$swt/$id';
@@ -330,7 +365,7 @@ Map<String, dynamic>? _lastRunUiResponse;
 /// PreferencesUtil). With no [id] it opens at the default page and the caller
 /// navigates the Flutter-rendered preference tree with `tapById`.
 String openPref(String opener, [String? id, String style = 'builder']) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openPreferences',
     'opener': opener,
     'style': style,
@@ -347,7 +382,7 @@ String openPref(String opener, [String? id, String style = 'builder']) {
 /// extension point. The Java hook builds a plain JFace `PreferenceDialog` on that
 /// manager, so nothing here names an application.
 String openPrefViaRegistry(String registry, String xpField, [String? id]) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openPreferences',
     'style': 'registry',
     'registry': registry,
@@ -363,7 +398,7 @@ String openPrefViaRegistry(String registry, String xpField, [String? id]) {
 /// project-open workbench event, whose topic is read at runtime from the
 /// app-supplied [eventClass] `#`[topicField] constant.
 String openProject(String project, String eventClass, String topicField) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openProject',
     'project': project,
     'eventClass': eventClass,
@@ -374,7 +409,7 @@ String openProject(String project, String eventClass, String topicField) {
 
 /// Open a file (by absolute [path]) in its default editor.
 String openFile(String path) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'openFile',
     'path': path,
   });
@@ -386,7 +421,7 @@ String openFile(String path) {
 /// result arrives asynchronously on the response channel — read it with
 /// [lastPrefPages] a beat later.
 String listPrefPages(String registry, [String? xpField]) {
-  EquoCommService.sendPayload('swt.evolve.test.runUi', {
+  EquoCommService.sendOn(WireChannel.swtEvolveTestRunUi, {
     'action': 'listPrefPages',
     'registry': registry,
     if (xpField != null && xpField.isNotEmpty) 'xpField': xpField,

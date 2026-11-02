@@ -7,20 +7,19 @@
 // with others, and this one has a window to itself. And it has to render from a frame on the
 // shell's own channel, because there is no Display state here to carry one down.
 
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 
 import 'package:swtflutter/main.dart';
-import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/impl/shell_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+
+import 'delivery/support/deliver.dart';
 
 const _window = Size(600, 420);
 const _shellId = 4242;
@@ -54,17 +53,6 @@ VShell _detachedShell() => VShell()
       ]
   ];
 
-void _receiveJson(String actionId, Object payload) {
-  final actionBytes = utf8.encode(actionId);
-  final body = utf8.encode(json.encode(payload));
-  final frame = Uint8List(2 + actionBytes.length + body.length);
-  frame[0] = (actionBytes.length >> 8) & 0xFF;
-  frame[1] = actionBytes.length & 0xFF;
-  frame.setRange(2, 2 + actionBytes.length, actionBytes);
-  frame.setRange(2 + actionBytes.length, frame.length, body);
-  EquoCommService.commForTesting.receiveBinary(frame);
-}
-
 void main() {
   setUp(resetConfigFlags);
   tearDown(resetConfigFlags);
@@ -84,26 +72,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('a shell rooted as a window renders its content from its own channel',
+  testWidgets('a shell rooted as a window renders its content from its own records',
       (tester) async {
     await pumpShellRoot(tester);
 
     // Nothing has described the shell yet: the root carries identity only.
     expect(find.text('Inside the detached window'), findsNothing);
 
-    _receiveJson('Shell/$_shellId', _detachedShell().toJson());
+    await deliverWhole(_detachedShell());
     await tester.pumpAndSettle();
 
     expect(
       find.text('Inside the detached window'),
       findsOneWidget,
-      reason: 'there is no Display state in this client, so the shell frame is the only source',
+      reason: 'there is no Display state in this client, so the records of the shell are the '
+          'only source',
     );
   });
 
   testWidgets('a shell rooted as a window fills it instead of floating in it', (tester) async {
     await pumpShellRoot(tester);
-    _receiveJson('Shell/$_shellId', _detachedShell().toJson());
+    await deliverWhole(_detachedShell());
     await tester.pumpAndSettle();
 
     expect(

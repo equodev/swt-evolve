@@ -162,6 +162,9 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
             items = newItems;
         }
         items[index] = item;
+        if (getItemCount() == 1) {
+            setSelection(index, false);
+        }
         getValue().markDirty(VTabFolder.ITEMS);
     }
 
@@ -233,7 +236,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        return null;
+        return TabFolderHelper.itemAt(this, point);
     }
 
     /**
@@ -498,7 +501,6 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         }
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        this.selection = newValue;
         if (items.length == 0) {
             setSelection(-1, false);
         } else {
@@ -617,22 +619,39 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Selection", "DefaultSelection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection", "Selection/Selection");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Selection/DefaultSelection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        sendEvent(SWT.DefaultSelection, e);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Selection/Selection":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        setSelection(e.index, true);
+                    });
                     return;
-                sendEvent(SWT.DefaultSelection, e);
-            });
-        });
-        FlutterBridge.on(this, "Selection", "Selection", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                setSelection(e.index, true);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public TabFolder getApi() {

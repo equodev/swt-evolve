@@ -15,10 +15,6 @@
  */
 package org.eclipse.swt.opengl;
 
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
-
 /**
  * The GLData class is a device-independent description
  * of the pixel format attributes of a GL drawable.
@@ -29,22 +25,19 @@ import com.dslplatform.json.JsonAttribute;
  *
  * @since 3.2
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public class GLData {
+public class GLData implements dev.equo.swt.WireObject {
 
     /**
      * Specifies a double-buffered surface.  During context
      * creation, only double-buffered formats are considered
      * when set to true.
      */
-    @JsonAttribute()
     public boolean doubleBuffer;
 
     /**
      * Specifies a stereo surface.  During context creation,
      * only stereo formats are considered when set to true.
      */
-    @JsonAttribute()
     public boolean stereo;
 
     /**
@@ -52,7 +45,6 @@ public class GLData {
      * During context creation, this specifies the minimum
      * required red bits.
      */
-    @JsonAttribute()
     public int redSize;
 
     /**
@@ -60,7 +52,6 @@ public class GLData {
      * During context creation, this specifies the minimum
      * required green bits.
      */
-    @JsonAttribute()
     public int greenSize;
 
     /**
@@ -68,7 +59,6 @@ public class GLData {
      * During context creation, this specifies the minimum
      * required blue bits.
      */
-    @JsonAttribute()
     public int blueSize;
 
     /**
@@ -76,7 +66,6 @@ public class GLData {
      * During context creation, this specifies the minimum
      * required alpha bits.
      */
-    @JsonAttribute()
     public int alphaSize;
 
     /**
@@ -85,7 +74,6 @@ public class GLData {
      * specified value is preferred, or zero for no depth
      * buffer.
      */
-    @JsonAttribute()
     public int depthSize;
 
     /**
@@ -94,7 +82,6 @@ public class GLData {
      * least the specified value is preferred, or zero for
      * no stencil buffer.
      */
-    @JsonAttribute()
     public int stencilSize;
 
     /**
@@ -102,7 +89,6 @@ public class GLData {
      * channel. During context creation, this specifies the
      * minimum required red bits.
      */
-    @JsonAttribute()
     public int accumRedSize;
 
     /**
@@ -110,7 +96,6 @@ public class GLData {
      * channel. During context creation, this specifies the
      * minimum required green bits.
      */
-    @JsonAttribute()
     public int accumGreenSize;
 
     /**
@@ -118,7 +103,6 @@ public class GLData {
      * channel. During context creation, this specifies the
      * minimum required blue bits.
      */
-    @JsonAttribute()
     public int accumBlueSize;
 
     /**
@@ -126,7 +110,6 @@ public class GLData {
      * channel. During context creation, this specifies the
      * minimum required alpha bits.
      */
-    @JsonAttribute()
     public int accumAlphaSize;
 
     /**
@@ -134,7 +117,6 @@ public class GLData {
      * During context creation, this specifies the minimum
      * number of multisample buffers requested.
      */
-    @JsonAttribute()
     public int sampleBuffers;
 
     /**
@@ -143,7 +125,6 @@ public class GLData {
      * samples that meets or exceeds the specified minimum number
      * are preferred.
      */
-    @JsonAttribute()
     public int samples;
 
     /**
@@ -152,7 +133,6 @@ public class GLData {
      *
      * @since 3.5
      */
-    @JsonAttribute(ignore = true)
     public GLCanvas shareContext;
 
     /**
@@ -164,5 +144,91 @@ public class GLData {
     @Override
     public String toString() {
         return (doubleBuffer ? "doubleBuffer," : "") + (stereo ? "stereo," : "") + "r:" + redSize + " g:" + greenSize + " b:" + blueSize + " a:" + alphaSize + "," + "depth:" + depthSize + ",stencil:" + stencilSize + ",accum r:" + accumRedSize + "g:" + accumGreenSize + "b:" + accumBlueSize + "a:" + accumAlphaSize + ",sampleBuffers:" + sampleBuffers + ",samples:" + samples;
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 50;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(299);
+        w.write(doubleBuffer);
+        w.key(306);
+        w.write(stereo);
+        w.key(301);
+        w.write((int) redSize);
+        w.key(300);
+        w.write((int) greenSize);
+        w.key(297);
+        w.write((int) blueSize);
+        w.key(296);
+        w.write((int) alphaSize);
+        w.key(298);
+        w.write((int) depthSize);
+        w.key(305);
+        w.write((int) stencilSize);
+        w.key(295);
+        w.write((int) accumRedSize);
+        w.key(294);
+        w.write((int) accumGreenSize);
+        w.key(293);
+        w.write((int) accumBlueSize);
+        w.key(292);
+        w.write((int) accumAlphaSize);
+        w.key(302);
+        w.write((int) sampleBuffers);
+        w.key(303);
+        w.write((int) samples);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 299:
+                doubleBuffer = r.bool();
+                return true;
+            case 306:
+                stereo = r.bool();
+                return true;
+            case 301:
+                redSize = r.int32();
+                return true;
+            case 300:
+                greenSize = r.int32();
+                return true;
+            case 297:
+                blueSize = r.int32();
+                return true;
+            case 296:
+                alphaSize = r.int32();
+                return true;
+            case 298:
+                depthSize = r.int32();
+                return true;
+            case 305:
+                stencilSize = r.int32();
+                return true;
+            case 295:
+                accumRedSize = r.int32();
+                return true;
+            case 294:
+                accumGreenSize = r.int32();
+                return true;
+            case 293:
+                accumBlueSize = r.int32();
+                return true;
+            case 292:
+                accumAlphaSize = r.int32();
+                return true;
+            case 302:
+                sampleBuffers = r.int32();
+                return true;
+            case 303:
+                samples = r.int32();
+                return true;
+        }
+        return false;
     }
 }

@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'scrolledcomposite_theme_extension.tailor.dart';
-part 'scrolledcomposite_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
 class ScrolledCompositeThemeExtension extends ThemeExtension<ScrolledCompositeThemeExtension> with _$ScrolledCompositeThemeExtensionTailorMixin {
   // Animation
   final Duration animationDuration;
@@ -61,9 +55,4 @@ class ScrolledCompositeThemeExtension extends ThemeExtension<ScrolledCompositeTh
     required this.defaultMinHeight,
     required this.contentPadding,
   });
-
-  factory ScrolledCompositeThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$ScrolledCompositeThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ScrolledCompositeThemeExtensionToJson(this);
 }

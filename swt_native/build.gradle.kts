@@ -158,20 +158,14 @@ dependencies {
     testRuntimeOnly(libs.jetty.websocket.server)
     compileOnly(libs.equo.chromium)
 
-    implementation(libs.dsl.json)
-    annotationProcessor(libs.dsl.json)
-    testAnnotationProcessor(libs.dsl.json)
-
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.assertj)
-    testImplementation(libs.json.unit.assertj)
-    // Gson, two test-only roles: (1) the JSON backend json-unit 4.x discovers at runtime (without one
-    // assertThatJson(...) fails to init) — its lenient parser also accepts the bare unquoted string
-    // expecteds the generated serialize tests use (e.g. isEqualTo("two")); (2) the bench code generator
-    // (WorkbenchTreeGenerator) parses workbench.json to emit the hardcoded WorkbenchTree.
+    // Gson, for the JSON tests read from outside: Chrome DevTools Protocol messages, the case file the
+    // canonical form shares with Dart, the workbench.json the bench generator reads, and the result
+    // files measurement tests write for tools.
     testImplementation(libs.gson)
     testImplementation(libs.mockito.core)
     testImplementation(libs.instancio.junit)
@@ -279,6 +273,9 @@ sourceSets {
                 desktopFontMetrics[os]?.let { srcDir(it) }
                 if (dropJdk9Sources) exclude(jdk9OnlySources)
             }
+            // The wire's channel, type and property tables: without them in the jar Java cannot read
+            // a numbered channel header, so nothing the client sends reaches it.
+            resources { srcDir("src/main/resources") }
             annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
             compileClasspath += sourceSets.main.get().compileClasspath
             runtimeClasspath += sourceSets.main.get().runtimeClasspath
@@ -348,6 +345,8 @@ sourceSets {
                 exclude("dev/equo/swt/IntegerOn150.java")
                 exclude("dev/equo/swt/ConfigUiZoomTest.java")
                 exclude("dev/equo/swt/size/ThemeTextZoomSizeTest.java")
+                exclude("org/eclipse/swt/graphics/DeviceDpiAutoScaleTest.java")
+                exclude("org/eclipse/swt/graphics/HostScreenDpiNativeTest.java")
                 exclude("javafx/embed/swt/FXCanvasPixelDensityNativeTest.java")
                 exclude("org/eclipse/swt/widgets/DeskMultiWindowFlutterTest.java")
                 exclude("org/eclipse/swt/widgets/DeskWindowUnitsTest.java")
@@ -365,6 +364,7 @@ sourceSets {
                 exclude("org/eclipse/swt/widgets/DisplaySystemColorFallbackFlutterTest.java")
                 exclude("org/eclipse/swt/widgets/RequestLayoutRunsLayoutFlutterTest.java")
                 exclude("org/eclipse/swt/widgets/LinkImplementationNativeTest.java")
+                exclude("org/eclipse/swt/widgets/AutoTextDirectionTest.java")
                 exclude("dev/equo/swt/harness/*BrowserKit.java")
                 exclude("dev/equo/swt/test/BrowserSetTextLocalResourceFlutterTest.java")
             }
@@ -395,9 +395,6 @@ sourceSets {
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/TreeAccessorsNativeTest.java")
             // Shell.setMaximumSize/getMaximumSize were added in 3.116.
             if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
-            // Text's paste goes through _paste(boolean) from 3.114.100 on, where the Verify fix and the clipboard recipe live.
-            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextPasteVerifyTest.java")
-            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextClipboardPasteTest.java")
             // StyledText.setLineVerticalIndent was added in 3.109.
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
@@ -510,7 +507,6 @@ tasks.withType<JavaCompile>().configureEach {
             "ToStringReturnsNull", "InterruptedExceptionSwallowed",
             "FallThrough", "MissingCasesInEnumSwitch", "ModifiedButNotUsed",
         )
-        // dsl-json's converters under build/generated are not ours either.
         excludedPaths.set("(.*/src/native[A-Za-z]*/java/(?!dev/equo/)(?!.*/Dart[^/]*\\.java$)|.*/build/generated/).*")
     }
     // That compile is warning-free; keep it so.
@@ -584,8 +580,8 @@ val checkJavaApiLevel by tasks.registering(JavaCompile::class) {
     destinationDirectory.set(layout.buildDirectory.dir("java-api-check"))
     options.encoding = "UTF-8"
     options.release.set(targetJavaRelease ?: 21)
-    // -Xlint:-options silences the "source value 8 is obsolete" pair; -proc:none keeps the dsl-json
-    // annotation processor out (it targets 21 and has nothing to say about the Java level).
+    // -Xlint:-options silences the "source value 8 is obsolete" pair; -proc:none: nothing here has
+    // annotations to process.
     options.compilerArgs.addAll(listOf("-Xlint:-options", "-proc:none"))
     // The withType<JavaCompile> block below adds --add-exports for the Swing bridge; javac refuses
     // it together with target 8, and this task excludes the bridge anyway.
@@ -615,8 +611,10 @@ val handWrittenInGeneratedTrees = listOf(
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
     "**/TrackerHelper.java",
+    "**/TextPasteHelper.java",
     "**/ShellActivation.java",
     "**/NativeCursorHotspot.java",
+    "**/TextApiEdits.java",
 )
 
 // The oldest JDK any enabled release runs on. Hand-written code is shared by every one of them, so
@@ -752,6 +750,10 @@ tasks.withType<Test>().configureEach {
     extensions.configure(org.gradle.testing.jacoco.plugins.JacocoTaskExtension::class) {
         isEnabled = name == "test"
     }
+    // Tests check what goes out on the wire through FlutterBridge.setSendObserver and WireStats,
+    // which only a JVM started with these watches.
+    systemProperty("dev.equo.swt.observeSends", "true")
+    systemProperty("dev.equo.swt.wireStats", "true")
 }
 
 /**
@@ -840,7 +842,10 @@ tasks.test {
         // correctly yet — part of it needs the native image decoder this backend deliberately does
         // not ship, the rest is real Java-vs-Flutter measurement drift. Tracked on its own; until
         // it is fixed no run wants it.
-        excludeTags(*excludedTags("web-known-broken"))
+        // 'transport-copies': the WebSocket library copies every frame it sends and queues the
+        // copies without bound, so senders that outrun the client grow the heap; red until the
+        // transport writes from buffers it does not have to copy.
+        excludeTags(*excludedTags("web-known-broken", "transport-copies"))
     }
     configureTestLogging()
     if (System.getProperty("skipFlutterLib") == null)
@@ -876,8 +881,8 @@ tasks.test {
     // fontsize.seed: FontSizeTest fuzzes over random sizes and texts and prints the seed it used,
     // so a red run can be repeated with -Dfontsize.seed=<the printed value>. Read in the test JVM,
     // so it has to be forwarded rather than left on the Gradle one.
-    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "fontsize.seed",
-        "dev.equo.swt.debug")
+    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "equo.swt.binaryWire", "fontsize.seed",
+        "dev.equo.swt.debug", "stress.frames", "stress.seed", "stress.rounds", "stress.inFlight", "stress.heapLimitMb", "stress.unpacedFrames")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
@@ -892,6 +897,14 @@ fun Test.configureCommBench() {
     useJUnitPlatform { includeTags("bench") }
     configureTestLogging()
     outputs.upToDateWhen { false } // always rerun benchmarks
+    // Discovery loads every test class, and some extend restricted AWT types (see the test task).
+    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
+            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
+            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
+    forwardSystemProperties("bench.runs", "bench.jfr")
+    System.getProperty("bench.jfr")?.let {
+        jvmArgs("-XX:StartFlightRecording=filename=$it,settings=profile,jdk.ExecutionSample#period=1ms")
+    }
 }
 
 fun Test.configureTestLogging() {
@@ -918,9 +931,9 @@ tasks.register<Test>("benchmark") {
     // 1g heap headroom for LARGE-shape serialization churn (~50KB byte[] per iter × 1000+ iters).
     // Default 512m goes into GC thrash territory; 1g is comfortable.
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
-        jvmArgs = listOf("-XstartOnFirstThread", "-Xmx1g")
+        jvmArgs("-XstartOnFirstThread", "-Xmx1g")
     else
-        jvmArgs = listOf("-Xmx1g")
+        jvmArgs("-Xmx1g")
     systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
     forwardSystemProperties("bench.warmup", "bench.measured", "bench.timeoutMs", "comm.impl", "bench.comm.label")
 }
@@ -933,10 +946,10 @@ tasks.register<Test>("webBenchmark") {
     configureCommBench()
     if (System.getProperty("skipFlutterLib") == null)
         dependsOn("webFlutterLib")
-    jvmArgs = listOf("-Xmx1g")
+    jvmArgs("-Xmx1g")
     systemProperty("bench.client", "web")
     systemProperty("dev.equo.swt.loadLibrary", "false")
-    systemProperty("bench.comm.label", System.getProperty("bench.comm.label", "web-json"))
+    systemProperty("bench.comm.label", System.getProperty("bench.comm.label", "web"))
     forwardSystemProperties("bench.warmup", "bench.measured", "bench.timeoutMs", "comm.impl", "equo.swt.browser", "bench.web.headless")
 }
 
@@ -1079,11 +1092,16 @@ val libertyFontExclude = "**/flutter_assets/assets/fonts/Liberation*.ttf"
 // See docs/design/flutter-dtd-introspection.md (Phases 1 & 2).
 val dartDebug = project.hasProperty("dartDebug")
 
-fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, debug: Boolean) {
+// `-PdartProfile` builds them in --profile: AOT like release, with the timeline kept, so a measurement
+// can tell build, layout and paint apart at release speed.
+val dartProfile = !dartDebug && project.hasProperty("dartProfile")
+val dartMode = if (dartDebug) "debug" else if (dartProfile) "profile" else "release"
+
+fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
     // Flutter emits build outputs under a mode-named directory: macOS/Windows capitalize
     // (Products/Debug, runner/Debug), Linux lower-cases (build/linux/<arch>/debug).
-    val modeCap = if (debug) "Debug" else "Release"
-    val modeLower = if (debug) "debug" else "release"
+    val modeCap = mode.replaceFirstChar { it.uppercase() }
+    val modeLower = mode
     when (os) {
         "macos" -> from("../flutter-lib/build/macos/Build/Products/$modeCap/swtflutter.app") {
             into("swtflutter.app")
@@ -1125,9 +1143,11 @@ val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
     inputs.dir("../flutter-lib/web")
     inputs.dir("../flutter-lib/assets")
     outputs.dir("../flutter-lib/build/web")
-    // JavaScript build only, so every browser runs CanvasKit. Under Skwasm (--wasm) a GC-painted
-    // Canvas that repaints while scrolling makes the whole window flicker; CanvasKit does not.
-    commandLine = flutterCmd() + listOf("build", "web")
+    // Both builds in one bundle: the loader runs the wasm one (Skwasm, which rasterises off the
+    // main thread when the page is cross-origin isolated) where the browser supports WasmGC, and
+    // the JavaScript one (CanvasKit) everywhere else. A pixel read-back shares Skwasm's frame
+    // surface; ImageUtils.toBytes keeps it out of a frame's way (see FramePresentation).
+    commandLine = flutterCmd() + listOf("build", "web", "--wasm")
 }
 
 val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {
@@ -1213,14 +1233,14 @@ platforms.forEach { platform ->
             // A plugin bump changes only the lock, and the plugin's native code is compiled into this build.
             inputs.file("../flutter-lib/pubspec.lock")
             outputs.dir("../flutter-lib/build/${info.os}")
-            // Toggling -PdartDebug must invalidate this task even though its output dir is unchanged
+            // Toggling -PdartDebug/-PdartProfile must invalidate this task even though its output dir is unchanged
             // (Flutter writes debug/release into sibling subdirs of the same build/<os> tree).
-            inputs.property("dartDebug", dartDebug)
-            val modeFlag = if (dartDebug) listOf("--debug") else emptyList()
+            inputs.property("dartMode", dartMode)
+            val modeFlag = if (dartMode == "release") emptyList() else listOf("--$dartMode")
             when (info.os) {
                 "macos" -> {
                     val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
-                    val extra = if (dartDebug) " --debug" else ""
+                    val extra = if (dartMode == "release") "" else " --$dartMode"
                     commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && ${flutterCmd().joinToString(" ")} build macos$extra")
                 }
                 else -> commandLine = flutterCmd() + listOf("build", info.os) + modeFlag
@@ -1245,7 +1265,7 @@ platforms.forEach { platform ->
             // this (aarch64) copy completes; see macos-x86_64FlutterLib's mustRunAfter above.
 
             val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
-            copyFlutterNatives(info.os, flutterArch, dartDebug)
+            copyFlutterNatives(info.os, flutterArch, dartMode)
 
             into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
         }

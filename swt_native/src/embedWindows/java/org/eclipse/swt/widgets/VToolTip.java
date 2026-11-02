@@ -3,11 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VToolTip extends VWidget {
 
     protected VToolTip() {
@@ -17,7 +13,6 @@ public class VToolTip extends VWidget {
         super(impl);
     }
 
-    @JsonAttribute(ignore = true)
     public boolean getAutoHide() {
         return ((DartToolTip) impl).getAutoHide();
     }
@@ -42,7 +37,6 @@ public class VToolTip extends VWidget {
         ((DartToolTip) impl).message = value;
     }
 
-    @JsonAttribute(nullable = false)
     public String getText() {
         return ((DartToolTip) impl).getText();
     }
@@ -51,7 +45,6 @@ public class VToolTip extends VWidget {
         ((DartToolTip) impl).text = value;
     }
 
-    @JsonAttribute(includeToMinimal = JsonAttribute.IncludePolicy.ALWAYS)
     public boolean getVisible() {
         return ((DartToolTip) impl).getVisible();
     }
@@ -60,55 +53,115 @@ public class VToolTip extends VWidget {
         ((DartToolTip) impl).visible = value;
     }
 
-    public static final String LOCATION = "location";
+    public static final int LOCATION = 607;
 
-    public static final String MESSAGE = "message";
+    public static final int MESSAGE = 608;
 
-    public static final String TEXT = "text";
+    public static final int TEXT = 609;
 
-    public static final String VISIBLE = "visible";
+    public static final int VISIBLE = 610;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "location":
-                Serializer.writeKeyValue(writer, "location", getLocation());
-                return;
-            case "message":
-                Serializer.writeKeyValue(writer, "message", getMessage());
-                return;
-            case "text":
-                Serializer.writeKeyValue(writer, "text", getText());
-                return;
-            case "visible":
-                Serializer.writeKeyValue(writer, "visible", getVisible());
-                return;
+            case LOCATION:
+                return "location";
+            case MESSAGE:
+                return "message";
+            case TEXT:
+                return "text";
+            case VISIBLE:
+                return "visible";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = ToolTip.class)
-    public static class ToolTipJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartToolTip.class, (JsonWriter.WriteObject<DartToolTip>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartToolTip.class, (JsonReader.ReadObject<DartToolTip>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 607:
+                w.write(getLocation());
+                return true;
+            case 608:
+                w.write(getMessage());
+                return true;
+            case 609:
+                w.write(getText());
+                return true;
+            case 610:
+                w.write(getVisible());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static ToolTip read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 607:
+                {
+                    Point v_ = getLocation();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(607);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 608:
+                {
+                    String v_ = getMessage();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(608);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 609:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(609);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 610:
+                {
+                    boolean v_ = getVisible();
+                    w.key(610);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, ToolTip api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 607, 608, 609, 610 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        switch(key) {
+            case 610:
+                return true;
         }
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

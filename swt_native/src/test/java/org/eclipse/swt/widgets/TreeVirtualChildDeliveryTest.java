@@ -1,18 +1,16 @@
 package org.eclipse.swt.widgets;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.delivery.DeliveryAudit;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,7 +56,7 @@ class TreeVirtualChildDeliveryTest {
             assertThat(sentFor(audit, launch))
                     .as("no child exists yet, so the count is the only thing that can give the row "
                             + "an expander")
-                    .anySatisfy(frame -> assertThat(frame.get("itemCount").getAsInt()).isEqualTo(2));
+                    .anySatisfy(frame -> assertThat(((Number) frame.get("itemCount")).intValue()).isEqualTo(2));
         }
     }
 
@@ -231,39 +229,30 @@ class TreeVirtualChildDeliveryTest {
     }
 
     /** Every description of {@code item} that went out, on its own channel or inside another. */
-    private static List<JsonObject> sentFor(DeliveryAudit audit, TreeItem item) {
-        List<JsonObject> found = new ArrayList<>();
+    private static List<Map<String, Object>> sentFor(DeliveryAudit audit, TreeItem item) {
+        List<Map<String, Object>> found = new ArrayList<>();
         for (DeliveryAudit.Frame frame : audit.frames()) {
-            collect(JsonParser.parseString(frame.json()), item.hashCode(), found);
+            found.addAll(WireValues.describing(frame.value(), item.hashCode()));
         }
         return found;
-    }
-
-    private static void collect(JsonElement node, int id, List<JsonObject> found) {
-        if (node.isJsonArray()) {
-            for (JsonElement e : node.getAsJsonArray()) collect(e, id, found);
-        } else if (node.isJsonObject()) {
-            JsonObject o = node.getAsJsonObject();
-            if (o.has("id") && o.get("id").getAsInt() == id) found.add(o);
-            for (var e : o.entrySet()) collect(e.getValue(), id, found);
-        }
     }
 
     /**
      * The texts of the children listed in the last item list sent for {@code parent}. A child sent
      * as a name is one the client already holds, so it reads as the text Java has for it.
      */
+    @SuppressWarnings("unchecked")
     private static List<String> childTextsSentFor(DeliveryAudit audit, TreeItem parent) {
-        JsonArray items = null;
-        for (JsonObject frame : sentFor(audit, parent)) {
-            if (frame.has("items")) items = frame.getAsJsonArray("items");
+        List<Object> items = null;
+        for (Map<String, Object> frame : sentFor(audit, parent)) {
+            if (frame.containsKey("items")) items = (List<Object>) frame.get("items");
         }
         List<String> texts = new ArrayList<>();
         if (items == null) return texts;
-        for (JsonElement child : items) {
-            JsonObject c = child.getAsJsonObject();
-            if (c.has("text")) texts.add(c.get("text").getAsString());
-            else if (c.has("_r")) texts.add(knownChildText(parent, c.get("id").getAsInt()));
+        for (Object child : items) {
+            Map<String, Object> c = (Map<String, Object>) child;
+            if (c.containsKey("text")) texts.add((String) c.get("text"));
+            else if (c.containsKey("_r")) texts.add(knownChildText(parent, ((Number) c.get("id")).intValue()));
             else texts.add("<" + c + ">");
         }
         return texts;

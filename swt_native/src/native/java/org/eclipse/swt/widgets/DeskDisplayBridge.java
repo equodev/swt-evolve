@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
+import dev.equo.swt.comm.CommService;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
@@ -80,11 +81,17 @@ public class DeskDisplayBridge extends DisplayBridge {
     private Shell windowShell;
 
     /**
-     * Set while a posted wake is still in the OS event queue. One queued wake is enough to end the
-     * idle wait, and every extra one is an OS event the next pump dispatches, each closing an AppKit
-     * transaction the window server has to process.
+     * Whether the UI thread is running a turn, armed for its idle wait, or woken from it. Only an
+     * armed wait needs a wake posted, and one is enough: a running turn sees new work when it next
+     * arms ({@code DartDisplay.sleep} arms before it checks for pending work), and every extra wake
+     * is an OS event the next pump dispatches, each closing an AppKit transaction the window server
+     * has to process.
      */
-    private final java.util.concurrent.atomic.AtomicBoolean wakeQueued = new java.util.concurrent.atomic.AtomicBoolean();
+    private final java.util.concurrent.atomic.AtomicInteger waitState = new java.util.concurrent.atomic.AtomicInteger(RUNNING);
+
+    private static final int RUNNING = 0;
+    private static final int ARMED = 1;
+    private static final int WOKEN = 2;
 
     DeskDisplayBridge(DartDisplay display) {
         super(display);
@@ -110,6 +117,11 @@ public class DeskDisplayBridge extends DisplayBridge {
         // Logical pixels, not converted: the client has not reported its monitor yet, so the UI
         // scale is unknown here, and the shell is fitted to whatever viewport the window reports.
         windowContext = openNativeWindow(0, displayId, "Display", width, height);
+    }
+
+    @Override
+    protected CommService createComm() {
+        return newComm();
     }
 
     /** Opens one native top-level window hosting a Flutter client rooted at {@code widgetName/id}.
@@ -152,8 +164,8 @@ public class DeskDisplayBridge extends DisplayBridge {
         fitShellTakingOverWindow(main);
         applyWindowOrigin(main, mainWindowOrigin());
 
-        // The pump drains the queued wake, so a wake after this point has to be posted again.
-        wakeQueued.set(false);
+        // A turn that found work instead of waiting left the wait armed.
+        waitState.set(RUNNING);
         int status = pumpWindow();
         if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
             onWindowCloseRequested();
@@ -367,6 +379,22 @@ public class DeskDisplayBridge extends DisplayBridge {
         return FlutterNative.getOrigin(context);
     }
 
+    @Override
+    public Point cursorLocation() {
+        Point logical = DisplayBridgePlatform.cursorLocation();
+        return logical == null ? null : new Point(Config.logicalToSwt(logical.x), Config.logicalToSwt(logical.y));
+    }
+
+    @Override
+    protected boolean moveCursor(int x, int y) {
+        return DisplayBridgePlatform.moveCursor(Config.swtToLogical(x), Config.swtToLogical(y));
+    }
+
+    @Override
+    public boolean pointerButtonDown() {
+        return DisplayBridgePlatform.pointerButtonDown();
+    }
+
 
 
     /** How many unplaced windows have been cascaded so far; see {@link #cascade}. */
@@ -533,15 +561,35 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /**
+     * The {@link #sleep(int)} wait ends on any wake, so the cap only bounds a wake that never reaches the OS loop
+     * (Windows posts it to the thread that last waited, and before the first wait there is none).
+     */
+    @Override
+    public int parkCapMillis() {
+        return hasNativeWindow() ? 1000 : super.parkCapMillis();
+    }
+
+    /** The UI thread is about to wait: from here a wake has to reach the OS loop. */
+    @Override
+    public void armWake() {
+        waitState.set(ARMED);
+    }
+
+    /**
      * Idle wait: block inside the native (Cocoa/GTK/Win32) event loop instead of {@code Thread.sleep}.
      * Keeps the SWT main thread parked in the OS event loop, so a click, key, or window event wakes
-     * it immediately (no up-to-16ms input lag) and live window drag/resize stays smooth. The deadline
-     * still bounds the wait so Java-side timers (caret blink, etc.) keep ticking when idle.
+     * it immediately (no up-to-16ms input lag) and live window drag/resize stays smooth. The caller
+     * bounds the wait by the next timer's deadline; asyncExec and dirty state end it through
+     * {@link #wake()}.
      */
     @Override
     public void sleep(int millis) throws InterruptedException {
         if (hasNativeWindow()) {
-            FlutterNative.waitEvents(windowContext, millis);
+            try {
+                waitNativeWindow(millis);
+            } finally {
+                waitState.set(RUNNING);
+            }
         } else {
             Thread.sleep(millis);
         }
@@ -555,9 +603,14 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     @Override
     public void wake() {
-        if (hasNativeWindow() && wakeQueued.compareAndSet(false, true)) {
+        if (hasNativeWindow() && waitState.compareAndSet(ARMED, WOKEN)) {
             wakeNativeWindow();
         }
+    }
+
+    /** Waits in the OS event loop for up to {@code millis}. Seam: tests stand a window in without JNI. */
+    protected void waitNativeWindow(int millis) {
+        FlutterNative.waitEvents(windowContext, millis);
     }
 
     /** Posts the wake into the OS event loop. Seam: tests stand a window in without JNI. */

@@ -5374,7 +5374,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
      */
     public int getTopIndex() {
         checkWidget();
-        Integer geometryTopIndex = StyledTextHelper.geometryLineIndex(this, 0);
+        Integer geometryTopIndex = StyledTextHelper.geometryTopIndex(this);
         if (geometryTopIndex != null)
             return geometryTopIndex;
         return topIndex;
@@ -6499,9 +6499,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                     if (horizontalScrollOffset != horizontalBar.getSelection()) {
                         horizontalBar.setSelection(horizontalScrollOffset);
                         horizontalScrollOffset = horizontalBar.getSelection();
-                        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
                         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
                         getValue().markDirty(VStyledText.SELECTION_RANGES);
+                        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
                     }
                 }
             }
@@ -8422,9 +8422,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         verticalScrollOffset = 0;
         getValue().markDirty(VStyledText.TOP_PIXEL);
         horizontalScrollOffset = 0;
-        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
+        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         resetSelection();
         ((DartStyledTextRenderer) renderer.getImpl()).setContent(content);
         getValue().markDirty(VStyledText.TOP_PIXEL);
@@ -8574,9 +8574,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
             }
         }
         horizontalScrollOffset += pixels;
-        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
+        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         setCaretLocations();
         return true;
     }
@@ -10639,6 +10639,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         if (verticalBar != null) {
             setScrollBar(verticalBar, clientAreaHeight, ((DartStyledTextRenderer) renderer.getImpl()).getHeight(), topMargin + bottomMargin);
         }
+        if (verticalBar != null && verticalScrollOffset >= 0 && verticalBar.getSelection() != verticalScrollOffset)
+            verticalBar.setSelection(verticalScrollOffset);
         if (horizontalBar != null && !wordWrap) {
             setScrollBar(horizontalBar, clientAreaWidth, ((DartStyledTextRenderer) renderer.getImpl()).getWidth(), leftMargin + rightMargin);
             if (!alwaysShowScroll && horizontalBar.getVisible() && verticalBar != null) {
@@ -11725,9 +11727,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
         resetCache(0, content.getLineCount());
         horizontalScrollOffset = 0;
-        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         getValue().markDirty(VStyledText.BLOCK_SELECTION_BOUNDS);
         getValue().markDirty(VStyledText.SELECTION_RANGES);
+        getValue().markDirty(VStyledText.HORIZONTAL_PIXEL);
         ScrollBar horizontalBar = getHorizontalBar();
         if (horizontalBar != null) {
             horizontalBar.setVisible(!wordWrap);

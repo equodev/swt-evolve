@@ -2,13 +2,9 @@ import 'colordialog.dart';
 import 'dialog.dart';
 import 'messagebox.dart';
 
-VDialog mapDialogValue(Map<String, dynamic> m) => switch (m['swt'] as String?) {
-  'MessageBox' => VMessageBox.fromJson(m),
-  'ColorDialog' => VColorDialog.fromJson(m),
-  _ => VDialog.fromJson(m),
+/// An empty dialog value of the class a binary frame names, for it to be read into.
+Object? newDialogValue(String name) => switch (name) {
+  'MessageBox' => VMessageBox(),
+  'ColorDialog' => VColorDialog(),
+  _ => VDialog(),
 };
-
-List<VDialog>? parseDialogs(dynamic raw) {
-  if (raw == null) return null;
-  return (raw as List).map((e) => mapDialogValue(e as Map<String, dynamic>)).toList();
-}

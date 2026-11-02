@@ -1,17 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'menuitem_theme_extension.tailor.dart';
-part 'menuitem_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
-@EdgeInsetsConverter()
 class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with _$MenuItemThemeExtensionTailorMixin {
   // Animation
   final Duration animationDuration;
@@ -123,9 +115,4 @@ class MenuItemThemeExtension extends ThemeExtension<MenuItemThemeExtension> with
     this.textStyle,
     this.acceleratorTextStyle,
   });
-
-  factory MenuItemThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$MenuItemThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MenuItemThemeExtensionToJson(this);
 }

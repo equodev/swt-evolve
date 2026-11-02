@@ -85,7 +85,7 @@ List<String> _highlighted(WidgetTester tester) {
     for (final label in _labels)
       if (tester
               .widgetList<AnimatedContainer>(find.ancestor(
-                  of: find.text(label), matching: find.byType(AnimatedContainer)))
+                  of: find.text(label), matching: find.byWidgetPredicate((w) => w is AnimatedContainer)))
               .map((c) => (c.decoration as BoxDecoration?)?.color)
               .contains(theme.hoverBackgroundColor))
         label,

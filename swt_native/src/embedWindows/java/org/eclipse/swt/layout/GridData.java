@@ -18,9 +18,6 @@ package org.eclipse.swt.layout;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * <code>GridData</code> is the layout data object associated with
@@ -60,8 +57,7 @@ import com.dslplatform.json.JsonAttribute;
  * @see Control#setLayoutData
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public final class GridData {
+public final class GridData implements dev.equo.swt.WireObject {
 
     /**
      * verticalAlignment specifies how controls will be positioned
@@ -76,7 +72,6 @@ public final class GridData {
      *    <li>SWT.FILL: Resize the control to fill the cell vertically</li>
      * </ul>
      */
-    @JsonAttribute()
     public int verticalAlignment = CENTER;
 
     /**
@@ -92,7 +87,6 @@ public final class GridData {
      *    <li>SWT.FILL: Resize the control to fill the cell horizontally</li>
      * </ul>
      */
-    @JsonAttribute()
     public int horizontalAlignment = BEGINNING;
 
     /**
@@ -104,7 +98,6 @@ public final class GridData {
      *
      * @see Control#computeSize(int, int, boolean)
      */
-    @JsonAttribute()
     public int widthHint = SWT.DEFAULT;
 
     /**
@@ -116,7 +109,6 @@ public final class GridData {
      *
      * @see Control#computeSize(int, int, boolean)
      */
-    @JsonAttribute()
     public int heightHint = SWT.DEFAULT;
 
     /**
@@ -125,7 +117,6 @@ public final class GridData {
      *
      * The default value is 0.
      */
-    @JsonAttribute()
     public int horizontalIndent = 0;
 
     /**
@@ -136,7 +127,6 @@ public final class GridData {
      *
      * @since 3.1
      */
-    @JsonAttribute()
     public int verticalIndent = 0;
 
     /**
@@ -145,7 +135,6 @@ public final class GridData {
      *
      * The default value is 1.
      */
-    @JsonAttribute()
     public int horizontalSpan = 1;
 
     /**
@@ -154,7 +143,6 @@ public final class GridData {
      *
      * The default value is 1.
      */
-    @JsonAttribute()
     public int verticalSpan = 1;
 
     /**
@@ -186,7 +174,6 @@ public final class GridData {
      * @see GridData#minimumWidth
      * @see GridData#widthHint
      */
-    @JsonAttribute()
     public boolean grabExcessHorizontalSpace = false;
 
     /**
@@ -218,7 +205,6 @@ public final class GridData {
      * @see GridData#minimumHeight
      * @see GridData#heightHint
      */
-    @JsonAttribute()
     public boolean grabExcessVerticalSpace = false;
 
     /**
@@ -234,7 +220,6 @@ public final class GridData {
      * @see Control#computeSize(int, int, boolean)
      * @see GridData#widthHint
      */
-    @JsonAttribute()
     public int minimumWidth = 0;
 
     /**
@@ -250,7 +235,6 @@ public final class GridData {
      * @see Control#computeSize(int, int, boolean)
      * @see GridData#heightHint
      */
-    @JsonAttribute()
     public int minimumHeight = 0;
 
     /**
@@ -264,7 +248,6 @@ public final class GridData {
      *
      * @since 3.1
      */
-    @JsonAttribute()
     public boolean exclude = false;
 
     /**
@@ -634,5 +617,136 @@ public final class GridData {
         string = string.trim();
         string += "}";
         return string;
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 52;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(329);
+        w.write((int) verticalAlignment);
+        w.key(324);
+        w.write((int) horizontalAlignment);
+        w.key(332);
+        w.write((int) widthHint);
+        w.key(323);
+        w.write((int) heightHint);
+        w.key(325);
+        w.write((int) horizontalIndent);
+        w.key(330);
+        w.write((int) verticalIndent);
+        w.key(326);
+        w.write((int) horizontalSpan);
+        w.key(331);
+        w.write((int) verticalSpan);
+        w.key(321);
+        w.write(grabExcessHorizontalSpace);
+        w.key(322);
+        w.write(grabExcessVerticalSpace);
+        w.key(328);
+        w.write((int) minimumWidth);
+        w.key(327);
+        w.write((int) minimumHeight);
+        w.key(320);
+        w.write(exclude);
+        w.key(311);
+        w.write((int) cacheWidth);
+        w.key(310);
+        w.write((int) cacheHeight);
+        w.key(318);
+        w.write((int) defaultWhint);
+        w.key(317);
+        w.write((int) defaultHhint);
+        w.key(319);
+        w.write((int) defaultWidth);
+        w.key(316);
+        w.write((int) defaultHeight);
+        w.key(314);
+        w.write((int) currentWhint);
+        w.key(313);
+        w.write((int) currentHhint);
+        w.key(315);
+        w.write((int) currentWidth);
+        w.key(312);
+        w.write((int) currentHeight);
+    }
+
+    @Override
+    public boolean readWire(int key, dev.equo.swt.WireReader r) {
+        switch(key) {
+            case 329:
+                verticalAlignment = r.int32();
+                return true;
+            case 324:
+                horizontalAlignment = r.int32();
+                return true;
+            case 332:
+                widthHint = r.int32();
+                return true;
+            case 323:
+                heightHint = r.int32();
+                return true;
+            case 325:
+                horizontalIndent = r.int32();
+                return true;
+            case 330:
+                verticalIndent = r.int32();
+                return true;
+            case 326:
+                horizontalSpan = r.int32();
+                return true;
+            case 331:
+                verticalSpan = r.int32();
+                return true;
+            case 321:
+                grabExcessHorizontalSpace = r.bool();
+                return true;
+            case 322:
+                grabExcessVerticalSpace = r.bool();
+                return true;
+            case 328:
+                minimumWidth = r.int32();
+                return true;
+            case 327:
+                minimumHeight = r.int32();
+                return true;
+            case 320:
+                exclude = r.bool();
+                return true;
+            case 311:
+                cacheWidth = r.int32();
+                return true;
+            case 310:
+                cacheHeight = r.int32();
+                return true;
+            case 318:
+                defaultWhint = r.int32();
+                return true;
+            case 317:
+                defaultHhint = r.int32();
+                return true;
+            case 319:
+                defaultWidth = r.int32();
+                return true;
+            case 316:
+                defaultHeight = r.int32();
+                return true;
+            case 314:
+                currentWhint = r.int32();
+                return true;
+            case 313:
+                currentHhint = r.int32();
+                return true;
+            case 315:
+                currentWidth = r.int32();
+                return true;
+            case 312:
+                currentHeight = r.int32();
+                return true;
+        }
+        return false;
     }
 }

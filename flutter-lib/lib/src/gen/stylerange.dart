@@ -1,24 +1,56 @@
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/font.dart';
 import '../gen/glyphmetrics.dart';
 import '../gen/textstyle.dart';
+import '../gen/widgets.dart';
 
-part 'stylerange.g.dart';
-
-@JsonSerializable()
 class VStyleRange extends VTextStyle {
   VStyleRange() : this.empty();
   VStyleRange.empty() : super.empty();
 
-  @JsonKey(defaultValue: 0)
   int fontStyle = 0;
-  @JsonKey(defaultValue: 0)
   int length = 0;
-  @JsonKey(defaultValue: 0)
   int start = 0;
 
-  factory VStyleRange.fromJson(Map<String, dynamic> json) =>
-      _$VStyleRangeFromJson(json);
-  Map<String, dynamic> toJson() => _$VStyleRangeToJson(this);
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case 469: // fontStyle
+        fontStyle = r.int32();
+        return true;
+      case 470: // length
+        length = r.int32();
+        return true;
+      case 471: // start
+        start = r.int32();
+        return true;
+      default:
+        return super.readWire(key, r);
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(469, fontStyle);
+    visit(470, length);
+    visit(471, start);
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    {
+      final v_ = fontStyle;
+      w.keyInt32(469, v_);
+    }
+    {
+      final v_ = length;
+      w.keyInt32(470, v_);
+    }
+    {
+      final v_ = start;
+      w.keyInt32(471, v_);
+    }
+  }
 }

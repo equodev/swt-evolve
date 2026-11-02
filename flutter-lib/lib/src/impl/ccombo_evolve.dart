@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
@@ -9,18 +10,22 @@ import '../gen/event.dart';
 import '../gen/point.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart' show WireKey, WireChannel;
 import '../impl/composite_evolve.dart';
 import '../styles.dart';
 import '../theme/theme_extensions/ccombo_theme_extension.dart';
 import '../theme/theme_settings/ccombo_theme_settings.dart';
 import 'utils/font_utils.dart';
+import 'utils/cached_text.dart';
 import 'utils/text_utils.dart';
+import 'utils/at_rest.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
+import 'utils/quiet_animations.dart';
 
 class CComboImpl<T extends CComboSwt, V extends VCCombo>
-    extends CompositeImpl<T, V> with PendingTextEchoes {
+    extends CompositeImpl<T, V> with PendingTextEchoes, AtRestHandover {
   late TextEditingController _controller;
   FocusNode? _focusNode;
   /// The arrow's node, where Tab leaves the focus of a READ_ONLY CCombo. Enter and Space there are
@@ -39,11 +44,12 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
   final MenuController _menuController = MenuController();
   bool _isFocused = false;
-  bool _isHovered = false;
   /// The last `listVisible` Java sent or was told. Only a change from it is a command to open or close.
   bool? _lastJavaListVisible;
   /// What Java last told the list to be, until the list gets there; its state before then is not news.
   bool? _javaListTarget;
+  /// Whether the list was open when last reported, whatever Java was told.
+  bool _listShown = false;
 
   @override
   void initState() {
@@ -62,6 +68,116 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
   // The list is an SWT List: it highlights the selection only, and the pointer over it moves nothing.
   bool _isHighlighted(int index) => index == _selectedIndex;
+
+  /// The menu's entries, kept while what they are made of is unchanged; see [_DropdownEntries].
+  final _DropdownEntries _entries = _DropdownEntries();
+
+  /// Whether the [DropdownMenu] is mounted. At rest the field is drawn on its own, which rebuilds at a
+  /// small fraction of the cost: DropdownMenu builds a button for every entry on every build, open or
+  /// not. It is mounted while anything could interact with it -- the pointer over it, focus in it, its
+  /// list open or about to open -- so input always reaches the real one.
+  bool get _live =>
+      _isFocused || hovered || _menuController.isOpen || _javaListTarget == true || handingOver || forcedLive;
+
+  /// The field's place in focus traversal while at rest, and the parent of the menu's own nodes once
+  /// it is mounted, so focus never leaves the control while one replaces the other.
+  final FocusNode _restFocus = FocusNode(debugLabel: 'CCombo');
+
+  bool get _isReadOnly => StyleBits(state.style).has(SWT.READ_ONLY);
+
+  TextStyle _fieldTextStyle(BuildContext context, CComboThemeExtension widgetTheme) => getTextStyle(
+        context: context,
+        font: state.font,
+        textColor: !(state.enabled ?? true)
+            ? widgetTheme.disabledTextColor
+            : getForegroundColor(
+                foreground: state.foreground,
+                defaultColor: widgetTheme.textColor,
+                context: context,
+                minContrast: widgetTheme.minTextContrast,
+              ),
+        baseTextStyle: widgetTheme.textStyle,
+      );
+
+  double _borderWidth(CComboThemeExtension widgetTheme) =>
+      StyleBits(state.style).has(SWT.BORDER) ? 3.0 : widgetTheme.borderWidth;
+
+  /// The text field, list and arrow are SWT widgets of their own, but what they show is in the
+  /// CCombo's own state.
+  @override
+  bool get drawsHeldWidgets => false;
+
+  /// What the field shows through its controller: a change naming only these is handed to the
+  /// controller, which redraws the text and nothing else.
+  static const _controllerProperties = {WireKey.k_CCombo_text, WireKey.k_CCombo_selection};
+
+  /// [_controllerProperties] and what only the menu shows. At rest the menu is not mounted, and is
+  /// built from the current state when it is.
+  static const _atRestProperties = {
+    WireKey.k_CCombo_text,
+    WireKey.k_CCombo_selection,
+    WireKey.k_CCombo_items,
+    WireKey.k_CCombo_itemTooltips,
+  };
+
+  /// The theme and field text style the last build used. Only a build changes them, so a delivery
+  /// that leaves the build alone can read them here.
+  CComboThemeExtension? _builtTheme;
+  TextStyle? _builtTextStyle;
+
+  @override
+  void setValue(V value) {
+    final change = lastChange;
+    // A part changed, and the CCombo mirrors its parts in its own state.
+    if (change != null && change.ofHeld) return;
+    final unbuilt = _live ? _controllerProperties : _atRestProperties;
+    // An open list highlights the selection, which only a rebuild moves.
+    if (mounted &&
+        change != null &&
+        change.isOnly(unbuilt) &&
+        !_menuController.isOpen &&
+        _keepsLayout(state.text ?? '')) {
+      extraSetState();
+      return;
+    }
+    super.setValue(value);
+  }
+
+  /// Whether showing [text] instead of what is shown leaves the field laid out as it is: a field
+  /// without bounds is as wide as its value, and a pinned one gives up padding for a value too wide
+  /// for it.
+  bool _keepsLayout(String text) {
+    final styleBits = StyleBits(state.style);
+    final widgetTheme = _builtTheme;
+    final style = _builtTextStyle;
+    if (!hasBounds(state.bounds) || styleBits.has(SWT.SIMPLE) || widgetTheme == null || style == null) {
+      return false;
+    }
+    final width = state.bounds!.width - _borderWidth(widgetTheme) * 2;
+    final basePadding = widgetTheme.textFieldPadding.horizontal / 2;
+    bool fullPadding(String t) =>
+        width - widgetTheme.iconSize - (singleLineTextWidth(t, style) + 2) >= basePadding * 2;
+    return fullPadding(_controller.text) && fullPadding(text);
+  }
+
+  /// A press on the field at rest, which only a pointer that did not hover first can make: mounts
+  /// the menu and does what a tap does on it. On an editable field the text area takes focus and
+  /// the arrow's area opens the list as well; a read-only field opens the list wherever it is tapped.
+  void _tapAtRest(bool opensList) => handOver(() {
+        _focusInside();
+        if (opensList && !_menuController.isOpen) _menuController.open();
+        handedOver();
+        setState(() {});
+      });
+
+  /// Moves focus from the field at rest into the menu: its text field, or on a read-only field the
+  /// arrow, which is where traversal stops on the menu.
+  void _focusInside() {
+    final FocusNode? node = _isReadOnly
+        ? _restFocus.descendants.where((n) => n.canRequestFocus && !n.skipTraversal).firstOrNull
+        : _focusNode;
+    node?.requestFocus();
+  }
 
   static bool _isListNavigationKey(LogicalKeyboardKey key) =>
       key == LogicalKeyboardKey.arrowDown ||
@@ -97,6 +213,11 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   void _reportListVisible() {
     if (!mounted) return;
     final bool open = _menuController.isOpen;
+    if (open != _listShown) {
+      _listShown = open;
+      // A list that closed may leave nothing keeping the menu mounted.
+      if (!open) setState(() {});
+    }
     if (_javaListTarget != null) {
       if (open != _javaListTarget) return;
       _javaListTarget = null;
@@ -105,7 +226,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     if (open == (_lastJavaListVisible ?? false)) return;
     _lastJavaListVisible = open;
     state.listVisible = open;
-    widget.sendEvent(state, "List/Visible", VEvent()..detail = open ? 1 : 0);
+    widget.sendEvent(state, WireChannel.listVisible, VEvent()..detail = open ? 1 : 0);
   }
 
   @override
@@ -115,7 +236,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
     final bool isEnabled = state.enabled ?? true;
 
-    final bool isActive = _isFocused || _isHovered;
+    final bool isActive = _isFocused || hovered;
     final Color currentBg = !isEnabled
         ? widgetTheme.disabledBackgroundColor
         : getBackgroundColor(
@@ -131,25 +252,10 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
             ? widgetTheme.focusedBorderColor
             : (isActive ? widgetTheme.borderColor : Colors.transparent));
 
-    final textColor = !isEnabled
-        ? widgetTheme.disabledTextColor
-        : getForegroundColor(
-            foreground: state.foreground,
-            defaultColor: widgetTheme.textColor,
-            context: context,
-            minContrast: widgetTheme.minTextContrast,
-          );
-
-    final textStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      textColor: textColor,
-      baseTextStyle: widgetTheme.textStyle,
-    );
-
-    final borderWidth = styleBits.has(SWT.BORDER)
-        ? 3.0
-        : widgetTheme.borderWidth;
+    final textStyle = _fieldTextStyle(context, widgetTheme);
+    _builtTheme = widgetTheme;
+    _builtTextStyle = textStyle;
+    final borderWidth = _borderWidth(widgetTheme);
 
     final hasConstraints = hasBounds(state.bounds);
     final double? width = hasConstraints
@@ -160,9 +266,9 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
         : null;
 
     Widget result = MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
+      onEnter: (_) => setHovered(true),
+      onExit: (_) => setHovered(false),
+      child: QuietAnimatedContainer(
         duration: widgetTheme.animationDuration,
         decoration: BoxDecoration(
           color: currentBg,
@@ -185,6 +291,10 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
           reportListVisible: () => scheduleMicrotask(_reportListVisible),
           controlHeight: height,
           borderWidth: borderWidth,
+          entries: _entries,
+          live: _live,
+          restFocus: _restFocus,
+          onTapAtRest: isEnabled ? _tapAtRest : null,
         ),
       ),
     );
@@ -205,7 +315,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     final wrapped = DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
-      text: _controller.text,
       onWordSelected: (start, end) {
         // The MouseDoubleClick itself is trackPointer's, sent on the second press.
         state.selection = VPoint()
@@ -233,10 +342,6 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       _focusNode?.requestFocus();
     }
   }
-
-  /// Every native's field takes the focus on a right press too.
-  @override
-  bool get takesFocusOnSecondaryPress => (state.style & SWT.READ_ONLY) == 0;
 
   void onChanged(String? value) {
     setState(() {
@@ -348,6 +453,13 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   void _handleFocusChange(bool hasFocus) {
     if (!mounted) return;
     setState(() => _isFocused = hasFocus);
+    // Traversal reached the field at rest: the menu mounts with this build, and takes the focus once
+    // it has.
+    if (hasFocus && _restFocus.hasPrimaryFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _restFocus.hasPrimaryFocus) _focusInside();
+      });
+    }
     if (hasFocus) {
       // Record the pre-edit text so a later stale echo of it is ignored rather than applied over
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
@@ -364,10 +476,18 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     HardwareKeyboard.instance.removeHandler(_handleListKey);
     _controller.dispose();
     _focusNode?.dispose();
+    _restFocus.dispose();
     _arrowFocusNode.dispose();
     super.dispose();
   }
 }
+
+/// What an editable line reserves after its text for the caret: the default cursor width (2) plus
+/// RenderEditable's gap (1).
+const double _caretRoom = 3;
+
+/// The gap the input decorator leaves between the text field and a suffix icon.
+const double _suffixGap = 4;
 
 class _StyledDropdownCCombo extends StatelessWidget {
   final VCCombo state;
@@ -387,6 +507,10 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final VoidCallback reportListVisible;
   final double? controlHeight;
   final double borderWidth;
+  final _DropdownEntries entries;
+  final bool live;
+  final FocusNode restFocus;
+  final void Function(bool opensList)? onTapAtRest;
 
   const _StyledDropdownCCombo({
     required this.state,
@@ -404,21 +528,22 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.reportListVisible,
     this.controlHeight,
     required this.borderWidth,
+    required this.entries,
+    required this.live,
+    required this.restFocus,
+    this.onTapAtRest,
   });
 
   /// The width of the value on display, with a pixel of slack either side.
-  double _selectedTextWidth() =>
-      FontUtils.measureTextWidget(state.text ?? '', textStyle).width + 2;
+  double _selectedTextWidth() => singleLineTextWidth(state.text ?? '', textStyle) + 2;
 
   double _calculateMinWidth() {
     double maxTextWidth = 0;
     final textToMeasure = [state.text ?? '', ...items];
 
     for (final text in textToMeasure) {
-      final width = FontUtils.measureTextWidget(text, textStyle).width;
-      if (width > maxTextWidth) {
-        maxTextWidth = width;
-      }
+      final width = singleLineTextWidth(text, textStyle);
+      if (width > maxTextWidth) maxTextWidth = width;
     }
 
     final horizontalPadding = widgetTheme.textFieldPadding.horizontal;
@@ -467,6 +592,21 @@ class _StyledDropdownCCombo extends StatelessWidget {
         ? BoxConstraints.tightFor(height: fieldHeight)
         : null;
 
+    // Live or at rest, under the same node: see CComboImpl._restFocus.
+    Widget underRestFocus(Widget child) => Focus(
+          focusNode: restFocus,
+          canRequestFocus: enabled,
+          skipTraversal: live,
+          child: child,
+        );
+
+    // Taps this far from the end reach the menu itself, which opens the list; see the overlay below.
+    final arrowAreaWidth = widgetTheme.iconSize + 24.0;
+
+    if (!live) {
+      return underRestFocus(_atRest(context, width, fieldHeight, effectivePadding, arrowAreaWidth));
+    }
+
     final dropdown = DropdownMenu<String>(
       enabled: enabled,
       focusNode: focusNode,
@@ -509,7 +649,8 @@ class _StyledDropdownCCombo extends StatelessWidget {
         size: widgetTheme.iconSize,
       ),
       onSelected: onSelected,
-      dropdownMenuEntries:
+      dropdownMenuEntries: entries.of(
+          items, state.itemTooltips, textStyle, state.alignment, widgetTheme, width, () =>
           items.asMap().entries.map<DropdownMenuEntry<String>>((entry) {
         final int index = entry.key;
         final String item = entry.value;
@@ -531,11 +672,10 @@ class _StyledDropdownCCombo extends StatelessWidget {
           ),
           style: getCComboEntryStyle(widgetTheme, textStyle, width, () => isHighlighted(index)),
         );
-      }).toList(),
+      }).toList()),
     );
 
-    final arrowAreaWidth = widgetTheme.iconSize + 24.0;
-    return Stack(
+    return underRestFocus(Stack(
       children: [
         SizedBox(width: width, child: dropdown),
         Positioned.fill(
@@ -558,6 +698,88 @@ class _StyledDropdownCCombo extends StatelessWidget {
           ),
         ),
       ],
+    ));
+  }
+
+  /// The closed field as the menu draws it -- its text and the arrow -- without the menu: what a
+  /// CCombo nobody is interacting with is.
+  Widget _atRest(
+      BuildContext context, double width, double? fieldHeight, EdgeInsetsGeometry padding, double arrowAreaWidth) {
+    // A disabled menu draws its text in its own disabled colour, whatever the style says.
+    final style = enabled
+        ? textStyle
+        : textStyle.copyWith(
+            color: DropdownMenuTheme.of(context).disabledColor ??
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38));
+    return Semantics(
+      container: true,
+      button: isReadOnly,
+      textField: !isReadOnly,
+      readOnly: isReadOnly,
+      enabled: enabled,
+      expanded: false,
+      onTap: onTapAtRest == null ? null : () => onTapAtRest!(true),
+      child: ExcludeSemantics(
+        // On the press, not the tap: a press that arrives without a hover first brings one, which
+        // mounts the menu before the release and would take the tap with it.
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: onTapAtRest == null
+              ? null
+              : (event) => onTapAtRest!(isReadOnly || event.localPosition.dx >= width - arrowAreaWidth),
+          child: SizedBox(
+            width: width,
+            height: fieldHeight,
+            child: Row(children: [
+              Expanded(
+                // The text field ends where the decorator's gap before the arrow begins, and clips
+                // there; within it, a short text is aligned clear of the room kept for the caret, and a
+                // long one shows its start.
+                child: Padding(
+                  padding: padding.resolve(TextDirection.ltr).copyWith(right: _suffixGap),
+                  child: ClipRect(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: _caretRoom),
+                      child: Align(
+                        alignment: Alignment(_getAlignment().x, 0),
+                        // Without a pinned height the field is as tall as its line, as the menu's is.
+                        heightFactor: fieldHeight == null ? 1 : null,
+                        child: ValueListenableBuilder<TextEditingValue>(
+                          valueListenable: controller,
+                          builder: (context, value, _) => Semantics(
+                            value: value.text,
+                            // The same few texts shown by many combos are shaped once between them.
+                            child: ExcludeSemantics(
+                              child: ColorCachedText(
+                                value.text,
+                                style: style,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.visible,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: widgetTheme.iconSize,
+                height: fieldHeight ?? widgetTheme.iconSize,
+                child: Center(
+                  child: Icon(
+                    Icons.arrow_drop_down,
+                    color: enabled ? widgetTheme.iconColor : widgetTheme.disabledIconColor,
+                    size: widgetTheme.iconSize,
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
     );
   }
 
@@ -582,5 +804,48 @@ class _StyledDropdownCCombo extends StatelessWidget {
       return AlignmentDirectional.topEnd;
     }
     return null;
+  }
+}
+
+/// The entries a CCombo hands its [DropdownMenu], the same list for as long as the items, their
+/// tooltips, the style, the alignment, the theme and the width stay the same.
+///
+/// DropdownMenu compares its entries by identity: a new list, even an equal one, makes it rebuild
+/// every entry's button under a new key, which a CCombo would otherwise pay on every update.
+class _DropdownEntries {
+  List<String>? _items;
+  List<String?>? _tooltips;
+  TextStyle? _style;
+  int? _alignment;
+  CComboThemeExtension? _theme;
+  double? _width;
+  List<DropdownMenuEntry<String>>? _entries;
+
+  List<DropdownMenuEntry<String>> of(
+    List<String> items,
+    List<String?>? tooltips,
+    TextStyle style,
+    int? alignment,
+    CComboThemeExtension theme,
+    double width,
+    List<DropdownMenuEntry<String>> Function() build,
+  ) {
+    final held = _entries;
+    if (held != null &&
+        listEquals(_items, items) &&
+        listEquals(_tooltips, tooltips) &&
+        _style == style &&
+        _alignment == alignment &&
+        identical(_theme, theme) &&
+        _width == width) {
+      return held;
+    }
+    _items = List.of(items);
+    _tooltips = tooltips == null ? null : List.of(tooltips);
+    _style = style;
+    _alignment = alignment;
+    _theme = theme;
+    _width = width;
+    return _entries = build();
   }
 }

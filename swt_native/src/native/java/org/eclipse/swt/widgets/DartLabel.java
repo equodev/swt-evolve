@@ -254,6 +254,7 @@ public class DartLabel extends DartControl implements ILabel {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         _setAlignment();
     }
 
@@ -384,6 +385,15 @@ public class DartLabel extends DartControl implements ILabel {
 
     public Image _displayedImage() {
         return isImage ? image : null;
+    }
+
+    public int getBorderWidth() {
+        checkWidget();
+        return ControlHelper.borderWidth(this);
+    }
+
+    int resolveTextDirection() {
+        return (getApi().style & SWT.SEPARATOR) != 0 ? SWT.NONE : ControlHelper.resolveTextDirection(text);
     }
 
     protected void _hookEvents() {

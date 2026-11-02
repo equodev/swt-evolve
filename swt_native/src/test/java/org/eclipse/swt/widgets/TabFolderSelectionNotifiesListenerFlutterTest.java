@@ -10,6 +10,7 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * A user clicking a different tab in the Flutter-rendered {@link TabFolder} must fire
@@ -91,5 +92,78 @@ class TabFolderSelectionNotifiesListenerFlutterTest {
         assertThat(indexAtNotify.get())
                 .as("the selection is already updated when the listener fires")
                 .isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("a Flutter double-click on a tab fires SWT.DefaultSelection and leaves the selection alone")
+    void tabDoubleClickFromFlutterNotifiesDefaultSelection() {
+        TabFolder folder = new TabFolder(shell, SWT.NONE);
+        for (int i = 0; i < 2; i++)
+            new TabItem(folder, SWT.NONE).setText("Tab " + i);
+        AtomicInteger selected = new AtomicInteger();
+        AtomicInteger defaultSelected = new AtomicInteger();
+        folder.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                selected.incrementAndGet();
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent e) {
+                defaultSelected.incrementAndGet();
+            }
+        });
+
+        Event event = new Event();
+        event.index = 0;
+        bridge.comm.fireContaining("TabFolder/" + folder.hashCode() + "/Selection/DefaultSelection", event);
+        while (display.readAndDispatch()) {
+            /* run the queued notification */
+        }
+
+        assertThat(defaultSelected.get()).isEqualTo(1);
+        assertThat(selected.get()).isEqualTo(0);
+        assertThat(folder.getSelectionIndex()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("a Flutter double-click on a tab behind a modal shell fires no SWT.DefaultSelection")
+    void tabDoubleClickBehindAModalShellIsDropped() {
+        TabFolder folder = new TabFolder(shell, SWT.NONE);
+        new TabItem(folder, SWT.NONE).setText("Tab 0");
+        AtomicInteger defaultSelected = new AtomicInteger();
+        folder.addListener(SWT.DefaultSelection, e -> defaultSelected.incrementAndGet());
+        shell.open();
+        Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        dialog.open();
+
+        Event event = new Event();
+        event.index = 0;
+        bridge.comm.fireContaining("TabFolder/" + folder.hashCode() + "/Selection/DefaultSelection", event);
+        while (display.readAndDispatch()) {
+            /* run the queued notification */
+        }
+
+        assertThat(defaultSelected.get()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("a Flutter tab event that arrives after the folder is disposed is dropped")
+    void tabEventsAfterDisposeAreDropped() {
+        TabFolder folder = new TabFolder(shell, SWT.NONE);
+        new TabItem(folder, SWT.NONE).setText("Tab 0");
+        new TabItem(folder, SWT.NONE).setText("Tab 1");
+        String channel = "TabFolder/" + folder.hashCode() + "/Selection/";
+        Event event = new Event();
+        event.index = 1;
+        bridge.comm.fireContaining(channel + "Selection", event);
+        bridge.comm.fireContaining(channel + "DefaultSelection", event);
+        folder.dispose();
+
+        assertThatCode(() -> {
+            while (display.readAndDispatch()) {
+                /* run the queued handlers */
+            }
+        }).doesNotThrowAnyException();
     }
 }

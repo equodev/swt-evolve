@@ -19,6 +19,7 @@ import 'utils/menu_mnemonics.dart';
 import 'utils/pointer.dart';
 import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
+import 'utils/quiet_animations.dart';
 import 'widget_config.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
@@ -382,7 +383,7 @@ class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
               }
             },
             child: GestureDetector(
-            child: AnimatedContainer(
+            child: QuietAnimatedContainer(
               duration: widget.widgetTheme.animationDuration,
               constraints: BoxConstraints(
                 minHeight: widget.widgetTheme.itemHeight,
@@ -497,6 +498,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   // A touch has no hover, so the press itself has to let the tap open the submenu.
   bool _isPressed = false;
   bool _shown = false;
+  MenuItemsWatch? _itemsWatch;
   AnimationStatus _submenuStatus = AnimationStatus.dismissed;
   // Opened by its mnemonic: the keyboard moves onto the first item as soon as the submenu has one.
   bool _focusFirstItemWhenFilled = false;
@@ -511,11 +513,25 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
           .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
           .toList();
     }
+    _itemsWatch = MenuItemsWatch(widget.subMenu, _itemsArrived);
+  }
+
+  void _itemsArrived(List<VMenuItem> arrived) {
+    if (!mounted) return;
+    final items = arrived.map((item) => MenuItemSwt(key: ValueKey(item.id), value: item)).toList();
+    setState(() {
+      _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
+    });
+    if (_focusFirstItemWhenFilled) _focusFirstItemNextFrame();
   }
 
   @override
   void didUpdateWidget(_CascadeMenuItemRow oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_itemsWatch?.watches(widget.subMenu) != true) {
+      _itemsWatch?.dispose();
+      _itemsWatch = MenuItemsWatch(widget.subMenu, _itemsArrived);
+    }
     final items = widget.subMenu.items;
     if (items != null &&
         items.isNotEmpty &&
@@ -551,7 +567,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
 
   @override
   void dispose() {
-    EquoCommService.remove("Menu/${widget.subMenu.id}");
+    _itemsWatch?.dispose();
     _buttonFocusNode.dispose();
     _submenuFocusNode.dispose();
     super.dispose();
@@ -653,19 +669,6 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   }
 
   void _requestItems() {
-    final channelName = "Menu/${widget.subMenu.id}";
-    EquoCommService.remove(channelName);
-    EquoCommService.on<VMenu>(channelName, (VMenu updatedMenu) {
-      EquoCommService.remove(channelName);
-      if (!mounted) return;
-      final items = (updatedMenu.items ?? [])
-          .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-          .toList();
-      setState(() {
-        _menuChildren = items.isEmpty ? const [SizedBox.shrink()] : items;
-      });
-      if (_focusFirstItemWhenFilled) _focusFirstItemNextFrame();
-    });
     MenuSwt<VMenu>(value: widget.subMenu).sendMenuShow(widget.subMenu, null);
   }
 
@@ -809,7 +812,7 @@ class _MenuCheckboxState extends State<_MenuCheckbox> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
+      child: QuietAnimatedContainer(
         duration: widget.widgetTheme.animationDuration,
         width: size,
         height: size,
@@ -875,7 +878,7 @@ class _MenuRadioButtonState extends State<_MenuRadioButton> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
+      child: QuietAnimatedContainer(
         duration: widget.widgetTheme.animationDuration,
         width: size,
         height: size,

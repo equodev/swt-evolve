@@ -42,6 +42,72 @@ private func installIsRunningOverride() {
     method_setImplementation(method, imp_implementationWithBlock(override))
 }
 
+// =================================================================================================
+// Lookups the Flutter engine repeats for every paragraph it builds.
+//
+// Each paragraph builder starts from the engine's default text style, which reads its font family
+// from +[NSFont systemFontOfSize:] behind an OS version check. AppKit works both answers out anew on
+// every call -- the version check parses the system version string each time -- and with many
+// labels changing at once that is a measurable share of the frame. Both answers are fixed for the
+// life of the process, so the first one is kept and handed back to every caller.
+// =================================================================================================
+private var engineLookupsCached = false
+
+@MainActor
+private func cacheEngineLookups() {
+    if engineLookupsCached { return }
+    engineLookupsCached = true
+    cacheOperatingSystemVersionCheck()
+    cacheSystemFonts()
+}
+
+/// Answers kept by key, safe to read from any thread. The original is called outside the lock, as it
+/// may itself call back into the cached method.
+private final class KeptAnswers<Key: Hashable, Value> {
+    private var answers = [Key: Value]()
+    private let lock = NSLock()
+
+    func answer(_ key: Key, _ compute: () -> Value) -> Value {
+        lock.lock()
+        let kept = answers[key]
+        lock.unlock()
+        if let kept { return kept }
+        let value = compute()
+        lock.lock()
+        answers[key] = value
+        lock.unlock()
+        return value
+    }
+}
+
+private func cacheOperatingSystemVersionCheck() {
+    let info = ProcessInfo.processInfo
+    let sel = #selector(ProcessInfo.isOperatingSystemAtLeast(_:))
+    // The method of the class the shared instance actually is, which overrides NSProcessInfo's.
+    guard let cls = object_getClass(info), let method = class_getInstanceMethod(cls, sel) else { return }
+    typealias CheckFn = @convention(c) (AnyObject, Selector, OperatingSystemVersion) -> Bool
+    let original = unsafeBitCast(method_getImplementation(method), to: CheckFn.self)
+    let kept = KeptAnswers<Int, Bool>()
+    let override: @convention(block) (AnyObject, OperatingSystemVersion) -> Bool = { receiver, version in
+        kept.answer(version.majorVersion << 40 | version.minorVersion << 20 | version.patchVersion) {
+            original(receiver, sel, version)
+        }
+    }
+    method_setImplementation(method, imp_implementationWithBlock(override))
+}
+
+private func cacheSystemFonts() {
+    let sel = #selector(NSFont.systemFont(ofSize:))
+    guard let method = class_getClassMethod(NSFont.self, sel) else { return }
+    typealias FontFn = @convention(c) (AnyObject, Selector, CGFloat) -> NSFont
+    let original = unsafeBitCast(method_getImplementation(method), to: FontFn.self)
+    let kept = KeptAnswers<CGFloat, NSFont>()
+    let override: @convention(block) (AnyObject, CGFloat) -> NSFont = { receiver, size in
+        kept.answer(size) { original(receiver, sel, size) }
+    }
+    method_setImplementation(method, imp_implementationWithBlock(override))
+}
+
 /// A Flutter "surface" hosted by the native bridge. Two kinds exist — an embedded view inside a
 /// native SWT parent ({@code FlutterBridgeController}) and a standalone top-level window hosting the
 /// whole Display ({@code FlutterDisplayWindowController}). The JNI entry points operate on this base
@@ -254,6 +320,8 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // handshake that would otherwise have corrected it. Restore the size that was asked for.
         win.setContentSize(NSSize(width: CGFloat(width), height: CGFloat(height)))
         win.delegate = self
+        NotificationCenter.default.addObserver(self, selector: #selector(screenParametersChanged(_:)),
+                                               name: NSApplication.didChangeScreenParametersNotification, object: nil)
         win.center()
         win.isReleasedWhenClosed = false
         self.window = win
@@ -316,6 +384,9 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
                                           until: Date.distantPast,
                                           inMode: .default,
                                           dequeue: true) {
+            // A wake has done its job by ending the wait. Dispatching it would open a Core Animation
+            // transaction that the run loop then commits to the window server, for nothing.
+            if isWakeEvent(event) { continue }
             NSApp.sendEvent(event)
         }
         // Under Flutter 3.35's merged platform/UI thread the engine's UI work (frame scheduling,
@@ -392,11 +463,35 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
     /// Content rather than frame, so the title bar is already accounted for and a caller converting
     /// a window-local point needs no further correction. Flips against the primary screen, the one
     /// setBounds places against, so the two round-trip; both share that call's multi-monitor caveat.
+    ///
+    /// The SWT loop asks on every pump, so the answer is kept until the window moves, resizes or
+    /// changes screen, or the screens are rearranged.
     override func origin() -> (Int32, Int32)? {
+        if let kept = keptOrigin { return kept }
         guard let win = window, let screen = NSScreen.screens.first else { return nil }
         let content = win.contentRect(forFrameRect: win.frame)
         let top = screen.frame.height - (content.origin.y + content.height)
-        return (Int32(content.origin.x.rounded()), Int32(top.rounded()))
+        let origin = (Int32(content.origin.x.rounded()), Int32(top.rounded()))
+        keptOrigin = origin
+        return origin
+    }
+
+    private var keptOrigin: (Int32, Int32)?
+
+    func windowDidMove(_ notification: Notification) {
+        keptOrigin = nil
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        keptOrigin = nil
+    }
+
+    func windowDidChangeScreen(_ notification: Notification) {
+        keptOrigin = nil
+    }
+
+    @objc private func screenParametersChanged(_ notification: Notification) {
+        keptOrigin = nil
     }
 
     override func setState(_ state: Int32) {
@@ -609,6 +704,7 @@ private func surfaceFrom(_ context: jlong) -> FlutterSurface? {
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_Initialize")
 public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint, csd_enabled: jboolean, impeller_enabled: jboolean) -> jlong {
     // impeller_enabled is the Windows engine's renderer choice; the macOS engine always renders with Impeller.
+    cacheEngineLookups()
     let name = jstringToSwift(env, widget_name)
     let themeString = jstringToSwift(env, theme)
     let surface: FlutterSurface
@@ -657,6 +753,14 @@ public func FlutterNative_waitEvents(env: UnsafeMutablePointer<JNIEnv?>, cls: jc
     surfaceFrom(context)?.waitForEvent(millis: millis)
 }
 
+/// The subtype that marks the events `FlutterNative_wake` posts, so the pump can drop them.
+private let wakeEventSubtype: Int16 = 0x5741
+
+private func isWakeEvent(_ event: NSEvent) -> Bool {
+    return event.type == .applicationDefined && event.subtype.rawValue == wakeEventSubtype
+        && event.windowNumber == 0
+}
+
 /// Wakes the main run loop so a `waitForEvent` in progress returns now. Called from a non-UI thread
 /// (the comm thread posting an SWT `asyncExec`), hence no `@MainActor`: it only hops to the main
 /// queue, which is what breaks the wait. `nextEvent` needs an event to hand back, so the hop posts
@@ -670,7 +774,7 @@ public func FlutterNative_wake(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, 
                                                  timestamp: ProcessInfo.processInfo.systemUptime,
                                                  windowNumber: 0,
                                                  context: nil,
-                                                 subtype: 0,
+                                                 subtype: wakeEventSubtype,
                                                  data1: 0,
                                                  data2: 0) else { return }
         NSApp.postEvent(wakeEvent, atStart: true)

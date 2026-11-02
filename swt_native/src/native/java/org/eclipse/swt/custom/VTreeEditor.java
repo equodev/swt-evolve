@@ -4,11 +4,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VTreeEditor extends VControlEditor {
 
     protected VTreeEditor() {
@@ -50,28 +46,74 @@ public class VTreeEditor extends VControlEditor {
         ((DartTreeEditor) impl).item = value;
     }
 
-    @JsonConverter(target = TreeEditor.class)
-    public static class TreeEditorJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTreeEditor.class, (JsonWriter.WriteObject<DartTreeEditor>) (writer, impl) -> {
-                Serializer.writeEditorWithId(json, writer, impl);
-            });
-            json.registerReader(DartTreeEditor.class, (JsonReader.ReadObject<DartTreeEditor>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 638:
+                w.write((int) getColumn());
+                return true;
+            case 639:
+                w.ref(getEditor());
+                return true;
+            case 640:
+                w.ref(getItem());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TreeEditor read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 638:
+                {
+                    int v_ = getColumn();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(638);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 639:
+                {
+                    Control v_ = getEditor();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(639);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 640:
+                {
+                    TreeItem v_ = getItem();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(640);
+                    w.ref(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TreeEditor api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControlEditor.allWireKeys_(), new int[] { 638, 639, 640 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

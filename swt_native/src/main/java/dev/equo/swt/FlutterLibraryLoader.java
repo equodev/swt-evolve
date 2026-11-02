@@ -41,9 +41,11 @@ public class FlutterLibraryLoader {
     // artifacts under its Debug/debug output dirs instead of Release/release. Only the dev (build-dir)
     // loading below needs to follow suit — the packaged-jar path is mode-agnostic (it just contains
     // swtflutter.app / runner, with no Release|Debug segment). See docs/design/flutter-dtd-introspection.md.
+    // -Ddev.equo.swt.dartProfile=true picks the --profile build the same way.
     private static final boolean DART_DEBUG = Boolean.getBoolean("dev.equo.swt.dartDebug");
-    private static final String BUILD_MODE_CAP = DART_DEBUG ? "Debug" : "Release";     // macOS & Windows
-    private static final String BUILD_MODE_LOWER = DART_DEBUG ? "debug" : "release";   // Linux
+    private static final boolean DART_PROFILE = !DART_DEBUG && Boolean.getBoolean("dev.equo.swt.dartProfile");
+    private static final String BUILD_MODE_CAP = DART_DEBUG ? "Debug" : DART_PROFILE ? "Profile" : "Release";     // macOS & Windows
+    private static final String BUILD_MODE_LOWER = DART_DEBUG ? "debug" : DART_PROFILE ? "profile" : "release";   // Linux
     public static final String SWTFLUTTER_APP_CONTENTS = "macos/Build/Products/" + BUILD_MODE_CAP + "/" + SWTFLUTTER_APP + SEP + CONTENTS;
     private static final String RUNNER_DIR_NAME = "runner";
     private static final String LINUX_BUNDLE_DIR_NAME = "bundle";

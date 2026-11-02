@@ -72,4 +72,24 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'tapping another row replaces a selection decoded off the wire',
+    (tester) async {
+      final cols = [_col(1, width: 400)];
+      final items = [_item(10, ['Row 0']), _item(11, ['Row 1'])];
+      // The wire decodes an int array into a fixed-length list.
+      final value = _table(columns: cols, items: items)
+        ..selection = List<int>.filled(1, 0);
+
+      await tester.pumpWidget(_wrap(value));
+      await tester.pump();
+
+      await tester.tap(find.text('Row 1'));
+      await tester.pump(Duration.zero);
+
+      expect(tester.takeException(), isNull);
+      expect(value.selection, equals([1]));
+    },
+  );
 }

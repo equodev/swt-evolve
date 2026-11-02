@@ -1,12 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/scrollbar_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'scrollbar.g.dart';
 
 class ScrollBarSwt<V extends VScrollBar> extends WidgetSwt<V> {
   const ScrollBarSwt({super.key, required super.value});
@@ -15,15 +14,14 @@ class ScrollBarSwt<V extends VScrollBar> extends WidgetSwt<V> {
   State createState() => ScrollBarImpl<ScrollBarSwt<VScrollBar>, VScrollBar>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
-@JsonSerializable()
 class VScrollBar extends VWidget {
   VScrollBar() : this.empty();
   VScrollBar.empty() {
@@ -53,28 +51,93 @@ class VScrollBar extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'enabled':
-        enabled = json['enabled'] as bool?;
-      case 'increment':
-        increment = (json['increment'] as num?)?.toInt();
-      case 'maximum':
-        maximum = (json['maximum'] as num?)?.toInt();
-      case 'minimum':
-        minimum = (json['minimum'] as num?)?.toInt();
-      case 'selection':
-        selection = (json['selection'] as num?)?.toInt();
-      case 'thumb':
-        thumb = (json['thumb'] as num?)?.toInt();
-      case 'visible':
-        visible = json['visible'] as bool?;
+      case 432: // enabled
+        enabled = r.boolean();
+        return true;
+      case 433: // increment
+        increment = r.int32();
+        return true;
+      case 434: // maximum
+        maximum = r.int32();
+        return true;
+      case 435: // minimum
+        minimum = r.int32();
+        return true;
+      case 436: // selection
+        selection = r.int32();
+        return true;
+      case 437: // thumb
+        thumb = r.int32();
+        return true;
+      case 438: // visible
+        visible = r.boolean();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VScrollBar.fromJson(Map<String, dynamic> json) =>
-      _$VScrollBarFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VScrollBarToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = enabled;
+      if (v_ != null) {
+        w.keyBoolean(432, v_);
+      }
+    }
+    {
+      final v_ = increment;
+      if (v_ != null) {
+        w.keyInt32(433, v_);
+      }
+    }
+    {
+      final v_ = maximum;
+      if (v_ != null) {
+        w.keyInt32(434, v_);
+      }
+    }
+    {
+      final v_ = minimum;
+      if (v_ != null) {
+        w.keyInt32(435, v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null) {
+        w.keyInt32(436, v_);
+      }
+    }
+    {
+      final v_ = thumb;
+      if (v_ != null) {
+        w.keyInt32(437, v_);
+      }
+    }
+    {
+      final v_ = visible;
+      if (v_ != null) {
+        w.keyBoolean(438, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(432, enabled);
+    visit(433, increment);
+    visit(434, maximum);
+    visit(435, minimum);
+    visit(436, selection);
+    visit(437, thumb);
+    visit(438, visible);
+  }
+
+  @override
+  bool? get semanticsEnabled => enabled;
 }

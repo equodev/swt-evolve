@@ -36,7 +36,7 @@ Widget _host(Widget folder) => EvolveApp(
 
 /// The box that holds one tab: the container the padding is applied to.
 Finder _tabBox(String label) => find
-    .ancestor(of: find.text(label), matching: find.byType(AnimatedContainer))
+    .ancestor(of: find.text(label), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
     .first;
 
 void main() {

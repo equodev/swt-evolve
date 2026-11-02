@@ -250,6 +250,7 @@ public class DartLabel extends DartControl implements ILabel {
             return;
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
+        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         updateStyleBits(getApi().getEnabled());
     }
 

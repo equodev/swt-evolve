@@ -18,6 +18,7 @@ import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/toolitem_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 /// A ToolItem whose outgoing events are captured instead of handed to EquoCommService, which is
 /// unavailable in a test.
@@ -27,7 +28,7 @@ class _CapturingToolItem extends ToolItemSwt<VToolItem> {
   const _CapturingToolItem({required super.value, required this.onSend});
 
   @override
-  void sendEvent(VToolItem val, String ev, VEvent? payload) => onSend(ev);
+  void sendEvent(VToolItem val, int channel, VEvent? payload) => onSend(wireChannelNames[channel]!);
 
   @override
   State createState() => ToolItemImpl<_CapturingToolItem, VToolItem>();

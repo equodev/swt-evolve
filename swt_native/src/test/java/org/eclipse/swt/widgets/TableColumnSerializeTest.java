@@ -4,16 +4,15 @@ import dev.equo.swt.SerializeTestBase;
 import org.eclipse.swt.SWT;
 import static org.eclipse.swt.widgets.Mocks.*;
 import org.junit.jupiter.api.*;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.*;
-import net.javacrumbs.jsonunit.assertj.JsonMapAssert;
+import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import dev.equo.swt.harness.WireAssert;
 
 class TableColumnSerializeTest extends SerializeTestBase {
 
     @Test
     void should_serialize_empty_TableColumn() {
         TableColumn w = new TableColumn(table(), SWT.NONE);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "TableColumn");
     }
@@ -22,8 +21,7 @@ class TableColumnSerializeTest extends SerializeTestBase {
     void should_serialize_filled_TableColumn() {
         TableColumn w = new TableColumn(table(), SWT.NONE);
         setAll(w);
-        String json = serialize(w);
-        JsonMapAssert assertJ = assertThatJson(json).isObject();
+        WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "TableColumn")
                .containsEntry("style", w.getStyle());
@@ -32,6 +30,16 @@ class TableColumnSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("resizable").equalsTo(w.getResizable(), orAbsentIfFalse));
         assertJ.satisfies(node("width").equalsTo(w.getWidth(), orAbsentIf0));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
+    }
+
+    @Test
+    void should_write_every_property_TableColumn() throws Exception {
+        assertWritesEveryProperty(style -> {
+            TableColumn w = new TableColumn(new Table(shell(), SWT.CHECK), style);
+            setAll(w);
+            fillUnsettable(w);
+            return w;
+        }, unwritable(), SWT.NONE, SWT.LEFT, SWT.RIGHT, SWT.CENTER);
     }
 
     @Test

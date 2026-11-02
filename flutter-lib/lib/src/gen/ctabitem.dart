@@ -1,15 +1,14 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/control.dart';
 import '../gen/font.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/ctabitem_evolve.dart';
 import 'widgets.dart';
-
-part 'ctabitem.g.dart';
 
 class CTabItemSwt<V extends VCTabItem> extends ItemSwt<V> {
   const CTabItemSwt({super.key, required super.value});
@@ -18,7 +17,6 @@ class CTabItemSwt<V extends VCTabItem> extends ItemSwt<V> {
   State createState() => CTabItemImpl<CTabItemSwt<VCTabItem>, VCTabItem>();
 }
 
-@JsonSerializable()
 class VCTabItem extends VItem {
   VCTabItem() : this.empty();
   VCTabItem.empty() {
@@ -48,29 +46,95 @@ class VCTabItem extends VItem {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'control':
-        control = json['control'] == null
-            ? null
-            : VControl.fromJson(json['control'] as Map<String, dynamic>);
-      case 'font':
-        font = json['font'] == null
-            ? null
-            : VFont.fromJson(json['font'] as Map<String, dynamic>);
-      case 'foreground':
-        foreground = VColor.read(json['foreground']);
-      case 'selectionForeground':
-        selectionForeground = VColor.read(json['selectionForeground']);
-      case 'showClose':
-        showClose = json['showClose'] as bool?;
-      case 'showing':
-        showing = json['showing'] as bool?;
-      case 'toolTipText':
-        toolTipText = json['toolTipText'] as String?;
+      case 61: // control
+        control = r.ref<VControl>();
+        return true;
+      case 62: // font
+        font = r.object(VFont.new);
+        return true;
+      case 63: // foreground
+        foreground = r.color();
+        return true;
+      case 64: // selectionForeground
+        selectionForeground = r.color();
+        return true;
+      case 65: // showClose
+        showClose = r.boolean();
+        return true;
+      case 66: // showing
+        showing = r.boolean();
+        return true;
+      case 67: // toolTipText
+        toolTipText = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = control;
+      if (v_ != null) {
+        w.keyRef(61, v_.id);
+      }
+    }
+    {
+      final v_ = font;
+      if (v_ != null) {
+        w.key(62);
+        w.object(v_.writeWire);
+      }
+    }
+    {
+      final v_ = foreground;
+      if (v_ != null) {
+        w.key(63);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = selectionForeground;
+      if (v_ != null) {
+        w.key(64);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = showClose;
+      if (v_ != null) {
+        w.keyBoolean(65, v_);
+      }
+    }
+    {
+      final v_ = showing;
+      if (v_ != null) {
+        w.keyBoolean(66, v_);
+      }
+    }
+    {
+      final v_ = toolTipText;
+      if (v_ != null) {
+        w.key(67);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(61, control);
+    visit(62, font);
+    visit(63, foreground);
+    visit(64, selectionForeground);
+    visit(65, showClose);
+    visit(66, showing);
+    visit(67, toolTipText);
   }
 
   @override
@@ -79,7 +143,6 @@ class VCTabItem extends VItem {
     control = VWidget.adoptOne(control, adopt);
   }
 
-  factory VCTabItem.fromJson(Map<String, dynamic> json) =>
-      _$VCTabItemFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VCTabItemToJson(this);
+  @override
+  String? get semanticsTooltip => toolTipText;
 }

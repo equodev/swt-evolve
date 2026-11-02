@@ -15,7 +15,7 @@ class _QuietCComboSwt extends CComboSwt<VCCombo> {
   const _QuietCComboSwt({super.key, required super.value});
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) {}
+  void sendEvent(VCCombo val, int channel, VEvent? payload) {}
 }
 
 VCCombo _borderedReadOnlyCombo() => VCCombo()

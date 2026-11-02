@@ -154,6 +154,7 @@ class GCHelperNativeTest {
         byte[] red = png(3, 3, 0xFF0000);
 
         GCHelper.updateImageFromPngBytes(image, null, (byte[]) null);
+        GCHelper.updateImageFromPngBytes(image, null, new byte[0]);
         GCHelper.updateImageFromPngBytes(image, null, (ByteBuffer) null);
         GCHelper.updateImageFromPngBytes(image, null, ByteBuffer.allocate(0));
         GCHelper.updateImageFromPng(image, null, null);
@@ -262,10 +263,34 @@ class GCHelperNativeTest {
         GC imageGc = new GC(image);
         boolean[] answered = new boolean[1];
 
-        GCHelper.callOnDisplayBytes(canvas.getImpl(), "probe", null, bytes -> answered[0] = true, 5);
-        GCHelper.callOnDisplayBytes(imageGc.getImpl(), "probe", null, bytes -> answered[0] = true, 5);
-        GCHelper.callOnDisplayBytes(new Object(), "probe", null, bytes -> answered[0] = true, 5);
+        GCHelper.callOnDisplayBytes(canvas.getImpl(), dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT, dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT_RESPONSE, null, bytes -> answered[0] = true, 5);
+        GCHelper.callOnDisplayBytes(imageGc.getImpl(), dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT, dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT_RESPONSE, null, bytes -> answered[0] = true, 5);
 
+        assertThat(answered[0]).isFalse();
+        imageGc.dispose();
+        image.dispose();
+    }
+
+    @Test
+    @DisplayName("off the UI thread an image's GC has no display to pump, and its request still gives up at its deadline")
+    void unansweredRequestOffTheUiThread() throws Exception {
+        Image image = new Image(display, 2, 2);
+        GC imageGc = new GC(image);
+        boolean[] answered = new boolean[1];
+        Throwable[] failed = new Throwable[1];
+
+        Thread other = new Thread(() -> {
+            try {
+                GCHelper.callOnDisplayBytes(imageGc.getImpl(), dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT, dev.equo.swt.WireTable.CHANNEL_GET_ITEM_HEIGHT_RESPONSE, null, bytes -> answered[0] = true, 20);
+            } catch (Throwable t) {
+                failed[0] = t;
+            }
+        });
+        other.start();
+        other.join(5000);
+
+        assertThat(other.isAlive()).isFalse();
+        assertThat(failed[0]).isNull();
         assertThat(answered[0]).isFalse();
         imageGc.dispose();
         image.dispose();

@@ -3,8 +3,6 @@
 // that moment sends the focus back to whichever control held it before, and Java is told that
 // control took focus: the editor closes as it opens and the keys go to the other control.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +15,10 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
+
+import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const int gridId = 30, lookForId = 31, editorId = 32;
 
@@ -32,7 +34,7 @@ class _RecordingCanvasSwt extends CanvasSwt<VCanvas> {
   final List<String> sent;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) => sent.add(ev);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) => sent.add(wireChannelNames[channel]!);
 }
 
 VCanvas _grid(List<VText> children, int seq) => VCanvas()
@@ -62,7 +64,7 @@ void main() {
   testWidgets('a focused Canvas keeps the focus when an editor is placed over it, and the editor takes it',
       (tester) async {
     final gridEvents = <String>[];
-    await tester.pumpWidget(EvolveApp(
+    await tester.pumpWidget(ForceLive(child: EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Row(children: [
         SizedBox(
@@ -76,7 +78,7 @@ void main() {
           child: _RecordingCanvasSwt(sent: gridEvents, value: _grid([], 1)),
         ),
       ]),
-    ));
+    )));
     await tester.pumpAndSettle();
     await tester.showKeyboard(find.byType(EditableText));
     await tester.pumpAndSettle();
@@ -88,9 +90,7 @@ void main() {
 
     // The click opened an editor over a cell: the grid's next update carries it, and Java asks for
     // the editor to be focused.
-    final withEditor = jsonDecode(jsonEncode(
-        _grid([_text(editorId, _rect(40, 20, 100, 22))], 2).toJson())) as Map<String, dynamic>;
-    VRegistry.instance.apply('Canvas/$gridId', withEditor..['_s'] = 2);
+    applyWhole(_grid([_text(editorId, _rect(40, 20, 100, 22))], 2));
     await tester.pump();
 
     expect(lookFor.hasFocus, isFalse,

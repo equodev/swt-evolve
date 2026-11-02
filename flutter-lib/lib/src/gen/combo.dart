@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -12,11 +12,10 @@ import '../gen/rectangle.dart';
 import '../gen/region.dart';
 import '../gen/scrollbar.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/combo_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'combo.g.dart';
 
 class ComboSwt<V extends VCombo> extends CompositeSwt<V> {
   const ComboSwt({super.key, required super.value});
@@ -25,27 +24,26 @@ class ComboSwt<V extends VCombo> extends CompositeSwt<V> {
   State createState() => ComboImpl<ComboSwt<VCombo>, VCombo>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, "Modify/Modify", payload);
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSegmentSegments(V val, VEvent? payload) {
-    sendEvent(val, "Segment/Segments", payload);
+    sendEvent(val, 85, payload); // Segment/Segments
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, "Verify/Verify", payload);
+    sendEvent(val, 107, payload); // Verify/Verify
   }
 }
 
-@JsonSerializable()
 class VCombo extends VComposite {
   VCombo() : this.empty();
   VCombo.empty() {
@@ -69,24 +67,65 @@ class VCombo extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'caretPosition':
-        caretPosition = (json['caretPosition'] as num?)?.toInt();
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList();
-      case 'listVisible':
-        listVisible = json['listVisible'] as bool?;
-      case 'text':
-        text = json['text'] as String?;
+      case 81: // caretPosition
+        caretPosition = r.int32();
+        return true;
+      case 82: // items
+        items = r.strings()?.map((e) => e ?? '').toList();
+        return true;
+      case 83: // listVisible
+        listVisible = r.boolean();
+        return true;
+      case 84: // text
+        text = r.string();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
   }
 
-  factory VCombo.fromJson(Map<String, dynamic> json) =>
-      _$VComboFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VComboToJson(this);
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = caretPosition;
+      if (v_ != null) {
+        w.keyInt32(81, v_);
+      }
+    }
+    {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(82);
+        w.strings(v_);
+      }
+    }
+    {
+      final v_ = listVisible;
+      if (v_ != null) {
+        w.keyBoolean(83, v_);
+      }
+    }
+    {
+      final v_ = text;
+      if (v_ != null) {
+        w.key(84);
+        w.string(v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(81, caretPosition);
+    visit(82, items);
+    visit(83, listVisible);
+    visit(84, text);
+  }
+
+  @override
+  String? get semanticsText => text;
 }

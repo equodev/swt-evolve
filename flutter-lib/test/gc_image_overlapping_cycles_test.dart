@@ -6,27 +6,26 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/gc.dart';
 import 'package:swtflutter/src/gen/image.dart';
+import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+
+import 'support/gc_frames.dart';
+import 'support/channels.dart' as channels;
 
 // 10x10, red at (0,0) and (9,9): decoding it makes its cycle span several turns, so a later one can overtake it.
 const _redCornersPng =
     'iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAEUlEQVR4nGP4zzAKSAPAEAMAOA0B/w2tcokAAAAASUVORK5CYII=';
 
 Uint8List _frame(String actionId, List<int> body) {
-  final action = utf8.encode(actionId);
-  final out = Uint8List(2 + action.length + body.length);
-  out[0] = (action.length >> 8) & 0xFF;
-  out[1] = action.length & 0xFF;
-  out.setRange(2, 2 + action.length, action);
-  out.setRange(2 + action.length, out.length, body);
+  final out = channels.frame(actionId, Uint8List.fromList(body));
   return out;
 }
 
-List<int> _json(Object o) => utf8.encode(jsonEncode(o));
 
 Future<void> _settle() async {
   for (var i = 0; i < 200; i++) {
@@ -47,38 +46,36 @@ void main() {
       ..swt = 'GC'
       ..id = gcId);
 
-    comm.receiveBinary(_frame('GC/$gcId', _json({
-      'id': gcId,
-      'swt': 'GC',
-      'alpha': 255,
-      'clippingRects': <Object>[],
-      'background': {'a': 255, 'r': 0, 'g': 0, 'b': 255},
-    })));
-    comm.receiveBinary(
-        _frame('GC/$gcId/imageInit', _json({'width': 10, 'height': 10})));
+    comm.receiveBinary(_frame('GC/$gcId/b', gcState(VGC.empty()
+      ..alpha = 255
+      ..clippingRects = []
+      ..background = colourOf(0, 0, 255))));
+    comm.receiveBinary(_frame(
+        'GC/$gcId/imageInit',
+        imageInit(VImage()
+          ..width = 10
+          ..height = 10)));
 
     // Cycle one: carries a bitmap, so its commit waits on a decode.
-    comm.receiveBinary(_frame('GC/$gcId/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': 10, 'height': 10})));
-    comm.receiveBinary(_frame('GC/$gcId/drawImageImageintint', _json({
-      'x': 0,
-      'y': 0,
-      'image': {
-        'id': 4321,
-        'swt': 'Image',
-        'width': 10,
-        'height': 10,
-        'imageData': {'width': 10, 'height': 10, 'depth': 24, 'data': _redCornersPng},
-      },
-    })));
+    comm.receiveBinary(_frame('GC/$gcId/b', gcOp('fillRectangleintintintint', [0, 0, 10, 10])));
+    final bitmap = VImage()
+      ..id = 4321
+      ..width = 10
+      ..height = 10
+      ..imageData = (VImageData()
+        ..width = 10
+        ..height = 10
+        ..depth = 24
+        ..data = base64Decode(_redCornersPng));
+    describeImage(bitmap);
+    comm.receiveBinary(_frame('GC/$gcId/b', gcOp('drawImageImageintint', [bitmap, 0, 0])));
     comm.receiveBinary(_frame('GC/$gcId/gcDispose',
-        _json({'ref': firstRef, 'pixels': false, 'retain': true})));
+        gcDisposeOf({'ref': firstRef, 'pixels': false, 'retain': true})));
 
     // Cycle two starts before the first has committed — a second scroll step.
-    comm.receiveBinary(_frame('GC/$gcId/fillRectangleintintintint',
-        _json({'x': 0, 'y': 0, 'width': 10, 'height': 10})));
+    comm.receiveBinary(_frame('GC/$gcId/b', gcOp('fillRectangleintintintint', [0, 0, 10, 10])));
     comm.receiveBinary(_frame('GC/$gcId/gcDispose',
-        _json({'ref': secondRef, 'pixels': false, 'retain': true})));
+        gcDisposeOf({'ref': secondRef, 'pixels': false, 'retain': true})));
 
     await _settle();
 

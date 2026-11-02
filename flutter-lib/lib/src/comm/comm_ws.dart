@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
@@ -7,6 +9,7 @@ import 'package:meta/meta.dart';
 import '../gen/widget.dart';
 import 'comm_api.dart';
 import 'comm_frame.dart';
+import 'widget_wire.dart' show WidgetWireWriter;
 
 /// Desktop comm: a `dart:io` WebSocket speaking the binary frame protocol. All
 /// protocol logic lives in [EquoCommBase]; this class only owns the socket.
@@ -52,30 +55,65 @@ class EquoCommService {
     return p != 0 ? _DesktopComm(host: "localhost", port: p) : NoComm();
   }
 
-  static Object onRaw(String userEventActionId, CommCallback<dynamic> onSuccess) =>
-      _comm.on(userEventActionId, onSuccess);
+  /// See [EquoCommBase.on].
+  static Object on(int type, int id, int channel, CommCallback<dynamic> onSuccess) =>
+      _comm.on(type, id, channel, onSuccess);
 
-  static Object on<V extends VWidget>(
-          String userEventActionId, CommCallback<V> onSuccess) =>
-      _comm.onWidget<V>(userEventActionId, onSuccess);
+  /// See [EquoCommBase.onWidgetOp].
+  static void onWidgetOp(int type, int channel, WidgetOpHandler handler) =>
+      _comm.onWidgetOp(type, channel, handler);
 
-  static Future send(String userEventActionId) => _comm.send(userEventActionId);
+  /// See [EquoCommBase.replayWidgetOps].
+  static void replayWidgetOps(int id) => _comm.replayWidgetOps(id);
 
-  static Future sendPayload(String userEventActionId, Object payload) =>
-      _comm.send(userEventActionId, payload);
+  /// See [EquoCommBase.forgetWidgetOps].
+  static void forgetWidgetOps(int id) => _comm.forgetWidgetOps(id);
 
-  static Future sendBytes(String userEventActionId, Uint8List bytes) =>
-      _comm.sendBytes(userEventActionId, bytes);
+  /// See [EquoCommBase.ensureWidgetOps].
+  static void ensureWidgetOps(void Function() register) => _comm.ensureWidgetOps(register);
 
-  static void onBytes(
-          String userEventActionId, FutureOr<void> Function(Uint8List) callback) =>
-      _comm.onBytes(userEventActionId, callback);
+  /// See [EquoCommBase.deliverEscape].
+  static FutureOr<void> deliverEscape(Uint8List bytes, int headerAt, int start, int end) =>
+      _comm.deliverEscape(bytes, headerAt, start, end);
 
-  static void onArrival(
-          String userEventActionId, bool Function(Uint8List) handler) =>
-      _comm.onArrival(userEventActionId, handler);
+  /// See [EquoCommBase.onFirstGcMessage].
+  static void onFirstGcMessage(int id, void Function() arrived) => _comm.onFirstGcMessage(id, arrived);
 
-  static void remove(eventName, [Object? token]) => _comm.remove(eventName, token);
+  /// See [EquoCommBase.cancelFirstGcMessage].
+  static void cancelFirstGcMessage(int id, void Function() arrived) =>
+      _comm.cancelFirstGcMessage(id, arrived);
+
+  /// See [EquoCommBase.sendTo].
+  static void sendTo(int type, int id, int channel, [Object? payload]) =>
+      _comm.sendTo(type, id, channel, payload);
+
+  /// See [EquoCommBase.sendFrame].
+  static void sendFrame(Uint8List frame) => _comm.sendFrame(frame);
+
+  /// See [EquoCommBase.sendWritten].
+  static void sendWritten(WidgetWireWriter w) => _comm.sendWritten(w);
+
+  /// See [EquoCommBase.sendOn].
+  static void sendOn(int channel, [Object? payload]) => _comm.sendOn(channel, payload);
+
+  /// See [EquoCommBase.onBytesAt].
+  static void onBytesAt(int channel, BytesAtHandler handler) => _comm.onBytesAt(channel, handler);
+
+  /// See [EquoCommBase.onBytes].
+  static void onBytes(int type, int id, int channel, FutureOr<void> Function(Uint8List) callback) =>
+      _comm.onBytes(type, id, channel, callback);
+
+  /// See [EquoCommBase.onArrival].
+  static void onArrival(int type, int id, int channel, bool Function(Uint8List) handler) =>
+      _comm.onArrival(type, id, channel, handler);
+
+  /// See [EquoCommBase.remove].
+  static void remove(int type, int id, int channel, [Object? token]) => _comm.remove(type, id, channel, token);
+
+  /// Delivers [payload] on the channel these numbers name as if it had arrived in a batch: an entry
+  /// of a GC's binary frame.
+  static FutureOr<void> deliverEntry(int type, int id, int channel, Object? payload) =>
+      _comm.deliverEntry(type, id, channel, payload);
 
   /// Registers the callback fired when the socket comes back after a drop. Never fires on
   /// desktop: the socket is a local link to the JVM that owns this window, so it only ends

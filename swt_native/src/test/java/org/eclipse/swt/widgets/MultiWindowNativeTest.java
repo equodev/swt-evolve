@@ -6,6 +6,7 @@ import dev.equo.swt.WindowPolicy;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,9 +68,9 @@ class MultiWindowNativeTest {
 
         assertThat(bridge.created).isEmpty();
         assertThat(bridge.windowedShells()).isEmpty();
-        assertThat(latestDisplayState(bridge))
+        assertThat(WireValues.containsText(latestDisplayState(bridge), "windowedShellIds"))
                 .as("the client is told nothing it would have to act on")
-                .doesNotContain("windowedShellIds");
+                .isFalse();
         assertThat(main.isDisposed() || second.isDisposed()).isFalse();
     }
 
@@ -111,9 +113,9 @@ class MultiWindowNativeTest {
         openShell();
         Shell detached = openShell();
 
-        assertThat(latestDisplayState(bridge))
+        assertThat(holds(latestDisplayState(bridge), "windowedShellIds", List.of(detached.hashCode())))
                 .as("drawn here as well as in its own window, the shell would be on screen twice")
-                .contains("\"windowedShellIds\":[" + detached.hashCode() + "]");
+                .isTrue();
     }
 
     @Test
@@ -138,9 +140,9 @@ class MultiWindowNativeTest {
         Shell main = openShell();
         openShell();
 
-        assertThat(latestDisplayState(bridge))
+        assertThat(holds(latestDisplayState(bridge), "mainShellId", main.hashCode()))
                 .as("the client still has to know which shell fills this window")
-                .contains("\"mainShellId\":" + main.hashCode());
+                .isTrue();
     }
 
     @Test
@@ -181,9 +183,10 @@ class MultiWindowNativeTest {
         Shell detached = openShell();
 
         assertThat(bridge.windowedShells()).isEmpty();
-        assertThat(latestDisplayState(bridge))
+        assertThat(WireValues.find(latestDisplayState(bridge), m -> m.get("windowedShellIds") instanceof List<?> ids
+                        && ids.stream().anyMatch(id -> WireValues.same(id, detached.hashCode()))))
                 .as("named as windowed with no window to draw it, the shell would exist nowhere")
-                .doesNotContain("\"windowedShellIds\":[" + detached.hashCode());
+                .isEmpty();
     }
 
     // ---- hiding the shell that holds the Display's window -------------------------------------------
@@ -204,7 +207,7 @@ class MultiWindowNativeTest {
                 .as("drawn in the Display's window now, its own window would show it twice")
                 .isTrue();
         assertThat(bridge.windowedShells()).isEmpty();
-        assertThat(latestDisplayState(bridge)).contains("\"mainShellId\":" + workbench.hashCode());
+        assertThat(holds(latestDisplayState(bridge), "mainShellId", workbench.hashCode())).isTrue();
     }
 
     @Test
@@ -430,6 +433,7 @@ class MultiWindowNativeTest {
         window.bounds = null;
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 500;
         p.height = 400;
         p.isFirst = true;
@@ -454,6 +458,7 @@ class MultiWindowNativeTest {
         bridge.comm.sent.clear();
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 400;
         p.height = 300;
         p.isFirst = true;
@@ -468,8 +473,8 @@ class MultiWindowNativeTest {
         assertThat(bridge.comm.sent)
                 .as("the window that draws this shell has to be given it")
                 .anyMatch(f -> f.event.equals(channel)
-                        && f.json.contains("\"id\":" + detached.hashCode())
-                        && f.json.contains("\"swt\":\"Shell\""));
+                        && !WireValues.find(f.value, m -> WireValues.same(m.get("id"), detached.hashCode())
+                                && "Shell".equals(m.get("swt"))).isEmpty());
     }
 
     @Test
@@ -480,6 +485,7 @@ class MultiWindowNativeTest {
         TestBridge bridge = install();
         Shell main = openShell();
         ClientReadyPayload mainReady = new ClientReadyPayload();
+        mainReady.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         mainReady.width = 1280;
         mainReady.height = 800;
         mainReady.isFirst = true;
@@ -501,6 +507,7 @@ class MultiWindowNativeTest {
         bridge.comm.sent.clear();
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 500;
         p.height = 260;
         p.isFirst = true;
@@ -525,6 +532,7 @@ class MultiWindowNativeTest {
         bridge.comm.sent.clear();
 
         ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         p.width = 400;
         p.height = 300;
         p.isFirst = true;
@@ -597,7 +605,7 @@ class MultiWindowNativeTest {
     private static List<String> focusRequests(TestBridge bridge) {
         return bridge.comm.sent.stream()
                 .filter(f -> f.event.equals("swt.evolve.focus"))
-                .map(f -> f.json.replaceAll(".*\"id\"\\s*:\\s*(-?\\d+).*", "$1"))
+                .map(f -> String.valueOf(((Number) ((java.util.Map<?, ?>) f.value).get("id")).longValue()))
                 .toList();
     }
 
@@ -615,12 +623,17 @@ class MultiWindowNativeTest {
         return shell;
     }
 
-    private String latestDisplayState(TestBridge bridge) {
+    private Map<String, Object> latestDisplayState(TestBridge bridge) {
         String channel = "Display/" + display.hashCode();
         List<RecordingComm.Frame> frames =
                 bridge.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
         assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
-        return frames.get(frames.size() - 1).json;
+        return frames.get(frames.size() - 1).state();
+    }
+
+    /** Whether any record in {@code state} holds {@code expected} under {@code key}. */
+    private static boolean holds(Map<String, Object> state, String key, Object expected) {
+        return !WireValues.find(state, m -> m.containsKey(key) && WireValues.same(m.get(key), expected)).isEmpty();
     }
 
     private TestBridge install() {

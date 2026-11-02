@@ -7,6 +7,8 @@ import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_extensions/message_box_theme_extension.dart';
 import 'messagebox_layout.dart';
 import 'utils/pointer.dart';
+import 'utils/quiet_animations.dart';
+import '../gen/widgets.dart' show WireChannel, WireType;
 
 void showMessageBoxDialog(BuildContext context, VMessageBox value, int dialogId) {
   showDialog<void>(
@@ -111,7 +113,7 @@ class _MessageBoxDialog extends StatelessWidget {
 /// Closes the box answering [id], as pressing its button does.
 void _answer(BuildContext context, int dialogId, int id) {
   Navigator.pop(context);
-  EquoCommService.sendPayload('MessageBox/$dialogId/close', '$id');
+  EquoCommService.sendTo(WireType.messageBox, dialogId, WireChannel.close, '$id');
 }
 
 Widget _buildIcon(int style, MessageBoxThemeExtension theme) {
@@ -204,7 +206,7 @@ class _MessageBoxButtonState extends State<_MessageBoxButton> {
           borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
           splashColor: theme.splashColor,
           highlightColor: theme.highlightColor,
-          child: AnimatedContainer(
+          child: QuietAnimatedContainer(
             duration: theme.buttonPressDelay,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),

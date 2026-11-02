@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/event.dart';
@@ -21,7 +22,7 @@ class _CapturingTreeSwt extends TreeSwt<VTree> {
   final void Function(String ev) onEvent;
 
   @override
-  void sendEvent(VTree val, String ev, VEvent? payload) => onEvent(ev);
+  void sendEvent(VTree val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!);
 }
 
 VTree _tree() => VTree()

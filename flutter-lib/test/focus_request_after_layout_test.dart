@@ -3,8 +3,6 @@
 // Opened before the move is laid out, it is told the old place, and on desktop the field then takes
 // no typed characters.
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,6 +14,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
+
+import 'delivery/support/deliver.dart';
 
 const int editorId = 41;
 
@@ -63,9 +63,7 @@ void main() {
     tester.testTextInput.log.clear();
 
     // One Java pass: the editor is placed over its cell and focused.
-    final moved = jsonDecode(jsonEncode(_editor(_rect(160, 120, 100, 22), 2).toJson()))
-        as Map<String, dynamic>;
-    VRegistry.instance.apply('Text/$editorId', moved..['_s'] = 2);
+    applyWhole(_editor(_rect(160, 120, 100, 22), 2));
     FocusRequests.instance.request(editorId);
     await tester.pump();
     await tester.pump();

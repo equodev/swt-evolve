@@ -1,7 +1,10 @@
 package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.DartMocks;
@@ -12,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,8 +59,19 @@ class GCPathNativeTest {
     }
 
     /** The GC's traffic, read after disposing it: a paint's ops are batched until then. */
-    private String wire() {
-        return bridge.comm.sent.stream().map(f -> f.json).reduce("", String::concat);
+    private List<GcFrames.Entry> wire() {
+        return BatchEntries.of(bridge.comm.sent);
+    }
+
+    /** Whether an op on a channel ending in [op] was sent. */
+    private boolean sentOp(String op) {
+        return wire().stream().anyMatch(e -> e.channel().endsWith("/" + op));
+    }
+
+    /** Whether any value sent carries [points] as its path's points. */
+    private boolean sentPoints(Float... points) {
+        List<Object> values = wire().stream().map(GcFrames.Entry::value).toList();
+        return !WireValues.find(values, m -> WireValues.same(m.get("points"), List.of(points))).isEmpty();
     }
 
     @Test
@@ -125,9 +141,8 @@ class GCPathNativeTest {
         gc.drawPath(path);
         gc.dispose();
 
-        assertThat(wire()).as("the op itself").contains("drawPathPath");
-        assertThat(wire()).as("the path's geometry")
-                .contains("\"points\":[10.0,20.0,30.0,40.0]");
+        assertThat(sentOp("drawPathPath")).as("the op itself").isTrue();
+        assertThat(sentPoints(10f, 20f, 30f, 40f)).as("the path's geometry").isTrue();
     }
 
     @Test
@@ -139,8 +154,7 @@ class GCPathNativeTest {
         gc.fillPath(path);
         gc.dispose();
 
-        assertThat(wire()).as("the op itself").contains("fillPathPath");
-        assertThat(wire()).as("the rectangle's geometry")
-                .contains("\"points\":[0.0,0.0,10.0,0.0,10.0,20.0,0.0,20.0]");
+        assertThat(sentOp("fillPathPath")).as("the op itself").isTrue();
+        assertThat(sentPoints(0f, 0f, 10f, 0f, 10f, 20f, 0f, 20f)).as("the rectangle's geometry").isTrue();
     }
 }

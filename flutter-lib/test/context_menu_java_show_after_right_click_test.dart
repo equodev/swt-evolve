@@ -16,7 +16,9 @@ import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
+import 'delivery/support/deliver.dart';
 import 'support/menu_shown_ack.dart';
 
 const _menuId = 4100;
@@ -79,14 +81,13 @@ int _seq = 0;
 void _javaSetsVisible(bool visible) {
   final base = _seq;
   _seq += 1;
-  VRegistry.instance.apply('Menu/$_menuId', <String, dynamic>{
-    'id': _menuId,
-    'swt': 'Menu',
-    '_s': _seq,
-    '_b': base,
-    '_d': <String>['visible'],
-    'visible': visible,
-  });
+  applyChange(
+      VMenu()
+        ..id = _menuId
+        ..seq = _seq
+        ..visible = visible,
+      keys: [WireKey.k_Menu_visible],
+      base: base);
 }
 
 void main() {

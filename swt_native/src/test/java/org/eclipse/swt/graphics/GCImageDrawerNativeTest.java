@@ -2,9 +2,11 @@ package org.eclipse.swt.graphics;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.GCImageDrawer;
-import dev.equo.swt.comm.CommService;
 import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.widgets.DartMocks;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.EmbeddedBridge;
@@ -20,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,43 +30,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class GCImageDrawerNativeTest {
 
     private Display display;
-    private final List<String> sent = new ArrayList<>();
-    private final List<String> payloads = new ArrayList<>();
+    /** What the drawers' Display comm was sent, decoded. */
+    private final RecordingComm comm = new RecordingComm();
+    /** The order the queued ops ran in. */
+    private final List<String> opsRun = new ArrayList<>();
     private final List<Image> images = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
         display = DartMocks.dartDisplay();
-        FlutterBridge.setDisplayGcCommResolver(d -> new CommService() {
-            @Override
-            public void send(String eventName) {
-                sent.add(eventName);
-            }
-
-            @Override
-            public void send(String eventName, byte[] payload) {
-                sent.add(eventName);
-                payloads.add(new String(payload, java.nio.charset.StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public <T> void on(String eventName, Class<T> cls, Consumer<T> callback) {
-            }
-
-            @Override
-            public void remove(String eventName) {
-            }
-
-            @Override
-            public int getPort() {
-                return 0;
-            }
-
-            @Override
-            public void stop() {
-            }
-        });
+        FlutterBridge.setDisplayGcCommResolver(d -> comm);
     }
 
     @AfterEach
@@ -87,11 +62,11 @@ class GCImageDrawerNativeTest {
     void abandoningAStartedDrawerSendsGcDispose() {
         GCImageDrawer drawer = drawer(71);
         drawer.startForPendingReply();
-        sent.clear();
+        comm.sent.clear();
 
         drawer.abandon();
 
-        assertThat(sent).containsExactly("GC/71/gcDispose");
+        assertThat(comm.sent).extracting(f -> f.event).containsExactly("GC/71/gcDispose");
     }
 
     /** The drawers holding queued ops, a static set other tests' unfinished GCs may still be in. */
@@ -111,8 +86,8 @@ class GCImageDrawerNativeTest {
         try {
             GCImageDrawer first = drawer(72);
             GCImageDrawer second = drawer(73);
-            first.queueOp(() -> sent.add("first op"));
-            second.queueOp(() -> sent.add("second op"));
+            first.queueOp(() -> opsRun.add("first op"));
+            second.queueOp(() -> opsRun.add("second op"));
             AtomicBoolean ran = new AtomicBoolean();
 
             GCImageDrawer.afterQueuedOps(() -> ran.set(true));
@@ -121,7 +96,7 @@ class GCImageDrawerNativeTest {
             second.startForPendingReply();
 
             assertThat(ran).isTrue();
-            assertThat(sent).contains("first op", "second op");
+            assertThat(opsRun).contains("first op", "second op");
         } finally {
             holding.addAll(others);
         }
@@ -136,12 +111,12 @@ class GCImageDrawerNativeTest {
         GCImageDrawer drawer = (GCImageDrawer) ((DartGC) gc.getImpl()).bridge;
         drawer.startForPendingReply();
         gc.drawLine(0, 0, 3, 3);
-        sent.clear();
-        payloads.clear();
+        comm.sent.clear();
 
         GCHelper.disposeImageGC(gc);
 
-        assertThat(sent).containsExactly(MessageBatch.EVENT);
-        assertThat(payloads.get(0)).contains("drawLine", "/gcDispose");
+        assertThat(comm.sent).extracting(f -> f.event).containsExactly(MessageBatch.EVENT);
+        List<String> entries = BatchEntries.of(comm.sent).stream().map(GcFrames.Entry::channel).toList();
+        assertThat(entries).anyMatch(c -> c.contains("/drawLine")).anyMatch(c -> c.endsWith("/gcDispose"));
     }
 }

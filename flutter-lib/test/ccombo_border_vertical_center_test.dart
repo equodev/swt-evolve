@@ -9,12 +9,14 @@ import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/ccombo_evolve.dart';
+import 'package:swtflutter/src/impl/utils/force_live.dart';
 
 class _QuietCComboSwt extends CComboSwt<VCCombo> {
   const _QuietCComboSwt({super.key, required super.value});
 
   @override
-  void sendEvent(VCCombo val, String ev, VEvent? payload) {}
+  void sendEvent(VCCombo val, int channel, VEvent? payload) {}
 }
 
 VCCombo _borderedReadOnlyCombo(int height) => VCCombo()
@@ -31,11 +33,12 @@ VCCombo _borderedReadOnlyCombo(int height) => VCCombo()
     ..height = height);
 
 void main() {
+  // What the menu itself draws; the field at rest paints the same (ccombo_rest_matches_menu_test).
   for (final height in [22, 30]) {
     testWidgets('value and arrow are vertically centered in a $height px bordered combo',
         (tester) async {
       final key = GlobalKey();
-      await tester.pumpWidget(EvolveApp(
+      await tester.pumpWidget(ForceLive.when(true, EvolveApp(
         theme: ThemeMode.dark,
         contentWidget: Align(
           alignment: Alignment.topLeft,
@@ -45,7 +48,7 @@ void main() {
             child: _QuietCComboSwt(key: key, value: _borderedReadOnlyCombo(height)),
           ),
         ),
-      ));
+      )));
       await tester.pumpAndSettle();
 
       final combo = tester.getRect(find.byKey(key));

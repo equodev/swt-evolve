@@ -796,8 +796,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean dragDetect(int x, int y, boolean filter, boolean[] consume) {
-        boolean dragging = false;
-        return dragging;
+        return DragDetectHelper.dragDetect(this, x, y);
     }
 
     boolean drawGripper(GC gc, int x, int y, int width, int height, boolean vertical) {
@@ -4127,13 +4126,12 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         return (ds instanceof org.eclipse.swt.dnd.DragSource) && !((org.eclipse.swt.dnd.DragSource) ds).isDisposed();
     }
 
+    public Long getDragSourceId() {
+        return ControlHelper.dndId(getApi(), org.eclipse.swt.dnd.DND.DRAG_SOURCE_KEY);
+    }
+
     public Long getDropTargetId() {
-        Widget w = getApi();
-        Object dt = w.isDisposed() ? null : w.getData(org.eclipse.swt.dnd.DND.DROP_TARGET_KEY);
-        if (dt instanceof org.eclipse.swt.dnd.DropTarget && !((org.eclipse.swt.dnd.DropTarget) dt).isDisposed() && ((org.eclipse.swt.dnd.DropTarget) dt).getImpl() instanceof org.eclipse.swt.dnd.DartDropTarget) {
-            return FlutterBridge.id(((org.eclipse.swt.dnd.DropTarget) dt).getImpl());
-        }
-        return null;
+        return ControlHelper.dndId(getApi(), org.eclipse.swt.dnd.DND.DROP_TARGET_KEY);
     }
 
     public Color getExplicitBackground() {
@@ -4155,6 +4153,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     public boolean getInheritsBackground() {
         return (getApi().state & PARENT_BACKGROUND) != 0;
+    }
+
+    public boolean getTabStop() {
+        return ControlHelper.isTabStop(getApi());
     }
 
     public Font getExplicitFont() {
@@ -4180,187 +4182,244 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
 
     protected void _hookEvents() {
         super._hookEvents();
-        FlutterBridge.on(this, "Control", "Move", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+    }
+
+    @Override
+    protected String[] _clientEvents() {
+        return FlutterBridge.joinEvents(super._clientEvents(), "Control/Move", "Control/Resize", "DragDetect/DragDetect", "Focus/FocusIn", "Focus/FocusOut", "Gesture/Gesture", "Help/Help", "Key/KeyDown", "Key/KeyUp", "MenuDetect/MenuDetect", "Mouse/MouseDoubleClick", "Mouse/MouseDown", "Mouse/MouseUp", "MouseMove/MouseMove", "MouseTrack/MouseEnter", "MouseTrack/MouseExit", "MouseTrack/MouseHover", "MouseWheel/MouseWheel", "Paint/Paint", "Touch/Touch", "Traverse/Traverse");
+    }
+
+    @Override
+    protected void _onClientEvent(String _channel, org.eclipse.swt.widgets.Event e) {
+        switch(_channel) {
+            case "Control/Move":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Move, e);
+                    });
                     return;
-                sendEvent(SWT.Move, e);
-            });
-        });
-        FlutterBridge.on(this, "Control", "Resize", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Resize, e);
-            });
-        });
-        FlutterBridge.on(this, "DragDetect", "DragDetect", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                if (!isActive())
-                    return;
-                if (!hooks(SWT.DragDetect) || !getDragDetect())
-                    return;
-                sendEvent(SWT.DragDetect, e);
-            });
-        });
-        FlutterBridge.on(this, "Focus", "FocusIn", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                FlutterBridge bridge = getBridge();
-                boolean hadFocus = bridge != null && bridge.hasFocus(this);
-                if (!hadFocus) {
-                    ControlHelper.sendActivateToAncestors(this);
-                    if (isDisposed())
-                        return;
                 }
-                if (bridge != null)
-                    bridge.clientFocused(this);
-            });
-        });
-        FlutterBridge.on(this, "Focus", "FocusOut", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+            case "Control/Resize":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Resize, e);
+                    });
                     return;
-                getDisplay().asyncExec(() -> {
-                    if (isDisposed())
-                        return;
-                    FlutterBridge bridge = getBridge();
-                    if (bridge != null)
-                        bridge.clearFocus(this);
-                });
-            });
-        });
-        FlutterBridge.on(this, "Gesture", "Gesture", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "DragDetect/DragDetect":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        if (!hooks(SWT.DragDetect) || !getDragDetect())
+                            return;
+                        DragDetectHelper.clientDragDetect(this, e);
+                    });
                     return;
-                sendEvent(SWT.Gesture, e);
-            });
-        });
-        FlutterBridge.on(this, "Help", "Help", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Focus/FocusIn":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        FlutterBridge bridge = getBridge();
+                        if (bridge != null && bridge.staleFocusReport(this))
+                            return;
+                        boolean hadFocus = bridge != null && bridge.hasFocus(this);
+                        if (!hadFocus) {
+                            ControlHelper.sendActivateToAncestors(this);
+                            if (isDisposed())
+                                return;
+                        }
+                        if (bridge != null)
+                            bridge.clientFocused(this);
+                    });
                     return;
-                sendEvent(SWT.Help, e);
-            });
-        });
-        FlutterBridge.on(this, "Key", "KeyDown", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Focus/FocusOut":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        getDisplay().asyncExec(() -> {
+                            if (isDisposed())
+                                return;
+                            FlutterBridge bridge = getBridge();
+                            if (bridge != null)
+                                bridge.clearFocus(this);
+                        });
+                    });
                     return;
-                ControlHelper.sendFlutterKeyDown(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Key", "KeyUp", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Gesture/Gesture":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Gesture, e);
+                    });
                     return;
-                sendEvent(SWT.KeyUp, e);
-            });
-        });
-        FlutterBridge.on(this, "MenuDetect", "MenuDetect", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Help/Help":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Help, e);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Key/KeyDown":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ControlHelper.sendFlutterKeyDown(this, e);
+                    });
                     return;
-                org.eclipse.swt.graphics.Point displayPt = toDisplay(e.x, e.y);
-                e.x = displayPt.x;
-                e.y = displayPt.y;
-                sendEvent(SWT.MenuDetect, e);
-                ControlHelper.sendMenuDetectVerdict(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Mouse", "MouseDoubleClick", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Key/KeyUp":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.KeyUp, e);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "MenuDetect/MenuDetect":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        org.eclipse.swt.graphics.Point displayPt = toDisplay(e.x, e.y);
+                        e.x = displayPt.x;
+                        e.y = displayPt.y;
+                        sendEvent(SWT.MenuDetect, e);
+                        ControlHelper.sendMenuDetectVerdict(this, e);
+                    });
                     return;
-                sendEvent(SWT.MouseDoubleClick, e);
-            });
-        });
-        FlutterBridge.on(this, "Mouse", "MouseDown", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Mouse/MouseDoubleClick":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        sendEvent(SWT.MouseDoubleClick, e);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "Mouse/MouseDown":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        ControlHelper.pressed(this, e);
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.MouseDown, e);
+                    });
                     return;
-                ControlHelper.pressed(this, e);
-                if (isDisposed())
+                }
+            case "Mouse/MouseUp":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        if (!isActive())
+                            return;
+                        DragDetectHelper.mouse(this, SWT.MouseUp, e);
+                    });
                     return;
-                sendEvent(SWT.MouseDown, e);
-            });
-        });
-        FlutterBridge.on(this, "Mouse", "MouseUp", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "MouseMove/MouseMove":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ((DartDisplay) display.getImpl()).cursorLocation = toDisplay(e.x, e.y);
+                        DragDetectHelper.mouse(this, SWT.MouseMove, e);
+                    });
                     return;
-                if (!isActive())
+                }
+            case "MouseTrack/MouseEnter":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.MouseEnter, e);
+                    });
                     return;
-                sendEvent(SWT.MouseUp, e);
-            });
-        });
-        FlutterBridge.on(this, "MouseMove", "MouseMove", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "MouseTrack/MouseExit":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.MouseExit, e);
+                    });
                     return;
-                ((DartDisplay) display.getImpl()).cursorLocation = toDisplay(e.x, e.y);
-                sendEvent(SWT.MouseMove, e);
-            });
-        });
-        FlutterBridge.on(this, "MouseTrack", "MouseEnter", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "MouseTrack/MouseHover":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.MouseHover, e);
+                    });
                     return;
-                sendEvent(SWT.MouseEnter, e);
-            });
-        });
-        FlutterBridge.on(this, "MouseTrack", "MouseExit", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "MouseWheel/MouseWheel":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ControlHelper.handleMouseWheel(this, e);
+                    });
                     return;
-                sendEvent(SWT.MouseExit, e);
-            });
-        });
-        FlutterBridge.on(this, "MouseTrack", "MouseHover", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Paint/Paint":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        ControlHelper.paint(this, e);
+                    });
                     return;
-                sendEvent(SWT.MouseHover, e);
-            });
-        });
-        FlutterBridge.on(this, "MouseWheel", "MouseWheel", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Touch/Touch":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Touch, e);
+                    });
                     return;
-                ControlHelper.handleMouseWheel(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Paint", "Paint", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
+                }
+            case "Traverse/Traverse":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        sendEvent(SWT.Traverse, e);
+                    });
                     return;
-                ControlHelper.paint(this, e);
-            });
-        });
-        FlutterBridge.on(this, "Touch", "Touch", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Touch, e);
-            });
-        });
-        FlutterBridge.on(this, "Traverse", "Traverse", e -> {
-            getDisplay().asyncExec(() -> {
-                if (isDisposed())
-                    return;
-                sendEvent(SWT.Traverse, e);
-            });
-        });
+                }
+            default:
+                super._onClientEvent(_channel, e);
+        }
     }
 
     public Control getApi() {

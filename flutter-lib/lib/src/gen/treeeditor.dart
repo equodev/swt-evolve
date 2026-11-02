@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
+import '../comm/widget_wire.dart';
 import '../gen/control.dart';
+import '../gen/controleditor.dart';
 import '../gen/treeitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/treeeditor_evolve.dart';
 import 'widget.dart';
 import 'widgets.dart';
-
-part 'treeeditor.g.dart';
 
 class TreeEditorSwt<V extends VTreeEditor> extends WidgetSwt<V> {
   const TreeEditorSwt({super.key, required super.value});
@@ -21,8 +21,7 @@ class TreeEditorSwt<V extends VTreeEditor> extends WidgetSwt<V> {
 abstract class TreeEditorState<T extends TreeEditorSwt, V extends VTreeEditor>
     extends WidgetSwtState<T, V> {}
 
-@JsonSerializable()
-class VTreeEditor extends VWidget {
+class VTreeEditor extends VControlEditor {
   VTreeEditor() : this.empty();
   VTreeEditor.empty() {
     swt = "TreeEditor";
@@ -43,21 +42,51 @@ class VTreeEditor extends VWidget {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'column':
-        column = (json['column'] as num?)?.toInt();
-      case 'editor':
-        editor = json['editor'] == null
-            ? null
-            : VControl.fromJson(json['editor'] as Map<String, dynamic>);
-      case 'item':
-        item = json['item'] == null
-            ? null
-            : VTreeItem.fromJson(json['item'] as Map<String, dynamic>);
+      case 638: // column
+        column = r.int32();
+        return true;
+      case 639: // editor
+        editor = r.ref<VControl>();
+        return true;
+      case 640: // item
+        item = r.ref<VTreeItem>();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = column;
+      if (v_ != null) {
+        w.keyInt32(638, v_);
+      }
+    }
+    {
+      final v_ = editor;
+      if (v_ != null) {
+        w.keyRef(639, v_.id);
+      }
+    }
+    {
+      final v_ = item;
+      if (v_ != null) {
+        w.keyRef(640, v_.id);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(638, column);
+    visit(639, editor);
+    visit(640, item);
   }
 
   @override
@@ -66,8 +95,4 @@ class VTreeEditor extends VWidget {
     editor = VWidget.adoptOne(editor, adopt);
     item = VWidget.adoptOne(item, adopt);
   }
-
-  factory VTreeEditor.fromJson(Map<String, dynamic> json) =>
-      _$VTreeEditorFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTreeEditorToJson(this);
 }

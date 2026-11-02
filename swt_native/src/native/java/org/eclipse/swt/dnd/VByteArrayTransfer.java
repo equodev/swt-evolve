@@ -1,9 +1,5 @@
 package org.eclipse.swt.dnd;
 
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-
 public class VByteArrayTransfer extends VTransfer {
 
     protected VByteArrayTransfer() {
@@ -13,31 +9,13 @@ public class VByteArrayTransfer extends VTransfer {
         super(impl);
     }
 
-    @JsonConverter(target = ByteArrayTransfer.class)
-    public static class ByteArrayTransferJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 9;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartByteArrayTransfer.class, (JsonWriter.WriteObject<DartByteArrayTransfer>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartByteArrayTransfer.class, (JsonReader.ReadObject<DartByteArrayTransfer>) reader -> {
-                return null;
-            });
-        }
-
-        public static ByteArrayTransfer read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, ByteArrayTransfer api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
     }
 }

@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'json_converters.dart';
 
 part 'display_theme_extension.tailor.dart';
-part 'display_theme_extension.g.dart';
 
 @TailorMixin()
-@JsonSerializable(explicitToJson: true)
-@ColorConverter()
-@DurationConverter()
-@TextStyleConverter()
 class DisplayThemeExtension extends ThemeExtension<DisplayThemeExtension>
     with _$DisplayThemeExtensionTailorMixin {
   final Color titleBarColor;
@@ -84,9 +77,4 @@ class DisplayThemeExtension extends ThemeExtension<DisplayThemeExtension>
     this.titleTextStyle,
     this.toolWindowTitleTextStyle,
   });
-
-  factory DisplayThemeExtension.fromJson(Map<String, dynamic> json) =>
-      _$DisplayThemeExtensionFromJson(json);
-
-  Map<String, dynamic> toJson() => _$DisplayThemeExtensionToJson(this);
 }

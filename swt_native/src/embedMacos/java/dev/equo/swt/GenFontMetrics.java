@@ -10,376 +10,383 @@ public final class GenFontMetrics {
     public static final Map<String, Metrics> DATA = new HashMap<>();
 
     static {
-        DATA.put("Academy Engraved LET-0-3", new Metrics(0.7700, 0.5000, 1.2688, 5.1384, Academy_Engraved_LET_0_3()));
-        DATA.put("Al Bayan-0-3", new Metrics(0.9909, 0.5090, 1.4992, 5.2179, Al_Bayan_0_3()));
-        DATA.put("Al Bayan-0-6", new Metrics(1.0410, 0.6139, 1.6548, 5.2592, Al_Bayan_0_6()));
-        DATA.put("Al Nile-0-3", new Metrics(0.8300, 0.5350, 1.3632, 5.0749, Al_Nile_0_3()));
-        DATA.put("Al Nile-0-6", new Metrics(0.8300, 0.5350, 1.3632, 5.0773, Al_Nile_0_6()));
-        DATA.put("Al Tarikh-0-3", new Metrics(0.7700, 0.4458, 1.2182, 5.0953, Al_Tarikh_0_3()));
-        DATA.put("American Typewriter-0-3", new Metrics(0.9040, 0.2500, 1.1540, 5.7369, American_Typewriter_0_3()));
-        DATA.put("American Typewriter-0-6", new Metrics(0.9479, 0.2779, 1.2246, 6.1362, American_Typewriter_0_6()));
+        DATA.put("Academy Engraved LET-0-3", new Metrics(0.9123, 0.5000, 1.4135, 5.1341, Academy_Engraved_LET_0_3()));
+        DATA.put("Al Bayan-0-3", new Metrics(0.9909, 0.5090, 1.4992, 5.2179, Al_Bayan_0_3(), Al_Bayan_0_3_kerning()));
+        DATA.put("Al Bayan-0-6", new Metrics(1.0410, 0.6139, 1.6548, 5.4435, Al_Bayan_0_6(), Al_Bayan_0_6_kerning()));
+        DATA.put("Al Nile-0-3", new Metrics(0.8300, 0.5350, 1.3632, 5.0749, Al_Nile_0_3(), Al_Nile_0_3_kerning()));
+        DATA.put("Al Nile-0-6", new Metrics(0.8300, 0.5350, 1.3632, 5.2832, Al_Nile_0_6(), Al_Nile_0_6_kerning()));
+        DATA.put("Al Tarikh-0-3", new Metrics(0.7700, 0.4458, 1.2182, 5.0953, Al_Tarikh_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("American Typewriter-0-3", new Metrics(0.9040, 0.2500, 1.1540, 5.7369, American_Typewriter_0_3(), American_Typewriter_0_3_kerning()));
+        DATA.put("American Typewriter-0-6", new Metrics(0.9479, 0.2779, 1.2246, 6.1362, American_Typewriter_0_6(), American_Typewriter_0_6_kerning()));
         DATA.put("Andale Mono-0-3", new Metrics(0.9072, 0.2177, 1.1239, 6.0009, null));
-        DATA.put("Apple Braille-0-3", new Metrics(0.8229, 0.2917, 1.1128, 5.2762, Apple_Braille_0_3()));
-        DATA.put("Apple Chancery-0-3", new Metrics(1.1176, 0.4648, 1.5820, 5.1949, Apple_Chancery_0_3()));
-        DATA.put("Apple Color Emoji-0-3", new Metrics(0.9855, 0.3079, 1.2931, 6.3343, Apple_Color_Emoji_0_3()));
-        DATA.put("Apple SD Gothic Neo-0-3", new Metrics(0.9000, 0.3000, 1.1998, 4.9097, Apple_SD_Gothic_Neo_0_3()));
-        DATA.put("Apple SD Gothic Neo-0-6", new Metrics(0.9000, 0.3000, 1.1998, 5.1414, Apple_SD_Gothic_Neo_0_6()));
+        DATA.put("Apple Braille-0-3", new Metrics(0.8229, 0.2917, 1.1128, 5.2762, Apple_Braille_0_3(), Apple_Braille_0_3_kerning()));
+        DATA.put("Apple Chancery-0-3", new Metrics(1.1176, 0.4648, 1.5820, 5.1949, Apple_Chancery_0_3(), Apple_Chancery_0_3_kerning()));
+        DATA.put("Apple Color Emoji-0-3", new Metrics(0.9855, 0.3079, 1.2931, 6.3343, Apple_Color_Emoji_0_3(), Apple_Color_Emoji_0_3_kerning()));
+        DATA.put("Apple SD Gothic Neo-0-3", new Metrics(0.9000, 0.3000, 1.1998, 4.9097, Apple_SD_Gothic_Neo_0_3(), Apple_SD_Gothic_Neo_0_3_kerning()));
+        DATA.put("Apple SD Gothic Neo-0-6", new Metrics(0.9000, 0.3000, 1.1998, 5.1414, Apple_SD_Gothic_Neo_0_6(), Apple_SD_Gothic_Neo_0_6_kerning()));
         DATA.put("Apple Symbols-0-3", new Metrics(0.7082, 0.2917, 1.0000, 4.0880, Apple_Symbols_0_3()));
         DATA.put("AppleGothic-0-3", new Metrics(0.8910, 0.3249, 1.2182, 5.8247, AppleGothic_0_3()));
         DATA.put("AppleMyungjo-0-3", new Metrics(0.8692, 0.3180, 1.1875, 5.7363, AppleMyungjo_0_3()));
-        DATA.put("Arial-0-3", new Metrics(0.9216, 0.2282, 1.1495, 5.2695, Arial_0_3()));
-        DATA.put("Arial-1-3", new Metrics(0.9216, 0.2282, 1.1495, 5.2695, DATA.get("Arial-0-3").glyphWidths()));
-        DATA.put("Arial-0-6", new Metrics(0.9216, 0.2282, 1.1495, 5.5124, Arial_0_6()));
-        DATA.put("Arial-1-6", new Metrics(0.9216, 0.2282, 1.1495, 5.5124, DATA.get("Arial-0-6").glyphWidths()));
-        DATA.put("Arial Black-0-3", new Metrics(1.1005, 0.3095, 1.4135, 6.1905, Arial_Black_0_3()));
-        DATA.put("Arial Hebrew-0-3", new Metrics(0.7700, 0.3350, 1.1049, 5.0818, Arial_Hebrew_0_3()));
-        DATA.put("Arial Hebrew-0-6", new Metrics(0.7700, 0.3350, 1.1049, 5.1866, Arial_Hebrew_0_6()));
-        DATA.put("Arial Hebrew Scholar-0-3", new Metrics(0.7700, 0.3350, 1.1049, 5.0818, DATA.get("Arial Hebrew-0-3").glyphWidths()));
-        DATA.put("Arial Hebrew Scholar-0-6", new Metrics(0.7700, 0.3350, 1.1049, 5.1866, DATA.get("Arial Hebrew-0-6").glyphWidths()));
-        DATA.put("Arial Narrow-0-3", new Metrics(0.9355, 0.2119, 1.1495, 4.3212, Arial_Narrow_0_3()));
-        DATA.put("Arial Narrow-1-3", new Metrics(0.9355, 0.2119, 1.1495, 4.3212, DATA.get("Arial Narrow-0-3").glyphWidths()));
-        DATA.put("Arial Narrow-0-6", new Metrics(0.9355, 0.2119, 1.1495, 4.5201, Arial_Narrow_0_6()));
-        DATA.put("Arial Narrow-1-6", new Metrics(0.9355, 0.2119, 1.1495, 4.5201, DATA.get("Arial Narrow-0-6").glyphWidths()));
-        DATA.put("Arial Rounded MT Bold-0-3", new Metrics(0.9462, 0.2109, 1.1560, 5.6028, Arial_Rounded_MT_Bold_0_3()));
+        DATA.put("Arial-0-3", new Metrics(0.9216, 0.2282, 1.1495, 5.2695, Arial_0_3(), Arial_0_3_kerning()));
+        DATA.put("Arial-1-3", new Metrics(0.9216, 0.2282, 1.1495, 5.2695, DATA.get("Arial-0-3").glyphWidths(), Arial_1_3_kerning()));
+        DATA.put("Arial-0-6", new Metrics(0.9216, 0.2282, 1.1495, 5.5124, Arial_0_6(), Arial_0_6_kerning()));
+        DATA.put("Arial-1-6", new Metrics(0.9216, 0.2282, 1.1495, 5.5124, DATA.get("Arial-0-6").glyphWidths(), Arial_1_6_kerning()));
+        DATA.put("Arial Black-0-3", new Metrics(1.1005, 0.3095, 1.4135, 6.1905, Arial_Black_0_3(), Arial_Black_0_3_kerning()));
+        DATA.put("Arial Hebrew-0-3", new Metrics(0.7700, 0.3350, 1.1049, 5.0818, Arial_Hebrew_0_3(), Arial_Hebrew_0_3_kerning()));
+        DATA.put("Arial Hebrew-0-6", new Metrics(0.7700, 0.3350, 1.1049, 5.3635, Arial_Hebrew_0_6(), Arial_Hebrew_0_6_kerning()));
+        DATA.put("Arial Hebrew Scholar-0-3", new Metrics(0.7700, 0.3350, 1.1049, 5.0818, DATA.get("Arial Hebrew-0-3").glyphWidths(), DATA.get("Arial Hebrew-0-3").kerning()));
+        DATA.put("Arial Hebrew Scholar-0-6", new Metrics(0.7700, 0.3350, 1.1049, 5.3635, DATA.get("Arial Hebrew-0-6").glyphWidths(), DATA.get("Arial Hebrew-0-6").kerning()));
+        DATA.put("Arial Narrow-0-3", new Metrics(0.9355, 0.2119, 1.1495, 4.3212, Arial_Narrow_0_3(), Arial_Narrow_0_3_kerning()));
+        DATA.put("Arial Narrow-1-3", new Metrics(0.9355, 0.2119, 1.1495, 4.3212, DATA.get("Arial Narrow-0-3").glyphWidths(), DATA.get("Arial-0-3").kerning()));
+        DATA.put("Arial Narrow-0-6", new Metrics(0.9355, 0.2119, 1.1495, 4.5201, Arial_Narrow_0_6(), Arial_Narrow_0_6_kerning()));
+        DATA.put("Arial Narrow-1-6", new Metrics(0.9355, 0.2119, 1.1495, 4.5201, DATA.get("Arial Narrow-0-6").glyphWidths(), DATA.get("Arial-0-6").kerning()));
+        DATA.put("Arial Rounded MT Bold-0-3", new Metrics(0.9462, 0.2109, 1.1560, 5.6028, Arial_Rounded_MT_Bold_0_3(), Arial_Rounded_MT_Bold_0_3_kerning()));
         DATA.put("Arial Unicode MS-0-3", new Metrics(1.0688, 0.2709, 1.3380, 5.2636, Arial_Unicode_MS_0_3()));
-        DATA.put("Avenir-0-3", new Metrics(1.0000, 0.3659, 1.3690, 5.2421, Avenir_0_3()));
-        DATA.put("Avenir-1-3", new Metrics(1.0000, 0.3659, 1.3690, 5.2421, DATA.get("Avenir-0-3").glyphWidths()));
-        DATA.put("Avenir Next-0-3", new Metrics(1.0000, 0.3659, 1.3690, 5.3543, Avenir_Next_0_3()));
-        DATA.put("Avenir Next-1-3", new Metrics(1.0000, 0.3659, 1.3690, 5.2990, Avenir_Next_1_3()));
-        DATA.put("Avenir Next-0-6", new Metrics(1.0000, 0.3659, 1.3690, 5.7664, Avenir_Next_0_6()));
-        DATA.put("Avenir Next-1-6", new Metrics(1.0000, 0.3659, 1.3690, 5.7066, Avenir_Next_1_6()));
-        DATA.put("Avenir Next Condensed-0-3", new Metrics(1.0000, 0.3659, 1.3690, 4.2139, Avenir_Next_Condensed_0_3()));
-        DATA.put("Avenir Next Condensed-1-3", new Metrics(1.0000, 0.3659, 1.3690, 4.1746, Avenir_Next_Condensed_1_3()));
-        DATA.put("Avenir Next Condensed-0-6", new Metrics(1.0000, 0.3659, 1.3690, 4.7237, Avenir_Next_Condensed_0_6()));
-        DATA.put("Avenir Next Condensed-1-6", new Metrics(1.0000, 0.3659, 1.3690, 4.6527, Avenir_Next_Condensed_1_6()));
-        DATA.put("Ayuthaya-0-3", new Metrics(1.0671, 0.3209, 1.3865, 5.9993, Ayuthaya_0_3()));
-        DATA.put("Baghdad-0-3", new Metrics(0.9179, 0.4462, 1.3632, 5.2722, Baghdad_0_3()));
-        DATA.put("Bangla MN-0-3", new Metrics(1.0527, 0.7766, 1.8303, 5.9663, Bangla_MN_0_3()));
-        DATA.put("Bangla MN-0-6", new Metrics(1.0527, 0.7766, 1.8303, 6.2526, Bangla_MN_0_6()));
+        DATA.put("Avenir-0-3", new Metrics(1.0000, 0.3659, 1.3690, 5.2421, Avenir_0_3(), Avenir_0_3_kerning()));
+        DATA.put("Avenir-1-3", new Metrics(1.0000, 0.3659, 1.3690, 5.2421, DATA.get("Avenir-0-3").glyphWidths(), DATA.get("Avenir-0-3").kerning()));
+        DATA.put("Avenir Next-0-3", new Metrics(1.0000, 0.3659, 1.3690, 5.3543, Avenir_Next_0_3(), Avenir_Next_0_3_kerning()));
+        DATA.put("Avenir Next-1-3", new Metrics(1.0000, 0.3659, 1.3690, 5.2990, Avenir_Next_1_3(), Avenir_Next_1_3_kerning()));
+        DATA.put("Avenir Next-0-6", new Metrics(1.0000, 0.3659, 1.3690, 5.7664, Avenir_Next_0_6(), Avenir_Next_0_6_kerning()));
+        DATA.put("Avenir Next-1-6", new Metrics(1.0000, 0.3659, 1.3690, 5.7066, Avenir_Next_1_6(), Avenir_Next_1_6_kerning()));
+        DATA.put("Avenir Next Condensed-0-3", new Metrics(1.0000, 0.3659, 1.3690, 4.2139, Avenir_Next_Condensed_0_3(), Avenir_Next_Condensed_0_3_kerning()));
+        DATA.put("Avenir Next Condensed-1-3", new Metrics(1.0000, 0.3659, 1.3690, 4.1746, Avenir_Next_Condensed_1_3(), Avenir_Next_Condensed_1_3_kerning()));
+        DATA.put("Avenir Next Condensed-0-6", new Metrics(1.0000, 0.3659, 1.3690, 4.7237, Avenir_Next_Condensed_0_6(), Avenir_Next_Condensed_0_6_kerning()));
+        DATA.put("Avenir Next Condensed-1-6", new Metrics(1.0000, 0.3659, 1.3690, 4.6527, Avenir_Next_Condensed_1_6(), Avenir_Next_Condensed_1_6_kerning()));
+        DATA.put("Ayuthaya-0-3", new Metrics(1.0671, 0.3209, 1.3865, 5.9993, Ayuthaya_0_3(), Ayuthaya_0_3_kerning()));
+        DATA.put("Baghdad-0-3", new Metrics(0.9179, 0.4462, 1.3632, 5.2722, Baghdad_0_3(), DATA.get("Al Bayan-0-3").kerning()));
+        DATA.put("Bangla MN-0-3", new Metrics(1.0527, 0.7766, 1.8303, 5.9663, Bangla_MN_0_3(), Bangla_MN_0_3_kerning()));
+        DATA.put("Bangla MN-0-6", new Metrics(1.0527, 0.7766, 1.8303, 6.2526, Bangla_MN_0_6(), Bangla_MN_0_6_kerning()));
         DATA.put("Bangla Sangam MN-0-3", new Metrics(0.8710, 0.4335, 1.3061, 5.0466, Bangla_Sangam_MN_0_3()));
-        DATA.put("Bangla Sangam MN-0-6", new Metrics(0.8710, 0.4335, 1.3061, 5.0516, Bangla_Sangam_MN_0_6()));
-        DATA.put("Baskerville-0-3", new Metrics(0.8979, 0.2460, 1.1447, 5.2523, Baskerville_0_3()));
-        DATA.put("Baskerville-1-3", new Metrics(0.8808, 0.2460, 1.1239, 4.8586, Baskerville_1_3()));
-        DATA.put("Baskerville-0-6", new Metrics(0.8964, 0.2548, 1.1483, 5.7872, Baskerville_0_6()));
-        DATA.put("Baskerville-1-6", new Metrics(0.8798, 0.2495, 1.1297, 5.6343, Baskerville_1_6()));
-        DATA.put("Beirut-0-6", new Metrics(0.7700, 0.2749, 1.0461, 5.0434, Beirut_0_6()));
-        DATA.put("Big Caslon-0-3", new Metrics(0.9430, 0.2660, 1.2066, 5.2230, Big_Caslon_0_3()));
+        DATA.put("Bangla Sangam MN-0-6", new Metrics(0.8710, 0.4335, 1.3061, 5.0516, Bangla_Sangam_MN_0_6(), Bangla_Sangam_MN_0_6_kerning()));
+        DATA.put("Baskerville-0-3", new Metrics(0.8979, 0.2460, 1.1447, 5.2523, Baskerville_0_3(), Baskerville_0_3_kerning()));
+        DATA.put("Baskerville-1-3", new Metrics(0.8808, 0.2460, 1.1239, 4.8586, Baskerville_1_3(), Baskerville_1_3_kerning()));
+        DATA.put("Baskerville-0-6", new Metrics(0.8964, 0.2548, 1.1483, 5.7872, Baskerville_0_6(), Baskerville_0_6_kerning()));
+        DATA.put("Baskerville-1-6", new Metrics(0.8798, 0.2495, 1.1297, 5.6343, Baskerville_1_6(), Baskerville_1_6_kerning()));
+        DATA.put("Beirut-0-6", new Metrics(0.7700, 0.2749, 1.0461, 5.2140, Beirut_0_6(), DATA.get("Al Nile-0-6").kerning()));
+        DATA.put("Big Caslon-0-3", new Metrics(0.9430, 0.2660, 1.2066, 5.2230, Big_Caslon_0_3(), Big_Caslon_0_3_kerning()));
         DATA.put("Bodoni 72-0-3", new Metrics(0.9360, 0.2660, 1.1998, 4.9581, Bodoni_72_0_3()));
         DATA.put("Bodoni 72-1-3", new Metrics(0.9470, 0.2920, 1.2382, 4.8822, Bodoni_72_1_3()));
         DATA.put("Bodoni 72-0-6", new Metrics(0.9230, 0.2720, 1.1940, 5.2334, Bodoni_72_0_6()));
-        DATA.put("Bodoni 72 Oldstyle-0-3", new Metrics(0.9360, 0.2660, 1.1998, 4.8806, Bodoni_72_Oldstyle_0_3()));
+        DATA.put("Bodoni 72 Oldstyle-0-3", new Metrics(0.9230, 0.2720, 1.1940, 5.1602, Bodoni_72_Oldstyle_0_3()));
         DATA.put("Bodoni 72 Oldstyle-1-3", new Metrics(0.9470, 0.2920, 1.2382, 4.7491, Bodoni_72_Oldstyle_1_3()));
-        DATA.put("Bodoni 72 Oldstyle-0-6", new Metrics(0.9230, 0.2720, 1.1940, 5.1602, Bodoni_72_Oldstyle_0_6()));
+        DATA.put("Bodoni 72 Oldstyle-0-6", new Metrics(0.9230, 0.2720, 1.1940, 5.1602, DATA.get("Bodoni 72 Oldstyle-0-3").glyphWidths()));
         DATA.put("Bodoni 72 Smallcaps-0-3", new Metrics(0.9360, 0.2619, 1.1998, 4.8983, Bodoni_72_Smallcaps_0_3()));
         DATA.put("Bodoni Ornaments-0-3", new Metrics(0.8099, 0.2299, 1.0384, 7.8731, Bodoni_Ornaments_0_3()));
         DATA.put("Bradley Hand-0-6", new Metrics(0.8500, 0.3990, 1.2517, 5.6469, Bradley_Hand_0_6()));
-        DATA.put("Brush Script MT-0-3", new Metrics(0.8886, 0.3378, 1.2246, 4.5699, Brush_Script_MT_0_3()));
-        DATA.put("Chalkboard-0-3", new Metrics(0.9867, 0.2894, 1.2738, 5.2357, Chalkboard_0_3()));
-        DATA.put("Chalkboard-0-6", new Metrics(0.9867, 0.2894, 1.2738, 5.5621, Chalkboard_0_6()));
-        DATA.put("Chalkboard SE-0-3", new Metrics(1.1381, 0.2894, 1.4243, 5.2565, Chalkboard_SE_0_3()));
-        DATA.put("Chalkboard SE-0-6", new Metrics(1.1381, 0.2894, 1.4243, 5.5830, Chalkboard_SE_0_6()));
-        DATA.put("Chalkduster-0-3", new Metrics(0.9867, 0.2894, 1.2738, 6.3635, Chalkduster_0_3()));
-        DATA.put("Charter-0-3", new Metrics(0.9799, 0.2402, 1.2196, 5.5178, Charter_0_3()));
-        DATA.put("Charter-1-3", new Metrics(0.9799, 0.2402, 1.2196, 5.3909, Charter_1_3()));
-        DATA.put("Charter-0-6", new Metrics(0.9799, 0.2402, 1.2196, 5.7135, Charter_0_6()));
-        DATA.put("Charter-1-6", new Metrics(0.9799, 0.2402, 1.2196, 5.6482, Charter_1_6()));
-        DATA.put("Cochin-0-3", new Metrics(0.8970, 0.2500, 1.1505, 5.2682, Cochin_0_3()));
-        DATA.put("Cochin-1-3", new Metrics(0.8860, 0.2339, 1.1205, 4.7732, Cochin_1_3()));
-        DATA.put("Cochin-0-6", new Metrics(0.9140, 0.2500, 1.1619, 5.4252, Cochin_0_6()));
-        DATA.put("Cochin-1-6", new Metrics(0.9149, 0.2339, 1.1495, 5.1285, Cochin_1_6()));
+        DATA.put("Brush Script MT-0-3", new Metrics(0.8886, 0.3378, 1.2246, 4.5699, Brush_Script_MT_0_3(), Brush_Script_MT_0_3_kerning()));
+        DATA.put("Chalkboard-0-3", new Metrics(0.9867, 0.2894, 1.2738, 5.2357, Chalkboard_0_3(), Chalkboard_0_3_kerning()));
+        DATA.put("Chalkboard-0-6", new Metrics(0.9867, 0.2894, 1.2738, 5.5621, Chalkboard_0_6(), Chalkboard_0_6_kerning()));
+        DATA.put("Chalkboard SE-0-3", new Metrics(1.1381, 0.2894, 1.4243, 5.2565, Chalkboard_SE_0_3(), DATA.get("Chalkboard-0-3").kerning()));
+        DATA.put("Chalkboard SE-0-6", new Metrics(1.1381, 0.2894, 1.4243, 5.5830, Chalkboard_SE_0_6(), DATA.get("Chalkboard-0-6").kerning()));
+        DATA.put("Chalkduster-0-3", new Metrics(0.9867, 0.2894, 1.2738, 6.3635, Chalkduster_0_3(), Chalkduster_0_3_kerning()));
+        DATA.put("Charter-0-3", new Metrics(0.9799, 0.2402, 1.2196, 5.5178, Charter_0_3(), Charter_0_3_kerning()));
+        DATA.put("Charter-1-3", new Metrics(0.9799, 0.2402, 1.2196, 5.3909, Charter_1_3(), Charter_1_3_kerning()));
+        DATA.put("Charter-0-6", new Metrics(0.9799, 0.2402, 1.2196, 5.7135, Charter_0_6(), Charter_0_6_kerning()));
+        DATA.put("Charter-1-6", new Metrics(0.9799, 0.2402, 1.2196, 5.6482, Charter_1_6(), Charter_1_6_kerning()));
+        DATA.put("Cochin-0-3", new Metrics(0.8970, 0.2500, 1.1505, 5.2682, Cochin_0_3(), Cochin_0_3_kerning()));
+        DATA.put("Cochin-1-3", new Metrics(0.8860, 0.2339, 1.1205, 4.7732, Cochin_1_3(), Cochin_1_3_kerning()));
+        DATA.put("Cochin-0-6", new Metrics(0.9140, 0.2500, 1.1619, 5.4252, Cochin_0_6(), Cochin_0_6_kerning()));
+        DATA.put("Cochin-1-6", new Metrics(0.9149, 0.2339, 1.1495, 5.1285, Cochin_1_6(), Cochin_1_6_kerning()));
         DATA.put("Comic Sans MS-0-3", new Metrics(1.1020, 0.2915, 1.3923, 5.6067, Comic_Sans_MS_0_3()));
         DATA.put("Comic Sans MS-0-6", new Metrics(1.1020, 0.2915, 1.3923, 5.8293, Comic_Sans_MS_0_6()));
         DATA.put("Copperplate-0-3", new Metrics(0.7724, 0.2574, 1.0305, 5.6496, Copperplate_0_3()));
         DATA.put("Copperplate-0-6", new Metrics(0.7770, 0.2580, 1.0382, 5.7982, Copperplate_0_6()));
-        DATA.put("Corsiva Hebrew-0-3", new Metrics(0.7700, 0.3076, 1.0750, 4.7912, Corsiva_Hebrew_0_3()));
-        DATA.put("Corsiva Hebrew-0-6", new Metrics(0.7700, 0.3076, 1.0750, 5.0127, Corsiva_Hebrew_0_6()));
+        DATA.put("Corsiva Hebrew-0-3", new Metrics(0.7700, 0.3076, 1.0750, 4.7912, Corsiva_Hebrew_0_3(), DATA.get("Arial Hebrew-0-3").kerning()));
+        DATA.put("Corsiva Hebrew-0-6", new Metrics(0.7700, 0.3076, 1.0750, 5.1896, Corsiva_Hebrew_0_6(), DATA.get("Arial Hebrew-0-6").kerning()));
         DATA.put("Courier New-0-3", new Metrics(0.8325, 0.3002, 1.1317, 6.0009, null));
         DATA.put("Courier New-1-3", new Metrics(0.8325, 0.3002, 1.1317, 6.0009, null));
         DATA.put("Courier New-0-6", new Metrics(0.8325, 0.3002, 1.1317, 6.0009, null));
         DATA.put("Courier New-1-6", new Metrics(0.8325, 0.3002, 1.1317, 6.0009, null));
-        DATA.put("Damascus-0-3", new Metrics(0.7700, 0.4306, 1.1998, 5.2637, Damascus_0_3()));
-        DATA.put("Damascus-0-6", new Metrics(0.7700, 0.4306, 1.1998, 5.2637, DATA.get("Damascus-0-3").glyphWidths()));
-        DATA.put("DecoType Naskh-0-3", new Metrics(1.1752, 0.6390, 1.8124, 5.2894, DecoType_Naskh_0_3()));
-        DATA.put("Devanagari MT-0-3", new Metrics(0.9252, 0.6826, 1.6076, 5.2999, Devanagari_MT_0_3()));
-        DATA.put("Devanagari MT-0-6", new Metrics(0.9252, 0.6826, 1.6076, 5.3354, Devanagari_MT_0_6()));
-        DATA.put("Devanagari Sangam MN-0-3", new Metrics(0.9960, 0.4951, 1.4930, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths()));
-        DATA.put("Devanagari Sangam MN-0-6", new Metrics(0.9960, 0.4951, 1.4930, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths()));
-        DATA.put("Didot-0-3", new Metrics(0.9529, 0.3109, 1.2620, 5.4065, Didot_0_3()));
-        DATA.put("Didot-1-3", new Metrics(0.9544, 0.3024, 1.2567, 5.2036, Didot_1_3()));
-        DATA.put("Didot-0-6", new Metrics(0.9819, 0.3070, 1.2874, 5.5133, Didot_0_6()));
-        DATA.put("DIN Alternate-0-6", new Metrics(0.9379, 0.2260, 1.1619, 4.7685, DIN_Alternate_0_6()));
-        DATA.put("DIN Condensed-0-6", new Metrics(0.8120, 0.3879, 1.1998, 3.6597, DIN_Condensed_0_6()));
-        DATA.put("Diwan Kufi-0-3", new Metrics(1.3916, 0.4882, 1.8794, 5.1528, Diwan_Kufi_0_3()));
-        DATA.put("Diwan Thuluth-0-3", new Metrics(1.0112, 0.7026, 1.7126, 4.6560, Diwan_Thuluth_0_3()));
-        DATA.put("Euphemia UCAS-0-3", new Metrics(1.1127, 0.2480, 1.3631, 5.2926, Euphemia_UCAS_0_3()));
+        DATA.put("Damascus-0-3", new Metrics(0.7700, 0.4306, 1.1998, 5.2637, Damascus_0_3(), Damascus_0_3_kerning()));
+        DATA.put("Damascus-0-6", new Metrics(0.7700, 0.4306, 1.1998, 5.5066, Damascus_0_6(), Damascus_0_6_kerning()));
+        DATA.put("DecoType Naskh-0-3", new Metrics(1.1752, 0.6390, 1.8124, 5.2894, DecoType_Naskh_0_3(), DATA.get("Al Bayan-0-3").kerning()));
+        DATA.put("Devanagari MT-0-3", new Metrics(0.9252, 0.6826, 1.6076, 5.1836, Devanagari_MT_0_3(), Devanagari_MT_0_3_kerning()));
+        DATA.put("Devanagari MT-0-6", new Metrics(0.9252, 0.6826, 1.6076, 5.4135, Devanagari_MT_0_6(), Devanagari_MT_0_6_kerning()));
+        DATA.put("Devanagari Sangam MN-0-3", new Metrics(0.9960, 0.4951, 1.4930, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths(), Devanagari_Sangam_MN_0_3_kerning()));
+        DATA.put("Devanagari Sangam MN-0-6", new Metrics(0.9960, 0.4951, 1.4930, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths(), Devanagari_Sangam_MN_0_6_kerning()));
+        DATA.put("Didot-0-3", new Metrics(0.9529, 0.3109, 1.2620, 5.4065, Didot_0_3(), Didot_0_3_kerning()));
+        DATA.put("Didot-1-3", new Metrics(0.9544, 0.3024, 1.2567, 5.2036, Didot_1_3(), Didot_1_3_kerning()));
+        DATA.put("Didot-0-6", new Metrics(0.9819, 0.3070, 1.2874, 5.5133, Didot_0_6(), Didot_0_6_kerning()));
+        DATA.put("DIN Alternate-0-6", new Metrics(0.9379, 0.2260, 1.1619, 4.7685, DIN_Alternate_0_6(), DIN_Alternate_0_6_kerning()));
+        DATA.put("DIN Condensed-0-6", new Metrics(0.8120, 0.3879, 1.1998, 3.6597, DIN_Condensed_0_6(), DIN_Condensed_0_6_kerning()));
+        DATA.put("Diwan Kufi-0-3", new Metrics(1.3916, 0.4882, 1.8794, 5.1528, Diwan_Kufi_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("Diwan Thuluth-0-3", new Metrics(1.0112, 0.7026, 1.7126, 4.6560, Diwan_Thuluth_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("Euphemia UCAS-0-3", new Metrics(1.1127, 0.2480, 1.3631, 5.2926, Euphemia_UCAS_0_3(), Euphemia_UCAS_0_3_kerning()));
         DATA.put("Euphemia UCAS-1-3", new Metrics(1.1127, 0.2480, 1.3631, 5.2988, Euphemia_UCAS_1_3()));
         DATA.put("Euphemia UCAS-0-6", new Metrics(1.1127, 0.2480, 1.3631, 5.7528, Euphemia_UCAS_0_6()));
-        DATA.put("Farah-0-3", new Metrics(0.7700, 0.2456, 1.0193, 4.9689, Farah_0_3()));
-        DATA.put("Farisi-0-3", new Metrics(1.1049, 0.9765, 2.0827, 5.0121, Farisi_0_3()));
-        DATA.put("Futura-0-3", new Metrics(1.0534, 0.2746, 1.3301, 5.5759, Futura_0_3()));
-        DATA.put("Futura-1-3", new Metrics(1.0527, 0.2778, 1.3301, 5.5206, Futura_1_3()));
-        DATA.put("Futura-0-6", new Metrics(1.0540, 0.2749, 1.3301, 6.3114, Futura_0_6()));
+        DATA.put("Farah-0-3", new Metrics(0.7700, 0.2456, 1.0193, 4.9689, Farah_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("Farisi-0-3", new Metrics(1.1049, 0.9765, 2.0827, 5.0121, Farisi_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("Futura-0-3", new Metrics(1.0534, 0.2746, 1.3301, 5.5759, Futura_0_3(), Futura_0_3_kerning()));
+        DATA.put("Futura-1-3", new Metrics(1.0527, 0.2778, 1.3301, 5.5206, Futura_1_3(), Futura_1_3_kerning()));
+        DATA.put("Futura-0-6", new Metrics(1.0540, 0.2749, 1.3301, 6.3114, Futura_0_6(), Futura_0_6_kerning()));
         DATA.put("Galvji-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6160, Galvji_0_3()));
-        DATA.put("Galvji-1-3", new Metrics(0.9667, 0.2109, 1.1746, 5.5736, Galvji_1_3()));
+        DATA.put("Galvji-1-3", new Metrics(0.9667, 0.2109, 1.1746, 5.5736, Galvji_1_3(), Galvji_1_3_kerning()));
         DATA.put("Galvji-0-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9595, Galvji_0_6()));
         DATA.put("Galvji-1-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9645, Galvji_1_6()));
-        DATA.put("GB18030 Bitmap-0-3", new Metrics(1.1250, 0.2299, 1.3554, 5.3455, GB18030_Bitmap_0_3()));
-        DATA.put("Geeza Pro-0-3", new Metrics(0.9629, 0.3987, 1.3631, 5.2746, Geeza_Pro_0_3()));
-        DATA.put("Geeza Pro-0-6", new Metrics(0.9629, 0.3987, 1.3631, 5.2746, DATA.get("Geeza Pro-0-3").glyphWidths()));
-        DATA.put("Geneva-0-3", new Metrics(1.0417, 0.2917, 1.3321, 5.7438, Geneva_0_3()));
+        DATA.put("GB18030 Bitmap-0-3", new Metrics(1.1250, 0.2299, 1.3554, 5.3455, GB18030_Bitmap_0_3(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Geeza Pro-0-3", new Metrics(0.9629, 0.3987, 1.3631, 5.2746, Geeza_Pro_0_3(), DATA.get("Damascus-0-3").kerning()));
+        DATA.put("Geeza Pro-0-6", new Metrics(0.9629, 0.3987, 1.3631, 5.5175, Geeza_Pro_0_6(), DATA.get("Damascus-0-6").kerning()));
+        DATA.put("Geneva-0-3", new Metrics(1.0417, 0.2917, 1.3321, 5.7438, Geneva_0_3(), Geneva_0_3_kerning()));
         DATA.put("Georgia-0-3", new Metrics(0.9169, 0.2192, 1.1374, 5.4989, Georgia_0_3()));
         DATA.put("Georgia-1-3", new Metrics(0.9169, 0.2192, 1.1374, 5.5455, Georgia_1_3()));
         DATA.put("Georgia-0-6", new Metrics(0.9169, 0.2192, 1.1374, 6.2268, Georgia_0_6()));
         DATA.put("Georgia-1-6", new Metrics(0.9169, 0.2192, 1.1374, 6.2725, Georgia_1_6()));
-        DATA.put("Gill Sans-0-3", new Metrics(0.9179, 0.2304, 1.1495, 4.9099, Gill_Sans_0_3()));
-        DATA.put("Gill Sans-1-3", new Metrics(0.9091, 0.2299, 1.1375, 4.6080, Gill_Sans_1_3()));
-        DATA.put("Gill Sans-0-6", new Metrics(0.9228, 0.2348, 1.1560, 6.0159, Gill_Sans_0_6()));
-        DATA.put("Gill Sans-1-6", new Metrics(0.9208, 0.2348, 1.1540, 5.6663, Gill_Sans_1_6()));
-        DATA.put("Grantha Sangam MN-0-3", new Metrics(0.8691, 0.8593, 1.7311, 5.1797, Grantha_Sangam_MN_0_3()));
-        DATA.put("Grantha Sangam MN-0-6", new Metrics(0.8691, 0.8593, 1.7311, 5.2291, Grantha_Sangam_MN_0_6()));
-        DATA.put("Gujarati MT-0-3", new Metrics(0.9082, 0.6323, 1.5386, 5.2499, Gujarati_MT_0_3()));
-        DATA.put("Gujarati MT-0-6", new Metrics(0.9082, 0.6323, 1.5386, 5.2537, Gujarati_MT_0_6()));
+        DATA.put("Gill Sans-0-3", new Metrics(0.9179, 0.2304, 1.1495, 4.9099, Gill_Sans_0_3(), Gill_Sans_0_3_kerning()));
+        DATA.put("Gill Sans-1-3", new Metrics(0.9091, 0.2299, 1.1375, 4.6080, Gill_Sans_1_3(), Gill_Sans_1_3_kerning()));
+        DATA.put("Gill Sans-0-6", new Metrics(0.9228, 0.2348, 1.1560, 6.0159, Gill_Sans_0_6(), Gill_Sans_0_6_kerning()));
+        DATA.put("Gill Sans-1-6", new Metrics(0.9208, 0.2348, 1.1540, 5.6663, Gill_Sans_1_6(), Gill_Sans_1_6_kerning()));
+        DATA.put("Grantha Sangam MN-0-3", new Metrics(0.8691, 0.8593, 1.7311, 5.1797, Grantha_Sangam_MN_0_3(), Grantha_Sangam_MN_0_3_kerning()));
+        DATA.put("Grantha Sangam MN-0-6", new Metrics(0.8691, 0.8593, 1.7311, 5.2291, Grantha_Sangam_MN_0_6(), Grantha_Sangam_MN_0_6_kerning()));
+        DATA.put("Gujarati MT-0-3", new Metrics(0.9123, 0.6323, 1.5463, 5.1336, Gujarati_MT_0_3(), DATA.get("Devanagari MT-0-3").kerning()));
+        DATA.put("Gujarati MT-0-6", new Metrics(0.9123, 0.6323, 1.5463, 5.3318, Gujarati_MT_0_6(), DATA.get("Devanagari MT-0-6").kerning()));
         DATA.put("Gujarati Sangam MN-0-3", new Metrics(1.0999, 0.4000, 1.4992, 6.2038, Gujarati_Sangam_MN_0_3()));
         DATA.put("Gujarati Sangam MN-0-6", new Metrics(1.0999, 0.4000, 1.4992, 6.2098, Gujarati_Sangam_MN_0_6()));
-        DATA.put("Gurmukhi MN-0-3", new Metrics(1.0966, 0.3916, 1.4872, 5.2438, Gurmukhi_MN_0_3()));
-        DATA.put("Gurmukhi MN-0-6", new Metrics(1.0966, 0.3916, 1.4872, 5.4955, Gurmukhi_MN_0_6()));
-        DATA.put("Gurmukhi MT-0-3", new Metrics(0.8642, 0.4394, 1.3061, 5.0702, Gurmukhi_MT_0_3()));
+        DATA.put("Gurmukhi MN-0-3", new Metrics(1.0966, 0.3916, 1.4872, 5.2438, Gurmukhi_MN_0_3(), Gurmukhi_MN_0_3_kerning()));
+        DATA.put("Gurmukhi MN-0-6", new Metrics(1.0966, 0.3916, 1.4872, 5.4955, Gurmukhi_MN_0_6(), Gurmukhi_MN_0_6_kerning()));
+        DATA.put("Gurmukhi MT-0-3", new Metrics(0.8642, 0.4394, 1.3061, 5.0702, Gurmukhi_MT_0_3(), DATA.get("Arial Hebrew-0-3").kerning()));
         DATA.put("Gurmukhi Sangam MN-0-3", new Metrics(0.9985, 0.2993, 1.3009, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths()));
-        DATA.put("Gurmukhi Sangam MN-0-6", new Metrics(0.9985, 0.2993, 1.3009, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths()));
+        DATA.put("Gurmukhi Sangam MN-0-6", new Metrics(0.9985, 0.2993, 1.3009, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths(), DATA.get("Bangla Sangam MN-0-6").kerning()));
         DATA.put("Heiti SC-0-3", new Metrics(0.8750, 0.1549, 1.0305, 5.4370, Heiti_SC_0_3()));
         DATA.put("Heiti SC-0-6", new Metrics(0.8750, 0.1549, 1.0305, 5.4596, Heiti_SC_0_6()));
         DATA.put("Heiti TC-0-3", new Metrics(0.8750, 0.1549, 1.0305, 5.4370, DATA.get("Heiti SC-0-3").glyphWidths()));
         DATA.put("Heiti TC-0-6", new Metrics(0.8750, 0.1549, 1.0305, 5.4596, DATA.get("Heiti SC-0-6").glyphWidths()));
-        DATA.put("Helvetica-0-3", new Metrics(0.7700, 0.2299, 1.0000, 5.2695, DATA.get("Arial-0-3").glyphWidths()));
-        DATA.put("Helvetica-1-3", new Metrics(0.7700, 0.2299, 1.0000, 5.2695, DATA.get("Arial-0-3").glyphWidths()));
-        DATA.put("Helvetica-0-6", new Metrics(0.7700, 0.2299, 1.0000, 5.5124, DATA.get("Arial-0-6").glyphWidths()));
-        DATA.put("Helvetica-1-6", new Metrics(0.7700, 0.2299, 1.0000, 5.5124, DATA.get("Arial-0-6").glyphWidths()));
-        DATA.put("Helvetica Neue-0-3", new Metrics(0.9659, 0.2269, 1.1920, 5.2551, Helvetica_Neue_0_3()));
-        DATA.put("Helvetica Neue-1-3", new Metrics(0.9710, 0.2269, 1.1998, 5.2255, Helvetica_Neue_1_3()));
-        DATA.put("Helvetica Neue-0-6", new Metrics(0.9895, 0.2314, 1.2196, 5.4813, Helvetica_Neue_0_6()));
-        DATA.put("Helvetica Neue-1-6", new Metrics(0.9895, 0.2314, 1.2196, 5.4831, Helvetica_Neue_1_6()));
-        DATA.put("Herculanum-0-3", new Metrics(0.7949, 0.2050, 1.0000, 5.4723, Herculanum_0_3()));
-        DATA.put("Hiragino Maru Gothic ProN-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.8295, Hiragino_Maru_Gothic_ProN_0_3()));
-        DATA.put("Hiragino Mincho ProN-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.5673, Hiragino_Mincho_ProN_0_3()));
-        DATA.put("Hiragino Sans-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.7367, Hiragino_Sans_0_3()));
-        DATA.put("Hiragino Sans-0-6", new Metrics(1.1300, 0.3700, 1.4992, 6.2388, Hiragino_Sans_0_6()));
+        DATA.put("Helvetica-0-3", new Metrics(0.7700, 0.2299, 1.0000, 5.2695, DATA.get("Arial-0-3").glyphWidths(), Helvetica_0_3_kerning()));
+        DATA.put("Helvetica-1-3", new Metrics(0.7700, 0.2299, 1.0000, 5.2695, DATA.get("Arial-0-3").glyphWidths(), DATA.get("Helvetica-0-3").kerning()));
+        DATA.put("Helvetica-0-6", new Metrics(0.7700, 0.2299, 1.0000, 5.5124, DATA.get("Arial-0-6").glyphWidths(), Helvetica_0_6_kerning()));
+        DATA.put("Helvetica-1-6", new Metrics(0.7700, 0.2299, 1.0000, 5.5124, DATA.get("Arial-0-6").glyphWidths(), DATA.get("Helvetica-0-6").kerning()));
+        DATA.put("Helvetica Neue-0-3", new Metrics(0.9659, 0.2269, 1.1920, 5.2551, Helvetica_Neue_0_3(), Helvetica_Neue_0_3_kerning()));
+        DATA.put("Helvetica Neue-1-3", new Metrics(0.9710, 0.2269, 1.1998, 5.2255, Helvetica_Neue_1_3(), Helvetica_Neue_1_3_kerning()));
+        DATA.put("Helvetica Neue-0-6", new Metrics(0.9895, 0.2314, 1.2196, 5.4813, Helvetica_Neue_0_6(), Helvetica_Neue_0_6_kerning()));
+        DATA.put("Helvetica Neue-1-6", new Metrics(0.9895, 0.2314, 1.2196, 5.4831, Helvetica_Neue_1_6(), Helvetica_Neue_1_6_kerning()));
+        DATA.put("Herculanum-0-3", new Metrics(0.7949, 0.2050, 1.0000, 5.4723, Herculanum_0_3(), Herculanum_0_3_kerning()));
+        DATA.put("Hiragino Maru Gothic ProN-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.8295, Hiragino_Maru_Gothic_ProN_0_3(), Hiragino_Maru_Gothic_ProN_0_3_kerning()));
+        DATA.put("Hiragino Mincho ProN-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.5673, Hiragino_Mincho_ProN_0_3(), Hiragino_Mincho_ProN_0_3_kerning()));
+        DATA.put("Hiragino Sans-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.7367, Hiragino_Sans_0_3(), Hiragino_Sans_0_3_kerning()));
+        DATA.put("Hiragino Sans-0-6", new Metrics(1.1300, 0.3700, 1.4992, 6.2388, Hiragino_Sans_0_6(), Hiragino_Sans_0_6_kerning()));
         DATA.put("Hiragino Sans GB-0-3", new Metrics(1.1300, 0.3700, 1.4992, 5.7367, DATA.get("Hiragino Sans-0-3").glyphWidths()));
-        DATA.put("Hoefler Text-0-3", new Metrics(0.7209, 0.2790, 1.0000, 5.1640, Hoefler_Text_0_3()));
-        DATA.put("Hoefler Text-1-3", new Metrics(0.7209, 0.2790, 1.0000, 4.9466, Hoefler_Text_1_3()));
-        DATA.put("Hoefler Text-0-6", new Metrics(0.7209, 0.2790, 1.0000, 5.9068, Hoefler_Text_0_6()));
-        DATA.put("Hoefler Text-1-6", new Metrics(0.7209, 0.2790, 1.0000, 5.7568, Hoefler_Text_1_6()));
-        DATA.put("Impact-0-3", new Metrics(1.0087, 0.2109, 1.2202, 4.5623, Impact_0_3()));
+        DATA.put("Hoefler Text-0-3", new Metrics(0.7209, 0.2790, 1.0000, 5.1640, Hoefler_Text_0_3(), Hoefler_Text_0_3_kerning()));
+        DATA.put("Hoefler Text-1-3", new Metrics(0.7209, 0.2790, 1.0000, 4.9466, Hoefler_Text_1_3(), Hoefler_Text_1_3_kerning()));
+        DATA.put("Hoefler Text-0-6", new Metrics(0.7209, 0.2790, 1.0000, 5.9068, Hoefler_Text_0_6(), Hoefler_Text_0_6_kerning()));
+        DATA.put("Hoefler Text-1-6", new Metrics(0.7209, 0.2790, 1.0000, 5.7568, Hoefler_Text_1_6(), Hoefler_Text_1_6_kerning()));
+        DATA.put("Impact-0-3", new Metrics(1.0087, 0.2109, 1.2202, 4.5623, Impact_0_3(), Impact_0_3_kerning()));
         DATA.put("InaiMathi-0-3", new Metrics(0.8500, 0.3999, 1.2490, 4.4016, InaiMathi_0_3()));
         DATA.put("InaiMathi-0-6", new Metrics(0.8500, 0.3999, 1.2490, 4.9327, InaiMathi_0_6()));
-        DATA.put("ITF Devanagari-0-3", new Metrics(1.1000, 0.4000, 1.4992, 5.2347, ITF_Devanagari_0_3()));
-        DATA.put("ITF Devanagari-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.4778, ITF_Devanagari_0_6()));
-        DATA.put("ITF Devanagari Marathi-0-3", new Metrics(1.1000, 0.4000, 1.4992, 5.2347, DATA.get("ITF Devanagari-0-3").glyphWidths()));
-        DATA.put("ITF Devanagari Marathi-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.4778, DATA.get("ITF Devanagari-0-6").glyphWidths()));
-        DATA.put("Kailasa-0-3", new Metrics(0.8442, 0.4496, 1.2951, 5.2817, Kailasa_0_3()));
-        DATA.put("Kailasa-0-6", new Metrics(0.8442, 0.4496, 1.2951, 5.2817, DATA.get("Kailasa-0-3").glyphWidths()));
-        DATA.put("Kannada MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.2685, Kannada_MN_0_3()));
-        DATA.put("Kannada MN-0-6", new Metrics(0.9123, 0.3020, 1.2125, 5.5201, Kannada_MN_0_6()));
+        DATA.put("ITF Devanagari-0-3", new Metrics(1.1000, 0.4000, 1.4992, 5.1185, ITF_Devanagari_0_3(), DATA.get("Devanagari MT-0-3").kerning()));
+        DATA.put("ITF Devanagari-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.5677, ITF_Devanagari_0_6(), DATA.get("Devanagari MT-0-6").kerning()));
+        DATA.put("ITF Devanagari Marathi-0-3", new Metrics(1.1000, 0.4000, 1.4992, 5.1185, DATA.get("ITF Devanagari-0-3").glyphWidths(), DATA.get("Devanagari MT-0-3").kerning()));
+        DATA.put("ITF Devanagari Marathi-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.5677, DATA.get("ITF Devanagari-0-6").glyphWidths(), DATA.get("Devanagari MT-0-6").kerning()));
+        DATA.put("Kailasa-0-3", new Metrics(0.8442, 0.4496, 1.2951, 5.2817, Kailasa_0_3(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Kailasa-0-6", new Metrics(0.8442, 0.4496, 1.2951, 5.5246, Kailasa_0_6(), Kailasa_0_6_kerning()));
+        DATA.put("Kannada MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.2685, Kannada_MN_0_3(), Kannada_MN_0_3_kerning()));
+        DATA.put("Kannada MN-0-6", new Metrics(0.9123, 0.3020, 1.2125, 5.5201, Kannada_MN_0_6(), DATA.get("Gurmukhi MN-0-6").kerning()));
         DATA.put("Kannada Sangam MN-0-3", new Metrics(1.1423, 0.4851, 1.6232, 5.0689, Kannada_Sangam_MN_0_3()));
-        DATA.put("Kannada Sangam MN-0-6", new Metrics(1.1423, 0.4851, 1.6232, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths()));
-        DATA.put("Kefa-0-3", new Metrics(0.9316, 0.2246, 1.1560, 5.4268, Kefa_0_3()));
-        DATA.put("Kefa-0-6", new Metrics(0.9316, 0.2246, 1.1560, 5.7812, Kefa_0_6()));
-        DATA.put("Khmer MN-0-3", new Metrics(0.9863, 0.8266, 1.8124, 4.5840, Khmer_MN_0_3()));
-        DATA.put("Khmer MN-0-6", new Metrics(0.9863, 0.8266, 1.8124, 4.9995, Khmer_MN_0_6()));
+        DATA.put("Kannada Sangam MN-0-6", new Metrics(1.1423, 0.4851, 1.6232, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths(), DATA.get("Bangla Sangam MN-0-6").kerning()));
+        DATA.put("Kefa-0-3", new Metrics(0.9799, 0.2200, 1.1998, 5.1598, Kefa_0_3(), Kefa_0_3_kerning()));
+        DATA.put("Kefa-0-6", new Metrics(0.9799, 0.2200, 1.1998, 5.5162, Kefa_0_6(), Kefa_0_6_kerning()));
+        DATA.put("Khmer MN-0-3", new Metrics(0.9863, 0.8266, 1.8124, 4.5840, Khmer_MN_0_3(), Khmer_MN_0_3_kerning()));
+        DATA.put("Khmer MN-0-6", new Metrics(0.9863, 0.8266, 1.8124, 4.9995, Khmer_MN_0_6(), Khmer_MN_0_6_kerning()));
         DATA.put("Khmer Sangam MN-0-3", new Metrics(1.2128, 0.7729, 1.9863, 4.9506, Khmer_Sangam_MN_0_3()));
-        DATA.put("Kohinoor Bangla-0-3", new Metrics(1.1000, 0.4000, 1.4992, 4.9921, Kohinoor_Bangla_0_3()));
-        DATA.put("Kohinoor Bangla-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.3953, Kohinoor_Bangla_0_6()));
-        DATA.put("Kohinoor Devanagari-0-3", new Metrics(1.1000, 0.4000, 1.4992, 4.9921, DATA.get("Kohinoor Bangla-0-3").glyphWidths()));
-        DATA.put("Kohinoor Devanagari-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.3953, DATA.get("Kohinoor Bangla-0-6").glyphWidths()));
-        DATA.put("Kohinoor Gujarati-0-3", new Metrics(1.0500, 0.4500, 1.4992, 5.1889, Kohinoor_Gujarati_0_3()));
-        DATA.put("Kohinoor Gujarati-0-6", new Metrics(1.0500, 0.4500, 1.4992, 5.3776, Kohinoor_Gujarati_0_6()));
-        DATA.put("Kohinoor Telugu-0-3", new Metrics(1.1000, 0.4000, 1.4992, 4.9689, Kohinoor_Telugu_0_3()));
-        DATA.put("Kohinoor Telugu-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.3610, Kohinoor_Telugu_0_6()));
-        DATA.put("Kokonor-0-3", new Metrics(1.0519, 0.6219, 1.6756, 5.2726, Kokonor_0_3()));
+        DATA.put("Kohinoor Bangla-0-3", new Metrics(1.1000, 0.4000, 1.4992, 4.9921, Kohinoor_Bangla_0_3(), Kohinoor_Bangla_0_3_kerning()));
+        DATA.put("Kohinoor Bangla-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.3953, Kohinoor_Bangla_0_6(), Kohinoor_Bangla_0_6_kerning()));
+        DATA.put("Kohinoor Devanagari-0-3", new Metrics(1.1000, 0.4000, 1.4992, 4.9921, DATA.get("Kohinoor Bangla-0-3").glyphWidths(), DATA.get("Kohinoor Bangla-0-3").kerning()));
+        DATA.put("Kohinoor Devanagari-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.3953, DATA.get("Kohinoor Bangla-0-6").glyphWidths(), DATA.get("Kohinoor Bangla-0-6").kerning()));
+        DATA.put("Kohinoor Gujarati-0-3", new Metrics(1.0500, 0.4500, 1.4992, 5.1889, Kohinoor_Gujarati_0_3(), Kohinoor_Gujarati_0_3_kerning()));
+        DATA.put("Kohinoor Gujarati-0-6", new Metrics(1.0500, 0.4500, 1.4992, 5.5409, Kohinoor_Gujarati_0_6(), Kohinoor_Gujarati_0_6_kerning()));
+        DATA.put("Kohinoor Telugu-0-3", new Metrics(1.1000, 0.4000, 1.4992, 4.9689, Kohinoor_Telugu_0_3(), Kohinoor_Telugu_0_3_kerning()));
+        DATA.put("Kohinoor Telugu-0-6", new Metrics(1.1000, 0.4000, 1.4992, 5.3610, Kohinoor_Telugu_0_6(), Kohinoor_Telugu_0_6_kerning()));
+        DATA.put("Kokonor-0-3", new Metrics(1.1176, 0.6219, 1.7380, 5.1980, Kokonor_0_3(), DATA.get("Apple Chancery-0-3").kerning()));
         DATA.put("Krungthep-0-6", new Metrics(1.0105, 0.2624, 1.2746, 6.1301, Krungthep_0_6()));
-        DATA.put("KufiStandardGK-0-3", new Metrics(0.9433, 0.4667, 1.4135, 5.2628, KufiStandardGK_0_3()));
-        DATA.put("Lao MN-0-3", new Metrics(0.9123, 0.4606, 1.3767, 5.2438, DATA.get("Gurmukhi MN-0-3").glyphWidths()));
-        DATA.put("Lao MN-0-6", new Metrics(0.9123, 0.4606, 1.3767, 5.4955, DATA.get("Gurmukhi MN-0-6").glyphWidths()));
-        DATA.put("Lao Sangam MN-0-3", new Metrics(1.0019, 0.3154, 1.3183, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths()));
-        DATA.put("Lucida Grande-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6438, Lucida_Grande_0_3()));
-        DATA.put("Lucida Grande-0-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9851, Lucida_Grande_0_6()));
-        DATA.put("Luminari-0-3", new Metrics(0.9830, 0.3560, 1.3380, 5.3415, Luminari_0_3()));
+        DATA.put("KufiStandardGK-0-3", new Metrics(0.9433, 0.4667, 1.4135, 5.2628, KufiStandardGK_0_3(), DATA.get("Al Bayan-0-3").kerning()));
+        DATA.put("Lao MN-0-3", new Metrics(0.9123, 0.4606, 1.3767, 5.2438, DATA.get("Gurmukhi MN-0-3").glyphWidths(), Lao_MN_0_3_kerning()));
+        DATA.put("Lao MN-0-6", new Metrics(0.9123, 0.4606, 1.3767, 5.4955, DATA.get("Gurmukhi MN-0-6").glyphWidths(), Lao_MN_0_6_kerning()));
+        DATA.put("Lao Sangam MN-0-3", new Metrics(1.0019, 0.3154, 1.3183, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths(), DATA.get("Devanagari Sangam MN-0-3").kerning()));
+        DATA.put("Lucida Grande-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6438, Lucida_Grande_0_3(), Lucida_Grande_0_3_kerning()));
+        DATA.put("Lucida Grande-0-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9851, Lucida_Grande_0_6(), Lucida_Grande_0_6_kerning()));
+        DATA.put("Luminari-0-3", new Metrics(0.9830, 0.3560, 1.3380, 5.3415, Luminari_0_3(), Luminari_0_3_kerning()));
         DATA.put("Malayalam MN-0-3", new Metrics(1.0915, 0.3327, 1.4251, 5.2438, DATA.get("Gurmukhi MN-0-3").glyphWidths()));
         DATA.put("Malayalam MN-0-6", new Metrics(1.0915, 0.3327, 1.4251, 5.4955, DATA.get("Gurmukhi MN-0-6").glyphWidths()));
         DATA.put("Malayalam Sangam MN-0-3", new Metrics(0.8710, 0.4335, 1.3061, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths()));
         DATA.put("Malayalam Sangam MN-0-6", new Metrics(0.8710, 0.4335, 1.3061, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths()));
-        DATA.put("Marker Felt-0-3", new Metrics(0.9080, 0.2369, 1.1447, 5.1148, Marker_Felt_0_3()));
-        DATA.put("Marker Felt-0-6", new Metrics(0.9080, 0.2369, 1.1447, 5.1148, DATA.get("Marker Felt-0-3").glyphWidths()));
+        DATA.put("Marker Felt-0-3", new Metrics(0.9080, 0.2369, 1.1447, 5.1148, Marker_Felt_0_3(), Marker_Felt_0_3_kerning()));
+        DATA.put("Marker Felt-0-6", new Metrics(0.9080, 0.2369, 1.1447, 5.1148, DATA.get("Marker Felt-0-3").glyphWidths(), DATA.get("Marker Felt-0-3").kerning()));
         DATA.put("Menlo-0-3", new Metrics(0.9282, 0.2358, 1.1619, 6.0205, null));
         DATA.put("Menlo-1-3", new Metrics(0.9282, 0.2358, 1.1619, 6.0205, null));
         DATA.put("Menlo-0-6", new Metrics(0.9282, 0.2358, 1.1619, 6.0205, null));
         DATA.put("Menlo-1-6", new Metrics(0.9282, 0.2358, 1.1619, 6.0205, null));
+        DATA.put("MesloLGS NF-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6071, MesloLGS_NF_0_3(), MesloLGS_NF_0_3_kerning()));
+        DATA.put("MesloLGS NF-1-3", new Metrics(0.9667, 0.2109, 1.1746, 5.5987, MesloLGS_NF_1_3(), MesloLGS_NF_1_3_kerning()));
+        DATA.put("MesloLGS NF-0-6", new Metrics(0.9667, 0.2109, 1.1746, 6.0101, MesloLGS_NF_0_6(), MesloLGS_NF_0_6_kerning()));
+        DATA.put("MesloLGS NF-1-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9919, MesloLGS_NF_1_6(), MesloLGS_NF_1_6_kerning()));
         DATA.put("Microsoft Sans Serif-0-3", new Metrics(0.9218, 0.2099, 1.1317, 5.2696, Microsoft_Sans_Serif_0_3()));
-        DATA.put("Mishafi-0-3", new Metrics(0.7846, 0.6621, 1.4434, 4.6186, Mishafi_0_3()));
-        DATA.put("Mishafi Gold-0-3", new Metrics(0.7846, 0.6621, 1.4434, 4.6179, Mishafi_Gold_0_3()));
+        DATA.put("Mishafi-0-3", new Metrics(0.7846, 0.6621, 1.4434, 4.6186, Mishafi_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("Mishafi Gold-0-3", new Metrics(0.7846, 0.6621, 1.4434, 4.6179, Mishafi_Gold_0_3(), DATA.get("Al Nile-0-3").kerning()));
         DATA.put("Monaco-0-3", new Metrics(1.0417, 0.2917, 1.3321, 6.0009, null));
-        DATA.put("Mshtakan-0-3", new Metrics(0.9123, 0.2375, 1.1495, 5.2393, Mshtakan_0_3()));
-        DATA.put("Mshtakan-1-3", new Metrics(0.9123, 0.2375, 1.1495, 5.2393, DATA.get("Mshtakan-0-3").glyphWidths()));
-        DATA.put("Mshtakan-0-6", new Metrics(0.9123, 0.2375, 1.1495, 5.2393, DATA.get("Mshtakan-0-3").glyphWidths()));
-        DATA.put("Mshtakan-1-6", new Metrics(0.9123, 0.2375, 1.1495, 5.2393, DATA.get("Mshtakan-0-3").glyphWidths()));
-        DATA.put("Mukta Mahee-0-3", new Metrics(1.1300, 0.5319, 1.6619, 4.6466, Mukta_Mahee_0_3()));
-        DATA.put("Mukta Mahee-0-6", new Metrics(1.1300, 0.5319, 1.6619, 4.8583, Mukta_Mahee_0_6()));
-        DATA.put("Muna-0-3", new Metrics(0.7700, 0.3349, 1.1049, 5.1240, Muna_0_3()));
-        DATA.put("Muna-0-6", new Metrics(0.7700, 0.3349, 1.1049, 5.0400, Muna_0_6()));
-        DATA.put("Myanmar MN-0-3", new Metrics(0.9765, 0.4394, 1.4194, 5.2438, DATA.get("Gurmukhi MN-0-3").glyphWidths()));
-        DATA.put("Myanmar MN-0-6", new Metrics(0.9765, 0.4394, 1.4194, 5.4955, DATA.get("Gurmukhi MN-0-6").glyphWidths()));
+        DATA.put("Mshtakan-0-3", new Metrics(0.9123, 0.2375, 1.1495, 5.1272, Mshtakan_0_3(), DATA.get("Devanagari MT-0-3").kerning()));
+        DATA.put("Mshtakan-1-3", new Metrics(0.9123, 0.2375, 1.1495, 4.9925, Mshtakan_1_3(), Mshtakan_1_3_kerning()));
+        DATA.put("Mshtakan-0-6", new Metrics(0.9123, 0.2375, 1.1495, 5.3148, Mshtakan_0_6(), DATA.get("Devanagari MT-0-6").kerning()));
+        DATA.put("Mshtakan-1-6", new Metrics(0.9123, 0.2375, 1.1495, 5.1394, Mshtakan_1_6(), Mshtakan_1_6_kerning()));
+        DATA.put("Mukta Mahee-0-3", new Metrics(1.1300, 0.5319, 1.6619, 4.6466, Mukta_Mahee_0_3(), Mukta_Mahee_0_3_kerning()));
+        DATA.put("Mukta Mahee-0-6", new Metrics(1.1300, 0.5319, 1.6619, 4.8556, Mukta_Mahee_0_6(), Mukta_Mahee_0_6_kerning()));
+        DATA.put("Muna-0-3", new Metrics(0.7700, 0.3349, 1.1049, 5.1240, Muna_0_3(), DATA.get("Al Nile-0-3").kerning()));
+        DATA.put("Muna-0-6", new Metrics(0.7700, 0.3349, 1.1049, 5.2459, Muna_0_6(), DATA.get("Al Nile-0-6").kerning()));
+        DATA.put("Myanmar MN-0-3", new Metrics(0.9765, 0.4394, 1.4194, 5.2438, DATA.get("Gurmukhi MN-0-3").glyphWidths(), DATA.get("Kannada MN-0-3").kerning()));
+        DATA.put("Myanmar MN-0-6", new Metrics(0.9765, 0.4394, 1.4194, 5.4955, DATA.get("Gurmukhi MN-0-6").glyphWidths(), DATA.get("Gurmukhi MN-0-6").kerning()));
         DATA.put("Myanmar Sangam MN-0-3", new Metrics(0.8190, 0.5441, 1.3632, 5.0466, DATA.get("Bangla Sangam MN-0-3").glyphWidths()));
-        DATA.put("Myanmar Sangam MN-0-6", new Metrics(0.8190, 0.5441, 1.3632, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths()));
-        DATA.put("Nadeem-0-3", new Metrics(0.9179, 0.4531, 1.3710, 5.1303, Nadeem_0_3()));
-        DATA.put("New Peninim MT-0-3", new Metrics(0.7700, 0.2963, 1.0680, 4.9120, New_Peninim_MT_0_3()));
-        DATA.put("New Peninim MT-1-3", new Metrics(0.7700, 0.2963, 1.0680, 4.9150, New_Peninim_MT_1_3()));
-        DATA.put("New Peninim MT-0-6", new Metrics(0.7700, 0.2963, 1.0680, 4.9655, New_Peninim_MT_0_6()));
-        DATA.put("New Peninim MT-1-6", new Metrics(0.7700, 0.2963, 1.0680, 4.9679, New_Peninim_MT_1_6()));
-        DATA.put("Noteworthy-0-3", new Metrics(1.2874, 0.3275, 1.6135, 4.8819, Noteworthy_0_3()));
-        DATA.put("Noteworthy-0-6", new Metrics(1.2874, 0.3275, 1.6135, 5.5957, Noteworthy_0_6()));
-        DATA.put("Noto Nastaliq Urdu-0-3", new Metrics(1.9040, 0.5959, 2.4992, 5.3949, Noto_Nastaliq_Urdu_0_3()));
-        DATA.put("Noto Nastaliq Urdu-0-6", new Metrics(1.9040, 0.5959, 2.4992, 5.4279, Noto_Nastaliq_Urdu_0_6()));
-        DATA.put("Noto Sans Batak-0-3", new Metrics(1.0690, 0.2929, 1.3631, 5.2676, Noto_Sans_Batak_0_3()));
-        DATA.put("Noto Sans Kannada-0-3", new Metrics(0.8090, 0.5399, 1.3509, 5.4185, Noto_Sans_Kannada_0_3()));
-        DATA.put("Noto Sans Kannada-0-6", new Metrics(0.8090, 0.5399, 1.3509, 5.4886, Noto_Sans_Kannada_0_6()));
-        DATA.put("Noto Sans Myanmar-0-3", new Metrics(1.3240, 0.8600, 2.1818, 5.2547, Noto_Sans_Myanmar_0_3()));
-        DATA.put("Noto Sans Myanmar-0-6", new Metrics(1.3240, 0.8600, 2.1818, 5.2593, Noto_Sans_Myanmar_0_6()));
-        DATA.put("Noto Sans NKo-0-3", new Metrics(1.0690, 0.2929, 1.3631, 5.2676, DATA.get("Noto Sans Batak-0-3").glyphWidths()));
-        DATA.put("Noto Sans Oriya-0-3", new Metrics(0.9169, 0.4833, 1.4000, 5.4170, Noto_Sans_Oriya_0_3()));
-        DATA.put("Noto Sans Oriya-0-6", new Metrics(0.9169, 0.4833, 1.4000, 5.4784, Noto_Sans_Oriya_0_6()));
-        DATA.put("Noto Sans Tagalog-0-3", new Metrics(1.0690, 0.2929, 1.3631, 5.2676, DATA.get("Noto Sans Batak-0-3").glyphWidths()));
-        DATA.put("Noto Serif Myanmar-0-3", new Metrics(1.2389, 1.2599, 2.5007, 5.2843, Noto_Serif_Myanmar_0_3()));
-        DATA.put("Noto Serif Myanmar-0-6", new Metrics(1.2389, 1.2599, 2.5007, 5.2854, Noto_Serif_Myanmar_0_6()));
-        DATA.put("Optima-0-3", new Metrics(0.9315, 0.2805, 1.2123, 5.2107, Optima_0_3()));
-        DATA.put("Optima-1-3", new Metrics(0.9355, 0.2744, 1.2123, 5.1970, Optima_1_3()));
-        DATA.put("Optima-0-6", new Metrics(0.9335, 0.2805, 1.2125, 5.3042, Optima_0_6()));
-        DATA.put("Optima-1-6", new Metrics(0.9434, 0.2734, 1.2182, 5.2495, Optima_1_6()));
-        DATA.put("Oriya MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.2479, Oriya_MN_0_3()));
-        DATA.put("Oriya MN-0-6", new Metrics(0.9123, 0.3020, 1.2125, 5.4996, Oriya_MN_0_6()));
+        DATA.put("Myanmar Sangam MN-0-6", new Metrics(0.8190, 0.5441, 1.3632, 5.0516, DATA.get("Bangla Sangam MN-0-6").glyphWidths(), DATA.get("Bangla Sangam MN-0-6").kerning()));
+        DATA.put("Nadeem-0-3", new Metrics(0.9179, 0.4531, 1.3710, 5.1303, Nadeem_0_3(), DATA.get("Al Bayan-0-3").kerning()));
+        DATA.put("New Peninim MT-0-3", new Metrics(0.7700, 0.2963, 1.0680, 4.9120, New_Peninim_MT_0_3(), DATA.get("Arial Hebrew-0-3").kerning()));
+        DATA.put("New Peninim MT-1-3", new Metrics(0.7700, 0.2963, 1.0680, 4.9150, New_Peninim_MT_1_3(), DATA.get("Arial Hebrew-0-3").kerning()));
+        DATA.put("New Peninim MT-0-6", new Metrics(0.7700, 0.2963, 1.0680, 5.1424, New_Peninim_MT_0_6(), DATA.get("Arial Hebrew-0-6").kerning()));
+        DATA.put("New Peninim MT-1-6", new Metrics(0.7700, 0.2963, 1.0680, 5.1448, New_Peninim_MT_1_6(), DATA.get("Arial Hebrew-0-6").kerning()));
+        DATA.put("Noteworthy-0-3", new Metrics(1.2874, 0.3275, 1.6135, 4.8819, Noteworthy_0_3(), Noteworthy_0_3_kerning()));
+        DATA.put("Noteworthy-0-6", new Metrics(1.2874, 0.3275, 1.6135, 5.5957, Noteworthy_0_6(), Noteworthy_0_6_kerning()));
+        DATA.put("Noto Nastaliq Urdu-0-3", new Metrics(1.9040, 0.5959, 2.4992, 5.3949, Noto_Nastaliq_Urdu_0_3(), Noto_Nastaliq_Urdu_0_3_kerning()));
+        DATA.put("Noto Nastaliq Urdu-0-6", new Metrics(1.9040, 0.5959, 2.4992, 5.6339, Noto_Nastaliq_Urdu_0_6(), Noto_Nastaliq_Urdu_0_6_kerning()));
+        DATA.put("Noto Sans Batak-0-3", new Metrics(1.0690, 0.2929, 1.3631, 5.2676, Noto_Sans_Batak_0_3(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Noto Sans Kannada-0-3", new Metrics(0.8090, 0.5399, 1.3509, 5.4185, Noto_Sans_Kannada_0_3(), DATA.get("Arial Hebrew-0-3").kerning()));
+        DATA.put("Noto Sans Kannada-0-6", new Metrics(0.8090, 0.5399, 1.3509, 5.6534, Noto_Sans_Kannada_0_6(), DATA.get("Arial Hebrew-0-6").kerning()));
+        DATA.put("Noto Sans Myanmar-0-3", new Metrics(1.3240, 0.8600, 2.1818, 5.2547, Noto_Sans_Myanmar_0_3(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Noto Sans Myanmar-0-6", new Metrics(1.3240, 0.8600, 2.1818, 5.4964, Noto_Sans_Myanmar_0_6(), DATA.get("Kailasa-0-6").kerning()));
+        DATA.put("Noto Sans NKo-0-3", new Metrics(1.0690, 0.2929, 1.3631, 5.2676, DATA.get("Noto Sans Batak-0-3").glyphWidths(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Noto Sans Oriya-0-3", new Metrics(0.9169, 0.4833, 1.4000, 5.4170, Noto_Sans_Oriya_0_3(), DATA.get("Arial Hebrew-0-3").kerning()));
+        DATA.put("Noto Sans Oriya-0-6", new Metrics(0.9169, 0.4833, 1.4000, 5.6432, Noto_Sans_Oriya_0_6(), DATA.get("Arial Hebrew-0-6").kerning()));
+        DATA.put("Noto Sans Syriac-0-3", new Metrics(0.9259, 0.4859, 1.4135, 5.2957, Noto_Sans_Syriac_0_3(), DATA.get("Al Bayan-0-3").kerning()));
+        DATA.put("Noto Sans Syriac-0-6", new Metrics(0.9259, 0.4859, 1.4135, 5.5458, Noto_Sans_Syriac_0_6(), DATA.get("Al Bayan-0-6").kerning()));
+        DATA.put("Noto Sans Tagalog-0-3", new Metrics(1.0690, 0.2929, 1.3631, 5.2676, DATA.get("Noto Sans Batak-0-3").glyphWidths(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Noto Serif Myanmar-0-3", new Metrics(1.2389, 1.2599, 2.5007, 5.2843, Noto_Serif_Myanmar_0_3(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Noto Serif Myanmar-0-6", new Metrics(1.2389, 1.2599, 2.5007, 5.5225, Noto_Serif_Myanmar_0_6(), DATA.get("Kailasa-0-6").kerning()));
+        DATA.put("Optima-0-3", new Metrics(0.9315, 0.2805, 1.2123, 5.2107, Optima_0_3(), Optima_0_3_kerning()));
+        DATA.put("Optima-1-3", new Metrics(0.9355, 0.2744, 1.2123, 5.1970, Optima_1_3(), Optima_1_3_kerning()));
+        DATA.put("Optima-0-6", new Metrics(0.9335, 0.2805, 1.2125, 5.3042, Optima_0_6(), Optima_0_6_kerning()));
+        DATA.put("Optima-1-6", new Metrics(0.9434, 0.2734, 1.2182, 5.2495, Optima_1_6(), Optima_1_6_kerning()));
+        DATA.put("Oriya MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.2479, Oriya_MN_0_3(), DATA.get("Kannada MN-0-3").kerning()));
+        DATA.put("Oriya MN-0-6", new Metrics(0.9123, 0.3020, 1.2125, 5.4996, Oriya_MN_0_6(), DATA.get("Gurmukhi MN-0-6").kerning()));
         DATA.put("Oriya Sangam MN-0-3", new Metrics(1.0998, 0.3998, 1.5007, 5.9161, Oriya_Sangam_MN_0_3()));
-        DATA.put("Oriya Sangam MN-0-6", new Metrics(1.0998, 0.3998, 1.5007, 5.9219, Oriya_Sangam_MN_0_6()));
-        DATA.put("Palatino-0-3", new Metrics(0.8227, 0.2773, 1.0992, 5.3947, Palatino_0_3()));
-        DATA.put("Palatino-1-3", new Metrics(0.8227, 0.2773, 1.0992, 5.2127, Palatino_1_3()));
-        DATA.put("Palatino-0-6", new Metrics(0.8227, 0.2773, 1.0992, 5.5136, Palatino_0_6()));
-        DATA.put("Palatino-1-6", new Metrics(0.8227, 0.2773, 1.0992, 5.4297, Palatino_1_6()));
-        DATA.put("Papyrus-0-3", new Metrics(0.9399, 0.6030, 1.5443, 5.2860, Papyrus_0_3()));
-        DATA.put("Party LET-0-3", new Metrics(0.7700, 0.5000, 1.2688, 4.2986, Party_LET_0_3()));
-        DATA.put("Phosphate-0-3", new Metrics(0.9650, 0.2849, 1.2490, 5.0443, Phosphate_0_3()));
-        DATA.put("PingFang HK-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, PingFang_HK_0_3()));
-        DATA.put("PingFang SC-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, DATA.get("PingFang HK-0-3").glyphWidths()));
-        DATA.put("PingFang TC-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, DATA.get("PingFang HK-0-3").glyphWidths()));
-        DATA.put("Plantagenet Cherokee-0-3", new Metrics(0.7340, 0.3220, 1.0563, 5.0016, Plantagenet_Cherokee_0_3()));
+        DATA.put("Oriya Sangam MN-0-6", new Metrics(1.0998, 0.3998, 1.5007, 5.9219, Oriya_Sangam_MN_0_6(), Oriya_Sangam_MN_0_6_kerning()));
+        DATA.put("Palatino-0-3", new Metrics(0.8227, 0.2773, 1.0992, 5.3947, Palatino_0_3(), Palatino_0_3_kerning()));
+        DATA.put("Palatino-1-3", new Metrics(0.8227, 0.2773, 1.0992, 5.2127, Palatino_1_3(), Palatino_1_3_kerning()));
+        DATA.put("Palatino-0-6", new Metrics(0.8227, 0.2773, 1.0992, 5.5136, Palatino_0_6(), Palatino_0_6_kerning()));
+        DATA.put("Palatino-1-6", new Metrics(0.8227, 0.2773, 1.0992, 5.4297, Palatino_1_6(), Palatino_1_6_kerning()));
+        DATA.put("Papyrus-0-3", new Metrics(0.9399, 0.6030, 1.5443, 5.2860, Papyrus_0_3(), Papyrus_0_3_kerning()));
+        DATA.put("Party LET-0-3", new Metrics(0.9123, 0.5000, 1.4135, 4.3047, Party_LET_0_3()));
+        DATA.put("Phosphate-0-3", new Metrics(0.9650, 0.2849, 1.2490, 5.0443, Phosphate_0_3(), Phosphate_0_3_kerning()));
+        DATA.put("PingFang HK-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, PingFang_HK_0_3(), PingFang_HK_0_3_kerning()));
+        DATA.put("PingFang MO-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, DATA.get("PingFang HK-0-3").glyphWidths(), DATA.get("PingFang HK-0-3").kerning()));
+        DATA.put("PingFang SC-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, DATA.get("PingFang HK-0-3").glyphWidths(), DATA.get("PingFang HK-0-3").kerning()));
+        DATA.put("PingFang TC-0-3", new Metrics(1.0600, 0.3400, 1.4000, 5.4447, DATA.get("PingFang HK-0-3").glyphWidths(), DATA.get("PingFang HK-0-3").kerning()));
+        DATA.put("Plantagenet Cherokee-0-3", new Metrics(0.7340, 0.3220, 1.0563, 5.0016, Plantagenet_Cherokee_0_3(), Plantagenet_Cherokee_0_3_kerning()));
         DATA.put("PT Mono-0-3", new Metrics(0.8849, 0.2350, 1.1205, 6.0000, null));
         DATA.put("PT Mono-0-6", new Metrics(0.8849, 0.2350, 1.1205, 6.0000, null));
-        DATA.put("PT Sans-0-3", new Metrics(0.9594, 0.3355, 1.2951, 4.9128, PT_Sans_0_3()));
-        DATA.put("PT Sans-1-3", new Metrics(0.9594, 0.3355, 1.2951, 4.6805, PT_Sans_1_3()));
-        DATA.put("PT Sans-0-6", new Metrics(0.9594, 0.3355, 1.2951, 5.0346, PT_Sans_0_6()));
-        DATA.put("PT Sans-1-6", new Metrics(0.9594, 0.3355, 1.2951, 4.8253, PT_Sans_1_6()));
-        DATA.put("PT Sans Caption-0-3", new Metrics(0.9594, 0.3355, 1.2951, 5.4872, PT_Sans_Caption_0_3()));
-        DATA.put("PT Sans Caption-0-6", new Metrics(0.9594, 0.3355, 1.2951, 5.5266, PT_Sans_Caption_0_6()));
-        DATA.put("PT Sans Narrow-0-3", new Metrics(0.9594, 0.3355, 1.2951, 3.9901, PT_Sans_Narrow_0_3()));
-        DATA.put("PT Sans Narrow-0-6", new Metrics(0.9594, 0.3355, 1.2951, 4.2101, PT_Sans_Narrow_0_6()));
-        DATA.put("PT Serif-0-3", new Metrics(1.0180, 0.2760, 1.2951, 5.2189, PT_Serif_0_3()));
-        DATA.put("PT Serif-1-3", new Metrics(1.0180, 0.2760, 1.2951, 5.0748, PT_Serif_1_3()));
-        DATA.put("PT Serif-0-6", new Metrics(1.0180, 0.2760, 1.2951, 5.5243, PT_Serif_0_6()));
-        DATA.put("PT Serif-1-6", new Metrics(1.0180, 0.2760, 1.2951, 5.3958, PT_Serif_1_6()));
-        DATA.put("PT Serif Caption-0-3", new Metrics(1.0180, 0.2760, 1.2951, 5.8558, PT_Serif_Caption_0_3()));
-        DATA.put("PT Serif Caption-1-3", new Metrics(1.0180, 0.2760, 1.2951, 5.6834, PT_Serif_Caption_1_3()));
-        DATA.put("Raanana-0-3", new Metrics(0.7700, 0.2841, 1.0563, 4.9996, Raanana_0_3()));
-        DATA.put("Raanana-0-6", new Metrics(0.7700, 0.2841, 1.0563, 5.1127, Raanana_0_6()));
-        DATA.put("Rockwell-0-3", new Metrics(0.7792, 0.4208, 1.1998, 5.9205, Rockwell_0_3()));
-        DATA.put("Rockwell-1-3", new Metrics(0.7792, 0.4208, 1.1998, 5.6943, Rockwell_1_3()));
-        DATA.put("Rockwell-0-6", new Metrics(0.7792, 0.4208, 1.1998, 6.3639, Rockwell_0_6()));
-        DATA.put("Rockwell-1-6", new Metrics(0.7792, 0.4208, 1.1998, 6.1703, Rockwell_1_6()));
-        DATA.put("Sana-0-3", new Metrics(0.7700, 0.2539, 1.0265, 5.0122, Sana_0_3()));
+        DATA.put("PT Sans-0-3", new Metrics(0.9594, 0.3355, 1.2951, 4.9128, PT_Sans_0_3(), PT_Sans_0_3_kerning()));
+        DATA.put("PT Sans-1-3", new Metrics(0.9594, 0.3355, 1.2951, 4.6805, PT_Sans_1_3(), PT_Sans_1_3_kerning()));
+        DATA.put("PT Sans-0-6", new Metrics(0.9594, 0.3355, 1.2951, 5.0346, PT_Sans_0_6(), PT_Sans_0_6_kerning()));
+        DATA.put("PT Sans-1-6", new Metrics(0.9594, 0.3355, 1.2951, 4.8253, PT_Sans_1_6(), PT_Sans_1_6_kerning()));
+        DATA.put("PT Sans Caption-0-3", new Metrics(0.9594, 0.3355, 1.2951, 5.4872, PT_Sans_Caption_0_3(), PT_Sans_Caption_0_3_kerning()));
+        DATA.put("PT Sans Caption-0-6", new Metrics(0.9594, 0.3355, 1.2951, 5.5266, PT_Sans_Caption_0_6(), PT_Sans_Caption_0_6_kerning()));
+        DATA.put("PT Sans Narrow-0-3", new Metrics(0.9594, 0.3355, 1.2951, 3.9901, PT_Sans_Narrow_0_3(), PT_Sans_Narrow_0_3_kerning()));
+        DATA.put("PT Sans Narrow-0-6", new Metrics(0.9594, 0.3355, 1.2951, 4.2101, PT_Sans_Narrow_0_6(), PT_Sans_Narrow_0_6_kerning()));
+        DATA.put("PT Serif-0-3", new Metrics(1.0180, 0.2760, 1.2951, 5.2189, PT_Serif_0_3(), PT_Serif_0_3_kerning()));
+        DATA.put("PT Serif-1-3", new Metrics(1.0180, 0.2760, 1.2951, 5.0748, PT_Serif_1_3(), PT_Serif_1_3_kerning()));
+        DATA.put("PT Serif-0-6", new Metrics(1.0180, 0.2760, 1.2951, 5.5243, PT_Serif_0_6(), PT_Serif_0_6_kerning()));
+        DATA.put("PT Serif-1-6", new Metrics(1.0180, 0.2760, 1.2951, 5.3958, PT_Serif_1_6(), PT_Serif_1_6_kerning()));
+        DATA.put("PT Serif Caption-0-3", new Metrics(1.0180, 0.2760, 1.2951, 5.8558, PT_Serif_Caption_0_3(), PT_Serif_Caption_0_3_kerning()));
+        DATA.put("PT Serif Caption-1-3", new Metrics(1.0180, 0.2760, 1.2951, 5.6834, PT_Serif_Caption_1_3(), PT_Serif_Caption_1_3_kerning()));
+        DATA.put("Raanana-0-3", new Metrics(0.9123, 0.2841, 1.1940, 4.8788, Raanana_0_3(), DATA.get("Devanagari MT-0-3").kerning()));
+        DATA.put("Raanana-0-6", new Metrics(0.9123, 0.2841, 1.1940, 5.1958, Raanana_0_6(), DATA.get("Devanagari MT-0-6").kerning()));
+        DATA.put("Rockwell-0-3", new Metrics(0.7792, 0.4208, 1.1998, 5.9205, Rockwell_0_3(), Rockwell_0_3_kerning()));
+        DATA.put("Rockwell-1-3", new Metrics(0.7792, 0.4208, 1.1998, 5.6943, Rockwell_1_3(), Rockwell_1_3_kerning()));
+        DATA.put("Rockwell-0-6", new Metrics(0.7792, 0.4208, 1.1998, 6.3639, Rockwell_0_6(), Rockwell_0_6_kerning()));
+        DATA.put("Rockwell-1-6", new Metrics(0.7792, 0.4208, 1.1998, 6.1703, Rockwell_1_6(), Rockwell_1_6_kerning()));
+        DATA.put("Sana-0-3", new Metrics(0.7700, 0.2539, 1.0265, 5.0122, Sana_0_3(), DATA.get("Al Nile-0-3").kerning()));
         DATA.put("Sathu-0-3", new Metrics(0.9034, 0.3171, 1.2196, 5.7285, Sathu_0_3()));
-        DATA.put("Savoye LET-0-3", new Metrics(0.7700, 0.5000, 1.2688, 3.6629, Savoye_LET_0_3()));
+        DATA.put("Savoye LET-0-3", new Metrics(0.9123, 0.5000, 1.4135, 3.6937, Savoye_LET_0_3()));
         DATA.put("Shree Devanagari 714-0-3", new Metrics(0.9906, 0.4937, 1.4871, 5.3714, Shree_Devanagari_714_0_3()));
         DATA.put("Shree Devanagari 714-1-3", new Metrics(0.9906, 0.4937, 1.4871, 5.3714, DATA.get("Shree Devanagari 714-0-3").glyphWidths()));
         DATA.put("Shree Devanagari 714-0-6", new Metrics(0.9906, 0.4937, 1.4871, 5.4011, Shree_Devanagari_714_0_6()));
         DATA.put("Shree Devanagari 714-1-6", new Metrics(0.9906, 0.4937, 1.4871, 5.4011, DATA.get("Shree Devanagari 714-0-6").glyphWidths()));
-        DATA.put("SignPainter-0-3", new Metrics(0.7700, 0.2340, 1.0057, 3.7110, SignPainter_0_3()));
+        DATA.put("SignPainter-0-3", new Metrics(1.1176, 0.4648, 1.5820, 3.7080, SignPainter_0_3(), SignPainter_0_3_kerning()));
         DATA.put("Silom-0-6", new Metrics(0.9589, 0.3159, 1.2746, 6.1327, Silom_0_6()));
-        DATA.put("Sinhala MN-0-3", new Metrics(0.8911, 0.2807, 1.1754, 5.2444, Sinhala_MN_0_3()));
-        DATA.put("Sinhala MN-0-6", new Metrics(0.8911, 0.2807, 1.1754, 5.4950, Sinhala_MN_0_6()));
-        DATA.put("Sinhala Sangam MN-0-3", new Metrics(1.0895, 0.3786, 1.4666, 5.0470, Sinhala_Sangam_MN_0_3()));
-        DATA.put("Sinhala Sangam MN-0-6", new Metrics(1.0895, 0.3786, 1.4666, 5.0515, Sinhala_Sangam_MN_0_6()));
-        DATA.put("Skia-0-3", new Metrics(0.7768, 0.2231, 1.0000, 5.3920, Skia_0_3()));
-        DATA.put("Skia-0-6", new Metrics(0.7768, 0.2231, 1.0000, 5.6757, Skia_0_6()));
-        DATA.put("Snell Roundhand-0-3", new Metrics(0.9369, 0.3240, 1.2619, 5.1745, Snell_Roundhand_0_3()));
-        DATA.put("Snell Roundhand-0-6", new Metrics(0.9369, 0.3240, 1.2619, 5.4669, Snell_Roundhand_0_6()));
-        DATA.put("Songti SC-0-3", new Metrics(1.0599, 0.3399, 1.4000, 5.1172, Songti_SC_0_3()));
-        DATA.put("Songti SC-0-6", new Metrics(1.0599, 0.3399, 1.4000, 5.1435, Songti_SC_0_6()));
-        DATA.put("Songti TC-0-3", new Metrics(1.0599, 0.3399, 1.4000, 5.1172, DATA.get("Songti SC-0-3").glyphWidths()));
-        DATA.put("Songti TC-0-6", new Metrics(1.0599, 0.3399, 1.4000, 5.1435, DATA.get("Songti SC-0-6").glyphWidths()));
-        DATA.put("STIX Two Math-0-3", new Metrics(0.8870, 0.3630, 1.2490, 5.1691, STIX_Two_Math_0_3()));
-        DATA.put("STIX Two Text-0-3", new Metrics(0.8869, 0.3630, 1.2490, 5.1450, STIX_Two_Text_0_3()));
-        DATA.put("STIX Two Text-1-3", new Metrics(0.8869, 0.3630, 1.2490, 5.0297, STIX_Two_Text_1_3()));
-        DATA.put("STIX Two Text-0-6", new Metrics(0.8869, 0.3630, 1.2490, 5.5279, STIX_Two_Text_0_6()));
-        DATA.put("STIX Two Text-1-6", new Metrics(0.8869, 0.3630, 1.2490, 5.4263, STIX_Two_Text_1_6()));
-        DATA.put("STSong-0-3", new Metrics(0.8600, 0.1399, 1.0000, 5.1230, STSong_0_3()));
-        DATA.put("Sukhumvit Set-0-3", new Metrics(1.1079, 0.4789, 1.5863, 4.9591, Sukhumvit_Set_0_3()));
-        DATA.put("Sukhumvit Set-0-6", new Metrics(1.1079, 0.4789, 1.5863, 5.1518, Sukhumvit_Set_0_6()));
-        DATA.put("Symbol-0-3", new Metrics(0.7700, 0.2988, 1.0701, 5.2108, Symbol_0_3()));
-        DATA.put("Tahoma-0-3", new Metrics(1.0004, 0.2065, 1.2066, 5.3526, Tahoma_0_3()));
+        DATA.put("Sinhala MN-0-3", new Metrics(0.8911, 0.2807, 1.1754, 5.2444, Sinhala_MN_0_3(), Sinhala_MN_0_3_kerning()));
+        DATA.put("Sinhala MN-0-6", new Metrics(0.8911, 0.2807, 1.1754, 5.4950, Sinhala_MN_0_6(), Sinhala_MN_0_6_kerning()));
+        DATA.put("Sinhala Sangam MN-0-3", new Metrics(1.0895, 0.3786, 1.4666, 5.0470, Sinhala_Sangam_MN_0_3(), Sinhala_Sangam_MN_0_3_kerning()));
+        DATA.put("Sinhala Sangam MN-0-6", new Metrics(1.0895, 0.3786, 1.4666, 5.0515, Sinhala_Sangam_MN_0_6(), DATA.get("Bangla Sangam MN-0-6").kerning()));
+        DATA.put("Skia-0-3", new Metrics(0.7768, 0.2231, 1.0000, 6.0488, Skia_0_3(), Skia_0_3_kerning()));
+        DATA.put("Skia-0-6", new Metrics(0.7768, 0.2231, 1.0000, 6.0488, DATA.get("Skia-0-3").glyphWidths(), DATA.get("Skia-0-3").kerning()));
+        DATA.put("Snell Roundhand-0-3", new Metrics(0.9369, 0.3240, 1.2619, 5.1745, Snell_Roundhand_0_3(), Snell_Roundhand_0_3_kerning()));
+        DATA.put("Snell Roundhand-0-6", new Metrics(0.9369, 0.3240, 1.2619, 5.4669, Snell_Roundhand_0_6(), Snell_Roundhand_0_6_kerning()));
+        DATA.put("Songti SC-0-3", new Metrics(1.0599, 0.3399, 1.4000, 5.1172, Songti_SC_0_3(), Songti_SC_0_3_kerning()));
+        DATA.put("Songti SC-0-6", new Metrics(1.0599, 0.3399, 1.4000, 5.1435, Songti_SC_0_6(), Songti_SC_0_6_kerning()));
+        DATA.put("Songti TC-0-3", new Metrics(1.0599, 0.3399, 1.4000, 5.1172, DATA.get("Songti SC-0-3").glyphWidths(), DATA.get("Songti SC-0-3").kerning()));
+        DATA.put("Songti TC-0-6", new Metrics(1.0599, 0.3399, 1.4000, 5.1435, DATA.get("Songti SC-0-6").glyphWidths(), DATA.get("Songti SC-0-6").kerning()));
+        DATA.put("STIX Two Math-0-3", new Metrics(0.8870, 0.3630, 1.2490, 5.1691, STIX_Two_Math_0_3(), STIX_Two_Math_0_3_kerning()));
+        DATA.put("STIX Two Text-0-3", new Metrics(0.8869, 0.3630, 1.2490, 5.1450, STIX_Two_Text_0_3(), STIX_Two_Text_0_3_kerning()));
+        DATA.put("STIX Two Text-1-3", new Metrics(0.8869, 0.3630, 1.2490, 5.0297, STIX_Two_Text_1_3(), STIX_Two_Text_1_3_kerning()));
+        DATA.put("STIX Two Text-0-6", new Metrics(0.8869, 0.3630, 1.2490, 5.5279, STIX_Two_Text_0_6(), STIX_Two_Text_0_6_kerning()));
+        DATA.put("STIX Two Text-1-6", new Metrics(0.8869, 0.3630, 1.2490, 5.4263, STIX_Two_Text_1_6(), STIX_Two_Text_1_6_kerning()));
+        DATA.put("STSong-0-3", new Metrics(0.8600, 0.1399, 1.0000, 5.1230, STSong_0_3(), STSong_0_3_kerning()));
+        DATA.put("Sukhumvit Set-0-3", new Metrics(1.1079, 0.4789, 1.5863, 4.9591, Sukhumvit_Set_0_3(), Sukhumvit_Set_0_3_kerning()));
+        DATA.put("Sukhumvit Set-0-6", new Metrics(1.1079, 0.4789, 1.5863, 5.1518, Sukhumvit_Set_0_6(), Sukhumvit_Set_0_6_kerning()));
+        DATA.put("Symbol-0-3", new Metrics(0.7700, 0.2988, 1.0701, 5.2108, Symbol_0_3(), Symbol_0_3_kerning()));
+        DATA.put("Tahoma-0-3", new Metrics(1.0004, 0.2065, 1.2066, 5.3526, Tahoma_0_3(), Tahoma_0_3_kerning()));
         DATA.put("Tahoma-0-6", new Metrics(1.0004, 0.2065, 1.2066, 6.2009, Tahoma_0_6()));
         DATA.put("Tamil MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.2438, DATA.get("Gurmukhi MN-0-3").glyphWidths()));
         DATA.put("Tamil MN-0-6", new Metrics(0.9123, 0.3024, 1.2125, 5.4955, DATA.get("Gurmukhi MN-0-6").glyphWidths()));
-        DATA.put("Tamil Sangam MN-0-3", new Metrics(0.7055, 0.2988, 1.0057, 5.1797, DATA.get("Grantha Sangam MN-0-3").glyphWidths()));
-        DATA.put("Tamil Sangam MN-0-6", new Metrics(0.7055, 0.2988, 1.0057, 5.2291, DATA.get("Grantha Sangam MN-0-6").glyphWidths()));
-        DATA.put("Telugu MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.1574, Telugu_MN_0_3()));
-        DATA.put("Telugu MN-0-6", new Metrics(0.9123, 0.3020, 1.2125, 5.4076, Telugu_MN_0_6()));
+        DATA.put("Tamil Sangam MN-0-3", new Metrics(0.7055, 0.2988, 1.0057, 5.1797, DATA.get("Grantha Sangam MN-0-3").glyphWidths(), DATA.get("Grantha Sangam MN-0-3").kerning()));
+        DATA.put("Tamil Sangam MN-0-6", new Metrics(0.7055, 0.2988, 1.0057, 5.2291, DATA.get("Grantha Sangam MN-0-6").glyphWidths(), DATA.get("Grantha Sangam MN-0-6").kerning()));
+        DATA.put("Telugu MN-0-3", new Metrics(0.9123, 0.3020, 1.2125, 5.1574, Telugu_MN_0_3(), DATA.get("Kannada MN-0-3").kerning()));
+        DATA.put("Telugu MN-0-6", new Metrics(0.9123, 0.3020, 1.2125, 5.4076, Telugu_MN_0_6(), DATA.get("Gurmukhi MN-0-6").kerning()));
         DATA.put("Telugu Sangam MN-0-3", new Metrics(0.9936, 0.6268, 1.6198, 5.4397, Telugu_Sangam_MN_0_3()));
-        DATA.put("Telugu Sangam MN-0-6", new Metrics(0.9936, 0.6268, 1.6198, 5.4450, Telugu_Sangam_MN_0_6()));
-        DATA.put("Thonburi-0-3", new Metrics(1.1150, 0.2615, 1.3744, 5.7437, Thonburi_0_3()));
-        DATA.put("Thonburi-0-6", new Metrics(1.1150, 0.2615, 1.3744, 5.7831, Thonburi_0_6()));
-        DATA.put("Times New Roman-0-3", new Metrics(0.9123, 0.2375, 1.1495, 5.1008, Times_New_Roman_0_3()));
-        DATA.put("Times New Roman-1-3", new Metrics(0.9123, 0.2375, 1.1495, 5.0329, Times_New_Roman_1_3()));
-        DATA.put("Times New Roman-0-6", new Metrics(0.9123, 0.2375, 1.1495, 5.3521, Times_New_Roman_0_6()));
-        DATA.put("Times New Roman-1-6", new Metrics(0.9123, 0.2375, 1.1495, 5.1434, Times_New_Roman_1_6()));
-        DATA.put("Trattatello-0-3", new Metrics(1.1499, 0.6620, 1.8136, 4.6159, Trattatello_0_3()));
-        DATA.put("Trebuchet MS-0-3", new Metrics(0.9389, 0.2221, 1.1618, 5.0705, Trebuchet_MS_0_3()));
-        DATA.put("Trebuchet MS-1-3", new Metrics(0.9389, 0.2221, 1.1618, 5.0832, Trebuchet_MS_1_3()));
-        DATA.put("Trebuchet MS-0-6", new Metrics(0.9389, 0.2221, 1.1618, 5.4070, Trebuchet_MS_0_6()));
-        DATA.put("Trebuchet MS-1-6", new Metrics(0.9389, 0.2221, 1.1618, 5.5287, Trebuchet_MS_1_6()));
-        DATA.put("Verdana-0-3", new Metrics(1.0053, 0.2099, 1.2125, 6.1521, Verdana_0_3()));
+        DATA.put("Telugu Sangam MN-0-6", new Metrics(0.9936, 0.6268, 1.6198, 5.4450, Telugu_Sangam_MN_0_6(), Telugu_Sangam_MN_0_6_kerning()));
+        DATA.put("Thonburi-0-3", new Metrics(1.1150, 0.2615, 1.3744, 5.7437, Thonburi_0_3(), Thonburi_0_3_kerning()));
+        DATA.put("Thonburi-0-6", new Metrics(1.1150, 0.2615, 1.3744, 5.7831, Thonburi_0_6(), Thonburi_0_6_kerning()));
+        DATA.put("Times New Roman-0-3", new Metrics(0.9123, 0.2375, 1.1495, 5.1008, Times_New_Roman_0_3(), Times_New_Roman_0_3_kerning()));
+        DATA.put("Times New Roman-1-3", new Metrics(0.9123, 0.2375, 1.1495, 5.0329, Times_New_Roman_1_3(), Times_New_Roman_1_3_kerning()));
+        DATA.put("Times New Roman-0-6", new Metrics(0.9123, 0.2375, 1.1495, 5.3521, Times_New_Roman_0_6(), Times_New_Roman_0_6_kerning()));
+        DATA.put("Times New Roman-1-6", new Metrics(0.9123, 0.2375, 1.1495, 5.1434, Times_New_Roman_1_6(), Times_New_Roman_1_6_kerning()));
+        DATA.put("Trattatello-0-3", new Metrics(1.1499, 0.6620, 1.8136, 4.6159, Trattatello_0_3(), Trattatello_0_3_kerning()));
+        DATA.put("Trebuchet MS-0-3", new Metrics(0.9389, 0.2221, 1.1618, 5.0705, Trebuchet_MS_0_3(), Trebuchet_MS_0_3_kerning()));
+        DATA.put("Trebuchet MS-1-3", new Metrics(0.9389, 0.2221, 1.1618, 5.0832, Trebuchet_MS_1_3(), Trebuchet_MS_1_3_kerning()));
+        DATA.put("Trebuchet MS-0-6", new Metrics(0.9389, 0.2221, 1.1618, 5.4070, Trebuchet_MS_0_6(), Trebuchet_MS_0_6_kerning()));
+        DATA.put("Trebuchet MS-1-6", new Metrics(0.9389, 0.2221, 1.1618, 5.5287, Trebuchet_MS_1_6(), Trebuchet_MS_1_6_kerning()));
+        DATA.put("Verdana-0-3", new Metrics(1.0053, 0.2099, 1.2125, 6.1521, Verdana_0_3(), Verdana_0_3_kerning()));
         DATA.put("Verdana-1-3", new Metrics(1.0053, 0.2099, 1.2125, 6.1507, Verdana_1_3()));
         DATA.put("Verdana-0-6", new Metrics(1.0053, 0.2099, 1.2125, 6.8819, Verdana_0_6()));
         DATA.put("Verdana-1-6", new Metrics(1.0053, 0.2099, 1.2125, 6.8817, Verdana_1_6()));
-        DATA.put("Waseem-0-3", new Metrics(0.8920, 0.5522, 1.4434, 4.9135, Waseem_0_3()));
+        DATA.put("Waseem-0-3", new Metrics(0.8920, 0.5522, 1.4434, 4.9135, Waseem_0_3(), Waseem_0_3_kerning()));
         DATA.put("Webdings-0-3", new Metrics(0.7998, 0.2001, 1.0000, 9.8024, Webdings_0_3()));
         DATA.put("Wingdings-0-3", new Metrics(0.8989, 0.2109, 1.1126, 9.0870, Wingdings_0_3()));
         DATA.put("Wingdings 2-0-3", new Metrics(0.8432, 0.2109, 1.0563, 8.5124, Wingdings_2_0_3()));
         DATA.put("Wingdings 3-0-3", new Metrics(0.9277, 0.2109, 1.1375, 8.0114, Wingdings_3_0_3()));
-        DATA.put("Zapf Dingbats-0-3", new Metrics(0.8139, 0.2299, 1.0461, 5.2815, Zapf_Dingbats_0_3()));
-        DATA.put("Zapfino-0-3", new Metrics(1.8750, 1.5025, 3.3744, 9.0273, Zapfino_0_3()));
-        DATA.put(".AppleSystemUIFont-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6071, _AppleSystemUIFont_0_3()));
-        DATA.put("Inter-0-3", new Metrics(0.9687, 0.2412, 1.2123, 5.5272, Inter_0_3()));
-        DATA.put("Inter-0-6", new Metrics(0.9687, 0.2412, 1.2123, 5.8006, Inter_0_6()));
-        DATA.put("Inter-1-3", new Metrics(0.9687, 0.2412, 1.2123, 5.5272, DATA.get("Inter-0-3").glyphWidths()));
-        DATA.put("Inter-1-6", new Metrics(0.9687, 0.2412, 1.2123, 5.8006, DATA.get("Inter-0-6").glyphWidths()));
-        DATA.put("Inter-0-2", new Metrics(0.9687, 0.2412, 1.2123, 5.4134, Inter_0_2()));
-        DATA.put("Inter-1-2", new Metrics(0.9687, 0.2412, 1.2123, 5.4134, DATA.get("Inter-0-2").glyphWidths()));
-        DATA.put("Inter-0-4", new Metrics(0.9687, 0.2412, 1.2123, 5.6183, Inter_0_4()));
-        DATA.put("Inter-1-4", new Metrics(0.9687, 0.2412, 1.2123, 5.6183, DATA.get("Inter-0-4").glyphWidths()));
-        DATA.put("Inter-0-5", new Metrics(0.9687, 0.2412, 1.2123, 5.7092, Inter_0_5()));
-        DATA.put("Inter-1-5", new Metrics(0.9687, 0.2412, 1.2123, 5.7092, DATA.get("Inter-0-5").glyphWidths()));
-        DATA.put("System-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6071, DATA.get(".AppleSystemUIFont-0-3").glyphWidths()));
-        DATA.put("System-0-6", new Metrics(0.9667, 0.2109, 1.1746, 6.0101, System_0_6()));
-        DATA.put("System-1-3", new Metrics(0.9667, 0.2109, 1.1746, 5.5987, System_1_3()));
-        DATA.put("System-1-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9919, System_1_6()));
-        DATA.put("System-0-2", new Metrics(0.9667, 0.2109, 1.1746, 5.5165, System_0_2()));
-        DATA.put("System-1-2", new Metrics(0.9667, 0.2109, 1.1746, 5.5174, System_1_2()));
-        DATA.put("System-0-4", new Metrics(0.9667, 0.2109, 1.1746, 5.7549, System_0_4()));
-        DATA.put("System-1-4", new Metrics(0.9667, 0.2109, 1.1746, 5.7402, System_1_4()));
-        DATA.put("System-0-5", new Metrics(0.9667, 0.2109, 1.1746, 5.8623, System_0_5()));
-        DATA.put("System-1-5", new Metrics(0.9667, 0.2109, 1.1746, 5.8488, System_1_5()));
+        DATA.put("Zapf Dingbats-0-3", new Metrics(0.8139, 0.2299, 1.0461, 5.2815, Zapf_Dingbats_0_3(), DATA.get("Apple Braille-0-3").kerning()));
+        DATA.put("Zapfino-0-3", new Metrics(1.8750, 1.5025, 3.3744, 9.0273, Zapfino_0_3(), Zapfino_0_3_kerning()));
+        DATA.put(".AppleSystemUIFont-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6071, DATA.get("MesloLGS NF-0-3").glyphWidths(), DATA.get("MesloLGS NF-0-3").kerning()));
+        DATA.put("Inter-0-3", new Metrics(0.9687, 0.2412, 1.2123, 5.5272, Inter_0_3(), Inter_0_3_kerning()));
+        DATA.put("Inter-0-6", new Metrics(0.9687, 0.2412, 1.2123, 5.8006, Inter_0_6(), Inter_0_6_kerning()));
+        DATA.put("Inter-1-3", new Metrics(0.9687, 0.2412, 1.2123, 5.5272, DATA.get("Inter-0-3").glyphWidths(), DATA.get("Inter-0-3").kerning()));
+        DATA.put("Inter-1-6", new Metrics(0.9687, 0.2412, 1.2123, 5.8006, DATA.get("Inter-0-6").glyphWidths(), DATA.get("Inter-0-6").kerning()));
+        DATA.put("Inter-0-2", new Metrics(0.9687, 0.2412, 1.2123, 5.4134, Inter_0_2(), Inter_0_2_kerning()));
+        DATA.put("Inter-1-2", new Metrics(0.9687, 0.2412, 1.2123, 5.4134, DATA.get("Inter-0-2").glyphWidths(), DATA.get("Inter-0-2").kerning()));
+        DATA.put("Inter-0-4", new Metrics(0.9687, 0.2412, 1.2123, 5.6183, Inter_0_4(), Inter_0_4_kerning()));
+        DATA.put("Inter-1-4", new Metrics(0.9687, 0.2412, 1.2123, 5.6183, DATA.get("Inter-0-4").glyphWidths(), DATA.get("Inter-0-4").kerning()));
+        DATA.put("Inter-0-5", new Metrics(0.9687, 0.2412, 1.2123, 5.7092, Inter_0_5(), Inter_0_5_kerning()));
+        DATA.put("Inter-1-5", new Metrics(0.9687, 0.2412, 1.2123, 5.7092, DATA.get("Inter-0-5").glyphWidths(), DATA.get("Inter-0-5").kerning()));
+        DATA.put("System-0-3", new Metrics(0.9667, 0.2109, 1.1746, 5.6071, DATA.get("MesloLGS NF-0-3").glyphWidths(), DATA.get("MesloLGS NF-0-3").kerning()));
+        DATA.put("System-0-6", new Metrics(0.9667, 0.2109, 1.1746, 6.0101, DATA.get("MesloLGS NF-0-6").glyphWidths(), DATA.get("MesloLGS NF-0-6").kerning()));
+        DATA.put("System-1-3", new Metrics(0.9667, 0.2109, 1.1746, 5.5987, DATA.get("MesloLGS NF-1-3").glyphWidths(), DATA.get("MesloLGS NF-1-3").kerning()));
+        DATA.put("System-1-6", new Metrics(0.9667, 0.2109, 1.1746, 5.9919, DATA.get("MesloLGS NF-1-6").glyphWidths(), DATA.get("MesloLGS NF-1-6").kerning()));
+        DATA.put("System-0-2", new Metrics(0.9667, 0.2109, 1.1746, 5.5350, System_0_2(), System_0_2_kerning()));
+        DATA.put("System-1-2", new Metrics(0.9667, 0.2109, 1.1746, 5.5329, System_1_2(), System_1_2_kerning()));
+        DATA.put("System-0-4", new Metrics(0.9667, 0.2109, 1.1746, 5.7415, System_0_4(), System_0_4_kerning()));
+        DATA.put("System-1-4", new Metrics(0.9667, 0.2109, 1.1746, 5.7298, System_1_4(), System_1_4_kerning()));
+        DATA.put("System-0-5", new Metrics(0.9667, 0.2109, 1.1746, 5.8758, System_0_5(), System_0_5_kerning()));
+        DATA.put("System-1-5", new Metrics(0.9667, 0.2109, 1.1746, 5.8608, System_1_5(), System_1_5_kerning()));
     }
     private static double[] Academy_Engraved_LET_0_3() {
         return new double[] {
             3.3105,
             2.6806,
             3.2128,
-            5.5615,
+            5.0000,
             5.1416,
             7.5878,
             7.3095,
@@ -387,7 +394,7 @@ public final class GenFontMetrics {
             2.9687,
             2.9687,
             3.5644,
-            5.8398,
+            5.6396,
             2.1337,
             3.1103,
             2.2265,
@@ -404,11 +411,11 @@ public final class GenFontMetrics {
             5.4687,
             2.4121,
             2.3046,
-            5.8398,
-            5.8398,
-            5.8398,
+            5.6396,
+            5.6396,
+            5.6396,
             4.7509,
-            10.1513,
+            9.2089,
             7.5341,
             6.4501,
             7.2119,
@@ -467,10 +474,10 @@ public final class GenFontMetrics {
             4.6484,
             4.0966,
             4.0039,
-            3.3398,
-            2.5976,
-            3.3398,
-            5.8398
+            4.7998,
+            2.0019,
+            4.7998,
+            5.4101
         };
     }
     private static double[] Al_Bayan_0_3() {
@@ -601,14 +608,14 @@ public final class GenFontMetrics {
             5.5615,
             5.5615,
             3.6000,
-            2.7783,
+            3.3300,
             4.0000,
             4.6300,
             4.0000,
-            5.5615,
-            10.1513,
-            6.6699,
-            6.6699,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -616,9 +623,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -640,34 +647,34 @@ public final class GenFontMetrics {
             6.3000,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
-            5.0000,
-            3.3398,
-            2.5976,
-            3.3398,
+            3.8916,
+            2.7978,
+            3.8916,
             5.8398
         };
     }
@@ -799,14 +806,14 @@ public final class GenFontMetrics {
             4.0099,
             4.2500,
             4.0599,
-            2.7783,
+            3.3300,
             3.7599,
             4.2100,
             3.7599,
-            5.5615,
-            10.1513,
-            6.6699,
-            6.6699,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -814,9 +821,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -831,41 +838,41 @@ public final class GenFontMetrics {
             6.6699,
             6.6699,
             6.1083,
+            3.3300,
             2.7783,
-            2.7783,
-            2.7783,
-            4.6923,
+            3.3300,
+            5.8398,
             6.3099,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
-            5.0000,
-            3.3398,
+            3.8916,
             2.8000,
-            3.3398,
+            3.8916,
             5.8398
         };
     }
@@ -2362,7 +2369,7 @@ public final class GenFontMetrics {
             5.5899,
             4.8600,
             7.1199,
-            6.6699,
+            7.2216,
             2.7599,
             2.7599,
             2.7599,
@@ -2388,9 +2395,9 @@ public final class GenFontMetrics {
             5.0000,
             5.0000,
             4.8600,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -2398,9 +2405,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -2418,34 +2425,34 @@ public final class GenFontMetrics {
             3.1699,
             3.2400,
             3.1699,
-            4.6923,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             3.6100,
             2.9900,
@@ -4759,14 +4766,14 @@ public final class GenFontMetrics {
             3.9013,
             3.9306,
             3.3300,
-            2.7783,
+            3.3300,
             4.1601,
             5.0000,
             4.1601,
-            5.5615,
-            10.1513,
-            6.6699,
-            6.6699,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -4774,9 +4781,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -4798,30 +4805,30 @@ public final class GenFontMetrics {
             5.0000,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             3.3300,
             2.5000,
@@ -5227,101 +5234,101 @@ public final class GenFontMetrics {
     }
     private static double[] Bodoni_72_Oldstyle_0_3() {
         return new double[] {
-            1.8600,
-            3.5599,
-            5.3300,
-            5.3300,
-            5.3300,
-            7.1499,
-            7.2899,
-            3.5599,
-            3.0500,
-            3.0500,
-            5.3300,
-            5.3300,
-            2.5899,
-            3.0500,
-            2.5899,
-            4.8899,
-            5.5700,
-            3.1799,
-            4.6999,
-            4.4900,
-            4.6999,
-            4.5800,
-            4.8899,
-            4.2100,
-            4.7299,
-            4.8899,
-            2.5899,
-            2.5899,
-            5.4199,
-            5.3300,
-            5.4199,
-            4.1300,
-            9.8999,
-            6.0200,
-            5.7100,
-            6.5299,
-            7.1600,
-            5.8200,
-            5.4299,
-            6.6499,
-            7.1199,
-            3.1399,
-            3.2799,
-            6.6600,
-            5.6399,
-            7.5500,
-            6.5599,
-            7.1999,
-            5.0399,
-            7.2200,
-            5.8800,
-            4.9799,
-            5.8600,
-            6.6600,
-            6.3300,
-            9.1199,
-            6.2500,
-            6.0700,
+            1.5099,
+            3.0399,
             5.6199,
-            3.0500,
-            4.8899,
-            3.0500,
-            5.3300,
-            5.1999,
-            5.0099,
-            3.9700,
-            4.8099,
-            4.0899,
-            4.7599,
-            4.3000,
-            2.6399,
-            4.6699,
-            4.7700,
-            2.5099,
-            2.3699,
-            4.6900,
-            2.3500,
-            7.0299,
-            4.8899,
-            4.8000,
-            4.8899,
-            4.6300,
-            3.3800,
-            3.6199,
-            2.8399,
+            5.6199,
+            5.6199,
+            7.5200,
+            7.9700,
+            3.0399,
+            3.8899,
+            3.8899,
+            5.9199,
+            5.6199,
+            3.1799,
+            2.9600,
+            2.7799,
+            5.3600,
+            5.9199,
+            3.8000,
+            5.0299,
+            4.6199,
             4.8999,
-            3.8399,
-            5.9900,
-            4.2100,
-            4.0099,
+            4.4700,
+            5.3800,
+            4.4600,
+            5.3200,
+            5.3399,
+            2.7899,
+            3.1799,
+            6.3999,
+            5.6199,
+            6.3999,
+            4.4499,
+            9.5500,
+            6.7799,
+            6.1600,
+            6.3600,
+            7.1600,
+            5.9499,
+            5.6199,
+            6.6399,
+            7.2700,
+            3.3600,
+            4.1900,
+            6.8999,
+            5.6399,
+            7.8600,
+            6.6000,
+            7.1000,
+            5.6399,
+            7.0899,
+            6.3699,
+            4.9600,
+            5.8600,
+            6.2400,
+            5.6699,
+            8.9900,
+            6.9900,
+            5.4799,
+            5.5000,
             3.9499,
-            3.0500,
-            5.1999,
-            3.0500,
-            6.8099
+            5.3600,
+            3.9499,
+            5.6199,
+            5.1000,
+            5.0000,
+            4.4499,
+            5.2200,
+            4.0700,
+            5.2299,
+            4.3999,
+            2.9400,
+            4.9700,
+            5.3600,
+            2.9100,
+            2.7899,
+            5.1699,
+            2.8200,
+            8.0099,
+            5.4299,
+            5.0800,
+            5.3399,
+            5.1600,
+            3.9900,
+            3.5399,
+            3.1600,
+            5.4299,
+            4.1199,
+            5.9499,
+            4.6100,
+            3.9299,
+            3.9100,
+            4.2299,
+            4.5899,
+            4.2299,
+            6.6499
         };
     }
     private static double[] Bodoni_72_Oldstyle_1_3() {
@@ -5421,105 +5428,6 @@ public final class GenFontMetrics {
             5.1699,
             3.7799,
             6.0399
-        };
-    }
-    private static double[] Bodoni_72_Oldstyle_0_6() {
-        return new double[] {
-            1.5099,
-            3.0399,
-            5.6199,
-            5.6199,
-            5.6199,
-            7.5200,
-            7.9700,
-            3.0399,
-            3.8899,
-            3.8899,
-            5.9199,
-            5.6199,
-            3.1799,
-            2.9600,
-            2.7799,
-            5.3600,
-            5.9199,
-            3.8000,
-            5.0299,
-            4.6199,
-            4.8999,
-            4.4700,
-            5.3800,
-            4.4600,
-            5.3200,
-            5.3399,
-            2.7899,
-            3.1799,
-            6.3999,
-            5.6199,
-            6.3999,
-            4.4499,
-            9.5500,
-            6.7799,
-            6.1600,
-            6.3600,
-            7.1600,
-            5.9499,
-            5.6199,
-            6.6399,
-            7.2700,
-            3.3600,
-            4.1900,
-            6.8999,
-            5.6399,
-            7.8600,
-            6.6000,
-            7.1000,
-            5.6399,
-            7.0899,
-            6.3699,
-            4.9600,
-            5.8600,
-            6.2400,
-            5.6699,
-            8.9900,
-            6.9900,
-            5.4799,
-            5.5000,
-            3.9499,
-            5.3600,
-            3.9499,
-            5.6199,
-            5.1000,
-            5.0000,
-            4.4499,
-            5.2200,
-            4.0700,
-            5.2299,
-            4.3999,
-            2.9400,
-            4.9700,
-            5.3600,
-            2.9100,
-            2.7899,
-            5.1699,
-            2.8200,
-            8.0099,
-            5.4299,
-            5.0800,
-            5.3399,
-            5.1600,
-            3.9900,
-            3.5399,
-            3.1600,
-            5.4299,
-            4.1199,
-            5.9499,
-            4.6100,
-            3.9299,
-            3.9100,
-            4.2299,
-            4.5899,
-            4.2299,
-            6.6499
         };
     }
     private static double[] Bodoni_72_Smallcaps_0_3() {
@@ -7708,7 +7616,7 @@ public final class GenFontMetrics {
             4.5898,
             3.9941,
             5.8105,
-            6.6699,
+            7.2216,
             2.3828,
             2.6416,
             2.6416,
@@ -7734,9 +7642,9 @@ public final class GenFontMetrics {
             3.9111,
             4.3603,
             2.9003,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -7744,9 +7652,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -7764,34 +7672,34 @@ public final class GenFontMetrics {
             3.4814,
             3.0908,
             3.4814,
-            4.6923,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             3.6962,
             2.7685,
@@ -7895,6 +7803,105 @@ public final class GenFontMetrics {
             3.3398,
             2.5976,
             3.3398,
+            5.8398
+        };
+    }
+    private static double[] Damascus_0_6() {
+        return new double[] {
+            2.5878,
+            3.3300,
+            4.7412,
+            5.5615,
+            5.5615,
+            8.8916,
+            7.2216,
+            2.3779,
+            3.3300,
+            3.3300,
+            3.8916,
+            5.8398,
+            2.7783,
+            3.3300,
+            2.4218,
+            2.7783,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            3.3300,
+            3.3300,
+            5.8398,
+            5.8398,
+            5.8398,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
+            7.2216,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.7783,
+            7.2216,
+            2.7783,
+            5.5615,
+            7.2216,
+            6.1083,
+            8.3300,
+            7.2216,
+            7.7783,
+            6.6699,
+            7.7783,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.2216,
+            6.6699,
+            9.4384,
+            6.6699,
+            6.6699,
+            6.1083,
+            3.3300,
+            2.7783,
+            3.3300,
+            5.8398,
+            5.5615,
+            3.3300,
+            5.5615,
+            6.1083,
+            5.5615,
+            6.1083,
+            5.5615,
+            3.3300,
+            6.1083,
+            6.1083,
+            2.7783,
+            2.7783,
+            5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
+            5.0000,
+            3.8916,
+            2.7978,
+            3.8916,
             5.8398
         };
     }
@@ -8003,9 +8010,9 @@ public final class GenFontMetrics {
             3.3251,
             4.3457,
             6.2109,
-            5.5615,
+            5.0000,
             7.4609,
-            6.6699,
+            7.7783,
             2.5439,
             4.3408,
             4.3408,
@@ -8031,32 +8038,32 @@ public final class GenFontMetrics {
             5.1855,
             5.1855,
             4.7021,
-            10.1513,
+            9.2089,
+            7.2216,
             6.6699,
             6.6699,
             7.2216,
-            7.2216,
-            6.6699,
             6.1083,
-            7.7783,
+            5.5615,
             7.2216,
-            2.7783,
-            5.0000,
+            7.2216,
+            3.3300,
+            3.8916,
+            7.2216,
+            6.1083,
+            8.8916,
+            7.2216,
+            7.2216,
+            5.5615,
+            7.2216,
             6.6699,
             5.5615,
-            8.3300,
-            7.2216,
-            7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
             6.1083,
             7.2216,
-            6.6699,
+            7.2216,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.2216,
             6.1083,
             4.0625,
             3.2714,
@@ -8064,32 +8071,32 @@ public final class GenFontMetrics {
             5.1855,
             3.4375,
             3.3300,
-            5.5615,
-            5.5615,
+            4.4384,
             5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
+            4.4384,
             5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.0000,
             2.7783,
-            5.5615,
+            2.7783,
+            5.0000,
+            2.7783,
+            7.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.3300,
+            3.8916,
+            2.7783,
+            5.0000,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             4.1748,
             3.0517,
             4.1748,
@@ -8102,9 +8109,9 @@ public final class GenFontMetrics {
             3.5009,
             4.3652,
             6.2207,
-            5.5615,
+            5.0000,
             7.8173,
-            6.6699,
+            8.3300,
             2.5439,
             4.5507,
             4.5507,
@@ -8130,65 +8137,65 @@ public final class GenFontMetrics {
             5.1367,
             5.1367,
             4.9902,
-            10.1513,
-            6.6699,
+            9.3017,
+            7.2216,
             6.6699,
             7.2216,
             7.2216,
             6.6699,
             6.1083,
             7.7783,
-            7.2216,
-            2.7783,
+            7.7783,
+            3.8916,
             5.0000,
-            6.6699,
-            5.5615,
-            8.3300,
-            7.2216,
             7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
-            6.1083,
-            7.2216,
             6.6699,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.7783,
             6.1083,
+            7.7783,
+            7.2216,
+            5.5615,
+            6.6699,
+            7.2216,
+            7.2216,
+            10.0000,
+            7.2216,
+            7.2216,
+            6.6699,
             4.2480,
             3.4277,
             4.2480,
             5.1367,
             3.5205,
             3.3300,
-            5.5615,
-            5.5615,
             5.0000,
             5.5615,
+            4.4384,
             5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.5615,
             2.7783,
+            3.3300,
+            5.5615,
+            2.7783,
+            8.3300,
+            5.5615,
+            5.0000,
+            5.5615,
+            5.5615,
+            4.4384,
+            3.8916,
+            3.3300,
             5.5615,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             4.3164,
             3.2373,
             4.3164,
@@ -10274,6 +10281,105 @@ public final class GenFontMetrics {
             5.8398
         };
     }
+    private static double[] Geeza_Pro_0_6() {
+        return new double[] {
+            3.1193,
+            3.3300,
+            4.7412,
+            5.5615,
+            5.5615,
+            8.8916,
+            7.2216,
+            2.3779,
+            3.3300,
+            3.3300,
+            3.8916,
+            5.8398,
+            2.7783,
+            3.3300,
+            2.9249,
+            2.7783,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            3.3300,
+            3.3300,
+            5.8398,
+            5.8398,
+            5.8398,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
+            7.2216,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.7783,
+            7.2216,
+            2.7783,
+            5.5615,
+            7.2216,
+            6.1083,
+            8.3300,
+            7.2216,
+            7.7783,
+            6.6699,
+            7.7783,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.2216,
+            6.6699,
+            9.4384,
+            6.6699,
+            6.6699,
+            6.1083,
+            3.3300,
+            2.7783,
+            3.3300,
+            5.8398,
+            5.5615,
+            3.3300,
+            5.5615,
+            6.1083,
+            5.5615,
+            6.1083,
+            5.5615,
+            3.3300,
+            6.1083,
+            6.1083,
+            2.7783,
+            2.7783,
+            5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
+            5.0000,
+            3.8916,
+            2.7978,
+            3.8916,
+            5.8398
+        };
+    }
     private static double[] Geneva_0_3() {
         return new double[] {
             3.3349,
@@ -11369,9 +11475,9 @@ public final class GenFontMetrics {
             2.8173,
             4.3457,
             6.2109,
-            5.5615,
+            5.0000,
             7.4609,
-            6.6699,
+            7.7783,
             2.5439,
             3.2373,
             3.2373,
@@ -11397,32 +11503,32 @@ public final class GenFontMetrics {
             5.1855,
             5.1855,
             4.0771,
-            10.1513,
+            9.2089,
+            7.2216,
             6.6699,
             6.6699,
             7.2216,
-            7.2216,
-            6.6699,
             6.1083,
-            7.7783,
+            5.5615,
             7.2216,
-            2.7783,
-            5.0000,
+            7.2216,
+            3.3300,
+            3.8916,
+            7.2216,
+            6.1083,
+            8.8916,
+            7.2216,
+            7.2216,
+            5.5615,
+            7.2216,
             6.6699,
             5.5615,
-            8.3300,
-            7.2216,
-            7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
             6.1083,
             7.2216,
-            6.6699,
+            7.2216,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.2216,
             6.1083,
             4.1601,
             3.2714,
@@ -11430,32 +11536,32 @@ public final class GenFontMetrics {
             5.1855,
             3.4375,
             3.3300,
-            5.5615,
-            5.5615,
+            4.4384,
             5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
+            4.4384,
             5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.0000,
             2.7783,
-            5.5615,
+            2.7783,
+            5.0000,
+            2.7783,
+            7.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.3300,
+            3.8916,
+            2.7783,
+            5.0000,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             4.1748,
             3.0517,
             4.1748,
@@ -11468,9 +11574,9 @@ public final class GenFontMetrics {
             2.5976,
             4.5605,
             6.2207,
-            5.5615,
+            5.0000,
             7.6171,
-            6.6699,
+            8.3300,
             2.5439,
             3.2666,
             3.2666,
@@ -11496,65 +11602,65 @@ public final class GenFontMetrics {
             5.1367,
             5.1367,
             3.9208,
-            10.1513,
-            6.6699,
+            9.3017,
+            7.2216,
             6.6699,
             7.2216,
             7.2216,
             6.6699,
             6.1083,
             7.7783,
-            7.2216,
-            2.7783,
+            7.7783,
+            3.8916,
             5.0000,
-            6.6699,
-            5.5615,
-            8.3300,
-            7.2216,
             7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
-            6.1083,
-            7.2216,
             6.6699,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.7783,
             6.1083,
+            7.7783,
+            7.2216,
+            5.5615,
+            6.6699,
+            7.2216,
+            7.2216,
+            10.0000,
+            7.2216,
+            7.2216,
+            6.6699,
             4.0576,
             3.1103,
             4.0576,
             5.1367,
             3.5205,
             3.3300,
-            5.5615,
-            5.5615,
             5.0000,
             5.5615,
+            4.4384,
             5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.5615,
             2.7783,
+            3.3300,
+            5.5615,
+            2.7783,
+            8.3300,
+            5.5615,
+            5.0000,
+            5.5615,
+            5.5615,
+            4.4384,
+            3.8916,
+            3.3300,
             5.5615,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             4.2871,
             3.3398,
             4.2871,
@@ -13844,9 +13950,9 @@ public final class GenFontMetrics {
             4.0000,
             4.5599,
             6.4400,
-            5.5615,
+            5.0000,
             8.0000,
-            6.6699,
+            7.7783,
             3.2799,
             3.3699,
             3.3699,
@@ -13872,32 +13978,32 @@ public final class GenFontMetrics {
             5.9299,
             5.6100,
             5.0500,
-            10.1513,
+            9.2089,
+            7.2216,
             6.6699,
             6.6699,
             7.2216,
-            7.2216,
-            6.6699,
             6.1083,
-            7.7783,
+            5.5615,
             7.2216,
-            2.7783,
-            5.0000,
+            7.2216,
+            3.3300,
+            3.8916,
+            7.2216,
+            6.1083,
+            8.8916,
+            7.2216,
+            7.2216,
+            5.5615,
+            7.2216,
             6.6699,
             5.5615,
-            8.3300,
-            7.2216,
-            7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
             6.1083,
             7.2216,
-            6.6699,
+            7.2216,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.2216,
             6.1083,
             3.4499,
             4.7100,
@@ -13905,32 +14011,32 @@ public final class GenFontMetrics {
             4.6923,
             4.8399,
             3.3300,
-            5.5615,
-            5.5615,
+            4.4384,
             5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
+            4.4384,
             5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.0000,
             2.7783,
-            5.5615,
+            2.7783,
+            5.0000,
+            2.7783,
+            7.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.3300,
+            3.8916,
+            2.7783,
+            5.0000,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             3.7200,
             3.1399,
             3.7200,
@@ -13943,9 +14049,9 @@ public final class GenFontMetrics {
             5.2200,
             5.9700,
             6.9700,
-            5.5615,
+            5.0000,
             8.7500,
-            6.6699,
+            8.3300,
             4.3200,
             4.0099,
             4.0099,
@@ -13971,65 +14077,65 @@ public final class GenFontMetrics {
             6.3999,
             6.3999,
             6.2599,
-            10.1513,
-            6.6699,
+            9.3017,
+            7.2216,
             6.6699,
             7.2216,
             7.2216,
             6.6699,
             6.1083,
             7.7783,
-            7.2216,
-            2.7783,
+            7.7783,
+            3.8916,
             5.0000,
-            6.6699,
-            5.5615,
-            8.3300,
-            7.2216,
             7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
-            6.1083,
-            7.2216,
             6.6699,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.7783,
             6.1083,
+            7.7783,
+            7.2216,
+            5.5615,
+            6.6699,
+            7.2216,
+            7.2216,
+            10.0000,
+            7.2216,
+            7.2216,
+            6.6699,
             3.7700,
             5.1100,
             4.5200,
-            4.6923,
+            5.8105,
             5.1600,
             3.3300,
-            5.5615,
-            5.5615,
             5.0000,
             5.5615,
+            4.4384,
             5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.5615,
             2.7783,
+            3.3300,
+            5.5615,
+            2.7783,
+            8.3300,
+            5.5615,
+            5.0000,
+            5.5615,
+            5.5615,
+            4.4384,
+            3.8916,
+            3.3300,
             5.5615,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             4.8999,
             3.3800,
             4.8999,
@@ -14132,6 +14238,105 @@ public final class GenFontMetrics {
             3.3398,
             2.5976,
             3.3398,
+            5.8398
+        };
+    }
+    private static double[] Kailasa_0_6() {
+        return new double[] {
+            3.9384,
+            3.3300,
+            4.7412,
+            5.5615,
+            5.5615,
+            8.8916,
+            7.2216,
+            2.3779,
+            3.3300,
+            3.3300,
+            3.8916,
+            5.8398,
+            2.7783,
+            3.3300,
+            2.7783,
+            2.7783,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            3.3300,
+            3.3300,
+            5.8398,
+            5.8398,
+            5.8398,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
+            7.2216,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.7783,
+            7.2216,
+            2.7783,
+            5.5615,
+            7.2216,
+            6.1083,
+            8.3300,
+            7.2216,
+            7.7783,
+            6.6699,
+            7.7783,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.2216,
+            6.6699,
+            9.4384,
+            6.6699,
+            6.6699,
+            6.1083,
+            3.3300,
+            2.7783,
+            3.3300,
+            5.8398,
+            5.5615,
+            3.3300,
+            5.5615,
+            6.1083,
+            5.5615,
+            6.1083,
+            5.5615,
+            3.3300,
+            6.1083,
+            6.1083,
+            2.7783,
+            2.7783,
+            5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
+            5.0000,
+            3.8916,
+            2.7978,
+            3.8916,
             5.8398
         };
     }
@@ -14434,200 +14639,200 @@ public final class GenFontMetrics {
     }
     private static double[] Kefa_0_3() {
         return new double[] {
-            2.5634,
-            3.4130,
-            4.1943,
-            6.0107,
-            6.0107,
-            10.6005,
-            7.0898,
-            2.3339,
-            3.1542,
-            3.1542,
-            6.2646,
-            6.0107,
-            3.7939,
-            3.6914,
-            3.7939,
-            3.8378,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            6.0107,
-            3.7939,
-            3.7939,
-            6.0107,
-            6.0107,
-            6.0107,
-            5.4003,
-            9.3896,
-            6.6210,
-            6.2500,
-            5.9179,
-            6.7138,
-            5.8496,
-            5.4638,
-            6.3378,
-            7.3339,
-            3.4570,
-            3.4179,
-            6.6357,
-            5.2587,
-            8.4082,
-            7.3583,
-            6.8896,
-            6.0400,
-            6.8994,
-            6.5380,
-            5.6982,
-            6.0791,
-            6.6357,
-            6.4648,
-            9.1308,
-            6.7968,
-            6.4257,
-            5.5810,
-            4.1748,
-            3.8378,
-            4.1748,
-            6.0107,
-            5.2441,
-            1.8457,
-            5.1025,
-            5.4687,
-            4.6777,
-            5.5664,
-            5.0146,
-            3.7792,
-            5.3564,
-            5.7666,
-            2.9736,
-            2.9101,
-            5.5419,
-            2.9492,
-            8.5595,
-            5.8544,
-            5.2734,
-            5.5957,
-            5.4394,
-            4.1650,
-            4.5312,
-            3.9160,
-            5.4589,
-            5.2783,
-            7.9541,
-            5.3076,
-            5.0878,
-            4.6728,
-            4.2529,
-            2.9052,
-            4.2529,
-            6.0107
+            2.1999,
+            4.0200,
+            3.9299,
+            6.0700,
+            6.0700,
+            8.6399,
+            7.2599,
+            2.2400,
+            3.8800,
+            3.8800,
+            5.3800,
+            6.0700,
+            3.8000,
+            3.6699,
+            3.8000,
+            3.8000,
+            6.0700,
+            3.5000,
+            4.9799,
+            4.8999,
+            5.3099,
+            4.9700,
+            5.6399,
+            4.9299,
+            5.4400,
+            5.6399,
+            3.8000,
+            3.8000,
+            6.0700,
+            6.0700,
+            6.0700,
+            5.2200,
+            9.5000,
+            6.3899,
+            6.0500,
+            5.6300,
+            6.5099,
+            5.5000,
+            5.1999,
+            6.3500,
+            7.0700,
+            3.0800,
+            3.0800,
+            6.2700,
+            5.0299,
+            8.3999,
+            7.0200,
+            6.5800,
+            5.8800,
+            6.5800,
+            6.2100,
+            5.2700,
+            5.3899,
+            6.8099,
+            6.3600,
+            9.3399,
+            6.3200,
+            6.1300,
+            5.6999,
+            3.7200,
+            3.8000,
+            3.7200,
+            6.0700,
+            5.1499,
+            5.0000,
+            4.7299,
+            5.1600,
+            4.4700,
+            5.1300,
+            4.7700,
+            3.1600,
+            4.7299,
+            5.3800,
+            2.5200,
+            2.4299,
+            4.9100,
+            2.4600,
+            8.0800,
+            5.3899,
+            4.9600,
+            5.1699,
+            5.1000,
+            3.7200,
+            4.1100,
+            3.3500,
+            5.2799,
+            5.0000,
+            7.5099,
+            5.0000,
+            5.0000,
+            4.0899,
+            3.7599,
+            2.7599,
+            3.7599,
+            6.0700
         };
     }
     private static double[] Kefa_0_6() {
         return new double[] {
-            2.4560,
-            3.6083,
-            4.6337,
-            6.2841,
-            6.2841,
-            12.2119,
-            7.4609,
-            2.4755,
-            3.3544,
-            3.3544,
-            6.4501,
-            6.2841,
-            4.5117,
-            3.7500,
-            4.5117,
-            4.0283,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            6.2841,
-            4.5117,
-            4.5117,
-            6.2841,
-            6.2841,
-            6.2841,
-            5.7031,
-            10.1367,
-            7.1728,
-            6.6943,
-            6.2060,
-            7.1826,
-            6.1865,
-            5.8105,
-            6.7431,
-            7.7734,
-            3.9306,
-            3.9160,
-            7.2314,
-            5.6347,
-            8.9404,
-            7.7734,
-            7.3291,
-            6.4990,
-            7.3486,
-            7.0312,
-            5.9912,
-            6.4404,
-            7.0117,
-            7.0117,
-            9.7753,
-            7.3193,
-            6.9726,
-            5.8984,
-            4.5996,
-            4.0283,
-            4.5996,
-            6.2841,
-            5.1171,
-            1.9628,
-            5.4101,
-            5.6152,
-            4.7900,
-            5.7177,
-            5.1660,
-            4.0820,
-            5.7324,
-            6.0205,
-            3.2128,
-            3.1640,
-            5.9130,
-            3.1933,
-            8.8476,
-            6.1376,
-            5.4248,
-            5.7617,
-            5.5957,
-            4.5458,
-            4.8193,
-            4.1699,
-            5.7861,
-            5.6298,
-            8.5986,
-            5.6835,
-            5.5371,
-            4.9023,
-            4.8681,
-            3.1054,
-            4.8681,
-            6.2841
+            2.1999,
+            4.4142,
+            4.4728,
+            6.0700,
+            6.0700,
+            8.6399,
+            7.6942,
+            2.5371,
+            4.0457,
+            4.0457,
+            5.4828,
+            6.0700,
+            4.1999,
+            3.8300,
+            4.1999,
+            4.0971,
+            6.0700,
+            4.0599,
+            5.0942,
+            5.0999,
+            5.4700,
+            4.9928,
+            5.6628,
+            4.9528,
+            5.4400,
+            5.6628,
+            4.1999,
+            4.1999,
+            6.0700,
+            6.0700,
+            6.0700,
+            5.9742,
+            10.0142,
+            6.9557,
+            6.4728,
+            5.9557,
+            6.9442,
+            5.8999,
+            5.5942,
+            6.7271,
+            7.5899,
+            3.5542,
+            3.5542,
+            6.7557,
+            5.4699,
+            9.1656,
+            7.5628,
+            6.9799,
+            6.2971,
+            6.9799,
+            6.7642,
+            5.6642,
+            5.8242,
+            7.3071,
+            6.9314,
+            9.8714,
+            6.7257,
+            6.5928,
+            6.1114,
+            4.1942,
+            4.0971,
+            4.1942,
+            6.0700,
+            5.1499,
+            5.0000,
+            5.2156,
+            5.6914,
+            4.8071,
+            5.6785,
+            5.1128,
+            3.6742,
+            5.2042,
+            5.9171,
+            3.0171,
+            2.8071,
+            5.5271,
+            2.8657,
+            8.5828,
+            5.9442,
+            5.3142,
+            5.7242,
+            5.6142,
+            4.3771,
+            4.4871,
+            3.9499,
+            5.7428,
+            5.5542,
+            8.3328,
+            5.3142,
+            5.5542,
+            4.4157,
+            4.1656,
+            3.0799,
+            4.1656,
+            6.0700
         };
     }
     private static double[] Khmer_MN_0_3() {
@@ -15259,8 +15464,8 @@ public final class GenFontMetrics {
             5.5800,
             4.5299,
             10.1600,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -15268,9 +15473,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -15292,30 +15497,30 @@ public final class GenFontMetrics {
             5.3000,
             5.0800,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             3.6999,
             2.8200,
@@ -15524,100 +15729,100 @@ public final class GenFontMetrics {
     private static double[] Kokonor_0_3() {
         return new double[] {
             3.0769,
-            2.7783,
-            3.5498,
-            5.5615,
-            5.5615,
-            8.8916,
-            6.6699,
-            1.9091,
-            3.3300,
-            3.3300,
-            3.8916,
-            5.8398,
-            2.7783,
-            3.3300,
-            2.7783,
-            2.7783,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            2.7783,
-            2.7783,
-            5.8398,
-            5.8398,
-            5.8398,
-            5.5615,
-            10.1513,
-            6.6699,
-            6.6699,
-            7.2216,
-            7.2216,
-            6.6699,
-            6.1083,
-            7.7783,
-            7.2216,
-            2.7783,
-            5.0000,
-            6.6699,
-            5.5615,
-            8.3300,
-            7.2216,
-            7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
-            6.1083,
-            7.2216,
-            6.6699,
-            9.4384,
-            6.6699,
-            6.6699,
-            6.1083,
-            2.7783,
-            2.7783,
-            2.7783,
-            4.6923,
-            5.5615,
-            3.3300,
-            5.5615,
-            5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            3.3300,
-            5.0000,
-            2.7783,
-            5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
-            5.0000,
-            3.3398,
-            2.5976,
-            3.3398,
-            5.8398
+            2.5634,
+            3.8037,
+            5.5566,
+            3.8769,
+            7.3437,
+            8.8476,
+            2.0654,
+            3.3984,
+            3.3984,
+            4.4628,
+            5.5566,
+            2.0654,
+            3.6181,
+            2.0654,
+            4.3359,
+            5.1562,
+            4.3066,
+            5.5859,
+            4.6093,
+            6.1816,
+            4.8291,
+            5.6689,
+            5.0878,
+            5.1660,
+            5.6689,
+            2.0654,
+            2.0654,
+            5.5566,
+            5.5566,
+            5.5566,
+            3.6376,
+            6.9238,
+            7.1728,
+            7.2119,
+            6.2255,
+            8.4326,
+            7.3095,
+            7.0117,
+            6.6210,
+            8.4667,
+            4.5654,
+            4.5458,
+            8.0126,
+            6.4013,
+            9.9072,
+            8.8232,
+            6.8554,
+            6.6894,
+            6.9238,
+            7.8710,
+            5.2539,
+            7.6171,
+            8.5449,
+            6.9042,
+            8.9794,
+            7.0117,
+            6.4501,
+            5.8935,
+            3.1591,
+            3.4912,
+            3.1591,
+            5.5566,
+            5.5566,
+            4.4628,
+            5.1318,
+            4.8486,
+            3.8281,
+            5.1318,
+            3.7158,
+            3.1201,
+            4.6630,
+            5.3222,
+            2.9589,
+            2.6611,
+            4.6240,
+            2.6660,
+            7.8906,
+            5.6445,
+            4.2871,
+            4.9755,
+            4.8486,
+            4.1650,
+            3.5546,
+            3.5400,
+            5.6054,
+            4.5068,
+            6.2744,
+            5.0097,
+            5.4199,
+            4.1162,
+            3.4814,
+            2.0410,
+            3.4814,
+            5.5566
         };
     }
     private static double[] Krungthep_0_6() {
@@ -16214,6 +16419,402 @@ public final class GenFontMetrics {
             4.6000
         };
     }
+    private static double[] MesloLGS_NF_0_3() {
+        return new double[] {
+            2.8125,
+            3.1103,
+            4.7753,
+            6.2988,
+            6.2988,
+            9.2529,
+            7.1142,
+            2.9687,
+            3.8183,
+            3.8183,
+            4.7167,
+            6.2988,
+            2.9687,
+            4.7167,
+            2.9687,
+            3.0468,
+            6.2988,
+            4.6386,
+            6.0351,
+            6.2695,
+            6.4355,
+            6.1816,
+            6.3671,
+            5.6933,
+            6.3867,
+            6.3671,
+            2.9687,
+            2.9687,
+            6.2988,
+            6.2988,
+            6.2988,
+            5.1269,
+            9.1796,
+            6.7382,
+            6.5722,
+            7.1582,
+            7.2656,
+            5.9570,
+            5.7226,
+            7.4658,
+            7.4218,
+            2.6757,
+            5.3808,
+            6.5869,
+            5.6787,
+            8.7402,
+            7.4218,
+            7.7148,
+            6.3525,
+            7.7148,
+            6.5332,
+            6.3720,
+            6.3378,
+            7.3730,
+            6.7382,
+            9.6777,
+            6.7871,
+            6.5527,
+            6.6162,
+            3.8183,
+            3.0468,
+            3.8183,
+            6.2988,
+            5.8349,
+            5.0000,
+            5.5175,
+            6.1425,
+            5.5957,
+            6.1425,
+            5.7128,
+            3.6181,
+            6.0937,
+            5.8837,
+            2.4707,
+            2.4658,
+            5.4296,
+            2.5292,
+            8.7011,
+            5.8349,
+            5.9082,
+            6.1035,
+            6.0937,
+            3.8085,
+            5.2343,
+            3.6328,
+            5.8349,
+            5.4199,
+            7.7441,
+            5.2441,
+            5.4296,
+            5.3906,
+            3.8183,
+            2.5878,
+            3.8183,
+            6.2988
+        };
+    }
+    private static double[] MesloLGS_NF_1_3() {
+        return new double[] {
+            2.8222,
+            3.1054,
+            4.3701,
+            6.3281,
+            6.4843,
+            9.1796,
+            7.1142,
+            2.5292,
+            3.8183,
+            3.8183,
+            4.5898,
+            6.4843,
+            2.9687,
+            4.7167,
+            2.9687,
+            3.6230,
+            6.2988,
+            4.6630,
+            6.0400,
+            6.2695,
+            6.4355,
+            6.1865,
+            6.3720,
+            5.6982,
+            6.3867,
+            6.3769,
+            2.9687,
+            2.9687,
+            6.4843,
+            6.4843,
+            6.4843,
+            5.1269,
+            9.1796,
+            6.7382,
+            6.5722,
+            7.1435,
+            7.2558,
+            5.9521,
+            5.7128,
+            7.4462,
+            7.4316,
+            2.6855,
+            5.3808,
+            6.5869,
+            5.6835,
+            8.7500,
+            7.4218,
+            7.7099,
+            6.3671,
+            7.7099,
+            6.5332,
+            6.2304,
+            6.3037,
+            7.4414,
+            6.7382,
+            9.6777,
+            6.7822,
+            6.5625,
+            6.6162,
+            3.8183,
+            3.6230,
+            3.8183,
+            4.5898,
+            4.4726,
+            5.0000,
+            5.4980,
+            6.1474,
+            5.5419,
+            6.1767,
+            5.7421,
+            3.6181,
+            6.0888,
+            5.9375,
+            2.5195,
+            2.5195,
+            5.3027,
+            2.5195,
+            8.7011,
+            5.8496,
+            5.9179,
+            6.1230,
+            6.1083,
+            3.8623,
+            5.1367,
+            3.6328,
+            5.8349,
+            5.4199,
+            7.7441,
+            5.2685,
+            5.4296,
+            5.3906,
+            3.8183,
+            3.6230,
+            3.8183,
+            6.4843
+        };
+    }
+    private static double[] MesloLGS_NF_0_6() {
+        return new double[] {
+            2.5781,
+            3.5620,
+            5.6884,
+            6.7138,
+            6.7138,
+            10.3564,
+            7.4438,
+            3.4765,
+            4.2871,
+            4.2871,
+            4.8437,
+            6.7138,
+            3.4765,
+            4.8437,
+            3.4765,
+            3.3447,
+            6.8457,
+            5.1171,
+            6.4306,
+            6.6894,
+            6.8701,
+            6.6333,
+            6.8359,
+            6.0449,
+            6.9384,
+            6.8359,
+            3.4765,
+            3.4765,
+            6.7138,
+            6.7138,
+            6.7138,
+            5.5712,
+            9.2700,
+            7.3242,
+            6.9335,
+            7.4121,
+            7.4731,
+            6.2182,
+            5.9741,
+            7.6025,
+            7.8320,
+            3.1835,
+            6.0107,
+            7.0922,
+            5.9472,
+            9.0649,
+            7.6806,
+            7.8637,
+            6.7358,
+            7.8637,
+            6.9433,
+            6.7504,
+            6.6015,
+            7.6025,
+            7.2119,
+            10.0927,
+            7.2949,
+            7.0800,
+            6.7553,
+            4.2871,
+            3.3447,
+            4.2871,
+            6.7138,
+            6.2719,
+            5.0000,
+            5.8959,
+            6.5136,
+            5.8740,
+            6.5136,
+            6.0083,
+            4.0795,
+            6.4526,
+            6.3208,
+            2.8710,
+            2.8686,
+            6.0131,
+            2.9492,
+            9.3212,
+            6.2719,
+            6.1962,
+            6.4697,
+            6.4746,
+            4.3505,
+            5.6640,
+            4.1259,
+            6.2719,
+            5.8276,
+            8.4716,
+            5.8056,
+            5.9716,
+            5.6640,
+            4.2871,
+            2.9931,
+            4.2871,
+            6.7138
+        };
+    }
+    private static double[] MesloLGS_NF_1_6() {
+        return new double[] {
+            2.5781,
+            3.5571,
+            4.9584,
+            6.6406,
+            6.9091,
+            9.7705,
+            7.4438,
+            2.7001,
+            4.2871,
+            4.2871,
+            4.8339,
+            6.9091,
+            3.4765,
+            4.8437,
+            3.4765,
+            3.9892,
+            6.8408,
+            5.1293,
+            6.4331,
+            6.6699,
+            6.8994,
+            6.6455,
+            6.8627,
+            6.0498,
+            6.9116,
+            6.8579,
+            3.4765,
+            3.4765,
+            6.9091,
+            6.9091,
+            6.9091,
+            5.5712,
+            9.2700,
+            7.3266,
+            6.9335,
+            7.4829,
+            7.4951,
+            6.2158,
+            6.0278,
+            7.6464,
+            7.8369,
+            3.1884,
+            5.9985,
+            7.0971,
+            5.9497,
+            9.1723,
+            7.6782,
+            7.8979,
+            6.6796,
+            7.8979,
+            6.9213,
+            6.6503,
+            6.5869,
+            7.6367,
+            7.2119,
+            10.0927,
+            7.2924,
+            7.0849,
+            6.7578,
+            4.2871,
+            3.9892,
+            4.2871,
+            4.8339,
+            4.6142,
+            5.0000,
+            5.8666,
+            6.5429,
+            5.8984,
+            6.5527,
+            6.1059,
+            4.0820,
+            6.4794,
+            6.3525,
+            2.9248,
+            2.9248,
+            5.9082,
+            2.8955,
+            9.2407,
+            6.2744,
+            6.3403,
+            6.5136,
+            6.5234,
+            4.4311,
+            5.6127,
+            4.1308,
+            6.2719,
+            5.7788,
+            8.4716,
+            5.8203,
+            5.8959,
+            5.6640,
+            4.2871,
+            3.9892,
+            4.2871,
+            6.9091
+        };
+    }
     private static double[] Microsoft_Sans_Serif_0_3() {
         return new double[] {
             2.6562,
@@ -16546,31 +17147,31 @@ public final class GenFontMetrics {
             5.6396,
             4.4384,
             9.2089,
+            7.2216,
             6.6699,
             6.6699,
             7.2216,
-            7.2216,
-            6.6699,
             6.1083,
-            7.7783,
+            5.5615,
             7.2216,
-            2.7783,
-            5.0000,
+            7.2216,
+            3.3300,
+            3.8916,
+            7.2216,
+            6.1083,
+            8.8916,
+            7.2216,
+            7.2216,
+            5.5615,
+            7.2216,
             6.6699,
             5.5615,
-            8.3300,
-            7.2216,
-            7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
             6.1083,
             7.2216,
-            6.6699,
+            7.2216,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.2216,
             6.1083,
             3.3300,
             2.7783,
@@ -16578,32 +17179,329 @@ public final class GenFontMetrics {
             4.6923,
             5.0000,
             3.3300,
-            5.5615,
-            5.5615,
+            4.4384,
             5.0000,
-            5.5615,
-            5.5615,
+            4.4384,
+            5.0000,
+            4.4384,
+            3.3300,
+            5.0000,
+            5.0000,
             2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
+            2.7783,
             5.0000,
-            2.2216,
+            2.7783,
+            7.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.3300,
+            3.8916,
+            2.7783,
+            5.0000,
+            5.0000,
+            7.2216,
+            5.0000,
+            5.0000,
+            4.4384,
+            4.7998,
+            2.0019,
+            4.7998,
+            5.4101
+        };
+    }
+    private static double[] Mshtakan_1_3() {
+        return new double[] {
+            5.0000,
+            3.3300,
+            4.0820,
+            5.0000,
+            5.0000,
             8.3300,
+            7.7783,
+            1.8017,
+            3.3300,
+            3.3300,
+            5.0000,
+            5.6396,
+            2.5000,
+            3.3300,
+            2.5000,
+            2.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            2.7783,
+            2.7783,
+            5.6396,
+            5.6396,
+            5.6396,
+            4.4384,
+            9.2089,
+            6.1083,
+            6.1083,
+            6.6699,
+            7.2216,
+            6.1083,
+            6.1083,
+            7.2216,
+            7.2216,
+            3.3300,
+            4.4384,
+            6.6699,
             5.5615,
+            8.3300,
+            6.6699,
+            7.2216,
+            6.1083,
+            7.2216,
+            6.1083,
+            5.0000,
             5.5615,
+            7.2216,
+            6.1083,
+            8.3300,
+            6.1083,
             5.5615,
             5.5615,
             3.3300,
+            2.7783,
+            3.3300,
+            4.6923,
+            5.0000,
+            3.3300,
+            5.0000,
+            5.0000,
+            4.4384,
+            5.0000,
+            4.4384,
+            2.7783,
+            5.0000,
             5.0000,
             2.7783,
+            2.7783,
+            4.4384,
+            2.7783,
+            7.2216,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.8916,
+            3.8916,
+            2.7783,
+            5.0000,
+            4.4384,
+            6.6699,
+            4.4384,
+            4.4384,
+            3.8916,
+            4.7998,
+            2.0019,
+            4.7998,
+            5.4101
+        };
+    }
+    private static double[] Mshtakan_0_6() {
+        return new double[] {
+            5.0000,
+            3.3300,
+            4.0820,
+            5.0000,
+            5.0000,
+            8.3300,
+            7.7783,
+            1.8017,
+            3.3300,
+            3.3300,
+            5.0000,
+            5.6396,
+            2.5000,
+            3.3300,
+            2.5000,
+            2.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            2.7783,
+            2.7783,
+            5.6396,
+            5.6396,
+            5.6396,
+            4.4384,
+            9.2089,
+            7.2216,
+            6.6699,
+            7.2216,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.7783,
+            7.7783,
+            3.8916,
+            5.0000,
+            7.7783,
+            6.6699,
+            9.4384,
+            7.2216,
+            7.7783,
+            6.1083,
+            7.7783,
+            7.2216,
+            5.5615,
+            6.6699,
+            7.2216,
+            7.2216,
+            10.0000,
+            7.2216,
+            7.2216,
+            6.6699,
+            3.3300,
+            2.7783,
+            3.3300,
+            4.6923,
+            5.0000,
+            3.3300,
+            5.0000,
+            5.5615,
+            4.4384,
+            5.5615,
+            4.4384,
+            3.3300,
+            5.0000,
+            5.5615,
+            2.7783,
+            3.3300,
+            5.5615,
+            2.7783,
+            8.3300,
+            5.5615,
+            5.0000,
+            5.5615,
+            5.5615,
+            4.4384,
+            3.8916,
+            3.3300,
             5.5615,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
+            4.4384,
+            4.7998,
+            2.0019,
+            4.7998,
+            5.4101
+        };
+    }
+    private static double[] Mshtakan_1_6() {
+        return new double[] {
             5.0000,
+            3.3300,
+            4.0820,
+            5.0000,
+            5.0000,
+            8.3300,
+            7.7783,
+            1.8017,
+            3.3300,
+            3.3300,
+            5.0000,
+            5.6396,
+            2.5000,
+            3.3300,
+            2.5000,
+            2.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            2.7783,
+            2.7783,
+            5.6396,
+            5.6396,
+            5.6396,
+            4.4384,
+            9.2089,
+            6.6699,
+            6.6699,
+            6.6699,
+            7.2216,
+            6.6699,
+            6.6699,
+            7.2216,
+            7.7783,
+            3.8916,
+            5.0000,
+            6.6699,
+            6.1083,
+            8.8916,
+            7.2216,
+            7.2216,
+            6.1083,
+            7.2216,
+            6.6699,
+            5.5615,
+            6.1083,
+            7.2216,
+            6.6699,
+            8.8916,
+            6.6699,
+            6.1083,
+            6.1083,
+            3.3300,
+            2.7783,
+            3.3300,
+            4.6923,
+            5.0000,
+            3.3300,
+            5.0000,
+            5.0000,
+            4.4384,
+            5.0000,
+            4.4384,
+            3.3300,
+            5.0000,
+            5.5615,
+            2.7783,
+            2.7783,
+            5.0000,
+            2.7783,
+            7.7783,
+            5.5615,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.8916,
+            3.8916,
+            2.7783,
+            5.5615,
+            4.4384,
+            6.6699,
+            5.0000,
+            4.4384,
+            3.8916,
             4.7998,
             2.0019,
             4.7998,
@@ -16714,78 +17612,78 @@ public final class GenFontMetrics {
             2.3000,
             2.4900,
             3.6499,
-            5.8699,
-            5.2500,
-            7.2599,
-            6.8200,
+            5.8399,
+            5.2400,
+            7.1900,
+            6.7100,
             2.0000,
-            2.9299,
-            2.9299,
+            2.9199,
+            2.9199,
             3.7299,
-            5.2599,
+            5.2400,
             2.3800,
             2.8000,
-            2.3300,
-            3.4900,
-            5.6000,
+            2.3399,
+            3.4700,
+            5.5800,
             3.8899,
-            4.6600,
+            4.6399,
             4.7500,
-            5.3000,
-            5.0399,
-            5.1900,
-            4.6999,
-            4.9400,
-            5.1199,
-            2.4499,
+            5.2899,
+            5.0099,
+            5.1699,
+            4.6799,
+            4.9299,
+            5.1100,
+            2.4600,
             2.4299,
             4.8099,
-            4.2599,
+            4.2299,
             4.8099,
-            4.1900,
+            4.1699,
             9.6600,
-            6.3300,
+            6.3699,
             5.6999,
             5.6999,
             6.5399,
-            5.1699,
+            5.1799,
             4.9700,
-            6.3099,
+            6.3200,
             6.5200,
             2.7599,
             2.9100,
             6.1199,
             4.6799,
-            8.3300,
-            6.6999,
+            8.3399,
+            6.7100,
             7.0399,
-            5.6000,
+            5.6100,
             7.0399,
-            5.7100,
-            5.3600,
-            5.0800,
+            5.7200,
+            5.3699,
+            5.0899,
             6.6100,
-            6.1300,
-            8.6800,
+            6.1199,
+            8.7700,
             6.2599,
-            5.8699,
-            5.3600,
-            2.8099,
+            5.8800,
+            5.3699,
+            2.8000,
             3.1199,
-            2.8099,
+            2.8000,
             5.0800,
-            3.7299,
+            3.7400,
             2.1499,
             5.0599,
             5.6799,
-            4.6100,
+            4.6199,
             5.6300,
             5.1900,
-            3.6900,
+            3.6999,
             5.6699,
             5.7100,
             2.7599,
-            2.7100,
+            2.7299,
             5.2799,
             2.5899,
             8.5399,
@@ -16796,14 +17694,14 @@ public final class GenFontMetrics {
             3.8999,
             4.3500,
             3.8200,
-            5.6100,
-            5.0599,
+            5.6199,
+            5.0700,
             7.5899,
             5.1300,
             5.1999,
             4.1900,
             3.2500,
-            2.3699,
+            2.3000,
             3.2500,
             5.7700
         };
@@ -16936,14 +17834,14 @@ public final class GenFontMetrics {
             3.8769,
             4.1064,
             2.4023,
-            2.7783,
+            3.3300,
             5.8398,
             3.5791,
             5.8398,
-            5.5615,
-            10.1513,
-            6.6699,
-            6.6699,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -16951,9 +17849,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -16968,41 +17866,41 @@ public final class GenFontMetrics {
             6.6699,
             6.6699,
             6.1083,
+            3.3300,
             2.7783,
-            2.7783,
-            2.7783,
-            4.6923,
+            3.3300,
+            5.8398,
             7.8222,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
-            5.0000,
-            3.3398,
+            3.8916,
             2.7978,
-            3.3398,
+            3.8916,
             5.8398
         };
     }
@@ -17311,7 +18209,7 @@ public final class GenFontMetrics {
             4.9511,
             4.0673,
             5.9472,
-            6.6699,
+            7.2216,
             2.2998,
             2.9736,
             2.9736,
@@ -17337,9 +18235,9 @@ public final class GenFontMetrics {
             4.2236,
             4.2236,
             3.9648,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -17347,9 +18245,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -17367,34 +18265,34 @@ public final class GenFontMetrics {
             2.7636,
             3.3935,
             2.7636,
-            4.6923,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             2.5341,
             2.1533,
@@ -17410,7 +18308,7 @@ public final class GenFontMetrics {
             5.4882,
             4.0820,
             6.0595,
-            6.6699,
+            7.2216,
             2.0507,
             2.9052,
             2.9052,
@@ -17436,9 +18334,9 @@ public final class GenFontMetrics {
             4.1210,
             4.1210,
             4.0185,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -17446,9 +18344,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -17466,34 +18364,34 @@ public final class GenFontMetrics {
             3.0419,
             3.4228,
             3.1103,
-            4.6923,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             2.8808,
             2.2119,
@@ -17802,12 +18700,12 @@ public final class GenFontMetrics {
         return new double[] {
             1.5000,
             4.8699,
-            3.5498,
+            4.7412,
             5.5615,
             5.5615,
             8.8916,
-            6.6699,
-            1.9091,
+            7.2216,
+            2.3779,
             4.0000,
             4.0000,
             3.8916,
@@ -17827,14 +18725,14 @@ public final class GenFontMetrics {
             5.8000,
             5.8000,
             3.1499,
-            2.7783,
+            3.3300,
             5.8398,
             5.9299,
             5.8398,
-            5.5615,
-            10.1513,
-            6.6699,
-            6.6699,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -17842,9 +18740,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -17862,34 +18760,34 @@ public final class GenFontMetrics {
             3.9900,
             5.3300,
             3.9900,
-            4.6923,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             3.9199,
             1.1600,
@@ -18103,7 +19001,7 @@ public final class GenFontMetrics {
             6.6600,
             5.5615,
             9.2299,
-            6.6699,
+            7.2216,
             2.6699,
             4.2200,
             4.2200,
@@ -18129,9 +19027,9 @@ public final class GenFontMetrics {
             5.7200,
             5.7200,
             4.8600,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -18139,9 +19037,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -18163,30 +19061,30 @@ public final class GenFontMetrics {
             4.1100,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
-            5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
             3.8500,
             5.5099,
@@ -18296,13 +19194,13 @@ public final class GenFontMetrics {
     private static double[] Noto_Sans_Myanmar_0_6() {
         return new double[] {
             2.6000,
-            2.7783,
-            3.5498,
+            3.3300,
+            4.7412,
             5.5615,
             5.5615,
             8.8916,
-            6.6699,
-            1.9091,
+            7.2216,
+            2.3779,
             3.3300,
             3.3300,
             3.8916,
@@ -18321,15 +19219,15 @@ public final class GenFontMetrics {
             5.5615,
             5.5615,
             5.5615,
-            2.7783,
-            2.7783,
+            3.3300,
+            3.3300,
             5.8398,
             5.8398,
             5.8398,
             4.7700,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -18337,9 +19235,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -18354,41 +19252,41 @@ public final class GenFontMetrics {
             6.6699,
             6.6699,
             6.1083,
+            3.3300,
             2.7783,
-            2.7783,
-            2.7783,
-            4.6923,
+            3.3300,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
-            5.0000,
-            3.3398,
-            2.5976,
-            3.3398,
+            3.8916,
+            2.7978,
+            3.8916,
             5.8398
         };
     }
@@ -18499,7 +19397,7 @@ public final class GenFontMetrics {
             6.6015,
             5.5615,
             9.0087,
-            6.6699,
+            7.2216,
             2.8613,
             3.8183,
             3.8183,
@@ -18525,6 +19423,105 @@ public final class GenFontMetrics {
             5.7177,
             5.7177,
             5.0097,
+            9.7509,
+            7.2216,
+            7.2216,
+            7.2216,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.7783,
+            7.2216,
+            2.7783,
+            5.5615,
+            7.2216,
+            6.1083,
+            8.3300,
+            7.2216,
+            7.7783,
+            6.6699,
+            7.7783,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.2216,
+            6.6699,
+            9.4384,
+            6.6699,
+            6.6699,
+            6.1083,
+            3.9501,
+            4.6191,
+            3.9501,
+            5.7177,
+            4.1113,
+            3.3300,
+            5.5615,
+            6.1083,
+            5.5615,
+            6.1083,
+            5.5615,
+            3.3300,
+            6.1083,
+            6.1083,
+            2.7783,
+            2.7783,
+            5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
+            5.0000,
+            4.4824,
+            5.5078,
+            4.4824,
+            5.7177
+        };
+    }
+    private static double[] Noto_Sans_Syriac_0_3() {
+        return new double[] {
+            2.6000,
+            2.8399,
+            3.5498,
+            5.5615,
+            5.5615,
+            8.8916,
+            6.6699,
+            1.9091,
+            2.9600,
+            2.9600,
+            4.2100,
+            5.7299,
+            2.7783,
+            3.2200,
+            2.6600,
+            4.6000,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            2.5700,
+            2.7783,
+            5.8398,
+            5.7299,
+            5.8398,
+            5.5615,
             10.1513,
             6.6699,
             6.6699,
@@ -18552,11 +19549,11 @@ public final class GenFontMetrics {
             6.6699,
             6.6699,
             6.1083,
-            3.9501,
-            4.6191,
-            3.9501,
-            5.7177,
-            4.1113,
+            3.2599,
+            3.6699,
+            3.2700,
+            4.6923,
+            5.5615,
             3.3300,
             5.5615,
             5.5615,
@@ -18584,10 +19581,109 @@ public final class GenFontMetrics {
             5.0000,
             5.0000,
             5.0000,
-            4.4824,
-            5.5078,
-            4.4824,
-            5.7177
+            3.3398,
+            2.5976,
+            3.3398,
+            5.8398
+        };
+    }
+    private static double[] Noto_Sans_Syriac_0_6() {
+        return new double[] {
+            2.5279,
+            2.8339,
+            4.7412,
+            5.5615,
+            5.5615,
+            8.8916,
+            7.2216,
+            2.3779,
+            3.8659,
+            3.2179,
+            4.4559,
+            5.7599,
+            2.7783,
+            3.3159,
+            2.7979,
+            5.0979,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            5.5615,
+            3.0859,
+            3.3300,
+            5.8398,
+            5.8559,
+            5.8398,
+            6.1083,
+            9.7509,
+            7.2216,
+            7.2216,
+            7.2216,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.7783,
+            7.2216,
+            2.7783,
+            5.5615,
+            7.2216,
+            6.1083,
+            8.3300,
+            7.2216,
+            7.7783,
+            6.6699,
+            7.7783,
+            7.2216,
+            6.6699,
+            6.1083,
+            7.2216,
+            6.6699,
+            9.4384,
+            6.6699,
+            6.6699,
+            6.1083,
+            3.0320,
+            4.0779,
+            3.2400,
+            5.8398,
+            5.5615,
+            3.3300,
+            5.5615,
+            6.1083,
+            5.5615,
+            6.1083,
+            5.5615,
+            3.3300,
+            6.1083,
+            6.1083,
+            2.7783,
+            2.7783,
+            5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
+            5.0000,
+            3.8916,
+            2.7978,
+            3.8916,
+            5.8398
         };
     }
     private static double[] Noto_Serif_Myanmar_0_3() {
@@ -18692,13 +19788,13 @@ public final class GenFontMetrics {
     private static double[] Noto_Serif_Myanmar_0_6() {
         return new double[] {
             3.2899,
-            2.7783,
-            3.5498,
+            3.3300,
+            4.7412,
             5.5615,
             5.5615,
             8.8916,
-            6.6699,
-            1.9091,
+            7.2216,
+            2.3779,
             3.3300,
             3.3300,
             3.8916,
@@ -18717,15 +19813,15 @@ public final class GenFontMetrics {
             5.5615,
             5.5615,
             5.5615,
-            2.7783,
-            2.7783,
+            3.3300,
+            3.3300,
             5.8398,
             5.8398,
             5.8398,
             6.5599,
-            10.1513,
-            6.6699,
-            6.6699,
+            9.7509,
+            7.2216,
+            7.2216,
             7.2216,
             7.2216,
             6.6699,
@@ -18733,9 +19829,9 @@ public final class GenFontMetrics {
             7.7783,
             7.2216,
             2.7783,
-            5.0000,
-            6.6699,
             5.5615,
+            7.2216,
+            6.1083,
             8.3300,
             7.2216,
             7.7783,
@@ -18750,41 +19846,41 @@ public final class GenFontMetrics {
             6.6699,
             6.6699,
             6.1083,
+            3.3300,
             2.7783,
-            2.7783,
-            2.7783,
-            4.6923,
+            3.3300,
+            5.8398,
             5.5615,
             3.3300,
             5.5615,
+            6.1083,
             5.5615,
-            5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
+            6.1083,
             5.5615,
             3.3300,
-            5.0000,
+            6.1083,
+            6.1083,
+            2.7783,
             2.7783,
             5.5615,
+            2.7783,
+            8.8916,
+            6.1083,
+            6.1083,
+            6.1083,
+            6.1083,
+            3.8916,
+            5.5615,
+            3.3300,
+            6.1083,
+            5.5615,
+            7.7783,
+            5.5615,
+            5.5615,
             5.0000,
-            7.2216,
-            5.0000,
-            5.0000,
-            5.0000,
-            3.3398,
-            2.5976,
-            3.3398,
+            3.8916,
+            2.7978,
+            3.8916,
             5.8398
         };
     }
@@ -20080,7 +21176,7 @@ public final class GenFontMetrics {
             1.7333,
             2.8857,
             2.2265,
-            5.5615,
+            5.0000,
             4.6386,
             3.1689,
             6.5185,
@@ -20105,11 +21201,11 @@ public final class GenFontMetrics {
             6.1474,
             1.6455,
             1.6455,
-            5.8398,
+            5.6396,
             3.7939,
-            5.8398,
+            5.6396,
             3.9111,
-            10.1513,
+            9.2089,
             7.1435,
             7.8466,
             6.3525,
@@ -20168,10 +21264,10 @@ public final class GenFontMetrics {
             3.4960,
             2.6318,
             2.6757,
-            3.3398,
+            4.7998,
             3.1591,
-            3.3398,
-            5.8398
+            4.7998,
+            5.4101
         };
     }
     private static double[] Phosphate_0_3() {
@@ -21865,7 +22961,7 @@ public final class GenFontMetrics {
             6.6015,
             4.1796,
             7.0019,
-            6.6699,
+            7.7783,
             2.0019,
             2.5000,
             2.5000,
@@ -21891,69 +22987,69 @@ public final class GenFontMetrics {
             5.1416,
             4.3798,
             3.2519,
-            10.1513,
+            9.2089,
+            7.2216,
             6.6699,
             6.6699,
             7.2216,
-            7.2216,
-            6.6699,
             6.1083,
-            7.7783,
+            5.5615,
             7.2216,
-            2.7783,
-            5.0000,
+            7.2216,
+            3.3300,
+            3.8916,
+            7.2216,
+            6.1083,
+            8.8916,
+            7.2216,
+            7.2216,
+            5.5615,
+            7.2216,
             6.6699,
             5.5615,
-            8.3300,
-            7.2216,
-            7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
             6.1083,
             7.2216,
-            6.6699,
+            7.2216,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.2216,
             6.1083,
             2.6416,
             4.1796,
             2.6416,
             4.6923,
-            5.5615,
+            5.0000,
             3.3300,
-            5.5615,
-            5.5615,
+            4.4384,
             5.0000,
-            5.5615,
-            5.5615,
-            2.7783,
-            5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
+            4.4384,
             5.0000,
-            2.2216,
-            8.3300,
-            5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
+            4.4384,
             3.3300,
             5.0000,
+            5.0000,
             2.7783,
-            5.5615,
+            2.7783,
+            5.0000,
+            2.7783,
+            7.7783,
+            5.0000,
+            5.0000,
+            5.0000,
+            5.0000,
+            3.3300,
+            3.8916,
+            2.7783,
+            5.0000,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             2.5878,
             2.6416,
             2.5878,
-            5.8398
+            5.4101
         };
     }
     private static double[] Raanana_0_6() {
@@ -21964,7 +23060,7 @@ public final class GenFontMetrics {
             6.6015,
             4.3310,
             8.0322,
-            6.6699,
+            8.3300,
             2.5781,
             2.8417,
             2.8417,
@@ -21990,69 +23086,69 @@ public final class GenFontMetrics {
             5.1416,
             4.9365,
             3.7207,
-            10.1513,
-            6.6699,
+            9.3017,
+            7.2216,
             6.6699,
             7.2216,
             7.2216,
             6.6699,
             6.1083,
             7.7783,
-            7.2216,
-            2.7783,
+            7.7783,
+            3.8916,
             5.0000,
-            6.6699,
-            5.5615,
-            8.3300,
-            7.2216,
             7.7783,
-            6.6699,
-            7.7783,
-            7.2216,
-            6.6699,
-            6.1083,
-            7.2216,
             6.6699,
             9.4384,
-            6.6699,
-            6.6699,
+            7.2216,
+            7.7783,
             6.1083,
+            7.7783,
+            7.2216,
+            5.5615,
+            6.6699,
+            7.2216,
+            7.2216,
+            10.0000,
+            7.2216,
+            7.2216,
+            6.6699,
             2.6416,
             4.1796,
             2.6416,
-            4.6923,
-            5.5615,
+            5.8105,
+            5.0000,
             3.3300,
-            5.5615,
-            5.5615,
             5.0000,
             5.5615,
+            4.4384,
+            5.5615,
+            4.4384,
+            3.3300,
+            5.0000,
             5.5615,
             2.7783,
+            3.3300,
             5.5615,
-            5.5615,
-            2.2216,
-            2.2216,
-            5.0000,
-            2.2216,
+            2.7783,
             8.3300,
             5.5615,
-            5.5615,
-            5.5615,
-            5.5615,
-            3.3300,
             5.0000,
-            2.7783,
+            5.5615,
+            5.5615,
+            4.4384,
+            3.8916,
+            3.3300,
             5.5615,
             5.0000,
             7.2216,
             5.0000,
             5.0000,
-            5.0000,
+            4.4384,
             2.5878,
             2.6416,
             2.5878,
-            5.8398
+            5.2001
         };
     }
     private static double[] Rockwell_0_3() {
@@ -22742,9 +23838,9 @@ public final class GenFontMetrics {
             2.3828,
             2.9199,
             2.3095,
-            3.3398,
+            4.7998,
             2.3388,
-            3.3398,
+            4.7998,
             2.7880
         };
     }
@@ -23042,7 +24138,7 @@ public final class GenFontMetrics {
             1.9299,
             2.2400,
             3.0599,
-            5.8398
+            5.5566
         };
     }
     private static double[] Silom_0_6() {
@@ -23542,199 +24638,100 @@ public final class GenFontMetrics {
     }
     private static double[] Skia_0_3() {
         return new double[] {
-            2.5000,
+            1.9531,
             4.6386,
-            3.7109,
-            6.9042,
-            4.1992,
-            9.8730,
-            7.3095,
-            2.0996,
-            4.1503,
-            4.1503,
-            3.6328,
-            6.9042,
-            2.5976,
-            3.4082,
-            2.5976,
-            3.3349,
-            6.2109,
-            3.8085,
-            5.1220,
-            4.6093,
-            5.8740,
-            4.7851,
-            5.7470,
-            4.8437,
-            5.7812,
-            5.7470,
-            3.1982,
-            3.1982,
-            6.9042,
-            6.9042,
-            6.9042,
-            5.5810,
-            8.9941,
-            6.6308,
-            6.3867,
-            5.7714,
-            7.3095,
-            6.0400,
-            5.6982,
-            6.8847,
-            7.8076,
-            3.1005,
-            3.7597,
-            6.3085,
-            5.3906,
-            9.4677,
-            7.9003,
-            7.5585,
-            5.6494,
-            7.5585,
-            6.3378,
-            5.0390,
-            5.6982,
-            7.5537,
-            6.6308,
-            10.4492,
-            6.1376,
-            5.7910,
-            5.9716,
-            4.1503,
-            3.3349,
-            4.1503,
-            6.9042,
-            5.0000,
-            3.9062,
-            5.1367,
-            5.5371,
             4.5410,
-            5.5419,
-            5.0976,
-            3.6718,
-            5.5078,
-            5.8105,
-            2.6611,
-            2.7001,
-            5.2490,
-            2.6660,
-            8.7597,
-            5.8105,
-            5.6884,
-            5.5468,
-            5.5273,
-            3.8476,
-            4.0673,
-            3.9208,
-            5.8105,
-            5.3271,
-            8.0322,
-            5.0195,
-            5.3515,
-            4.7705,
-            4.1503,
-            2.9296,
-            4.1503,
-            6.9042
-        };
-    }
-    private static double[] Skia_0_6() {
-        return new double[] {
-            2.2656,
-            4.6386,
-            4.0673,
             6.9042,
-            4.8095,
-            10.2490,
-            7.8369,
-            2.2265,
-            4.4873,
-            4.4873,
-            3.8476,
+            5.6152,
+            10.7421,
+            8.5351,
+            2.3925,
+            4.9316,
+            4.9316,
+            4.1308,
             6.9042,
-            3.0371,
-            3.8476,
-            3.0371,
-            3.3691,
-            6.3916,
-            4.2724,
+            3.6132,
+            4.4287,
+            3.6132,
+            3.4179,
+            6.6308,
+            4.8876,
+            5.7666,
             5.4003,
-            4.9511,
-            6.4550,
-            5.1171,
-            6.1376,
-            5.2978,
-            6.1181,
-            6.1376,
-            3.5449,
-            3.5449,
+            7.2216,
+            5.5517,
+            6.6503,
+            5.8935,
+            6.5576,
+            6.6503,
+            4.0039,
+            4.0039,
             6.9042,
             6.9042,
             6.9042,
-            5.7714,
-            9.2236,
-            6.9384,
-            6.8212,
-            5.9863,
-            7.5195,
-            6.2841,
-            5.9570,
-            6.9042,
+            6.0205,
+            9.5214,
+            7.3388,
+            7.3876,
+            6.2646,
+            7.7978,
+            6.6015,
+            6.2988,
+            6.9335,
+            8.1982,
+            3.7353,
+            4.7851,
+            7.5292,
+            6.0742,
+            9.4726,
+            8.1103,
+            8.1005,
+            7.0068,
+            8.1005,
+            7.3876,
+            6.3427,
+            6.0986,
             7.9785,
-            3.3740,
-            4.2041,
-            6.8359,
-            5.6835,
-            9.4677,
-            7.9931,
-            7.7929,
-            6.2353,
-            7.7929,
-            6.7919,
-            5.6005,
-            5.8691,
-            7.7392,
-            6.8798,
-            10.3955,
-            6.5917,
-            6.1865,
-            6.3525,
-            4.4873,
-            3.3691,
-            4.4873,
+            7.2021,
+            10.3271,
+            7.1875,
+            6.7089,
+            6.8554,
+            4.9316,
+            3.4179,
+            4.9316,
             6.9042,
             5.0000,
             3.9062,
-            5.5078,
+            5.9960,
+            6.3769,
+            4.8876,
+            6.3769,
+            5.9326,
+            4.3798,
+            6.3769,
+            6.7333,
+            3.3740,
+            3.3740,
+            6.4062,
+            3.3740,
+            10.0439,
+            6.7333,
+            6.3476,
+            6.3769,
+            6.3769,
+            4.7412,
+            5.0537,
+            4.7363,
+            6.7333,
             5.8984,
-            4.6923,
-            5.9033,
-            5.4589,
-            3.9794,
-            5.8837,
-            6.2109,
-            2.9687,
-            2.9931,
-            5.7470,
-            2.9736,
-            9.3164,
-            6.2109,
-            5.9716,
-            5.9033,
-            5.8935,
-            4.2333,
-            4.4921,
-            4.2724,
-            6.2109,
-            5.5761,
-            8.3740,
-            5.4638,
-            5.6005,
-            5.0146,
-            4.4873,
-            3.1396,
-            4.4873,
+            8.8281,
+            6.0498,
+            5.9228,
+            5.3369,
+            4.9316,
+            3.4179,
+            4.9316,
             6.9042
         };
     }
@@ -27797,105 +28794,6 @@ public final class GenFontMetrics {
             10.0000
         };
     }
-    private static double[] _AppleSystemUIFont_0_3() {
-        return new double[] {
-            2.8125,
-            3.1103,
-            4.7753,
-            6.2988,
-            6.2988,
-            9.2529,
-            7.1142,
-            2.9687,
-            3.8183,
-            3.8183,
-            4.7167,
-            6.2988,
-            2.9687,
-            4.7167,
-            2.9687,
-            3.0468,
-            6.2988,
-            4.6386,
-            6.0351,
-            6.2695,
-            6.4355,
-            6.1816,
-            6.3671,
-            5.6933,
-            6.3867,
-            6.3671,
-            2.9687,
-            2.9687,
-            6.2988,
-            6.2988,
-            6.2988,
-            5.1269,
-            9.1796,
-            6.7382,
-            6.5722,
-            7.1582,
-            7.2656,
-            5.9570,
-            5.7226,
-            7.4658,
-            7.4218,
-            2.6757,
-            5.3808,
-            6.5869,
-            5.6787,
-            8.7402,
-            7.4218,
-            7.7148,
-            6.3525,
-            7.7148,
-            6.5332,
-            6.3720,
-            6.3378,
-            7.3730,
-            6.7382,
-            9.6777,
-            6.7871,
-            6.5527,
-            6.6162,
-            3.8183,
-            3.0468,
-            3.8183,
-            6.2988,
-            5.8349,
-            5.0000,
-            5.5175,
-            6.1425,
-            5.5957,
-            6.1425,
-            5.7128,
-            3.6181,
-            6.0937,
-            5.8837,
-            2.4707,
-            2.4658,
-            5.4296,
-            2.5292,
-            8.7011,
-            5.8349,
-            5.9082,
-            6.1035,
-            6.0937,
-            3.8085,
-            5.2343,
-            3.6328,
-            5.8349,
-            5.4199,
-            7.7441,
-            5.2441,
-            5.4296,
-            5.3906,
-            3.8183,
-            2.5878,
-            3.8183,
-            6.2988
-        };
-    }
     private static double[] Inter_0_3() {
         return new double[] {
             2.7441,
@@ -28391,895 +29289,7748 @@ public final class GenFontMetrics {
             6.6699
         };
     }
-    private static double[] System_0_6() {
-        return new double[] {
-            2.5781,
-            3.5620,
-            5.6884,
-            6.7138,
-            6.7138,
-            10.3564,
-            7.4438,
-            3.4765,
-            4.2871,
-            4.2871,
-            4.8437,
-            6.7138,
-            3.4765,
-            4.8437,
-            3.4765,
-            3.3447,
-            6.8457,
-            5.1171,
-            6.4306,
-            6.6894,
-            6.8701,
-            6.6333,
-            6.8359,
-            6.0449,
-            6.9384,
-            6.8359,
-            3.4765,
-            3.4765,
-            6.7138,
-            6.7138,
-            6.7138,
-            5.5712,
-            9.2700,
-            7.3242,
-            6.9335,
-            7.4121,
-            7.4731,
-            6.2182,
-            5.9741,
-            7.6025,
-            7.8320,
-            3.1835,
-            6.0107,
-            7.0922,
-            5.9472,
-            9.0649,
-            7.6806,
-            7.8637,
-            6.7358,
-            7.8637,
-            6.9433,
-            6.7504,
-            6.6015,
-            7.6025,
-            7.2119,
-            10.0927,
-            7.2949,
-            7.0800,
-            6.7553,
-            4.2871,
-            3.3447,
-            4.2871,
-            6.7138,
-            6.2719,
-            5.0000,
-            5.8959,
-            6.5136,
-            5.8740,
-            6.5136,
-            6.0083,
-            4.0795,
-            6.4526,
-            6.3208,
-            2.8710,
-            2.8686,
-            6.0131,
-            2.9492,
-            9.3212,
-            6.2719,
-            6.1962,
-            6.4697,
-            6.4746,
-            4.3505,
-            5.6640,
-            4.1259,
-            6.2719,
-            5.8276,
-            8.4716,
-            5.8056,
-            5.9716,
-            5.6640,
-            4.2871,
-            2.9931,
-            4.2871,
-            6.7138
-        };
-    }
-    private static double[] System_1_3() {
-        return new double[] {
-            2.8222,
-            3.1054,
-            4.3701,
-            6.3281,
-            6.4843,
-            9.1796,
-            7.1142,
-            2.5292,
-            3.8183,
-            3.8183,
-            4.5898,
-            6.4843,
-            2.9687,
-            4.7167,
-            2.9687,
-            3.6230,
-            6.2988,
-            4.6630,
-            6.0400,
-            6.2695,
-            6.4355,
-            6.1865,
-            6.3720,
-            5.6982,
-            6.3867,
-            6.3769,
-            2.9687,
-            2.9687,
-            6.4843,
-            6.4843,
-            6.4843,
-            5.1269,
-            9.1796,
-            6.7382,
-            6.5722,
-            7.1435,
-            7.2558,
-            5.9521,
-            5.7128,
-            7.4462,
-            7.4316,
-            2.6855,
-            5.3808,
-            6.5869,
-            5.6835,
-            8.7500,
-            7.4218,
-            7.7099,
-            6.3671,
-            7.7099,
-            6.5332,
-            6.2304,
-            6.3037,
-            7.4414,
-            6.7382,
-            9.6777,
-            6.7822,
-            6.5625,
-            6.6162,
-            3.8183,
-            3.6230,
-            3.8183,
-            4.5898,
-            4.4726,
-            5.0000,
-            5.4980,
-            6.1474,
-            5.5419,
-            6.1767,
-            5.7421,
-            3.6181,
-            6.0888,
-            5.9375,
-            2.5195,
-            2.5195,
-            5.3027,
-            2.5195,
-            8.7011,
-            5.8496,
-            5.9179,
-            6.1230,
-            6.1083,
-            3.8623,
-            5.1367,
-            3.6328,
-            5.8349,
-            5.4199,
-            7.7441,
-            5.2685,
-            5.4296,
-            5.3906,
-            3.8183,
-            3.6230,
-            3.8183,
-            6.4843
-        };
-    }
-    private static double[] System_1_6() {
-        return new double[] {
-            2.5781,
-            3.5571,
-            4.9584,
-            6.6406,
-            6.9091,
-            9.7705,
-            7.4438,
-            2.7001,
-            4.2871,
-            4.2871,
-            4.8339,
-            6.9091,
-            3.4765,
-            4.8437,
-            3.4765,
-            3.9892,
-            6.8408,
-            5.1293,
-            6.4331,
-            6.6699,
-            6.8994,
-            6.6455,
-            6.8627,
-            6.0498,
-            6.9116,
-            6.8579,
-            3.4765,
-            3.4765,
-            6.9091,
-            6.9091,
-            6.9091,
-            5.5712,
-            9.2700,
-            7.3266,
-            6.9335,
-            7.4829,
-            7.4951,
-            6.2158,
-            6.0278,
-            7.6464,
-            7.8369,
-            3.1884,
-            5.9985,
-            7.0971,
-            5.9497,
-            9.1723,
-            7.6782,
-            7.8979,
-            6.6796,
-            7.8979,
-            6.9213,
-            6.6503,
-            6.5869,
-            7.6367,
-            7.2119,
-            10.0927,
-            7.2924,
-            7.0849,
-            6.7578,
-            4.2871,
-            3.9892,
-            4.2871,
-            4.8339,
-            4.6142,
-            5.0000,
-            5.8666,
-            6.5429,
-            5.8984,
-            6.5527,
-            6.1059,
-            4.0820,
-            6.4794,
-            6.3525,
-            2.9248,
-            2.9248,
-            5.9082,
-            2.8955,
-            9.2407,
-            6.2744,
-            6.3403,
-            6.5136,
-            6.5234,
-            4.4311,
-            5.6127,
-            4.1308,
-            6.2719,
-            5.7788,
-            8.4716,
-            5.8203,
-            5.8959,
-            5.6640,
-            4.2871,
-            3.9892,
-            4.2871,
-            6.9091
-        };
-    }
     private static double[] System_0_2() {
         return new double[] {
-            2.6925,
-            3.0103,
-            4.4831,
-            6.2373,
-            6.2373,
-            8.9776,
-            7.1880,
-            2.8949,
-            3.6645,
-            3.6645,
-            4.7598,
-            6.2373,
-            2.8949,
-            4.7598,
-            2.8949,
-            2.9299,
-            6.2588,
-            4.4356,
-            5.9644,
-            6.1495,
-            6.4063,
-            6.1262,
-            6.2841,
-            5.6656,
-            6.3190,
-            6.2841,
-            2.8949,
-            2.8949,
-            6.2373,
-            6.2373,
-            6.2373,
-            4.9762,
-            9.1335,
-            6.6552,
-            6.4399,
-            7.1043,
-            7.1856,
-            5.8416,
-            5.6365,
-            7.3520,
-            7.2619,
-            2.4727,
-            5.3116,
-            6.3977,
-            5.5572,
-            8.5987,
-            7.2926,
-            7.6225,
-            6.2095,
-            7.6225,
-            6.3901,
-            6.2659,
-            6.2486,
-            7.2469,
-            6.6552,
-            9.5485,
-            6.6671,
-            6.4389,
-            6.4823,
-            3.6645,
-            2.9299,
-            3.6645,
-            6.2373,
-            5.8211,
+            2.7170,
+            3.0308,
+            4.5428,
+            6.2498,
+            6.2498,
+            9.0338,
+            7.1729,
+            2.9100,
+            3.6959,
+            3.6959,
+            4.7510,
+            6.2498,
+            2.9100,
+            4.7510,
+            2.9100,
+            2.9538,
+            6.2670,
+            4.4771,
+            5.9788,
+            6.1740,
+            6.4122,
+            6.1375,
+            6.3011,
+            5.6713,
+            6.3328,
+            6.3011,
+            2.9100,
+            2.9100,
+            6.2498,
+            6.2498,
+            6.2498,
+            5.0070,
+            9.1429,
+            6.6721,
+            6.4670,
+            7.1153,
+            7.2019,
+            5.8652,
+            5.6541,
+            7.3752,
+            7.2946,
+            2.5142,
+            5.3257,
+            6.4364,
+            5.5820,
+            8.6276,
+            7.3190,
+            7.6414,
+            6.2387,
+            7.6414,
+            6.4194,
+            6.2876,
+            6.2669,
+            7.2727,
+            6.6721,
+            9.5749,
+            6.6916,
+            6.4621,
+            6.5097,
+            3.6959,
+            2.9538,
+            3.6959,
+            6.2498,
+            5.8239,
             5.0000,
-            5.4929,
-            6.1148,
-            5.5910,
-            6.1302,
-            5.7313,
-            3.5058,
-            6.0660,
-            5.8699,
-            2.3507,
-            2.3473,
-            5.3297,
-            2.3908,
-            8.6534,
-            5.8211,
-            5.8989,
-            6.0727,
-            6.0660,
-            3.7286,
-            5.1651,
-            3.5312,
-            5.8211,
-            5.2599,
-            7.6441,
-            5.1118,
-            5.2666,
-            5.2798,
-            3.6645,
-            2.4094,
-            3.6645,
-            6.2373
+            5.4980,
+            6.1205,
+            5.5920,
+            6.1327,
+            5.7275,
+            3.5288,
+            6.0717,
+            5.8727,
+            2.3752,
+            2.3715,
+            5.3501,
+            2.4191,
+            8.6632,
+            5.8239,
+            5.9008,
+            6.0790,
+            6.0717,
+            3.7449,
+            5.1793,
+            3.5520,
+            5.8239,
+            5.2926,
+            7.6645,
+            5.1389,
+            5.2999,
+            5.3025,
+            3.6959,
+            2.4459,
+            3.6959,
+            6.2498
         };
     }
     private static double[] System_1_2() {
         return new double[] {
-            2.7057,
-            3.0101,
-            3.9129,
-            6.4265,
-            6.4480,
-            9.1085,
-            7.1869,
-            2.2886,
-            3.6669,
-            3.6669,
-            4.4990,
-            6.4480,
-            2.8960,
-            4.7591,
-            2.8960,
-            3.5110,
-            6.2594,
-            4.4572,
-            5.9689,
-            6.1514,
-            6.4067,
-            6.1305,
-            6.2888,
-            5.6709,
-            6.3201,
-            6.2921,
-            2.8960,
-            2.8960,
-            6.4480,
-            6.4480,
-            6.4480,
-            4.9786,
-            9.1342,
-            6.6565,
-            6.4617,
-            7.1359,
-            7.2059,
-            5.8401,
-            5.6311,
-            7.3463,
-            7.2711,
-            2.4827,
-            5.3248,
-            6.4007,
-            5.5625,
-            8.6046,
-            7.2856,
-            7.6342,
-            6.2445,
-            7.6660,
-            6.3999,
-            6.1880,
-            6.2265,
-            7.3203,
-            6.6565,
-            9.5596,
-            6.6732,
-            6.4504,
-            6.4845,
-            3.6669,
-            3.5110,
-            3.6669,
-            4.4990,
-            4.4893,
+            2.7280,
+            3.0283,
+            4.0005,
+            6.4076,
+            6.4550,
+            9.1221,
+            7.1729,
+            2.3347,
+            3.6959,
+            3.6959,
+            4.5164,
+            6.4550,
+            2.9100,
+            4.7510,
+            2.9100,
+            3.5325,
+            6.2670,
+            4.4966,
+            5.9825,
+            6.1740,
+            6.4122,
+            6.1412,
+            6.3047,
+            5.6762,
+            6.3328,
+            6.3084,
+            2.9100,
+            2.9100,
+            6.4550,
+            6.4550,
+            6.4550,
+            5.0070,
+            9.1429,
+            6.6721,
+            6.4829,
+            7.1374,
+            7.2154,
+            5.8616,
+            5.6468,
+            7.3655,
+            7.3019,
+            2.5215,
+            5.3355,
+            6.4364,
+            5.5856,
+            8.6325,
+            7.3117,
+            7.6487,
+            6.2680,
+            7.6744,
+            6.4255,
+            6.1962,
+            6.2413,
+            7.3435,
+            6.6721,
+            9.5822,
+            6.6941,
+            6.4719,
+            6.5097,
+            3.6959,
+            3.5325,
+            3.6959,
+            4.5164,
+            4.4861,
             5.0000,
-            5.4995,
-            6.1398,
-            5.5798,
+            5.4992,
+            6.1413,
+            5.5725,
             6.1767,
-            5.7588,
-            3.5273,
-            6.0873,
-            5.9329,
-            2.3893,
-            2.3908,
-            5.2421,
-            2.3863,
-            8.6769,
-            5.8511,
-            5.9467,
-            6.1063,
-            6.1129,
-            3.7790,
-            5.1276,
-            3.5359,
-            5.8410,
-            5.2624,
-            7.6533,
-            5.1308,
-            5.2692,
-            5.2816,
-            3.6669,
-            3.5110,
-            3.6669,
-            6.4480
+            5.7556,
+            3.5447,
+            6.0876,
+            5.9338,
+            2.4142,
+            2.4155,
+            5.2537,
+            2.4118,
+            8.6815,
+            5.8508,
+            5.9412,
+            6.1095,
+            6.1120,
+            3.7949,
+            5.1293,
+            3.5545,
+            5.8398,
+            5.2926,
+            7.6707,
+            5.1571,
+            5.2999,
+            5.3025,
+            3.6959,
+            3.5325,
+            3.6959,
+            6.4550
         };
     }
     private static double[] System_0_4() {
         return new double[] {
-            2.7265,
-            3.2759,
-            5.1102,
-            6.4510,
-            6.4510,
-            9.6575,
-            7.2351,
-            3.1549,
-            3.9902,
-            3.9902,
-            4.7633,
-            6.4510,
-            3.1549,
-            4.7633,
-            3.1549,
-            3.1560,
-            6.4993,
-            4.8141,
-            6.1801,
-            6.4235,
-            6.5949,
-            6.3472,
-            6.5390,
-            5.8222,
-            6.5890,
-            6.5390,
-            3.1549,
-            3.1549,
-            6.4510,
-            6.4510,
-            6.4510,
-            5.2898,
-            9.2128,
-            6.9531,
-            6.7047,
-            7.2513,
-            7.3417,
-            6.0528,
-            5.8148,
-            7.5159,
-            7.5722,
-            2.8619,
-            5.6118,
-            6.7722,
-            5.7771,
-            8.8592,
-            7.5167,
-            7.7694,
-            6.4931,
-            7.7694,
-            6.6836,
-            6.5108,
-            6.4345,
-            7.4571,
-            6.9119,
-            9.8299,
-            6.9733,
-            6.7461,
-            6.6672,
-            3.9902,
-            3.1560,
-            3.9902,
-            6.4510,
-            5.9952,
+            2.7343,
+            3.2609,
+            5.0797,
+            6.4371,
+            6.4371,
+            9.6208,
+            7.2241,
+            3.1380,
+            3.9746,
+            3.9746,
+            4.7591,
+            6.4371,
+            3.1380,
+            4.7591,
+            3.1380,
+            3.1461,
+            6.4811,
+            4.7982,
+            6.1670,
+            6.4095,
+            6.5804,
+            6.3322,
+            6.5234,
+            5.8105,
+            6.5706,
+            6.5234,
+            3.1380,
+            3.1380,
+            6.4371,
+            6.4371,
+            6.4371,
+            5.2750,
+            9.2098,
+            6.9336,
+            6.6927,
+            7.2428,
+            7.3348,
+            6.0441,
+            5.8064,
+            7.5113,
+            7.5586,
+            2.8450,
+            5.5908,
+            6.7553,
+            5.7682,
+            8.8484,
+            7.5081,
+            7.7644,
+            6.4803,
+            7.7644,
+            6.6699,
+            6.4982,
+            6.4257,
+            7.4495,
+            6.8961,
+            9.8161,
+            6.9564,
+            6.7285,
+            6.6625,
+            3.9746,
+            3.1461,
+            3.9746,
+            6.4371,
+            5.9806,
             5.0000,
-            5.6563,
-            6.2786,
-            5.6977,
-            6.2786,
-            5.8212,
-            3.7873,
-            6.2253,
-            6.0440,
-            2.6175,
-            2.6135,
-            5.6436,
-            2.6832,
-            8.9285,
-            5.9952,
-            6.0138,
-            6.2378,
-            6.2334,
-            4.0073,
-            5.3919,
-            3.8136,
-            5.9952,
-            5.5694,
-            8.0109,
-            5.4500,
-            5.6284,
-            5.4908,
-            3.9902,
-            2.7365,
-            3.9902,
-            6.4510
+            5.6437,
+            6.2662,
+            5.6884,
+            6.2662,
+            5.8113,
+            3.7719,
+            6.2133,
+            6.0294,
+            2.6041,
+            2.6001,
+            5.6242,
+            2.6692,
+            8.9078,
+            5.9806,
+            6.0042,
+            6.2256,
+            6.2207,
+            3.9892,
+            5.3776,
+            3.7972,
+            5.9806,
+            5.5558,
+            7.9866,
+            5.4313,
+            5.6103,
+            5.4817,
+            3.9746,
+            2.7229,
+            3.9746,
+            6.4371
         };
     }
     private static double[] System_1_4() {
         return new double[] {
-            2.7343,
-            3.2680,
-            4.5819,
-            6.4406,
-            6.6372,
-            9.3923,
-            7.2329,
-            2.5908,
-            3.9871,
-            3.9871,
-            4.6777,
-            6.6372,
-            3.1515,
-            4.7624,
-            3.1515,
-            3.7548,
-            6.4939,
-            4.8309,
-            6.1815,
-            6.4136,
-            6.6025,
-            6.3517,
-            6.5487,
-            5.8247,
-            6.5756,
-            6.5500,
-            3.1515,
-            3.1515,
-            6.6372,
-            6.6372,
-            6.6372,
-            5.2869,
-            9.2122,
-            6.9500,
-            6.7023,
-            7.2657,
-            7.3419,
-            6.0470,
-            5.8262,
-            7.5183,
-            7.5775,
-            2.8665,
-            5.6032,
-            6.7705,
-            5.7793,
-            8.9020,
-            7.5141,
-            7.7776,
-            6.4796,
-            7.7776,
-            6.6729,
-            6.3816,
-            6.4056,
-            7.5117,
-            6.9087,
-            9.8271,
-            6.9659,
-            6.7505,
-            6.6671,
-            3.9871,
-            3.7548,
-            3.9871,
-            4.6777,
-            4.5236,
+            2.7408,
+            3.2560,
+            4.5662,
+            6.4323,
+            6.6259,
+            9.3766,
+            7.2241,
+            2.5862,
+            3.9746,
+            3.9746,
+            4.6712,
+            6.6259,
+            3.1380,
+            4.7591,
+            3.1380,
+            3.7451,
+            6.4795,
+            4.8185,
+            6.1710,
+            6.4030,
+            6.5901,
+            6.3395,
+            6.5356,
+            5.8154,
+            6.5617,
+            6.5372,
+            3.1380,
+            3.1380,
+            6.6259,
+            6.6259,
+            6.6259,
+            5.2750,
+            9.2098,
+            6.9344,
+            6.6927,
+            7.2566,
+            7.3356,
+            6.0400,
+            5.8178,
+            7.5130,
+            7.5667,
+            2.8532,
+            5.5867,
+            6.7570,
+            5.7723,
+            8.8908,
+            7.5073,
+            7.7726,
+            6.4713,
+            7.7726,
+            6.6626,
+            6.3704,
+            6.3981,
+            7.5065,
+            6.8961,
+            9.8161,
+            6.9523,
+            6.7366,
+            6.6634,
+            3.9746,
+            3.7451,
+            3.9746,
+            4.6712,
+            4.5198,
             5.0000,
-            5.6307,
-            6.2898,
-            5.6703,
-            6.3121,
-            5.8731,
-            3.7851,
-            6.2294,
-            6.0869,
-            2.6654,
-            2.6654,
-            5.5206,
-            2.6548,
-            8.8954,
-            6.0025,
-            6.0700,
-            6.2636,
-            6.2578,
-            4.0670,
-            5.3081,
-            3.8121,
-            5.9922,
-            5.5491,
-            8.0060,
-            5.4671,
-            5.5975,
-            5.4890,
-            3.9871,
-            3.7548,
-            3.9871,
-            6.6372
+            5.6209,
+            6.2793,
+            5.6608,
+            6.3020,
+            5.8634,
+            3.7728,
+            6.2190,
+            6.0758,
+            2.6546,
+            2.6546,
+            5.5045,
+            2.6448,
+            8.8810,
+            5.9912,
+            6.0587,
+            6.2532,
+            6.2467,
+            4.0519,
+            5.2954,
+            3.7988,
+            5.9806,
+            5.5395,
+            7.9866,
+            5.4524,
+            5.5851,
+            5.4817,
+            3.9746,
+            3.7451,
+            3.9746,
+            6.6259
         };
     }
     private static double[] System_0_5() {
         return new double[] {
-            2.6640,
-            3.3963,
-            5.3536,
-            6.5616,
-            6.5616,
-            9.9517,
-            7.3229,
-            3.2903,
-            4.1152,
-            4.1152,
-            4.7971,
-            6.5616,
-            3.2903,
-            4.7971,
-            3.2903,
-            3.2355,
-            6.6451,
-            4.9417,
-            6.2856,
-            6.5354,
-            6.7107,
-            6.4676,
-            6.6640,
-            5.9160,
-            6.7361,
-            6.6640,
-            3.2903,
-            3.2903,
-            6.5616,
-            6.5616,
-            6.5616,
-            5.4083,
-            9.2368,
-            7.1093,
-            6.8011,
-            7.3190,
-            7.3970,
-            6.1224,
-            5.8819,
-            7.5523,
-            7.6816,
-            2.9973,
-            5.7797,
-            6.9069,
-            5.8487,
-            8.9458,
-            7.5857,
-            7.8091,
-            6.5952,
-            7.8091,
-            6.7929,
-            6.6117,
-            6.5048,
-            7.5183,
-            7.0382,
-            9.9405,
-            7.1087,
-            6.8867,
-            6.7043,
-            4.1152,
-            3.2355,
-            4.1152,
-            6.5616,
-            6.1117,
+            2.6562,
+            3.4114,
+            5.3840,
+            6.5755,
+            6.5755,
+            9.9885,
+            7.3339,
+            3.3072,
+            4.1308,
+            4.1308,
+            4.8014,
+            6.5755,
+            3.3072,
+            4.8014,
+            3.3072,
+            3.2454,
+            6.6633,
+            4.9576,
+            6.2988,
+            6.5494,
+            6.7252,
+            6.4827,
+            6.6796,
+            5.9277,
+            6.7545,
+            6.6796,
+            3.3072,
+            3.3072,
+            6.5755,
+            6.5755,
+            6.5755,
+            5.4231,
+            9.2398,
+            7.1288,
+            6.8131,
+            7.3274,
+            7.4039,
+            6.1311,
+            5.8902,
+            7.5569,
+            7.6952,
+            3.0142,
+            5.8007,
+            6.9238,
+            5.8577,
+            8.9566,
+            7.5943,
+            7.8141,
+            6.6080,
+            7.8141,
+            6.8066,
+            6.6243,
+            6.5136,
+            7.5260,
+            7.0540,
+            9.9544,
+            7.1256,
+            6.9042,
+            6.7089,
+            4.1308,
+            3.2454,
+            4.1308,
+            6.5755,
+            6.1262,
             5.0000,
-            5.7572,
-            6.3775,
-            5.7719,
-            6.3775,
-            5.8999,
-            3.9103,
-            6.3210,
-            6.1605,
-            2.7242,
-            2.7209,
-            5.7992,
-            2.7952,
-            9.0938,
-            6.1117,
-            6.0906,
-            6.3354,
-            6.3349,
-            4.1518,
-            5.5065,
-            3.9451,
-            6.1117,
-            5.6781,
-            8.2048,
-            5.5997,
-            5.7729,
-            5.5637,
-            4.1152,
-            2.8445,
-            4.1152,
-            6.5616
+            5.7698,
+            6.3899,
+            5.7812,
+            6.3899,
+            5.9098,
+            3.9257,
+            6.3329,
+            6.1751,
+            2.7376,
+            2.7343,
+            5.8186,
+            2.8092,
+            9.1145,
+            6.1262,
+            6.1002,
+            6.3476,
+            6.3476,
+            4.1699,
+            5.5208,
+            3.9615,
+            6.1262,
+            5.6917,
+            8.2291,
+            5.6184,
+            5.7910,
+            5.5729,
+            4.1308,
+            2.8580,
+            4.1308,
+            6.5755
         };
     }
     private static double[] System_1_5() {
         return new double[] {
-            2.6669,
-            3.3927,
-            4.7443,
-            6.5268,
-            6.7545,
-            9.5554,
-            7.3238,
-            2.6379,
-            4.1164,
-            4.1164,
-            4.7451,
-            6.7545,
-            3.2917,
-            4.7975,
-            3.2917,
-            3.8559,
-            6.6435,
-            4.9596,
-            6.2900,
-            6.5241,
-            6.7305,
-            6.4784,
-            6.6841,
-            5.9218,
-            6.7205,
-            6.6828,
-            3.2917,
-            3.2917,
-            6.7545,
-            6.7545,
-            6.7545,
-            5.4095,
-            9.2371,
-            7.1124,
-            6.8020,
-            7.3593,
-            7.4080,
-            6.1198,
-            5.9131,
-            7.5736,
-            7.6893,
-            3.0054,
-            5.7736,
-            6.9114,
-            5.8528,
-            9.0186,
-            7.5849,
-            7.8295,
-            6.5659,
-            7.8295,
-            6.7800,
-            6.4975,
-            6.4838,
-            7.5656,
-            7.0395,
-            9.9416,
-            7.1067,
-            6.8947,
-            6.7062,
-            4.1164,
-            3.8559,
-            4.1164,
-            4.7451,
-            4.5627,
+            2.6595,
+            3.4065,
+            4.7623,
+            6.5364,
+            6.7675,
+            9.5735,
+            7.3339,
+            2.6432,
+            4.1308,
+            4.1308,
+            4.7525,
+            6.7675,
+            3.3072,
+            4.8014,
+            3.3072,
+            3.8671,
+            6.6601,
+            4.9739,
+            6.3020,
+            6.5364,
+            6.7447,
+            6.4924,
+            6.6992,
+            5.9326,
+            6.7366,
+            6.6975,
+            3.3072,
+            3.3072,
+            6.7675,
+            6.7675,
+            6.7675,
+            5.4231,
+            9.2398,
+            7.1305,
+            6.8131,
+            7.3697,
+            7.4153,
+            6.1279,
+            5.9228,
+            7.5797,
+            7.7018,
+            3.0208,
+            5.7926,
+            6.9270,
+            5.8609,
+            9.0315,
+            7.5927,
+            7.8352,
+            6.5755,
+            7.8352,
+            6.7919,
+            6.5104,
+            6.4925,
+            7.5716,
+            7.0540,
+            9.9544,
+            7.1223,
+            6.9107,
+            6.7106,
+            4.1308,
+            3.8671,
+            4.1308,
+            4.7525,
+            4.5670,
             5.0000,
-            5.7324,
-            6.3990,
-            5.7686,
-            6.4158,
-            5.9735,
-            3.9131,
-            6.3372,
-            6.2014,
-            2.7772,
-            2.7772,
-            5.6878,
-            2.7586,
-            9.0443,
-            6.1197,
-            6.1865,
-            6.3714,
-            6.3723,
-            4.2240,
-            5.4394,
-            3.9495,
-            6.1128,
-            5.6481,
-            8.2068,
-            5.6194,
-            5.7262,
-            5.5645,
-            4.1164,
-            3.8559,
-            4.1164,
-            6.7545
+            5.7438,
+            6.4111,
+            5.7796,
+            6.4273,
+            5.9846,
+            3.9273,
+            6.3492,
+            6.2141,
+            2.7897,
+            2.7897,
+            5.7063,
+            2.7701,
+            9.0608,
+            6.1327,
+            6.1995,
+            6.3834,
+            6.3850,
+            4.2415,
+            5.4540,
+            3.9648,
+            6.1262,
+            5.6591,
+            8.2291,
+            5.6363,
+            5.7405,
+            5.5729,
+            4.1308,
+            3.8671,
+            4.1308,
+            6.7675
         };
+    }
+    private static String Al_Bayan_0_3_kerning() {
+        return "11-7373,AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,F,-11083,FA-5468,LT-7373,LV-7373"
+            + ",LW-7373,LY-7373,Ly-3662,P,-12890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T,-11083,T;-11083,TA-7"
+            + "373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468"
+            + ",V,-9179,V;-3662,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W,-5468,W;-1757"
+            + ",WA-3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-878,Y,-12890,Y;-6494,YA-7373,Ya-7373,Ye-9179"
+            + ",Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,r,-5468,v,-7373,w,-5468,y,-7373,";
+    }
+    private static String Al_Bayan_0_6_kerning() {
+        return "11-5468,AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,F,-11083,FA-5468,LT-7373,LV-7373"
+            + ",LW-5468,LY-9179,Ly-3662,P,-12890,PA-7373,RV-1757,RW-1757,RY-3662,T,-11083,T;-11083,TA-7373,TO-1"
+            + "757,Ta-7373,Tc-7373,Te-7373,Ti-1757,To-7373,Tr-5468,Ts-7373,Tu-7373,Tw-7373,Ty-7373,V,-9179,V;-5"
+            + "468,VA-7373,Va-5468,Ve-5468,Vi-1757,Vo-7373,Vr-5468,Vu-3662,Vy-3662,W,-5468,W;-1757,WA-5468,Wa-3"
+            + "662,We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,Y,-11083,Y;-7373,YA-9179,Ya-5468,Ye-5468,Yi-3"
+            + "662,Yo-7373,Yp-5468,Yq-7373,Yu-5468,Yv-5468,r,-5468,v,-7373,w,-3662,y,-7373,";
+    }
+    private static String Al_Nile_0_3_kerning() {
+        return "AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,F,-11083,FA-5468,LT-7373,LV-7373,LW-7373"
+            + ",LY-7373,Ly-3662,P,-12890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T,-11083,T;-11083,TA-7373,TO-1"
+            + "757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,V,-9179"
+            + ",V;-3662,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W,-5468,W;-1757,WA-3662"
+            + ",Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-878,Y,-12890,Y;-6494,YA-7373,Ya-7373,Ye-9179,Yi-3662"
+            + ",Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,r,-5468,v,-7373,w,-5468,y,-7373,";
+    }
+    private static String Al_Nile_0_6_kerning() {
+        return "AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,F,-11083,FA-5468,LT-7373,LV-7373,LW-5468"
+            + ",LY-9179,Ly-3662,P,-12890,PA-7373,RV-1757,RW-1757,RY-3662,T,-11083,T;-11083,TA-7373,TO-1757,Ta-7"
+            + "373,Tc-7373,Te-7373,Ti-1757,To-7373,Tr-5468,Ts-7373,Tu-7373,Tw-7373,Ty-7373,V,-9179,V;-5468,VA-7"
+            + "373,Va-5468,Ve-5468,Vi-1757,Vo-7373,Vr-5468,Vu-3662,Vy-3662,W,-5468,W;-1757,WA-5468,Wa-3662,We-1"
+            + "757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,Y,-11083,Y;-7373,YA-9179,Ya-5468,Ye-5468,Yi-3662,Yo-7"
+            + "373,Yp-5468,Yq-7373,Yu-5468,Yv-5468,r,-5468,v,-7373,w,-3662,y,-7373,";
+    }
+    private static String American_Typewriter_0_3_kerning() {
+        return ",1-5599,01-9199,1,-4600,1.-5399,10-8200,11-7799,12-4199,13-6600,14-10200,15-6699,16-8300,17-1309"
+            + "9,18-7100,19-6499,21-5599,31-6100,41-4499,51-8399,61-8200,7,-11399,7.-12200,71-5500,74-9700,76-3"
+            + "899,7:-6999,81-7700,91-9900,AA4600,AC-2799,AG-2700,AO-2599,AQ-2599,AT-3000,AU-3800,AV-11499,AW-7"
+            + "799,AY-5500,Aa1300,Ac-1499,Ad-1600,Ae-1399,Ag2200,Ao-1499,Aq-1499,At-1799,Au-2799,Av-7899,Aw-539"
+            + "9,BA-1499,BY-1600,CA-1100,DA-3300,DV-3600,DW-3500,DY-2899,F,-7899,F.-8600,FA-7799,Fa-1300,Fe-169"
+            + "9,Fi1300,Fo-1499,Fr1300,Fu2100,GA-1799,GT-1100,GV-2400,GY-1900,KC-3000,KG-2899,KO-2899,KT1499,Ke"
+            + "-1699,Ko-1799,Ku-3000,LA2599,LT-4799,LV-9299,LW-6900,LY-7500,Lu-1900,Ly-2700,NA-2299,NC-2799,NG-"
+            + "2700,NO-2599,Na-3099,Ne-3200,No-3200,Nu-2599,OA-2799,OV-2500,OW-2400,OX-3399,OY-1799,P,-9400,P.-"
+            + "10200,PA-8399,Pa-1199,Pe-1600,Po-1499,RA3200,RC1600,RG1600,RO1600,RT-1999,RY-3200,Ra1999,Re1600,"
+            + "Ro1600,Ry-1900,SA-1300,ST-1900,St-1199,T,-6600,T.-7400,T:-1499,TA-3300,TS-1600,TV2700,TY3200,Ta-"
+            + "1300,Tc-1499,Te-1499,Tg-2799,Ti1300,To-1399,Tr1300,Ts-1100,Tu2100,Tw2599,Ty2400,U,-3699,U.-4299,"
+            + "UA-3800,Um-2799,Un-2799,Up-2500,V,-9600,V.-10299,V:-6699,V;-6000,VA-9900,VO-2500,Va-7299,Ve-7400"
+            + ",Vg-7700,Vo-7299,Vr-3699,Vu-3000,Vy-2599,W,-7500,W.-8200,WA-7500,WC-3000,WG-2899,WO-2500,WS-1999"
+            + ",Wa-6000,We-6100,Wo-6000,Wr-3600,Wu-2899,Wy-2500,XC-3399,XO-3200,Xe-1999,Xo-2100,Xu-3399,Y,-8699"
+            + ",Y.-9499,Y:-8999,Y;-8300,YA-5299,YG-2299,YO-1999,YS-1499,Ya-8600,Ye-10099,Yg-7700,Yo-10000,Yp-55"
+            + "00,Yu-5000,Zy-2299,av-3600,aw-2899,ay-2100,ch-1300,ck-1300,fa-1199,fe-2599,ff1100,fi-5600,fl-550"
+            + "0,fo-2299,ft2599,ga-1199,ge-1799,gl1399,gr2500,hy-1999,ij-1300,ke-1600,kg1600,ko-1699,ks1300,lv-"
+            + "1900,ly-2200,mp-2599,my-2100,np-2599,ny-2100,ow-1100,ox-2400,oy-1300,qu-1100,r,-8399,r.-9199,rf1"
+            + "100,rg-1600,rm1399,rn1399,rr1399,rt1900,ru2100,rw2700,rx1300,ry2500,v,-7599,v.-8399,ve-1399,vo-1"
+            + "100,w,-5599,w.-6399,wc-1100,we-1199,wg-1900,xc-2299,xe-2500,xo-2200,y,-7500,y.-8300,yc-1100,ye-1"
+            + "199,";
+    }
+    private static String American_Typewriter_0_6_kerning() {
+        return ",1-4700,01-6900,1,-1900,1.-2299,10-5399,11-7100,12-2899,13-3899,14-6199,15-4199,16-6199,17-8800,"
+            + "18-3999,19-4400,21-5500,31-6199,41-4299,51-7899,61-6499,7,-9700,7.-10200,71-4900,74-6999,76-3399"
+            + ",7:-4100,81-6399,91-7599,AA3899,AC-1199,AO-1199,AQ-1199,AT-1499,AU-4700,AV-7299,AW-6399,AY-3500,"
+            + "Aa1199,Ag1399,At-1499,Au-1499,Av-5000,Aw-3999,DA-1699,DV-1399,DW-1799,DY-1199,F,-8500,F.-8999,FA"
+            + "-7100,Fa-1699,Fe-1999,Fo-1799,Fu1300,GA-1300,KC-1100,KG-1100,KO-1199,KT1799,Ku-1600,LA2799,LT-25"
+            + "00,LV-5599,LW-4700,LY-4600,NA-3200,NC-1399,NG-1699,NO-1600,Na-3699,Ne-3800,No-3600,Nu-1600,OW-11"
+            + "99,OX-1100,P,-6999,P.-7400,PA-6300,Pa-1199,Pe-1100,RA3899,RC-1100,RO-1100,RT-1499,RY-1399,Ra1300"
+            + ",T,-3200,T.-3699,T;1399,TA-1499,TV2700,TY2799,Ta-1300,Tc-1600,Te-1699,Tg-2299,To-1499,Ts-1100,Tu"
+            + "1699,Tw2200,Ty2599,U,-5399,U.-5899,UA-4799,Um-2299,Un-2299,Up-1600,V,-8600,V.-9100,V:-3899,V;-30"
+            + "00,VA-8000,Va-4900,Ve-6399,Vg-6699,Vi-1300,Vo-6199,Vr-1100,W,-6399,W.-6900,WA-6600,WG-1100,WO-11"
+            + "00,Wa-5200,We-5200,Wi-1699,Wo-5099,Wr-1600,XC-1100,XO-1100,Xu-1600,Y,-5500,Y.-6000,Y:-3099,Y;-25"
+            + "99,YA-3600,Ya-4900,Ye-5800,Yg-5899,Yi-1300,Yo-5700,aj2899,av-2500,aw-2299,fe-1699,ff1499,fi-9099"
+            + ",fl-7299,fo-1499,gl1699,gr1300,ij1900,kg1100,ks1600,lv-2599,mp-1600,np-1600,qu-1100,r,-5299,r.-5"
+            + "800,rf1699,rg-1300,rm1799,rn1799,rr1799,rt2400,ru2599,rw3099,rx2100,ry3399,v,-6699,v.-7200,w,-52"
+            + "99,w.-5800,wg-1699,xc-1300,xe-1300,xo-1199,y,-6199,y.-6699,";
+    }
+    private static String Apple_Braille_0_3_kerning() {
+        return "11-7373,AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,F,-11083,F.-11083,FA-5468,LT-737"
+            + "3,LV-7373,LW-7373,LY-7373,Ly-3662,P,-12890,P.-12890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T,-1"
+            + "1083,T--5468,T.-11083,T:-11083,T;-11083,TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11"
+            + "083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,V,-9179,V--5468,V.-9179,V:-3662,V;-3662,VA-7373,Va-"
+            + "7373,Ve-5468,Vi-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W,-5468,W--1757,W.-5468,W:-1757,W;-1757,WA-"
+            + "3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-878,Y,-12890,Y--9179,Y.-12890,Y:-5468,Y;-6494,YA"
+            + "-7373,Ya-7373,Ye-9179,Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,r,-5468,r.-5468,v,"
+            + "-7373,v.-7373,w,-5468,w.-5468,y,-7373,y.-7373,";
+    }
+    private static String Apple_Chancery_0_3_kerning() {
+        return "\"A2441,\"B2441,\"D2441,\"F2441,\"H2441,\"I2441,\"J2441,\"K2441,\"M2441,\"N2441,\"P2441,\"R2441,\"T2441,\"U244"
+            + "1,'A2441,'B2441,'D2441,'F2441,'H2441,'I2441,'J2441,'K2441,'M2441,'N2441,'P2441,'R2441,'T2441,'U2"
+            + "441,-V-2441,-W-2441,-X-976,-Y-1220,A\"-488,A'-488,AV-3662,AW-3662,AY-2441,D,-976,D.-976,DA2441,DB"
+            + "2441,DD2441,DF2441,DH2441,DI2441,DJ2441,DK2441,DM2441,DN2441,DP2441,DR2441,DT2441,DU2441,DX-488,"
+            + "F,-2441,F--732,F.-2441,FA1220,FB1220,FD1220,FF1220,FH1220,FI1220,FJ1220,FK1220,FM1220,FN1220,FP1"
+            + "220,FR1220,FT1220,FU1220,Fa-2441,Fc-2441,Fd-1953,Fe-2441,Fg-2441,Fo-2441,Fq-2441,Fs-976,Fx-976,F"
+            + "z-976,K--976,L\"-488,L'-488,L--732,LA-732,LB-732,LD-732,LF-732,LH-732,LI-732,LK-732,LM-732,LN-732"
+            + ",LP-732,LR-732,LT-732,LU-732,LV-1464,LW-1464,LY-1220,Na-1220,Nc-1220,Nd-732,Ne-1220,Ng-1220,No-1"
+            + "220,Nq-1220,Ns-1220,Nx-1220,Nz-1220,O,-732,O.-732,OA2441,OB2441,OD2441,OF2441,OH2441,OI2441,OJ24"
+            + "41,OK2441,OM2441,ON2441,OP2441,OR2441,OT2441,OU2441,OX-732,P,-2441,P--732,P.-2441,PA2441,PB2441,"
+            + "PD2441,PF2441,PH2441,PI2441,PJ2441,PK2441,PM2441,PN2441,PP2441,PR2441,PT2441,PU2441,Pa-1220,Pc-1"
+            + "220,Pd-1220,Pe-1220,Pg-1220,Po-1220,Pq-1220,RV-976,RW-976,RY-488,Ra1220,Rc1220,Rd1220,Re1220,Rg1"
+            + "220,Ro1220,Rq1220,SX-732,SY-732,T,-4882,T--3662,T.-4882,TA-732,TB-732,TC-1220,TD-732,TF-732,TG-1"
+            + "220,TH-732,TI-732,TJ-1220,TK-732,TM-732,TN-732,TO-1220,TP-732,TQ-1220,TR-732,TT-732,TU-732,Ta-61"
+            + "03,Tc-6103,Td-4394,Te-6103,Tg-6103,Th-16699,Ti-1220,Tj-3662,Tm-4882,Tn-4882,To-6103,Tp-3662,Tq-6"
+            + "103,Tr-4882,Ts-4882,Tt-4882,Tu-4882,Tv-4882,Tw-4882,Tx-4882,Ty-4882,Tz-4882,V,-1464,V--732,V.-14"
+            + "64,VA1464,VB1464,VD1464,VF1464,VH1464,VI1464,VJ1464,VK1464,VM1464,VN1464,VP1464,VR1464,VT1464,VU"
+            + "1464,Va-3662,Vc-3662,Vd-3662,Ve-3662,Vg-3662,Vo-3662,Vq-3662,Vs-976,Vx-976,Vz-976,W,-1464,W--732"
+            + ",W.-1464,WA1464,WB1464,WD1464,WF1464,WH1464,WI1464,WJ1464,WK1464,WM1464,WN1464,WP1464,WR1464,WT1"
+            + "464,WU1464,Wa-3662,Wc-3662,Wd-3662,We-3662,Wg-3662,Wo-3662,Wq-3662,Ws-976,Wx-976,Wz-976,X--732,Y"
+            + ",-2929,Y--1953,Y.-2929,YC-732,YG-732,YO-732,YQ-732,Ya-4882,Yc-4882,Yd-3906,Ye-4882,Yg-4394,Yi-73"
+            + "2,Yj-1220,Ym-1953,Yn-1953,Yo-4882,Yp-1220,Yq-4394,Yr-1953,Ys-3662,Yt-1953,Yu-1953,Yv-1953,Yw-195"
+            + "3,Yx-3662,Yy-1953,Yz-3662,ff-1806,fi-7226,fj-4199,fl1416,fr-2929,fu-2636,fy-5908,gg-2050,ll781,r"
+            + ",-976,r.-976,ra-1464,rc-1464,rd-1220,re-1464,rg-976,ro-1464,rq-976,ta-732,tc-732,td-732,te-3808,"
+            + "th-6250,ti-9228,to-3515,tr-9423,tt-7568,ty-9375,v,-732,v.-732,w,-732,w.-732,";
+    }
+    private static String Apple_Color_Emoji_0_3_kerning() {
+        return "AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,F,-11083,F.-11083,FA-5468,LT-7373,LV-737"
+            + "3,LW-7373,LY-7373,Ly-3662,P,-12890,P.-12890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T,-11083,T--"
+            + "5468,T.-11083,T:-11083,T;-11083,TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3"
+            + "662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,V,-9179,V--5468,V.-9179,V:-3662,V;-3662,VA-7373,Va-7373,Ve-"
+            + "5468,Vi-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W,-5468,W--1757,W.-5468,W:-1757,W;-1757,WA-3662,Wa-"
+            + "3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-878,Y,-12890,Y--9179,Y.-12890,Y:-5468,Y;-6494,YA-7373,Ya"
+            + "-7373,Ye-9179,Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,r,-5468,r.-5468,v,-7373,v."
+            + "-7373,w,-5468,w.-5468,y,-7373,y.-7373,";
+    }
+    private static String Apple_SD_Gothic_Neo_0_3_kerning() {
+        return "\",-9199,\"0-1999,\"4-6199,\"6-1999,\"71000,\"8-1999,\"9-899,\"A-6900,\"C-1100,\"J-11499,\"T1000,\"V2100,\"W1"
+            + "499,\"a-2799,\"d-4600,\"g-4100,\"t899,\"v899,\"w899,\u00233-1100,$1-1499,$4899,$7-1100,$9-1100,&0-1000,&1-3"
+            + "600,&7-2599,&9-1499,&C-1000,&T-6000,&U-1000,&V-5500,&W-3099,&v-2200,&w-2100,(4-1600,(71100,(g309"
+            + "9,(j8399,*11499,*4-4400,*7899,*8-1499,*A-7299,*J-10099,*T899,*V1000,*W1000,*X-2100,*a-1499,*d-21"
+            + "00,*f1799,*g-4199,*t1999,*v1999,*w2100,,\"-9799,,0-4100,,1-7100,,4-4100,,6-4100,,7-3300,,8-2100,,"
+            + "9-4100,,A1499,,C-3600,,T-9799,,U-3099,,V-8999,,W-5899,,d-2100,,f-3099,,j4100,,t-3099,,u-1499,,v-"
+            + "7899,,w-7100,,y-5299,-1-5800,-2-3099,-3-3600,-5-1300,-7-6300,-9-3399,-A-3099,-J-8200,-T-10599,-V"
+            + "-6499,-W-4199,-X-5299,-g-1100,-v-2400,-w-2100,-x-4100,//-8699,/0-1000,/2-1000,/3-1799,/4-4199,/6"
+            + "-2100,/8-1499,/9-899,/A-5200,/C-1000,/J-7299,/X-1000,/a-4700,/d-3200,/g-6000,/m-3200,/u-3600,/v-"
+            + "2200,/w-2200,/x-3200,0\"-1999,0,-4100,0/-1000,01-1000,02-1600,03-2100,07-3200,09-500,1\"-1100,1,-1"
+            + "100,2\"-899,2%-899,2&-1000,2--2100,20-500,24-1600,26-1000,27-1000,2<-1499,3\"-1000,3%-1499,3*-1100"
+            + ",3,-2100,32-2100,37-1900,39-1000,4\"-3999,4\u00231499,4%-3099,4*-3200,4,-2599,41-2200,42-1100,441799,4"
+            + "7-1600,49-2100,5\"-1000,5%-1600,5*-2100,5,-2100,51-1000,57-1100,59-1600,6\"-1999,6%-2599,6*-1900,6"
+            + ",-3099,60-500,61-3000,62-1100,67-1499,69-2200,7\"1000,7%899,7&-3200,7)1100,7*2100,7,-10000,7--419"
+            + "9,7/-5500,70-1100,711100,74-3500,76-1100,771100,7:-4100,7<-3399,7=-2100,7?1999,7@-2400,7]2100,8\""
+            + "-1999,8%-1999,8*-1499,8,-2100,81-1000,82-1000,87-2100,89-1000,8<-1000,8?-1000,9\"-1000,9,-5000,9/"
+            + "-1000,91-1000,92-1600,93-1100,97-2200,99-899,:1-5200,:7-4100,:9-1000,:T-10000,:V-5200,:W-2599,:j"
+            + "1000,:v-2599,:w-1499,<7-1300,=1-3200,=2-2100,=3-2100,=7-4100,>1-4100,>2-3200,>3-3699,>7-5500,>8-"
+            + "1000,>9-1600,@1-3000,@2-1499,@3-2100,@7-3200,@8-599,@9-1000,@A-2100,@J-4199,@T-4100,@V-2599,@W-1"
+            + "000,@X-3099,@g-1000,@x-1000,A\"-6900,A*-7299,A,1499,A--3099,AC-2100,AT-5500,AU-2100,AV-5299,AW-27"
+            + "00,At-1499,Av-4100,Aw-2599,B*-1100,BV-1100,BX-1000,Bv-1100,Bx-1499,C--2100,C/899,Cv-2400,Cw-1300"
+            + ",E*-899,E,1000,E--2599,EC-2100,Ea-1000,Ed-2100,Ef-2100,Eg-1999,Et-2700,Eu-1499,Ev-4100,Ew-2700,E"
+            + "x-1000,F\"899,F&-3699,F)1000,F*899,F,-8200,F--2200,F/-5299,F:-4100,F?1000,F@-3699,FA-5599,FC-1000"
+            + ",FJ-8000,FV1000,FW1499,F]1000,Fa-4900,Fd-3699,Ff-2200,Fg-4900,Fj-1100,Fm-3699,Ft-2400,Fu-4700,Fv"
+            + "-2700,Fw-2200,Fx-4199,G\"-1000,G*-2200,GT-2200,GV-1600,GW-1100,Gv-1000,Hg-1000,J,-3500,J/-1000,J:"
+            + "-899,JA-1000,JJ-2599,Ja-899,K*-1499,K--5299,K@-1000,KC-3099,KU-1499,Ka-1000,Kd-3099,Kf-1100,Kg-1"
+            + "999,Km-1000,Kt-2100,Ku-2100,Kv-4100,Kw-3099,LT-5200,LW-2899,LY-4600,P\"1399,P&-2100,P*2599,P,-110"
+            + "00,P--2400,P/-3399,P?1000,P@-1000,PA-5299,PC1499,PJ-7700,PV1000,PW1100,PX-1499,Pa-1100,Pd-1000,P"
+            + "f1000,Pg-1600,Pt1000,Pv1000,Pw1000,Q)1600,Q,800,Q.-1499,Q/3399,QA-1100,QJ-1499,QX-1000,Q]2200,Qg"
+            + "1300,Qj6199,Qy1399,Q}2200,R\"-1000,R,1000,R--4199,RT-1600,RU-1000,RV-1000,Ra-500,Rd-1499,Rt-1000,"
+            + "Ru-1000,Rv-1000,Rw-1000,T\"1000,T&-3200,T*1799,T,-9799,T--10599,T/-5500,T:-10000,T?1499,T@-5200,T"
+            + "A-5500,TC-2400,TJ-7299,TT1499,TV1499,TW1100,Ta-7599,Td-7500,Tf-1300,Tg-8000,Tj-1000,Tm-6999,Tt-3"
+            + "399,Tu-6799,Tv-7200,Tw-6699,Tx-6199,U,-3099,U/-1000,UA-2100,UJ-2599,Ua-1000,Ug-1499,Ux-1000,V\"21"
+            + "00,V&-4100,V*1000,V,-8999,V--6499,V/-5299,V:-5200,V?2100,V@-4100,VA-5299,VC-1499,VJ-6499,VT1499,"
+            + "VV1499,VW1499,V]1000,Va-4199,Vd-4600,Vf-1000,Vg-4700,Vm-2100,Vu-2100,Vv-1000,Vw-1499,Vx-2599,W\"1"
+            + "499,W&-3099,W*1000,W,-5899,W--4199,W/-3099,W:-2599,W?1499,W@-2599,WA-2700,WC-1000,WJ-5200,WT1100"
+            + ",WV1499,WW1000,W]1000,Wa-2700,Wd-2100,Wg-2700,Wm-1000,Wu-1000,Wv-1000,Ww-1000,Wx-2100,X&-1000,X*"
+            + "-2100,X--5299,X@-1999,XC-2599,Xa-1000,Xd-2599,Xf-1000,Xg-1000,Xt-1499,Xu-2100,Xv-4100,Xw-2200,[4"
+            + "-1100,[72100,[V1000,[W1000,[g2100,[j8099,a\"-3000,a*-1000,a?-1100,ag-500,av-500,aw-500,c*899,c,10"
+            + "00,c@899,cA1000,cC1000,cT-3500,ct899,cv899,cw1000,cx899,e\"-3099,e*-1000,e,-500,et500,ev-500,ex-1"
+            + "000,f!1300,f\"5500,f&-899,f)5500,f*5099,f,-6199,f--2400,f/-1300,f:-2200,f?6300,f]6000,fa-1499,fd-"
+            + "500,fg-2599,fj1499,fk2400,ft899,fv1000,fw1000,g\"899,g)3099,g*1999,g--2200,g/4600,g]2100,gf1000,g"
+            + "g1000,gj6799,gt1000,gv1000,gw1000,gx1000,j/1100,jj4199,k&-1499,k--3899,k@-1000,ka-1000,kd-1499,k"
+            + "g-1999,q/2599,qj4100,r\"2100,r&-1100,r*2500,r,-6699,r--2200,r/-1900,ra-1100,rf1000,rt899,rv1000,r"
+            + "w1000,t*899,t,1000,t--2100,t/2100,tf-1000,tg-899,tt-1000,tv-500,v\"899,v&-2100,v*1799,v,-7899,v--"
+            + "2400,v/-2200,v:-2599,v@-1000,va-1499,vd-1000,vf1000,vg-2100,vt1000,vv1000,vw1000,w\"899,w&-1499,w"
+            + "*2100,w,-7100,w--2100,w/-2200,w:-1499,w@-1000,wa-1499,wd-500,wf1000,wg-1499,wt1000,wv1000,x&-100"
+            + "0,x--4100,xd-1000,xg-899,";
+    }
+    private static String Apple_SD_Gothic_Neo_0_6_kerning() {
+        return "\",-8399,\"0-2100,\"4-6799,\"6-2100,\"71000,\"8-2100,\"9-500,\"A-7899,\"C-1000,\"J-11499,\"T1000,\"V2100,\"W1"
+            + "499,\"a-2700,\"d-4199,\"g-3699,\"t1000,\"v1000,\"w1000,\u00233-1000,\u00234-500,$1-1499,$41000,$7-1000,$9-1000,&"
+            + "0-1000,&1-4199,&4-500,&6-500,&7-2700,&8-500,&9-1499,&C-1000,&T-6300,&U-1000,&V-5800,&W-3699,&a-5"
+            + "00,&f-500,&t-500,&v-2700,&w-2700,(0-500,(1-500,(3-500,(4-2100,(5-500,(6-500,(7500,(8-1000,(9-500"
+            + ",(A-500,(C-500,(J-500,(d-500,(f-500,(g2700,(j8999,(t-500,(v-500,(w-500,*11499,*4-4199,*71000,*8-"
+            + "1499,*A-7899,*J-10000,*T1000,*V500,*W1000,*X-2700,*a-1499,*d-2100,*f2100,*g-3699,*t2100,*v2100,*"
+            + "w2100,,\"-11000,,0-3699,,1-7899,,4-3699,,6-3699,,7-3200,,8-1499,,9-4199,,A1499,,C-3200,,T-11000,,"
+            + "U-2700,,V-10000,,W-6799,,d-2100,,f-3200,,g-500,,j4199,,t-3200,,u-1499,,v-8399,,w-7299,,x-500,,y-"
+            + "5800,-1-5800,-2-2700,-3-3200,-5-1000,-7-6300,-9-2700,-A-3200,-J-6799,-T-10500,-V-6300,-W-4199,-X"
+            + "-5299,-g-1000,-v-2100,-w-2100,-x-4199,.j3699,//-9499,/0-1499,/1-500,/2-1000,/3-2100,/4-4700,/5-5"
+            + "00,/6-2700,/8-2100,/9-1499,/A-5800,/C-1499,/J-7299,/X-1000,/a-5299,/d-3699,/f-500,/g-6300,/m-320"
+            + "0,/t-500,/u-3699,/v-2100,/w-2100,/x-3699,0\"-2100,0)-500,0,-3699,0/-1499,01-1000,02-1499,03-2100,"
+            + "07-2700,09-500,1\"-1000,1,-1000,11-500,2\"-1000,2%-1000,2&-1000,2--2100,20-500,24-1499,26-1000,27-"
+            + "1000,2<-1499,3\"-1000,3%-1499,3)-500,3*-1000,3,-1499,3/-500,31-500,32-1499,37-1499,39-1000,4\"-419"
+            + "9,4\u00231000,4%-3200,4)-500,4*-3200,4,-2100,41-2700,42-1000,441499,47-1499,49-2100,5\"-1000,5%-1499,5"
+            + ")-500,5*-2100,5,-2100,5/-500,51-1000,57-1000,59-1499,6\"-2100,6%-2700,6)-500,6*-1499,6,-2700,6/-5"
+            + "00,60-500,61-3200,62-1000,67-1499,69-2100,7\"1000,7\u0023-500,7%1000,7&-3699,7)500,7*1499,7,-10500,7--"
+            + "4199,7/-5800,70-1000,711000,74-3699,76-1000,771000,7:-3699,7<-3200,7=-2100,7?2100,7@-2700,7]2100"
+            + ",8\"-2100,8%-2100,8)-1000,8*-1499,8,-1499,8/-500,81-1000,82-500,87-2100,89-1000,8<-1000,8?-1000,9"
+            + "\"-1000,9)-500,9,-4700,9/-1499,91-1000,92-1499,93-1000,97-2100,99-1000,:1-4199,:7-3699,:9-1000,:T"
+            + "-10000,:V-5299,:W-2700,:X-500,:j1000,:v-2100,:w-1499,<7-1000,=1-2700,=2-1499,=3-1499,=7-3699,>1-"
+            + "3699,>2-3200,>3-3699,>7-5299,>8-1000,>9-1499,@1-2700,@2-1000,@3-2100,@7-2700,@8-500,@9-1000,@A-2"
+            + "700,@J-3699,@T-3699,@V-3200,@W-1000,@X-3200,@g-1000,@x-1499,A\"-7899,A&-500,A)-500,A*-7899,A,1499"
+            + ",A--3200,A?-500,AA500,AC-2700,AT-5800,AU-2100,AV-5800,AW-3200,Ad-500,Af-500,At-2100,Au-500,Av-47"
+            + "00,Aw-3200,B)-500,B*-1000,BV-1499,BX-1499,Bv-1000,Bx-1499,C--1499,C/1000,Cv-1499,Cw-1000,E*-1000"
+            + ",E,1000,E--2700,EC-2100,Ea-1000,Ed-2100,Ef-2100,Eg-2100,Et-2100,Eu-1499,Ev-3699,Ew-2700,Ex-1000,"
+            + "F\"1000,F&-4199,F)1000,F*1000,F,-7899,F--2100,F/-5800,F:-3699,F?1000,F@-3699,FA-5800,FC-1000,FJ-7"
+            + "299,FV1000,FW1499,F]1000,Fa-4700,Fd-3699,Ff-1499,Fg-4700,Fj-1000,Fm-3200,Ft-1499,Fu-4199,Fv-2100"
+            + ",Fw-2100,Fx-3699,G\"-1000,G*-2100,GT-2100,GV-1499,GW-1000,Gv-1000,Hg-1000,J,-3200,J/-1000,J:-1000"
+            + ",JA-1000,JJ-2100,Ja-1000,Jx-500,K&-500,K*-2100,K--5299,K@-1000,KC-3699,KU-1499,Ka-1000,Kd-3699,K"
+            + "f-1000,Kg-1499,Km-1000,Kt-2100,Ku-2100,Kv-4700,Kw-3699,LT-5299,LW-3200,LY-4700,P\"1499,P&-2700,P)"
+            + "-500,P*2100,P,-11499,P--1499,P/-3699,P?1000,P@-1000,PA-5800,PC1499,PJ-7899,PV500,PW500,PX-2100,P"
+            + "a-1499,Pd-1000,Pf1000,Pg-1499,Pt1000,Pv1000,Pw1000,Q)1000,Q.-1499,Q/1499,QA-1499,QJ-1499,QX-1499"
+            + ",Q]1499,Qg500,Qj6300,Qy1000,Q}1499,R\"-1000,R&-500,R,1000,R--3699,RT-1499,RU-1000,RV-1499,RW-500,"
+            + "Ra-500,Rd-1499,Rt-1000,Ru-1000,Rv-1000,Rw-1000,T\"1000,T&-3699,T*2100,T,-11000,T--10500,T/-5800,T"
+            + ":-10000,T?1499,T@-5299,TA-5800,TC-2100,TJ-7299,TT1499,TV1499,TW1000,Ta-6799,Td-7299,Tf-1000,Tg-7"
+            + "899,Tj-1000,Tm-5800,Tt-2700,Tu-5800,Tv-5800,Tw-5800,Tx-5299,U,-2700,U/-1000,UA-2100,UJ-2100,Ua-1"
+            + "000,Ug-1499,Ux-1000,V\"2100,V&-5299,V*500,V,-10000,V--6300,V/-5800,V:-5299,V?2100,V@-4700,VA-5800"
+            + ",VC-2100,VJ-6799,VT1499,VV1499,VW1499,V]1000,Va-4700,Vd-5299,Vf-1000,Vg-5299,Vm-2700,Vt-500,Vu-2"
+            + "700,Vv-1499,Vw-1499,Vx-2700,W\"1499,W&-3699,W*500,W,-6799,W--4199,W/-3699,W:-2700,W?1499,W@-3200,"
+            + "WA-3200,WC-1499,WJ-5299,WT1000,WV1499,WW1000,W]1000,Wa-3200,Wd-2700,Wg-3200,Wm-1000,Wu-1499,Wv-1"
+            + "000,Ww-1000,Wx-2100,X&-1499,X*-1499,X--5299,X@-2100,XC-3200,Xa-1000,Xd-3200,Xf-1000,Xg-1000,Xt-2"
+            + "100,Xu-2100,Xv-4700,Xw-2700,[4-1000,[72100,[V1000,[W1000,[g2100,[j8399,a\"-2700,a*-1000,a?-1000,a"
+            + "g-500,av-1000,aw-500,c*1000,c,1000,c@1000,cA1000,cC1000,cT-2700,cV-500,cW-500,ct1000,cv1000,cw10"
+            + "00,cx1000,e\"-3200,e*-1000,e,-500,et500,ev-1000,ew-500,ex-1499,f!1499,f\"4700,f&-1499,f)4700,f*470"
+            + "0,f,-6799,f--1499,f/-2100,f:-1499,f?5800,f]5200,fa-1499,fd-500,fg-2100,fj1499,fk2100,ft1000,fv10"
+            + "00,fw1000,g\"1000,g)2700,g*2100,g,500,g--2100,g/4700,g:500,g]2100,gf1000,gg1000,gj7299,gt1000,gv1"
+            + "000,gw1000,gx1000,j/1000,jj4700,k&-2100,k)-500,k--4199,k@-1000,ka-1000,kd-2100,kg-2100,q/500,qj4"
+            + "700,r\"2100,r&-1499,r*2700,r,-7299,r--1499,r/-2100,ra-1499,rf1000,rt1000,rv1000,rw1000,t\"1000,t*1"
+            + "000,t,1000,t--1499,t/1499,tf-1000,tg-1000,tt-1000,tv-500,v\"1000,v&-2700,v)-500,v*2100,v,-8399,v-"
+            + "-2100,v/-2700,v:-2100,v@-1499,va-2100,vd-1499,vf1000,vg-2100,vt1000,vv1000,vw1000,w\"1000,w&-2100"
+            + ",w)-500,w*2100,w,-7299,w--2100,w/-2100,w:-1499,w@-1499,wa-1499,wd-1000,wf1000,wg-1499,wt1000,wv1"
+            + "000,x&-1499,x--4199,x@-500,xd-1499,xg-1000,";
+    }
+    private static String Arial_0_3_kerning() {
+        return " A-5517, T-1806, Y-1806,11-7421,A -5517,AT-7421,AV-7421,AW-3710,AY-7421,Av-1806,Aw-1806,Ay-1806,"
+            + "F,-11083,F.-11083,FA-5517,L -3710,LT-7421,LV-7421,LW-7421,LY-7421,Ly-3710,P -1806,P,-12890,P.-12"
+            + "890,PA-7421,RT-1806,RV-1806,RW-1806,RY-1806,T -1806,T,-11083,T--5517,T.-11083,T:-11083,T;-11083,"
+            + "TA-7421,TO-1806,Ta-11083,Tc-11083,Te-11083,Ti-3710,To-11083,Tr-3710,Ts-11083,Tu-3710,Tw-5517,Ty-"
+            + "5517,V,-9179,V--5517,V.-9179,V:-3710,V;-3710,VA-7421,Va-7421,Ve-5517,Vi-1806,Vo-5517,Vr-3710,Vu-"
+            + "3710,Vy-3710,W,-5517,W--1806,W.-5517,W:-1806,W;-1806,WA-3710,Wa-3710,We-1806,Wo-1806,Wr-1806,Wu-"
+            + "1806,Wy-878,Y -1806,Y,-12890,Y--9179,Y.-12890,Y:-5517,Y;-6494,YA-7421,Ya-7421,Ye-9179,Yi-3710,Yo"
+            + "-9179,Yp-7421,Yq-9179,Yu-5517,Yv-5517,ff-1806,r,-5517,r.-5517,v,-7421,v.-7421,w,-5517,w.-5517,y,"
+            + "-7421,y.-7421,";
+    }
+    private static String Arial_1_3_kerning() {
+        return " A-3710, Y-1806,11-7421,A -3710,AT-7421,AV-5517,AW-1806,AY-7421,Av-1806,Aw-1806,Ay-878,F -1806,F"
+            + ",-12890,F.-12890,FA-7421,L -1806,LT-7421,LV-5517,LW-3710,LY-9179,Ly-1806,P -3710,P,-12890,P.-128"
+            + "90,PA-7421,RT-1806,RV-1806,RW-1806,RY-3710,T,-9179,T--9179,T.-9179,T:-7421,T;-7421,TA-7421,TO-18"
+            + "06,Ta-9179,Tc-9179,Te-9179,Ti-878,To-9179,Tr-7421,Ts-9179,Tu-7421,Tw-7421,Ty-7421,V,-7421,V--371"
+            + "0,V.-7421,V:-1806,V;-1806,VA-5517,Va-3710,Ve-3710,Vi-1806,Vo-3710,Vr-1806,Vu-1806,Vy-1806,W,-371"
+            + "0,W--1806,W.-3710,WA-1806,Wa-1806,We-1806,Wi-878,Y -1806,Y,-9179,Y--7421,Y.-9179,Y:-3710,Y;-3710"
+            + ",YA-5517,Ya-7421,Ye-5517,Yi-1806,Yo-5517,Yp-5517,Yq-5517,Yu-3710,Yv-3710,r,-5517,r--1806,r.-3710"
+            + ",v,-7421,v.-7421,w,-5517,w.-5517,y,-7421,y.-7421,";
+    }
+    private static String Arial_0_6_kerning() {
+        return " A-3710, Y-1806,11-5517,A -3710,AT-7421,AV-7421,AW-5517,AY-9179,Av-3710,Aw-1806,Ay-3710,F,-11083"
+            + ",F.-11083,FA-5517,L -1806,LT-7421,LV-7421,LW-5517,LY-9179,Ly-3710,P -1806,P,-12890,P.-12890,PA-7"
+            + "421,RV-1806,RW-1806,RY-3710,T,-11083,T--5517,T.-11083,T:-11083,T;-11083,TA-7421,TO-1806,Ta-7421,"
+            + "Tc-7421,Te-7421,Ti-1806,To-7421,Tr-5517,Ts-7421,Tu-7421,Tw-7421,Ty-7421,V,-9179,V--5517,V.-9179,"
+            + "V:-5517,V;-5517,VA-7421,Va-5517,Ve-5517,Vi-1806,Vo-7421,Vr-5517,Vu-3710,Vy-3710,W,-5517,W--2001,"
+            + "W.-5517,W:-1806,W;-1806,WA-5517,Wa-3710,We-1806,Wi-878,Wo-1806,Wr-1806,Wu-1806,Wy-1806,Y -1806,Y"
+            + ",-11083,Y--5517,Y.-11083,Y:-7421,Y;-7421,YA-9179,Ya-5517,Ye-5517,Yi-3710,Yo-7421,Yp-5517,Yq-7421"
+            + ",Yu-5517,Yv-5517,r,-5517,r.-5517,v,-7421,v.-7421,w,-3710,w.-3710,y,-7421,y.-7421,";
+    }
+    private static String Arial_1_6_kerning() {
+        return " A-3710, Y-1806,11-7421,A -3710,AT-7421,AV-7421,AW-5517,AY-7421,F,-11083,F.-11083,FA-5517,L -180"
+            + "6,LT-7421,LV-5517,LW-5517,LY-7421,P -3710,P,-12890,P.-12890,PA-7421,RT-1806,RW-1806,RY-1806,T,-7"
+            + "421,T--5517,T.-7421,T:-7421,T;-7421,TA-7421,TO-1806,Ta-3710,Tc-3710,Te-3710,Ti-1806,To-3710,Tr-1"
+            + "806,Ts-3710,Tu-1806,Tw-3710,Ty-3710,V,-9179,V--3710,V.-9179,V:-3710,V;-3710,VA-7421,Va-3710,Ve-3"
+            + "710,Vi-3710,Vo-3710,Vr-1806,Vu-1806,Vy-1806,W,-7421,W--3710,W.-7421,W:-3710,W;-3710,WA-5517,Wa-1"
+            + "806,We-1806,Wi-878,Wo-1806,Wr-1806,Wu-1806,Wy-1806,Y -1806,Y,-9179,Y--7421,Y.-9179,Y:-5517,Y;-55"
+            + "17,YA-7421,Ya-3710,Ye-3710,Yi-3710,Yo-3710,Yp-3710,Yq-3710,Yu-3710,Yv-3710,ff-1806,r,-5517,r.-55"
+            + "17,v,-5517,v.-5517,w,-3710,w.-3710,y,-3710,y.-3710,";
+    }
+    private static String Arial_Black_0_3_kerning() {
+        return "AC-1806,AG-1806,AO-1806,AQ-1904,AT-6884,AU-3417,AV-5517,AW781,AY-8496,Ap1708,Au-976,Av-1708,B,24"
+            + "90,B.1611,BA-1708,BU-2587,C,2490,C.1708,D,-976,D.-1708,DA-4296,DV-3417,DW1708,DY-3417,F,-14599,F"
+            + ".-15283,FA-9423,Fa-2587,Fe-3417,Fl781,Fo-3417,Fr-3417,G,1611,G.976,J,-1806,J.-2587,JA-2587,Ja-17"
+            + "08,Je-2587,Jo-2587,Ju-2587,Jy-1708,KC-3417,KG-3417,KO-3417,Ke-3417,Ko-3417,Ku-2587,Kv-1708,Ky-17"
+            + "08,LC-1708,LG-1708,LO-1708,LT-5078,LU-2587,LV-5078,LW-1708,LY-7714,Lw-1708,Ly-976,NA-976,O,-1708"
+            + ",O.-2587,OA-3417,OT-2587,OV-4296,OW-1708,OX-5175,OY-6787,P,-18017,P.-18798,PA-8496,Pa-1708,Pe-25"
+            + "87,Po-2587,Q,3320,Q.1708,QA1708,QT-1806,QV-4296,QY-5078,RC-1806,RG-1806,RO-1708,RQ-2001,RT-878,R"
+            + "U-1708,RV-1708,RY-4296,Re-2490,Ro-2587,Ru-1708,Rw1708,T,-14599,T--6787,T.-15283,T:-3417,T;-3417,"
+            + "TA-6787,TC-3417,TG-3417,TO-3417,TQ-3417,Ta-5078,Tc-6005,Te-6005,Th2685,Tl1904,Tm-4296,To-6787,Tr"
+            + "-4296,Ts-6787,Tu-4296,Tw-976,Ty-1708,Tz-3417,U,-2587,U.-3417,UA-3417,V,-12011,V--4296,V.-12792,V"
+            + ":-2587,V;-2587,VA-5712,VC-3417,VG-3417,VO-3417,VQ-3417,Va-4296,Ve-5078,Vi1611,Vo-5078,Vr-3417,Vu"
+            + "-3417,W,-4296,W--976,W.-5175,WC-1708,WG-1708,WO-1708,Wa-1708,Wd-2587,We-2587,Wh3320,Wi3320,Wo-25"
+            + "87,Wu-1708,XC-3417,XG-3417,XO-3417,Y,-16210,Y--8593,Y.-16992,Y:-6005,Y;-6005,YA-9423,YC-6005,YG-"
+            + "6005,YO-6005,YS-4296,Ya-8593,Yd-9423,Ye-9423,Yo-8496,Yp-5078,Yq-8496,Yu-6005,Yv-2587,ab976,ag161"
+            + "1,ap976,at-1708,av-1708,bb976,bv-2587,ch-1708,ck-1708,cl-2587,cy-1708,dd976,dw976,eb-976,eg2490,"
+            + "ev-2587,ex-2587,f 5810,f!8300,f,-5175,f.-6005,f?8300,fa-976,fe-1708,ff2490,fk976,fo-1708,gg976,g"
+            + "l976,gr1806,gy1708,ke-3417,ko-3417,ky1708,ly1708,nv-2685,o,-976,o.-1708,ov-3417,ow-1806,ox-3515,"
+            + "oy-1708,oz1708,p,-976,p.-1708,pw-2587,py-1708,r,-6787,r.-7714,r:4199,r;4199,ra1708,rc1708,rd2490"
+            + ",re1611,rg2490,rj4199,rk3320,rl3320,rm4980,rn4980,ro1611,rp4199,rq2490,rr4199,rs2490,rt4980,ru33"
+            + "20,rv5810,ry5810,sw-2587,v,-8496,v.-9277,vc-2587,vd-1708,ve-2587,vo-2587,vq-2490,w,-7714,w.-8496"
+            + ",wa-1123,wc-976,wd-1123,we-1123,wh1708,wo-1708,wq-1708,xc-1708,xd-1708,xe-1708,xo-1708,y,-8496,y"
+            + ".-9423,ya-1708,yc-1708,yd-1708,ye-1708,yo-1708,zc-976,zd-976,ze-976,zo-976,";
+    }
+    private static String Arial_Hebrew_0_3_kerning() {
+        return "AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,FA-5468,LT-7373,LV-7373,LW-7373,LY-7373,"
+            + "Ly-3662,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-36"
+            + "62,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-"
+            + "3662,Vu-3662,Vy-3662,WA-3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-878,YA-7373,Ya-7373,Ye-9"
+            + "179,Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,";
+    }
+    private static String Arial_Hebrew_0_6_kerning() {
+        return "AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,FA-5468,LT-7373,LV-7373,LW-5468,LY-9179,"
+            + "Ly-3662,PA-7373,RV-1757,RW-1757,RY-3662,TA-7373,TO-1757,Ta-7373,Tc-7373,Te-7373,Ti-1757,To-7373,"
+            + "Tr-5468,Ts-7373,Tu-7373,Tw-7373,Ty-7373,VA-7373,Va-5468,Ve-5468,Vi-1757,Vo-7373,Vr-5468,Vu-3662,"
+            + "Vy-3662,WA-5468,Wa-3662,We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,YA-9179,Ya-5468,Ye-5468,Y"
+            + "i-3662,Yo-7373,Yp-5468,Yq-7373,Yu-5468,Yv-5468,";
+    }
+    private static String Arial_Narrow_0_3_kerning() {
+        return " A-4492, T-1416, Y-1416,11-6005,A -4492,AT-6005,AV-6005,AW-2978,AY-6005,Av-1416,Aw-1416,Ay-1416,"
+            + "F,-9082,F.-9082,FA-4492,L -2978,LT-6005,LV-6005,LW-6005,LY-6005,Ly-2978,P -1416,P,-10498,P.-1049"
+            + "8,PA-6005,RT-1416,RV-1416,RW-1416,RY-1416,T -1416,T,-9082,T--4492,T.-9082,T:-9082,T;-9082,TA-600"
+            + "5,TO-1416,Ta-9082,Tc-9082,Te-9082,Ti-1806,To-9082,Tr-2978,Ts-6982,Tu-2978,Tw-4492,Ty-4492,V,-751"
+            + "9,V--4492,V.-7519,V:-2978,V;-2978,VA-6005,Va-6005,Ve-4492,Vi-1416,Vo-4492,Vr-2978,Vu-2978,Vy-297"
+            + "8,W,-4492,W--1416,W.-4492,W:-1416,W;-1416,WA-2978,Wa-2978,We-1416,Wo-1416,Wr-1416,Wu-1416,Wy-683"
+            + ",Y -1416,Y,-10498,Y--7519,Y.-10498,Y:-4492,Y;-5322,YA-6005,Ya-6005,Ye-7519,Yi-2978,Yo-7519,Yp-60"
+            + "05,Yq-7519,Yu-4492,Yv-4492,ff-1416,r,-4492,r.-4492,v,-6005,v.-6005,w,-4492,w.-4492,y,-6005,y.-60"
+            + "05,";
+    }
+    private static String Arial_Narrow_0_6_kerning() {
+        return " A-2978, Y-1416,11-4492,A -2978,AT-6005,AV-6005,AW-4492,AY-7519,Av-2978,Aw-1416,Ay-2978,F,-9082,"
+            + "F.-9082,FA-4492,L -1416,LT-6005,LV-6005,LW-4492,LY-7519,Ly-2978,P -1416,P,-10498,P.-10498,PA-600"
+            + "5,RV-1416,RW-1416,RY-2978,T,-9082,T--4492,T.-9082,T:-9082,T;-9082,TA-6005,TO-1416,Ta-6005,Tc-600"
+            + "5,Te-6005,Ti-1416,To-6005,Tr-4492,Ts-6005,Tu-6005,Tw-6005,Ty-6005,V,-7519,V--4492,V.-7519,V:-449"
+            + "2,V;-4492,VA-6005,Va-4492,Ve-4492,Vi-1416,Vo-6005,Vr-4492,Vu-2978,Vy-2978,W,-4492,W--1611,W.-449"
+            + "2,W:-1416,W;-1416,WA-4492,Wa-2978,We-1416,Wi-683,Wo-1416,Wr-1416,Wu-1416,Wy-1416,Y -1416,Y,-9082"
+            + ",Y--4492,Y.-9082,Y:-6005,Y;-6005,YA-7519,Ya-4492,Ye-4492,Yi-2978,Yo-6005,Yp-4492,Yq-6005,Yu-4492"
+            + ",Yv-4492,r,-4492,r.-4492,v,-6005,v.-6005,w,-2978,w.-2978,y,-6005,y.-6005,";
+    }
+    private static String Arial_Rounded_MT_Bold_0_3_kerning() {
+        return "(J-2490,(g-1318,(j8691,AC-2490,AG-2490,AO-1318,AQ-1318,AT-8789,AU-3808,AV-5078,AY-6298,Av-2490,A"
+            + "w-1318,B,-3808,B.-5078,BA-3808,BU-3808,C,-3808,C.-4980,D,-6298,D.-7519,DA-3808,DV-2587,DW2490,DY"
+            + "-3808,F,-11279,F.-12500,FA-7519,Fa-2490,Fe-3808,Fi-1318,Fl-1318,Fo-3808,Fr-3808,G,-1318,G.-2490,"
+            + "GA-3808,GG-1318,J,-6298,J.-7519,J:-1318,J;-1318,JA-2490,K)-3808,KC-4980,KG-4980,KO-3808,Ka-1318,"
+            + "Ke-3808,Ko-3808,Ku-3808,Kv-6298,Kw-4980,Ky-2490,LA-1318,LC-4980,LG-6298,LO-4980,LS-3808,LT-12500"
+            + ",LU-4980,LV-11279,LW-6298,LY-12597,Lw-3808,Ly-3808,N,-1318,N.-2490,NA-1318,O,-3808,O.-5078,OA-38"
+            + "08,OT-3808,OV-2587,OW1220,OX-2490,OY-3808,P,-13818,P.-14990,PA-8789,Pa-3808,Pe-3808,Po-3808,QT-3"
+            + "808,QV-1318,QW2490,QY-4980,Qf3710,Qg2490,Qj6201,Qp2490,Qy1220,R)-2490,RC-1318,RG-1318,RT-4980,RU"
+            + "-2490,RV-2490,RY-3808,Ra-1318,Re-2490,Ro-2490,Ru-2490,Rv-2490,Rw-1318,Ry-1318,S,-2490,S.-3808,T,"
+            + "-11279,T--4980,T.-12500,T:-4980,T;-4980,TA-6298,TC-2490,TG-2490,TO-1318,TQ-1318,Ta-4980,Tc-6298,"
+            + "Te-6298,Th-1318,Ti-1318,Tm-3808,To-6298,Tr-3808,Ts-6298,Tu-4980,Tw-3808,Ty-3808,Tz-2490,U,-3808,"
+            + "U.-4980,UA-4980,V,-11279,V--4980,V.-12500,V:-2490,V;-2490,VA-5078,VC-1318,VG-1318,VO-1318,VQ-131"
+            + "8,Va-4980,Ve-4980,Vi-1318,Vo-4980,Vr-3808,Vu-3808,Vy-3808,W,-4980,W--1318,W.-6298,W:-2490,W;-249"
+            + "0,WO1220,Wa-2490,Wd-2490,We-2490,Wo-2490,Wr-1318,Wu-3808,Wy-2490,XC-2587,XG-2490,XO-1318,Y,-1000"
+            + "9,Y--4980,Y.-11279,Y:-4980,Y;-4980,YA-6298,YC-2490,YG-2490,YO-1318,YS-2490,Ya-6298,Yd-6298,Ye-62"
+            + "98,Yi-1318,Yo-6298,Yp-4980,Yq-7519,Yu-4980,Yv-3808,ab-1318,ag-1318,ap-1318,at-2490,av-2490,aw-24"
+            + "90,ay-1318,b,-4980,b.-6298,bb-1318,bl-1318,bu-1318,bv-1318,bw-1318,by-1318,c,-3808,c.-4980,ch-24"
+            + "90,ck-3808,cl-2490,cy-2587,dv-1318,e,-3808,e.-4980,eb-1318,eg-1318,ep-1318,ev-2490,ew-1318,ex-13"
+            + "18,ey-2587,ez-1318,f 11181,f!3710,f)3710,f,-3808,f.-4980,f?4980,fa-1318,fe-1318,ff3710,fi1220,fl"
+            + "1220,fo-1318,g,-2490,g.-3808,ga-2490,ge-2490,gg-2490,gl-1318,go-2490,gp-1318,gr-1318,ka-3808,kc-"
+            + "2490,kd-3808,ke-3808,kg-3808,ki-2490,kl-2490,ko-3808,kp-2490,kq-3808,ks-2490,ku-2490,ky-2490,lw-"
+            + "1318,mu-1318,nu-1318,nv-1318,o,-3808,o.-4980,ov-1318,ox-2490,oy-1318,p,-3808,p.-4980,pw-1318,py-"
+            + "1318,pz-1318,r,-11279,r--1318,r.-12500,r:-1318,r;-1318,ra-2490,rc-2587,rd-2587,re-2490,rg-2490,r"
+            + "j-1318,rk-2490,rl-1318,ro-3808,rp-1318,rq-3808,rr-1318,rs-2490,rt1220,ru-2490,rv-1318,s,-3808,s."
+            + "-4980,sw-2490,v,-6298,v.-7519,va-1318,vc-2490,vd-1318,ve-1318,vo-1318,vq-1318,w,-7519,w.-8789,wa"
+            + "-1318,wc-1318,wd-1318,we-1318,wo-1318,wq-1318,xc-2490,xd-1318,xe-1318,xo-1318,y,-7519,y.-8789,ya"
+            + "-1318,yc-1318,yd-1318,ye-1318,yg-1318,yo-1318,ys-1318,zc-1318,zd-1318,ze-1318,zo-1318,";
+    }
+    private static String Avenir_0_3_kerning() {
+        return "AT-6799,AV-5000,AW-500,AY-7400,Av-1799,Aw-1799,Ay-1799,F,-12899,F.-12899,FA-5500,LT-9199,LV-9199"
+            + ",LW-5500,LY-9799,Ly-3699,P,-15299,P.-15299,PA-7400,RT599,RV599,RW1600,RY-1300,Ry2400,T,-11100,T-"
+            + "-12899,T.-11100,T:-11100,T;-11100,TA-6799,Ta-11100,Tc-11100,Te-11100,Ti-700,To-11100,Tr-9199,Ts-"
+            + "11100,Tu-9199,Tw-11100,Ty-11100,V,-12899,V--5500,V.-12899,V:-7400,V;-7400,VA-5500,Va-5500,Ve-550"
+            + "0,Vi599,Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-7400,W.-7400,W:-1799,W;-1799,WA-1799,Wa-3699,We-1799,"
+            + "Wi2400,Wo-1799,Wr-1799,Wu-1799,Y,-12299,Y--11100,Y.-9900,Y:-9199,Y;-9199,YA-7400,Ya-9199,Ye-9199"
+            + ",Yi-700,Yo-9199,Yp-7400,Yq-9199,Yu-7400,Yv-5500,ff-1799,r,-9199,r--5500,r.-9199,rc-1799,rd-1799,"
+            + "re-1799,rg-1799,rm1799,rn1799,ro-1799,rq-1799,v,-7400,v.-7400,w,-5500,w.-5500,y,-9199,y.-9199,";
+    }
+    private static String Avenir_Next_0_3_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-8999,-V-2400,-W-1199,-X-2400,-Y-8999,-x-1199,. -3000,.--3600,.T-9600,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-1799,AG-1799,AO-1799,AQ-1799,AT-6000,AU-1199,AV-3000,AW-1199,AY-6000,Av-599,Aw"
+            + "-599,Ay-599,CA-1199,CC-1199,CO-1199,CQ-1199,CT-599,CY-1199,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-17"
+            + "99,Cy-1799,D,-4799,D.-4799,DA-2400,DJ-6000,DT-3000,DV-1199,DX-1799,DY-3600,DZ-1199,Ev-1199,Ew-11"
+            + "99,Ey-1199,F,-10800,F--1199,F.-9600,F:-2400,F;-2400,FA-5399,FJ-14400,Fa-4799,Fe-4799,Fi-1799,Fo-"
+            + "4799,Fr-4199,Fu-4199,Fy-1799,GT-4799,GV-599,GW-1199,GY-4799,Gw-2400,Gy-2400,JA-1199,Ja-599,K -11"
+            + "99,K--2400,KA-1199,KC-2400,KG-2400,KO-2400,KQ-2400,KT-1199,KY-599,Ka-1199,Ke-3000,Ko-3000,Ku-300"
+            + "0,Kv-3000,Kw-3000,Ky-2400,L -2400,L--3600,LC-3000,LG-3000,LO-3000,LQ-3000,LT-9600,LU-2400,LV-539"
+            + "9,LW-4799,LY-8999,Le-1799,Lo-1799,Lu-1199,Lv-1199,Ly-3600,O,-4799,O.-4799,OA-1799,OJ-3600,OT-300"
+            + "0,OV-1199,OX-1799,OY-2400,OZ-2400,P,-14400,P--3600,P.-14400,P:-3600,P;-3600,PA-6000,PT-599,PY-17"
+            + "99,Pa-6000,Pe-7200,Pi-2400,Pn-4799,Po-7200,Pr-4799,Ps-4799,Pu-4799,Py-4199,QV-1199,RT-1199,RV-11"
+            + "99,RY-599,Ra-1199,Re-1199,Ro-1199,Ru-1199,Rw-599,Ry-599,ST-1799,SV-1199,SY-2400,St-599,Sy-1199,T"
+            + " -2400,T,-7799,T--8999,T.-7799,T:-7200,T;-7200,TA-6000,TC-3000,TG-3000,TJ-10800,TO-3000,TQ-3000,"
+            + "TY-1199,TZ-1199,Ta-9600,Tc-9600,Te-9600,Th-1799,Ti-1199,To-9600,Tr-8999,Ts-9600,Tu-8999,Tv-9600,"
+            + "Tw-9600,Ty-9600,Tz-7799,U,-2400,U.-2400,UA-1199,V -1799,V,-8399,V--2400,V.-8399,V:-4799,V;-4799,"
+            + "VA-3000,VC-1199,VG-1199,VO-1199,Va-4199,Ve-4199,Vi-1799,Vo-4199,Vu-4199,Vy-2400,W -1199,W,-6600,"
+            + "W--1199,W.-6600,W:-2400,W;-2400,WA-1199,WO-1199,Wa-3600,We-3600,Wo-3600,Wr-2400,Wu-2400,Wy-2400,"
+            + "X -1199,X--2400,XC-1799,XG-1799,XO-1799,Xa-1199,Xe-2400,Xo-2400,Xu-2400,Xy-2400,Y -2400,Y,-7799,"
+            + "Y--8999,Y.-7799,Y:-6000,Y;-6000,YA-6000,YC-2400,YG-2400,YJ-11999,YO-2400,YQ-2400,Ya-8999,Yc-8999"
+            + ",Yd-8999,Ye-8999,Yi-2400,Yo-8999,Yq-8999,Yr-7799,Ys-8999,Yu-7799,Yv-7200,Z--3600,ZO-2400,Za-1199"
+            + ",Ze-1199,Zo-1199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,at-1000,b,-1199,b.-1199,ea-599,ex-599,f 2"
+            + "400,f!3600,f)4799,f*3600,f?4799,f]4799,ff-1799,fi-99,fl-299,ft-1199,f}4799,gj1199,k--2400,ka-599"
+            + ",ke-1799,ko-1799,ks-599,ku-1199,ky-1199,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-4799,r--2400,r"
+            + ".-4799,ra-1199,rc-1799,rd-1799,re-1799,rg-1799,ro-1799,rq-1799,rt-1199,tt-1199,v,-4799,v.-4799,w"
+            + ",-3600,w.-3600,x--1199,xc-599,xe-599,xo-599,y,-3600,y.-3600,";
+    }
+    private static String Avenir_Next_1_3_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-8999,-V-2400,-W-1199,-X-2400,-Y-8999,-x-1199,. -3000,.--3600,.T-9600,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-1799,AG-1799,AO-1799,AQ-1799,AT-6000,AU-1799,AV-3600,AW-1199,AY-4199,Av-599,Aw"
+            + "-599,Ay-599,CA-1199,CC-1199,CO-1199,CQ-1199,CT-599,CY-1199,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-17"
+            + "99,Cy-1799,D,-4799,D.-4799,DA-2400,DJ-6000,DT-4799,DV-1199,DW-1199,DX-1799,DY-3600,DZ-2400,Ev-11"
+            + "99,Ew-1199,Ey-1199,F,-10800,F--1199,F.-9600,F:-2400,F;-2400,FA-5399,FJ-14400,Fa-4799,Fe-4799,Fi-"
+            + "1799,Fo-4799,Fr-4199,Fu-4199,Fy-1799,GT-4799,GV-599,GW-1199,GY-4799,Gw-1199,Gy-1199,JA-1199,Ja-5"
+            + "99,K -1199,K--2400,KA-1199,KC-2400,KG-2400,KO-2400,KQ-2400,KT-1199,KY-599,Ka-1199,Ke-3000,Ko-300"
+            + "0,Ku-3000,Kv-3000,Kw-3000,Ky-2400,L -2400,L--3600,LC-4199,LG-4199,LO-4199,LQ-4199,LT-9600,LU-300"
+            + "0,LV-6000,LW-4799,LY-8999,Le-1799,Lo-1799,Lu-1199,Lv-1199,Ly-3600,O,-4799,O.-4799,OA-1799,OJ-360"
+            + "0,OT-4199,OV-2400,OW-599,OX-1799,OY-3000,OZ-2400,P,-14400,P--3600,P.-14400,P:-3600,P;-3600,PA-60"
+            + "00,PT-599,PY-1799,Pa-6000,Pe-7200,Pi-2400,Pn-4799,Po-7200,Pr-4799,Ps-4799,Pu-4799,Py-4199,QV-119"
+            + "9,RT-1199,RV-1199,Ra-1199,Re-1199,Ro-1199,Ru-1199,Rw-599,Ry-599,ST-1799,SV-1199,SY-2400,St-599,S"
+            + "y-1199,T -2400,T,-7799,T--8999,T.-7799,T:-7200,T;-7200,TA-6000,TC-3000,TG-3000,TJ-10800,TO-3000,"
+            + "TQ-3000,TY-1199,TZ-1199,Ta-9600,Tc-9600,Te-9600,Th-1799,Ti-1199,To-9600,Tr-8999,Ts-9600,Tu-8999,"
+            + "Tv-9600,Tw-9600,Ty-9600,Tz-7799,U,-2400,U.-2400,UA-1199,V -1799,V,-8399,V--2400,V.-8399,V:-4799,"
+            + "V;-4799,VA-1799,VC-599,VG-599,VO-599,Va-3000,Ve-3000,Vo-3000,Vu-3000,Vy-2400,W -1199,W,-3600,W--"
+            + "1199,W.-3600,W:-2400,W;-2400,WA-599,Wa-1799,We-1799,Wo-1799,Wr-1799,Wu-1799,Wy-1799,X -1199,X--2"
+            + "400,XC-1799,XG-1799,XO-1799,Xa-1199,Xe-2400,Xo-2400,Xu-2400,Xy-2400,Y -2400,Y,-7799,Y--8999,Y.-7"
+            + "799,Y:-6000,Y;-6000,YA-3600,YC-1199,YG-1199,YJ-11999,YO-1199,YQ-1199,Ya-7200,Yc-7200,Yd-7200,Ye-"
+            + "7200,Yi-599,Yo-7200,Yq-7200,Yr-6600,Ys-6600,Yu-6600,Yv-5399,Z--3600,ZO-2400,Za-1199,Ze-1199,Zo-1"
+            + "199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,at-1000,b,-1199,b.-1199,ea-599,ex-599,f 2400,f!3600,f)"
+            + "4799,f*3600,f?4799,f]4799,ff-1799,fi-99,fl-299,ft-1199,f}4799,gj1199,k--2400,ka-599,ke-1799,ko-1"
+            + "799,ks-599,ku-1199,ky-1199,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-3600,r--2400,r.-3600,ra-119"
+            + "9,rc-1199,rd-1199,re-1199,rg-1199,ro-1199,rq-1199,rt-1199,tt-1799,v,-4799,v.-4799,w,-3000,w.-300"
+            + "0,x--1199,xc-599,xe-599,xo-599,y,-3600,y.-3600,";
+    }
+    private static String Avenir_Next_0_6_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-8999,-V-2400,-W-1199,-X-2400,-Y-8999,-x-1199,. -3000,.--3600,.T-9600,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-1799,AG-1799,AO-1799,AQ-1799,AT-6000,AU-1799,AV-3000,AW-1199,AY-6000,Av-599,Aw"
+            + "-599,Ay-599,CA-1199,CC-1199,CO-1199,CQ-1199,CT-599,CY-1199,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-17"
+            + "99,Cy-1799,D,-4799,D.-4799,DA-2400,DJ-6000,DT-2500,DV-1199,DX-3000,DY-3600,DZ-1199,Ev-1199,Ew-11"
+            + "99,Ey-1199,F,-10800,F--1199,F.-9600,F:-2400,F;-2400,FA-5399,FJ-14400,Fa-4799,Fe-4799,Fi-1799,Fo-"
+            + "4799,Fr-4199,Fu-4199,Fy-1799,GT-4799,GV-599,GW-1199,GY-4799,Gw-2400,Gy-2400,JA-1199,Ja-599,K -11"
+            + "99,K--2400,KA-1199,KC-3999,KG-3999,KO-3999,KQ-3999,KT-1199,KY-599,Ka-1199,Ke-3000,Ko-3000,Ku-300"
+            + "0,Kv-3000,Kw-3000,Ky-2400,L -2400,L--3600,LC-3000,LG-3000,LO-3000,LQ-3000,LT-7899,LU-2400,LV-539"
+            + "9,LW-4799,LY-7700,Le-1799,Lo-1799,Lu-1199,Lv-1199,Ly-3600,O,-4799,O.-4799,OA-1799,OJ-3600,OT-300"
+            + "0,OV-1199,OX-3000,OY-3200,OZ-2400,P,-14400,P--3600,P.-14400,P:-3600,P;-3600,PA-6000,PT-599,PY-17"
+            + "99,Pa-4700,Pe-5000,Pi-2400,Pn-4299,Po-5000,Pr-4299,Ps-4799,Pu-4299,Py-4199,QV-1199,RT-1199,RV-11"
+            + "99,RY-1000,Ra-1199,Re-1199,Ro-1199,Ru-1199,Rw-599,Ry-599,ST-1300,SV-700,SY-1499,St-599,Sy-1199,T"
+            + " -2400,T,-7799,T--8999,T.-7799,T:-7200,T;-7200,TA-6000,TC-3000,TG-3000,TJ-10800,TO-3000,TQ-3000,"
+            + "TY-1199,TZ-1199,Ta-9600,Tc-9600,Te-9600,Th-1799,Ti-1199,To-9600,Tr-8999,Ts-9600,Tu-8999,Tv-9600,"
+            + "Tw-9600,Ty-9600,Tz-7799,U,-2400,U.-2400,UA-1799,V -1799,V,-8399,V--2400,V.-8399,V:-4799,V;-4799,"
+            + "VA-3000,VC-1199,VG-1199,VO-1199,Va-4199,Ve-4199,Vi-1799,Vo-4199,Vu-4199,Vy-2400,W -1199,W,-6600,"
+            + "W--1199,W.-6600,W:-2400,W;-2400,WA-1199,WO-1199,Wa-3600,We-3600,Wo-3600,Wr-2400,Wu-2400,Wy-2400,"
+            + "X -1199,X--2400,XC-3000,XG-3000,XO-3000,Xa-1199,Xe-2799,Xo-2799,Xu-2400,Xy-2799,Y -2400,Y,-7799,"
+            + "Y--8999,Y.-7799,Y:-6000,Y;-6000,YA-6000,YC-3200,YG-3200,YJ-11999,YO-3200,YQ-3200,Ya-10200,Yc-102"
+            + "00,Yd-10200,Ye-10200,Yi-2400,Yo-10200,Yq-10200,Yr-7799,Ys-8999,Yu-8600,Yv-7200,Z--3600,ZO-2400,Z"
+            + "a-1199,Ze-1199,Zo-1199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,at-1000,b,-1199,b.-1199,ea-599,ex-2"
+            + "200,f 2400,f!2700,f)3099,f*3600,f?4799,f]3099,ff-3000,fi499,fl400,ft-2400,f}3099,gj1199,k--2400,"
+            + "ka-599,ke-1799,ko-2599,ks-599,ku-1199,ky-1199,o,-1199,o.-1199,ox-2200,p,-1199,p.-1199,r,-4799,r-"
+            + "-1100,r.-4799,ra-1600,rc-1799,rd-1799,re-1799,rg-1799,ro-1799,rq-1799,rt-1199,tt-2400,v,-4799,v."
+            + "-4799,w,-3600,w.-3600,x--1199,xc-2200,xe-2200,xo-2200,y,-3600,y.-3600,";
+    }
+    private static String Avenir_Next_1_6_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-8999,-V-2400,-W-1199,-X-2400,-Y-8999,-x-1199,. -3000,.--3600,.T-9600,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-1799,AG-1799,AO-1799,AQ-1799,AT-6000,AU-1799,AV-3600,AW-1199,AY-4199,Av-599,Aw"
+            + "-599,Ay-599,CA-1199,CC-1199,CO-1199,CQ-1199,CT-599,CY-1199,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-17"
+            + "99,Cy-1799,D,-4799,D.-4799,DA-2400,DJ-6000,DT-4199,DV-1199,DW-1199,DX-1799,DY-3600,DZ-2400,Ev-11"
+            + "99,Ew-1199,Ey-1199,F,-10800,F--1199,F.-9600,F:-2400,F;-2400,FA-5399,FJ-14400,Fa-4799,Fe-4799,Fi-"
+            + "1799,Fo-4799,Fr-4199,Fu-4199,Fy-1799,GT-4799,GV-599,GW-1199,GY-4799,Gw-1199,Gy-1199,JA-1199,Ja-5"
+            + "99,K -1199,K--2400,KA-1199,KC-2400,KG-2400,KO-2400,KQ-2400,KT-1199,KY-599,Ka-1199,Ke-3000,Ko-300"
+            + "0,Ku-3000,Kv-3000,Kw-3000,Ky-2400,L -2400,L--3600,LC-4199,LG-4199,LO-4199,LQ-4199,LT-9600,LU-300"
+            + "0,LV-6000,LW-4799,LY-8999,Le-1799,Lo-1799,Lu-1199,Lv-1199,Ly-3600,O,-4799,O.-4799,OA-1799,OJ-360"
+            + "0,OT-4199,OV-2400,OW-599,OX-1799,OY-3000,OZ-2400,P,-14400,P--3600,P.-14400,P:-3600,P;-3600,PA-60"
+            + "00,PT-599,PY-1799,Pa-6000,Pe-7200,Pi-2400,Pn-4799,Po-7200,Pr-4799,Ps-4799,Pu-4799,Py-4199,QV-119"
+            + "9,RT-1199,RV-1199,Ra-1199,Re-1199,Ro-1199,Ru-1199,Rw-599,Ry-599,ST-1799,SV-1199,SY-2400,St-599,S"
+            + "y-1199,T -2400,T,-7799,T--8999,T.-7799,T:-7200,T;-7200,TA-6000,TC-3000,TG-3000,TJ-10800,TO-3000,"
+            + "TQ-3000,TY-1199,TZ-1199,Ta-9600,Tc-9600,Te-9600,Th-1799,Ti-1199,To-9600,Tr-8999,Ts-9600,Tu-8999,"
+            + "Tv-9600,Tw-9600,Ty-9600,Tz-7799,U,-2400,U.-2400,UA-1199,V -1799,V,-8399,V--2400,V.-8399,V:-4799,"
+            + "V;-4799,VA-2400,VC-599,VG-599,VO-599,Va-3000,Ve-3000,Vo-3000,Vu-3000,Vy-2400,W -1199,W,-3600,W--"
+            + "1199,W.-3600,W:-2400,W;-2400,WA-599,Wa-1799,We-1799,Wo-1799,Wr-1799,Wu-1799,Wy-1799,X -1199,X--2"
+            + "400,XC-1799,XG-1799,XO-1799,Xa-1199,Xe-2400,Xo-2400,Xu-2400,Xy-2400,Y -2400,Y,-7799,Y--8999,Y.-7"
+            + "799,Y:-6000,Y;-6000,YA-3600,YC-1199,YG-1199,YJ-11999,YO-1199,YQ-1199,Ya-7200,Yc-7200,Yd-7200,Ye-"
+            + "7200,Yi-599,Yo-7200,Yq-7200,Yr-6600,Ys-6600,Yu-6600,Yv-5399,Z--3600,ZO-2400,Za-1199,Ze-1199,Zo-1"
+            + "199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,at-1000,b,-1199,b.-1199,ea-599,ex-599,f 2400,f!3600,f)"
+            + "4799,f*3600,f?4799,f]4799,ff-1799,fi399,fl299,ft-1199,f}4799,gj1199,k--2400,ka-599,ke-1799,ko-17"
+            + "99,ks-599,ku-1199,ky-1199,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-3600,r--2400,r.-3600,ra-1199"
+            + ",rc-1199,rd-1199,re-1199,rg-1199,ro-1199,rq-1199,rt-1199,tt-1799,v,-4799,v.-4799,w,-3000,w.-3000"
+            + ",x--1199,xc-599,xe-599,xo-599,y,-3600,y.-3600,";
+    }
+    private static String Avenir_Next_Condensed_0_3_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-4199,-V-2400,-W-1199,-X-2400,-Y-6000,-x-1199,. -3000,.--3600,.T-4799,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-599,AG-599,AO-599,AQ-599,AT-1799,AU-1199,AV-1199,AY-2400,BY-599,CA-1199,CC-119"
+            + "9,CO-1199,CQ-1199,CT-599,CY-599,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-1799,Cy-1799,D,-4799,D.-4799,"
+            + "DA-2400,DJ-3000,DT-1799,DX-2400,DY-599,DZ-1799,Ev-1199,Ew-1199,Ey-1199,F,-7799,F--1199,F.-7799,F"
+            + ":-2400,F;-2400,FA-3600,FJ-14400,Fa-2400,Fe-2400,Fi-1799,Fo-2400,Fr-2400,Fu-2400,Fy-1799,GT-3000,"
+            + "GV-599,GW-1199,GY-3000,Gw-1199,Gy-1199,JA-1199,Ja-599,K -1199,K--2400,KA-1199,KC-3000,KG-3000,KO"
+            + "-3000,KQ-3000,KT-1199,KU-1199,KV-1199,KW-1199,KY-599,Ka-1199,Ke-3000,Ko-3000,Ku-3000,Kv-3000,Kw-"
+            + "3000,Ky-3000,L -2400,L--3600,LC-3000,LG-3000,LO-3000,LQ-3000,LT-2400,LU-2400,LV-3600,LW-2400,LY-"
+            + "3600,Le-1199,Lo-599,Lu-599,Lv-1199,Ly-2400,O,-4799,O.-4799,OA-599,OJ-3600,OT-3000,OV-599,OX-1799"
+            + ",OY-1199,OZ-1799,P,-11999,P--3600,P.-11999,P:-2400,P;-2400,PA-4199,PT-599,PY-599,Pa-3600,Pe-3600"
+            + ",Pi-2400,Pn-2400,Po-3600,Pr-2400,Ps-1799,Pu-2400,Py-2400,QV-1199,RT-599,Ra-599,Re-599,Ro-599,Ru-"
+            + "599,Rw-599,Ry-599,ST-599,SV-1199,SY-1199,St-599,Sy-1199,T -2400,T,-4799,T--4199,T.-4799,T:-4199,"
+            + "T;-4199,TA-1799,TC-1199,TG-1199,TJ-4199,TO-1199,TQ-1199,Ta-3600,Tc-3600,Te-3600,Th-599,Ti-599,To"
+            + "-3600,Tr-3600,Ts-3600,Tu-3600,Tv-3600,Tw-3600,Ty-3600,Tz-3000,U,-2400,U.-2400,UA-1199,V -1799,V,"
+            + "-7200,V--2400,V.-7200,V:-3000,V;-3000,VA-1199,VC-599,VG-599,VO-599,Va-2400,Ve-2400,Vo-2400,Vu-24"
+            + "00,Vy-1199,W -1199,W,-4799,W--1199,W.-4799,W:-2400,W;-2400,WA-2400,Wa-1199,We-1199,Wo-1199,Wr-11"
+            + "99,Wu-1199,Wy-1199,X -1199,X--2400,XC-1799,XG-1799,XO-1799,Xa-599,Xe-1199,Xo-1199,Xu-1199,Xy-119"
+            + "9,Y -2400,Y,-7799,Y--6000,Y.-7799,Y:-6000,Y;-6000,YA-2400,YC-1199,YG-1199,YJ-6000,YO-1199,YQ-119"
+            + "9,Ya-4799,Yc-5399,Yd-5399,Ye-5399,Yi-599,Yo-5399,Yq-5399,Yr-4799,Ys-4799,Yu-4799,Yv-4799,Z--3600"
+            + ",ZO-1799,Za-1199,Ze-1199,Zo-1199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,b,-1199,b.-1199,ea-599,ex"
+            + "-599,f 2400,f!2400,f)4799,f*3600,f?4799,f]4799,ff-1199,ft-1199,f}4799,gj1199,k--1799,ka-599,ke-1"
+            + "199,ko-1199,ks-599,ku-599,ky-599,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-2400,r--1199,r.-2400,"
+            + "ra-599,rc-599,rd-599,re-599,rg-599,ro-599,rq-599,ss-599,tt-1199,v,-4799,v.-4799,w,-3600,w.-3600,"
+            + "x--1199,xc-599,xe-599,xo-599,y,-3600,y.-3600,";
+    }
+    private static String Avenir_Next_Condensed_1_3_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-4199,-V-2400,-W-1199,-X-2400,-Y-6000,-x-1199,. -3000,.--3600,.T-4799,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-599,AG-599,AO-599,AQ-599,AT-1799,AU-1199,AV-1199,AY-2400,BY-599,CA-1199,CC-119"
+            + "9,CO-1199,CQ-1199,CT-599,CY-599,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-1799,Cy-1799,D,-4799,D.-4799,"
+            + "DA-2400,DJ-3000,DT-1799,DX-2400,DY-599,DZ-599,Ev-1199,Ew-1199,Ey-1199,F,-7799,F--1199,F.-7799,F:"
+            + "-2400,F;-2400,FA-3600,FJ-14400,Fa-2400,Fe-2400,Fi-1799,Fo-2400,Fr-2400,Fu-2400,Fy-1799,GT-3000,G"
+            + "V-599,GW-1199,GY-3000,Gw-2400,Gy-2400,JA-1199,Ja-599,K -1199,K--2400,KA-1199,KC-3600,KG-3600,KO-"
+            + "3600,KQ-3600,KT-1199,KU-1199,KV-1199,KW-1199,KY-599,Ka-1199,Ke-3000,Ko-3000,Ku-3000,Kv-3000,Kw-3"
+            + "000,Ky-3000,L -2400,L--3600,LC-3000,LG-3000,LO-3000,LQ-3000,LT-2400,LU-2400,LV-3600,LW-2400,LY-3"
+            + "600,Le-1199,Lo-599,Lu-599,Lv-1199,Ly-2400,O,-4799,O.-4799,OA-599,OJ-3600,OT-3000,OV-599,OX-1799,"
+            + "OY-1799,OZ-1199,P,-11999,P--3600,P.-11999,P:-2400,P;-2400,PA-4199,PT-599,PY-599,Pa-2400,Pe-2400,"
+            + "Pi-1199,Pn-1199,Po-2400,Pr-1199,Ps-1199,Pu-1199,Py-1199,QV-1199,RT-599,Ra-599,Re-599,Ro-599,Ru-5"
+            + "99,Rw-599,Ry-599,ST-599,SV-1199,SY-1199,St-599,Sy-1199,T -2400,T,-4799,T--4199,T.-4799,T:-4199,T"
+            + ";-4199,TA-1799,TC-1199,TG-1199,TJ-4199,TO-1199,TQ-1199,Ta-3600,Tc-3600,Te-3600,Th-599,Ti-599,To-"
+            + "3600,Tr-3600,Ts-3600,Tu-3600,Tv-3600,Tw-3600,Ty-3600,U,-2400,U.-2400,UA-1199,V -1799,V,-7200,V--"
+            + "2400,V.-7200,V:-3000,V;-3000,VA-1199,VC-599,VG-599,VO-599,Va-2400,Ve-2400,Vo-2400,Vu-2400,Vy-119"
+            + "9,W -1199,W,-6000,W--1199,W.-6000,W:-2400,W;-2400,WA-2400,Wa-1199,We-1199,Wo-1199,Wr-1199,Wu-119"
+            + "9,Wy-1199,X -1199,X--2400,XC-1799,XG-1799,XO-1799,Xa-599,Xe-1199,Xo-1199,Xu-1199,Xy-1199,Y -2400"
+            + ",Y,-7799,Y--6000,Y.-7799,Y:-6000,Y;-6000,YA-2400,YC-1199,YG-1199,YJ-6000,YO-1199,YQ-1199,Ya-3600"
+            + ",Yc-5399,Yd-5399,Ye-5399,Yi-599,Yo-5399,Yq-5399,Yr-4799,Ys-4799,Yu-4799,Yv-4799,Z--3600,ZO-1799,"
+            + "Za-1199,Ze-1199,Zo-1199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,at-599,b,-1199,b.-1199,ea-599,ex-5"
+            + "99,f 2400,f!2400,f)4799,f*3600,f?4799,f]4799,ff-1199,fi-200,fl299,ft-1199,f}4799,gj1199,k--2400,"
+            + "ka-599,ke-1799,ko-1799,ks-599,ku-1199,ky-599,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-2400,r--1"
+            + "199,r.-2400,ra-599,rc-599,rd-599,re-599,rg-599,ro-599,rq-599,ss-1199,tt-1199,v,-4799,v.-4799,w,-"
+            + "3600,w.-3600,x--1199,xc-599,xe-599,xo-599,y,-2400,y.-2400,";
+    }
+    private static String Avenir_Next_Condensed_0_6_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-4199,-V-2400,-W-1199,-X-2400,-Y-6000,-x-1199,. -3000,.--3600,.T-4799,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-599,AG-599,AO-599,AQ-599,AT-1799,AU-1199,AV-1199,AY-2400,BY-599,CA-1199,CC-119"
+            + "9,CO-1199,CQ-1199,CT-599,CY-599,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-1799,Cy-1799,D,-4799,D.-4799,"
+            + "DA-2400,DJ-3000,DT-1799,DX-2400,DY-599,DZ-1799,Ev-1199,Ew-1199,Ey-1199,F,-7799,F--1199,F.-7799,F"
+            + ":-2400,F;-2400,FA-3600,FJ-14400,Fa-2400,Fe-2400,Fi-1799,Fo-2400,Fr-2400,Fu-2400,Fy-1799,GT-3000,"
+            + "GV-599,GW-1199,GY-3000,Gw-1199,Gy-1199,JA-1199,Ja-599,K -1199,K--2400,KA-1199,KC-3000,KG-3000,KO"
+            + "-3000,KQ-3000,KT-1199,KU-1199,KV-1199,KW-1199,KY-599,Ka-1199,Ke-3000,Ko-3000,Ku-3000,Kv-3000,Kw-"
+            + "3000,Ky-3000,L -2400,L--3600,LC-3000,LG-3000,LO-3000,LQ-3000,LT-2400,LU-2400,LV-3600,LW-2400,LY-"
+            + "3600,Le-1199,Lo-599,Lu-599,Lv-1199,Ly-2400,O,-4799,O.-4799,OA-599,OJ-3600,OT-3000,OV-599,OX-2400"
+            + ",OY-1199,OZ-1799,P,-11999,P--3600,P.-11999,P:-2400,P;-2400,PA-4199,PT-599,PY-599,Pa-3000,Pe-3000"
+            + ",Pi-1799,Pn-1799,Po-3000,Pr-1799,Ps-1799,Pu-1799,Py-2400,QV-1199,RT-599,Ra-599,Re-599,Ro-599,Ru-"
+            + "599,Rw-599,Ry-599,ST-599,SV-1199,SY-1199,St-599,Sy-1199,T -2400,T,-4799,T--4199,T.-4799,T:-4199,"
+            + "T;-4199,TA-1799,TC-1199,TG-1199,TJ-4199,TO-1199,TQ-1199,Ta-3600,Tc-3600,Te-3600,Th-599,Ti-599,To"
+            + "-3600,Tr-3600,Ts-3600,Tu-3600,Tv-3600,Tw-3600,Ty-3600,Tz-3000,U,-2400,U.-2400,UA-1199,V -1799,V,"
+            + "-7200,V--2400,V.-7200,V:-3000,V;-3000,VA-1199,VC-599,VG-599,VO-599,Va-2400,Ve-2400,Vo-2400,Vu-24"
+            + "00,Vy-1199,W -1199,W,-4799,W--1199,W.-4799,W:-2400,W;-2400,WA-2400,Wa-1199,We-1199,Wo-1199,Wr-11"
+            + "99,Wu-1199,Wy-1199,X -1199,X--2400,XC-2400,XG-2400,XO-2400,Xa-599,Xe-1199,Xo-1199,Xu-1199,Xy-119"
+            + "9,Y -2400,Y,-7799,Y--6000,Y.-7799,Y:-6000,Y;-6000,YA-2400,YC-1199,YG-1199,YJ-6000,YO-1199,YQ-119"
+            + "9,Ya-5399,Yc-5399,Yd-5399,Ye-5399,Yi-599,Yo-5399,Yq-5399,Yr-4799,Ys-4799,Yu-4799,Yv-4799,Z--3600"
+            + ",ZO-1799,Za-1199,Ze-1199,Zo-1199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,at-1000,b,-1199,b.-1199,e"
+            + "a-599,ex-599,f 2400,f!2400,f)4799,f*3600,f?4799,f]4799,ff-1199,ft-1199,f}4799,gj1199,k--1799,ka-"
+            + "599,ke-1199,ko-1199,ks-599,ku-599,ky-599,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-2400,r--1199,"
+            + "r.-2400,ra-599,rc-599,rd-599,re-599,rg-599,ro-599,rq-599,ss-599,tt-1199,v,-4799,v.-4799,w,-3600,"
+            + "w.-3600,x--1199,xc-599,xe-599,xo-599,y,-3600,y.-3600,";
+    }
+    private static String Avenir_Next_Condensed_1_6_kerning() {
+        return " A-1799, J-1199, T-2400, V-1799, W-1199, X-1199, Y-2400,(J-3000,(j6000,, -3000,,--3600,-J-1199,-"
+            + "S-1199,-T-4199,-V-2400,-W-1199,-X-2400,-Y-6000,-x-1199,. -3000,.--3600,.T-4799,.V-6600,.W-5399,."
+            + "Y-7200,A -1799,AC-599,AG-599,AO-599,AQ-599,AT-1799,AU-1199,AV-1199,AY-2400,BY-599,CA-1199,CC-119"
+            + "9,CO-1199,CQ-1199,CT-599,CY-599,Ca-1799,Ce-1199,Co-1199,Cv-1799,Cw-1799,Cy-1799,D,-4799,D.-4799,"
+            + "DA-2400,DJ-3000,DT-1799,DX-2400,DY-599,DZ-1799,Ev-1199,Ew-1199,Ey-1199,F,-7799,F--1199,F.-7799,F"
+            + ":-2400,F;-2400,FA-3600,FJ-14400,Fa-2400,Fe-2400,Fi-1799,Fo-2400,Fr-2400,Fu-2400,Fy-1799,GT-3000,"
+            + "GV-599,GW-1199,GY-3000,Gw-1199,Gy-1199,JA-1199,Ja-599,K -1199,K--2400,KA-1199,KC-3000,KG-3000,KO"
+            + "-3000,KQ-3000,KT-1199,KU-1199,KV-1199,KW-1199,KY-599,Ka-1199,Ke-3000,Ko-3000,Ku-3000,Kv-3000,Kw-"
+            + "3000,Ky-3000,L -2400,L--3600,LC-3000,LG-3000,LO-3000,LQ-3000,LT-2400,LU-2400,LV-3600,LW-2400,LY-"
+            + "3600,Le-1199,Lo-599,Lu-599,Lv-1199,Ly-2400,O,-4799,O.-4799,OA-599,OJ-3600,OT-3000,OV-599,OX-2400"
+            + ",OY-1199,OZ-1199,P,-11999,P--3600,P.-11999,P:-2400,P;-2400,PA-4199,PT-599,PY-599,Pa-2400,Pe-1799"
+            + ",Pi-1199,Pn-1199,Po-1799,Pr-1199,Ps-1199,Pu-1199,Py-1199,QV-1199,RT-599,Ra-599,Re-599,Ro-599,Ru-"
+            + "599,Rw-599,Ry-599,ST-599,SV-1199,SY-1199,St-599,Sy-1199,T -2400,T,-4799,T--4199,T.-4799,T:-4199,"
+            + "T;-4199,TA-1799,TC-1199,TG-1199,TJ-4199,TO-1199,TQ-1199,Ta-3600,Tc-3600,Te-3600,Th-599,Ti-599,To"
+            + "-3600,Tr-3600,Ts-3600,Tu-3600,Tv-3600,Tw-3600,Ty-3600,Tz-3000,U,-2400,U.-2400,UA-1199,V -1799,V,"
+            + "-7200,V--2400,V.-7200,V:-3000,V;-3000,VA-1199,VC-599,VG-599,VO-599,Va-2400,Ve-2400,Vo-2400,Vu-24"
+            + "00,Vy-1199,W -1199,W,-4799,W--1199,W.-4799,W:-2400,W;-2400,WA-2400,Wa-1199,We-1199,Wo-1199,Wr-11"
+            + "99,Wu-1199,Wy-1199,X -1199,X--2400,XC-2400,XG-2400,XO-2400,Xa-599,Xe-1199,Xo-1199,Xu-1199,Xy-119"
+            + "9,Y -2400,Y,-7799,Y--6000,Y.-7799,Y:-6000,Y;-6000,YA-2400,YC-1199,YG-1199,YJ-6000,YO-1199,YQ-119"
+            + "9,Ya-5399,Yc-5399,Yd-5399,Ye-5399,Yi-599,Yo-5399,Yq-5399,Yr-4799,Ys-4799,Yu-4799,Yv-4799,Z--3600"
+            + ",ZO-1799,Za-1199,Ze-1199,Zo-1199,Zu-599,Zw-1799,Zy-1799,[J-3000,[j6000,b,-1199,b.-1199,ea-599,ex"
+            + "-599,f 2400,f!2400,f)4799,f*3600,f?4799,f]4799,ff-1199,fi-200,fl-299,ft-1199,f}4799,gj1199,k--17"
+            + "99,ka-599,ke-1199,ko-1199,ks-599,ku-599,ky-599,o,-1199,o.-1199,ox-599,p,-1199,p.-1199,r,-2400,r-"
+            + "-1199,r.-2400,ra-599,rc-599,rd-599,re-599,rg-599,ro-599,rq-599,ss-1199,tt-1199,v,-4799,v.-4799,w"
+            + ",-3600,w.-3600,x--1199,xc-599,xe-599,xo-599,y,-3000,y.-3000,";
+    }
+    private static String Ayuthaya_0_3_kerning() {
+        return "fi-60000,fl-60000,";
+    }
+    private static String Bangla_MN_0_3_kerning() {
+        return "fi1166,";
+    }
+    private static String Bangla_MN_0_6_kerning() {
+        return "fi-55,";
+    }
+    private static String Bangla_Sangam_MN_0_6_kerning() {
+        return "fi-146,";
+    }
+    private static String Baskerville_0_3_kerning() {
+        return "AC-2783,AG-3710,AO-3710,AQ-3710,AT-7421,AU-4589,AV-12011,AW-6591,AY-11083,Ap1806,Au-1904,Av-5615"
+            + ",Aw-3710,Ay-5615,B,-976,B.-976,BA-2783,BU-2783,D,-7519,D.-7421,DA-6494,DV-8300,DW-3808,DY-6494,F"
+            + ",-13818,F.-13916,FA-8398,Fa-5615,Fe-7421,Fl3613,Fo-9277,Fr-5615,G,-5615,G.-5615,J,-6494,J.-6494,"
+            + "J:-3710,J;-3710,JA-3710,Ja-3710,Je-4687,Jo-4687,Ju-6494,Jy-4589,KC-7519,KG-7519,KO-7421,Ka976,Ke"
+            + "-3710,Ko-3710,Ku-4687,Kv-6396,Kw-4687,Ky-4687,LC-976,LG-2001,LO-1904,LT-5615,LU-3710,LV-7421,LW-"
+            + "3710,LY-6494,Lw1806,N,-4589,N.-4589,NA-2783,O,-7421,O.-7421,OA-5615,OT-2783,OV-8300,OW-2783,OX-5"
+            + "615,OY-6494,P,-15820,P.-15820,PA-9277,Pa-2783,Pe-4589,Po-4589,Q,11718,Q.-10107,QA-5615,QT-3710,Q"
+            + "U-3710,QV-8300,QW-3808,QY-5615,RC-7519,RG-8398,RO-8300,RQ-8300,RT-10205,RU-11181,RV-12988,RW-942"
+            + "3,RY-12988,Re-4589,Ro-4589,Ru-6494,Rv-8300,Rw-6494,Ry-8300,S,-2783,S.-2783,T,-14794,T--7421,T.-1"
+            + "4794,T:-6494,T;-6494,TA-8398,TC-3710,TG-4589,TO-4589,TQ-4589,Ta-8398,Tc-10205,Te-10205,Th976,Tl9"
+            + "76,Tm-8300,To-10205,Tr-7421,Ts-10205,Tu-9277,Tw-8300,Ty-8300,Tz-8398,U,-11083,U.-11083,UA-6494,V"
+            + ",-19482,V--9179,V.-19384,V:-10205,V;-10107,VA-12011,VC-5517,VG-6494,VO-6396,VQ-6494,Va-11083,Ve-"
+            + "12011,Vi-3710,Vo-11914,Vr-9423,Vu-9179,Vy-10205,W,-14697,W--5517,W.-14599,W:-7421,W;-7421,WA-742"
+            + "1,WC-2783,WG-3710,WO-3710,Wa-7421,Wd-8300,We-8398,Wi-3710,Wo-8300,Wr-3808,Wu-8300,Wy-7421,XC-561"
+            + "5,XG-5615,XO-6494,Y,-16503,Y--11083,Y.-16601,Y:-11083,Y;-11083,YA-11083,YC-5615,YG-6396,YO-6494,"
+            + "YS-1904,Ya-10205,Yd-11083,Ye-12011,Yi-3710,Yo-12011,Yp-6494,Yq-12011,Yu-12109,Yv-10205,at-976,av"
+            + "-2880,aw-976,ay-976,b,-3710,b.-3710,bb-976,bl-976,bu-1904,bv-976,by-2783,ch-1123,dw1806,dy-976,e"
+            + ",-2880,e.-2880,ep976,ev-976,ex-976,ey-1904,f 14404,f!11718,f,-1904,f.-1904,f?14501,ff976,fi-1074"
+            + ",fk1904,fl-48,fo-976,g,-3710,g.-7421,ga976,gg976,gl976,gr1806,gy1806,hy-2783,lw-976,mu-1904,my-1"
+            + "904,nu-976,nv-2783,ny-1904,o,-1904,o.-1904,ov-2783,ow-976,ox-1904,oy-1904,oz-976,p,-3710,p.-3710"
+            + ",pw-2001,py-2783,pz-2001,r,-10302,r--1904,r.-10205,rc-1904,rd-976,re-976,rg-976,rj1806,rk-1904,r"
+            + "l-2001,rm3613,rn2685,ro-1904,rp2685,rq-1904,rr976,rs976,ry976,s,-1904,s.-1904,v,-12109,v.-12011,"
+            + "va-976,vc-1904,vd-976,ve-1904,vo-1904,vq-1904,w,-12109,w.-12011,wc-976,we-976,wh-976,wo-976,wq-9"
+            + "76,xc-976,xd-976,xe-976,xo-1904,y,-12988,y.-12890,ya-976,yc-2783,yd-1904,ye-2783,yg-1904,yo-2783"
+            + ",ze-976,zo-976,";
+    }
+    private static String Baskerville_1_3_kerning() {
+        return "AC-1904,AG-976,AO-2783,AQ-2783,AT-7421,AU-3710,AV-6494,AW-2783,AY-2783,Ap1806,Av-1904,Ay-1904,B,"
+            + "-976,B.-976,BA-1904,BU-3710,D,-4589,D.-4687,DA-4589,DV-7519,DW-3710,DY-1904,F,-13916,F.-13916,FA"
+            + "-8300,Fa-4687,Fe-5615,Fo-5517,Fr-1904,G,-1904,G.-1904,J,-9277,J.-9277,J:-4589,J;-4687,JA-3710,Ja"
+            + "-3710,Je-4589,Jo-4589,Ju-1904,Jy-976,KC-1904,KG-976,KO-2783,Ko-976,Ku-976,Kv-2783,Kw-976,Ky-976,"
+            + "LC-2783,LG-1904,LO-3710,LT-6494,LU-1904,LV-6494,LW-2880,LY-1904,Lw4492,Ly3613,N,-4589,N.-4589,NA"
+            + "-1904,O,-5615,O.-5615,OA-1904,OT-5615,OV-6494,OW-3710,OX-6494,OY-1904,P,-19482,P.-19287,PA-8300,"
+            + "Pa-3808,Pe-3710,Po-2880,Q,23486,Q.-6396,QA-2783,QT-5615,QU-3710,QV-5615,QW-2783,QY-1904,RC-2783,"
+            + "RG-1904,RO-3710,RQ-3710,RT-5615,RU-5615,RV-8300,RW-5615,RY-1904,Rw1806,Ry-976,T,-12890,T--9179,T"
+            + ".-12988,T:-9277,T;-9277,TA-7519,TC-3710,TG-2783,TO-4687,TQ-4589,Ta-12109,Tc-12988,Te-12011,Th449"
+            + "2,Tl2685,Tm-6494,To-12988,Tr-9179,Ts-12988,Tu-9277,Tw-6494,Ty-5615,Tz-12109,U,-10205,U.-10205,UA"
+            + "-4589,V,-18603,V--5517,V.-18505,V:-9277,V;-9277,VA-7421,VC-2880,VG-1904,VO-3808,VQ-3710,Va-8398,"
+            + "Ve-9277,Vo-9277,Vr-5615,Vu-7421,Vy-5615,W,-16601,W--4687,W.-16601,W:-9277,W;-9277,WA-5615,WC-371"
+            + "0,WG-2783,WO-4589,Wa-8398,Wd-7421,We-8398,Wh2685,Wo-9277,Wr-4687,Wu-5615,Wy-6494,XC-5615,XG-3808"
+            + ",XO-6494,Y,-12890,Y--7421,Y.-12988,Y:-11083,Y;-11083,YA-8398,YC-3808,YG-2783,YO-4687,YS-1904,Ya-"
+            + "12109,Yd-12011,Ye-11181,Yi-976,Yo-12011,Yp-7421,Yq-12011,Yu-8300,Yv-7519,ag1806,ap976,aw976,b,-8"
+            + "300,b.-8300,bb-2783,bl-3710,bu-976,bv-1904,by-976,c,-4589,c.-4589,ch-976,ck-976,cl-2880,dd-976,d"
+            + "w1904,e,-1904,e.-1904,eg2685,ep1806,ev976,ew2685,ex976,ey1806,ez-1904,f 18115,f!10791,f,-5517,f."
+            + "-5615,f?12597,fa-976,fe-976,ff1806,fi-4199,fl-3125,fo-976,g.-7421,gg3613,gl-976,gr2685,gy5419,ke"
+            + "976,ko976,ky2685,lw1904,ly1806,my976,o,-3710,o.-3710,ow1806,ox-976,oy97,oz-3710,p,-6494,p.-6494,"
+            + "py1806,pz-4589,r,-10205,r--976,r.-10205,r:-1904,r;-1904,ra-976,rc-976,rd-976,re-976,rg976,rj5419"
+            + ",rk-976,rl-1904,rm5419,rn4492,ro-976,rq-1904,rr3613,rs-2783,ru2685,rv3613,ry3613,s,-3710,s.-3710"
+            + ",sw976,v,-5615,v.-5615,ve976,vo976,vq-976,w,-5615,w.-5615,wc-976,wq-976,y,-9277,y.-9277,ya-976,y"
+            + "c-1904,yd-1904,ye-1904,yg-976,yo-1904,zc-2001,zd-1904,ze-1904,zo-1904,";
+    }
+    private static String Baskerville_0_6_kerning() {
+        return "AC-1904,AG-1904,AO-1904,AQ-1904,AT-4589,AU-2783,AV-7421,AW-2783,AY-4687,Ap1806,Av-976,Ay-1904,B,"
+            + "-976,B.-976,BA-2783,BU-3710,C,-1904,C.-1904,D,-4589,D.-4589,DA-4589,DV-5615,DW-976,DY-5615,F,-14"
+            + "794,F.-14794,FA-7421,Fa-4687,Fe-7421,Fl3613,Fo-7421,Fr-4589,J,-3710,J.-3710,J:-2783,J;-2783,JA-2"
+            + "783,Ja-2783,Je-4589,Jo-4589,Ju-2880,Jy-2783,KC-2783,KG-2783,KO-2783,Ka4492,Ke976,Ko1806,Ku976,Kv"
+            + "976,Kw2685,LC-976,LG-976,LO-976,LT-5615,LU-2001,LV-5615,LW-976,LY-7421,Lw976,N,-1904,N.-2783,NA-"
+            + "2783,O,-7421,O.-7324,OA-3710,OT-2783,OV-7421,OW-1904,OX-6494,OY-5517,P,-19287,P.-19287,PA-4589,P"
+            + "a-1904,Pe-5517,Po-5615,Q,7177,Q.-8300,QA-3710,QT-3710,QU-1904,QV-5615,QW-976,QY-3710,RC-2783,RG-"
+            + "2783,RO-2783,RQ-2783,RT-4589,RU-3710,RV-6494,RW-2783,RY-6494,Re-3710,Ro-2783,Ru-1904,Rv-1904,Rw-"
+            + "976,Ry-1904,S,-1904,S.-2783,T,-12792,T--7421,T.-13818,T:-6494,T;-6494,TA-5615,TC-3710,TG-3710,TO"
+            + "-3710,TQ-3710,Ta-10302,Tc-12011,Te-12207,Th-976,Tm-7421,To-12988,Tr-7519,Ts-8300,Tu-8398,Tw-5615"
+            + ",Ty-5615,Tz-8300,U,-9277,U.-10107,UA-3710,V,-19482,V--6494,V.-19384,V:-11083,V;-11181,VA-8300,VC"
+            + "-4687,VG-4589,VO-4589,VQ-4589,Va-10205,Ve-11083,Vi-2783,Vo-11914,Vr-6494,Vu-7421,Vy-6494,W,-1391"
+            + "6,W--5615,W.-13916,W:-7421,W;-7421,WA-5615,WC-3710,WG-3710,WO-3710,Wa-6494,Wd-6494,We-8300,Wh180"
+            + "6,Wi-2783,Wo-8398,Wr-3710,Wu-4589,Wy-4589,XC-4589,XG-4589,XO-4589,Y,-15820,Y--8398,Y.-15722,Y:-1"
+            + "1181,Y;-11083,YA-8398,YC-6494,YG-6494,YO-6494,YS-1904,Ya-11083,Yd-11083,Ye-12988,Yi-3710,Yo-1298"
+            + "8,Yp-8300,Yq-12011,Yu-9277,Yv-8300,ag976,av-976,ay-976,b,-1904,b.-2783,bb-1904,bl-1904,bu-2001,b"
+            + "v-976,by-976,c,-976,c.-1904,dd-976,dv-976,dy-1904,e,-3710,e.-4589,eb-2783,eg-976,ev-976,ey-1904,"
+            + "f 14501,f!12597,f?16308,fa976,ff2685,fi-3125,fl-1025,g,-1904,g.-3710,ge-976,gl976,go-976,gr3613,"
+            + "gy3613,iv-976,ke-2783,ko-2783,mu-2001,my-976,nu-976,o,-976,o.-1904,og-976,ov-1123,oy-976,oz-976,"
+            + "p,-3710,p.-4589,pw-976,py-1904,pz-976,r,-12011,r--976,r.-14697,r:-2783,r;-2783,rc-1904,rd-1904,r"
+            + "e-1904,rg-1904,rj976,rk-1904,rl-1904,rm2685,rn2685,ro-1904,rp976,rq-1904,rs-976,rt-976,rv976,ry9"
+            + "76,s,-1904,s.-2783,sw-2001,v,-11083,v.-12011,vc-1904,vd-976,ve-1904,vo-1904,vq-1904,w,-10205,w.-"
+            + "11914,wc-2001,wd-976,we-1904,wh-976,wo-1904,xc-976,xe-2001,xo-976,y,-12988,y.-12988,ya-976,yc-27"
+            + "83,yd-1904,ye-2783,yg-1904,yo-2783,zc-1904,zd-976,ze-1904,zo-976,";
+    }
+    private static String Baskerville_1_6_kerning() {
+        return "AC-2783,AG-2783,AO-2783,AQ-2783,AT-3710,AU-2783,AV-3710,AW-1904,AY-6494,Ap976,Au1806,Av-1904,Aw2"
+            + "685,B,-2001,B.-2001,BA-2783,BU-2783,C,-2001,C.-2001,D,-6494,D.-6494,DA-6494,DV-7421,DW-5615,DY-9"
+            + "277,F,-14794,F.-14794,FA-7421,Fa-3808,Fe-3710,Fl976,Fo-3710,Fr-976,G,-1904,G.-1904,J,-10205,J.-1"
+            + "0205,J:-4589,J;-4589,JA-6494,Ja-5615,Je-5615,Jo-5615,Ju-4589,Jy-1904,KC-976,KG-1123,KO-1904,Ka26"
+            + "85,Ke1806,Ko-976,Ku1904,Kw5419,LC-2783,LG-2783,LO-3710,LT-3710,LU-1904,LV-5517,LW-3710,LY-7421,L"
+            + "w3613,Ly878,N,-6494,N.-6494,NA-5615,O,-5712,O.-5615,OA-3710,OT-3710,OV-5615,OW-3710,OX-3710,OY-7"
+            + "421,P,-19580,P.-19384,PA-9277,Pa-2783,Pe-3710,Po-3710,Q,15380,Q.-6494,QA-4589,QT-2783,QU-976,QV-"
+            + "3710,QW-2001,QY-5615,RC-1123,RG-976,RO-976,RQ-878,RT-976,RU-976,RV-1904,RY-3710,Re1806,Ro-976,Ru"
+            + "3613,Rv976,Rw5419,Ry2685,S,-2001,S.-1904,T,-16601,T--4589,T.-16699,T:-4589,T;-4589,TA-8300,TC-27"
+            + "83,TG-2783,TO-2783,TQ-2783,Ta-7519,Tc-9277,Te-8398,Th1806,Tl976,Tm-4589,To-8300,Tr-4589,Ts-7421,"
+            + "Tu-4589,Tw-1904,Ty-976,Tz-6494,U,-11181,U.-10986,UA-8300,V,-20410,V--7421,V.-20410,V:-9277,V;-92"
+            + "77,VA-10205,VC-5615,VG-5615,VO-5615,VQ-5517,Va-11083,Ve-12011,Vi-1904,Vo-12109,Vr-6494,Vu-8300,V"
+            + "y-6494,W,-14794,W--4687,W.-14794,W:-5615,W;-5615,WA-4589,WC-3710,WG-3710,WO-3710,Wa-4687,Wd-5615"
+            + ",We-5615,Wh2685,Wi-1904,Wo-5615,Wr-2783,Wu-2783,Wy-1904,XC-6494,XG-6494,XO-6494,Y,-10205,Y--5615"
+            + ",Y.-10205,Y:-7421,Y;-7421,YA-5615,YC-2783,YG-2783,YO-2783,YS976,Ya-5615,Yd-6494,Ye-6494,Yi-2783,"
+            + "Yo-6494,Yp-2783,Yq-5615,Yu-3710,Yv-4687,ag2685,ap976,at-976,av-976,aw3613,b,-3710,b.-3710,bb-976"
+            + ",bl-976,bu1806,bv-976,bw2685,by1806,c,-1904,c.-1904,ch-976,ck-976,cy1904,dv-1904,dw2685,e,-3710,"
+            + "e.-3710,eb-2783,ep976,ev-1904,ew1806,ex-976,ez-2783,f 10791,f!6298,f,-7421,f.-7421,f?10791,fa-97"
+            + "6,fe-976,ff1806,fi-2099,fk-976,fl-1025,fo-976,g,-3710,g.-9277,ga-976,ge-2001,gg2685,gl-1904,go-9"
+            + "76,gr3613,gy2685,iv-976,ko-976,ky976,lw2685,my-976,nv-976,ny976,o,-1904,o.-1904,ov-2001,ow2685,o"
+            + "x-976,oy976,oz-976,p,-3710,p.-3710,pw2685,pz-2783,r,-14794,r.-14794,r:-1904,r;-1904,ra-878,rc-19"
+            + "04,rd-976,re-1904,rg1806,rj3613,rk-1904,rl-1904,rm5419,rn6298,rp3613,rq-976,rr3613,rs-976,rt1806"
+            + ",ru5419,rv2685,ry4492,s,-5615,s.-5615,sw1806,v,-10205,v.-10205,va-3710,vc-4589,vd-3710,ve-3710,v"
+            + "o-3710,vq-3710,w,-10205,w.-10205,wa-3710,wc-4589,wd-3710,we-3710,wh-5615,wo-3710,wq-3710,xc-2783"
+            + ",xd-976,xe-976,xo-1904,y,-8398,y.-8398,ya-2783,yc-3710,yd-2783,ye-2783,yg-976,yo-1904,zc-1904,zd"
+            + "-1904,ze-1904,zo-1904,";
+    }
+    private static String Big_Caslon_0_3_kerning() {
+        return "ff-99,fi-399,fl399,";
+    }
+    private static String Brush_Script_MT_0_3_kerning() {
+        return " A-2587, T-6298,(J-1318,(f-1318,(g-1318,(j-3808,(y-1318,Au1220,Av1220,Aw1220,Ay1220,B.1220,C,249"
+            + "0,C.3710,D,-10009,D.-8789,F,-3808,F.-2490,Fa-1318,Fe-1318,Fi-1318,Fo-1318,Fr-1318,G,1220,G.2490,"
+            + "Ia-4980,Ic-4980,Id-5078,Ig-5078,Ik-3808,Il-1318,Im-4980,In-4980,Io-4980,Ip-6298,Ir-3808,Is-6298,"
+            + "It-2490,Iv-4980,Iw-4980,Ix-3808,J,2490,J.3710,J:2490,J;2490,Ka-1318,Ke-1318,Ko-1318,Ku-1318,Kv-1"
+            + "318,Kw-1318,Ky-1318,Lw-2490,Ly-3808,N,2490,N.3710,O,-4980,O.-4980,P,-10009,P.-8789,Pa-2490,Pe-24"
+            + "90,Po-2490,Q,-2490,Q.-1318,Qg-1318,Qj-2490,R)2490,S,-2490,S.-1318,T--2490,Ta-1318,Tc-2490,Te-249"
+            + "0,Th-1318,Ti-2490,Tm-2490,To-2490,Tr-2490,Ts-3808,Tu-2490,Tw-2490,Ty-3808,Tz-1318,U,2490,U.3710,"
+            + "V,-3808,V--1318,V.-3808,V:-1318,V;-2490,Va-1318,Ve-1318,Vi-1318,Vo-1318,Vu-1318,Vy-1318,Wa1220,W"
+            + "d1220,We1220,Wh2490,Wi1220,Wo1220,Wr1220,Y--1318,Ya-4980,Yd-6298,Ye-4980,Yi-6298,Yo-6298,Yp-2587"
+            + ",Yq-4980,Yu-4980,Yv-4980,b,-3808,b.-2490,bv-1318,bw-1318,by-1318,c,-1318,e,-2490,e.-1318,ep-1318"
+            + ",ev-1318,ex-1318,f 4980,f,-1318,f?2490,fa-1318,fe-1318,fk-1318,g,-2490,g.-1318,gp-1318,gr-1318,k"
+            + "l1220,lw-1318,ly-1318,ox-1318,p,-2490,p.-1318,rj-1318,s,-1318,w,-2490,w.-1318,y,-1318,";
+    }
+    private static String Chalkboard_0_3_kerning() {
+        return " A-6850, T-8397, V-8950, W-7845, Y-7403,\"2-3646,\"4-11381,\"6-7845,\"72651,\"A-9723,\"C-4419,\"D3535,\""
+            + "G-4419,\"O-6187,\"Q-4419,\"R3535,\"S-2651,\"T3535,\"V773,\"W1767,\"Y3535,\"a-10497,\"c-5303,\"d-7071,\"e-441"
+            + "9,\"f-4419,\"g-6077,\"j-8950,\"k1767,\"o-6077,\"q-6187,\"s-5303,\"t-5303,\"u-5303,$2-4751,$3-3535,$5-3093"
+            + ",$8-2209,$9-1657,'d-3646,'m-3646,(A8950,(C-4861,(O-4861,(Q-4972,(S-3867,(U-3867,(V3867,(W4861,(Y"
+            + "2983,(a-4861,(c-3867,(d-1988,(e-3867,(f-4861,(g-3756,(j7955,(n-3867,(o-3867,(q-3867,(r-3867,(s-3"
+            + "867,(t-7845,(u-3867,(v-3867,(w-3867,(x-3756,(y-3867,)A12817,)C4861,)D6850,)E3867,)F5856,)G5966,)"
+            + "H5966,)I3867,)J7845,)K7845,)L5966,)M5966,)O4861,)P7845,)Q4861,)R3867,)S2872,)U7845,)V6850,)W6850"
+            + ",)Y5856,)Z5856,)a5966,)b3867,)c6850,)d9944,)e6850,)g4861,)h5966,)i4861,)j4861,)k4861,)l6850,)m78"
+            + "45,)n4861,)o8950,)p5966,)q6850,)r7845,)s5966,)t3867,)u6850,)v7845,)w7845,)x4861,)y4861,)z8950,*,"
+            + "-13922,*.-13922,*;-10276,*A-2872,*B5082,*C-3646,*D2872,*E1436,*F2209,*G-5856,*H1436,*I2209,*J441"
+            + "9,*K3646,*L2983,*M2983,*N3646,*O-3646,*P2872,*Q-4419,*R3646,*S-2320,*T4419,*U2983,*V3646,*W4419,"
+            + "*X1436,*Y4419,*Z2320,*a-10276,*b3646,*c-5082,*d-3646,*e-4419,*f-2983,*g-4419,*h2872,*i2209,*j-87"
+            + "29,*k1436,*l2983,*m2983,*n2872,*o-8729,*p-2983,*q-6740,*r-3646,*s-3646,*t-6629,*u-5856,*v-3646,*"
+            + "w-6629,*x-5082,*y-3646,*z2983,,12983,,2-3646,,6-4419,,7-5856,,J4419,,Q-3646,,V-5745,,W-4419,-058"
+            + "56,-2-4972,-3-7955,-5-5082,-7-6629,-D-3646,-J-5303,-R662,-T-11712,-V-2872,-W-3535,-X-13149,-Y-65"
+            + "19,-b-4751,-d3756,-f-3093,-v-3093,-y-3756,. -5414,..-8618,.2-2983,.3-3646,.4-3646,.6-2320,.7-364"
+            + "6,.9-5856,.C-3646,.O-3093,.Q-4419,.V-7955,.W-5856,.Y-8397,.b-3646,.c-3756,.e-3093,.f-6850,.k-607"
+            + "7,.l-3756,.m-3093,.n-2983,.o-3756,.p-5414,.q-4530,.r-2872,.s-1546,.u-6077,.v-10055,.w-6629,.x-29"
+            + "83,.y-9944,//-20883,/0-5082,/1-5082,/2-14585,/3-13149,/4-16906,/5-10165,/6-17569,/7-5856,/8-8950"
+            + ",/9-10165,/A-11491,/B-4419,/C-7292,/E-4309,/G-8950,/H-4419,/I-5745,/K-2983,/L-7955,/M-7292,/O-10"
+            + "165,/P-4419,/Q-7292,/R-3646,/S-12375,/T-2983,/U-4972,/V-4309,/W-2983,/X-5856,/Z-5856,/a-13922,/b"
+            + "-5856,/c-13149,/d-11049,/e-15248,/f-7292,/g-13922,/h-4419,/i-2983,/k-7292,/l-5856,/m-8729,/n-131"
+            + "49,/o-14696,/p-12375,/q-16906,/r-12375,/s-7955,/t-13149,/u-13922,/v-10939,/w-9613,/x-14585,/y-87"
+            + "29,/z-13038,0,-5082,0-4419,0.-2872,0/-6629,001546,0G7292,0H6519,0M7955,0\\-7292,1\"-6077,1.662,1/-"
+            + "3646,12-4419,16-5082,1M3646,1\\-6629,2.2209,2/-4309,24-2541,2G2320,2M5856,2\\-4419,3,-5856,3.-3646"
+            + ",3/-11049,32-5856,3M1436,3\\-6629,4\"-5303,4,-3646,4-2320,4/-6629,45-5856,47-4419,4M4972,4\\-10165,"
+            + "5,-5082,5/-7292,56-3646,5G2209,5M3646,5\\-5082,6\"-5303,6-3646,6/-5082,67-4309,6G2872,6M4309,6\\-72"
+            + "92,7\"3535,7,-14585,7--12375,7.-16132,7/-16022,70-2983,74-7955,76-6629,78-4419,7G-2320,8/-5745,8G"
+            + "1436,8M5082,8\\-3646,9,-8729,9.-5082,9/-11049,93-5856,9\\-4309,:3-4309,; -5303,A\"-7845,A)-4972,A*-"
+            + "15359,A-1767,A.-2320,A;-4751,AC662,AG1657,AJ5524,AO1878,AP2872,AQ2872,AT-4972,AU-3867,AV-2983,AW"
+            + "-2983,AY-2541,AZ662,A]-5966,Ab-2541,Ac-1546,Ae-552,Af-1988,Aj1546,Al110,Ao4198,Ap110,At-1215,Au1"
+            + "10,Av-1215,Aw110,Ay110,A}-3867,B)-4861,B*-1546,B,-7955,B--2320,B.-7955,B;-5414,BA110,BO-1988,BU-"
+            + "1988,C*2320,C,-5303,C.-5082,C;-4751,CA110,CD3314,CR2983,CX-2209,D)-5856,D*-662,D,-10607,D--2320,"
+            + "D.-7955,D/-4309,D;-3756,DA-3867,DU-2983,DV-1988,DW-2541,DY-3756,De-994,E*-662,E,-3093,E--4419,E;"
+            + "-4530,EC-2541,EO-2541,F)-3867,F*1436,F,-18894,F--1657,F.-18674,F/-11049,F;-5414,FA-2872,FT2983,F"
+            + "Y6519,Fa-7292,Fe-4419,Fj-11712,Fo-5856,Fr-2320,G)-4972,G*-1436,G,-5856,G--2983,G.-7292,G/-3646,G"
+            + ";-4530,GX-2872,H*2209,H,-3756,H-5745,H/-3646,H;-3756,I*2320,I,-6519,I--5082,I.-7734,I/-3646,I;-3"
+            + "756,IT1988,Ia-1546,Ic-1988,Id-994,Ie-1546,Ig-994,Io-1546,Is-994,Iw-1546,J)1988,J*5082,J,-14585,J"
+            + "--5856,J.-11712,J/-8729,J;-13812,JA-2430,JF5856,J]3867,Ja-3535,Je-2983,Jo-2983,Ju-2430,K\"-3646,K"
+            + ")-4861,K*-3646,K,-3093,K--11712,K;-4530,KC-4530,KG-2983,KO-3867,KU-2541,Ke-2320,Ko-2320,Ku-1657,"
+            + "Ky-5082,L\"-21878,L)-3867,L*-12375,L--8950,L;-3756,LC-4972,LG-4530,LJ5524,LO-3646,LQ-2983,LT-9944"
+            + ",LU-3867,LV-5856,LW-3535,LY-4530,L[3867,L]-3867,La-2983,Ly-4751,M)3867,M*-3646,M--5082,M42983,M;"
+            + "-4530,MC-2541,MG-2541,MU-3535,MV-4530,MW-2983,M[5966,M]-2983,Mo2762,M}3867,N*2209,N,-5856,N-552,"
+            + "N.-5856,N;-5414,N[5856,N]3867,Na-1215,Ne-1767,No-1546,O\"-3535,O)-6850,O*-2320,O,-12375,O--2209,O"
+            + ".-10939,O/-11602,O;-5303,OA-2541,OB-3646,OT110,OU-2541,OV110,OW110,OX-8066,OY-4088,OZ-2983,O[585"
+            + "6,O]-3867,Oe-994,P)-3867,P*2983,P,-14585,P--4088,P.-13922,P/-7955,P;-6850,PA-4972,P]-3867,Pa-662"
+            + "9,Pe-2541,Pg-1988,Po-2541,Pr-1546,Ps-1546,Q\"-5303,Q*-5082,Q,1436,Q--3535,Q.-6519,Q;-5414,QU-5856"
+            + ",QX-2320,Q]-1988,Q}5082,R\"-2651,R*-2320,R,-2320,R--7071,R/-5082,R;-5414,RC-5082,RG-2541,RO-1988,"
+            + "RU-2541,RV110,RW110,R]-3867,Ry110,R}-662,S)-3867,S*-2209,S,-7292,S.-3535,S/-3646,S;-5414,S[3867,"
+            + "S]-3867,T\"3646,T)7845,T*2209,T,-11712,T--8729,T.-13149,T/-13149,T:-9171,T;-16906,T?5966,TA-1988,"
+            + "TO110,TY7513,T[3867,T]2983,Ta-9613,Tc-11049,Te-13149,Th110,Ti-2983,To-13038,Tr-7955,Ts-6629,Tu-9"
+            + "392,Tw-7292,Ty-5745,T}3867,U)2872,U*1436,U,-7734,U-1546,U/-4419,U;-4751,UA110,UD2872,UR2209,U[38"
+            + "67,U]-2983,V)6850,V*2320,V,-16906,V--7071,V.-17127,V/-21215,V:-6850,V;-12707,VA-4530,VG-2872,VM-"
+            + "4309,VO-2320,V[2872,Va-10165,Ve-9060,Vi110,Vo-5966,Vr-5082,Vs-4972,Vu-4530,Vy-4530,V}4861,W*1546"
+            + ",W,-13922,W--3646,W.-15580,W/-11712,W:-4088,W;-13038,W?-662,WA-4530,WO-1767,W]-1878,Wa-6629,We-6"
+            + "629,Wh110,Wi110,Wm-2983,Wo-5966,Wr-3535,Wu-3867,Wy-3867,X\"2651,X)4861,X*2209,X--4751,X/-2983,X;-"
+            + "3756,XC-2983,XG662,XO-662,XQ1436,XU662,X[5856,X]1988,X}6850,Y)2872,Y*2320,Y,-9723,Y--7071,Y.-151"
+            + "38,Y/-18232,Y:-6298,Y;-13259,Y?2651,YA-2320,YB6519,YD5082,YE5082,YF5082,YH7071,YI7734,YK4088,YN2"
+            + "872,YO-4972,YP4972,YR4751,YS-1988,YT9281,YW8287,YX5966,YZ4419,Y[6850,Y]-1988,Ya-8729,Yc-7071,Ye-"
+            + "9613,Yi110,Yo-8950,Yr-3867,Ys-4530,Yu-4530,Yv-5524,Y}4088,Z)994,Z*2320,Z,-2320,Z;-3646,ZA7955,ZO"
+            + "-2541,ZV3093,ZY7292,Z[5856,Z]-1878,Za-662,Ze1546,Zi2872,Zw-1546,Z}3535,[C-3867,[J2983,[O-4861,[Q"
+            + "-4861,[S-3867,[U-4972,[W2983,[Y2983,[c-3867,[j5856,[l3867,[n-3867,[o-2983,[q-5856,[r-4861,[s-287"
+            + "2,[t-5856,[u-4861,[v-3867,[w-4861,[y-3867,\\0-2872,\\2-7292,\\3-5856,\\4-3646,\\5-7292,\\6-7955,\\7-109"
+            + "39,\\8-5082,\\9-11602,]A13812,]B4861,]C3867,]D4861,]E3867,]F3756,]G4861,]H4861,]J5856,]K4861,]M486"
+            + "1,]N8950,]O8950,]P5856,]Q13812,]R7845,]S3867,]T6850,]U6850,]V4861,]W3867,]X3867,]Y5856,]Z5966,]a"
+            + "4861,]b2983,]d6850,]e4861,]g6850,]h6850,]i8950,]j4861,]k6850,]l6850,]m7845,]n7845,]o8950,]p7845,"
+            + "]q6850,]r6850,]s5856,]t3867,]u5856,]v6850,]w5856,]x5856,]y4861,]z7845,a*1436,a;-6850,aV-1436,aZ2"
+            + "872,a]-3756,ab110,ac-3093,ad3314,ae-2209,af-3314,ag110,aj-4751,ak-662,al-773,ap110,ar-1436,as121"
+            + "5,at-6850,av-442,aw110,ay110,b)-5856,b*-3646,b,-7955,b.-7955,b;-6077,b[3867,b]-3867,ba-2320,bb11"
+            + "0,bd4198,bs994,bu110,bv110,by-3093,c)-1878,c*2872,c,-4530,c.-4530,c;-6077,c]-3867,ca-3756,cc-430"
+            + "9,ce-2320,ch110,ck-1657,cl110,cn-994,co-3093,cp-552,cq-552,ct-3535,cy110,d;-5414,d[7845,dd2320,d"
+            + "v110,dw110,dy110,e)-3867,e*2983,e,-2320,e.-3535,eV-1436,e[5966,e]-3867,eb110,ec1657,ed4751,ef-23"
+            + "20,ej-9281,ep1657,er2209,es2320,et-4419,ev-552,ex-3093,ey-2430,ez2320,f\"9723,f)5856,f*5856,f,-75"
+            + "13,f.-12154,f;-6077,f[8950,f]5856,fa-3093,fe-2320,ff-2983,fi-10497,fj-7292,fl-5635,fo-3093,fs-12"
+            + "15,ft-3756,g!-3867,g)3867,g*-662,g,-662,g--2983,g.-1546,g:-5082,g;-3867,g?-4530,g[8950,g]2983,ga"
+            + "110,ge1546,gg1546,gh2430,gi3535,gn1436,go2320,gr2872,gs2983,gy110,g}3867,h\"-5303,h)-3867,h*-4419"
+            + ",h;-6077,h[6850,hi1657,ht-4530,hy110,i)3867,i*1436,i.-3756,i;-3093,i[8950,i]4861,ia-2209,ic-2320"
+            + ",id3535,if-4751,ij-6187,ip-2320,iq-1657,it-7292,iv110,j)3867,j*3646,j,-4751,j.-7734,j;-5414,j[78"
+            + "45,j}3867,k\"-3535,k)-3867,k*-2983,k.-2430,k;-3756,kT-5856,k[5856,k]-3867,ka-4419,ke-3756,kl-2209"
+            + ",ko-2320,ky110,l)-3867,l*-2872,l,-4530,l.-8397,l;-4530,l[9944,l]-3867,la-6629,lc-4530,le-5524,lg"
+            + "-3867,li-4419,ll-1546,lo-3867,lt-10497,lu-5414,lv-4530,lw-4751,ly-3867,m)-3867,m*2872,m--1436,m."
+            + "-1436,m;-3756,m[3867,m]-4861,me2430,mi1546,mm3093,mn-552,mu110,my110,n)-3867,n*2872,n,-3093,n;-3"
+            + "093,n[3867,n]-3867,nd4530,ne1546,ng1546,ni1767,no2320,nt-3756,nu2430,nv110,ny110,o\"-4309,o)-1988"
+            + ",o*2983,o,-7955,o-3314,o.-6629,o;-3756,oF3646,o[3867,o]-3867,oa1546,oc1657,od4972,oe662,og1546,o"
+            + "i3535,oj-4972,om3093,on2541,oo3867,op3093,oq2320,or1546,os994,ot-3646,ou3093,ov3093,ow2430,ox-15"
+            + "46,oy1767,oz3093,p\"-7071,p)-3867,p*-3646,p,-7845,p.-6077,p;-6077,p[3867,p]-3867,pb-2430,pe1105,p"
+            + "o1215,pr-2320,pt-6740,py110,q\"-4419,q)3867,q*-2872,q;-3093,q[3867,q]-4861,qi2651,q}4861,r)-3867,"
+            + "r*5856,r,-11712,r-3646,r.-12375,r/-6629,r:-1657,r;-5856,r?4309,rP2872,r[3867,r]-3867,ra-6629,rc-"
+            + "1215,rd662,re-2209,rg-1436,rh2762,ri2651,rk110,rl2320,rm4309,rn2209,ro-1436,rp2762,rq-994,rr3093"
+            + ",rs1657,rt110,ru2762,rv6629,rw3093,ry3646,s!-4530,s\"-5303,s)-4861,s*2209,s,-3867,s--4751,s.-5966"
+            + ",s:-3867,s;-6629,s?-4530,s[3867,s]-3867,sb-994,sc-994,st-4751,sw110,t\"-4419,t)-3867,t*4309,t,-13"
+            + "038,t--8397,t.-11491,t/-8729,t;-6187,t[4861,t]-4861,ta-7955,tc-3314,te-4972,ti552,tm2872,to-4419"
+            + ",tt-2983,u\"-4309,u)3867,u*-3646,u,-1436,u/-3646,u;-6077,uF3646,u[3867,u]-3867,ud5303,uf-3314,ul2"
+            + "651,um3093,un1436,up1546,ur1546,us2872,ut-6077,v!-1436,v*2983,v,-12265,v--4751,v.-9392,v/-8729,v"
+            + ";-8508,v[4861,v]-4861,va-5414,ve-773,vo110,vy2209,w*3646,w,-7292,w--1436,w.-5303,w/-8950,w;-3756"
+            + ",w[3867,w]-4861,wd3093,wh2320,wi3867,wn2320,wo552,wu3535,wv2983,wy2762,x)-3867,x*2872,x,-2320,x-"
+            + "-4751,x/-3646,x;-6850,x[4861,x]-4861,xa-3756,xb-2320,xc-4530,xe-1546,xg-662,xh-1105,xi-1325,xk-1"
+            + "436,xl-1325,xm-1546,xn-1657,xo-3646,xp-1325,xr-994,xu-994,xw-994,xy-552,y!-1436,y*1436,y,-9834,y"
+            + "--3646,y.-10165,y/-13922,y:-662,y;-7955,y?662,y[4861,y]-5966,ya-3756,yc-994,ye-3867,yg-3093,yo-2"
+            + "762,yw2320,z)-3867,z*2320,z,-1546,z--5303,z/-3646,z;-3756,z]-5966,ze-4751,{A5856,{J1436,{P1988,{"
+            + "V2320,{Y2983,}K8950,}Q12375,}R9613,";
+    }
+    private static String Chalkboard_0_6_kerning() {
+        return " A-6850, T-8397, V-8950, W-7845, Y-7403,\"2-3646,\"4-11381,\"6-7845,\"72651,\"A-9723,\"C-4419,\"D3535,\""
+            + "G-4419,\"O-6187,\"Q-4419,\"R3535,\"S-2651,\"T3535,\"V773,\"W1767,\"Y3535,\"a-10497,\"c-5303,\"d-7071,\"e-441"
+            + "9,\"f-4419,\"g-6077,\"j-8950,\"k1767,\"o-6077,\"q-6187,\"s-5303,\"t-5303,\"u-5303,$2-4751,$3-3535,$5-3093"
+            + ",$8-2209,$9-1657,'d-3646,'m-3646,(A8950,(C-4861,(O-4861,(Q-4972,(S-3867,(U-3867,(V3867,(W4861,(Y"
+            + "2983,(a-4861,(c-3867,(d-1988,(e-3867,(f-4861,(g-3756,(j7955,(n-3867,(o-3867,(q-3867,(r-3867,(s-3"
+            + "867,(t-7845,(u-3867,(v-3867,(w-3867,(x-3756,(y-3867,)A12817,)C4861,)D6850,)E3867,)F5856,)G5966,)"
+            + "H5966,)I3867,)J7845,)K7845,)L5966,)M5966,)O4861,)P7845,)Q4861,)R3867,)S2872,)U7845,)V6850,)W6850"
+            + ",)Y5856,)Z5856,)a5966,)b3867,)c6850,)d9944,)e6850,)g4861,)h5966,)i4861,)j4861,)k4861,)l6850,)m78"
+            + "45,)n4861,)o8950,)p5966,)q6850,)r7845,)s5966,)t3867,)u6850,)v7845,)w7845,)x4861,)y4861,)z8950,*,"
+            + "-13922,*.-13922,*;-10276,*A-2872,*B5082,*C-3646,*D2872,*E1436,*F2209,*G-5856,*H1436,*I2209,*J441"
+            + "9,*K3646,*L2983,*M2983,*N3646,*O-3646,*P2872,*Q-4419,*R3646,*S-2320,*T4419,*U2983,*V3646,*W4419,"
+            + "*X1436,*Y4419,*Z2320,*a-10276,*b3646,*c-5082,*d-3646,*e-4419,*f-2983,*g-4419,*h2872,*i2209,*j-87"
+            + "29,*k1436,*l2983,*m2983,*n2872,*o-8729,*p-2983,*q-6740,*r-3646,*s-3646,*t-6629,*u-5856,*v-3646,*"
+            + "w-6629,*x-5082,*y-3646,*z2983,,12983,,2-3646,,6-4419,,7-5856,,J4419,,Q-3646,,V-5745,,W-4419,-058"
+            + "56,-2-4972,-3-7955,-5-5082,-7-6629,-D-3646,-J-5303,-R662,-T-11712,-V-2872,-W-3535,-X-13149,-Y-65"
+            + "19,-b-4751,-d3756,-f-3093,-v-3093,-y-3756,. -5414,..-8618,.2-2983,.3-3646,.4-3646,.6-2320,.7-364"
+            + "6,.9-5856,.C-3646,.O-3093,.Q-4419,.V-7955,.W-5856,.Y-8397,.b-3646,.c-3756,.e-3093,.f-6850,.k-607"
+            + "7,.l-3756,.m-3093,.n-2983,.o-3756,.p-5414,.q-4530,.r-2872,.s-1546,.u-6077,.v-10055,.w-6629,.x-29"
+            + "83,.y-9944,//-20883,/0-5082,/1-5082,/2-14585,/3-13149,/4-16906,/5-10165,/6-17569,/7-5856,/8-8950"
+            + ",/9-10165,/A-11491,/B-4419,/C-7292,/E-4309,/G-8950,/H-4419,/I-5745,/K-2983,/L-7955,/M-7292,/O-10"
+            + "165,/P-4419,/Q-7292,/R-3646,/S-12375,/T-2983,/U-4972,/V-4309,/W-2983,/X-5856,/Z-5856,/a-13922,/b"
+            + "-5856,/c-13149,/d-11049,/e-15248,/f-7292,/g-13922,/h-4419,/i-2983,/k-7292,/l-5856,/m-8729,/n-131"
+            + "49,/o-14696,/p-12375,/q-16906,/r-12375,/s-7955,/t-13149,/u-13922,/v-10939,/w-9613,/x-14585,/y-87"
+            + "29,/z-13038,0,-5082,0-4419,0.-2872,0/-6629,001546,0G7292,0H6519,0M7955,0\\-7292,1\"-6077,1.662,1/-"
+            + "3646,12-4419,16-5082,1M3646,1\\-6629,2.2209,2/-4309,24-2541,2G2320,2M5856,2\\-4419,3,-5856,3.-3646"
+            + ",3/-11049,32-5856,3M1436,3\\-6629,4\"-5303,4,-3646,4-2320,4/-6629,45-5856,47-4419,4M4972,4\\-10165,"
+            + "5,-5082,5/-7292,56-3646,5G2209,5M3646,5\\-5082,6\"-5303,6-3646,6/-5082,67-4309,6G2872,6M4309,6\\-72"
+            + "92,7\"3535,7,-14585,7--12375,7.-16132,7/-16022,70-2983,74-7955,76-6629,78-4419,7G-2320,8/-5745,8G"
+            + "1436,8M5082,8\\-3646,9,-8729,9.-5082,9/-11049,93-5856,9\\-4309,:3-4309,; -5303,A\"-7845,A)-4972,A*-"
+            + "15359,A-1767,A.-2320,A;-4751,AC662,AG1657,AJ5524,AO1878,AP2872,AQ2872,AT-4972,AU-3867,AV-2983,AW"
+            + "-2983,AY-2541,AZ662,A]-5966,Ab-2541,Ac-1546,Ae-552,Af-1988,Aj1546,Al110,Ao4198,Ap110,At-1215,Au1"
+            + "10,Av-1215,Aw110,Ay110,A}-3867,B)-4861,B*-1546,B,-7955,B--2320,B.-7955,B;-5414,BA110,BO-1988,BU-"
+            + "1988,C*2320,C,-5303,C.-5082,C;-4751,CA110,CD3314,CR2983,CX-2209,D)-5856,D*-662,D,-10607,D--2320,"
+            + "D.-7955,D/-4309,D;-3756,DA-3867,DU-2983,DV-1988,DW-2541,DY-3756,De-994,E*-662,E,-3093,E--4419,E;"
+            + "-4530,EC-2541,EO-2541,F)-3867,F*1436,F,-18894,F--1657,F.-18674,F/-11049,F;-5414,FA-2872,FT2983,F"
+            + "Y6519,Fa-7292,Fe-4419,Fj-11712,Fo-5856,Fr-2320,G)-4972,G*-1436,G,-5856,G--2983,G.-7292,G/-3646,G"
+            + ";-4530,GX-2872,H*2209,H,-3756,H-5745,H/-3646,H;-3756,I*2320,I,-6519,I--5082,I.-7734,I/-3646,I;-3"
+            + "756,IT1988,Ia-1546,Ic-1988,Id-994,Ie-1546,Ig-994,Io-1546,Is-994,Iw-1546,J)1988,J*5082,J,-14585,J"
+            + "--5856,J.-11712,J/-8729,J;-13812,JA-2430,JF5856,J]3867,Ja-3535,Je-2983,Jo-2983,Ju-2430,K\"-3646,K"
+            + ")-4861,K*-3646,K,-3093,K--11712,K;-4530,KC-4530,KG-2983,KO-3867,KU-2541,Ke-2320,Ko-2320,Ku-1657,"
+            + "Ky-5082,L\"-21878,L)-3867,L*-12375,L--8950,L;-3756,LC-4972,LG-4530,LJ5524,LO-3646,LQ-2983,LT-9944"
+            + ",LU-3867,LV-5856,LW-3535,LY-4530,L[3867,L]-3867,La-2983,Ly-4751,M)3867,M*-3646,M--5082,M42983,M;"
+            + "-4530,MC-2541,MG-2541,MU-3535,MV-4530,MW-2983,M[5966,M]-2983,Mo2762,M}3867,N*2209,N,-5856,N-552,"
+            + "N.-5856,N;-5414,N[5856,N]3867,Na-1215,Ne-1767,No-1546,O\"-3535,O)-6850,O*-2320,O,-12375,O--2209,O"
+            + ".-10939,O/-11602,O;-5303,OA-2541,OB-3646,OT110,OU-2541,OV110,OW110,OX-8066,OY-4088,OZ-2983,O[585"
+            + "6,O]-3867,Oe-994,P)-3867,P*2983,P,-14585,P--4088,P.-13922,P/-7955,P;-6850,PA-4972,P]-3867,Pa-662"
+            + "9,Pe-2541,Pg-1988,Po-2541,Pr-1546,Ps-1546,Q\"-5303,Q*-5082,Q,1436,Q--3535,Q.-6519,Q;-5414,QU-5856"
+            + ",QX-2320,Q]-1988,Q}5082,R\"-2651,R*-2320,R,-2320,R--7071,R/-5082,R;-5414,RC-5082,RG-2541,RO-1988,"
+            + "RU-2541,RV110,RW110,R]-3867,Ry110,R}-662,S)-3867,S*-2209,S,-7292,S.-3535,S/-3646,S;-5414,S[3867,"
+            + "S]-3867,T\"3646,T)7845,T*2209,T,-11712,T--8729,T.-13149,T/-13149,T:-9171,T;-16906,T?5966,TA-1988,"
+            + "TO110,TY7513,T[3867,T]2983,Ta-9613,Tc-11049,Te-13149,Th110,Ti-2983,To-13038,Tr-7955,Ts-6629,Tu-9"
+            + "392,Tw-7292,Ty-5745,T}3867,U)2872,U*1436,U,-7734,U-1546,U/-4419,U;-4751,UA110,UD2872,UR2209,U[38"
+            + "67,U]-2983,V)6850,V*2320,V,-16906,V--7071,V.-17127,V/-21215,V:-6850,V;-12707,VA-4530,VG-2872,VM-"
+            + "4309,VO-2320,V[2872,Va-10165,Ve-9060,Vi110,Vo-5966,Vr-5082,Vs-4972,Vu-4530,Vy-4530,V}4861,W*1546"
+            + ",W,-13922,W--3646,W.-15580,W/-11712,W:-4088,W;-13038,W?-662,WA-4530,WO-1767,W]-1878,Wa-6629,We-6"
+            + "629,Wh110,Wi110,Wm-2983,Wo-5966,Wr-3535,Wu-3867,Wy-3867,X\"2651,X)4861,X*2209,X--4751,X/-2983,X;-"
+            + "3756,XC-2983,XG662,XO-662,XQ1436,XU662,X[5856,X]1988,X}6850,Y)2872,Y*2320,Y,-9723,Y--7071,Y.-151"
+            + "38,Y/-18232,Y:-6298,Y;-13259,Y?2651,YA-2320,YB6519,YD5082,YE5082,YF5082,YH7071,YI7734,YK4088,YN2"
+            + "872,YO-4972,YP4972,YR4751,YS-1988,YT9281,YW8287,YX5966,YZ4419,Y[6850,Y]-1988,Ya-8729,Yc-7071,Ye-"
+            + "9613,Yi110,Yo-8950,Yr-3867,Ys-4530,Yu-4530,Yv-5524,Y}4088,Z)994,Z*2320,Z,-2320,Z;-3646,ZA7955,ZO"
+            + "-2541,ZV3093,ZY7292,Z[5856,Z]-1878,Za-662,Ze1546,Zi2872,Zw-1546,Z}3535,[C-3867,[J2983,[O-4861,[Q"
+            + "-4861,[S-3867,[U-4972,[W2983,[Y2983,[c-3867,[j5856,[l3867,[n-3867,[o-2983,[q-5856,[r-4861,[s-287"
+            + "2,[t-5856,[u-4861,[v-3867,[w-4861,[y-3867,\\0-2872,\\2-7292,\\3-5856,\\4-3646,\\5-7292,\\6-7955,\\7-109"
+            + "39,\\8-5082,\\9-11602,]A13812,]B4861,]C3867,]D4861,]E3867,]F3756,]G4861,]H4861,]J5856,]K4861,]M486"
+            + "1,]N8950,]O8950,]P5856,]Q13812,]R7845,]S3867,]T6850,]U6850,]V4861,]W3867,]X3867,]Y5856,]Z5966,]a"
+            + "4861,]b2983,]d6850,]e4861,]g6850,]h6850,]i8950,]j4861,]k6850,]l6850,]m7845,]n7845,]o8950,]p7845,"
+            + "]q6850,]r6850,]s5856,]t3867,]u5856,]v6850,]w5856,]x5856,]y4861,]z7845,a*1436,a;-6850,aV-1436,aZ2"
+            + "872,a]-3756,ab110,ac-3093,ad3314,ae-2209,af-3314,ag110,aj-4751,ak-662,al-773,ap110,ar-1436,as121"
+            + "5,at-6850,av-442,aw110,ay110,b)-5856,b*-3646,b,-7955,b.-7955,b;-6077,b[3867,b]-3867,ba-2320,bb11"
+            + "0,bd4198,bs994,bu110,bv110,by-3093,c)-1878,c*2872,c,-4530,c.-4530,c;-6077,c]-3867,ca-3756,cc-430"
+            + "9,ce-2320,ch110,ck-1657,cl110,cn-994,co-3093,cp-552,cq-552,ct-3535,cy110,d;-5414,d[7845,dd2320,d"
+            + "v110,dw110,dy110,e)-3867,e*2983,e,-2320,e.-3535,eV-1436,e[5966,e]-3867,eb110,ec1657,ed4751,ef-23"
+            + "20,ej-9281,ep1657,er2209,es2320,et-4419,ev-552,ex-3093,ey-2430,ez2320,f\"9723,f)5856,f*5856,f,-75"
+            + "13,f.-12154,f;-6077,f[8950,f]5856,fa-3093,fe-2320,ff-2983,fi-4751,fj-7292,fl-7845,fo-3093,fs-121"
+            + "5,ft-3756,g!-3867,g)3867,g*-662,g,-662,g--2983,g.-1546,g:-5082,g;-3867,g?-4530,g[8950,g]2983,ga1"
+            + "10,ge1546,gg1546,gh2430,gi3535,gn1436,go2320,gr2872,gs2983,gy110,g}3867,h\"-5303,h)-3867,h*-4419,"
+            + "h;-6077,h[6850,hi1657,ht-4530,hy110,i)3867,i*1436,i.-3756,i;-3093,i[8950,i]4861,ia-2209,ic-2320,"
+            + "id3535,if-4751,ij-6187,ip-2320,iq-1657,it-7292,iv110,j)3867,j*3646,j,-4751,j.-7734,j;-5414,j[784"
+            + "5,j}3867,k\"-3535,k)-3867,k*-2983,k.-2430,k;-3756,kT-5856,k[5856,k]-3867,ka-4419,ke-3756,kl-2209,"
+            + "ko-2320,ky110,l)-3867,l*-2872,l,-4530,l.-8397,l;-4530,l[9944,l]-3867,la-6629,lc-4530,le-5524,lg-"
+            + "3867,li-4419,ll-1546,lo-3867,lt-10497,lu-5414,lv-4530,lw-4751,ly-3867,m)-3867,m*2872,m--1436,m.-"
+            + "1436,m;-3756,m[3867,m]-4861,me2430,mi1546,mm3093,mn-552,mu110,my110,n)-3867,n*2872,n,-3093,n;-30"
+            + "93,n[3867,n]-3867,nd4530,ne1546,ng1546,ni1767,no2320,nt-3756,nu2430,nv110,ny110,o\"-4309,o)-1988,"
+            + "o*2983,o,-7955,o-3314,o.-6629,o;-3756,oF3646,o[3867,o]-3867,oa1546,oc1657,od4972,oe662,og1546,oi"
+            + "3535,oj-4972,om3093,on2541,oo3867,op3093,oq2320,or1546,os994,ot-3646,ou3093,ov3093,ow2430,ox-154"
+            + "6,oy1767,oz3093,p\"-7071,p)-3867,p*-3646,p,-7845,p.-6077,p;-6077,p[3867,p]-3867,pb-2430,pe1105,po"
+            + "1215,pr-2320,pt-6740,py110,q\"-4419,q)3867,q*-2872,q;-3093,q[3867,q]-4861,qi2651,q}4861,r)-3867,r"
+            + "*5856,r,-11712,r-3646,r.-12375,r/-6629,r:-1657,r;-5856,r?4309,rP2872,r[3867,r]-3867,ra-6629,rc-1"
+            + "215,rd662,re-2209,rg-1436,rh2762,ri2651,rk110,rl2320,rm4309,rn2209,ro-1436,rp2762,rq-994,rr3093,"
+            + "rs1657,rt110,ru2762,rv6629,rw3093,ry3646,s!-4530,s\"-5303,s)-4861,s*2209,s,-3867,s--4751,s.-5966,"
+            + "s:-3867,s;-6629,s?-4530,s[3867,s]-3867,sb-994,sc-994,st-4751,sw110,t\"-4419,t)-3867,t*4309,t,-130"
+            + "38,t--8397,t.-11491,t/-8729,t;-6187,t[4861,t]-4861,ta-7955,tc-3314,te-4972,ti552,tm2872,to-4419,"
+            + "tt-2983,u\"-4309,u)3867,u*-3646,u,-1436,u/-3646,u;-6077,uF3646,u[3867,u]-3867,ud5303,uf-3314,ul26"
+            + "51,um3093,un1436,up1546,ur1546,us2872,ut-6077,v!-1436,v*2983,v,-12265,v--4751,v.-9392,v/-8729,v;"
+            + "-8508,v[4861,v]-4861,va-5414,ve-773,vo110,vy2209,w*3646,w,-7292,w--1436,w.-5303,w/-8950,w;-3756,"
+            + "w[3867,w]-4861,wd3093,wh2320,wi3867,wn2320,wo552,wu3535,wv2983,wy2762,x)-3867,x*2872,x,-2320,x--"
+            + "4751,x/-3646,x;-6850,x[4861,x]-4861,xa-3756,xb-2320,xc-4530,xe-1546,xg-662,xh-1105,xi-1325,xk-14"
+            + "36,xl-1325,xm-1546,xn-1657,xo-3646,xp-1325,xr-994,xu-994,xw-994,xy-552,y!-1436,y*1436,y,-9834,y-"
+            + "-3646,y.-10165,y/-13922,y:-662,y;-7955,y?662,y[4861,y]-5966,ya-3756,yc-994,ye-3867,yg-3093,yo-27"
+            + "62,yw2320,z)-3867,z*2320,z,-1546,z--5303,z/-3646,z;-3756,z]-5966,ze-4751,{A5856,{J1436,{P1988,{V"
+            + "2320,{Y2983,}K8950,}Q12375,}R9613,";
+    }
+    private static String Chalkduster_0_3_kerning() {
+        return " A-6850, T-8397, V-8950, W-7845, Y-7403,\"2-3646,\"4-16685,\"6-8397,\"A-17679,\"C-4419,\"D3535,\"G-4419"
+            + ",\"O-6187,\"Q-4419,\"R-994,\"S-2651,\"T3204,\"V773,\"W-4088,\"Y3535,\"a-10497,\"c-5303,\"d-13480,\"e-4419,\"f"
+            + "-4419,\"g-6077,\"j-8950,\"k1767,\"o-6077,\"q-6187,\"s-5303,\"t-5303,\"u-5303,$2-994,$3-3535,$5-3093,$8-2"
+            + "209,$9-1657,'d-3646,'m-3646,'s-4198,(A8950,(C-4861,(O-4861,(Q-4972,(S-3867,(U-3867,(V3867,(W4861"
+            + ",(Y2983,(a-4861,(c-3867,(d-1988,(e-3867,(f-4861,(g-3756,(j7955,(n-3867,(o-3867,(q-3867,(r-3867,("
+            + "s-3867,(t-7845,(u-3867,(v-3867,(w-3867,(x-3756,(y-3867,)A12817,)C4861,)D6850,)E3867,)F5856,)G596"
+            + "6,)H5966,)I3867,)J7845,)K7845,)L5966,)M5966,)O4861,)P7845,)Q4861,)R3867,)S2872,)U7845,)V6850,)W6"
+            + "850,)Y5856,)Z5856,)a5966,)b3867,)c6850,)d9944,)e6850,)g4861,)h5966,)i4861,)j4861,)k4861,)l6850,)"
+            + "m7845,)n4861,)o8950,)p5966,)q6850,)r7845,)s5966,)t3867,)u6850,)v7845,)w7845,)x4861,)y4861,)z8950"
+            + ",*,-13922,*.-13922,*;-10276,*A-2872,*B5082,*C-3646,*D2872,*E1436,*F2209,*G-5856,*H1436,*I2209,*J"
+            + "4419,*K3646,*L2983,*M2983,*N3646,*O-3646,*P2872,*Q-4419,*R3646,*S-2320,*T4419,*U2983,*V3646,*W44"
+            + "19,*X1436,*Y4419,*Z2320,*a-10276,*b3646,*c-5082,*d-3646,*e-4419,*f-2983,*g-4419,*h2872,*i2209,*j"
+            + "-8729,*k1436,*l2983,*m2983,*n2872,*o-8729,*p-2983,*q-6740,*r-3646,*s-3646,*t-6629,*u-5856,*v-364"
+            + "6,*w-6629,*x-5082,*y-3646,*z2983,,12983,,2-3646,,6-4419,,7-5856,,J4419,,Q-3646,,V-5745,,W-4419,-"
+            + "05856,-2-4972,-3-7955,-5-5082,-7-6629,-D-3646,-J-5303,-R662,-T-11712,-V-2872,-W-3535,-X-13149,-Y"
+            + "-6519,-b-4751,-d3756,-f-3093,-v-3093,-y-3756,. -5414,..-8618,.21105,.3994,.4-3646,.6-2320,.7-828"
+            + "7,.8-1105,.9-8287,.C-3646,.O-3093,.Q-4419,.V-7955,.W-5856,.Y-8397,.b-3646,.c-3756,.e-3093,.f-685"
+            + "0,.k-6077,.l-3756,.m-3093,.n-2983,.o-2099,.p-5414,.q-4530,.r-2872,.s-1546,.u-6077,.v-10055,.w-66"
+            + "29,.x-2983,.y-9944,/.-10386,//-20883,/0-8287,/1-9392,/2-5303,/3-13149,/4-16906,/5-11491,/6-15580"
+            + ",/7-2099,/8-8950,/9-4088,/<-11491,/A-11491,/B-4419,/C-7292,/E-4309,/G-8950,/H-4419,/I-5745,/K-29"
+            + "83,/L994,/M-7292,/O-10165,/P-4419,/Q-7292,/R-3646,/S-12375,/T-2983,/U-4972,/V-4309,/W-2983,/X-58"
+            + "56,/Z-5856,/a-13922,/b-5856,/c-13149,/d-11049,/e-15248,/f-7292,/g-13922,/h-4419,/i-2983,/k-7292,"
+            + "/l-5856,/m-8729,/n-13149,/o-14696,/p-12375,/q-16906,/r-12375,/s-7955,/t-13149,/u-13922,/v-10939,"
+            + "/w-9613,/x-14585,/y-8729,/z-13038,0,-5082,0-4419,0.-2872,0/-6629,001546,0G7292,0H6519,0M7955,0\\-"
+            + "7292,1\"-6077,1.-4198,1/-3646,12-2099,16-5082,19-5303,1M3646,1\\-6629,2.2209,2/-4309,24-2541,2G232"
+            + "0,2M5856,2\\-4419,3,-5856,3.-3646,3/-7292,32-5856,3M1436,3\\-6629,4\"-5303,4,-3646,4-2320,4.-4198,4"
+            + "/-6629,45-4198,47-4419,4M4972,4\\-10165,5,-5082,5.-5193,5/-7292,56-3646,5G2209,5M3646,5\\-5082,6\"-"
+            + "5303,6-3646,6/-5082,67-5193,6G2872,6M4309,6\\-7292,6d3204,7\"3535,7,-14585,7--12375,7.-11491,7/-16"
+            + "022,70-2983,74-7955,76-6629,7G-2320,7d-1105,7n3093,8.-11491,8/-12486,8G1436,8M5082,8\\-3646,8d-62"
+            + "98,9,-8729,9.-5082,9/-11049,93-5856,9\\-4309,:3-4309,; -5303,A\"-7845,A)-4972,A*-15359,A-1767,A.-2"
+            + "320,A;-4751,AC662,AG-2099,AJ5524,AO-3093,AP2872,AQ2872,AS-4198,AT-8287,AU-3867,AV-2983,AW-2983,A"
+            + "Y-2541,AZ662,A]-5966,Ab-2541,Ac-1546,Ae-552,Af-1988,Aj1546,Al110,Ao4198,Ap110,At-1215,Au110,Av-1"
+            + "215,Aw110,Ay110,A}-3867,B)-4861,B*-1546,B,-7955,B--2320,B.-7955,B;-5414,BA110,BM-3093,BO-1988,BU"
+            + "-1988,Bo3093,C*2320,C,-5303,C.-5082,C;-4751,CA110,CD-2099,CO-1988,CR2983,CX-2209,Ch3093,D)-5856,"
+            + "D*-662,D,-10607,D--2320,D.-7955,D/-4309,D;-3756,DA-3867,DU-2983,DV-1988,DW-2541,DY-3756,De-994,E"
+            + "*-662,E,-3093,E--4419,E;-4530,EC-2541,EO-2541,F)-3867,F*1436,F,-18894,F--1657,F.-18674,F/-11049,"
+            + "F;-5414,FA-2872,FB5193,FG-1988,FT2983,FY6519,Fa-7292,Fe-4419,Fj-11712,Fo-8287,Fr-2320,G)-4972,G*"
+            + "-1436,G,-5856,G--2983,G.-7292,G/-3646,G;-4530,GA-7292,GR-3093,GX-2872,H*2209,H,-3756,H-5745,H/-3"
+            + "646,H;-3756,HB4088,HE2099,HH3093,I*2320,I,-6519,I--5082,I.-7734,I/-3646,I;-3756,IT1988,Ia-1546,I"
+            + "c-1988,Id-994,Ie-1546,Ig-994,Io-1546,Is-994,Iw-1546,J)1988,J*5082,J,-14585,J--5856,J.-11712,J/-8"
+            + "729,J;-13812,JA-2430,JF5856,J]3867,Ja-3535,Je-2983,Jo-2983,Ju-2430,K\"-3646,K)-4861,K*-3646,K,-30"
+            + "93,K--11712,K;-4530,KC-4530,KG-2983,KO-3867,KU-2541,Ke-2320,Ko-2320,Ku-1657,Ky-5082,L\"-21878,L)-"
+            + "3867,L*-12375,L--8950,L;-3756,LC-4972,LG-4530,LJ5524,LO-3646,LQ-2983,LT-9944,LU-3867,LV-5856,LW-"
+            + "3535,LY-13591,L[3867,L]-3867,La-2983,Ly-4751,M)3867,M*-3646,M--5082,M42983,M;-4530,MC-2541,MG-25"
+            + "41,MU-3535,MV-4530,MW2099,M[5966,M]-2983,Mo2762,M}3867,N*2209,N,-5856,N-552,N.-5856,N;-5414,NB61"
+            + "87,ND4198,N[5856,N]3867,Na-1215,Ne-1767,No3093,O\"-3535,O)-6850,O*-2320,O,-12375,O--2209,O.-10939"
+            + ",O/-11602,O;-5303,OA-2541,OB1105,OC994,OT110,OU-2541,OV110,OW110,OX-8066,OY-4088,OZ-2983,O[5856,"
+            + "O]-3867,Oe-994,Ou3204,P)-3867,P*2983,P,-14585,P--4088,P.-13922,P/-7955,P;-6850,PA-4972,PM-6187,P"
+            + "Q-2099,P]-3867,Pa-6629,Pe-2541,Pg-1988,Po-7292,Pr-1546,Ps-1546,Q\"-5303,Q*-5082,Q,1436,Q--3535,Q."
+            + "-6519,Q;-5414,QU2099,QX-2320,Q]-1988,Qu3093,Q}5082,R\"-2651,R*-2320,R,-2320,R--7071,R/-5082,R;-54"
+            + "14,RC-5082,RG-2541,RO-1988,RS-2099,RT-6187,RU-2541,RV110,RW110,R]-3867,Ry110,R}-662,S)-3867,S*-2"
+            + "209,S,-7292,S.-3535,S/-3646,S;-5414,SE3093,SH4198,SL3093,S[3867,S]-3867,T\"3646,T)7845,T*2209,T,-"
+            + "11712,T--8729,T.-13149,T/-13149,T:-9171,T;-16906,T?5966,TA-1988,TO110,TU-2099,TY7513,T[3867,T]29"
+            + "83,Ta-9613,Tc-11049,Te-13149,Th110,Ti-2983,To-13038,Tr-7955,Ts-6629,Tu-9392,Tw-7292,Ty-5745,T}38"
+            + "67,U)2872,U*1436,U,-7734,U-1546,U/-4419,U;-4751,UA110,UD2872,UR2209,U[3867,U]-2983,V)6850,V*2320"
+            + ",V,-16906,V--7071,V.-17127,V/-21215,V:-6850,V;-12707,VA-4530,VG-2872,VM-4309,VO-2320,V[2872,Va-1"
+            + "0165,Ve-9060,Vi110,Vo-5966,Vr-5082,Vs-4972,Vu-4530,Vx-2099,Vy-4530,V}4861,W*1546,W,-13922,W--364"
+            + "6,W.-15580,W/-11712,W:-4088,W;-13038,W?-662,WA-4530,WO-1767,W]-1878,Wa-6629,We2099,Wh3093,Wi110,"
+            + "Wm-2983,Wo-5966,Wr-3535,Wu-3867,Wy-3867,X\"2651,X)4861,X*2209,X--4751,X/-2983,X;-3756,XC-2983,XG6"
+            + "62,XO-662,XQ1436,XU662,X[5856,X]1988,X}6850,Y)2872,Y*2320,Y,-9723,Y--7071,Y.-15138,Y/-18232,Y:-6"
+            + "298,Y;-13259,Y?2651,YA-2320,YB6519,YD5082,YE5082,YF5082,YH7071,YI7734,YK4088,YN2872,YO-4972,YP-3"
+            + "093,YR4751,YS-1988,YT9281,YW8287,YX5966,YZ-2099,Y[6850,Y]-1988,Ya-8729,Yc-7071,Ye-9613,Yi110,Yo-"
+            + "13591,Yr-3867,Ys-4530,Yu-4530,Yv-5524,Y}4088,Z)994,Z*2320,Z,-2320,Z;-3646,ZA7955,ZO-2541,ZV3093,"
+            + "ZY7292,Z[5856,Z]-1878,Za-662,Ze1546,Zi2872,Zw-1546,Z}3535,[C-3867,[J2983,[O-4861,[Q-4861,[S-3867"
+            + ",[U-4972,[W2983,[Y2983,[c-3867,[j5856,[l3867,[n-3867,[o-2983,[q-5856,[r-4861,[s-2872,[t-5856,[u-"
+            + "4861,[v-3867,[w-4861,[y-3867,\\0-2872,\\2-7292,\\3-5856,\\4-3646,\\5-7292,\\6-7955,\\7-10939,\\8-5082,\\9"
+            + "-11602,]A13812,]B4861,]C3867,]D4861,]E3867,]F3756,]G4861,]H4861,]J5856,]K4861,]M4861,]N8950,]O89"
+            + "50,]P5856,]Q13812,]R7845,]S3867,]T6850,]U6850,]V4861,]W3867,]X3867,]Y5856,]Z5966,]a4861,]b2983,]"
+            + "d6850,]e4861,]g6850,]h6850,]i8950,]j4861,]k6850,]l6850,]m7845,]n7845,]o8950,]p7845,]q6850,]r6850"
+            + ",]s5856,]t3867,]u5856,]v6850,]w5856,]x5856,]y4861,]z7845,a'-15690,a*1436,a;-6850,aV-1436,aZ2872,"
+            + "a]-3756,ab110,ac-3093,ad-3204,ae-2209,af-3314,ag-5193,aj-4751,ak-6298,al-4088,am-3093,ap110,ar-5"
+            + "193,as1215,at-6850,av-7292,aw110,ax-2099,ay110,b)-5856,b*-3646,b,-7955,b.-7955,b;-6077,b[3867,b]"
+            + "-3867,ba-2320,bb110,bd4198,bl2099,bs994,bu110,bv110,by-3093,c'-5193,c)-1878,c*2872,c,-4530,c.-45"
+            + "30,c;-6077,c]-3867,ca-3756,cc-4309,ce-2320,ch110,ck-4198,cl110,cn-994,co-3093,cp-552,cq-552,cr-2"
+            + "099,ct-3535,cy110,d'2099,d26298,d33093,d94198,d;-5414,d[7845,dd2320,di4088,ds3204,du1988,dv110,d"
+            + "w110,dy110,e)-3867,e*2983,e,-2320,e.-3535,eV-1436,e[5966,e]-3867,eb110,ec1657,ed3093,ef-2320,eg-"
+            + "3093,ej-9281,en1105,ep1657,er-994,es2320,et-994,ev-552,ex-3093,ey-2430,ez2320,f\"9723,f'3093,f)58"
+            + "56,f*5856,f,-7513,f.-12154,f;-6077,f[8950,f]5856,fa-3093,fe994,ff-2983,fi110,fj-7292,fl110,fo-30"
+            + "93,fr4088,fs-1215,ft-3756,g!-3867,g)3867,g*-662,g,-662,g--2983,g.-1546,g:-5082,g;-3867,g?-4530,g"
+            + "[8950,g]2983,ga110,ge1546,gg1546,gh4198,gi3535,gl4198,gn1436,go2320,gr2872,gs2983,gy110,g}3867,h"
+            + "\"-5303,h'-4198,h)-3867,h*-4419,h;-6077,h[6850,hi1657,ht-4530,hy-2099,i)3867,i*1436,i.-3756,i;-30"
+            + "93,i[8950,i]4861,ia994,ic994,id3535,if-4751,ij-6187,il994,ip-2320,iq-1657,it1105,iv110,j)3867,j*"
+            + "3646,j,-4751,j.-7734,j;-5414,j[7845,je2099,j}3867,k\"-3535,k)-3867,k*-2983,k.-2430,k;-3756,kT-585"
+            + "6,k[5856,k]-3867,ka-4419,ke-2099,kl3093,km3093,ko-2320,ky110,l'-13480,l)-3867,l*-2872,l,-4530,l."
+            + "-994,l;-4530,l[9944,l]-3867,la-2099,lc-4530,le-5524,lg-3867,li1105,lk-2099,ll-1546,lm-2099,lo-38"
+            + "67,lt-10497,lu-994,lv-6298,lw-4751,ly-6298,m)-3867,m*2872,m--1436,m.-1436,m;-3756,m[3867,m]-4861"
+            + ",me2430,mi1546,mm3093,mn2099,mu110,my110,n'-8397,n)-3867,n*2872,n,-3093,n;-3093,n[3867,n]-3867,n"
+            + "e1546,ng-3093,ni1767,no-2099,nt-3756,nu2430,nv110,ny110,o\"-4309,o'-4198,o)-1988,o*2983,o,-7955,o"
+            + "-3314,o.-6629,o;-3756,oF3646,o[3867,o]-3867,oa1546,oc1657,od4972,oe662,og1546,oi3535,oj-4972,ok-"
+            + "1988,ol4198,om3093,on2541,oo3867,op994,oq2320,or994,os994,ot-3646,ou3093,ov3093,ow2430,ox-1546,o"
+            + "y1767,oz3093,p\"-7071,p)-3867,p*-3646,p,-7845,p.-6077,p;-6077,p[3867,p]-3867,pb-2430,pe1105,ph320"
+            + "4,pi2099,po1215,pt994,py110,q\"-4419,q)3867,q*-2872,q;-3093,q[3867,q]-4861,qi2651,q}4861,r'2099,r"
+            + ")-3867,r*5856,r,-11712,r-3646,r.-12375,r/-6629,r:-1657,r;-5856,r?4309,rP2872,r[3867,r]-3867,rc-1"
+            + "215,rd662,re-2099,rg-1436,rh2762,ri2651,rk110,rl2320,rm4309,rn2209,ro-1436,rp2762,rq-994,rr3093,"
+            + "rs-1105,rt110,ru2762,rv6629,rw3093,ry3646,s!-4530,s\"-5303,s)-4861,s*2209,s,-3867,s--4751,s.-2099"
+            + ",s:-3867,s;-6629,s?-4530,s[3867,s]-3867,sb-994,sc2099,sh1105,st3093,sw110,t\"-4419,t)-3867,t*4309"
+            + ",t,-13038,t--8397,t.-6187,t/-8729,t;-6187,t[4861,t]-4861,ta-994,tc-3314,te-994,tf-4088,th2099,ti"
+            + "552,tm2872,to-4419,tt-4088,u\"-4309,u'-3093,u)3867,u*-3646,u,-1436,u/-3646,u;-6077,uF3646,u[3867,"
+            + "u]-3867,ud5303,uf-3314,ul2651,um-2099,un1436,up1546,ur1546,us2872,ut-994,v!-1436,v'4088,v*2983,v"
+            + ",-12265,v--4751,v.-9392,v/-8729,v;-8508,v[4861,v]-4861,va-5414,ve-773,vo110,vw2099,vy2209,w'-309"
+            + "3,w*3646,w,-7292,w--1436,w.-5303,w/-8950,w;-3756,w[3867,w]-4861,wd3093,wh2320,wi3867,wn2320,wo55"
+            + "2,wu3535,wv2983,wy2762,x'-6298,x)-3867,x*2872,x,-2320,x--4751,x/3093,x;-6850,x[4861,x]-4861,xa-3"
+            + "756,xb-2320,xc-4530,xe-1546,xg-662,xh-1105,xi-1325,xk-1436,xl-1325,xm-1546,xn-1657,xo-3646,xp-13"
+            + "25,xr-994,xu-994,xw-994,xy-3093,y!-1436,y*1436,y,-994,y--3646,y.-10165,y/6298,y:-662,y;-7955,y?6"
+            + "62,y[4861,y]-5966,ya-3756,yc-994,ye-3867,yg-3093,yn1988,yo-2762,yw2320,z)-3867,z*2320,z,-1546,z-"
+            + "-5303,z/-3646,z;-3756,z]-5966,ze-4751,zy-3093,{A5856,{J1436,{P1988,{V2320,{Y2983,}K8950,}Q12375,"
+            + "}R9613,";
+    }
+    private static String Charter_0_3_kerning() {
+        return "-T-3564,-V-5468,-W-5468,-X-3564,-Y-7275,AT-10986,AU-2197,AV-5468,AW-4052,AY-4052,Af-1757,At-1757"
+            + ",Av-3076,Aw-4492,Ay-2197,B-3662,BC1855,BG1855,BO1855,BS1855,BV-3564,BW-1757,BY-1757,C-2294,CA-17"
+            + "57,CS1855,D-3662,DA-1757,DV-1757,DY-1757,F,-18896,F--9179,F.-18896,F:-3564,F;-3564,FA-9570,Fa-77"
+            + "63,Fe-6396,Fo-6396,G-1855,GT-1757,GW-1757,GY-2197,JA-3564,K--3564,KA-2197,KC-2685,KO-2685,KU-356"
+            + "4,KW-3564,KY-2685,Ke-1757,Ko-1757,Ku-1757,Ky-2685,LT-8154,LU-1757,LV-11865,LW-8691,LY-10058,Ly-1"
+            + "757,O,-5859,O-3662,O.-5859,OV-1757,OX-1757,P,-25781,P--9179,P.-25781,P:-3564,P;-3564,PA-9179,PU-"
+            + "1757,Pa-5468,Pe-5468,Po-4980,Ps-3076,Q-3662,R:-1757,R;-1757,RT-3564,RV-5468,RW-4052,RY-4980,Re-3"
+            + "564,Ro-3564,Ru-3564,Ry-4492,T,-14697,T--12890,T.-14697,T:-3564,T;-3564,TA-10986,TT1855,Ta-9570,T"
+            + "c-9570,Te-9570,Ti-1757,To-9570,Tr-7275,Ts-7275,Tu-10986,Tw-7275,Ty-9179,UA-3076,UJ-2685,V,-22070"
+            + ",V--9179,V.-22070,V:-10058,V;-10058,VA-7763,VO-1757,Va-10986,Ve-10498,Vi-2685,Vo-9179,Vu-6396,Vy"
+            + "-6396,W,-17480,W--7275,W.-17480,W:-8691,W;-8691,WA-5859,Wa-6787,We-8154,Wi-1757,Wo-6787,Wr-4492,"
+            + "Wu-4052,Wy-2197,X--3564,XA-1757,XC-1757,XO-1757,Y,-12890,Y--12890,Y.-12890,Y:-12353,Y;-12353,YA-"
+            + "5859,YC-1757,Ya-9570,Ye-10498,Yi-3564,Yo-9570,Yu-6787,f,-3564,f--1757,f.-3564,r,-10986,r.-10986,"
+            + "v,-11865,v.-11865,w,-11865,w.-11865,y,-13281,y.-13281,";
+    }
+    private static String Charter_1_3_kerning() {
+        return "-T-3564,-V-5468,-W-5468,-X-3564,-Y-7275,A:1855,A;1855,AS1855,AT-3564,AU-2197,AV-5468,AW-4052,AY-"
+            + "4052,Ay-1757,B-5566,BS1855,BV-1757,BW-1757,BY-1757,C-2294,CS1855,D-3662,DA-1757,DV-1757,DW-1757,"
+            + "DY-2685,F,-16552,F--5468,F.-16552,F:-3564,F;-3564,FA-3076,Fa-4052,Fe-4492,Fo-4492,G-1855,JA-2197"
+            + ",K--3564,KA-2197,KC-2685,KO-2685,KU-3564,KW-4052,KY-3076,Ka-1757,Ke-5468,Ko-5468,Ku-5468,Ky-8154"
+            + ",L-5566,LA1855,LT-7275,LU-1757,LV-10058,LW-8691,LY-8691,Lu-1757,Ly-3564,O,-3564,O-1855,O.-3564,O"
+            + "V-1757,OX-1757,OY-1757,P,-24853,P--7275,P.-24853,P:-1757,P;-1757,PA-5468,PU-1757,PW-1757,PY-1757"
+            + ",Pa-3564,Pe-5468,Po-4980,Ps-3076,Q-1855,R,1855,R--1757,R.1855,RT-1757,RV-1757,RW-2197,RY-3564,Ra"
+            + "-1757,Re-1757,Ro-1757,Ry-1757,SA3662,SG1855,SO1855,SQ1855,SS1855,T,-14697,T--12890,T.-14697,T:-3"
+            + "564,T;-3564,TA-5468,TT1855,Ta-11474,Tc-9570,Te-9570,Ti-1757,To-11474,Tr-7275,Ts-9179,Tu-9179,Tw-"
+            + "9179,Ty-7275,UA-2685,UJ-1757,UZ-1757,V,-18359,V--5468,V.-18359,V:-9179,V;-9179,VA-7763,VO-1757,V"
+            + "a-9179,Ve-9179,Vi-2685,Vo-5859,Vu-3076,Vy-4492,W,-13281,W--3564,W.-13281,W:-2685,W;-2685,WA-2685"
+            + ",Wa-4980,We-7275,Wi-1757,Wo-4980,Wr-2685,Wu-2685,Wy-2197,X--1757,XA-1757,Y,-12890,Y--10986,Y.-12"
+            + "890,Y:-10498,Y;-10498,YA-4492,Ya-11474,Ye-11474,Yi-1757,Yo-9570,Yu-5468,Z-3662,f,-8154,f--1757,f"
+            + ".-8154,r,-12890,r--1757,r.-12890,v,-4492,v-3662,v.-4492,w,-5468,w-1855,w.-5468,y,-5859,y-1855,y."
+            + "-5859,";
+    }
+    private static String Charter_0_6_kerning() {
+        return "-T-3564,-V-5468,-W-5468,-X-3564,-Y-7275,AT-10986,AU-2197,AV-5468,AW-4052,AY-4052,Af-1757,At-1757"
+            + ",Av-3076,Aw-4492,Ay-2197,B-3662,BC1855,BG1855,BO1855,BS1855,BV-3564,BW-1757,BY-1757,C-2294,CA-17"
+            + "57,CS1855,D-3662,DA-1757,DV-1757,DY-1757,F,-18896,F--7275,F.-18896,F:-3564,F;-3564,FA-9570,Fa-77"
+            + "63,Fe-6396,Fi-1757,Fo-4492,Fr-3564,Fu-3564,Fy-3564,G-1855,GT-1757,GW-1757,GY-2197,JA-3564,K--356"
+            + "4,KA-2197,KC-2685,KO-2685,KU-3564,KW-3564,KY-2685,Ka1855,Ke-3564,Ko-3564,Ku-1757,Ky-10058,LT-815"
+            + "4,LU-1757,LV-11865,LW-8691,LY-10058,La1855,Le1855,Lo1855,Ly-5468,O,-5859,O-3662,O.-5859,OV-1757,"
+            + "OX-1757,P,-25781,P--9179,P.-25781,P:-3564,P;-3564,PA-9179,PU-1757,Pa-3564,Pe-3564,Po-3076,Q-3662"
+            + ",R:-1757,R;-1757,RT-3564,RV-5468,RW-4052,RY-4980,Re-3564,Ro-3564,Ru-3564,Ry-4492,T,-14697,T--128"
+            + "90,T.-14697,T:-3564,T;-3564,TA-10986,TT1855,Ta-9570,Tc-9570,Te-9570,Ti-1757,To-9570,Tr-7275,Ts-7"
+            + "275,Tu-10986,Tw-7275,Ty-9179,UA-3076,UJ-2685,V,-22070,V--9179,V.-22070,V:-10058,V;-10058,VA-7763"
+            + ",VO-1757,Va-10986,Ve-10498,Vi-2685,Vo-9179,Vu-6396,Vy-6396,W,-17480,W--7275,W.-17480,W:-8691,W;-"
+            + "8691,WA-5859,Wa-8691,We-8154,Wi-3564,Wo-8691,Wr-6396,Wu-5859,Wy-4052,X--3564,XA-1757,XC-1757,XO-"
+            + "1757,Xe-3564,Y,-12890,Y--12890,Y.-12890,Y:-12353,Y;-12353,YA-5859,YC-1757,Ya-11474,Ye-12353,Yi-3"
+            + "564,Yo-11474,Yu-8691,f,-3564,f--1757,f.-3564,r,-10986,r.-10986,v,-11865,v.-11865,w,-11865,w.-118"
+            + "65,xe-1757,xo-1757,y,-13281,y.-13281,";
+    }
+    private static String Charter_1_6_kerning() {
+        return "-T-3564,-V-5468,-W-5468,-X-3564,-Y-7275,A:1855,A;1855,AS1855,AT-3564,AU-2197,AV-5468,AW-4052,AY-"
+            + "4052,Ay-1757,B-5566,BS1855,BV-1757,BW-1757,BY-1757,C-2294,CS1855,D-3662,DA-1757,DV-1757,DW-1757,"
+            + "DY-2685,F,-16552,F--5468,F.-16552,F:-3564,F;-3564,FA-3076,Fa-5859,Fe-6396,Fi-1757,Fo-4492,Fr-175"
+            + "7,Fu-1757,G-1855,JA-2197,K--3564,KA-2197,KC-2685,KO-2685,KU-3564,KW-4052,KY-3076,Ka-1757,Ke-1757"
+            + ",Ko-3564,Ku-1757,Ky-8154,L-5566,LA1855,LO-1757,LT-7275,LU-3564,LV-10058,LW-8691,LY-8691,Lu-1757,"
+            + "Ly-7275,O,-3564,O-1855,O.-3564,OV-1757,OX-1757,OY-1757,P,-24853,P--5468,P.-24853,P:-1757,P;-1757"
+            + ",PA-7275,PU-1757,PW-1757,PY-1757,Pa-3564,Pe-3564,Pi1855,Pn1855,Po-3076,Pr1855,Pu1855,Py1855,Q-18"
+            + "55,R,1855,R--1757,R.1855,RC-1757,RT-1757,RV-1757,RW-2197,RY-3564,Re-1757,Ro-1757,SA1855,SG1855,S"
+            + "O1855,SQ1855,SS-1757,T,-14697,T--12890,T.-14697,T:-3564,T;-3564,TA-5468,TT1855,Ta-11474,Tc-9570,"
+            + "Te-9570,Ti-1757,To-9570,Tr-5468,Ts-9179,Tu-9179,Tw-9179,Ty-7275,UA-2685,UJ-1757,UZ-1757,V,-18359"
+            + ",V--5468,V.-18359,V:-9179,V;-9179,VA-9570,VO-1757,Va-9179,Ve-9179,Vi-2685,Vo-5859,Vu-3076,Vy-268"
+            + "5,W,-13281,W--3564,W.-13281,W:-2685,W;-2685,WA-2685,Wa-6787,We-9179,Wi-1757,Wo-6787,Wr-2685,Wu-2"
+            + "685,Wy-2197,X--1757,XA-1757,Xe-3564,Y,-12890,Y--10986,Y.-12890,Y:-10498,Y;-10498,YA-4492,Ya-1147"
+            + "4,Ye-11474,Yi-1757,Yo-9570,Yu-5468,Z-3662,f,-8154,f--1757,f.-8154,r,-12890,r--1757,r.-12890,rg-1"
+            + "757,rh-1757,v,-4492,v-3662,v.-4492,w,-5468,w-1855,w.-5468,y,-5859,y-1855,y.-5859,";
+    }
+    private static String Cochin_0_3_kerning() {
+        return "AT-7400,AV-9199,AW-7400,AY-9199,Av-3699,Aw-3699,Ay-1799,F,-12899,F.-12899,FA-3699,LT-9199,LV-111"
+            + "00,LW-11100,LY-11100,Ly-1799,P,-12899,P.-12899,PA-5500,RT-3699,RV-5500,RW-5500,RY-5500,T,-9199,T"
+            + "--7400,T.-9199,T:-7400,T;-7400,TA-7400,Ta-7400,Tc-7400,Te-7400,Ti-3699,To-7400,Tr-7400,Ts-7400,T"
+            + "u-7400,Tw-9199,Ty-7400,V,-12899,V--5500,V.-12899,V:-7400,V;-7400,VA-9199,Va-5500,Ve-5500,Vi-3699"
+            + ",Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-11100,W--7400,W.-11100,W:-5500,W;-5500,WA-7400,Wa-3699,We-36"
+            + "99,Wi-1799,Wo-3699,Wr-1799,Wu-1799,Wy-1799,Y,-9199,Y--7400,Y.-9199,Y:-7400,Y;-7400,YA-9199,Ya-74"
+            + "00,Ye-7400,Yi-3699,Yo-7400,Yp-5500,Yq-7400,Yu-5500,Yv-3699,fi-1799,r,-7400,r--1799,r.-7400,v,-55"
+            + "00,v.-5500,w,-5500,w.-5500,y,-5500,y.-5500,";
+    }
+    private static String Cochin_1_3_kerning() {
+        return "AT-5500,AV-5500,AW-5500,AY-5500,Av-1799,Aw-1799,Ay-1799,F,-11100,F.-11100,FA-3699,LT-5500,LV-550"
+            + "0,LW-5500,LY-5500,Ly-1799,P,-12899,P.-12899,PA-3699,RT-1799,RV-1799,RW-1799,RY-1799,T,-9199,T--9"
+            + "199,T.-9199,T:-9199,T;-9199,TA-5500,Ta-7400,Tc-7400,Te-7400,Ti-5500,To-7400,Tr-7400,Ts-7400,Tu-7"
+            + "400,Tw-7400,Ty-9199,V,-11100,V--5500,V.-11100,V:-7400,V;-7400,VA-5500,Va-5500,Ve-5500,Vi-1799,Vo"
+            + "-5500,Vr-3699,Vu-3699,Vy-3699,W,-12899,W--5500,W.-12899,W:-7400,W;-7400,WA-5500,Wa-5500,We-5500,"
+            + "Wi-3699,Wo-5500,Wr-5500,Wu-5500,Wy-3699,Y,-9199,Y--9199,Y.-9199,Y:-7400,Y;-7400,YA-5500,Ya-9199,"
+            + "Ye-9199,Yi-5500,Yo-9199,Yp-9199,Yq-9199,Yu-7400,Yv-5500,fi-1799,fl-1799,r,-9199,r.-9199,rg-1799,"
+            + "rq-1799,v,-1799,v.-1799,w,-1799,w.-1799,y,-1799,y.-1799,";
+    }
+    private static String Cochin_0_6_kerning() {
+        return "AT-7400,AV-9199,AW-7400,AY-9199,Av-3699,Aw-3699,Ay-1799,F,-12899,F.-12899,FA-3699,LT-9199,LV-111"
+            + "00,LW-11100,LY-11100,Ly-1799,P,-12899,P.-12899,PA-3699,RT-3699,RV-5500,RW-5500,RY-5500,T,-9199,T"
+            + "--7400,T.-9199,T:-7400,T;-7400,TA-7400,Ta-7400,Tc-7400,Te-7400,Ti-3699,To-7400,Tr-7400,Ts-7400,T"
+            + "u-7400,Tw-9199,Ty-7400,V,-12899,V--5500,V.-12899,V:-7400,V;-7400,VA-9199,Va-5500,Ve-5500,Vi-3699"
+            + ",Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-11100,W--5500,W.-11100,W:-5500,W;-5500,WA-7400,Wa-3699,We-36"
+            + "99,Wi-1799,Wo-3699,Wr-1799,Wu-1799,Wy-1799,Y,-9199,Y--5500,Y.-9199,Y:-7400,Y;-7400,YA-9199,Ya-74"
+            + "00,Ye-7400,Yi-3699,Yo-7400,Yp-5500,Yq-7400,Yu-5500,Yv-3699,fi-5500,fl-3700,r,-7400,r--1799,r.-74"
+            + "00,v,-5500,v.-5500,w,-5500,w.-5500,y,-5500,y.-5500,";
+    }
+    private static String Cochin_1_6_kerning() {
+        return "AT-5500,AV-5500,AW-5500,AY-5500,Av-1799,Aw-1799,Ay-1799,F,-11100,F.-11100,FA-3699,LT-5500,LV-550"
+            + "0,LW-5500,LY-5500,Ly-1799,P,-12899,P.-12899,PA-3699,RT-1799,RV-1799,RW-1799,RY-1799,T,-9199,T--9"
+            + "199,T.-9199,T:-9199,T;-9199,TA-5500,Ta-7400,Tc-7400,Te-7400,Ti-5500,To-7400,Tr-7400,Ts-7400,Tu-7"
+            + "400,Tw-7400,Ty-9199,V,-11100,V--5500,V.-11100,V:-7400,V;-7400,VA-5500,Va-5500,Ve-5500,Vi-1799,Vo"
+            + "-5500,Vr-3699,Vu-3699,Vy-3699,W,-12899,W--7400,W.-12899,W:-7400,W;-7400,WA-5500,Wa-5500,We-5500,"
+            + "Wi-3699,Wo-5500,Wr-5500,Wu-5500,Wy-3699,Y,-9199,Y--7400,Y.-9199,Y:-7400,Y;-7400,YA-5500,Ya-7400,"
+            + "Ye-7400,Yi-5500,Yo-7400,Yp-7400,Yq-7400,Yu-7400,Yv-5500,fi99,fl1899,r,-9199,r.-9199,rg-1799,rq-1"
+            + "799,v,-1799,v.-1799,w,-1799,w.-1799,y,-1799,y.-1799,";
+    }
+    private static String Damascus_0_3_kerning() {
+        return "11-7373,AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,F,-11083,FA-5468,LT-7373,LV-7373"
+            + ",LW-7373,LY-7373,Ly-3662,P,-12890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T,-11083,T--5468,T:-11"
+            + "083,T;-11083,TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-366"
+            + "2,Tw-5468,Ty-5468,V,-9179,V--5468,V:-3662,V;-3662,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-366"
+            + "2,Vu-3662,Vy-3662,W,-5468,W--1757,W:-1757,W;-1757,WA-3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-175"
+            + "7,Wy-878,Y,-12890,Y--9179,Y:-5468,Y;-6494,YA-7373,Ya-7373,Ye-9179,Yi-3662,Yo-9179,Yp-7373,Yq-917"
+            + "9,Yu-5468,Yv-5468,ff-1757,r,-5468,v,-7373,w,-5468,y,-7373,";
+    }
+    private static String Damascus_0_6_kerning() {
+        return "11-5468,AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,F,-11083,FA-5468,LT-7373,LV-7373"
+            + ",LW-5468,LY-9179,Ly-3662,P,-12890,PA-7373,RV-1757,RW-1757,RY-3662,T,-11083,T--5468,T:-11083,T;-1"
+            + "1083,TA-7373,TO-1757,Ta-7373,Tc-7373,Te-7373,Ti-1757,To-7373,Tr-5468,Ts-7373,Tu-7373,Tw-7373,Ty-"
+            + "7373,V,-9179,V--5468,V:-5468,V;-5468,VA-7373,Va-5468,Ve-5468,Vi-1757,Vo-7373,Vr-5468,Vu-3662,Vy-"
+            + "3662,W,-5468,W--1953,W:-1757,W;-1757,WA-5468,Wa-3662,We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1"
+            + "757,Y,-11083,Y--5468,Y:-7373,Y;-7373,YA-9179,Ya-5468,Ye-5468,Yi-3662,Yo-7373,Yp-5468,Yq-7373,Yu-"
+            + "5468,Yv-5468,r,-5468,v,-7373,w,-3662,y,-7373,";
+    }
+    private static String Devanagari_MT_0_3_kerning() {
+        return "AT-11083,AV-12890,AW-8007,AY-9179,Av-7421,Aw-9179,Ay-9179,FA-7421,LT-9179,LV-9179,LW-7421,LY-100"
+            + "09,Ly-5517,PA-9179,RT-6005,RV-8007,RW-5517,RY-5517,Ry-4003,TA-8007,TO-1806,Ta-6982,Tc-6982,Te-69"
+            + "82,Ti-3515,To-6982,Tr-3515,Ts-6982,Tu-3515,Tw-6982,Ty-6982,VA-12890,Va-11083,Ve-11083,Vi-6005,Vo"
+            + "-12890,Vr-6005,Vu-6005,Vy-11083,WA-11083,Wa-8007,We-8007,Wi-4003,Wo-8007,Wr-4003,Wu-4003,Wy-6005"
+            + ",YA-11083,Ya-10009,Ye-10009,Yi-5517,Yo-10009,Yp-9179,Yq-11083,Yu-11083,Yv-10009,ff-1806,rg-1806,";
+    }
+    private static String Devanagari_MT_0_6_kerning() {
+        return "AT-7421,AV-12890,AW-11083,AY-9179,Av-7421,Aw-7421,Ay-7421,FA-7421,LT-9179,LV-9179,LW-9179,LY-917"
+            + "9,Ly-5517,PA-7421,RT-3515,RV-3515,RW-3515,RY-3515,Ry-3515,TA-7421,TO-1806,Ta-9179,Tc-9179,Te-917"
+            + "9,Ti-1806,To-9179,Tr-7421,Ts-9179,Tu-9179,Tw-7421,Ty-7421,VA-12890,VO-2001,Va-9179,Ve-9179,Vi-37"
+            + "10,Vo-9179,Vr-7421,Vu-9179,Vy-9179,WA-11083,Wa-5517,We-5517,Wi-1806,Wo-5517,Wr-1806,Wu-1806,Wy-3"
+            + "710,YA-9179,Ya-11083,Ye-11083,Yi-3710,Yo-11083,Yp-9179,Yq-11083,Yu-9179,Yv-11083,rc-1806,re-1806"
+            + ",ro-1806,rq-1806,";
+    }
+    private static String Devanagari_Sangam_MN_0_3_kerning() {
+        return " A-3710, T-1220, V-1220, W-1220, Y-2490,\"A-6982,A\"-8593,AJ-3076,AT-10888,AV-9423,AW-8300,AY-1250"
+            + "0,DJ-6298,F,-16503,F.-16503,F:-5517,F;-6689,FA-8300,FJ-15576,KO-7324,Ke-7324,Ko-6298,L\"-12011,LT"
+            + "-12988,LV-9423,LW-6298,LY-13476,OJ-4199,OT-3906,OV-3222,OX-3222,OY-3222,PA-7324,PJ-13476,QT-6005"
+            + ",QV-2685,QW-2685,QX-1904,QY-4785,T,-14306,T.-14306,T:-6298,T;-6298,TA-9423,TJ-13623,TO-3906,TQ-6"
+            + "298,Ta-8300,Te-8300,Ti-3222,To-9423,Tu-10888,Tw-8593,Ty-7812,VA-6298,VJ-9423,VO-781,VQ-2294,Va-4"
+            + "687,Ve-4687,Vo-3906,Vu-2880,WA-6298,WJ-6298,Wa-3076,We-3076,Wo-3076,XC-3417,XO-3222,XQ-3222,YA-8"
+            + "300,YJ-11376,YO-4785,YQ-4785,Ya-8789,Ye-10888,Yo-10888,Yu-5615,aw781,cw-1123,cy-1123,ev-1123,ey-"
+            + "1123,f,-6982,f.-6982,f:-2880,f;-2294,fe-781,fo-781,ko-1611,ov-2392,ow-1123,oy-1611,r.-8593,to-78"
+            + "1,v,-9912,v.-9912,v;-1904,va-488,vc-2392,ve-2392,vo-781,w,-9423,w.-6591,wa-1123,wc-1123,we-1123,"
+            + "wo-1123,y,-12500,y.-9619,ya-1611,yc-1123,ye-1123,yo-1611,";
+    }
+    private static String Devanagari_Sangam_MN_0_6_kerning() {
+        return " A-976, T-1220, V-1220, W-1220, Y-2490,\"A-6982,.x1416,:x4199,;x4199,A\"-8593,AJ-3076,AO-4199,AT-1"
+            + "0888,AV-9423,AW-8300,AY-12500,DJ-6298,F,-16503,F.-16503,F:-1416,F;-2783,FA-8300,FJ-15576,KO-7324"
+            + ",Ke-4199,Ko-5615,L\"-12011,LT-12988,LV-9423,LW-6298,LY-13476,OJ-4199,OT-3906,OV-3222,OX-3222,OY-3"
+            + "222,PA-7324,PJ-13476,QT-6005,QV-2685,QW-2685,QX1416,QY-4785,T,-14306,T.-14306,T:-6298,T;-6298,TA"
+            + "-9423,TJ-13623,TO-3906,TQ-4199,Ta-9716,Te-11083,Ti-3222,To-12500,Tu-10888,Tw-8593,Ty-7812,VA-629"
+            + "8,VJ-9423,VO-781,VQ-2294,Va-4687,Ve-4687,Vo-3906,Vu-2880,WA-6298,WJ-6298,Wa-3076,We-3076,Wo-3076"
+            + ",XC-3417,XO-3222,XQ-3222,YA-9716,YJ-11376,YO-4785,YQ-4785,Ya-8789,Ye-10888,Yo-10888,Yu-5615,aw78"
+            + "1,ax5517,cw-1123,cy-1123,ev-1123,ey-1123,f,-1416,f.-1416,f:8300,f;8300,fe-781,fo-781,ko-1611,ov-"
+            + "2392,ow-1123,oy-1611,r.-4199,to-1416,v,-5615,v.-4199,v;4199,va-488,ve-2392,vo-781,vx4199,w,-9423"
+            + ",w.-6591,wa-1123,wc-1123,we-1123,wo-1123,y,-6884,y.-4199,ya-1611,yc-1123,ye-1123,yo-1611,yx4199,";
+    }
+    private static String Didot_0_3_kerning() {
+        return " A-5500, T-8999, V-10000, W-8999, Y-10000,, -5500,. -5500,: -5500,; -5500,AC-3000,AG-3000,AO-300"
+            + "0,AQ-3000,AT-7500,AU-3000,AV-5500,AW-8500,AY-7500,Au-1799,Av-4499,Aw-5500,Ay-5500,B,-5500,B.-550"
+            + "0,BA-1799,C,1000,C.1000,CA-1499,D,-7500,D.-7500,DA-5500,DV-3999,DW-3699,DY-5500,F,-17500,F.-1750"
+            + "0,FA-10000,Fa-7500,Fe-10000,Fi-3699,Fo-10000,Fr-10000,G,-3699,G.-3699,J,-7500,J.-7500,JA-2500,Ja"
+            + "-2500,Je-2500,Jo-2500,Ju-2500,KO-5500,Ke-2500,Ko-2500,Ku-1799,Ky-7500,LT-10000,LV-7500,LW-7500,L"
+            + "Y-10000,Ly-4499,N,-5500,N.-5500,NA-5500,O,-7500,O.-7500,OA-3000,OT-1000,OV-1799,OW-1799,OX-3699,"
+            + "OY-3000,P,-20000,P.-20000,PA-9100,Pa-7500,Pe-8000,Po-8000,Q,-7500,Q.-7500,RT-3000,RV-3500,RW-250"
+            + "0,RY-3699,S,-7500,S.-7500,T,-12500,T--12500,T.-12500,T:-7500,T;-7500,TA-7500,TO-1000,Ta-12500,Te"
+            + "-12500,Ti-2500,To-12500,Tr-13999,Tu-13999,Tw-13500,Ty-14499,U,-7500,U.-7500,UA-5500,V,-17500,V--"
+            + "12500,V.-17500,V:-10000,V;-10000,VA-11100,VG-1799,VO-1799,Va-10000,Ve-10000,Vi-2500,Vo-10000,Vu-"
+            + "8500,W,-15000,W--12500,W.-15000,W:-7500,W;-7500,WA-12500,WO-1799,Wa-10000,We-10000,Wi-2500,Wo-10"
+            + "000,Wu-8500,Wy-7500,Y,-12500,Y--15000,Y.-12500,Y:-7500,Y;-7500,YA-7500,YO-1799,YS-2500,Ya-12500,"
+            + "Ye-12500,Yi-2500,Yo-12500,Yu-10000,av-1000,aw-1000,ay-1499,b,-5500,b.-5500,bv-1000,by-1499,c,-35"
+            + "00,c.-3500,ch-1000,ck-1000,dv-1000,dw-1000,dy-1499,e,-3999,e.-3999,ev-1000,ew-1000,ex-1000,ey-14"
+            + "99,f,-5500,f.-5500,fi-3600,fl-3600,fo-1000,g,-2500,g.-2500,hy-2500,ke-1000,ko-1499,ky-1000,my-10"
+            + "00,ny-1000,o,-5500,o.-5500,ov-1000,ow-1000,ox-1000,oy-1499,p,-5500,p.-5500,r,-10000,r--5500,r.-1"
+            + "0000,s,-3500,s.-3500,sw-1000,v,-12500,v.-12500,va-1000,ve-1000,vo-1000,w,-11000,w.-11000,wa-1000"
+            + ",we-1000,wo-1000,y,-11000,y.-11000,ya-1000,ye-1000,yo-1000,";
+    }
+    private static String Didot_1_3_kerning() {
+        return " A-5500, T-8999, V-10000, W-8999, Y-10000,, -5500,. -5500,: -5500,; -5500,AC-3000,AG-3000,AO-300"
+            + "0,AQ-3000,AT-7500,AU-3000,AV-5500,AW-8500,AY-7500,Au-1799,Av-4499,Aw-5500,Ay-5500,B,-5500,B.-550"
+            + "0,BA-1799,C,1000,C.1000,CA-1499,D,-7500,D.-7500,DA-5500,DV-3999,DW-3699,DY-5500,F,-17500,F.-1750"
+            + "0,FA-10000,Fa-7500,Fe-10000,Fi-3699,Fo-10000,Fr-10000,G,-3699,G.-3699,J,-7500,J.-7500,JA-2500,Ja"
+            + "-2500,Je-2500,Jo-2500,Ju-2500,KO-5500,Ke-2500,Ko-2500,Ku-1799,Ky-7500,LT-10000,LV-7500,LW-7500,L"
+            + "Y-10000,Ly-4499,N,-5500,N.-5500,NA-5500,O,-7500,O.-7500,OA-3000,OT-1000,OV-1799,OW-1799,OX-3699,"
+            + "OY-3000,P,-20000,P.-20000,PA-9100,Pa-7500,Pe-8000,Po-8000,Q,-7500,Q.-7500,RT-3000,RV-3500,RW-250"
+            + "0,RY-3699,S,-7500,S.-7500,T,-12500,T--12500,T.-12500,T:-7500,T;-7500,TA-7500,TO-1000,Ta-12500,Te"
+            + "-12500,Ti-2500,To-12500,Tr-13999,Tu-13999,Tw-13500,Ty-14499,U,-7500,U.-7500,UA-5500,V,-17500,V--"
+            + "12500,V.-17500,V:-10000,V;-10000,VA-11100,VG-1799,VO-1799,Va-10000,Ve-10000,Vi-2500,Vo-10000,Vu-"
+            + "8500,W,-15000,W--12500,W.-15000,W:-7500,W;-7500,WA-12500,WO-1799,Wa-10000,We-10000,Wi-2500,Wo-10"
+            + "000,Wu-8500,Wy-7500,Y,-12500,Y--15000,Y.-12500,Y:-7500,Y;-7500,YA-7500,YO-1799,YS-2500,Ya-12500,"
+            + "Ye-12500,Yi-2500,Yo-12500,Yu-10000,av-1000,aw-1000,ay-1499,b,-5500,b.-5500,bv-1000,by-1499,c,-35"
+            + "00,c.-3500,ch-1000,ck-1000,dv-1000,dw-1000,dy-1499,e,-3999,e.-3999,ev-1000,ew-1000,ex-1000,ey-14"
+            + "99,f,-5500,f.-5500,fi-3699,fl-3699,fo-1000,g,-2500,g.-2500,hy-2500,ke-1000,ko-1499,ky-1000,my-10"
+            + "00,ny-1000,o,-5500,o.-5500,ov-1000,ow-1000,ox-1000,oy-1499,p,-5500,p.-5500,r,-10000,r--5500,r.-1"
+            + "0000,s,-3500,s.-3500,sw-1000,v,-12500,v.-12500,va-1000,ve-1000,vo-1000,w,-11000,w.-11000,wa-1000"
+            + ",we-1000,wo-1000,y,-11000,y.-11000,ya-1000,ye-1000,yo-1000,";
+    }
+    private static String Didot_0_6_kerning() {
+        return "fi-3699,fl-5599,";
+    }
+    private static String DIN_Alternate_0_6_kerning() {
+        return "AC-1806,AG-1806,AO-1806,AQ-1806,AT-7421,AU-1806,AV-5517,AW-3710,AY-7421,Au-1806,Av-1806,Aw-1806,"
+            + "Ay-1806,DA-1806,DV-1220,DY-2392,F,-12890,F.-12890,FA-5517,Fa-2392,Fe-1806,Fo-1806,Fr-1806,J,-180"
+            + "6,J.-1806,Ja-585,Ju-1220,KO-2392,Ko-1220,Ku-1806,Ky-1220,LT-11083,LV-11083,LW-7421,LY-12890,Ly-5"
+            + "517,O,-2490,O.-2490,OA-1806,OT-1806,OV-2490,OW-1806,OX-1220,OY-2978,P,-12890,P.-12890,PA-7421,Pa"
+            + "-2490,Pe-1806,Po-1806,QU-585,RT-1806,RV-1806,RW-1806,RY-2978,T,-10009,T--12890,T.-11083,T:-10009"
+            + ",T;-10009,TA-7421,TO-1806,Ta-10009,Te-10009,Th-1806,Ti-1806,To-10009,Tr-9179,Tu-9179,Tw-11083,Ty"
+            + "-11083,U,-2490,U.-2490,UA-2490,V,-12890,V--5517,V.-12890,V:-7421,V;-7421,VA-5517,VG-1806,VO-1806"
+            + ",Va-5517,Ve-5517,Vi-1806,Vo-5517,Vu-3710,W,-7421,W--1806,W.-7421,W:-1806,W;-1806,WA-3710,Wa-3710"
+            + ",We-2490,Wh-1806,Wo-2490,Wu-2490,Y,-11083,Y--11083,Y.-11083,Y:-9179,Y;-9179,YA-7421,YO-2490,Ya-9"
+            + "179,Ye-8007,Yi-3710,Yo-8007,Yu-7421,ay-585,ev-585,ff-1806,ke-1220,ko-1220,r,-9179,r--5517,r.-917"
+            + "9,ra-1806,rc-1806,rd-1806,re-1806,rn-2392,ro-1806,rq-1806,ru-1220,sw-585,v,-7421,v.-7421,ve-585,"
+            + "w,-5517,w.-5517,y,-9179,y.-9179,yo-585,";
+    }
+    private static String DIN_Condensed_0_6_kerning() {
+        return "AT-5500,AV-3699,AW-3699,AY-5500,Av-1799,Aw-1799,Ay-1799,BA-1199,DA-1199,DV-1799,DW-1199,DY-1799,"
+            + "F,-11100,F.-11100,FA-5000,Fe-1799,Fi-1199,Fo-1799,Fr-1799,J,-1799,J.-1799,Ja-599,Je-599,Jo-599,J"
+            + "u-599,KO-1199,Ke-1199,Ko-1199,Ku-1199,Ky-1799,LT-7400,LV-7400,LW-7400,LY-9199,Ly-5500,OA-1199,OT"
+            + "-1199,OV-1799,OW-1199,OY-1799,P,-12899,P.-12899,PA-3699,Pa-1199,Pe-1199,Po-1199,RT-1799,RY-1799,"
+            + "T,-9199,T--6199,T.-9199,T:-6000,T;-6199,TA-5500,TO-1199,Ta-6199,Te-6199,Ti-1799,To-6199,Tr-6199,"
+            + "Tu-6199,Tw-7400,Ty-5500,UA-1199,V,-9199,V--3699,V.-9199,V:-1799,V;-1799,VA-3699,Va-3699,Ve-3699,"
+            + "Vo-3699,Vu-3000,W,-7400,W--1799,W.-7400,W:-1799,W;-1799,WA-3000,WO-1199,Wa-1799,We-1799,Wo-1799,"
+            + "Wu-1799,Wy-1199,Y,-9199,Y--7400,Y.-9199,Y:-3699,Y;-5500,YA-5500,Ya-5500,Ye-5500,Yi-1799,Yo-5500,"
+            + "Yu-5500,av-599,aw-599,ay-1199,bv-599,by-1199,ch-1199,ck-1199,cl-1199,cy-1799,ev-1199,ey-1199,ke-"
+            + "1199,ko-1199,ov-599,ow-599,oy-1199,py-1199,r,-7400,r--3699,r.-7400,ra-599,rc-1199,ro-599,rv1799,"
+            + "ry1799,sw-1199,v,-5500,v.-5500,va-599,ve-599,vo-599,w,-3699,w.-3699,wa-599,we-599,wo-599,y,-5500"
+            + ",y.-5500,ya-599,ye-599,yo-599,ze-599,zo-599,";
+    }
+    private static String Euphemia_UCAS_0_3_kerning() {
+        return " A-20605, B-20605, C-20605, D-20605, E-20605, F-20605, G-20605, H-20605, I-20605, J-20605, K-206"
+            + "05, L-20605, M-20605, N-20605, O-20605, P-20605, Q-20605, R-20605, S-20605, T-20605, U-20605, V-"
+            + "20605, W-20605, X-20605, Y-20605, Z-20605, a-20605, b-20605, c-20605, d-20605, e-20605, f-20605,"
+            + " g-20605, h-20605, i-20605, j-20605, k-20605, l-20605, m-20605, n-20605, o-20605, p-20605, q-206"
+            + "05, r-20605, s-20605, t-20605, u-20605, v-20605, w-20605, x-20605, y-20605, z-20605,11-11718,12-"
+            + "6982,13-6396,14-10498,15-10498,16-6396,17-11718,18-6982,19-5322,21-5322,31-3515,41-3515,51-6396,"
+            + "61-4687,71-5908,81-4101,91-4687,A -20605,AT-6982,AV-2294,B -20605,C -20605,D -20605,E -20605,F -"
+            + "20605,G -20605,H -20605,I -20605,J -20605,K -20605,L -20605,LT-12304,M -20605,N -20605,O -20605,"
+            + "O,-4882,P -20605,PA-6396,Pa-4687,Pd-4101,Pe-4687,Pi-1708,Po-4687,Ps-2294,Pu-1806,Q -20605,R -206"
+            + "05,RT-3515,S -20605,Sy-976,T -20605,T,-10302,TA-5712,Ta-10888,Te-9814,To-10205,Tr-9082,Tu-9082,T"
+            + "w-6884,Ty-9277,U -20605,V -20605,V,-8300,VA-2880,VO-1220,VQ-1220,Va-4492,Vc-4492,Vd-4492,Ve-4101"
+            + ",Vo-4492,Vr-4003,Vu-2978,W -20605,X -20605,Y -20605,Ya-8984,Ye-9619,Yo-8984,Yr-7324,Yu-6103,Z -2"
+            + "0605,a -20605,at-2392,b -20605,c -20605,d -20605,e -20605,eT-8203,f -20605,f,-6298,fo-4003,g -20"
+            + "605,ge-2392,h -20605,i -20605,j -20605,k -20605,l -20605,m -20605,n -20605,nT-7177,o -20605,p -2"
+            + "0605,q -20605,r -20605,ra-2880,rc-4101,rd-4101,re-4101,rg-4687,ro-4101,rq-4101,s -20605,t -20605"
+            + ",u -20605,v -20605,v,-9912,w -20605,w,-7324,x -20605,y -20605,z -20605,";
+    }
+    private static String Futura_0_3_kerning() {
+        return ",1-7324,-A4882,-T1220,-V-195,-W-97,-Y-1708,.1-8007,01-7714,04-1806,07-3222,1,-4589,1.-5908,10-60"
+            + "05,11-14599,12-7910,13-7177,14-7910,15-7910,16-8789,17-9277,18-7519,19-8105,21-8398,24-683,27-25"
+            + "87,31-8789,34-2294,37-4394,51-7617,54-2294,57-3076,61-9912,64-878,67-4980,7,-12792,7.-14111,71-5"
+            + "712,74-12500,76-10205,771416,7:-8105,81-8007,84-1220,87-3613,91-7324,94-8593,97-2880,A,4980,A-50"
+            + "78,A.3710,AC-3515,AG-3417,AO-3417,AQ-3417,AT-4199,AU-2880,AV-5908,AW-5810,AY-6591,Aa-97,Ab1416,A"
+            + "c-488,Ad-97,Ao-488,Aq-97,At1123,Au-97,Av-2294,Aw-2099,Ay-2490,BA-1123,BO-585,BV-2880,BW-2783,BY-"
+            + "3808,CA1806,CH2099,CK2099,CO-488,DA-3710,DJ-2685,DT-2587,DV-2783,DW-2685,DX-2294,DY-3808,F,-4882"
+            + ",F-2880,F.-6201,FA-4980,FJ-3710,FO97,Fa-683,Fe-683,Fi195,Fj195,Fo-878,Fr-976,Fu-976,GA-3417,GT-1"
+            + "95,GV-1806,GW-1806,GY-2490,JA-2587,K-292,KC-4394,KG-4296,KO-4296,KS-2783,KT4101,Ka-3320,Ke-3076,"
+            + "Ko-3417,Ku-2587,Ky-4199,L-2001,LA4199,LC-3320,LG-3320,LO-3076,LS292,LT-4882,LU-2294,LV-6298,LW-6"
+            + "201,LY-6396,Lu195,Ly-4394,N,3320,N.1708,NA585,NC683,NG781,NO683,Na976,Ne1123,No683,Nu1123,OA-380"
+            + "8,OT-2685,OV-3320,OW-3222,OX-2392,OY-4101,P,-7080,P-292,P.-8496,PA-5517,PJ-4296,Pa-2685,Pe-2490,"
+            + "Po-2880,R-1416,RC-1708,RG-1708,RO-1708,RT-878,RU-1123,RV-2685,RW-2685,RY-3320,Ra-1708,Re-1611,Ro"
+            + "-2001,Ru-1513,Ry-97,SA-781,ST1416,SV-195,SW-195,SY-683,St1708,T,-1708,T-1220,T.-3076,T:-1123,T;-"
+            + "1806,TA-4101,TC-2685,TG-2490,TJ-2880,TO-2392,TS-97,TV4492,TW4492,TY4882,Ta-4199,Tc-4492,Te-4101,"
+            + "Ti1806,Tj1806,To-4492,Tr-3417,Tu-4101,Tv-4492,Tw-4492,Ty-4492,U,195,U.-1123,UA-3222,Um781,Un683,"
+            + "Up781,Ur781,V,-6201,V--488,V.-7519,V:-2685,V;-3417,VA-6298,VC-3417,VG-3320,VO-3320,VS-1904,VT449"
+            + "2,Va-5810,Ve-5712,Vi976,Vo-6103,Vr-4296,Vu-4492,Vy-1220,W,-6201,W--585,W.-7617,W:-2783,W;-3515,W"
+            + "A-6396,WC-3515,WG-3417,WO-3417,WS-1904,WT4492,Wa-5908,We-5810,Wi976,Wo-6201,Wr-4394,Wu-4492,Wy-1"
+            + "416,X-3222,XC-1904,XO-1806,XQ-1806,Xa-1611,Xe-1611,Xo-2001,Xu-1611,Xy-3808,Y,-4589,Y--1708,Y.-60"
+            + "05,Y:-3222,Y;-3808,YA-6884,YC-4003,YG-3808,YO-3808,YS-2294,YT4882,Ya-6396,Ye-6396,Yi976,Yo-6787,"
+            + "Yp-5712,Yu-6298,Yv-3320,Zv-4980,Zy-5078,aj1220,av878,aw878,ay878,bv-1708,bw-1611,by-1806,ch2587,"
+            + "ck2587,et878,ev-1708,ew-1513,ex-1904,ey-1708,fa1513,fe1513,ff3320,fi-1513,fj2001,fl-1513,fo1220,"
+            + "ft3613,hy-1611,iT1806,ij1220,k,3076,k--195,k.1513,ka-1708,ke-1611,ko-2001,ku292,lv878,ly878,mp12"
+            + "20,mv-1513,mw-1416,my-1611,nT-3710,np1220,nv-1513,nw-1416,ny-1611,oT-4589,ot585,ov-2001,ow-1904,"
+            + "ox-2392,oy-2294,pt878,py-2099,qc781,qu1123,r,-4003,r--1123,r.-5322,r:1513,r;195,ra-683,rc-878,rd"
+            + "-683,re-683,rf3320,rh1513,ri1513,rj1513,rk1513,rl1513,rm1513,rn1513,ro-878,rp1513,rq-878,rr1513,"
+            + "rt3613,ru1513,rv4296,rw4589,rx2099,ry4394,rz1220,t:3417,t;2099,ta878,te878,th2001,to683,v,-4003,"
+            + "v-2294,v.-5517,v:488,v;-585,va-1708,vc-2001,ve-1708,vl878,vo-1904,w,-3710,w-2392,w.-5322,w:585,w"
+            + ";-488,wa-1611,wc-1904,we-1513,wl878,wo-1806,xa-1708,xc-2001,xe-1611,xo-2001,xq-1708,y,-4296,y-20"
+            + "01,y.-5908,y:488,y;-781,ya-1708,yc-2001,ye-1611,yl878,yo-1904,";
+    }
+    private static String Futura_1_3_kerning() {
+        return ",1-8007,-A3808,-T488,-V-976,-W-683,-Y-2001,.1-7910,01-7617,04-1123,07-4492,1,-4980,1.-7177,10-79"
+            + "10,11-14013,12-9814,13-9619,14-9423,15-9619,16-9716,17-11083,18-8984,19-9423,21-7812,24-2490,27-"
+            + "4101,31-8691,34-1513,37-5908,41-8496,44-292,47-5419,51-8007,54-1416,57-5175,61-9814,64-97,67-541"
+            + "9,7,-11376,7.-13720,71-4199,74-12500,76-9277,77292,7:-8593,81-7714,84-292,87-4882,91-6884,94-771"
+            + "4,97-4101,A,5712,A-4687,A.3515,AC-3417,AG-3417,AO-3613,AQ-3613,AT-4296,AU-3417,AV-6103,AW-5908,A"
+            + "Y-6689,Aa-97,Ab1220,Ac-195,Ad-292,Ae-195,Ag-292,Ao-488,Aq-195,At878,Au-195,Av-976,Aw-1220,Ay-190"
+            + "4,BA-1220,BO-488,BV-2880,BW-2685,BY-3710,CA1708,CH976,CK976,CO-292,DA-3613,DJ-2001,DT-3076,DV-27"
+            + "83,DW-2587,DX-2001,DY-3808,F,-3613,F-2880,F.-5908,FA-4589,FJ-4296,FO1220,Fa585,Fe585,Fi-195,Fj-9"
+            + "7,Fo585,Fr-195,Fu-195,GA-2880,GT-488,GV-1806,GW-1708,GY-2685,JA-3222,K--878,KC-5712,KG-5712,KO-5"
+            + "810,KS-3222,KT1513,Ka-3710,Ke-3710,Ko-4394,Ku-3417,Ky-4687,L--195,LA2685,LC-4394,LG-4492,LO-4687"
+            + ",LS878,LT-4980,LU-3320,LV-6103,LW-6103,LY-5908,Lu-292,Ly-4687,N,3613,N.1123,NA-976,NO-97,Na195,N"
+            + "e97,No-97,OA-3808,OT-3320,OV-3222,OW-2880,OX-2294,OY-4003,P,-7080,P--683,P.-9277,PA-6787,PJ-6298"
+            + ",Pa-2490,Pe-2490,Po-2490,R-1123,RC-1220,RG-1220,RO-1416,RT-1220,RU-1513,RV-2685,RW-2587,RY-3515,"
+            + "Ra-1611,Re-1708,Ro-1904,Ru-1611,Ry585,SA-976,ST1611,SV292,SW488,SY-97,St976,T,-1123,T-683,T.-341"
+            + "7,T:-1708,T;-585,TA-5517,TC-683,TG-683,TJ-4296,TO-781,TS292,TV4980,TW4980,TY5078,Ta-4394,Tc-4394"
+            + ",Te-4394,Tg-4589,Ti878,Tj976,To-4589,Tr-3808,Ts-4492,Tu-4492,Tv-4199,Tw-4101,Ty-4199,U,1123,U.-1"
+            + "123,UA-4003,Um-488,Un-488,Up-488,Ur-488,V,-6201,V--1806,V.-8398,V:-4101,V;-3076,VA-7519,VC-2685,"
+            + "VG-2685,VO-2685,VS-1904,VT4394,Va-6787,Ve-6884,Vg-6982,Vi-97,Vo-6884,Vr-5419,Vu-5712,Vy-1904,W,-"
+            + "4687,W--585,W.-6884,W:-2880,W;-1904,WA-6591,WC-2294,WG-2294,WO-2294,WS-1708,WT4394,Wa-5517,We-57"
+            + "12,Wg-5908,Wo-5908,Wr-4687,Wu-4882,Wy-1220,X-2490,XC-2294,XO-2392,XQ-2392,Xa-2099,Xe-2294,Xo-249"
+            + "0,Xu-2294,Xy-3808,Y,-4003,Y--2099,Y.-6103,Y:-3808,Y;-2783,YA-7617,YC-3515,YG-3613,YO-3613,YS-239"
+            + "2,YT4394,Ya-6689,Ye-6787,Yg-6884,Yi-195,Yo-6982,Yp-6103,Yu-6884,Yv-3710,Zv-4296,Zy-5419,aj585,av"
+            + "976,aw976,ay976,bv-878,bw-1123,by-1904,ch1416,ck1416,et195,ev-1220,ew-1416,ex-1611,ey-1904,fa976"
+            + ",fe976,ff3417,fi-3466,fj1123,fl-3222,fo976,fs1123,ft2783,ga292,ge195,gl683,gr585,hy-1513,iT1123,"
+            + "ij585,k,3710,k--976,k.585,ka-2099,ke-2099,kg-2392,ko-2490,ks-585,ku195,lv976,ly976,mp195,mv-683,"
+            + "mw-781,my-1220,nT-4589,np97,nv-781,nw-976,ny-1708,oT-4882,ot292,ov-976,ow-1220,ox-2001,oy-1904,p"
+            + "t488,py-1806,qc195,r,-3613,r--1708,r.-5712,r:1416,r;1513,ra-683,rc-488,rd-781,re-585,rf4199,rg-1"
+            + "123,rh976,ri976,rj976,rk976,rl976,rm976,rn976,ro-683,rp976,rq-878,rr976,rs878,rt3710,ru976,rv429"
+            + "6,rw4296,rx1611,ry4199,rz2001,st1416,t:2294,t;3222,tS-1123,ta1806,te1806,th976,to1806,v,-2392,v-"
+            + "2294,v.-5175,v:781,v;878,va-976,vc-878,ve-976,vg-1416,vl683,vo-976,w,-1904,w-2587,w.-4589,w:781,"
+            + "w;1416,wa-878,wc-781,we-878,wg-1220,wl683,wo-878,ws97,xa-1708,xc-1806,xe-1806,xo-2001,xq-1904,y,"
+            + "-1806,y-2587,y.-4492,y:781,y;1220,ya-878,yc-781,ye-878,yg-1220,yl683,yo-878,ys97,";
+    }
+    private static String Futura_0_6_kerning() {
+        return ",1-6999,-A4700,-T1199,-V-1199,-W1900,-Y-3399,-\\-1199,.1-6900,/,-6000,/--1399,/.-6999,/:-1100,/;-"
+            + "2400,/A-6000,/C-3600,/G-3300,/O-3500,/Q-3500,/S-2700,/T4199,/a-6000,/d-6000,/e-6000,/g-6100,/i16"
+            + "99,/o-6199,/r-3999,/u-3999,/y-899,01-5099,042599,07-800,1,-3300,1.-4400,10-3999,11-11999,12-6799"
+            + ",13-5800,14-5500,15-6300,16-5399,17-7799,18-5899,19-5500,21-5700,241699,27-200,31-6399,341600,37"
+            + "-1900,41-6300,442500,47-1699,51-7500,54700,57-3099,61-7200,642899,67-2700,7,-9600,7.-10599,71-24"
+            + "00,74-6000,76-5399,771499,7:-3600,81-6699,841399,87-2100,91-4700,94-299,97-800,A,5299,A-4700,A.3"
+            + "800,AC-2799,AG-2400,AO-2700,AQ-2799,AT-3300,AU-2100,AV-5800,AW-3399,AY-7100,A\\-5800,Aa-299,Ab110"
+            + "0,Ac-599,Ad-299,Ae-299,Af1100,Ag-299,Ah1100,Ai1100,Aj1100,Ak1100,Al1100,Am1100,An1100,Ao-700,Ap1"
+            + "100,Aq-500,Ar1100,At599,Au99,Av-3099,Aw-2899,Ay-3300,BA-1100,BO-599,BQ-599,BV-3500,BW-1199,BY-44"
+            + "99,B\\-3500,CA1799,CH3200,CK3200,CO1100,CQ1100,DA-3200,DJ-4199,DT-899,DV-3699,DW-1499,DX-4199,DY-"
+            + "5399,D\\-3699,F,-2599,F-4499,F.-3300,FA-3099,FJ-4700,FO-99,FQ-99,Fa-700,Fd-700,Fe-700,Fi-99,Fj-99"
+            + ",Fo-800,Fr-99,Fu-599,GA-2799,GT-299,GV-3500,GW-1199,GY-5000,G\\-3500,JA-1900,K--500,KC-4700,KG-42"
+            + "99,KO-4600,KQ-4600,KT2400,Ka-3800,Kd-3800,Ke-3699,Ko-3999,Ku-3099,Ky-6300,L-5399,LA3099,LC-1600,"
+            + "LG-1100,LO-1499,LQ-1499,LS1199,LT-3999,LU-1399,LV-6600,LW-4199,LY-7599,L\\-6600,Lu99,Ly-4299,Ma-2"
+            + "700,Md-2700,Me-2700,N,3699,N.2500,NA200,NC1000,NG1399,NO899,NQ899,Na1100,Nd1100,Ne1199,No800,Nu1"
+            + "600,OA-2899,OT-800,OV-3500,OW-1199,OX-3800,OY-5299,O\\-3500,P,-5700,P-1999,P.-6300,PA-4199,PJ-600"
+            + "0,Pa-1199,Pd-1199,Pe-1199,Po-1499,R-1399,RC-1399,RG-1000,RO-1399,RQ-1399,RT99,RU-700,RV-2899,RW-"
+            + "1499,RY-3600,R\\-2899,Ra-1199,Rd-1199,Re-1100,Ro-1499,Ru-500,Ry599,SA-1399,ST500,SV-99,SW99,SY99,"
+            + "S\\-99,St1000,T,-899,T-1100,T.-2100,T:1499,T;299,TA-3500,TC-700,TG-500,TJ-4299,TO-700,TQ-700,TS99"
+            + ",TV4199,TW4199,TY4900,T\\4199,Ta-3500,Tc-3699,Td-3500,Te-3399,Tg-3500,Ti1499,Tj1499,To-3699,Tq-36"
+            + "99,Tr-2100,Ts-3500,Tu-2299,Tv800,Tw800,Ty800,U,500,U.-500,UA-2500,Um1100,Un1100,Up1100,Ur1100,V,"
+            + "-6000,V--1399,V.-6999,V:-1100,V;-2400,VA-6000,VC-3600,VG-3300,VO-3500,VQ-3500,VS-2700,VT4199,Va-"
+            + "6000,Vd-6000,Ve-6000,Vg-6100,Vi1699,Vo-6199,Vr-3999,Vu-3999,Vy-899,W,-2599,W-1399,W.-3600,W:1399"
+            + ",W;200,WA-3999,WC-1600,WG-1199,WO-1600,WQ-1600,WS-1600,WT4199,Wa-3399,Wd-3399,We-3399,Wg-3399,Wi"
+            + "1699,Wo-3600,Wr-2100,Wu-2599,Wy500,X-1399,XC-3399,XO-3399,XQ-3500,Xa-2799,Xd-2799,Xe-2899,Xo-320"
+            + "0,Xu-2500,Xy-6000,Y,-5800,Y--3800,Y.-7100,Y:-3300,Y;-4400,YA-7700,YC-5500,YG-5200,YO-5399,YQ-539"
+            + "9,YS-3500,YT4900,Ya-8300,Yd-8300,Ye-8099,Yg-8300,Yi2400,Yo-8500,Yp-6399,Yu-6799,Yv-3699,Yw-3699,"
+            + "Zv-3699,Zw-3699,Zy-3699,aj1900,av1000,aw1000,ay1000,bv-2400,bw-2400,by-2700,ch2500,ck2500,dj1900"
+            + ",dv1000,dw1000,dy1000,et700,ev-2400,ew-2400,ex-2700,ey-2700,fa1100,fd1100,fe1100,ff3300,fi-2300,"
+            + "fj1399,fl-2300,fo899,fs500,ft2700,ga1100,gd1100,ge1199,gj1900,gl1799,gr1799,gv1000,gw1000,gy1000"
+            + ",hy-1999,iT1499,ij1900,iv1000,iw1000,iy1000,jj1900,jv1000,jw1000,jy1000,k,3399,k--2100,k.800,ka-"
+            + "3099,kd-3099,ke-3099,kg-3099,ko-3399,ks1399,ku200,lj1900,lv1000,lw1000,ly1000,mp1799,mv-1600,mw-"
+            + "1600,my-1799,nT-2599,np1699,nv-1799,nw-1799,ny-1999,oT-3699,ot299,ov-2599,ow-2599,ox-3399,oy-289"
+            + "9,pt700,pv-2400,pw-2400,py-2599,qc1000,qg1000,qj1900,qq1000,qu1699,qv1000,qw1000,qy1000,r,-4900,"
+            + "r-3399,r.-6199,r:1999,r;-99,ra700,rc599,rd700,re700,rf2599,rg599,rh99,ri99,rj99,rk99,rl99,rm99,r"
+            + "n99,ro500,rp99,rq800,rr99,rs-200,rt1999,ru99,rv3200,rw3200,rx800,ry3200,rz500,st1399,t:4600,t;28"
+            + "99,tS299,ta1000,td1000,te1000,tf3300,th2299,ti1399,tj1399,tl1699,to899,ts500,tt2700,v,-4100,v-11"
+            + "00,v.-5099,v:1499,va-2500,vc-2700,vd-2500,ve-2400,vg-2599,vl1000,vo-2599,vq-2700,vs-2299,w,-4199"
+            + ",w-1100,w.-5099,w:1499,wa-2500,wc-2700,wd-2500,we-2400,wg-2599,wl1000,wo-2599,wq-2700,ws-2299,xa"
+            + "-3099,xc-3300,xd-3099,xe-3099,xg-3300,xo-3300,xq-3099,y,-4400,y-800,y.-5399,y:1199,y;-200,ya-259"
+            + "9,yc-2799,yd-2599,ye-2599,yg-2799,yl1000,yo-2700,yq-2799,ys-2400,";
+    }
+    private static String Galvji_1_3_kerning() {
+        return "\u00234-1464,&'-2929,&1-1464,&7-1464,&?-4882,&T-7324,&V-3906,&W-6347,&Y-7812,&v-2929,&w-2929,'&-3417,"
+            + "',-9277,'1976,'4-2441,'8-1464,'A-9765,'J-12207,'a1464,'c2441,'f3417,'s976,'w2441,(c-976,(j2929,,"
+            + "'-9277,,/3906,,0-5859,,1-4394,,3-4882,,4-3906,,5-4394,,8-1464,,9-1953,,C-5859,,T-8300,,U-4394,,V"
+            + "-9765,,W-9765,,Y-9765,,\\-3906,,^-12207,,c-976,,f-1953,,j4882,,t-1953,,v-6347,,w-5371,/,-3906,/4-"
+            + "1953,/A-2929,/J-2929,/T1464,0'-1953,0,-4882,07-1953,0A-976,0T-4882,0V-1953,0W-976,0X-2929,0Y-488"
+            + "2,0\\2929,0^-976,0_-4394,0v-976,0w-976,0x-976,1'-2441,1,-2441,24-1953,2@-488,2V-1953,2Y-3417,3'-1"
+            + "464,3,-2441,3T-3417,3V-2441,3W-1464,3X-488,3Y-3417,3\\1464,3_-1464,4'-3906,4,-2929,41-976,4T-1464"
+            + ",4V-976,4W-976,4X976,4Y-1953,4^-4882,4v-1464,4w-1464,4x-488,5,-3417,5Y-1953,5\\1464,5_-1464,6,-24"
+            + "41,6X-488,6Y-2441,6\\1464,6_-4394,7\u0023-5371,7&-4394,7,-7812,7/-2929,70-1464,711464,73-1464,74-3417,"
+            + "771953,7<-8789,7@-1953,7A-5371,7J-6347,7\\1953,7_-15625,7a-3417,7c-4882,7s-3906,7u-2441,7x-1953,8"
+            + "_-4394,:1-1464,:2-1464,:4-1464,:7-1464,>7-7324,>A-2929,>T-7812,>V-7324,>W-6347,>X-2929,>Y-8789,>"
+            + "Z-5859,>v-2929,>w-2929,>x-2929,>z-2441,@2-976,@7-1953,@T-2929,@Y-1464,A&-1464,A'-9765,A0-976,A1-"
+            + "3417,A5-1953,A7-1464,A<-2929,AC-3417,AT-7324,AU-1464,AV-6347,AW-6347,AY-7812,A\\-1953,A^-9765,Aa-"
+            + "976,Ac-2929,Af-1464,As-1464,At-2929,Au-3417,Av-6347,Aw-5371,BT-976,BV-2441,BY-3417,B\\1464,CA-488"
+            + ",CT-2441,CX-1464,CY-1464,C\\1464,C_-3906,D,-4394,D/-3906,D7-1953,DA-1464,DT-2929,DV-2929,DW-2929,"
+            + "DX-2441,DY-5859,DZ-2929,D^-2929,D_-3906,Dx-976,E\\1953,F,-8300,F/-4882,FA-976,FJ-4882,F\\976,F_-68"
+            + "35,Fv-1464,G/-1464,G41464,GT-1464,GV-3906,GW-1953,GX-1464,GY-4394,H11464,H\\1953,J,-7812,J/-4882,"
+            + "J<-8300,JA-1464,J\\1953,J_-3906,Ja-976,K&-3417,K0-1953,K1-976,K3-2441,K4-3417,K5-976,K<-7812,KC-3"
+            + "417,KS-1464,KU-2441,K^-2929,Ka-1953,Kc-4882,Kf-1464,Ks-2929,Kt-1953,Ku-3906,Kv-6347,Kw-6347,L&-1"
+            + "464,L'-12207,L0-3906,L1-4882,L5-1953,L7-2929,L8-1953,L9-1953,L<-10253,LC-1953,LT-8300,LU-2929,LV"
+            + "-6835,LW-6835,LY-9277,L\\-3417,L^-12207,La-2929,Lc-3906,Lt-4394,Lu-3906,Lv-6835,Lw-6347,P&-2929,P"
+            + ",-11230,P/-4882,PA-2441,PJ-5371,PX-2929,PY-1953,PZ-1953,P\\1464,P_-8300,Pa-1953,Pc-976,Pf2441,Pt2"
+            + "441,Pv1953,Pw1953,Px2929,Pz976,RV-1464,RW-1464,RY-976,Rc-488,Rf2441,Rt2441,ST-1953,SV-976,SW-976"
+            + ",SX-976,SY-2441,T&-3417,T,-8300,T/-7812,T0-2929,T3-976,T4-1953,T72929,T9976,T<-7812,T@-3906,TA-4"
+            + "882,TJ-7324,T\\1953,T_-5371,Ta-8300,Tc-7812,Tm-5371,Ts-7324,Tu-7324,Tv-6347,Tw-6347,Tx-5859,Tz-58"
+            + "59,V&-4882,V,-9765,V/-6835,V0-976,V22929,V31953,V4-1953,V73906,V8-1464,V9976,V<-4394,VA-4394,VC-"
+            + "2929,VJ-6347,VS-976,V\\1953,V_-7812,Va-3906,Vc-2441,Vm-1953,Vs-2929,Vu-1953,Vv-1464,Vw-1464,Vx-14"
+            + "64,Vz-1464,W&-4882,W,-9765,W/-6835,W0-976,W11953,W21953,W4-2441,W8-1464,W<-4882,WA-4394,WC-2929,"
+            + "WJ-5859,W\\1953,W_-7812,Wa-4882,Wc-1953,Wm-2929,Ws-2441,Wu-2441,Wv-1464,Ww-976,Wx-1464,Wz-1464,X&"
+            + "-2441,X/-1464,X0-1953,X4-488,X71953,X<-5371,XC-2441,XS-488,X\\976,Xa-976,Xc-2929,Xs-1464,Xu-1953,"
+            + "Xv-2929,Xw-1953,Y&-5371,Y,-9765,Y/-6835,Y0-976,Y1976,Y4-2929,Y8-1953,Y<-8789,Y@-2929,YA-4882,YC-"
+            + "1464,YJ-7324,YS-976,Y\\1464,Y_-9765,Ya-5859,Yc-5371,Ym-4394,Ys-5859,Yu-4394,Yv-2929,Yw-2929,Yx-29"
+            + "29,Yz-2929,Z3-1953,Z4-2441,Z<-5859,ZC-2929,Za-976,Zc-1464,Zu-1953,Zv-976,Zw-976,\\,3906,\\1-976,\\7"
+            + "-1464,\\C-4394,\\T-6347,\\U-1953,\\V-4882,\\W-4882,\\X-976,\\Y-3906,\\j2929,\\v-2929,\\w-4394,^&-3417,^,-1"
+            + "2207,^0-976,^4-4394,^A-9765,^J-9765,^X-3906,^_-6835,^c1464,^t3906,_0-4394,_1-10742,_3-4394,_4-53"
+            + "71,_5-4394,_8-4394,_9-4394,_C-3906,_J-1464,_T-5371,_U-3906,_V-7812,_W-7812,_Y-9765,_^-6835,_a-19"
+            + "53,_c-1464,_j9277,_p4394,_s-1464,_u-1464,_v-7812,_w-7812,a'-3906,a1-3906,a7-1464,aT-10253,aU-976"
+            + ",aV-6347,aW-4882,aY-8789,av-2441,aw-2441,az-976,b'-5859,b)-976,b,-976,b1-2441,b7-2929,bA-2929,bT"
+            + "-7812,bV-4882,bW-4882,bX-2441,bY-9765,b_-1464,bv-2929,bw-1953,bx-2441,bz-1464,c'-976,c7-1953,cA-"
+            + "1464,cT-7812,cV-2929,cW-2929,cX-1464,cY-7324,cf1953,ct976,cz-976,d,-3906,df3417,dj1464,dt3417,e'"
+            + "-2441,e7-1953,eA-1953,eT-7812,eV-4394,eW-4882,eX-1953,eY-8300,e^-976,e_-1464,ev-1953,ew-976,ex-1"
+            + "953,ez-1953,f&-1464,f'1953,f,-2441,f4-5859,fA-3417,fJ-5859,f_-1464,fa-1464,fc-2197,fs-2441,g7-19"
+            + "53,gT-6835,gV-3417,gW-1464,gY-6347,g_3417,iY-976,k&-976,k0-2441,k4-4394,k7-1464,k<-5859,kC-1464,"
+            + "kT-5371,kV-1464,kW-1953,kY-3417,ka-1464,kc-2441,kf1464,ks-2929,qT-5859,r&-976,r,-7324,r7-1464,rA"
+            + "-2929,rJ-5371,rT-3417,rX-976,rY-1464,rZ-2929,r_-2929,ra-976,rc-1464,rf2929,rs-976,rt2929,s'-976,"
+            + "s7-1953,sA-488,sT-8300,sV-4394,sW-3417,sX-1464,sY-7324,ss-976,st-488,sv-1464,sw-1464,sx-976,t<-2"
+            + "441,tT-2441,tV-976,tW-976,tY-1953,tc-488,ts-976,u7-976,uA-976,uT-7812,uV-1953,uW-2441,uY-5371,uf"
+            + "1464,v&-2929,v,-5859,v0-976,v4-1953,v<-1953,vA-5371,vJ-5371,vT-5859,vV-1464,vW-1464,vX-2929,vY-3"
+            + "417,vZ-2929,v_-7812,va-976,vc-488,vs-1464,w&-2929,w,-6835,w0-976,w4-1953,w<-1953,wA-4882,wJ-5371"
+            + ",wT-6347,wV-1464,wW-1464,wX-2929,wY-3417,wZ-2929,w_-7812,wa-1464,wc-488,ws-1464,x&-488,x0-976,x4"
+            + "-1953,x7-976,x<-2929,xC-976,xT-5859,xV-1464,xW-1464,xY-3417,xc-1953,xf1953,xs-488,z7-1953,z<-195"
+            + "3,zT-5859,zV-1464,zW-1464,zY-3906,za-1953,zc-1953,}Y-1953,";
+    }
+    private static String Geneva_0_3_kerning() {
+        return "fi-2636,fl-2636,";
+    }
+    private static String Gill_Sans_0_3_kerning() {
+        return " A-10009, T-12500, V-14990, W-12500, Y-14990,, -10009,. -10009,: -10009,; -10009,AC-4003,AG-4003"
+            + ",AO-4003,AQ-4003,AT-10009,AU-2001,AV-8007,AW-8007,AY-10986,Av-2490,Aw-2490,Ay-2490,BA2001,C,2490"
+            + ",C.2490,CA2490,D,-7519,D.-7519,DA-5517,DV-4980,DW-4980,DY-10009,F,-14013,F.-14013,FA-4980,Fe-151"
+            + "3,Fo-1513,Je-2001,Jo-2001,Ju-2001,KO-12011,Ke-6005,Ko-6005,Ku-4980,Ky-7519,LT-10009,LV-10009,LW-"
+            + "10009,LY-10986,Ly-2978,O,-6005,O.-6005,OA-4003,OT-6494,OV-4003,OW-4003,OX-8007,OY-8007,P,-14990,"
+            + "P.-14990,PA-8007,Pe-2490,Po-2490,RO-6005,RT-8984,RU-2978,RV-8007,RW-7519,RY-10009,T,-12500,T--16"
+            + "992,T.-12500,T:-2978,T;-2978,TA-10009,TO-6494,Ta-12500,Te-14990,To-14990,Tr-12500,Tu-14013,Tw-14"
+            + "990,Ty-12500,U,-2490,U.-2490,UA-2490,V,-12988,V--10009,V.-12988,VA-8007,VG-4003,VO-4003,Va-6005,"
+            + "Ve-10009,Vo-10009,Vu-7519,W,-12988,W--10009,W.-12988,WA-8007,WO-4003,Wa-6005,We-8984,Wo-8984,Wu-"
+            + "7519,Wy-2978,Y,-12988,Y--14990,Y.-12988,Y:-2978,Y;-2978,YA-10986,YO-8007,YS-2001,Ya-12011,Ye-129"
+            + "88,Yo-14013,Yu-12011,ap-976,av-3515,aw-3515,ay-4003,b,-976,b.-976,by-976,c,2001,c.2001,dd-976,e,"
+            + "2001,e.2001,ev-1513,ew-1513,ey-1513,fe-976,fi3076,fl3076,fo-976,go-976,gy2001,hy-3515,ke-2978,ko"
+            + "-2978,lw-976,ly-976,mu-976,my-3515,nu-976,nv-1513,ny-2001,o,-2978,o.-2978,ov-976,ow-976,ox-1513,"
+            + "oy-2001,p,-2978,p.-2978,py-3515,r,-10009,r--8007,r.-10009,r:4003,r;4003,rc-2490,rd-1513,re-2001,"
+            + "ro-2490,rq-2490,rr-976,rt2001,rv2978,ry2978,sw-976,v,-6005,v.-6005,ve-2001,vo-2001,w,-6005,w.-60"
+            + "05,we-2001,wo-2001,xe-2978,y,-8007,y.-8007,ye-2001,yo-2001,";
+    }
+    private static String Gill_Sans_1_3_kerning() {
+        return " A-8007, T-14990, V-14990, W-14990, Y-17480,, -10009,. -10009,: -10009,; -10009,AC-4003,AG-2978,"
+            + "AO-2978,AQ-2978,AT-10009,AU-4003,AV-6005,AW-6005,AY-10009,Av-976,B,2978,B.2978,BA5517,C,4980,C.4"
+            + "980,CA6005,D,-2490,D.-2490,DV-4980,DW-6982,DY-10009,F,-10009,F.-10009,Fa-4003,Fe-1513,Fo-1513,Fr"
+            + "-1513,G,2001,G.2001,JA2490,KO-4003,Ke-5517,Ko-3515,Ku-1513,Ky-2978,LT-6982,LV-4003,LW-7519,LY-60"
+            + "05,NA2001,O,-2978,O.-2978,OA-976,OT-8007,OV-4003,OW-4980,OX-6982,OY-8984,P,-10009,P.-10009,PA-29"
+            + "78,Pa-3515,Pe-2001,Po-2001,Q,2978,Q.2978,QU-2978,RO-2001,RT-6982,RV-2978,RW-6005,RY-7519,S,2490,"
+            + "S.2490,T,-10009,T--12011,T.-10009,T:-2490,T;-2490,TA-6005,TO-4980,Ta-10986,Te-10009,To-10009,Tr-"
+            + "10009,Tu-10009,Tw-10009,Ty-8007,U,-1513,U.-1513,V,-8007,V--8007,V.-8007,VA-2978,VO-2001,Va-8007,"
+            + "Ve-8007,Vo-8007,Vu-6494,W,-8007,W--7519,W.-8007,WA-2001,WO-2001,Wa-8007,We-7519,Wo-7519,Wu-5517,"
+            + "Y,-8007,Y--8984,Y.-8007,YA-2978,YO-4003,Ya-8007,Ye-8007,Yo-8007,Yu-7519,bv-2001,by-1513,c,6005,c"
+            + ".6005,ch2001,ck2001,cl2001,cy2490,e,2978,e.2978,ev-1513,ew-976,fa-1513,fe-1513,fi2001,fl2001,fo-"
+            + "1513,ge-1513,go-976,hy-1513,ke-4980,ko-2978,ky-2001,mu-976,my-1513,nv-2001,og-976,ov-2001,ow-200"
+            + "1,ox-2001,oy-1513,py-976,r,-4003,r.-4003,r:4003,r;4003,ra-2001,rd-2001,re-976,ri2001,ro-2001,rq-"
+            + "2001,rs2001,rt4003,rv2978,ry4003,s,2978,s.2978,sw-976,v,-2001,v.-2001,w,-2978,w.-2978,wa-2001,xe"
+            + "-4003,y,-2978,y.-2978,ya-2001,ye-2001,ze-2001,zo-2001,";
+    }
+    private static String Gill_Sans_0_6_kerning() {
+        return "(J7080,(f2880,(g4296,(j7080,(p5712,(y4296,AC-1416,AG-1416,AQ-1416,AT-10009,AU-2880,AV-7177,AW-57"
+            + "12,AY-10009,Ap1416,Au1416,Av-2880,Aw-1416,Ay-1416,B,1416,B.2783,BA-2880,BU-1416,C.1416,CC-1416,C"
+            + "O-1416,D,-2880,D.-1416,DA-4296,DV-1513,DY-4296,F,-8593,F.-7177,FA-5712,Fa1416,Fe-1416,Fo-1416,G."
+            + "1416,GA-1416,J.1416,JA-1416,Ja1416,Ju2783,K)5712,KC-4296,KG-4296,KO-4296,Ke-4296,Ko-4296,Ku-2880"
+            + ",Kv-5712,Kw-4296,Ky-5712,LA-1416,LC-5712,LG-5712,LO-5712,LS-5712,LT-12890,LU-5712,LV-10009,LW-10"
+            + "009,LY-12890,Lw-7177,Ly-7177,N.1416,NA-1416,O,-2880,O.-1416,OA-4296,ON-1416,OT-5712,OV-1513,OW-1"
+            + "416,OX-4296,OY-4296,P,-12890,P.-11523,PA-8593,Pa-2880,Pe-2880,Po-2880,Q)1416,Q,2783,Q.1416,QA-28"
+            + "80,QT-4296,QV-1416,QW-1416,QY-4296,Qf2783,Qg1416,Qj2783,Qp2880,RT-4296,RU-1416,RV-1416,RW-1416,R"
+            + "Y-2880,Ra2880,Re-1416,Ru1416,Rv-1416,S,1416,S.2880,T,-14306,T--5712,T.-12890,T:-1416,T;-2880,TA-"
+            + "8593,TC-5712,TG-5712,TO-5712,TQ-5712,TT-1416,Ta-5712,Tc-10009,Te-11523,Ti-1416,Tl-1416,Tm-2880,T"
+            + "o-10009,Tr-2880,Ts-8593,Tu-2880,Tw-1416,Ty-2880,Tz-1416,U,-4296,U.-2880,UA-4296,V,-10009,V--5712"
+            + ",V.-8593,V;-1416,VA-7177,VC-2880,VG-2880,VO-2880,VQ-2880,Va-2880,Ve-5712,Vi-1416,Vo-5712,Vr-1416"
+            + ",Vu-2880,Vy-2880,W,-5712,W--4296,W.-4296,W;-1416,WA-5712,Wa-2880,Wd-4296,We-4296,Wi-1416,Wo-4296"
+            + ",Wr-1416,Wu-1416,Wy-1416,XC-4296,XG-4296,XO-4296,Y,-11376,Y--10009,Y.-10009,Y:-2880,Y;-4296,YA-1"
+            + "0009,YC-4296,YG-4296,YO-4296,YS-2880,Ya-5712,Yd-8593,Ye-10009,Yi-2880,Yo-10009,Yp-5712,Yq-10009,"
+            + "Yu-5712,Yv-5712,ab1416,af1416,ag1416,ah1416,ai1416,ak1416,am1416,an1416,ap1416,ar1416,au1416,aw1"
+            + "416,b.1416,bl-1416,bv-1416,by-1416,c,1416,c.2880,e,1416,e.2880,eb1416,ep1416,ew1416,f 2880,f!429"
+            + "6,f)10009,f,-1416,f?5712,fa2783,ff2880,fi-2441,fl-2441,fu2783,g.1416,ga1416,gl1416,gp1416,gr4296"
+            + ",gy1416,kc-4296,kd-4296,ke-4296,kg-2880,ko-4296,kq-4296,ks-2880,ku-1416,ky-1416,lo-1416,nw1416,o"
+            + ",-2880,ov-1416,ow-1416,ox-2880,oy-1416,oz-1416,p,-2880,p.-1416,pw-1416,py-2880,pz-2880,r,-8593,r"
+            + "--4296,r.-7177,r;-1416,ra-1416,rc-4296,rd-4296,re-4296,rg-2880,ri-4296,rj-1416,rk-1416,rl-1416,r"
+            + "o-4296,rp-1416,rq-4296,rs-2880,rt-1416,ru-1416,s,-1416,v,-7177,v.-5712,vc-1416,vd-1416,ve-1416,v"
+            + "o-1416,vq-1416,w,-5712,w.-4296,wa-1416,wc-1416,wd-1416,we-1416,wo-1416,wq-1416,xc-2880,xd-2880,x"
+            + "e-4296,xo-2880,y,-7177,y.-5712,ye-1416,zc-1416,zd-1416,ze-2880,zo-1416,";
+    }
+    private static String Gill_Sans_1_6_kerning() {
+        return "(J7080,(f1416,(g4296,(j10009,(p2880,(y5712,AT-7177,AU-1416,AV-1416,AY-2880,Ap2880,Au1416,Av1416,"
+            + "Aw1416,Ay1416,B,1416,B.1416,BA-2880,BU-1416,C,7080,C.7080,CC1416,CO1416,D,-1416,D.-1416,DA-2880,"
+            + "DV-1416,DY-4296,F,-4296,F.-4296,FA-4296,Fe-1416,Fl-1416,Fo-1416,G,2880,G.2880,GA-1416,GG1416,J;-"
+            + "1416,JA-4296,Je-1416,Jo-1416,K)1416,KC-4296,KG-4296,KO-4296,Ka-2880,Ke-4296,Ko-4296,Ku-2880,Kv-2"
+            + "880,Kw-2880,Ky-2880,LC-5712,LG-5712,LO-5712,LS-1416,LT-10009,LU-5712,LV-5712,LW-4296,LY-8593,Lw-"
+            + "2880,Ly-2880,NA-2880,O,-1513,O.-1416,OA-2880,OT-7177,OV-1416,OX-4296,OY-2880,P,-12890,P.-12890,P"
+            + "A-7177,Pa-2880,Pe-4296,Po-4296,QA-2880,QT-5712,QV-1416,QY-2880,Qf2880,Qg2783,Qj2880,Qp4296,Qy141"
+            + "6,R)-1416,RT-5712,RU-2880,RV-1416,RY-1416,Re-1416,Ro-1416,Rv1416,Rw1416,Ry1416,S,2880,S.2880,T,-"
+            + "7177,T--2880,T.-7177,T;-1416,TA-7177,TC-2880,TG-2880,TO-2880,TQ-2880,TT-1416,Ta-7177,Tc-7177,Te-"
+            + "8593,Th-1416,Ti-1416,Tl-2880,Tm-2880,To-8593,Tr-7177,Ts-4296,Tu-2880,Tw-2880,Ty-2880,Tz-4296,U,-"
+            + "4296,U.-4296,UA-4296,V,-2880,V--2880,V.-2880,V;-1416,VA-2880,VC1416,VG1416,VO1416,VQ1416,Va-2880"
+            + ",Ve-2880,Vo-2880,Vr-1416,Vu-1416,W,-5712,W--2880,W.-5712,W;-1416,WA-2880,Wa-2880,Wd-4296,We-4296"
+            + ",Wo-4296,Wr-1416,Wu-1416,Y,-7177,Y--4296,Y.-7177,Y:-1416,Y;-2880,YA-7177,YC-1416,YG-1416,YO-1416"
+            + ",Ya-7177,Yd-7177,Ye-7177,Yi-1416,Yo-7177,Yp-2880,Yq-7177,Yu-2880,Yv-2880,ab-1416,av1416,aw1416,a"
+            + "y1416,c,2880,c.2880,ch1416,ck1416,cl1416,cy2783,dv2880,dw2880,dy1416,ex-1416,ez-1416,f 5712,f!14"
+            + "16,f)2880,f,-2880,f.-2880,f?7080,fi-4296,fk-1416,fl-3906,fu1416,g,4296,g.2880,gg1416,gp1416,gr27"
+            + "83,gy4296,hy-1416,iv2880,kc-1513,kd-1513,ke-1416,kg1416,ki1416,ko-1416,kq-1416,ks1416,ku1416,ky1"
+            + "416,lw1416,ly1416,nw1416,o,-1416,o.-1416,og1416,ox-1416,oy-1416,oz-2880,p,-1416,p.-1416,pz-1416,"
+            + "r,-4296,r.-4296,r;-1416,ra-1416,rc-1416,rd-1513,re-1416,rg1416,rl-1416,ro-1416,rq-1416,rs1416,rt"
+            + "1416,rv1416,ry2880,sw1416,v,-4296,v.-4296,va-1416,vc-1416,vd-1416,ve-1416,vo-1416,vq-1416,w,-429"
+            + "6,w.-4296,xc-1416,xd-1513,xe-1513,xo-1416,y,-2880,y.-2880,ya1416,yc1416,yd1416,ye1416,yg2783,yo1"
+            + "416,ys2783,zc-2880,zd-2880,ze-2880,zo-2880,";
+    }
+    private static String Grantha_Sangam_MN_0_3_kerning() {
+        return "&C-1171,&G-1171,&J-195,&O-1171,&Q-1171,&S-195,&T-3710,&U-781,&V-3515,&W-2929,&X-781,&Y-3906,&v-9"
+            + "76,&w-195,&x-195,&y-976,,C-2929,,G-2929,,O-2929,,Q-2929,,S-585,,T-7031,,U-1171,,V-6250,,W-5664,,"
+            + "Y-7812,,c-781,,d-585,,e-781,,f-1171,,g-195,,o-781,,q-585,,t-2539,,v-4101,,w-3125,,y-1757,-1-3906"
+            + ",-A-1562,-T-6640,-V-3515,-W-2929,-X-3515,-Y-5859,-Z-585,-v-1171,-w-585,-x-2539,-y-1171,-z-390,.C"
+            + "-2929,.G-2929,.J-195,.O-2929,.Q-2929,.S-585,.T-7031,.U-1171,.V-6250,.W-5664,.Y-7812,.c-781,.d-58"
+            + "5,.e-781,.f-1171,.g-195,.o-781,.q-585,.t-2539,.v-4101,.w-3125,.y-4101,A&-195,A--1562,AC-1953,AG-"
+            + "1953,AJ-390,AO-1953,AQ-1953,AS-195,AT-5664,AU-1757,AV-4687,AW-4296,AX-1367,AY-6445,Ac-585,Ad-390"
+            + ",Ae-585,Af-390,Ag-195,Ao-585,Aq-390,At-1757,Au-390,Av-2539,Aw-2343,Ax-390,Ay-2539,BA-390,BT-390,"
+            + "BV-781,BW-585,BX-1562,BY-1953,C,-1171,C.-1171,CA-1367,CT-1367,CV-1757,CW-1562,CX-3515,CY-2734,D&"
+            + "-585,D,-2539,D.-2734,DA-2343,DJ-781,DS-195,DT-3125,DV-2148,DW-1953,DX-3906,DY-3515,DZ-781,Da-195"
+            + ",Dx-195,EC-390,EG-390,EO-390,EQ-390,Ec-195,Ed-195,Ee-195,Eg-195,Eo-195,Eq-195,F&-2539,F,-6250,F-"
+            + "-390,F.-6250,FA-3906,FC-781,FG-781,FJ-4101,FO-781,FQ-781,FS-195,Fa-1367,Fc-2343,Fd-1562,Fe-2343,"
+            + "Ff-195,Fg-1562,Fm-1562,Fn-1562,Fo-2343,Fp-1562,Fq-1562,Fr-1562,Fs-781,Ft-195,Fu-1367,Fv-976,Fw-7"
+            + "81,Fx-976,Fy-976,Fz-781,GT-2148,GV-1367,GW-1367,GX-390,GY-3125,J,-781,J.-781,JA-1171,JX-195,K&-3"
+            + "90,K--3320,KA-781,KC-3125,KG-3125,KJ-390,KO-3125,KQ-3125,KS-390,KY-390,Ka-195,Kc-1171,Kd-976,Ke-"
+            + "1171,Kf-585,Kg-585,Ko-1171,Kq-976,Kt-1171,Ku-390,Kv-1953,Kw-1757,Kx-390,Ky-1953,L--1757,LC-1953,"
+            + "LG-1953,LO-1953,LQ-1953,LS-195,LT-7031,LU-585,LV-4492,LW-4296,LY-7421,Lc-195,Ld-195,Le-195,Lf-39"
+            + "0,Lo-195,Lq-195,Lt-1171,Lv-2929,Lw-2343,Ly-2539,O&-585,O,-2929,O.-2929,OA-1953,OJ-390,OT-2929,OV"
+            + "-2343,OW-2148,OX-3906,OY-3710,P&-2539,P,-6250,P--390,P.-6250,PA-4296,PJ-5859,PX-2539,PY-1171,Pa-"
+            + "390,Pc-781,Pd-390,Pe-781,Pg-390,Po-781,Pq-390,Q&-585,Q,-976,Q.-2929,QA-976,QJ-390,QT-2929,QV-234"
+            + "3,QW-2148,QX-3125,QY-3710,RA-195,RC-390,RG-390,RJ-195,RO-390,RQ-390,RT-781,RU-195,RV-976,RW-781,"
+            + "RX-585,RY-1953,SV-585,SW-585,SX-2148,SY-1562,T&-2734,T,-7031,T--6640,T.-7031,TA-5664,TC-2929,TG-"
+            + "2929,TJ-8203,TO-2929,TQ-2929,TT2441,Ta-7031,Tc-8203,Td-7226,Te-8203,Tf-2734,Tg-7226,Tm-5859,Tn-5"
+            + "859,To-8203,Tp-5859,Tq-7226,Tr-5859,Ts-6640,Tt-2148,Tu-5859,Tv-5273,Tw-4882,Tx-5078,Ty-5273,Tz-4"
+            + "101,U,-1171,U.-1171,UA-1757,UJ-390,UX-390,V&-2734,V,-6250,V--3515,V.-6250,VA-4687,VC-2343,VG-234"
+            + "3,VJ-5468,VO-2343,VQ-2343,VS-390,Va-3710,Vc-4882,Vd-4296,Ve-4882,Vf-1171,Vg-4296,Vm-2734,Vn-2734"
+            + ",Vo-4882,Vp-2734,Vq-4296,Vr-2734,Vs-3710,Vt-976,Vu-2734,Vv-781,Vw-781,Vx-1171,Vy-781,Vz-1953,W&-"
+            + "2148,W,-5664,W--2929,W.-5664,WA-4296,WC-2148,WG-2148,WJ-4882,WO-2148,WQ-2148,WS-390,WX-195,Wa-31"
+            + "25,Wc-4296,Wd-3906,We-4296,Wf-1367,Wg-4296,Wm-2734,Wn-2734,Wo-4296,Wp-2734,Wq-3906,Wr-2734,Ws-31"
+            + "25,Wt-390,Wu-2734,Wv-2148,Ww-1757,Wx-976,Wy-2148,Wz-1953,X&-1367,X--3515,XA-1367,XC-3906,XG-3906"
+            + ",XJ-1953,XO-3906,XQ-3906,XS-2148,XU-390,XW-195,XY-390,Xa-1367,Xc-2734,Xd-2539,Xe-2734,Xf-2539,Xg"
+            + "-2343,Xo-2734,Xq-2539,Xs-1171,Xt-2343,Xu-2148,Xv-3125,Xw-2734,Xx-390,Xy-3125,Y&-3515,Y,-7812,Y--"
+            + "5859,Y.-7812,YA-6445,YC-3710,YG-3710,YJ-7812,YO-3710,YQ-3710,YS-1367,YX-390,Ya-6347,Yc-7617,Yd-7"
+            + "617,Ye-7617,Yf-1562,Yg-7617,Ym-4882,Yn-4882,Yo-7617,Yp-4882,Yq-7617,Yr-4882,Ys-6640,Yt-1953,Yu-5"
+            + "175,Yv-3515,Yw-3125,Yx-3906,Yy-3515,Yz-3710,Z&-195,Z--585,Zc-1171,Zd-781,Ze-1171,Zo-1171,Zq-781,"
+            + "aC-585,aG-585,aO-585,aQ-585,aT-6640,aU-195,aV-4687,aW-4296,aX-585,aY-7031,ac-585,ad-195,ae-585,a"
+            + "f-195,ag-195,ao-585,aq-195,at-976,au-195,av-1171,aw-1171,ax-585,ay-1171,b,-781,b.-781,bA-976,bT-"
+            + "7226,bV-4296,bW-3906,bX-2539,bY-7421,ba-195,bf-585,bj-195,bt-976,bv-1171,bw-781,bx-1757,by-1171,"
+            + "bz-1367,cA-585,cT-7421,cV-4101,cW-3906,cY-6835,ct-195,cv-195,cw-195,cx-1171,cy-195,cz-195,eA-390"
+            + ",eT-7617,eV-4687,eW-4101,eX-2539,eY-7421,ef-390,et-390,ev-976,ew-585,ex-1953,ey-976,ez-781,f*781"
+            + ",f,-3125,f--1367,f.-3125,fA-2148,fa-585,fc-1171,fd-781,fe-1171,ff-1708,fg-781,fl-1171,fo-1171,fq"
+            + "-781,gT-5859,gV-2734,gW-2734,gY-4882,hT-5859,hV-2734,hW-2734,hY-4882,ht-195,hv-195,hw-195,hx-195"
+            + ",hy-195,k--3320,kC-390,kG-390,kO-390,kQ-390,kT-2343,kV-1757,kW-781,kY-3515,ka-195,kc-1562,kd-117"
+            + "1,ke-1562,kg-781,ko-1562,kq-1171,ks-195,ku-195,kv-195,ky-195,l 781,mT-5859,mV-2734,mW-2734,mY-48"
+            + "82,mt-195,mv-195,mw-195,mx-195,my-195,nT-5859,nV-2734,nW-2734,nY-4882,nt-195,nv-195,nw-195,nx-19"
+            + "5,ny-195,o,-781,o.-781,oA-1171,oT-7812,oV-4882,oW-4296,oX-2734,oY-7617,oa-195,of-585,ot-585,ov-1"
+            + "171,ow-976,ox-2148,oy-1171,oz-1562,p,-781,p.-781,pA-976,pT-7226,pV-4296,pW-3906,pX-2539,pY-7421,"
+            + "pa-195,pf-585,pj-195,pt-976,pv-1171,pw-781,px-1757,py-1171,pz-1367,qT-5859,qV-2734,qW-2734,qY-48"
+            + "82,r&-781,r,-4296,r--390,r.-4296,rA-2929,rT-1953,rV-585,rW-390,rX-1562,rY-2929,ra-390,rc-976,rd-"
+            + "1171,re-976,rg-1171,ro-976,rq-1171,sA-195,sT-6445,sV-4101,sW-3125,sX-976,sY-6445,sc-195,se-195,s"
+            + "o-195,sv-195,sw-195,sx-976,sy-195,sz-390,t--1171,tC-390,tG-390,tO-390,tQ-390,tT-2148,tV-1367,tW-"
+            + "781,tY-3125,ta-195,tc-1367,td-585,te-1367,tf-390,tg-390,to-1367,tq-585,tv-195,ty-195,uT-5859,uV-"
+            + "2734,uW-2734,uY-4882,v&-390,v,-4101,v--1171,v.-4101,vA-2539,vT-5273,vV-781,vW-2148,vX-3125,vY-35"
+            + "15,va-976,vc-1171,vd-976,ve-1171,vg-781,vo-1171,vq-976,vs-195,w&-390,w,-3125,w--585,w.-3125,wA-2"
+            + "343,wT-4882,wV-781,wW-1757,wX-2734,wY-3125,wa-585,wc-976,wd-781,we-976,wg-781,wo-976,wq-781,ws-1"
+            + "95,x&-390,x--3515,xA-390,xT-5078,xV-1171,xW-976,xX-390,xY-3906,xa-1171,xc-2148,xd-1757,xe-2148,x"
+            + "g-1562,xo-2148,xq-1757,xs-976,y&-390,y,-4101,y--1171,y.-4101,yA-2539,yT-5273,yV-781,yW-2148,yX-3"
+            + "125,yY-3515,ya-781,yc-1171,yd-976,ye-1171,yg-976,yo-1171,yq-976,ys-195,z&-195,z--390,zT-4101,zV-"
+            + "1953,zW-1953,zY-3710,za-585,zc-1562,zd-976,ze-1562,zg-976,zo-1562,zq-976,zs-390,";
+    }
+    private static String Grantha_Sangam_MN_0_6_kerning() {
+        return "&C-292,&G-292,&J-48,&O-292,&Q-292,&S-48,&T-927,&U-195,&V-878,&W-732,&X-195,&Y-976,&v-244,&w-48,&"
+            + "x-48,&y-244,,C-732,,G-732,,O-732,,Q-732,,S-146,,T-1757,,U-292,,V-1562,,W-1416,,Y-1953,,c-195,,d-"
+            + "146,,e-195,,f-292,,g-48,,o-195,,q-146,,t-634,,v-1025,,w-781,,y-439,-1-976,-A-390,-T-1660,-V-878,"
+            + "-W-732,-X-878,-Y-1464,-Z-146,-v-292,-w-146,-x-634,-y-292,-z-97,.C-732,.G-732,.J-48,.O-732,.Q-732"
+            + ",.S-146,.T-1757,.U-292,.V-1562,.W-1416,.Y-1953,.c-195,.d-146,.e-195,.f-292,.g-48,.o-195,.q-146,."
+            + "t-634,.v-1025,.w-781,.y-1025,A&-48,A--390,AC-488,AG-488,AJ-97,AO-488,AQ-488,AS-48,AT-1416,AU-439"
+            + ",AV-1171,AW-1074,AX-341,AY-1611,Ac-146,Ad-97,Ae-146,Af-97,Ag-48,Ao-146,Aq-97,At-439,Au-97,Av-634"
+            + ",Aw-585,Ax-97,Ay-634,BA-97,BT-97,BV-195,BW-146,BX-390,BY-488,C,-292,C.-292,CA-341,CT-341,CV-439,"
+            + "CW-390,CX-878,CY-683,D&-146,D,-634,D.-683,DA-585,DJ-195,DS-48,DT-781,DV-537,DW-488,DX-976,DY-878"
+            + ",DZ-195,Da-48,Dx-48,EC-97,EG-97,EO-97,EQ-97,Ec-48,Ed-48,Ee-48,Eg-48,Eo-48,Eq-48,F&-634,F,-1562,F"
+            + "--97,F.-1562,FA-976,FC-195,FG-195,FJ-1025,FO-195,FQ-195,FS-48,Fa-341,Fc-585,Fd-390,Fe-585,Ff-48,"
+            + "Fg-390,Fm-390,Fn-390,Fo-585,Fp-390,Fq-390,Fr-390,Fs-195,Ft-48,Fu-341,Fv-244,Fw-195,Fx-244,Fy-244"
+            + ",Fz-195,GT-537,GV-341,GW-341,GX-97,GY-781,J,-195,J.-195,JA-292,JX-48,K&-97,K--830,KA-195,KC-781,"
+            + "KG-781,KJ-97,KO-781,KQ-781,KS-97,KY-97,Ka-48,Kc-292,Kd-244,Ke-292,Kf-146,Kg-146,Ko-292,Kq-244,Kt"
+            + "-292,Ku-97,Kv-488,Kw-439,Kx-97,Ky-488,L--439,LC-488,LG-488,LO-488,LQ-488,LS-48,LT-1757,LU-146,LV"
+            + "-1123,LW-1074,LY-1855,Lc-48,Ld-48,Le-48,Lf-97,Lo-48,Lq-48,Lt-292,Lv-732,Lw-585,Ly-634,O&-146,O,-"
+            + "732,O.-732,OA-488,OJ-97,OT-732,OV-585,OW-537,OX-976,OY-927,P&-634,P,-1562,P--97,P.-1562,PA-1074,"
+            + "PJ-1464,PX-634,PY-292,Pa-97,Pc-195,Pd-97,Pe-195,Pg-97,Po-195,Pq-97,Q&-146,Q,-244,Q.-732,QA-244,Q"
+            + "J-97,QT-732,QV-585,QW-537,QX-781,QY-927,RA-48,RC-97,RG-97,RJ-48,RO-97,RQ-97,RT-195,RU-48,RV-244,"
+            + "RW-195,RX-146,RY-488,SV-146,SW-146,SX-537,SY-390,T&-683,T,-1757,T--1660,T.-1757,TA-1416,TC-732,T"
+            + "G-732,TJ-2050,TO-732,TQ-732,TT585,Ta-1757,Tc-2050,Td-1806,Te-2050,Tf-683,Tg-1806,Tm-1464,Tn-1464"
+            + ",To-2050,Tp-1464,Tq-1806,Tr-1464,Ts-1660,Tt-537,Tu-1464,Tv-1318,Tw-1220,Tx-1269,Ty-1318,Tz-1025,"
+            + "U,-292,U.-292,UA-439,UJ-97,UX-97,V&-683,V,-1562,V--878,V.-1562,VA-1171,VC-585,VG-585,VJ-1367,VO-"
+            + "585,VQ-585,VS-97,Va-927,Vc-1220,Vd-1074,Ve-1220,Vf-292,Vg-1074,Vm-683,Vn-683,Vo-1220,Vp-683,Vq-1"
+            + "074,Vr-683,Vs-927,Vt-244,Vu-683,Vv-195,Vw-195,Vx-292,Vy-195,Vz-488,W&-537,W,-1416,W--732,W.-1416"
+            + ",WA-1074,WC-537,WG-537,WJ-1220,WO-537,WQ-537,WS-97,WX-48,Wa-781,Wc-1074,Wd-976,We-1074,Wf-341,Wg"
+            + "-1074,Wm-683,Wn-683,Wo-1074,Wp-683,Wq-976,Wr-683,Ws-781,Wt-97,Wu-683,Wv-537,Ww-439,Wx-244,Wy-537"
+            + ",Wz-488,X&-341,X--878,XA-341,XC-976,XG-976,XJ-488,XO-976,XQ-976,XS-537,XU-97,XW-48,XY-97,Xa-341,"
+            + "Xc-683,Xd-634,Xe-683,Xf-634,Xg-585,Xo-683,Xq-634,Xs-292,Xt-585,Xu-537,Xv-781,Xw-683,Xx-97,Xy-781"
+            + ",Y&-878,Y,-1953,Y--1464,Y.-1953,YA-1611,YC-927,YG-927,YJ-1953,YO-927,YQ-927,YS-341,YX-97,Ya-1562"
+            + ",Yc-1904,Yd-1904,Ye-1904,Yf-390,Yg-1904,Ym-1220,Yn-1220,Yo-1904,Yp-1220,Yq-1904,Yr-1220,Ys-1660,"
+            + "Yt-488,Yu-1269,Yv-878,Yw-781,Yx-976,Yy-878,Yz-927,Z&-48,Z--146,Zc-292,Zd-195,Ze-292,Zo-292,Zq-19"
+            + "5,aC-146,aG-146,aO-146,aQ-146,aT-1660,aU-48,aV-1171,aW-1074,aX-146,aY-1757,ac-146,ad-48,ae-146,a"
+            + "f-48,ag-48,ao-146,aq-48,at-244,au-48,av-292,aw-292,ax-146,ay-292,b,-195,b.-195,bA-244,bT-1806,bV"
+            + "-1074,bW-976,bX-634,bY-1855,ba-48,bf-146,bj-48,bt-244,bv-292,bw-195,bx-439,by-292,bz-341,cA-146,"
+            + "cT-1855,cV-1025,cW-976,cY-1708,ct-48,cv-48,cw-48,cx-292,cy-48,cz-48,eA-97,eT-1904,eV-1171,eW-102"
+            + "5,eX-634,eY-1855,ef-97,et-97,ev-244,ew-146,ex-488,ey-244,ez-195,f*195,f,-781,f--341,f.-781,fA-53"
+            + "7,fa-146,fc-292,fd-195,fe-292,ff-1464,fg-195,fl-634,fo-292,fq-195,gT-1464,gV-683,gW-683,gY-1220,"
+            + "hT-1464,hV-683,hW-683,hY-1220,ht-48,hv-48,hw-48,hx-48,hy-48,k--830,kC-97,kG-97,kO-97,kQ-97,kT-58"
+            + "5,kV-439,kW-195,kY-878,ka-48,kc-390,kd-292,ke-390,kg-195,ko-390,kq-292,ks-48,ku-48,kv-48,ky-48,l"
+            + " 195,mT-1464,mV-683,mW-683,mY-1220,mt-48,mv-48,mw-48,mx-48,my-48,nT-1464,nV-683,nW-683,nY-1220,n"
+            + "t-48,nv-48,nw-48,nx-48,ny-48,o,-195,o.-195,oA-292,oT-1953,oV-1220,oW-1074,oX-683,oY-1904,oa-48,o"
+            + "f-146,ot-146,ov-292,ow-244,ox-537,oy-292,oz-390,p,-195,p.-195,pA-244,pT-1806,pV-1074,pW-976,pX-6"
+            + "34,pY-1855,pa-48,pf-146,pj-48,pt-244,pv-292,pw-195,px-439,py-292,pz-341,qT-1464,qV-683,qW-683,qY"
+            + "-1220,r&-195,r,-1074,r--97,r.-1074,rA-732,rT-488,rV-146,rW-97,rX-390,rY-732,ra-97,rc-244,rd-292,"
+            + "re-244,rg-292,ro-244,rq-292,sA-48,sT-1611,sV-1025,sW-781,sX-244,sY-1611,sc-48,se-48,so-48,sv-48,"
+            + "sw-48,sx-244,sy-48,sz-97,t--292,tC-97,tG-97,tO-97,tQ-97,tT-537,tV-341,tW-195,tY-781,ta-48,tc-341"
+            + ",td-146,te-341,tf-97,tg-97,to-341,tq-146,tv-48,ty-48,uT-1464,uV-683,uW-683,uY-1220,v&-97,v,-1025"
+            + ",v--292,v.-1025,vA-634,vT-1318,vV-195,vW-537,vX-781,vY-878,va-244,vc-292,vd-244,ve-292,vg-195,vo"
+            + "-292,vq-244,vs-48,w&-97,w,-781,w--146,w.-781,wA-585,wT-1220,wV-195,wW-439,wX-683,wY-781,wa-146,w"
+            + "c-244,wd-195,we-244,wg-195,wo-244,wq-195,ws-48,x&-97,x--878,xA-97,xT-1269,xV-292,xW-244,xX-97,xY"
+            + "-976,xa-292,xc-537,xd-439,xe-537,xg-390,xo-537,xq-439,xs-244,y&-97,y,-1025,y--292,y.-1025,yA-634"
+            + ",yT-1318,yV-195,yW-537,yX-781,yY-878,ya-195,yc-292,yd-244,ye-292,yg-244,yo-292,yq-244,ys-48,z&-4"
+            + "8,z--97,zT-1025,zV-488,zW-488,zY-927,za-146,zc-390,zd-244,ze-390,zg-244,zo-390,zq-244,zs-97,";
+    }
+    private static String Gurmukhi_MN_0_3_kerning() {
+        return "fi976,";
+    }
+    private static String Gurmukhi_MN_0_6_kerning() {
+        return "fi-48,";
+    }
+    private static String Helvetica_0_3_kerning() {
+        return " A-5468, T-1757, Y-1757,11-7373,A -5468,AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,"
+            + "F,-11083,F.-11083,FA-5468,L -3662,LT-7373,LV-7373,LW-7373,LY-7373,Ly-3662,P -1757,P,-12890,P.-12"
+            + "890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T -1757,T,-11083,T--5468,T.-11083,T:-11083,T;-11083,"
+            + "TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-"
+            + "5468,V,-9179,V--5468,V.-9179,V:-3662,V;-3662,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-3662,Vu-"
+            + "3662,Vy-3662,W,-5468,W--1757,W.-5468,W:-1757,W;-1757,WA-3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-"
+            + "1757,Wy-878,Y -1757,Y,-12890,Y--9179,Y.-12890,Y:-5468,Y;-6494,YA-7373,Ya-7373,Ye-9179,Yi-3662,Yo"
+            + "-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,r,-5468,r.-5468,v,-7373,v.-7373,w,-5468,w.-5468,y,"
+            + "-7373,y.-7373,";
+    }
+    private static String Helvetica_0_6_kerning() {
+        return " A-3662, Y-1757,11-5468,A -3662,AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,F,-11083"
+            + ",F.-11083,FA-5468,L -1757,LT-7373,LV-7373,LW-5468,LY-9179,Ly-3662,P -1757,P,-12890,P.-12890,PA-7"
+            + "373,RV-1757,RW-1757,RY-3662,T,-11083,T--5468,T.-11083,T:-11083,T;-11083,TA-7373,TO-1757,Ta-7373,"
+            + "Tc-7373,Te-7373,Ti-1757,To-7373,Tr-5468,Ts-7373,Tu-7373,Tw-7373,Ty-7373,V,-9179,V--5468,V.-9179,"
+            + "V:-5468,V;-5468,VA-7373,Va-5468,Ve-5468,Vi-1757,Vo-7373,Vr-5468,Vu-3662,Vy-3662,W,-5468,W--1953,"
+            + "W.-5468,W:-1757,W;-1757,WA-5468,Wa-3662,We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,Y -1757,Y"
+            + ",-11083,Y--5468,Y.-11083,Y:-7373,Y;-7373,YA-9179,Ya-5468,Ye-5468,Yi-3662,Yo-7373,Yp-5468,Yq-7373"
+            + ",Yu-5468,Yv-5468,r,-5468,r.-5468,v,-7373,v.-7373,w,-3662,w.-3662,y,-7373,y.-7373,";
+    }
+    private static String Helvetica_Neue_0_3_kerning() {
+        return "AT-9199,AV-4600,AW-2400,AY-7400,Av-1799,Aw-1799,Ay-1799,F,-15700,F.-15700,FA-5500,LT-9199,LV-919"
+            + "9,LW-5500,LY-11100,Ly-3699,P,-17899,P.-17899,PA-7400,RT-1799,RV-1799,RW-1799,RY-3699,T,-11100,T-"
+            + "-12899,T.-11100,T:-11100,T;-11100,TA-9199,Ta-11100,Tc-11100,Te-11100,To-11100,Tr-9199,Ts-11100,T"
+            + "u-9199,Tw-11100,Ty-11100,V,-12899,V--5500,V.-12899,V:-4600,V;-4600,VA-4600,Va-5500,Ve-5500,Vi-17"
+            + "99,Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-7400,W.-7400,W:-1799,W;-1799,WA-2400,Wa-3699,We-5700,Wo-57"
+            + "00,Wr-1799,Wu-1799,Y,-13899,Y--11100,Y.-13899,Y:-9199,Y;-9199,YA-7400,Ya-9199,Ye-11100,Yi-3699,Y"
+            + "o-11100,Yp-7400,Yq-9199,Yu-7400,Yv-5500,ff-1500,r,-9199,r--5500,r.-9199,rc-1799,rd-1799,re-1799,"
+            + "rg-2799,rn1799,ro-1799,rq-1799,v,-7400,v.-7400,w,-5500,w.-5500,y,-7400,y.-7400,";
+    }
+    private static String Helvetica_Neue_1_3_kerning() {
+        return "AT-9199,AV-4600,AW-2400,AY-7400,Av-1799,Aw-1799,Ay-1799,F,-15700,F.-15700,FA-5500,LT-9199,LV-919"
+            + "9,LW-5500,LY-11100,Ly-3699,P,-17899,P.-17899,PA-7400,RT-1799,RV-1799,RW-1799,RY-3699,T,-11100,T-"
+            + "-12899,T.-11100,T:-11100,T;-11100,TA-9199,Ta-11100,Tc-11100,Te-11100,To-11100,Tr-9199,Ts-11100,T"
+            + "u-9199,Tw-11100,Ty-11100,V,-12899,V--5500,V.-12899,V:-4600,V;-4600,VA-4600,Va-5500,Ve-5500,Vi-17"
+            + "99,Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-7400,W.-7400,W:-1799,W;-1799,WA-2400,Wa-3699,We-5700,Wo-57"
+            + "00,Wr-1799,Wu-1799,Y,-13899,Y--11100,Y.-13899,Y:-9199,Y;-9199,YA-7400,Ya-9199,Ye-11100,Yi-3699,Y"
+            + "o-11100,Yp-7400,Yq-9199,Yu-7400,Yv-5500,ff-1500,fi99,fl99,r,-9199,r--5500,r.-9199,rc-1799,rd-179"
+            + "9,re-1799,rg-2799,rn1799,ro-1799,rq-1799,v,-7400,v.-7400,w,-5500,w.-5500,y,-7400,y.-7400,";
+    }
+    private static String Helvetica_Neue_0_6_kerning() {
+        return "AT-9199,AV-4600,AW-2400,AY-7400,Av-1799,Aw-1799,Ay-1799,F,-15700,F.-15700,FA-5500,LT-9199,LV-919"
+            + "9,LW-5500,LY-11100,Ly-3699,P,-17899,P.-17899,PA-7400,RT-1799,RV-1799,RW-1799,RY-3699,T,-11100,T-"
+            + "-12899,T.-11100,T:-11100,T;-11100,TA-9199,Ta-11100,Tc-11100,Te-11100,To-11100,Tr-9199,Ts-11100,T"
+            + "u-9199,Tw-11100,Ty-11100,V,-12899,V--5500,V.-12899,V:-4600,V;-4600,VA-4600,Va-5500,Ve-5500,Vi-17"
+            + "99,Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-7400,W.-7400,W:-1799,W;-1799,WA-2400,Wa-3699,We-5700,Wo-57"
+            + "00,Wr-1799,Wu-1799,Y,-13899,Y--11100,Y.-13899,Y:-9199,Y;-9199,YA-7400,Ya-9199,Ye-11100,Yi-3699,Y"
+            + "o-11100,Yp-7400,Yq-9199,Yu-7400,Yv-5500,ff-3000,fi1999,fl1999,r,-9199,r--5500,r.-9199,rc-1799,rd"
+            + "-1799,re-1799,rg-2799,rn1799,ro-1799,rq-1799,v,-7400,v.-7400,w,-5500,w.-5500,y,-7400,y.-7400,";
+    }
+    private static String Helvetica_Neue_1_6_kerning() {
+        return "AT-9199,AV-4600,AW-2400,AY-7400,Av-1799,Aw-1799,Ay-1799,F,-15700,F.-15700,FA-5500,LT-9199,LV-919"
+            + "9,LW-5500,LY-11100,Ly-3699,P,-17899,P.-17899,PA-7400,RT-1799,RV-1799,RW-1799,RY-3699,T,-11100,T-"
+            + "-12899,T.-11100,T:-11100,T;-11100,TA-9199,Ta-11100,Tc-11100,Te-11100,To-11100,Tr-9199,Ts-11100,T"
+            + "u-9199,Tw-11100,Ty-11100,V,-12899,V--5500,V.-12899,V:-4600,V;-4600,VA-4600,Va-5500,Ve-5500,Vi-17"
+            + "99,Vo-5500,Vr-3699,Vu-3699,Vy-1799,W,-7400,W.-7400,W:-1799,W;-1799,WA-2400,Wa-3699,We-5700,Wo-57"
+            + "00,Wr-1799,Wu-1799,Y,-13899,Y--11100,Y.-13899,Y:-9199,Y;-9199,YA-7400,Ya-9199,Ye-11100,Yi-3699,Y"
+            + "o-11100,Yp-7400,Yq-9199,Yu-7400,Yv-5500,ff-6800,r,-9199,r--5500,r.-9199,rc-1799,rd-1799,re-1799,"
+            + "rg-2799,rn1799,ro-1799,rq-1799,v,-7400,v.-7400,w,-5500,w.-5500,y,-7400,y.-7400,";
+    }
+    private static String Herculanum_0_3_kerning() {
+        return " A-3699, T-3699, V-12899, W-3699, Y-20000,AV-7400,AY-17400,DV-7400,DY-11100,F,-7400,F.-7400,LV-7"
+            + "400,LY-17400,OV-7400,OY-7400,P,-7400,P.-7400,RY-7400,T--12899,V,-7400,V.-7400,W,-7400,W.-7400,Y,"
+            + "-7400,Y.-7400,ag-5500,at-3699,av-7400,aw-4499,ay-4499,f,-7400,f.-7400,p,-7400,p.-7400,r--12899,r"
+            + "c-9199,rd-9199,re-9199,rg-9199,ri-11100,rk-9199,rl-9199,rm-5500,rn-7400,ro-12899,rp-11100,rq-200"
+            + "00,rr-7400,rt-12899,ru-12899,rv-12899,ry-12899,v,-7400,v.-7400,w,-7400,w.-7400,y,-7400,y.-7400,";
+    }
+    private static String Hiragino_Maru_Gothic_ProN_0_3_kerning() {
+        return "-T-8000,-Y-8999,:T-8000,:Y-6000,;T-8000,;Y-6999,AT-11999,AV-6999,AW-5000,AY-11000,DT-6000,DY-600"
+            + "0,DZ-6000,F,-10000,F.-11000,FA-8999,FJ-10000,Fx-5000,Fz-6000,GY-5000,Kt-5000,Kv-6000,Kw-5000,Ky-"
+            + "6000,L--11999,LC-5000,LG-5000,LO-5000,LQ-5000,LT-11000,LV-11000,LW-8000,LY-11999,Lv-6999,Lw-5000"
+            + ",Ly-6999,OT-6000,OY-6000,OZ-5000,P,-11999,P.-11999,PA-6999,PJ-8999,PZ-5000,QT-5000,QY-6000,T,-89"
+            + "99,T--8000,T.-10000,T:-6999,T;-6999,TA-11999,TC-6000,TG-6000,TJ-11000,TO-6000,TQ-5000,Ta-8999,Tc"
+            + "-8999,Td-11000,Te-8999,Tf-5000,Tg-8999,Tm-8999,Tn-8999,To-8999,Tp-8999,Tq-8999,Tr-8999,Ts-8999,T"
+            + "u-8999,Tv-11000,Tw-10000,Tx-11000,Ty-11000,Tz-11999,V,-8000,V.-8999,VA-6999,VJ-8999,Va-5000,Vc-5"
+            + "000,Vd-5000,Ve-5000,Vg-5000,Vo-5000,Vq-5000,Vr-5000,Vs-5000,Vu-5000,W,-6000,W.-6000,WA-6000,WJ-6"
+            + "000,Xf-5000,Xt-5000,Xv-5000,Xy-5000,Y,-10000,Y--8999,Y.-11000,Y:-6000,Y;-6000,YA-11000,YC-6000,Y"
+            + "G-6000,YJ-11000,YO-6000,YQ-6000,Ya-8000,Yc-8000,Yd-8000,Ye-8000,Yf-5000,Yg-8000,Ym-6999,Yn-6999,"
+            + "Yo-8000,Yp-6999,Yq-8000,Yr-8000,Ys-8000,Yt-5000,Yu-6999,Yv-5000,Yw-5000,Yx-6000,Yy-5000,Yz-6000,"
+            + "Z--11000,ZC-6000,ZG-6000,ZO-6000,ZQ-6000,Zf-5000,Zt-5000,Zv-6000,Zw-6000,Zy-6000,ff-7100,fl99,r,"
+            + "-8000,r--6000,r.-8000,";
+    }
+    private static String Hiragino_Mincho_ProN_0_3_kerning() {
+        return "-T-5000,-X-6000,-Y-8999,:Y-6000,;Y-6000,AC-5000,AG-5000,AO-5000,AQ-5000,AT-6000,AU-6000,AV-10000"
+            + ",AW-8000,AY-6999,Av-5000,Aw-5000,Ay-5000,DA-6000,DV-6000,DX-6000,DY-6000,F,-8000,F.-8000,FA-6999"
+            + ",FJ-6999,JA-5000,K--6000,KC-6000,KG-6000,KO-6000,KQ-6000,Kv-8000,Kw-6000,Ky-8000,LT-6000,LV-8000"
+            + ",LW-6000,LY-8000,OA-6000,OV-6000,OX-6000,OY-6000,P,-11000,P.-11000,PA-8999,PJ-8000,QA-5000,QV-60"
+            + "00,QX-5000,QY-6999,T,-8000,T--5000,T.-8000,TA-6000,TJ-6000,Tc-5000,Td-5000,Te-5000,To-5000,Tq-50"
+            + "00,UA-6999,UJ-5000,V,-11000,V--5000,V.-11000,VA-11000,VC-6000,VG-6000,VJ-5000,VO-6000,VQ-6999,Va"
+            + "-6999,Vc-6999,Vd-8000,Ve-6999,Vg-6999,Vm-5000,Vn-5000,Vo-6999,Vp-5000,Vq-6999,Vr-5000,Vs-6999,Vt"
+            + "-6000,Vu-5000,Vx-5000,Vz-6999,W,-8000,W.-8000,WA-10000,WC-5000,WG-5000,WJ-5000,WO-5000,WQ-5000,W"
+            + "a-5000,Wc-5000,Wd-6000,We-5000,Wg-5000,Wo-5000,Wq-5000,Wt-5000,Wz-6000,X--6000,XC-5000,XG-5000,X"
+            + "O-6000,XQ-5000,Xv-8000,Xw-6000,Xy-8000,Y,-10000,Y--8999,Y.-10000,Y:-6999,Y;-6999,YA-8000,YC-6000"
+            + ",YG-6999,YJ-5000,YO-6000,YQ-6999,Ya-8999,Yc-8999,Yd-10000,Ye-8999,Yg-8999,Ym-8000,Yn-8000,Yo-899"
+            + "9,Yp-6999,Yq-8999,Yr-8000,Ys-8999,Yt-8000,Yu-6999,Yv-6999,Yw-6999,Yx-6999,Yy-6999,Yz-8999,ff-429"
+            + "9,fi-4499,fl-4600,r,-6000,r.-6000,v,-6000,v.-6000,w,-5000,w.-5000,y,-6000,y.-6000,";
+    }
+    private static String Hiragino_Sans_0_3_kerning() {
+        return "-T-6000,-Y-6999,:T-6000,:Y-6000,;T-6000,;Y-5000,AT-11000,AV-6999,AW-6000,AY-10000,BY-5000,CX-500"
+            + "0,CY-5000,DX-5000,DY-6000,DZ-6000,F,-10000,F.-10000,FA-8000,FJ-10000,Fx-6000,GY-5000,K--5000,KC-"
+            + "6000,KG-6000,KO-6000,KQ-6000,KS-5000,Kc-5000,Kd-5000,Ke-5000,Kg-5000,Ko-5000,Kq-5000,Kt-6000,Kv-"
+            + "8000,Kw-6000,Ky-8000,L--11999,LT-10000,LV-10000,LW-6999,LY-11000,Lv-6000,Ly-6999,OX-5000,OY-6000"
+            + ",OZ-5000,P,-10000,P.-10000,PA-6000,PJ-8000,QT-5000,QY-6999,RY-5000,SY-5000,T,-8000,T--6000,T.-89"
+            + "99,T:-6000,T;-6000,TA-10000,TJ-11000,TQ-5000,Ta-10000,Tc-8999,Td-8999,Te-8999,Tg-8999,Tm-8999,Tn"
+            + "-8999,To-8999,Tp-8999,Tq-8999,Tr-8999,Ts-8999,Tu-8999,Tv-11000,Tw-8999,Tx-11000,Ty-11000,Tz-1100"
+            + "0,V,-8000,V.-8000,VA-8000,VJ-8999,Va-6000,Vc-5000,Vd-5000,Ve-5000,Vg-5000,Vm-5000,Vn-5000,Vo-500"
+            + "0,Vp-5000,Vq-5000,Vr-5000,Vs-6000,Vu-5000,W,-5000,W.-5000,WA-6000,WJ-6000,XC-5000,XG-5000,XO-500"
+            + "0,XQ-5000,XS-5000,Xt-6000,Xv-6000,Xw-5000,Xy-6999,Y,-10000,Y--6999,Y.-10000,Y:-6000,Y;-5000,YA-1"
+            + "0000,YC-6000,YG-6000,YJ-11000,YO-6000,YQ-6999,YS-5000,Ya-8999,Yc-8000,Yd-8000,Ye-8000,Yg-8000,Ym"
+            + "-8000,Yn-8000,Yo-8000,Yp-8000,Yq-8000,Yr-8000,Ys-8999,Yu-8000,Yv-5000,Yw-5000,Yx-6000,Yy-5000,Yz"
+            + "-6000,Z--10000,ZC-5000,ZG-5000,ZO-5000,ZQ-5000,Zv-6000,Zw-5000,Zy-5000,ff-9700,fi-3500,fl-3300,r"
+            + ",-8000,r--6000,r.-8000,y,-5000,";
+    }
+    private static String Hiragino_Sans_0_6_kerning() {
+        return "-T-6999,-X-5000,-Y-6999,:T-5000,;T-5000,AT-11000,AV-6999,AW-6000,AY-11000,Ay-5000,BY-5000,CX-500"
+            + "0,CY-5000,DX-5000,DY-6000,F,-8000,F.-8000,FA-6999,FJ-8999,Fx-6000,GY-5000,K--5000,KC-6000,KG-600"
+            + "0,KO-6000,KQ-6000,KS-5000,Kc-5000,Kd-5000,Ke-5000,Kg-6000,Ko-5000,Kq-5000,Kt-6000,Kv-8000,Kw-600"
+            + "0,Ky-8000,L--6000,LT-10000,LV-10000,LW-6999,LY-11999,Lv-6000,Ly-6999,OX-5000,OY-6999,P,-8999,P.-"
+            + "8999,PA-6000,PJ-8000,PX-5000,QY-6999,RV-5000,RY-6000,SY-5000,T,-8000,T--6999,T.-8000,T:-5000,T;-"
+            + "5000,TA-11000,TJ-11000,Ta-10000,Tc-8999,Td-8999,Te-8999,Tg-8999,Tm-8000,Tn-8000,To-8999,Tp-8000,"
+            + "Tq-8999,Tr-8999,Ts-8999,Tu-8999,Tv-11000,Tw-10000,Tx-11000,Ty-11000,Tz-11000,V,-6999,V.-6999,VA-"
+            + "6999,VJ-8999,Va-5000,Vc-5000,Vd-5000,Ve-5000,Vg-5000,Vo-5000,Vq-5000,Vs-5000,WA-6000,WJ-6000,X--"
+            + "5000,XC-5000,XG-5000,XO-5000,XQ-5000,XS-5000,Xc-5000,Xd-5000,Xe-5000,Xg-5000,Xo-5000,Xq-5000,Xt-"
+            + "6000,Xv-6999,Xw-6000,Xy-6999,Y,-10000,Y--6999,Y.-10000,YA-11000,YC-6999,YG-6000,YJ-11999,YO-6999"
+            + ",YQ-6999,YS-5000,Ya-8999,Yc-8999,Yd-8999,Ye-8999,Yg-8999,Ym-6999,Yn-6999,Yo-8999,Yp-6999,Yq-8999"
+            + ",Yr-6999,Ys-8999,Yu-6999,Yv-5000,Yw-5000,Yx-6000,Yz-6000,Z--6000,ff-11400,fi-3200,fl-3300,r,-899"
+            + "9,r--6999,r.-8999,y,-5000,y.-5000,";
+    }
+    private static String Hoefler_Text_0_3_kerning() {
+        return " A-5000, T-5000, V-5000, W-5000, X-5000, Y-5000,&T-9199,&V-9900,&W-8099,&X-6199,&Y-11799,'d-7299"
+            + ",'s-4299,'t-3600,,7-1999,-A-6000,-T-6000,-V-6999,-W-6999,-X-8999,-Y-8999,-s1499,-t1499,-v-1300,-"
+            + "w-899,-x-2400,.7-1999,0,-2500,0.-2500,5,-3000,5.-3000,7,-6999,7.-6999,74-4100,A -5000,A\"-15200,A"
+            + "'-15200,A--5000,AC-3500,AG-3500,AO-3500,AQ-3500,AT-7599,AU-5200,AV-10899,AW-9799,AY-10399,Ab-259"
+            + "9,Ac-5000,Ad-5000,Ae-5000,Ao-5000,Aq-5000,At-5000,Au-5000,Av-6300,Aw-6300,Ay-5700,B-1999,Ca-1000"
+            + ",Cr-1000,Cu-1000,Cy-2500,D,-8399,D.-8399,DA-3899,DV-4499,DW-6100,DY-6900,Ef-3200,Ev-1499,Ew-1499"
+            + ",Ey-1499,F\"3500,F'3500,F,-10000,F.-10000,F:-3999,F;-3999,FA-4499,Fa-6499,Fe-5299,Fi-4400,Fo-5299"
+            + ",Fr-7100,Fu-5200,Fy-4400,G\"-2700,G'-2700,G,-6300,G.-6300,Ga-1000,Gh-1499,Gi-1600,Gl-1499,Gr-1499"
+            + ",Gu-2100,Gy-899,Ha-3000,He-3600,Hi-1499,Ho-3600,Hu-3800,Hy-4499,Ia-5200,Ic-6100,Id-6699,Ie-6699,"
+            + "If-6699,Ig-4799,Ii-3699,Ij-5299,Im-4100,In-4100,Io-6100,Ip-2700,Ir-4100,Is-5200,It-5099,Iu-6100,"
+            + "Iv-6799,Iw-5000,Iz-3200,J,-6999,J.-6999,JA-2299,Ja-5200,Je-4799,Ji-5099,Jo-4799,Ju-5200,K\"-3200,"
+            + "K'-3200,K--8000,KC-9100,KG-7200,KO-9400,KT-3600,KU-3600,Ka-1600,Ke-4700,Ko-4700,Ku-4700,Kw-8899,"
+            + "Ky-9199,L\"-20500,L'-20500,LT-9100,LV-7700,LW-7700,LY-10000,Ly-2799,Ma-4199,Mc-4199,Md-4199,Me-33"
+            + "00,Mo-4199,Mu-3000,My-4199,Na-4799,Ne-5399,Ng-5000,Ni-5099,Nn-3999,No-5099,Nu-4799,Ny-3600,O,-72"
+            + "99,O.-7299,OA-4199,OV-2500,OW-5500,OX-5599,OY-6399,P -1499,P,-18000,P.-18000,PA-4199,Pa-3200,Pd-"
+            + "4700,Pe-4700,Pg-4199,Pi-1900,Po-4700,Pr-3200,Ps-2899,Q,-7700,Q.-7700,QA-4199,R -4700,R\"-10399,R'"
+            + "-10399,R--8999,RC-6499,RG-6499,RO-5700,RQ-5700,RT-6399,RU-5500,RV-7700,RW-7700,RY-10800,Ra-1900,"
+            + "Rd-4499,Re-4499,Ro-4499,Rt-5500,Ru-6399,Rw-8000,Ry-7500,S,-1999,S.-1999,T -5000,T&-5099,T,-14299"
+            + ",T--6000,T.-14299,T:-14299,T;-14299,TA-5399,TT3000,Ta-11600,Tc-11199,Te-13200,Ti-4100,To-11199,T"
+            + "r-16600,Ts-10599,Tu-11600,Tw-13200,Ty-12200,Tz-10599,U,-11699,U.-11699,UA-7299,Ua-5700,Uc-6699,U"
+            + "d-6699,Ue-6699,Uf-5800,Ug-6399,Ui-5299,Um-5800,Un-5800,Uo-6100,Up-5800,Ur-5800,Us-5800,Ut-5800,U"
+            + "v-5000,Uw-5399,Ux-6399,Uy-5200,Uz-8000,V -5000,V&-11799,V,-16999,V--6000,V.-16999,V:-13500,V;-13"
+            + "500,VA-12500,VC-2799,VG-2799,VO-2500,VQ-2500,Va-15700,Vd-15899,Ve-15899,Vi-8699,Vo-15899,Vr-1559"
+            + "9,Vs-15599,Vt-13200,Vu-12899,Vy-11999,W -5000,W&-9600,W,-16799,W--6000,W.-16799,W:-14100,W;-1410"
+            + "0,WA-12299,WC-5500,WG-4499,WO-3999,WQ-4499,Wa-15700,Wd-16199,We-16199,Wi-8999,Wm-14400,Wn-14400,"
+            + "Wo-16199,Wr-14400,Wt-12799,Wu-13200,Wy-11399,X -5000,X&-2500,X--8999,XC-7299,XG-6600,XO-7299,XQ-"
+            + "7299,Xa-2599,Xe-6999,Xu-6600,Xy-9600,Y -5000,Y&-11100,Y,-15800,Y--8999,Y.-15800,Y:-16100,Y;-1610"
+            + "0,YA-9700,YC-5299,YG-4600,YO-4700,YQ-4700,Ya-18699,Yc-18899,Yd-18899,Ye-18899,Yi-8000,Yo-18899,Y"
+            + "p-14499,Yq-18899,Yr-14499,Ys-15500,Yt-16000,Yu-16100,Yv-15500,af-1000,ag2500,as1000,av1499,b\"-53"
+            + "99,b'-5399,c--2599,ce-1000,co-1000,ev1000,ew1000,f!8000,f\"11100,f'11100,f,-5099,f.-5099,f?10000,"
+            + "fb-1399,ff-5400,fh-1000,fi-3100,fj399,fk-200,fl-899,fr1499,g-3000,gg3000,h\"-3899,h'-3899,k--1100"
+            + "0,ke-3399,ko-3399,ll1000,ly1499,m\"-3899,m'-3899,n\"-3899,n'-3899,ov1000,ox-800,r\"2899,r'2899,r,-7"
+            + "200,r--6100,r.-7200,rn1000,rt1000,ru2500,rv3999,rw3999,rx3999,ry3999,s-1799,t--4400,te-1499,to-1"
+            + "499,v,-14700,v--2200,v.-14700,w,-13800,w--2599,w.-13800,wc-1499,wd-1499,we-899,wo-700,x--1799,y,"
+            + "-14400,y.-14400,yp2500,";
+    }
+    private static String Hoefler_Text_1_3_kerning() {
+        return " A-6000, T-5000, V-3999, W-3999, X-3999, Y-5000,&A-5000,&J5500,&Q5000,&V-1999,&W-1499,&X-6999,&Y"
+            + "-3999,&a-3999,&d-3000,&f6000,&n3999,&p1999,&q-3000,&r5000,&t6000,&u3999,&v3000,&w3000,&x1999,&y3"
+            + "000,&z3000,(B3999,(D3999,(E3999,(F3999,(H3999,(I3999,(J8000,(K3999,(L3999,(N5000,(P3999,(Q1000,("
+            + "R3999,(T6000,(U3999,(V3999,(W3999,(X3999,(Y5000,(Z3000,-A-11000,-C3000,-G3000,-I-1000,-J-4499,-M"
+            + "-3000,-O4499,-Q1999,-S500,-T-9499,-V-8999,-W-9499,-X-13999,-Y-15000,-Z-3000,25-1499,35-1999,36-1"
+            + "499,5,-3000,5.-3000,62-3000,681499,7,-6999,7.-6999,731499,74-5000,9,-3000,9.-3000,931000,A -3999"
+            + ",A)1999,A--3500,AC-6000,AG-6000,AO-3999,AQ-3999,AS-3500,AT-8000,AU-5500,AV-8000,AW-8000,AY-5000,"
+            + "Aa-3000,Ab-3000,Ac-5500,Ad-4499,Ae-5500,Af-8000,Ag-5500,Ah-3999,Ai-3500,Aj-6000,Ak-3999,Al-3500,"
+            + "Am-3500,An-3500,Ao-5500,Ap-5000,Aq-3500,Ar-3999,As-3999,At-5000,Au-4499,Av-8999,Aw-9499,Ax-3500,"
+            + "Ay-7500,Az-3000,B)1999,B-3000,BJ1999,BM-1999,BV-1000,BW-1999,BX-1999,Bv-1999,Bw-1999,C)5000,C-14"
+            + "99,CJ3999,CZ1000,Cv-6000,Cw-6000,Cy-3000,D)-1999,D,-8999,D-3000,D.-8999,DA-7500,DB-1999,DD-1999,"
+            + "DE-1999,DF-1999,DH-1999,DI-1999,DK-1999,DL-1999,DM-4499,DN-1999,DP-1999,DR-1999,DT-1999,DU-1000,"
+            + "DV-6000,DW-6000,DX-6999,DY-2500,DZ-1999,Da-3500,Dd-2500,De-1000,E)3999,E-1000,EJ3000,EV-1000,EW-"
+            + "1000,EZ1000,Ef-2500,Ev-4499,Ew-4499,Ey-3000,F)5000,F,-15500,F--1000,F.-15500,F:-3000,F;-3000,FA-"
+            + "8500,FJ3999,FM-3000,Fa-8999,Fe-7500,Ff-3000,Fi-6999,Fj-6999,Fo-6999,Fr-5500,Fu-5000,Fy-3999,G)30"
+            + "00,G,-3000,G-5000,G.-3000,G:-1499,G;-1499,GA-1999,GM-1000,GV-1999,GW-1999,GX-1999,Ga-1999,H)3999"
+            + ",Ha-3500,He-5000,Hi-3999,Ho-3999,Hs-1999,Ht-2500,Hu-3500,Hy-3000,I)3999,Ia-6000,Ib-5000,Ic-6999,"
+            + "Id-6000,Ie-8000,If-6499,Ig-6499,Ih-3000,Ii-5500,Ij-5000,Ik-3000,Il-5000,Im-5000,In-5000,Io-6499,"
+            + "Ip-5000,Iq-6000,Ir-5000,Is-5000,It-5000,Iu-5500,Iv-8999,Iw-8999,Ix-6499,Iy-6499,Iz-5000,J,-8999,"
+            + "J-1000,J.-8999,J:-3000,J;-3000,JA-6000,JC-3000,JE-2500,JG-3000,JI-3999,JM-5000,JO-1499,JS-3999,J"
+            + "U-1999,JV-1999,JW-1999,JX-3000,JZ-1999,Ja-8500,Je-5500,Ji-3999,Jo-6499,Ju-3500,K&-5500,K)5000,K-"
+            + "-10500,KC-6499,KG-6499,KO-6499,KQ-3000,KS-1999,Ke-2500,Ko-1999,Kw-9499,Ky-6000,L)1999,L,1999,L--"
+            + "1499,L.1999,L:1999,L;1999,LC-1999,LG-1999,LJ-1000,LO-1000,LT-8999,LU-3000,LV-6999,LW-10000,LY-85"
+            + "00,La1499,Le1999,Lo1499,Lu1000,M)3000,M--1999,MC-1999,MG-1999,MQ-1000,MS-1000,MT-1000,Ma-3000,Mb"
+            + "-3000,Mc-4499,Md-3999,Me-5000,Mg-3999,Mi-3999,Mm-2500,Mo-4499,Mr-2500,Ms-1999,Mu-3999,My-5500,N)"
+            + "5500,N,-1999,N-1000,N.-1999,NA-3500,Na-3999,Ne-3500,Ng-5000,Ni-3500,No-3500,Nu-1999,Ny-1000,O,-8"
+            + "999,O-3500,O.-8999,OA-6000,OM-1999,OS-1000,OT-1999,OV-3500,OW-3000,OX-5000,Oa-3500,Ob-1999,Oc-25"
+            + "00,Od-1999,Oe-2500,Og-1999,Oh-1999,Oi-1999,Ok-1999,Ol-1999,Oq-1999,Os-3000,Ot-1499,Ox-2500,P)300"
+            + "0,P,-18000,P-3999,P.-18000,PA-8999,PJ5000,PM-3999,PQ3000,Pa-8500,Pd-6000,Pe-3999,Pg-3500,Pi-2500"
+            + ",Po-3999,Ps-2500,Q)1999,Q,-13000,Q-3000,Q.-13000,QA-6999,QM-3999,QR-1999,QS-1000,QT-1999,QU-1999"
+            + ",QV-3999,QW-3999,QX-5000,Qa-6000,Qe-4499,Qi-1999,Qo-3000,Qu-2500,R--7500,RC-6000,RG-6000,RJ-1999"
+            + ",RO-6000,RQ-3999,RS-5000,RT-5000,RU-6000,RV-8000,RW-8500,RY-4499,Re-4499,Ro-5500,Ru-2500,Ry-6999"
+            + ",S)1000,SA-1999,SC-1999,SG-1999,SM-1999,SS-1499,SV-1999,SW-1999,Sa-1000,Sb-500,Se-500,Sf-2500,Sg"
+            + "-1499,Sh-500,Si-1499,Sj-1499,Sk-500,Sl-500,Sm-1499,Sn-1499,So-500,Sp-1000,Sq-500,Sr-500,St-1999,"
+            + "Su-1000,Sv-3000,Sw-3000,Sy-1999,Sz-1499,T -5000,T&-5500,T)6000,T,-11999,T--9499,T.-11999,T:-1199"
+            + "9,T;-11999,TA-10000,TJ6999,TM-3000,TT3000,TY3999,Ta-13500,Tc-14499,Te-14499,Ti-6999,Tl-1999,To-1"
+            + "5500,Tr-11999,Ts-13500,Tu-13999,Tw-16999,Ty-15000,Tz-13300,U)6000,U,-10000,U.-10000,U:-5000,U;-5"
+            + "000,UA-8000,UC-1999,UG-1999,UJ1999,UM-1999,US-1499,Ua-8000,Ub-2500,Uc-6000,Ud-7500,Ue-6499,Uf-39"
+            + "99,Ug-6000,Ui-5500,Uj-5500,Ul-3999,Um-5500,Un-5000,Uo-6000,Up-6499,Uq-6499,Ur-3999,Us-7500,Ut-55"
+            + "00,Uu-3500,Uv-6499,Uw-6499,Ux-7500,Uy-5000,Uz-6000,V -5000,V&-11499,V)3000,V,-15500,V--13500,V.-"
+            + "15500,V:-15500,V;-15500,VA-20500,VC-6999,VG-6999,VM-3999,VO-5000,VQ-1999,VS-1999,Va-21499,Vc-194"
+            + "99,Vd-19499,Ve-17500,Vi-8999,Vl-1999,Vo-17500,Vr-13999,Vs-17500,Vt-11499,Vu-15000,Vy-13500,W -30"
+            + "00,W&-11499,W)3000,W,-15000,W--13000,W.-15000,W:-15000,W;-15000,WA-18999,WC-7500,WG-7500,WM-3999"
+            + ",WO-5000,WQ-1999,WS-3500,Wa-20000,Wd-16999,We-16999,Wi-8000,Wm-16000,Wn-13999,Wo-16999,Wr-13000,"
+            + "Ws-17500,Wt-12500,Wu-13999,Wy-11000,X&-6999,X)3999,X--15500,X=-5000,XC-6499,XG-6499,XO-5500,XQ-1"
+            + "499,XS-1999,Xa-1499,Xe-4400,Xu-2500,Xy-8999,Y -5000,Y&-12100,Y)3999,Y,-15000,Y--16000,Y.-15000,Y"
+            + ":-15000,Y;-15000,YA-13999,YC-1999,YG-1999,YJ3000,YM-5000,YO-1999,YT3000,Ya-16999,Yc-18999,Yd-180"
+            + "00,Ye-18000,Yg-18999,Yi-6499,Yo-18500,Yp-18000,Yq-17500,Yr-18000,Ys-17500,Yt-14499,Yu-17500,Yv-2"
+            + "0000,Z)3000,Z--5000,ZC-3000,ZG-3000,ZO-1999,ZQ-1999,ZV-1999,ZW-1999,Zi-1999,Zl-1999,Zv-7500,Zw-7"
+            + "500,Zy-4499,a,-3999,a.-3999,b,-8500,b.-8500,b:-1499,b;-1499,ba-1999,bd-1000,c,-5000,c.-5000,ca-1"
+            + "000,d*6000,e,-3000,e.-3000,e:-1000,e;-1000,f!8999,f*13999,f,-8500,f.-8500,f?8000,fa-3999,fb-2599"
+            + ",ff-5099,fh400,fi-5499,fj-8599,fk400,fl-3699,fr-4600,ft-4299,g,-5000,g.-5000,ga-1999,gg-1799,gn1"
+            + "999,gr1999,gy3500,h,-7500,h.-7500,h:-2500,h;-2500,ha-1999,i*3000,i,-3000,i.-3000,j*3000,j,-8000,"
+            + "j.-8000,j:-4499,j;-4499,l*6000,l,-3000,l.-3000,ll-3399,o,-4499,o.-4499,o:-3000,o;-3000,p,-5500,p"
+            + ".-5500,p:-2500,p;-2500,q,-6000,q.-6000,q:-500,q;-500,r*5000,r,-13500,r.-13500,ra-5500,rd-1999,rf"
+            + "3000,rn1999,rq-3000,ru1999,rv1999,rw1999,ry1999,s,-3000,s.-3000,t*5000,t,-3000,t.-3000,v,-7500,v"
+            + ".-7500,v:-1499,v;-1499,w,-7500,w.-7500,w:-1499,w;-1499,x,-1999,x.-1999,y,-8999,y.-8999,y:-3000,y"
+            + ";-3000,ya-3500,yc-1999,ye-1999,yi-2500,yo-2500,yq-2500,ys-1999,";
+    }
+    private static String Hoefler_Text_0_6_kerning() {
+        return " A-5000, T-5000, V-5000, W-5000, X-5000, Y-5000,&T-9199,&V-9900,&W-8099,&X-6199,&Y-7500,&c-1000,"
+            + "&d-1499,&e-1000,&o-1000,&s-500,,7-1999,-A-6000,-T-3000,-V-6999,-W-6999,-X-8999,-Y-8999,.7-1999,0"
+            + ",-2500,0.-2500,04-1999,40-1000,49-1300,5,-3000,5.-3000,55-1499,6,-2500,6.-2500,7,-6999,7.-6999,7"
+            + "4-4499,84-1999,85-1999,94-1300,A -5000,A--5000,AC-3500,AG-3500,AO-3500,AQ-3500,AT-7599,AU-5200,A"
+            + "V-10899,AW-9799,AY-8000,Ab-2599,Ac-5000,Ad-5000,Ae-5000,Ao-5000,Aq-5000,At-5000,Au-5000,Av-6300,"
+            + "Aw-6300,Ay-5700,B&3500,B-1999,BA-1000,BJ-1499,BW-1499,C&1999,Ca-1000,Co-1000,Cr-1000,Cu-1000,Cy-"
+            + "2500,D,-8399,D.-8399,DA-3899,DV-5500,DW-5000,DY-3500,E&3999,ES2500,Ef-1999,Eq-1999,F&-1000,F,-10"
+            + "000,F.-10000,F:-3999,F;-3999,FA-10500,FO-1000,Fa-6499,Fe-11499,Ff-6499,Fi-4400,Fj-3500,Fo-11499,"
+            + "Fr-7100,Fu-5200,Fy-4400,G&3500,G,-3999,G.-3999,Ga-1000,Gy-899,Ha-3000,He-6000,Hi-1499,Ho-6000,Hs"
+            + "-4499,Hu-3800,Hy-4499,Ia-3000,Ic-5500,Id-6000,Ie-5500,If-6699,Ig-5000,Ij-5000,Im-4100,In-4100,Io"
+            + "-5500,Ip-3000,Ir-4100,Is-5200,It-5099,Iu-6100,Iv-5000,Iw-5000,Iy-3000,Iz-3000,J&-1499,J,-6999,J-"
+            + "-500,J.-6999,JA-2299,JO-1499,Ja-8500,Je-10000,Ji-5099,Jo-8999,Ju-6000,K--8000,KC-9100,KG-7200,KO"
+            + "-4400,KT-3600,KU-3600,Ka-1600,Ke-4700,Ko-4700,Ku-4700,Kw-8899,Ky-9199,LT-5500,LU-1499,LV-7700,LW"
+            + "-7700,LY-5500,Lu-3999,Ly-2799,M&700,MO-1000,Ma-4199,Mc-4199,Md-4199,Me-3300,Mg-2500,Mo-4199,Mt-3"
+            + "500,Mu-3000,My-4199,NA-1499,Na-2500,Ne-3999,Ng-3000,Ni-3000,No-3999,Nu-3500,Ny-1999,O,-7299,O.-7"
+            + "299,OA-5000,OJ-1999,OV-3000,OW-3000,OX-2500,OY-3500,OZ-1499,Og-1999,P -1499,P,-18000,P.-18000,PA"
+            + "-9499,PO1499,PU500,Pa-3200,Pd-4700,Pe-4700,Pg-4499,Pi-1900,Po-4700,Pr-3200,Ps-5500,Q,-7700,Q.-77"
+            + "00,QA-5000,R -4700,R--4499,RC-1000,RG-1000,RO-1000,RQ-1000,RT-1000,RU-1000,RV-4499,RW-4499,RY-25"
+            + "00,Ra-1900,Rd-4499,Re-4499,Ro-4499,Rt-1000,Ru-1999,Rw-3000,Ry-1499,S)-200,S,-4499,S.-4499,SA-130"
+            + "0,SV-1000,SW-1000,Se-500,Sf-1000,Su-1000,Sv-1000,Sw-1000,Sz-500,T -5000,T!1300,T&-5099,T,-14299,"
+            + "T--2500,T.-14299,T:-3999,T;-3999,TA-4499,TT3000,Ta-11600,Tc-11199,Te-13200,Ti-4100,To-11199,Tr-9"
+            + "499,Ts-10599,Tu-11600,Tw-10000,Ty-10000,Tz-8000,U,-11699,U.-11699,UA-7299,Ua-5700,Uc-6699,Ud-669"
+            + "9,Ue-6699,Uf-5800,Ug-6399,Ui-3000,Um-5800,Un-5800,Uo-6100,Up-5800,Ur-5800,Us-5800,Ut-5800,Uv-300"
+            + "0,Uw-3000,Ux-3999,Uy-2500,Uz-5500,V -5000,V&-7500,V,-16999,V--6000,V.-16999,V:-13500,V;-13500,VA"
+            + "-11499,VC-2799,VG-2799,VO-2500,VQ-2500,Va-15700,Vd-15899,Ve-15500,Vi-6499,Vo-15500,Vr-12500,Vs-1"
+            + "5599,Vt-10000,Vu-12899,Vy-11999,W -5000,W&-9600,W,-16799,W--6000,W.-16799,W:-14100,W;-14100,WA-1"
+            + "2299,WC-4499,WG-4499,WO-3999,WQ-3999,WS-3000,Wa-15000,Wd-16199,We-15000,Wi-6999,Wm-13000,Wn-1440"
+            + "0,Wo-15000,Wr-13000,Wt-10000,Wu-11000,Wy-11399,X -5000,X&-2500,X--8999,XC-5000,XG-5000,XO-3999,X"
+            + "Q-3999,Xa-2599,Xe-6999,Xu-6600,Xy-9600,Y -5000,Y&-6999,Y,-15800,Y--8999,Y.-15800,Y:-13000,Y;-130"
+            + "00,YA-6999,YC-3500,YG-3500,YO-3500,YQ-3500,Ya-13500,Yc-16499,Yd-16000,Ye-15500,Yi-8000,Yo-16499,"
+            + "Yp-13500,Yq-16499,Yr-14499,Ys-15500,Yt-10000,Yu-13999,Yv-11999,Z&1499,Zo-2500,Zu-500,Zw-500,Zy-5"
+            + "00,af-1000,b,-1499,b.-1499,bb-1000,bh-500,bk-500,bl-500,ce-1000,co-1000,eg-1000,ev1000,ew1000,f!"
+            + "11000,f&1000,f,-5099,f.-5099,f?11000,fb-3899,ff-7599,fh-5399,fi-6799,fj-6200,fk-5399,fl-5299,fr1"
+            + "499,ia1000,ib1000,ih1000,ik1000,il1000,ke-3399,ko-3399,li500,ll1000,ly1499,os-1000,ox-800,r,-105"
+            + "00,r.-10500,ra-1000,rc-3000,rd-3000,re-3000,rg-3000,rn1000,ro-3000,rq-3000,rs-1999,rt1000,ru2500"
+            + ",rv3999,rw3999,rx1999,ry3999,s&1000,sb-500,sl-1000,tc-1999,te-1499,to-1499,v,-14700,v.-14700,w,-"
+            + "13800,w.-13800,wc-1499,wd-1499,we-899,wo-700,xe-1999,xo-1999,y,-14400,y.-14400,ya-1000,yc-3999,y"
+            + "e-3000,yo-3000,yp2500,yq-3000,";
+    }
+    private static String Hoefler_Text_1_6_kerning() {
+        return " A-6000, T-5000, V-3999, W-3999, X-3999, Y-5000,&A-6000,&C3000,&J5500,&Q5000,&V-1999,&W-1499,&Y5"
+            + "000,&a-3999,&c-3999,&d-6000,&e-5000,&f1000,&g-6000,&n3999,&o-1999,&p1999,&q-8000,&r5000,&s-1000,"
+            + "&t3999,&u1999,&v3000,&w3000,&y3000,-A-8000,-C3000,-G3000,-I-1000,-J-4499,-M-3000,-O4499,-Q1999,-"
+            + "S500,-T-9499,-V-6999,-W-9499,-X-11499,-Y-12500,-Z-3000,22-1499,25-1499,35-1999,36-1499,5,-3000,5"
+            + ".-3000,62-3000,681499,7,-6999,7.-6999,731499,74-1000,85-1000,9,-3000,9.-3000,931000,A -3999,A&-3"
+            + "000,A--3500,AC-5299,AG-5299,AO-3999,AQ-3999,AS-3500,AT-4499,AU-5500,AV-8000,AW-8000,AY-5000,Aa-3"
+            + "000,Ab-6000,Ac-5500,Ad-4499,Ae-5500,Af-8000,Ag-5500,Ah-3999,Ai-3500,Aj-6000,Ak-3999,Al-3500,Am-3"
+            + "500,An-3500,Ao-5500,Ap-5000,Aq-3500,Ar-3999,As-3999,At-5000,Au-4499,Av-8999,Aw-9499,Ax-3500,Ay-7"
+            + "500,Az-4499,B-3000,BJ1999,BV-1000,BW-1999,Bv-1999,Bw-1999,C&-3000,C-1499,CJ3999,CZ-500,Ca-6000,C"
+            + "e-8000,Ch-5000,Ci-5000,Cl-5000,Cn-5000,Co-6000,Cr-5000,Ct-6999,Cu-5000,Cv-6000,Cw-6000,Cy-8000,C"
+            + "z-6999,D,-8000,D-3000,D.-8000,DA-7500,DM-2500,DT-1999,DU-1000,DV-6000,DW-6000,DX-3999,DY-1999,DZ"
+            + "-1999,Da-3500,Dd-2500,De-1000,E-1000,EJ3000,EV-1000,EW-1000,EZ1000,Eb-1000,Ef-2500,Eg-1999,Eq-30"
+            + "00,Es-500,Ev-4499,Ew-4499,Ex-1000,Ey-3000,Ez-1000,F,-13500,F--1000,F.-13500,F:-3000,F;-3000,FA-7"
+            + "500,FJ3999,FM-3000,Fa-8999,Fe-7500,Ff-3000,Fi-6999,Fj-4499,Fl-3999,Fo-10500,Fr-3999,Fu-5000,Fy-3"
+            + "999,G,-3500,G-5000,G.-3500,G:-1499,G;-1499,GA-1000,GM-1000,GV-1999,GW-1999,GX-1999,Ga-1999,Ha-35"
+            + "00,He-5000,Hi-3999,Ho-3999,Hs-1999,Ht-2500,Hu-3500,Hy-3000,Ia-6000,Ib-5000,Ic-6999,Id-6999,Ie-69"
+            + "99,If-6499,Ig-8000,Ih-3000,Ii-5000,Ij-5000,Ik-3000,Il-5000,Im-3999,In-3999,Io-6499,Ip-5000,Iq-60"
+            + "00,Ir-3999,Is-5500,It-4499,Iu-5500,Iv-7500,Iw-7500,Ix-5500,Iy-6499,Iz-5000,J,-8999,J-1000,J.-899"
+            + "9,J:-3000,J;-3000,JA-6000,JC-3000,JE-2500,JG-3000,JM-5000,JO-1499,JU-1999,JV-1999,JW-1999,JX-300"
+            + "0,JZ-1999,Ja-8500,Je-9499,Ji-6999,Jo-8000,Ju-3999,K&-5500,K--10500,KC-6499,KG-6499,KO-3999,KQ-30"
+            + "00,KS-1999,Ke-2500,Ko-5500,Kw-7500,Ky-6000,L,1999,L--1499,L.1999,L:1999,L;1999,LC-1999,LG-1999,L"
+            + "J-1000,LO-1000,LT-6999,LU-3000,LV-6999,LW-10000,LY-8500,Le-3000,Ll-1999,Lo-3000,Lu-3000,Ly-1499,"
+            + "M--1999,MC-1999,MG-1999,MO-1499,MQ-1000,MT-1000,Ma-3500,Mb-5500,Mc-5500,Md-6000,Me-5500,Mf-1499,"
+            + "Mg-3999,Mi-3999,Mm-2500,Mn-1499,Mo-6499,Mr-2500,Ms-1999,Mt-5000,Mu-4499,My-6999,N&-1999,N)-1499,"
+            + "N,-3000,N.-3000,N:-1000,N;-1000,Na-5000,Ne-6000,Ng-6000,Ni-3500,Nk-2500,Nn-2500,No-5500,Nr-2500,"
+            + "Ns-3999,Nu-3000,Ny-3999,O,-7500,O-3500,O.-7500,OA-6000,OM-1999,OT-1999,OU-500,OV-5500,OW-5500,OX"
+            + "-5000,OY-1999,Oa-3500,Ob-1999,Oc-2500,Od-3500,Oe-2500,Og-3000,Oh-1999,Oi-1999,Ok-3000,Ol-1999,Oq"
+            + "-1999,Os-3000,Ot-1499,Ox-3000,Oz-1499,P,-18000,P-3999,P.-18000,PA-8999,PJ5000,PM-3999,PQ3000,Pa-"
+            + "9499,Pb-6499,Pd-10000,Pe-10000,Pf-3000,Pg-9499,Ph-5000,Pi-2500,Pl-6000,Po-8500,Pp-3999,Pr-1000,P"
+            + "s-7500,Pt-3000,Pu-3000,Py-3999,Q,-13000,Q-3000,Q.-13000,Q:-1499,Q;-1499,QA-6999,QM-3999,QR-1999,"
+            + "QT-1999,QU-1000,QV-3999,QW-3999,QX-5000,Qa-6000,Qe-4499,Qi-1999,Qo-3000,Qu-2500,R--7500,RC-3999,"
+            + "RG-6000,RJ-1999,RO-3500,RQ-3500,RS-1499,RT-3500,RU-5000,RV-8000,RW-8500,RY-4499,Rb-6499,Rd-7500,"
+            + "Re-4499,Ro-5500,Rt-4499,Ru-2500,Rw-8000,Ry-6999,SV-1999,SW-1999,Sa-1499,Sb-2500,Sc-1999,Se-2500,"
+            + "Sf-4499,Sg-2500,Sh-2500,Si-1000,Sj-2500,Sk-2500,Sl-2500,So-1000,Sp-1000,Sq-2500,St-1999,Sv-1999,"
+            + "Sw-1999,Sy-1999,Sz-1999,T -5000,T&-5500,T,-11999,T--9499,T.-11999,T:-3999,T;-3999,TA-10000,TJ699"
+            + "9,TM-3000,TT3000,TY3999,Ta-13500,Tb-5000,Tc-15000,Te-14499,Ti-6999,Tl-1999,To-15500,Tr-10000,Ts-"
+            + "13500,Tu-16499,Tw-18999,Ty-11999,Tz-13300,U,-10000,U.-10000,U:-5000,U;-5000,UA-8000,UC-1999,UG-1"
+            + "999,UJ1999,UM-1999,Ua-8000,Ub-2500,Uc-6000,Ud-7500,Ue-6499,Uf-3999,Ug-8999,Ui-5500,Uj-5500,Ul-39"
+            + "99,Um-5500,Un-5000,Uo-6000,Up-6499,Uq-6499,Ur-3999,Us-7500,Ut-5500,Uu-3500,Uv-8999,Uw-6499,Ux-75"
+            + "00,Uy-5000,Uz-6000,V -5000,V&-11499,V,-15500,V--9499,V.-15500,V:-14499,V;-14499,VA-13500,VC-6999"
+            + ",VG-6999,VM-3999,VO-1499,VQ-1999,Va-20500,Vc-19499,Vd-19499,Ve-19499,Vi-11999,Vl-1999,Vo-20000,V"
+            + "r-13000,Vs-17500,Vt-11499,Vu-15000,Vy-13500,W -3000,W&-11499,W,-15000,W--8000,W.-15000,W:-13000,"
+            + "W;-13000,WA-12500,WC-7500,WG-7500,WM-3999,WO-5000,WQ-1999,WS-2500,Wa-18999,Wd-16999,We-18500,Wi-"
+            + "11000,Wm-13999,Wn-13999,Wo-17500,Wr-11499,Ws-17500,Wt-12500,Wu-13999,Wy-13999,X -5000,X&-8999,X-"
+            + "-13999,XC-6499,XG-6499,XO-5500,XQ-1499,XS-1000,Xa-5500,Xe-7500,Xi-5000,Xu-6499,Xy-13000,Y -5000,"
+            + "Y&-8999,Y)-1999,Y,-15000,Y--15000,Y.-15000,Y:-15000,Y;-15000,YA-6999,YC-1999,YG-1999,YJ3000,YM-5"
+            + "000,YO-1999,YT3000,Ya-16999,Yc-18999,Yd-18000,Ye-18000,Yg-18999,Yi-9499,Yo-19499,Yp-16000,Yq-225"
+            + "00,Yr-15000,Ys-17500,Yt-14499,Yu-17500,Yv-20000,Z--3999,ZV-1999,ZW-1999,ZY-1999,Za-3099,Ze-4499,"
+            + "Zh-1499,Zi-1999,Zl-1999,Zo-3500,Zu-3000,Zv-4499,Zw-4499,Zy-5500,a,-1999,a.-1999,ac-1000,ad-1000,"
+            + "ae-1000,ag-1199,am500,an500,ao-1000,aq-1499,ar500,au500,az-700,b,-6499,b.-6499,b:-1499,b;-1499,b"
+            + "a-1999,bd-1000,be-1499,bl-1999,bo-1499,c,-5000,c.-5000,ca-1000,ce-1699,co-1000,cz-1499,d?1000,e,"
+            + "-3000,e.-3000,e:-1000,e;-1000,ee-1000,en299,eq-1499,er299,es-1000,ez-1499,f!13000,f&3999,f*16999"
+            + ",f,-8500,f.-8500,f?17500,fa-3200,fb-5599,ff-3499,fh-3399,fi-10099,fj-6399,fk-4299,fl-4899,fr-499"
+            + "9,ft-5899,g,-5000,g.-5000,gn1999,gr1999,gy3500,h,-6499,h.-6499,h:-2500,h;-2500,ha-1999,he-1499,h"
+            + "l-1999,id-1000,ig-1499,il-500,iq-1000,j,-5500,j.-5500,j:-3999,j;-3999,ji-1000,ka-1000,kc-1499,kd"
+            + "-1499,ke-1499,ko-1000,kq-1499,kt-1000,kw-1000,kz-1000,l,-3000,l.-3000,l?1600,ll-4000,mm500,mr500"
+            + ",o,-4499,o.-4499,o:-3000,o;-3000,ol-500,p,-5000,p.-5000,p:-2500,p;-2500,pm500,pr500,q,-6000,q.-6"
+            + "000,q:-500,q;-500,r,-13500,r.-13500,ra-5000,rd-1999,re-2500,rf3000,rn1999,rq-3000,ru1999,rv1999,"
+            + "rw1999,ry1999,s,-3000,s.-3000,sq-1499,t,-3000,t.-3000,te-500,um299,un299,ur299,v,-7500,v.-7500,v"
+            + ":-1499,v;-1499,va-1000,w,-7500,w.-7500,w:-1499,w;-1499,wa-1000,we-1000,ws-1000,x,-1999,x.-1999,x"
+            + "a-1000,xe-2500,y,-8999,y.-8999,y:-3000,y;-3000,ya-3500,yc-1999,yd-3500,ye-1999,yg-3500,yi-2500,y"
+            + "k-2500,yl-3000,yo-2500,yq-2500,ys-1999,ze-1499,zz-2500,";
+    }
+    private static String Impact_0_3_kerning() {
+        return "(A2490,24-2001,37-976,41-2197,47-1806,51-2978,52-2001,57-2978,62-976,67-1318,712197,731220,74-20"
+            + "01,771806,A)2490,A,2490,A.2490,A/2490,AA2490,AJ2490,AT-5517,AV-2197,AW-1806,AX2490,AY-6005,AZ249"
+            + "0,A]2490,Ax2490,Az2490,A}2490,ET-1318,F,-5322,F.-5322,FA-2001,FV2197,FW2001,FY2197,K)1513,K,2197"
+            + ",K.2197,KA2001,KC-1806,KJ1318,KO-1806,KQ-1806,KS-1513,KZ1806,K]1513,K}1513,L,2685,L.2685,LA2490,"
+            + "LC-1513,LG-1318,LO-1513,LQ-1513,LS-683,LT-7177,LV-4199,LW-3515,LX1513,LY-6494,LZ1318,Ly-2490,P,-"
+            + "12695,P.-12695,P/-7519,PA-2490,PJ-3808,T,-8300,T--6689,T.-8300,T/-7519,TA-4003,TJ-4492,TV2490,TW"
+            + "2197,TY2490,TZ-683,Ta-4199,Tc-4199,Te-4199,Tv2001,Tw2001,Ty2001,V,-3808,V.-3808,V/-3515,VA-1318,"
+            + "VJ-2685,VY2490,Vy2001,W,-3320,W.-3320,W/-4199,WA-976,WJ-2685,WY1806,Wy1513,X,3515,X.3515,XA2490,"
+            + "XJ2001,Y,-8496,Y.-8496,Y/-8300,YA-4980,YJ-4492,Ya-4492,Yc-4492,Yd-2978,Ye-4492,Yg-3320,Yo-4492,Y"
+            + "q-2978,Ys-3320,Z,2197,Z.2197,ZA2001,Zy2490,[A2490,fv2197,fw2001,fy2490,r,-6982,r.-6982,rf1806,rt"
+            + "1806,rv1806,rw1806,ry1806,t,2978,t.2978,tv1806,ty2001,tz2197,v,-1806,v.-1806,vf2685,vt2685,vy297"
+            + "8,vz976,wf2197,wy2490,wz683,x,2197,x.2197,xy1513,y,-1806,y.-1806,yf2001,yt2001,yv2001,yx2001,yz4"
+            + "88,z,2197,z.2197,zf1513,zt1513,zv2490,zw2001,zy2197,zz1806,{A2490,";
+    }
+    private static String Kailasa_0_6_kerning() {
+        return "11-5468,AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,F,-11083,F.-11083,FA-5468,LT-737"
+            + "3,LV-7373,LW-5468,LY-9179,Ly-3662,P,-12890,P.-12890,PA-7373,RV-1757,RW-1757,RY-3662,T,-11083,T--"
+            + "5468,T.-11083,T:-11083,T;-11083,TA-7373,TO-1757,Ta-7373,Tc-7373,Te-7373,Ti-1757,To-7373,Tr-5468,"
+            + "Ts-7373,Tu-7373,Tw-7373,Ty-7373,V,-9179,V--5468,V.-9179,V:-5468,V;-5468,VA-7373,Va-5468,Ve-5468,"
+            + "Vi-1757,Vo-7373,Vr-5468,Vu-3662,Vy-3662,W,-5468,W--1953,W.-5468,W:-1757,W;-1757,WA-5468,Wa-3662,"
+            + "We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,Y,-11083,Y--5468,Y.-11083,Y:-7373,Y;-7373,YA-9179"
+            + ",Ya-5468,Ye-5468,Yi-3662,Yo-7373,Yp-5468,Yq-7373,Yu-5468,Yv-5468,r,-5468,r.-5468,v,-7373,v.-7373"
+            + ",w,-3662,w.-3662,y,-7373,y.-7373,";
+    }
+    private static String Kannada_MN_0_3_kerning() {
+        return "fi1025,";
+    }
+    private static String Kefa_0_3_kerning() {
+        return "\"0-3500,\"2-299,\"3-299,\"4-9400,\"5-1000,\"6-3999,\"8-1900,\"9-1000,\"A-9700,\"C-1799,\"G-1799,\"J-399,\"O-"
+            + "1799,\"Q-1799,\"S-1300,\"U-299,\"X-700,\"Z-1000,\"a-2200,\"c-6399,\"d-6100,\"e-6399,\"f-299,\"g-4400,\"i-399"
+            + ",\"j-99,\"m-399,\"n-399,\"o-6399,\"p-399,\"q-6100,\"r-399,\"s-3699,\"u-299,$0-2100,$2-700,$5-299,$6-2100,"
+            + "$9-2700,&4-1399,&7-3899,&C-299,&G-299,&O-299,&Q-299,&T-6499,&U-2400,&V-4799,&W-3999,&Y-6799,&a-9"
+            + "9,&c-299,&d-299,&e-299,&g-299,&j-299,&o-299,&q-299,&u-399,'0-3500,'2-299,'3-299,'4-9400,'5-1000,"
+            + "'6-3999,'8-1900,'9-1000,'A-9700,'C-1799,'G-1799,'J-399,'O-1799,'Q-1799,'S-1300,'U-299,'X-700,'Z-"
+            + "1000,'a-2200,'c-6399,'d-6100,'e-6399,'f-299,'g-4400,'i-399,'j-99,'m-399,'n-399,'o-6399,'p-399,'q"
+            + "-6100,'r-399,'s-3699,'u-299,(0-7700,(1-1699,(2-4600,(3-4400,(4-9199,(5-4700,(6-7700,(7-1699,(8-6"
+            + "900,(9-7700,(A-3300,(C-5899,(G-5899,(J-299,(O-5899,(Q-5899,(S-6399,(U-1600,(X-1699,(Y-99,(Z-3800"
+            + ",(a-7799,(c-7700,(d-7700,(e-7700,(f-6100,(h-99,(i-3699,(k-99,(l-99,(m-5399,(n-5399,(o-7700,(p-53"
+            + "99,(q-7700,(r-5399,(s-6999,(t-8500,(u-8500,(v-8000,(w-8000,(x-3999,(z-4400,*0-2899,*2-99,*4-8099"
+            + ",*5-899,*6-3000,*8-899,*9-599,*A-10099,*C-1199,*G-1199,*J-1000,*O-1199,*Q-1199,*S-1000,*U-1000,*"
+            + "X-1300,*Y-399,*Z-2200,*a-2200,*c-6100,*d-5899,*e-6100,*g-4600,*h-1100,*i-99,*k-1100,*l-1100,*m-9"
+            + "9,*n-99,*o-6100,*p-99,*q-5899,*r-99,*s-4299,,,-15399,,.-15399,,/-7299,,0-8800,,1-899,,2-3399,,3-"
+            + "1600,,4-5500,,5-2599,,6-8399,,7-11900,,8-4400,,9-5700,,A-700,,C-8099,,G-8099,,J-3600,,O-8099,,Q-"
+            + "8099,,S-1699,,T-13300,,U-11699,,V-13300,,W-13300,,X-1799,,Y-13800,,Z-3500,,\\-14700,,a-4199,,c-58"
+            + "99,,d-5599,,e-5899,,f-3600,,g-5200,,h-2700,,i-2899,,j-6799,,k-2700,,l-2700,,m-2899,,n-2899,,o-58"
+            + "99,,p-2899,,q-5599,,r-2899,,s-2599,,t-8699,,u-8399,,v-11199,,w-11199,,x-1799,,y-10299,,z-2400,-1"
+            + "-2400,-2-299,-3-3399,-5-299,-7-8800,-9-299,-A-2700,-J-2100,-S-1999,-T-10800,-U-1600,-V-7200,-W-5"
+            + "200,-X-6300,-Y-10899,-Z-2200,-a-99,-f-700,-h-1199,-i-1300,-j-1000,-k-1199,-l-1199,-m-1300,-n-130"
+            + "0,-p-1300,-r-1300,-t-599,-u-899,-v-1600,-w-1600,-x-3699,-y-1199,-z-1000,.,-15399,..-15399,./-729"
+            + "9,.0-8800,.1-899,.2-3399,.3-1600,.4-5500,.5-2599,.6-8399,.7-11900,.8-4400,.9-5700,.A-700,.C-8099"
+            + ",.G-8099,.J-3600,.O-8099,.Q-8099,.S-1699,.T-13300,.U-11699,.V-13300,.W-13300,.X-1799,.Y-13800,.Z"
+            + "-3500,.\\-14700,.a-4199,.c-5899,.d-5599,.e-5899,.f-3600,.g-5200,.h-2700,.i-2899,.j-6799,.k-2700,."
+            + "l-2700,.m-2899,.n-2899,.o-5899,.p-2899,.q-5599,.r-2899,.s-2599,.t-8699,.u-8399,.v-11199,.w-11199"
+            + ",.x-1799,.y-10299,.z-2400,/,-14700,/.-14700,//-8999,/0-2400,/4-5299,/6-2599,/8-1699,/9-1900,/A-4"
+            + "799,/C-800,/G-800,/O-800,/Q-800,/S-599,/a-3000,/c-4900,/d-4900,/e-4900,/f-599,/g-4400,/i-299,/j-"
+            + "99,/m-700,/n-700,/o-4900,/p-700,/q-4900,/r-700,/s-3899,/t-299,/u-599,/v-99,/w-99,/x-99,/y-99,/z-"
+            + "299,0\"-3200,0$-2799,0&-299,0'-3200,0)-7700,0*-3500,0,-9600,0.-9600,0/-4600,02-299,0:-5700,0;-570"
+            + "0,0?-4700,0@-399,0\\-2100,0]-5299,0_-6199,0}-5399,1\"-7299,1&-299,1'-7299,1)-4799,1*-7299,1,-2200,"
+            + "1--3300,1.-2200,10-800,14-700,16-500,17-1100,1:-2200,1;-2200,1?-6699,1@-3699,1\\-3999,1]-2799,1_3"
+            + "800,1}-2400,2\"-899,2$-1000,2&-1000,2'-899,2)-6399,2*-1000,2,-3699,2--2799,2.-3699,24-299,2:-3699"
+            + ",2;-3699,2?-3099,2@-700,2\\-700,2]-3500,2_2299,2}-3300,3\"-1300,3$-1699,3'-1300,3)-6399,3*-1300,3,"
+            + "-5299,3.-5299,3/-1699,3:-4600,3;-4600,3?-3300,3\\-700,3]-3200,3_-3200,3}-3300,4\"-6900,4$-700,4'-6"
+            + "900,4)-5800,4*-7200,4,-3200,4.-3200,47-1399,4:-3200,4;-3200,4?-6199,4\\-2899,4]-3500,4_3000,4}-27"
+            + "99,5\"-700,5$-1699,5'-700,5)-4400,5*-1000,5,-5899,5.-5899,5/-2500,5:-5899,5;-5899,5?-1000,5]-1399"
+            + ",5_-3999,5}-1399,6\"-1499,6$-2400,6'-1499,6)-6799,6*-1300,6,-6799,6.-6799,6/-3399,69-299,6:-6799,"
+            + "6;-6799,6?-2100,6]-3099,6_-4299,6}-3300,7\"-99,7$-1199,7&-3300,7'-99,7)-1699,7*-599,7,-12899,7--6"
+            + "399,7.-12899,7/-6699,70-899,74-5000,76-1100,7:-5899,7;-5899,7@-2100,7_-6199,8\"-1499,8$-1399,8'-1"
+            + "499,8)-6799,8*-1199,8,-4900,8.-4900,8/-1699,8:-4900,8;-4900,8?-3500,8\\-1000,8]-3699,8_-3200,8}-3"
+            + "899,9\"-3000,9$-2799,9&-700,9'-3000,9)-7700,9*-3399,9,-9900,9.-9900,9/-4600,92-700,9:-5700,9;-570"
+            + "0,9?-4700,9@-399,9\\-1999,9]-5099,9_-6199,9}-5299,:0-6199,:1-899,:2-3399,:3-1600,:4-5500,:5-2599,"
+            + ":6-6199,:7-5299,:8-4400,:9-4199,:A-700,:C-4199,:G-4199,:J-3600,:O-4199,:Q-4199,:S-1699,:T-10599,"
+            + ":U-8500,:V-8300,:W-8000,:X-1799,:Y-10200,:Z-3500,:a-4199,:c-5899,:d-5599,:e-5899,:f-1499,:g-4600"
+            + ",:h-2700,:i-2899,:j-2599,:k-2700,:l-2700,:m-2899,:n-2899,:o-5899,:p-2899,:q-5599,:r-2899,:s-2599"
+            + ",:t-899,:u-2400,:v-700,:w-700,:x-1799,:y-700,:z-1900,;0-6199,;1-899,;2-3399,;3-1600,;4-5500,;5-2"
+            + "599,;6-6199,;7-5299,;8-4400,;9-4199,;A-700,;C-4199,;G-4199,;J-3600,;O-4199,;Q-4199,;S-1699,;T-10"
+            + "599,;U-8500,;V-8300,;W-8000,;X-1799,;Y-10200,;Z-3500,;a-4199,;c-5899,;d-5599,;e-5899,;f-1499,;g-"
+            + "4600,;h-2700,;i-2899,;j-2599,;k-2700,;l-2700,;m-2899,;n-2899,;o-5899,;p-2899,;q-5599,;r-2899,;s-"
+            + "2599,;t-899,;u-2400,;v-700,;w-700,;x-1799,;y-700,;z-1900,@0-399,@1-599,@2-700,@3-299,@5-399,@6-3"
+            + "99,@7-299,@8-299,@9-299,@A-399,@C-99,@G-99,@J-1300,@O-99,@Q-99,@S-399,@T-1199,@U-1600,@V-1399,@W"
+            + "-1699,@X-1499,@Y-2500,@Z-1699,@a-299,@h-399,@i-99,@k-399,@l-399,@m-99,@n-99,@p-99,@r-99,A\"-9700,"
+            + "A'-9700,A)-3500,A*-9600,A,-700,A--2299,A.-700,A:-700,A;-700,A?-4600,A@-2899,AC-700,AG-700,AO-700"
+            + ",AQ-700,AT-3699,AU-3500,AV-6499,AW-5000,AY-8200,A\\-5000,A]-2200,A_6900,Aj-299,At-1000,Au-1399,Av"
+            + "-3399,Aw-3399,Ay-3399,A}-1199,B\"-2299,B'-2299,B)-6100,B*-1999,B,-5599,B.-5599,B/-3099,B:-5599,B;"
+            + "-5599,B?-4499,BT-299,BX-299,BY-700,BZ-700,B\\-1300,B]-4299,B_-3000,Bw-299,Bx-1399,Bz-299,B}-3800,"
+            + "C\"-299,C'-299,C)-3800,C*-399,C,-3099,C--2400,C.-3099,C/-99,C:-3099,C;-3099,C@-1499,CC-1399,CG-13"
+            + "99,CO-1399,CQ-1399,C]-299,C_1199,Cc-1000,Cd-1000,Ce-1000,Cf-700,Cg-1300,Cj-700,Co-1000,Cq-1000,C"
+            + "t-3099,Cu-2799,Cv-3500,Cw-3500,Cy-3500,C}-299,D\"-1300,D'-1300,D)-6300,D*-1499,D,-9199,D.-9199,D/"
+            + "-3600,D:-3999,D;-3999,D?-4100,D@-99,DA-1999,DT-1399,DV-1000,DX-2299,DY-1900,DZ-1499,D\\-1100,D]-3"
+            + "899,D_-5800,D}-3600,E\"-399,E'-399,E)-1600,E*-1000,E,-1999,E--2200,E.-1999,E:-1999,E;-1999,E?-399"
+            + ",E@-2100,EC-1399,EG-1399,EO-1399,EQ-1399,E_4499,Ec-1399,Ed-1000,Ee-1399,Eg-299,Ej-1199,Eo-1399,E"
+            + "q-1000,Et-2899,Eu-2899,Ev-2799,Ew-3099,Ey-2799,F&-3500,F)-99,F*-299,F,-13300,F--1199,F.-13300,F/"
+            + "-7200,F:-6799,F;-6799,F@-1199,FA-7400,FC-1499,FG-1499,FO-1499,FQ-1499,F_-6199,Fa-4799,Fc-4499,Fd"
+            + "-4900,Fe-4499,Ff-2100,Fg-3500,Fm-2799,Fn-2799,Fo-4499,Fp-2799,Fq-4900,Fr-2799,Fs-3000,Ft-1399,Fu"
+            + "-2400,Fv-1399,Fw-1699,Fx-2799,Fy-1399,Fz-2400,G\"-2299,G'-2299,G)-5700,G*-2299,G,-4799,G--299,G.-"
+            + "4799,G/-99,G:-4799,G;-4799,G?-3600,G@-700,G\\-399,G]-3300,G_2799,Gv-1499,Gw-1499,Gy-1399,G}-3300,"
+            + "J\"-599,J&-1000,J'-599,J)-2100,J*-1300,J,-10000,J--2100,J.-10000,J/-4199,J:-9700,J;-9700,J?-1100,"
+            + "J@-3800,JA-599,JZ-700,J_-3600,Ja-1100,Jc-299,Jd-299,Je-299,Jf-1199,Jg-500,Ji-1000,Jj-1300,Jm-100"
+            + "0,Jn-1000,Jo-299,Jp-1000,Jq-299,Jr-1000,Js-299,Jt-1300,Ju-1300,Jv-3099,Jw-3500,Jx-3099,Jy-3000,J"
+            + "z-1399,K*-399,K,-700,K--5099,K.-700,K:-700,K;-700,K@-3099,KC-1399,KG-1399,KO-1399,KQ-1399,K_6300"
+            + ",Kc-700,Kd-700,Ke-700,Ko-700,Kq-700,Kt-2500,Ku-2500,Kv-4700,Kw-5099,Ky-4600,L\"-10399,L'-10399,L)"
+            + "-3800,L*-11100,L,-599,L--7299,L.-599,L:-599,L;-599,L?-5099,L@-299,LT-3600,LU-2799,LV-9600,LW-839"
+            + "9,LY-9499,L\\-7599,L]-2200,L_6499,Lj-599,Lt-1600,Lu-1300,Lv-4400,Lw-4400,Ly-4400,L}-1199,N\"-399,N"
+            + "&-500,N'-399,N)-1600,N*-1199,N,-9499,N--1600,N.-9499,N/-4100,N:-9199,N;-9199,N?-599,N@-3300,NZ-2"
+            + "99,N_-2400,Na-599,Nf-700,Ni-299,Nj-800,Nm-299,Nn-299,Np-299,Nr-299,Nt-800,Nu-800,Nv-2599,Nw-3000"
+            + ",Nx-2599,Ny-2500,Nz-1399,O\"-1300,O'-1300,O)-5899,O*-1499,O,-8899,O.-8899,O/-3300,O:-3999,O;-3999"
+            + ",O?-4299,O@-99,OA-1699,OT-1000,OV-700,OX-1999,OY-1699,OZ-1499,O\\-800,O]-3600,O_-5800,O}-3300,P\"-"
+            + "599,P&-2299,P'-599,P)-6799,P*-599,P,-12100,P--599,P.-12100,P/-4900,P:-2200,P;-2200,P?-1300,P@-29"
+            + "9,PA-4499,PJ-1000,PU-299,PX-299,PZ-1699,P\\-99,P]-3800,P_-5299,Pc-2200,Pd-1999,Pe-2200,Pg-700,Ph-"
+            + "2500,Pk-2500,Pl-2500,Po-2200,Pq-1999,P}-3999,Q\"-1300,Q'-1300,Q)-1799,Q*-1499,Q,-8500,Q.-8500,Q:-"
+            + "3999,Q;-3999,Q?-4299,Q@-99,QA-99,QT-1000,QV-700,QX-1999,QY-1699,QZ-1499,Q\\-800,Q_800,R\"-2899,R'-"
+            + "2899,R)-3999,R*-2599,R,-899,R--3300,R.-899,R:-899,R;-899,R?-4400,R@-1100,RT-700,RU-399,RV-299,RW"
+            + "-700,RY-1499,R\\-2299,R]-2400,R_6499,Rc-299,Rd-299,Re-299,Rj-700,Ro-299,Rq-299,Ru-1000,Rv-99,Rw-5"
+            + "00,Ry-99,R}-1699,S\"-1999,S'-1999,S)-6300,S*-1999,S,-5099,S.-5099,S/-2599,S:-5099,S;-5099,S?-3500"
+            + ",SJ-700,SU-700,S\\-800,S]-3999,S_-2100,Sf-700,Sh-700,Si-299,Sj-700,Sk-700,Sl-700,Sm-299,Sn-299,Sp"
+            + "-299,Sr-299,St-700,Su-700,Sv-2400,Sw-2200,Sx-1000,Sy-2200,Sz-700,S}-4199,T&-3300,T,-13300,T--105"
+            + "99,T.-13300,T/-7599,T:-10000,T;-10000,T@-2400,TA-3699,TC-1399,TG-1399,TO-1399,TQ-1399,T_-5899,Ta"
+            + "-7100,Tc-8300,Td-8200,Te-8300,Tf-2100,Tg-7899,Tm-6300,Tn-6300,To-8300,Tp-6300,Tq-8200,Tr-6300,Ts"
+            + "-7299,Tt-3500,Tu-6600,Tv-6300,Tw-6300,Tx-5899,Ty-6300,Tz-5599,U\"-399,U&-899,U'-399,U)-1300,U*-11"
+            + "99,U,-11699,U--1600,U.-11699,U/-5099,U:-8500,U;-8500,U?-599,U@-2799,UA-3899,US-99,U_-6300,Ua-139"
+            + "9,Uc-599,Ud-599,Ue-599,Uf-1999,Ug-800,Ui-1300,Uj-1300,Um-1600,Un-1600,Uo-599,Up-1600,Uq-599,Ur-1"
+            + "600,Us-500,Ut-1799,Uu-2100,Uv-1900,Uw-2299,Ux-2899,Uy-1900,Uz-1499,V&-3099,V,-13399,V--8000,V.-1"
+            + "3399,V/-7299,V:-8999,V;-8999,V@-3300,VA-6799,VC-1699,VG-1699,VO-1699,VQ-1699,V_-6199,Va-6699,Vc-"
+            + "6399,Vd-6399,Ve-6399,Vf-2599,Vg-6499,Vm-5200,Vn-5200,Vo-6399,Vp-5200,Vq-6399,Vr-5200,Vs-5899,Vt-"
+            + "3500,Vu-4700,Vv-3399,Vw-3699,Vx-4900,Vy-3399,Vz-5099,W&-2700,W,-13300,W--5399,W.-13300,W/-6000,W"
+            + ":-8600,W;-8600,W@-3699,WA-5700,W_-5800,Wa-4900,Wc-4100,Wd-4100,We-4100,Wf-2799,Wg-4199,Wm-4700,W"
+            + "n-4700,Wo-4100,Wp-4700,Wq-4100,Wr-4700,Ws-3899,Wt-2700,Wu-4400,Wv-2400,Ww-2700,Wx-3899,Wy-2400,W"
+            + "z-3800,X\"-299,X&-399,X'-299,X)-1100,X*-1000,X,-1999,X--6199,X.-1999,X:-1999,X;-1999,X?-399,X@-44"
+            + "99,XC-2200,XG-2200,XO-2200,XQ-2200,X_4900,Xa-99,Xc-1799,Xd-1499,Xe-1799,Xg-399,Xj-1100,Xo-1799,X"
+            + "q-1499,Xt-3600,Xu-3999,Xv-5200,Xw-5200,Xy-5200,Y&-4199,Y*-599,Y,-13899,Y--10899,Y.-13899,Y/-8399"
+            + ",Y:-10800,Y;-10800,Y@-4499,YA-8699,YC-2799,YG-2799,YO-2799,YQ-2799,Y_-6300,Ya-8500,Yc-8200,Yd-85"
+            + "00,Ye-8200,Yf-3600,Yg-8699,Yi-299,Ym-7100,Yn-7100,Yo-8200,Yp-7100,Yq-8500,Yr-7100,Ys-8000,Yt-520"
+            + "0,Yu-6799,Yv-5099,Yw-5399,Yx-6499,Yy-5099,Yz-6600,Z\"-899,Z&-1799,Z'-899,Z)-3000,Z*-1600,Z,-3999,"
+            + "Z--7700,Z.-3999,Z/-299,Z:-3999,Z;-3999,Z?-2400,Z@-3999,ZC-1999,ZG-1999,ZO-1999,ZQ-1999,Z_2500,Za"
+            + "-1600,Zc-3000,Zd-3000,Ze-3000,Zf-700,Zg-2100,Zj-3500,Zo-3000,Zq-3000,Zt-3999,Zu-5200,Zv-3899,Zw-"
+            + "4199,Zy-3899,[0-5700,[2-1699,[3-1399,[4-8800,[5-1699,[6-5899,[8-4299,[9-4900,[A-1699,[C-3600,[G-"
+            + "3600,[O-3600,[Q-3600,[S-4900,[Z-800,[a-6300,[c-5500,[d-5500,[e-5500,[f-4799,[i-1600,[m-6699,[n-6"
+            + "699,[o-5500,[p-6699,[q-5500,[r-6699,[s-6499,[t-5200,[u-6999,[v-6199,[w-6600,[x-6900,[z-6199,\\,-7"
+            + "299,\\.-7299,\\0-4299,\\4-1699,\\6-4299,\\7-5700,\\8-1399,\\9-1000,\\C-3300,\\G-3300,\\O-3300,\\Q-3300,\\S-2"
+            + "99,\\T-7599,\\U-5299,\\V-6799,\\W-6100,\\Y-8399,\\\\-8999,\\a-1199,\\c-1499,\\d-1399,\\e-1499,\\o-1499,\\q-13"
+            + "99,\\s-299,\\t-2899,\\u-2899,\\v-4199,\\w-4600,_0-5800,_15299,_23300,_32200,_4-6199,_51799,_6-5500,_7"
+            + "-5500,_8-1499,_9-500,_A7200,_C-4600,_G-4600,_J5899,_O-4600,_Q-4600,_S2899,_T-6000,_U-6300,_V-619"
+            + "9,_W-5700,_X5200,_Y-6300,_Z3699,_a1100,_c-1300,_d-1300,_e-1300,_f4299,_g5599,_h5200,_i5000,_j250"
+            + "0,_k5200,_l5200,_m5000,_n5000,_o-1300,_p5000,_q-1300,_r5000,_s3399,_t-2100,_u-2599,_v-3300,_w-32"
+            + "00,_x6100,_y-1100,_z6199,a\"-6799,a&-399,a'-6799,a)-5700,a*-6999,a,-1999,a--899,a.-1999,a:-1999,a"
+            + ";-1999,a?-5000,a@-700,aJ-299,aT-8000,aU-1799,aV-7200,aW-5000,aY-8999,a\\-5700,a]-6799,a_4900,aa-9"
+            + "9,av-1100,aw-1399,ay-1100,a}-6300,b\"-5200,b&-299,b'-5200,b)-7700,b*-4100,b,-6600,b.-6600,b/-1900"
+            + ",b:-5599,b;-5599,b?-6499,bA-700,bJ-299,bS-299,bT-8699,bU-800,bV-5899,bW-3899,bX-3000,bY-8200,bZ-"
+            + "1799,b\\-4900,b]-5500,b_-2299,bx-700,bz-299,b}-5000,c\"-1000,c&-700,c'-1000,c)-7799,c*-2400,c,-320"
+            + "0,c--800,c.-3200,c/-599,c:-2899,c;-2899,c?-4600,c@-99,cJ-2599,cT-6900,cU-2799,cV-6199,cW-5000,cY"
+            + "-7500,c\\-1699,c]-7700,c_2200,ca-299,cc-99,cd-99,ce-99,co-99,cq-99,c}-6199,e\"-4900,e&-599,e'-4900"
+            + ",e)-8000,e*-4100,e,-4700,e.-4700,e/-899,e:-4700,e;-4700,e?-6999,e@-99,eJ-1199,eT-8699,eU-1799,eV"
+            + "-6399,eW-4700,eY-8300,eZ-800,e\\-4700,e]-6499,e_1000,e}-6000,f\"7299,f&-2400,f'7299,f)2299,f*3200,"
+            + "f,-7700,f--4799,f.-7700,f/-2599,f:-1300,f;-1300,f?3099,f@2899,f\\8800,f]5899,f_1399,fb-2600,fc-59"
+            + "9,fd-599,fe-599,ff-3900,fh-3000,fi-3100,fj-2799,fk-2600,fl-2700,fo-599,fq-599,f}5800,g\"-99,g&-59"
+            + "9,g'-99,g)-599,g*-299,g,-2799,g--700,g.-2799,g:-899,g;-899,g?-2500,gT-5899,gU-1799,gV-2500,gW-22"
+            + "00,gY-4400,g\\-99,g_7200,h\"-7400,h&-399,h'-7400,h)-4900,h*-7200,h,-2200,h--899,h.-2200,h:-2200,h;"
+            + "-2200,h?-5399,h@-1100,hT-8200,hU-1999,hV-7400,hW-5200,hY-8800,h\\-6100,h]-7299,h_5500,hv-1600,hw-"
+            + "1999,hy-1600,h}-6499,k\"-399,k'-399,k)-3899,k*-599,k,-899,k--4199,k.-899,k:-899,k;-899,k?-2100,k@"
+            + "-299,kT-5399,kU-3399,kV-3899,kW-3600,kY-5599,k\\-599,k]-6000,k_6499,k}-5899,m\"-7400,m&-399,m'-740"
+            + "0,m)-4900,m*-7200,m,-2200,m--899,m.-2200,m:-2200,m;-2200,m?-5399,m@-1100,mT-8200,mU-1999,mV-7400"
+            + ",mW-5200,mY-8800,m\\-6100,m]-7299,m_5500,mv-1600,mw-1999,my-1600,m}-6499,n\"-7400,n&-399,n'-7400,n"
+            + ")-4900,n*-7200,n,-2200,n--899,n.-2200,n:-2200,n;-2200,n?-5399,n@-1100,nT-8200,nU-1999,nV-7400,nW"
+            + "-5200,nY-8800,n\\-6100,n]-7299,n_5500,nv-1600,nw-1999,ny-1600,n}-6499,o\"-5399,o&-299,o'-5399,o)-7"
+            + "700,o*-4199,o,-6600,o.-6600,o/-1900,o:-5899,o;-5899,o?-6499,oA-700,oJ-299,oS-299,oT-8300,oU-800,"
+            + "oV-5899,oW-3899,oX-3000,oY-8200,oZ-2200,o\\-4900,o]-5500,o_-2299,ox-700,o}-5000,p\"-5200,p&-299,p'"
+            + "-5200,p)-7700,p*-4100,p,-6600,p.-6600,p/-1900,p:-5599,p;-5599,p?-6499,pA-700,pJ-299,pS-299,pT-86"
+            + "99,pU-800,pV-5899,pW-3899,pX-3000,pY-8200,pZ-1799,p\\-4900,p]-5500,p_-2299,px-700,pz-299,p}-5000,"
+            + "r\"-399,r&-1799,r'-399,r)-8399,r*-599,r,-11499,r--1799,r.-11499,r/-4700,r:-1399,r;-1399,r?-5599,r"
+            + "A-4499,rJ-4100,rT-6399,rU-3300,rV-3200,rW-2899,rX-6000,rY-4900,rZ-4499,r\\-599,r]-6600,r_-3699,rc"
+            + "-1300,rd-1199,re-1300,rh-1699,rk-1699,rl-1699,ro-1300,rq-1199,r}-5899,s\"-2200,s'-2200,s)-7700,s*"
+            + "-3300,s,-4400,s.-4400,s/-1000,s:-3699,s;-3699,s?-5599,sJ-1000,sT-7299,sU-1199,sV-5899,sW-4100,sX"
+            + "-299,sY-7899,sZ-800,s\\-2500,s]-6199,s_200,s}-5399,t\"-299,t'-299,t)-5000,t*-399,t,-1000,t--4499,t"
+            + ".-1000,t:-1000,t;-1000,t?-1999,tT-5200,tU-2200,tV-2899,tW-2500,tY-4799,t\\-399,t]-6000,t_5299,t}-"
+            + "4799,u\"-4600,u&-700,u'-4600,u)-5200,u*-5000,u,-2500,u--1199,u.-2500,u:-2500,u;-2500,u?-4600,u@-1"
+            + "100,uT-7799,uU-1799,uV-6900,uW-5500,uY-8200,u\\-4499,u]-7100,u_5200,uv-599,uw-599,uy-599,u}-6300,"
+            + "v&-1199,v)-8000,v*-99,v,-11499,v--1999,v.-11499,v/-4400,v:-700,v;-700,v?-4799,vA-3699,vJ-3000,vT"
+            + "-6300,vU-2100,vV-2400,vW-1999,vX-5200,vY-4299,vZ-3200,v]-6199,v_-3300,vc-599,vd-500,ve-599,vh-70"
+            + "0,vk-700,vl-700,vo-599,vq-500,v}-4900,w&-1199,w)-8000,w*-99,w,-11199,w--1999,w.-11199,w/-4600,w:"
+            + "-700,w;-700,w?-4799,wA-3500,wJ-3300,wT-6300,wU-2500,wV-2700,wW-2400,wX-5200,wY-4600,wZ-3699,w\\-9"
+            + "9,w]-6600,w_-3300,wc-1000,wd-1000,we-1000,wh-1100,wk-1100,wl-1100,wo-1000,wq-1000,w}-5299,x&-99,"
+            + "x)-5099,x*-500,x,-2400,x--4700,x.-2400,x:-2100,x;-2100,x?-2700,xJ-299,xT-5899,xU-3600,xV-4100,xW"
+            + "-3800,xY-5700,x]-7200,x_5299,xc-1399,xd-1000,xe-1399,xo-1399,xq-1000,x}-6100,y&-1199,y)-8000,y*-"
+            + "99,y,-11199,y--1999,y.-11199,y/-4400,y:-700,y;-700,y?-4799,yA-3500,yJ-3000,yT-6300,yU-2100,yV-24"
+            + "00,yW-1999,yX-5200,yY-4299,yZ-3600,y]-6199,y_-3300,yc-599,yd-500,ye-599,yh-700,yk-700,yl-700,yo-"
+            + "599,yq-500,y}-4900,z\"-399,z&-99,z'-399,z)-4900,z*-399,z,-1699,z--299,z.-1699,z:-1699,z;-1699,z?-"
+            + "2700,z@-99,zT-5599,zU-1399,zV-3899,zW-3600,zY-5500,z\\-399,z]-6199,z_5500,z}-5399,{0-5399,{2-1399"
+            + ",{3-1399,{4-6799,{5-1399,{6-5399,{8-4499,{9-4700,{A-1000,{C-3300,{G-3300,{O-3300,{Q-3300,{S-4499"
+            + ",{X-99,{Z-800,{a-5800,{c-5000,{d-5000,{e-5000,{f-4499,{i-899,{m-6000,{n-6000,{o-5000,{p-6000,{q-"
+            + "5000,{r-6000,{s-5700,{t-4600,{u-6199,{v-4900,{w-5299,{x-5700,{z-5399,";
+    }
+    private static String Kefa_0_6_kerning() {
+        return "\"0-4928,\"2-699,\"3-699,\"4-10028,\"5-2428,\"6-5428,\"8-3099,\"9-2428,\"A-10728,\"C-3628,\"G-3628,\"J-1028,"
+            + "\"O-3628,\"Q-3628,\"S-3128,\"U-699,\"X-1728,\"Z-2428,\"a-3799,\"c-7028,\"d-6900,\"e-7028,\"f-699,\"g-5028,\"i"
+            + "-1028,\"j-328,\"m-1028,\"n-1028,\"o-7028,\"p-1028,\"q-6900,\"r-1028,\"s-4728,\"u-699,$0-900,$2-300,$5-128"
+            + ",$6-900,$9-1728,&4-599,&7-2528,&C-699,&G-699,&O-699,&Q-699,&T-6499,&U-3028,&V-5199,&W-3999,&Y-71"
+            + "99,&a-328,&c-699,&d-699,&e-699,&g-699,&j-699,&o-699,&q-699,&u-1028,'0-4928,'2-699,'3-699,'4-1002"
+            + "8,'5-2428,'6-5428,'8-3099,'9-2428,'A-10728,'C-3628,'G-3628,'J-1028,'O-3628,'Q-3628,'S-3128,'U-69"
+            + "9,'X-1728,'Z-2428,'a-3799,'c-7028,'d-6900,'e-7028,'f-699,'g-5028,'i-1028,'j-328,'m-1028,'n-1028,"
+            + "'o-7028,'p-1028,'q-6900,'r-1028,'s-4728,'u-699,(0-6728,(1-728,(2-3400,(3-3600,(4-8228,(5-3728,(6"
+            + "-6728,(7-728,(8-5528,(9-6728,(A-3128,(C-4528,(G-4528,(J-128,(O-4528,(Q-4528,(S-5028,(U-1828,(X-2"
+            + "728,(Y-328,(Z-4199,(a-8199,(c-7300,(d-7300,(e-7300,(f-6328,(h-328,(i-5299,(k-328,(l-328,(m-6028,"
+            + "(n-6028,(o-7300,(p-6028,(q-7300,(r-6028,(s-6999,(t-8500,(u-8500,(v-8000,(w-8000,(x-3999,(z-5028,"
+            + "*0-4099,*2-328,*4-8899,*5-2099,*6-4428,*8-2099,*9-1399,*A-10899,*C-2799,*G-2799,*J-2428,*O-2799,"
+            + "*Q-2799,*S-2428,*U-2428,*X-3128,*Y-1028,*Z-3799,*a-3228,*c-6900,*d-6528,*e-6900,*g-4828,*h-1900,"
+            + "*i-328,*k-1900,*l-1900,*m-328,*n-328,*o-6900,*p-328,*q-6528,*r-328,*s-4699,,,-16599,,.-16599,,/-"
+            + "9128,,0-9199,,1-2099,,2-4599,,3-2400,,4-5500,,5-3399,,6-9028,,7-12528,,8-5028,,9-6728,,A-1728,,C"
+            + "-8899,,G-8899,,J-4400,,O-8899,,Q-8899,,S-3299,,T-13699,,U-13299,,V-13699,,W-13699,,X-3628,,Y-141"
+            + "99,,Z-4928,,\\-15728,,a-5799,,c-6528,,d-6399,,e-6528,,f-4400,,g-6799,,h-3728,,i-4099,,j-7199,,k-3"
+            + "728,,l-3728,,m-4099,,n-4099,,o-6528,,p-4099,,q-6399,,r-4099,,s-3399,,t-10299,,u-9599,,v-12799,,w"
+            + "-12799,,x-2199,,y-10699,,z-3600,-1-3600,-2-699,-3-2028,-5-699,-7-8628,-9-699,-A-3728,-J-4328,-S-"
+            + "1428,-T-11199,-U-3828,-V-8799,-W-6799,-X-6128,-Y-11528,-Z-3228,-a-328,-f-1728,-h-2799,-i-3128,-j"
+            + "-2428,-k-2799,-l-2799,-m-3128,-n-3128,-p-3128,-r-3128,-t-1399,-u-2099,-v-2400,-w-2400,-x-3300,-y"
+            + "-2228,-z-1000,.,-16599,..-16599,./-9128,.0-9199,.1-2099,.2-4599,.3-2400,.4-5500,.5-3399,.6-9028,"
+            + ".7-12528,.8-5028,.9-6728,.A-1728,.C-8899,.G-8899,.J-4400,.O-8899,.Q-8899,.S-3299,.T-13699,.U-132"
+            + "99,.V-13699,.W-13699,.X-3628,.Y-14199,.Z-4928,.\\-15728,.a-5799,.c-6528,.d-6399,.e-6528,.f-4400,."
+            + "g-6799,.h-3728,.i-4099,.j-7199,.k-3728,.l-3728,.m-4099,.n-4099,.o-6528,.p-4099,.q-6399,.r-4099,."
+            + "s-3399,.t-10299,.u-9599,.v-12799,.w-12799,.x-2199,.y-10699,.z-3600,/,-15728,/.-15728,//-10428,/0"
+            + "-3028,/4-5699,/6-3399,/8-1300,/9-1100,/A-5199,/C-1199,/G-1199,/O-1199,/Q-1199,/S-1399,/a-5000,/c"
+            + "-5528,/d-5528,/e-5528,/f-1399,/g-5599,/i-699,/j-328,/m-1728,/n-1728,/o-5528,/p-1728,/q-5528,/r-1"
+            + "728,/s-5099,/t-699,/u-1399,/v-328,/w-328,/x-328,/y-328,/z-699,0\"-4799,0$-1200,0&-128,0'-4799,0)-"
+            + "6728,0*-4928,0,-10400,0.-10400,0/-4828,02-128,0:-6728,0;-6728,0?-3728,0@-1028,0\\-2328,0]-5699,0_"
+            + "-5800,0}-6028,1\"-9699,1&-128,1'-9699,1)-3200,1*-9699,1,-3228,1--3699,1.-3228,10-628,14-300,16-50"
+            + "0,17-1328,1:-3228,1;-3228,1?-7728,1@-3300,1\\-3999,1]-1200,1_4199,1}-1028,2\"-2099,2$-428,2&-428,2"
+            + "'-2099,2)-5028,2*-2428,2,-4728,2--3199,2.-4728,24-128,2:-4728,2;-4728,2?-1328,2@-1728,2\\-300,2]-"
+            + "1500,2_2699,2}-1700,3\"-3128,3$-728,3'-3128,3)-5028,3*-3128,3,-5699,3.-5699,3/-728,3:-5400,3;-540"
+            + "0,3?-1700,3\\-300,3]-2800,3_-2800,3}-3128,4\"-7528,4$-300,4'-7528,4)-4200,4*-8228,4,-4228,4.-4228,"
+            + "47-599,4:-4228,4;-4228,4?-5228,4\\-1528,4]-1500,4_3571,4}-1200,5\"-1728,5$-728,5'-1728,5)-3028,5*-"
+            + "2428,5,-6528,5.-6528,5/-1928,5:-6528,5;-6528,5?-428,5]-599,5_-3999,5}-599,6\"-2928,6$-1028,6'-292"
+            + "8,6)-5200,6*-3128,6,-7199,6.-7199,6/-2599,69-128,6:-7199,6;-7199,6?-900,6]-1328,6_-4128,6}-1700,"
+            + "7\"-328,7$-800,7&-3128,7'-328,7)-728,7*-1399,7,-13528,7--7599,7.-13528,7/-8299,70-1528,74-4428,76"
+            + "-1900,7:-7099,7;-7099,7@-4328,7_-5800,8\"-2928,8$-599,8'-2928,8)-5200,8*-2799,8,-5528,8.-5528,8/-"
+            + "728,8:-5528,8;-5528,8?-1500,8\\-428,8]-2728,8_-2800,8}-3099,9\"-4428,9$-1200,9&-300,9'-4428,9)-672"
+            + "8,9*-4599,9,-10528,9.-10528,9/-4828,92-300,9:-6728,9;-6728,9?-3728,9@-1028,9\\-1999,9]-5328,9_-58"
+            + "00,9}-5699,:0-7228,:1-2099,:2-4599,:3-2400,:4-5500,:5-3399,:6-7228,:7-5128,:8-5028,:9-5228,:A-17"
+            + "28,:C-5799,:G-5799,:J-4400,:O-5799,:Q-5799,:S-3299,:T-8828,:U-9928,:V-8128,:W-8000,:X-3628,:Y-98"
+            + "00,:Z-4928,:a-5799,:c-6528,:d-6399,:e-6528,:f-2928,:g-5400,:h-3728,:i-4099,:j-3399,:k-3728,:l-37"
+            + "28,:m-4099,:n-4099,:o-6528,:p-4099,:q-6399,:r-4099,:s-3399,:t-2099,:u-3600,:v-1728,:w-1728,:x-21"
+            + "99,:y-1728,:z-2528,;0-7228,;1-2099,;2-4599,;3-2400,;4-5500,;5-3399,;6-7228,;7-5128,;8-5028,;9-52"
+            + "28,;A-1728,;C-5799,;G-5799,;J-4400,;O-5799,;Q-5799,;S-3299,;T-8828,;U-9928,;V-8128,;W-8000,;X-36"
+            + "28,;Y-9800,;Z-4928,;a-5799,;c-6528,;d-6399,;e-6528,;f-2928,;g-5400,;h-3728,;i-4099,;j-3399,;k-37"
+            + "28,;l-3728,;m-4099,;n-4099,;o-6528,;p-4099,;q-6399,;r-4099,;s-3399,;t-2099,;u-3600,;v-1728,;w-17"
+            + "28,;x-2199,;y-1728,;z-2528,@0-1028,@1-1399,@2-1728,@3-699,@5-1028,@6-1028,@7-699,@8-699,@9-699,@"
+            + "A-1028,@C-328,@G-328,@J-3128,@O-328,@Q-328,@S-1028,@T-2228,@U-3828,@V-2599,@W-2728,@X-2928,@Y-39"
+            + "28,@Z-3299,@a-699,@h-1028,@i-328,@k-1028,@l-1028,@m-328,@n-328,@p-328,@r-328,A\"-10728,A'-10728,A"
+            + ")-3500,A*-10400,A,-1728,A--2699,A.-1728,A:-1728,A;-1728,A?-6828,A@-2099,AC-300,AG-300,AO-300,AQ-"
+            + "300,AT-2728,AU-3500,AV-5928,AW-4428,AY-7800,A\\-5000,A]-1228,A_6671,Aj-128,At-428,Au-599,Av-2599,"
+            + "Aw-2599,Ay-2599,A}-800,B\"-4128,B'-4128,B)-4328,B*-3999,B,-6399,B.-6399,B/-3328,B:-6399,B;-6399,B"
+            + "?-4499,BT-128,BX-128,BY-300,BZ-300,B\\-1128,B]-4699,B_-3000,Bw-128,Bx-599,Bz-128,B}-3628,C\"-699,C"
+            + "'-699,C)-3628,C*-1028,C,-3899,C--1600,C.-3899,C/-328,C:-3899,C;-3899,C@-1499,CC-599,CG-599,CO-59"
+            + "9,CQ-599,C]-128,C_1371,Cc-428,Cd-428,Ce-428,Cf-300,Cg-1699,Cj-300,Co-428,Cq-428,Ct-1328,Cu-1200,"
+            + "Cv-1500,Cw-1500,Cy-1500,C}-128,D\"-3128,D'-3128,D)-4700,D*-3499,D,-10228,D.-10228,D/-3828,D:-5428"
+            + ",D;-5428,D?-4328,D@-328,DA-1428,DT-599,DV-428,DX-2128,DY-1100,DZ-928,D\\-1328,D]-4528,D_-5628,D}-"
+            + "3828,E\"-1028,E'-1028,E)-1828,E*-2428,E,-3428,E--1800,E.-3428,E:-3428,E;-3428,E?-1028,E@-2328,EC-"
+            + "599,EG-599,EO-599,EQ-599,E_4499,Ec-599,Ed-428,Ee-599,Eg-128,Ej-800,Eo-599,Eq-428,Et-1528,Eu-1528"
+            + ",Ev-1200,Ew-1328,Ey-1200,F&-3500,F)-328,F*-699,F,-13699,F--2228,F.-13699,F/-6800,F:-7199,F;-7199"
+            + ",F@-2799,FA-6028,FC-928,FG-928,FO-928,FQ-928,F_-5800,Fa-4628,Fc-3928,Fd-4100,Fe-3928,Ff-900,Fg-2"
+            + "928,Fm-1200,Fn-1200,Fo-3928,Fp-1200,Fq-4100,Fr-1200,Fs-3000,Ft-599,Fu-1028,Fv-599,Fw-728,Fx-1200"
+            + ",Fy-599,Fz-1028,G\"-4699,G'-4699,G)-4728,G*-4699,G,-6628,G--699,G.-6628,G/-328,G:-6628,G;-6628,G?"
+            + "-4400,G@-1728,G\\-1028,G]-3128,G_3199,Gv-928,Gw-928,Gy-599,G}-3128,J\"-1399,J&-1000,J'-1399,J)-232"
+            + "8,J*-3128,J,-11999,J--4328,J.-11999,J/-5228,J:-11299,J;-11299,J?-1900,J@-5628,JA-828,JZ-300,J_-4"
+            + "400,Ja-1328,Jc-128,Jd-128,Je-128,Jf-800,Jg-500,Ji-1000,Jj-1128,Jm-1000,Jn-1000,Jo-128,Jp-1000,Jq"
+            + "-128,Jr-1000,Js-128,Jt-1128,Ju-1128,Jv-3328,Jw-3500,Jx-1900,Jy-3000,Jz-599,K*-1028,K,-1728,K--38"
+            + "99,K.-1728,K:-1728,K;-1728,K@-1900,KC-599,KG-599,KO-599,KQ-599,K_6699,Kc-300,Kd-300,Ke-300,Ko-30"
+            + "0,Kq-300,Kt-2500,Ku-1928,Kv-3728,Kw-3899,Ky-3400,L\"-11028,L'-11028,L)-3628,L*-11328,L,-1399,L--3"
+            + "128,L.-1399,L:-1399,L;-1399,L?-7899,L@-128,LT-2400,LU-2628,LV-8400,LW-7599,LY-8928,L\\-7828,L]-12"
+            + "28,L_6499,Lj-828,Lt-1828,Lu-1128,Lv-3600,Lw-3600,Ly-3600,L}-800,N\"-1028,N&-500,N'-1028,N)-1828,N"
+            + "*-2799,N,-11499,N--3828,N.-11499,N/-4900,N:-10799,N;-10799,N?-1399,N@-5128,NZ-128,N_-3028,Na-828"
+            + ",Nf-300,Ni-128,Nj-628,Nm-128,Nn-128,Np-128,Nr-128,Nt-628,Nu-628,Nv-2828,Nw-3000,Nx-1399,Ny-2500,"
+            + "Nz-599,O\"-3128,O'-3128,O)-4528,O*-3499,O,-10099,O.-10099,O/-3699,O:-5428,O;-5428,O?-4699,O@-328,"
+            + "OA-1300,OT-428,OV-300,OX-1999,OY-1300,OZ-928,O\\-1199,O]-4400,O_-5628,O}-3699,P\"-1399,P&-2699,P'-"
+            + "1399,P)-6628,P*-1399,P,-12900,P--1399,P.-12900,P/-5528,P:-3799,P;-3799,P?-1128,P@-699,PA-4499,PJ"
+            + "-428,PU-128,PX-128,PZ-728,P\\-328,P]-3628,P_-5128,Pc-1800,Pd-1428,Pe-1800,Pg-300,Ph-1928,Pk-1928,"
+            + "Pl-1928,Po-1800,Pq-1428,P}-3999,Q\"-3128,Q'-3128,Q)-2199,Q*-3499,Q,-9928,Q.-9928,Q:-5428,Q;-5428,"
+            + "Q?-4699,Q@-328,QA-328,QT-428,QV-300,QX-1999,QY-1300,QZ-928,Q\\-1199,Q_1199,R\"-5528,R'-5528,R)-399"
+            + "9,R*-5399,R,-2099,R--3128,R.-2099,R:-2099,R;-2099,R?-5599,R@-1328,RT-300,RU-1028,RV-128,RW-300,R"
+            + "Y-1499,R\\-2699,R]-1600,R_6499,Rc-128,Rd-128,Re-128,Rj-300,Ro-128,Rq-128,Ru-428,Rv-328,Rw-500,Ry-"
+            + "328,R}-1300,S\"-3428,S'-3428,S)-4700,S*-3999,S,-5899,S.-5899,S/-3399,S:-5899,S;-5899,S?-3500,SJ-3"
+            + "00,SU-300,S\\-1199,S]-3428,S_-2328,Sf-300,Sh-300,Si-128,Sj-300,Sk-300,Sl-300,Sm-128,Sn-128,Sp-128"
+            + ",Sr-128,St-300,Su-300,Sv-1600,Sw-1228,Sx-428,Sy-1228,Sz-300,S}-3800,T&-3699,T,-13699,T--10828,T."
+            + "-13699,T/-7828,T:-8000,T;-8000,T@-3600,TA-2728,TC-599,TG-599,TO-599,TQ-599,T_-5099,Ta-5328,Tc-81"
+            + "28,Td-7800,Te-8128,Tf-900,Tg-6528,Tm-2700,Tn-2700,To-8128,Tp-2700,Tq-7800,Tr-2700,Ts-5700,Tt-150"
+            + "0,Tu-2828,Tv-2700,Tw-2700,Tx-2528,Ty-2700,Tz-2400,U\"-1028,U&-1528,U'-1028,U)-1699,U*-2799,U,-132"
+            + "99,U--3828,U.-13299,U/-5899,U:-10500,U;-10500,U?-1399,U@-5199,UA-4528,US-328,U_-6128,Ua-2028,Uc-"
+            + "828,Ud-828,Ue-828,Uf-1999,Ug-1199,Ui-1699,Uj-1699,Um-1828,Un-1828,Uo-828,Up-1828,Uq-828,Ur-1828,"
+            + "Us-500,Ut-2199,Uu-2328,Uv-2528,Uw-2699,Ux-2099,Uy-2528,Uz-928,V&-3899,V,-14028,V--9428,V.-14028,"
+            + "V/-7699,V:-8999,V;-8999,V@-5128,VA-6628,VC-1300,VG-1300,VO-1300,VQ-1300,V_-5800,Va-6300,Vc-5599,"
+            + "Vd-5599,Ve-5599,Vf-2828,Vg-5928,Vm-4228,Vn-4228,Vo-5599,Vp-4228,Vq-5599,Vr-4228,Vs-5099,Vt-2928,"
+            + "Vu-3728,Vv-2599,Vw-2728,Vx-3528,Vy-2599,Vz-3899,W&-2300,W,-13699,W--6599,W.-13699,W/-6000,W:-882"
+            + "8,W;-8828,W@-5299,WA-5300,W_-5628,Wa-4100,Wc-2900,Wd-2900,We-2900,Wf-2628,Wg-3228,Wm-3728,Wn-372"
+            + "8,Wo-2900,Wp-3728,Wq-2900,Wr-3728,Ws-2528,Wt-2300,Wu-3600,Wv-1600,Ww-1728,Wx-2528,Wy-1600,Wz-220"
+            + "0,X\"-699,X&-1028,X'-699,X)-1328,X*-2428,X,-3999,X--5228,X.-3999,X:-3999,X;-3999,X?-1028,X@-3928,"
+            + "XC-1800,XG-1800,XO-1800,XQ-1800,X_4671,Xa-328,Xc-1628,Xd-1499,Xe-1628,Xg-1028,Xj-1328,Xo-1628,Xq"
+            + "-1499,Xt-3828,Xu-3999,Xv-4228,Xw-4228,Xy-4228,Y&-5228,Y*-1399,Y,-14528,Y--11528,Y.-14528,Y/-9028"
+            + ",Y:-10628,Y;-10628,Y@-6499,YA-8300,YC-2628,YG-2628,YO-2628,YQ-2628,Y_-6128,Ya-8500,Yc-7800,Yd-79"
+            + "28,Ye-7800,Yf-3828,Yg-8300,Yi-699,Ym-5328,Yn-5328,Yo-7800,Yp-5328,Yq-7928,Yr-5328,Ys-7428,Yt-422"
+            + "8,Yu-5200,Yv-3899,Yw-4028,Yx-4499,Yy-3899,Yz-4828,Z\"-2099,Z&-2199,Z'-2099,Z)-3000,Z*-3828,Z,-542"
+            + "8,Z--5300,Z.-5428,Z/-699,Z:-5428,Z;-5428,Z?-3028,Z@-3999,ZC-1428,ZG-1428,ZO-1428,ZQ-1428,Z_2500,"
+            + "Za-1828,Zc-2428,Zd-2428,Ze-2428,Zf-300,Zg-2328,Zj-3500,Zo-2428,Zq-2428,Zt-3428,Zu-4228,Zv-3099,Z"
+            + "w-3228,Zy-3099,[0-6728,[2-728,[3-599,[4-9199,[5-728,[6-7099,[8-4128,[9-3528,[A-728,[C-4400,[G-44"
+            + "00,[O-4400,[Q-4400,[S-5528,[Z-1199,[a-8699,[c-7500,[d-7500,[e-7500,[f-7199,[i-2400,[m-8299,[n-82"
+            + "99,[o-7500,[p-8299,[q-7500,[r-8299,[s-7928,[t-6799,[u-8999,[v-9228,[w-9400,[x-8099,[z-7228,\\,-91"
+            + "28,\\.-9128,\\0-4128,\\4-728,\\6-4128,\\7-4728,\\8-599,\\9-428,\\C-3699,\\G-3699,\\O-3699,\\Q-3699,\\S-699,\\"
+            + "T-7828,\\U-5699,\\V-7199,\\W-6328,\\Y-9028,\\\\-10428,\\a-2799,\\c-2928,\\d-2599,\\e-2928,\\o-2928,\\q-2599,"
+            + "\\s-699,\\t-4099,\\u-4099,\\v-5228,\\w-5400,_0-5628,_15699,_23699,_32371,_4-5800,_52199,_6-5500,_7-49"
+            + "28,_8-928,_971,_A7371,_C-4828,_G-4828,_J7099,_O-4828,_Q-4828,_S2099,_T-5428,_U-6128,_V-5800,_W-5"
+            + "300,_X4800,_Y-6128,_Z3871,_a471,_c-1699,_d-1699,_e-1699,_f4699,_g6399,_h5371,_i5000,_j5071,_k537"
+            + "1,_l5371,_m5000,_n5000,_o-1699,_p5000,_q-1699,_r5000,_s3171,_t-2328,_u-2828,_v-3128,_w-2800,_x69"
+            + "00,_y2099,_z6371,a\"-8628,a&-1028,a'-8628,a)-6728,a*-8428,a,-3428,a--2099,a.-3428,a:-3428,a;-3428"
+            + ",a?-8428,a@-1728,aJ-128,aT-7428,aU-2199,aV-6800,aW-4428,aY-8999,a\\-6728,a]-9199,a_4671,aa-328,av"
+            + "-1900,aw-2028,ay-1900,a}-8128,b\"-6228,b&-699,b'-6228,b)-7300,b*-4900,b,-7400,b.-7400,b/-3099,b:-"
+            + "6399,b;-6399,b?-8499,bA-300,bJ-128,bS-128,bT-8300,bU-628,bV-5099,bW-3099,bX-3000,bY-7800,bZ-1628"
+            + ",b\\-5528,b]-7500,b_-2128,bx-300,bz-128,b}-6428,c\"-2428,c&-1728,c'-2428,c)-8199,c*-3028,c,-4799,c"
+            + "--1199,c.-4799,c/-1399,c:-4099,c;-4099,c?-5400,c@-328,cJ-1399,cT-5528,cU-2628,cV-5800,cW-4428,cY"
+            + "-6928,c\\-3299,c]-9299,c_1800,ca-699,cc-328,cd-328,ce-328,co-328,cq-328,c}-7799,e\"-6100,e&-1399,e"
+            + "'-6100,e)-8000,e*-4900,e,-5728,e.-5728,e/-2099,e:-5728,e;-5728,e?-8999,e@-328,eJ-800,eT-8300,eU-"
+            + "1628,eV-5599,eW-3728,eY-8128,eZ-628,e\\-5728,e]-8499,e_1000,e}-7428,f\"8271,f&-1600,f'8271,f)1271,"
+            + "f*4799,f,-7300,f--3200,f.-7300,f/-3399,f:-1128,f;-1128,f?1900,f@2671,f\\7200,f]5099,f_1171,fb-459"
+            + "9,fc-828,fd-828,fe-828,ff-6242,fh-5514,fi-5785,fj-5028,fk-4600,fl-4642,fo-828,fq-828,f}4771,g\"-3"
+            + "28,g&-1399,g'-328,g)-1399,g*-699,g,-4628,g--1728,g.-4628,g:-2099,g;-2099,g?-1928,gT-2528,gU-1628"
+            + ",gV-1928,gW-1800,gY-3028,g\\-328,g_6800,h\"-8600,h&-1028,h'-8600,h)-5528,h*-8228,h,-3228,h--2099,h"
+            + ".-3228,h:-3228,h;-3228,h?-8599,h@-1900,hT-7228,hU-1999,hV-6600,hW-4228,hY-8628,h\\-6900,h]-9128,h"
+            + "_5500,hv-1828,hw-1999,hy-1828,h}-7928,k\"-1028,k'-1028,k)-4528,k*-1399,k,-2099,k--3228,k.-2099,k:"
+            + "-2099,k;-2099,k?-2328,k@-699,kT-2599,kU-2599,kV-2528,kW-2400,kY-3828,k\\-1399,k]-8000,k_6499,k}-7"
+            + "099,m\"-8600,m&-1028,m'-8600,m)-5528,m*-8228,m,-3228,m--2099,m.-3228,m:-3228,m;-3228,m?-8599,m@-1"
+            + "900,mT-7228,mU-1999,mV-6600,mW-4228,mY-8628,m\\-6900,m]-9128,m_5500,mv-1828,mw-1999,my-1828,m}-79"
+            + "28,n\"-8600,n&-1028,n'-8600,n)-5528,n*-8228,n,-3228,n--2099,n.-3228,n:-3228,n;-3228,n?-8599,n@-19"
+            + "00,nT-7228,nU-1999,nV-6600,nW-4228,nY-8628,n\\-6900,n]-9128,n_5500,nv-1828,nw-1999,ny-1828,n}-792"
+            + "8,o\"-6599,o&-699,o'-6599,o)-7300,o*-5228,o,-7400,o.-7400,o/-3099,o:-6528,o;-6528,o?-8499,oA-300,"
+            + "oJ-128,oS-128,oT-8128,oU-628,oV-5099,oW-3099,oX-3000,oY-7800,oZ-1800,o\\-5528,o]-7500,o_-2128,ox-"
+            + "300,o}-6428,p\"-6228,p&-699,p'-6228,p)-7300,p*-4900,p,-7400,p.-7400,p/-3099,p:-6399,p;-6399,p?-84"
+            + "99,pA-300,pJ-128,pS-128,pT-8300,pU-628,pV-5099,pW-3099,pX-3000,pY-7800,pZ-1628,p\\-5528,p]-7500,p"
+            + "_-2128,px-300,pz-128,p}-6428,r\"-1028,r&-3628,r'-1028,r)-9028,r*-1399,r,-12928,r--1628,r.-12928,r"
+            + "/-5728,r:-2599,r;-2599,r?-3828,rA-3928,rJ-4328,rT-3028,rU-3699,rV-2228,rW-2099,rX-5428,rY-3528,r"
+            + "Z-3928,r\\-1399,r]-8828,r_-3300,rc-1128,rd-800,re-1128,rh-2728,rk-2728,rl-2728,ro-1128,rq-800,r}-"
+            + "8528,s\"-3228,s'-3228,s)-7300,s*-3699,s,-5028,s.-5028,s/-2428,s:-4728,s;-4728,s?-5828,sJ-428,sT-5"
+            + "700,sU-800,sV-5099,sW-2900,sX-128,sY-7099,sZ-628,s\\-3928,s]-7799,s_-199,s}-6599,t\"-699,t'-699,t)"
+            + "-6428,t*-1028,t,-2428,t--2500,t.-2428,t:-2428,t;-2428,t?-1999,tT-2228,tU-1800,tV-2099,tW-1928,tY"
+            + "-3200,t\\-1028,t]-8000,t_4271,t}-6628,u\"-6828,u&-1728,u'-6828,u)-6228,u*-6999,u,-3928,u--2799,u.-"
+            + "3928,u:-3928,u;-3928,u?-6828,u@-1900,uT-6200,uU-2199,uV-6100,uW-4928,uY-7228,u\\-6499,u]-9328,u_4"
+            + "800,uv-1399,uw-1399,uy-1399,u}-8128,v&-2799,v)-8000,v*-328,v,-12928,v--3428,v.-12928,v/-5599,v:-"
+            + "1728,v;-1728,v?-2628,vA-3300,vJ-3000,vT-2700,vU-2328,vV-1600,vW-1428,vX-4228,vY-2700,vZ-2228,v]-"
+            + "9228,v_-3128,vc-828,vd-500,ve-828,vh-1728,vk-1728,vl-1728,vo-828,vq-500,v}-7528,w&-2799,w)-8000,"
+            + "w*-328,w,-12799,w--3428,w.-12799,w/-5400,w:-1728,w;-1728,w?-2628,wA-2928,wJ-3128,wT-2700,wU-2500"
+            + ",wV-1728,wW-1600,wX-4228,wY-2828,wZ-2728,w\\-328,w]-9400,w_-3128,wc-1000,wd-1000,we-1000,wh-1900,"
+            + "wk-1900,wl-1900,wo-1000,wq-1000,w}-7699,x&-328,x)-5328,x*-500,x,-3028,x--3728,x.-3028,x:-2328,x;"
+            + "-2328,x?-1728,xJ-128,xT-2528,xU-2400,xV-2328,xW-2200,xY-3300,x]-8228,x_5699,xc-599,xd-428,xe-599"
+            + ",xo-599,xq-428,x}-6900,y&-2799,y)-8000,y*-328,y,-12799,y--3428,y.-12799,y/-5599,y:-1728,y;-1728,"
+            + "y?-2628,yA-2928,yJ-3000,yT-2700,yU-2328,yV-1600,yW-1428,yX-4228,yY-2700,yZ-2400,y]-9228,y_-3128,"
+            + "yc-828,yd-500,ye-828,yh-1728,yk-1728,yl-1728,yo-828,yq-500,y}-7528,z\"-1028,z&-328,z'-1028,z)-552"
+            + "8,z*-1028,z,-2728,z--699,z.-2728,z:-2728,z;-2728,z?-2300,z@-328,zT-2400,zU-599,zV-2528,zW-2400,z"
+            + "Y-3500,z\\-1028,z]-7228,z_5500,z}-6028,{0-6028,{2-599,{3-599,{4-6628,{5-599,{6-6028,{8-4499,{9-37"
+            + "28,{A-428,{C-3699,{G-3699,{O-3699,{Q-3699,{S-4499,{X-328,{Z-1199,{a-7628,{c-6428,{d-6428,{e-6428"
+            + ",{f-6499,{i-2099,{m-7428,{n-7428,{o-6428,{p-7428,{q-6428,{r-7428,{s-6728,{t-6828,{u-7799,{v-7528"
+            + ",{w-7699,{x-6728,{z-6028,";
+    }
+    private static String Khmer_MN_0_3_kerning() {
+        return " A-4785, T-5957, V-7128, W-5957, Y-7128,, -4052,. -4052,: -4052,; -4052,AC-1660,AG-1660,AO-1660,"
+            + "AQ-1660,AT-6054,AU-830,AV-6054,AW-3222,AY-6054,Av-3466,Aw-3466,Ay-976,BA830,C,976,C.976,CA976,D,"
+            + "-3076,D.-3076,DA-2587,DV-2001,DW-2001,DY-4052,F,-8642,F.-8642,FA-4296,Fe-1757,Fo-1757,Je-830,Jo-"
+            + "830,Ju-830,KO-4882,Ke-2392,Ko-2392,Ku-2001,Ky-3076,LT-4052,LV-4052,LW-4052,LY-5224,Ly-3466,O,-23"
+            + "92,O.-2392,OA-1660,OT-2636,OV-1660,OW-1660,OX-3222,OY-3222,P,-10400,P.-10400,PA-4296,Pe-976,Po-9"
+            + "76,RO-2392,RT-3662,RU-1269,RV-3222,RW-3076,RY-4052,T,-7812,T--6884,T.-7812,T:-3466,T;-3466,TA-60"
+            + "54,TO-2636,Ta-5078,Te-6054,To-6054,Tr-5078,Tu-5664,Tw-6054,Ty-5078,U,-976,U.-976,UA-976,V,-5224,"
+            + "V--4052,V.-6884,VA-6054,VG-1660,VO-1660,Va-2392,Ve-4052,Vo-4052,Vu-3076,W,-6884,W--4052,W.-6884,"
+            + "WA-3222,WO-1660,Wa-2392,We-3662,Wo-3662,Wu-3076,Wy-1269,Y,-7812,Y--8642,Y.-7812,Y:-3466,Y;-3466,"
+            + "YA-6884,YO-3222,YS-830,Ya-4882,Ye-6884,Yo-6884,Yu-4882,ap-439,av-1416,aw-1416,ay-1660,b,-2587,b."
+            + "-2587,by-439,c,-1757,c.-1757,dd-439,e,-1757,e.-1757,ev-585,ew-585,ey-585,fe-439,fo-439,go-439,gy"
+            + "830,hy-1416,ke-1269,ko-1269,lw-439,ly-439,mu-439,my-1416,nu-439,nv-585,ny-830,o,-3466,o.-3466,ov"
+            + "-439,ow-439,ox-585,oy-830,p,-3466,p.-3466,py-1416,r,-6884,r--5224,r.-6884,r:1660,r;1660,rc-976,r"
+            + "d-585,re-830,ro-976,rq-976,rr-439,rt830,rv390,ry390,sw-439,v,-5224,v.-6884,ve-830,vo-830,w,-5224"
+            + ",w.-5224,we-830,wo-830,xe-1269,y,-5224,y.-5224,ye-830,yo-830,";
+    }
+    private static String Khmer_MN_0_6_kerning() {
+        return " A-4785, T-7128, V-7128, W-5957, Y-8300,, -4052,. -4052,: -4052,; -4052,AC-3466,AG-3466,AO-1660,"
+            + "AQ-1660,AT-6054,AU-830,AV-7812,AW-6054,AY-4492,Av-5224,Aw-5224,Ay-6054,B,-3466,B.-3466,BU-830,C,"
+            + "-3466,C.-3466,D,-3466,D.-3466,DA-5224,DV-2832,DW-2832,DY-3466,F,-10400,F.-10400,FA-6884,Fa-830,F"
+            + "e-5224,Fo-4296,Fr-2587,Je-830,Jo-830,Ju-830,KO-2832,Ke-2392,Ko-2392,Ku-2001,Ky-3076,LT-8642,LV-8"
+            + "642,LW-6884,LY-10400,Ly-3466,O,-2392,O.-2392,OA-3466,OT-5224,OV-2636,OW-2392,OX-3222,OY-3222,On-"
+            + "830,Ou-830,P,-12109,P.-12109,PA-6884,Pa-1269,Pe-3076,Po-3076,RO-830,RT-3466,RU-1269,RV-2392,RW-2"
+            + "832,RY-4052,T,-10400,T--12109,T.-10400,T:-4296,T;-4296,TA-6054,TO-5224,Ta-5664,Te-7812,To-7812,T"
+            + "r-5078,Tu-7812,Tw-6884,Ty-6054,U,-3466,U.-3466,UA-1806,V,-6884,V--7812,V.-6884,VA-7812,VG-2636,V"
+            + "O-2636,Va-2392,Ve-4052,Vo-4052,Vu-3076,W,-7812,W--6054,W.-7812,WA-6054,WO-2392,Wa-2392,We-3662,W"
+            + "o-3662,Wu-3076,Wy-1269,Y,-8642,Y--10400,Y.-8642,Y:-3466,Y;-3466,YA-4492,YO-3222,YS-1416,Ya-4882,"
+            + "Ye-5224,Yo-5664,Yu-4882,ap-439,av-1416,aw-1416,ay-1660,b,-2587,b.-2587,bb-439,bl-439,bv-585,by-9"
+            + "76,c,-1757,c.-1757,dd-439,e,-1757,e.-1757,ev-1269,ew-585,ex-439,ey-585,fe-439,fo-439,ge-585,go-4"
+            + "39,gy830,hy-1416,ke-1269,ko-1269,lw-439,ly-439,mu-439,my-1416,nu-439,nv-1269,ny-830,o,-1757,o.-1"
+            + "757,og-585,ov-1660,ow-1416,ox-1269,oy-1416,p,-1757,p.-1757,py-1416,r,-6884,r--6054,r.-6884,r:166"
+            + "0,r;1660,rc-976,rd-585,re-830,ro-976,rq-585,rr-439,rt830,rv1220,ry1220,sw-439,v,-4296,v.-4296,ve"
+            + "-830,vo-830,w,-5224,w.-5224,we-830,wo-830,xe-1269,y,-6054,y.-6054,ya-585,ye-1416,yo-976,ze-830,z"
+            + "o-830,";
+    }
+    private static String Kohinoor_Bangla_0_3_kerning() {
+        return "\"4-7799,\"6-2400,\"c-3200,&T-1499,&V-1300,&W-599,&Y-1300,&v-599,&x500,&y-800,'4-7799,'6-2400,'c-32"
+            + "00,(C-1100,(G-800,(J-700,([500,(]500,(b500,(c-800,(i500,(j500,(p500,(y299,(|500,*A-1300,*J-2100,"
+            + "*X-599,,1-6600,,T-1699,,U-399,,V-2100,,W-1300,,Y-3099,,c-1600,,f-599,,v-6499,,w-4100,,y-3999,-1-"
+            + "3200,-3-3999,-7-2400,-J-1399,-T-1499,-V-599,-W-399,-X-800,-Y-1699,-Z-599,-f-1600,-v-800,-x-3999,"
+            + "-z-2400,.1-1699,.C-200,.G-200,.T-1699,.U-200,.V-1699,.W-1300,.Y-2500,.c-399,.d-99,.f-599,.v-1399"
+            + ",.w-899,.y-1000,/4-3800,/A-1000,/J-500,/Y399,/c-3000,/d-2200,/g-599,/o-599,/q-599,/z-399,07-1600"
+            + ",24-800,54-599,61-1100,64-599,65-399,7,-4400,7--3200,7.-1499,7/-6199,72-399,74-1300,76-599,82-39"
+            + "9,84-399,9,-2400,9.-2400,92-599,94-599,:T-599,:V-599,:Y-1100,;T-599,;V-599,;Y-1100,?A-1100,?J-13"
+            + "99,?X-399,?Z-399,?c-1999,?d-3099,?g-399,?q-200,@J-800,@V-599,@X-800,@Y-1100,@a-399,@v-800,@x-199"
+            + "9,@y-1000,A*-1300,A?-599,AC-1999,AG-399,AQ-1999,AT-4900,AU-399,AV-4299,AW-2200,AY-5299,A\\-599,Af"
+            + "-399,Aq-200,At-500,Av-3699,Aw-899,Ay-3800,BA-399,BJ-299,BT-2899,BV-1300,BW-2200,BX-2299,BY-3300,"
+            + "BZ-1799,Bf-399,Bv-399,Bx-399,By-2200,Bz-399,C--1100,CC-1600,CJ-800,CO-1600,CS-800,CY-800,Cc-399,"
+            + "Cd-399,Cf-399,Cq-200,Cv-2799,Cw-1799,Cy-2899,D.-200,D/-399,DA-1999,DJ-1600,DT-1799,DV-1100,DX-25"
+            + "99,DY-2100,DZ-1799,Dz-299,E--500,Ef-500,Eg-399,Eq-200,Ev-2200,Ew-2200,F&-599,F.-1900,F/-1399,F:-"
+            + "599,F;-599,FA-3899,FC-1799,FG-399,FJ-7599,FO-1600,FQ-1799,FS-1799,FU-800,FV-1600,FW-800,FX-2700,"
+            + "FY-1300,FZ-4600,Fa-3500,Fc-899,Fd-800,Ff-599,Fg-800,Fo-599,Fq-399,Fs-500,Fv-800,Fw-800,Fx-2500,F"
+            + "y-800,Fz-899,GV-599,GY-2200,Gv-299,Gy-399,JA-1000,K*-800,K--1199,KC-1999,KG-399,KO-1600,KQ-399,K"
+            + "V-2400,KW-1600,KY-1600,KZ-1600,Kc-2799,Kd-399,Kf-2799,Kg-399,Ko-2799,Kq-399,Kv-3200,Kw-700,Ky-41"
+            + "99,L*-3899,L--2400,L?-1199,LC-2700,LO-2400,LQ-3200,LT-8200,LU-2799,LV-7899,LW-5800,LX-1600,LY-11"
+            + "799,L[-800,L\\-800,L]-800,Lb-800,Lf-4299,Li-800,Lj-800,Lp-800,Lv-6900,Lw-3999,Ly-5500,L|-800,O)-8"
+            + "00,OA-1999,OJ-3200,OT-3399,OV-2799,OW-399,OX-1999,OY-3000,OZ-800,Ox-399,P&-1000,P)-800,P.-2400,P"
+            + "/-2500,P@-700,PA-5700,PJ-7599,PQ-1799,PS-2799,PT-1600,PU-1600,PV-1900,PW-800,PX-4799,PY-2200,PZ-"
+            + "4700,Pa-4799,Pc-3099,Pd-800,Pg-599,Po-599,Pq-599,Ps-2899,Px-2799,Pz-3200,Q)-800,QA-200,QJ-200,QT"
+            + "-200,QV-399,QW-399,QX-1999,QY-599,QZ-800,Q[599,Q]599,Qb599,Qi599,Qj599,Qp599,Qx-399,Q|599,R--399"
+            + ",RB-800,RD-800,RE-800,RF-800,RP-800,RR-800,RT-2400,RU-800,RV-3800,RW-1000,RY-3099,Rq-200,Ry-2400"
+            + ",SJ-399,ST-2100,SV-1399,SY-3000,Sf-1999,Sv-700,Sw-599,Sx-500,Sy-3399,T&-1499,T--1499,T.-1900,T/-"
+            + "1999,T:-599,T;-599,T?399,T@-599,TA-4900,TC-1000,TJ-6000,TO-3200,TQ-3399,TS-1000,TZ-399,T[-2400,T"
+            + "\\500,T]-2400,Ta-4900,Tb-2400,Tc-4100,Td-3200,Tg-800,Ti-2400,Tj-2400,To-3800,Tp-2400,Tq-599,Ts-38"
+            + "00,Tv-4799,Tw-3999,Tx-599,Ty-4799,Tz-2200,T|-2400,U.-200,U/-1499,UA-399,UJ-3800,V&-1300,V,-7100,"
+            + "V--599,V.-1699,V/-1399,V:-599,V;-599,V@-1300,VA-4299,VC-599,VG-599,VJ-6100,VO-2400,VQ-3600,VS-28"
+            + "99,VX-1600,VZ-399,Va-3800,Vc-3999,Vd-3999,Vg-800,Vo-3999,Vq-800,Vs-1999,Vy-399,Vz-2599,W&-599,W-"
+            + "-399,W.-1300,W/-1100,W@-599,WA-2200,WG-399,WJ-6199,WS-399,Wa-599,Wc-700,Wd-800,Wg-800,Wo-800,Wq-"
+            + "800,Ws-599,Wz-399,X*-599,X--800,X@-599,XC-1999,XG-599,XO-1600,XQ-1199,XV-1600,Xc-399,Xd-399,Xo-3"
+            + "99,Xq-399,Xt-399,Xv-800,Xw-399,Xy-700,Y&-1300,Y,-9199,Y--1699,Y.-2100,Y/-2500,Y:-1100,Y;-1100,Y@"
+            + "-1300,YA-5299,YC-2500,YG-599,YJ-6300,YO-2400,YQ-2200,YS-3099,YZ-599,Ya-4600,Yc-4600,Yd-4600,Yf-5"
+            + "99,Yg-1499,Yo-4600,Yq-1499,Ys-3999,Yv-3000,Yw-2799,Yx-2200,Yy-3800,Yz-3699,Z--599,ZC-1600,ZG-500"
+            + ",ZO-800,ZQ-1600,ZS-1600,ZT-299,ZY-299,\\1-5800,\\4-2400,\\7-2700,\\9-3200,\\C-599,\\T-1199,\\U-599,\\V-1"
+            + "799,\\W-1100,\\Y-2599,\\[700,\\]700,\\b700,\\i700,\\j700,\\p700,\\v-3399,\\w-599,\\y700,\\|700,a\"-3999,a'-39"
+            + "99,a*-2599,a\\-3800,av-800,ay-800,b\"-3200,b'-3200,b/-599,b?-1399,b\\-2400,bv-1600,bx-800,by-1900,b"
+            + "z-1799,c--800,cq-200,cy-800,dJ-700,d\\-299,e\"-2400,e'-2400,e?-399,ev-1600,ey-800,f)3699,f,-5899,f"
+            + "--2500,f.-5899,f/-2400,f?500,f@-3200,f\\1300,fc-2400,fd-2899,fe-399,ff-4199,fg-399,fi-5199,fl-119"
+            + "9,fo-399,fq-399,fs-1000,fz-399,h\"-3999,h'-3999,k--4499,kc-1600,kd-2200,ke-599,kq-200,ky-1600,l\"-"
+            + "2400,l'-2400,m\"-3999,m'-3999,n\"-3999,n'-3999,o/-3000,od-800,ov-1199,ow-1199,ox-1000,oy-2200,oz-1"
+            + "799,pf-399,pv-800,px-1600,py-1600,r&-1100,r,-5800,r--2500,r.-1600,r/-3200,r@-3000,ra-1999,rc-240"
+            + "0,rd-1600,rs-800,rt399,rx-1600,ry-1600,rz-2200,r}-500,s\"-1600,s'-1600,sc-800,sv-2599,sw-1000,sx-"
+            + "800,sy-1600,t--2899,tc-800,td-1600,tf-2799,tv-1600,ty-1600,v&-599,v,-3999,v--800,v.-1399,v/-2599"
+            + ",v@-2200,va-1000,vc-3000,vd-2200,vf-299,vg-399,vo-1199,vq-399,vs-1499,vw-1600,vx-2400,vy-2400,vz"
+            + "-800,w,-3200,w.-1100,w/-2599,w@-599,wc-1300,wd-1399,wg-399,wq-399,ws-1000,wv-1600,x--3999,x@-160"
+            + "0,xc-1799,xd-1999,xe-399,xg-299,xo-800,xq-299,xs-800,xv-2400,xy-800,y&-700,y,-3999,y.-1300,y/-32"
+            + "00,y@-2200,ya-1100,yc-2899,yd-2200,yg-399,yo-800,yq-399,ys-1600,yv-1999,yz-800,z--2400,z\\-1600,z"
+            + "c-1000,zd-1799,zs-800,zv-1999,zw-399,zy-800,";
+    }
+    private static String Kohinoor_Bangla_0_6_kerning() {
+        return "\"4-6000,&T-6999,&V-6000,&W-3000,&Y-6000,&t-1000,&v-3000,&w-1000,&x2200,&y-3699,'4-6000,(C-5200,("
+            + "G-3999,(J-3099,([2400,(]2400,(b2400,(i2400,(j2400,(p2400,(y1600,(|2400,*A-6000,*J-10099,*X-3000,"
+            + ",T-8300,,U-1999,,V-10000,,W-6000,,Y-14600,,f-2799,,v-8399,,w-4299,-J-6900,-T-6999,-V-3000,-W-199"
+            + "9,-X-3999,-Y-8000,-Z-3000,-x-3999,.1-8000,.C-1000,.G-1000,.T-8300,.U-1000,.V-8000,.W-6000,.Y-119"
+            + "99,.c-1999,.d-599,.f-2799,.v-6900,.w-4100,.y-4700,/4-3000,/71000,/A-4600,/J-2299,/T1000,/Y1999,/"
+            + "c-3000,/d-3000,/g-3000,/o-3000,/q-3000,/x-1000,/z-1999,54-3000,61-5000,64-3000,65-1999,7.-6999,7"
+            + "/-6699,72-1999,74-6000,76-3000,82-1999,84-1999,92-3000,93-1000,94-3000,:T-3000,:V-3000,:W-1000,:"
+            + "Y-5000,;T-3000,;V-3000,;W-1000,;Y-5000,?A-5000,?J-6799,?X-1999,?Z-1999,?c-1999,?d-3399,?g-1999,?"
+            + "q-1000,@J-3999,@V-3000,@W-1000,@X-3999,@Y-5000,@a-1900,@w-1000,@x-1999,@y-1000,@z-1000,A*-6000,A"
+            + "?-3000,AC-1999,AG-1999,AQ-1999,AT-4499,AU-1999,AV-5299,AW-3000,AY-6499,A\\-2899,Ac-1000,Ad-1000,A"
+            + "f-1999,Al-1000,Ao-1000,Aq-1000,At-2200,Av-6199,Aw-4400,Ay-6900,BA-1999,BJ-1600,BS-1000,BT-2599,B"
+            + "V-2299,BW-2799,BX-3399,BY-4499,BZ-1000,Bf-1999,Bt-1000,Bv-1999,Bw-1000,Bx-1999,By-3000,Bz-1999,C"
+            + "--5099,CG-1000,CQ-1000,Cc-1999,Cd-1999,Cf-1999,Cg-1000,Co-1000,Cq-1000,Cv-1999,Cw-1000,Cx-1000,C"
+            + "y-2700,D.-1000,D/-1999,DA-1999,DT-1000,DV-1699,DW-399,DX-1300,DY-2599,DZ-1199,Dx-1000,Dz-1300,E-"
+            + "-2299,EG-1000,EQ-1000,Ef-2299,Eg-1999,Eo-1000,Eq-1000,Et-1000,Ev-3099,Ew-3000,Ey-1000,F&-3000,F."
+            + "-8899,F/-6799,F:-3000,F;-3000,FA-3600,FC-1000,FG-1900,FJ-9799,FQ-1000,FS-1000,FX-1600,FY-2200,FZ"
+            + "-3300,Fa-5299,Fc-4100,Fd-3899,Ff-3000,Fg-3800,Fo-2899,Fq-1999,Fs-2400,Ft-1000,Fv-3600,Fw-3600,Fx"
+            + "-4299,Fy-3899,Fz-4199,GV-2700,GW-1000,GX-1000,GY-3000,Gv-1600,Gw-1000,Gy-1699,JA-1000,K*-3999,K-"
+            + "-5700,KC-1999,KG-1999,KQ-1999,Kc-1999,Kd-1999,Kf-1900,Kg-1999,Ko-1999,Kq-1999,Kt-1000,Kv-4100,Kw"
+            + "-3500,Ky-4799,L*-18500,L--11399,L?-5700,LC-1799,LG-1000,LT-8000,LU-1999,LV-9100,LW-4900,LY-10899"
+            + ",L[-3699,L\\-3999,L]-3699,Lb-3699,Lf-1600,Li-3699,Lj-3699,Lp-3699,Lt-1000,Lv-6499,Lw-3800,Ly-7500"
+            + ",L|-3699,O)-3999,OA-1999,OT-1000,OV-1999,OW-1999,OX-1999,OY-3000,Ov-899,Ox-1699,Oy-1000,Oz-1000,"
+            + "P&-4600,P)-3999,P.-11300,P/-11900,P@-3399,PA-6999,PJ-10200,PQ-1000,PS-2100,PV-1699,PX-4600,PY-28"
+            + "99,PZ-3399,Pa-3999,Pc-3300,Pd-3999,Pg-3000,Po-3000,Pq-3000,Ps-2299,Px-1999,Pz-3899,Q)-3999,QA-10"
+            + "00,QJ-1000,QT-1000,QV-1999,QW-1999,QX-1999,QY-3000,Q[2899,Q]2899,Qb2899,Qi2899,Qj2899,Qp2899,Qv-"
+            + "899,Qx-1699,Qy-1000,Qz-1000,Q|2899,R--1699,RV-2899,RW-1000,RY-3600,Rc-1000,Rd-1000,Rg-1000,Ro-10"
+            + "00,Rq-1000,Rv-1000,Rw-1000,SA-1000,SJ-1999,ST-2599,SV-2299,SW-1000,SX-1000,SY-2799,Sf-2100,Sv-35"
+            + "00,Sw-2799,Sx-2400,Sy-5099,Sz-1000,T&-6999,T--6999,T.-8899,T/-9700,T:-3000,T;-3000,T?1999,T@-279"
+            + "9,TA-4499,TC-1000,TG-1000,TJ-5800,TQ-1000,TS-1100,TZ-1999,T\\2200,Ta-4400,Tc-4600,Td-3999,Tg-3999"
+            + ",To-3000,Tq-3000,Ts-3000,Tv-3999,Tw-3999,Tx-3000,Ty-3999,Tz-3000,U.-1000,U/-6999,UA-1999,UJ-3000"
+            + ",V&-6000,V--3000,V.-8000,V/-6799,V:-3000,V;-3000,V@-6000,VA-5299,VC-3000,VG-2799,VJ-6399,VQ-1999"
+            + ",VS-2700,VZ-1799,Va-3200,Vc-3999,Vd-3999,Vg-3999,Vo-3999,Vq-3999,Vs-1999,Vy-1999,Vz-5000,W&-3000"
+            + ",W--1999,W.-6000,W/-5099,W:-1000,W;-1000,W@-3000,WA-3000,WC-1000,WG-1999,WJ-6999,WS-1699,Wa-3000"
+            + ",Wc-3099,Wd-3999,Wg-3999,Wo-3999,Wq-3999,Ws-3000,Wz-1999,X*-3000,X--3999,X@-3000,XC-1999,XG-3000"
+            + ",XQ-1999,Xc-1999,Xd-1999,Xg-1000,Xl-1000,Xo-1999,Xq-1999,Xt-1999,Xv-3999,Xw-1999,Xy-3300,Y&-6000"
+            + ",Y,-10000,Y--8000,Y.-10000,Y/-12100,Y:-5000,Y;-5000,Y@-6000,YA-6499,YC-4600,YG-3000,YJ-7400,YQ-3"
+            + "000,YS-3500,YZ-2700,Ya-6999,Yc-6999,Yd-6999,Yf-3000,Yg-6999,Yo-6999,Yq-6999,Ys-3999,Yt-1000,Yv-3"
+            + "000,Yw-2100,Yx-3000,Yy-3000,Yz-6300,Z--3000,ZG-2200,ZT-1499,ZV-1000,ZY-1300,\\1-8699,\\C-3000,\\T-5"
+            + "700,\\U-3000,\\V-8800,\\W-5200,\\Y-12299,\\[3500,\\]3500,\\b3500,\\i3500,\\j3500,\\p3500,\\v-5000,\\w-3000,\\"
+            + "y3500,\\|3500,a*-1000,a\\-3000,b/-3000,b?-3000,by-1399,bz-1199,co-1000,cq-1000,dJ-3200,d\\-1499,e?-"
+            + "1999,f)2799,f--4499,f?2200,f\\6000,fd-2500,fe-1799,ff-6600,fg-1900,fi-4100,fl-3300,fo-1999,fq-199"
+            + "9,fs-899,fz-1799,k--5399,kd-3000,ke-3000,kg-1000,ko-1000,kq-1000,l?-1000,o/-3000,of-1100,ov-1999"
+            + ",ow-2100,ox-1000,oy-2799,oz-1000,pf-1699,r&-5200,r.-7500,r/-3999,r@-3000,ra-1799,rf1000,rt1699,r"
+            + "z-3000,r}-2299,sf-1000,sv-1000,sw-1000,t--1999,tf-2100,v&-3000,v.-6699,v/-5000,v@-2899,va-1199,v"
+            + "c-3000,vd-2799,vf-1499,vg-1999,vo-1999,vq-1999,w&-1000,w.-5000,w/-5000,w@-3000,wa-1000,wc-2299,w"
+            + "d-3000,wf-1000,wg-1799,wq-1799,ws-1000,x--3999,xc-1000,xd-1999,xe-1900,xf-1000,xg-1399,xq-1399,y"
+            + "&-3200,y.-6000,y/-3999,y@-3000,ya-1399,yc-2599,yd-2799,yg-1999,yq-1999,z@-1000,zc-800,zd-899,zf-"
+            + "899,zv-1999,zw-1699,";
+    }
+    private static String Kohinoor_Gujarati_0_3_kerning() {
+        return "\"4-7799,\"6-2400,'4-7799,'6-2400,([500,(]500,(|500,,1-6600,-1-3200,-3-3999,-7-2400,.1-1699,/4-380"
+            + "0,07-1600,24-800,54-599,61-1100,64-599,65-399,7,-4400,7--3200,7.-1499,7/-6199,72-399,74-1300,76-"
+            + "599,82-399,84-399,9,-2400,9.-2400,92-599,94-599,AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,"
+            + "Ay-1757,FA-5468,LT-7373,LV-7373,LW-7373,LY-7373,Ly-3662,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,"
+            + "TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-"
+            + "5468,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,WA-3662,Wa-3662,We-1757,Wo-"
+            + "1757,Wr-1757,Wu-1757,Wy-878,YA-7373,Ya-7373,Ye-9179,Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5"
+            + "468,\\1-5800,\\4-2400,\\7-2700,\\9-3200,\\[700,\\]700,\\|700,ff-1757,";
+    }
+    private static String Kohinoor_Gujarati_0_6_kerning() {
+        return "\"4-6000,'4-6000,([2400,(]2400,(|2400,.1-8000,/4-3000,/71000,54-3000,61-5000,64-3000,65-1999,7.-6"
+            + "999,7/-6699,72-1999,74-6000,76-3000,82-1999,84-1999,92-3000,93-1000,94-3000,AT-7373,AV-7373,AW-5"
+            + "468,AY-9179,Av-3662,Aw-1757,Ay-3662,FA-5468,LT-7373,LV-7373,LW-5468,LY-9179,Ly-3662,PA-7373,RV-1"
+            + "757,RW-1757,RY-3662,TA-7373,TO-1757,Ta-7373,Tc-7373,Te-7373,Ti-1757,To-7373,Tr-5468,Ts-7373,Tu-7"
+            + "373,Tw-7373,Ty-7373,VA-7373,Va-5468,Ve-5468,Vi-1757,Vo-7373,Vr-5468,Vu-3662,Vy-3662,WA-5468,Wa-3"
+            + "662,We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,YA-9179,Ya-5468,Ye-5468,Yi-3662,Yo-7373,Yp-54"
+            + "68,Yq-7373,Yu-5468,Yv-5468,\\1-8699,\\[3500,\\]3500,\\|3500,";
+    }
+    private static String Kohinoor_Telugu_0_3_kerning() {
+        return "&T-1499,&V-1300,&W-599,&Y-1300,&t-200,&v-599,&w-200,&x500,&y-800,54-599,61-1000,64-599,65-399,72"
+            + "-399,74-1199,76-599,82-399,84-399,92-599,93-200,94-599,@J-800,@V-599,@W-200,@X-800,@Y-1100,@a-39"
+            + "9,@v-800,@w-200,@x-1999,@y-1000,@z-200,AC-1999,AG-399,AQ-1999,AT-4900,AU-399,AV-4299,AW-2200,AY-"
+            + "5299,Ac-200,Ad-200,Af-399,Al-200,Ao-200,Aq-200,At-500,Av-3699,Aw-899,Ay-3800,BA-399,BJ-299,BS-20"
+            + "0,BT-2899,BV-1300,BW-2200,BX-2299,BY-3300,BZ-1799,Bf-399,Bt-200,Bv-399,Bw-200,Bx-399,By-2200,Bz-"
+            + "399,CC-1600,CG-200,CJ-800,CO-1600,CQ-200,CS-800,CY-800,Cc-399,Cd-399,Cf-399,Cg-200,Co-200,Cq-200"
+            + ",Cv-2799,Cw-1799,Cx-200,Cy-2899,DA-1999,DJ-1600,DT-1799,DV-1100,DW-99,DX-2599,DY-2100,DZ-1799,Dx"
+            + "-200,Dz-299,EG-200,EQ-200,Ef-500,Eg-399,Eo-200,Eq-200,Et-200,Ev-2200,Ew-2200,Ey-200,F&-599,FA-38"
+            + "99,FC-1799,FG-399,FJ-7599,FO-1600,FQ-1799,FS-1799,FU-800,FV-1600,FW-800,FX-2700,FY-1300,FZ-4600,"
+            + "Fa-3500,Fc-899,Fd-800,Ff-599,Fg-800,Fo-599,Fq-399,Fs-500,Ft-200,Fv-800,Fw-800,Fx-2500,Fy-800,Fz-"
+            + "899,GV-599,GW-200,GX-200,GY-2200,Gv-299,Gw-200,Gy-399,JA-1000,KC-1999,KG-399,KO-1600,KQ-399,KV-2"
+            + "400,KW-1600,KY-1600,KZ-1600,Kc-2799,Kd-399,Kf-2799,Kg-399,Ko-2799,Kq-399,Kt-200,Kv-3200,Kw-700,K"
+            + "y-4199,LC-2700,LG-200,LO-2400,LQ-3200,LT-8200,LU-2799,LV-7899,LW-5800,LX-1600,LY-11799,Lb-800,Lf"
+            + "-4299,Lt-200,Lv-6900,Lw-3999,Ly-5500,OA-1999,OJ-3200,OT-3399,OV-2799,OW-399,OX-1999,OY-3000,OZ-8"
+            + "00,Ov-200,Ox-399,Oy-200,Oz-200,P&-1000,P@-700,PA-5700,PJ-7599,PQ-1799,PS-2799,PT-1600,PU-1600,PV"
+            + "-1900,PW-800,PX-4799,PY-2200,PZ-4700,Pa-4799,Pc-3099,Pd-800,Pg-599,Po-599,Pq-599,Ps-2899,Px-2799"
+            + ",Pz-3200,QA-200,QJ-200,QT-200,QV-399,QY-599,Qb599,RB-800,RT-2400,RU-800,RV-3800,RW-1000,RY-3099,"
+            + "Rc-200,Rd-200,Rg-200,Ro-200,Rq-200,Rv-200,Rw-200,Ry-2400,SA-200,SJ-399,ST-2100,SV-1399,SW-200,SX"
+            + "-200,SY-3000,Sf-1999,Sv-700,Sw-599,Sx-500,Sy-3399,Sz-200,T&-1499,T@-599,TA-4900,TC-1000,TG-200,T"
+            + "J-6000,TO-3200,TQ-3399,TS-1000,TZ-399,Ta-4900,Tb-2400,Tc-4100,Td-3200,Tg-800,To-3800,Tq-599,Ts-3"
+            + "800,Tv-4799,Tw-3999,Tx-599,Ty-4799,Tz-2200,UA-399,UJ-3800,V&-1300,V@-1300,VA-4299,VC-599,VG-599,"
+            + "VJ-6100,VO-2400,VQ-3600,VS-2899,VX-1600,VZ-399,Va-3800,Vc-3999,Vd-3999,Vg-800,Vo-3999,Vq-800,Vs-"
+            + "1999,Vy-399,Vz-2599,W&-599,W@-599,WA-2200,WC-200,WG-399,WJ-6199,WS-399,Wa-599,Wc-700,Wd-800,Wg-8"
+            + "00,Wo-800,Wq-800,Ws-599,Wz-399,X@-599,XC-1999,XG-599,XO-1600,XQ-1199,XV-1600,Xc-399,Xd-399,Xg-20"
+            + "0,Xl-200,Xo-399,Xq-399,Xt-399,Xv-800,Xw-399,Xy-700,Y&-1300,Y@-1300,YA-5299,YC-2500,YG-599,YJ-630"
+            + "0,YO-2400,YQ-2200,YS-3099,YZ-599,Ya-4600,Yc-4600,Yd-4600,Yf-599,Yg-1499,Yo-4600,Yq-1499,Ys-3999,"
+            + "Yt-200,Yv-3000,Yw-2799,Yx-2200,Yy-3800,Yz-3699,ZC-1600,ZG-500,ZO-800,ZQ-1600,ZS-1600,ZT-299,ZV-2"
+            + "00,ZY-299,av-800,ay-800,bv-1600,bx-800,by-1900,bz-1799,co-200,cq-200,cy-800,dJ-700,ev-1600,ey-80"
+            + "0,f@-3200,fc-2400,fd-2899,fe-399,fg-399,fo-399,fq-399,fs-1000,fz-399,kc-1600,kd-2200,ke-599,kg-2"
+            + "00,ko-200,kq-200,ky-1600,od-800,of-200,ov-1199,ow-1199,ox-1000,oy-2200,oz-1799,pf-399,pv-800,px-"
+            + "1600,py-1600,r&-1100,r@-3000,ra-1999,rc-2400,rd-1600,rf200,rs-800,rt399,rx-1600,ry-1600,rz-2200,"
+            + "sc-800,sf-200,sv-2599,sw-1000,sx-800,sy-1600,tc-800,td-1600,tf-2799,tv-1600,ty-1600,v&-599,v@-22"
+            + "00,va-1000,vc-3000,vd-2200,vf-299,vg-399,vo-1199,vs-1499,vw-1600,vx-2400,vy-2400,vz-800,w&-200,w"
+            + "@-599,wa-200,wc-1300,wd-1399,wf-200,wg-399,ws-1000,wv-1600,x@-1600,xc-1799,xd-1999,xe-399,xf-200"
+            + ",xg-299,xo-800,xs-800,xv-2400,xy-800,y&-700,y@-2200,ya-1100,yc-2899,yd-2200,yg-399,yo-800,ys-160"
+            + "0,yv-1999,yz-800,z@-200,zc-1000,zd-1799,zf-200,zs-800,zv-1999,zw-399,zy-800,";
+    }
+    private static String Kohinoor_Telugu_0_6_kerning() {
+        return "&T-6999,&V-6000,&W-3000,&Y-6000,&t-1000,&v-3000,&w-1000,&x2200,&y-3699,54-2899,61-4900,64-2899,6"
+            + "5-1900,72-1900,74-5800,76-2899,82-1900,84-1900,92-2899,93-1000,94-2899,@J-3999,@V-3000,@W-1000,@"
+            + "X-3999,@Y-5000,@a-1900,@w-1000,@x-1999,@y-1000,@z-1000,AC-1999,AG-1999,AQ-1999,AT-4499,AU-1999,A"
+            + "V-5299,AW-3000,AY-6499,Ac-1000,Ad-1000,Af-1999,Al-1000,Ao-1000,Aq-1000,At-2200,Av-6199,Aw-4400,A"
+            + "y-6900,BA-1999,BJ-1600,BS-1000,BT-2599,BV-2299,BW-2799,BX-3399,BY-4499,BZ-1000,Bf-1999,Bt-1000,B"
+            + "v-1999,Bw-1000,Bx-1999,By-3000,Bz-1999,CG-1000,CQ-1000,Cc-1999,Cd-1999,Cf-1999,Cg-1000,Co-1000,C"
+            + "q-1000,Cv-1999,Cw-1000,Cx-1000,Cy-2700,DA-1999,DT-1000,DV-1699,DW-399,DX-1300,DY-2599,DZ-1199,Dx"
+            + "-1000,Dz-1300,EG-1000,EQ-1000,Ef-2299,Eg-1999,Eo-1000,Eq-1000,Et-1000,Ev-3099,Ew-3000,Ey-1000,F&"
+            + "-3000,FA-3600,FC-1000,FG-1900,FJ-9799,FQ-1000,FS-1000,FX-1600,FY-2200,FZ-3300,Fa-5299,Fc-4100,Fd"
+            + "-3899,Ff-3000,Fg-3800,Fo-2899,Fq-1999,Fs-2400,Ft-1000,Fv-3600,Fw-3600,Fx-4299,Fy-3899,Fz-4199,GV"
+            + "-2700,GW-1000,GX-1000,GY-3000,Gv-1600,Gw-1000,Gy-1699,JA-1000,KC-1999,KG-1999,KQ-1999,Kc-1999,Kd"
+            + "-1999,Kf-1900,Kg-1999,Ko-1999,Kq-1999,Kt-1000,Kv-4100,Kw-3500,Ky-4799,LC-1799,LG-1000,LT-8000,LU"
+            + "-1999,LV-9100,LW-4900,LY-10899,Lb-3699,Lf-1600,Lt-1000,Lv-6499,Lw-3800,Ly-7500,OA-1999,OT-1000,O"
+            + "V-1999,OW-1999,OX-1999,OY-3000,Ov-899,Ox-1699,Oy-1000,Oz-1000,P&-4600,P@-3399,PA-6999,PJ-10200,P"
+            + "Q-1000,PS-2100,PV-1699,PX-4600,PY-2899,PZ-3399,Pa-3999,Pc-3300,Pd-3999,Pg-3000,Po-3000,Pq-3000,P"
+            + "s-2299,Px-1999,Pz-3899,QA-1000,QJ-1000,QT-1000,QV-1999,QY-3000,Qb2899,RV-2899,RW-1000,RY-3600,Rc"
+            + "-1000,Rd-1000,Rg-1000,Ro-1000,Rq-1000,Rv-1000,Rw-1000,SA-1000,SJ-1999,ST-2599,SV-2299,SW-1000,SX"
+            + "-1000,SY-2799,Sf-2100,Sv-3500,Sw-2799,Sx-2400,Sy-5099,Sz-1000,T&-6999,T@-2799,TA-4499,TC-1000,TG"
+            + "-1000,TJ-5800,TQ-1000,TS-1100,TZ-1999,Ta-4400,Tc-4600,Td-3999,Tg-3999,To-3000,Tq-3000,Ts-3000,Tv"
+            + "-3999,Tw-3999,Tx-3000,Ty-3999,Tz-3000,UA-1999,UJ-3000,V&-6000,V@-6000,VA-5299,VC-3000,VG-2799,VJ"
+            + "-6399,VQ-1999,VS-2700,VZ-1799,Va-3200,Vc-3999,Vd-3999,Vg-3999,Vo-3999,Vq-3999,Vs-1999,Vy-1999,Vz"
+            + "-5000,W&-3000,W@-3000,WA-3000,WC-1000,WG-1999,WJ-6999,WS-1699,Wa-3000,Wc-3099,Wd-3999,Wg-3999,Wo"
+            + "-3999,Wq-3999,Ws-3000,Wz-1999,X@-3000,XC-1999,XG-3000,XQ-1999,Xc-1999,Xd-1999,Xg-1000,Xl-1000,Xo"
+            + "-1999,Xq-1999,Xt-1999,Xv-3999,Xw-1999,Xy-3300,Y&-6000,Y@-6000,YA-6499,YC-4600,YG-3000,YJ-7400,YQ"
+            + "-3000,YS-3500,YZ-2700,Ya-6999,Yc-6999,Yd-6999,Yf-3000,Yg-6999,Yo-6999,Yq-6999,Ys-3999,Yt-1000,Yv"
+            + "-3000,Yw-2100,Yx-3000,Yy-3000,Yz-6300,ZG-2200,ZT-1499,ZV-1000,ZY-1300,by-1399,bz-1199,co-1000,cq"
+            + "-1000,dJ-3200,fd-2500,fe-1799,fg-1900,fo-1999,fq-1999,fs-899,fz-1799,kd-3000,ke-3000,kg-1000,ko-"
+            + "1000,kq-1000,of-1100,ov-1999,ow-2100,ox-1000,oy-2799,oz-1000,pf-1699,r&-5200,r@-3000,ra-1799,rf1"
+            + "000,rt1699,rz-3000,sf-1000,sv-1000,sw-1000,tf-2100,v&-3000,v@-2899,va-1199,vc-3000,vd-2799,vf-14"
+            + "99,vg-1999,vo-1999,w&-1000,w@-3000,wa-1000,wc-2299,wd-3000,wf-1000,wg-1799,ws-1000,xc-1000,xd-19"
+            + "99,xe-1900,xf-1000,xg-1399,y&-3200,y@-3000,ya-1399,yc-2599,yd-2799,yg-1999,z@-1000,zc-800,zd-899"
+            + ",zf-899,zv-1999,zw-1699,";
+    }
+    private static String Lao_MN_0_3_kerning() {
+        return " A-4785, T-4199, V-2783, W-1416, Y-2783,, -4589,. -4589,: -4589,; -4589,AC-1904,AG-1904,AO-1904,"
+            + "AQ-1904,AT-6787,AU-878,AV-6787,AW-3710,AY-6787,Av-3906,Aw-3906,Ay-1123,BA878,C,-2783,C.-2783,CA1"
+            + "123,D,-5517,D.-5517,DA-2783,DV-2197,DW-2197,DY-4589,F,-9716,F.-9716,FA-4785,Fe-4199,Fo-5517,Je-8"
+            + "78,Jo-878,Ju-878,KO-5517,Ke-2685,Ko-2685,Ku-2197,Ky-3515,LT-4589,LV-4589,LW-4589,LY-5908,Ly-3906"
+            + ",O,-6982,O.-8300,OA-2783,OT-5615,OV-1904,OW-1904,OX-3710,OY-3710,P,-15283,P.-11621,PA-8300,Pe-11"
+            + "23,Po-5615,RO-2685,RT-4101,RU-1416,RV-3710,RW-1416,RY-4589,T,-8789,T--7714,T.-8789,T:-3906,T;-39"
+            + "06,TA-6787,TO-5615,Ta-8300,Te-9716,To-9716,Tr-5712,Tu-6298,Tw-6787,Ty-5712,U,-4199,U.-4199,UA-11"
+            + "23,V,-8300,V--4589,V.-7714,VA-6787,VG-1904,VO-1904,Va-5517,Ve-4589,Vo-4589,Vu-3515,W,-7714,W--45"
+            + "89,W.-7714,WA-3710,WO-1904,Wa-2685,We-4101,Wo-4101,Wu-3515,Wy-1416,Y,-8789,Y--9716,Y.-8789,Y:-39"
+            + "06,Y;-3906,YA-7714,YO-3710,YS-878,Ya-5517,Ye-7714,Yo-7714,Yu-5517,ap-488,av-1611,aw-1611,ay-1904"
+            + ",b,-2783,b.-2783,by-488,c,-1904,c.-1904,dd-488,e,-1904,e.-1904,ev-683,ew-683,ey-683,fe-488,fi102"
+            + "5,fo-488,go-488,gy5615,hy-1611,ke-1416,ko-1416,lw-488,ly-488,my-1611,nu-488,nv-683,ny-878,o,-390"
+            + "6,o.-8300,ov-488,ow-488,ox-683,oy-878,p,-3906,p.-3906,py-1611,r,-7714,r--5908,r.-7714,r:5615,r;1"
+            + "904,rc-1416,rd-1416,re-1416,ro-1416,rq-1416,rt878,rv488,ry488,sw-488,t,4199,t.4199,t:4199,t;4199"
+            + ",v,-5908,v.-7714,ve-878,vo-878,w,-5908,w.-5908,we-488,wo-878,xe-1416,y,-9716,y.-9716,ye-878,yo-2"
+            + "685,";
+    }
+    private static String Lao_MN_0_6_kerning() {
+        return " A-4785, T-4199, V-2783, W-1416, Y-2783,, -4589,. -4589,: -4589,; -4589,AC-1904,AG-1904,AO-1904,"
+            + "AQ-1904,AT-6787,AU-878,AV-6787,AW-3710,AY-6787,Av-3906,Aw-3906,Ay-1123,BA878,C,-2783,C.-2783,CA1"
+            + "123,D,-5517,D.-5517,DA-5615,DV-2197,DW-2197,DY-4589,F,-9716,F.-9716,FA-4785,Fe-4199,Fo-5517,Je-8"
+            + "78,Jo-878,Ju-878,KO-5517,Ke-2685,Ko-2685,Ku-2197,Ky-3515,LT-4589,LV-4589,LW-4589,LY-5908,Ly-3906"
+            + ",O,-6982,O.-8300,OA-2783,OT-5615,OV-1904,OW-1904,OX-3710,OY-3710,P,-19384,P.-11621,PA-8300,Pe-11"
+            + "23,Po-5615,RO-2685,RT-4101,RU-1416,RV-3710,RW-1416,RY-4589,T,-8789,T--7714,T.-8789,T:-3906,T;-39"
+            + "06,TA-6787,TO-5615,Ta-8300,Te-9716,To-9716,Tr-5712,Tu-6298,Tw-6787,Ty-5712,U,-4199,U.-4199,UA-11"
+            + "23,V,-8300,V--4589,V.-7714,VA-6787,VG-1904,VO-1904,Va-5517,Ve-4589,Vo-4589,Vu-3515,W,-7714,W--45"
+            + "89,W.-7714,WA-3710,WO-1904,Wa-2685,We-4101,Wo-4101,Wu-3515,Wy-1416,Y,-8789,Y--13916,Y.-15283,Y:-"
+            + "3906,Y;-3906,YA-7714,YO-3710,YS-878,Ya-5517,Ye-7714,Yo-7714,Yu-5517,ap-488,av-1611,aw-1611,ay-19"
+            + "04,b,-2783,b.-2783,by-488,c,-1904,c.-1904,dd-488,e,-1904,e.-1904,ev-683,ew-683,ey-683,fe-488,fi-"
+            + "48,fo-488,go-488,gy5615,hy-1611,ke-1416,ko-1416,lw-488,ly-488,my-1611,nu-488,nv-683,ny-878,o,-39"
+            + "06,o.-8300,ov-488,ow-488,ox-683,oy-878,p,-3906,p.-3906,py-1611,r,-7714,r--5908,r.-7714,r:5615,r;"
+            + "1904,rc-1416,rd-1416,re-1416,ro-1416,rq-1416,rt878,rv488,ry488,sw-488,t,4199,t.4199,t:4199,t;419"
+            + "9,v,-5908,v.-7714,ve-878,vo-878,w,-5908,w.-5908,we-488,wo-878,xe-1416,y,-9716,y.-9716,ye-878,yo-"
+            + "2685,";
+    }
+    private static String Lucida_Grande_0_3_kerning() {
+        return "ff-3076,fi-1220,fl-927,";
+    }
+    private static String Lucida_Grande_0_6_kerning() {
+        return "ff-7763,fi-6201,fl-6201,";
+    }
+    private static String Luminari_0_3_kerning() {
+        return ",4-6300,-1-10399,-2-8300,-3-8399,-4-4199,-5-5200,-6-3200,-7-8300,-A-6199,-B-9400,-F-10399,-H-729"
+            + "9,-I-7299,-J-7299,-K-9400,-L-6300,-N-5200,-P-4100,-R-7299,-S-4199,-T-5200,-U-2100,-V-9400,-W-940"
+            + "0,-X-5200,-Z-8300,-a-7299,-b-3099,-h-4100,-k-5200,-l-5200,-m-3200,-o-4199,-p-4199,-q-4199,-t-320"
+            + "0,-y-4100,-z-5200,.4-7299,//-12500,/q-5200,0,-6300,0.-6199,01-4199,02-3099,03-4199,1--5200,11-10"
+            + "00,14-1100,17-1100,19-2100,2--4199,24-1000,29-1100,3,-3200,3.-4199,31-4199,32-4199,33-4199,35-10"
+            + "00,37-3099,41-4100,42-1000,43-3099,47-3099,5,-6300,5.-6199,51-2100,52-4100,53-1000,6,-5200,6.-52"
+            + "00,61-4100,62-6300,63-2100,67-5200,7,-10399,7--8300,7.-10399,7/-10399,74-7299,76-4199,78-2100,82"
+            + "-4100,83-2100,87-4100,89-3200,9,-8399,9.-9299,91-3099,92-1000,93-1100,A*-4100,A--6199,AC-2100,AF"
+            + "-2100,AJ-3099,AQ-4199,AV-9700,AW-6999,AY-1000,Av-2799,Aw-2799,Ay-4199,B*-4199,B,-6300,B.-6300,BB"
+            + "-4199,BF-6300,BI-4199,BJ-6199,BK-4199,BL-4199,BP-2100,BR-4199,BV-7299,BW-8399,BZ-4199,C--6300,Cv"
+            + "-3099,Cw-4199,E--5200,EO-1100,EQ-1100,F,-6199,F.-6199,FA-2100,FK-3099,FS-2100,FZ-2100,G*-3099,G,"
+            + "-5200,G.-5200,GB-2100,GF-4199,GI-2100,GJ-2100,GL-4199,GR-3099,GV-3099,GX-2100,GZ-5200,H,-6199,H."
+            + "-6199,H;-3099,HA-3099,HB-2100,HJ-3200,HL-3099,HV-3099,HW-1100,HZ-3200,I--4199,IC-5200,IG-3099,J,"
+            + "-4199,J--4199,J.-4199,K--7299,KE-4199,KO-3099,KQ-3099,KS-2100,Kv-4199,Kw-4199,Ky-5599,L*-10399,L"
+            + "--8399,LF-5200,LJ-5200,LV-8300,LW-6300,Lv-6300,Lw-5200,Ly-7200,M,-6199,M.-9299,M/-5200,MF-3200,M"
+            + "K-4199,ML-5200,MV-4199,MX-5200,MZ-3099,N--1999,NF-2100,O,-9400,O.-9400,O/-7299,O;-3099,OB-3200,O"
+            + "F-3200,OJ-3099,OK-4199,OL-3200,OR-4100,OV-5200,OW-4100,OX-6199,OZ-3200,P,-18800,P--5200,P.-18800"
+            + ",P/-13500,P:-3099,P;-5200,PA-5200,PB-1100,PS-2100,PX-5200,PZ-1000,Pa-6199,Pc-3099,Pd-5200,Pe-410"
+            + "0,Pg-3099,Po-6199,Pq-4199,Ps-3099,QV-6300,QW-3099,QX-1999,R--4199,RB-5200,RE-3099,RF-4100,RJ-520"
+            + "0,RL-4100,RM-2100,RN-5200,RO-1100,RQ-3099,RT-3099,RV-6300,RW-5200,Rx-5200,Ry-4199,S,-5200,S.-520"
+            + "0,SF-3099,SK-4199,SZ-2100,T,-6300,T.-6300,TA-1000,TB-2100,TF-4199,TI-2100,TJ-2100,TK-5200,TR-320"
+            + "0,TS-5200,TV-3099,TZ-5200,Ti-2100,Ty-2100,U--6199,US-3200,V,-8300,V--7299,V.-12500,V/-18800,V:-3"
+            + "099,V;-7299,VA-7299,VC-2100,VE-4199,VM-3099,VO-3099,VS-2100,VZ-2100,Va-8300,Vc-7299,Vd-7200,Ve-6"
+            + "300,Vg-8399,Vo-7299,Vq-8399,Vr-2100,Vs-8300,Vu-3099,W,-9299,W--6300,W.-10399,W/-13600,W:-4100,W;"
+            + "-4199,WG-2100,WO-2100,WQ-3099,Wa-5200,Wc-4199,Wd-5200,We-4100,Wg-6199,Wo-5299,Wq-6300,Ws-5200,Wu"
+            + "-2100,X--6300,XC-4199,XE-4199,XG-5200,XM-5200,XO-6300,XQ-5200,Xv-6300,Xw-3099,Xy-5200,Z--9400,ZC"
+            + "-2100,ZE-4100,ZF-4199,ZM-4199,ZO-4100,ZQ-5200,ZT-3099,ZV-3099,Zg-5200,Zv-7299,Zw-5200,Zy-7299,a*"
+            + "-7299,a--3099,av-2100,ay-2500,b,-8399,b.-8399,ba-1999,ca-1499,ec-800,eg-2400,ei-800,f*12500,h!-3"
+            + "099,h,-7299,h.-7299,h;-3099,ha-2799,hh-4199,hl-4100,k--4199,m--4199,o,-7299,o.-7299,oa-2100,p,-6"
+            + "300,p.-6300,p/-5200,q--3099,qa-1100,r,-10399,r.-10399,r/-7299,ra-3099,rc-2299,rd-3899,re-3899,rg"
+            + "-2299,ro-3099,rs-800,sh-1000,t--5200,v,-11499,v.-11499,v/-7200,va-3099,ve-500,w,-6300,w.-7299,w/"
+            + "-5200,y,-9400,y.-9400,y/-7299,ya-1000,z--3099,";
+    }
+    private static String Marker_Felt_0_3_kerning() {
+        return "!!4900,!\"3899,!'3899,!(3500,!)3699,!,2599,!-2400,!.6300,!/3099,!1-10000,!44199,!85099,!:3699,!;3"
+            + "699,!?3200,!@3800,!A4199,!B4400,!C4799,!D3099,!E4199,!F5599,!G4900,!H4100,!I4600,!J3000,!K4299,!"
+            + "L5000,!M4100,!N5099,!O3699,!P5000,!Q3999,!R4299,!S3300,!T3699,!U3300,!V5000,!W4799,!X4799,!Y4700"
+            + ",!Z5000,!]2799,!a5099,!b5399,!c5500,!d2799,!e4299,!f5599,!g5099,!h5800,!i5000,!j16199,!k4199,!l4"
+            + "600,!m5800,!n5800,!o5399,!p3099,!q5299,!r5299,!s4499,!t3800,!u5000,!v5000,!w5000,!x4600,!y4299,!"
+            + "z4600,\"!2599,\"\"2500,\"'2400,\")2700,\",-31399,\"--46199,\".-21199,\"/-25200,\"0-2799,\"1-10099,\"2-2400,\""
+            + "3-4499,\"4-13600,\"5-3399,\"6-2500,\"9-2100,\"@-13999,\"A-12400,\"B2500,\"E2899,\"F4499,\"H2899,\"I3300,\"J-"
+            + "21699,\"K2899,\"L3800,\"M2500,\"N3099,\"P3800,\"R2700,\"S2899,\"T3600,\"U2899,\"V4700,\"W4299,\"Y5000,\"Z-279"
+            + "9,\"\\3300,\"a-7799,\"b4199,\"c-2500,\"d-11000,\"e-7299,\"f3699,\"g-6999,\"h3399,\"i3500,\"k2799,\"l3300,\"m41"
+            + "00,\"n4100,\"o-4400,\"p2200,\"q-8300,\"r3800,\"t2400,\"u4299,\"v5099,\"w4799,\"z-2899,\u0023\"-2299,\u0023'-2299,\u0023)-7"
+            + "799,\u0023,-23999,\u0023.-12500,\u0023/-8399,\u00230-3200,\u00231-13800,\u00232-5299,\u00233-8999,\u002342299,\u00235-5099,\u00236-2700,\u00237-14900,\u0023"
+            + "?-2799,\u0023C2500,\u0023G2599,\u0023T-3600,\u0023X-8800,\u0023Y-3500,\u0023Z-7200,\u0023\\-11300,\u0023]-12100,\u0023c3200,\u0023e2100,\u0023f3300,\u0023g27"
+            + "00,\u0023m2100,\u0023n2100,\u0023o3099,\u0023q2200,\u0023r2400,\u0023u3000,\u0023v2799,\u0023w3000,\u0023y2599,\u0023z-2599,'!3999,'\"3899,''3899,'"
+            + "(3099,')4100,',-21300,'--23200,'.-4400,'/-23600,'1-8699,'3-3099,'4-12299,':2700,';2700,'?3200,'@"
+            + "-15099,'A-13099,'B3899,'C3200,'D3000,'E4299,'F5899,'G3300,'H4299,'I4700,'J-22400,'K4299,'L5200,'"
+            + "M3899,'N4499,'O2200,'P5200,'Q2500,'R4100,'S4299,'T5000,'U4299,'V6100,'W5800,'X2100,'Y6399,'\\4700"
+            + ",']3099,'a-2799,'b5599,'d-9600,'e-5899,'f5200,'g-5599,'h4799,'i4900,'j2799,'k4199,'l4700,'m5500,"
+            + "'n5500,'o-3000,'p3600,'q-6900,'r5200,'t3800,'u5700,'v6399,'w6199,'y2799,(!2799,(\u0023-6100,(,3800,(-"
+            + "-8800,(.3899,(0-5500,(1-15099,(2-5500,(3-8600,(4-5899,(5-4100,(6-5599,(8-2599,(9-6499,(;8399,(?2"
+            + "100,(@-5899,(B2500,(C-2400,(E2599,(F3500,(H2400,(I2799,(J-7400,(K2599,(L2700,(M2500,(N2899,(O-27"
+            + "99,(P3500,(Q-2599,(R3000,(V3699,(W3399,(Y3600,(a-2899,(b3899,(c-3300,(d-5800,(e-4900,(f-2100,(g5"
+            + "299,(h3500,(i2899,(j17299,(k2599,(l2799,(m3200,(n3200,(o-3800,(s-4100,(t-3999,(u-1999,(w-2100,(y"
+            + "-4199,)!4499,)\"-2100,)'-2100,)(2599,),-6100,)-2400,)1-13699,)2-5299,)3-4499,)43300,)5-2799,)7-83"
+            + "00,)82899,):2700,);2599,)@3600,)B3200,)C4299,)D2400,)E3200,)F3399,)G4400,)H3099,)I3500,)J2400,)K"
+            + "3300,)L3500,)M3099,)N3399,)O3300,)P3500,)Q3600,)R3399,)S3099,)T-2700,)U2299,)W2500,)Y-3200,)Z210"
+            + "0,)\\-8999,)a3300,)b3600,)c5299,)d2100,)e3999,)f3399,)g4799,)h3600,)i3200,)j7799,)k3399,)l3500,)m"
+            + "4100,)n4100,)o5099,)q4299,)r4100,)s3200,)u4400,)v3399,)w3699,)y2799,,!4799,,\"-30599,,\u0023-20700,,'-"
+            + "21999,,(-4299,,)3699,,--31900,,.6199,,/6699,,0-6399,,1-18500,,3-2200,,4-29600,,6-5800,,7-10899,,"
+            + "84100,,9-4799,,:4799,,;7400,,A5599,,B4100,,C-2799,,D2799,,E3600,,F3500,,H3399,,I4600,,K4100,,L41"
+            + "00,,M4100,,N4700,,O-2899,,P4900,,Q-2799,,R4100,,T-11600,,U-3099,,V-8200,,W-3699,,X6499,,Y-8099,,"
+            + "Z6799,,\\-31499,,]5299,,a4100,,b5099,,c2700,,g3699,,h6000,,i5000,,j15800,,k3899,,l4600,,m6000,,n6"
+            + "000,,o2100,,q3099,,r5500,,s1999,,t-3699,,u2400,,v-3600,,x5800,,y-11499,,z6100,-!3600,-\"-45099,-'"
+            + "-23500,-(2299,-)-8500,-,-31499,-.-21300,-/-9900,-0-2200,-1-20399,-2-18699,-3-12700,-42799,-5-399"
+            + "9,-7-20899,-9-2200,-@1999,-A-5500,-B2400,-C4199,-E2299,-F2299,-G4100,-H2299,-I2299,-K2299,-L2299"
+            + ",-N2299,-O3000,-P2299,-Q3399,-R2299,-S-4100,-T-14900,-X-11999,-Y-8500,-Z-10599,-\\-16900,-]-20299"
+            + ",-b2400,-c3899,-d1999,-e2599,-g3500,-h2299,-k2200,-l2299,-m2299,-n2299,-o3800,-q2100,-r2299,-t-3"
+            + "500,-u3099,-v2100,-w2100,-x-6199,-z-8000,.!4600,.\"-21100,.\u0023-24299,.'-21199,.)3200,.--22400,..550"
+            + "0,./6799,.0-4700,.1-18099,.4-21399,.6-4100,.7-11699,.85800,.9-2899,.:3899,.@2599,.A5500,.B4600,."
+            + "D3399,.E4400,.F4400,.H3899,.I4700,.J2200,.K4700,.L4600,.M4299,.N4700,.P5000,.R4700,.T-19499,.V-6"
+            + "300,.X6300,.Y-8000,.Z7899,.\\-23800,.]4700,.a5700,.b4900,.c4400,.d2799,.e2799,.f-2299,.g3600,.h49"
+            + "00,.i4400,.j-4900,.k4499,.l4700,.m5000,.n5000,.o3800,.p2799,.q5899,.r5200,.s3999,.t-4199,.u3500,"
+            + ".x4900,.y-19600,.z6699,/\"3099,/\u0023-10299,/'3099,/(-3099,/,-41100,/--16900,/.-34499,//-31199,/0-690"
+            + "0,/1-17100,/2-11300,/3-11399,/4-21600,/5-5500,/6-6900,/7-2700,/8-8300,/9-8000,/:-11900,/;-12200,"
+            + "/@-20299,/A-15800,/C-3899,/G-3000,/J-21699,/O-3999,/Q-3999,/S-2100,/V1999,/Y2100,/Z-3399,/\\-2200"
+            + ",/a-13600,/c-13999,/d-19299,/e-17599,/f-6399,/g-16699,/m-7299,/n-7299,/o-15599,/p-6199,/q-18200,"
+            + "/r-7700,/s-13500,/t-6799,/u-7799,/v-6999,/w-7599,/x-12899,/y-11300,/z-14299,0\"-2500,0\u0023-3699,0'-2"
+            + "500,0)-7899,0,-16999,0--2200,0.-6799,0/-8099,0?-5299,0@-2200,0A-5099,0D-2400,0J-3099,0S-1999,0T-"
+            + "3200,0V-2299,0X-6199,0Y-3200,0Z-4799,0\\-8300,0]-5200,0d-3699,0j-3399,0p-2599,0x-2799,0z-5200,1!-"
+            + "13200,1\"-15700,1\u0023-18099,1'-15700,1(-15899,1)-15099,1,-16900,1--17100,1.-11699,1/-15399,1:-14199,"
+            + "1;-15899,1?-16199,1@-15700,1A-13699,1B-14499,1C-14600,1D-15200,1E-14199,1F-14400,1G-14499,1H-141"
+            + "99,1I-13300,1J-16600,1K-14100,1L-13800,1M-13800,1N-12899,1O-15599,1P-13099,1Q-15399,1R-13800,1S-"
+            + "15500,1T-15800,1U-16000,1V-14499,1W-14600,1X-13300,1Y-14600,1Z-14700,1\\-18099,1]-15099,1a-14600,"
+            + "1b-12599,1c-13999,1d-16600,1e-15200,1f-13699,1g-14100,1h-12100,1i-12799,1j-16900,1k-14100,1l-133"
+            + "00,1m-11999,1n-11999,1o-14199,1p-15899,1q-14199,1r-12599,1s-15000,1t-15500,1u-14199,1v-14199,1w-"
+            + "14199,1x-13200,1y-14900,1z-13999,2\u0023-5200,2(-3899,2)-3000,2,-11499,2--9700,2:-2700,2;-4299,2?-399"
+            + "9,2@-2599,2C-3600,2G-2599,2J-4600,2O-4299,2Q-4299,2S-2799,2U-2200,2\\-7100,2]-2700,2d-3000,2e-210"
+            + "0,2j-3200,2p-2599,2t-3600,2w-1999,2y-4199,3!-2700,3\"-3500,3\u0023-6699,3'-3600,3(-4400,3)-9900,3,-172"
+            + "00,3--7700,3.-6900,3/-8800,3:-7200,3;-7400,3?-6799,3@-2799,3A-5200,3B-3099,3C-2400,3D-3899,3E-30"
+            + "00,3F-2899,3G-2100,3H-3099,3I-2700,3J-3999,3K-2899,3L-2700,3M-3099,3N-2899,3O-3200,3P-2700,3Q-30"
+            + "00,3R-2899,3S-2899,3T-4299,3U-4100,3V-3699,3W-3300,3X-7599,3Y-4600,3Z-5000,3\\-10200,3]-6499,3a-3"
+            + "399,3b-2700,3d-3899,3e-2599,3f-3300,3h-2599,3i-2799,3j-5299,3k-2799,3l-2700,3m-2500,3n-2500,3p-4"
+            + "299,3r-2599,3s-3500,3t-5000,3u-2299,3v-2899,3w-3099,3x-7400,3y-5800,3z-6799,4!6900,4\"-5200,4'-52"
+            + "00,4(5299,4)-2599,4,-5899,4.-2799,4/-4299,4:-3200,4?2899,4@6600,4A2700,4B6399,4C7299,4D5500,4E63"
+            + "99,4F6600,4G7500,4H6300,4I6699,4J5599,4K6499,4L6699,4M6300,4N6600,4O6300,4P6699,4Q6600,4R6600,4S"
+            + "2599,4T-4199,4U5200,4W4799,4X-3699,4Y-2200,4Z-3000,4\\-5899,4]-5000,4a2100,4b6799,4c8300,4d5200,4"
+            + "e6999,4g7899,4h6799,4i6300,4j8399,4k6600,4l6699,4m6999,4n6999,4o8099,4p4799,4q6999,4r6999,4s4299"
+            + ",4u7400,4v5299,4w5599,4x-3600,4z-3800,5\"-3399,5\u0023-7799,5'-3399,5(-3699,5)-4400,5,-16699,5--4499,5"
+            + ".-7100,5/-9299,5:-8500,5;-8699,5?-2200,5@-3300,5A-5899,5D-2299,5J-3999,5O-3000,5Q-2700,5S-3800,5"
+            + "U-2100,5X-3399,5Z-5800,5\\-4900,5]-2799,5a-4700,5d-4499,5e-2899,5f-8600,5g-2200,5j-3000,5m-2799,5"
+            + "n-2799,5p-5200,5q-3000,5r-2799,5s-3999,5t-8800,5u-2400,5v-3800,5w-3399,5x-8899,5y-7700,5z-7299,6"
+            + "\"-3200,6\u0023-5000,6'-3300,6(-2100,6)-8999,6,-16399,6--2599,6.-6100,6/-8000,6:-4299,6;-4499,6?-5099,"
+            + "6A-4199,6D-2400,6J-2400,6S-2100,6T-3899,6U-2400,6V-2799,6W-2100,6X-6499,6Y-4600,6Z-4299,6\\-11100"
+            + ",6]-6300,6a-2700,6d-2799,6j-3999,6p-3000,6s-1999,6t-3500,6x-6699,6y-5099,6z-5599,7\u0023-8999,7(-5399"
+            + ",7)-4199,7,-21900,7--11300,7.-17799,7/-18399,7:-9199,7;-9299,7?-2100,7@-12899,7A-15800,7C-5800,7"
+            + "D-2200,7G-5000,7J-13099,7O-6100,7Q-6000,7S-4199,7U-2100,7X-3300,7Z-5899,7\\-4700,7]-2799,7a-8899,"
+            + "7c-10099,7d-13699,7e-12100,7f-5200,7g-11100,7j-3200,7m-5500,7n-5500,7o-10500,7p-6300,7q-13000,7r"
+            + "-5899,7s-9900,7t-7200,7u-5800,7v-5500,7w-5800,7x-9499,7y-7700,7z-11600,8!3699,8(2100,8)-4799,8,-"
+            + "13999,8.-3300,8/-4400,8:-2799,8;-3000,8@3699,8B3300,8C3999,8D2500,8E3300,8F3500,8G4299,8H3300,8I"
+            + "3699,8J2400,8K3500,8L3699,8M3300,8N3500,8O3200,8P3699,8Q3399,8R3500,8S3099,8X-4400,8\\-7299,8]-33"
+            + "00,8a1999,8b3699,8c5200,8d2400,8e3899,8g4600,8h3800,8i3300,8k3600,8l3699,8m3899,8n3899,8o5000,8q"
+            + "4299,8r3899,8u4199,8w2200,8x-3000,8z-3699,9\"-4400,9\u0023-4700,9'-4499,9(-2100,9)-7799,9,-14199,9--25"
+            + "99,9.-5099,9/-6900,9;-2100,9?-5700,9A-4700,9D-2799,9H-1999,9J-3000,9M-1999,9S-2500,9T-5099,9U-24"
+            + "00,9V-3399,9X-5299,9Y-5399,9Z-3699,9\\-11499,9]-7200,9d-3399,9j-4400,9p-3300,9s-1999,9x-3500,9z-4"
+            + "499,:!2400,:(2100,:.4900,:/3099,:0-2500,:1-12100,:2-2700,:3-3999,:4-6999,:7-14400,:83699,:?-2200"
+            + ",:A3200,:B3200,:C2899,:E2700,:F2700,:G2899,:H2599,:I2799,:K2799,:L2899,:M2400,:N3699,:P3399,:R28"
+            + "99,:S2200,:T-3699,:U2100,:W2700,:X3000,:Y-2100,:Z3699,:\\-10599,:a3300,:b2899,:c2599,:f4799,:g220"
+            + "0,:h3200,:i3300,:j13200,:k2700,:l2799,:m3899,:n3899,:o2100,:q3699,:r3800,:t2799,:u3999,:v3899,:w"
+            + "3999,:x2400,:y2899,:z3500,;!3200,;,2700,;--3000,;.5700,;/2700,;0-3300,;1-13000,;2-2700,;3-7200,;"
+            + "4-7899,;5-4199,;6-2799,;7-13300,;9-2200,;:2200,;;6900,;@-2500,;A3399,;B2599,;C1999,;E2299,;F2100"
+            + ",;G1999,;H2400,;I3099,;J-3099,;K2400,;L2599,;M2599,;N3500,;P3300,;R2799,;T-4499,;X3000,;Y-3000,;"
+            + "Z2299,;\\-11499,;b3800,;f3899,;g3800,;h4199,;i3600,;j15399,;k2299,;l3099,;m4299,;n4299,;r3800,;u3"
+            + "200,;v3099,;w3200,;x3099,;y2200,;z2899,?\"3200,?'3200,?)-4900,?,-22599,?--3699,?.-16600,?/-17400,"
+            + "?0-4100,?1-12500,?2-4400,?3-6699,?4-11499,?5-5500,?6-3699,?7-4799,?9-3200,??-2100,?@-7400,?A-116"
+            + "00,?J-13200,?X-2799,?Z-5399,?\\-5099,?c-2100,?d-6999,?e-4799,?f3099,?g-3899,?o-3000,?q-6300,?z-33"
+            + "99,@!2599,@\"-16100,@\u0023-2899,@'-16100,@)-8200,@,-24900,@.-10200,@/-6999,@0-3200,@1-20899,@2-13600,"
+            + "@3-11600,@42200,@5-5000,@6-2500,@7-20599,@9-2799,@?-2599,@C3000,@G3000,@Q2200,@T-14600,@X-8699,@"
+            + "Y-8600,@Z-6600,@\\-17599,@]-14299,@c3000,@g2500,@o2899,@t-2599,@u2400,@x-4299,@z-6499,A!4199,A\"-8"
+            + "600,A\u0023-8300,A'-8600,A(-3699,A)2299,A,2700,A--5899,A.7100,A/2299,A0-6900,A1-18600,A3-4799,A5-2599"
+            + ",A6-6300,A7-11600,A82200,A9-5099,A:3699,AA3800,AB3500,AD2299,AE3399,AF3200,AH3500,AI4100,AJ-2700"
+            + ",AK3500,AL3699,AM3600,AN4600,AO-2400,AP4400,AQ-2100,AR3500,AT-7799,AU-3099,AV-7200,AW-2200,AX429"
+            + "9,AY-7200,AZ3200,A\\-10800,A]2400,Aa2599,Ab4700,Ac1999,Af-2200,Ag4499,Ah5200,Ai4700,Ak3399,Al4100"
+            + ",Am5800,An5800,Aq3399,Ar5399,At-3699,Au2700,Av-3099,Ax4700,Ay-4600,Az4199,B!4299,B\"2100,B'2100,B"
+            + "(2400,B)-3099,B,-16600,B.-6000,B/-6499,B1-12799,B2-5700,B3-6499,B42799,B5-3699,B7-2400,B9-2100,B"
+            + ";-2200,B@2799,BB2899,BC3999,BD2100,BE3099,BF3200,BG4100,BH2899,BI3200,BJ1999,BK3099,BL3200,BM279"
+            + "9,BN3099,BO3099,BP3200,BQ3300,BR3099,BU1999,BV2299,BW2400,BY2500,BZ-3099,B\\-3099,Bb3399,Bc4400,B"
+            + "e3000,Bg3899,Bh3300,Bi2799,Bk3099,Bl3200,Bm3300,Bn3300,Bo4199,Bq3099,Br3200,Bs1999,Bt-2400,Bu360"
+            + "0,Bv2299,Bw2400,Bx-5399,Bz-6000,C!2799,C\u0023-2299,C)-3000,C,-9400,C--5000,C/-2200,C0-3099,C1-13999,"
+            + "C2-5700,C3-4400,C5-2100,C6-2299,C7-6499,C84100,C?-4299,C@3099,CB3399,CC2400,CD2400,CE3500,CF3600"
+            + ",CG3300,CH3399,CI3600,CK3600,CL3600,CM3200,CN3399,CP3600,CQ2100,CR3399,CS3699,C\\-8300,C]-3500,Ca"
+            + "3600,Cb3699,Cc4900,Cd2400,Ce3500,Cf2100,Cg4100,Ch3699,Ci3200,Ck3500,Cl3600,Cm3699,Cn3699,Co4499,"
+            + "Cq4700,Cr3699,Cs3399,Cu3800,D!3099,D\"2400,D'2400,D(2899,D)-5399,D,-19499,D-2500,D.-9100,D/-9700,"
+            + "D1-11000,D2-2500,D3-5299,D5-3399,D7-4799,D82200,D:3099,D;2899,D?-2799,DA-3300,DB3099,DC3999,DD22"
+            + "00,DE3300,DF3300,DG3999,DH3099,DI3399,DK3300,DL3300,DM3000,DN3200,DO3000,DP3399,DQ3099,DR3200,DS"
+            + "2700,DU2799,DV2500,DW3600,DX-3500,DZ-5500,D\\-6699,D]-1999,Da3399,Db3500,Dc3200,Df5200,Dg2599,Dh3"
+            + "500,Di3800,Dk3200,Dl3399,Dm4499,Dn4499,Do2899,Dp2100,Dr4299,Ds2599,Dt3500,Du4499,Dv4499,Dw4499,D"
+            + "y3899,E!3000,E\u0023-6300,E(-2100,E,-6300,E--3999,E.4400,E0-4799,E1-16199,E2-3200,E3-2799,E4-5700,E6-"
+            + "4199,E7-2200,E83999,E9-3099,EA2500,EB3200,ED2200,EE3099,EF3300,EH3099,EI3399,EK3300,EL3399,EM300"
+            + "0,EN3500,EP3399,ER3200,EV2400,EW2200,EX2700,EY2700,EZ4100,Ea3800,Eb3500,Ec3300,Ef-3500,Eg1999,Eh"
+            + "3500,Ei2899,Ek3300,El3399,Em3200,En3200,Eo2799,Eq3899,Er3200,Es2500,Et-5500,Eu2799,Ev-2400,Ey-64"
+            + "99,Ez3099,F!2500,F\"2599,F\u0023-7899,F'2599,F,-21600,F--6199,F.-17100,F/-14600,F0-5200,F1-15000,F2-86"
+            + "00,F3-8699,F4-3999,F5-3899,F6-5200,F8-5800,F9-6000,F:-11799,F;-11999,F?2100,F@-3899,FA-8200,FB27"
+            + "00,FE2799,FF3200,FH2700,FI3000,FJ-3899,FK2899,FL3000,FM2599,FN3000,FO-2200,FP3500,FQ-2100,FR3099"
+            + ",FT2200,FV3699,FW3399,FY3800,Fa-9700,Fb3099,Fc-2100,Fd-4400,Fe-3500,Ff-4799,Fg-2599,Fh3099,Fi309"
+            + "9,Fk2899,Fl3000,Fm-3300,Fn-3300,Fo-2200,Fp-5399,Fq-3600,Fr-3300,Fs-5099,Ft-5099,Fu-2899,Fv-4700,"
+            + "Fw-4400,Fx-14600,Fy-9400,Fz-16000,G!5500,G\"-5800,G'-5800,G(3699,G)-5500,G,-16799,G.-6499,G/-8000"
+            + ",G1-17899,G2-9900,G3-11100,G42299,G5-3099,G7-10899,G:-4100,G;-4299,G@4100,GA-2899,GB4199,GC5200,"
+            + "GD3300,GE4400,GF4400,GG5399,GH4199,GI4400,GJ3000,GK4400,GL4400,GM4100,GN4299,GO4199,GP4400,GQ449"
+            + "9,GR4299,GS-2799,GT-5899,GU3200,GW3300,GX-6499,GY-6199,GZ-4799,G\\-12200,G]-8099,Ga-2599,Gb4600,G"
+            + "c6000,Gd2299,Ge4499,Gg5500,Gh4600,Gi4199,Gk4299,Gl4400,Gm4900,Gn4900,Go5800,Gp2799,Gq4199,Gr4900"
+            + ",Gs3600,Gt-3300,Gu5299,Gv3899,Gw4100,Gx-4799,Gz-5700,H!5599,H(4199,H-3200,H1-15000,H2-5500,H3-72"
+            + "00,H7-5000,H@3099,HB4400,HC5700,HD3600,HE4600,HF4700,HG5700,HH4400,HI4799,HK4600,HL4799,HM4400,H"
+            + "N4600,HO4600,HP4799,HQ4900,HR4600,HU3800,HW4100,H\\-2299,Hb4900,Hc5599,He4100,Hg5000,Hh4799,Hi429"
+            + "9,Hk4700,Hl4799,Hm4900,Hn4900,Ho5399,Hp2799,Hq3399,Hr4900,Hs4100,Hu5399,Hv4400,Hw4600,I!4700,I\"3"
+            + "099,I'3099,I(2599,I)4400,I,1999,I.6100,I/2599,I0-1999,I1-10899,I3-3099,I43300,I83800,I:3699,I;25"
+            + "00,I?3899,I@2700,IA4199,IB4499,IC3899,ID3500,IE4700,IF6399,IG3899,IH4299,II5299,IK4700,IL5700,IM"
+            + "4299,IN5000,IO2799,IP5800,IQ3099,IR5000,IS3099,IT3099,IU3399,IV5800,IW5800,IX4600,IY4900,IZ3699,"
+            + "I\\2599,I]2700,Ia3800,Ib6199,Ic4400,Ie3099,If4700,Ig4799,Ih5800,Ii5000,Ij-99,Ik4600,Il5299,Im5899"
+            + ",In5899,Io4199,Ip2200,Iq4199,Ir5200,Is3300,It2899,Iu4199,Iv4199,Iw4199,Ix4600,Iy3500,Iz3800,J!38"
+            + "00,J\"3099,J'3099,J(2700,J)2899,J,-7799,J0-1999,J1-10899,J2-2700,J3-4900,J42599,J5-3300,J82100,J:"
+            + "2700,J;2400,J?2599,J@2100,JB3099,JC3800,JD2100,JE3200,JF5000,JG3800,JH3099,JI3800,JK3300,JL4199,"
+            + "JM2899,JN3500,JO2799,JP4299,JQ3000,JR3600,JS2500,JT2799,JU2500,JV4400,JW4299,JY3999,Ja2899,Jb470"
+            + "0,Jc3800,Je2500,Jf4799,Jg3300,Jh3999,Ji3800,Jk3200,Jl3800,Jm4100,Jn4100,Jo3600,Jp2200,Jq2899,Jr3"
+            + "999,Js2299,Jt3000,Ju4199,Jv4199,Jw4199,Jy3500,K!3300,K\u0023-9900,K,-6100,K--18099,K.4499,K0-3999,K1-"
+            + "16799,K2-3200,K3-2599,K4-4799,K6-3300,K84299,K9-2299,KA2200,KB3300,KD2400,KE3399,KF3600,KG2299,K"
+            + "H3200,KI3600,KK3399,KL3600,KM3200,KN3399,KP3600,KR3399,KV3099,KW3000,KX2700,KY2899,KZ4199,Ka3999"
+            + ",Kb3800,Kc3999,Ke2500,Kf-3300,Kg2899,Kh3699,Ki3000,Kk3500,Kl3600,Km3399,Kn3399,Ko3399,Kq4299,Kr3"
+            + "399,Ks3600,Kt-5200,Ku3099,Ky-8800,Kz2799,L\"-20899,L\u0023-15700,L'-20899,L(-3500,L,-6399,L--22700,L.4"
+            + "100,L0-6399,L1-20700,L2-5099,L3-4400,L4-7700,L5-2500,L6-5700,L7-15700,L82400,L9-4499,L;-2200,L?-"
+            + "3999,LJ-2100,LO-2200,LT-14900,LU-2599,LV-7400,LW-3200,LY-10599,LZ2400,L\\-20500,La2700,Lc2400,Lf-"
+            + "5299,Lm2100,Ln2100,Lq3000,Lr2100,Lt-6999,Lv-3099,Ly-10500,M!4700,M)2799,M.6300,M/2299,M0-2899,M1"
+            + "-11799,M3-3999,M42400,M5-2100,M6-2299,M82899,M:3800,M?2100,MA4199,MB3099,MC3000,MD2400,ME3800,MF"
+            + "3999,MG3000,MH3500,MI4600,MK3899,ML3899,MM4100,MN4700,MP4499,MQ2100,MR4199,MS2100,MT2100,MV3899,"
+            + "MW3800,MX4299,MY3600,MZ2799,M]2700,Ma3000,Mb5299,Mc3600,Me2400,Mf3800,Mg4499,Mh5800,Mi5099,Mk380"
+            + "0,Ml4600,Mm6000,Mn6000,Mo3500,Mp2100,Mq3399,Mr5299,Ms2599,Mt2100,Mu3399,Mv3399,Mw3399,Mx4700,My2"
+            + "799,Mz3699,N!3300,N)2500,N.4600,N0-3000,N1-11900,N2-2799,N3-4100,N42400,N5-2100,N6-2299,N82799,N"
+            + ":2299,N?2200,NA2700,NB2799,NC2899,NE3000,NF4700,NG3000,NH2700,NI3600,NK3000,NL3800,NM2700,NN3500"
+            + ",NP4100,NQ2100,NR3399,NS2100,NV4199,NW4100,NX3200,NY3300,NZ2799,Na2799,Nb4499,Nc3500,Ne2200,Nf38"
+            + "00,Ng3500,Nh4299,Ni3600,Nk2899,Nl3600,Nm4400,Nn4400,No3300,Nq3300,Nr3800,Ns2400,Nt1999,Nu3200,Nv"
+            + "3300,Nw3200,Nx3200,Ny2599,Nz2599,O!3000,O\"-2100,O'-2100,O)-5700,O,-13399,O.-2799,O/-4600,O0-3000"
+            + ",O1-13999,O2-5500,O3-7299,O5-4400,O6-2299,O7-8200,O9-2100,O?-2100,OC2899,OG3000,OQ2100,OT-2700,O"
+            + "X-3200,OY-3399,O\\-9400,O]-5399,Oa1999,Ob2100,Oc3399,Oe2100,Of2799,Og2899,Oh1999,Om2400,On2400,Oo"
+            + "3300,Oq2299,Or2299,Ou3000,Ov2500,Ow2599,Oy2100,Oz-2200,P!2599,P\"4199,P'4199,P(2100,P)-4499,P,-26"
+            + "100,P.-21900,P/-16399,P0-2500,P1-10899,P2-2700,P3-5099,P4-6000,P5-3699,P6-2100,P7-3399,P@-3300,P"
+            + "A-9600,PB2799,PC2700,PE2899,PF3000,PG2700,PH2799,PI3000,PJ-4900,PK3000,PL3000,PM2599,PN2899,PP30"
+            + "00,PR2899,PS2500,PU2500,PV2700,PW3399,PZ-4299,P\\-5200,Pb3200,Pd-3999,Pf4700,Ph3099,Pi3399,Pk2899"
+            + ",Pl3000,Pm3699,Pn3699,Pq-3099,Pr3500,Pt2799,Pu3600,Pv3800,Pw3600,Py2599,Q!2799,Q,-5800,Q.3899,Q0"
+            + "-3099,Q1-13000,Q2-2899,Q3-3000,Q6-2500,Q7-6600,Q83800,Q9-2100,Q?-2299,QA2400,QB3099,QC2700,QE309"
+            + "9,QF3099,QG2700,QH2899,QI3099,QK3099,QL3099,QM2700,QN3399,QP3300,QR3000,QX3000,QY-2100,QZ3899,Q\\"
+            + "-8399,Qa4199,Qb3300,Qc3699,Qe2200,Qf3399,Qg2400,Qh3200,Qi2899,Qk3000,Ql3099,Qm3600,Qn3600,Qo3200"
+            + ",Qq4400,Qr3800,Qs2899,Qu3200,Qv2899,Qw3099,Qx2500,Qy2599,Qz3699,R!3399,R\u0023-2200,R,-5700,R--8800,R"
+            + ".4900,R0-4499,R1-13099,R2-2500,R3-2400,R4-6399,R6-3899,R7-5399,R84400,R9-2700,RA2899,RB3600,RD25"
+            + "00,RE3600,RF3699,RH3500,RI3699,RK3699,RL3699,RM3300,RN3899,RP3800,RR3500,RX3300,RZ4499,R\\-7299,R"
+            + "a4400,Rb3899,Rc3999,Re2400,Rg2599,Rh3899,Ri3399,Rk3600,Rl3699,Rm3899,Rn3899,Ro3300,Rq4600,Rr3899"
+            + ",Rs3300,Ru3399,Rx2400,Rz3800,S!2799,S,-6999,S.3899,S0-3200,S1-12899,S2-3099,S3-3099,S42200,S6-27"
+            + "99,S7-4299,S83800,S9-2299,S@2599,SA2299,SB2799,SC2500,SE2899,SF3000,SG2700,SH2700,SI3099,SK2899,"
+            + "SL3099,SM2700,SN3399,SP3099,SR3000,SS2799,SX2799,SZ3699,S\\-5000,Sa4100,Sb3300,Sc4400,Se3000,Sf28"
+            + "99,Sg3600,Sh3099,Si2799,Sk3000,Sl3099,Sm3399,Sn3399,So3999,Sq4400,Sr3500,Ss3699,Su3300,Sv2599,Sw"
+            + "2799,Sx2299,Sy2299,Sz3399,T!3000,T\"4299,T\u0023-13399,T'4299,T)2100,T,-13999,T--14199,T.-9100,T/-1169"
+            + "9,T0-3800,T1-12400,T2-5800,T3-5899,T4-11399,T5-3399,T6-3699,T8-3099,T9-4199,T:-11600,T;-13000,T?"
+            + "2500,T@-12799,TA-10200,TB3099,TD2200,TE3300,TF4199,TH3099,TI3399,TJ-12899,TK3300,TL3300,TM3000,T"
+            + "N3200,TP3899,TR3399,TT3099,TU2500,TV4100,TW3899,TY4100,Ta-11699,Tb3999,Tc-11100,Td-12899,Te-1240"
+            + "0,Tf-3899,Tg-11199,Th3500,Ti3999,Tk3300,Tl3399,Tm-9400,Tn-9400,To-11300,Tp-6900,Tq-11300,Tr-9900"
+            + ",Ts-12100,Tt-4499,Tu-11300,Tv-11300,Tw-11300,Tx-10599,Ty-11999,Tz-11000,U!4199,U\"3699,U'3600,U(3"
+            + "099,U)2899,U,-9199,U1-10399,U2-2200,U3-4400,U42799,U5-3099,U82400,U:3099,U;2899,U?2899,U@2400,UB"
+            + "3399,UC4199,UD2500,UE3600,UF5299,UG4199,UH3300,UI4199,UK3699,UL4199,UM3300,UN3899,UO3099,UP4700,"
+            + "UQ3300,UR3999,US3000,UT3300,UU3000,UV4799,UW4700,UY4199,Ua3399,Ub5099,Uc4100,Ue2700,Uf5299,Ug360"
+            + "0,Uh3999,Ui4299,Uk3600,Ul4199,Um4600,Un4600,Uo3999,Up2700,Uq3099,Ur4400,Us2700,Ut3500,Uu4600,Uv4"
+            + "700,Uw4600,Uy3999,V!3800,V\"3999,V\u0023-3000,V'3999,V)2200,V,-13200,V--5200,V.-8999,V/-10800,V0-4600,"
+            + "V1-13000,V2-5599,V3-6699,V4-6300,V5-2599,V6-4700,V8-2400,V9-5000,V:-2899,V;-3099,V?3500,V@-6600,"
+            + "VA-9199,VB4100,VD3099,VE4199,VF5399,VH3999,VI4400,VJ-6799,VK4299,VL4299,VM3899,VN4499,VP5299,VR4"
+            + "600,VT2799,VU3099,VV5200,VW5099,VY4799,Va-2700,Vb5000,Vc-3800,Vd-7400,Ve-5700,Vg-4700,Vh4400,Vi3"
+            + "800,Vk4199,Vl4400,Vo-4199,Vq-6399,Vs-3699,Vx-3300,Vz-5399,W!3200,W\"3399,W\u0023-4600,W'3399,W,-13899,"
+            + "W--7200,W.-10500,W/-11900,W0-5200,W1-14299,W2-6999,W3-8000,W4-8000,W5-3099,W6-5200,W8-3999,W9-63"
+            + "00,W:-4799,W;-5000,W?3000,W@-8399,WA-10800,WB3500,WC-2200,WD2500,WE3500,WF4499,WH3500,WI3699,WJ-"
+            + "8500,WK3699,WL3699,WM3300,WN3800,WO-2400,WP4400,WQ-2400,WR3999,WU2500,WV4600,WW4299,WY4299,Wa-44"
+            + "99,Wb4100,Wc-5800,Wd-9199,We-7599,Wg-6600,Wh3800,Wi3300,Wk3600,Wl3699,Wo-6199,Wq-8099,Ws-5500,Wt"
+            + "-2700,Wx-5200,Wy-3200,Wz-7100,X!3300,X\"3000,X\u0023-9100,X'3000,X,-7599,X--16999,X.4199,X0-4799,X1-15"
+            + "200,X2-3600,X3-5500,X4-6399,X5-3200,X6-5000,X9-6100,X;-1999,X?2899,XB3300,XD2599,XE3399,XF4799,X"
+            + "H3200,XI3800,XJ-3300,XK3500,XL3699,XM3300,XN3999,XO-1999,XP4799,XR4100,XT2200,XU2599,XV4799,XW47"
+            + "00,XX2400,XY4499,XZ2299,Xb4499,Xf-4199,Xh3699,Xi3600,Xk3600,Xl3800,Xm2599,Xn2599,Xr2599,Xt-4299,"
+            + "Xv-4600,Xw-3399,Xy-8800,Y\"3200,Y\u0023-7299,Y'3300,Y,-25099,Y--11900,Y.-20200,Y/-20899,Y0-5500,Y1-150"
+            + "00,Y2-8500,Y3-8699,Y4-15099,Y5-4400,Y6-5500,Y8-5700,Y9-6199,Y:-8399,Y;-8699,Y@-14499,YA-14499,YB"
+            + "2200,YC-2200,YE2299,YF3000,YH2200,YI2400,YJ-15000,YK2400,YL2400,YM1999,YN2500,YO-2500,YP3099,YQ-"
+            + "2400,YR2700,YV3399,YW3200,YY3200,YZ-2299,Ya-8800,Yb2599,Yc-10099,Yd-14700,Ye-12799,Yf-3800,Yg-11"
+            + "799,Yh2500,Yi2700,Yk2299,Yl2400,Ym-3899,Yn-3899,Yo-11000,Yp-3500,Yq-14100,Yr-4299,Ys-9499,Yt-550"
+            + "0,Yu-4299,Yv-3699,Yw-4199,Yx-8800,Yy-6999,Yz-10399,Z!2899,Z\"5099,Z\u0023-5800,Z'5000,Z,-11600,Z--1410"
+            + "0,Z0-3500,Z1-12100,Z2-5599,Z3-5800,Z4-8600,Z5-3500,Z6-3399,Z9-3800,Z:-2299,Z;-4799,Z@-3999,ZB320"
+            + "0,ZD2299,ZE3200,ZF3300,ZH3200,ZI3500,ZJ-5500,ZK3500,ZL3399,ZM3099,ZN3300,ZP3500,ZR3300,ZT3300,ZU"
+            + "2700,ZV3500,ZW3600,ZY3899,Zb3399,Zd-3899,Ze-3500,Zf-2599,Zg-3399,Zh3699,Zi4199,Zk3300,Zl3500,Zo-"
+            + "2500,Zs-2500,Zt-4299,Zu-2200,Zv-2100,Zw-2400,Zy-6399,\\!2599,\\\"-22200,\\\u0023-13399,\\'-22200,\\(-6199,\\"
+            + ",-4400,\\--12100,\\.6799,\\0-8500,\\1-20099,\\2-3600,\\3-6799,\\4-4700,\\5-4900,\\6-8300,\\7-13500,\\9-7200"
+            + ",\\:2599,\\A2299,\\C-4299,\\G-2599,\\I2500,\\J-4499,\\L2100,\\M1999,\\N3099,\\O-4799,\\P2799,\\Q-4199,\\S-330"
+            + "0,\\T-13300,\\U-4700,\\V-8800,\\W-3800,\\X2599,\\Y-9299,\\\\-27100,\\b3200,\\d-3099,\\f-3800,\\h3600,\\i3200,"
+            + "\\l2500,\\m4799,\\n4799,\\q2400,\\r4199,\\t-5200,\\v-4100,\\w-2100,\\x3500,\\y-11300,\\z3200,]!3699,]\"2299,"
+            + "]'2299,])2100,],-8099,].4600,]/2400,]0-2700,]1-11600,]3-3899,]42500,]5-1999,]6-2100,]83000,]:259"
+            + "9,]@2299,]A3699,]B3600,]C3200,]D2200,]E3200,]F3800,]G3200,]H3500,]I3899,]K3399,]L3699,]M3300,]N4"
+            + "499,]O2200,]P4299,]Q2400,]R3300,]S2400,]T2100,]V3399,]W3200,]X4199,]Y3300,]Z3300,]]2100,]a3099,]"
+            + "b3999,]c3800,]e2400,]f4199,]g3099,]h5200,]i4299,]k3300,]l3899,]m5200,]n5200,]o3500,]q3300,]r4799"
+            + ",]s2799,]t2400,]u3399,]v3300,]w3399,]x3999,]y2599,]z3699,a!4299,a\"-15200,a'-15200,a(2599,a)2200,"
+            + "a,-4100,a.5800,a/3500,a0-2100,a1-19199,a3-3399,a43699,a7-12299,a84100,a:3399,a@2700,a\\-15000,aa3"
+            + "600,ab5000,ac4400,ad2799,ae3099,ag3800,ah5500,ai4600,ak3399,al4199,am5599,an5599,ao4100,aq3999,a"
+            + "r4900,as3300,au3399,av3000,aw3099,ax4199,az3399,b!3099,b\"-11199,b\u0023-2400,b'-9900,b)-6300,b,-10899"
+            + ",b-2500,b.-2500,b/-5099,b0-2899,b1-18000,b2-9199,b3-8099,b5-4299,b6-2200,b7-19400,b9-2100,b:2400"
+            + ",b;2200,b?-2100,b@2700,b\\-14199,b]-5899,ba2700,bb2200,bc4400,be3099,bg3899,bh2200,bi1999,bk1999,"
+            + "bl2200,bm3500,bn3500,bo4299,bq2899,br3500,bs2700,bu3899,bv3099,bw3399,by2200,c!3600,c\"-13500,c\u0023-"
+            + "3699,c'-13500,c)-2100,c,-9600,c0-2100,c1-18200,c2-6100,c3-3399,c43200,c7-15200,c85500,c?-4100,c@"
+            + "3999,c\\-16199,c]-3000,ca4600,cb4499,cc5599,cd4400,ce4400,cg4900,ch4400,ci3899,ck4199,cl4299,cm44"
+            + "00,cn4400,co5399,cp2299,cq5500,cr4400,cs4400,cu4700,d!2500,d.3800,d0-3500,d1-12400,d2-3600,d3-46"
+            + "00,d5-2700,d6-2899,d82299,d9-2500,d?2100,da2200,db4199,dc2899,df3200,dg4499,dh3500,di2700,dk2700"
+            + ",dl3300,dm3600,dn3600,do2700,dq2700,dr2899,du2599,dv2700,dw2599,dx2200,dy1999,e!3000,e\"-14100,e\u0023"
+            + "-3099,e'-14100,e,-8300,e0-3600,e1-19199,e2-5099,e3-3300,e6-2899,e7-15500,e84700,e?-2899,e@2599,e"
+            + "\\-15899,ea4199,eb3600,ec4499,ed3200,ee3099,eg3600,eh3500,ei3000,ek3300,el3399,em3600,en3600,eo39"
+            + "99,eq4799,er3500,es3899,eu3399,f!3999,f\"3300,f'3300,f(3200,f)2200,f,-11399,f.-2100,f/-5599,f1-14"
+            + "100,f2-6499,f3-8000,f4-4499,f5-2299,f82400,f:3099,f;2799,f?3800,f@-2200,f]2400,fa3399,fb5000,fc2"
+            + "299,fd-2500,ff4499,fh4499,fi4400,fk4400,fl4499,fm3399,fn3399,fr3500,fs2400,ft2500,fu4100,fv4100,"
+            + "fw4199,fy3699,g!4400,g\"-1999,g\u00232500,g'-1999,g(4199,g,1999,g.5399,g/3699,g1-10700,g3-3000,g43999,"
+            + "g7-12500,g84600,g:3699,g;8300,g@3099,g\\-8899,ga4100,gb5000,gc4799,gd3399,ge3500,gf6900,gg4299,gh"
+            + "5200,gi5200,gj16300,gk4799,gl5000,gm5800,gn5800,go4600,gp2700,gq3399,gr5800,gs3699,gt4900,gu6100"
+            + ",gv5899,gw6100,gx3999,gy5000,gz3800,h!3699,h\"-11199,h\u0023-2299,h'-11199,h,-2599,h.6799,h0-3099,h1-1"
+            + "6900,h2-2500,h3-3999,h42400,h5-2100,h6-2599,h7-12299,h82899,h9-2599,h:4100,h;2100,h@3300,h\\-1330"
+            + "0,ha4400,hb4199,hc5000,he3899,hf2100,hg4400,hh4700,hi4299,hk2799,hl3600,hm6199,hn6199,ho5000,hp1"
+            + "999,hq4900,hr5599,hs3999,hu4199,hv3099,hw3300,hx5000,hy2700,hz4400,i!4499,i\"3500,i'3500,i(3099,i"
+            + ")2400,i.5800,i/2200,i1-10899,i2-2100,i3-4199,i42299,i5-2299,i82799,i:3399,i;2400,i?2200,i\\-2100,"
+            + "i]2400,ia2700,ib5200,ic3200,if5500,ig3699,ih5500,ii4799,ij2299,ik3899,il4299,im5500,in5500,io300"
+            + "0,ip2500,iq3000,ir4900,is2100,it3600,iu4700,iv4499,iw4700,ix4299,iy4100,iz2899,j!4199,j\"4400,j'4"
+            + "400,j(3399,j.4299,j1-10000,j2-2700,j3-3699,j42700,j83300,j:3099,j;8699,j?2799,j]2899,ja3099,jb47"
+            + "99,jc3699,je2400,jf6000,jg4199,jh4700,ji5500,jj16600,jk4600,jl4700,jm4499,jn4499,jo3500,jp3300,j"
+            + "q2500,jr4900,js2599,jt4100,ju5200,jv4900,jw5200,jx2899,jy4299,jz2700,k!2599,k\"-10299,k\u0023-3300,k'-"
+            + "10299,k,-5299,k--5000,k.5899,k0-5700,k1-17299,k2-2599,k3-3600,k4-6499,k6-5099,k7-13600,k83300,k9"
+            + "-4199,k:2599,k\\-13999,ka4400,kb3099,kc3999,ke2500,kg2500,kh3399,ki2899,kk2899,kl3000,km4499,kn44"
+            + "99,ko3399,kq4799,kr5000,ks2899,ku3600,kx3600,kz4600,l!4199,l\"2599,l'2599,l(2100,l)3899,l.5599,l/"
+            + "2100,l0-2500,l1-11399,l3-3600,l42799,l83300,l:3200,l?3399,l@2200,l\\2100,l]2200,la3200,lb5700,lc3"
+            + "899,le2599,lf4199,lg4299,lh5299,li4499,lj-6799,lk4100,ll4799,lm5399,ln5399,lo3699,lq3699,lr4700,"
+            + "ls2899,lt2400,lu3600,lv3699,lw3699,lx4100,ly3000,lz3300,m!4199,m\"-9799,m'-9799,m(2100,m)2100,m,-"
+            + "3500,m.5899,m/3399,m0-2500,m1-16499,m3-3399,m43800,m7-12400,m84199,m:3200,m@2500,m\\-13800,ma3600"
+            + ",mb4900,mc4199,md2899,me3099,mf2899,mg3600,mh5299,mi4499,mk3300,ml4100,mm5299,mn5299,mo4199,mq41"
+            + "00,mr4700,ms3200,mu3300,mv2299,mw2500,mx4100,mz3500,n!5000,n\"-8999,n'-8999,n(2799,n)2899,n,-2700"
+            + ",n.6699,n/4199,n1-15700,n3-2599,n44600,n7-11600,n85000,n:3999,n;2100,n@3300,n\\-13000,n]2400,na44"
+            + "00,nb5700,nc5000,nd3699,ne3899,nf3699,ng4400,nh6100,ni5299,nk4199,nl4900,nm6199,nn6199,no5000,np"
+            + "2200,nq4900,nr5500,ns3999,nu4199,nv3099,nw3300,nx4900,ny2700,nz4299,o!5399,o\"-11499,o'-11499,o(3"
+            + "699,o,-6799,o-2599,o.2400,o1-17899,o2-3899,o3-3200,o45399,o7-15500,o85000,o:2200,o;1999,o@4299,o"
+            + "\\-14600,oa4299,ob4700,oc6000,od4499,oe4700,of2599,og5599,oh4600,oi4100,ok4400,ol4499,om4700,on47"
+            + "00,oo5800,op2500,oq5399,or4600,os4100,ou5000,ov3600,ow3800,oz2599,p!4199,p\"-11399,p'-11399,p(229"
+            + "9,p)-6499,p,-14100,p-2799,p.-3300,p/-3800,p1-18300,p2-9199,p3-7400,p42899,p5-3500,p7-19100,p:210"
+            + "0,p@3000,p\\-14700,p]-6399,pa2400,pb3200,pc4700,pd2299,pe3300,pf2299,pg3200,ph3399,pi2799,pk3099,"
+            + "pl3300,pm3699,pn3699,po4499,pr3699,ps2799,pu4100,pv3000,pw3399,pz-2799,q!3200,q\"-3899,q'-3899,q("
+            + "2599,q.4299,q/2500,q1-12400,q2-2899,q3-4100,q42899,q5-2200,q7-13600,q83399,q:1999,q;8699,q@1999,"
+            + "q\\-10200,qa3000,qb3600,qc3600,qd2200,qe2400,qf5500,qg4100,qh4100,qi3899,qj16600,qk3399,ql3500,qm"
+            + "4499,qn4499,qo3500,qp3000,qq2599,qr4400,qs2599,qt3500,qu4700,qv4499,qw4700,qx2899,qy3600,qz2700,"
+            + "r!3200,r\"-3099,r'-3099,r(3300,r)-6399,r,-19600,r--2299,r.-10800,r/-11999,r1-13500,r2-4400,r3-107"
+            + "00,r4-7899,r5-3099,r7-23099,r83099,r:2799,r;2599,r?-11199,r@-4700,r\\-11000,r]-13500,ra2799,rb389"
+            + "9,rd-3000,rf5700,rh3800,ri3600,rk3600,rl3699,rm3800,rn3800,rq-2599,rr4299,rt3699,ru4900,rv4600,r"
+            + "w4799,rx2100,ry4199,s!3699,s\"-12599,s'-12599,s(2100,s,-6100,s.5700,s/3899,s0-2400,s1-18500,s3-25"
+            + "99,s7-12799,s84900,s:2599,s@2299,s\\-13999,sa4400,sb3899,sc4199,sd2899,se3000,sf3000,sg3300,sh479"
+            + "9,si4100,sk3600,sl3699,sm4900,sn4900,so3899,sq4700,sr4799,ss3699,su3600,sv2500,sw2799,sx3800,sy2"
+            + "200,sz4199,t!2899,t\"-3000,t'-3000,t(3099,t)-5500,t,-11100,t.-2299,t/-5299,t1-15700,t2-6600,t3-11"
+            + "199,t4-4400,t5-3300,t7-7299,t82500,t:3099,t;2799,t?-5200,t@-2200,t\\-9600,t]-4499,ta3399,tb3500,t"
+            + "c2299,td-2299,tf4400,th3399,ti2899,tk3200,tl3399,tm3399,tn3399,tr3399,ts2299,tt2400,tu4100,tv410"
+            + "0,tw4199,ty3699,u!4700,u\u00232299,u(4199,u)2299,u.6000,u/3300,u1-10299,u3-3300,u43899,u7-11900,u8419"
+            + "9,u:3699,u;3099,u@2700,u\\-8699,ua3699,ub5299,uc4400,ud3000,ue3200,uf6799,ug3899,uh5700,ui5200,uj"
+            + "2700,uk4700,ul4799,um5899,un5899,uo4199,up2799,uq4199,ur5700,us3300,ut4799,uu6000,uv5899,uw6000,"
+            + "ux4199,uy5000,uz3399,v!3200,v\"-2500,v'-2500,v(3000,v)-6000,v,-9100,v.-5800,v/-6000,v1-12200,v2-3"
+            + "000,v3-9299,v5-3200,v7-22700,v82799,v:2100,v?-5800,v@-2100,v\\-9900,v]-8300,va2200,vb3800,vd-2200"
+            + ",vf5700,vh3800,vi4100,vj5700,vk3600,vl3699,vm4799,vn4799,vr4600,vt3800,vu4900,vv4700,vw4900,vy36"
+            + "99,w!3600,w\"-5000,w'-5000,w(3600,w)-5899,w,-9100,w.-5399,w/-5500,w1-13500,w2-4299,w3-11100,w5-27"
+            + "00,w7-22200,w83399,w:3200,w;2899,w?-5000,w\\-10599,w]-7899,wa3399,wb4299,wc1999,wf6199,wh4199,wi3"
+            + "999,wk3999,wl4199,wm4299,wn4299,wp2100,wr4900,ws2299,wt4199,wu5200,wv5000,ww5200,wx2599,wy4600,x"
+            + "!4499,x\"-2200,x\u00232100,x'-2200,x(4100,x)2700,x,-5500,x--3999,x.6699,x/4400,x1-11499,x3-5200,x4-539"
+            + "9,x5-2299,x7-11799,x83899,x:3500,x;3099,x\\-9299,x]2400,xa2899,xb5000,xc2400,xf6600,xh5899,xi5000"
+            + ",xj2299,xk4400,xl4700,xm5899,xn5899,xp2599,xq3699,xr5500,xs2400,xt4600,xu5700,xv5599,xw5700,xx47"
+            + "99,xy5099,xz4499,y!3099,y\"-4199,y'-4199,y(2799,y)-6399,y,-15099,y.-9900,y/-9299,y1-13200,y2-4100"
+            + ",y3-10899,y4-3600,y5-3399,y7-23200,y82899,y:2799,y;2700,y?-6999,y@-2899,y\\-10700,y]-11799,ya3099"
+            + ",yb3699,yd-2799,yf5700,yh3800,yi3899,yk3600,yl3699,ym4100,yn4100,yq-3600,yr4499,ys2100,yt3699,yu"
+            + "4700,yv4400,yw4799,yx2100,yy3500,z!3099,z(3200,z,-9600,z1-13099,z2-4299,z3-8500,z4-6799,z5-3200,"
+            + "z7-16100,z83000,z:3300,z;3099,z?-4100,z@-2700,z\\-11300,za3699,zb3699,zc2599,zf5399,zh3999,zi3300"
+            + ",zk3699,zl3800,zm3999,zn3999,zr4199,zs2899,zt3500,zu4400,zv4199,zw4600,zy3999,";
+    }
+    private static String MesloLGS_NF_0_3_kerning() {
+        return "\"&-3417,\",-9277,\".-9277,\"0-1464,\"4-6347,\"6-1464,\"8-1464,\"A-7812,\"J-12207,\u00234-1464,&\"-2929,&'-2929"
+            + ",&1-1464,&7-1464,&T-5371,&V-6347,&W-3906,&Y-7324,&v-2929,&w-2929,&y-2929,'&-3417,',-9277,'.-9277"
+            + ",'0-1464,'4-6347,'6-1464,'8-1464,'A-7812,'J-12207,(c-976,(d-976,(e-976,(g-976,(j2929,(o-976,(q-9"
+            + "76,*&-3417,*,-13671,*.-13671,*0-976,*4-4394,*6-976,*A-7812,*J-9765,*X-1464,*Y-1464,*_-7324,+A-14"
+            + "64,+J-1464,+T-7324,+V-4882,+W-4882,+X-6347,+Y-7812,+Z-2441,+f-1953,+t-1953,+v-976,+w-976,+x-1953"
+            + ",+y-976,+z-976,,\"-9277,,&-3417,,'-9277,,*-13671,,/3906,,0-3906,,1-2929,,2-1953,,3-2929,,4-2929,,"
+            + "5-3173,,6-3906,,7-3417,,8-3417,,9-3906,,C-5859,,G-5859,,O-5859,,Q-5859,,T-8300,,U-4394,,V-9765,,"
+            + "W-9765,,Y-9765,,\\-3906,,^-13671,,c-1953,,d-1953,,e-1953,,f-2929,,g-1953,,o-1953,,q-1953,,t-1953,"
+            + ",v-7324,,w-7324,,y-7324,-A-1464,-J-1464,-T-7324,-V-4882,-W-4882,-X-6347,-Y-7812,-Z-2441,-f-1953,"
+            + "-t-1953,-v-976,-w-976,-x-1953,-y-976,-z-976,.\"-9277,.&-3417,.'-9277,.*-13671,./3906,.0-3906,.1-2"
+            + "929,.2-1953,.3-2929,.4-2929,.5-3173,.6-3906,.7-3417,.8-3417,.9-3906,.C-5859,.G-5859,.O-5859,.Q-5"
+            + "859,.T-8300,.U-4394,.V-9765,.W-9765,.Y-9765,.\\-3906,.^-13671,.c-1953,.d-1953,.e-1953,.f-2929,.g-"
+            + "1953,.o-1953,.q-1953,.t-1953,.v-7324,.w-7324,.y-7324,/,-3906,/.-3906,/4-1953,/A-2929,/J-2929,/T1"
+            + "464,0\"-1464,0'-1464,0*-976,0,-3906,0.-3906,07-1953,0A-976,0T-2929,0V-976,0W-976,0X-2929,0Y-3417,"
+            + "0Z-976,0\\2929,0^-976,0_-4882,0v-976,0w-976,0x-976,0y-976,1\"-1953,1&-976,1'-1953,1,-2441,1.-2441,"
+            + "2,-1464,2.-1464,24-1464,2@-488,2Y-976,2c-488,2d-488,2e-488,2g-488,2o-488,2q-488,3\"-1464,3'-1464,"
+            + "3,-3417,3.-3417,3A-488,3V-1464,3W-1464,3X-488,3Y-2441,3\\1464,3_-1953,4*-976,4,-3417,4.-3417,41-9"
+            + "76,4T-1464,4V-976,4W-976,4Y-1464,4Z-488,4^-976,4v-1464,4w-1464,4x-488,4y-1464,5,-3417,5.-3417,5\\"
+            + "1464,5_-1953,6,-3417,6.-3417,6A-488,6X-488,6Y-976,6\\1464,6_-4882,7\u0023-5371,7&-4394,7,-10742,7.-107"
+            + "42,7/-2929,70-1464,73-1464,74-5859,75-976,76-1464,771953,78-1464,79-976,7:-2929,7;-2929,7<-8789,"
+            + "7@-1953,7A-10742,7C-976,7G-976,7J-7812,7O-976,7Q-976,7\\1953,7_-16113,7a-4394,7c-4882,7d-4882,7e-"
+            + "4882,7g-4882,7o-4882,7q-4882,7s-3906,7u-2441,7x-1953,8\"-1464,8'-1464,8,-3417,8.-3417,8A-976,8V-1"
+            + "464,8W-1464,8X-488,8Y-2441,8\\1464,8_-4882,9\"-1464,9'-1464,9*-976,9,-3906,9.-3906,97-1953,9A-976,"
+            + "9T-2929,9V-976,9W-976,9X-2929,9Z-976,9\\2929,9^-976,9_-4882,9v-976,9w-976,9x-976,9y-976,:2488,:3-"
+            + "488,:4-1464,:7-1464,:T-3906,:V-5859,:W-4882,:Y-5859,;2488,;3-488,;4-1464,;7-1464,;T-3906,;V-5859"
+            + ",;W-4882,;Y-5859,=A-4882,=V-6347,=W-6347,=X-4882,=Y-9277,=v-3906,=w-2929,=x-3417,=y-3906,>7-7324"
+            + ",>A-2929,>T-7812,>V-7324,>W-7324,>X-5371,>Y-8789,>Z-5859,>v-2929,>w-2929,>x-2929,>y-2929,>z-1953"
+            + ",?4-2441,?A-5859,@2-976,@7-1953,@V-1464,@X-976,@Y-1953,@v-1464,@y-1464,A\"-7812,A'-7812,A*-7812,A"
+            + "+-1464,A--1464,A0-976,A1-3417,A5-488,A6-976,A7-1464,A8-976,A9-976,A<-2929,A=-4882,A?-5859,AC-341"
+            + "7,AG-3417,AO-3417,AQ-3417,AT-8300,AU-1464,AV-6347,AW-5371,AY-7324,A\\-1953,A^-7812,Aa-488,Ac-2929"
+            + ",Ad-2929,Ae-2929,Af-1464,Ag-2929,Ao-2929,Aq-2929,As-976,At-2929,Au-2441,Av-6835,Aw-6835,Ax-488,A"
+            + "y-6835,Az-976,BY-1953,CA-1953,CT-2441,CX-1464,CY-1464,C\\1464,C_-4394,D,-4394,D.-4394,D/-3906,D7-"
+            + "976,DA-3417,DT-2929,DV-2441,DW-2929,DX-2441,DY-3417,DZ-2929,D_-4394,Dx-976,E4-976,E\\1953,F&-2441"
+            + ",F,-8300,F.-8300,F/-4882,F0-1464,F2-976,F3-976,F4-1464,F6-1464,F8-1464,F=-1464,FA-3417,FJ-4882,F"
+            + "\\976,F_-9765,Fa-3417,Fz-3417,G/-1464,GA-1464,GT-1464,GX-1464,GY-1464,H\\1953,I\\1953,J,-2441,J.-24"
+            + "41,J/-4882,JA-1464,J\\1953,J_-4394,K\"-976,K&-1464,K'-976,K+-10742,K--10742,K0-1953,K1-976,K3-976,"
+            + "K4-2441,K5-976,K6-1953,K9-1464,K<-6347,K=-2929,K@-1464,KC-3906,KG-3906,KO-3906,KQ-3906,KS-2441,K"
+            + "a-976,Kc-3906,Kd-3906,Ke-3906,Kf-1464,Kg-3906,Ko-3906,Kq-3906,Ks-2441,Kt-1953,Ku-3417,Kv-6347,Kw"
+            + "-6347,Ky-6347,L\"-8789,L'-8789,L*-13183,L+-8300,L--8300,L0-1464,L1-4394,L4-976,L6-1464,L7-1464,L8"
+            + "-976,L<-1953,L?-6835,LC-2929,LG-2929,LO-2929,LQ-2929,LT-9277,LU-2441,LV-6835,LW-6835,LY-9277,L\\-"
+            + "1953,L^-13183,Lc-2441,Ld-2441,Le-2441,Lg-2441,Lo-2441,Lq-2441,Lt-2441,Lv-6835,Lw-6347,Ly-6835,M\\"
+            + "1953,N\\1953,O,-4394,O.-4394,O/-3906,O7-976,OA-3417,OT-2929,OV-2441,OW-2929,OX-2441,OY-3417,OZ-29"
+            + "29,O_-4394,Ox-976,P&-2929,P,-9765,P.-9765,P/-4882,P2-488,P4-2929,P7-488,PA-4394,PJ-5371,PX-2929,"
+            + "PY-1953,PZ-1953,P\\1464,P_-9765,Pa-1953,Pc-1464,Pd-1464,Pe-1464,Pf2441,Pg-1464,Po-1464,Pq-1464,Ps"
+            + "-1464,Pt2441,Pv1953,Py1953,Q,-4394,Q.-4394,Q/-3906,Q7-976,QA-3417,QT-2929,QV-2441,QW-2929,QX-244"
+            + "1,QY-3417,QZ-2929,Q_-4394,Qx-976,R4-976,RV-1464,RW-1464,RY-1953,Rc-1464,Rd-1464,Re-1464,Rf976,Rg"
+            + "-1464,Ro-1464,Rq-1464,Rs-976,Rt2441,SV-976,SW-976,SX-488,SY-976,T&-3417,T+-7324,T,-8300,T--7324,"
+            + "T.-8300,T/-7812,T0-2929,T3-976,T4-6835,T6-2929,T:-3906,T;-3906,T<-7812,TA-8300,TC-2929,TG-2929,T"
+            + "J-7324,TO-2929,TQ-2929,T\\1953,T_-5859,Ta-10253,Tc-9765,Td-9765,Te-9765,Tg-9765,Ti-976,Tj-976,Tm-"
+            + "7324,Tn-7324,To-9765,Tp-7324,Tq-9765,Tr-7324,Ts-7324,Tu-7324,Tv-6347,Tw-6347,Tx-5859,Ty-6347,Tz-"
+            + "5859,U,-2441,U.-2441,U/-4882,UA-1464,U\\1953,U_-4394,V&-4882,V+-4882,V,-9765,V--4882,V.-9765,V/-7"
+            + "324,V0-976,V4-3417,V6-976,V8-1464,V9-488,V:-5859,V;-5859,V<-7324,V=-6347,V@-3417,VA-6347,VC-2441"
+            + ",VG-2441,VJ-5859,VO-2441,VQ-2441,VS-976,V\\1953,V_-7812,Va-4882,Vc-4882,Vd-4882,Ve-4882,Vg-4882,V"
+            + "m-2929,Vn-2929,Vo-4882,Vp-2929,Vq-4882,Vr-2929,Vs-4394,Vu-2441,Vv-1464,Vw-1464,Vx-1464,Vy-1464,V"
+            + "z-1464,W&-4882,W+-4882,W,-9765,W--4882,W.-9765,W/-6835,W0-976,W3-1464,W4-3417,W6-976,W8-1464,W:-"
+            + "4882,W;-4882,W<-7324,W=-6347,WA-5371,WC-2929,WG-2929,WJ-5859,WO-2929,WQ-2929,W\\1953,W_-8300,Wa-4"
+            + "882,Wc-4882,Wd-4882,We-4882,Wg-4882,Wm-2929,Wn-2929,Wo-4882,Wp-2929,Wq-4882,Wr-2929,Ws-3417,Wu-2"
+            + "441,Wv-1464,Ww-1464,Wx-1464,Wy-1464,Wz-1464,X&-976,X*-1464,X+-6347,X--6347,X/-1464,X0-2929,X2-97"
+            + "6,X3-1464,X4-1464,X6-2929,X8-488,X<-5371,X=-4882,X@-976,XC-2441,XG-2441,XJ-1953,XO-2441,XQ-2441,"
+            + "XS-488,X\\976,X^-1464,Xa-976,Xc-3417,Xd-3417,Xe-3417,Xg-3417,Xo-3417,Xq-3417,Xs-1464,Xt-1953,Xu-1"
+            + "464,Xv-2929,Xw-2929,Xy-2929,Y&-5859,Y*-1464,Y+-7812,Y,-9765,Y--7812,Y.-9765,Y/-6835,Y0-3417,Y2-9"
+            + "76,Y3-1953,Y4-6835,Y6-3417,Y8-2441,Y9-976,Y:-5859,Y;-5859,Y<-10253,Y=-9277,Y@-1953,YA-7324,YC-34"
+            + "17,YG-3417,YJ-7324,YO-3417,YQ-3417,YS-976,Y\\1464,Y^-1464,Y_-8789,Ya-7812,Yc-8300,Yd-8300,Ye-8300"
+            + ",Yf-2441,Yg-8300,Ym-5371,Yn-5371,Yo-8300,Yp-5371,Yq-8300,Yr-5371,Ys-7324,Yt-976,Yu-5859,Yv-3417,"
+            + "Yw-3417,Yx-3417,Yy-3417,Yz-4394,Z+-3906,Z--3906,Z0-976,Z4-2441,Z6-976,Z<-5859,ZC-2929,ZG-2929,ZO"
+            + "-2929,ZQ-2929,Zc-1464,Zd-1464,Ze-1464,Zg-1464,Zo-1464,Zq-1464,[c-976,[d-976,[e-976,[g-976,[j2929"
+            + ",[o-976,[q-976,\\,3906,\\.3906,\\1-976,\\7-1464,\\C-1464,\\G-1464,\\O-1464,\\Q-1464,\\T-3906,\\U-1953,\\V-4"
+            + "882,\\W-4882,\\X-976,\\Y-3906,\\j2929,\\v-4882,\\w-2929,\\y-4882,^&-3417,^,-13671,^.-13671,^0-976,^4-43"
+            + "94,^6-976,^A-7812,^J-9765,^X-1464,^Y-1464,^_-7324,_*-7324,_0-4882,_1-11230,_3-4882,_4-5859,_5-48"
+            + "82,_6-4882,_8-4882,_9-4882,_C-4394,_G-4394,_J-1953,_O-4394,_Q-4394,_T-5859,_U-4394,_V-7812,_W-83"
+            + "00,_Y-8789,_^-7324,__-3906,_a-976,_c-2929,_d-2929,_e-2929,_g-2929,_j7812,_o-2929,_p976,_q-2929,_"
+            + "s-976,_u-1953,_v488,_w-8300,_y488,a1-3906,a7-1464,aT-7324,aU-1464,aV-4882,aW-4882,aY-7324,av-195"
+            + "3,aw-2441,ay-1953,b,-976,b.-976,b1-2441,b7-2929,bA-2929,bT-9765,bV-4882,bW-4882,bX-3417,bY-8300,"
+            + "b_-2929,bv-1953,bw-1953,bx-2441,by-1953,bz-1464,c7-1953,cA-1464,cT-6347,cV-2929,cW-2929,cX-1464,"
+            + "cY-4394,c_-1464,cf1953,ct976,e7-1953,eA-1953,eT-9765,eV-4882,eW-4882,eX-2441,eY-8300,e_-1953,ev-"
+            + "976,ex-1953,ey-976,f&-1464,f+-2441,f,-5371,f--2441,f.-5371,f/-2441,f4-5859,fA-3417,fJ-5859,fY146"
+            + "4,f_-1953,fa-1464,fc-2197,fd-2197,fe-2197,fg-2197,fo-2197,fq-2197,fs-2441,g7-1464,g_2929,h1-3906"
+            + ",h7-1464,hT-7324,hU-1464,hV-4882,hW-4882,hY-7324,hv-1953,hw-2441,hy-1953,i\"-1464,i'-1464,iT-976,"
+            + "j\"-1464,j'-1464,jT-976,k&-976,k+-4394,k--4394,k0-2441,k4-4394,k6-2441,k7-1953,k<-8300,k=-976,kJ-"
+            + "488,kT-5371,kV-1953,kW-1953,kY-3417,ka-1464,kc-2441,kd-2441,ke-2441,kg-2441,ko-2441,kq-2441,ks-1"
+            + "953,m1-3906,m7-1464,mT-7324,mU-1464,mV-4882,mW-4882,mY-7324,mv-1953,mw-2441,my-1953,n1-3906,n7-1"
+            + "464,nT-7324,nU-1464,nV-4882,nW-4882,nY-7324,nv-1953,nw-2441,ny-1953,o,-976,o.-976,o1-2441,o7-292"
+            + "9,oA-2929,oT-9765,oV-4882,oW-4882,oX-3417,oY-8300,o_-2929,ov-1953,ow-1953,ox-2441,oy-1953,oz-146"
+            + "4,p,-976,p.-976,p1-2441,p7-2929,pA-2929,pT-9765,pV-4882,pW-4882,pX-3417,pY-8300,p_-2929,pv-1953,"
+            + "pw-1953,px-2441,py-1953,pz-1464,q7-1464,q_2929,r&-976,r+-3906,r,-6347,r--3906,r.-6347,r/-3417,r4"
+            + "-1953,r7-976,r<-3906,r?1953,rA-3906,rJ-5371,rT-5371,rV-488,rW-488,rX-976,rY-976,rZ-2929,r_-3417,"
+            + "rc-1464,rd-1464,re-1464,rf2929,rg-1464,rm976,rn976,ro-1464,rp976,rq-1464,rr976,rs-976,rt976,rv48"
+            + "8,ry488,s1-1464,s7-1953,sA-976,sT-7324,sV-4394,sW-3417,sX-1464,sY-7324,s_-976,ss-976,st-488,sv-1"
+            + "464,sw-1464,sx-976,sy-1464,t+-1953,t--1953,t4-1953,t<-2441,tT-3417,tV-976,tW-976,tY-1953,tc-732,"
+            + "td-732,te-732,tg-732,to-732,tq-732,ts-976,u7-976,uT-7812,uV-1953,uW-1953,uY-5371,uf1464,v&-2441,"
+            + "v+-976,v,-7324,v--976,v.-7324,v/-5371,v0-976,v4-1953,v6-976,v<-3417,v=-3906,v@-1464,vA-6835,vJ-5"
+            + "859,vT-6347,vV-1464,vW-1464,vX-2929,vY-3417,vZ-2929,v_-7812,va-1953,vc-1953,vd-1953,ve-1953,vg-1"
+            + "953,vo-1953,vq-1953,vs-1464,w&-2929,w+-976,w,-7324,w--976,w.-7324,w/-2929,w0-976,w4-1953,w6-976,"
+            + "w<-2929,w=-2929,wA-6835,wJ-5371,wT-6347,wV-1464,wW-1464,wX-2929,wY-3417,wZ-2929,w_-8300,wa-1464,"
+            + "wc-1953,wd-1953,we-1953,wg-1953,wo-1953,wq-1953,ws-1464,x&-488,x+-1953,x--1953,x0-976,x4-1953,x6"
+            + "-976,x7-976,x<-2929,x=-3417,xA-488,xC-976,xG-976,xO-976,xQ-976,xT-5859,xV-1464,xW-1464,xY-3417,x"
+            + "c-2441,xd-2441,xe-2441,xf1953,xg-2441,xo-2441,xq-2441,xs-976,y&-2441,y+-976,y,-7324,y--976,y.-73"
+            + "24,y/-5371,y0-976,y4-1953,y6-976,y<-3417,y=-3906,y@-1464,yA-6835,yJ-5859,yT-6347,yV-1464,yW-1464"
+            + ",yX-2929,yY-3417,yZ-2929,y_-7812,ya-1953,yc-1953,yd-1953,ye-1953,yg-1953,yo-1953,yq-1953,ys-1464"
+            + ",z+-5859,z--5859,z<-5371,zA-976,zT-5859,zV-1464,zW-1464,zY-4394,zc-1464,zd-1464,ze-1464,zg-1464,"
+            + "zo-1464,zq-1464,{c-976,{d-976,{e-976,{g-976,{j2929,{o-976,{q-976,";
+    }
+    private static String MesloLGS_NF_1_3_kerning() {
+        return "\"&-3417,\",-9277,\".-9277,\"1976,\"4-2441,\"8-1464,\"A-9765,\"J-12207,\"a1464,\"c2441,\"d2441,\"e2441,\"f341"
+            + "7,\"g2441,\"o2441,\"q2441,\"s976,\"w2441,\u00234-1464,&\"-2929,&'-2929,&1-1464,&7-1464,&?-4882,&T-7324,&V-3"
+            + "906,&W-6347,&Y-7812,&v-2929,&w-2929,&y-2929,'&-3417,',-9277,'.-9277,'1976,'4-2441,'8-1464,'A-976"
+            + "5,'J-12207,'a1464,'c2441,'d2441,'e2441,'f3417,'g2441,'o2441,'q2441,'s976,'w2441,(c-976,(d-976,(e"
+            + "-976,(g-976,(j2929,(o-976,(q-976,*&-3417,*,-12207,*.-12207,*0-976,*4-4394,*6-976,*A-9765,*J-9765"
+            + ",*X-3906,*_-6835,*c1464,*d1464,*e1464,*g1464,*o1464,*q1464,*t3906,+A-1464,+T-6347,+V-4882,+W-488"
+            + "2,+X-6347,+Y-7812,+Z-2441,+v-976,+w-976,+x-1953,+y-976,+z-976,,\"-9277,,'-9277,,*-12207,,/3906,,0"
+            + "-5859,,1-4394,,3-4882,,4-3906,,5-4394,,6-5859,,8-1464,,9-1953,,C-5859,,G-5859,,O-5859,,Q-5859,,T"
+            + "-8300,,U-4394,,V-9765,,W-9765,,Y-9765,,\\-3906,,^-12207,,c-976,,d-976,,e-976,,f-1953,,g-976,,j488"
+            + "2,,o-976,,q-976,,t-1953,,v-6347,,w-5371,,y-6347,-A-1464,-T-6347,-V-4882,-W-4882,-X-6347,-Y-7812,"
+            + "-Z-2441,-v-976,-w-976,-x-1953,-y-976,-z-976,.\"-9277,.'-9277,.*-12207,./3906,.0-5859,.1-4394,.3-4"
+            + "882,.4-3906,.5-4394,.6-5859,.8-1464,.9-1953,.C-5859,.G-5859,.O-5859,.Q-5859,.T-8300,.U-4394,.V-9"
+            + "765,.W-9765,.Y-9765,.\\-3906,.^-12207,.c-976,.d-976,.e-976,.f-1953,.g-976,.j4882,.o-976,.q-976,.t"
+            + "-1953,.v-6347,.w-5371,.y-6347,/,-3906,/.-3906,/4-1953,/A-2929,/J-2929,/T1464,0\"-1953,0'-1953,0*-"
+            + "976,0,-4882,0.-4882,07-1953,0A-976,0T-4882,0V-1953,0W-976,0X-2929,0Y-4882,0\\2929,0^-976,0_-4394,"
+            + "0v-976,0w-976,0x-976,0y-976,1\"-2441,1'-2441,1,-2441,1.-2441,24-1953,2@-488,2V-1953,2Y-3417,3\"-14"
+            + "64,3'-1464,3,-2441,3.-2441,3T-3417,3V-2441,3W-1464,3X-488,3Y-3417,3\\1464,3_-1464,4\"-3906,4'-3906"
+            + ",4*-4882,4,-2929,4.-2929,41-976,4T-1464,4V-976,4W-976,4X976,4Y-1953,4^-4882,4v-1464,4w-1464,4x-4"
+            + "88,4y-1464,5,-3417,5.-3417,5Y-1953,5\\1464,5_-1464,6,-2441,6.-2441,6X-488,6Y-2441,6\\1464,6_-4394,"
+            + "7\u0023-5371,7&-4394,7,-7812,7.-7812,7/-2929,70-1464,711464,73-1464,74-3417,76-1464,771953,7<-8789,7@"
+            + "-1953,7A-5371,7J-6347,7\\1953,7_-15625,7a-3417,7c-4882,7d-4882,7e-4882,7g-4882,7o-4882,7q-4882,7s"
+            + "-3906,7u-2441,7x-1953,8\"-1464,8'-1464,8,-2441,8.-2441,8T-3417,8V-2441,8W-1464,8X-488,8Y-3417,8\\1"
+            + "464,8_-4394,9\"-1953,9'-1953,9*-976,9,-4882,9.-4882,97-1953,9A-976,9T-4882,9V-1953,9W-976,9X-2929"
+            + ",9Y-4882,9\\2929,9^-976,9_-4394,9v-976,9w-976,9x-976,9y-976,:1-1953,:2-1464,:4-1464,:7-1464,;1-14"
+            + "64,;2-1464,;4-1464,;7-1464,=V-6347,=W-2929,=Y-12695,=Z-3417,>7-7324,>A-2929,>T-7812,>V-7324,>W-6"
+            + "347,>X-2929,>Y-8789,>Z-5859,>v-2929,>w-2929,>x-2929,>y-2929,>z-2441,@2-976,@7-1953,@T-2929,@Y-14"
+            + "64,A\"-9765,A&-1464,A'-9765,A*-9765,A+-1464,A--1464,A0-976,A1-3417,A5-1953,A6-976,A7-1464,A<-2929"
+            + ",AC-3417,AG-3417,AO-3417,AQ-3417,AT-7324,AU-1464,AV-6347,AW-6347,AY-7812,A\\-1953,A^-9765,Aa-976,"
+            + "Ac-2929,Ad-2929,Ae-2929,Af-1464,Ag-2929,Ao-2929,Aq-2929,As-1464,At-2929,Au-3417,Av-6347,Aw-5371,"
+            + "Ay-6347,BT-976,BV-2441,BY-3417,B\\1464,CA-488,CT-2441,CX-1464,CY-1464,C\\1464,C_-3906,D*-2929,D,-4"
+            + "394,D.-4394,D/-3906,D7-1953,DA-1464,DT-2929,DV-2929,DW-2929,DX-2441,DY-5859,DZ-2929,D^-2929,D_-3"
+            + "906,Dx-976,E\\1953,F,-8300,F.-8300,F/-4882,FA-976,FJ-4882,F\\976,F_-6835,Fv-1464,Fy-1464,G/-1464,G"
+            + "41464,GT-1464,GV-3906,GW-1953,GX-1464,GY-4394,H11464,H\\1953,I11464,I\\1953,J,-7812,J.-7812,J/-488"
+            + "2,J<-8300,J=-2441,JA-1464,J\\1953,J_-3906,Ja-976,K&-3417,K*-2929,K+-7812,K--7812,K0-1953,K1-976,K"
+            + "3-2441,K4-3417,K5-976,K6-1953,K<-7812,KC-3417,KG-3417,KO-3417,KQ-3417,KS-1464,KU-2441,K^-2929,Ka"
+            + "-1953,Kc-4882,Kd-4882,Ke-4882,Kf-1464,Kg-4882,Ko-4882,Kq-4882,Ks-2929,Kt-1953,Ku-3906,Kv-6347,Kw"
+            + "-6347,Ky-6347,L\"-12207,L&-1464,L'-12207,L*-12207,L+-8789,L--8789,L0-3906,L1-4882,L5-1953,L6-3906"
+            + ",L7-2929,L8-1953,L9-1953,L<-10253,LC-1953,LG-1953,LO-1953,LQ-1953,LT-8300,LU-2929,LV-6835,LW-683"
+            + "5,LY-9277,L\\-3417,L^-12207,La-2929,Lc-3906,Ld-3906,Le-3906,Lg-3906,Lo-3906,Lq-3906,Lt-4394,Lu-39"
+            + "06,Lv-6835,Lw-6347,Ly-6835,M11464,M\\1953,N11464,N\\1953,O*-2929,O,-4394,O.-4394,O/-3906,O7-1953,O"
+            + "A-1464,OT-2929,OV-2929,OW-2929,OX-2441,OY-5859,OZ-2929,O^-2929,O_-3906,Ox-976,P&-2929,P,-11230,P"
+            + ".-11230,P/-4882,PA-2441,PJ-5371,PX-2929,PY-1953,PZ-1953,P\\1464,P_-8300,Pa-1953,Pc-976,Pd-976,Pe-"
+            + "976,Pf2441,Pg-976,Po-976,Pq-976,Pt2441,Pv1953,Pw1953,Px2929,Py1953,Pz976,Q*-2929,Q,-4394,Q.-4394"
+            + ",Q/-3906,Q7-1953,QA-1464,QT-2929,QV-2929,QW-2929,QX-2441,QY-5859,QZ-2929,Q^-2929,Q_-3906,Qx-976,"
+            + "RV-1464,RW-1464,RY-976,Rc-488,Rd-488,Re-488,Rf2441,Rg-488,Ro-488,Rq-488,Rt2441,ST-1953,SV-976,SW"
+            + "-976,SX-976,SY-2441,T&-3417,T+-10253,T,-8300,T--10253,T.-8300,T/-7812,T0-2929,T3-976,T4-1953,T6-"
+            + "2929,T72929,T9976,T<-7812,T@-3906,TA-4882,TJ-7324,T\\1953,T_-5371,Ta-10742,Tc-10742,Td-10742,Te-1"
+            + "0742,Tg-10742,Ti-1464,Tj-976,Tm-6835,Tn-6835,To-10742,Tp-6835,Tq-10742,Tr-6835,Ts-7324,Tu-7324,T"
+            + "v-6347,Tw-6347,Tx-5859,Ty-6347,Tz-5859,U,-7812,U.-7812,U/-4882,U<-8300,U=-2441,UA-1464,U\\1953,U_"
+            + "-3906,Ua-976,V&-4882,V+-4882,V,-9765,V--4882,V.-9765,V/-6835,V0-976,V22929,V31953,V4-1953,V6-976"
+            + ",V73906,V8-1464,V9976,V<-4394,V=-2441,VA-4394,VC-2929,VG-2929,VJ-6347,VO-2929,VQ-2929,VS-976,V\\1"
+            + "953,V_-7812,Va-3906,Vc-2441,Vd-2441,Ve-2441,Vg-2441,Vm-1953,Vn-1953,Vo-2441,Vp-1953,Vq-2441,Vr-1"
+            + "953,Vs-2929,Vu-1953,Vv-1464,Vw-1464,Vx-1464,Vy-1464,Vz-1464,W&-4882,W+-4882,W,-9765,W--4882,W.-9"
+            + "765,W/-6835,W0-976,W11953,W21953,W4-2441,W6-976,W8-1464,W<-4882,W=-488,WA-4394,WC-2929,WG-2929,W"
+            + "J-5859,WO-2929,WQ-2929,W\\1953,W_-7812,Wa-4882,Wc-1953,Wd-1953,We-1953,Wg-1953,Wm-2929,Wn-2929,Wo"
+            + "-1953,Wp-2929,Wq-1953,Wr-2929,Ws-2441,Wu-2441,Wv-1464,Ww-976,Wx-1464,Wy-1464,Wz-1464,X&-2441,X+-"
+            + "6347,X--6347,X/-1464,X0-1953,X4-488,X6-1953,X71953,X<-5371,XC-2441,XG-2441,XO-2441,XQ-2441,XS-48"
+            + "8,X\\976,Xa-976,Xc-2929,Xd-2929,Xe-2929,Xg-2929,Xo-2929,Xq-2929,Xs-1464,Xu-1953,Xv-2929,Xw-1953,X"
+            + "y-2929,Y&-5371,Y+-7812,Y,-9765,Y--7812,Y.-9765,Y/-6835,Y0-976,Y1976,Y4-2929,Y6-976,Y8-1953,Y<-87"
+            + "89,Y=-5371,Y@-2929,YA-4882,YC-1464,YG-1464,YJ-7324,YO-1464,YQ-1464,YS-976,Y\\1464,Y_-9765,Ya-5859"
+            + ",Yc-5371,Yd-5371,Ye-5371,Yg-5371,Ym-4394,Yn-4394,Yo-5371,Yp-4394,Yq-5371,Yr-4394,Ys-5859,Yu-4394"
+            + ",Yv-2929,Yw-2929,Yx-2929,Yy-2929,Yz-2929,Z+-3906,Z--3906,Z3-1953,Z4-2441,Z<-5859,ZC-2929,ZG-2929"
+            + ",ZO-2929,ZQ-2929,Za-976,Zc-1464,Zd-1464,Ze-1464,Zg-1464,Zo-1464,Zq-1464,Zu-1953,Zv-976,Zw-976,Zy"
+            + "-976,[c-976,[d-976,[e-976,[g-976,[j2929,[o-976,[q-976,\\,3906,\\.3906,\\1-976,\\7-1464,\\C-4394,\\G-43"
+            + "94,\\O-4394,\\Q-4394,\\T-6347,\\U-1953,\\V-4882,\\W-4882,\\X-976,\\Y-3906,\\j2929,\\v-2929,\\w-4394,\\y-2929"
+            + ",^&-3417,^,-12207,^.-12207,^0-976,^4-4394,^6-976,^A-9765,^J-9765,^X-3906,^_-6835,^c1464,^d1464,^"
+            + "e1464,^g1464,^o1464,^q1464,^t3906,_*-6835,_0-4394,_1-10742,_3-4394,_4-5371,_5-4394,_6-4394,_8-43"
+            + "94,_9-4394,_C-3906,_G-3906,_J-1464,_O-3906,_Q-3906,_T-5371,_U-3906,_V-7812,_W-7812,_Y-9765,_^-68"
+            + "35,_a-1953,_c-1464,_d-1464,_e-1464,_g-1464,_j9277,_o-1464,_p4394,_q-1464,_s-1464,_u-1464,_v-7812"
+            + ",_w-7812,_y-7812,a\"-3906,a'-3906,a1-3906,a7-1464,aT-10253,aU-976,aV-6347,aW-4882,aY-8789,av-2441"
+            + ",aw-2441,ay-2441,az-976,b\"-5859,b'-5859,b)-976,b,-976,b.-976,b1-2441,b7-2929,bA-2929,bT-11230,bV"
+            + "-4882,bW-4882,bX-2441,bY-9765,b]-976,b_-1464,bv-2929,bw-1953,bx-2441,by-2929,bz-1464,b}-976,c\"-9"
+            + "76,c'-976,c7-1953,cA-1464,cT-7812,cV-2929,cW-2929,cX-1464,cY-7324,cf1953,ct976,cz-976,d,-3906,d."
+            + "-3906,df3417,dj1464,dt3417,e\"-2441,e'-2441,e*-976,e7-1953,eA-1953,eT-10742,eV-4394,eW-4882,eX-19"
+            + "53,eY-8300,e^-976,e_-1464,ev-1953,ew-976,ex-1953,ey-1953,ez-1953,f\"1953,f&-1464,f'1953,f,-2441,f"
+            + ".-2441,f4-5859,fA-3417,fJ-5859,f_-1464,fa-1464,fc-2197,fd-2197,fe-2197,fg-2197,fo-2197,fq-2197,f"
+            + "s-2441,g7-1953,gT-6835,gV-3417,gW-1464,gY-6347,g_3417,h\"-3906,h'-3906,h1-3906,h7-1464,hT-10253,h"
+            + "U-976,hV-6347,hW-4882,hY-8789,hv-2441,hw-2441,hy-2441,hz-976,iT-1464,iY-976,jT-1464,jY-976,k&-97"
+            + "6,k+-4882,k--4882,k0-2441,k4-4394,k6-2441,k7-1464,k<-5859,kC-1464,kG-1464,kO-1464,kQ-1464,kT-537"
+            + "1,kV-1464,kW-1953,kY-3417,ka-1464,kc-2441,kd-2441,ke-2441,kf1464,kg-2441,ko-2441,kq-2441,ks-2929"
+            + ",l,-3906,l.-3906,lf3417,lj1464,lt3417,m\"-3906,m'-3906,m1-3906,m7-1464,mT-10253,mU-976,mV-6347,mW"
+            + "-4882,mY-8789,mv-2441,mw-2441,my-2441,mz-976,n\"-3906,n'-3906,n1-3906,n7-1464,nT-10253,nU-976,nV-"
+            + "6347,nW-4882,nY-8789,nv-2441,nw-2441,ny-2441,nz-976,o\"-5859,o'-5859,o)-976,o,-976,o.-976,o1-2441"
+            + ",o7-2929,oA-2929,oT-11230,oV-4882,oW-4882,oX-2441,oY-9765,o]-976,o_-1464,ov-2929,ow-1953,ox-2441"
+            + ",oy-2929,oz-1464,o}-976,p\"-5859,p'-5859,p)-976,p,-976,p.-976,p1-2441,p7-2929,pA-2929,pT-11230,pV"
+            + "-4882,pW-4882,pX-2441,pY-9765,p]-976,p_-1464,pv-2929,pw-1953,px-2441,py-2929,pz-1464,p}-976,q7-1"
+            + "953,qT-5859,qV-3417,qW-1464,qY-6347,q_3417,r&-976,r,-7324,r.-7324,r7-1464,rA-2929,rJ-5371,rT-341"
+            + "7,rX-976,rY-1464,rZ-2929,r_-2929,ra-976,rc-1464,rd-1464,re-1464,rf2929,rg-1464,ro-1464,rq-1464,r"
+            + "s-976,rt2929,s\"-976,s'-976,s7-1953,sA-488,sT-8300,sV-4394,sW-3417,sX-1464,sY-7324,ss-976,st-488,"
+            + "sv-1464,sw-1464,sx-976,sy-1464,t+-1953,t--1953,t<-2441,tT-2441,tV-976,tW-976,tY-1953,tc-488,td-4"
+            + "88,te-488,tg-488,to-488,tq-488,ts-976,u7-976,uA-976,uT-7812,uV-1953,uW-2441,uY-5371,uf1464,v&-29"
+            + "29,v+-976,v,-5859,v--976,v.-5859,v0-976,v4-1953,v6-976,v<-1953,vA-5371,vJ-5371,vT-5859,vV-1464,v"
+            + "W-1464,vX-2929,vY-3417,vZ-2929,v_-7812,va-976,vc-488,vd-488,ve-488,vg-488,vo-488,vq-488,vs-1464,"
+            + "w&-2929,w+-976,w,-6835,w--976,w.-6835,w0-976,w4-1953,w6-976,w<-1953,wA-4882,wJ-5371,wT-6347,wV-1"
+            + "464,wW-1464,wX-2929,wY-3417,wZ-2929,w_-7812,wa-1464,wc-488,wd-488,we-488,wg-488,wo-488,wq-488,ws"
+            + "-1464,x&-488,x+-1953,x--1953,x0-976,x4-1953,x6-976,x7-976,x<-2929,xC-976,xG-976,xO-976,xQ-976,xT"
+            + "-5859,xV-1464,xW-1464,xY-3417,xc-1953,xd-1953,xe-1953,xf1953,xg-1953,xo-1953,xq-1953,xs-488,y&-2"
+            + "929,y+-976,y,-5859,y--976,y.-5859,y0-976,y4-1953,y6-976,y<-1953,yA-5371,yJ-5371,yT-5859,yV-1464,"
+            + "yW-1464,yX-2929,yY-3417,yZ-2929,y_-7812,ya-976,yc-488,yd-488,ye-488,yg-488,yo-488,yq-488,ys-1464"
+            + ",z+-976,z--976,z7-1953,z<-1953,zT-5859,zV-1464,zW-1464,zY-3906,za-1953,zc-1953,zd-1953,ze-1953,z"
+            + "g-1953,zo-1953,zq-1953,{c-976,{d-976,{e-976,{g-976,{j2929,{o-976,{q-976,}Y-1953,";
+    }
+    private static String MesloLGS_NF_0_6_kerning() {
+        return "\"&-1708,\",-10742,\".-10742,\"0-732,\"4-4394,\"5-732,\"6-732,\"8-1220,\"A-7568,\"J-9765,\"f732,\u00234-1220,&\"-"
+            + "3662,&'-3662,&+-1708,&--1708,&1-2929,&5-1464,&7-732,&=-2441,&@-976,&C-1220,&G-1220,&O-1220,&Q-12"
+            + "20,&T-7324,&V-6835,&W-5615,&Y-9521,&s-1708,&t-976,&u-1220,&v-3417,&w-3417,&x-976,&y-3417,&z-976,"
+            + "'&-1708,',-10742,'.-10742,'0-732,'4-4394,'5-732,'6-732,'8-1220,'A-7568,'J-9765,'f732,(c-488,(d-4"
+            + "88,(e-488,(g-488,(j2685,(o-488,(q-488,*&-3417,*,-14160,*.-14160,*0-488,*4-3906,*6-488,*A-7568,*J"
+            + "-8789,*X-1953,*Y-1708,*_-6640,+A-2685,+J-732,+T-5371,+V-4638,+W-4638,+X-5371,+Y-6347,+Z-1220,+f-"
+            + "976,+t-976,+v-1708,+w-1708,+x-1953,+y-1708,+z-488,,\"-10742,,&-1708,,'-10742,,*-14160,,/4150,,0-4"
+            + "638,,1-4882,,2-976,,3-2929,,4-1464,,5-3051,,6-4638,,7-3417,,8-4150,,9-4150,,C-5615,,G-5615,,O-56"
+            + "15,,Q-5615,,T-8789,,U-4150,,V-10742,,W-10742,,Y-12207,,\\-4150,,^-14160,,c-1953,,d-1953,,e-1953,,"
+            + "f-4150,,g-1953,,o-1953,,q-1953,,t-976,,v-6835,,w-6835,,y-6835,-A-2685,-J-732,-T-5371,-V-4638,-W-"
+            + "4638,-X-5371,-Y-6347,-Z-1220,-f-976,-t-976,-v-1708,-w-1708,-x-1953,-y-1708,-z-488,.\"-10742,.&-17"
+            + "08,.'-10742,.*-14160,./4150,.0-4638,.1-4882,.2-976,.3-2929,.4-1464,.5-3051,.6-4638,.7-3417,.8-41"
+            + "50,.9-4150,.C-5615,.G-5615,.O-5615,.Q-5615,.T-8789,.U-4150,.V-10742,.W-10742,.Y-12207,.\\-4150,.^"
+            + "-14160,.c-1953,.d-1953,.e-1953,.f-4150,.g-1953,.o-1953,.q-1953,.t-976,.v-6835,.w-6835,.y-6835,/,"
+            + "-4150,/.-4150,/1488,/4-976,/7976,/A-3173,/B488,/C488,/D488,/E488,/F488,/G488,/H488,/I488,/J-2441"
+            + ",/K488,/L488,/M488,/N488,/O488,/P488,/Q488,/R488,/T1220,/U488,/V488,/W488,/X488,/Y488,/b488,/f48"
+            + "8,/h488,/k488,/l488,0\"-732,0'-732,0*-488,0,-5126,0.-5126,03-732,07-1953,0A-1464,0T-2685,0V-1220,"
+            + "0W-2441,0X-2685,0Y-4394,0Z-488,0\\1953,0^-488,0_-4931,0v-488,0w-488,0x-488,0y-488,1\"-976,1&-488,1"
+            + "'-976,1*-732,1,-2685,1.-2685,1^-732,2,-732,2.-732,24-732,2@-244,2Y-976,2c-244,2d-244,2e-244,2g-2"
+            + "44,2o-244,2q-244,3\"-1220,3'-1220,3,-3906,3.-3906,30-488,36-488,39-244,3A-732,3V-1708,3W-2685,3X-"
+            + "1464,3Y-3173,3\\732,3_-3466,3c-488,3d-488,3e-488,3g-488,3o-488,3q-488,4*-1220,4,-1708,4.-1708,41-"
+            + "1220,4T-732,4V-1953,4W-1464,4Y-2929,4Z-244,4^-1220,4v-732,4w-732,4x-244,4y-732,5,-3906,5.-3906,5"
+            + "1-976,5A-488,5Y-1220,5\\732,5_-3466,6,-3906,6.-3906,63-732,6A-2197,6V-732,6W-732,6X-732,6Y-2197,6"
+            + "\\732,6_-4931,7\u0023-3417,7&-3662,7,-11230,7.-11230,7/-2197,70-1220,73-976,74-4882,75-976,76-1220,771"
+            + "953,78-1220,79-976,7:-2441,7;-2441,7<-5859,7@-976,7A-8056,7C-488,7G-488,7J-5371,7O-488,7Q-488,7\\"
+            + "1953,7_-13964,7a-3173,7c-2929,7d-2929,7e-2929,7g-2929,7o-2929,7q-2929,7s-2441,7u-1220,7x-976,8\"-"
+            + "1220,8'-1220,8,-3906,8.-3906,80-488,86-488,89-244,8A-1464,8V-1708,8W-2685,8X-1464,8Y-3173,8\\732,"
+            + "8_-4931,8c-488,8d-488,8e-488,8g-488,8o-488,8q-488,9\"-732,9'-732,9*-488,9,-5126,9.-5126,93-732,97"
+            + "-1953,9A-1464,9T-2685,9V-1220,9W-2441,9X-2685,9Y-2685,9Z-488,9\\1953,9^-488,9_-4931,9v-488,9w-488"
+            + ",9x-488,9y-488,:2244,:3-244,:4-732,:7-1464,:T-1953,:V-4150,:W-4882,:X-1708,:Y-5615,;2244,;3-244,"
+            + ";4-732,;7-1464,;T-1953,;V-4150,;W-4882,;X-1708,;Y-5615,=&-1953,=A-4882,=V-6103,=W-5615,=X-5371,="
+            + "Y-8300,=v-3173,=w-3173,=x-2929,=y-3173,>7-6103,>A-2441,>T-7080,>V-5859,>W-5859,>X-6103,>Y-8300,>"
+            + "Z-2929,>v-2441,>w-2441,>x-2685,>y-2441,>z-1220,?4-2441,?A-5371,@&-1708,@2-488,@7-2441,@V-2197,@W"
+            + "-1220,@X-2441,@Y-2929,@v-1464,@w-732,@x-976,@y-1464,A\"-7568,A'-7568,A*-7568,A+-2685,A--2685,A0-1"
+            + "464,A1-4394,A5-1708,A6-1464,A7-1708,A8-1464,A9-1464,A<-2441,A=-4882,A?-5859,AC-3173,AG-3173,AO-3"
+            + "173,AQ-3173,AT-7568,AU-1708,AV-6347,AW-5859,AY-8056,A\\-1464,A^-7568,Aa-732,Ac-2929,Ad-2929,Ae-29"
+            + "29,Af-1953,Ag-2929,Ao-2929,Aq-2929,As-1464,At-2929,Au-2929,Av-6347,Aw-6347,Ax-732,Ay-6347,Az-976"
+            + ",BY-1953,B_-1513,Bx-488,Bz-488,CA-2197,CT-1464,CX-1953,CY-1953,C\\1220,C_-4687,D,-4882,D.-4882,D/"
+            + "-2441,D7-488,DA-3173,DT-2441,DV-2197,DW-2441,DX-2929,DY-4150,DZ-2441,D\\488,D_-4687,Da-488,Ds-244"
+            + ",Dx-976,E4-488,E\\1464,F&-1953,F,-8056,F.-8056,F/-3662,F0-1464,F2-488,F3-488,F4-732,F6-1464,F8-97"
+            + "6,F=-1708,FA-3906,FJ-2441,F\\976,F_-9033,Fa-2441,Fz-2197,G,-2197,G.-2197,G/-732,GA-1708,GT-732,GX"
+            + "-1953,GY-1953,G\\488,G_-2734,Ga-488,Gz-488,H\\1464,I\\1464,J,-3417,J.-3417,J/-2929,JA-1708,J\\1464,J"
+            + "_-4199,Ja-732,Jc-1220,Jd-1220,Je-1220,Jg-1220,Jo-1220,Jq-1220,Jx-732,K\"-488,K&-1708,K'-488,K*-12"
+            + "20,K+-7324,K--7324,K0-2441,K1-488,K3-732,K4-2685,K5-1708,K6-2441,K8-732,K9-2441,K<-6103,K=-3173,"
+            + "K@-2685,KC-4638,KG-4638,KO-4638,KQ-4638,KS-2441,K^-1220,Ka-2197,Kc-4150,Kd-4150,Ke-4150,Kf-2685,"
+            + "Kg-4150,Ko-4150,Kq-4150,Ks-2929,Kt-2929,Ku-3417,Kv-4882,Kw-4882,Kx-976,Ky-4882,L\"-10009,L'-10009"
+            + ",L*-11718,L+-5371,L--5371,L0-1464,L1-6835,L4-488,L6-1464,L7-3417,L8-488,L<-3906,L?-7080,LC-1953,"
+            + "LG-1953,LO-1953,LQ-1953,LT-9277,LU-1220,LV-7080,LW-7080,LY-9521,L\\-1464,L^-11718,Lc-2441,Ld-2441"
+            + ",Le-2441,Lg-2441,Lo-2441,Lq-2441,Lt-2929,Lv-6835,Lw-6591,Ly-6835,M\\1464,N\\1464,O,-4882,O.-4882,O"
+            + "/-2441,O7-488,OA-3173,OT-2441,OV-2197,OW-2441,OX-2929,OY-4150,OZ-2441,O\\488,O_-4687,Oa-488,Os-24"
+            + "4,Ox-976,P&-2685,P,-11718,P.-11718,P/-4394,P2-244,P4-3417,P7-1464,PA-4882,PJ-3906,PX-3173,PY-268"
+            + "5,PZ-1464,P\\976,P_-9765,Pa-1953,Pc-1464,Pd-1464,Pe-1464,Pf2441,Pg-1464,Po-1464,Pq-1464,Ps-1464,P"
+            + "t1953,Pv976,Py976,Q,-4882,Q.-4882,Q/-2441,Q7-488,QA-3173,QT-2441,QV-2197,QW-2441,QX-2929,QY-4150"
+            + ",QZ-2441,Q\\488,Q_-4687,Qa-488,Qs-244,Qx-976,R4-488,RV-1953,RW-1953,RY-2197,Ra-244,Rc-1708,Rd-170"
+            + "8,Re-1708,Rf488,Rg-1708,Ro-1708,Rq-1708,Rs-732,Rt1220,SV-1220,SW-1708,SX-1464,SY-2441,Sa-732,T&-"
+            + "3906,T+-5371,T,-8300,T--5371,T.-8300,T/-5859,T0-2685,T3-488,T4-5371,T6-2685,T:-1953,T;-1953,T<-7"
+            + "080,TA-7568,TC-2441,TG-2441,TJ-7324,TO-2441,TQ-2441,T\\1464,T_-5859,Ta-9277,Tc-9277,Td-9277,Te-92"
+            + "77,Tg-9277,Ti-976,Tj-488,Tm-5615,Tn-5615,To-9277,Tp-5615,Tq-9277,Tr-5615,Ts-7568,Tu-5126,Tv-3173"
+            + ",Tw-3173,Tx-2929,Ty-3173,Tz-4150,U,-3417,U.-3417,U/-2929,UA-1708,U\\1464,U_-4199,Ua-732,Uc-1220,U"
+            + "d-1220,Ue-1220,Ug-1220,Uo-1220,Uq-1220,Ux-732,V&-4882,V+-4638,V,-10742,V--4638,V.-10742,V/-6591,"
+            + "V0-1220,V4-3662,V6-1220,V8-1708,V9-732,V:-4150,V;-4150,V<-5859,V=-6103,V@-3173,VA-6347,VC-2197,V"
+            + "G-2197,VJ-5859,VO-2197,VQ-2197,VS-488,V\\1953,V_-8789,Va-6103,Vc-5859,Vd-5859,Ve-5859,Vg-5859,Vm-"
+            + "3417,Vn-3417,Vo-5859,Vp-3417,Vq-5859,Vr-3417,Vs-5126,Vu-2197,Vv-1220,Vw-732,Vx-976,Vy-1220,Vz-19"
+            + "53,W&-4882,W+-4638,W,-10742,W--4638,W.-10742,W/-5859,W0-2441,W3-2685,W4-3662,W5-1464,W6-2441,W8-"
+            + "2685,W9-1220,W:-4882,W;-4882,W<-5859,W=-5615,W@-1220,WA-5859,WC-2441,WG-2441,WJ-5859,WO-2441,WQ-"
+            + "2441,WS-488,W\\1953,W_-9082,Wa-6103,Wc-5859,Wd-5859,We-5859,Wg-5859,Wm-3417,Wn-3417,Wo-5859,Wp-34"
+            + "17,Wq-5859,Wr-3417,Ws-4638,Wu-2197,Wv-1220,Ww-732,Wx-976,Wy-1220,Wz-2685,X&-2197,X*-1953,X+-5371"
+            + ",X--5371,X/-1464,X0-2685,X2-1220,X3-1708,X4-2685,X6-2685,X8-1464,X9-732,X:-1708,X;-1708,X<-6103,"
+            + "X=-5371,X@-2441,XC-2929,XG-2929,XJ-976,XO-2929,XQ-2929,XS-976,X\\1464,X^-1953,Xa-2197,Xc-4638,Xd-"
+            + "4638,Xe-4638,Xf-1708,Xg-4638,Xo-4638,Xq-4638,Xs-2685,Xt-3417,Xu-2929,Xv-3417,Xw-3662,Xy-3417,Y&-"
+            + "6347,Y*-1708,Y+-6347,Y,-12207,Y--6347,Y.-12207,Y/-7324,Y0-4394,Y1-1220,Y2-1464,Y3-2441,Y4-7324,Y"
+            + "5-1220,Y6-4394,Y8-3173,Y9-1708,Y:-5615,Y;-5615,Y<-9033,Y=-8300,Y@-2929,YA-8056,YC-4150,YG-4150,Y"
+            + "J-8544,YO-4150,YQ-4150,YS-2441,Y\\1708,Y^-1708,Y_-9277,Ya-9277,Yc-9521,Yd-9521,Ye-9521,Yf-2441,Yg"
+            + "-9521,Yi-1220,Yj-1220,Ym-5371,Yn-5371,Yo-9521,Yp-5371,Yq-9521,Yr-5371,Ys-8056,Yt-2441,Yu-5371,Yv"
+            + "-3662,Yw-3662,Yx-4150,Yy-3662,Yz-4638,Y{-976,Z+-1953,Z--1953,Z0-488,Z4-1220,Z6-488,Z<-2929,ZC-24"
+            + "41,ZG-2441,ZO-2441,ZQ-2441,Zc-1220,Zd-1220,Ze-1220,Zg-1220,Zo-1220,Zq-1220,[c-488,[d-488,[e-488,"
+            + "[g-488,[j2685,[o-488,[q-488,\\,4150,\\.4150,\\1-488,\\2488,\\7-1464,\\8244,\\A488,\\C-732,\\G-732,\\O-732,"
+            + "\\Q-732,\\T-2441,\\U-976,\\V-2929,\\W-2929,\\X-488,\\Y-2685,\\j4638,\\m488,\\n488,\\p488,\\r488,\\v-2929,\\w-1"
+            + "953,\\y-2929,^&-3417,^,-14160,^.-14160,^0-488,^4-3906,^6-488,^A-7568,^J-8789,^X-1953,^Y-1708,^_-6"
+            + "640,_*-6640,_0-4931,_1-9814,_3-4931,_4-5175,_5-4931,_6-4931,_8-4931,_9-4931,_C-4687,_G-4687,_J-1"
+            + "269,_O-4687,_Q-4687,_T-5859,_U-4199,_V-8789,_W-9082,_Y-9277,_^-6640,__-3906,_a-976,_c-2929,_d-29"
+            + "29,_e-2929,_f-1025,_g-244,_j8300,_o-2929,_p1904,_q-2929,_s-976,_t-1269,_u-2490,_v976,_w-7861,_y9"
+            + "76,a/488,a1-1953,a7-732,aT-7080,aU-1464,aV-5615,aW-5615,aX-488,aY-8789,av-1464,aw-1708,ay-1464,b"
+            + ")-1708,b,-1464,b.-1464,b1-2441,b3-488,b7-2685,b8-488,b9-732,bA-2929,bS-732,bT-8544,bU-1220,bV-58"
+            + "59,bW-5859,bX-4638,bY-8300,b]-1708,b_-2929,bv-2197,bw-2197,bx-2929,by-2197,bz-1220,b}-1708,c7-17"
+            + "08,cA-2197,cT-7080,cU-976,cV-4638,cW-4638,cX-2685,cY-6835,c_-1464,cf976,ct488,cx-976,e/488,e7-21"
+            + "97,eA-2441,eT-8789,eU-1220,eV-5859,eW-5859,eX-3173,eY-9033,e_-1953,ev-1464,ew-976,ex-2197,ey-146"
+            + "4,f&-2441,f+-1220,f,-5371,f--1220,f.-5371,f/-1708,f4-3417,fA-4394,fJ-6103,fX-976,fY732,f_-2246,f"
+            + "a-1708,fc-1831,fd-1831,fe-1831,ff488,fg-1831,fo-1831,fq-1831,fs-1953,ft488,g7-732,gV-1953,gW-146"
+            + "4,gY-3417,g_1953,gj1220,h/488,h1-1953,h7-732,hT-7080,hU-1464,hV-5615,hW-5615,hX-488,hY-8789,hv-1"
+            + "464,hw-1708,hy-1464,i\"-732,i'-732,iT-976,iY-1220,j\"-732,j'-732,jT-976,jY-1220,k&-1953,k(-488,k+-"
+            + "3662,k--3662,k0-1220,k4-3173,k5-1464,k6-1220,k7-2197,k8-732,k9-732,k<-7080,k=-1708,k?-244,k@-976"
+            + ",kC-1220,kG-1220,kJ-976,kO-1220,kQ-1220,kS-976,kT-2685,kU-1220,kV-2685,kW-3173,kY-4882,ka-1953,k"
+            + "c-3173,kd-3173,ke-3173,kf-976,kg-3173,ko-3173,kq-3173,ks-2197,kt-976,k{-1220,m/488,m1-1953,m7-73"
+            + "2,mT-7080,mU-1464,mV-5615,mW-5615,mX-488,mY-8789,mv-1464,mw-1708,my-1464,n/488,n1-1953,n7-732,nT"
+            + "-7080,nU-1464,nV-5615,nW-5615,nX-488,nY-8789,nv-1464,nw-1708,ny-1464,o)-1708,o,-1464,o.-1464,o1-"
+            + "2441,o3-488,o7-2685,o8-488,o9-732,oA-2929,oS-732,oT-8544,oU-1220,oV-5859,oW-5859,oX-4638,oY-8300"
+            + ",o]-1708,o_-2929,ov-2197,ow-2197,ox-2929,oy-2197,oz-1220,o}-1708,p)-1708,p,-1464,p.-1464,p1-2441"
+            + ",p3-488,p7-2685,p8-488,p9-732,pA-2929,pS-732,pT-8544,pU-1220,pV-5859,pW-5859,pX-4638,pY-8300,p]-"
+            + "1708,p_-2929,pv-2197,pw-2197,px-2929,py-2197,pz-1220,p}-1708,q7-732,qV-1953,qW-1464,qY-3417,q_19"
+            + "53,qj1220,r&-1708,r+-3173,r,-8544,r--3173,r.-8544,r/-2441,r4-1464,r7-488,r<-1953,r?1708,rA-4638,"
+            + "rJ-5615,rT-3417,rV-1464,rW-1464,rX-3417,rY-2441,rZ-1953,r_-5664,ra-976,rc-1220,rd-1220,re-1220,r"
+            + "f2197,rg-1220,rm488,rn488,ro-1220,rp488,rq-1220,rr488,rs-1220,rt1220,rv976,rw732,ry976,s1-1220,s"
+            + "7-1708,sA-1464,sC-244,sG-244,sO-244,sQ-244,sT-7568,sV-5126,sW-4638,sX-2685,sY-8056,s_-976,ss-976"
+            + ",st-244,sv-1464,sw-1464,sx-1708,sy-1464,t+-976,t--976,t4-976,t<-1220,tT-2441,tV-2441,tW-2441,tX-"
+            + "1220,tY-3906,tc-366,td-366,te-366,tf488,tg-366,to-366,tq-366,ts-488,tt488,u/488,u7-488,uT-5859,u"
+            + "V-2685,uW-2685,uY-5126,uf1220,v&-2441,v+-1708,v,-6835,v--1708,v.-6835,v/-2929,v0-488,v4-976,v6-4"
+            + "88,v<-2685,v=-3173,v@-1464,vA-6347,vJ-4638,vT-3173,vV-1220,vW-1220,vX-3417,vY-3662,vZ-2197,v\\488"
+            + ",v_-8300,va-1708,vc-2197,vd-2197,ve-2197,vf976,vg-2197,vo-2197,vq-2197,vs-1464,w&-3417,w+-1708,w"
+            + ",-6835,w--1708,w.-6835,w/-1953,w0-488,w4-976,w6-488,w<-2441,w=-3173,w@-732,wA-6347,wJ-4394,wT-31"
+            + "73,wV-732,wW-732,wX-3662,wY-3662,wZ-2197,w\\488,w_-7861,wa-1464,wc-2197,wd-2197,we-2197,wf1220,wg"
+            + "-2197,wo-2197,wq-2197,ws-1464,x&-1464,x+-1953,x--1953,x0-488,x4-976,x6-488,x7-488,x<-2685,x=-292"
+            + "9,x@-976,xA-732,xC-976,xG-976,xO-976,xQ-976,xT-2929,xU-732,xV-976,xW-976,xY-4150,xa-732,xc-2929,"
+            + "xd-2929,xe-2929,xf1708,xg-2929,xo-2929,xq-2929,xs-1708,y&-2441,y+-1708,y,-6835,y--1708,y.-6835,y"
+            + "/-2929,y0-488,y4-976,y6-488,y<-2685,y=-3173,y@-1464,yA-6347,yJ-4638,yT-3173,yV-1220,yW-1220,yX-3"
+            + "417,yY-3662,yZ-2197,y\\488,y_-8300,ya-1708,yc-2197,yd-2197,ye-2197,yf976,yg-2197,yo-2197,yq-2197,"
+            + "ys-1464,z+-2929,z--2929,z<-2929,zA-976,zC-488,zG-488,zJ-488,zO-488,zQ-488,zT-4150,zV-1953,zW-268"
+            + "5,zY-4638,zc-1220,zd-1220,ze-1220,zg-1220,zo-1220,zq-1220,{c-488,{d-488,{e-488,{g-488,{j2685,{o-"
+            + "488,{q-488,";
+    }
+    private static String MesloLGS_NF_1_6_kerning() {
+        return "\"&-1708,\",-10742,\".-10742,\"1488,\"4-2441,\"5-732,\"8-1220,\"A-8544,\"J-9765,\"a732,\"c1220,\"d1220,\"e122"
+            + "0,\"f2441,\"g1220,\"o1220,\"q1220,\"s488,\"w1220,\u00234-1220,&\"-3662,&'-3662,&*-3173,&+-1708,&--1708,&1-29"
+            + "29,&5-1464,&7-1953,&8-488,&9-1220,&=-2441,&?-4150,&@-976,&C-1220,&G-1220,&O-1220,&Q-1220,&T-8300"
+            + ",&V-6103,&W-6835,&Y-9765,&^-3173,&s-1708,&t-976,&u-1220,&v-3417,&w-3417,&x-976,&y-3417,&z-976,'&"
+            + "-1708,',-10742,'.-10742,'1488,'4-2441,'5-732,'8-1220,'A-8544,'J-9765,'a732,'c1220,'d1220,'e1220,"
+            + "'f2441,'g1220,'o1220,'q1220,'s488,'w1220,(c-488,(d-488,(e-488,(g-488,(j2685,(o-488,(q-488,*&-341"
+            + "7,*,-13427,*.-13427,*0-488,*4-2685,*6-488,*7-488,*A-8056,*J-8300,*X-3173,*Y-976,*_-6835,*c732,*d"
+            + "732,*e732,*g732,*o732,*q732,*t1953,+A-3173,+T-5615,+V-4638,+W-4638,+X-5371,+Y-8544,+Z-1220,+v-17"
+            + "08,+w-1708,+x-1953,+y-1708,+z-488,,\"-10742,,'-10742,,*-13427,,/4150,,0-5615,,1-5859,,3-3906,,4-1"
+            + "953,,5-3662,,6-5615,,7-732,,8-3173,,9-3173,,C-6835,,G-6835,,O-6835,,Q-6835,,T-9521,,U-4150,,V-11"
+            + "718,,W-10742,,Y-13183,,\\-4150,,^-13427,,c-1464,,d-1464,,e-1464,,f-3662,,g-1464,,j2441,,o-1464,,q"
+            + "-1464,,t-976,,v-6347,,w-5859,,y-6347,-A-3173,-T-5615,-V-4638,-W-4638,-X-5371,-Y-8544,-Z-1220,-v-"
+            + "1708,-w-1708,-x-1953,-y-1708,-z-488,.\"-10742,.'-10742,.*-13427,./4150,.0-5615,.1-5859,.3-3906,.4"
+            + "-1953,.5-3662,.6-5615,.7-732,.8-3173,.9-3173,.C-6835,.G-6835,.O-6835,.Q-6835,.T-9521,.U-4150,.V-"
+            + "11718,.W-10742,.Y-13183,.\\-4150,.^-13427,.c-1464,.d-1464,.e-1464,.f-3662,.g-1464,.j2441,.o-1464,"
+            + ".q-1464,.t-976,.v-6347,.w-5859,.y-6347,/,-4150,/.-4150,/1488,/4-976,/7976,/A-3173,/B488,/C488,/D"
+            + "488,/E488,/F488,/G488,/H488,/I488,/J-1464,/K488,/L488,/M488,/N488,/O488,/P488,/Q488,/R488,/T1220"
+            + ",/U488,/V488,/W488,/X488,/Y488,/b488,/f488,/h488,/k488,/l488,0\"-976,0'-976,0*-1953,0,-5126,0.-51"
+            + "26,01-732,03-732,07-2685,09-732,0?-1220,0A-1464,0T-4394,0V-2685,0W-3417,0X-2685,0Y-6103,0\\1953,0"
+            + "^-1953,0_-5126,0v-488,0w-488,0x-488,0y-488,1\"-1220,1'-1220,1*-732,1,-2685,1.-2685,1Y-976,1^-732,"
+            + "2*-488,24-976,2@-244,2V-976,2Y-4150,2^-488,3\"-1220,3'-1220,3,-3173,3.-3173,30-488,36-488,39-244,"
+            + "3A-488,3T-1708,3V-2197,3W-2685,3X-1464,3Y-3662,3\\732,3_-3662,4\"-1953,4'-1953,4*-4638,4,-1464,4.-"
+            + "1464,41-1220,4T-732,4V-1953,4W-1464,4X488,4Y-3173,4^-4638,4v-732,4w-732,4x-244,4y-732,5,-3906,5."
+            + "-3906,51-976,5:-244,5;-244,5Y-2197,5\\732,5_-3662,6\"-732,6'-732,6*-1220,6,-3417,6.-3417,63-732,6A"
+            + "-976,6V-732,6W-732,6X-732,6Y-3662,6\\732,6^-1220,6_-5126,6w-732,7\u0023-3417,7&-3662,7,-10009,7.-10009"
+            + ",7/-2197,70-976,71732,73-976,74-3662,75-488,76-976,771953,78-488,79-488,7:-976,7;-976,7<-5859,7@"
+            + "-976,7A-5371,7J-5371,7\\1953,7_-14160,7a-2685,7c-2929,7d-2929,7e-2929,7g-2929,7o-2929,7q-2929,7s-"
+            + "2441,7u-1220,7x-976,8\"-1220,8'-1220,8,-3173,8.-3173,80-488,86-488,89-244,8A-488,8T-1708,8V-2197,"
+            + "8W-2685,8X-1464,8Y-3662,8\\732,8_-5126,9\"-976,9'-976,9*-1953,9,-5126,9.-5126,91-732,93-732,97-268"
+            + "5,99-732,9?-1220,9A-1464,9T-4394,9V-2685,9W-3417,9X-2685,9Y-6103,9\\1953,9^-1953,9_-5126,9v-488,9"
+            + "w-488,9x-488,9y-488,:1-1708,:2-732,:4-732,:5-488,:7-1708,:V-1220,:W-2441,:X-1708,:Y-2685,;1-1464"
+            + ",;2-732,;4-732,;5-488,;7-1708,;V-1220,;W-2441,;X-1708,;Y-2685,=&-1953,=A-2441,=V-6103,=W-3906,=X"
+            + "-2929,=Y-10009,=Z-1708,=v-1220,=w-1708,=x-1220,=y-1220,>7-6103,>A-2441,>T-7080,>V-5859,>W-5371,>"
+            + "X-4882,>Y-8300,>Z-2929,>v-2441,>w-2441,>x-2685,>y-2441,>z-1464,?4-1220,@&-1708,@2-488,@7-2441,@T"
+            + "-1464,@V-2197,@W-1220,@X-1953,@Y-3906,@v-732,@w-732,@x-976,@y-732,A\"-8544,A&-976,A'-8544,A*-9033"
+            + ",A+-3173,A--3173,A0-3173,A1-4394,A5-2197,A6-3173,A7-1220,A9-732,A<-3173,A=-2441,A?-2441,AC-4394,"
+            + "AG-4394,AO-4394,AQ-4394,AT-7568,AU-1708,AV-6835,AW-7080,AY-8789,A\\-1464,A^-9033,Aa-976,Ac-2929,A"
+            + "d-2929,Ae-2929,Af-1953,Ag-2929,Ao-2929,Aq-2929,As-1708,At-2929,Au-2929,Av-6103,Aw-5615,Ax-488,Ay"
+            + "-6103,Az-488,B5-488,B7-244,BT-488,BV-1220,BW-732,BY-2685,B\\732,B_-1953,Bt-244,Bx-488,Bz-488,CA-7"
+            + "32,CT-2441,CV-1464,CW-732,CX-1953,CY-3417,C\\1220,C_-4882,D*-1464,D,-4150,D.-4150,D/-2441,D7-976,"
+            + "DA-1464,DT-3906,DV-3906,DW-3417,DX-2929,DY-6835,DZ-2441,D^-1464,D_-4882,Da-488,Ds-488,Dx-976,E72"
+            + "44,E\\1464,F,-8056,F.-8056,F/-3662,F=-976,FA-2197,FJ-2441,F\\976,F_-6103,Fa-732,Fv-732,Fy-732,Fz-4"
+            + "88,G,-2197,G.-2197,G/-732,G4732,GA-976,GT-732,GV-1953,GW-1708,GX-1708,GY-3906,G\\488,G_-3173,Ga-4"
+            + "88,Gz-488,H1732,H\\1464,I1732,I\\1464,J,-6103,J.-6103,J/-2929,J<-4150,J=-1220,JA-1708,J\\1464,J_-43"
+            + "94,Ja-1220,Jc-1220,Jd-1220,Je-1220,Jg-1220,Jo-1220,Jq-1220,Jx-732,K&-3417,K*-2441,K+-6347,K--634"
+            + "7,K0-2929,K1-976,K3-1220,K4-3173,K5-1708,K6-2929,K8-732,K9-1708,K<-7568,K=-1708,K@-1953,KC-4394,"
+            + "KG-4394,KO-4394,KQ-4394,KS-1953,KU-1220,K^-2441,Ka-2685,Kc-4638,Kd-4638,Ke-4638,Kf-2685,Kg-4638,"
+            + "Ko-4638,Kq-4638,Ks-3173,Kt-2929,Ku-3173,Kv-4882,Kw-4882,Kx-976,Ky-4882,L\"-11718,L&-732,L'-11718,"
+            + "L*-11230,L+-6591,L--6591,L0-4638,L1-7080,L5-976,L6-4638,L7-4150,L8-976,L9-976,L<-8056,L?-3662,LC"
+            + "-2441,LG-2441,LO-2441,LQ-2441,LT-8789,LU-2685,LV-7080,LW-7080,LY-9521,L\\-2197,L^-11230,La-1464,L"
+            + "c-3173,Ld-3173,Le-3173,Lg-3173,Lo-3173,Lq-3173,Lt-3417,Lu-1953,Lv-6835,Lw-6591,Ly-6835,M1732,M\\1"
+            + "464,N1732,N\\1464,O*-1464,O,-4150,O.-4150,O/-2441,O7-976,OA-1464,OT-3906,OV-3906,OW-3417,OX-2929,"
+            + "OY-6835,OZ-2441,O^-1464,O_-4882,Oa-488,Os-488,Ox-976,P&-2685,P,-12451,P.-12451,P/-4394,P4-1953,P"
+            + "7-1220,PA-3173,PJ-3906,PT-976,PV-1220,PW-976,PX-3417,PY-2685,PZ-1464,P\\976,P_-10253,Pa-1953,Pc-1"
+            + "220,Pd-1220,Pe-1220,Pf2441,Pg-1220,Po-1220,Pq-1220,Ps-732,Pt1953,Pv976,Pw976,Px1464,Py976,Pz488,"
+            + "Q*-1464,Q,-4150,Q.-4150,Q/-2441,Q7-976,QA-1464,QT-3906,QV-3906,QW-3417,QX-2929,QY-6835,QZ-2441,Q"
+            + "^-1464,Q_-4882,Qa-488,Qs-488,Qx-976,RV-1953,RW-1953,RY-1953,Ra-244,Rc-732,Rd-732,Re-732,Rf1220,R"
+            + "g-732,Ro-732,Rq-732,Rs-244,Rt1220,ST-1464,SV-1220,SW-1708,SX-1708,SY-3173,Sa-732,T&-3906,T+-6835"
+            + ",T,-8544,T--6835,T.-8544,T/-5859,T0-2685,T3-488,T4-976,T6-2685,T71464,T9488,T<-7080,T@-1953,TA-5"
+            + "859,TC-732,TG-732,TJ-7324,TO-732,TQ-732,T\\1464,T_-5859,Ta-9033,Tc-8789,Td-8789,Te-8789,Tg-8789,T"
+            + "i-1220,Tj-976,Tm-4882,Tn-4882,To-8789,Tp-4882,Tq-8789,Tr-4882,Ts-7568,Tu-5126,Tv-3173,Tw-3173,Tx"
+            + "-2929,Ty-3173,Tz-4150,U,-6103,U.-6103,U/-2929,U<-4150,U=-1220,UA-1708,U\\1464,U_-4394,Ua-1220,Uc-"
+            + "1220,Ud-1220,Ue-1220,Ug-1220,Uo-1220,Uq-1220,Ux-732,V&-4150,V+-4638,V,-10986,V--4638,V.-10986,V/"
+            + "-5859,V0-1220,V21464,V3976,V4-2929,V6-1220,V71953,V8-1708,V:-1220,V;-1220,V<-4394,V=-4150,V@-146"
+            + "4,VA-5371,VC-1708,VG-1708,VJ-6103,VO-1708,VQ-1708,VS-488,V\\1953,V_-9277,Va-4394,Vc-2685,Vd-2685,"
+            + "Ve-2685,Vg-2685,Vm-2929,Vn-2929,Vo-2685,Vp-2929,Vq-2685,Vr-2929,Vs-4394,Vu-1953,Vv-732,Vw-732,Vx"
+            + "-976,Vy-732,Vz-2685,W&-4882,W+-4638,W,-10742,W--4638,W.-10742,W/-5859,W0-1953,W1976,W2976,W3-195"
+            + "3,W4-3173,W5-1464,W6-1953,W8-2685,W9-1220,W:-2441,W;-2441,W<-4638,W=-2685,W@-1220,WA-6103,WC-195"
+            + "3,WG-1953,WJ-5859,WO-1953,WQ-1953,WS-488,W\\1953,W_-9277,Wa-6103,Wc-3417,Wd-3417,We-3417,Wg-3417,"
+            + "Wm-3417,Wn-3417,Wo-3417,Wp-3417,Wq-3417,Wr-3417,Ws-4150,Wu-2197,Wv-732,Ww-488,Wx-976,Wy-732,Wz-2"
+            + "685,X&-2929,X*-1220,X+-5371,X--5371,X/-732,X0-2197,X4-2197,X6-2197,X7976,X8-1220,X9-732,X:-1708,"
+            + "X;-1708,X<-6103,X=-2929,X@-1953,XC-3173,XG-3173,XO-3173,XQ-3173,XS-976,X\\1464,X^-1220,Xa-2197,Xc"
+            + "-4394,Xd-4394,Xe-4394,Xf-1708,Xg-4394,Xo-4394,Xq-4394,Xs-2685,Xt-2441,Xu-3173,Xv-3662,Xw-3173,Xy"
+            + "-3662,Y&-6103,Y*-976,Y+-7812,Y,-12207,Y--7812,Y.-12207,Y/-7324,Y0-2441,Y1-732,Y2-976,Y3-1464,Y4-"
+            + "5371,Y5-1220,Y6-2441,Y8-2929,Y9-1220,Y:-2685,Y;-2685,Y<-8300,Y=-6347,Y@-3417,YA-6835,YC-2441,YG-"
+            + "2441,YJ-8544,YO-2441,YQ-2441,YS-2441,Y\\1708,Y^-976,Y_-10253,Ya-7568,Yc-6835,Yd-6835,Ye-6835,Yf-1"
+            + "220,Yg-6835,Yi-1220,Yj-1220,Ym-4882,Yn-4882,Yo-6835,Yp-4882,Yq-6835,Yr-4882,Ys-7324,Yt-1953,Yu-4"
+            + "638,Yv-3417,Yw-3417,Yx-3906,Yy-3417,Yz-3906,Z+-1953,Z--1953,Z3-976,Z4-1220,Z<-2929,ZC-2441,ZG-24"
+            + "41,ZO-2441,ZQ-2441,Za-488,Zc-1220,Zd-1220,Ze-1220,Zg-1220,Zo-1220,Zq-1220,Zu-976,Zv-488,Zw-488,Z"
+            + "y-488,[c-488,[d-488,[e-488,[g-488,[j2685,[o-488,[q-488,\\,4150,\\.4150,\\1-488,\\2488,\\7-1464,\\8244,"
+            + "\\A488,\\C-2197,\\G-2197,\\O-2197,\\Q-2197,\\T-3662,\\U-976,\\V-4638,\\W-2929,\\X-488,\\Y-4150,\\j4638,\\m488"
+            + ",\\n488,\\p488,\\r488,\\v-1953,\\w-2685,\\y-1953,^&-3417,^,-13427,^.-13427,^0-488,^4-2685,^6-488,^7-48"
+            + "8,^A-8056,^J-8300,^X-3173,^Y-976,^_-6835,^c732,^d732,^e732,^g732,^o732,^q732,^t1953,_*-6835,_0-5"
+            + "126,_1-10009,_3-5126,_4-5371,_5-5126,_6-5126,_8-5126,_9-5126,_C-4882,_G-4882,_J-1464,_O-4882,_Q-"
+            + "4882,_T-5859,_U-3906,_V-9277,_W-9277,_Y-10253,_^-6835,_a-2685,_c-2441,_d-2441,_e-2441,_f-1464,_g"
+            + "1220,_j10009,_o-2441,_p5126,_q-2441,_s-2441,_t-1708,_u-2441,_v-8056,_w-8056,_y-8056,a\"-1953,a'-1"
+            + "953,a*-1953,a/488,a1-1953,a7-732,aT-10742,aU-1220,aV-7324,aW-5615,aX-488,aY-10253,a^-1953,av-170"
+            + "8,aw-1708,ay-1708,az-488,b\"-3906,b'-3906,b)-2197,b*-2929,b,-1464,b.-1464,b1-2441,b3-1220,b7-2685"
+            + ",b8-488,b9-732,b?-732,bA-2929,bS-732,bT-10742,bU-1220,bV-5859,bW-5615,bX-4150,bY-10742,b]-2197,b"
+            + "^-2929,b_-2441,bv-2929,bw-2197,bx-2929,by-2929,bz-1220,b}-2197,c\"-488,c'-488,c*-1464,c7-976,cA-2"
+            + "197,cT-7812,cU-976,cV-4638,cW-4638,cX-2685,cY-8300,c^-1464,c_-1708,cf976,ct488,cv-1220,cw-1464,c"
+            + "x-976,cy-1220,cz-488,d,-1953,d.-1953,df1708,dj732,dt1708,e\"-1220,e'-1220,e*-1953,e/488,e1-976,e7"
+            + "-1708,e?-1464,eA-2441,eT-10742,eU-1220,eV-5615,eW-5859,eX-2929,eY-9521,e^-1953,e_-2441,ev-2441,e"
+            + "w-1464,ex-2685,ey-2441,ez-976,f\"976,f&-2441,f'976,f,-3906,f.-3906,f/-488,f4-2929,f<-732,fA-4394,"
+            + "fJ-6103,fX-976,fY-732,f_-2441,fa-1708,fc-1831,fd-1831,fe-1831,ff488,fg-1831,fo-1831,fq-1831,fs-1"
+            + "953,ft488,g7-976,gT-4882,gV-3662,gW-2197,gY-6591,g_2197,gj1220,h\"-1953,h'-1953,h*-1953,h/488,h1-"
+            + "1953,h7-732,hT-10742,hU-1220,hV-7324,hW-5615,hX-488,hY-10253,h^-1953,hv-1708,hw-1708,hy-1708,hz-"
+            + "488,iT-1464,iY-1708,jT-1464,jY-1708,k&-1953,k(-488,k*-976,k+-3906,k--3906,k0-1708,k1-488,k4-3173"
+            + ",k5-1708,k6-1708,k7-1953,k8-732,k9-732,k<-5859,k=-1220,k?-488,k@-976,kC-1953,kG-1953,kJ-732,kO-1"
+            + "953,kQ-1953,kS-976,kT-2685,kU-1220,kV-2441,kW-3173,kY-4882,k^-976,ka-1953,kc-3173,kd-3173,ke-317"
+            + "3,kf-244,kg-3173,ko-3173,kq-3173,ks-2685,kt-976,k{-1220,l,-1953,l.-1953,lf1708,lj732,lt1708,m\"-1"
+            + "953,m'-1953,m*-1953,m/488,m1-1953,m7-732,mT-10742,mU-1220,mV-7324,mW-5615,mX-488,mY-10253,m^-195"
+            + "3,mv-1708,mw-1708,my-1708,mz-488,n\"-1953,n'-1953,n*-1953,n/488,n1-1953,n7-732,nT-10742,nU-1220,n"
+            + "V-7324,nW-5615,nX-488,nY-10253,n^-1953,nv-1708,nw-1708,ny-1708,nz-488,o\"-3906,o'-3906,o)-2197,o*"
+            + "-2929,o,-1464,o.-1464,o1-2441,o3-1220,o7-2685,o8-488,o9-732,o?-732,oA-2929,oS-732,oT-10742,oU-12"
+            + "20,oV-5859,oW-5615,oX-4150,oY-10742,o]-2197,o^-2929,o_-2441,ov-2929,ow-2197,ox-2929,oy-2929,oz-1"
+            + "220,o}-2197,p\"-3906,p'-3906,p)-2197,p*-2929,p,-1464,p.-1464,p1-2441,p3-1220,p7-2685,p8-488,p9-73"
+            + "2,p?-732,pA-2929,pS-732,pT-10742,pU-1220,pV-5859,pW-5615,pX-4150,pY-10742,p]-2197,p^-2929,p_-244"
+            + "1,pv-2929,pw-2197,px-2929,py-2929,pz-1220,p}-2197,q7-976,qT-4394,qV-3662,qW-2197,qY-6591,q_2197,"
+            + "qj1220,r&-1708,r+-1220,r,-8544,r--1220,r.-8544,r7-732,rA-4150,rJ-5615,rT-2441,rV-1220,rW-1220,rX"
+            + "-3417,rY-2685,rZ-1953,r_-5859,ra-1220,rc-1220,rd-1220,re-1220,rf2197,rg-1220,ro-1220,rq-1220,rs-"
+            + "1220,rt1708,rv732,rw732,ry732,s\"-488,s'-488,s*-1220,s7-976,sA-1220,sT-8056,sV-5126,sW-4638,sX-29"
+            + "29,sY-8056,s^-1220,s_-1708,ss-488,st-244,sv-2197,sw-1464,sx-1708,sy-2197,t+-976,t--976,t<-1220,t"
+            + "T-1953,tV-2441,tW-2441,tX-1220,tY-3906,tc-732,td-732,te-732,tf488,tg-732,to-732,tq-732,ts-488,tt"
+            + "488,u/488,u7-488,uA-488,uT-5859,uV-2685,uW-2929,uY-5126,uf1220,v&-3417,v+-1708,v,-6103,v--1708,v"
+            + ".-6103,v/-244,v0-488,v4-976,v6-488,v<-1953,v=-1220,v@-732,vA-5615,vJ-4394,vT-2929,vV-732,vW-732,"
+            + "vX-3417,vY-3662,vZ-2197,v\\488,v_-8056,va-1220,vc-976,vd-976,ve-976,vf976,vg-976,vo-976,vq-976,vs"
+            + "-1464,w&-3417,w+-1708,w,-6591,w--1708,w.-6591,w/-488,w0-488,w4-976,w6-488,w7-732,w<-1953,w=-1708"
+            + ",w@-732,wA-5371,wJ-4394,wT-3173,wV-732,wW-732,wX-3417,wY-3662,wZ-2197,w\\488,w_-8056,wa-1464,wc-1"
+            + "220,wd-1220,we-1220,wf1220,wg-1220,wo-1220,wq-1220,ws-1464,x&-1464,x+-1953,x--1953,x0-488,x4-976"
+            + ",x6-488,x7-488,x<-2685,x=-1220,x@-976,xA-488,xC-976,xG-976,xO-976,xQ-976,xT-2929,xU-1220,xV-1220"
+            + ",xW-976,xY-4150,xa-732,xc-2685,xd-2685,xe-2685,xf1708,xg-2685,xo-2685,xq-2685,xs-1464,y&-3417,y+"
+            + "-1708,y,-6103,y--1708,y.-6103,y/-244,y0-488,y4-976,y6-488,y<-1953,y=-1220,y@-732,yA-5615,yJ-4394"
+            + ",yT-2929,yV-732,yW-732,yX-3417,yY-3662,yZ-2197,y\\488,y_-8056,ya-1220,yc-976,yd-976,ye-976,yf976,"
+            + "yg-976,yo-976,yq-976,ys-1464,z*-244,z+-488,z--488,z7-976,z<-1220,zA-488,zC-488,zG-488,zJ-488,zO-"
+            + "488,zQ-488,zT-4150,zV-2685,zW-2685,zY-4882,z^-244,za-976,zc-1464,zd-1464,ze-1464,zg-1464,zo-1464"
+            + ",zq-1464,{c-488,{d-488,{e-488,{g-488,{j2685,{o-488,{q-488,}Y-976,";
+    }
+    private static String Mshtakan_1_3_kerning() {
+        return "AT-3710,AV-4980,AW-3710,AY-5517,Av-5517,Aw-5517,Ay-5517,FA-12890,LT-2001,LV-3710,LW-3710,LY-2001"
+            + ",Ly-2978,PA-12890,RV-1806,RW-1806,RY-1806,Ry-1806,TA-7421,TO-1806,Ta-9179,Tc-9179,Te-9179,Ti-551"
+            + "7,To-9179,Tr-5517,Ts-9179,Tu-5517,Tw-7421,Ty-7421,VA-7421,VO-2978,Va-11083,Ve-11083,Vi-7421,Vo-1"
+            + "1083,Vr-7421,Vu-7421,Vy-9179,WA-6982,Wa-9179,We-9179,Wi-5517,Wo-9179,Wr-5517,Wu-5517,Wy-9179,YA-"
+            + "6982,Ya-9179,Ye-9179,Yi-7421,Yo-9179,Yp-9179,Yq-11083,Yu-9179,Yv-9179,rc-3710,rd-3710,re-3710,rg"
+            + "-3710,rh-1806,ro-3710,rq-3710,";
+    }
+    private static String Mshtakan_1_6_kerning() {
+        return "AT-5517,AV-7421,AW-9179,AY-5517,Av-7421,Aw-7421,Ay-7421,FA-9179,LT-1806,LV-3710,LW-3710,LY-3710,"
+            + "Ly-3710,PA-7421,RV-1806,RW-1806,RY-1806,Ry-1806,TA-5517,TO-1806,Ta-9179,Tc-9179,Te-9179,Ti-3710,"
+            + "To-9179,Tr-3710,Ts-9179,Tu-3710,Tw-3710,Ty-3710,VA-7421,Va-11083,Ve-11083,Vi-5517,Vo-11083,Vr-55"
+            + "17,Vu-5517,Vy-7421,WA-7421,Wa-7421,We-7421,Wi-3710,Wo-7421,Wr-7421,Wu-5517,Wy-5517,YA-7421,Ya-91"
+            + "79,Ye-11083,Yi-5517,Yo-11083,Yp-7421,Yq-11083,Yu-9179,Yv-9179,ff-1806,";
+    }
+    private static String Mukta_Mahee_0_3_kerning() {
+        return "  -3200,\"A-5000,\"O-1999,\"Q-1999,\"S-1999,\"a-3000,\"e-3000,\"g-6000,\"m-3000,\"n-3000,\"o-5000,\"p-1999,"
+            + "\"q-3999,\"s-1999,\"u-3000,$1-5000,$2-1999,$3-1999,$5-1999,$7-3000,$9-1999,'A-5000,'O-1999,'Q-1999,"
+            + "'S-1999,'a-3000,'e-3000,'g-6000,'m-3000,'n-3000,'o-5000,'p-1999,'q-3999,'s-1999,'u-3000,(0-1999,"
+            + "(1-3000,(3-1000,(4-1999,(5-1000,(6-1000,(8-1000,(9-1999,)(1999,)03999,)1-1999,)31000,)45000,)619"
+            + "99,)71000,)83000,)91999,)[1999,){1999,*,-3999,*.-3999,*4-3000,*:-3999,*;-3999,*T5000,*V3999,*W39"
+            + "99,*X3000,*Y3000,*f3000,*t3000,+01999,+42500,+61999,+81999,+91999,, -3999,,1-3000,,23000,,31999,"
+            + ",51999,,7-1999,,81999,,X3000,,g1999,,s3000,,t-1999,-1-3000,-2-1999,-7-5000,-T-1999,-X-1000,-Y-10"
+            + "00,-v-1499,-x-1499,. -3999,.1-3000,.23000,.31999,.51999,.7-1999,.81999,.X3000,.g1999,.s3000,.t-1"
+            + "999,/1-1000,/4-6000,/5-3000,/71000,0(3999,0)-1999,0+1999,001000,01-1499,041999,05-500,061999,07-"
+            + "1000,081999,091499,0=1999,0[3999,0]-1999,0|1000,1(3000,1+1999,101499,122500,131000,141999,161499"
+            + ",181499,191000,1=1999,1[3000,1|1999,2(1999,2+1000,2,1999,2.1999,201000,231000,25-1000,281000,291"
+            + "000,2<-1999,2=1000,2[1999,2|1999,3%-1999,3)-1999,3,-1000,3.-1000,31-2500,32-1000,33-1000,35-1999"
+            + ",37-1999,381000,39-1000,3<-3000,3]-1999,4\u00231999,4%-1000,4(5000,4)-1000,4+2500,401000,41-1999,4413"
+            + "99,45-1000,461000,47-1000,481999,49-1000,4=2500,4[5000,4\\-3000,4]-1000,4{5000,4|500,5%-1999,5(19"
+            + "99,5)-800,5,-1000,5.-1000,5/-1999,51-2500,52-1000,53-1999,541000,55-1999,56-500,57-1999,581000,5"
+            + "9-500,5<-3000,5[1999,5]-800,6(1499,6+1999,601999,61-1999,641499,65-1999,661499,67-1000,682500,69"
+            + "-500,6=1999,6[1499,6|1000,7\u0023-1999,7%1000,7(1999,7+-1000,7,-6000,7--3000,7.-6000,7/-8999,70-1999,"
+            + "71-1999,72-1000,73-1000,74-3999,75-3999,76-2500,78-1499,79-1000,7:-6000,7;-6000,7<-6999,7=-1000,"
+            + "7[1999,8(3000,8)-1000,8+1999,801999,81-1000,821000,841999,85-500,861499,87-1000,881999,891000,8="
+            + "1999,8[3000,8]-1000,8|1999,9(1999,9)-1999,9+1999,901699,91-500,93-500,941000,95-800,961000,98149"
+            + "9,991000,9=1999,9[1999,9]-1999,9|1000,: -3999,:81999,; -3999,;81999,=01999,=42500,=61999,=81999,"
+            + "=91999,>7-8999,A\"-5000,A'-5000,A,1000,A.1000,AA500,AC-1999,AG-1499,AO-1499,AQ-1000,AT-6999,AV-47"
+            + "00,AW-4499,AX1999,AY-5500,A^-6000,Aa1000,Ad-500,Ae-800,Ao-500,Aq-1000,Av-3500,Aw-2500,Ay-3500,Az"
+            + "3000,A}-1000,B,-3000,B.-3000,B:-3000,B;-3000,BA-1499,BJ-1499,BT-1000,Bv-500,By-1000,Bz-1000,B}-3"
+            + "000,C--3000,CB-1000,CC-2500,CD-1000,CE-1000,CF-1000,CG-1999,CH-1000,CK-1000,CL-1000,CN-1000,CO-2"
+            + "500,CP-1000,CR-1000,CY-200,Ca-1000,Cd-1000,Ce-1600,Ch1000,Cl1000,Cw-1499,Cy-1499,D\"-1000,D'-1000"
+            + ",D,-3500,D.-3500,D:-3500,D;-3500,DA-1999,DJ-1000,DN-1000,DY-3000,DZ-500,Da-500,D}-3000,EC-500,EG"
+            + "-500,EO-500,EQ-500,EV-500,EY-500,Ec-3000,Ed-1499,Ee-1499,Eo-1499,Eq-1499,Et-500,Eu-500,Ev-1499,E"
+            + "w500,Ey-1499,E}-1000,F,-6999,F.-6999,F:-6999,F;-6999,FA-3999,FF-3000,FG-1999,FJ-3000,FM-1999,FO-"
+            + "500,FS-1499,FT1000,FY1999,Fa-3000,Fe-3000,Fi-1499,Fj-1499,Fm-3000,Fn-3000,Fo-1499,Fr-3000,Fs-149"
+            + "9,Fu-3000,Fy-2500,Fz-3000,GT-1499,GW-3000,GY-1499,Gw-1000,Gy-3000,G}-1000,H,-1999,H.-1999,HJ-199"
+            + "9,H}-1999,I,-1999,I.-1999,IE-500,IJ-1999,If-1000,Ig-1000,Ij-3000,I}-1999,J,-1999,J.-1999,JA-1999"
+            + ",J}-1999,K--1999,KC-3000,KG-3000,KO-3500,KQ-3000,KS-1600,KU-1499,KY-500,K^-5000,Ka-1999,Ki-1000,"
+            + "Ko-3000,Ku-1499,Ky-3200,K}-1000,L\"-10000,L'-10000,L,1000,L--1999,L.1000,LA1000,LC-1000,LO-1499,L"
+            + "Q-3999,LT-8000,LU-1999,LV-6000,LW-6000,LX1000,LY-6000,LZ1999,L^-6000,M,-1999,M.-1999,MF-1999,Mu-"
+            + "1000,M}-1999,N,-1999,N.-1999,N}-1999,O\"-1999,O'-1999,O,-3999,O.-3999,O:-3999,O;-3999,OA-1999,OJ-"
+            + "1999,OT-3500,OV-1499,OW-500,OX-3000,OY-1499,Ox-1499,Oz-1499,O}-3000,P,-6999,P.-6999,P:-6999,P;-6"
+            + "999,PA-5000,PJ-1499,PV1999,Ps1000,Pt1000,Pv1000,Pw1000,Py500,P}-3000,Q\"-1999,Q'-1999,Q,-1999,Q.-"
+            + "1999,Q:-1999,Q;-1999,QJ3999,QT-1499,QX-1999,Qf1000,Qj3999,Q}-1000,RT-500,RU-1000,RV-500,RY-2500,"
+            + "Ro-1499,Ru-1499,R}-3000,S\"-1999,S'-1999,S,-3000,S.-3000,SA-1000,SS-1499,ST-1499,SV-1999,SW-1499,"
+            + "St-500,Sv-1499,Sw-1499,Sy-1499,S}-3000,T*5000,T,-5500,T--1999,T.-5500,T:-5500,T;-5500,TA-6999,TC"
+            + "-1999,TF-1999,TG-1999,TO-1999,TQ-1999,TT1999,TV1000,TW1499,TY2500,Ta-5000,Tc-6000,Td-6000,Te-600"
+            + "0,Tf-1000,Tg-6000,Tm-3999,Tn-6999,To-6199,Tp-3999,Tq-6000,Tr-3999,Ts-5000,Tu-3500,Tv-3999,Tw-399"
+            + "9,Tx-5000,Ty-3999,Tz-3999,U,-3999,U.-3999,U:-3999,U;-3999,U}-1999,V*3999,V,-6000,V--1000,V.-6000"
+            + ",V:-6000,V;-6000,VA-4700,VD-1999,VF-1999,VG-1999,VO-1499,VQ-3000,VT1000,Va-3999,Vc-6000,Vd-5000,"
+            + "Ve-3800,Vg-6999,Vm-3000,Vn-3000,Vo-3999,Vp-1999,Vq-3999,Vr-1999,Vs-3999,Vu-1999,Vx-1999,W*3999,W"
+            + ",-6000,W.-6000,W:-6000,W;-6000,WA-4499,WO-1000,WT1499,WY1000,Wa-1499,Wc-3000,Wd-3999,We-3000,Wf-"
+            + "1000,Wo-1499,Wt1499,X*3000,X--1999,XA1999,XC-3000,XF-1999,XG-3000,XL-1000,XO-3000,XQ-3000,XU-100"
+            + "0,Xa-1499,Xc-1999,Xd-1999,Xe-1999,Xg-1000,Xi-1000,Xo-1999,Xq-1999,Xy-1999,Y*3000,Y,-2500,Y--1000"
+            + ",Y.-5000,Y:-6999,Y;-6999,YA-5500,YC-2500,YF-1999,YO-3000,YS-1199,YT2500,Ya-4499,Yb1000,Yc-5000,Y"
+            + "d-5000,Ye-6000,Yg-6000,Yi-1000,Yk1000,Ym-1999,Yn-1999,Yo-6000,Yp-3000,Yq-6000,Yr-1999,Ys-6000,Yu"
+            + "-3999,Yv-1000,Yw-1000,Yx-1000,Yy-1999,Yz-5000,Z--3000,ZC-1499,ZM-1000,ZO-1999,ZU-1000,ZV1000,ZY1"
+            + "000,Zc-3000,Ze-1999,Zo-1999,Zu-1499,Zv-3000,Zy-1499,[0-1999,[1-3000,[3-1000,[4-1999,[5-1000,[6-1"
+            + "000,[8-1000,[9-1999,](1999,]03999,]1-1999,]31000,]45000,]61999,]71000,]83000,]91999,][1999,]{199"
+            + "9,_j10000,a\"-5000,a'-5000,aT-6000,aV-3999,aW-3000,aY-5000,at500,av-500,ay-200,az500,a}-1999,b,-1"
+            + "999,b.-1999,bT-6000,bV-3999,bW-3000,bX-1999,bY-5000,bZ-3000,bv-500,bx-1999,by-500,bz-1000,b}-300"
+            + "0,c--3000,cT-3000,cV-1000,cW-1999,cY-1999,ca-500,cc-3000,cd-1799,ce-2599,co-3000,cq-1499,ct500,c"
+            + "z1000,dV1999,dY1000,d}-1000,e\"-3000,e'-3000,e,-1000,e.-1000,eT-6000,eY-5000,ed500,ev-1000,ew-500"
+            + ",ex-1000,ey-1000,ez-1000,e}-3000,f\"5000,f'5000,f*5000,f,-3000,f.-3000,f:-3000,f;-3000,fA-5000,fD"
+            + "-1000,fJ-500,fQ1000,fT6000,fV6999,fW3999,fX5000,fZ1000,fa-1999,fc-1499,fd-1499,fe-1499,ff-5300,f"
+            + "g-1499,fi-5300,fj-4800,fl-3200,fo-1999,fr-1499,ft-1000,fy1999,f}1999,g,-1999,g.-1999,gJ1000,gT-3"
+            + "999,gY-1999,gZ-1999,ga-1499,gd-1000,ge-1999,gf1000,gg1000,gj1999,go-1799,gq-1999,gs1000,gt1000,g"
+            + "y1999,g}-1000,h*-3000,hF-1999,hJ-1999,hT-6999,hY-6000,hf-500,hy-500,h}-3000,iJ-3000,j}-1999,k--1"
+            + "000,kA1000,kC-1000,kT-5000,kY-1999,kc-1999,kd-1499,ke-1999,kf500,ko-1799,kq-1499,kt1000,kv1000,k"
+            + "w1000,kx1000,ky1000,kz1000,lD-1999,lF-1999,lJ-1999,m\"-5000,m'-5000,m*-3000,mF-1999,mJ-1999,mT-89"
+            + "99,mV-3000,mY-5000,m}-1999,n\"-5000,n'-5000,n*-3000,nF-1999,nJ-1999,nT-6000,nV-3000,nY-6000,na-50"
+            + "0,nf-500,ng-500,nt-500,ny-500,n}-1999,o\"-5000,o'-5000,oA-1000,oJ-1999,oT-6000,oV-3999,oX-1999,oY"
+            + "-6000,ov-1000,ow-500,ox-2500,oy-1000,oz-1000,o}-3000,p\"-3999,p'-3999,pD-1999,pJ-1000,pT-6000,pV-"
+            + "3999,pX-1999,pY-6000,px-1999,py-500,pz-1000,p}-1999,q\"-1999,q'-1999,qT-3999,qV-1999,qY-3000,r,-8"
+            + "000,r--3000,r.-8000,rA-6999,rF-1999,rJ-3000,rT-1999,rX-3999,rZ-3999,ra-1499,rc-3000,rd-3000,re-2"
+            + "400,rg-2500,ri-500,rn-500,ro-2500,rq-1999,rt3000,rv1999,rw1499,rx-500,ry1999,r}-1999,s\"-1999,s'-"
+            + "1999,sT-5000,sV-3999,sY-6000,se-500,s}-1999,t,1000,t.1000,tA1999,tT-3000,tY-1999,tk-1000,to-399,"
+            + "tt-1000,tv1000,tw1000,ty1000,tz1000,u\"-3000,u'-3000,uT-3999,uV-1999,uY-3999,ug-1000,u}-1399,v,-6"
+            + "000,v--1499,v.-6000,v:-6000,v;-6000,vA-3999,vT-3999,vY-1000,vZ-3000,va-1000,vd-500,ve-1000,vg-30"
+            + "00,vo-1000,vt1000,v}-3000,w,-6000,w.-6000,wA-3000,wT-3999,wY-1000,wc-500,we-500,wg-3000,wo-500,w"
+            + "t1000,wy1999,w}-3000,x--1499,xT-3999,xV-1999,xY-1999,xc-2500,xd-1999,xe-2500,xo-2500,xq-1999,x}-"
+            + "1999,y,-6999,y.-6999,yA-3999,yJ-1999,yT-3999,ya-1000,yc-2500,yd-500,ye-1000,yf1999,yg-1000,yt149"
+            + "9,yv1999,yw1000,y}-1999,z:1000,z;1000,zY-3000,zZ1000,zc-1499,ze-1000,zo-1000,zs1000,zt1499,zy100"
+            + "0,{5-2799,{A-1000,{B-1999,{C-3000,{D-1999,{E-1999,{F-1999,{G-3000,{H-1999,{I-1999,{J1999,{K-1999"
+            + ",{L-1999,{M-1999,{N-1999,{O-3000,{P-1999,{Q-1999,{R-1999,{S-3000,{U-1999,{a-3000,{c-3000,{d-3000"
+            + ",{e-3000,{f-1999,{j1999,{k-1000,{m-1999,{n-1999,{o-3000,{q-1999,{s-1999,{u-3000,{v-3000,{w-3000,"
+            + "{x-1999,|01000,|21999,|31000,|41000,|61000,|71000,|81999,|91000,}(1999,}45000,}[1999,}{1999,";
+    }
+    private static String Mukta_Mahee_0_6_kerning() {
+        return "  -3200,\"A-4299,\"O-500,\"Q-500,\"S-500,\"a-800,\"e-800,\"g-1499,\"m-800,\"n-800,\"o-1300,\"p-500,\"q-1000,"
+            + "\"s-500,\"u-800,$1-5000,$2-399,$3-1999,$5-1999,$7-3000,$9-1999,'A-4299,'O-500,'Q-500,'S-500,'a-800"
+            + ",'e-800,'g-1499,'m-800,'n-800,'o-1300,'p-500,'q-1000,'s-500,'u-800,(0-1999,(1-3000,(3-1000,(4-19"
+            + "99,(5-1000,(6-1000,(8-1000,(9-1999,)(2799,)03999,)1-1999,)31000,)45000,)61999,)71000,)83000,)919"
+            + "99,)[2799,){2799,*,-3999,*.-3999,*4-3000,*:-3999,*;-3999,*A-3000,*T4299,*V3300,*W2500,*X800,*Y22"
+            + "99,*Z1499,*f2299,*t2299,+01999,+42500,+61999,+81999,+91999,,1-3000,,22200,,32799,,41600,,5399,,7"
+            + "-399,,83600,,G-1199,,X800,,g500,,s800,,t-1999,,v-2299,,y-1499,-1-3000,-2-1999,-4800,-7-3399,-816"
+            + "00,-A-1499,-T-2799,-V-1499,-X-2500,-Y-2500,-v-1499,-x-1900,.1-3000,.22200,.32799,.41600,.5399,.7"
+            + "-399,.83600,.G-1199,.X800,.g500,.s800,.t-1999,.v-2299,.y-1499,/1-1000,/4-6000,/5-3000,/71000,0(3"
+            + "999,0)-1999,0+1999,001000,01-1900,042400,05-500,061999,07-1000,081999,091100,0=1999,0[3999,0]-19"
+            + "99,0|1000,1(3000,1+399,101900,122500,131399,141199,161100,171600,181900,19200,1=399,1[3000,1|119"
+            + "9,2(1999,2+1000,2,1999,2.1999,201000,231000,25-1000,281000,291000,2<-3600,2=1000,2[1999,2|1999,3"
+            + "%-1999,3)-1999,3,-1799,3.-1799,31-2500,32-1000,33-1000,35-2400,37-1999,381000,39-1399,3<-700,3]-"
+            + "1999,4\u00231999,4%-1000,4(5000,4)-1000,4+2500,4,-800,4.-800,40800,41-2400,441499,45-1799,461000,47-1"
+            + "000,481999,49-1000,4=2500,4[5000,4\\-3000,4]-1000,4{4199,4|500,5%-1999,5(1999,5)-800,5,-1799,5.-1"
+            + "799,5/-1999,51-2500,52-1000,53-1999,541000,55-1999,56-99,57-1999,58200,59-1300,5<-700,5[1999,5]-"
+            + "800,6(1499,6+1999,601999,61-1999,641499,65-1999,661100,67-1000,682100,69-899,6=1999,6[1499,6|100"
+            + "0,7\u0023-1999,7%1000,7(1999,7+-1000,7,-6000,7--3800,7.-6000,7/-8999,70-1600,71-1999,72-1000,73-1000,"
+            + "74-3999,75-3999,76-2500,78-1499,79-1000,7:-4400,7;-4400,7<-6999,7=-1000,7[1999,8(3000,8)-1000,8+"
+            + "1999,8,1600,8-1600,8.1600,801999,81-1000,821000,841999,85-500,861100,87-1000,882299,891000,8=199"
+            + "9,8[3000,8]-1000,8|1999,9(1999,9)-1999,9+1999,901699,91-500,93-899,941000,95-800,961000,981499,9"
+            + "91000,9=1999,9[1999,9]-1999,9|1000,:81199,;81199,=01999,=42500,=61999,=81999,=91999,>7-6699,A\"-4"
+            + "299,A'-4299,A*-3000,A,299,A--1499,A.299,AA-500,AC-1999,AG-1499,AO-1499,AQ-1000,AT-5700,AV-6000,A"
+            + "W-3999,AX500,AY-9499,A\\-3999,A^-1499,Aa299,Ad-800,Ae-1000,Ag-500,Ao-800,Aq-1000,Av-3500,Aw-2500,"
+            + "Ay-3500,Az800,A}-299,B,-800,B.-800,BA-1499,BJ-500,BT-299,BX-1999,Bv-500,By-299,Bz-1000,B}-800,C\""
+            + "1499,C'1499,C--2299,CB-299,CC-3000,CD-299,CE-299,CF-299,CG-500,CH-299,CK-299,CL-299,CN-299,CO-25"
+            + "00,CP-299,CR-299,CY-200,Ca-1000,Cc-3000,Cd-1000,Ce-1600,Ch1000,Cl1000,Co-1999,Cq-1999,Cw-1499,Cy"
+            + "-1499,D\"-299,D'-299,D,-3200,D.-3200,D:-1499,D;-1499,DA-1999,DJ-1000,DN-1000,DX-5000,DY-3000,DZ-5"
+            + "00,Da-500,D}-800,EC-500,EG-500,EO-500,EQ-500,EV-500,EY-500,E\\1999,Ec-3000,Ed-1499,Ee-1499,Eo-149"
+            + "9,Eq-1499,Et-500,Eu-500,Ev-1499,Ew500,Ey-1499,E}-299,F,-1999,F.-1999,F:-1999,F;-1999,FA-3999,FF-"
+            + "800,FG-500,FJ-1999,FM-500,FO-500,FS-1499,FT299,FY500,F\\1999,Fa-3000,Fe-3000,Fi-1499,Fj-1499,Fm-3"
+            + "000,Fn-3000,Fo-1499,Fr-3000,Fs-1499,Fu-3000,Fy-1499,Fz-800,GF4100,GT-1499,GW-3000,GY-1499,Gw-100"
+            + "0,Gy-3000,G}-299,H,-500,H.-500,HJ-500,H}-500,I,-500,I.-500,IE-500,IJ-500,If-1000,Ig-1000,Ij-3000"
+            + ",I}-500,J,-500,J.-500,JA-1999,J}-500,K--2799,KC-800,KG-800,KO-4299,KQ-800,KS-1600,KU-1499,KY-500"
+            + ",K^-1300,Ka-1999,Ki-1000,Ko-3000,Ku-1499,Ky-3200,K}-299,L\"-5500,L'-5500,L*-2299,L,1000,L--2799,L"
+            + ".1000,LA299,LC-299,LO-1499,LQ-3999,LT-8000,LU-1999,LV-6000,LW-6000,LX299,LY-8600,LZ500,L\\-5000,L"
+            + "^-1499,M,-500,M.-500,MF-500,Mu-1000,M}-500,N,-500,N.-500,N}-500,O\"-500,O'-500,O,-3300,O.-3300,OA"
+            + "-1999,OJ-1999,OT-3500,OV-1499,OW-500,OX-3000,OY-1499,Oa-1999,Ox-1499,Oz-399,O}-800,P,-6300,P.-63"
+            + "00,P:-6300,P;-6300,PA-6000,PJ-1499,PV500,PX-3000,Ps-1000,Pt1000,Pv1000,Pw1000,Py500,P}-800,Q\"-50"
+            + "0,Q'-500,Q,-1300,Q.-1300,QJ3999,QT-1499,QX-3000,QY-3999,Qf299,Qj3000,Q}-299,RT-500,RU-1399,RV-50"
+            + "0,RY-2500,Ro-1499,Ru-1499,R}-800,S\"-500,S'-500,S,-1499,S.-1499,SA-500,SS-1499,ST-399,SV-500,SW-1"
+            + "499,St-500,Sv-1499,Sw-1499,Sy-1499,S}-800,T*4299,T,-2500,T--2799,T.-2500,T:-2500,T;-2500,TA-5500"
+            + ",TC-500,TF-500,TG-500,TO-1999,TQ-500,TT1499,TV299,TW1499,TY2500,T\\1000,Ta-1300,Tc-6000,Td-6000,T"
+            + "e-6000,Tf-299,Tg-6000,Tm-4700,Tn-5299,To-6199,Tp-1000,Tq-5000,Tr-1999,Ts-5000,Tu-1499,Tv-1000,Tw"
+            + "-1999,Tx-1999,Ty-1999,Tz-1000,U,-1799,U.-1799,UX-1999,U}-500,V*3300,V,-3000,V--1799,V.-3000,V:-3"
+            + "000,V;-3000,VA-6000,VD-500,VF-500,VG-500,VO-1499,VQ-800,VT299,V\\1000,Va-3999,Vc-5000,Vd-5000,Ve-"
+            + "4499,Vg-5000,Vm-1000,Vn-1000,Vo-3999,Vp-1000,Vq-3999,Vr-500,Vs-3999,Vu-500,Vx-500,W*2500,W,-1999"
+            + ",W.-1999,W:-1999,W;-1999,WA-4499,WC-1999,WG-1000,WO-1000,WQ-1000,WT1499,WY1000,W\\1000,Wa-1499,Wc"
+            + "-3000,Wd-1000,We-3500,Wf-299,Wg-3999,Wo-1499,Wq-1000,Wt1499,X*800,X--2799,XA500,XC-5000,XF-500,X"
+            + "G-5000,XL-299,XO-3000,XQ-3000,XU-1999,Xa-1499,Xc-500,Xd-3000,Xe-2500,Xf-1000,Xg-299,Xi-1000,Xo-3"
+            + "999,Xq-3500,Xs-3000,Xy-1999,Y*2299,Y,-2500,Y--2500,Y.-7299,Y:-2500,Y;-2500,YA-9499,YC-2500,YF-50"
+            + "0,YG-5000,YO-3000,YQ-3999,YS-1499,YT700,Y\\3000,Ya-4499,Yb299,Yc-6999,Yd-6999,Ye-6999,Yg-8000,Yi-"
+            + "1000,Yk299,Ym-1999,Yn-1999,Yo-6000,Yp-3999,Yq-6000,Yr-1999,Ys-6000,Yu-3999,Yv-1000,Yw-299,Yx-199"
+            + "9,Yy-1999,Yz-3999,Z--800,ZC-1499,ZM-299,ZO-1999,ZU-1000,ZV299,ZY299,Zc-800,Ze-500,Zo-500,Zu-1499"
+            + ",Zv-800,Zy-1499,[0-1999,[1-3000,[3-1000,[4-1999,[5-1000,[6-1000,[8-1000,[9-1999,\\A1000,\\J3000,\\T"
+            + "-3999,\\V-3999,\\W-1999,\\Y-6000,\\a1000,\\f-1999,\\g1999,\\t-1000,\\v-3999,\\w-1999,](2799,]03999,]1-199"
+            + "9,]31000,]45000,]61999,]71000,]83000,]91999,][2799,]{2799,_j10000,aT-1499,aV-3999,aW-3000,aY-130"
+            + "0,a\\-1999,ag200,al1000,as1000,at1000,av-500,aw-500,ay-1100,az1499,a}-500,b,-1300,b.-1300,bT-5000"
+            + ",bV-3999,bW-3000,bX-1999,bY-6999,bZ-800,b\\-3999,bg-1000,bv-500,bx-500,by-500,bz-1000,b}-2299,c,8"
+            + "00,c--800,c.800,cT-800,cV-299,cW-500,cY-3999,c\\-1999,ca-1000,cc-3000,cd-1799,ce-2599,ci-1999,co-"
+            + "3000,cq-1499,ct500,cz1000,dV500,dY299,d\\1999,d}-299,e\"-800,e'-800,e,-1000,e.-1000,eT-5000,eV-500"
+            + "0,eW-1999,eY-6000,e\\-1999,ed500,ev-1000,ew-500,ex-1000,ey-1000,ez-1000,e}-800,f\"5800,f'5800,f*42"
+            + "99,f,-3000,f.-3800,fA-1300,fJ-200,fQ299,fT3999,fV6000,fW3999,fX1999,fY3999,fZ299,f\\5000,fa-1999,"
+            + "fc-1499,fd-1499,fe-1499,ff-6699,fg-1499,fi-6699,fj-6299,fl-4299,fo-1999,fr-1499,ft-1000,fy1999,f"
+            + "}500,g,-1999,g.-1999,gJ299,gT-1000,gY-500,gZ-500,ga-1499,gc-500,gd-1000,ge-1000,gf1000,gg1000,gj"
+            + "500,go-1999,gq-500,gs1000,gt1000,gy1999,g}-299,h*-2299,hJ-500,hT-5000,hV-3999,hW-1999,hY-1499,hf"
+            + "-500,hy-500,h}-800,iJ-800,ia500,j}-500,k--1799,kA299,kC-299,kT-1300,kY-3999,kc-1999,kd-1499,ke-1"
+            + "999,kf500,ko-1799,kq-1499,kt1000,kv1000,kw1000,kx1000,ky1000,kz1000,lD-500,lF-500,lJ-500,m\"-1300"
+            + ",m'-1300,m*-1499,mJ-500,mT-2299,mV-1999,mY-3999,m\\-2299,m}-500,n\"-1300,n'-1300,n*-1499,nJ-500,nT"
+            + "-1499,nV-1999,nW-800,nY-4499,n\\-3000,na-500,nf-500,ng-500,nt-500,ny-500,n}-500,o\"-1300,o'-1300,o"
+            + "A-299,oJ-500,oT-6000,oV-3999,oW-1499,oX-3999,oY-6000,o\\-1000,ov-1000,ow-500,ox-2500,oy-1000,oz-1"
+            + "000,o}-2299,p\"-1000,p'-1000,pJ-299,pT-5000,pV-3999,pW-1000,pX-3500,pY-6000,px-500,py-500,pz-1000"
+            + ",p}-1999,q\"-500,q'-500,qT-1000,qV-1000,qY-3999,q\\-1000,r,-3000,r--3000,r.-8000,r:1499,r;1499,rA-"
+            + "1799,rJ-800,rT1999,rX-1000,rZ-1000,ra-1499,rc-3000,rd-3000,re-2500,rg-1000,ri-500,rn-500,ro-2500"
+            + ",rq-500,rt3000,rv1999,rw1499,rx-500,ry1999,r}-500,s\"-500,s'-500,sT-5000,sV-3999,sX-3000,sY-6000,"
+            + "se-500,s}-500,t,1799,t.1799,tA500,tT-800,tY-500,tk-299,to-99,tt-1000,tv1000,tw1000,ty1000,tz1000"
+            + ",u\"-800,u'-800,uT-1999,uV-500,uY-3999,ug-299,u}-1100,v,-4499,v--1499,v.-4499,vA-3500,vT-1000,vY-"
+            + "1000,vZ-800,va-1000,vd-500,ve-1000,vg-1999,vo-1000,vt1000,v}-800,w,-3800,w.-3800,wA-2500,wT-1999"
+            + ",wY-299,wc-500,we-500,wg-1999,wo-500,wt1000,wy1999,w}-800,x,800,x--1900,x.800,xC-3000,xT-1999,xV"
+            + "-500,xY-1999,xc-700,xd-500,xe-2500,xo-700,xq-500,x}-500,y,-1999,y--800,y.-1999,yA-3500,yJ-500,yT"
+            + "-1999,ya-1000,yc-2500,yd-500,ye-1000,yf1999,yg-1999,yt1499,yv1999,yw1000,y}-500,z,1000,z:299,z;2"
+            + "99,zY-800,zZ299,zc-1499,ze-1000,zo-1000,zs1000,zt1499,zy1000,{5-2200,{A-299,{B-500,{C-800,{D-500"
+            + ",{E-500,{F-500,{G-1499,{H-500,{I-500,{J500,{K-500,{L-500,{M-500,{N-500,{O-800,{P-500,{Q-500,{R-5"
+            + "00,{S-800,{U-500,{a-800,{c-2299,{d-2299,{e-2299,{f-500,{j500,{k-299,{m-500,{n-500,{o-2299,{q-199"
+            + "9,{s-500,{u-1499,{v-800,{w-800,{x-500,|01000,|21999,|31000,|41000,|61000,|71000,|81999,|91000,}("
+            + "2799,}44199,}[2799,}{2799,";
+    }
+    private static String Noteworthy_0_3_kerning() {
+        return "AB1499,AC1625,AD2500,AF1625,AL3000,AM2124,AN3000,AP749,AQ-749,AS-749,AT-6875,AU1625,AV-3874,AY-3"
+            + "125,BA-3874,BL3000,BT-4125,BY-1000,CA-2124,CO-2875,CT-7375,CY-4375,DA-5500,DE874,DL4499,DR-2124,"
+            + "EA-7749,EC-5124,EE-1499,EF-2124,EG-4375,EH-3625,EI-749,EJ-6499,EN-749,EO-5124,EQ-7250,ER-6000,ES"
+            + "-6125,ET-8750,EU-2124,EV-3625,EW-2875,EX-4375,EY-4375,EZ-749,F,-15000,F.-15000,FA-8750,FO-3000,F"
+            + "a-9250,Fc-6625,Fd-6625,Fe-6625,Ff-7500,Fg-6625,Fj-5874,Fm-874,Fn-1625,Fo-7624,Fp-5000,Fq-6625,Fr"
+            + "-1625,Fs-7500,Ft-3374,Fu-4125,Fv-4125,Fw-2500,Fx-8374,Fy-4125,Fz-5874,GA-749,GL2500,GT-6125,GY-4"
+            + "375,HL4499,IA-2875,IG-749,IH-2875,IL3000,IO-3000,IR-2875,IT-2875,JA-4750,JL3000,KL4499,KT-2124,L"
+            + "O-3625,LT-11999,LV-10500,LW-1499,LY-8999,MA-2375,ML1499,NA-2124,NB749,ND3000,NE2875,NI2875,NL449"
+            + "9,NO1374,NY1000,OA-4375,OL3000,ON2250,OP2124,OR-2124,OT-6750,OY-4375,P,-19375,P.-13249,PA-5000,P"
+            + "B1000,PJ-2124,PL3000,PT-3874,PX-4125,Pa-4125,Pe-1625,Po-1625,Pu1625,QA-2375,QL4499,QO1499,QT-612"
+            + "5,QU1499,QY-2124,Qa-2375,Qb1625,Qc1625,Qd874,Qe1625,Qi3249,Qu3999,RA-5500,RB-749,RE-1499,RF-2875"
+            + ",RG-2124,RH-1499,RI-1499,RJ-5874,RO-3625,RP-1499,RQ-4375,RR-3625,RS-2124,RT-6499,RU-2875,RV-5124"
+            + ",RY-4375,Re-2624,SA1625,SL6000,ST-6750,SU3000,SY-1999,T,-20249,T.-15874,TA-18500,TC-6625,TG-2500"
+            + ",TH-3000,TI-749,TO-10500,TQ-7375,TS-3000,TT-3000,TU-2124,Ta-20000,Tc-17500,Td-16625,Te-18374,Tf-"
+            + "12500,Tg-18374,Ti-4125,Tj-7500,Tm-15874,Tn-15874,To-19125,Tp-17500,Tq-19125,Tr-15874,Ts-20000,Tt"
+            + "-15874,Tu-15000,Tv-15874,Tw-15000,Tx-16625,Ty-17500,Tz-17500,UA-2375,UD2124,UI1499,UL6000,UN2375"
+            + ",V,-14125,V.-9750,VA-6875,VE4499,VL4499,Va-7124,Vc-2500,Vd-2500,Ve-5375,Vf-2500,Vg-5000,Vh3374,V"
+            + "i874,Vk1625,Vl1625,Vo-5000,Vq-4125,Vr-1625,Vs-5000,Vt-2500,Vx-5874,Vy-874,Vz-4125,W,-8874,W.-262"
+            + "4,WA-3874,WL4499,Wa-1875,Wd-874,We-1000,XT-2875,XY-5249,Y,-25625,Y.-18125,YA-16999,YC-8500,YG-85"
+            + "00,YH-5874,YO-9750,YQ-11750,YS-4499,Ya-19375,Yc-17500,Yd-17500,Ye-19499,Yf-12500,Yg-16625,Yi-500"
+            + "0,Yj-9125,Ym-9125,Yn-11625,Yo-14125,Yp-10000,Yq-15874,Yr-9125,Ys-15874,Yt-10000,Yu-10000,Yv-1162"
+            + "5,Yw-10874,Yx-14125,Yy-12500,Yz-14125,ZC-3625,ZG-3625,ZH-3625,ZO-6499,ZQ-6499,ab2500,ac1250,ad12"
+            + "50,ae1250,af-2875,ag625,ah4250,ai3500,aj-2375,ak2624,al2624,am2624,an2875,ao1000,ap1875,aq1999,a"
+            + "r2624,at-2250,au1875,av-1000,aw1875,ay749,az749,ba-1875,bf-3000,bg-1000,bh1999,bi3000,bj-3999,bk"
+            + "1999,bl1999,bm1000,bn1999,bs-1999,bt-3999,bu1999,bv-1999,bw1000,bx-6125,by-1999,bz-1999,ca-1000,"
+            + "cd-1000,cf-8125,cg-1999,cj-3000,cp-1000,cq-1000,cs-1999,ct-7124,cv-3000,cw-1000,cx-7124,cy-3999,"
+            + "cz-3000,da-2875,df-3000,dg-1999,dh1000,di1000,dk1999,dl1999,dq-1000,ds-1999,dt-5124,dv-1000,dx-1"
+            + "000,dy-3000,dz-1999,ea-1000,ef-3999,ei3000,es-1999,et-3999,eu625,ev-1999,ew1000,ex-6999,ey-1999,"
+            + "ez-3000,f,-11750,f.-4125,fa-9125,fb-2875,fc-6125,fd-7124,fe-7500,ff-10874,fg-10375,fh-1625,fi-19"
+            + "99,fj-9375,fk-2375,fl-749,fm-3750,fn-5249,fo-8999,fp-5375,fq-8000,fr-3625,fs-9250,ft-8125,fu-562"
+            + "5,fv-7375,fw-6000,fx-10749,fy-7500,fz-8500,ga-1875,gf-3000,gh1000,gi3000,gj13125,gl1250,gm1250,g"
+            + "n1250,gp1250,gr1999,gs-1999,gt-5000,gv-1999,gw1000,gx-1999,gy-1000,gz-1000,ha-749,hb1000,hf-1000"
+            + ",hh1999,hi1999,hk3249,hl1250,hm1250,hn1250,hp1250,hs-1999,ht-6125,hu1250,hv-3000,hx-1999,hy-1000"
+            + ",ia-2875,ic-2624,ie-1999,if-6000,ig-1999,io-3000,is-3999,it-5124,iv-1999,ix-5124,iy-3000,iz-1000"
+            + ",ja-1875,jb1625,jf-3000,jh1000,ji3000,jl3000,jm3000,jn3000,jo-1999,jt-3000,jw1999,jy-1000,jz-100"
+            + "0,ka-8625,kb-1999,kc-6125,kd-7124,ke-7124,kf-9125,kg-8125,kj-1000,kl-1000,km-1999,kn-1999,ko-612"
+            + "5,kq-6000,kr-1999,ks-9125,kt-9125,kv-3000,kw-1999,kx-5124,ky-5000,kz-3999,la-1000,lb1625,lc-1750"
+            + ",lf-3000,lh1250,li1000,ll1000,lm1000,lp1000,ls-3000,lt-3999,lv-1000,lx-3999,ly-1999,lz-1000,ma-1"
+            + "000,mb1000,me1625,mf-1000,mh1250,mi3000,mk1999,ml1999,mm1999,mn1999,mo1000,mp1999,ms-1999,mt-300"
+            + "0,mu1999,mv-1999,mw1000,mx-1000,my-1000,mz-1000,nb1625,ne625,nf-1999,nh1250,ni1999,nk1000,nl1999"
+            + ",nm1999,nn1000,np1999,nr1000,nt-3374,nv-1999,nw1000,nx-1000,ny-1000,nz-1000,oa-1000,of-3000,oi19"
+            + "99,ol1000,om1750,os-1000,ot-5124,ov-1999,ox-6125,oy-1000,oz-1999,pa-2875,pf-3000,pi1250,pk1000,p"
+            + "l1000,pm1999,pn1000,ps-1999,pt-3999,pv-1000,pw1000,px-6125,pz-1999,qa-3874,qd-1000,qe-1000,qf-19"
+            + "99,qg-1000,qp1000,qs-3000,qt-3999,qv-1000,qx-3000,qy-1000,qz-1999,ra-6750,rc-3000,rd-3000,re-399"
+            + "9,rf-3999,rg-3999,rj-3000,ro-5000,rq-5000,rs-6999,rt-6000,rx-6999,ry-1999,rz-3000,sa-1000,se-199"
+            + "9,sf-6000,sg-1000,si1000,sj-3999,so-1000,sq-1000,sr-1000,ss-3999,st-5375,su-1999,sv-3000,sw-1000"
+            + ",sx-5000,sy-3000,sz-1000,t,-8125,t.-3999,ta-6750,tb-1625,tc-3000,td-3000,te-4624,tf-3999,tg-5124"
+            + ",th-1999,tj-1999,tl-874,to-3999,tp-1000,tq-3000,ts-5000,tt-8500,tu-1999,tv-3000,tw-1000,tx-6999,"
+            + "ty-5000,tz-3999,ua-1000,ub2624,uf-1000,uh1999,ui3000,uk1000,ul1999,um3000,un1999,up3000,ur3000,u"
+            + "s-1000,ut-1000,uw3000,ux-1999,v,-6125,v.-3000,va-5749,vc-1000,vd-1000,ve-3000,vf-3000,vg-3000,vi"
+            + "1999,vl1000,vo-1999,vq-1999,vr1000,vs-3999,vt-3999,vw1000,vx-5124,vy-1000,vz-3000,w,-5124,wa-212"
+            + "4,wc-1000,wf-3000,wi1000,wl1999,wm1000,wn1999,wo-1000,ws-1999,wt-3000,wv1000,ww1999,wx-4125,wy-1"
+            + "000,wz-1000,xa-3374,xc-1999,xe-3000,xf-3999,xg-1999,xi3000,xk3999,xl1999,xo-3999,xq-1000,xs-3000"
+            + ",xt-5124,xx-1000,xy-1999,xz-1000,ya-1875,yd-1000,ye-1000,yf-3999,yg-1000,yh1999,yi1000,yj12124,y"
+            + "k1999,ym1000,yn1000,yp1999,ys-3000,yt-3000,yw1000,yx-3000,yy-1000,yz-1000,za-4125,zb874,zc-3999,"
+            + "zd-3999,ze-3000,zf-3999,zg-3999,zh1000,zi1000,zl1000,zn1000,zo-1999,zq-3000,zs-3999,zt-3874,zx-1"
+            + "999,zy-1999,";
+    }
+    private static String Noteworthy_0_6_kerning() {
+        return "AC1625,AD2500,AF1625,AL3000,AN4499,AP749,AQ-749,AT-7875,AU1625,AV-3874,AY-3125,BA-3874,BL3000,CT"
+            + "-7375,DA-5500,DE4499,DL4499,EA-9875,ER-6000,ES-8999,F,-15000,F.-15000,FA-8750,FM1250,FN1250,FO-3"
+            + "000,FW1250,Fa-14499,Fb-5249,Fc-8374,Fd-9250,Fe-11000,Ff-7500,Fg-10124,Fh-1750,Fi-6125,Fj-12875,F"
+            + "k-2624,Fm-9750,Fn-8625,Fo-12875,Fp-10249,Fq-11875,Fr-7749,Fs-11875,Ft-13000,Fu-6750,Fv-8500,Fw-8"
+            + "750,Fx-12749,Fy-10249,Fz-10249,GL2500,GT-6125,GY-1250,HL4499,IL3000,JA-4750,JL3000,KL4499,LT-119"
+            + "99,LV-10500,LW-1499,LY-7500,MA-1625,ML1499,ND1499,NL4499,OA-749,OL3000,OP1250,OT-6000,OY-1250,P,"
+            + "-19375,P.-13249,PA-874,PL3000,PQ1250,Pa-4125,Pe-1625,Po-1625,Pu1625,QA-2375,QL4499,QT-6125,RA-55"
+            + "00,SA1625,SL6000,SU3000,T,-20249,T.-15874,TA-14125,TC-2500,TG-2500,TH-3000,TO-8999,TQ-7375,TS-30"
+            + "00,TT-3000,Ta-20000,Tc-17500,Td-16625,Te-18374,Tf-12500,Tg-18374,Ti-4125,Tj-7500,Tm-15874,Tn-158"
+            + "74,To-19125,Tp-17500,Tq-19125,Tr-15874,Ts-20000,Tt-15874,Tu-15000,Tv-15874,Tw-15000,Tx-16625,Ty-"
+            + "17500,Tz-17500,UA-2375,UL6000,UN4499,V,-14125,V.-9750,VA-4750,VE4499,VL4499,Va-3374,Vc-2500,Vd-2"
+            + "500,Ve-1625,Vf-2500,Vg-5000,Vh3374,Vi874,Vk1625,Vl1625,Vo-5000,Vq-4125,Vr-1625,Vs-5000,Vt-2500,V"
+            + "x-5874,Vy-874,Vz-4125,W,-8874,W.-2624,WA-3874,WL4499,Wa-874,Wd-874,Y,-25625,Y.-18125,YA-14875,YC"
+            + "-4875,YG-4875,YO-6125,YQ-7375,YS-4499,Ya-18374,Yc-17500,Yd-17500,Ye-16625,Yf-12500,Yg-16625,Yi-5"
+            + "000,Yj-9125,Ym-9125,Yn-11625,Yo-14125,Yp-10000,Yq-15874,Yr-9125,Ys-15874,Yt-10000,Yu-10000,Yv-11"
+            + "625,Yw-10874,Yx-14125,Yy-12500,Yz-14125,ac1250,ad1250,ae1250,af-2875,ag625,ah2500,ai1875,ak1000,"
+            + "al1875,am1875,an1250,ao1000,ap1875,aq1999,ar1875,at-3874,au1875,av-1000,aw1875,ba-1875,bf-3000,b"
+            + "g-1000,bh1999,bi3000,bj124,bk1999,bl1999,bm1000,bn1999,bs-1999,bt-3999,bu1999,bv-1999,bw1000,bx-"
+            + "6125,by-1999,bz-1999,ca-1000,cf-8125,cg-1999,cj-3000,cp-1000,cq-1000,cs-1999,ct-7124,cv-3000,cw-"
+            + "1000,cx-7124,cy-3999,cz-3000,da-2875,df-3000,dg-1999,dh1000,di1000,dk1999,dl1999,dq-1000,ds-1999"
+            + ",dt-5124,dv-1000,dx-1000,dy-3000,dz-1999,ea-1875,ei3000,es-1999,et-3999,eu625,ev-1999,ew1000,ex-"
+            + "6999,ey-1999,ez-3000,f,-11750,f.-4125,fa-9125,fb-3374,fc-6125,fd-6000,fe-5124,ff-8000,fg-9624,fi"
+            + "-1999,fj-6125,fk-1125,fm-3000,fn-1999,fo-6125,fp-3000,fq-7124,fr-1999,fs-6000,ft-8125,fu-3999,fv"
+            + "-5000,fw-1999,fx-9125,fy-5124,fz-6125,ga-1875,gf-3000,gi3000,gj13125,gl1250,gm1250,gn1250,gp1250"
+            + ",gr1999,gs-1999,gt-5000,gv-1999,gw1000,gx-1999,gy-1000,gz-1000,hb1000,hf-1000,hh1999,hi5375,hk32"
+            + "49,hl1250,hm1250,hn1250,hp1250,hs-1999,ht-6125,hu1250,hv-3000,hx-1999,hy-1000,ia-2875,ie-1999,if"
+            + "-6000,ig-1999,io-3000,is-3999,it-5124,iv-1999,ix-5124,iy-3000,iz-1000,ja-1875,jb1625,jf-3000,jh1"
+            + "000,ji3000,jj17375,jl3000,jm3000,jn3000,jo-1999,jt-3000,jw1999,jy-1000,jz-1000,ka-8625,kb-1999,k"
+            + "c-6125,kd-7124,ke-7124,kf-9125,kg-8125,kj-7124,km-1999,kn-1999,ko-6125,kq-6000,kr-1999,ks-9125,k"
+            + "t-9125,kv-3000,kw-1999,kx-5124,ky-5000,kz-3999,la-1000,lb1625,lf-3000,lh1250,li1000,ll1000,lp100"
+            + "0,ls-3000,lt-3999,lv-1000,lx-3999,ly-1999,lz-1000,ma-1000,mb1000,me625,mf-1000,mh1250,mi1999,mk1"
+            + "999,ml1999,mm1999,mo1000,mp1999,ms-1999,mt-3000,mv-1999,mw1000,mx-1000,my-1000,mz-1000,nb1625,ne"
+            + "625,nf-1999,nh1250,ni1999,nk1000,nl1999,nm1999,nn1000,np1999,nr1000,nt-5124,nv-1999,nw1000,nx-10"
+            + "00,ny-1000,nz-1000,oa-1000,of-3000,oi1999,ol1000,os-1000,ot-5124,ou2624,ov-1999,ox-6125,oy-1000,"
+            + "oz-1999,pa-2875,pf-3000,pi1250,pk1000,pl1000,pm1999,pn1000,ps-1999,pt-3999,pv-1000,pw1000,px-612"
+            + "5,pz-1999,qa-3874,qd-1000,qe-1000,qf-1999,qg-1000,qj18500,qp1000,qs-3000,qt-3999,qv-1000,qx-3000"
+            + ",qy-1000,qz-1999,ra-6750,rb-2124,rc-3000,rd-3000,re-3999,rf-3999,rg-6125,rj-3000,ro-5000,rp-2124"
+            + ",rq-5000,rs-5375,rt-4875,rx-6999,ry-1999,rz-3000,sa-1000,se-1999,sf-6000,sg-1000,si1000,sj-3999,"
+            + "so-1000,sq-1000,sr-1000,ss-3999,su-1999,sv-3000,sw-1000,sx-5000,sy-3000,sz-1000,t,-8125,t.-3999,"
+            + "ta-6750,tb-1625,tc-3000,td-3000,te-3000,tf-3999,tg-5124,th-1999,tj-3999,to-3999,tp-1000,tq-3000,"
+            + "ts-5000,tt-6125,tv-3000,tw-1000,tx-6999,ty-3000,tz-3999,ua-1000,ub2624,uf-1000,uh1999,ui3000,uk1"
+            + "000,ul1999,um1999,un1999,up3000,ur3000,us-1000,ut-1000,uw3000,ux-1999,v,-6125,v.-3000,va-5749,vc"
+            + "-1000,vd-1000,ve-3000,vf-3000,vg-3000,vi1999,vl1000,vo-1999,vq-1999,vr1000,vs-3999,vt-3999,vx-51"
+            + "24,vy-1000,vz-3000,w,-5124,wa-2875,wc-1000,wf-3000,wi1000,wl1999,wm1000,wn1999,wo-1000,ws-1999,w"
+            + "t-3000,wv1000,ww1999,wy-1000,wz-1000,xa-1000,xc-1999,xe-3999,xf-3999,xg-1999,xi3000,xk3999,xl199"
+            + "9,xo-3999,xq-1000,xs-3000,xt-5124,xx-1000,xz-1000,ya-1875,yd-1000,ye-1000,yf-3999,yg-1000,yh1999"
+            + ",yi1000,yj12124,yk1999,ym1000,yn1000,yp1999,ys-3000,yt-3000,yw1000,yx-3000,yy-1000,za-4875,zb874"
+            + ",zc-3999,zd-3999,ze-3000,zf-3999,zg-3999,zi1000,zl1000,zn1000,zo-1999,zq-3000,zs-3999,zt-3125,zx"
+            + "-1999,zy-1999,";
+    }
+    private static String Noto_Nastaliq_Urdu_0_3_kerning() {
+        return "AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,FA-5468,LT-7373,LV-7373,LW-7373,LY-7373,"
+            + "Ly-3662,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T;-11083,TA-7373,TO-1757,Ta-11083,Tc-11083,Te-11"
+            + "083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,V;-3662,VA-7373,Va-7373,Ve-5468,Vi"
+            + "-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W;-1757,WA-3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy"
+            + "-878,Y;-6494,YA-7373,Ya-7373,Ye-9179,Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,";
+    }
+    private static String Noto_Nastaliq_Urdu_0_6_kerning() {
+        return "AT-7373,AV-7373,AW-5468,AY-9179,Av-3662,Aw-1757,Ay-3662,FA-5468,LT-7373,LV-7373,LW-5468,LY-9179,"
+            + "Ly-3662,PA-7373,RV-1757,RW-1757,RY-3662,T;-11083,TA-7373,TO-1757,Ta-7373,Tc-7373,Te-7373,Ti-1757"
+            + ",To-7373,Tr-5468,Ts-7373,Tu-7373,Tw-7373,Ty-7373,V;-5468,VA-7373,Va-5468,Ve-5468,Vi-1757,Vo-7373"
+            + ",Vr-5468,Vu-3662,Vy-3662,W;-1757,WA-5468,Wa-3662,We-1757,Wi-878,Wo-1757,Wr-1757,Wu-1757,Wy-1757,"
+            + "Y;-7373,YA-9179,Ya-5468,Ye-5468,Yi-3662,Yo-7373,Yp-5468,Yq-7373,Yu-5468,Yv-5468,";
+    }
+    private static String Optima_0_3_kerning() {
+        return " A-3699, T-7400, V-9199, W-3699, Y-9199,AC-3000,AG-4499,AO-3000,AQ-3000,AT-7400,AU-3000,AV-5500,"
+            + "AW-4499,AY-7400,Au-1799,Av-5500,Aw-5500,Ay-5500,B,-2400,B.-2400,BA-3699,CA-4499,D,-4499,D.-4499,"
+            + "DA-5500,DV-3699,DW-1799,DY-7400,F,-11100,F.-11100,FA-5500,Fa-5500,Fe-4499,Fi-1799,Fo-4499,Fr-369"
+            + "9,JA-1799,Ja-1199,Je-1199,Jo-1199,Ju-1799,KO-3699,Ke-2400,Ko-3699,Ku-3000,Ky-5500,LT-9199,LV-919"
+            + "9,LW-9199,LY-11100,Ly-9199,NA-1799,O,-2400,O.-2400,OA-3699,OT-3699,OV-3699,OW-1799,OX-3699,OY-74"
+            + "00,P,-12899,P.-12899,PA-5500,Pa-9199,Pe-4499,Po-4499,Q,-2400,Q.-2400,RT-1799,RV-3699,RW-1799,RY-"
+            + "3699,T,-11100,T--11100,T.-11100,T:-9199,T;-9199,TA-7400,TO-3699,Ta-10000,Te-10000,Th-4499,Ti-740"
+            + "0,To-10000,Tr-7400,Tu-10000,Tw-9199,Ty-7400,V,-12899,V--7400,V.-12899,V:-7400,V;-7400,VA-5500,VO"
+            + "-3699,Va-5500,Ve-5500,Vi-3699,Vo-5500,Vu-3699,W,-9199,W--5500,W.-9199,W:-7400,W;-7400,WA-4499,WO"
+            + "-1799,Wa-3699,We-3699,Wi-1799,Wo-3699,Wu-1799,Wy-1799,Y,-12899,Y--15000,Y.-12899,Y:-9199,Y;-9199"
+            + ",YA-5500,YO-5500,Ya-12899,Ye-11100,Yi-5500,Yo-12899,Yu-12899,av-3000,aw-1799,ay-3000,bv-1199,by-"
+            + "1799,ch-1799,ck-1799,cy-2400,dv-2400,dw-1199,dy-2400,hy-3699,iv-1799,ky-1799,my-1199,nv-1199,ny-"
+            + "1799,ov-1199,ow-1199,oy-1199,py-1799,r,-7400,r--5500,r.-7400,ra-1199,rc-1199,sw-1199,v,-9199,v.-"
+            + "9199,va-2400,ve-1199,vo-1799,w,-7400,w.-7400,wa-1799,wh-1799,wo-1199,y,-9199,y.-9199,ya-2400,ye-"
+            + "1799,yo-1799,";
+    }
+    private static String Optima_1_3_kerning() {
+        return " A-3699, T-7400, V-9199, W-3699, Y-9199,AC-3000,AG-4499,AO-3000,AQ-3000,AT-7400,AU-3000,AV-5500,"
+            + "AW-4499,AY-7400,Au-1799,Av-5500,Aw-5500,Ay-5500,B,-2400,B.-2400,BA-3699,CA-4499,D,-4499,D.-4499,"
+            + "DA-5500,DV-3699,DW-1799,DY-7400,F,-11100,F.-11100,FA-5500,Fa-5500,Fe-4499,Fi-1799,Fo-4499,Fr-369"
+            + "9,JA-1799,Ja-1199,Je-1199,Jo-1199,Ju-1799,KO-3699,Ke-2400,Ko-3699,Ku-3000,Ky-5500,LT-9199,LV-919"
+            + "9,LW-9199,LY-11100,Ly-9199,NA-1799,O,-2400,O.-2400,OA-3699,OT-3699,OV-3699,OW-1799,OX-3699,OY-74"
+            + "00,P,-12899,P.-12899,PA-5500,Pa-9199,Pe-4499,Po-4499,Q,-2400,Q.-2400,RT-1799,RV-3699,RW-1799,RY-"
+            + "3699,T,-11100,T--11100,T.-11100,T:-9199,T;-9199,TA-7400,TO-3699,Ta-10000,Te-10000,Th-4499,Ti-740"
+            + "0,To-10000,Tr-7400,Tu-10000,Tw-9199,Ty-7400,V,-12899,V--7400,V.-12899,V:-7400,V;-7400,VA-5500,VO"
+            + "-3699,Va-5500,Ve-5500,Vi-3699,Vo-5500,Vu-3699,W,-9199,W--5500,W.-9199,W:-7400,W;-7400,WA-4499,WO"
+            + "-1799,Wa-3699,We-3699,Wi-1799,Wo-3699,Wu-1799,Wy-1799,Y,-12899,Y--15000,Y.-12899,Y:-9199,Y;-9199"
+            + ",YA-5500,YO-5500,Ya-12899,Ye-11100,Yi-5500,Yo-12899,Yu-12899,av-3000,aw-1799,ay-3000,bv-1199,by-"
+            + "1799,ch-1799,ck-1799,cy-2400,dv-2400,dw-1199,dy-2400,fi-100,fl-100,hy-3699,iv-1799,ky-1799,my-11"
+            + "99,nv-1199,ny-1799,ov-1199,ow-1199,oy-1199,py-1799,r,-7400,r--5500,r.-7400,ra-1199,rc-1199,sw-11"
+            + "99,v,-9199,v.-9199,va-2400,ve-1199,vo-1799,w,-7400,w.-7400,wa-1799,wh-1799,wo-1199,y,-9199,y.-91"
+            + "99,ya-2400,ye-1799,yo-1799,";
+    }
+    private static String Optima_0_6_kerning() {
+        return " A-3699, T-7400, V-9199, W-3699, Y-9199,AC-3000,AG-4499,AO-3000,AQ-3000,AT-7400,AU-3000,AV-5500,"
+            + "AW-4499,AY-7400,Au-1799,Av-5500,Aw-5500,Ay-5500,B,-2400,B.-2400,BA-3699,CA-4499,D,-4499,D.-4499,"
+            + "DA-5500,DV-3699,DW-1799,DY-7400,F,-11100,F.-11100,FA-5500,Fa-5500,Fe-4499,Fi-1799,Fo-4499,Fr-369"
+            + "9,JA-1799,Ja-1199,Je-1199,Jo-1199,Ju-1799,KO-3699,Ke-2400,Ko-3699,Ku-3000,Ky-5500,LT-9199,LV-919"
+            + "9,LW-9199,LY-11100,Ly-9199,NA-1799,O,-2400,O.-2400,OA-3699,OT-3699,OV-3699,OW-1799,OX-3699,OY-74"
+            + "00,P,-12899,P.-12899,PA-5500,Pa-9199,Pe-4499,Po-4499,Q,-2400,Q.-2400,RT-1799,RV-3699,RW-1799,RY-"
+            + "3699,T,-11100,T--11100,T.-11100,T:-9199,T;-9199,TA-7400,TO-3699,Ta-10000,Te-10000,Th-4499,Ti-740"
+            + "0,To-10000,Tr-7400,Tu-10000,Tw-9199,Ty-7400,V,-12899,V--7400,V.-12899,V:-7400,V;-7400,VA-5500,VO"
+            + "-3699,Va-5500,Ve-5500,Vi-3699,Vo-5500,Vu-3699,W,-9199,W--5500,W.-9199,W:-7400,W;-7400,WA-4499,WO"
+            + "-1799,Wa-3699,We-3699,Wi-1799,Wo-3699,Wu-1799,Wy-1799,Y,-12899,Y--15000,Y.-12899,Y:-9199,Y;-9199"
+            + ",YA-5500,YO-5500,Ya-12899,Ye-11100,Yi-5500,Yo-12899,Yu-12899,av-3000,aw-1799,ay-3000,bv-1199,by-"
+            + "1799,ch-1799,ck-1799,cy-2400,dv-2400,dw-1199,dy-2400,fi1800,fl1800,hy-3699,iv-1799,ky-1799,my-11"
+            + "99,nv-1199,ny-1799,ov-1199,ow-1199,oy-1199,py-1799,r,-7400,r--5500,r.-7400,ra-1199,rc-1199,sw-11"
+            + "99,v,-9199,v.-9199,va-2400,ve-1199,vo-1799,w,-7400,w.-7400,wa-1799,wh-1799,wo-1199,y,-9199,y.-91"
+            + "99,ya-2400,ye-1799,yo-1799,";
+    }
+    private static String Optima_1_6_kerning() {
+        return " A-3699, T-7400, V-9199, W-3699, Y-9199,AC-3000,AG-4499,AO-3000,AQ-3000,AT-7400,AU-3000,AV-5500,"
+            + "AW-4499,AY-7400,Au-1799,Av-5500,Aw-5500,Ay-5500,B,-2400,B.-2400,BA-3699,CA-4499,D,-4499,D.-4499,"
+            + "DA-5500,DV-3699,DW-1799,DY-7400,F,-11100,F.-11100,FA-5500,Fa-5500,Fe-4499,Fi-1799,Fo-4499,Fr-369"
+            + "9,JA-1799,Ja-1199,Je-1199,Jo-1199,Ju-1799,KO-3699,Ke-2400,Ko-3699,Ku-3000,Ky-5500,LT-9199,LV-919"
+            + "9,LW-9199,LY-11100,Ly-9199,NA-1799,O,-2400,O.-2400,OA-3699,OT-3699,OV-3699,OW-1799,OX-3699,OY-74"
+            + "00,P,-12899,P.-12899,PA-5500,Pa-9199,Pe-4499,Po-4499,Q,-2400,Q.-2400,RT-1799,RV-3699,RW-1799,RY-"
+            + "3699,T,-11100,T--11100,T.-11100,T:-9199,T;-9199,TA-7400,TO-3699,Ta-10000,Te-10000,Th-4499,Ti-740"
+            + "0,To-10000,Tr-7400,Tu-10000,Tw-9199,Ty-7400,V,-12899,V--7400,V.-12899,V:-7400,V;-7400,VA-5500,VO"
+            + "-3699,Va-5500,Ve-5500,Vi-3699,Vo-5500,Vu-3699,W,-9199,W--5500,W.-9199,W:-7400,W;-7400,WA-4499,WO"
+            + "-1799,Wa-3699,We-3699,Wi-1799,Wo-3699,Wu-1799,Wy-1799,Y,-12899,Y--15000,Y.-12899,Y:-9199,Y;-9199"
+            + ",YA-5500,YO-5500,Ya-12899,Ye-11100,Yi-5500,Yo-12899,Yu-12899,av-3000,aw-1799,ay-3000,bv-1199,by-"
+            + "1799,ch-1799,ck-1799,cy-2400,dv-2400,dw-1199,dy-2400,fi-1800,fl-1800,hy-3699,iv-1799,ky-1799,my-"
+            + "1199,nv-1199,ny-1799,ov-1199,ow-1199,oy-1199,py-1799,r,-7400,r--5500,r.-7400,ra-1199,rc-1199,sw-"
+            + "1199,v,-9199,v.-9199,va-2400,ve-1199,vo-1799,w,-7400,w.-7400,wa-1799,wh-1799,wo-1199,y,-9199,y.-"
+            + "9199,ya-2400,ye-1799,yo-1799,";
+    }
+    private static String Oriya_Sangam_MN_0_6_kerning() {
+        return "fi-171,";
+    }
+    private static String Palatino_0_3_kerning() {
+        return " A-3662, Y-1757,11-5468,A -5468,AT-7373,AV-11083,AW-7373,AY-11083,Av-9179,Aw-7373,Ay-7373,F,-917"
+            + "9,F.-9179,FA-7373,L -3662,LT-7373,LV-9179,LW-7373,LY-9179,Ly-5468,P -1757,P,-12890,P.-12890,PA-9"
+            + "179,RT-3662,RV-5468,RW-3662,RY-3662,Ry-3662,T,-7373,T--5468,T.-7373,T:-5468,T;-5468,TA-7373,TO-1"
+            + "757,Ta-9179,Tc-11083,Te-9179,Ti-5468,To-9179,Tr-8984,Ts-8984,Tu-8984,Tw-8984,Ty-8984,V,-12890,V-"
+            + "-7373,V.-12890,V:-5468,V;-5468,VA-11083,Va-9179,Ve-11083,Vi-5468,Vo-11083,Vr-9179,Vu-9179,Vy-917"
+            + "9,W,-9179,W--5468,W.-9179,W:-1757,W;-1757,WA-9179,Wa-9179,We-9179,Wi-5468,Wo-9179,Wr-7373,Wu-498"
+            + "0,Wy-4980,Y -1757,Y,-11083,Y--9179,Y.-11083,Y:-7373,Y;-7373,YA-9179,Ya-9179,Ye-9179,Yi-5468,Yo-9"
+            + "179,Yp-11083,Yq-8984,Yu-8984,Yv-8984,ff-1757,fi-1904,fl-1611,r,-7373,r--1757,r.-7373,rc-1757,rd-"
+            + "1757,re-1757,rg-1757,rh-1757,ro-1757,rq-1757,ru-781,v,-11083,v.-11083,w,-9179,w.-9179,y,-11083,y"
+            + ".-11083,";
+    }
+    private static String Palatino_1_3_kerning() {
+        return "11-5468,A -3662,AT-5468,AV-7373,AW-5468,AY-5468,Av-3662,Aw-3662,Ay-5468,F,-11083,F.-11083,FA-110"
+            + "83,L -1757,LT-7373,LV-7373,LW-7373,LY-7373,Ly-3662,P,-12890,P.-12890,PA-12890,RT-5468,RV-7373,RW"
+            + "-5468,RY-5468,Ry-3662,T,-7373,T--5468,T.-7373,T:-7373,T;-7373,TA-9179,TO-1757,Ta-11083,Tc-11083,"
+            + "Te-11083,Ti-5468,To-11083,Tr-11083,Ts-11083,Tu-11083,Tw-9179,Ty-9179,V,-12890,V--5468,V.-12890,V"
+            + ":-3662,V;-3662,VA-20996,Va-7373,Ve-9179,Vi-7373,Vo-7373,Vr-9179,Vu-7373,Vy-7373,W,-5468,W--1757,"
+            + "W.-5468,W:-1757,W;-1757,WA-9179,Wa-1953,We-1953,Wi-1953,Wo-1953,Wr-1953,Wu-1953,Wy-1953,Y,-9179,"
+            + "Y--7373,Y.-9179,Y:-7373,Y;-7373,YA-9179,Ya-9179,Ye-11083,Yi-5468,Yo-11083,Yp-7373,Yq-9179,Yu-917"
+            + "9,Yv-7373,fi-2783,fl-1074,r,-7373,r.-7373,rc-1757,re-1757,rg-1757,rh-1757,ro-1757,rq-1757,v,-546"
+            + "8,v.-5468,w,-5468,w.-5468,y,-3662,y.-3662,";
+    }
+    private static String Palatino_0_6_kerning() {
+        return "11-3662,A -1757,AT-9179,AV-12890,AW-8984,AY-11083,Av-6982,Aw-6982,Ay-6982,F,-11083,F.-11083,FA-5"
+            + "468,L -1757,LT-7373,LV-9179,LW-9179,LY-9179,Ly-7373,P,-12890,P.-12890,PA-7373,RT-5468,RV-7373,RW"
+            + "-3662,RY-5468,Ry-2978,T,-9179,T--9179,T.-9179,T:-7373,T;-7373,TA-9179,Ta-11083,Tc-12890,Te-11083"
+            + ",Ti-5468,To-11083,Tr-11083,Ts-11083,Tu-12890,Tw-8984,Ty-8984,V,-12890,V--9179,V.-12890,V:-7373,V"
+            + ";-7373,VA-12890,Va-11083,Ve-11083,Vi-5468,Vo-11083,Vr-11083,Vu-9179,Vy-8984,W,-9179,W--3662,W.91"
+            + "79,W:-3662,W;-3662,WA-8984,Wa-7373,We-7373,Wi-3662,Wo-7373,Wr-7373,Wu-7373,Wy-7373,Y,-7373,Y--73"
+            + "73,Y.-7373,Y:-5468,Y;-5468,YA-5468,Ya-7373,Ye-7373,Yi-5468,Yo-7373,Yp-7373,Yq-9179,Yu-7373,Yv-73"
+            + "73,ff-1757,fi-11132,fl-11132,r,-5468,r--1757,r.-5468,v,-11083,v.-11083,w,-9179,w.-9179,y,-9179,y"
+            + ".-9179,";
+    }
+    private static String Palatino_1_6_kerning() {
+        return "11-5468,A -5468,AT-5468,AV-7373,AW-7373,AY-7373,Av-5468,Aw-3662,Ay-5468,F -1757,F,-11083,F.-1108"
+            + "3,FA-7373,L -1757,LT-7373,LV-7373,LW-7373,LY-7373,Ly-3662,P -5468,P,-12890,P.-12890,PA-9179,RT-3"
+            + "662,RV-5468,RW-5468,RY-3662,Ry-1953,T,-5468,T--9179,T.-5468,T:-5468,T;-5468,TA-5468,TO-1757,Ta-1"
+            + "1083,Tc-9179,Te-11083,Ti-7373,To-11083,Tr-9179,Ts-9179,Tu-9179,Tw-4980,Ty-7958,V,-11083,V--3662,"
+            + "V.-11083,V:-3662,V;-3662,VA-7373,Va-9179,Ve-7373,Vi-4980,Vo-7373,Vr-7373,Vu-4980,Vy-4980,W,-5468"
+            + ",W.-5468,W:-2783,W;-1757,WA-7373,Wa-7373,We-5468,Wi-2978,Wo-5468,Wr-2978,Wu-2978,Wy-2978,Y,-5468"
+            + ",Y--5468,Y.-5468,Y:-5468,Y;-5468,YA-5468,Ya-11083,Ye-9179,Yi-5371,Yo-11083,Yp-7373,Yq-9179,Yu-49"
+            + "80,Yv-2978,ff-3662,fi-5517,fl-5517,r,-5468,r.-5468,rc-1757,re-1757,rg-1757,rh-1757,ro-1757,rq-17"
+            + "57,v,-5468,v.-5468,w,-5468,w.-5468,y,-3662,y.-3662,";
+    }
+    private static String Papyrus_0_3_kerning() {
+        return "-A-4003,-T-12988,-Y-6005,AT-14990,AV-6982,AW-6982,AX976,AY-8007,Av-4003,Aw-4003,BT-12988,BV-2001"
+            + ",BW-2001,BY-4980,C--4003,CC-4980,CO-2001,CQ-2001,CT-6005,CY-4980,D,-8984,D.-8984,DA-5322,DJ-8007"
+            + ",DT-4980,Da-4003,De-2001,Do-2001,E--6005,EC-2978,EG-2978,EO-2978,EQ-2978,ET-6005,EV-2001,EW-2001"
+            + ",EY-2001,Et-2001,Ev-2001,Ew-2001,F,-18017,F--10009,F.-18017,F:-14013,F;-14013,FA-14990,FO-2978,F"
+            + "T-2001,Fa-8007,Fe-12011,Fi-4003,Fo-12011,Fr-4003,Fu-4003,Fy-6005,GT-4980,GY-2001,JA-2978,K--6005"
+            + ",KC-6005,KG-4980,KO-4980,KW-4980,KY-4980,Ke-2001,Kh-2001,Ko-2001,Kw-6982,L--6005,LC-6982,LG-4003"
+            + ",LO-4003,LQ-4003,LT-20019,LU-2001,LV-12988,LW-12011,LY-16992,Le-2001,Lo-2001,MT-2001,OA-2978,OJ-"
+            + "2001,OS-2978,OT-6005,OY-2001,P,-18017,P--10009,P.-18017,P:-10986,P;-10986,PA-14013,PO-4003,PS-49"
+            + "80,PY2978,Pa-10009,Pe-12011,Pn-6005,Po-12011,Pr-4980,Ps-12011,Pu-2978,Py-6982,R--4980,RC-2978,RG"
+            + "-2001,RO-4980,RQ-4980,RR-2001,RT-4980,RV-4003,RW-4003,RY-2978,Re-2978,Rh-2001,Ro-2001,Ru-2001,SA"
+            + "-4003,ST-4003,SY-2001,T,-18017,T--12988,T.-18017,T:-14990,T;-14990,TA-14990,TC-6005,TE-2001,TG-6"
+            + "005,TM-2001,TO-8984,TS-8007,TU-4980,Ta-20019,Tc-20019,Te-20019,Th-2978,Ti-2001,To-20019,Tr-20019"
+            + ",Ts-20019,Tu-20019,Tw-20019,Ty-20019,Tz-20019,V,-14013,V.-14013,V:-8984,V;-8984,VA-6982,VO-2001,"
+            + "VY2001,Va-6982,Ve-6982,Vi-2001,Vo-6982,Vu-4003,Vy-6982,W,-12011,W.-12011,W:-8007,W;-8007,WA-6982"
+            + ",Wa-4980,We-4003,Wo-4003,Wr-2001,Wu-2001,Wy-4980,XY-2001,Xa2001,Y,-14990,Y--6005,Y.-14990,Y:-129"
+            + "88,Y;-12988,YA-10986,YC-2001,YG-2978,YO-4003,YV2001,YW2001,Ya-12011,Ye-12011,Yi-2001,Yo-12011,Yu"
+            + "-8007,Yv-4980,Z--4980,ZA2978,ZY-4003,Za2978,f--4003,fa-2001,fe-2978,fi-11425,fl-10839,fo-2978,fs"
+            + "-2001,ft2978,ge-976,go-976,gw4003,gy2001,k--6005,kc-976,ke-976,ko-976,r--4003,ra-2001,rc-2001,rd"
+            + "-4003,re-2978,rg-2978,ro-2978,rq-2978,rs-4003,rt2001,rv4003,rw4003,rx2001,va-2001,ve-976,vo-976,"
+            + "wo-976,";
+    }
+    private static String Phosphate_0_3_kerning() {
+        return "\u002313999,\u00232-1999,\u002331000,\u00234-3500,\u00236-1499,\u002371999,\u00238-1100,\u002391000,$0-500,$1-1999,$2-500,$41999,$6500,$"
+            + "7-500,$81000,$9-3999,(23500,(31499,(73000,,*-10500,,1-3000,,2500,,71000,,9-8999,,V-11499,,W-1000"
+            + "0,,Y-12500,,v-11499,,w-10000,,y-12500,-01000,-1-2500,-2-7500,-3-1999,-4-1999,-6500,-7-5500,-9100"
+            + "0,-A-5500,-C1000,-G1000,-J-8999,-O1000,-S-1000,-T-6000,-V-5000,-W-3999,-X-8500,-Y-8999,-Z-6999,."
+            + "*-10500,.0-2500,.1-2500,.21999,.41999,.51000,.6-500,.72500,.9-6999,.A3000,.C-3500,.G-3500,.J2500"
+            + ",.O-3500,.S500,.T-7500,.U-1499,.V-11499,.W-10000,.X3000,.Y-12500,.Z3000,.v-11499,.w-10000,.y-125"
+            + "00,/0-3000,/2-1999,/31999,/4-12500,/5-3000,/6-6499,/7-500,/8-3000,/9-1999,/A-11499,/C-3999,/G-44"
+            + "99,/J-8500,/O-5000,/T3999,/V5500,/W5000,/X3500,/Y3999,/Z-3000,/a-11499,0%-500,0,-5500,0-1000,0.-"
+            + "2500,0/-3500,01-1000,02-5000,03-2500,04-1000,07-1499,08-500,09-500,1,-500,2--500,2.-1499,2/-1000"
+            + ",20-1499,211000,22-1999,23-1000,241000,26-1999,27500,28-500,3%-2500,3,-2500,3/-1999,30-500,31-14"
+            + "99,32-3000,33-1499,34500,35-500,37-1999,39-3500,4,500,4.1499,4/1999,41-500,431000,443000,451000,"
+            + "461499,481499,49-1000,5%1000,5,-4499,5.-1999,5/-3999,50-1000,511999,52-3500,54-1000,55-1999,56-5"
+            + "00,571000,58-500,59-500,6%-3999,6,-3000,6.-500,6/-1499,61-3000,62-3000,63-1499,64500,65-1000,665"
+            + "00,67-1999,68500,69-2500,7%1000,7)3500,7,-16000,7--6000,7.-16000,7/-10000,70-3500,72-1499,731999"
+            + ",74-13000,75-4499,76-7500,77-1000,78-2500,79-1499,8%-1999,8,-1999,8/-1000,80-500,81-500,82-1999,"
+            + "83-500,841000,85-500,86500,87-1000,881000,89-2500,9%1000,9,-8999,9-1000,9.-6499,9/-6000,911000,9"
+            + "2-5000,93-1999,94-3999,96-1000,98-1999,991000,A!1999,A*-11499,A--5500,A.3000,A/3999,A:3000,A?100"
+            + "0,AA5000,AC-4499,AG-5000,AJ3500,AO-5000,AS1499,AT-7500,AU-3000,AV-11999,AW-10000,AX5000,AY-12500"
+            + ",AZ5000,Av-11999,Aw-10000,Ay-12500,B!-1000,B*-1100,B,-1999,B;-1999,B?-1000,BA-500,BC-500,BG-500,"
+            + "BO-500,BS-500,BT-1000,BV-2500,BW-1999,BY-3999,C!1000,C*-500,C,1999,C--7500,C.2500,C/1999,C:1999,"
+            + "C?1999,CA2500,CC-6000,CG-5500,CJ3000,CO-6000,CS1000,CT1499,CU-1000,CV1999,CW1999,CX1499,CY1000,C"
+            + "Z2500,D!-1000,D*-500,D,-6499,D-1000,D.-3500,D/-4499,D;-1000,D?-1999,DA-5000,DJ-3500,DS-1499,DT-2"
+            + "500,DV-3999,DW-3000,DX-6499,DY-6999,DZ-5500,E--500,E/1000,EA1000,EC-1499,EG-1499,EJ500,EO-1499,E"
+            + "S-1000,EX500,EZ1499,F*1000,F,-12500,F-500,F.-12500,F/-5500,F;-1000,F?1499,FA-5500,FC-500,FG-500,"
+            + "FJ-8000,FO-500,FS-500,FT1499,FU-500,FV1999,FW1999,FY1499,G!-1000,G*-2500,G,-3500,G-1000,G.-1499,"
+            + "G/-1999,G:500,G;-500,G?-1999,GA-2500,GS-500,GT-7500,GV-5500,GW-5500,GX-3500,GY-9499,GZ-2500,Gy-9"
+            + "499,J,-3000,J;-1499,JA-1499,JZ-1000,K!1499,K*-3999,K,2500,K--12500,K.1499,K/3999,K:1499,K;2500,K"
+            + "?2500,KA3999,KC-9499,KG-9499,KJ2500,KO-9499,KQ-9499,KT1499,KU-1499,KV3999,KW3999,KX3999,KY3500,K"
+            + "Z5000,Kc-9499,Kg-9499,Ko-9499,Kq-9499,L!1999,L*-13000,L--6000,L.3000,L/3999,L:3000,L?1999,LA3500"
+            + ",LC-3000,LG-3000,LJ3999,LO-3000,LS1999,LT-8000,LU-1499,LV-10500,LW-8500,LX3500,LY-11499,LZ3999,L"
+            + "v-10500,Ly-11499,O!-1000,O*-1499,O,-6499,O-1000,O.-3500,O/-5000,O;-1000,O?-1999,OA-5000,OJ-3999,"
+            + "OS-1999,OT-3000,OV-5000,OW-3500,OX-7500,OY-6999,OZ-5500,P,-11999,P.-11999,P/-8000,P?-500,PA-8000"
+            + ",PJ-7500,PX-4499,PY-3500,Q,-1499,Q.500,Q/-1999,Q:500,Q;-1499,QA-1000,QJ1999,QX-2500,R!1000,R.199"
+            + "9,R/3999,R:1999,R?500,RA4499,RC-500,RG-500,RJ1999,RO-500,RS1499,RT-1000,RV-2500,RW-1499,RX4499,R"
+            + "Y-4499,RZ5000,S!-500,S*-5000,S,-1999,S--500,S;-1999,S?-500,SC-1499,SG-1499,SJ1000,SO-1499,SS-500"
+            + ",ST-4499,SV-3999,SW-3999,SX-1000,SY-3999,T!1999,T*3000,T,-8000,T--6000,T.-7500,T/-8000,T:-6000,T"
+            + ";-6499,T?3500,TA-7500,TC-3000,TG-3000,TJ-7500,TO-3000,TS1000,TT3000,TV3500,TW3999,TX2500,TY3500,"
+            + "U!-1000,U,-4499,U.-1499,U/-3000,U;-1499,UA-3000,UJ-1000,US-299,UW500,UX-1000,UZ-2500,V!2500,V,-1"
+            + "3500,V--5000,V.-11499,V/-11499,V:-3500,V;-5000,V?3500,VA-11999,VC-4499,VG-5000,VJ-6999,VO-5000,V"
+            + "S500,VT3600,VV5500,VW5500,VX3999,VY5500,VZ-1000,Va-11999,W!2500,W,-11000,W--3999,W.-10000,W/-100"
+            + "00,W:-3000,W;-4499,W?3999,WA-10000,WC-3000,WG-3500,WO-3500,WS1000,WT3999,WU500,WV5500,WW5000,WX3"
+            + "999,WY5500,Wa-10000,Wj-5000,X!2500,X*-1999,X--8500,X.3000,X/4499,X:3000,X?3000,XA5000,XC-6999,XG"
+            + "-7500,XJ3999,XO-7500,XS1499,XT2500,XU-1000,XV5000,XW3999,XX5000,XY3999,XZ5000,Y!1999,Y*-500,Y,-1"
+            + "3000,Y--8999,Y.-12500,Y/-13999,Y:-6000,Y;-6499,Y?3500,YA-12500,YC-6499,YG-6499,YJ-6499,YO-6999,Y"
+            + "S-500,YT3500,YV5500,YW5500,YX3999,YY5000,YZ-3999,Ya-12500,Z!500,Z*-1000,Z,-1499,Z--8500,Z/-1499,"
+            + "Z;-1000,Z?1499,ZA-1000,ZC-3999,ZE-1499,ZG-3999,ZO-5000,ZT1999,ZU-1000,ZV3999,ZW3999,ZX3500,ZY350"
+            + "0,ZZ-1999,Ze-1499,a*-11499,aV-11999,aW-10000,aY-12500,av-11999,aw-10000,ay-12500,f,-12500,f.-125"
+            + "00,gY-9499,gy-9499,k--12500,kC-9499,kG-9499,kO-9499,kQ-9499,kc-9499,kg-9499,ko-9499,kq-9499,l*-1"
+            + "3000,lV-10500,lY-11499,lv-10500,ly-11499,p,-11999,p.-11999,q.500,q/-1999,qa-1000,qj1999,qx-2500,"
+            + "v,-13500,v.-11499,v/-11499,vA-11999,va-11999,w,-11000,w.-10000,w/-10000,wA-10000,wa-10000,y,-130"
+            + "00,y.-12500,y/-13999,yA-12500,ya-12500,";
+    }
+    private static String PingFang_HK_0_3_kerning() {
+        return "ff-5999,fi-2099,";
+    }
+    private static String Plantagenet_Cherokee_0_3_kerning() {
+        return "(^-3200,(_-8000,(`-8000,(a-8000,(b-5000,(c-2100,(d-3200,(e-8000,(g-3200,(h-3200,(i-8000,(j-8000,"
+            + "(k-8000,(l-8000,(m-8000,(n-8000,(o-8000,(p-8000,(q-8000,(r-8000,(s-8000,(t-8000,(u-8000,(v-8000,"
+            + ")j-5099,-r-2799,-s-1600,-t-3000,-u-1799,AB-2500,AF-2500,AI-3500,AN-2500,AS-8000,AT-8000,AU-11999"
+            + ",AV-11999,AX-10000,A^-3999,A_-1999,A`-1999,Aa-1999,Af-1999,Ak-1999,Al-2500,Am-2500,Ap-1999,Aq-30"
+            + "00,Ar-11000,As-10000,Au-11000,B@-1499,BO-1999,BQ-1999,BT-1999,BU-2500,BV-2500,BX-4499,B^-1999,Bd"
+            + "-1499,Bg-1499,Br-1499,Bu-1499,CY1499,D@-3000,DD-1499,DF1499,DG-1499,DH-1499,DI-1499,DQ-1499,DT-1"
+            + "499,DU-3500,DV-3500,DX-3000,D^-1499,Dd-1999,D|-5500,D~-5500,Er-3500,Es-1999,Et1499,Eu-2500,F,-11"
+            + "900,F.-12500,F@-10000,F_-5000,F`-5000,Fe-3999,Ff-3999,Fh1499,Fi-3999,Fj-3999,Fk-5000,Fl-3999,Fm-"
+            + "5500,Fn-3999,Fo-5500,Fp-3999,Fq-2500,Fr-3999,Fs-2500,Ft-3999,Fu-3500,Fv-3999,F|-11900,F~-11900,G"
+            + ".-6499,G@-3999,GA-1999,GC-1999,GD-1999,GE-3999,GG-3500,GH-3500,GK-3500,GM-3500,GQ-3000,GT-3000,G"
+            + "V-2500,GX-2500,Gd-4499,Ge-3000,Gh-3000,Gj-2500,Gn-3500,Gq-2500,Gr-3999,Gs-2500,Gu-2500,G|-5500,G"
+            + "~-5500,IB-1999,Is-3999,Iu-3999,J@-3000,J_-5000,J`-5000,Ja-1499,Je-3000,Ji-3999,Jj-3999,Jk-1499,J"
+            + "l-3000,Jm-3999,Jn-3000,Jo-3000,Jp-3000,Jq-1499,Jr-3000,Js-3000,Jt-3000,Ju-3000,Jv-3000,J|-7500,J"
+            + "~-7500,KB-5000,KF-4499,KN-3999,KT-5000,KU-5000,KV-5000,KX-3000,K^-1999,K_-3000,K`-3000,Ka-1499,K"
+            + "k-1499,Kl-3500,Km-3000,Kq-1699,Kr-10000,Ks-8500,Ku-10000,LS-7500,LT-5500,LU-11999,LV-10000,LX-11"
+            + "000,Lq-1999,Lr-6000,Ls-4499,Lu-6000,Ma-1999,Mk-1999,Mm-1999,Mp-3000,Mq-1499,Mr-3500,Ms-1999,Mu-3"
+            + "500,N.-7500,N@-3000,NB-1499,N_-1999,N`-1999,Na-1999,Nc-1999,Ne-1999,Nj-1499,Nk-1999,Nm-3000,Nn-1"
+            + "499,No-1999,Np-2500,Nq-1499,Nr-3000,Ns-1499,Nu-3000,N|-7500,N~-7500,O@-2500,OX-3000,O^-1499,Oc14"
+            + "99,Od-1499,Og-1499,Oh-1499,Oj-2299,Ok1499,P,-11799,P.-13399,P@-10000,PA-1999,PD-2500,PG-2500,PH-"
+            + "2500,PS1499,P_-3000,P`-1999,Pa-1999,Pc-1999,Pd-1999,Pg-1999,Ph-1999,Pk-2500,Pm-3000,Pn1499,Po-25"
+            + "00,Pu1499,P|-11999,P~-11999,RB-1499,RF-1499,RS-1999,RT-7500,RU-7500,RV-7500,RX-7500,R^-3999,Rf-3"
+            + "000,Rl-1499,Rr-3999,Rs-3500,Ru-3999,S.-1999,S@-1499,Se-1499,Sf-1999,Si-1499,Sj-1499,Sl-1499,Sn-1"
+            + "499,Sp-1499,Sr-1999,Ss-1999,Su-1999,T,-11000,T--8000,T.-11000,T:-8999,T;-9600,T@-6499,T_-5000,T`"
+            + "-8500,Ta-5000,Tc-8500,Te-3500,Tf-3500,Ti-6999,Tj-6999,Tk-5000,Tl-5000,Tm-8500,Tn-5000,To-5000,Tq"
+            + "-6999,Tr-8500,Ts-6999,Tt-8500,Tu-6999,Tv-6999,T|-11000,T~-11000,U@-8999,UB-5599,UR-3000,U_-3999,"
+            + "U`-3999,Ub-5000,Uc-3999,Ue-3500,Ui-3999,Uj-3999,Uk-3999,Ul-3999,Um-3999,Un-3999,Uo-3999,Up-3999,"
+            + "Ur-3999,Us-3999,Ut-3999,Uu-3999,Uv-3000,U|-7500,U~-7500,V,-7500,V--8000,V.-13899,V@-15000,VF-350"
+            + "0,V_-8999,V`-6000,Va-6000,Vc-8999,Ve-3999,Vf-3999,Vi-8999,Vj-8999,Vk-6000,Vl-8999,Vm-8999,Vn-699"
+            + "9,Vo-6000,Vp-6000,Vq-6999,Vr-8999,Vs-8999,Vt-8999,Vu-6999,Vv-8999,V|-15000,V~-15000,W,-5500,W--3"
+            + "999,W.-12100,W@-11499,W_-3999,W`-3999,Wa-3999,Wb-3600,Wc-3999,We-3000,Wf-3000,Wi-5000,Wj-5000,Wk"
+            + "-3999,Wl-3000,Wm-3999,Wn-3000,Wo-8999,Wp-3000,Wq-3000,Wr-3500,Ws-6999,Wt-3000,Wu-3000,Wv-3999,W|"
+            + "-15000,W~-15000,X@-3000,X^-1999,X_-1999,X`-1999,Xk-1999,Xl-1999,Xm-1999,Xp-1999,Xq-1499,Xr-8999,"
+            + "Xs-7500,Xu-8999,Y,-3500,Y.-9299,Y@-10000,YB-5500,YN-3000,Y_-6999,Y`-6999,Ya-6999,Yb-9400,Yc-1199"
+            + "9,Ye-6300,Yf-5599,Yi-11999,Yj-11999,Yk-6999,Yl-6999,Ym-6999,Yn-6999,Yo-6999,Yp-6999,Yq-6999,Yr-8"
+            + "999,Ys-11999,Yt-6999,Yu-11999,Yv-11999,Y|-15000,Y~-15000,Zr-3500,Zs-3500,Zu-3500,au-3699,b,-2400"
+            + ",b.-2400,e,-1999,e.-1999,fV13099,g.-4799,g`-1999,ga-1999,gk-1999,gm-1999,nS-7500,o,-2400,o.-2400"
+            + ",p.-2400,r,-6000,r.-6000,v--1999,v.-8699,w.-8699,x--3000,y--2200,y.-11000,{_-5000,{`-5000,{b-500"
+            + "0,{e-5000,{i-5000,{j-5000,{k-5000,{l-5000,{m-5000,{n-5000,{o-5000,{p-5000,{r-5000,{s-5000,{t-500"
+            + "0,{u-5000,{v-5000,}_-5000,}`-5000,}b-5000,}e-5000,}i-5000,}j-5000,}k-5000,}l-5000,}m-5000,}n-500"
+            + "0,}o-5000,}p-5000,}r-5000,}s-5000,}t-5000,}u-5000,}v-5000,";
+    }
+    private static String PT_Sans_0_3_kerning() {
+        return " \"-6799, '-6799, ,-1300, --8000, .-1300, A-3200, T-3099, V-3000, W-1900, X-3000, Y-3000, Z-2200,"
+            + " v-1399, y-1399, z-3000,\" -8200,\",-12200,\"--15099,\".-12200,\"A-12200,\"C-3999,\"G-3999,\"O-3999,\"Q-3"
+            + "999,\"V3999,\"W3999,\"Y3600,\"a-6199,\"c-10099,\"e-10099,\"g-10099,\"m-6199,\"n-6199,\"o-10099,\"p-6199,\"q-"
+            + "10099,\"r-6199,\"s-6199,\"u-6199,\"v3000,\"y3000,' -8200,',-12200,'--15099,'.-12200,'A-12200,'C-3999,"
+            + "'G-3999,'O-3999,'Q-3999,'V3999,'W3999,'Y3600,'a-6199,'c-10099,'e-10099,'g-10099,'m-6199,'n-6199,"
+            + "'o-10099,'p-6199,'q-10099,'r-6199,'s-6199,'u-6199,'v3000,'y3000,(--3600,(V1000,(c-599,(e-599,(g-"
+            + "599,(o-599,(q-599,* -6000,*,-25000,*--15800,*.-25000,*A-1000,*V1199,*W1199,*c-1399,*e-1399,*g-13"
+            + "99,*o-1399,*q-1399,*v1399,*y1399,, -7799,,\"-13999,,'-13999,,*-14100,,,6499,,--12599,,.6499,,T-30"
+            + "00,,V-5800,,W-2899,,Y-1300,,v-2400,,w-2200,,x1999,,y-2400,- -8000,-\"-12200,-'-12200,-)-3600,-*-1"
+            + "1100,-,-12599,-.-12599,-T-8399,-V-2899,-X-8000,-Y-1300,-Z-1000,-]-3600,-}-3600,. -7799,.\"-13999,"
+            + ".'-13999,.*-14100,.,6499,.--12599,..6499,.T-3000,.V-5800,.W-2899,.Y-1300,.v-2400,.w-2200,.x1999,"
+            + ".y-2400,7 -5399,7,-11000,7--6399,7.-11000,7A-5800,7C-1499,7G-1499,7O-1499,7Q-1499,7a-4499,7c-750"
+            + "0,7e-7500,7g-7500,7m-4499,7n-4499,7o-7500,7p-4499,7q-7500,7r-4499,7s-4499,7t-2400,7u-4499,:/1999"
+            + ",A -4100,A\"-8899,A'-8899,A*-1000,A,2700,A--3999,A.2700,AC-2500,AG-2500,AO-2500,AQ-2500,AT-6699,A"
+            + "V-4499,AW-2799,AX-3000,AY-6799,AZ-1399,Ac-1300,Ae-1300,Ag-1300,Ao-1300,Aq-1300,At-1499,Av-3500,A"
+            + "w-2200,Ax-3200,Ay-3500,Az-2200,BT-3000,C -3999,C--7799,CA-2799,CC-2599,CG-2599,CO-2599,CQ-2599,C"
+            + "T-2799,CV-2700,CW-599,CX-4199,CY-3500,CZ-2400,Ca-1699,Cc-3500,Ce-3500,Cg-3500,Cm-1699,Cn-1699,Co"
+            + "-3500,Cp-1699,Cq-3500,Cr-1699,Cs-1699,Ct-3500,Cu-1699,Cv-4199,Cw-3999,Cx-2799,Cy-4199,Cz-2299,D\""
+            + "-3999,D'-3999,D,-3000,D.-3000,DA-2500,DT-4799,DV-2599,DW-1999,DX-4900,DY-4100,DZ-2400,Dv-1600,Dx"
+            + "-3000,Dy-1600,Dz-2299,K -3000,K--8000,KA-3000,KC-4900,KG-4900,KO-4900,KQ-4900,KT-3300,KX-3099,KY"
+            + "-2700,Ka-2799,Kc-4799,Ke-4799,Kg-4799,Km-2799,Kn-2799,Ko-4799,Kp-2799,Kq-4799,Kr-2799,Ks-2799,Kt"
+            + "-3800,Ku-2799,Kv-5399,Kw-5399,Kx-3800,Ky-5399,Kz-3200,L -4199,L\"-12400,L'-12400,L*-16100,L--7799"
+            + ",LA-7500,LC-6600,LG-6600,LO-6600,LQ-6600,LT-12200,LV-10399,LW-7299,LX-10399,LY-10500,LZ-3000,La-"
+            + "1999,Lc-5899,Le-5899,Lg-5899,Lm-1999,Ln-1999,Lo-5899,Lp-1999,Lq-5899,Lr-1999,Ls-1999,Lt-4600,Lu-"
+            + "1999,Lv-9799,Lw-6999,Lx-4199,Ly-9799,Lz-3200,O\"-3999,O'-3999,O,-3000,O.-3000,OA-2500,OT-4799,OV-"
+            + "2599,OW-1999,OX-4900,OY-4100,OZ-2400,Ov-1600,Ox-3000,Oy-1600,Oz-2299,P -3999,P,-13000,P.-13000,P"
+            + "A-6300,PC-1699,PG-1699,PO-1699,PQ-1699,PT-1600,PX-4199,PY-2500,PZ-2799,Pa-3500,Pc-3600,Pe-3600,P"
+            + "g-3600,Pm-3500,Pn-3500,Po-3600,Pp-3500,Pq-3600,Pr-3500,Ps-3500,Pu-3500,Px-3600,Pz-2700,Q\"-3999,Q"
+            + "'-3999,Q,-3000,Q.-3000,QA-2500,QT-4799,QV-2599,QW-1999,QX-4900,QY-4100,QZ-2400,Qv-1600,Qx-3000,Q"
+            + "y-1600,Qz-2299,R--3999,RA-2599,RC-4400,RG-4400,RO-4400,RQ-4400,RT-6100,RV-4799,RW-3999,RX-3999,R"
+            + "Y-6000,RZ-2400,Ra-1000,Rc-4799,Re-4799,Rg-4799,Rm-1000,Rn-1000,Ro-4799,Rp-1000,Rq-4799,Rr-1000,R"
+            + "s-1000,Rt-2400,Ru-1000,Rv-3300,Rw-2899,Rx-3800,Ry-3300,Rz-2700,T -3999,T)2700,T,-10200,T--8399,T"
+            + ".-10200,TA-6699,TC-4799,TG-4799,TO-4799,TQ-4799,TT1999,TX-3300,TY-1199,TZ-2400,T]2700,Ta-10500,T"
+            + "c-12799,Te-12799,Tg-12799,Tm-10500,Tn-10500,To-12799,Tp-10500,Tq-12799,Tr-10500,Ts-10500,Tt-6100"
+            + ",Tu-10500,Tv-12799,Tw-12799,Tx-12799,Ty-12799,Tz-12799,T}2700,V -3000,V\"3999,V'3999,V)1000,V*460"
+            + "0,V,-9400,V--5399,V.-9400,VA-4499,VC-2599,VG-2599,VO-2599,VQ-2599,V]1000,Va-5000,Vc-5800,Ve-5800"
+            + ",Vg-5800,Vm-5000,Vn-5000,Vo-5800,Vp-5000,Vq-5800,Vr-5000,Vs-5000,Vu-5000,Vv-2200,Vw-1799,Vx-4799"
+            + ",Vy-2200,Vz-3800,V}1000,W -2500,W\"3999,W'3999,W*4600,W,-7400,W--2500,W.-7400,WA-2799,WC-1999,WG-"
+            + "1999,WO-1999,WQ-1999,Wa-4100,Wc-4199,We-4199,Wg-4199,Wm-4100,Wn-4100,Wo-4199,Wp-4100,Wq-4199,Wr-"
+            + "4100,Ws-4100,Wu-4100,Wv-1600,Ww-1799,Wx-3999,Wy-1600,Wz-3699,X -3000,X--8000,XA-3000,XC-4900,XG-"
+            + "4900,XO-4900,XQ-4900,XT-3300,XX-3099,XY-2700,Xa-2799,Xc-4799,Xe-4799,Xg-4799,Xm-2799,Xn-2799,Xo-"
+            + "4799,Xp-2799,Xq-4799,Xr-2799,Xs-2799,Xt-3800,Xu-2799,Xv-5399,Xw-5399,Xx-3800,Xy-5399,Xz-3200,Y -"
+            + "2500,Y\"3600,Y'3600,Y*2400,Y,-10700,Y--6199,Y.-10700,YA-6799,YC-4100,YG-4100,YO-4100,YQ-4100,YT-1"
+            + "199,YX-2700,YZ-2500,Ya-7200,Yc-8500,Ye-8500,Yg-8500,Ym-7200,Yn-7200,Yo-8500,Yp-7200,Yq-8500,Yr-7"
+            + "200,Ys-7200,Yt-3899,Yu-7200,Yv-4799,Yw-3999,Yx-6000,Yy-4799,Yz-6499,Z -4299,Z--9199,ZA-1900,ZC-2"
+            + "400,ZG-2400,ZO-2400,ZQ-2400,ZT-2400,ZX-2899,ZY-2500,ZZ-2200,Za-2200,Zc-5099,Ze-5099,Zg-5099,Zm-2"
+            + "200,Zn-2200,Zo-5099,Zp-2200,Zq-5099,Zr-2200,Zs-2200,Zt-1600,Zu-2200,Zv-3099,Zw-3099,Zx-2100,Zy-3"
+            + "099,Zz-2700,[--3600,[V1000,[c-599,[e-599,[g-599,[o-599,[q-599,a\"-800,a'-800,aT-11999,b\"-5299,b'-"
+            + "5299,b)-599,b*-1399,b,-1199,b.-1199,b]-599,bf-1199,bv-1199,bw-1100,bx-2400,by-1199,bz-1600,b}-59"
+            + "9,c -2400,c\"-1399,c'-1399,c--4600,cc-2299,ce-2299,cg-2299,co-2299,cq-2299,cx-1600,cy-1199,cz-160"
+            + "0,e\"-1199,e'-1199,ec-1100,ee-1100,eg-1100,eo-1100,eq-1100,ev-2200,ew-1100,ex-2299,ey-2200,ez-110"
+            + "0,f\"1600,f'1600,f)6000,f*1600,f,-2400,f.-2400,f]3600,fc-1100,fe-1100,fg-1100,fi-4700,fl-2799,fo-"
+            + "1100,fq-1100,ft-1600,f}3600,k -3000,k--4600,kc-1199,ke-1199,kg-1199,ko-1199,kq-1199,kv-700,kx-16"
+            + "00,ky-700,nT-12700,o\"-5299,o'-5299,o)-599,o*-1399,o,-1199,o.-1199,o]-599,of-1199,ov-1199,ow-1100"
+            + ",ox-2400,oy-1199,oz-1600,o}-599,p\"-5299,p'-5299,p)-599,p*-1399,p,-1199,p.-1199,p]-599,pf-1199,pv"
+            + "-1199,pw-1100,px-2400,py-1199,pz-1600,p}-599,r,-6000,r.-6000,rt3000,t,1600,t--3200,t.1600,tc-110"
+            + "0,te-1100,tg-1100,to-1100,tq-1100,tx-1600,v -3600,v*1399,v,-7200,v.-7200,vc-1100,ve-1100,vg-1100"
+            + ",vo-1100,vq-1100,vv700,vw599,vx-1300,vy700,vz-1000,w -2400,w,-6199,w.-6199,wc-1100,we-1100,wg-11"
+            + "00,wo-1100,wq-1100,wv599,wx-1499,wy599,wz-1600,x -3000,x--4600,xc-2400,xe-2400,xg-2400,xo-2400,x"
+            + "q-2400,xv-700,xx-1600,xy-700,y -3600,y*1399,y,-7200,y.-7200,yc-1100,ye-1100,yg-1100,yo-1100,yq-1"
+            + "100,yv700,yw599,yx-1300,yy700,yz-1000,z -3000,z--3999,zc-1600,ze-1600,zg-1600,zo-1600,zq-1600,zv"
+            + "-1000,zy-1000,{--3600,{V1000,{c-599,{e-599,{g-599,{o-599,{q-599,";
+    }
+    private static String PT_Sans_1_3_kerning() {
+        return " \"-6799, '-6799, *-599, ,-1300, --800, .-1300, A-3200, T-3099, V-3000, W-1900, X-3000, Y-3000, Z"
+            + "-2200, v-2700, w-2200, x-2500, y-2700, z-2200,\" -7799,\",-11600,\"--14400,\".-11600,\"A-11499,\"C-380"
+            + "0,\"G-3800,\"O-3800,\"Q-3800,\"V3800,\"W3800,\"Y3399,\"a-3999,\"c-3999,\"d-3999,\"e-3999,\"g-3999,\"o-3999,\""
+            + "q-3999,' -7799,',-11600,'--14400,'.-11600,'A-11499,'C-3800,'G-3800,'O-3800,'Q-3800,'V3800,'W3800"
+            + ",'Y3399,'a-3999,'c-3999,'d-3999,'e-3999,'g-3999,'o-3999,'q-3999,(--599,(a-2500,(c-2500,(d-2500,("
+            + "e-2500,(g-2500,(o-2500,(q-2500,* -599,*,-23800,*--15000,*.-23800,*A-1000,, -3000,,\"-13999,,'-139"
+            + "99,,*-2400,,--12599,,T-1000,,V-1100,,W-700,,Y-1300,,a-2200,,c-2200,,d-2200,,e-2200,,g-2200,,o-22"
+            + "00,,q-2200,,v-5899,,w-2500,,y-5899,,z1600,- -7599,-\"-11699,-'-11699,-)-599,-*-700,-,-11999,---10"
+            + "00,-.-11999,-T-1199,-V-500,-X-800,-Y-700,-]-599,-x-3500,-z-2700,-}-599,. -3000,.\"-13999,.'-13999"
+            + ",.*-2400,.--12599,.T-1000,.V-1100,.W-700,.Y-1300,.a-2200,.c-2200,.d-2200,.e-2200,.g-2200,.o-2200"
+            + ",.q-2200,.v-5899,.w-2500,.y-5899,.z1600,7 -5099,7,-10500,7--6100,7.-10500,7A-1100,7C-500,7G-500,"
+            + "7O-500,7Q-500,A -3899,A\"-8500,A'-8500,A*-1000,A,2599,A--3800,A.2599,AC-2400,AG-2400,AO-2400,AQ-2"
+            + "400,AT-6399,AV-4299,AW-2599,AX-2899,AY-6499,AZ-1300,Av-2799,Aw-1999,Ay-2799,BT-2899,C -3800,C--7"
+            + "400,CA-2599,CC-2500,CG-2500,CO-2500,CQ-2500,CT-2599,CV-2500,CW-500,CX-3999,CY-3300,CZ-2200,Ca-38"
+            + "00,Cc-3800,Cd-3800,Ce-3800,Cg-3800,Ci-2200,Cj-2200,Cm-2899,Cn-2899,Co-3800,Cp-2899,Cq-3800,Cr-28"
+            + "99,Cs-2899,Ct-3500,Cu-2899,Cv-5399,Cw-4299,Cx-1399,Cy-5399,Cz-1600,D\"-3800,D'-3800,D,-2899,D.-28"
+            + "99,DA-1900,DT-4600,DV-2500,DW-1900,DX-4700,DY-3899,DZ-2299,K -2899,K--7599,KA-2899,KC-4700,KG-47"
+            + "00,KO-4700,KQ-4700,KT-3200,KV-599,KW-500,KX-3000,KY-2599,Ka-2599,Kc-2599,Kd-2599,Ke-2599,Kg-2599"
+            + ",Ki-2200,Kj-2200,Km-2200,Kn-2200,Ko-2599,Kp-2200,Kq-2599,Kr-2200,Ks-2200,Kt-2700,Ku-2200,Kv-4100"
+            + ",Kw-3200,Kx-2200,Ky-4100,Kz-1600,L -3999,L\"-11799,L'-11799,L*-15299,L--7400,LA-7100,LC-6300,LG-6"
+            + "300,LO-6300,LQ-6300,LT-11600,LV-9799,LW-6999,LX-9900,LY-10000,LZ-4600,La-3399,Lc-3399,Ld-3399,Le"
+            + "-3399,Lg-3399,Lo-3399,Lq-3399,Lt-3500,Lv-9700,Lw-6699,Lx-2200,Ly-9700,Lz-2700,O\"-3800,O'-3800,O,"
+            + "-2899,O.-2899,OA-1900,OT-4600,OV-2500,OW-1900,OX-4700,OY-3899,OZ-2299,P -3800,P,-12400,P.-12400,"
+            + "PA-6000,PC-1600,PG-1600,PO-1600,PQ-1600,PT-1499,PX-3999,PY-2400,PZ-2700,Q\"-3800,Q'-3800,Q,-2899,"
+            + "Q.-2899,QA-1900,QT-4600,QV-2500,QW-1900,QX-4700,QY-3899,QZ-2299,R--3800,RA-2500,RC-3399,RG-3399,"
+            + "RO-3399,RQ-3399,RT-5800,RV-4600,RW-3800,RX-3699,RY-5200,RZ-2299,Ra-4299,Rc-4299,Rd-4299,Re-4299,"
+            + "Rg-4299,Ri-1600,Rj-1600,Rm-2200,Rn-2200,Ro-4299,Rp-2200,Rq-4299,Rr-2200,Rs-2200,Ru-2200,Rv-2200,"
+            + "Rw-1600,Rx-2200,Ry-2200,Rz-2299,T -3800,T)2599,T,-9700,T--12200,T.-9700,TA-6399,TC-4600,TG-4600,"
+            + "TO-4600,TQ-4600,TT1999,TV-599,TW-500,TX-3200,TY-1199,TZ-3200,T]2599,Ta-10700,Tc-10700,Td-10700,T"
+            + "e-10700,Tg-10700,Ti-3200,Tj-3200,Tm-10800,Tn-10800,To-10700,Tp-10800,Tq-10700,Tr-10800,Ts-10800,"
+            + "Tt-4600,Tu-10800,Tv-10700,Tw-9100,Tx-11900,Ty-10700,Tz-10000,T}2599,V -2899,V\"3800,V'3800,V*4400"
+            + ",V,-8999,V--5099,V.-8999,VA-4299,VC-2500,VG-2500,VO-2500,VQ-2500,VT-599,VV-599,VW-500,VX-599,VY-"
+            + "700,VZ-599,Va-3500,Vc-3500,Vd-3500,Ve-3500,Vg-3500,Vm-3300,Vn-3300,Vo-3500,Vp-3300,Vq-3500,Vr-33"
+            + "00,Vs-3300,Vu-3300,Vx-2500,Vz-2100,W -2400,W\"3800,W'3800,W*4400,W,-6999,W--2400,W.-6999,WA-2599,"
+            + "WC-1900,WG-1900,WO-1900,WQ-1900,WT-500,WV-500,WW-599,WX-500,WY-700,WZ-599,Wa-2799,Wc-2799,Wd-279"
+            + "9,We-2799,Wg-2799,Wm-2100,Wn-2100,Wo-2799,Wp-2100,Wq-2799,Wr-2100,Ws-2100,Wu-2100,Wx-2299,Wz-199"
+            + "9,X -2899,X--7599,XA-2899,XC-4700,XG-4700,XO-4700,XQ-4700,XT-3200,XV-599,XW-500,XX-3000,XY-2599,"
+            + "Xa-2599,Xc-2599,Xd-2599,Xe-2599,Xg-2599,Xi-2200,Xj-2200,Xm-2200,Xn-2200,Xo-2599,Xp-2200,Xq-2599,"
+            + "Xr-2200,Xs-2200,Xt-2700,Xu-2200,Xv-4100,Xw-3200,Xx-2200,Xy-4100,Xz-1600,Y -2400,Y\"3399,Y'3399,Y*"
+            + "2299,Y,-10200,Y--5800,Y.-10200,YA-6499,YC-3899,YG-3899,YO-3899,YQ-3899,YT-1199,YV-700,YW-500,YX-"
+            + "2599,YY-700,YZ-2400,Ya-7400,Yc-7400,Yd-7400,Ye-7400,Yg-7400,Ym-6199,Yn-6199,Yo-7400,Yp-6199,Yq-7"
+            + "400,Yr-6199,Ys-6199,Yt-3200,Yu-6199,Yv-2400,Yw-2500,Yx-5899,Yy-2400,Yz-3999,Z -4100,Z--8699,ZA-1"
+            + "799,ZC-2299,ZG-2299,ZO-2299,ZQ-2299,ZT-2299,ZV-599,ZW-500,ZX-2799,ZY-2400,ZZ-2100,Za-2299,Zc-229"
+            + "9,Zd-2299,Ze-2299,Zg-2299,Zo-2299,Zq-2299,Zz-2200,[--599,[a-2500,[c-2500,[d-2500,[e-2500,[g-2500"
+            + ",[o-2500,[q-2500,aT-10700,b\"-6499,b'-6499,b)-1999,b*-500,b,-2200,b.-2200,b]-1999,bv-1799,bw-599,"
+            + "bx-2899,by-1799,b}-1999,c -3000,c--2899,ca-2899,cc-2899,cd-2899,ce-2899,cg-2899,co-2899,cq-2899,"
+            + "e\"-3800,e'-3800,eT-13800,ex-1600,ez-500,f -2200,f\"9299,f'9299,f)9700,f*11900,f,-3000,f--2200,f.-"
+            + "3000,f]9700,fi-2399,fj500,fl-199,ft1900,fw2200,f}9700,k -2500,k--3500,ka-2500,kc-2500,kd-2500,ke"
+            + "-2500,kg-2500,ko-2500,kq-2500,nT-13999,o\"-6499,o'-6499,o)-1999,o*-500,o,-2200,o.-2200,o]-1999,ov"
+            + "-1799,ow-599,ox-2899,oy-1799,o}-1999,p\"-6499,p'-6499,p)-1999,p*-500,p,-2200,p.-2200,p]-1999,pv-1"
+            + "799,pw-599,px-2899,py-1799,p}-1999,r,-6000,r--2700,r.-6000,v -2700,v,-6900,v.-6900,va-1799,vc-17"
+            + "99,vd-1799,ve-1799,vg-1799,vo-1799,vq-1799,vx-1799,vz-899,w -2200,w,-3000,w.-3000,wx-1600,wz-160"
+            + "0,x -2500,x--3500,xa-2500,xc-2500,xd-2500,xe-2500,xg-2500,xo-2500,xq-2500,y -2700,y,-6900,y.-690"
+            + "0,ya-1799,yc-1799,yd-1799,ye-1799,yg-1799,yo-1799,yq-1799,yx-1799,yz-899,z -2200,z--2700,za-1600"
+            + ",zc-1600,zd-1600,ze-1600,zg-1600,zo-1600,zq-1600,zx-1399,{--599,{a-2500,{c-2500,{d-2500,{e-2500,"
+            + "{g-2500,{o-2500,{q-2500,";
+    }
+    private static String PT_Sans_0_6_kerning() {
+        return " \"-8399, '-8399, *-3500, ,-6999, --4400, .-6999, A-3999, C-1300, G-1300, O-1300, Q-1300, T-3600,"
+            + " V-3000, W-2500, X-3000, Y-3000, Z-1100, v-1999, w-1300, x-1699, y-1999,\" -9100,\",-13099,\"--2009"
+            + "9,\".-13099,\"A-12799,\"C-3999,\"G-3999,\"O-3999,\"Q-3999,\"T1999,\"V3999,\"W3999,\"Y3600,\"Z1999,\"a-7299,\""
+            + "c-10399,\"e-10399,\"g-10399,\"m-7299,\"n-7299,\"o-10399,\"p-7299,\"q-10399,\"r-7299,\"s-7299,\"t-1000,\"u-7"
+            + "299,\"z-1300,' -9100,',-13099,'--20099,'.-13099,'A-12799,'C-3999,'G-3999,'O-3999,'Q-3999,'T1999,'"
+            + "V3999,'W3999,'Y3600,'Z1999,'a-7299,'c-10399,'e-10399,'g-10399,'m-7299,'n-7299,'o-10399,'p-7299,'"
+            + "q-10399,'r-7299,'s-7299,'t-1000,'u-7299,'z-1300,(,-3000,(--3500,(.-3000,(A-1699,(C-1699,(G-1699,"
+            + "(O-1699,(Q-1699,(c-1699,(e-1699,(g-1699,(o-1699,(q-1699,(t-1000,* -3500,*,-25000,*--19100,*.-250"
+            + "00,*A-5500,*C-1000,*G-1000,*O-1000,*Q-1000,*T1600,*V1000,*W1300,*Y1000,*Z1999,*c-1999,*e-1999,*g"
+            + "-1999,*o-1999,*q-1999,*v2200,*y2200,, -6900,,\"-13999,,'-13999,,*-13200,,,1300,,--11699,,.1300,,A"
+            + "5500,,T-5500,,V-6199,,W-3999,,X1999,,Y-6999,,Z3999,,a1999,,m1999,,n1999,,p1999,,r1999,,s1999,,t-"
+            + "1000,,u1999,,v-2200,,w-1300,,y-2200,,z1999,- -8000,-\"-18600,-'-18600,-)-3500,-*-4100,-,-11699,--"
+            + "-5899,-.-11699,-A-2200,-T-6999,-V-3000,-W-1999,-X-4400,-Y-4100,-Z-1000,-]-3500,-x-1699,-}-3500,."
+            + " -6900,.\"-13999,.'-13999,.*-13200,.,1300,.--11699,..1300,.A5500,.T-5500,.V-6199,.W-3999,.X1999,."
+            + "Y-6999,.Z3999,.a1999,.m1999,.n1999,.p1999,.r1999,.s1999,.t-1000,.u1999,.v-2200,.w-1300,.y-2200,."
+            + "z1999,7 -5399,7,-11900,7--6399,7.-11900,7A-6600,7C-3000,7G-3000,7O-3000,7Q-3000,7X-3099,7Y-1199,"
+            + "7a-5500,7c-5500,7e-5500,7g-5500,7m-5500,7n-5500,7o-5500,7p-5500,7q-5500,7r-5500,7s-5500,7t-3300,"
+            + "7u-5500,7v-3999,7w-3999,7x-5399,7y-3999,7z-5500,A -4400,A\"-11300,A'-11300,A)-1699,A*-5500,A,1300"
+            + ",A--3999,A.1300,AA-1300,AC-3099,AG-3099,AO-3099,AQ-3099,AT-7799,AV-6799,AW-4400,AX-3000,AY-8800,"
+            + "AZ-2200,A]-1699,Ac-1900,Ae-1900,Ag-1900,Ao-1900,Aq-1900,At-2700,Av-5500,Aw-3800,Ax-3999,Ay-5500,"
+            + "Az-1100,A}-1699,BT-3000,C -3999,C--6900,CA-4400,CC-3300,CG-3300,CO-3300,CQ-3300,CT-4400,CV-6600,"
+            + "CW-2599,CX-5099,CY-5500,CZ-4900,Ca-1100,Cc-3600,Ce-3600,Cg-3600,Cm-1100,Cn-1100,Co-3600,Cp-1100,"
+            + "Cq-3600,Cr-1100,Cs-1100,Ct-3600,Cu-1100,Cv-5299,Cw-3999,Cx-4400,Cy-5299,Cz-1699,D -1300,D\"-3999,"
+            + "D'-3999,D)-1699,D*-1000,D,-3000,D.-3000,DA-2799,DJ-2200,DT-3899,DV-3699,DW-2799,DX-5500,DY-4799,"
+            + "DZ-2400,D]-1699,Dv-800,Dx-3000,Dy-800,Dz-1699,D}-1699,K -3000,K--8000,KA-3000,KC-5500,KG-5500,KO"
+            + "-5500,KQ-5500,KT-4700,KV-3500,KW-3000,KX-3600,KY-4100,KZ-1300,Ka-1999,Kc-4799,Ke-4799,Kg-4799,Km"
+            + "-1999,Kn-1999,Ko-4799,Kp-1999,Kq-4799,Kr-1999,Ks-1999,Kt-4600,Ku-1999,Kv-5399,Kw-5399,Kx-4900,Ky"
+            + "-5399,Kz-1600,L -5099,L\"-14199,L'-14199,L*-16399,L,1000,L--6900,L.1000,LA-12200,LC-9299,LG-9299,"
+            + "LO-9299,LQ-9299,LT-13099,LV-11900,LW-8699,LX-14199,LY-12799,LZ-8800,Lc-3500,Le-3500,Lg-3500,Lo-3"
+            + "500,Lq-3500,Lt-3500,Lv-8600,Lw-6199,Lx-6900,Ly-8600,Lz-3999,O -1300,O\"-3999,O'-3999,O)-1699,O*-1"
+            + "000,O,-3000,O.-3000,OA-2799,OJ-2200,OT-3899,OV-3699,OW-2799,OX-5500,OY-4799,OZ-2400,O]-1699,Ov-8"
+            + "00,Ox-3000,Oy-800,Oz-1699,O}-1699,P -3999,P,-13000,P--1000,P.-13000,PA-7700,PC-1100,PG-1100,PO-1"
+            + "100,PQ-1100,PT-800,PV-1000,PW-700,PX-5299,PY-2700,PZ-1999,Pa-2899,Pc-3600,Pe-3600,Pg-3600,Pm-289"
+            + "9,Pn-2899,Po-3600,Pp-2899,Pq-3600,Pr-2899,Ps-2899,Pu-2899,Px-3600,Pz-1300,Q -1300,Q\"-3999,Q'-399"
+            + "9,Q)-1699,Q*-1000,Q,-3000,Q.-3000,QA-2799,QJ-2200,QT-3899,QV-3699,QW-2799,QX-5500,QY-4799,QZ-240"
+            + "0,Q]-1699,Qv-800,Qx-3000,Qy-800,Qz-1699,Q}-1699,R\"-1999,R'-1999,R--3999,RA-3699,RC-3300,RG-3300,"
+            + "RO-3300,RQ-3300,RT-4900,RV-4799,RW-3999,RX-5599,RY-6000,RZ-2400,Rc-4799,Re-4799,Rg-4799,Ro-4799,"
+            + "Rq-4799,Rt-2400,Rv-2200,Rw-2299,Rx-2799,Ry-2200,Rz-1300,T -3999,T\"1999,T'1999,T)1300,T*1600,T,-1"
+            + "1100,T--12799,T.-11100,TA-7799,TC-3899,TG-3899,TO-3899,TQ-3899,TT1999,TV-3300,TW-3000,TX-4700,TY"
+            + "-6999,TZ-4900,T]1300,Ta-10500,Tc-12799,Te-12799,Tg-12799,Tm-10500,Tn-10500,To-12799,Tp-10500,Tq-"
+            + "12799,Tr-10500,Ts-10500,Tt-4900,Tu-10500,Tv-12799,Tw-12799,Tx-12799,Ty-12799,Tz-12799,T}1300,V -"
+            + "3000,V\"3999,V'3999,V*3800,V,-11100,V--5399,V.-11100,VA-6799,VC-3699,VG-3699,VO-3699,VQ-3699,VT-3"
+            + "300,VV-3500,VW-3000,VX-3500,VY-4100,VZ-3500,Va-5700,Vc-7400,Ve-7400,Vg-7400,Vm-5700,Vn-5700,Vo-7"
+            + "400,Vp-5700,Vq-7400,Vr-5700,Vs-5700,Vt-1999,Vu-5700,Vv-1100,Vw-1799,Vx-4799,Vy-1100,Vz-4600,W -2"
+            + "700,W\"3999,W'3999,W*3500,W,-8500,W--3099,W.-8500,WA-4400,WC-2799,WG-2799,WO-2799,WQ-2799,WT-3000"
+            + ",WV-3000,WW-3300,WX-3000,WY-4100,WZ-3300,Wa-4799,Wc-5299,We-5299,Wg-5299,Wm-4799,Wn-4799,Wo-5299"
+            + ",Wp-4799,Wq-5299,Wr-4799,Ws-4799,Wt-1300,Wu-4799,Wv-800,Ww-1799,Wx-3999,Wy-800,Wz-4299,X -3000,X"
+            + "--8000,XA-3000,XC-5500,XG-5500,XO-5500,XQ-5500,XT-4700,XV-3500,XW-3000,XX-3600,XY-4100,XZ-1300,X"
+            + "a-1999,Xc-4799,Xe-4799,Xg-4799,Xm-1999,Xn-1999,Xo-4799,Xp-1999,Xq-4799,Xr-1999,Xs-1999,Xt-4600,X"
+            + "u-1999,Xv-5399,Xw-5399,Xx-4900,Xy-5399,Xz-1600,Y -2700,Y\"3600,Y'3600,Y*2400,Y,-11799,Y--6799,Y.-"
+            + "11799,YA-8800,YC-4799,YG-4799,YO-4799,YQ-4799,YT-6999,YV-4100,YW-3000,YX-4100,YY-4100,YZ-5800,Ya"
+            + "-7200,Yc-10599,Ye-10599,Yg-10599,Ym-7200,Yn-7200,Yo-10599,Yp-7200,Yq-10599,Yr-7200,Ys-7200,Yt-50"
+            + "99,Yu-7200,Yv-4799,Yw-3999,Yx-6000,Yy-4799,Yz-6999,Z -2200,Z\"1999,Z'1999,Z*1999,Z--5500,ZA-2500,"
+            + "ZC-2400,ZG-2400,ZO-2400,ZQ-2400,ZT-2400,ZV-3500,ZW-3000,ZX-2700,ZY-5800,ZZ-1100,Za-1100,Zc-3800,"
+            + "Ze-3800,Zg-3800,Zm-1100,Zn-1100,Zo-3800,Zp-1100,Zq-3800,Zr-1100,Zs-1100,Zt-800,Zu-1100,Zv-1000,Z"
+            + "w-1000,Zx-700,Zy-1000,Zz-1300,[,-3000,[--3500,[.-3000,[A-1699,[C-1699,[G-1699,[O-1699,[Q-1699,[c"
+            + "-1699,[e-1699,[g-1699,[o-1699,[q-1699,[t-1000,a\"-4100,a'-4100,aT-11999,b\"-7400,b'-7400,b)-1699,b"
+            + "*-1999,b,-1000,b.-1000,b]-1699,bf-1199,bv-1199,bw-899,bx-2400,by-1199,bz-800,b}-1699,c -2400,c\"-"
+            + "2200,c'-2200,c)-1000,c--3800,c]-1000,cc-1699,ce-1699,cg-1699,co-1699,cq-1699,cv-1699,cw-1699,cx-"
+            + "800,cy-1699,cz-800,c}-1000,e\"-5000,e'-5000,e)-1300,e*-2200,e]-1300,ec-500,ee-500,eg-500,eo-500,e"
+            + "q-500,ev-1399,ew-500,ex-2100,ey-1399,ez-500,e}-1300,f\"3300,f'3300,f)6000,f*3300,f,-1999,f.-1999,"
+            + "f]3600,fc-500,fe-500,fg-500,fi-3700,fl-2200,fo-500,fq-500,ft-800,fv-1300,fw-1000,fy-1300,f}3600,"
+            + "k -3000,k--3800,kc-1199,ke-1199,kg-1199,ko-1199,kq-1199,kv1399,kx-800,ky1399,nT-11399,o\"-7400,o'"
+            + "-7400,o)-1699,o*-1999,o,-1000,o.-1000,o]-1699,of-1199,ov-1199,ow-899,ox-2400,oy-1199,oz-800,o}-1"
+            + "699,p\"-7400,p'-7400,p)-1699,p*-1999,p,-1000,p.-1000,p]-1699,pf-1199,pv-1199,pw-899,px-2400,py-11"
+            + "99,pz-800,p}-1699,r,-6000,r.-6000,rt3000,t\"-1000,t'-1000,t)-1000,t,1000,t--1600,t.1000,t]-1000,t"
+            + "c-500,te-500,tg-500,to-500,tq-500,tt-700,tv-2299,tw-1699,tx-800,ty-2299,t}-1000,v -3600,v*2200,v"
+            + ",-7200,v.-7200,vc-700,ve-700,vg-700,vo-700,vq-700,vt-1699,vv4100,vw3300,vx800,vy4100,w -2400,w,-"
+            + "5500,w.-5500,wc-899,we-899,wg-899,wo-899,wq-899,wt-1000,wv3300,ww2200,wy3300,wz-800,x -3000,x--3"
+            + "800,xc-2400,xe-2400,xg-2400,xo-2400,xq-2400,xv1399,xx-800,xy1399,y -3600,y*2200,y,-7200,y.-7200,"
+            + "yc-700,ye-700,yg-700,yo-700,yq-700,yt-1699,yv4100,yw3300,yx800,yy4100,z -3000,z\"-1300,z'-1300,z-"
+            + "-3999,zc-800,ze-800,zg-800,zo-800,zq-800,zt-1300,{,-3000,{--3500,{.-3000,{A-1699,{C-1699,{G-1699"
+            + ",{O-1699,{Q-1699,{c-1699,{e-1699,{g-1699,{o-1699,{q-1699,{t-1000,";
+    }
+    private static String PT_Sans_1_6_kerning() {
+        return " \"-8399, '-8399, *-3500, ,-6999, --4400, .-6999, A-3999, C-1300, G-1300, O-1300, Q-1300, T-3600,"
+            + " V-3000, W-2500, X-3000, Y-3000, Z-1100, v-1300, w-1100, x-2700, y-1300, z-1100,\" -8600,\",-12400"
+            + ",\"--19100,\".-12400,\"A-12200,\"C-3800,\"G-3800,\"O-3800,\"Q-3800,\"V3800,\"W3800,\"Y3399,\"a-6000,\"c-6000"
+            + ",\"d-6000,\"e-6000,\"g-6000,\"o-6000,\"q-6000,' -8600,',-12400,'--19100,'.-12400,'A-12200,'C-3800,'G-"
+            + "3800,'O-3800,'Q-3800,'V3800,'W3800,'Y3399,'a-6000,'c-6000,'d-6000,'e-6000,'g-6000,'o-6000,'q-600"
+            + "0,(--3399,(A-1600,(C-1600,(G-1600,(O-1600,(Q-1600,(a-2700,(c-2700,(d-2700,(e-2700,(g-2700,(o-270"
+            + "0,(q-2700,* -3399,*,-23800,*--18200,*.-23800,*A-5200,*C-899,*G-899,*O-899,*Q-899,*T1600,*V899,*W"
+            + "1300,*Y899,*v1999,*w1000,*y1999,, -6000,,\"-13999,,'-13999,,*-13200,,,1300,,--11699,,.1300,,T-550"
+            + "0,,V-6199,,W-3999,,Y-6999,,a-1100,,c-1100,,d-1100,,e-1100,,g-1100,,o-1100,,q-1100,,v-5299,,w-309"
+            + "9,,y-5299,,z800,- -7599,-\"-17700,-'-17700,-)-3399,-*-3899,-,-11199,---5700,-.-11199,-A-2100,-T-6"
+            + "699,-V-2799,-W-1900,-X-4199,-Y-3899,-Z-899,-]-3399,-x-3300,-z-1300,-}-3399,. -6000,.\"-13999,.'-1"
+            + "3999,.*-13200,.,1300,.--11699,..1300,.T-5500,.V-6199,.W-3999,.Y-6999,.a-1100,.c-1100,.d-1100,.e-"
+            + "1100,.g-1100,.o-1100,.q-1100,.v-5299,.w-3099,.y-5299,.z800,7 -5099,7,-11300,7--6100,7.-11300,7A-"
+            + "6300,7C-2799,7G-2799,7O-2799,7Q-2799,:/1999,A -4199,A\"-10700,A'-10700,A)-1600,A*-5200,A,1300,A--"
+            + "3800,A.1300,AA-1300,AC-2899,AG-2899,AO-2899,AQ-2899,AT-7500,AV-6399,AW-4199,AX-2899,AY-8399,AZ-2"
+            + "100,A]-1600,Aa-1300,Ac-1300,Ad-1300,Ae-1300,Ag-1300,Am-1000,An-1000,Ao-1300,Ap-1000,Aq-1300,Ar-1"
+            + "000,As-1000,At-2200,Au-1000,Av-4400,Aw-3099,Ay-4400,A}-1600,BT-2899,C -3800,C--6600,CA-4199,CC-3"
+            + "099,CG-3099,CO-3099,CQ-3099,CT-4199,CV-6300,CW-2500,CX-4799,CY-5200,CZ-4700,Ca-3099,Cc-3099,Cd-3"
+            + "099,Ce-3099,Cg-3099,Ci-1100,Cj-1100,Cm-2700,Cn-2700,Co-3099,Cp-2700,Cq-3099,Cr-2700,Cs-2700,Ct-3"
+            + "300,Cu-2700,Cv-2700,Cw-2200,Cy-2700,Cz-800,D -1300,D\"-3800,D'-3800,D)-1600,D*-899,D,-2899,D.-289"
+            + "9,DA-2599,DJ-2100,DT-3800,DV-3600,DW-2599,DX-5200,DY-4499,DZ-2299,D]-1600,Dt1000,Dv1000,Dw1000,D"
+            + "x-700,Dy1000,D}-1600,K -2899,K--7599,KA-2899,KC-5200,KG-5200,KO-5200,KQ-5200,KT-4400,KV-3399,KW-"
+            + "2799,KX-3399,KY-3800,KZ-1300,Ka-3600,Kc-3600,Kd-3600,Ke-3600,Kg-3600,Ki-1100,Kj-1100,Km-1100,Kn-"
+            + "1100,Ko-3600,Kp-1100,Kq-3600,Kr-1100,Ks-1100,Kt-4100,Ku-1100,Kv-4799,Kw-3999,Kx-1100,Ky-4799,Kz-"
+            + "800,L -4799,L\"-13500,L'-13500,L*-15599,L--6600,LA-11699,LC-8800,LG-8800,LO-8800,LQ-8800,LT-12400"
+            + ",LV-11300,LW-8200,LX-13500,LY-12100,LZ-8399,La-2299,Lc-2299,Ld-2299,Le-2299,Lg-2299,Lo-2299,Lq-2"
+            + "299,Lt-2899,Lv-8500,Lw-5500,Lx-1100,Ly-8500,Lz-1300,O -1300,O\"-3800,O'-3800,O)-1600,O*-899,O,-28"
+            + "99,O.-2899,OA-2599,OJ-2100,OT-3800,OV-3600,OW-2599,OX-5200,OY-4499,OZ-2299,O]-1600,Ot1000,Ov1000"
+            + ",Ow1000,Ox-700,Oy1000,O}-1600,P -3800,P,-12400,P--899,P.-12400,PA-7299,PC-1100,PG-1100,PO-1100,P"
+            + "Q-1100,PT-800,PV-899,PW-599,PX-5099,PY-2599,PZ-1900,Pa-700,Pc-700,Pd-700,Pe-700,Pg-700,Po-700,Pq"
+            + "-700,Pt1300,Pv2500,Pw1600,Py2500,Q -1300,Q\"-3800,Q'-3800,Q)-1600,Q*-899,Q,-2899,Q.-2899,QA-2599,"
+            + "QJ-2100,QT-3800,QV-3600,QW-2599,QX-5200,QY-4499,QZ-2299,Q]-1600,Qt1000,Qv1000,Qw1000,Qx-700,Qy10"
+            + "00,Q}-1600,R\"-1900,R'-1900,R--3800,RA-3600,RC-3099,RG-3099,RO-3099,RQ-3099,RT-4600,RV-4600,RW-38"
+            + "00,RX-5299,RY-5700,RZ-2299,Ra-4900,Rc-4900,Rd-4900,Re-4900,Rg-4900,Ri-800,Rj-800,Rm-1100,Rn-1100"
+            + ",Ro-4900,Rp-1100,Rq-4900,Rr-1100,Rs-1100,Rt-1300,Ru-1100,Rv-1100,Rw-800,Rx-1100,Ry-1100,Rz-2100,"
+            + "T -3800,T)1300,T*1600,T,-10500,T--12200,T.-10500,TA-7500,TC-3800,TG-3800,TO-3800,TQ-3800,TT1999,"
+            + "TV-3099,TW-2799,TX-4400,TY-6699,TZ-4700,T]1300,Ta-10399,Tc-10399,Td-10399,Te-10399,Tg-10399,Ti-1"
+            + "600,Tj-1600,Tm-10800,Tn-10800,To-10399,Tp-10800,Tq-10399,Tr-10800,Ts-10800,Tt-3500,Tu-10800,Tv-1"
+            + "0399,Tw-9600,Tx-11300,Ty-10399,Tz-10000,T}1300,V -2899,V\"3800,V'3800,V*3699,V,-10599,V--5099,V.-"
+            + "10599,VA-6399,VC-3600,VG-3600,VO-3600,VQ-3600,VT-3099,VV-3399,VW-2799,VX-3399,VY-3899,VZ-3399,Va"
+            + "-5800,Vc-5800,Vd-5800,Ve-5800,Vg-5800,Vm-4900,Vn-4900,Vo-5800,Vp-4900,Vq-5800,Vr-4900,Vs-4900,Vt"
+            + "-1000,Vu-4900,Vx-2799,Vz-3500,W -2599,W\"3800,W'3800,W*3300,W,-8099,W--2899,W.-8099,WA-4199,WC-25"
+            + "99,WG-2599,WO-2599,WQ-2599,WT-2799,WV-2799,WW-3099,WX-2799,WY-3899,WZ-3099,Wa-4400,Wc-4400,Wd-44"
+            + "00,We-4400,Wg-4400,Wm-3500,Wn-3500,Wo-4400,Wp-3500,Wq-4400,Wr-3500,Ws-3500,Wt-899,Wu-3500,Wx-210"
+            + "0,Wz-3000,X -2899,X--7599,XA-2899,XC-5200,XG-5200,XO-5200,XQ-5200,XT-4400,XV-3399,XW-2799,XX-339"
+            + "9,XY-3800,XZ-1300,Xa-3600,Xc-3600,Xd-3600,Xe-3600,Xg-3600,Xi-1100,Xj-1100,Xm-1100,Xn-1100,Xo-360"
+            + "0,Xp-1100,Xq-3600,Xr-1100,Xs-1100,Xt-4100,Xu-1100,Xv-4799,Xw-3999,Xx-1100,Xy-4799,Xz-800,Y -2599"
+            + ",Y\"3399,Y'3399,Y*2299,Y,-11199,Y--6499,Y.-11199,YA-8399,YC-4499,YG-4499,YO-4499,YQ-4499,YT-6699,"
+            + "YV-3899,YW-2799,YX-3800,YY-3899,YZ-5500,Ya-9100,Yc-9100,Yd-9100,Ye-9100,Yg-9100,Ym-7299,Yn-7299,"
+            + "Yo-9100,Yp-7299,Yq-9100,Yr-7299,Ys-7299,Yt-4299,Yu-7299,Yv-2400,Yw-2700,Yx-5299,Yy-2400,Yz-5599,"
+            + "Z -2100,Z--5200,ZA-2400,ZC-2299,ZG-2299,ZO-2299,ZQ-2299,ZT-2299,ZV-3399,ZW-2799,ZX-2599,ZY-5500,"
+            + "ZZ-1000,Za-2100,Zc-2100,Zd-2100,Ze-2100,Zg-2100,Zo-2100,Zq-2100,Zt-1000,Zv1300,Zy1300,Zz-1100,[-"
+            + "-3399,[A-1600,[C-1600,[G-1600,[O-1600,[Q-1600,[a-2700,[c-2700,[d-2700,[e-2700,[g-2700,[o-2700,[q"
+            + "-2700,aT-10399,b\"-6799,b'-6799,b)-2799,b*-3000,b,-1100,b.-1100,b]-2799,bv-1799,bw-599,bx-2700,by"
+            + "-1799,b}-2799,c -3000,c\"-1999,c'-1999,c)-1300,c--2700,c]-1300,ca-2700,cc-2700,cd-2700,ce-2700,cg"
+            + "-2700,co-2700,cq-2700,cv1000,cw700,cx1000,cy1000,c}-1300,e\"-4600,e'-4600,e)-1300,eT-12899,e]-130"
+            + "0,et1000,ex-800,e}-1300,f -1100,f\"10599,f'10599,f)8600,f*11300,f,-3000,f--1100,f.-3000,f]8600,fa"
+            + "1000,fc1000,fd1000,fe1000,fg1000,fi-2400,fj3000,fl-700,fo1000,fq1000,ft2500,fw1100,fx1000,fz1300"
+            + ",f}8600,k -2700,k--3300,ka-2700,kc-2700,kd-2700,ke-2700,kg-2700,ko-2700,kq-2700,kv-1000,ky-1000,"
+            + "nT-13699,o\"-6799,o'-6799,o)-2799,o*-3000,o,-1100,o.-1100,o]-2799,ov-1799,ow-599,ox-2700,oy-1799,"
+            + "o}-2799,p\"-6799,p'-6799,p)-2799,p*-3000,p,-1100,p.-1100,p]-2799,pv-1799,pw-599,px-2700,py-1799,p"
+            + "}-2799,r,-8000,r--1300,r.-8000,tv-1300,tw-1300,tx1600,ty-1300,v -1300,v*1999,v,-5399,v.-5399,va-"
+            + "1799,vc-1799,vd-1799,ve-1799,vg-1799,vo-1799,vq-1799,vt2200,vx-1799,vz500,w -1100,w)-1300,w*1600"
+            + ",w,-3000,w.-3000,w]-1300,wt1999,wx-800,wz-800,w}-1300,x -2700,x--3300,xa-2700,xc-2700,xd-2700,xe"
+            + "-2700,xg-2700,xo-2700,xq-2700,xv-1000,xy-1000,y -1300,y*1999,y,-5399,y.-5399,ya-1799,yc-1799,yd-"
+            + "1799,ye-1799,yg-1799,yo-1799,yq-1799,yt2200,yx-1799,yz500,z -1100,z--1300,za-800,zc-800,zd-800,z"
+            + "e-800,zg-800,zo-800,zq-800,zv1600,zw1300,zy1600,{--3399,{A-1600,{C-1600,{G-1600,{O-1600,{Q-1600,"
+            + "{a-2700,{c-2700,{d-2700,{e-2700,{g-2700,{o-2700,{q-2700,";
+    }
+    private static String PT_Sans_Caption_0_3_kerning() {
+        return " \"-6799, '-6799, *-599, ,-1300, --800, .-1300, A-3200, T-3099, V-3000, W-1900, X-3000, Y-3000, Z"
+            + "-2200,\" -8200,\",-12200,\"--15099,\".-12200,\"A-12200,\"C-3999,\"G-3999,\"O-3999,\"Q-3999,\"V3999,\"W3999,"
+            + "\"Y3600,\"a-6199,\"c-10099,\"e-10099,\"g-10099,\"m-6199,\"n-6199,\"o-10099,\"p-6199,\"q-10099,\"r-6199,\"s-6"
+            + "199,\"u-6199,' -8200,',-12200,'--15099,'.-12200,'A-12200,'C-3999,'G-3999,'O-3999,'Q-3999,'V3999,'"
+            + "W3999,'Y3600,'a-6199,'c-10099,'e-10099,'g-10099,'m-6199,'n-6199,'o-10099,'p-6199,'q-10099,'r-619"
+            + "9,'s-6199,'u-6199,(--599,* -599,*,-25000,*--15800,*.-25000,*A-1000,, -3000,,\"-13999,,'-13999,,*-"
+            + "2400,,--12599,,T-1000,,V-1100,,W-700,,Y-1300,- -8000,-\"-12200,-'-12200,-)-599,-*-800,-,-12599,--"
+            + "-1100,-.-12599,-T-1300,-V-500,-X-800,-Y-800,-]-599,-}-599,. -3000,.\"-13999,.'-13999,.*-2400,.--1"
+            + "2599,.T-1000,.V-1100,.W-700,.Y-1300,7 -5399,7,-11000,7--6399,7.-11000,7A-1199,7C-500,7G-500,7O-5"
+            + "00,7Q-500,7a-1000,7c-1000,7e-1000,7g-1000,7m-1000,7n-1000,7o-1000,7p-1000,7q-1000,7r-1000,7s-100"
+            + "0,7t-599,7u-1000,:/1999,A -4100,A\"-8899,A'-8899,A*-1000,A,2700,A--3999,A.2700,AC-2500,AG-2500,AO"
+            + "-2500,AQ-2500,AT-6699,AV-4499,AW-2799,AX-3000,AY-6799,AZ-1399,Ac-1300,Ae-1300,Ag-1300,Ao-1300,Aq"
+            + "-1300,At-1499,Av-3500,Aw-2200,Ax-3200,Ay-3500,Az-2200,BT-3000,C -3999,C--7799,CA-2799,CC-2599,CG"
+            + "-2599,CO-2599,CQ-2599,CT-2799,CV-2700,CW-500,CX-4199,CY-3500,CZ-2400,Ca-1699,Cc-3500,Ce-3500,Cg-"
+            + "3500,Cm-1699,Cn-1699,Co-3500,Cp-1699,Cq-3500,Cr-1699,Cs-1699,Ct-3500,Cu-1699,Cv-4199,Cw-3999,Cx-"
+            + "2799,Cy-4199,Cz-2299,D\"-3999,D'-3999,D,-3000,D.-3000,DA-1999,DT-4799,DV-2599,DW-1999,DX-4900,DY-"
+            + "4100,DZ-2400,Dv-1600,Dx-3000,Dy-1600,Dz-2299,K -3000,K--8000,KA-3000,KC-4900,KG-4900,KO-4900,KQ-"
+            + "4900,KT-3300,KV-599,KW-500,KX-3099,KY-2700,Ka-2799,Kc-4799,Ke-4799,Kg-4799,Km-2799,Kn-2799,Ko-47"
+            + "99,Kp-2799,Kq-4799,Kr-2799,Ks-2799,Kt-3800,Ku-2799,Kv-5399,Kw-5399,Kx-3800,Ky-5399,Kz-3200,L -41"
+            + "99,L\"-12400,L'-12400,L*-16100,L--7799,LA-7500,LC-6600,LG-6600,LO-6600,LQ-6600,LT-12200,LV-10399,"
+            + "LW-7299,LX-10399,LY-10500,LZ-4900,La-1999,Lc-5899,Le-5899,Lg-5899,Lm-1999,Ln-1999,Lo-5899,Lp-199"
+            + "9,Lq-5899,Lr-1999,Ls-1999,Lt-4600,Lu-1999,Lv-9799,Lw-6999,Lx-4199,Ly-9799,Lz-3200,O\"-3999,O'-399"
+            + "9,O,-3000,O.-3000,OA-1999,OT-4799,OV-2599,OW-1999,OX-4900,OY-4100,OZ-2400,Ov-1600,Ox-3000,Oy-160"
+            + "0,Oz-2299,P -3999,P,-13000,P.-13000,PA-6300,PC-1699,PG-1699,PO-1699,PQ-1699,PT-1600,PX-4199,PY-2"
+            + "500,PZ-2799,Pa-3500,Pc-3600,Pe-3600,Pg-3600,Pm-3500,Pn-3500,Po-3600,Pp-3500,Pq-3600,Pr-3500,Ps-3"
+            + "500,Pu-3500,Px-3600,Pz-2700,Q\"-3999,Q'-3999,Q,-3000,Q.-3000,QA-1999,QT-4799,QV-2599,QW-1999,QX-4"
+            + "900,QY-4100,QZ-2400,Qv-1600,Qx-3000,Qy-1600,Qz-2299,R--3999,RA-2599,RC-3500,RG-3500,RO-3500,RQ-3"
+            + "500,RT-6100,RV-4799,RW-3999,RX-3999,RY-5500,RZ-2400,Rc-4799,Re-4799,Rg-4799,Ro-4799,Rq-4799,Rt-2"
+            + "400,Rv-3300,Rw-2899,Rx-3800,Ry-3300,Rz-2700,T -3999,T)2700,T,-10200,T--12799,T.-10200,TA-6699,TC"
+            + "-4799,TG-4799,TO-4799,TQ-4799,TT1999,TV-599,TW-500,TX-3300,TY-1300,TZ-3300,T]2700,Ta-10500,Tc-12"
+            + "799,Te-12799,Tg-12799,Tm-10500,Tn-10500,To-12799,Tp-10500,Tq-12799,Tr-10500,Ts-10500,Tt-6100,Tu-"
+            + "10500,Tv-12799,Tw-12799,Tx-12799,Ty-12799,Tz-12799,T}2700,V -3000,V\"3999,V'3999,V*4600,V,-9400,V"
+            + "--5399,V.-9400,VA-4499,VC-2599,VG-2599,VO-2599,VQ-2599,VT-599,VV-599,VW-500,VX-599,VY-800,VZ-599"
+            + ",Va-5000,Vc-5800,Ve-5800,Vg-5800,Vm-5000,Vn-5000,Vo-5800,Vp-5000,Vq-5800,Vr-5000,Vs-5000,Vu-5000"
+            + ",Vv-2200,Vw-1799,Vx-4799,Vy-2200,Vz-3800,W -2500,W\"3999,W'3999,W*4600,W,-7400,W--2500,W.-7400,WA"
+            + "-2799,WC-1999,WG-1999,WO-1999,WQ-1999,WT-500,WV-500,WW-599,WX-500,WY-800,WZ-599,Wa-4100,Wc-4199,"
+            + "We-4199,Wg-4199,Wm-4100,Wn-4100,Wo-4199,Wp-4100,Wq-4199,Wr-4100,Ws-4100,Wu-4100,Wv-1600,Ww-1799,"
+            + "Wx-3999,Wy-1600,Wz-3699,X -3000,X--8000,XA-3000,XC-4900,XG-4900,XO-4900,XQ-4900,XT-3300,XV-599,X"
+            + "W-500,XX-3099,XY-2700,Xa-2799,Xc-4799,Xe-4799,Xg-4799,Xm-2799,Xn-2799,Xo-4799,Xp-2799,Xq-4799,Xr"
+            + "-2799,Xs-2799,Xt-3800,Xu-2799,Xv-5399,Xw-5399,Xx-3800,Xy-5399,Xz-3200,Y -2500,Y\"3600,Y'3600,Y*24"
+            + "00,Y,-10700,Y--6199,Y.-10700,YA-6799,YC-4100,YG-4100,YO-4100,YQ-4100,YT-1300,YV-800,YW-500,YX-27"
+            + "00,YY-800,YZ-2500,Ya-7200,Yc-8500,Ye-8500,Yg-8500,Ym-7200,Yn-7200,Yo-8500,Yp-7200,Yq-8500,Yr-720"
+            + "0,Ys-7200,Yt-3899,Yu-7200,Yv-4799,Yw-3999,Yx-6000,Yy-4799,Yz-6499,Z -4299,Z--9199,ZA-1900,ZC-240"
+            + "0,ZG-2400,ZO-2400,ZQ-2400,ZT-2400,ZV-599,ZW-500,ZX-2899,ZY-2500,ZZ-2200,Za-2200,Zc-5099,Ze-5099,"
+            + "Zg-5099,Zm-2200,Zn-2200,Zo-5099,Zp-2200,Zq-5099,Zr-2200,Zs-2200,Zt-1600,Zu-2200,Zv-3099,Zw-3099,"
+            + "Zx-2100,Zy-3099,Zz-2700,[--599,a\"-800,a'-800,aT-11999,b\"-5299,b'-5299,bf-1199,bv-1199,bw-1100,bx"
+            + "-2400,by-1199,bz-1600,c -2400,c--4600,cc-2299,ce-2299,cg-2299,co-2299,cq-2299,cx-1600,cy-1199,cz"
+            + "-1600,e\"-899,e'-899,ec-1100,ee-1100,eg-1100,eo-1100,eq-1100,ev-2200,ew-1100,ex-2299,ey-2200,ez-1"
+            + "100,f\"599,f'599,f)6000,f*599,f]3600,fc-1100,fe-1100,fg-1100,fi-3800,fl-2700,fo-1100,fq-1100,ft-1"
+            + "600,f}3600,k -3000,k--4600,kc-1199,ke-1199,kg-1199,ko-1199,kq-1199,kv-700,kx-1600,ky-700,nT-1270"
+            + "0,o\"-5299,o'-5299,of-1199,ov-1199,ow-1100,ox-2400,oy-1199,oz-1600,p\"-5299,p'-5299,pf-1199,pv-119"
+            + "9,pw-1100,px-2400,py-1199,pz-1600,r,-6000,r.-6000,rt3000,t--3200,tc-1100,te-1100,tg-1100,to-1100"
+            + ",tq-1100,tx-1600,v -3600,v,-7200,v.-7200,vv700,vw599,vx-1300,vy700,vz-1000,w -2400,w,-6199,w.-61"
+            + "99,wc-1100,we-1100,wg-1100,wo-1100,wq-1100,wv599,wx-1499,wy599,wz-1600,x -3000,x--4600,xc-2400,x"
+            + "e-2400,xg-2400,xo-2400,xq-2400,xv-700,xx-1600,xy-700,y -3600,y,-7200,y.-7200,yv700,yw599,yx-1300"
+            + ",yy700,yz-1000,z -3000,z--3999,zc-1600,ze-1600,zg-1600,zo-1600,zq-1600,zv-1000,zy-1000,{--599,";
+    }
+    private static String PT_Sans_Caption_0_6_kerning() {
+        return " \"-9199, '-9199, *-3999, ,-8000, --5000, .-8000, A-4400, C-1499, G-1499, O-1499, Q-1499, T-3899,"
+            + " V-3300, W-2700, X-3300, Y-3300, Z-1199, v-2299, w-1499, x-1900, y-2299,\" -9900,\",-14199,\"--2199"
+            + "9,\".-14199,\"A-13999,\"C-4400,\"G-4400,\"O-4400,\"Q-4400,\"V4400,\"W4400,\"Y3899,\"a-8000,\"c-11399,\"e-113"
+            + "99,\"g-11399,\"m-8000,\"n-8000,\"o-11399,\"p-8000,\"q-11399,\"r-8000,\"s-8000,\"t-1100,\"u-8000,\"z-1499,' "
+            + "-9900,',-14199,'--21999,'.-14199,'A-13999,'C-4400,'G-4400,'O-4400,'Q-4400,'V4400,'W4400,'Y3899,'"
+            + "a-8000,'c-11399,'e-11399,'g-11399,'m-8000,'n-8000,'o-11399,'p-8000,'q-11399,'r-8000,'s-8000,'t-1"
+            + "100,'u-8000,'z-1499,(--3999,(A-1900,(C-1900,(G-1900,(O-1900,(Q-1900,(c-1900,(e-1900,(g-1900,(o-1"
+            + "900,(q-1900,(t-1100,* -3999,*,-27200,*--20899,*.-27200,*A-6300,*C-1100,*G-1100,*O-1100,*Q-1100,*"
+            + "T1799,*V1100,*W1399,*Y1100,*c-2299,*e-2299,*g-2299,*o-2299,*q-2299,*v2400,*y2400,, -3999,,\"-1520"
+            + "0,,'-15200,,*-15099,,,1399,,--12700,,.1399,,T-6300,,V-6999,,W-4499,,Y-8000,,t-1100,,v-2500,,w-14"
+            + "99,,y-2500,- -8699,-\"-20599,-'-20599,-)-3999,-*-4700,-,-12700,---6799,-.-12700,-A-2500,-T-8000,-"
+            + "V-3399,-W-2299,-X-5000,-Y-4700,-Z-1100,-]-3999,-x-1900,-}-3999,. -3999,.\"-15200,.'-15200,.*-1509"
+            + "9,.,1399,.--12700,..1399,.T-6300,.V-6999,.W-4499,.Y-8000,.t-1100,.v-2500,.w-1499,.y-2500,7 -5899"
+            + ",7,-12899,7--6999,7.-12899,7A-7500,7C-3399,7G-3399,7O-3399,7Q-3399,7a-6300,7c-6300,7e-6300,7g-63"
+            + "00,7m-6300,7n-6300,7o-6300,7p-6300,7q-6300,7r-6300,7s-6300,7t-3800,7u-6300,A -4799,A\"-12299,A'-1"
+            + "2299,A)-1900,A*-6300,A,1399,A--4400,A.1399,AA-1499,AC-3300,AG-3300,AO-3300,AQ-3300,AT-8600,AV-75"
+            + "00,AW-4799,AX-3300,AY-9700,AZ-2400,A]-1900,Ac-1999,Ae-1999,Ag-1999,Ao-1999,Aq-1999,At-3099,Av-61"
+            + "00,Aw-4199,Ax-4400,Ay-6100,Az-1199,A}-1900,BT-3300,C -4400,C--7500,CA-4799,CC-3600,CG-3600,CO-36"
+            + "00,CQ-3600,CT-4799,CV-7400,CW-3000,CX-5599,CY-6100,CZ-5500,Ca-1199,Cc-3899,Ce-3899,Cg-3899,Cm-11"
+            + "99,Cn-1199,Co-3899,Cp-1199,Cq-3899,Cr-1199,Cs-1199,Ct-3899,Cu-1199,Cv-5800,Cw-4400,Cx-4799,Cy-58"
+            + "00,Cz-1900,D -1499,D\"-4400,D'-4400,D)-1900,D*-1100,D,-3300,D.-3300,DA-3099,DJ-2500,DT-4299,DV-41"
+            + "00,DW-3099,DX-5899,DY-5200,DZ-2599,D]-1900,Dv-899,Dx-3300,Dy-899,Dz-1900,D}-1900,K -3300,K--8699"
+            + ",KA-3300,KC-5899,KG-5899,KO-5899,KQ-5899,KT-5099,KV-3999,KW-3399,KX-3899,KY-4499,KZ-1499,Ka-2200"
+            + ",Kc-5200,Ke-5200,Kg-5200,Km-2200,Kn-2200,Ko-5200,Kp-2200,Kq-5200,Kr-2200,Ks-2200,Kt-5000,Ku-2200"
+            + ",Kv-5899,Kw-5899,Kx-5399,Ky-5899,Kz-1799,L -5599,L\"-15500,L'-15500,L*-17899,L--7500,LA-13600,LC-"
+            + "10299,LG-10299,LO-10299,LQ-10299,LT-14199,LV-13000,LW-9400,LX-15700,LY-13899,LZ-9900,La-500,Lc-3"
+            + "699,Le-3699,Lg-3699,Lm-500,Ln-500,Lo-3699,Lp-500,Lq-3699,Lr-500,Ls-500,Lt-3800,Lu-500,Lv-9400,Lw"
+            + "-6799,Lx-7700,Ly-9400,Lz-4400,O -1499,O\"-4400,O'-4400,O)-1900,O*-1100,O,-3300,O.-3300,OA-3099,OJ"
+            + "-2500,OT-4299,OV-4100,OW-3099,OX-5899,OY-5200,OZ-2599,O]-1900,Ov-899,Ox-3300,Oy-899,Oz-1900,O}-1"
+            + "900,P -4400,P,-14100,P--1100,P.-14100,PA-8399,PC-1199,PG-1199,PO-1199,PQ-1199,PT-899,PV-1100,PW-"
+            + "800,PX-5800,PY-3000,PZ-2200,Pa-3200,Pc-3899,Pe-3899,Pg-3899,Pm-3200,Pn-3200,Po-3899,Pp-3200,Pq-3"
+            + "899,Pr-3200,Ps-3200,Pu-3200,Px-3899,Pz-1499,Q -1499,Q\"-4400,Q'-4400,Q)-1900,Q*-1100,Q,-3300,Q.-3"
+            + "300,QA-3099,QJ-2500,QT-4299,QV-4100,QW-3099,QX-5899,QY-5200,QZ-2599,Q]-1900,Qv-899,Qx-3300,Qy-89"
+            + "9,Qz-1900,Q}-1900,R\"-2299,R'-2299,R--4400,RA-4100,RC-3600,RG-3600,RO-3600,RQ-3600,RT-5299,RV-520"
+            + "0,RW-4400,RX-6100,RY-6499,RZ-2599,Rc-5200,Re-5200,Rg-5200,Ro-5200,Rq-5200,Rt-2599,Rv-2299,Rw-250"
+            + "0,Rx-3000,Ry-2299,Rz-1499,T -4400,T)1399,T*1799,T,-12100,T--13899,T.-12100,TA-8600,TC-4299,TG-42"
+            + "99,TO-4299,TQ-4299,TT1999,TV-3800,TW-3399,TX-5099,TY-8000,TZ-5399,T]1399,Ta-11399,Tc-13899,Te-13"
+            + "899,Tg-13899,Tm-11399,Tn-11399,To-13899,Tp-11399,Tq-13899,Tr-11399,Ts-11399,Tt-5299,Tu-11399,Tv-"
+            + "13899,Tw-13899,Tx-13899,Ty-13899,Tz-13899,T}1399,V -3300,V\"4400,V'4400,V*4199,V,-12100,V--5899,V"
+            + ".-12100,VA-7500,VC-4100,VG-4100,VO-4100,VQ-4100,VT-3800,VV-3999,VW-3399,VX-3999,VY-4700,VZ-3999,"
+            + "Va-6199,Vc-8099,Ve-8099,Vg-8099,Vm-6199,Vn-6199,Vo-8099,Vp-6199,Vq-8099,Vr-6199,Vs-6199,Vt-2299,"
+            + "Vu-6199,Vv-1199,Vw-1999,Vx-5200,Vy-1199,Vz-5000,W -3000,W\"4400,W'4400,W*3800,W,-9299,W--3300,W.-"
+            + "9299,WA-4799,WC-3099,WG-3099,WO-3099,WQ-3099,WT-3399,WV-3399,WW-3800,WX-3399,WY-4700,WZ-3800,Wa-"
+            + "5200,Wc-5800,We-5800,Wg-5800,Wm-5200,Wn-5200,Wo-5800,Wp-5200,Wq-5800,Wr-5200,Ws-5200,Wt-1499,Wu-"
+            + "5200,Wv-899,Ww-1999,Wx-4400,Wy-899,Wz-4600,X -3300,X--8699,XA-3300,XC-5899,XG-5899,XO-5899,XQ-58"
+            + "99,XT-5099,XV-3999,XW-3399,XX-3899,XY-4499,XZ-1499,Xa-2200,Xc-5200,Xe-5200,Xg-5200,Xm-2200,Xn-22"
+            + "00,Xo-5200,Xp-2200,Xq-5200,Xr-2200,Xs-2200,Xt-5000,Xu-2200,Xv-5899,Xw-5899,Xx-5399,Xy-5899,Xz-17"
+            + "99,Y -3000,Y\"3899,Y'3899,Y*2599,Y,-12799,Y--7400,Y.-12799,YA-9700,YC-5200,YG-5200,YO-5200,YQ-520"
+            + "0,YT-8000,YV-4700,YW-3399,YX-4499,YY-4700,YZ-6499,Ya-7799,Yc-11699,Ye-11699,Yg-11699,Ym-7799,Yn-"
+            + "7799,Yo-11699,Yp-7799,Yq-11699,Yr-7799,Ys-7799,Yt-5700,Yu-7799,Yv-5200,Yw-4400,Yx-6499,Yy-5200,Y"
+            + "z-7599,Z -2400,Z--5800,ZA-2700,ZC-2599,ZG-2599,ZO-2599,ZQ-2599,ZT-2599,ZV-3999,ZW-3399,ZX-2899,Z"
+            + "Y-6499,ZZ-1199,Za-1199,Zc-4100,Ze-4100,Zg-4100,Zm-1199,Zn-1199,Zo-4100,Zp-1199,Zq-4100,Zr-1199,Z"
+            + "s-1199,Zt-899,Zu-1199,Zv-1100,Zw-1100,Zx-800,Zy-1100,Zz-1499,[--3999,[A-1900,[C-1900,[G-1900,[O-"
+            + "1900,[Q-1900,[c-1900,[e-1900,[g-1900,[o-1900,[q-1900,[t-1100,a\"-4900,a'-4900,aT-13800,b\"-8600,b'"
+            + "-8600,b)-1999,b*-2400,b,-1199,b.-1199,b]-1999,bf-1399,bv-1399,bw-899,bx-2700,by-1399,bz-899,b}-1"
+            + "999,c -2700,c\"-2599,c'-2599,c)-1199,c--4400,c]-1199,cc-1999,ce-1999,cg-1999,co-1999,cq-1999,cv-1"
+            + "999,cw-1999,cx-899,cy-1399,cz-899,c}-1199,e\"-6000,e'-6000,e)-1600,e*-2599,e]-1600,ec-599,ee-599,"
+            + "eg-599,eo-599,eq-599,ev-1600,ew-599,ex-2400,ey-1600,ez-599,e}-1600,f\"3800,f'3800,f)6799,f*3800,f"
+            + ",-2400,f.-2400,f]4100,fc-599,fe-599,fg-599,fi-4199,fl-2899,fo-599,fq-599,ft-899,fv-1600,fw-1199,"
+            + "fy-1600,f}4100,k -3500,k--4400,kc-1399,ke-1399,kg-1399,ko-1399,kq-1399,kv1699,kx-899,ky1699,nT-1"
+            + "3000,o\"-8600,o'-8600,o)-1999,o*-2400,o,-1199,o.-1199,o]-1999,of-1399,ov-1399,ow-899,ox-2700,oy-1"
+            + "399,oz-899,o}-1999,p\"-8600,p'-8600,p)-1999,p*-2400,p,-1199,p.-1199,p]-1999,pf-1399,pv-1399,pw-89"
+            + "9,px-2700,py-1399,pz-899,p}-1999,r,-6000,r.-6000,rt3500,t\"-1199,t'-1199,t)-1199,t--1900,t]-1199,"
+            + "tc-599,te-599,tg-599,to-599,tq-599,tt-800,tv-2700,tw-1999,tx-899,ty-2700,t}-1199,v -4100,v*2500,"
+            + "v,-8200,v.-8200,vc-800,ve-800,vg-800,vo-800,vq-800,vt-1999,vv4700,vw3800,vx899,vy4700,w -2700,w,"
+            + "-6300,w.-6300,wc-899,we-899,wg-899,wo-899,wq-899,wt-1199,wv3800,ww2500,wy3800,wz-899,x -3500,x--"
+            + "4400,xc-2700,xe-2700,xg-2700,xo-2700,xq-2700,xv1699,xx-899,xy1699,y -4100,y*2500,y,-8200,y.-8200"
+            + ",yc-800,ye-800,yg-800,yo-800,yq-800,yt-1999,yv4700,yw3800,yx899,yy4700,z -3500,z\"-1600,z'-1600,z"
+            + "--4600,zc-899,ze-899,zg-899,zo-899,zq-899,zt-1600,{--3999,{A-1900,{C-1900,{G-1900,{O-1900,{Q-190"
+            + "0,{c-1900,{e-1900,{g-1900,{o-1900,{q-1900,{t-1100,";
+    }
+    private static String PT_Sans_Narrow_0_3_kerning() {
+        return " \"-5700, '-5700, *-899, ,-1799, --1199, .-1799, A-2700, T-2599, V-2400, W-1600, X-2400, Y-2400, "
+            + "Z-1600, v-500, y-500,\" -6699,\",-10000,\"--12899,\".-10000,\"A-9900,\"C-3200,\"G-3200,\"O-3200,\"Q-3200,"
+            + "\"V3200,\"W3200,\"Y2899,\"a-5200,\"c-8200,\"e-8200,\"g-8200,\"m-5200,\"n-5200,\"o-8200,\"p-5200,\"q-8200,\"r-"
+            + "5200,\"s-5200,\"u-5200,' -6699,',-10000,'--12899,'.-10000,'A-9900,'C-3200,'G-3200,'O-3200,'Q-3200,"
+            + "'V3200,'W3200,'Y2899,'a-5200,'c-8200,'e-8200,'g-8200,'m-5200,'n-5200,'o-8200,'p-5200,'q-8200,'r-"
+            + "5200,'s-5200,'u-5200,(--899,* -899,*,-20099,*--13200,*.-20099,*A-1399,*T500,*c-500,*e-500,*g-500"
+            + ",*o-500,*q-500,*v599,*y599,, -6600,,\"-11300,,'-11300,,*-3399,,,399,,--10000,,.399,,J1699,,T-1399"
+            + ",,V-1600,,W-1000,,Y-1799,,t-299,,v-599,,w-399,,y-599,- -6399,-\"-10700,-'-10700,-)-899,-*-1100,-,"
+            + "-10000,---1499,-.-10000,-A-599,-T-1799,-V-800,-W-500,-X-1199,-Y-1100,-]-899,-}-899,. -6600,.\"-11"
+            + "300,.'-11300,.*-3399,.,399,.--10000,..399,.J1699,.T-1399,.V-1600,.W-1000,.Y-1799,.t-299,.v-599,."
+            + "w-399,.y-599,7 -4299,7,-8999,7--5099,7.-8999,7A-1699,7C-800,7G-800,7O-800,7Q-800,7a-1399,7c-1399"
+            + ",7e-1399,7g-1399,7m-1399,7n-1399,7o-1399,7p-1399,7q-1399,7r-1399,7s-1399,7t-800,7u-1399,:/1999,A"
+            + " -3300,A\"-7500,A'-7500,A*-1399,A,1999,A--3200,A.1999,AC-2100,AG-2100,AO-2100,AQ-2100,AT-5500,AV-"
+            + "3899,AW-2500,AX-2400,AY-5800,AZ-1199,Ac-1100,Ae-1100,Ag-1100,Ao-1100,Aq-1100,At-1399,Av-3099,Aw-"
+            + "1999,Ax-2700,Ay-3099,Az-1600,BT-2400,C -3200,C--6100,CA-2500,CC-2200,CG-2200,CO-2200,CQ-2200,CT-"
+            + "2500,CV-2700,CW-700,CX-3500,CY-3099,CZ-2299,Ca-1300,Cc-2799,Ce-2799,Cg-2799,Cm-1300,Cn-1300,Co-2"
+            + "799,Cp-1300,Cq-2799,Cr-1300,Cs-1300,Ct-2799,Cu-1300,Cv-3600,Cw-3200,Cx-2500,Cy-3600,Cz-1699,D\"-3"
+            + "200,D'-3200,D,-2400,D.-2400,DA-1699,DJ-599,DT-3699,DV-2299,DW-1699,DX-3999,DY-3399,DZ-1900,Dv-11"
+            + "99,Dx-2400,Dy-1199,Dz-1699,K -2400,K--6399,KA-2400,KC-3999,KG-3999,KO-3999,KQ-3999,KT-2899,KV-89"
+            + "9,KW-800,KX-2599,KY-2400,Ka-2100,Kc-3899,Ke-3899,Kg-3899,Km-2100,Kn-2100,Ko-3899,Kp-2100,Kq-3899"
+            + ",Kr-2100,Ks-2100,Kt-3200,Ku-2100,Kv-4299,Kw-4299,Kx-3300,Ky-4299,Kz-2299,L -3500,L\"-10200,L'-102"
+            + "00,L*-13000,L--6100,LA-6699,LC-5700,LG-5700,LO-5700,LQ-5700,LT-10000,LV-8500,LW-6100,LX-8899,LY-"
+            + "8800,LZ-4499,La-1399,Lc-4400,Le-4400,Lg-4400,Lm-1399,Ln-1399,Lo-4400,Lp-1399,Lq-4400,Lr-1399,Ls-"
+            + "1399,Lt-3500,Lu-1399,Lv-7700,Lw-5500,Lx-3699,Ly-7700,Lz-2700,O\"-3200,O'-3200,O,-2400,O.-2400,OA-"
+            + "1699,OJ-599,OT-3699,OV-2299,OW-1699,OX-3999,OY-3399,OZ-1900,Ov-1199,Ox-2400,Oy-1199,Oz-1699,P -3"
+            + "200,P,-10500,P.-10500,PA-5299,PC-1300,PG-1300,PO-1300,PQ-1300,PT-1199,PX-3600,PY-1999,PZ-2100,Pa"
+            + "-2700,Pc-2899,Pe-2899,Pg-2899,Pm-2700,Pn-2700,Po-2899,Pp-2700,Pq-2899,Pr-2700,Ps-2700,Pu-2700,Px"
+            + "-2899,Pz-1900,Q\"-3200,Q'-3200,Q,-2400,Q.-2400,QA-1699,QJ-599,QT-3699,QV-2299,QW-1699,QX-3999,QY-"
+            + "3399,QZ-1900,Qv-1199,Qx-2400,Qy-1199,Qz-1699,R\"-500,R'-500,R--3200,RA-2299,RC-2799,RG-2799,RO-27"
+            + "99,RQ-2799,RT-4700,RV-3899,RW-3200,RX-3399,RY-4499,RZ-1900,Rc-3899,Re-3899,Rg-3899,Ro-3899,Rq-38"
+            + "99,Rt-1900,Rv-2500,Rw-2200,Rx-2899,Ry-2500,Rz-1900,T -3200,T)1999,T*500,T,-8300,T--10299,T.-8300"
+            + ",TA-5500,TC-3699,TG-3699,TO-3699,TQ-3699,TT1999,TV-800,TW-800,TX-2899,TY-1799,TZ-2899,T]1999,Ta-"
+            + "8500,Tc-10299,Te-10299,Tg-10299,Tm-8500,Tn-8500,To-10299,Tp-8500,Tq-10299,Tr-8500,Ts-8500,Tt-470"
+            + "0,Tu-8500,Tv-10299,Tw-10299,Tx-10299,Ty-10299,Tz-10299,T}1999,V -2400,V\"3200,V'3200,V*3600,V,-77"
+            + "99,V--4299,V.-7799,VA-3899,VC-2299,VG-2299,VO-2299,VQ-2299,VT-800,VV-899,VW-800,VX-899,VY-1100,V"
+            + "Z-899,Va-4100,Vc-4900,Ve-4900,Vg-4900,Vm-4100,Vn-4100,Vo-4900,Vp-4100,Vq-4900,Vr-4100,Vs-4100,Vt"
+            + "-500,Vu-4100,Vv-1600,Vw-1399,Vx-3899,Vy-1600,Vz-3200,W -1999,W\"3200,W'3200,W*3500,W,-6199,W--210"
+            + "0,W.-6199,WA-2500,WC-1699,WG-1699,WO-1699,WQ-1699,WT-800,WV-800,WW-800,WX-800,WY-1100,WZ-800,Wa-"
+            + "3399,Wc-3600,We-3600,Wg-3600,Wm-3399,Wn-3399,Wo-3600,Wp-3399,Wq-3600,Wr-3399,Ws-3399,Wu-3399,Wv-"
+            + "1199,Ww-1399,Wx-3200,Wy-1199,Wz-3099,X -2400,X--6399,XA-2400,XC-3999,XG-3999,XO-3999,XQ-3999,XT-"
+            + "2899,XV-899,XW-800,XX-2599,XY-2400,Xa-2100,Xc-3899,Xe-3899,Xg-3899,Xm-2100,Xn-2100,Xo-3899,Xp-21"
+            + "00,Xq-3899,Xr-2100,Xs-2100,Xt-3200,Xu-2100,Xv-4299,Xw-4299,Xx-3300,Xy-4299,Xz-2299,Y -1999,Y\"289"
+            + "9,Y'2899,Y*1900,Y,-8800,Y--5000,Y.-8800,YA-5800,YC-3399,YG-3399,YO-3399,YQ-3399,YT-1799,YV-1100,"
+            + "YW-800,YX-2400,YY-1100,YZ-2500,Ya-5800,Yc-7200,Ye-7200,Yg-7200,Ym-5800,Yn-5800,Yo-7200,Yp-5800,Y"
+            + "q-7200,Yr-5800,Ys-5800,Yt-3300,Yu-5800,Yv-3899,Yw-3200,Yx-4799,Yy-3899,Yz-5299,Z -3099,Z--6799,Z"
+            + "A-1600,ZC-1900,ZG-1900,ZO-1900,ZQ-1900,ZT-1900,ZV-899,ZW-800,ZX-2299,ZY-2500,ZZ-1600,Za-1600,Zc-"
+            + "3899,Ze-3899,Zg-3899,Zm-1600,Zn-1600,Zo-3899,Zp-1600,Zq-3899,Zr-1600,Zs-1600,Zt-1199,Zu-1600,Zv-"
+            + "2100,Zw-2100,Zx-1499,Zy-2100,Zz-1900,[--899,a\"-1100,a'-1100,aT-9600,b\"-4600,b'-4600,b*-500,b,-29"
+            + "9,b.-299,bf-1000,bv-1000,bw-899,bx-1900,by-1000,bz-1199,c -1900,c\"-599,c'-599,c--3600,cc-1699,ce"
+            + "-1699,cg-1699,co-1699,cq-1699,cx-1199,cy-1000,cz-1199,e\"-1300,e'-1300,e*-599,ec-800,ee-800,eg-80"
+            + "0,eo-800,eq-800,ev-1699,ew-800,ex-1799,ey-1699,ez-800,f\"899,f'899,f)4799,f*899,f,-500,f.-500,f]2"
+            + "899,fc-800,fe-800,fg-800,fi-3700,fl-2100,fo-800,fq-800,ft-1199,f}2899,k -2400,k--3600,kc-1000,ke"
+            + "-1000,kg-1000,ko-1000,kq-1000,kx-1199,nT-10000,o\"-4600,o'-4600,o*-500,o,-299,o.-299,of-1000,ov-1"
+            + "000,ow-899,ox-1900,oy-1000,oz-1199,p\"-4600,p'-4600,p*-500,p,-299,p.-299,pf-1000,pv-1000,pw-899,p"
+            + "x-1900,py-1000,pz-1199,r,-5200,r.-5200,rt2400,t--2299,tc-800,te-800,tg-800,to-800,tq-800,tv-599,"
+            + "tx-1199,ty-599,v -2899,v*599,v,-5800,v.-5800,vv1199,vw899,vx-700,vy1199,vz-599,w -1900,w,-4900,w"
+            + ".-4900,wc-899,we-899,wg-899,wo-899,wq-899,wv899,ww599,wx-1000,wy899,wz-1199,x -2400,x--3600,xc-1"
+            + "900,xe-1900,xg-1900,xo-1900,xq-1900,xx-1199,y -2899,y*599,y,-5800,y.-5800,yv1199,yw899,yx-700,yy"
+            + "1199,yz-599,z -2400,z--3200,zc-1199,ze-1199,zg-1199,zo-1199,zq-1199,zv-599,zy-599,{--899,";
+    }
+    private static String PT_Sans_Narrow_0_6_kerning() {
+        return " \"-7200, '-7200, *-3200, ,-6399, --3999, .-6399, A-3399, C-1199, G-1199, O-1199, Q-1199, T-3000,"
+            + " V-2500, W-2100, X-2500, Y-2500, Z-599, v-1799, w-1199, x-1499, y-1799,\" -7700,\",-11000,\"--17200"
+            + ",\".-11000,\"A-10700,\"C-3300,\"G-3300,\"O-3300,\"Q-3300,\"V3300,\"W3300,\"Y3000,\"a-6199,\"c-8699,\"e-8699,"
+            + "\"g-8699,\"m-6199,\"n-6199,\"o-8699,\"p-6199,\"q-8699,\"r-6199,\"s-6199,\"t-899,\"u-6199,\"z-1199,' -7700,'"
+            + ",-11000,'--17200,'.-11000,'A-10700,'C-3300,'G-3300,'O-3300,'Q-3300,'V3300,'W3300,'Y3000,'a-6199,"
+            + "'c-8699,'e-8699,'g-8699,'m-6199,'n-6199,'o-8699,'p-6199,'q-8699,'r-6199,'s-6199,'t-899,'u-6199,'"
+            + "z-1199,(--3200,(A-1499,(C-1499,(G-1499,(O-1499,(Q-1499,(c-1499,(e-1499,(g-1499,(o-1499,(q-1499,("
+            + "t-899,* -3200,*,-20599,*--16300,*.-20599,*A-5000,*C-899,*G-899,*O-899,*Q-899,*T1699,*V1000,*W139"
+            + "9,*Y1000,*c-1799,*e-1799,*g-1799,*o-1799,*q-1799,*v2299,*y2299,, -6100,,\"-11499,,'-11499,,*-1210"
+            + "0,,,1399,,--9400,,.1399,,J899,,T-5000,,V-5599,,W-3600,,Y-6399,,t-899,,v-1999,,w-1199,,y-1999,- -"
+            + "6600,-\"-16199,-'-16199,-)-3200,-*-3800,-,-9400,---5399,-.-9400,-A-1999,-T-6399,-V-2700,-W-1799,-"
+            + "X-3999,-Y-3800,-Z-899,-]-3200,-x-1499,-}-3200,. -6100,.\"-11499,.'-11499,.*-12100,.,1399,.--9400,"
+            + "..1399,.J899,.T-5000,.V-5599,.W-3600,.Y-6399,.t-899,.v-1999,.w-1199,.y-1999,7 -4400,7,-10000,7--"
+            + "5299,7.-10000,7A-6000,7C-2700,7G-2700,7O-2700,7Q-2700,7a-5000,7c-5000,7e-5000,7g-5000,7m-5000,7n"
+            + "-5000,7o-5000,7p-5000,7q-5000,7r-5000,7s-5000,7t-3000,7u-5000,:/1000,A -3699,A\"-9600,A'-9600,A)-"
+            + "1499,A*-5000,A,1000,A--3300,A.1000,AA-1199,AC-2599,AG-2599,AO-2599,AQ-2599,AT-6600,AV-5899,AW-38"
+            + "00,AX-2500,AY-7599,AZ-1900,A]-1499,Ac-1600,Ae-1600,Ag-1600,Ao-1600,Aq-1600,At-2400,Av-4799,Aw-33"
+            + "00,Ax-3399,Ay-4799,Az-599,A}-1499,BT-2500,C -3300,C--5399,CA-3800,CC-2799,CG-2799,CO-2799,CQ-279"
+            + "9,CT-3800,CV-5899,CW-2400,CX-4400,CY-4799,CZ-4400,Ca-800,Cc-2899,Ce-2899,Cg-2899,Cm-800,Cn-800,C"
+            + "o-2899,Cp-800,Cq-2899,Cr-800,Cs-800,Ct-2899,Cu-800,Cv-4499,Cw-3300,Cx-3800,Cy-4499,Cz-1300,D -11"
+            + "99,D\"-3300,D'-3300,D)-1499,D*-899,D,-2500,D.-2500,DA-2400,DJ-1999,DT-3000,DV-3200,DW-2400,DX-460"
+            + "0,DY-4100,DZ-1999,D]-1499,Dv-500,Dx-2500,Dy-500,Dz-1300,D}-1499,K -2500,K--6600,KA-2500,KC-4600,"
+            + "KG-4600,KO-4600,KQ-4600,KT-3999,KV-3200,KW-2700,KX-3000,KY-3500,KZ-1199,Ka-1399,Kc-3999,Ke-3999,"
+            + "Kg-3999,Km-1399,Kn-1399,Ko-3999,Kp-1399,Kq-3999,Kr-1399,Ks-1399,Kt-3899,Ku-1399,Kv-4400,Kw-4400,"
+            + "Kx-4199,Ky-4400,Kz-899,L -4400,L\"-11999,L'-11999,L*-13600,L--5399,LA-10700,LC-8000,LG-8000,LO-80"
+            + "00,LQ-8000,LT-11000,LV-10099,LW-7400,LX-12200,LY-10899,LZ-7799,Lc-2599,Le-2599,Lg-2599,Lo-2599,L"
+            + "q-2599,Lr99,Lt-2599,Lv-6799,Lw-4900,Lx-6000,Ly-6799,Lz-3399,O -1199,O\"-3300,O'-3300,O)-1499,O*-8"
+            + "99,O,-2500,O.-2500,OA-2400,OJ-1999,OT-3000,OV-3200,OW-2400,OX-4600,OY-4100,OZ-1999,O]-1499,Ov-50"
+            + "0,Ox-2500,Oy-500,Oz-1300,O}-1499,P -3300,P,-10700,P--899,P.-10700,PA-6499,PC-800,PG-800,PO-800,P"
+            + "Q-800,PT-500,PV-899,PW-599,PX-4499,PY-2299,PZ-1399,Pa-2299,Pc-3000,Pe-3000,Pg-3000,Pm-2299,Pn-22"
+            + "99,Po-3000,Pp-2299,Pq-3000,Pr-2299,Ps-2299,Pu-2299,Px-3000,Pz-800,Q -1199,Q\"-3300,Q'-3300,Q)-149"
+            + "9,Q*-899,Q,-2500,Q.-2500,QA-2400,QJ-1999,QT-3000,QV-3200,QW-2400,QX-4600,QY-4100,QZ-1999,Q]-1499"
+            + ",Qv-500,Qx-2500,Qy-500,Qz-1300,Q}-1499,R\"-1799,R'-1799,R--3300,RA-3200,RC-2599,RG-2599,RO-2599,R"
+            + "Q-2599,RT-3699,RV-3999,RW-3300,RX-4799,RY-5000,RZ-1999,Rc-3999,Re-3999,Rg-3999,Ro-3999,Rq-3999,R"
+            + "t-1999,Rv-1600,Rw-1799,Rx-1999,Ry-1600,Rz-800,T -3300,T)1000,T*1699,T,-9400,T--10500,T.-9400,TA-"
+            + "6600,TC-3000,TG-3000,TO-3000,TQ-3000,TT1999,TV-3000,TW-2700,TX-3999,TY-6399,TZ-4199,T]1000,Ta-86"
+            + "00,Tc-10500,Te-10500,Tg-10500,Tm-8600,Tn-8600,To-10500,Tp-8600,Tq-10500,Tr-8600,Ts-8600,Tt-3699,"
+            + "Tu-8600,Tv-10500,Tw-10500,Tx-10500,Ty-10500,Tz-10500,T}1000,V -2500,V\"3300,V'3300,V*2899,V,-9400"
+            + ",V--4400,V.-9400,VA-5899,VC-3200,VG-3200,VO-3200,VQ-3200,VT-3000,VV-3200,VW-2700,VX-3200,VY-3800"
+            + ",VZ-3200,Va-4799,Vc-6300,Ve-6300,Vg-6300,Vm-4799,Vn-4799,Vo-6300,Vp-4799,Vq-6300,Vr-4799,Vs-4799"
+            + ",Vt-1799,Vu-4799,Vv-599,Vw-1499,Vx-3999,Vy-599,Vz-3899,W -2299,W\"3300,W'3300,W*2599,W,-7200,W--2"
+            + "599,W.-7200,WA-3800,WC-2400,WG-2400,WO-2400,WQ-2400,WT-2700,WV-2700,WW-3000,WX-2700,WY-3800,WZ-3"
+            + "000,Wa-4100,Wc-4499,We-4499,Wg-4499,Wm-4100,Wn-4100,Wo-4499,Wp-4100,Wq-4499,Wr-4100,Ws-4100,Wt-1"
+            + "199,Wu-4100,Wv-500,Ww-1499,Wx-3300,Wy-500,Wz-3600,X -2500,X--6600,XA-2500,XC-4600,XG-4600,XO-460"
+            + "0,XQ-4600,XT-3999,XV-3200,XW-2700,XX-3000,XY-3500,XZ-1199,Xa-1399,Xc-3999,Xe-3999,Xg-3999,Xm-139"
+            + "9,Xn-1399,Xo-3999,Xp-1399,Xq-3999,Xr-1399,Xs-1399,Xt-3899,Xu-1399,Xv-4400,Xw-4400,Xx-4199,Xy-440"
+            + "0,Xz-899,Y -2299,Y\"3000,Y'3000,Y*1999,Y,-9900,Y--5800,Y.-9900,YA-7599,YC-4100,YG-4100,YO-4100,YQ"
+            + "-4100,YT-6399,YV-3800,YW-2700,YX-3500,YY-3800,YZ-5099,Ya-5899,Yc-9100,Ye-9100,Yg-9100,Ym-5899,Yn"
+            + "-5899,Yo-9100,Yp-5899,Yq-9100,Yr-5899,Ys-5899,Yt-4400,Yu-5899,Yv-3999,Yw-3300,Yx-4900,Yy-3999,Yz"
+            + "-5899,Z -1199,Z--3999,ZA-2100,ZC-1999,ZG-1999,ZO-1999,ZQ-1999,ZT-1999,ZV-3200,ZW-2700,ZX-2100,ZY"
+            + "-5099,ZZ-599,Za-599,Zc-2700,Ze-2700,Zg-2700,Zm-599,Zn-599,Zo-2700,Zp-599,Zq-2700,Zr-599,Zs-599,Z"
+            + "t-500,Zu-599,Zz-800,[--3200,[A-1499,[C-1499,[G-1499,[O-1499,[Q-1499,[c-1499,[e-1499,[g-1499,[o-1"
+            + "499,[q-1499,[t-899,a\"-3800,a'-3800,aT-9900,b\"-6399,b'-6399,b)-1499,b*-1799,b,-899,b.-899,b]-1499"
+            + ",bf-1000,bv-1000,bw-700,bx-1999,by-1000,bz-500,b}-1499,c -1999,c\"-1999,c'-1999,c)-899,c--2899,c]"
+            + "-899,cc-1300,ce-1300,cg-1300,co-1300,cq-1300,cv-1499,cw-1499,cx-500,cy-1499,cz-500,c}-899,e\"-449"
+            + "9,e'-4499,e)-1199,e*-1999,e]-1199,ev-1000,ex-1600,ey-1000,e}-1199,f\"3399,f'3399,f)4900,f*3399,f,"
+            + "-1799,f.-1799,f]3000,fi-3199,fl-1799,ft-500,fv-1199,fw-899,fy-1199,f}3000,k -2500,k--2899,kc-100"
+            + "0,ke-1000,kg-1000,ko-1000,kq-1000,kv1699,kx-500,ky1699,nT-8999,o\"-6399,o'-6399,o)-1499,o*-1799,o"
+            + ",-899,o.-899,o]-1499,of-1000,ov-1000,ow-700,ox-1999,oy-1000,oz-500,o}-1499,p\"-6399,p'-6399,p)-14"
+            + "99,p*-1799,p,-899,p.-899,p]-1499,pf-1000,pv-1000,pw-700,px-1999,py-1000,pz-500,p}-1499,r,-5000,r"
+            + ".-5000,rt2500,t\"-899,t'-899,t)-899,t--899,t]-899,tt-599,tv-2100,tw-1499,tx-500,ty-2100,t}-899,v "
+            + "-3000,v*2299,v,-5899,v.-5899,vc-599,ve-599,vg-599,vo-599,vq-599,vt-1499,vv4299,vw3399,vx1300,vy4"
+            + "299,w -1999,w,-4299,w.-4299,wc-700,we-700,wg-700,wo-700,wq-700,wt-899,wv3399,ww2299,wy3399,wz-50"
+            + "0,x -2500,x--2899,xc-1999,xe-1999,xg-1999,xo-1999,xq-1999,xv1699,xx-500,xy1699,y -3000,y*2299,y,"
+            + "-5899,y.-5899,yc-599,ye-599,yg-599,yo-599,yq-599,yt-1499,yv4299,yw3399,yx1300,yy4299,z -2500,z\"-"
+            + "1199,z'-1199,z--3300,zc-500,ze-500,zg-500,zo-500,zq-500,zt-1199,{--3200,{A-1499,{C-1499,{G-1499,"
+            + "{O-1499,{Q-1499,{c-1499,{e-1499,{g-1499,{o-1499,{q-1499,{t-899,";
+    }
+    private static String PT_Serif_0_3_kerning() {
+        return " \"-3999, '-3999, *-3999, ,-3999, --3999, .-3999, V-2899,\" -3999,\",-5899,\"--6999,\".-5899,\"A-12500"
+            + ",\"a-2899,\"c-3999,\"e-3999,\"g-3999,\"m-2899,\"n-2899,\"o-3999,\"p-2899,\"q-3999,\"r-2899,\"s-2899,\"u-2899"
+            + ",\"z-2899,' -3999,',-5899,'--6999,'.-5899,'A-12500,'a-2899,'c-3999,'e-3999,'g-3999,'m-2899,'n-289"
+            + "9,'o-3999,'p-2899,'q-3999,'r-2899,'s-2899,'u-2899,'z-2899,(,-3000,(.-3000,* -3999,*,-6999,*--399"
+            + "9,*.-6999,*A-4900,, -3999,,\"-5899,,'-5899,,)-3000,,*-6999,,--6999,,T-4900,,V-8000,,W-6499,,Y-839"
+            + "9,,]-3000,,v-4100,,w-4100,,y-4100,,}-3000,- -3999,-\"-6999,-'-6999,-*-3999,-,-6999,-.-6999,-A-399"
+            + "9,-T-6300,-V-5500,-W-4799,-X-4799,-Y-5399,-Z-4700,-x-3099,. -3999,.\"-5899,.'-5899,.)-3000,.*-699"
+            + "9,.--6999,.T-4900,.V-8000,.W-6499,.Y-8399,.]-3000,.v-4100,.w-4100,.y-4100,.}-3000,7,-10000,7--50"
+            + "99,7.-10000,7A-6199,7C-3099,7G-3099,7O-3099,7Q-3099,7Z-3000,7a-5099,7c-5399,7e-5399,7g-5399,7m-5"
+            + "099,7n-5099,7o-5399,7p-5099,7q-5399,7r-5099,7s-5099,7t-4299,7u-5099,7v-3999,7w-3999,7x-5299,7y-3"
+            + "999,7z-5399,A\"-12500,A'-12500,A*-4900,A--3999,AC-5399,AG-5399,AO-5399,AQ-5399,AT-8099,AV-10299,A"
+            + "W-9100,AY-9100,Ac-3600,Ae-3600,Ag-3600,Ao-3600,Aq-3600,At-4799,Av-7200,Aw-5500,Ay-7200,CV-3000,C"
+            + "t-2899,Cv-2899,Cy-2899,DA-5399,DV-4100,DW-3200,DX-3300,DY-4100,FA-7400,K--4799,KC-3300,KG-3300,K"
+            + "O-3300,KQ-3300,Kc-4799,Ke-4799,Kg-4799,Ko-4799,Kq-4799,Kt-3999,Kv-5599,Kw-5500,Ky-5599,L\"-11999,"
+            + "L'-11999,L*-5399,LT-9600,LV-9799,LW-6300,LY-9299,Lv-4799,Lw-3099,Ly-4799,OA-5399,OV-4100,OW-3200"
+            + ",OX-3300,OY-4100,P,-12299,P.-12299,PA-7299,PW-3000,PX-4100,PY-3099,Pc-3000,Pe-3000,Pg-3000,Po-30"
+            + "00,Pq-3000,Pz-3000,QA-5399,QV-4100,QW-3200,QX-3300,QY-4100,R--3000,RC-3099,RG-3099,RO-3099,RQ-30"
+            + "99,RT-4900,RV-7299,RW-5599,RY-6199,Rv-3699,Rw-3099,Ry-3699,T,-4900,T--6300,T.-4900,TA-8099,Ta-30"
+            + "00,Tc-6300,Te-6300,Tg-6300,Tm-3000,Tn-3000,To-6300,Tp-3000,Tq-6300,Tr-3000,Ts-3000,Tu-3000,Tx-28"
+            + "99,Tz-4700,V -2899,V,-8000,V--5500,V.-8000,VA-10299,VC-3999,VG-3999,VO-3999,VQ-3999,Va-8099,Vc-9"
+            + "100,Ve-9100,Vg-9100,Vm-8099,Vn-8099,Vo-9100,Vp-8099,Vq-9100,Vr-8099,Vs-8099,Vt-5399,Vu-8099,Vv-4"
+            + "100,Vw-4100,Vx-6499,Vy-4100,Vz-6600,W,-6399,W--4799,W.-6399,WA-9100,WC-3200,WG-3200,WO-3200,WQ-3"
+            + "200,Wa-6499,Wc-6499,We-6499,Wg-6499,Wm-6499,Wn-6499,Wo-6499,Wp-6499,Wq-6499,Wr-6499,Ws-6499,Wt-4"
+            + "799,Wu-6499,Wv-5399,Ww-4799,Wx-6399,Wy-5399,Wz-7299,X--4799,XC-3300,XG-3300,XO-3300,XQ-3300,Xc-4"
+            + "799,Xe-4799,Xg-4799,Xo-4799,Xq-4799,Xt-3999,Xv-5599,Xw-5500,Xy-5599,Y,-8399,Y--5399,Y.-8399,YA-9"
+            + "100,YC-4100,YG-4100,YO-4100,YQ-4100,Ya-8099,Yc-9100,Ye-9100,Yg-9100,Ym-8099,Yn-8099,Yo-9100,Yp-8"
+            + "099,Yq-9100,Yr-8099,Ys-8099,Yt-6000,Yu-8099,Yv-5599,Yw-5000,Yx-7299,Yy-5599,Yz-9100,Z--3000,Zv-3"
+            + "099,Zy-3099,Zz-3000,[,-3000,[.-3000,aT-4799,b\"-3999,b'-3999,c\"-2899,c'-2899,e\"-3999,e'-3999,f\"36"
+            + "99,f'3699,f)8099,f*3699,f--3899,f]8099,fl3999,f}8099,k--3099,nT-3999,o\"-3999,o'-3999,p\"-3999,p'-"
+            + "3999,r,-3999,r--3899,r.-3999,t--3999,v,-4100,v.-4100,vv3000,vw3000,vy3000,w,-4100,w.-4100,wv3000"
+            + ",ww3000,wy3000,x--3099,y,-4100,y.-4100,yv3000,yw3000,yy3000,z\"-2899,z'-2899,{,-3000,{.-3000,";
+    }
+    private static String PT_Serif_1_3_kerning() {
+        return " \"-3999, '-3999, *-3999, ,-3999, --3999, .-3999, V-2899,\" -3999,\",-5899,\"--6999,\".-5899,\"A-12500"
+            + ",\"a-2500,\"c-2500,\"d-2500,\"e-2500,\"g-2500,\"o-2500,\"q-2500,' -3999,',-5899,'--6999,'.-5899,'A-1250"
+            + "0,'a-2500,'c-2500,'d-2500,'e-2500,'g-2500,'o-2500,'q-2500,(,-3000,(--3999,(.-3000,(a-3099,(c-309"
+            + "9,(d-3099,(e-3099,(g-3099,(o-3099,(q-3099,* -3999,*,-6999,*--3999,*.-6999,*A-4900,*i6100,*m5099,"
+            + "*n5099,*p5099,*r5099,*s5099,*t3800,*u5099,*v8099,*w6300,*x5099,*y8099,*z5099,, -3999,,\"-5899,,'-"
+            + "5899,,)-3000,,*-6999,,--6999,,T-5200,,V-8200,,W-6499,,Y-8399,,]-3000,,v-4600,,y-4600,,}-3000,- -"
+            + "3999,-\"-6999,-'-6999,-)-3999,-*-3999,-,-6999,-.-6999,-A-3999,-T-6300,-V-5599,-W-4799,-X-4799,-Y-"
+            + "5399,-Z-4700,-]-3999,-}-3999,. -3999,.\"-5899,.'-5899,.)-3000,.*-6999,.--6999,.T-5200,.V-8200,.W-"
+            + "6499,.Y-8399,.]-3000,.v-4600,.y-4600,.}-3000,7,-10500,7--5599,7.-10500,7A-6199,7C-3099,7G-3099,7"
+            + "O-3099,7Q-3099,7Z-3000,7a-6000,7c-6000,7d-6000,7e-6000,7g-6000,7o-6000,7q-6000,902899,992799,A\"-"
+            + "12500,A'-12500,A*-4900,A--3999,AC-5399,AG-5399,AO-5399,AQ-5399,AT-8099,AV-10299,AW-9199,AY-9299,"
+            + "Aa-2500,Ac-2500,Ad-2500,Ae-2500,Ag-2500,Ao-2500,Aq-2500,Av-7200,Aw-4900,Ay-7200,CV-3000,DA-5399,"
+            + "DV-4100,DW-3300,DX-3300,DY-4199,FA-6799,K--4799,KC-3399,KG-3399,KO-3399,KQ-3399,Kv-4199,Kw-4199,"
+            + "Ky-4199,L\"-11999,L'-11999,L*-5399,LT-9600,LV-9900,LW-6300,LY-9299,Lv-3999,Ly-3999,OA-5399,OV-410"
+            + "0,OW-3300,OX-3300,OY-4199,P,-12299,P.-12299,PA-7299,PW-3000,PX-4100,PY-3099,PZ-2500,Pv2599,Pw320"
+            + "0,Py2599,QA-5399,QV-4100,QW-3300,QX-3300,QY-4199,R--3000,RC-3099,RG-3099,RO-3099,RQ-3099,RT-4900"
+            + ",RV-7400,RW-5599,RY-6199,T,-4900,T--6300,T.-4900,TA-8099,Ta-3600,Tc-3600,Td-3600,Te-3600,Tg-3600"
+            + ",To-3600,Tq-3600,V -2899,V,-8000,V--5500,V.-8000,VA-10299,VC-3999,VG-3999,VO-3999,VQ-3999,Va-500"
+            + "0,Vc-5000,Vd-5000,Ve-5000,Vg-5000,Vm-4100,Vn-4100,Vo-5000,Vp-4100,Vq-5000,Vr-4100,Vs-4100,Vu-410"
+            + "0,Vx-3800,Vz-3300,W,-6399,W--4799,W.-6399,WA-9100,WC-3300,WG-3300,WO-3300,WQ-3300,Wa-3899,Wc-389"
+            + "9,Wd-3899,We-3899,Wg-3899,Wm-3200,Wn-3200,Wo-3899,Wp-3200,Wq-3899,Wr-3200,Ws-3200,Wu-3200,Wx-470"
+            + "0,Wz-3800,X--4799,XC-3399,XG-3399,XO-3399,XQ-3399,Xv-4199,Xw-4199,Xy-4199,Y,-8399,Y--5399,Y.-839"
+            + "9,YA-9100,YC-4100,YG-4100,YO-4100,YQ-4100,Ya-7400,Yc-7400,Yd-7400,Ye-7400,Yg-7400,Ym-4199,Yn-419"
+            + "9,Yo-7400,Yp-4199,Yq-7400,Yr-4199,Ys-4199,Yt-5399,Yu-4199,Yv-3600,Yw-4799,Yx-6199,Yy-3600,Yz-610"
+            + "0,Z--3000,ZW-2500,[,-3000,[--3999,[.-3000,[a-3099,[c-3099,[d-3099,[e-3099,[g-3099,[o-3099,[q-309"
+            + "9,aT-5299,b\"-7299,b'-7299,b)-3099,b]-3099,b}-3099,c\"-4900,c'-4900,c)-3000,c--2899,c]-3000,c}-300"
+            + "0,e\"-6399,e'-6399,f\"8399,f'8399,f)8500,f*5700,f]8500,fi4199,fl6000,fv3300,fw3300,fy3300,f}8500,g"
+            + "g2500,nT-8300,o\"-7299,o'-7299,o)-3099,o]-3099,o}-3099,p\"-7299,p'-7299,p)-3099,p]-3099,p}-3099,t-"
+            + "-3899,{,-3000,{--3999,{.-3000,{a-3099,{c-3099,{d-3099,{e-3099,{g-3099,{o-3099,{q-3099,";
+    }
+    private static String PT_Serif_0_6_kerning() {
+        return " \"-3999, '-3999, *-3500, ,-3500, --3500, .-3500,\" -3999,\",-4499,\"--5599,\".-4499,\"A-12500,\"c-3999"
+            + ",\"e-3999,\"g-3999,\"o-3999,\"q-3999,' -3999,',-4499,'--5599,'.-4499,'A-12500,'c-3999,'e-3999,'g-399"
+            + "9,'o-3999,'q-3999,* -3500,*,-5599,*--3999,*.-5599,*A-6000,, -3500,,\"-4499,,'-4499,,*-5599,,--509"
+            + "9,,T-5399,,V-8000,,W-7200,,Y-8200,,v-4700,,w-4700,,y-4700,- -3500,-\"-5599,-'-5599,-*-3999,-,-509"
+            + "9,-.-5099,-A-3999,-T-5200,-V-6699,-W-5099,-X-4400,-Y-5099,-Z-3899,-x-3500,. -3500,.\"-4499,.'-449"
+            + "9,.*-5599,.--5099,.T-5399,.V-8000,.W-7200,.Y-8200,.v-4700,.w-4700,.y-4700,7,-5299,7.-5299,7A-800"
+            + "0,7C-3500,7G-3500,7O-3500,7Q-3500,7c-5700,7e-5700,7g-5700,7o-5700,7q-5700,7v-3500,7w-3500,7x-470"
+            + "0,7y-3500,7z-5000,A\"-12500,A'-12500,A*-6000,A--3999,AC-5099,AG-5099,AO-5099,AQ-5099,AT-8999,AV-1"
+            + "3000,AW-9499,AY-10000,Ac-3600,Ae-3600,Ag-3600,Ao-3600,Aq-3600,At-4400,Av-7599,Aw-6300,Ay-7599,DA"
+            + "-5399,DV-5200,DX-4299,DY-5200,FA-9600,K--4400,KC-4299,KG-4299,KO-4299,KQ-4299,Kc-4400,Ke-4400,Kg"
+            + "-4400,Ko-4400,Kq-4400,Kt-4400,Kv-7700,Kw-5899,Ky-7700,L\"-11999,L'-11999,L*-5099,LT-9600,LV-11799"
+            + ",LW-8500,LY-11499,Lv-4799,Lw-3800,Ly-4799,OA-5399,OV-5200,OX-4299,OY-5200,P,-10299,P.-10299,PA-8"
+            + "600,PX-4700,PY-3500,QA-5399,QV-5200,QX-4299,QY-5200,RC-3899,RG-3899,RO-3899,RQ-3899,RT-6000,RV-8"
+            + "399,RW-7200,RY-8300,Rv-4499,Rw-3899,Ry-4499,T,-5399,T--5200,T.-5399,TA-8999,Tc-5500,Te-5500,Tg-5"
+            + "500,To-5500,Tq-5500,Tz-3899,V,-8000,V--6699,V.-8000,VA-13000,VC-4400,VG-4400,VO-4400,VQ-4400,Va-"
+            + "8800,Vc-10000,Ve-10000,Vg-10000,Vm-8800,Vn-8800,Vo-10000,Vp-8800,Vq-10000,Vr-8800,Vs-8800,Vt-570"
+            + "0,Vu-8800,Vv-5000,Vw-4700,Vx-7400,Vy-5000,Vz-8500,W,-6799,W--5099,W.-6799,WA-10000,Wa-6999,Wc-77"
+            + "00,We-7700,Wg-7700,Wm-6999,Wn-6999,Wo-7700,Wp-6999,Wq-7700,Wr-6999,Ws-6999,Wt-5099,Wu-6999,Wv-50"
+            + "00,Ww-4700,Wx-6199,Wy-5000,Wz-8099,X--4400,XC-4299,XG-4299,XO-4299,XQ-4299,Xc-4400,Xe-4400,Xg-44"
+            + "00,Xo-4400,Xq-4400,Xt-4400,Xv-7700,Xw-5899,Xy-7700,Y,-8200,Y--5099,Y.-8200,YA-10000,YC-5200,YG-5"
+            + "200,YO-5200,YQ-5200,Ya-8999,Yc-9799,Ye-9799,Yg-9799,Ym-8999,Yn-8999,Yo-9799,Yp-8999,Yq-9799,Yr-8"
+            + "999,Ys-8999,Yt-6199,Yu-8999,Yv-6900,Yw-6600,Yx-8600,Yy-6900,Yz-9799,Zv-3899,Zw-3300,Zy-3899,aT-4"
+            + "400,b\"-3999,b'-3999,e\"-3999,e'-3999,f\"5000,f'5000,f)9199,f*5000,f]9199,fl6000,f}9199,k--3500,nT-"
+            + "4400,o\"-3999,o'-3999,p\"-3999,p'-3999,r,-4299,r.-4299,t--3999,v,-4700,v.-4700,w,-4700,w.-4700,x--"
+            + "3500,y,-4700,y.-4700,";
+    }
+    private static String PT_Serif_1_6_kerning() {
+        return " \"-3999, '-3999, *-3500, ,-3500, --3500, .-3500,\" -3999,\",-4499,\"--5599,\".-4499,\"A-12500,' -3999"
+            + ",',-4499,'--5599,'.-4499,'A-12500,(--3999,(a-3500,(c-3500,(d-3500,(e-3500,(g-3500,(o-3500,(q-350"
+            + "0,* -3500,*,-5599,*--3999,*.-5599,*A-6000,*v5700,*w5200,*y5700,, -3500,,\"-4499,,'-4499,,*-5599,,"
+            + "--5099,,T-8399,,V-10299,,W-7200,,Y-8200,,v-5299,,y-5299,- -3500,-\"-5599,-'-5599,-)-3999,-*-3999,"
+            + "-,-5099,-.-5099,-A-3999,-T-5200,-V-7700,-W-5099,-X-4400,-Y-5099,-Z-3899,-]-3999,-}-3999,. -3500,"
+            + ".\"-4499,.'-4499,.*-5599,.--5099,.T-8399,.V-10299,.W-7200,.Y-8200,.v-5299,.y-5299,7,-10099,7--690"
+            + "0,7.-10099,7A-8000,7C-3500,7G-3500,7O-3500,7Q-3500,7a-6000,7c-6000,7d-6000,7e-6000,7g-6000,7o-60"
+            + "00,7q-6000,A\"-12500,A'-12500,A*-6000,A--3999,AC-5099,AG-5099,AO-5099,AQ-5099,AT-8999,AV-13000,AW"
+            + "-11300,AY-11999,Aa-3600,Ac-3600,Ad-3600,Ae-3600,Ag-3600,Ao-3600,Aq-3600,Av-7200,Aw-6000,Ay-7200,"
+            + "DA-5099,DV-5200,DW-4299,DX-4299,DY-6199,FA-3600,K--4400,KC-5399,KG-5399,KO-5399,KQ-5399,Ka-3300,"
+            + "Kc-3300,Kd-3300,Ke-3300,Kg-3300,Ko-3300,Kq-3300,Kv-6199,Kw-5599,Ky-6199,L\"-11999,L'-11999,L*-509"
+            + "9,LT-9600,LV-12799,LW-8999,LY-11499,Lv-3500,Ly-3500,OA-5099,OV-5200,OW-4299,OX-4299,OY-6199,P,-1"
+            + "0299,P.-10299,PA-8600,PX-4700,PY-3500,Pv4400,Pw4700,Py4400,QA-5099,QV-5200,QW-4299,QX-4299,QY-61"
+            + "99,RC-3899,RG-3899,RO-3899,RQ-3899,RT-6000,RV-9499,RW-7200,RY-8300,T,-5399,T--5200,T.-5399,TA-89"
+            + "99,Ta-3800,Tc-3800,Td-3800,Te-3800,Tg-3800,To-3800,Tq-3800,V,-8000,V--6699,V.-8000,VA-13000,VC-4"
+            + "400,VG-4400,VO-4400,VQ-4400,Va-6900,Vc-6900,Vd-6900,Ve-6900,Vg-6900,Vm-5200,Vn-5200,Vo-6900,Vp-5"
+            + "200,Vq-6900,Vr-5200,Vs-5200,Vu-5200,Vx-5800,Vz-5700,W,-6799,W--5099,W.-6799,WA-10000,WC-3999,WG-"
+            + "3999,WO-3999,WQ-3999,Wa-6600,Wc-6600,Wd-6600,We-6600,Wg-6600,Wm-4700,Wn-4700,Wo-6600,Wp-4700,Wq-"
+            + "6600,Wr-4700,Ws-4700,Wu-4700,Wx-6300,Wz-5399,X--4400,XC-5399,XG-5399,XO-5399,XQ-5399,Xa-3300,Xc-"
+            + "3300,Xd-3300,Xe-3300,Xg-3300,Xo-3300,Xq-3300,Xv-6199,Xw-5599,Xy-6199,Y,-8200,Y--5099,Y.-8200,YA-"
+            + "10000,YC-5200,YG-5200,YO-5200,YQ-5200,Ya-9600,Yc-9600,Yd-9600,Ye-9600,Yg-9600,Ym-5800,Yn-5800,Yo"
+            + "-9600,Yp-5800,Yq-9600,Yr-5800,Ys-5800,Yt-5700,Yu-5800,Yv-4100,Yw-4700,Yx-7799,Yy-4100,Yz-7200,[-"
+            + "-3999,[a-3500,[c-3500,[d-3500,[e-3500,[g-3500,[o-3500,[q-3500,aT-4700,b\"-8399,b'-8399,b)-3500,b]"
+            + "-3500,b}-3500,c\"-5599,c'-5599,c)-3300,c]-3300,c}-3300,e\"-6399,e'-6399,f\"8399,f'8399,f)9700,f*869"
+            + "9,f]9700,fi5899,fl6000,f}9700,gg3399,nT-6900,o\"-8399,o'-8399,o)-3500,o]-3500,o}-3500,p\"-8399,p'-"
+            + "8399,p)-3500,p]-3500,p}-3500,{--3999,{a-3500,{c-3500,{d-3500,{e-3500,{g-3500,{o-3500,{q-3500,";
+    }
+    private static String PT_Serif_Caption_0_3_kerning() {
+        return " \"-4499, '-4499, *-4400, ,-4400, --4400, .-4400, V-3200,\" -4499,\",-6499,\"--7799,\".-6499,\"A-14100"
+            + ",\"a-3200,\"c-4499,\"e-4499,\"g-4499,\"m-3200,\"n-3200,\"o-4499,\"p-3200,\"q-4499,\"r-3200,\"s-3200,\"u-3200"
+            + ",\"z-3200,' -4499,',-6499,'--7799,'.-6499,'A-14100,'a-3200,'c-4499,'e-4499,'g-4499,'m-3200,'n-320"
+            + "0,'o-4499,'p-3200,'q-4499,'r-3200,'s-3200,'u-3200,'z-3200,(,-3399,(.-3399,* -4400,*,-7799,*--449"
+            + "9,*.-7799,*A-5599,, -4400,,\"-6499,,'-6499,,)-3399,,*-7799,,--7799,,T-5500,,V-8999,,W-7299,,Y-940"
+            + "0,,]-3399,,v-4600,,w-4600,,y-4600,,}-3399,- -4400,-\"-7799,-'-7799,-*-4499,-,-7799,-.-7799,-A-449"
+            + "9,-T-6900,-V-6300,-W-5399,-X-5299,-Y-6000,-Z-5299,-x-3500,. -4400,.\"-6499,.'-6499,.)-3399,.*-779"
+            + "9,.--7799,.T-5500,.V-8999,.W-7299,.Y-9400,.]-3399,.v-4600,.w-4600,.y-4600,.}-3399,7,-10899,7--55"
+            + "99,7.-10899,7A-6999,7C-3500,7G-3500,7O-3500,7Q-3500,7Z-3399,7a-5599,7c-6000,7e-6000,7g-6000,7m-5"
+            + "599,7n-5599,7o-6000,7p-5599,7q-6000,7r-5599,7s-5599,7t-4600,7u-5599,7v-4400,7w-4400,7x-5899,7y-4"
+            + "400,7z-5899,A\"-13800,A'-13800,A*-5500,A--4400,AC-5899,AG-5899,AO-5899,AQ-5899,AT-8999,AV-11600,A"
+            + "W-10000,AY-10099,Ac-3999,Ae-3999,Ag-3999,Ao-3999,Aq-3999,At-5200,Av-8000,Aw-6100,Ay-8000,CV-3300"
+            + ",Ct-3200,Cv-3200,Cy-3200,DA-6000,DV-4700,DW-3600,DX-3800,DY-4700,K--5299,KC-3800,KG-3800,KO-3800"
+            + ",KQ-3800,Kc-5299,Ke-5299,Kg-5299,Ko-5299,Kq-5299,Kt-4600,Kv-6499,Kw-6199,Ky-6499,L\"-13500,L'-135"
+            + "00,L*-6000,LT-10800,LV-11199,LW-7100,LY-10500,Lv-5399,Lw-3500,Ly-5399,OA-6000,OV-4700,OW-3600,OX"
+            + "-3800,OY-4700,P,-13600,P.-13600,PA-8300,PW-3399,PX-4600,PY-3500,PZ-2899,Pc-3399,Pe-3399,Pg-3399,"
+            + "Po-3399,Pq-3399,Pz-3399,QA-6000,QV-4700,QW-3600,QX-3800,QY-4700,R--3399,RC-3500,RG-3500,RO-3500,"
+            + "RQ-3500,RT-5599,RV-8300,RW-6399,RY-7100,Rv-4199,Rw-3500,Ry-4199,T,-5500,T--6900,T.-5500,TA-9199,"
+            + "Ta-3399,Tc-6900,Te-6900,Tg-6900,Tm-3399,Tn-3399,To-6900,Tp-3399,Tq-6900,Tr-3399,Ts-3399,Tu-3399,"
+            + "Tx-3300,Tz-5299,V -3200,V,-8999,V--6300,V.-8999,VA-11799,VC-4600,VG-4600,VO-4600,VQ-4600,Va-9100"
+            + ",Vc-10299,Ve-10299,Vg-10299,Vm-9100,Vn-9100,Vo-10299,Vp-9100,Vq-10299,Vr-9100,Vs-9100,Vt-6000,Vu"
+            + "-9100,Vv-4700,Vw-4600,Vx-7400,Vy-4700,Vz-7500,W,-7299,W--5399,W.-7299,WA-10299,WC-3600,WG-3600,W"
+            + "O-3600,WQ-3600,WZ-2899,Wa-7299,Wc-7400,We-7400,Wg-7400,Wm-7299,Wn-7299,Wo-7400,Wp-7299,Wq-7400,W"
+            + "r-7299,Ws-7299,Wt-5399,Wu-7299,Wv-5899,Ww-5399,Wx-7100,Wy-5899,Wz-8200,X--5299,XC-3800,XG-3800,X"
+            + "O-3800,XQ-3800,Xc-5299,Xe-5299,Xg-5299,Xo-5299,Xq-5299,Xt-4600,Xv-6499,Xw-6199,Xy-6499,Y,-9400,Y"
+            + "--6000,Y.-9400,YA-10299,YC-4700,YG-4700,YO-4700,YQ-4700,Ya-9199,Yc-10200,Ye-10200,Yg-10200,Ym-91"
+            + "99,Yn-9199,Yo-10200,Yp-9199,Yq-10200,Yr-9199,Ys-9199,Yt-6699,Yu-9199,Yv-6300,Yw-5700,Yx-8300,Yy-"
+            + "6300,Yz-10200,Z--3399,Zt-2899,Zv-3500,Zy-3500,Zz-3399,[,-3399,[.-3399,aT-5299,b\"-4499,b'-4499,c\""
+            + "-3099,c'-3099,e\"-4499,e'-4499,f\"4299,f'4299,f)9199,f*4299,f--4400,f]9199,f}9199,k--3500,nT-4600,"
+            + "o\"-4499,o'-4499,p\"-4499,p'-4499,r,-4499,r--4299,r.-4499,t--4499,v,-4600,v.-4600,vv3399,vw3399,vy"
+            + "3399,w,-4600,w.-4600,wv3399,ww3399,wy3399,x--3500,y,-4600,y.-4600,yv3399,yw3399,yy3399,z\"-3099,z"
+            + "'-3099,{,-3399,{.-3399,";
+    }
+    private static String PT_Serif_Caption_1_3_kerning() {
+        return " \"-4400, '-4400, *-4299, ,-4299, --4299, .-4299, V-3099,\" -4400,\",-6399,\"--7599,\".-6399,\"A-13800"
+            + ",' -4400,',-6399,'--7599,'.-6399,'A-13800,(,-3300,(--4400,(.-3300,(a-3399,(c-3399,(d-3399,(e-339"
+            + "9,(g-3399,(o-3399,(q-3399,* -4299,*,-7599,*--4400,*.-7599,*A-5500,*i6499,*m5500,*n5500,*p5500,*r"
+            + "5500,*s5500,*t4100,*u5500,*v8800,*w6799,*x5500,*y8800,*z5500,, -4299,,\"-6399,,'-6399,,)-3300,,*-"
+            + "7599,,--7599,,T-5899,,V-9199,,W-7200,,Y-9199,,]-3300,,v-5099,,y-5099,,}-3300,- -4299,-\"-7599,-'-"
+            + "7599,-)-4400,-*-4400,-,-7599,-.-7599,-A-4400,-T-6799,-V-6399,-W-5299,-X-5200,-Y-5899,-Z-5200,-]-"
+            + "4400,-}-4400,. -4299,.\"-6399,.'-6399,.)-3300,.*-7599,.--7599,.T-5899,.V-9199,.W-7200,.Y-9199,.]-"
+            + "3300,.v-5099,.y-5099,.}-3300,7,-11399,7--6199,7.-11399,7A-6900,7C-3399,7G-3399,7O-3399,7Q-3399,7"
+            + "Z-3300,7a-6600,7c-6600,7d-6600,7e-6600,7g-6600,7o-6600,7q-6600,903200,993099,A\"-13800,A'-13800,A"
+            + "*-5500,A--4400,AC-5899,AG-5899,AO-5899,AQ-5899,AT-8999,AV-11600,AW-10299,AY-10500,Aa-2899,Ac-289"
+            + "9,Ad-2899,Ae-2899,Ag-2899,Ao-2899,Aq-2899,Av-7899,Aw-5500,Ay-7899,CV-3300,DA-5899,DV-4600,DW-369"
+            + "9,DX-3699,DY-4799,K--5200,KC-3899,KG-3899,KO-3899,KQ-3899,Kv-4799,Kw-4700,Ky-4799,L\"-13200,L'-13"
+            + "200,L*-5899,LT-10599,LV-11100,LW-7200,LY-10299,Lv-4299,Ly-4299,OA-5899,OV-4600,OW-3699,OX-3699,O"
+            + "Y-4799,P,-13300,P.-13300,PA-8099,PW-3300,PX-4499,PY-3399,Pv3000,Pw3600,Py3000,QA-5899,QV-4600,QW"
+            + "-3699,QX-3699,QY-4799,R--3300,RC-3399,RG-3399,RO-3399,RQ-3399,RT-5500,RV-8399,RW-6300,RY-6999,T,"
+            + "-5399,T--6799,T.-5399,TA-8999,Ta-3999,Tc-3999,Td-3999,Te-3999,Tg-3999,To-3999,Tq-3999,V -3099,V,"
+            + "-8800,V--6199,V.-8800,VA-11600,VC-4499,VG-4499,VO-4499,VQ-4499,Va-5599,Vc-5599,Vd-5599,Ve-5599,V"
+            + "g-5599,Vm-4600,Vn-4600,Vo-5599,Vp-4600,Vq-5599,Vr-4600,Vs-4600,Vu-4600,Vx-4400,Vz-3699,W,-7200,W"
+            + "--5299,W.-7200,WA-10099,WC-3600,WG-3600,WO-3600,WQ-3600,Wa-4499,Wc-4499,Wd-4499,We-4499,Wg-4499,"
+            + "Wm-3600,Wn-3600,Wo-4499,Wp-3600,Wq-4499,Wr-3600,Ws-3600,Wu-3600,Wx-5299,Wz-4299,X--5200,XC-3899,"
+            + "XG-3899,XO-3899,XQ-3899,Xv-4799,Xw-4700,Xy-4799,Y,-9199,Y--5899,Y.-9199,YA-10099,YC-4600,YG-4600"
+            + ",YO-4600,YQ-4600,Ya-8399,Yc-8399,Yd-8399,Ye-8399,Yg-8399,Ym-4700,Yn-4700,Yo-8399,Yp-4700,Yq-8399"
+            + ",Yr-4700,Ys-4700,Yt-5899,Yu-4700,Yv-4100,Yw-5299,Yx-6900,Yy-4100,Yz-6799,Z--3300,[,-3300,[--4400"
+            + ",[.-3300,[a-3399,[c-3399,[d-3399,[e-3399,[g-3399,[o-3399,[q-3399,aT-5800,b\"-8099,b'-8099,b)-3399"
+            + ",b]-3399,b}-3399,c\"-5399,c'-5399,c)-3300,c--3200,c]-3300,c}-3300,e\"-6999,e'-6999,f\"9199,f'9199,f"
+            + ")9499,f*6499,f]9499,fi4700,fv3500,fw3500,fy3500,f}9499,gg2899,nT-8999,o\"-8099,o'-8099,o)-3399,o]"
+            + "-3399,o}-3399,p\"-8099,p'-8099,p)-3399,p]-3399,p}-3399,t--4299,{,-3300,{--4400,{.-3300,{a-3399,{c"
+            + "-3399,{d-3399,{e-3399,{g-3399,{o-3399,{q-3399,";
+    }
+    private static String Rockwell_0_3_kerning() {
+        return "\"\"-6005,\"'-6005,\",-12988,\".-12988,\":-4003,\";-4003,\"A-12011,'\"-6005,''-6005,',-12988,'.-12988,':-"
+            + "4003,';-4003,'A-12011,(J8007,(j6005,*A-10986,,\"-14013,,'-14013,,C-4003,,G-4003,,O-4003,,Q-4003,,"
+            + "T-8007,,V-10009,,W-10009,,Y-8984,,v-8007,,w-6005,,y-10009,-A-4003,-T-4003,-V-8007,-W-6982,-X-698"
+            + "2,-Y-12011,-c4003,-d4003,-e4003,-g4003,-o4003,-q4003,.\"-14013,.'-14013,.C-4003,.G-4003,.O-4003,."
+            + "Q-4003,.T-8007,.V-10009,.W-10009,.Y-8984,.v-8007,.w-6005,.y-10009,:\"-4003,:'-4003,:V-8007,:W-800"
+            + "7,:Y-6982,;\"-4003,;'-4003,;V-8007,;W-8007,;Y-6982,A\"-12011,A'-12011,A*-10986,A--4003,AC-4980,AG-"
+            + "4980,AO-4980,AQ-4980,AT-8007,AU-4003,AV-9521,AW-9521,AX-6982,AY-10009,A\\-6005,Ac-4003,Ad-4003,Ae"
+            + "-4003,Ag-4003,Ao-4003,Ap-4003,Aq-4003,At-4003,Au-4003,Av-6982,Aw-4980,Ay-6005,BY-6005,C,-2978,C."
+            + "-2978,CA-2978,D,-4003,D.-4003,DA-4980,DV-4980,DW-4980,DX-4980,DY-6005,F,-12988,F.-12988,FA-7519,"
+            + "Fa-6005,Fc-8007,Fd-8007,Fe-8007,Fg-8007,Fm-2978,Fn-2978,Fo-8007,Fp-2001,Fq-8007,Fr-2978,Fs-6982,"
+            + "Fu-2001,Fx-4003,Fz-6005,G,-2978,GA-4003,GY-4003,Ja-4003,Jc-4003,Jd-4003,Je-4003,Jg-4003,Jo-4003,"
+            + "Jp-2978,Jq-4003,Jt-2001,Ju-2978,Jv-2001,Jw-2001,Jy-976,K--4003,KA-4003,KC-6005,KG-6005,KO-6005,K"
+            + "Q-6005,KV-4003,KW-4003,Kc-4003,Kd-4003,Ke-4003,Kg-4003,Ko-4003,Kp-4003,Kq-4003,Kt-2978,Ku-4003,K"
+            + "v-8007,Kw-6982,Ky-8007,L\"-6982,L'-6982,L-4003,LT-6982,LV-10986,LW-8007,LY-10986,Ls2001,Lv-4980,L"
+            + "w-4980,Ly-4980,O,-4003,O.-4003,OA-4980,OV-4980,OW-4980,OX-4980,OY-6005,P,-12011,P.-12011,PA-8984"
+            + ",PT2001,PX-4003,Pa-2978,Pb2978,Pv2001,Pw2001,Q,-4003,Q.-4003,QA-4980,QV-4980,QW-4980,QX-4980,QY-"
+            + "6005,RV-4980,RW-4980,RY-6982,Rc-2001,Rd-2001,Re-2001,Rg-2001,Ro-2001,Rq-2001,Ry-2001,SY-2978,St-"
+            + "4003,Sv-4003,Sw-4003,Sy-4003,T,-8007,T--4003,T.-8007,TA-8007,Ta-4980,Tc-4980,Td-4980,Te-4980,Tg-"
+            + "4980,To-4980,Tq-4980,Ts-4003,Tz-4003,UA-4003,V,-10009,V--8007,V.-10009,V/-6005,V:-8007,V;-8007,V"
+            + "A-9521,VC-4980,VG-4980,VO-4980,VQ-4980,Va-14013,Vc-10009,Vd-10009,Ve-10009,Vf-4980,Vg-10009,Vm-6"
+            + "982,Vn-6982,Vo-10009,Vp-6982,Vq-10009,Vr-6982,Vs-10986,Vt-4980,Vu-6005,Vv-4980,Vw-6982,Vx-8007,V"
+            + "y-6982,Vz-10009,W,-10009,W--6982,W.-10009,W/-6005,W:-8007,W;-8007,WA-9521,WC-4980,WG-4980,WO-498"
+            + "0,WQ-4980,Wa-10009,Wc-8007,Wd-8007,We-8007,Wf-4980,Wg-8007,Wm-6982,Wn-6982,Wo-8007,Wp-4003,Wq-80"
+            + "07,Wr-6982,Ws-6005,Wt-4003,Wu-6005,Ww-2978,Wx-4003,Wy-4003,Wz-8007,X--6982,XA-6982,XC-4980,XG-49"
+            + "80,XO-4980,XQ-4980,Xc-2978,Xd-2978,Xe-2978,Xg-2978,Xo-2978,Xp-4003,Xq-2978,Xt-4003,Xu-4003,Xv-80"
+            + "07,Xw-6982,Xy-10986,Y,-8984,Y--12011,Y.-8984,Y/-8007,Y:-6982,Y;-6982,YA-10009,YC-6005,YG-6005,YO"
+            + "-6005,YQ-6005,Ya-12011,Yc-10009,Yd-10009,Ye-10009,Yf-6005,Yg-10009,Ym-6982,Yn-6982,Yo-10009,Yp-8"
+            + "007,Yq-10009,Yr-6982,Ys-8984,Yt-6982,Yu-8007,Yv-4003,Yw-6982,Yx-4980,Yy-4980,Yz-6982,Zv-6005,Zw-"
+            + "4003,Zy-6005,[J8007,[j6005,\\V-6005,\\W-6005,\\Y-8007,av-2490,b-4003,bx-2978,by-2001,c-4003,e-4980,"
+            + "ey-2978,f!4980,f\"4980,f'4980,f)6982,f*6005,f?8007,f\\6982,f]6982,fb6005,fh6005,fi781,fj2001,fk600"
+            + "5,fl6005,f}6982,hY-6005,ha-1513,hv-2490,hw-2490,hy-2490,iv-2001,iw-1513,iy-2001,jv-2001,jw-2001,"
+            + "jy-2001,mY-6005,ma-1513,mv-2490,mw-2490,my-2490,nY-6005,na-1513,nv-2490,nw-2490,ny-2490,o-4003,o"
+            + "x-2978,oy-2001,p-4003,px-2978,py-2001,qj8984,rb-2978,rc-6005,rd-6005,re-6005,rg-6005,rh-2978,rk-"
+            + "2978,rl-2978,ro-6005,rq-6005,rs-4003,rv2001,rw2001,ry2001,rz-2490,sy-2978,uv-2001,uw-2001,uy-249"
+            + "0,v,-8007,v.-8007,va-2001,vz-2001,w,-6005,w.-6005,wa-2978,ws-2001,wz-2001,xc-2978,xd-2978,xe-297"
+            + "8,xg-2978,xo-2978,xq-2978,y,-10009,y.-10009,ya-2978,yc-2978,yd-2978,ye-2978,yg-2978,yo-2978,yq-2"
+            + "978,ys-4003,yz-2001,{J8007,{j6005,";
+    }
+    private static String Rockwell_1_3_kerning() {
+        return "\"\"-6005,\"'-6005,\",-12988,\".-12988,\":-4003,\";-4003,\"A-12011,'\"-6005,''-6005,',-12988,'.-12988,':-"
+            + "4003,';-4003,'A-12011,(J8007,(j6005,*A-10986,,\"-14013,,'-14013,,C-4003,,G-4003,,O-4003,,Q-4003,,"
+            + "T-8007,,V-10009,,W-10009,,Y-8984,,v-8007,,w-6005,,y-10009,-A-4003,-T-4003,-V-8007,-W-6982,-X-698"
+            + "2,-Y-12011,-c4003,-d4003,-e4003,-g4003,-o4003,-q4003,.\"-14013,.'-14013,.C-4003,.G-4003,.O-4003,."
+            + "Q-4003,.T-8007,.V-10009,.W-10009,.Y-8984,.v-8007,.w-6005,.y-10009,:\"-4003,:'-4003,:V-8007,:W-800"
+            + "7,:Y-6982,;\"-4003,;'-4003,;V-8007,;W-8007,;Y-6982,A\"-12011,A'-12011,A*-10986,A--4003,AC-4980,AG-"
+            + "4980,AO-4980,AQ-4980,AT-8007,AU-4003,AV-9521,AW-9521,AX-6982,AY-10009,A\\-6005,Ac-4003,Ad-4003,Ae"
+            + "-4003,Ag-4003,Ao-4003,Ap-4003,Aq-4003,At-4003,Au-4003,Av-6982,Aw-4980,Ay-6005,BY-6005,C,-2978,C."
+            + "-2978,CA-2978,D,-4003,D.-4003,DA-4980,DV-4980,DW-4980,DX-4980,DY-6005,F,-12988,F.-12988,FA-7519,"
+            + "Fa-6005,Fc-8007,Fd-8007,Fe-8007,Fg-8007,Fm-2978,Fn-2978,Fo-8007,Fp-2001,Fq-8007,Fr-2978,Fs-6982,"
+            + "Fu-2001,Fx-4003,Fz-6005,G,-2978,GA-4003,GY-4003,Ja-4003,Jc-4003,Jd-4003,Je-4003,Jg-4003,Jo-4003,"
+            + "Jp-2978,Jq-4003,Jt-2001,Ju-2978,Jv-2001,Jw-2001,Jy-976,K--4003,KA-4003,KC-6005,KG-6005,KO-6005,K"
+            + "Q-6005,KV-4003,KW-4003,Kc-2978,Kd-2978,Ke-2978,Kg-2978,Ko-2978,Kp-4003,Kq-2978,Kt-2978,Ku-4003,K"
+            + "v-8007,Kw-6982,Ky-8007,L\"-6982,L'-6982,L-4003,LT-6982,LV-10986,LW-8007,LY-10986,Ls2001,Lv-4980,L"
+            + "w-4980,Ly-4980,O,-4003,O.-4003,OA-4980,OV-4980,OW-4980,OX-4980,OY-6005,P,-12011,P.-12011,PA-8984"
+            + ",PT2001,PX-4003,Pa-2978,Pb2978,Pv2001,Pw2001,Q,-4003,Q.-4003,QA-4980,QV-4980,QW-4980,QX-4980,QY-"
+            + "6005,RV-4980,RW-4980,RY-6982,Rc-2001,Rd-2001,Re-2001,Rg-2001,Ro-2001,Rq-2001,Ry-2001,SY-2978,St-"
+            + "4003,Sv-4003,Sw-4003,Sy-4003,T,-8007,T--4003,T.-8007,TA-8007,Ta-4980,Tc-4980,Td-4980,Te-4980,Tg-"
+            + "4980,To-4980,Tq-4980,Ts-4003,Tz-4003,UA-4003,V,-10009,V--8007,V.-10009,V/-6005,V:-8007,V;-8007,V"
+            + "A-9521,VC-4980,VG-4980,VO-4980,VQ-4980,Va-14013,Vc-10009,Vd-10009,Ve-10009,Vf-4980,Vg-10009,Vm-6"
+            + "982,Vn-6982,Vo-10009,Vp-6982,Vq-10009,Vr-6982,Vs-10986,Vt-4980,Vu-6005,Vv-4980,Vw-6982,Vx-8007,V"
+            + "y-6982,Vz-10009,W,-10009,W--6982,W.-10009,W/-6005,W:-8007,W;-8007,WA-9521,WC-4980,WG-4980,WO-498"
+            + "0,WQ-4980,Wa-10009,Wc-8007,Wd-8007,We-8007,Wf-4980,Wg-8007,Wm-6982,Wn-6982,Wo-8007,Wp-4003,Wq-80"
+            + "07,Wr-6982,Ws-6005,Wt-4003,Wu-6005,Ww-2978,Wx-4003,Wy-4003,Wz-8007,X--6982,XA-6982,XC-4980,XG-49"
+            + "80,XO-4980,XQ-4980,Xc-6982,Xd-6982,Xe-6982,Xg-6982,Xo-6982,Xp-4003,Xq-6982,Xt-4003,Xu-4003,Xv-80"
+            + "07,Xw-6982,Xy-10986,Y,-8984,Y--12011,Y.-8984,Y/-8007,Y:-6982,Y;-6982,YA-10009,YC-3515,YG-3515,YO"
+            + "-3515,YQ-3515,Ya-12011,Yc-10009,Yd-10009,Ye-10009,Yf-6005,Yg-10009,Ym-6982,Yn-6982,Yo-10009,Yp-8"
+            + "007,Yq-10009,Yr-6982,Ys-8984,Yt-6982,Yu-8007,Yv-4003,Yw-6982,Yx-4980,Yy-4980,Yz-6982,Zv-6005,Zw-"
+            + "4003,Zy-6005,[J8007,[j6005,\\V-6005,\\W-6005,\\Y-8007,av-2490,b-4003,bx-2978,by-2001,bz2001,c-4003,"
+            + "ca-1513,e-4980,ey-2978,f!4980,f\"4980,f'4980,f)6982,f*6005,f?8007,f\\6982,f]6982,fa-2001,fb6005,fh"
+            + "6005,fi-1220,fj2001,fk6005,fl6005,f}6982,hY-6005,ha-1513,hp-1513,ht-2001,hu-1513,hv-2490,hw-2490"
+            + ",hy-2490,it-2001,iv-2001,iw-1513,iy-2001,jv-2001,jw-2001,jy-2001,mY-6005,ma-1513,mp-1513,mt-2001"
+            + ",mu-1513,mv-2490,mw-2490,my-2490,nY-6005,na-1513,np-1513,nt-2001,nu-1513,nv-2490,nw-2490,ny-2490"
+            + ",o-4003,ox-2978,oy-2001,oz2001,p-4003,px-2978,py-2001,pz2001,qj8984,ra-4003,rb-2978,rc-3515,rd-3"
+            + "515,re-3515,rg-3515,rh-2978,rk-2978,rl-2978,ro-3515,rq-3515,rs-4003,rv2001,rw2001,ry2001,rz-2490"
+            + ",tp-976,tu-976,ut-2001,uv-2001,uw-2001,uy-2490,v,-8007,v.-8007,va-2001,vz-2001,w,-6005,w.-6005,w"
+            + "a-2978,ws-2001,wz-2001,xa-2490,xc-2978,xd-2978,xe-2978,xg-2978,xo-2978,xq-2978,y,-10009,y.-10009"
+            + ",ya-2978,yz-2001,zc2490,zd2490,ze2490,zg2490,zo2490,zq2490,{J8007,{j6005,";
+    }
+    private static String Rockwell_0_6_kerning() {
+        return " T-4296, V-8691, W-8691, Y-10791,(Y2978,(j2978,, -8691,,C-6005,,G-6005,,O-6005,,Q-6005,,T-8007,,"
+            + "U-6005,,V-12011,,W-12011,,Y-10009,,c-4003,,d-4003,,e-4003,,g-4003,,o-4003,,p-2978,,q-4003,,t-400"
+            + "3,,u-2978,,v-8007,,w-8007,,y-10009,-T-10009,-V-6005,-W-6005,-Y-10986,. -8691,.C-6005,.G-6005,.O-"
+            + "6005,.Q-6005,.T-8007,.U-6005,.V-10986,.W-10986,.Y-10009,.c-4003,.d-4003,.e-4003,.g-4003,.o-4003,"
+            + ".p-2978,.q-4003,.t-4003,.u-2978,.v-8007,.w-8007,.y-10009,: -8691,:V-6982,:W-6982,:Y-2978,; -8691"
+            + ",;V-6982,;W-6982,;Y-2978,A?-4003,AC-4296,AG-4296,AJ-4003,AO-4296,AQ-4296,AT-7324,AU-6005,AV-8789"
+            + ",AW-8789,AY-6494,Aa-1220,Ac-2197,Ad-2197,Ae-2197,Ag-2197,Ao-2197,Ap-3320,Aq-2197,At-3320,Au-4296"
+            + ",Av-9814,Aw-6494,Ay-7617,B,-2978,B.-2978,B?-2978,BA-3320,BB-2001,BD-2001,BE-1123,BH-2001,BI-2001"
+            + ",BJ-2197,BK-2001,BL-2001,BM-2001,BN-2001,BP-2001,BR-2001,BU-2197,BV-4296,BW-4296,BX-2197,BY-5419"
+            + ",By-3320,C,-4003,C.-4003,CA-4882,CC-1123,CG-1123,CO-1123,CQ-1123,CX-2197,CY-1123,Cp-3320,Cu-3320"
+            + ",D,-6005,D.-6005,DA-4296,DB-3320,DD-2197,DE-4296,DF-2685,DH-3320,DI-3320,DJ-4687,DK-3320,DL-3320"
+            + ",DM-3320,DN-3320,DP-3320,DR-3320,DT-2978,DU-2685,DV-7617,DW-7617,DX-5517,DY-6982,DZ-2197,F,-1918"
+            + "9,F.-19189,F:-6982,F;-6982,FA-9814,FC-3515,FG-3515,FO-3515,FQ-3515,FZ-2001,Fa-8691,Fc-10986,Fd-5"
+            + "419,Fe-10986,Ff-4003,Fg-10986,Fi-2490,Fj-2490,Fm-2490,Fn-2490,Fo-10986,Fp-2001,Fq-10986,Fr-2490,"
+            + "Fs-4003,Ft-2001,Fu-2001,Fy-2001,Fz-2978,G,-6494,G.-6494,GA-5419,GB-2197,GD-2197,GE-2197,GH-2197,"
+            + "GI-2197,GJ-2685,GK-2197,GL-2197,GM-2197,GN-2197,GP-2197,GR-2197,GT-2001,GU-2197,GV-2197,GW-2197,"
+            + "GX-3320,GY-2197,HC-3320,HG-2685,HO-2685,HQ-2685,HS-1513,Hc-2197,Hd-2197,He-2197,Hg-2197,Ho-2197,"
+            + "Hq-2197,Hv-4296,Hy-4296,IC-2685,IG-2685,IO-2685,IQ-2685,IS-1513,Ic-2197,Id-2197,Ie-2197,Ig-2197,"
+            + "Io-2197,Iq-2197,Iv-4296,Iy-4296,J,-3320,J.-3320,JA-3320,JC-2685,JG-2685,JO-2685,JQ-2685,JS-2001,"
+            + "Ja-3808,Jc-4296,Jd-4296,Je-4296,Jf-2978,Jg-4296,Ji-2001,Jm-2978,Jn-2978,Jo-4296,Jp-1611,Jq-4296,"
+            + "Jr-2978,Js-2978,Jt-4003,Ju-1611,Jz-2001,KC-4296,KG-4296,KO-5419,KQ-5419,Kc-2197,Kd-2197,Ke-2685,"
+            + "Kg-2197,Ko-2197,Kp-3320,Kq-2197,Kt-2978,Ku-3320,Kv-6494,Kw-6494,Ky-8691,LD2978,LT-4980,LU-2001,L"
+            + "V-8105,LW-8105,LY-10107,Lc2001,Ld2001,Le2001,Lg2001,Lm1513,Ln1513,Lo2001,Lq2001,Lr1513,Ls2001,Lv"
+            + "-3320,Lw-2197,Ly-3320,Lz2001,MC-2685,MG-2685,MO-2685,MQ-2685,MS-1513,Ma-2197,Mc-3320,Md-3320,Me-"
+            + "3320,Mg-2197,Mo-2197,Mp-2197,Mq-2197,Mu-3320,Mv-3320,Mw-3320,My-2197,N,-6005,N.-6005,NA-4003,NC-"
+            + "3320,NG-4296,NO-4296,NQ-4296,NS-1513,Na-4296,Nc-4296,Nd-4296,Ne-4296,Ng-4296,No-5419,Np-4296,Nq-"
+            + "5419,Ns-3320,Nt-2197,Nu-4296,Nv-4296,Nw-4296,Nx-3320,Ny-4296,Nz-4296,O,-6005,O.-6005,OA-4296,OB-"
+            + "3320,OD-2197,OE-2197,OF-2685,OH-2685,OI-2685,OJ-4687,OK-2685,OL-2685,OM-2685,ON-2685,OP-2685,OR-"
+            + "2685,OT-2978,OU-2685,OV-7617,OW-7617,OX-5517,OY-6982,OZ-2197,P,-14990,P.-14990,PA-7519,PB-976,PD"
+            + "-976,PE-976,PH-976,PI-976,PJ-2001,PK-976,PL-976,PM-976,PN-976,PP-976,PR-976,PU-1513,PX-2001,PZ-2"
+            + "001,Pa-2197,Pc-3320,Pd-3320,Pe-3320,Pg-3320,Po-3320,Pq-3320,Q,-6005,Q.-6005,QA-4296,QB-3320,QD-2"
+            + "197,QE-2197,QF-2685,QH-2685,QI-2685,QJ-4687,QK-2685,QL-2685,QM-2685,QN-2685,QP-2685,QR-2685,QT-2"
+            + "978,QU-3320,QV-7617,QW-7617,QX-5517,QY-6982,QZ-2197,RA-2978,RC-4296,RG-4296,RJ-2978,RO-4296,RQ-4"
+            + "296,RT-3320,RU-4296,RV-6494,RW-6494,RY-6494,Rc-2197,Rd-2197,Re-2197,Rg-2197,Rj-2197,Ro-2197,Rp-2"
+            + "197,Rq-2197,Rt-3320,Ru-3320,Rv-4296,Rw-4296,Ry-4296,Rz1513,S,-2490,S.-2490,SA-2197,SB-2001,SD-20"
+            + "01,SE-2001,SH-2001,SI-2001,SJ-2978,SK-2001,SL-2001,SM-2001,SN-2001,SP-2001,SR-2001,ST-2001,SU-20"
+            + "01,SV-2197,SW-2197,SY-2001,SZ-2001,Sf-2001,Si-2001,Sj-2001,Sm-2001,Sn-2001,Sp-2001,Sr-2001,St-33"
+            + "20,Su-2001,Sv-3320,Sw-3320,Sy-3320,Sz-2001,T,-8007,T--10009,T.-8007,TA-7324,TC-2978,TG-2978,TO-2"
+            + "978,TQ-2978,TZ-2001,Ta-4492,Tc-6494,Td-6494,Te-6494,Tf-2001,Tg-6494,Ti-2001,Tj-2001,Tm-2490,Tn-2"
+            + "490,To-6494,Tq-4296,Tr-2490,Ts-2001,Tt-1513,Tz-4003,U,-6005,U.-6005,UA-6005,UC-2685,UG-2685,UO-2"
+            + "685,UQ-2685,US-2001,Ua-4296,Uc-4296,Ud-4296,Ue-4296,Ug-4296,Uo-4296,Up-4296,Uq-4296,Us-4296,Uu-4"
+            + "296,Uv-3320,Uw-3320,Ux-3320,Uy-3320,Uz-3320,V,-14013,V--6005,V.-14013,V:-3808,V;-3808,VA-8398,VC"
+            + "-5419,VG-5419,VO-5419,VQ-5419,VS-1123,VZ-2001,Va-9814,Vc-9814,Vd-9814,Ve-9814,Vf-6982,Vg-9814,Vi"
+            + "-5517,Vm-5419,Vn-6494,Vo-9814,Vp-5419,Vq-10791,Vr-6494,Vs-7617,Vt-4296,Vu-6005,Vv-5419,Vw-6494,V"
+            + "x-6494,Vy-5419,Vz-7617,W,-14013,W--6005,W.-14013,W:-3808,W;-3808,WA-8398,WC-5419,WG-5419,WO-5419"
+            + ",WQ-5419,WS-1123,WZ-2001,Wa-9814,Wc-9814,Wd-9814,We-9814,Wf-6982,Wg-9814,Wi-5517,Wm-6494,Wn-6494"
+            + ",Wo-9814,Wp-5419,Wq-10791,Wr-6494,Ws-7617,Wt-4296,Wu-6005,Wv-5419,Ww-5419,Wx-6494,Wy-5419,Wz-761"
+            + "7,XC-5517,XG-5517,XO-5517,XQ-5517,Xc-3320,Xd-3320,Xe-3320,Xg-3320,Xo-3320,Xp-4296,Xq-3320,Xt-429"
+            + "6,Xu-4296,Xv-6494,Xw-6494,Xy-4296,Y)2978,Y,-10009,Y--10986,Y.-10009,Y:-2978,Y;-2978,YA-5419,YC-6"
+            + "982,YG-6982,YO-6982,YQ-6982,YS-1123,Y]2978,Ya-13623,Yc-12988,Yd-12988,Ye-12988,Yf-4296,Yg-12988,"
+            + "Yi-4296,Yj-4199,Ym-8007,Yn-8007,Yo-12988,Yp-8691,Yq-12988,Yr-8007,Ys-9521,Yt-5419,Yu-8691,Yv-761"
+            + "7,Yw-9619,Yx-6494,Yy-6494,Yz-10009,Y}2978,ZC-1123,ZG-1123,ZO-1123,ZQ-1123,ZS-1416,ZT-2001,ZV-200"
+            + "1,ZW-2001,[Y2978,[j2978,a?-6005,ac-2197,ad-3320,ag-3320,ap-2197,aq-2197,av-6494,b,-4003,b.-4003,"
+            + "b?-6005,bb-2197,bf-2001,bh-2197,bi-2197,bj-2197,bk-2197,bl-2197,bm-1513,bn-1513,bp-2197,br-1513,"
+            + "bt-2197,bu-3320,bv-4296,bw-4882,bx-3320,by-5419,bz-2197,c,-2001,c.-2001,c?-2978,dc-1123,dd-1123,"
+            + "de-1123,dg-1123,do-1123,dq-1123,dv-2197,dw-1123,dy-3808,e,-2001,e.-2001,e?-4980,eb-1611,ef-1123,"
+            + "ei-2197,ek-2197,em-1123,en-1123,ep-1513,er-1123,ev-3808,ew-3320,ex-1123,ey-4296,f?6005,fc-3417,f"
+            + "d-5419,fe-3417,ff1123,fg-3417,fi-8496,fl1123,fo-3417,fq-3417,ft-2978,g,-4296,g.-4296,ga-1611,gc-"
+            + "2197,gd-2197,ge-2197,gg-1123,gh-1123,gl-3320,go-2197,gq-2197,h?-6005,ha-2197,hc-1123,hd-1123,he-"
+            + "1513,hg-1123,ho-1513,hp-2197,hq-2197,ht-4296,hu-2197,hv-6005,hw-6591,hy-5419,ic-1123,id-2197,ie-"
+            + "2197,ig-2197,io-1123,ip-3320,iq-1123,it-4980,iu-3320,iv-5419,iw-5419,iy-4296,ja-2197,jt-1513,jz-"
+            + "2197,kc-3320,kd-2197,ke-3320,kg-3320,ko-3320,kq-3320,kt-2001,ky-1123,la-2197,lc-2197,ld-2197,le-"
+            + "2197,lg-3320,lo-2197,lp-3320,lq-2197,lt-3320,lv-3320,lw-1611,ly-2197,m?-6005,ma-2197,mc-1513,md-"
+            + "2197,me-1513,mg-1513,mj-4296,mo-1513,mp-2197,mq-2197,mt-4296,mu-4296,mv-6005,mw-6591,my-5419,n?-"
+            + "6005,na-2197,nc-1513,nd-1513,ne-1513,ng-1513,no-1513,np-2197,nq-2197,nt-4296,nu-4296,nv-6005,nw-"
+            + "6591,ny-5419,o,-4003,o.-4003,o?-6005,ob-2197,of-2001,oh-2197,oi-2197,oj-2197,ok-2197,ol-2197,om-"
+            + "1513,on-1513,op-1513,or-1513,ot-2197,ou-2197,ov-4296,ow-4882,ox-3320,oy-5419,oz-2197,p,-4003,p.-"
+            + "4003,p?-6005,pb-2197,pf-2001,ph-2197,pi-2197,pj-2197,pk-2197,pl-2197,pm-1513,pn-1513,pp-1513,pr-"
+            + "1513,pt-2197,pu-2197,pv-4296,pw-4882,px-3320,py-5419,pz-2197,qa-1123,qc-1123,qd-2197,qe-2197,qg-"
+            + "1123,qh-3320,qk-3320,ql-3320,qo-1123,qq-2197,r,-6494,r.-6494,ra-1611,rb-2197,rc-4296,rd-1611,re-"
+            + "1123,rg-3515,rh-3320,rk-4296,rl-2197,ro-3515,rp1611,rq-3515,rs-1123,rt1611,ru1611,rv1611,sb-2197"
+            + ",sh-2197,sp-1513,st-1123,su-1513,sv-1123,sw-2197,sz-1123,tc-1123,td-1123,te-1123,tf-2001,tg-1123"
+            + ",to-1123,tq-2197,u?-4980,uc-1513,ud-1513,ue-2197,ug-2197,uo-1513,up-2197,uq-2197,ut-2197,uv-5419"
+            + ",uw-5419,uy-5419,v,-8789,v.-8789,va-1611,vb-4296,vc-3320,vd-3808,ve-2685,vg-3808,vh-5419,vk-4882"
+            + ",vl-3320,vo-3808,vq-4296,vs-1123,w,-8691,w.-8691,wa-2685,wc-3808,wd-3808,we-3808,wg-3808,wh-3320"
+            + ",wk-4296,wl-1513,wo-3808,wq-3808,xc-3320,xd-3320,xe-3320,xg-3320,xo-3320,xq-3320,y,-10986,y.-109"
+            + "86,ya-2197,yb-2197,yc-3320,yd-3320,ye-3320,yg-3320,yh-4296,yk-3320,yl-2197,yo-3320,yq-3320,yz-20"
+            + "01,ze-1123,{Y2978,{j2978,";
+    }
+    private static String Rockwell_1_6_kerning() {
+        return " T-4296, V-8691, W-8691, Y-10791,(Y2978,(j2978,, -8691,,C-6005,,G-6005,,O-6005,,Q-6005,,T-8007,,"
+            + "U-6005,,V-12011,,W-12011,,Y-10009,,c-4003,,d-4003,,e-4003,,g-4003,,o-4003,,p-2978,,q-4003,,t-400"
+            + "3,,u-2978,,v-8007,,w-8007,,y-10009,-T-10009,-V-6005,-W-6005,-Y-10986,. -8691,.C-6005,.G-6005,.O-"
+            + "6005,.Q-6005,.T-8007,.U-6005,.V-10986,.W-10986,.Y-10009,.c-4003,.d-4003,.e-4003,.g-4003,.o-4003,"
+            + ".p-2978,.q-4003,.t-4003,.u-2978,.v-8007,.w-8007,.y-10009,: -8691,:V-6982,:W-6982,:Y-2978,; -8691"
+            + ",;V-6982,;W-6982,;Y-2978,A?-4003,AC-4296,AG-4296,AJ-4003,AO-4296,AQ-4296,AT-7324,AU-6005,AV-8789"
+            + ",AW-8789,AY-6494,Aa-1220,Ap-3320,At-3320,Au-2001,Av-2001,Aw-2001,Ay-2001,Az1513,B,-2978,B.-2978,"
+            + "B?-2978,BA-1513,BB-2001,BD-2001,BE-1123,BH-2001,BI-2001,BJ-2197,BK-2001,BL-2001,BM-2001,BN-2001,"
+            + "BP-2001,BR-2001,BU-2197,BV-4296,BW-4296,BX-2197,BY-5419,C,-4003,C.-4003,CA-1513,CC-1123,CG-1123,"
+            + "CO-1123,CQ-1123,CX-2197,CY-1123,D,-6005,D.-6005,DA-3320,DB-3320,DD-2197,DE-4296,DF-2685,DH-2685,"
+            + "DI-2685,DJ-2978,DK-2685,DL-2685,DM-2685,DN-2685,DP-2685,DR-2685,DS-2978,DT-2978,DU-2685,DV-7617,"
+            + "DW-7617,DX-5517,DY-6982,DZ-2197,F,-19189,F.-19189,F:-6982,F;-6982,FA-9814,FC-3515,FG-3515,FO-351"
+            + "5,FQ-3515,FZ-2001,Fa-8691,Fc-10986,Fd-10986,Fe-10986,Ff-4003,Fg-10986,Fi-2490,Fj-2490,Fm-2490,Fn"
+            + "-2490,Fo-10986,Fp-2001,Fq-10986,Fr-2490,Fs-4003,Ft-2001,Fu-2001,Fy-2001,Fz-2978,G,-6494,G.-6494,"
+            + "GA-2001,GB-2197,GD-2197,GE-2197,GH-2197,GI-2197,GJ-2685,GK-2197,GL-2197,GM-2197,GN-2197,GP-2197,"
+            + "GR-2197,GT-2001,GU-2197,GV-2197,GW-2197,GX-3320,GY-2197,HC-2685,HG-2685,HO-2685,HQ-2685,HS-1513,"
+            + "Hc-2197,Hd-2197,He-2197,Hg-2197,Ho-2197,Hq-2197,Hv-4296,Hy-4296,IC-2685,IG-2685,IO-2685,IQ-2685,"
+            + "IS-1513,Ic-2197,Id-2197,Ie-2197,Ig-2197,Io-2197,Iq-2197,Iv-4296,Iy-4296,J,-3320,J.-3320,JA-3320,"
+            + "JC-2685,JG-2685,JO-2685,JQ-2685,JS-2001,Ja-3808,Jc-4296,Jd-4296,Je-4296,Jf-2978,Jg-4296,Ji-2001,"
+            + "Jm-2978,Jn-2978,Jo-4296,Jp-1611,Jq-4296,Jr-2978,Js-2978,Jt-4003,Ju-1611,Jz-2001,KC-4296,KG-4296,"
+            + "KO-5419,KQ-5419,Kc-2197,Kd-2197,Ke-2197,Kg-2197,Ko-2197,Kp-3320,Kq-2197,Kt-2978,Ku-3320,Kv-6494,"
+            + "Kw-6494,Ky-8691,LT-4980,LU-2001,LV-8105,LW-8105,LY-10107,Lc2001,Ld2001,Le2001,Lg2001,Lm1513,Ln15"
+            + "13,Lo2001,Lq2001,Lr1513,Ls2001,Lv-3320,Lw-2197,Ly-3320,Lz2001,MC-2685,MG-2685,MO-2685,MQ-2685,MS"
+            + "-1513,Ma-2197,Mc-2197,Md-2197,Me-2197,Mg-2197,Mo-2197,Mp-2197,Mq-2197,Mu-3320,Mv-3320,Mw-3320,My"
+            + "-2197,N,-6005,N.-6005,NA-2978,NC-4296,NG-4296,NO-4296,NQ-4296,NS-1513,Na-4296,Nc-5419,Nd-5419,Ne"
+            + "-5419,Ng-5419,No-5419,Np-4296,Nq-5419,Ns-3320,Nt-2197,Nu-4296,Nv-4296,Nw-4296,Nx-3320,Ny-4296,Nz"
+            + "-4296,O,-6005,O.-6005,OA-3320,OB-3320,OD-2197,OE-2197,OF-2685,OH-2685,OI-2685,OJ-4687,OK-2685,OL"
+            + "-2685,OM-2685,ON-2685,OP-2685,OR-2685,OS-2978,OT-2978,OU-2685,OV-7617,OW-7617,OX-5517,OY-6982,OZ"
+            + "-2197,P,-14990,P.-14990,PA-7519,PB-976,PD-976,PE-976,PH-976,PI-976,PJ-2001,PK-976,PL-976,PM-976,"
+            + "PN-976,PP-976,PR-976,PU-1513,PX-2001,PZ-2001,Pa-2197,Pc-3320,Pd-3320,Pe-3320,Pg-3320,Po-3320,Pq-"
+            + "3320,Pv4003,Pw4003,Py4003,Q,-6005,Q.-6005,QA-3320,QB-3320,QD-2197,QE-2197,QF-2685,QH-2685,QI-268"
+            + "5,QJ-4687,QK-2685,QL-2685,QM-2685,QN-2685,QP-2685,QR-2685,QS-2978,QT-2978,QU-3320,QV-7617,QW-761"
+            + "7,QX-5517,QY-6982,QZ-2197,RA-2978,RC-4296,RG-4296,RJ-2978,RO-4296,RQ-4296,RT-3320,RU-4296,RV-649"
+            + "4,RW-6494,RY-6494,Rc-2197,Rd-2197,Re-2197,Rg-2197,Rj-2197,Ro-2197,Rp-2197,Rq-2197,Rt-3320,Ru-332"
+            + "0,Rz1513,S,-2490,S.-2490,SB-2001,SC-2001,SD-2001,SE-2001,SG-2001,SH-2001,SI-2001,SJ-2978,SK-2001"
+            + ",SL-2001,SM-2001,SN-2001,SO-2001,SP-2001,SQ-2001,SR-2001,ST-2001,SU-2001,SV-2197,SW-2197,SY-2001"
+            + ",SZ-2001,Sf-2001,Si-2001,Sj-2001,Sm-2001,Sn-2001,Sp-2001,Sr-2001,St-3320,Su-2001,Sv-3320,Sw-3320"
+            + ",Sy-3320,Sz-2001,T,-8007,T--10009,T.-8007,TA-7324,TC-2978,TG-2978,TO-2978,TQ-2978,TZ-2001,Ta-449"
+            + "2,Tc-6494,Td-6494,Te-6494,Tf-2001,Tg-6494,Ti-2001,Tj-2001,Tm-2490,Tn-2490,To-6494,Tq-4296,Tr-249"
+            + "0,Ts-2001,Tt-1513,Tz-4003,U,-6005,U.-6005,UA-6005,UC-2685,UG-2685,UO-2685,UQ-2685,US-2001,Ua-429"
+            + "6,Uc-4296,Ud-4296,Ue-4296,Ug-4296,Uo-4296,Up-4296,Uq-4296,Us-4296,Uu-4296,Uv-3320,Uw-3320,Ux-332"
+            + "0,Uy-3320,Uz-3320,V,-14013,V--6005,V.-14013,V:-3808,V;-3808,VA-8398,VC-5419,VG-5419,VO-5419,VQ-5"
+            + "419,VS-1123,VZ-2001,Va-9814,Vc-9814,Vd-9814,Ve-9814,Vf-6982,Vg-9814,Vi-5517,Vm-6494,Vn-6494,Vo-9"
+            + "814,Vp-5419,Vq-10791,Vr-6494,Vs-7617,Vt-4296,Vu-6005,Vv-5419,Vw-6494,Vx-6494,Vy-5419,Vz-7617,W,-"
+            + "14013,W--6005,W.-14013,W:-3808,W;-3808,WA-8398,WC-5419,WG-5419,WO-5419,WQ-5419,WS-1123,WZ-2001,W"
+            + "a-9814,Wc-9814,Wd-9814,We-9814,Wf-6982,Wg-9814,Wi-5517,Wm-6494,Wn-6494,Wo-9814,Wp-5419,Wq-10791,"
+            + "Wr-6494,Ws-7617,Wt-4296,Wu-6005,Wv-5419,Ww-5419,Wx-6494,Wy-5419,Wz-7617,XC-5517,XG-5517,XO-5517,"
+            + "XQ-5517,Xc-3320,Xd-3320,Xe-3320,Xg-3320,Xo-3320,Xp-4296,Xq-3320,Xt-4296,Xu-4296,Xv-6494,Xw-6494,"
+            + "Xy-4296,Y)2978,Y,-10009,Y--10986,Y.-10009,Y:-2978,Y;-2978,YA-5419,YC-6982,YG-6982,YO-6982,YQ-698"
+            + "2,YS-1123,Y]2978,Ya-13623,Yc-12988,Yd-12988,Ye-12988,Yf-4296,Yg-12988,Yi-4296,Yj-4199,Ym-8007,Yn"
+            + "-8007,Yo-12988,Yp-8691,Yq-12988,Yr-8007,Ys-9521,Yt-5419,Yu-8691,Yv-7617,Yw-9619,Yx-6494,Yy-6494,"
+            + "Yz-10009,Y}2978,ZC-1123,ZG-1123,ZO-1123,ZQ-1123,ZS-1416,ZT-2001,ZV-2001,ZW-2001,[Y2978,[j2978,a?"
+            + "-6005,ap-2197,aq-2197,av-2978,b,-4003,b.-4003,b?-6005,ba-1513,bb-2197,bf-2001,bh-2197,bi-2197,bk"
+            + "-2197,bl-1513,bm-1513,bn-1513,bp-2197,br-1513,bt-2197,bu-3320,bv-1513,bw-1513,bx-2978,by-976,c,-"
+            + "2001,c.-2001,c?-2978,ct-2001,dc-1123,dd-1123,de-1123,dg-1123,dm-2001,dn-2001,do-1123,dq-1123,dr-"
+            + "2001,dv-2197,dw-1123,dy-3808,e,-2001,e.-2001,e?-4980,eb-1611,ef-1123,ei-2197,ej-2197,ek-2197,el-"
+            + "1513,em-1123,en-1123,ep-1513,er-1123,et-2978,eu-2001,ev-2001,ew-3320,ex-2001,ey-2587,f?6005,fa-2"
+            + "490,fb-2001,fc-2001,fd-2001,fe-2001,ff-2001,fg-2001,fi-7421,fk-2001,fl-2001,fo-2001,fq-2001,ft-2"
+            + "978,g,-4296,g.-4296,ga-1611,gh-1123,gl-3320,h?-6005,ha-2197,hc-1513,hd-1513,he-1513,hg-1513,ho-1"
+            + "513,hp-2197,hq-2197,ht-4003,hu-2197,hv-2978,hw-2978,hy-5419,ia-2001,ic-1123,id-1123,ie-1123,ig-1"
+            + "123,io-1123,ip-3320,iq-1123,it-4003,iu-3320,iv-5419,iw-5419,iy-4296,ja-2197,ji-2001,jt-1513,jz-2"
+            + "197,ka-2001,kc-3320,kd-3320,ke-3320,kg-3320,ko-3320,kq-3320,kt-2001,ky-1123,la-2197,lc-1513,ld-1"
+            + "513,le-1513,lf-2001,lg-1513,lm-1513,ln-1513,lo-1513,lp-3320,lq-1513,lr-1513,lt-3320,lu-2001,lv-3"
+            + "320,lw-1611,ly-2197,m?-6005,ma-2197,mc-1513,md-1513,me-1513,mg-1513,mo-1513,mp-2197,mq-2197,mt-4"
+            + "003,mu-2001,mv-2978,mw-2978,my-5419,n?-6005,na-2197,nc-1513,nd-1513,ne-1513,ng-1513,no-1513,np-2"
+            + "197,nq-2197,nt-4003,nu-2001,nv-2978,nw-2978,ny-5419,o,-4003,o.-4003,o?-6005,oa-1513,ob-2197,of-2"
+            + "001,oh-2197,oi-2197,ok-2197,ol-1513,om-1513,on-1513,op-1513,or-1513,ot-2197,ou-2197,ov-1513,ow-1"
+            + "513,ox-2978,oy-976,p,-4003,p.-4003,p?-6005,pa-1513,pb-2197,pf-2001,ph-2197,pi-2197,pk-2197,pl-15"
+            + "13,pm-1513,pn-1513,pp-1513,pr-1513,pt-2197,pu-2197,pv-1513,pw-1513,px-2978,py-976,qa-1123,qb-200"
+            + "1,qc-1123,qd-1123,qe-1123,qg-1123,qh-2001,qj4003,qk-2001,ql-2001,qo-1123,qq-2197,r,-6494,r.-6494"
+            + ",ra-1611,rb-2197,rc-1513,rd-1513,re-1513,rg-1513,rh-3320,rk-4296,rl-2197,ro-1513,rp1611,rq-1513,"
+            + "rs-1123,ru1611,rv1611,rw2978,sb-2197,sh-2197,sp-1513,st-1123,su-1513,sw-2001,sz-1123,ta-2001,tb-"
+            + "2001,tc-1123,td-1123,te-1123,tf-2001,tg-1123,ti-2490,tk-2001,tl-2001,to-1123,tq-2197,u?-4980,ua-"
+            + "2978,ub-2001,uc-1513,ud-1513,ue-1513,ug-1513,ul-2978,um-2001,un-2001,uo-1513,up-2197,uq-2197,ur-"
+            + "2001,ut-2197,uv-5419,uw-4003,uy-5419,v,-8789,v.-8789,va-2001,vb-4296,vc-1513,vd-1513,ve-1513,vg-"
+            + "1513,vh-5419,vk-4882,vl-3320,vo-1513,vq-1513,vs-1123,w,-8691,w.-8691,wa-3515,wc-2490,wd-2490,we-"
+            + "2490,wg-2490,wh-3320,wk-4296,wl-1513,wo-2490,wq-2490,ws-4003,xc-2978,xd-2978,xe-2978,xg-2978,xo-"
+            + "2978,xq-2978,y,-10986,y.-10986,ya-2197,yb-2197,yc-2001,yd-2001,ye-2001,yg-2001,yh-4296,yk-3320,y"
+            + "l-2197,yo-2001,yq-2001,yz-2001,{Y2978,{j2978,";
+    }
+    private static String SignPainter_0_3_kerning() {
+        return " &-6999,!\"-6999,!'-6999,!)-6000,!}-10000,\"!-19199,\"\"-8999,\"\u0023-13999,\"$-11999,\"%-9100,\"&-11000,\"'-"
+            + "8999,\"(-10000,\")-11999,\"*-8000,\"+-8999,\",-8000,\"--6000,\".-8000,\"/-23000,\"0-8999,\"1-6999,\"2-11999"
+            + ",\"3-13000,\"4-16999,\"5-11999,\"6-8000,\"7-3999,\"8-8999,\"9-6999,\"?-6999,\"@-11999,\"A-16000,\"B-3999,\"C"
+            + "-6000,\"D-3000,\"E-6000,\"F-5000,\"G-8000,\"H-11999,\"I-8999,\"J-20000,\"K-8999,\"L-11999,\"M-11999,\"N-100"
+            + "00,\"O-6999,\"P-3999,\"Q-8000,\"R-5000,\"S-8000,\"U-8000,\"V-1000,\"W-6999,\"X-5000,\"Y-1999,\"Z-10000,\"[-1"
+            + "1000,\"a-15000,\"b-8999,\"c-11999,\"d-15000,\"e-11000,\"f-10000,\"g-16000,\"h-10000,\"i-10000,\"j-8999,\"k-"
+            + "8000,\"l-8000,\"m-11000,\"n-11999,\"o-13999,\"p-13999,\"q-16999,\"r-8999,\"s-11000,\"t-1999,\"u-11999,\"v-8"
+            + "000,\"w-13000,\"x-11000,\"y-11999,\"z-11999,\"{-11000,\"|-11999,\"}-16000,\u0023!-8000,\u0023\"-5000,\u0023'-5000,\u0023(-19"
+            + "99,\u0023)-6000,\u0023/-10000,\u00232-5000,\u00233-1999,\u00234-3000,\u00235-3000,\u00237-5000,\u00238-1999,\u0023}-6000,$!-10000,$\"-8999,$'-"
+            + "8999,$)-5000,$/-11000,$0-1000,$1-1999,$2-3999,$3-3000,$4-1000,$5-1999,$7-5000,$8-1999,$9-1000,$}"
+            + "-5000,%\"-13999,%'-13999,%)-3000,%/-5000,%}-3000,& -11000,&!-8000,&\"-13999,&'-13999,&(-1999,&)-69"
+            + "99,&,-13000,&.-13000,&/-8000,&:-11000,&;-11000,&}-3999,'!-19199,'\"-8999,'\u0023-13999,'$-11999,'%-910"
+            + "0,'&-11000,''-11999,'(-10000,')-11999,'*-8000,'+-8999,',-8000,'--6000,'.-8000,'/-23000,'0-8999,'"
+            + "1-6999,'2-11999,'3-13000,'4-16999,'5-11999,'6-10000,'7-3999,'8-8999,'9-6999,'?-6999,'@-11999,'A-"
+            + "16000,'B-3999,'C-6000,'D-3000,'E-6000,'F-5000,'G-8000,'H-11999,'I-8999,'J-20000,'K-8999,'L-11999"
+            + ",'M-11999,'N-10000,'O-6999,'P-3999,'Q-8000,'R-5000,'S-8000,'U-8000,'V-1000,'W-6999,'X-5000,'Y-19"
+            + "99,'Z-10000,'[-11000,'a-15000,'b-8999,'c-11999,'d-15000,'e-11000,'f-10000,'g-16000,'h-10000,'i-1"
+            + "0000,'j-8999,'k-8000,'l-8000,'m-11000,'n-11999,'o-13999,'p-13999,'q-16999,'r-8999,'s-11000,'t-19"
+            + "99,'u-11999,'v-8000,'w-13000,'x-11000,'y-11999,'z-11999,'{-11000,'|-11999,'}-16000,(!-10000,(\"-1"
+            + "999,(\u0023-6000,($-6000,(%-3999,(&-5000,('-1999,(+-6999,(,-11999,(--6999,(.-11999,(/-11000,(0-1999,("
+            + "1-1999,(2-5000,(3-6999,(4-6999,(5-5000,(6-4799,(8-5000,(9-1999,(:-8999,(;-8999,(<-3999,(=-8000,("
+            + ">-6000,(?-1999,(@-6300,(A-7200,(C-1999,(G-3000,(H-6000,(I-3999,(J-3999,(K-3999,(L-3999,(M-5000,("
+            + "N-3999,(O-3000,(Q-3000,(S-3999,(T5000,(U-1999,(V1000,(W-1999,(Y1999,(Z-5000,(a-6699,(b-3000,(c-6"
+            + "000,(d-6000,(e-6600,(f-1000,(g-6000,(h-3999,(i-5399,(k-3999,(l-3999,(m-3999,(n-3999,(o-6000,(p-1"
+            + "000,(q-6999,(r-3999,(s-6000,(t-1000,(u-6999,(v-3999,(w-6000,(x-6000,(y-6000,(z-6999,)!-8000,)\"-6"
+            + "000,)'-6000,))-6999,)*-5000,),-8999,).-8999,)/-8000,):-8000,);-8000,)?-5000,)X-3999,)]-6999,*\"-8"
+            + "999,*'-8999,*)-10000,*/-21000,*6-3200,*?-6000,*]-16999,+\"-6000,+'-6000,+)-6999,+/-10000,,\"-8000,"
+            + ",'-8000,,(-6000,,*1000,,,-8000,,.-8000,,/-3999,,0-7100,,3-3999,,4-11000,,5-3999,,6-5000,,8-1999,"
+            + ",@-10000,,A-1699,,B-1199,,C-6999,,D-1999,,G-6000,,H-1999,,J-1000,,O-7400,,Q-3000,,R-1999,,T-6000"
+            + ",,U-1999,,V-5000,,W-4199,,Y-5000,,e-1999,,f1999,,j3000,,l-1999,,o-2500,,p3999,,q-1000,,r1999,,s-"
+            + "1999,,t-1000,,v-1499,,x-3999,,z-6999,-(-1999,-)-6999,-/-8999,-2-11999,-5-1999,-7-4600,-9-1000,-R"
+            + "-1999,-S-8000,-T-6000,-V-1000,-W-3000,-X-6000,-Y-5000,-Z-5000,.\"-8000,.'-8000,.(-6000,.*1000,./-"
+            + "3999,.0-7100,.3-3999,.4-11000,.5-3999,.6-5000,.8-1999,.@-10000,.A-1699,.B-1199,.C-6999,.D-1999,."
+            + "G-6000,.H-1999,.J-1000,.O-7400,.Q-3000,.R-1999,.T-6000,.U-1999,.V-5000,.W-4199,.Y-5000,.e-1999,."
+            + "f1999,.j3000,.l-1999,.o-2500,.p3999,.q-1000,.r1999,.s-1999,.t-1000,.v-1499,.x-3999,.z-6999,//-16"
+            + "000,/:-13999,/;-13999,/]-6999,0!-8000,0\"-4700,0%-3999,0'-4700,0)-6000,0*-5000,0,-10700,0.-10700,"
+            + "0/-8000,02-2799,07-3800,0:-8999,0;-8999,0?-6000,0T-2299,0\\-8000,0]-8999,0}-6999,1!-8999,1\"-1999,"
+            + "1%-1000,1'-1999,1(-1999,1)-3000,1,-11199,1.-11199,1/-11000,12-3999,13-4100,14-1600,15-2700,16-59"
+            + "9,18-2100,1:-9400,1;-9400,1A-2500,1H-1399,1K-1300,1L-1300,1M-2299,1N-2200,1T1000,1]-6000,1}-8000"
+            + ",2!-8000,2\"-1999,2'-1999,2)-3999,2,-8000,2.-8000,2/-6999,21-1000,22-3000,23-5000,24-2299,25-1999"
+            + ",261000,27-2200,28-3300,29-1799,2:-6000,2;-6000,2A-5299,2B-800,2H-1399,2J-3300,2L-2400,2N-1199,2"
+            + "R-1799,2\\-1499,2]-6000,2}-3000,3!-6000,3\"-1000,3%-1999,3'-1000,3(-1999,3)-5000,3*-1000,3,-6999,3"
+            + ".-6999,3/-5000,3:-5000,3;-5000,3<-1999,3>-1999,3S899,3\\-1999,3]-6000,3}-5000,4!-8999,4\"-3000,4%-"
+            + "800,4'-3000,4(-1000,4)-3999,4,-13000,4.-13000,4/-10000,42-2200,4:-8999,4;-8999,4<-1000,4>-1999,4"
+            + "T1000,4V1000,4W-1199,4X-2500,4Z-4199,4]-10000,4}-5000,5!-6999,5\"-1000,5%-700,5'-1000,5(-1999,5)-"
+            + "3000,5,-8000,5.-8000,5/-6999,572899,5:-6000,5;-6000,5<-1999,5>-3000,5B1699,5D1999,5P3200,5R1000,"
+            + "5T6300,5V4400,5Y4100,5Z-1699,5]-6999,5}-3999,6!-6000,6\"-1999,6%-599,6'-1999,6(-1000,6)-3999,6*-1"
+            + "000,6,-6699,6.-6699,6/-6999,6:-6000,6;-6000,6R-700,6S1100,6X-2200,6Z-1199,6\\-3000,6]-6999,6}-399"
+            + "9,7!-8999,7\"-1000,7'-1000,7(-1000,7)-6000,7+-3999,7,-20000,7--6699,7.-20000,7/-18999,70-899,72-2"
+            + "200,73-2899,74-5800,75-1999,76-1000,78-1199,7:-11999,7;-11999,7<-3999,7=-5000,7>-3000,7A-8800,7E"
+            + "-599,7F-700,7H-3099,7I-1799,7J-9799,7K-1100,7L-1799,7M-3300,7N-2200,7T1000,7V1999,7W-2200,7X-149"
+            + "9,7Y1000,7Z-7200,7\\-1000,7]-11999,7a-6999,7}-8999,8!-6000,8)-3999,8+-6999,8,-6000,8--4499,8.-600"
+            + "0,8/-6000,84-5200,87-1199,8:-3000,8;-3000,8<-6000,8=-5000,8>-3999,8A-1100,8C1000,8H-800,8S1999,8"
+            + "U1000,8V5399,8X-1000,8Y3999,8]-6999,8}-3000,9!-6999,9\"-6000,9%-3600,9'-6000,9)-8000,9*-3099,9,-1"
+            + "1199,9.-10000,9/-9199,92-3300,93-1000,95-2200,97-3500,98-800,99-1199,9:-8000,9;-8000,9<-1999,9=-"
+            + "1000,9>-3000,9?-5000,9A-1199,9B-1000,9D-800,9H-800,9R-1300,9T-599,9W-1199,9X-4700,9Y-2200,9Z-330"
+            + "0,9\\-8999,9]-10000,9}-8999,:\"-8000,:'-8000,:(-1999,:)-5000,:/-11999,:1-1000,:9-1000,;\"-8000,;'-8"
+            + "000,;(-1999,;)-5000,;/-11999,;1-1000,;9-1000,<(-5000,<)-5000,<2-8000,<3-1999,<4-1999,<5-1000,<6-"
+            + "1000,<7-3999,=(-3000,=)-8000,=1-1999,=2-13999,=3-3000,=5-1999,=7-5000,=8-3000,=9-1999,>(-1000,>)"
+            + "-8000,>1-3000,>2-11999,>3-3000,>5-3099,>7-6999,>8-3000,>9-3999,?\"-3000,?'-3000,?(-1000,?)-5000,?"
+            + "]-13999,@!-11000,@\"-11999,@'-11999,@(-3999,@)-12599,@*-10000,@,-13999,@.-13999,@/-11999,@6-1000,"
+            + "@:-11999,@;-11999,@?-10000,@]-13999,@a-1999,@b-1000,@}-8999,A!-3999,A\"-6999,A'-6999,A(-1999,A)-5"
+            + "99,A*-8999,A+-3000,A,-3999,A--1999,A.-3999,A/-3999,A0-1000,A4-3300,A:-3999,A;-3999,A?-6000,A@-30"
+            + "00,AH-1999,AM1000,AO-1000,AQ-2299,AR-700,AT-3500,AU1000,AV-1499,AW-3000,AX-3500,AY-3999,AZ-1499,"
+            + "A\\-10000,Ap1000,As1000,Ax-1999,Az-3000,A}-3000,B!-8999,B\"-3999,B'-3999,B(-3999,B)-10000,B*-3999,"
+            + "B+-5000,B,-11000,B--8000,B.-11000,B/-10000,B0-2299,B2-4299,B3-5299,B4-6199,B5-3999,B6-2200,B7-39"
+            + "99,B8-3500,B9-1600,B:-11000,B;-11000,B?-6000,B@-3999,BA-5000,BB-3999,BD-3000,BE-3000,BF-1999,BG-"
+            + "1000,BH-6999,BI-3000,BJ-3000,BK-3999,BL-3999,BM-1999,BN-5000,BO-1000,BP-3999,BQ-1000,BR-5000,BS-"
+            + "1000,BT-1999,BU-2299,BW-5000,BX-6000,BY-1999,BZ-6000,B]-13000,Ba-3999,Bb-3000,Bc-3000,Bd-3000,Be"
+            + "-3000,Bf-3000,Bg-3000,Bh-2500,Bi-3000,Bj-3000,Bk-3000,Bl-1999,Bm-2500,Bn-1000,Bo-3500,Bp-3999,Bq"
+            + "-3999,Br-1499,Bs-3000,Bu-3099,Bv-1000,Bw-2299,Bx-1999,By-3000,Bz-3000,B}-11999,C!-6999,C\"-5099,C"
+            + "'-5099,C(-3999,C)-6999,C*-5000,C+-3999,C,-8000,C--5000,C.-8000,C/-6999,C2-2200,C3-2200,C4-3300,C"
+            + "7-3099,C:-6999,C;-6999,C?-6000,C@-3000,CA-1999,CB-1999,CD-1999,CH-3999,CL-1000,CN-1999,CO-1999,C"
+            + "P-1000,CQ-1000,CR-3899,CT-3000,CW-4400,CX-3999,CY-2299,CZ-1999,C]-8999,Ca-500,Ci-1000,Cl-1000,Cv"
+            + "-899,Cx-1499,Cz-3000,C}-8000,D!-8000,D\"-5000,D'-5000,D)-11000,D*-6000,D+-1000,D,-15000,D.-15000,"
+            + "D/-11999,D2-6399,D3-4299,D5-3000,D7-6699,D8-3200,D9-2200,D:-10000,D;-10000,D?-6999,D@-1999,DA-41"
+            + "00,DB-1999,DD-1000,DE-1000,DH-3000,DI-1000,DK-1000,DL-3000,DM-2100,DN-3000,DP-1999,DR-4100,DS-30"
+            + "00,DT-6000,DW-3999,DX-8999,DY-3000,DZ-6499,D]-11999,Da-1999,Db-1000,Dd-1000,Df-1000,Dg-1000,Dh-1"
+            + "600,Di-1999,Dj-1000,Dk-500,Dm-1000,Dn-500,Dp-1999,Dq-1999,Dr-1999,Ds-1000,Du-1000,Dv1000,Dw-299,"
+            + "D}-10000,E!-6000,E)-1999,E+-6999,E,-6000,E--3999,E.-6000,E/-6999,E0-1000,E2-299,E3-4199,E4-5299,"
+            + "E6-2200,E71999,E:-5000,E;-5000,E@-6000,EA-5000,EC-1000,EG-1999,EH-3999,EI-1000,EJ-3999,EK-1000,E"
+            + "L-1999,EM-1000,EN-3000,EO-1100,EP1000,EQ-1999,ER1000,ES-3000,EW-1499,EY1000,EZ-2700,E]-5000,Ea-3"
+            + "000,Eb-1000,Ec-3000,Ed-3999,Ee-3000,Eg-2500,Eh-1000,Ei-3000,Ej1000,Ek-1000,El-1000,Em-1000,En-10"
+            + "00,Eo-2500,Eq-3000,Er-399,Es-3999,Et-1999,Eu-3000,Ev-3200,Ew-1999,Ex-5000,Ey-1999,Ez-3999,E}-600"
+            + "0,F!-8000,F)-1999,F+-6999,F,-23999,F--3999,F.-23999,F/-15000,F2-3300,F3-3300,F4-3999,F6-1199,F73"
+            + "000,F:-11999,F;-11999,F@-5000,FA-6600,FC-1000,FG-1999,FH-3999,FI-1100,FJ-6999,FK-1000,FL-3000,FM"
+            + "-3000,FN-3000,FO-1999,FQ-1999,FR1000,FS-3999,FW-1499,FY1000,FZ-2500,F]-8000,Fa-5000,Fb-1000,Fc-3"
+            + "000,Fd-5000,Fe-3000,Ff-3000,Fg-3999,Fh-3999,Fi-3999,Fj-3999,Fk-1000,Fl-700,Fm-4499,Fn-5000,Fo-39"
+            + "99,Fp-6999,Fq-5000,Fr-6000,Fs-6999,Ft-1999,Fu-5000,Fv-3000,Fw-3999,Fx-3999,Fy-3999,Fz-3500,F}-10"
+            + "000,G!-6000,G\"-6000,G'-6000,G)-8000,G*-6000,G+-3999,G,-11000,G.-11000,G/-8000,G2-4400,G7-2200,G:"
+            + "-8999,G;-8999,G?-6000,G@-1999,GE1000,GH-2299,GM1000,GR-1000,GS-1999,GT-1999,GW-3999,GX-3999,GY-2"
+            + "599,GZ-3500,G]-8999,Gp-1000,Gx-1999,Gz-1000,G}-8000,H!-6999,H\"-1399,H'-1399,H)-5000,H,-13000,H.-"
+            + "13000,H/-8999,H2-3399,H:-8999,H;-8999,H?-1999,H@-1999,HA-1000,HL-1000,HN-1000,HR-1999,HS-3000,HT"
+            + "1999,HV1000,HW-1999,HX-3000,HY1999,HZ-4499,H]-8000,Hm-1000,Hp-1999,Hr-1000,Ht1999,H}-6999,I!-699"
+            + "9,I)-3000,I,-11000,I--1000,I.-11000,I/-13999,I3-2799,I61000,I:-8999,I;-8999,I@-1000,IA-1999,IH-1"
+            + "999,IJ-3000,IL-1399,IM-1300,IN-1399,IT3000,IU1000,IV2200,IX-1000,IY3000,IZ-3200,I]-6000,Ia-1999,"
+            + "Ib-1000,Id-1999,If-1999,Ig-1999,Ih-1999,Ii-1000,Ij-1000,Ik-1000,Im-1499,In-1000,Io-500,Ip-3000,I"
+            + "q-1999,Ir-500,Is-1499,It3000,Iu-1699,Iv1000,Iw-1000,Iy-1000,I}-6999,J!-6999,J\"-1999,J'-1999,J)-3"
+            + "999,J,-11999,J.-11999,J/-11999,J2-2100,J61000,J8-1000,J:-10000,J;-10000,J?-1000,J@-1000,JA-2899,"
+            + "JE-1000,JH-1999,JI-1000,JK-1000,JL-1999,JM-1399,JN-3999,JR-1999,JS-1000,JV1000,JW-2500,JX-3000,J"
+            + "Y1100,JZ-6499,J]-8999,Ja-1499,Jb-1000,Jd-1000,Je-500,Jf-1100,Jg-500,Jh-1999,Ji-1000,Jj-1000,Jk-1"
+            + "000,Jm-1000,Jn-1000,Jp-3999,Jq-1399,Js-800,Jt1999,Ju-1499,Jv1000,Jw-1000,J}-8000,K!-6000,K)-1999"
+            + ",K*1000,K+-6000,K,-8000,K--8999,K.-8000,K/-10000,K2-1199,K3-2899,K4-6199,K6200,K73000,K:-8999,K;"
+            + "-8999,K?1000,K@-1999,KA-7599,KH-3999,KJ-6000,KL-1000,KM-3099,KN-1999,KP1999,KR1000,KS-1000,KT199"
+            + "9,KV1000,KW-599,KX1000,KY1999,KZ-1999,K]-3000,Ka-6000,Kc-5000,Kd-5000,Ke-6000,Kf-1000,Kg-5500,Kh"
+            + "-1000,Ki-1999,Kj-1000,Kk-500,Km-3399,Kn-3300,Ko-6000,Kp-1999,Kq-6000,Kr-1999,Ks-5000,Kt1000,Ku-4"
+            + "100,Kw-3999,Kx-3000,Ky-3300,Kz-6000,K}-6000,L!-3999,L\"-15800,L'-15800,L)-1999,L*-16999,L+-16000,"
+            + "L,-3999,L--16999,L.-3999,L/-6000,L0-5700,L3-3300,L4-15000,L5-3200,L6-6199,L7-2100,L8-2100,L9-199"
+            + "9,L:-3999,L;-3999,L?-3999,L@-10000,LA-1999,LB-3000,LC-8000,LD-3000,LG-6000,LH-3000,LJ-1999,LN-10"
+            + "00,LO-8200,LP-1000,LQ-6000,LR-1999,LS-3000,LT-6000,LU-1999,LV-6000,LW-6300,LX-1000,LY-6000,LZ-19"
+            + "99,L]-3999,La-2599,Lc-1999,Ld-1000,Le-3000,Lg-1000,Lj1000,Ll-3000,Lo-3000,Lq-1000,Ls-1999,Lt-199"
+            + "9,Lu-800,Lv-2299,Lx-3999,Lz-6000,L}-1999,M!-6000,M\"-1000,M'-1000,M)-3999,M,-10000,M.-10000,M/-11"
+            + "000,M2-2799,M4-1999,M5-1999,M8-1199,M:-8000,M;-8000,M?-1999,M@-1000,MA-3999,MB-1000,MH-3000,MI-1"
+            + "000,MJ-1999,MK-1000,ML-1999,MM-1999,MN-1999,MR-1999,MS-1000,MT1000,MV1000,MW-2799,MX-3000,MY1000"
+            + ",MZ-5099,M]-6000,Ma-1399,Mb-1999,Md-1000,Me-1000,Mf-1499,Mg-1999,Mh-1000,Mi-1000,Mj-1000,Mk-1000"
+            + ",Mm-1300,Mn-1000,Mo-500,Mp-3000,Mq-1999,Mr-1000,Ms-500,Mt1000,Mu-1000,Mw-1000,My-500,M}-6000,N!-"
+            + "6999,N\"-1000,N'-1000,N)-3999,N,-11999,N--1999,N.-11999,N/-11999,N2-3099,N3-2200,N4-2200,N5-1999,"
+            + "N8-2200,N:-10000,N;-10000,N?-1000,N@-1000,NA-3999,NE-1000,NF-1000,NH-1999,NI-1000,NJ-3000,NK-199"
+            + "9,NL-3999,NM-3000,NN-1999,NR-1000,NS-1000,NT3000,NV1999,NW-2599,NX-1000,NY1999,NZ-5500,N]-8000,N"
+            + "a-3000,Nb-1999,Nc-1000,Nd-1999,Ne-500,Nf-1999,Ng-3000,Nh-1999,Ni-1000,Nj-1499,Nk-1000,Nm-2100,Nn"
+            + "-1499,No-1499,Np-3999,Nq-1999,Nr-1000,Ns-1499,Nt1000,Nu-2299,Nw-1000,Ny-800,N}-6999,O!-6999,O\"-6"
+            + "000,O'-6000,O)-8000,O*-6000,O,-11999,O.-11999,O/-11000,O2-4700,O7-3600,O8-1000,O9-1799,O:-8000,O"
+            + ";-8000,O?-5000,O@-1000,OA-3000,OB-3000,OD-1000,OE-1000,OF-1000,OK-1999,OL-3000,OM-1999,ON-1999,O"
+            + "P-1999,OR-3999,OS-1000,OT-3999,OV-1000,OW-3899,OX-8000,OY-3999,OZ-5299,O]-8999,Oa-1000,Of-500,Og"
+            + "-1000,Om-500,Op-1999,Or-1000,Ou-299,Ov1000,O}-8000,P!-8000,P\"-1999,P'-1999,P)-6999,P,-31000,P.-2"
+            + "8999,P/-16000,P2-3300,P3-4299,P4-3099,P5-3200,P7-1199,P8-2100,P:-8999,P;-8999,P?-1000,P@-200,PA-"
+            + "7200,PB-1999,PC1000,PE-1000,PH-3999,PJ-8999,PL-3000,PM-3000,PN-1999,PR-3000,PV1999,PW-2200,PX-50"
+            + "00,PZ-10000,P]-10000,Pa-3999,Pb-1000,Pc-1000,Pd-3000,Pe-1000,Pf-1499,Pg-3999,Ph-1000,Pi-500,Pm-1"
+            + "000,Pn-1000,Po-1000,Pp-3999,Pq-3999,Pr-1000,Ps-6000,Pt3000,Pu-1499,Pv1000,Pw-1000,Py-500,Pz-1000"
+            + ",P}-10000,Q!-8999,Q\"-6999,Q'-6999,Q)-8999,Q*-8000,Q,-11999,Q.-11999,Q/-11999,Q2-4299,Q3-3200,Q4-"
+            + "2200,Q5-2299,Q7-3800,Q8-2200,Q9-3399,Q:-10000,Q;-10000,Q?-6999,Q@-1999,QA-3999,QB-3000,QC-1000,Q"
+            + "D-3000,QE-1999,QF-1999,QG-1999,QH-1999,QJ-3000,QK-2100,QL-3999,QM-1999,QN-3999,QO-1000,QP-3000,Q"
+            + "Q-1000,QR-5000,QS-1000,QT-8000,QV-3000,QW-5899,QX-8000,QY-5000,QZ-6799,Q]-8999,Qa-1999,Qb-1999,Q"
+            + "d-1000,Qe-1000,Qg-1999,Qh-1000,Qi-1000,Qk-1999,Ql-500,Qm-1499,Qn-1000,Qo-1000,Qq-1999,Qr-1999,Qs"
+            + "-1000,Qu-1799,Qw-1000,Qx-1999,Q}-10000,R!-8999,R\"-1999,R'-1999,R)-8000,R*-3000,R,-11999,R--5000,"
+            + "R.-11999,R/-11999,R2-3300,R3-6000,R4-5299,R5-4299,R7-2200,R8-3899,R9-1300,R:-11000,R;-11000,R?-1"
+            + "999,R@-1000,RA-8200,RB-3000,RD-3000,RE-1999,RF-1999,RH-5000,RI-1000,RJ-8999,RK-3000,RL-3999,RM-5"
+            + "000,RN-3999,RO-1000,RP-3000,RR-3999,RS-1999,RU-1000,RV1000,RW-3999,RX-6999,RY-1000,RZ-8999,R]-69"
+            + "99,Ra-6000,Rb-1799,Rc-1999,Rd-5399,Re-3000,Rf-3500,Rg-5000,Rh-1999,Ri-1999,Rj-1000,Rk-1499,Rm-30"
+            + "00,Rn-2500,Ro-2400,Rp-5000,Rq-6000,Rr-1000,Rs-6999,Rt1000,Ru-3500,Rw-3000,Ry-1999,Rz-1999,R}-899"
+            + "9,S!-6000,S\"-3000,S'-3000,S)-5000,S*-3000,S,-6000,S--3000,S.-6000,S/-6999,S0-1199,S2-1100,S3-270"
+            + "0,S4-5099,S5-3699,S7-2299,S8-1999,S9-1199,S:-5000,S;-5000,S?-3000,S@-1999,SA-3500,SB-1000,SF-100"
+            + "0,SH-3999,SK-1000,SL-1999,SM-1000,SN-1999,SO-1000,SP-2100,SQ-1000,SR-3999,ST-1000,SV1000,SW-3500"
+            + ",SX-3999,SY-1000,SZ-2700,S]-5000,Sa-1399,Sc-1999,Sd-1199,Se-1999,Sf-599,Sg-1999,Si-1399,Sk-500,S"
+            + "l-1499,So-1999,Sq-1999,Ss-1000,St1999,Su-1000,Sw-500,Sx-1000,Sz-3000,S}-5000,T!-11999,T\"-1399,T'"
+            + "-1399,T)-6999,T*-2100,T+-16999,T,-26999,T--16000,T.-26999,T/-26000,T0-6000,T1-3399,T2-8300,T3-72"
+            + "99,T4-13999,T5-8200,T6-7200,T8-6399,T9-4299,T:-23999,T;-23999,T?-1999,T@-10000,TA-13000,TC-3000,"
+            + "TE-2599,TF-3000,TG-6000,TH-8999,TI-6000,TJ-16999,TK-5000,TL-5000,TM-7200,TN-3999,TO-6999,TQ-3999"
+            + ",TR-6199,TS-6000,TU-3000,TV3999,TW-2500,TY1000,TZ-7599,T]-13000,Ta-16999,Tb-6000,Tc-15000,Td-169"
+            + "99,Te-15099,Tf-8000,Tg-16000,Th-8000,Ti-16000,Tj-16999,Tk-5000,Tl-5000,Tm-16999,Tn-16199,To-1600"
+            + "0,Tp-18999,Tq-18000,Tr-15000,Ts-16999,Tt-6000,Tu-17200,Tv-13000,Tw-16399,Tx-13999,Ty-15399,Tz-15"
+            + "000,T}-16000,U!-8000,U\"-1000,U'-1000,U)-6000,U,-13600,U--1999,U.-13600,U/-13999,U2-4400,U3-3500,"
+            + "U5-4199,U8-3300,U:-10000,U;-10000,U?-1000,U@-1000,UA-4799,UB-1000,UE-1999,UF-1999,UH-3000,UI-199"
+            + "9,UJ-1999,UK-3000,UL-4499,UM-3000,UN-3000,UR-2200,US-1999,UT1000,UV1000,UW-2299,UX-3000,UZ-6999,"
+            + "U]-11000,Ua-3500,Ub-2700,Uc-500,Ud-1999,Ue-1999,Uf-3000,Ug-3000,Uh-1999,Ui-1000,Uj-1999,Uk-1999,"
+            + "Ul-500,Um-2400,Un-1000,Uo-1999,Up-5000,Uq-3000,Ur-500,Us-1199,Ut1999,Uu-2299,Uw-1999,Uz-1999,U}-"
+            + "11999,V!-10000,V\"-1000,V'-1000,V)-6999,V+-5000,V,-21000,V--6999,V.-21000,V/-20000,V0-2100,V1-220"
+            + "0,V2-5700,V3-5000,V4-5899,V5-5200,V6-2200,V8-3300,V9-2299,V:-13999,V;-13999,V?-1000,V@-3000,VA-8"
+            + "999,VB1000,VE-1999,VF-1999,VG-1000,VH-6000,VI-3000,VJ-8999,VK-3000,VL-3999,VM-5000,VN-3099,VO-10"
+            + "00,VQ-1000,VR-1999,VS-3000,VT3999,VU-1999,VV1999,VW-2799,VX-1000,VY1000,VZ-6000,V]-13000,Va-8800"
+            + ",Vb-3999,Vc-5000,Vd-6999,Ve-6600,Vf-5000,Vg-8000,Vh-5000,Vi-3000,Vj-3999,Vk-3000,Vl-1999,Vm-6999"
+            + ",Vn-5500,Vo-6000,Vp-8999,Vq-8000,Vr-3999,Vs-8000,Vu-6399,Vv-1000,Vw-6499,Vx-3000,Vy-4499,Vz-6000"
+            + ",V}-13999,W!-8000,W)-3000,W+-3000,W,-18500,W--3999,W.-18500,W/-16999,W2-2200,W3-4199,W4-3999,W5-"
+            + "2100,W6-599,W71999,W8-1300,W:-11000,W;-11000,W@-1000,WA-7400,WH-4400,WI-2500,WJ-7500,WK-1999,WL-"
+            + "3699,WM-4400,WN-2700,WS-1000,WT3000,WV1999,WX-599,WY3000,WZ-3999,W]-10000,Wa-5500,Wb-3000,Wc-300"
+            + "0,Wd-3999,We-3000,Wf-3500,Wg-3999,Wh-2500,Wi-1999,Wj-3000,Wk-1000,Wm-3999,Wn-3999,Wo-3000,Wp-500"
+            + "0,Wq-4400,Wr-1999,Ws-3999,Wt3000,Wu-3000,Ww-3999,Wy-3000,Wz-3000,W}-11000,X!-3000,X+-8000,X,-100"
+            + "0,X--8000,X.-1000,X/-1999,X0-1199,X11000,X21000,X3-4199,X4-6000,X5-3099,X6-2299,X71000,X:-1999,X"
+            + ";-1999,X@-5000,XG-1000,XH-1100,XL1000,XM3000,XO-1999,XS-1000,XT3999,XV3000,XW-1499,XY1000,X]-100"
+            + "0,Xa-500,Xe-1000,Xf5000,Xh1000,Xl-500,Xo-1000,Xq-1000,Xr3000,Xt1000,Xx-1999,Xz-3999,Y!-8999,Y)-5"
+            + "000,Y+-8000,Y,-24799,Y--11000,Y.-24799,Y/-21999,Y0-1300,Y2-4400,Y3-5299,Y4-8200,Y5-3999,Y6-899,Y"
+            + "71000,Y8-1799,Y9-1199,Y:-15000,Y;-15000,Y@-3999,YA-10700,YH-5000,YI-1000,YJ-11999,YK-3000,YL-399"
+            + "9,YM-4499,YN-3000,YP500,YQ-1000,YS-1999,YT1999,YV3999,YW-1499,YZ-3999,Y]-11999,Ya-11000,Yb-3000,"
+            + "Yc-8000,Yd-10200,Ye-8999,Yf-3999,Yg-11999,Yh-3000,Yi-3000,Yj-3999,Yk-1999,Yl-1000,Ym-8999,Yn-699"
+            + "9,Yo-8300,Yp-10000,Yq-11999,Yr-5000,Ys-10000,Yt1000,Yu-8000,Yv-1199,Yw-6999,Yx-6000,Yy-6999,Yz-8"
+            + "500,Y}-11000,Z!-8000,Z\"-1999,Z'-1999,Z)-6999,Z+-10000,Z,-9600,Z--13999,Z.-9600,Z/-11999,Z0-2200,"
+            + "Z2-4900,Z3-6300,Z4-10000,Z5-6100,Z6-2799,Z7-1199,Z8-3300,Z9-2200,Z:-8000,Z;-8000,Z?-1999,Z@-5000"
+            + ",ZA-8000,ZB-1600,ZC-500,ZD-1000,ZE-3000,ZF-3000,ZG-1999,ZH-6999,ZI-4299,ZJ-8999,ZK-5000,ZL-6199,"
+            + "ZM-6000,ZN-3999,ZO-1999,ZP-1000,ZQ-1999,ZR-1499,ZS-2500,ZT1000,ZU-2500,ZV1000,ZW-2500,ZX-3999,ZZ"
+            + "-8000,Z]-11999,Za-8000,Zb-3000,Zc-6999,Zd-6000,Ze-8000,Zf-3000,Zg-5000,Zh-3000,Zi-3000,Zk-3999,Z"
+            + "l-1999,Zm-6000,Zn-4299,Zo-8999,Zp-1999,Zq-8000,Zr-3999,Zs-6999,Zu-6000,Zv-2899,Zw-6000,Zx-8000,Z"
+            + "y-5000,Zz-11000,Z}-6999,[!-1000,[(-8999,[,-18000,[.-18000,[0-10000,[1-8999,[2-10000,[3-15000,[4-"
+            + "13999,[5-13999,[6-10000,[7-6000,[8-13000,[9-10000,[@-13999,[A-13000,[B-6999,[C-10000,[D-6999,[E-"
+            + "6999,[F-6999,[G-10000,[H-11999,[I-6999,[J-11999,[K-8000,[L-8000,[M-11000,[N-11999,[O-8999,[P-399"
+            + "9,[Q-8999,[R-6000,[S-11000,[T-1999,[U-8000,[V-1999,[W-8000,[X-3999,[Y-1999,[Z-11999,[a-13999,[b-"
+            + "6999,[c-11999,[d-13000,[e-13000,[f-6999,[g-13999,[h-8000,[i-13000,[j-3999,[k-6000,[l-8999,[m-130"
+            + "00,[n-11999,[o-13000,[p-6000,[q-13999,[r-11000,[s-13999,[t-8999,[u-15000,[v-8999,[w-13000,[x-119"
+            + "99,[y-11999,[z-13999,[{-11000,[|-6999,\\0-3999,\\11000,\\21999,\\3-1000,\\4-5000,\\6-2899,\\@-8999,]!-1"
+            + "1999,]\"-1999,]'-1999,],-13999,].-13999,]:-11999,];-11999,]?-1999,]]-8999,]s-1000,`w99,a\"-8000,a'"
+            + "-8000,a*-11999,a--1999,ar-400,ax-10300,az-500,b!-6999,b\"-8000,b'-8000,b)-6000,b*-13000,b,-8000,b"
+            + ".-8000,b/-6999,b:-8000,b;-8000,b?-6000,b]-6999,ba-399,bu-200,bx-1499,bz-500,c\"-6999,c'-6999,c*-1"
+            + "1999,cr99,cu-200,cw-1000,cx-1000,d\"-1999,d'-1999,db-1000,dc-500,de-1000,df-1000,du-500,dv-1000,d"
+            + "x-1100,dz-1000,e\"-6999,e'-6999,e*-11999,eb-500,ek-1000,er-500,es-500,et-99,eu-500,ev-399,ew-1000"
+            + ",ex-11199,f\"-3999,f'-3999,f*-5000,f+-3999,f--6000,fb-1000,fe-1600,ff-200,fj500,fm-1000,fp1800,fr"
+            + "-899,fs-500,fu-899,fv-700,fw-1000,fx-1000,g\"-8000,g'-8000,g*-13999,g+-1999,g--1999,gb-1000,gf-10"
+            + "00,gj2500,gp-599,gr-1300,gs-399,gu-1000,gv-99,gw-1000,gx-2200,gz-1000,h\"-11000,h'-11000,h*-15000"
+            + ",h+-3000,h--3000,hb-1000,hc-500,hl-500,hu-200,hv-800,hx-1300,i\"-1999,i'-1999,i*-5000,i+-3999,i--"
+            + "3000,ia-500,ib-1000,if-1000,il-299,ip-1000,iq-500,ir800,is-800,iu-500,iv-1199,ix-10800,iz-500,j\""
+            + "-1000,j'-1000,j*-3000,j--1000,jb-500,jr399,ju-800,jw-1000,jx-1199,jz-500,k\"-8999,k'-8999,k*-1100"
+            + "0,k--700,ke-899,kf-1000,kr-1000,ks-1000,ku-1000,kw-1000,kx-899,l\"-1000,l'-1000,l--2400,ld-1000,l"
+            + "f-1499,lj-99,lq-500,lu-1999,lw-1600,lx-1000,m\"-8000,m'-8000,m*-11999,m+-3999,m--3000,mb-399,mq-5"
+            + "00,mv-500,mw-200,mx-1199,my-500,mz-500,n\"-11000,n'-11000,n*-11999,n+-5000,n--3000,na-500,ng-200,"
+            + "nq-500,nt-399,nu-299,nv-800,nw-299,nx-1100,ny-500,o!-6999,o\"-8000,o'-8000,o)-5000,o*-13000,o+-19"
+            + "99,o,-6999,o.-6999,o/-6000,o:-6499,o;-6499,o?-6000,o]-5000,oi3000,oj3099,ol1199,om2599,on3300,oo"
+            + "2699,op1999,or-2900,ou2899,ov1699,ow4100,ox-9900,oy4099,oz-500,p\"-10000,p'-10000,p*-16999,p+-399"
+            + "9,p--1999,p]-1999,pa-599,pb-99,pf-700,pg-99,ph500,pi-700,pk-200,pl-599,pm-200,pp-299,pq-399,pt-5"
+            + "00,pu-399,pv-1399,pw-500,px-1300,pz-1300,q!-8000,q\"-5000,q'-5000,q)-5000,q*-8999,q,-10000,q.-100"
+            + "00,q/-8000,q:-8999,q;-8999,q?-6499,q]-3999,qa-800,qq-500,qw-1000,r\"-8000,r'-8000,r*-13999,rg-500"
+            + ",rp1000,rr1100,rs500,rv-1000,rx-899,ry500,rz-700,s\"-10000,s'-10000,s*-15000,s+-3999,s--6000,se-2"
+            + "00,sp399,sr-2900,sv-500,sx-1499,sz-500,t\"500,t'500,t+-3000,t--5500,tb-1000,tc-1000,td-1999,te-19"
+            + "99,tg-1999,tr1300,tt1600,tu-1000,tw-1999,tx-1000,u\"-8999,u'-8999,u*-13000,u+-3999,u--3000,ub-500"
+            + ",uc-700,um-1000,uq-1000,ur-1799,us-399,uu-1000,uv-399,ux-12299,v!-8000,v\"-1999,v'-1999,v)-6000,v"
+            + "*-6000,v,-15500,v.-15500,v/-11999,v:-10000,v;-10000,v?-8000,v]-8999,va-1999,vb-500,vd-1999,ve-50"
+            + "0,vf-1999,vg-2500,vi-1499,vj-1499,vm-1300,vn-1300,vo-599,vp-1999,vq-2500,vr-399,vs-3399,vu-1300,"
+            + "vw-1000,vx1000,vy-1000,w!-8999,w\"-3999,w'-3999,w)-8000,w*-6999,w,-11000,w.-11000,w/-8999,w:-1000"
+            + "0,w;-10000,w?-8000,w]-8999,wa-1799,wb-1000,wf-1000,wg-1000,wh-500,wi-500,wj-800,wm-500,wn-299,wp"
+            + "-899,wq-899,wr-1000,x\"-6000,x'-6000,x*-11000,x--3000,x]1000,xa-99,xq-500,xt99,xv-1100,xw-99,xx-1"
+            + "799,xz-1000,y\"-6999,y'-6999,y*-15000,y+-3000,y--1000,yb-500,yq-99,yr-1300,yw-99,yx-2899,yz-1999,"
+            + "z\"-8000,z'-8000,z*-16000,z+-3000,z--1000,zv-1000,zx-1300,{!-8000,{3-3000,{4-1000,{73000,{A-1999,"
+            + "{B1000,{H-1999,{L-1999,{P1000,{T3999,{V3999,{Y6000,{k-1000,|]-5000,}!-11999,}\"-6999,}'-6999,}*-5"
+            + "000,},-15000,}.-15000,";
+    }
+    private static String Sinhala_MN_0_3_kerning() {
+        return " A-4785, T-4150, V-2783, W-1367, Y-2783,, -4589,. -4589,: -4589,; -4589,AC-1855,AG-1855,AO-1855,"
+            + "AQ-1855,AT-6787,AU-927,AV-6787,AW-3662,AY-6787,Av-3906,Aw-3906,Ay-1123,BA927,C,-2783,C.-2783,CA1"
+            + "123,D,-5517,D.-5517,DA-2832,DV-2246,DW-2246,DY-4589,F,-9716,F.-9716,FA-4833,Fe-4150,Fo-5517,Je-9"
+            + "27,Jo-927,Ju-927,KO-5517,Ke-2734,Ko-2734,Ku-2246,Ky-3466,LT-4589,LV-4589,LW-4589,LY-5859,Ly-3906"
+            + ",O,-6982,O.-8349,OA-2783,OT-5566,OV-1855,OW-1855,OX-3662,OY-3662,P,-15283,P.-11621,PA-8349,Pe-11"
+            + "23,Po-5566,RO-2734,RT-4101,RU-1416,RV-3662,RW-1416,RY-4589,T,-8789,T--7714,T.-8789,T:-3906,T;-39"
+            + "06,TA-6787,TO-5566,Ta-8300,Te-9716,To-9716,Tr-5664,Tu-6298,Tw-6787,Ty-5664,U,-4150,U.-4150,UA-11"
+            + "23,V,-8300,V--4589,V.-7714,VA-6787,VG-1855,VO-1855,Va-5517,Ve-4589,Vo-4589,Vu-3466,W,-7714,W--45"
+            + "89,W.-7714,WA-3662,WO-1855,Wa-2734,We-4101,Wo-4101,Wu-3466,Wy-1416,Y,-8789,Y--9716,Y.-8789,Y:-39"
+            + "06,Y;-3906,YA-7714,YO-3662,YS-927,Ya-5517,Ye-7714,Yo-7714,Yu-5517,ap-488,av-1611,aw-1611,ay-1855"
+            + ",b,-2832,b.-2832,by-488,c,-1904,c.-1904,dd-488,e,-1904,e.-1904,ev-683,ew-683,ey-683,fe-488,fi976"
+            + ",fo-488,go-488,gy5566,hy-1611,ke-1416,ko-1416,lw-488,ly-488,my-1611,nu-488,nv-683,ny-927,o,-3906"
+            + ",o.-8349,ov-488,ow-488,ox-683,oy-927,p,-3906,p.-3906,py-1611,r,-7714,r--5859,r.-7714,r:5566,r;18"
+            + "55,rc-1416,rd-1416,re-1416,ro-1416,rq-1416,rt927,rv488,ry488,sw-488,t,4150,t.4150,t:4150,t;4150,"
+            + "v,-5859,v.-7714,ve-927,vo-927,w,-5859,w.-5859,we-488,wo-927,xe-1416,y,-9716,y.-9716,ye-927,yo-27"
+            + "34,";
+    }
+    private static String Sinhala_MN_0_6_kerning() {
+        return " A-4785, T-4199, V-2783, W-1416, Y-2783,, -4589,. -4589,: -4589,; -4589,AC-1904,AG-1904,AO-1904,"
+            + "AQ-1904,AT-6787,AU-878,AV-6787,AW-3710,AY-6787,Av-3906,Aw-3906,Ay-1123,BA878,C,-2783,C.-2783,CA1"
+            + "123,D,-5517,D.-5517,DA-5566,DV-2197,DW-2197,DY-4589,F,-9716,F.-9716,FA-4785,Fe-4199,Fo-5517,Je-8"
+            + "78,Jo-878,Ju-878,KO-5517,Ke-2685,Ko-2685,Ku-2197,Ky-3515,LT-4589,LV-4589,LW-4589,LY-5908,Ly-3906"
+            + ",O,-6982,O.-8300,OA-2783,OT-5615,OV-1904,OW-1904,OX-3710,OY-3710,P,-19433,P.-11621,PA-8300,Pe-11"
+            + "23,Po-5615,RO-2685,RT-4101,RU-1416,RV-3710,RW-1416,RY-4589,T,-8789,T--7714,T.-8789,T:-3906,T;-39"
+            + "06,TA-6787,TO-5615,Ta-8300,Te-9716,To-9716,Tr-5712,Tu-6298,Tw-6787,Ty-5712,U,-4199,U.-4199,UA-11"
+            + "23,V,-8300,V--4589,V.-7714,VA-6787,VG-1904,VO-1904,Va-5517,Ve-4589,Vo-4589,Vu-3515,W,-7714,W--45"
+            + "89,W.-7714,WA-3710,WO-1904,Wa-2685,We-4101,Wo-4101,Wu-3515,Wy-1416,Y,-8789,Y--13867,Y.-15283,Y:-"
+            + "3906,Y;-3906,YA-7714,YO-3710,YS-878,Ya-5517,Ye-7714,Yo-7714,Yu-5517,ap-488,av-1611,aw-1611,ay-19"
+            + "04,b,-2783,b.-2783,by-488,c,-1904,c.-1904,dd-488,e,-1904,e.-1904,ev-683,ew-683,ey-683,fe-488,fo-"
+            + "488,go-488,gy5615,hy-1611,ke-1416,ko-1416,lw-488,ly-488,my-1611,nu-488,nv-683,ny-878,o,-3906,o.-"
+            + "8300,ov-488,ow-488,ox-683,oy-878,p,-3906,p.-3906,py-1611,r,-7714,r--5908,r.-7714,r:5615,r;1904,r"
+            + "c-1416,rd-1416,re-1416,ro-1416,rq-1416,rt878,rv488,ry488,sw-488,t,4199,t.4199,t:4199,t;4199,v,-5"
+            + "908,v.-7714,ve-878,vo-878,w,-5908,w.-5908,we-488,wo-878,xe-1416,y,-9716,y.-9716,ye-878,yo-2685,";
+    }
+    private static String Sinhala_Sangam_MN_0_3_kerning() {
+        return " A-3710, T-1220, V-1220, W-1220, Y-2539,\"A-7031,A\"-8593,AJ-3125,AT-10937,AV-9375,AW-8349,AY-1250"
+            + "0,DJ-6250,F,-16503,F.-16503,F:-5468,F;-6738,FA-8349,FJ-15625,KO-7275,Ke-7275,Ko-6250,L\"-12011,LT"
+            + "-12988,LV-9375,LW-6250,LY-13525,OJ-4150,OT-3906,OV-3222,OX-3222,OY-3222,PA-7324,PJ-13525,QT-5957"
+            + ",QV-2685,QW-2685,QX-1904,QY-4785,T,-14306,T.-14306,T:-6250,T;-6250,TA-9375,TJ-13574,TO-3906,TQ-6"
+            + "250,Ta-8349,Te-8349,Ti-3222,To-9375,Tu-10937,Tw-8593,Ty-7812,VA-6250,VJ-9375,VO-781,VQ-2343,Va-4"
+            + "687,Ve-4687,Vo-3906,Vu-2880,WA-6250,WJ-6250,Wa-3125,We-3125,Wo-3125,XC-3369,XO-3222,XQ-3222,YA-8"
+            + "300,YJ-11425,YO-4785,YQ-4785,Ya-8837,Ye-10937,Yo-10937,Yu-5566,aw781,cw-1074,cy-1074,ev-1074,ey-"
+            + "1074,f,-7031,f.-7031,f:-2880,f;-2343,fe-781,fo-781,ko-1562,ov-2392,ow-1074,oy-1611,r.-8642,to-78"
+            + "1,v,-9912,v.-9912,v;-1904,va-488,vc-2392,ve-2392,vo-781,w,-9375,w.-6591,wa-1074,wc-1074,we-1074,"
+            + "wo-1074,y,-12500,y.-9619,ya-1611,yc-1074,ye-1074,yo-1611,";
+    }
+    private static String Skia_0_3_kerning() {
+        return "'A-3417,(T3906,(V2880,(Y2880,(j9814,,)-5908,,--5859,,1-2392,,3-2392,,5-2880,,7-2294,,9-1806,-&-9"
+            + "76,-11220,-2-2441,-3-1464,-5488,-7-2441,-9488,-A-2001,-B-1708,-C1708,-D-1708,-E-1708,-F-1708,-G1"
+            + "708,-H-1708,-I-1708,-J-3906,-K-1708,-L-1708,-M-976,-N-1708,-O1708,-P-1708,-Q1708,-R-1708,-S-2880"
+            + ",-T-7324,-U-1513,-V-2392,-W-2880,-X-2392,-Y-7324,-Z-3417,-a-976,-b-1513,-c2001,-d2001,-e1953,-f-"
+            + "1513,-g2001,-h-1513,-i-1464,-j-1513,-k-1513,-l-1513,-m-1513,-n-1513,-o1953,-p-1513,-q2001,-r-151"
+            + "3,-t-976,-u-1464,-v-1513,-w-976,-x-2392,-y-1464,-z-3906,.)-5908,.1-2392,.3-2392,.5-2880,.7-2490,"
+            + ".9-1806,.]-5908,.}-2392,/4-2880,02-976,07-1123,1,488,1.488,27-683,4--976,47-2294,5--1953,62-1318"
+            + ",67-1806,7,-4882,7-976,7.-4589,7/-2001,71488,74-1123,9,-2099,9.-2001,92-1123,97-488,A--2001,AA-4"
+            + "88,AC-1513,AG-1513,AM-1513,AO-1513,AQ-1513,AS-2001,AT-5615,AU-2001,AV-1220,AW-2783,AX-488,AY-390"
+            + "6,AZ-976,Af-488,At-976,Av-976,Aw-488,Ay-976,B,-2392,B.-1513,BA-976,BC-1513,BG-1513,BJ-2001,BO-97"
+            + "6,BQ-976,BT-3906,BV-488,BW-976,BX-488,BY-2880,By-976,C)976,C--9814,CA-976,CC-5419,CG-5419,CM-976"
+            + ",CO-3906,CQ-3906,CS-3417,CT-1513,CV-1513,CW-1513,CX-976,CY-2001,CZ-976,Ca-488,Cc-2001,Cd-2001,Ce"
+            + "-1953,Cg-2001,Co-1953,Cq-2001,Cs-2880,Ct-2392,Cv-2880,Cw-2880,Cy-2929,Cz-2001,D,-6298,D-1708,D.-"
+            + "5419,DA-2880,DJ-2392,DT-4394,DV-683,DW-2001,DX-976,DY-3417,DZ-3710,EA-1513,ET-2880,EV-976,EW-976"
+            + ",EY-976,EZ-2001,Ea-1171,Ec-976,Ed-976,Ee-976,Eg-976,Eo-488,Eq-976,Es-976,Ev-1464,Ew-1464,Ex-488,"
+            + "Ey-1464,Ez-1464,F,-17089,F-488,F.-14599,FA-2880,FJ-3417,FM-1513,FT-1513,FV-976,FW-976,FY-1513,FZ"
+            + "-2880,Fa-2929,Fc-1513,Fd-1513,Fe-1464,Fg-1513,Fo-1464,Fq-1513,Fs-1513,Fv-1513,Fw-1513,Fx-1513,Fy"
+            + "-1464,Fz-1513,G--1708,GT-4394,GW-1708,H--1708,I--1708,J,-4394,J--1513,J.-2880,JA-878,JJ-2001,Ja-"
+            + "488,K--4882,KA-976,KC-1123,KG-1123,KO-1220,KQ-1220,KT-2001,KV-2001,KW-2001,KX-976,KY-2001,KZ-488"
+            + ",Ka-195,Kc-976,Kd-976,Ke-976,Kg-976,Ko-976,Kq-976,Ks-976,Kv-2001,Kw-2001,Ky-1953,Kz-488,L'-6787,"
+            + "L--9814,LA-976,LC-6787,LG-6787,LL-1806,LO-5419,LQ-5419,LS-4882,LT-10693,LU-4882,LV-6787,LW-6787,"
+            + "LX-2001,LY-9814,LZ-976,La-976,Lc-2392,Ld-2392,Le-2441,Lg-2392,Lo-2441,Lq-2392,Ls-2392,Lt-2392,Lu"
+            + "-976,Lv-3710,Lw-3710,Ly-3710,Lz-1513,M--976,MA-1513,MT-1513,MY-1513,MZ-488,N--1708,O,-3417,O-170"
+            + "8,O.-2392,OA-1513,OJ-2880,OT-2880,OW-488,OX-976,OY-1708,OZ-2392,P,-16601,P.-14208,PA-2685,PJ-341"
+            + "7,PM-1513,PT-1513,PX-976,PZ-2392,Pa-1953,Pc-1220,Pd-1220,Pe-1220,Pg-1220,Po-1220,Pq-1220,Ps-1513"
+            + ",Q,-488,Q-1708,Q.-2392,QA-1513,QJ-1513,QT-2880,QW-488,QX-976,QY-2392,QZ-2001,R--3417,RA-976,RC-2"
+            + "880,RG-2880,RJ-976,RO-1513,RQ-1513,RS-1513,RT-2392,RU-2001,RW-976,RX-1513,RY-2001,RZ-1513,Rc-488"
+            + ",Rd-488,Re-488,Rf-976,Rg-488,Ro-488,Rq-488,Rs-488,Rt-488,Ru-976,Rv-1220,Rw-1220,Rx-976,Ry-1220,S"
+            + ",-2880,S--488,S.-976,SA-976,SC-488,SG-488,SJ-1513,SS-976,ST-3417,SV-1513,SW-1513,SY-3417,SZ-3417"
+            + ",Sf-976,Ss-1513,St-976,Sv-2001,Sw-1513,Sx-1513,Sy-1953,Sz-976,T)3906,T,-13183,T--7324,T.-10693,T"
+            + "A-5615,TC-3906,TG-3906,TJ-4882,TM-1513,TO-2880,TQ-2880,TS-2392,TT-2392,TW-1513,TZ-6787,Ta-10742,"
+            + "Tc-9814,Td-9814,Te-9277,Tf-4882,Tg-9814,Tm-9814,Tn-9814,To-9277,Tp-9814,Tq-9814,Tr-9814,Ts-10693"
+            + ",Tt-3417,Tu-9765,Tv-11181,Tw-10693,Tx-10302,Ty-11230,Tz-8789,U,-5419,U--1513,U.-2880,UA-2001,UJ-"
+            + "2392,UM-1513,V)2880,V,-14599,V--2392,V.-12207,VA-1220,VC-2001,VG-2001,VJ-3417,VM-488,VY976,VZ-23"
+            + "92,Va-2929,Vc-3417,Vd-3417,Ve-2929,Vg-2880,Vm-976,Vn-976,Vo-2929,Vp-976,Vq-2880,Vr-976,Vs-2392,V"
+            + "u-976,Vy-488,Vz-976,W,-11718,W--2880,W.-9814,WA-2783,WC-2001,WG-2001,WJ-3417,WM-1513,WO-488,WQ-4"
+            + "88,WT-1513,WY-976,WZ-2392,Wa-3906,Wc-3906,Wd-3906,We-3906,Wg-3906,Wm-2001,Wn-2001,Wo-3906,Wp-200"
+            + "1,Wq-3906,Wr-2001,Ws-3417,Wu-1953,Wy-976,Wz-1513,X--2392,XA-488,XC-1513,XG-1513,XJ-976,XO-976,XQ"
+            + "-976,XZ-976,Xa-195,Xc-2001,Xd-2001,Xe-1464,Xg-2001,Xo-1464,Xq-2001,Xs-976,Xv-1513,Xw-1513,Xy-146"
+            + "4,Y)2880,Y,-14208,Y--7324,Y.-12109,YA-3906,YC-3417,YG-3417,YJ-4394,YM-1513,YO-1708,YQ-2392,YV976"
+            + ",YW-976,YZ-1513,Ya-5859,Yc-5908,Yd-5908,Ye-5371,Yg-5908,Ym-3906,Yn-3906,Yo-5371,Yp-3906,Yq-5908,"
+            + "Yr-3906,Ys-5908,Yu-3906,Yv-3417,Yw-3417,Yx-3417,Yy-3417,Yz-3417,Z--8300,ZA-1513,ZC-2880,ZG-2880,"
+            + "ZO-2001,ZQ-2001,ZT-976,ZZ-488,Za-488,Zc-2001,Zd-2001,Ze-1953,Zg-2001,Zo-1953,Zq-2001,Zs-2001,Zt-"
+            + "1513,Zv-2392,Zw-2392,Zy-1953,a--1464,at-195,av-683,ay-683,b,-2880,b-2001,b.-976,c--6787,cT-6298,"
+            + "cW-3417,ca-1464,cc-3222,cd-3222,ce-1953,cf-2392,cg-3222,co-1953,cq-3222,cs-2001,ct-3417,cv-976,c"
+            + "w-488,cx-1513,cy-976,cz-2001,d--1513,e,-2880,e-488,e.-976,eT-10302,f\"2001,f'2001,f)4882,f,-10693"
+            + ",f--5419,f.-7324,f\\6298,f]3906,fa-2441,fc-976,fd-976,fe-488,ff-8105,fg-976,fi-5712,fj-5908,fl-55"
+            + "66,fo-488,fq-976,fs-488,ft-8300,fv-976,fw-976,fx-976,fy-976,fz-6005,f}4882,g--1513,h--1513,i--14"
+            + "64,j,-488,j--1513,j.-976,k--4882,ka-244,kc-976,kd-976,ke-488,kg-976,ko-488,kq-976,ks-292,kt-781,"
+            + "kv-976,kw-488,kx-488,ky-976,kz-488,l--1513,m--1513,n--1513,o,-2392,o-1953,o.-488,p,-2880,p-1513,"
+            + "p.-976,q--1513,r,-14599,r--5419,r.-11181,ra-3222,rc-1708,rd-1708,re-1123,rg-1708,ro-1123,rq-1708"
+            + ",rs-976,rz-1513,s--2392,sf-683,ss-1123,st-976,t--6298,ta-1074,tc-1220,td-1220,te-585,tf-4980,tg-"
+            + "1220,to-585,tq-1220,ts-976,tt-6005,tv-2392,tw-2001,tx-1513,ty-2929,tz-3417,u--1464,v,-14208,v--1"
+            + "513,v.-10693,va-488,w,-11718,w--976,w.-8300,x--2392,y,-14208,y--1464,y.-10693,ya-488,z--3906,";
+    }
+    private static String Snell_Roundhand_0_3_kerning() {
+        return "F,-9199,F.-9199,T,-12899,T--12899,T.-12899,T:-12899,T;-12899,Ta-9199,Tc-9199,Te-9199,Ti-7400,To-"
+            + "9199,Tr-7400,Ts-7400,Tu-7400,Tw-7400,Ty-7400,V,-7400,V.-7400,V:-3699,V;-3699,W,-7400,W.-7400,W:-"
+            + "3699,W;-3699,Y,-7400,Y--3699,Y.-7400,Y:-7400,Y;-7400,r,-12899,r.-12899,v,-5500,v.-5500,w,-5500,w"
+            + ".-5500,y,-3699,y.-3699,";
+    }
+    private static String Snell_Roundhand_0_6_kerning() {
+        return "F,-9199,F.-9199,T,-12899,T--12899,T.-12899,T:-12899,T;-12899,Ta-9199,Tc-9199,Te-9199,Ti-7400,To-"
+            + "9199,Tr-7400,Ts-7400,Tu-7400,Tw-7400,Ty-7400,V,-7400,V.-7400,V:-3699,V;-3699,W,-5500,W.-5500,W:-"
+            + "1799,W;-1799,Y,-3699,Y--3699,Y.-3699,Y:-3699,Y;-3699,r,-11100,r.-11100,v,-1799,v.-1799,w,-1799,w"
+            + ".-1799,";
+    }
+    private static String Songti_SC_0_3_kerning() {
+        return "fi-4100,fl-2700,";
+    }
+    private static String Songti_SC_0_6_kerning() {
+        return "fi-2899,fl-3399,";
+    }
+    private static String STIX_Two_Math_0_3_kerning() {
+        return " T-1999, V-1999, W-1999, X-1000, Y-1999,\"A-6999,\"C-1000,\"G-1000,\"O-1000,\"Q-1000,\"T1999,\"V3000,\"W"
+            + "3000,\"Y2500,\"a-2500,\"c-2500,\"d-2500,\"e-2500,\"g-1999,\"o-2500,\"q-2500,\"s-1499,\"v1499,\"w1499,\"y1499"
+            + ",\"z-1000,&T-3000,&V-6000,&W-6000,&Y-6000,'A-6999,'C-1000,'G-1000,'O-1000,'Q-1000,'T1999,'V3000,'"
+            + "W3000,'Y2500,'a-2500,'c-2500,'d-2500,'e-2500,'g-1999,'o-2500,'q-2500,'s-1499,'v1499,'w1499,'y149"
+            + "9,'z-1000,(j8000,,\"-6999,,'-6999,,*-6999,-A-1999,-C3000,-G3000,-O3000,-Q3000,-S1000,-T-5000,-V-5"
+            + "000,-W-5000,-X-3000,-Y-6000,-Z-1999,-c1000,-d1000,-e1000,-g1000,-o1000,-q1000,-s1000,-v-1999,-w-"
+            + "1499,-x-2500,-y-1999,.\"-6999,.'-6999,.*-6999,A\"-6999,A'-6999,A*-6999,A--1999,AC-3999,AG-3999,AO-"
+            + "3999,AQ-3999,AT-6000,AU-4499,AV-10000,AW-10000,AY-8999,Ac-1000,Ad-1000,Ae-1000,Ao-1000,Aq-1000,A"
+            + "t-1499,Au-1999,Av-5000,Aw-4499,Ay-4499,B,-1499,B-1999,B.-1000,BA-1999,BT-1499,BV-2500,BW-2500,BX"
+            + "-2500,BY-1999,Bv-1000,Bw-1000,By-1000,CC-1000,CG-1000,CO-1000,CQ-1000,CT-500,D,-4499,D-3000,D.-3"
+            + "999,DA-3999,DT-1000,DV-3000,DW-3000,DX-4499,DY-3500,DZ-1999,EC-1999,EG-1999,EO-1999,EQ-1999,ET-1"
+            + "499,Eg-1000,Eu-1000,Ev-1999,Ew-1499,Ey-1499,F!1999,F\"1999,F'1999,F*1999,F,-6499,F--1999,F.-6000,"
+            + "FA-6499,FC-1499,FG-1499,FO-1499,FQ-1499,Fa-3500,Fc-3999,Fd-3999,Fe-3999,Fm-1499,Fn-1499,Fo-3999,"
+            + "Fp-1499,Fq-3999,Fr-1499,G,-2500,G.-1999,GA-1000,GV-1000,GW-1000,GY-1000,J,-3999,J.-3999,J:-1999,"
+            + "J;-1999,Ja-1000,Jc-1000,Jd-1000,Je-1000,Jo-1000,Jq-1000,K!1000,K--3000,KC-3999,KG-3999,KO-3999,K"
+            + "Q-3999,Kc-1999,Kd-1999,Ke-1999,Ko-1999,Kq-1999,Ku-1999,Kv-3999,Kw-3500,Ky-3999,L!1000,L\"-5000,L'"
+            + "-5000,L*-5000,LC-1000,LG-1000,LO-1000,LQ-1000,LT-5000,LU-1999,LV-6499,LW-6499,LY-6000,Lv-1499,Lw"
+            + "-1000,Ly-1499,N,-2500,N.-1999,NA-1499,Na-1000,Nc-1000,Nd-1000,Ne-1000,No-1000,Nq-1000,O,-4499,O-"
+            + "3000,O.-3999,OA-3999,OT-1000,OV-3000,OW-3000,OX-4499,OY-3500,OZ-1999,P\"1999,P'1999,P*1999,P,-949"
+            + "9,P--1999,P.-8999,PA-8500,PX-3000,PZ-1499,Pa-2500,Pc-3000,Pd-3000,Pe-3000,Pg-1000,Po-3000,Pq-300"
+            + "0,Ps-1499,Q,-4499,Q-3000,Q.-3999,QA-3999,QT-1000,QV-3000,QW-3000,QX-4499,QY-3500,QZ-1999,R\"-3000"
+            + ",R'-3000,R*-3000,RC-1999,RG-1999,RO-1999,RQ-1999,RT-3000,RU-3500,RV-5000,RW-5000,RY-5500,Rc-1499"
+            + ",Rd-1499,Re-1499,Ro-1499,Rq-1499,Ru-1499,Rv-1999,Rw-1999,Ry-1999,S-1999,SA-1999,ST-1000,SZ-1499,"
+            + "Sv-1000,Sw-1000,Sy-1000,T!1999,T\"1999,T&-1999,T'1999,T*1999,T,-6499,T--5000,T.-6000,T:-1999,T;-1"
+            + "999,TA-6000,TC-1000,TG-1000,TO-1000,TQ-1000,TZ-1000,Ta-6000,Tc-6999,Td-6999,Te-6999,Tg-6000,Tm-3"
+            + "000,Tn-3000,To-6999,Tp-3000,Tq-6999,Tr-3000,Ts-3500,Tt-1999,Tu-3000,Tv-5000,Tw-5000,Tx-5000,Ty-5"
+            + "000,Tz-3999,U,-5500,U.-5000,UA-5500,Uc-1000,Ud-1000,Ue-1000,Ug-1999,Uo-1000,Uq-1000,Uv-1000,Uw-1"
+            + "000,Ux-1499,Uy-1000,Uz-1000,V -1999,V\"3999,V&-3500,V'3999,V*3000,V,-10500,V--6000,V.-10000,V:-50"
+            + "00,V;-5000,VA-10500,VC-3500,VG-3500,VO-3500,VQ-3500,Va-6000,Vc-6499,Vd-6499,Ve-6499,Vf-2500,Vg-5"
+            + "500,Vm-3500,Vn-3500,Vo-6499,Vp-3500,Vq-6499,Vr-3500,Vs-4499,Vt-1999,Vu-3500,Vv-3500,Vw-3000,Vx-3"
+            + "500,Vy-3500,Vz-4499,W -1999,W\"3999,W&-3500,W'3999,W*3000,W,-10500,W--6000,W.-10000,W:-5000,W;-50"
+            + "00,WA-10500,WC-3500,WG-3500,WO-3500,WQ-3500,Wa-6000,Wc-6499,Wd-6499,We-6499,Wf-2500,Wg-5500,Wm-3"
+            + "500,Wn-3500,Wo-6499,Wp-3500,Wq-6499,Wr-3500,Ws-4499,Wt-1999,Wu-3500,Wv-3500,Ww-3000,Wx-3500,Wy-3"
+            + "500,Wz-4499,X -1000,X!1000,X--3000,XC-3999,XG-3999,XO-3999,XQ-3999,Xc-1999,Xd-1999,Xe-1999,Xo-19"
+            + "99,Xq-1999,Xu-1999,Xv-3999,Xw-3999,Xy-3999,Y -1999,Y\"3000,Y&-4600,Y'3000,Y*1999,Y,-8500,Y--6999,"
+            + "Y.-8000,Y:-5500,Y;-5500,YA-8999,YC-3999,YG-3999,YO-3999,YQ-3999,Ya-7500,Yc-8000,Yd-8000,Ye-8000,"
+            + "Yf-3000,Yg-8500,Ym-6000,Yn-6000,Yo-8000,Yp-6000,Yq-8000,Yr-6000,Ys-5500,Yt-3500,Yu-6000,Yv-5000,"
+            + "Yw-5000,Yx-5000,Yy-5000,Yz-6000,ZC-1999,ZG-1999,ZO-1999,ZQ-1999,Zv-3000,Zw-3000,Zy-3000,[j8000,a"
+            + "\"-3000,a'-3000,a*-3000,av-2500,aw-2500,ay-1999,b\"-1000,b'-1000,b*-1000,b,-1999,b-1000,b.-1999,bx"
+            + "-1000,e\"-1999,e'-1999,e*-1999,e-1499,ex-1000,f 5000,f!6000,f\"8000,f'8000,f)6999,f*8000,f?6999,f]"
+            + "6999,fi1000,fj1499,f}6999,g\"1000,g'1000,g*1000,g--1000,g.-1000,ga-1000,gc500,gd500,ge500,gj1000,"
+            + "go500,gq500,h\"-3000,h'-3000,h*-3000,hv-2500,hw-2500,hy-1999,j,-1999,j.-1999,k--3000,kc-2500,kd-2"
+            + "500,ke-2500,kg-1000,ko-2500,kq-2500,kv-1999,kw-1499,ky-1999,m\"-3000,m'-3000,m*-3000,mv-2500,mw-2"
+            + "500,my-1999,n\"-3000,n'-3000,n*-3000,nv-2500,nw-2500,ny-1999,o\"-1000,o'-1000,o*-1000,o,-1999,o-10"
+            + "00,o.-1999,ox-1000,p\"-1000,p'-1000,p*-1000,p,-1999,p-1000,p.-1999,px-1000,q,-1999,q.-1999,r\"1999"
+            + ",r'1999,r*1999,r,-6499,r--2500,r.-6499,ra-1499,rc-1000,rd-1000,re-1000,ro-1000,rq-1000,s-500,t--"
+            + "2500,tc-500,td-500,te-500,to-500,tq-500,tt-1499,v\"3000,v'3000,v*3000,v,-7500,v--1999,v.-7500,va-"
+            + "1499,vc-500,vd-500,ve-500,vg-1000,vo-500,vq-500,w\"3000,w'3000,w*3000,w,-6999,w--1499,w.-6999,wa-"
+            + "1499,wc-500,wd-500,we-500,wg-1000,wo-500,wq-500,x\"1999,x'1999,x*1999,x--2500,xc-1000,xd-1000,xe-"
+            + "1000,xo-1000,xq-1000,y\"3000,y'3000,y*3000,y,-7500,y--1999,y.-7500,ya-1499,yc-500,yd-500,ye-500,y"
+            + "g-1000,yo-500,yq-500,{j8000,";
+    }
+    private static String STIX_Two_Text_0_3_kerning() {
+        return " T-1999, V-1999, W-1999, X-1000, Y-1999,\"A-6999,\"C-1000,\"G-1000,\"O-1000,\"Q-1000,\"T1999,\"V3000,\"W"
+            + "3000,\"Y2500,\"a-2500,\"c-2500,\"d-2500,\"e-2500,\"g-1999,\"o-2500,\"q-2500,\"s-1499,\"v1499,\"w1499,\"y1499"
+            + ",\"z-1000,&T-3000,&V-6000,&W-6000,&Y-6000,'A-6999,'C-1000,'G-1000,'O-1000,'Q-1000,'T1999,'V3000,'"
+            + "W3000,'Y2500,'a-2500,'c-2500,'d-2500,'e-2500,'g-1999,'o-2500,'q-2500,'s-1499,'v1499,'w1499,'y149"
+            + "9,'z-1000,(j8000,,\"-6999,,'-6999,,*-6999,-A-1999,-C3000,-G3000,-O3000,-Q3000,-S1000,-T-5000,-V-5"
+            + "000,-W-5000,-X-3000,-Y-6000,-Z-1999,-c1000,-d1000,-e1000,-g1000,-o1000,-q1000,-s1000,-v-1999,-w-"
+            + "1499,-x-2500,-y-1999,.\"-6999,.'-6999,.*-6999,A\"-6999,A'-6999,A*-6999,A--1999,AC-3999,AG-3999,AO-"
+            + "3999,AQ-3999,AT-6000,AU-4499,AV-10000,AW-10000,AY-8999,A`-5000,Ac-1000,Ad-1000,Ae-1000,Ao-1000,A"
+            + "q-1000,At-1499,Au-1999,Av-5000,Aw-4499,Ay-4499,B,-1499,B-1999,B.-1000,BA-1999,BT-1499,BV-2500,BW"
+            + "-2500,BX-2500,BY-1999,Bv-1000,Bw-1000,By-1000,CC-1000,CG-1000,CO-1000,CQ-1000,CT-500,D,-4499,D-3"
+            + "000,D.-3999,DA-3999,DT-1000,DV-3000,DW-3000,DX-4499,DY-3500,DZ-1999,EC-1999,EG-1999,EO-1999,EQ-1"
+            + "999,ET-1499,Eg-1000,Eu-1000,Ev-1999,Ew-1499,Ey-1499,F!1999,F\"1999,F'1999,F*1999,F,-6499,F--1999,"
+            + "F.-6000,FA-6499,FC-1499,FG-1499,FO-1499,FQ-1499,Fa-3500,Fc-3999,Fd-3999,Fe-3999,Fm-1499,Fn-1499,"
+            + "Fo-3999,Fp-1499,Fq-3999,Fr-1499,G,-2500,G.-1999,GA-1000,GV-1000,GW-1000,GY-1000,J,-3999,J.-3999,"
+            + "J:-1999,J;-1999,Ja-1000,Jc-1000,Jd-1000,Je-1000,Jo-1000,Jq-1000,K!1000,K--3000,KC-3999,KG-3999,K"
+            + "O-3999,KQ-3999,Kc-1999,Kd-1999,Ke-1999,Ko-1999,Kq-1999,Ku-1999,Kv-3999,Kw-3500,Ky-3999,L!1000,L\""
+            + "-5000,L'-5000,L*-5000,LC-1000,LG-1000,LO-1000,LQ-1000,LT-5000,LU-1999,LV-6499,LW-6499,LY-6000,Lv"
+            + "-1499,Lw-1000,Ly-1499,N,-2500,N.-1999,NA-1499,Na-1000,Nc-1000,Nd-1000,Ne-1000,No-1000,Nq-1000,O,"
+            + "-4499,O-3000,O.-3999,OA-3999,OT-1000,OV-3000,OW-3000,OX-4499,OY-3500,OZ-1999,P\"1999,P'1999,P*199"
+            + "9,P,-9499,P--1999,P.-8999,PA-8500,PX-3000,PZ-1499,Pa-2500,Pc-3000,Pd-3000,Pe-3000,Pg-1000,Po-300"
+            + "0,Pq-3000,Ps-1499,Q,-4499,Q-3000,Q.-3999,QA-3999,QT-1000,QV-3000,QW-3000,QX-4499,QY-3500,QZ-1999"
+            + ",R\"-3000,R'-3000,R*-3000,RC-1999,RG-1999,RO-1999,RQ-1999,RT-3000,RU-3500,RV-5000,RW-5000,RY-5500"
+            + ",Rc-1499,Rd-1499,Re-1499,Ro-1499,Rq-1499,Ru-1499,Rv-1999,Rw-1999,Ry-1999,S-1999,SA-1999,ST-1000,"
+            + "SZ-1499,Sv-1000,Sw-1000,Sy-1000,T!1999,T\"1999,T&-1999,T'1999,T*1999,T,-6499,T--5000,T.-6000,T:-1"
+            + "999,T;-1999,TA-6000,TC-1000,TG-1000,TO-1000,TQ-1000,TZ-1000,T`1999,Ta-6000,Tc-6999,Td-6999,Te-69"
+            + "99,Tg-6000,Tm-3000,Tn-3000,To-6999,Tp-3000,Tq-6999,Tr-3000,Ts-3500,Tt-1999,Tu-3000,Tv-5000,Tw-50"
+            + "00,Tx-5000,Ty-5000,Tz-3999,U,-5500,U.-5000,UA-5500,Uc-1000,Ud-1000,Ue-1000,Ug-1999,Uo-1000,Uq-10"
+            + "00,Uv-1000,Uw-1000,Ux-1499,Uy-1000,Uz-1000,V -1999,V\"3999,V&-3500,V'3999,V*3000,V,-10500,V--6000"
+            + ",V.-10000,V:-5000,V;-5000,VA-10500,VC-3500,VG-3500,VO-3500,VQ-3500,V`1999,Va-6000,Vc-6499,Vd-649"
+            + "9,Ve-6499,Vf-2500,Vg-5500,Vm-3500,Vn-3500,Vo-6499,Vp-3500,Vq-6499,Vr-3500,Vs-4499,Vt-1999,Vu-350"
+            + "0,Vv-3500,Vw-3000,Vx-3500,Vy-3500,Vz-4499,W -1999,W\"3999,W&-3500,W'3999,W*3000,W,-10500,W--6000,"
+            + "W.-10000,W:-5000,W;-5000,WA-10500,WC-3500,WG-3500,WO-3500,WQ-3500,W`1999,Wa-6000,Wc-6499,Wd-6499"
+            + ",We-6499,Wf-2500,Wg-5500,Wm-3500,Wn-3500,Wo-6499,Wp-3500,Wq-6499,Wr-3500,Ws-4499,Wt-1999,Wu-3500"
+            + ",Wv-3500,Ww-3000,Wx-3500,Wy-3500,Wz-4499,X -1000,X!1000,X--3000,XC-3999,XG-3999,XO-3999,XQ-3999,"
+            + "Xc-1999,Xd-1999,Xe-1999,Xo-1999,Xq-1999,Xu-1999,Xv-3999,Xw-3999,Xy-3999,Y -1999,Y\"3000,Y&-4600,Y"
+            + "'3000,Y*1999,Y,-8500,Y--6999,Y.-8000,Y:-5500,Y;-5500,YA-8999,YC-3999,YG-3999,YO-3999,YQ-3999,Y`2"
+            + "500,Ya-7500,Yc-8000,Yd-8000,Ye-8000,Yf-3000,Yg-8500,Ym-6000,Yn-6000,Yo-8000,Yp-6000,Yq-8000,Yr-6"
+            + "000,Ys-5500,Yt-3500,Yu-6000,Yv-5000,Yw-5000,Yx-5000,Yy-5000,Yz-6000,ZC-1999,ZG-1999,ZO-1999,ZQ-1"
+            + "999,Zv-3000,Zw-3000,Zy-3000,[j8000,a\"-3000,a'-3000,a*-3000,av-2500,aw-2500,ay-1999,b\"-1000,b'-10"
+            + "00,b*-1000,b,-1999,b-1000,b.-1999,bx-1000,e\"-1999,e'-1999,e*-1999,e-1499,ex-1000,f 5000,f!6000,f"
+            + "\"8000,f'8000,f)6999,f*8000,f?6999,f]6999,f`8000,fb3399,ff-500,fh999,fj199,fk1099,fl1199,f}6999,g"
+            + "\"1000,g'1000,g*1000,g--1000,g.-1000,ga-1000,gc500,gd500,ge500,gj1000,go500,gq500,h\"-3000,h'-3000"
+            + ",h*-3000,hv-2500,hw-2500,hy-1999,j,-1999,j.-1999,k--3000,kc-2500,kd-2500,ke-2500,kg-1000,ko-2500"
+            + ",kq-2500,kv-1999,kw-1499,ky-1999,m\"-3000,m'-3000,m*-3000,mv-2500,mw-2500,my-1999,n\"-3000,n'-3000"
+            + ",n*-3000,nv-2500,nw-2500,ny-1999,o\"-1000,o'-1000,o*-1000,o,-1999,o-1000,o.-1999,ox-1000,p\"-1000,"
+            + "p'-1000,p*-1000,p,-1999,p-1000,p.-1999,px-1000,q,-1999,q.-1999,r\"1999,r'1999,r*1999,r,-6499,r--2"
+            + "500,r.-6499,ra-1499,rc-1000,rd-1000,re-1000,ro-1000,rq-1000,s-500,t--2500,tc-500,td-500,te-500,t"
+            + "o-500,tq-500,tt-1499,v\"3000,v'3000,v*3000,v,-7500,v--1999,v.-7500,v`3000,va-1499,vc-500,vd-500,v"
+            + "e-500,vg-1000,vo-500,vq-500,w\"3000,w'3000,w*3000,w,-6999,w--1499,w.-6999,w`3000,wa-1499,wc-500,w"
+            + "d-500,we-500,wg-1000,wo-500,wq-500,x\"1999,x'1999,x*1999,x--2500,xc-1000,xd-1000,xe-1000,xo-1000,"
+            + "xq-1000,y\"3000,y'3000,y*3000,y,-7500,y--1999,y.-7500,y`3000,ya-1499,yc-500,yd-500,ye-500,yg-1000"
+            + ",yo-500,yq-500,{j8000,";
+    }
+    private static String STIX_Two_Text_1_3_kerning() {
+        return " T-1999, V-1999, W-1999, X-1000, Y-1999,\"A-6999,\"C1000,\"G1000,\"O1000,\"Q1000,\"S1000,\"T1999,\"V3999"
+            + ",\"W3999,\"Y3999,\"Z1000,\"a-2500,\"c-2500,\"d-2500,\"e-2500,\"g-2500,\"m1499,\"n1499,\"o-2500,\"p1499,\"q-25"
+            + "00,\"r1499,\"s-1499,\"v5000,\"w5000,\"y4499,\"z-1000,&T-3999,&V-3999,&W-3999,&Y-5000,'A-6999,'C1000,'G"
+            + "1000,'O1000,'Q1000,'S1000,'T1999,'V3999,'W3999,'Y3999,'Z1000,'a-2500,'c-2500,'d-2500,'e-2500,'g-"
+            + "2500,'m1499,'n1499,'o-2500,'p1499,'q-2500,'r1499,'s-1499,'v5000,'w5000,'y4499,'z-1000,(C-1999,(G"
+            + "-1999,(O-1999,(Q-1999,(S-1999,(f5000,(j5000,,\"-6999,,'-6999,,*-6999,-A-1999,-C1999,-G1999,-O1999"
+            + ",-Q1999,-S1000,-T-5000,-V-3999,-W-3999,-X-3000,-Y-5000,-Z-1999,-a1000,-c1999,-d1999,-e1999,-g100"
+            + "0,-o1999,-q1999,-s1000,-v-1999,-w-1999,-x-2500,-y-1999,.\"-6999,.'-6999,.*-6999,A\"-6999,A'-6999,A"
+            + "*-6999,A--1999,AC-3999,AG-3999,AO-3999,AQ-3999,AT-6000,AU-4499,AV-8500,AW-8500,AY-8000,A`-5000,A"
+            + "a-1000,Ac-1000,Ad-1000,Ae-1000,Ag-1000,Ao-1000,Aq-1000,At-1499,Au-1999,Av-3999,Aw-3999,Ay-3500,B"
+            + ",-1499,B-3000,B.-1000,BA-1999,BT-1499,BV-1999,BW-1999,BX-1999,BY-3000,CC-1000,CG-1000,CO-1000,CQ"
+            + "-1000,CT-1000,D,-3000,D-1999,D.-3999,DA-3000,DT-1499,DV-1999,DW-1999,DX-3500,DY-2500,DZ-1999,E,1"
+            + "000,EC-1000,EG-1000,EO-1000,EQ-1000,ET-1999,Eu-1000,F!1999,F\"1999,F'1999,F*3000,F,-5500,F--1999,"
+            + "F.-5000,FA-6999,FC-1000,FG-1000,FO-1000,FQ-1000,Fa-3999,Fc-3999,Fd-3999,Fe-3999,Fg-3999,Fm-1499,"
+            + "Fn-1499,Fo-3999,Fp-1499,Fq-3999,Fr-1499,G,-2500,G.-1999,GA-1000,GV-1000,GW-1000,GY-1000,J,-3999,"
+            + "J.-3999,J:-3000,J;-3000,Ja-1000,Jc-1000,Jd-1000,Je-1000,Jg-1000,Jo-1000,Jq-1000,K!1000,K--3000,K"
+            + "C-3500,KG-3500,KO-3500,KQ-3500,Ka-1999,Kc-1999,Kd-1999,Ke-1999,Kg-1999,Ko-1999,Kq-1999,Ku-1499,K"
+            + "v-3999,Kw-3999,Ky-3999,L!1000,L\"-5000,L'-5000,L*-5000,LC-1000,LG-1000,LO-1000,LQ-1000,LT-6000,LU"
+            + "-1999,LV-6499,LW-6499,LY-6000,Lv-1499,Lw-1499,Ly-1499,N,-2500,N.-1999,NA-1499,Nc-1000,Nd-1000,Ne"
+            + "-1000,No-1000,Nq-1000,O,-3000,O-1999,O.-3999,OA-3000,OT-1499,OV-1999,OW-1999,OX-3500,OY-2500,OZ-"
+            + "1999,P!1000,P\"1999,P'1999,P*3000,P,-8500,P--1999,P.-8000,PA-8999,PX-3500,PZ-2500,Pa-3000,Pc-3000"
+            + ",Pd-3000,Pe-3000,Pg-1000,Po-3000,Pq-3000,Ps-1000,Q,-3000,Q-1999,Q.-3999,QA-3000,QT-1499,QV-1999,"
+            + "QW-1999,QX-3500,QY-2500,QZ-1999,R\"-1999,R'-1999,R*-1999,RC-1999,RG-1999,RO-1999,RQ-1999,RT-3000,"
+            + "RU-2500,RV-3999,RW-3999,RY-4499,Ra-1499,Rc-1499,Rd-1499,Re-1499,Rg-1499,Ro-1499,Rq-1499,Ru-1000,"
+            + "Rv-1499,Rw-1499,Ry-1499,S-1999,SA-1000,ST-2500,SZ-1000,T!1999,T\"1999,T&-3999,T'1999,T*1999,T,-64"
+            + "99,T--5000,T.-6000,T:-1999,T;-1999,TA-6000,TC-1000,TG-1000,TO-1000,TQ-1000,TZ-1999,T`1999,Ta-699"
+            + "9,Tc-6999,Td-6999,Te-6999,Tg-3999,Tm-3000,Tn-3000,To-6999,Tp-3000,Tq-6999,Tr-3000,Ts-3500,Tt-199"
+            + "9,Tu-3000,Tv-3000,Tw-3000,Tx-3999,Ty-1999,Tz-3999,U,-4499,U.-3999,UA-5000,Ua-1000,Uc-1000,Ud-100"
+            + "0,Ue-1000,Ug-1000,Uo-1000,Uq-1000,Uv-1000,Uw-1000,Ux-1499,Uy-1000,Uz-1000,V -1999,V\"3999,V&-4499"
+            + ",V'3999,V*3000,V,-8999,V--3999,V.-8999,V:-3999,V;-3999,VA-11999,VC-1499,VG-1499,VO-1499,VQ-1499,"
+            + "V`5000,Va-6499,Vc-6499,Vd-6499,Ve-6499,Vf-2500,Vg-6499,Vm-3000,Vn-3000,Vo-6499,Vp-3000,Vq-6499,V"
+            + "r-3000,Vs-3999,Vt-1999,Vu-3000,Vv-1999,Vw-1999,Vx-3999,Vy-1999,Vz-3999,W -1999,W\"3999,W&-4499,W'"
+            + "3999,W*3000,W,-8999,W--3999,W.-8999,W:-3999,W;-3999,WA-11999,WC-1499,WG-1499,WO-1499,WQ-1499,W`5"
+            + "000,Wa-6499,Wc-6499,Wd-6499,We-6499,Wf-2500,Wg-6499,Wm-3000,Wn-3000,Wo-6499,Wp-3000,Wq-6499,Wr-3"
+            + "000,Ws-3999,Wt-1999,Wu-3000,Wv-1999,Ww-1999,Wx-3999,Wy-1999,Wz-3999,X -1000,X!1000,X--3000,XC-39"
+            + "99,XG-3999,XO-3999,XQ-3999,Xa-1999,Xc-1999,Xd-1999,Xe-1999,Xg-1999,Xo-1999,Xq-1999,Xu-1999,Xv-39"
+            + "99,Xw-3999,Xy-5000,Y -1999,Y\"3999,Y&-5000,Y'3999,Y*3000,Y,-7500,Y--5000,Y.-6999,Y:-3999,Y;-3999,"
+            + "YA-8000,YC-3000,YG-3000,YO-3000,YQ-3000,Y`2500,Ya-8000,Yc-8000,Yd-8000,Ye-8000,Yf-3000,Yg-8000,Y"
+            + "m-5000,Yn-5000,Yo-8000,Yp-5000,Yq-8000,Yr-5000,Ys-5500,Yt-3000,Yu-5000,Yv-3999,Yw-3999,Yx-6999,Y"
+            + "y-3999,Yz-6999,Z\"-1000,Z'-1000,Z*-1000,ZC-1999,ZG-1999,ZO-1999,ZQ-1999,ZT-1000,Zv-1000,Zw-1000,Z"
+            + "y-1000,[C-1999,[G-1999,[O-1999,[Q-1999,[S-1999,[f5000,[j5000,a\"-3000,a'-3000,a*-3000,b\"-1999,b'-"
+            + "1999,b*-1999,b,-1499,b-1999,b.-1499,bx-1000,bz-500,c\"-1000,c'-1000,c*-1000,ca-500,cc-500,cd-500,"
+            + "ce-500,co-500,cq-500,d\"-3000,d'-3000,d*-3000,e\"-1000,e'-1000,e*-1000,f 5099,f!6999,f\"8000,f'8000"
+            + ",f)6000,f*8999,f,-1999,f.-1999,f?6999,f]6000,f`8000,fb399,ff-1200,fh-400,fi-1300,fj-2500,fk-300,"
+            + "fl-200,f}6000,g\"1000,g'1000,g*1000,g,-500,g--1000,g.-1999,ga-500,gc-500,gd-500,ge-500,gf1000,gg-"
+            + "500,gj1499,go-500,gq-500,gx-500,gz-500,h\"-3000,h'-3000,h*-3000,i\"-3000,i'-3000,i*-3000,j\"1000,j'"
+            + "1000,j*1000,j,-1499,j--1000,j.-1999,k--3000,ka-500,kc-500,kd-500,ke-500,kg-500,ko-500,kq-500,kv-"
+            + "1999,kw-1000,ky-1000,m\"-3000,m'-3000,m*-3000,n\"-3000,n'-3000,n*-3000,o\"-1999,o'-1999,o*-1999,o,-"
+            + "1499,o-1999,o.-1499,ox-1000,oz-500,p\"-1999,p'-1999,p*-1999,p,-1499,p-1999,p.-1499,px-1000,pz-500"
+            + ",q,-1499,q--1000,q.-1499,r\"1000,r'1000,r*1999,r,-6999,r--1999,r.-6999,ra-1000,rc-500,rd-500,re-5"
+            + "00,ro-500,rq-500,s\"-1999,s'-1999,s*-1000,s-1000,t--1999,tg-500,tt-1499,u\"-3000,u'-3000,u*-1999,v"
+            + ",-3999,v-1000,v.-4499,v`1999,vx-500,w,-3999,w-1000,w.-4499,w`1999,wx-500,x\"1000,x'1000,x*1999,x-"
+            + "-2500,y,-3999,y-1000,y.-4499,y`1999,yx-500,z)1000,z,3000,z--1999,z.2500,z/5000,z:1999,z;1999,z]1"
+            + "000,z}1000,{C-1999,{G-1999,{O-1999,{Q-1999,{S-1999,{f5000,{j5000,";
+    }
+    private static String STIX_Two_Text_0_6_kerning() {
+        return " T-1999, V-1999, W-1999, X-1000, Y-1999,\"A-6999,\"C-1000,\"G-1000,\"O-1000,\"Q-1000,\"T1999,\"V3000,\"W"
+            + "3000,\"Y2500,\"a-2500,\"c-2500,\"d-2500,\"e-2500,\"g-1999,\"o-2500,\"q-2500,\"s-1499,\"v1499,\"w1499,\"y1499"
+            + ",\"z-1000,&T-3000,&V-6000,&W-6000,&Y-6000,'A-6999,'C-1000,'G-1000,'O-1000,'Q-1000,'T1999,'V3000,'"
+            + "W3000,'Y2500,'a-2500,'c-2500,'d-2500,'e-2500,'g-1999,'o-2500,'q-2500,'s-1499,'v1499,'w1499,'y149"
+            + "9,'z-1000,(j8000,,\"-6999,,'-6999,,*-6999,-A-1999,-C3000,-G3000,-O3000,-Q3000,-S1000,-T-5000,-V-5"
+            + "000,-W-5000,-X-3000,-Y-6000,-Z-1999,-c1000,-d1000,-e1000,-g1000,-o1000,-q1000,-s1000,-v-1999,-w-"
+            + "1499,-x-2500,-y-1999,.\"-6999,.'-6999,.*-6999,A\"-6999,A'-6999,A*-6999,A--1999,AC-3999,AG-3999,AO-"
+            + "3999,AQ-3999,AT-6000,AU-4499,AV-10000,AW-10000,AY-8999,A`-5000,Ac-1000,Ad-1000,Ae-1000,Ao-1000,A"
+            + "q-1000,At-1499,Au-1999,Av-5000,Aw-4499,Ay-4499,B,-1499,B-1999,B.-1000,BA-1999,BT-1499,BV-2500,BW"
+            + "-2500,BX-2500,BY-1999,Bv-1000,Bw-1000,By-1000,CC-1000,CG-1000,CO-1000,CQ-1000,CT-500,D,-4499,D-3"
+            + "000,D.-3999,DA-3999,DT-1000,DV-3000,DW-3000,DX-4499,DY-3500,DZ-1999,EC-1999,EG-1999,EO-1999,EQ-1"
+            + "999,ET-1499,Eg-1000,Eu-1000,Ev-1999,Ew-1499,Ey-1499,F!1999,F\"1999,F'1999,F*1999,F,-6499,F--1999,"
+            + "F.-6000,FA-6499,FC-1499,FG-1499,FO-1499,FQ-1499,Fa-3500,Fc-3999,Fd-3999,Fe-3999,Fm-1499,Fn-1499,"
+            + "Fo-3999,Fp-1499,Fq-3999,Fr-1499,G,-2500,G.-1999,GA-1000,GV-1000,GW-1000,GY-1000,J,-3999,J.-3999,"
+            + "J:-1999,J;-1999,Ja-1000,Jc-1000,Jd-1000,Je-1000,Jo-1000,Jq-1000,K!1000,K--3000,KC-3999,KG-3999,K"
+            + "O-3999,KQ-3999,Kc-1999,Kd-1999,Ke-1999,Ko-1999,Kq-1999,Ku-1999,Kv-3999,Kw-3500,Ky-3999,L!1000,L\""
+            + "-5000,L'-5000,L*-5000,LC-1000,LG-1000,LO-1000,LQ-1000,LT-5000,LU-1999,LV-6499,LW-6499,LY-6000,Lv"
+            + "-1499,Lw-1000,Ly-1499,N,-2500,N.-1999,NA-1499,Na-1000,Nc-1000,Nd-1000,Ne-1000,No-1000,Nq-1000,O,"
+            + "-4499,O-3000,O.-3999,OA-3999,OT-1000,OV-3000,OW-3000,OX-4499,OY-3500,OZ-1999,P\"1999,P'1999,P*199"
+            + "9,P,-9499,P--1999,P.-8999,PA-8500,PX-3000,PZ-1499,Pa-2500,Pc-3000,Pd-3000,Pe-3000,Pg-1000,Po-300"
+            + "0,Pq-3000,Ps-1499,Q,-4499,Q-3000,Q.-3999,QA-3999,QT-1000,QV-3000,QW-3000,QX-4499,QY-3500,QZ-1999"
+            + ",R\"-3000,R'-3000,R*-3000,RC-1999,RG-1999,RO-1999,RQ-1999,RT-3000,RU-3500,RV-5000,RW-5000,RY-5500"
+            + ",Rc-1499,Rd-1499,Re-1499,Ro-1499,Rq-1499,Ru-1499,Rv-1999,Rw-1999,Ry-1999,S-1999,SA-1999,ST-1000,"
+            + "SZ-1499,Sv-1000,Sw-1000,Sy-1000,T!1999,T\"1999,T&-1999,T'1999,T*1999,T,-6499,T--5000,T.-6000,T:-1"
+            + "999,T;-1999,TA-6000,TC-1000,TG-1000,TO-1000,TQ-1000,TZ-1000,T`1999,Ta-6000,Tc-6999,Td-6999,Te-69"
+            + "99,Tg-6000,Tm-3000,Tn-3000,To-6999,Tp-3000,Tq-6999,Tr-3000,Ts-3500,Tt-1999,Tu-3000,Tv-5000,Tw-50"
+            + "00,Tx-5000,Ty-5000,Tz-3999,U,-5500,U.-5000,UA-5500,Uc-1000,Ud-1000,Ue-1000,Ug-1999,Uo-1000,Uq-10"
+            + "00,Uv-1000,Uw-1000,Ux-1499,Uy-1000,Uz-1000,V -1999,V\"3999,V&-3500,V'3999,V*3000,V,-10500,V--6000"
+            + ",V.-10000,V:-5000,V;-5000,VA-10500,VC-3500,VG-3500,VO-3500,VQ-3500,V`1999,Va-6000,Vc-6499,Vd-649"
+            + "9,Ve-6499,Vf-2500,Vg-5500,Vm-3500,Vn-3500,Vo-6499,Vp-3500,Vq-6499,Vr-3500,Vs-4499,Vt-1999,Vu-350"
+            + "0,Vv-3500,Vw-3000,Vx-3500,Vy-3500,Vz-4499,W -1999,W\"3999,W&-3500,W'3999,W*3000,W,-10500,W--6000,"
+            + "W.-10000,W:-5000,W;-5000,WA-10500,WC-3500,WG-3500,WO-3500,WQ-3500,W`1999,Wa-6000,Wc-6499,Wd-6499"
+            + ",We-6499,Wf-2500,Wg-5500,Wm-3500,Wn-3500,Wo-6499,Wp-3500,Wq-6499,Wr-3500,Ws-4499,Wt-1999,Wu-3500"
+            + ",Wv-3500,Ww-3000,Wx-3500,Wy-3500,Wz-4499,X -1000,X!1000,X--3000,XC-3999,XG-3999,XO-3999,XQ-3999,"
+            + "Xc-1999,Xd-1999,Xe-1999,Xo-1999,Xq-1999,Xu-1999,Xv-3999,Xw-3999,Xy-3999,Y -1999,Y\"3000,Y&-4600,Y"
+            + "'3000,Y*1999,Y,-8500,Y--6999,Y.-8000,Y:-5500,Y;-5500,YA-8999,YC-3999,YG-3999,YO-3999,YQ-3999,Y`2"
+            + "500,Ya-7500,Yc-8000,Yd-8000,Ye-8000,Yf-3000,Yg-8500,Ym-6000,Yn-6000,Yo-8000,Yp-6000,Yq-8000,Yr-6"
+            + "000,Ys-5500,Yt-3500,Yu-6000,Yv-5000,Yw-5000,Yx-5000,Yy-5000,Yz-6000,ZC-1999,ZG-1999,ZO-1999,ZQ-1"
+            + "999,Zv-3000,Zw-3000,Zy-3000,[j8000,a\"-3000,a'-3000,a*-3000,av-2500,aw-2500,ay-1999,b\"-1000,b'-10"
+            + "00,b*-1000,b,-1999,b-1000,b.-1999,bx-1000,e\"-1999,e'-1999,e*-1999,e-1499,ex-1000,f 5000,f!6000,f"
+            + "\"8000,f'8000,f)6999,f*8000,f?6999,f]6999,f`8000,fb700,ff-899,fh-1299,fi-1199,fj-999,fk-1299,fl-1"
+            + "299,f}6999,g\"1000,g'1000,g*1000,g--1000,g.-1000,ga-1000,gc500,gd500,ge500,gj1000,go500,gq500,h\"-"
+            + "3000,h'-3000,h*-3000,hv-2500,hw-2500,hy-1999,j,-1999,j.-1999,k--3000,kc-2500,kd-2500,ke-2500,kg-"
+            + "1000,ko-2500,kq-2500,kv-1999,kw-1499,ky-1999,m\"-3000,m'-3000,m*-3000,mv-2500,mw-2500,my-1999,n\"-"
+            + "3000,n'-3000,n*-3000,nv-2500,nw-2500,ny-1999,o\"-1000,o'-1000,o*-1000,o,-1999,o-1000,o.-1999,ox-1"
+            + "000,p\"-1000,p'-1000,p*-1000,p,-1999,p-1000,p.-1999,px-1000,q,-1999,q.-1999,r\"1999,r'1999,r*1999,"
+            + "r,-6499,r--2500,r.-6499,ra-1499,rc-1000,rd-1000,re-1000,ro-1000,rq-1000,s-500,t--2500,tc-500,td-"
+            + "500,te-500,to-500,tq-500,tt-1499,v\"3000,v'3000,v*3000,v,-7500,v--1999,v.-7500,v`3000,va-1499,vc-"
+            + "500,vd-500,ve-500,vg-1000,vo-500,vq-500,w\"3000,w'3000,w*3000,w,-6999,w--1499,w.-6999,w`3000,wa-1"
+            + "499,wc-500,wd-500,we-500,wg-1000,wo-500,wq-500,x\"1999,x'1999,x*1999,x--2500,xc-1000,xd-1000,xe-1"
+            + "000,xo-1000,xq-1000,y\"3000,y'3000,y*3000,y,-7500,y--1999,y.-7500,y`3000,ya-1499,yc-500,yd-500,ye"
+            + "-500,yg-1000,yo-500,yq-500,{j8000,";
+    }
+    private static String STIX_Two_Text_1_6_kerning() {
+        return " T-1999, V-1999, W-1999, X-1000, Y-1999,\"A-6999,\"C1000,\"G1000,\"O1000,\"Q1000,\"S1000,\"T1999,\"V3999"
+            + ",\"W3999,\"Y3999,\"Z1000,\"a-2500,\"c-2500,\"d-2500,\"e-2500,\"g-2500,\"m1499,\"n1499,\"o-2500,\"p1499,\"q-25"
+            + "00,\"r1499,\"s-1499,\"v5000,\"w5000,\"y4499,\"z-1000,&T-3999,&V-3999,&W-3999,&Y-5000,'A-6999,'C1000,'G"
+            + "1000,'O1000,'Q1000,'S1000,'T1999,'V3999,'W3999,'Y3999,'Z1000,'a-2500,'c-2500,'d-2500,'e-2500,'g-"
+            + "2500,'m1499,'n1499,'o-2500,'p1499,'q-2500,'r1499,'s-1499,'v5000,'w5000,'y4499,'z-1000,(C-1999,(G"
+            + "-1999,(O-1999,(Q-1999,(S-1999,(f5000,(j5000,,\"-6999,,'-6999,,*-6999,-A-1999,-C1999,-G1999,-O1999"
+            + ",-Q1999,-S1000,-T-5000,-V-3999,-W-3999,-X-3000,-Y-5000,-Z-1999,-a1000,-c1999,-d1999,-e1999,-g100"
+            + "0,-o1999,-q1999,-s1000,-v-1999,-w-1999,-x-2500,-y-1999,.\"-6999,.'-6999,.*-6999,A\"-6999,A'-6999,A"
+            + "*-6999,A--1999,AC-3999,AG-3999,AO-3999,AQ-3999,AT-6000,AU-4499,AV-8500,AW-8500,AY-8000,A`-5000,A"
+            + "a-1000,Ac-1000,Ad-1000,Ae-1000,Ag-1000,Ao-1000,Aq-1000,At-1499,Au-1999,Av-3999,Aw-3999,Ay-3500,B"
+            + ",-1499,B-3000,B.-1000,BA-1999,BT-1499,BV-1999,BW-1999,BX-1999,BY-3000,CC-1000,CG-1000,CO-1000,CQ"
+            + "-1000,CT-1000,D,-3000,D-1999,D.-3999,DA-3000,DT-1499,DV-1999,DW-1999,DX-3500,DY-2500,DZ-1999,E,1"
+            + "000,EC-1000,EG-1000,EO-1000,EQ-1000,ET-1999,Eu-1000,F!1999,F\"1999,F'1999,F*3000,F,-5500,F--1999,"
+            + "F.-5000,FA-6999,FC-1000,FG-1000,FO-1000,FQ-1000,Fa-3999,Fc-3999,Fd-3999,Fe-3999,Fg-3999,Fm-1499,"
+            + "Fn-1499,Fo-3999,Fp-1499,Fq-3999,Fr-1499,G,-2500,G.-1999,GA-1000,GV-1000,GW-1000,GY-1000,J,-3999,"
+            + "J.-3999,J:-3000,J;-3000,Ja-1000,Jc-1000,Jd-1000,Je-1000,Jg-1000,Jo-1000,Jq-1000,K!1000,K--3000,K"
+            + "C-3500,KG-3500,KO-3500,KQ-3500,Ka-1999,Kc-1999,Kd-1999,Ke-1999,Kg-1999,Ko-1999,Kq-1999,Ku-1499,K"
+            + "v-3999,Kw-3999,Ky-3999,L!1000,L\"-5000,L'-5000,L*-5000,LC-1000,LG-1000,LO-1000,LQ-1000,LT-6000,LU"
+            + "-1999,LV-6499,LW-6499,LY-6000,Lv-1499,Lw-1499,Ly-1499,N,-2500,N.-1999,NA-1499,Nc-1000,Nd-1000,Ne"
+            + "-1000,No-1000,Nq-1000,O,-3000,O-1999,O.-3999,OA-3000,OT-1499,OV-1999,OW-1999,OX-3500,OY-2500,OZ-"
+            + "1999,P!1000,P\"1999,P'1999,P*3000,P,-8500,P--1999,P.-8000,PA-8999,PX-3500,PZ-2500,Pa-3000,Pc-3000"
+            + ",Pd-3000,Pe-3000,Pg-1000,Po-3000,Pq-3000,Ps-1000,Q,-3000,Q-1999,Q.-3999,QA-3000,QT-1499,QV-1999,"
+            + "QW-1999,QX-3500,QY-2500,QZ-1999,R\"-1999,R'-1999,R*-1999,RC-1999,RG-1999,RO-1999,RQ-1999,RT-3000,"
+            + "RU-2500,RV-3999,RW-3999,RY-4499,Ra-1499,Rc-1499,Rd-1499,Re-1499,Rg-1499,Ro-1499,Rq-1499,Ru-1000,"
+            + "Rv-1499,Rw-1499,Ry-1499,S-1999,SA-1000,ST-2500,SZ-1000,T!1999,T\"1999,T&-3999,T'1999,T*1999,T,-64"
+            + "99,T--5000,T.-6000,T:-1999,T;-1999,TA-6000,TC-1000,TG-1000,TO-1000,TQ-1000,TZ-1999,T`1999,Ta-699"
+            + "9,Tc-6999,Td-6999,Te-6999,Tg-3999,Tm-3000,Tn-3000,To-6999,Tp-3000,Tq-6999,Tr-3000,Ts-3500,Tt-199"
+            + "9,Tu-3000,Tv-3000,Tw-3000,Tx-3999,Ty-1999,Tz-3999,U,-4499,U.-3999,UA-5000,Ua-1000,Uc-1000,Ud-100"
+            + "0,Ue-1000,Ug-1000,Uo-1000,Uq-1000,Uv-1000,Uw-1000,Ux-1499,Uy-1000,Uz-1000,V -1999,V\"3999,V&-4499"
+            + ",V'3999,V*3000,V,-8999,V--3999,V.-8999,V:-3999,V;-3999,VA-11999,VC-1499,VG-1499,VO-1499,VQ-1499,"
+            + "V`5000,Va-6499,Vc-6499,Vd-6499,Ve-6499,Vf-2500,Vg-6499,Vm-3000,Vn-3000,Vo-6499,Vp-3000,Vq-6499,V"
+            + "r-3000,Vs-3999,Vt-1999,Vu-3000,Vv-1999,Vw-1999,Vx-3999,Vy-1999,Vz-3999,W -1999,W\"3999,W&-4499,W'"
+            + "3999,W*3000,W,-8999,W--3999,W.-8999,W:-3999,W;-3999,WA-11999,WC-1499,WG-1499,WO-1499,WQ-1499,W`5"
+            + "000,Wa-6499,Wc-6499,Wd-6499,We-6499,Wf-2500,Wg-6499,Wm-3000,Wn-3000,Wo-6499,Wp-3000,Wq-6499,Wr-3"
+            + "000,Ws-3999,Wt-1999,Wu-3000,Wv-1999,Ww-1999,Wx-3999,Wy-1999,Wz-3999,X -1000,X!1000,X--3000,XC-39"
+            + "99,XG-3999,XO-3999,XQ-3999,Xa-1999,Xc-1999,Xd-1999,Xe-1999,Xg-1999,Xo-1999,Xq-1999,Xu-1999,Xv-39"
+            + "99,Xw-3999,Xy-5000,Y -1999,Y\"3999,Y&-5000,Y'3999,Y*3000,Y,-7500,Y--5000,Y.-6999,Y:-3999,Y;-3999,"
+            + "YA-8000,YC-3000,YG-3000,YO-3000,YQ-3000,Y`2500,Ya-8000,Yc-8000,Yd-8000,Ye-8000,Yf-3000,Yg-8000,Y"
+            + "m-5000,Yn-5000,Yo-8000,Yp-5000,Yq-8000,Yr-5000,Ys-5500,Yt-3000,Yu-5000,Yv-3999,Yw-3999,Yx-6999,Y"
+            + "y-3999,Yz-6999,Z\"-1000,Z'-1000,Z*-1000,ZC-1999,ZG-1999,ZO-1999,ZQ-1999,ZT-1000,Zv-1000,Zw-1000,Z"
+            + "y-1000,[C-1999,[G-1999,[O-1999,[Q-1999,[S-1999,[f5000,[j5000,a\"-3000,a'-3000,a*-3000,b\"-1999,b'-"
+            + "1999,b*-1999,b,-1499,b-1999,b.-1499,bx-1000,bz-500,c\"-1000,c'-1000,c*-1000,ca-500,cc-500,cd-500,"
+            + "ce-500,co-500,cq-500,d\"-3000,d'-3000,d*-3000,e\"-1000,e'-1000,e*-1000,f 5099,f!6999,f\"8000,f'8000"
+            + ",f)6000,f*8999,f,-1999,f.-1999,f?6999,f]6000,f`8000,fb699,ff-599,fh-99,fi-1100,fj-1799,fk699,fl3"
+            + "99,f}6000,g\"1000,g'1000,g*1000,g,-500,g--1000,g.-1999,ga-500,gc-500,gd-500,ge-500,gf1000,gg-500,"
+            + "gj1499,go-500,gq-500,gx-500,gz-500,h\"-3000,h'-3000,h*-3000,i\"-3000,i'-3000,i*-3000,j\"1000,j'1000"
+            + ",j*1000,j,-1499,j--1000,j.-1999,k--3000,ka-500,kc-500,kd-500,ke-500,kg-500,ko-500,kq-500,kv-1999"
+            + ",kw-1000,ky-1000,m\"-3000,m'-3000,m*-3000,n\"-3000,n'-3000,n*-3000,o\"-1999,o'-1999,o*-1999,o,-1499"
+            + ",o-1999,o.-1499,ox-1000,oz-500,p\"-1999,p'-1999,p*-1999,p,-1499,p-1999,p.-1499,px-1000,pz-500,q,-"
+            + "1499,q--1000,q.-1499,r\"1000,r'1000,r*1999,r,-6999,r--1999,r.-6999,ra-1000,rc-500,rd-500,re-500,r"
+            + "o-500,rq-500,s\"-1999,s'-1999,s*-1000,s-1000,t--1999,tg-500,tt-1499,u\"-3000,u'-3000,u*-1999,v,-39"
+            + "99,v-1000,v.-4499,v`1999,vx-500,w,-3999,w-1000,w.-4499,w`1999,wx-500,x\"1000,x'1000,x*1999,x--250"
+            + "0,y,-3999,y-1000,y.-4499,y`1999,yx-500,z)1000,z,3000,z--1999,z.2500,z/5000,z:1999,z;1999,z]1000,"
+            + "z}1000,{C-1999,{G-1999,{O-1999,{Q-1999,{S-1999,{f5000,{j5000,";
+    }
+    private static String STSong_0_3_kerning() {
+        return "fi-8999,fl-8699,";
+    }
+    private static String Sukhumvit_Set_0_3_kerning() {
+        return "\"A-6699,\"O-1000,\"Q-1000,\"T1000,\"c-1999,\"d-1999,\"e-1999,\"f1000,\"g-1999,\"o-1999,\"q-1999,\"s-1000,\"t"
+            + "1000,\"x-1999,'A-6699,'O-1000,'Q-1000,'T1000,'c-1999,'d-1999,'e-1999,'f1000,'g-1999,'o-1999,'q-19"
+            + "99,'s-1000,'t1000,'x-1999,A\"-6699,A'-6699,AA599,AC-1999,AG-1999,AJ1399,AO-1999,AQ-1999,AT-5700,A"
+            + "U-1399,AV-11199,AW-7299,AX-1999,AY-10000,Ac-1000,Ad-1000,Ae-1000,Ag-1000,Ao-1000,Aq-1000,At-1399"
+            + ",Au-1000,Av-5099,Aw-2899,Ax-1000,Ay-1000,BJ-399,BS-1000,BV-1999,BW-1000,BX-1399,BY-1999,BZ-1000,"
+            + "Bu-1000,Bv-1999,Bw-1000,Bx-1000,By-1000,CC-1999,CG-3099,CJ1000,CO-3699,CQ-3699,CX-1399,CY-1000,C"
+            + "a-1000,Cc-1999,Cd-1999,Ce-1999,Cg-1999,Co-1999,Cq-1999,Cs-1000,Cu-1000,Cv-4499,Cw-1999,Cx-1000,C"
+            + "y-1000,DA-2400,DJ-2400,DS-1000,DT-1000,DV-1999,DW-500,DX-2400,DY-2200,DZ-1399,Dv-1000,Dx-1000,EG"
+            + "-1000,EO-1000,EQ-1000,EX-1000,Ea-1000,Ec-1000,Ed-1000,Ee-1000,Eg-1000,Eo-1000,Eq-1000,Eu-1000,Ev"
+            + "-1000,Ex-1000,Ey-1000,FA-5099,FJ-5099,FO-1000,FQ-1000,FX-1999,FZ-1000,Fa-1600,Fc-1000,Fd-1000,Fg"
+            + "-1000,Fo-1000,Fq-1000,Fx-1999,Fz-1000,G\"-1600,G'-1600,GT-1000,GV-1199,Gv-1000,Gx-1000,JA-1399,K\""
+            + "-1000,K'-1000,KC-3099,KG-3099,KJ1000,KO-3699,KQ-3699,KS-1000,KU-1600,KW-599,KX-1000,Ka-1999,Kc-2"
+            + "200,Kd-2200,Ke-2200,Kf-1999,Kg-2200,Ko-2400,Kq-2200,Ku-1999,Kv-4100,Kw-2200,Kx-1999,Ky-1999,L\"-6"
+            + "100,L'-6100,LA1000,LC-1999,LG-1999,LJ1000,LO-2200,LQ-2200,LT-6100,LV-4700,LW-3099,LX-1000,LY-509"
+            + "9,Lc-1000,Ld-1000,Le-1000,Lg-1000,Lo-1000,Lq-1000,Lt-3099,Lu-1999,Lv-3699,Lw-1399,Ly-1999,O\"-100"
+            + "0,O'-1000,OA-1999,OJ-1000,OT-1000,OV-1499,OW-500,OX-2700,OY-2400,OZ-399,PA-6499,PC-1000,PG-1000,"
+            + "PJ-7100,PV-1000,PX-2400,PY-1000,PZ-1000,Pa-3300,Pc-1999,Pd-1999,Pe-1999,Pg-1999,Po-1999,Pq-1999,"
+            + "Ps-1000,Px-1999,Pz-1000,Q\"-1000,Q'-1000,QA-1999,QJ-1000,QT-1000,QV-1499,QW-500,QX-2700,QY-2400,Q"
+            + "Z-399,RC-599,RG-599,RJ-1000,RO-599,RQ-599,RT-1000,RV-599,RX-1000,RY-1399,Ra-1000,Rc-1000,Rd-1000"
+            + ",Re-1000,Rf1000,Rg-1000,Ro-1000,Rq-1000,Rx-1000,SA-1000,SC-1000,SO-1000,SQ-1000,SV-1600,SW-1000,"
+            + "SX-1199,SY-1600,Sa-1000,Sd-1000,Se-1000,Sg-1000,Sq-1000,Sv-2400,Sw-599,Sx-1999,Sz-1000,T\"1000,T'"
+            + "1000,TA-5700,TC-1000,TG-1000,TJ-3500,TO-1000,TQ-1000,TT1600,TV599,TW599,TY1000,Ta-2200,Tc-2599,T"
+            + "d-2599,Te-2599,Tf-1000,Tg-2599,To-2599,Tq-2599,Ts-1999,Tu-599,Tv-1499,Tw-1000,Tx-3099,Ty-599,Tz-"
+            + "1999,UA-1399,UX-1000,Ua-1000,Ud-599,Ue-599,Ug-599,Uq-599,Ux-1399,VA-11199,VC-1499,VG-1999,VJ-410"
+            + "0,VO-1499,VQ-1499,VT599,VV599,VX-1499,Va-1999,Vc-1999,Vd-1999,Ve-1999,Vg-1999,Vo-3099,Vq-1999,Vs"
+            + "-500,Vt399,Vu-599,Vv-1000,Vw-500,Vx-2200,Vy-599,Vz-1999,WA-7299,WC-500,WG-500,WJ-3099,WO-500,WQ-"
+            + "500,WT599,WX-1000,WZ-500,Wa-1999,Wc-1000,Wd-1000,We-1000,Wg-1000,Wo-1000,Wq-1000,Ws-1000,Wt1000,"
+            + "Wx-1499,Wz-599,XA-1999,XC-1999,XG-1999,XO-2700,XQ-2700,XU-1000,XV-1499,XW-1000,XY-1499,Xa-1000,X"
+            + "c-1999,Xd-1999,Xe-1999,Xf-1000,Xg-1999,Xo-2599,Xq-1999,Xt-1000,Xu-500,Xv-3099,Xw-1499,Xx-1499,Xy"
+            + "-500,YA-10000,YC-1399,YG-1399,YJ-7299,YO-2400,YQ-2400,YS-1000,YT1000,YX-1499,YY1000,Ya-5099,Yc-6"
+            + "100,Yd-6100,Ye-6100,Yf-1000,Yg-6100,Yo-6100,Yq-6100,Ys-3099,Yt-1000,Yu-1999,Yv-1999,Yw-1000,Yx-4"
+            + "100,Yy-1999,Yz-1999,ZC-1000,ZJ1000,ZO-1199,ZQ-1199,ZT-1000,ZW-500,ZX-1199,Za-599,Zc-1000,Zd-1000"
+            + ",Ze-1000,Zg-1000,Zo-1000,Zq-1000,Zu-500,Zw-1000,Zy-500,a\"-1999,a'-1999,aS-599,aT-1999,aV-1999,aW"
+            + "-1999,aY-3099,av-500,ax-500,b\"-1999,b'-1999,bA-1000,bJ-1000,bS-1000,bT-2599,bU-599,bV-1999,bW-10"
+            + "00,bX-1999,bY-6100,ba-599,bv-1000,bx-1600,bz-1000,cC-1000,cT-1999,cU-1399,cV-1000,cW-1000,cX-199"
+            + "9,cY-4100,ca-599,cc-1999,cd-2400,cg-2400,co-2700,cq-2400,cv-500,cz-1000,e\"-1999,e'-1999,eT-1999,"
+            + "eU-599,eV-1999,eW-1000,eX-1999,eY-6100,eZ-1000,ea-599,eo-1000,ev-1000,ex-1199,ez-1000,f\"3899,f'3"
+            + "899,fA-4499,fJ-6100,fO1000,fQ1000,fS1999,fT4100,fV1999,fW1999,fX1000,fY1999,fZ1000,fa-1000,fc-10"
+            + "00,fd-1000,fe-1000,ff1000,fg-1000,fi-3299,fo-1600,fq-1000,ft1000,fx-1000,h\"-1999,h'-1999,hS-599,"
+            + "hT-1999,hV-1999,hW-1999,hY-3099,hv-500,hx-500,jj1000,k\"-1999,k'-1999,kT-1999,kU-1999,kV-3099,kW-"
+            + "500,kY-3099,ka-1999,kc-1799,kd-1799,ke-1999,kg-1799,ko-1999,kq-1799,ks-1000,kt-1600,ku-2700,kw-1"
+            + "600,kx-1000,ky-2700,m\"-1999,m'-1999,mS-599,mT-1999,mV-1999,mW-1999,mY-3099,mv-500,mx-500,n\"-1999"
+            + ",n'-1999,nS-599,nT-1999,nV-1999,nW-1999,nY-3099,nv-500,nx-500,o\"-1999,o'-1999,oA-1000,oJ-1600,oS"
+            + "-1999,oT-2599,oV-3099,oW-1000,oX-2599,oY-6100,oZ-1000,oa-599,ov-1000,ox-1799,oz-1000,p\"-1999,p'-"
+            + "1999,pA-1000,pJ-1000,pS-1000,pT-2599,pU-599,pV-1999,pW-1000,pX-1999,pY-6100,pa-599,pv-1000,px-16"
+            + "00,pz-1000,rA-5099,rJ-5099,rT-1999,rV-1999,rW-1000,rX-1999,rY-1000,ra-1999,rc-1000,rd-1000,re-10"
+            + "00,rf1999,rg-1000,ro-1000,rq-1000,rt1000,rv500,rw1000,rx-1999,s\"-1000,s'-1000,sA-1199,sT-1999,sU"
+            + "-1399,sV-1000,sW-1000,sX-599,sY-3099,sa-399,sw-500,sx-1000,t\"1000,t'1000,tA1000,tJ1999,tU-1000,t"
+            + "V-1999,tX1000,tY-1999,tZ1000,to-1000,tt1000,tu-1000,tv599,tw399,ty-1000,tz599,vA-5099,vJ-4100,vT"
+            + "-1499,vV-1000,vX-3099,vY-1999,va-1000,vc-1000,vd-1000,ve-500,vg-1000,vo-1000,vq-1000,vt1199,vv39"
+            + "9,vx-1000,wA-2899,wJ-1600,wT-1000,wV-500,wX-1499,wY-1000,wZ-1600,ws-500,wx-500,wz-1000,x\"-1999,x"
+            + "'-1999,xA-1000,xT-3099,xU-1399,xV-2200,xW-1499,xX-1499,xY-4100,xa-1000,xc-1600,xd-1600,xe-1600,x"
+            + "g-1600,xo-1799,xq-1600,xs-500,xu-500,xv-1000,xw-500,xx-500,xy-500,zT-1999,zV-1999,zW-599,zY-1999"
+            + ",za-500,zc-1000,zd-1000,ze-1000,zf1000,zg-1000,zo-1000,zq-1000,zt1000,zu-1000,zw-1000,zx-500,zy-"
+            + "1000,";
+    }
+    private static String Sukhumvit_Set_0_6_kerning() {
+        return "\"A-5700,\"O-899,\"Q-899,\"T899,\"c-1699,\"d-1699,\"e-1699,\"f899,\"g-1699,\"o-1699,\"q-1699,\"s-899,\"t899,\""
+            + "x-1699,'A-5700,'O-899,'Q-899,'T899,'c-1699,'d-1699,'e-1699,'f899,'g-1699,'o-1699,'q-1699,'s-899,"
+            + "'t899,'x-1699,A\"-5700,A'-5700,AA500,AC-1699,AG-1699,AJ1199,AO-1699,AQ-1699,AT-4799,AU-1199,AV-94"
+            + "99,AW-6199,AX-1699,AY-8399,Ac-899,Ad-899,Ae-899,Ag-899,Ao-899,Aq-899,At-1199,Au-899,Av-4299,Aw-2"
+            + "400,Ax-899,Ay-899,BJ-299,BS-899,BV-1699,BW-899,BX-1199,BY-1699,BZ-899,Bu-899,Bv-1699,Bw-899,Bx-8"
+            + "99,By-899,CC-1699,CG-2599,CJ899,CO-3099,CQ-3099,CX-1199,CY-899,Ca-899,Cc-1699,Cd-1699,Ce-1699,Cg"
+            + "-1699,Co-1699,Cq-1699,Cs-899,Cu-899,Cv-3800,Cw-1699,Cx-899,Cy-899,DA-2100,DJ-2100,DS-899,DT-899,"
+            + "DV-1699,DW-399,DX-2100,DY-1900,DZ-1199,Dv-899,Dx-899,EG-899,EO-899,EQ-899,EX-899,Ea-899,Ec-899,E"
+            + "d-899,Ee-899,Eg-899,Eo-899,Eq-899,Eu-899,Ev-899,Ex-899,Ey-899,FA-4299,FJ-4299,FO-899,FQ-899,FX-1"
+            + "699,FZ-899,Fa-1399,Fc-899,Fd-899,Fg-899,Fo-899,Fq-899,Fx-1699,Fz-899,G\"-1399,G'-1399,GT-899,GV-1"
+            + "000,Gv-899,Gx-899,JA-1199,K\"-899,K'-899,KC-2599,KG-2599,KJ899,KO-3099,KQ-3099,KS-899,KU-1399,KW-"
+            + "500,KX-899,Ka-1699,Kc-1900,Kd-1900,Ke-1900,Kf-1699,Kg-1900,Ko-2100,Kq-1900,Ku-1699,Kv-3399,Kw-19"
+            + "00,Kx-1699,Ky-1699,L\"-5200,L'-5200,LA899,LC-1699,LG-1699,LJ899,LO-1900,LQ-1900,LT-5200,LV-3999,L"
+            + "W-2599,LX-899,LY-4299,Lc-899,Ld-899,Le-899,Lg-899,Lo-899,Lq-899,Lt-2599,Lu-1699,Lv-3099,Lw-1199,"
+            + "Ly-1699,O\"-899,O'-899,OA-1699,OJ-899,OT-899,OV-1300,OW-399,OX-2200,OY-2100,OZ-299,PA-5500,PC-899"
+            + ",PG-899,PJ-6000,PV-899,PX-2100,PY-899,PZ-899,Pa-2799,Pc-1699,Pd-1699,Pe-1699,Pg-1699,Po-1699,Pq-"
+            + "1699,Ps-899,Px-1699,Pz-899,Q\"-899,Q'-899,QA-1699,QJ-899,QT-899,QV-1300,QW-399,QX-2200,QY-2100,QZ"
+            + "-299,RC-500,RG-500,RJ-899,RO-500,RQ-500,RT-899,RV-500,RX-899,RY-1199,Ra-899,Rc-899,Rd-899,Re-899"
+            + ",Rf899,Rg-899,Ro-899,Rq-899,Rx-899,SA-899,SC-899,SO-899,SQ-899,SV-1399,SW-899,SX-1000,SY-1399,Sa"
+            + "-899,Sd-899,Se-899,Sg-899,Sq-899,Sv-2100,Sw-500,Sx-1699,Sz-899,T\"899,T'899,TA-4799,TC-899,TG-899"
+            + ",TJ-2899,TO-899,TQ-899,TT1399,TV500,TW500,TY899,Ta-1900,Tc-2200,Td-2200,Te-2200,Tf-899,Tg-2200,T"
+            + "o-2200,Tq-2200,Ts-1699,Tu-500,Tv-1300,Tw-899,Tx-2599,Ty-500,Tz-1699,UA-1199,UX-899,Ua-899,Ud-500"
+            + ",Ue-500,Ug-500,Uq-500,Ux-1199,VA-9499,VC-1300,VG-1699,VJ-3399,VO-1300,VQ-1300,VT500,VV500,VX-130"
+            + "0,Va-1699,Vc-1699,Vd-1699,Ve-1699,Vg-1699,Vo-2599,Vq-1699,Vs-399,Vt299,Vu-500,Vv-899,Vw-399,Vx-1"
+            + "900,Vy-500,Vz-1699,WA-6199,WC-399,WG-399,WJ-2599,WO-399,WQ-399,WT500,WX-899,WZ-399,Wa-1699,Wc-89"
+            + "9,Wd-899,We-899,Wg-899,Wo-899,Wq-899,Ws-899,Wt899,Wx-1300,Wz-500,XA-1699,XC-1699,XG-1699,XO-2200"
+            + ",XQ-2200,XU-899,XV-1300,XW-899,XY-1300,Xa-899,Xc-1699,Xd-1699,Xe-1699,Xf-899,Xg-1699,Xo-2200,Xq-"
+            + "1699,Xt-899,Xu-399,Xv-2599,Xw-1300,Xx-1300,Xy-399,YA-8399,YC-1199,YG-1199,YJ-6199,YO-2100,YQ-210"
+            + "0,YS-899,YT899,YX-1300,YY899,Ya-4299,Yc-5200,Yd-5200,Ye-5200,Yf-899,Yg-5200,Yo-5200,Yq-5200,Ys-2"
+            + "599,Yt-899,Yu-1699,Yv-1699,Yw-899,Yx-3399,Yy-1699,Yz-1699,ZC-899,ZJ899,ZO-1000,ZQ-1000,ZT-899,ZW"
+            + "-399,ZX-1000,Za-500,Zc-899,Zd-899,Ze-899,Zg-899,Zo-899,Zq-899,Zu-399,Zw-899,Zy-399,a\"-1699,a'-16"
+            + "99,aS-500,aT-1699,aV-1699,aW-1699,aY-2599,av-399,ax-399,b\"-1699,b'-1699,bA-899,bJ-899,bS-899,bT-"
+            + "2200,bU-500,bV-1699,bW-899,bX-1699,bY-5200,ba-500,bv-899,bx-1399,bz-899,cC-899,cT-1699,cU-1199,c"
+            + "V-899,cW-899,cX-1699,cY-3399,ca-500,cc-1699,cd-2100,cg-2100,co-2200,cq-2100,cv-399,cz-899,e\"-169"
+            + "9,e'-1699,eT-1699,eU-500,eV-1699,eW-899,eX-1699,eY-5200,eZ-899,ea-500,eo-899,ev-899,ex-1000,ez-8"
+            + "99,f\"3300,f'3300,fA-3800,fJ-5200,fO899,fQ899,fS1699,fT3399,fV1699,fW1699,fX899,fY1699,fZ899,fa-8"
+            + "99,fc-899,fd-899,fe-899,ff899,fg-899,fi-2999,fo-1399,fq-899,ft899,fx-899,h\"-1699,h'-1699,hS-500,"
+            + "hT-1699,hV-1699,hW-1699,hY-2599,hv-399,hx-399,jj899,k\"-1699,k'-1699,kT-1699,kU-1699,kV-2599,kW-3"
+            + "99,kY-2599,ka-1699,kc-1499,kd-1499,ke-1699,kg-1499,ko-1699,kq-1499,ks-899,kt-1399,ku-2200,kw-139"
+            + "9,kx-899,ky-2200,m\"-1699,m'-1699,mS-500,mT-1699,mV-1699,mW-1699,mY-2599,mv-399,mx-399,n\"-1699,n'"
+            + "-1699,nS-500,nT-1699,nV-1699,nW-1699,nY-2599,nv-399,nx-399,o\"-1699,o'-1699,oA-899,oJ-1399,oS-169"
+            + "9,oT-2200,oV-2599,oW-899,oX-2200,oY-5200,oZ-899,oa-500,ov-899,ox-1499,oz-899,p\"-1699,p'-1699,pA-"
+            + "899,pJ-899,pS-899,pT-2200,pU-500,pV-1699,pW-899,pX-1699,pY-5200,pa-500,pv-899,px-1399,pz-899,rA-"
+            + "4299,rJ-4299,rT-1699,rV-1699,rW-899,rX-1699,rY-899,ra-1699,rc-899,rd-899,re-899,rf1699,rg-899,ro"
+            + "-899,rq-899,rt899,rv399,rw899,rx-1699,s\"-899,s'-899,sA-1000,sT-1699,sU-1199,sV-899,sW-899,sX-500"
+            + ",sY-2599,sa-299,sw-399,sx-899,t\"899,t'899,tA899,tJ1699,tU-899,tV-1699,tX899,tY-1699,tZ899,to-899"
+            + ",tt899,tu-899,tv500,tw299,ty-899,tz500,vA-4299,vJ-3399,vT-1300,vV-899,vX-2599,vY-1699,va-899,vc-"
+            + "899,vd-899,ve-399,vg-899,vo-899,vq-899,vt1000,vv299,vx-899,wA-2400,wJ-1399,wT-899,wV-399,wX-1300"
+            + ",wY-899,wZ-1399,ws-399,wx-399,wz-899,x\"-1699,x'-1699,xA-899,xT-2599,xU-1199,xV-1900,xW-1300,xX-1"
+            + "300,xY-3399,xa-899,xc-1399,xd-1399,xe-1399,xg-1399,xo-1499,xq-1399,xs-399,xu-399,xv-899,xw-399,x"
+            + "x-399,xy-399,zT-1699,zV-1699,zW-500,zY-1699,za-399,zc-899,zd-899,ze-899,zf899,zg-899,zo-899,zq-8"
+            + "99,zt899,zu-899,zw-899,zx-399,zy-899,";
+    }
+    private static String Symbol_0_3_kerning() {
+        return "AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,FA-5468,LT-7373,LV-7373,LW-7373,LY-7373,"
+            + "Ly-3662,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T--5468,TA-7373,TO-1757,Ta-11083,Tc-11083,Te-110"
+            + "83,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,V--5468,VA-7373,Va-7373,Ve-5468,Vi-"
+            + "1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W--1757,WA-3662,Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-"
+            + "878,Y--9179,YA-7373,Ya-7373,Ye-9179,Yi-3662,Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,";
+    }
+    private static String Tahoma_0_3_kerning() {
+        return "'A-4589,(T976,(j2392,,)-4394,,7-2392,,]-4394,,}-4394,-A-2294,-I-1416,-J-4589,-S-878,-T-6982,-V-2"
+            + "294,-W-2294,-X-3710,-Y-6396,-Z-1416,-a-878,-v-1904,-w-878,-x-2294,-y-1904,-z-1904,.)-4882,.,-649"
+            + "4,.--7910,.7-2392,.]-4882,.}-4882,4,-976,4.-976,7,-7324,7.-7324,A--2294,AS-195,AT-5615,AU-488,AV"
+            + "-2685,AW-2294,AY-3710,At-683,Au-488,Av-1318,Aw-488,Ay-1318,B,-878,B-488,B.-878,BC488,BG488,BO488"
+            + ",BQ488,BT-2685,Ba488,Be488,Bh585,Bi488,Bj488,Bl585,Bo488,Br488,Bu488,Bw488,By97,C--2294,D,-2294,"
+            + "D.-2294,DJ-976,DT-2294,DW-878,DX-488,DY-878,DZ-878,F,-13916,F.-13916,F:-2685,F;-2685,F?2685,FA-4"
+            + "589,FJ-2880,FT1416,Fa-4589,Fe-2294,Fo-2294,I--1416,Ia-976,Ic-1220,Id-976,Ie-1220,Ig-976,Im-488,I"
+            + "n-488,Io-1220,Ip-488,Ir-488,Is-976,Iv-1513,J,-878,J.-878,JA-488,K--5078,KO-878,Ka-2197,Ke-2783,K"
+            + "o-2783,Ku-2001,Kv-2685,Kw-2783,Ky-2685,L'-5615,L--7421,LA-2001,LC-878,LG-878,LJ4589,LO-878,LQ-87"
+            + "8,LT-7910,LV-5078,LW-4589,LY-7421,Lv-5078,Ly-5078,O,-1416,O.-1416,OJ-390,OT-2294,OX-488,OY-878,O"
+            + "Z-878,P,-13916,P.-13916,PA-2294,PJ-3417,PY878,Pa-2294,Pe-2294,Po-2294,Q,-1416,Q.-1416,R--4589,RT"
+            + "-2685,RY-878,Ra-878,Re-1806,Ro-1806,Ru-585,Ry-2294,S,-878,S.-878,SA-683,SS-1123,Sc195,Se195,So19"
+            + "5,Sq292,Sv-1416,Sw-878,Sy-1416,T)976,T,-13476,T--6982,T.-13476,T:-9277,T;-9277,T?2685,TA-5615,TC"
+            + "-1904,TG-1904,TJ-2880,TO-2294,TS-488,TT-4882,TY-3417,T]976,Ta-11083,Tc-10205,Te-10205,Tg-9814,To"
+            + "-10205,Tr-9277,Ts-8300,Tu-9277,Tv-9277,Tw-9277,Ty-9277,Tz-7910,T}976,U,-878,U.-878,UA-488,V,-134"
+            + "76,V--2294,V.-13476,V:-3710,V;-3710,VA-2685,Va-4589,Ve-4589,Vo-4589,Vu-2685,Vy-3076,W,-13476,W--"
+            + "2294,W.-10205,W:-3710,W;-3710,WA-2294,Wa-3710,We-3710,Wo-3710,Wr-1806,Wu-1806,Wy-2587,X--3710,XC"
+            + "-488,XG-488,XO-488,Xa-1806,Xe-2197,Xo-2197,Xu-1416,Xy-3222,Y,-13476,Y--6396,Y.-13476,Y:-9277,Y;-"
+            + "9277,YA-3710,YJ-2880,YO-878,Ya-6396,Yd-5615,Ye-6005,Yg-6005,Ym-4589,Yn-4589,Yo-6005,Yp-4589,Yq-6"
+            + "005,Yr-4589,Ys-5078,Yu-5078,Yv-4589,Z--2685,ZC-878,ZG-878,ZO-878,ZZ-488,Za-2294,Ze-2685,Zo-2685,"
+            + "Zw-1904,Zy-3076,[T976,[j2392,av-683,aw-488,ay-683,b,-1416,b.-878,by-195,c--878,cT-4687,cc-292,eT"
+            + "-6396,f\"4199,f'4199,f)4882,f*3320,f,-7324,f--3320,f.-7324,f?5615,f\\4589,f]4882,fa-1220,fc-976,fe"
+            + "-976,ff-683,fg-488,fj-976,fm-488,fn-488,fo-976,fp-488,fq-488,fr-488,fs-1123,fu-976,fy-1220,f}488"
+            + "2,gj585,hv-878,hw-488,hy-878,if195,ii97,il97,it195,k--4589,ke-878,ko-878,lf97,li97,ll292,lt195,m"
+            + "v-878,mw-488,my-878,nv-878,nw-488,ny-878,o,-1416,o.-878,ov-585,ox-878,oy-585,p,-1416,p.-878,py-1"
+            + "95,r,-13476,r--1220,r.-13476,ra-1708,rc-488,rd-488,re-488,rg-488,ro-488,rq-488,t--1904,tt-781,tv"
+            + "-976,ty-976,v,-8300,v--1904,v.-8300,va-1904,ve-781,vo-781,w,-3320,w--878,w.-3320,wa-878,x--2294,"
+            + "xc-878,xd-488,xe-1220,xg-488,xo-1220,y,-8789,y--1904,y.-8789,ya-1904,yc-781,yd-488,ye-781,yg-488"
+            + ",yo-781,yq-488,z--878,zc-488,zd-488,ze-488,zg-488,zo-488,zq-488,{T976,{j2392,";
+    }
+    private static String Telugu_Sangam_MN_0_6_kerning() {
+        return "fi-157,";
+    }
+    private static String Thonburi_0_3_kerning() {
+        return "fi-2617,fl-2617,";
+    }
+    private static String Thonburi_0_6_kerning() {
+        return "fi-5507,fl-5507,";
+    }
+    private static String Times_New_Roman_0_3_kerning() {
+        return " A-5517, T-1806, V-1806, W-1806, Y-3710,11-3710,A -5517,AT-11083,AV-12890,AW-8007,AY-9179,Av-742"
+            + "1,Aw-9179,Ay-9179,F,-8007,F.-8007,FA-7421,L -3710,LT-9179,LV-9179,LW-7421,LY-10009,Ly-5517,P -37"
+            + "10,P,-11083,P.-11083,PA-9179,RT-6005,RV-8007,RW-5517,RY-5517,Ry-4003,T -1806,T,-7421,T--9179,T.-"
+            + "7421,T:-4980,T;-5517,TA-8007,TO-1806,Ta-6982,Tc-6982,Te-6982,Ti-3515,To-6982,Tr-3515,Ts-6982,Tu-"
+            + "3515,Tw-6982,Ty-6982,V -1806,V,-12890,V--9179,V.-12890,V:-7421,V;-7421,VA-12890,Va-11083,Ve-1108"
+            + "3,Vi-6005,Vo-12890,Vr-6005,Vu-6005,Vy-11083,W -1806,W,-9179,W--5517,W.-9179,W:-3710,W;-3710,WA-1"
+            + "1083,Wa-8007,We-8007,Wi-4003,Wo-8007,Wr-4003,Wu-4003,Wy-6005,Y -3710,Y,-12890,Y--11083,Y.-12890,"
+            + "Y:-9179,Y;-9179,YA-11083,Ya-10009,Ye-10009,Yi-5517,Yo-10009,Yp-9179,Yq-11083,Yu-11083,Yv-10009,f"
+            + "f-1806,r,-4003,r--2001,r.-5517,rg-1806,v,-6494,v.-6494,w,-6494,w.-6494,y,-6494,y.-6494,";
+    }
+    private static String Times_New_Roman_1_3_kerning() {
+        return " A-1806,11-7421,A -1806,AT-3710,AV-4980,AW-3710,AY-5517,Av-5517,Aw-5517,Ay-5517,F,-12890,F.-1289"
+            + "0,FA-12890,L -1806,LT-2001,LV-3710,LW-3710,LY-2001,Ly-2978,P -1806,P,-12890,P.-12890,PA-12890,RV"
+            + "-1806,RW-1806,RY-1806,Ry-1806,T -1806,T,-7421,T--7421,T.-7421,T:-5517,T;-6494,TA-7421,TO-1806,Ta"
+            + "-9179,Tc-9179,Te-9179,Ti-5517,To-9179,Tr-5517,Ts-9179,Tu-5517,Tw-7421,Ty-7421,V -1806,V,-12890,V"
+            + "--5517,V.-12890,V:-6494,V;-7421,VA-7421,VO-2978,Va-11083,Ve-11083,Vi-7421,Vo-11083,Vr-7421,Vu-74"
+            + "21,Vy-9179,W,-9179,W--3710,W.-9179,W:-6494,W;-6494,WA-6982,Wa-9179,We-9179,Wi-5517,Wo-9179,Wr-55"
+            + "17,Wu-5517,Wy-9179,Y,-9179,Y--7421,Y.-9179,Y:-6494,Y;-6494,YA-6982,Ya-9179,Ye-9179,Yi-7421,Yo-91"
+            + "79,Yp-9179,Yq-11083,Yu-9179,Yv-9179,r,-11083,r--2001,r.-11083,rc-3710,rd-3710,re-3710,rg-3710,rh"
+            + "-1806,ro-3710,rq-3710,v,-7421,v.-7421,w,-7421,w.-7421,y,-5517,y.-5517,";
+    }
+    private static String Times_New_Roman_0_6_kerning() {
+        return " A-5517, T-1806, V-1806, W-1806, Y-3710,11-5517,A -5517,AT-7421,AV-12890,AW-11083,AY-9179,Av-742"
+            + "1,Aw-7421,Ay-7421,F -3710,F,-9179,F.-9179,FA-7421,L -5517,LT-9179,LV-9179,LW-9179,LY-9179,Ly-551"
+            + "7,P -5517,P,-9179,P.-9179,PA-7421,RT-3515,RV-3515,RW-3515,RY-3515,Ry-3515,T -1806,T,-7421,T--917"
+            + "9,T.-7421,T:-7421,T;-7421,TA-7421,TO-1806,Ta-9179,Tc-9179,Te-9179,Ti-1806,To-9179,Tr-7421,Ts-917"
+            + "9,Tu-9179,Tw-7421,Ty-7421,V -1806,V,-12890,V--7421,V.-12890,V:-9179,V;-9179,VA-12890,VO-2001,Va-"
+            + "9179,Ve-9179,Vi-3710,Vo-9179,Vr-7421,Vu-9179,Vy-9179,W -1806,W,-9179,W--3710,W.-9179,W:-5517,W;-"
+            + "5517,WA-11083,Wa-5517,We-5517,Wi-1806,Wo-5517,Wr-1806,Wu-1806,Wy-3710,Y -3710,Y,-9179,Y--9179,Y."
+            + "-9179,Y:-9179,Y;-9179,YA-9179,Ya-11083,Ye-11083,Yi-3710,Yo-11083,Yp-9179,Yq-11083,Yu-9179,Yv-110"
+            + "83,r -1806,r,-9179,r--3710,r.-9179,rc-1806,re-1806,ro-1806,rq-1806,v,-5517,v.-5517,w,-5517,w.-55"
+            + "17,y,-5517,y.-5517,";
+    }
+    private static String Times_New_Roman_1_6_kerning() {
+        return " A-3710, W-1806, Y-1806,11-5517,A -5517,AT-5517,AV-7421,AW-9179,AY-5517,Av-7421,Aw-7421,Ay-7421,"
+            + "F -1806,F,-12890,F.-12890,FA-9179,L -3710,LT-1806,LV-3710,LW-3710,LY-3710,Ly-3710,P -3710,P,-128"
+            + "90,P.-12890,PA-7421,RV-1806,RW-1806,RY-1806,Ry-1806,T,-9179,T--9179,T.-9179,T:-7421,T;-7421,TA-5"
+            + "517,TO-1806,Ta-9179,Tc-9179,Te-9179,Ti-3710,To-9179,Tr-3710,Ts-9179,Tu-3710,Tw-3710,Ty-3710,V -1"
+            + "806,V,-12890,V--5517,V.-12890,V:-7421,V;-7421,VA-7421,Va-11083,Ve-11083,Vi-5517,Vo-11083,Vr-5517"
+            + ",Vu-5517,Vy-7421,W -1806,W,-7421,W--3710,W.-7421,W:-5517,W;-5517,WA-7421,Wa-7421,We-7421,Wi-3710"
+            + ",Wo-7421,Wr-7421,Wu-5517,Wy-5517,Y -3710,Y,-9179,Y--9179,Y.-7421,Y:-9179,Y;-9179,YA-7421,Ya-9179"
+            + ",Ye-11083,Yi-5517,Yo-11083,Yp-7421,Yq-11083,Yu-9179,Yv-9179,ff-1806,r,-5517,r.-5517,v,-3710,v.-3"
+            + "710,w,-3710,w.-3710,y,-3710,y.-3710,";
+    }
+    private static String Trattatello_0_3_kerning() {
+        return "AC-1100,AG-1399,AO-1100,AQ-1399,AT-1199,AU-1100,AV-2799,AW-2500,AY-2299,Af-1499,Ag-599,Al-1000,A"
+            + "n-1000,Ar-1999,At-299,Au-599,Av-2799,Aw-1499,Ay-2799,BA-1100,BE-1399,BL-399,BP-399,BR-700,BU-700"
+            + ",BV-1799,BW-1799,BY-1699,Bl-1199,Br-1399,Bu-899,By-1199,CA-700,Cr-1399,DA-2500,DB-1000,DD-1100,D"
+            + "E-1799,DF1799,DH-899,DI-1100,DK-599,DL-700,DM-3600,DN-1499,DP-1100,DR-2200,DU-1100,DV-2899,DW-25"
+            + "00,DX-899,DY-1799,Db-500,Dc-500,Dd-500,De-1000,Df-1499,Di-500,Dk-899,Dl-1499,Dm-500,Dn-500,Do-10"
+            + "00,Dq-1000,Dr-1999,Dx-2500,Ea-1000,Eb-1000,Ec-1499,Ed-1499,Ee-1499,Ef-1999,Eg-1000,Ej-1499,El-14"
+            + "99,Em-1499,Eo-1499,Eq-1499,Er-2500,Et-1999,Eu-1199,Ev-899,Ex-1499,Ey-1999,FA-1999,Fa-1399,Fc-199"
+            + "9,Fd-1999,Fe-1999,Fi-899,Fl-2500,Fo-1999,Fq-1999,Fr-1999,Ft-1399,Fu-1199,Fy-899,HC-1399,HG-1399,"
+            + "HO-1399,HQ-1399,Ha-1499,Hc-1499,Hd-1499,He-1499,Ho-1499,Hq-1499,Hu-1399,Hy-2200,IC-599,IG-599,IO"
+            + "-599,IQ-599,Ic-299,Id-299,Ie-299,Io-299,Iq-299,It-599,J,899,J.-1199,JA-1399,Ja-899,Jc-899,Jd-899"
+            + ",Je-599,Jo-899,Jq-899,Ju-1199,KC-1399,KG-1399,KO-1399,KQ-1399,Ki-1499,Kn-1000,Ku-599,Kv-1499,Kw-"
+            + "1499,LC-599,LG-599,LO-599,LQ-599,LT-3099,LU-899,LV-2799,LW-2799,LY-2799,La-500,Lc-500,Ld-500,Le-"
+            + "500,Li-1499,Lo-500,Lq-500,Lu-1399,Ly-3699,MC-599,MG-599,MO-599,MQ-599,Ma-500,Mc-599,Md-599,Me-10"
+            + "00,Mi-1499,Mo-599,Mq-599,Mr-1999,Mu-1199,My-3000,N,-2299,N.-2299,NA-3500,NC-899,NG-899,NO-899,NQ"
+            + "-899,Na-4499,Nc-3699,Nd-3699,Ne-4499,Ni-2500,No-3699,Nq-3699,Nu-3699,OA-2799,OB-1000,OD-599,OE-1"
+            + "199,OF1799,OH-899,OI-299,OK-599,OL-899,OM-2200,ON-1499,OP-599,OV-2200,OW-1999,OX-899,OY-1699,Ob-"
+            + "500,Oc-500,Od-500,Of-1499,Oi-500,Ok-899,Ol-1499,Om-500,On-500,Or-1499,Ox-2500,P,-1999,P.-1999,PA"
+            + "-3399,PE-599,PL-599,Pa-1000,Pc-1499,Pd-1499,Pe-1000,Ph-1000,Pl-1999,Po-1499,Pq-1499,Pr-1000,QA33"
+            + "300,QB33300,QC33300,QD33300,QE33300,QF33300,QG33300,QH33300,QI33300,QJ33300,QK33300,QL33300,QM33"
+            + "300,QN33300,QO33300,QP33300,QR33300,QS33300,QT33300,QU33300,QV33300,QW33300,QX33300,QY33300,Qa33"
+            + "300,Qb33300,Qc33300,Qd33300,Qe33300,Qf33300,Qg33300,Qh33300,Qi33300,Qj33300,Qk33300,Ql33300,Qm33"
+            + "300,Qn33300,Qo33300,Qp33300,Qq33300,Qr33300,Qs33300,Qt33300,Qu33300,Qv33300,Qw33300,Qx33300,Qy33"
+            + "300,Qz33300,RG-700,RT-1100,RU-1399,RV-2899,RW-2899,RY-2200,SM-1399,ST-1100,SU-399,Si-1000,Sl-100"
+            + "0,Sn-500,T,-899,T.-899,TA-2500,Ta-2500,Tc-1399,Td-3500,Te-2500,Th-1499,Ti-899,To-3500,Tq-3500,Tr"
+            + "-1999,Ts-1199,Tu-1699,Ty-1199,U,-1399,U.-1699,UA-3600,UC-399,US-1100,Ua-1900,Ug-1399,Uh-1499,Um-"
+            + "1999,Un-1999,Up-899,Us-1699,Ut-1999,V,-3699,V.-5000,V:-2899,V;-3099,VA-6199,VC-1399,VG-1799,VO-1"
+            + "000,VQ-1000,VS-2200,Va-5500,Vc-5500,Vd-4499,Ve-4499,Vh-2500,Vi-3000,Vm-3399,Vo-5500,Vq-5500,Vr-3"
+            + "999,Vt-2500,Vu-3999,Vy-3699,W,-4199,W.-3999,W:-3399,W;-1900,WA-6199,WC-1399,WG-1100,WO-899,WQ-89"
+            + "9,Wa-5500,Wc-5000,Wd-4499,We-4499,Wh-2500,Wi-3099,Wm-3399,Wo-5000,Wq-5000,Wr-3999,Wt-2500,Wu-449"
+            + "9,Wy-3699,Xa-899,Xc-1199,Xd-1199,Xe-599,Xo-1199,Xq-1199,Xu-1699,Xy-3999,YA-2200,YC-1100,YG-1399,"
+            + "YO-1399,YQ-1399,YS-1799,Ya-2799,Yc-2799,Yd-2899,Ye-2799,Yi-2799,Yo-2799,Yp-1699,Yq-2799,Yu-3399,"
+            + "Yv-3999,ZA-12200,ZB-12200,ZC-12200,ZD-12200,ZE-12200,ZF-12200,ZG-12200,ZH-12200,ZI-12200,ZJ-1220"
+            + "0,ZK-12200,ZL-12200,ZM-12200,ZN-12200,ZO-12200,ZP-12200,ZQ-1799,ZR-12200,ZS-12200,ZT-12200,ZU-12"
+            + "200,ZV-12200,ZW-12200,ZX-12200,ZY-12200,Za-12200,Zb-12200,Zc-12200,Zd-12200,Ze-12200,Zf-12200,Zg"
+            + "-12200,Zh-12200,Zi-12200,Zj-12200,Zk-12200,Zl-12200,Zm-12200,Zn-12200,Zo-12200,Zp-12200,Zq-12200"
+            + ",Zr-12200,Zs-12200,Zt-12200,Zu-12200,Zv-12200,Zw-12200,Zx-12200,Zy-12200,Zz-12200,ap599,ar-500,b"
+            + "f-299,bl-599,bx-599,db1000,dv-1199,dw-899,dy-1399,el-299,ep1199,ev-299,ew-299,fa-1199,fc-1199,fd"
+            + "-1199,fe-1199,ff-5599,fi-1999,fl1999,fo-1199,fq-1199,gl-1199,hy-599,ip299,iv-299,iy-599,kf-1000,"
+            + "kj-1000,lb500,lv-1199,lw-299,ly-1399,my-899,ny-899,of-299,ol-599,ox-599,pf-299,pl-1000,pr-1499,p"
+            + "x-599,r,-1399,r.-1399,rb1000,ri1999,rm1000,rn1000,rp1999,rr500,rt1000,ru1000,up500,ur-500,v,-119"
+            + "9,v.-1199,vd-700,w,-1199,w.-1199,xp1000,y,-1399,y.-1399,ys-500,yy-10800,";
+    }
+    private static String Trebuchet_MS_0_3_kerning() {
+        return " A-5517, T-1806, Y-1806,A -5517,AT-9716,AV-8789,AW-8789,AY-10644,Av-5517,Aw-4589,Ay-4101,F,-1801"
+            + "7,F.-18017,FA-10595,Ke-3125,Ki-3125,Kn-3125,Ko-3125,Ku-3125,Kw-3125,L -3710,LT-10205,LV-13867,LW"
+            + "-12500,LY-12939,Ly-8300,P -1806,P,-19531,P.-19531,PA-11132,Pa-4687,Pe-4687,Ph-4687,Pi-4687,Po-46"
+            + "87,Pr-4687,RT-4101,RV-4589,RW-6396,RY-6396,Re-4052,Ro-4052,Ru-2880,T -1806,T,-16601,T--9667,T.-1"
+            + "6601,T:-11083,T;-11083,TA-9716,TO-5517,Ta-12451,Tc-12451,Te-12451,Ti-4150,To-12451,Tr-10986,Ts-1"
+            + "2011,Tu-12939,Tw-13818,Ty-11523,V,-14648,V--7373,V.-14648,V:-6005,V;-6005,VA-10205,Va-7861,Ve-64"
+            + "45,Vi-1806,Vo-6445,Vr-6005,Vu-6494,Vy-3710,W,-9228,W--6884,W.-9228,W:-1806,W;-1806,WA-8789,Wa-55"
+            + "66,We-4589,Wi-1367,Wo-4589,Wr-5029,Wu-4101,Wy-1806,Y -1806,Y,-16113,Y--12207,Y.-16113,Y:-8740,Y;"
+            + "-8740,YA-10644,Ya-9277,Ye-10498,Yi-5566,Yo-11474,Yp-9277,Yq-11962,Yu-7373,Yv-5957,r,-14257,r.-13"
+            + "330,v,-13427,v.-13427,w,-10595,w.-10595,y,-12207,y.-12207,";
+    }
+    private static String Trebuchet_MS_1_3_kerning() {
+        return " A-3710, Y-1806,A -3710,AT-11230,AV-12304,AW-9863,AY-12060,Av-8154,Aw-7324,Ay-3857,F -1806,F,-19"
+            + "531,F.-19531,FA-11230,L -1806,LT-10400,LV-8496,LW-8349,LY-12158,Ly-4345,P -3710,P,-19531,P.-1953"
+            + "1,PA-11962,RT-4785,RV-5615,RW-4345,RY-6689,T,-14648,T--11230,T.-14648,T:-7324,T;-7324,TA-11230,T"
+            + "O-4785,Ta-12158,Tc-12158,Te-12158,Ti-2587,To-11718,Tr-10400,Ts-10888,Tu-10791,Tw-10791,Ty-9521,V"
+            + ",-13330,V--5419,V.-13330,V:-1806,V;-1806,VA-12207,Va-6689,Ve-6689,Vi-2636,Vo-7958,Vr-6054,Vu-390"
+            + "6,Vy-2246,W,-12597,W--4785,W.-9619,WA-8593,Wa-4785,We-6445,Wi-1708,Y -1806,Y,-14648,Y--11230,Y.-"
+            + "14648,Y:-3710,Y;-3710,YA-12744,Ya-10400,Ye-10595,Yi-3076,Yo-10156,Yp-8056,Yq-11035,Yu-7958,Yv-54"
+            + "19,r,-13134,r--7324,r.-13134,v,-12207,v.-12207,w,-11425,w.-11425,y,-11669,y.-11669,";
+    }
+    private static String Trebuchet_MS_0_6_kerning() {
+        return " A-5517, T-1806, Y-1806,A -5517,AT-9472,AV-7421,AW-5419,AY-8935,Av-1806,Aw-1806,Ay-1806,F,-11083"
+            + ",F.-11083,FA-5517,Fa-4687,Fe-4687,Fo-4687,Fu-4687,L -3710,LT-7421,LV-7421,LW-7421,LY-7421,Ly-371"
+            + "0,P -1806,P,-12890,P.-12890,PA-7421,Pa-4687,Pe-4687,Po-4687,RT-4052,RV-3613,RW-4345,RY-6298,T -1"
+            + "806,T,-11083,T--7763,T.-11083,T:-11083,T;-11083,TA-9472,TO-5957,Ta-11083,Tc-11083,Te-11083,Ti-37"
+            + "10,To-12890,Tr-10253,Ts-11083,Tu-9033,Tw-7958,Ty-7519,V,-11181,V--5517,V.-9179,V:-3710,V;-3710,V"
+            + "A-7421,Va-7421,Ve-5517,Vi-1806,Vo-6738,Vr-4931,Vu-5322,Vy-3710,W,-8740,W--1806,W.-8349,W:-1806,W"
+            + ";-1806,WA-5419,Wa-3710,We-1806,Wo-1806,Wr-1806,Wu-1806,Wy-878,Y -1806,Y,-12890,Y--9179,Y.-12890,"
+            + "Y:-5517,Y;-6494,YA-8935,Ya-7421,Ye-9179,Yi-3710,Yo-9179,Yp-7421,Yq-9179,Yu-5517,Yv-5517,ka-3125,"
+            + "r,-11279,r.-11816,ra-3125,v,-13183,v.-13183,vi3125,w,-9716,w.-9716,y,-11083,y.-11083,";
+    }
+    private static String Trebuchet_MS_1_6_kerning() {
+        return " A-3710, Y-1806,A -3710,AT-9033,AV-10009,AW-7470,AY-11669,F,-14648,F.-14648,FA-14306,L -1806,LT-"
+            + "14599,LV-15283,LW-12988,LY-17822,P -3710,P,-16796,P.-16796,PA-10351,RT-7666,RW-6054,RY-10595,T,-"
+            + "17822,T--12353,T.-17822,T:-10986,T;-10986,TA-9033,TO-6689,Ta-12500,Tc-12500,Te-12500,Ti-5371,To-"
+            + "11181,Tr-11230,Ts-13818,Tu-11914,Tw-12500,Ty-12500,V,-15039,V--6005,V.-15039,V:-7275,V;-7275,VA-"
+            + "10009,Va-8251,Ve-8251,Vi-4687,Vo-8251,Vr-6347,Vu-5712,Vy-5712,W,-17089,W--6640,W.-17089,W:-7958,"
+            + "W;-7958,WA-10742,Wa-7031,We-5371,Wi-3466,Wo-5371,Wr-3759,Wu-4101,Wy-4736,Y -1806,Y,-15869,Y--109"
+            + "86,Y.-15869,Y:-9765,Y;-9765,YA-11669,Ya-8593,Ye-9765,Yi-5664,Yo-9765,Yp-7617,Yq-9765,Yu-10986,Yv"
+            + "-8251,ff-4394,r,-11376,r.-11376,v,-14648,v.-14648,w,-9570,w.-9570,y,-9228,y.-9228,";
+    }
+    private static String Verdana_0_3_kerning() {
+        return "'A-4882,-A-2441,-I-1464,-J-4882,-S-976,-T-7324,-V-2441,-W-2441,-X-3906,-Y-6835,-Z-1464,-a-976,-v"
+            + "-1953,-w-976,-x-2441,-y-1953,-z-1953,.,-6347,.--7812,A--2441,AS-488,AT-5859,AU-488,AV-2929,AW-24"
+            + "41,AY-3906,At-976,Au-488,Av-2441,Aw-1464,Ay-2441,B,-976,B-488,B.-976,BT-2929,C--2441,D,-2441,D.-"
+            + "2441,DT-2441,DW-976,DX-488,DY-976,DZ-976,F,-14648,F.-14648,F:-2929,F;-2929,F?2929,FA-4882,FT1464"
+            + ",Fa-4882,Fe-2441,Fo-2441,I--1464,J,-976,J.-976,JA-488,K--5371,KO-976,Ka-2929,Ke-3417,Ko-3417,Ku-"
+            + "2441,Kv-3906,Kw-3417,Ky-3906,L'-5859,L--7812,LC-976,LG-976,LJ4882,LO-976,LT-8300,LV-5371,LW-4882"
+            + ",LY-7812,Lv-5371,Ly-5371,O,-1464,O.-1464,OT-2441,OX-488,OY-976,OZ-976,P,-14648,P.-14648,PA-2441,"
+            + "PY976,Pa-2441,Pe-2441,Po-2441,Q,-1464,Q.-1464,R--4882,RT-2929,RY-976,Ra-1953,Re-2441,Ro-2441,Ru-"
+            + "976,Ry-2685,S,-976,S.-976,SA-976,SS-1074,Sv-1464,Sw-976,Sy-1464,T,-14160,T--7324,T.-14160,T:-976"
+            + "5,T;-9765,T?2929,TA-5859,TC-1953,TG-1953,TO-2441,TS-585,TT-3417,Ta-11718,Tc-10742,Te-10742,Tg-10"
+            + "253,To-10742,Tr-9765,Ts-8789,Tu-9765,Tv-9765,Tw-9765,Ty-9765,Tz-8300,U,-976,U.-976,UA-488,V,-141"
+            + "60,V--2441,V.-14160,V:-3906,V;-3906,VA-2929,Va-4882,Ve-4882,Vo-4882,Vu-2929,Vy-3173,W,-14160,W--"
+            + "2441,W.-10742,W:-3906,W;-3906,WA-2441,Wa-4882,We-4882,Wo-4882,Wr-2929,Wu-2929,Wy-3173,X--3906,XC"
+            + "-488,XG-488,XO-488,Xa-2441,Xe-2929,Xo-2929,Xu-1464,Xy-3906,Y,-14160,Y--6835,Y.-14160,Y:-9765,Y;-"
+            + "9765,YA-3906,YO-976,Ya-6835,Yd-5859,Ye-6347,Yg-6347,Ym-4882,Yn-4882,Yo-6347,Yp-4882,Yq-6347,Yr-4"
+            + "882,Ys-5371,Yu-5371,Yv-4882,Z--2929,ZC-976,ZG-976,ZO-976,ZZ-488,Za-2441,Ze-2929,Zo-2929,Zw-1953,"
+            + "Zy-3173,av-781,aw-488,ay-781,b,-1464,b.-976,by-244,c--976,cT-2929,eT-6835,f\"2929,f'2929,f)4882,f"
+            + "*2441,f,-6347,f--2441,f.-5859,f?5371,f\\4882,f]4882,fy-488,f}4882,hv-976,hw-488,hy-976,k--4882,ke"
+            + "-976,ko-976,mv-976,mw-488,my-976,nv-976,nw-488,ny-976,o,-1464,o.-976,ov-732,ox-976,oy-732,p,-146"
+            + "4,p.-976,py-244,r,-14160,r--976,r.-14160,ra-1757,t--1953,ty-488,v,-8789,v--1953,v.-8789,va-1953,"
+            + "ve-878,vo-878,w,-3417,w--976,w.-3417,wa-976,x--2441,xc-976,xd-488,xe-1171,xg-488,xo-1171,y,-9277"
+            + ",y--1953,y.-9277,ya-1953,yc-878,yd-488,ye-878,yg-488,yo-878,yq-488,z--976,zc-488,zd-488,ze-585,z"
+            + "g-488,zo-585,zq-488,";
+    }
+    private static String Waseem_0_3_kerning() {
+        return ". 12353,.!12353,.\"12353,.\u002312353,.$12353,.%12353,.&12353,.'12353,.(12353,.)12353,.*12353,.+12353,"
+            + ".,12353,.-12353,./12353,.:12353,.;12353,.<12353,.=12353,.>12353,.?12353,.@12353,.A12353,.B12353,"
+            + ".C12353,.D12353,.E12353,.F12353,.G12353,.H12353,.I12353,.J12353,.K12353,.L12353,.M12353,.N12353,"
+            + ".O12353,.P12353,.Q12353,.R12353,.S12353,.T12353,.U12353,.V12353,.W12353,.X12353,.Y12353,.Z12353,"
+            + ".[12353,.\\12353,.]12353,.^12353,._12353,.`12353,.a12353,.b12353,.c12353,.d12353,.e12353,.f12353,"
+            + ".g12353,.h12353,.i12353,.j12353,.k12353,.l12353,.m12353,.n12353,.o12353,.p12353,.q12353,.r12353,"
+            + ".s12353,.t12353,.u12353,.v12353,.w12353,.x12353,.y12353,.z12353,.{12353,.|12353,.}12353,.~12353,"
+            + "AT-7373,AV-7373,AW-3662,AY-7373,Av-1757,Aw-1757,Ay-1757,F,-11083,FA-5468,LT-7373,LV-7373,LW-7373"
+            + ",LY-7373,Ly-3662,P,-12890,PA-7373,RT-1757,RV-1757,RW-1757,RY-1757,T,-11083,T;-11083,TA-7373,TO-1"
+            + "757,Ta-11083,Tc-11083,Te-11083,Ti-3662,To-11083,Tr-3662,Ts-11083,Tu-3662,Tw-5468,Ty-5468,V,-9179"
+            + ",V;-3662,VA-7373,Va-7373,Ve-5468,Vi-1757,Vo-5468,Vr-3662,Vu-3662,Vy-3662,W,-5468,W;-1757,WA-3662"
+            + ",Wa-3662,We-1757,Wo-1757,Wr-1757,Wu-1757,Wy-878,Y,-12890,Y;-6494,YA-7373,Ya-7373,Ye-9179,Yi-3662"
+            + ",Yo-9179,Yp-7373,Yq-9179,Yu-5468,Yv-5468,ff-1757,r,-5468,v,-7373,w,-5468,y,-7373,";
+    }
+    private static String Zapfino_0_3_kerning() {
+        return "-J-13249,-R-7500,-T-8750,-V-7250,-W-8750,-X-10249,-Y-16000,00-31250,24-6250,45-5000,70-7500,74-7"
+            + "500,76-5000,78-5000,A--16250,A.-5749,AC-10000,AG-10000,AJ-12500,AO-8750,AQ-6250,AT-12500,AU-1000"
+            + "0,AV-7500,AW-7500,AY-6250,Ab-6250,Ac-3750,Ae-4499,Af-5000,Aj3750,Al-3000,Ao-2500,At-3000,Av-3000"
+            + ",B,-10249,B--5749,B.-10249,BO-5000,BU-5000,C,-6000,C.-6000,D,-16250,D--5749,D.-16250,DA-10000,DU"
+            + "-7500,DV-5000,DW-6250,DY-9499,De-2500,E--11750,EC-6250,EO-6250,F,-17500,F--4250,F.-17500,FT7500,"
+            + "FY16250,Fj7500,G,-5749,G--7500,G.-10249,H--17500,I,-16000,I--13000,I.-18999,IT5000,Ia-3750,Ic-50"
+            + "00,Id-2500,Ie-3750,Ig-2500,Io-3750,Is-2500,Iw-3750,J,-10000,J--7500,J.-10000,K--17500,KC-11250,K"
+            + "G-7500,KO-10000,KU-6250,K}36499,L--21999,LC-12500,LG-11250,LJ-11250,LO-15000,LQ-7500,LT-17500,LU"
+            + "-10000,LV-14750,LW-8750,LY-11250,M--13000,MC-6250,MG-6250,MO-6250,MQ-5000,MU-8750,MV-11250,MW-75"
+            + "00,Mc45249,N,-14750,N--14499,N.-14750,Na-3000,Ne-4499,No-3750,O,-16250,O--10249,O.-16250,OA-6250"
+            + ",OU-6250,OX-10000,OY-10249,OZ-7500,Oe-2500,P,-23500,P--10249,P.-23500,PA-12500,Pa-7500,Pe-6250,P"
+            + "g-5000,Po-6250,Pr-3750,Ps-3750,Q,30000,Q--8750,Q.-16000,QU-5000,Q}21750,R--17500,RC-6250,RG-6250"
+            + ",RO-5000,RU-6250,R}43999,S,-8750,S.-8750,T,-16250,T--13249,T.-16250,T?15000,TA-5000,TY18750,Ta-6"
+            + "250,Tc-10000,Te-10000,Th60500,Ti-7500,To-10000,Tr-7500,Ts-5000,Tu-10000,Tw-10000,Ty-6250,U--8999"
+            + ",V,-23500,V--17749,V.-30749,VA-11250,Va-15000,Ve-15000,Vo-15000,Vr-7500,Vs-12500,Vu-11250,Vy-112"
+            + "50,W,-23500,W--18999,W.-27749,W?17500,WA-11250,Wa-13750,We-15000,Wm-7500,Wo-15000,Wr-8750,Wu-100"
+            + "00,Wy-10000,X--11750,XC-7500,XG-7500,XO-7500,XQ-6250,XU-5000,Y,-20500,Y--17500,Y.-20500,Y?30749,"
+            + "YB16250,YD17500,YE13000,YF17500,YH17500,YI18999,YK10249,YN7250,YP20000,YR11750,YS11250,YT27749,Y"
+            + "W20500,YX15000,YZ19250,Ya-15000,Yc-17500,Ye-17500,Yo-16250,Yr-10000,Ys-11250,Yu-11250,Yv-13750,Y"
+            + "}10249,Z)35000,Z,54250,ZA-10000,ZO-6250,ZV25000,ZY25000,Z]35249,Za-10500,Ze8750,Zi11999,Zw-3750,"
+            + "Z}42500,[J7500,av-1000,b,-8750,b.-11750,bs2500,cn-2500,cp-1499,cq-1499,di-249,dr-1999,e.90749,es"
+            + "12749,ev-1499,ez-7500,f.-10249,ff-16000,fi-8000,fj6250,fl-6499,fs-3000,ft1250,g!-10000,g,-12500,"
+            + "g--18999,g.-16000,g:-13000,g;-10000,g?-11250,ge7749,gg-4250,is-2250,ll14500,m--11750,mn-1250,o,-"
+            + "7250,o.-8750,oa-1250,od-1250,oe1750,oq-2500,os2250,ou-3249,ox-3750,pf-1000,ph14500,pp15749,r,-13"
+            + "750,r--11750,r.-18750,r:-7500,r;-7500,r?-10000,ra-2500,rc-3000,rd-2500,re-2500,rg-2500,ri8500,ro"
+            + "-2500,rq-2500,rs-2500,rt16000,s!-11250,s,-10000,s--17749,s.-15000,s:-10000,s;-7500,s?-11250,sb-2"
+            + "500,sc-2500,sh5000,sp10249,ss18499,st2249,th-4749,tt-2249,tz-18999,uz13249,v!-10000,v,-15000,v--"
+            + "11750,v.-15249,v:-10000,v;-10000,v?-12500,w,-7250,w--11750,w.-13249,wn-8750,wv-6499,x--11750,xc-"
+            + "3000,xe-3750,xg-1750,xh-2749,xi-3249,xk-3500,xl-3249,xm-3750,xn-4250,xo-1999,xp-3249,xr-2250,xu-"
+            + "2250,xw-2250,xy-1250,y!-11250,y,-12500,y--17749,y.-16250,y:-12500,y;-10000,y?-11250,yc-2500,z--1"
+            + "3249,ze-3750,{J13249,{V22500,{Y13000,";
+    }
+    private static String Inter_0_3_kerning() {
+        return "!*14404,\"&-3369,\",-8203,\".-8203,\"4-6250,\"A-7910,\"J-16455,\"c-2246,\"d-2246,\"e-2246,\"g-2246,\"o-2246"
+            + ",\"q-2246,\"s-781,$*14404,$T-683,$X-1074,%*14404,&\"-3369,&'-3369,&*14404,&T-5664,&V-6250,&W-3955,&"
+            + "Y-7373,&\\-6250,&v-3369,&w-3369,&y-3369,'&-3369,',-8203,'.-8203,'4-6250,'A-7910,'J-16455,'c-2246,"
+            + "'d-2246,'e-2246,'g-2246,'o-2246,'q-2246,'s-781,(c-1123,(d-1123,(e-1123,(g-1123,(j2832,(o-1123,(q"
+            + "-1123,*!14404,*$14404,*%14404,*&14404,*,-13623,*.-13623,*014404,*114404,*214404,*314404,*414404,"
+            + "*514404,*614404,*714404,*814404,*914404,*?14404,*@-878,*A11035,*B14404,*C14404,*D14404,*E14404,*"
+            + "F14404,*G14404,*H14404,*I14404,*J14404,*K14404,*L14404,*M14404,*N14404,*O14404,*P14404,*Q14404,*"
+            + "R14404,*S14404,*T11035,*U14404,*V10449,*W14404,*X9863,*Y9863,*Z14404,*_-6787,*|14404,+2-3369,+3-"
+            + "1123,+7-2246,+A-3369,+J-4541,+T-7373,+V-5078,+W-5078,+X-3759,+Y-7910,+\\-5078,+v-195,+x-2246,+y-1"
+            + "95,,\"-8203,,'-8203,,0-2539,,1-8886,,297,,3-2294,,5-1416,,6-2539,,7-1416,,8-1953,,9-683,,?-9912,,"
+            + "@-4394,,C-4394,,G-4394,,O-4394,,Q-4394,,T-3369,,Y-3369,-2-3369,-3-1123,-7-2246,->-16015,-A-3369,"
+            + "-J-4541,-T-7373,-V-5078,-W-5078,-X-3759,-Y-7910,-\\-5078,-v-195,-x-2246,-y-195,.\"-8203,.'-8203,.0"
+            + "-2539,.1-8886,.297,.3-2294,.5-1416,.6-2539,.7-1416,.8-1953,.9-683,.?-9912,.@-4394,.C-4394,.G-439"
+            + "4,.O-4394,.Q-4394,.T-3369,.Y-3369,/,-3955,/.-3955,/A-2441,/J-6250,0*14404,0,-2539,0.-2539,07-195"
+            + "3,0A-537,0V-1318,0X-3417,0Y-3369,0\\-1318,0_-4541,0t1562,1*14404,1t1269,1v488,1y488,2*14404,24-15"
+            + "62,3*14404,3,-2246,3.-2246,3X-1953,3^-1806,4*14404,4,-3369,4.-3369,41-2392,47-878,4^-2490,4t-439"
+            + ",5*14404,5,-2685,5.-2685,51-439,5^-439,5t-341,6*14404,6,-3173,6.-3173,6_-4541,7\u0023-5664,7%195,7&-4"
+            + "541,7*14404,7,-12500,7.-12500,70-1562,73-1660,74-5810,75-976,76-1562,771953,78-1416,79-976,7:-33"
+            + "69,7;-3369,7A-10791,7J-9619,7^439,7_-15869,7a-4541,7c-5078,7d-5078,7e-5078,7g-5078,7m-5078,7n-50"
+            + "78,7o-5078,7p-5078,7q-5078,7r-5078,7s-4492,8*14404,8,-2246,8.-2246,8X-1953,8^-1806,9*14404,9,-25"
+            + "39,9.-2539,97-1953,9A-537,9V-1318,9X-3417,9Y-3369,9\\-1318,9_-4541,9t1562,:\\-6250,;T-3369,;V-6250"
+            + ",;\\-6250,<--16015,=>-36132,=A-5078,=T-4541,=V-6787,=W-6250,=X-5078,=Y-9619,=\\-6787,=v-3955,=x-33"
+            + "69,=y-3955,>\\-7373,?*14404,?A-6250,@,-4394,@.-4394,@/-3955,@\\-3369,@_-3955,A\"-7910,A'-7910,A*110"
+            + "35,A+-3369,A--3369,A/1953,A0-537,A1-4345,A6-537,A=-5078,A?-6250,AA1367,AC-3320,AG-3320,AO-3320,A"
+            + "Q-3320,AT-8789,AU-2392,AV-7470,AW-5712,AY-8105,A\\-7470,A^-7910,Ac-439,Ad-439,Ae-439,Ag-439,Ai439"
+            + ",Ao-439,Aq-439,At-2246,Av-6787,Aw-6787,Ay-6787,A~-3369,B*14404,BT-5273,C*14404,CA-1855,CX-537,C_"
+            + "-3955,D*14404,D,-4394,D.-4394,D/-3955,DA-3320,DT-3271,DV-3369,DW-439,DX-3955,DY-3808,D\\-3369,D_-"
+            + "3955,E*14404,F*14404,F,-3955,F.-3369,F/-195,FA-9082,FC-195,FG-195,FJ-6787,FO-195,FQ-195,F_-3369,"
+            + "Fa-2246,Fc-3271,Fd-3271,Fe-3271,Fg-3271,Fm-2587,Fn-2587,Fo-3271,Fp-2587,Fq-3271,Fr-2587,Fu-3369,"
+            + "Fv-3369,Fy-3369,Fz-3369,G*14404,GA-2246,GT-2978,GV-2246,GX-537,GY-2246,G\\-2246,H*14404,Ht1269,Hv"
+            + "488,Hy488,I*14404,It1269,Iv488,Iy488,J*14404,J,-3369,J.-3369,J/-5664,JA-2392,J_-5078,K$-1171,K*1"
+            + "1035,K+-10791,K--10791,K=-3369,KC-3466,KG-3466,KO-3466,KQ-3466,KS-1171,Kc-3955,Kd-3955,Ke-3955,K"
+            + "g-3955,Ki1220,Ko-3955,Kq-3955,Ku-3369,Kv-3955,Kw-6250,Ky-3955,K~-10791,L\"-9082,L'-9082,L*11035,L"
+            + "+-8496,L--8496,L1-4541,L?-1757,LC-2832,LG-2832,LO-2832,LQ-2832,LT-9667,LV-6787,LY-5664,L\\-6787,L"
+            + "^-13037,Lt-2246,Lv-6787,Ly-6787,L~-8496,M*14404,Mt1269,Mv488,My488,N*14404,Nt1269,Nv488,Ny488,O*"
+            + "14404,O,-4394,O.-4394,O/-3955,OA-3320,OT-3271,OV-3369,OW-439,OX-3955,OY-3808,O\\-3369,O_-3955,P&-"
+            + "3369,P*14404,P+-4541,P,-3955,P--4541,P.-3369,PA-7373,PJ-9619,PT-195,Pa-537,Pc-1074,Pd-1074,Pe-10"
+            + "74,Pg-1074,Pm-195,Pn-195,Po-1074,Pp-195,Pq-1074,Pr-195,P~-4541,Q*14404,Q,-4394,Q.-4394,Q/-3955,Q"
+            + "A-3320,QT-3271,QV-3369,QW-439,QX-3955,QY-3808,Q\\-3369,Q_-3955,R*14404,RT-439,RV-1660,RY-2392,R\\-"
+            + "1660,Ra-585,Rc-1562,Rd-1562,Re-1562,Rg-1562,Ro-1562,Rq-1562,S*14404,ST-683,SX-1074,T&-3369,T*110"
+            + "35,T+-7373,T,-3369,T--7373,T.-3369,T/-5078,T0-3369,T4-6787,T6-3369,T7-7910,T:-3955,T;-3369,T=-33"
+            + "69,TA-8789,TC-3271,TG-3271,TJ-9082,TO-3271,TQ-3271,TY1513,T_-5664,Ta-8203,Tc-8691,Td-8691,Te-869"
+            + "1,Tf-341,Tg-8691,Tm-6445,Tn-6445,To-8691,Tp-6445,Tq-8691,Tr-6445,Ts-8251,Tt-8154,Tu-7812,Tv-7373"
+            + ",Tw-7226,Tx-7031,Ty-7373,Tz-5810,T~-7373,U*14404,U,-3369,U.-3369,U/-5664,UA-2392,U_-5078,V&-5078"
+            + ",V*10449,V+-5078,V,-9619,V--5078,V.-9619,V/-4785,V0-1318,V4-3369,V6-1318,V:-6250,V;-6250,V=-6250"
+            + ",VA-7470,VC-3369,VG-3369,VJ-9619,VO-3369,VQ-3369,VV1660,V\\1660,V_-7910,Va-5371,Vc-5468,Vd-5468,V"
+            + "e-5468,Vg-5468,Vm-878,Vn-878,Vo-5468,Vp-878,Vq-5468,Vr-878,Vs-4541,V~-5078,W&-5078,W*14404,W+-50"
+            + "78,W,-9619,W--5078,W.-9619,W4-3369,W:-5078,W;-5078,W=-6250,WA-5712,WC-439,WG-439,WJ-6250,WO-439,"
+            + "WQ-439,WW2246,Wa-5078,Wc-5078,Wd-5078,We-5078,Wg-5078,Wm-3076,Wn-3076,Wo-5078,Wp-3076,Wq-5078,Wr"
+            + "-3076,Ws-3369,W~-5078,X$-1074,X*9863,X+-3759,X--3759,X0-3417,X3-1953,X4-3955,X6-3417,X8-1953,X=-"
+            + "5078,XC-3955,XG-3955,XO-3955,XQ-3955,XS-1074,XT-3076,Xa-5664,Xc-2832,Xd-2832,Xe-2832,Xg-2832,Xo-"
+            + "2832,Xq-2832,X~-3759,Y&-6250,Y*10449,Y+-7910,Y,-3369,Y--7910,Y.-3369,Y4-6787,Y:-6250,Y;-6250,Y=-"
+            + "9619,YA-8105,YC-3808,YG-3808,YJ-3369,YO-3808,YQ-3808,YT1513,Ya-7666,Yc-8154,Yd-8154,Ye-8154,Yg-8"
+            + "154,Yi-2832,Ym-4541,Yn-4541,Yo-8154,Yp-4541,Yq-8154,Yr-4541,Ys-6787,Yu-3955,Y~-7910,Z*14404,Z+-3"
+            + "955,Z--3955,ZC-3369,ZG-3369,ZO-3369,ZQ-3369,Z~-3955,[c-1123,[d-1123,[e-1123,[g-1123,[j2832,[o-11"
+            + "23,[q-1123,\\\"-7910,\\'-7910,\\*-7910,\\+-3369,\\--3369,\\/1953,\\0-537,\\1-4345,\\6-537,\\=-5078,\\?-6250,"
+            + "\\@-3320,\\A1367,\\C-3320,\\G-3320,\\O-3320,\\Q-3320,\\T-3955,\\U-2392,\\V-4785,\\W-5712,\\Y-8105,\\\\-4785,\\"
+            + "^-7910,\\c-439,\\d-439,\\e-439,\\g-439,\\i439,\\o-439,\\q-439,\\t-2246,\\v-5078,\\w-6787,\\y-5078,\\~-3369,^"
+            + "&-3369,^,-13623,^.-13623,^4-4541,^@-878,^A-7910,^C-878,^G-878,^J-9619,^O-878,^Q-878,^_-6787,_*-6"
+            + "787,_0-4541,_1-10791,_3-4541,_4-5664,_5-4541,_6-4541,_8-4541,_9-4541,_@-3955,_B2636,_C-3955,_D26"
+            + "36,_E2636,_F2636,_G-3955,_H2636,_I2636,_K2636,_L2636,_M2636,_N2636,_O-3955,_P2636,_Q-3955,_R2636"
+            + ",_T-5664,_U-3955,_V-7910,_\\-7910,_^-6787,_b2636,_h2636,_i2636,_j9619,_k2636,_l2636,_m2636,_n2636"
+            + ",_p2636,_r2636,_v-7910,_y-7910,_|2636,a\"-1074,a'-1074,a1-3955,aT-7470,aV-5078,aW-5078,aY-7373,a\\"
+            + "-5078,av-1660,ay-1660,b\"-2246,b'-2246,b)-1123,b1-3369,bA-3076,bT-8886,bV-5468,bW-5078,bX-2832,bY"
+            + "-8789,b\\-5468,b]-1123,ba878,bv-1953,bw-1806,bx-2392,by-1953,bz-1464,b}-1123,c\"-2246,c'-2246,c)-1"
+            + "123,c1-3369,cA-3076,cT-8886,cV-5468,cW-5078,cX-2832,cY-8789,c\\-5468,c]-1123,ca878,cv-1953,cw-180"
+            + "6,cx-2392,cy-1953,cz-1464,c}-1123,dt1269,dv488,dy488,e\"-2246,e'-2246,e)-1123,e1-3369,eA-3076,eT-"
+            + "8886,eV-5468,eW-5078,eX-2832,eY-8789,e\\-5468,e]-1123,ea878,ev-1953,ew-1806,ex-2392,ey-1953,ez-14"
+            + "64,e}-1123,f+-2832,f,-5664,f--2832,f.-5664,f/-2832,f4-6250,fA-3369,fJ-6250,fY976,f_-1416,fa-1562"
+            + ",fc-2490,fd-2490,fe-2490,ff-3710,fg-2490,fj97,fo-2490,fq-2490,fs-2246,ft-3417,fv97,fw1806,fy97,f"
+            + "~-2832,gT-5078,h\"-1074,h'-1074,h1-3955,hT-7470,hV-5078,hW-5078,hY-7373,h\\-5078,hv-1660,hy-1660,i"
+            + ")732,i]732,it195,i}732,j)732,j]732,jt195,j}732,k+-4541,k--4541,k4-4541,k<-8496,kT-5664,kc-2246,k"
+            + "d-2246,ke-2246,kg-2246,ko-2246,kq-2246,k~-4541,lt1269,lv488,ly488,m\"-1074,m'-1074,m1-3955,mT-747"
+            + "0,mV-5078,mW-5078,mY-7373,m\\-5078,mv-1660,my-1660,n\"-1074,n'-1074,n1-3955,nT-7470,nV-5078,nW-507"
+            + "8,nY-7373,n\\-5078,nv-1660,ny-1660,o\"-2246,o'-2246,o)-1123,o1-3369,oA-3076,oT-8886,oV-5468,oW-507"
+            + "8,oX-2832,oY-8789,o\\-5468,o]-1123,oa878,ov-1953,ow-1806,ox-2392,oy-1953,oz-1464,o}-1123,p\"-2246,"
+            + "p'-2246,p)-1123,p1-3369,pA-3076,pT-8886,pV-5468,pW-5078,pX-2832,pY-8789,p\\-5468,p]-1123,pa878,pv"
+            + "-1953,pw-1806,px-2392,py-1953,pz-1464,p}-1123,qT-5078,r+-3955,r,-6250,r--3955,r.-6250,r/-3369,r<"
+            + "-3955,rA-3955,rB976,rD976,rE976,rF976,rH976,rI976,rJ-5664,rK976,rL976,rM976,rN976,rP976,rR976,rT"
+            + "-5664,rZ-3369,ra-341,rb976,rc-1513,rd-1513,re-1513,rf1562,rg-1513,rh976,ri781,rj1220,rk976,rl976"
+            + ",rm1220,rn1220,ro-1513,rp1220,rq-1513,rr1220,rt1562,rv1416,rw830,rx1220,ry1416,r|976,r~-3955,s\"-"
+            + "634,s'-634,sT-7373,sV-4541,sW-3369,sY-7373,s\\-4541,st195,sv-341,sy-341,t+-1953,t--1953,t4-1416,t"
+            + "<-2832,tT-3369,tV-976,tW-976,tY-1562,t\\-976,ta683,tc-976,td-976,te-976,tf-2099,tg-976,tj976,to-9"
+            + "76,tq-976,ts-976,tt-781,tv2148,tw1660,ty2148,t~-1953,u+-3955,u--3955,u/-3369,u<-3955,uT-5078,uY-"
+            + "5664,u_-3369,u~-3955,v+-3271,v,-4833,v--3271,v.-4833,v/-5664,v<-3369,v=-3955,vA-6787,vB488,vD488"
+            + ",vE488,vF488,vH488,vI488,vJ-6250,vK488,vL488,vM488,vN488,vP488,vR488,vT-3369,vY-3369,v_-7910,va-"
+            + "683,vb488,vc-1953,vd-1953,ve-1953,vf1562,vg-1953,vh488,vk488,vl488,vo-1953,vq-1953,vs-195,vt1562"
+            + ",v|488,v~-3271,w&-3369,w,-7373,w.-7373,wA-6787,wJ-5664,wT-5078,wZ-3369,wa-97,wc-1806,wd-1806,we-"
+            + "1806,wg-1806,wo-1806,wq-1806,x+-2246,x--2246,x=-3369,xT-6250,xa-195,xc-2392,xd-2392,xe-2392,xf18"
+            + "55,xg-2392,xo-2392,xq-2392,xt1855,x~-2246,y+-3271,y,-4833,y--3271,y.-4833,y/-5664,y<-3369,y=-395"
+            + "5,yA-6787,yB488,yD488,yE488,yF488,yH488,yI488,yJ-6250,yK488,yL488,yM488,yN488,yP488,yR488,yT-336"
+            + "9,yY-3369,y_-7910,ya-683,yb488,yc-1953,yd-1953,ye-1953,yf1562,yg-1953,yh488,yk488,yl488,yo-1953,"
+            + "yq-1953,ys-195,yt1562,y|488,y~-3271,zT-3369,zc-1464,zd-1464,ze-1464,zg-1464,zo-1464,zq-1464,{c-1"
+            + "123,{d-1123,{e-1123,{g-1123,{j2832,{o-1123,{q-1123,|*14404,|t1269,|v488,|y488,~2-3369,~3-1123,~7"
+            + "-2246,~A-3369,~J-4541,~T-7373,~V-5078,~W-5078,~X-3759,~Y-7910,~\\-5078,~v-195,~x-2246,~y-195,";
+    }
+    private static String Inter_0_6_kerning() {
+        return "!*11425,\"&-3369,\",-8984,\".-8984,\"4-6250,\"A-7910,\"J-16455,\"c-2294,\"d-2294,\"e-2294,\"g-2294,\"o-2294"
+            + ",\"q-2294,\"s-1220,$*11425,$7-195,$A-1513,$T-976,$X-1513,%*11425,&\"-3369,&'-3369,&*11425,&T-5664,&"
+            + "V-6250,&W-3955,&Y-7373,&\\-6250,&v-3369,&w-3369,&y-3369,'&-3369,',-8984,'.-8984,'4-6250,'A-7910,'"
+            + "J-16455,'c-2294,'d-2294,'e-2294,'g-2294,'o-2294,'q-2294,'s-1220,(b1416,(c-537,(d-537,(e-537,(g-5"
+            + "37,(h1416,(j1318,(k1416,(l1416,(m1416,(n1416,(o-537,(p1416,(q-537,(r1416,*!11425,*$11425,*%11425"
+            + ",*&11425,*,-13623,*.-13623,*011425,*111425,*211425,*311425,*411425,*511425,*611425,*711425,*8114"
+            + "25,*911425,*?11425,*@-1367,*A8056,*B11425,*C11425,*D11425,*E11425,*F11425,*G11425,*H11425,*I1142"
+            + "5,*J11425,*K11425,*L11425,*M11425,*N11425,*O11425,*P11425,*Q11425,*R11425,*S11425,*T8056,*U11425"
+            + ",*V7470,*W11425,*X6884,*Y6884,*Z11425,*_-6787,*|11425,+2-2148,+3-537,+7-2832,+A-3369,+J-4541,+T-"
+            + "7666,+V-4492,+W-2734,+X-4150,+Y-6396,+\\-4492,+v-439,+x-2246,+y-439,, -3076,,!-1220,,\"-9912,,'-99"
+            + "12,,0-2929,,1-9423,,248,,3-2099,,5-634,,6-2929,,7-2636,,8-2441,,9-1269,,?-10107,,@-4394,,C-4394,"
+            + ",G-4394,,O-4394,,Q-4394,,T-3369,,Y-6445,-2-2148,-3-537,-7-2832,->-18701,-A-3369,-J-4541,-T-7666,"
+            + "-V-4492,-W-2734,-X-4150,-Y-6396,-\\-4492,-v-439,-x-2246,-y-439,. -3076,.!-1220,.\"-9912,.'-9912,.0"
+            + "-2929,.1-9423,.248,.3-2099,.5-634,.6-2929,.7-2636,.8-2441,.9-1269,.?-10107,.@-4394,.C-4394,.G-43"
+            + "94,.O-4394,.Q-4394,.T-3369,.Y-6445,/,-3955,/.-3955,/A-3320,/J-6250,/V781,/W781,/\\781,0*11425,0,-"
+            + "2929,0.-2929,07-1953,0A-732,0V-2880,0X-3808,0Y-3369,0\\-2880,0_-4541,0t1757,1*11425,1_1416,1t1269"
+            + ",1v976,1y976,2*11425,24-1562,3*11425,3,-1953,3.-1953,3X-2197,3^-976,4*11425,4,-3369,4.-3369,41-4"
+            + "101,47-1123,4A-97,4^-4003,4t-732,5*11425,5,-2246,5.-2246,51-439,5^-830,5t-341,6*11425,6,-2880,6."
+            + "-2880,6_-4541,7\u0023-5664,7%341,7&-4541,7*11425,7,-12500,7.-12500,70-1562,73-1660,74-5810,75-976,76-"
+            + "1562,771953,78-1416,79-976,7:-3369,7;-3369,7A-10791,7J-9619,7^390,7_-15869,7a-4541,7c-5078,7d-50"
+            + "78,7e-5078,7g-5078,7m-5078,7n-5078,7o-5078,7p-5078,7q-5078,7r-5078,7s-4443,8*11425,8,-1953,8.-19"
+            + "53,8X-2197,8^-976,9*11425,9,-2929,9.-2929,97-1953,9A-732,9V-2880,9X-3808,9Y-3369,9\\-2880,9_-4541"
+            + ",9t1757,:\\-6250,;T-3369,;V-6250,;\\-6250,<--18701,=>-39746,=A-5078,=T-4541,=V-6787,=W-6250,=X-507"
+            + "8,=Y-9619,=\\-6787,=v-3955,=x-3369,=y-3955,>\\-7373,?*11425,?A-6250,@,-4394,@.-4394,@/-3955,@\\-410"
+            + "1,@_-3955,A\"-7910,A$-1513,A'-7910,A*8056,A+-3369,A--3369,A/1220,A0-732,A1-6054,A6-732,A=-5078,A?"
+            + "-6250,AA1416,AC-4150,AG-4150,AO-4150,AQ-4150,AS-1513,AT-9082,AU-2490,AV-8544,AW-7519,AY-8496,A\\-"
+            + "8544,A^-9472,Ac-2294,Ad-2294,Ae-2294,Af-1171,Ag-2294,Ai195,Ao-2294,Aq-2294,As-1123,At-2978,Av-67"
+            + "87,Aw-6787,Ay-6787,A~-3369,B*11425,BT-5029,C*11425,CA-2685,CX-1464,C_-3955,Cv585,Cy585,D*11425,D"
+            + ",-4394,D.-4394,D/-3955,DA-4150,DT-3320,DV-4101,DW-2587,DX-5517,DY-4492,D\\-4101,D_-3955,E*11425,F"
+            + "*11425,F,-3955,F.-3369,F/-683,FA-9082,FC-97,FG-97,FJ-6787,FO-97,FQ-97,F_-3369,Fa-1660,Fc-2392,Fd"
+            + "-2392,Fe-2392,Fg-2392,Fm-1708,Fn-1708,Fo-2392,Fp-1708,Fq-2392,Fr-1708,Fu-3369,Fv-3369,Fy-3369,Fz"
+            + "-3369,G*11425,GA-3125,GT-3076,GV-2246,GX-1464,GY-2832,G\\-2246,H*11425,H_1416,Ht1269,Hv976,Hy976,"
+            + "I*11425,I_1416,It1269,Iv976,Iy976,J*11425,J,-3369,J.-3369,J/-5664,JA-2490,J_-5078,K$-1464,K*8056"
+            + ",K+-7714,K--7714,K=-3369,KC-4296,KG-4296,KO-4296,KQ-4296,KS-1464,Kc-3955,Kd-3955,Ke-3955,Kg-3955"
+            + ",Ki537,Ko-3955,Kq-3955,Ku-3369,Kv-3955,Kw-6250,Ky-3955,K~-7714,L\"-9082,L'-9082,L*8056,L+-6640,L-"
+            + "-6640,L1-4541,L?-781,LC-2832,LG-2832,LO-2832,LQ-2832,LT-9130,LV-7714,LW-3662,LY-9716,L\\-7714,L^-"
+            + "13037,Lt-2246,Lv-6787,Ly-6787,L~-6640,M*11425,M_1416,Mt1269,Mv976,My976,N*11425,N_1416,Nt1269,Nv"
+            + "976,Ny976,O*11425,O,-4394,O.-4394,O/-3955,OA-4150,OT-3320,OV-4101,OW-2587,OX-5517,OY-4492,O\\-410"
+            + "1,O_-3955,P&-3369,P*11425,P+-2099,P,-3955,P--2099,P.-3369,PA-8300,PJ-9619,PT-146,Pa-1464,Pc-1269"
+            + ",Pd-1269,Pe-1269,Pg-1269,Pm-97,Pn-97,Po-1269,Pp-97,Pq-1269,Pr-97,P~-2099,Q*11425,Q,-4394,Q.-4394"
+            + ",Q/-3955,QA-4150,QT-3320,QV-4101,QW-2587,QX-5517,QY-4492,Q\\-4101,Q_-3955,R*11425,RC-48,RG-48,RO-"
+            + "48,RQ-48,RT-488,RV-1953,RY-2929,R\\-1953,Ra-634,Rc-1464,Rd-1464,Re-1464,Rg-1464,Ro-1464,Rq-1464,S"
+            + "*11425,S7-195,SA-1513,ST-976,SX-1513,T$-585,T&-3369,T*8056,T+-5761,T,-3369,T--5761,T.-3369,T/-50"
+            + "78,T0-3369,T4-6787,T6-3369,T7-7910,T:-3955,T;-3369,T=-3369,TA-9082,TC-3320,TG-3320,TJ-9082,TO-33"
+            + "20,TQ-3320,TS-585,TY683,T_-5664,Ta-8056,Tc-8789,Td-8789,Te-8789,Tf-146,Tg-8789,Tm-6054,Tn-6054,T"
+            + "o-8789,Tp-6054,Tq-8789,Tr-6054,Ts-7763,Tt-9277,Tu-8007,Tv-6738,Tw-6689,Tx-3515,Ty-6738,Tz-5126,T"
+            + "~-5761,U*11425,U,-3369,U.-3369,U/-5664,UA-2490,U_-5078,V&-5078,V*7470,V+-5712,V,-9619,V--5712,V."
+            + "-9619,V/-5517,V0-2880,V4-3369,V6-2880,V:-6250,V;-6250,V=-6250,VA-8544,VC-4101,VG-4101,VJ-9619,VO"
+            + "-4101,VQ-4101,VV1562,V\\1562,V_-7910,Va-6250,Vc-6494,Vd-6494,Ve-6494,Vg-6494,Vm-1464,Vn-1464,Vo-6"
+            + "494,Vp-1464,Vq-6494,Vr-1464,Vs-4541,V~-5712,W$-585,W&-5078,W*11425,W+-4150,W,-9619,W--4150,W.-96"
+            + "19,W/-3125,W4-3369,W:-5078,W;-5078,W=-6250,WA-7519,WC-2587,WG-2587,WJ-6250,WO-2587,WQ-2587,WS-58"
+            + "5,WV585,WW2099,W\\585,Wa-5761,Wc-5126,Wd-5126,We-5126,Wg-5126,Wm-3222,Wn-3222,Wo-5126,Wp-3222,Wq-"
+            + "5126,Wr-3222,Ws-3369,W~-4150,X$-1513,X*6884,X+-4150,X--4150,X0-3808,X3-2197,X4-3955,X6-3808,X8-2"
+            + "197,X=-5078,XC-5517,XG-5517,XO-5517,XQ-5517,XS-1513,XT-3076,Xa-5664,Xc-2832,Xd-2832,Xe-2832,Xg-2"
+            + "832,Xo-2832,Xq-2832,X~-4150,Y&-6250,Y*7470,Y+-6396,Y,-6445,Y--6396,Y.-6445,Y4-6787,Y:-6250,Y;-62"
+            + "50,Y=-9619,YA-8496,YC-4492,YG-4492,YJ-3369,YO-4492,YQ-4492,YT683,Ya-10546,Yc-11181,Yd-11181,Ye-1"
+            + "1181,Yg-11181,Yi-2050,Ym-4736,Yn-4736,Yo-11181,Yp-4736,Yq-11181,Yr-4736,Ys-6787,Yu-3955,Y~-6396,"
+            + "Z*11425,Z+-3662,Z--3662,ZC-3369,ZG-3369,ZO-3369,ZQ-3369,Z~-3662,[b1416,[c-537,[d-537,[e-537,[g-5"
+            + "37,[h1416,[j1318,[k1416,[l1416,[m1416,[n1416,[o-537,[p1416,[q-537,[r1416,\\\"-7910,\\$-1513,\\'-7910"
+            + ",\\*-9472,\\+-3369,\\--3369,\\/1220,\\0-732,\\1-6054,\\6-732,\\<-3808,\\=-5078,\\?-6250,\\@-4150,\\A1416,\\C-"
+            + "4150,\\G-4150,\\O-4150,\\Q-4150,\\S-1513,\\T-3955,\\U-2490,\\V-5517,\\W-5761,\\Y-8496,\\\\-5517,\\^-9472,\\c-"
+            + "2294,\\d-2294,\\e-2294,\\f-1171,\\g-2294,\\i195,\\o-2294,\\q-2294,\\s-1123,\\t-2978,\\v-5078,\\w-6787,\\y-50"
+            + "78,\\~-3369,^&-3369,^,-13623,^.-13623,^4-4541,^@-1367,^A-9472,^C-1367,^G-1367,^J-9619,^O-1367,^Q-"
+            + "1367,^_-6787,_*-6787,_0-4541,_1-10791,_3-4541,_4-5664,_5-4541,_6-4541,_8-4541,_9-4541,_@-3955,_B"
+            + "2636,_C-3955,_D2636,_E2636,_F2636,_G-3955,_H2636,_I2636,_K2636,_L2636,_M2636,_N2636,_O-3955,_P26"
+            + "36,_Q-3955,_R2636,_T-5664,_U-3955,_V-7910,_\\-7910,_^-6787,_b2636,_h2636,_i1220,_j9619,_k2636,_l2"
+            + "636,_m3027,_n3027,_p3027,_r3027,_v-7910,_y-7910,_|2636,a\"-2490,a'-2490,a1-3955,aT-7714,aV-5078,a"
+            + "W-5078,aY-9667,a\\-5078,av-1806,ay-1806,b\"-2392,b'-2392,b)-1269,b1-3369,bA-3173,bT-8740,bV-6494,b"
+            + "W-5126,bX-2832,bY-11474,b\\-6494,b]-1269,ba927,bv-1806,bw-1367,bx-2148,by-1806,bz-2050,b}-1269,c\""
+            + "-2392,c'-2392,c)-1269,c1-3369,cA-3173,cT-8740,cV-6494,cW-5126,cX-2832,cY-11474,c\\-6494,c]-1269,c"
+            + "a927,cv-1806,cw-1367,cx-2148,cy-1806,cz-2050,c}-1269,d)1416,d]1416,d_1416,dt1269,dv976,dy976,d}1"
+            + "416,e\"-2392,e'-2392,e)-1269,e1-3369,eA-3173,eT-8740,eV-6494,eW-5126,eX-2832,eY-11474,e\\-6494,e]-"
+            + "1269,ea927,ev-1806,ew-1367,ex-2148,ey-1806,ez-2050,e}-1269,f+-2050,f,-5664,f--2050,f.-5664,f/-13"
+            + "18,f4-6250,fA-3369,fJ-6250,fY439,f_-1416,fa-1953,fc-1904,fd-1904,fe-1904,ff-4443,fg-1904,fi634,f"
+            + "j439,fo-1904,fq-1904,fs-1806,ft-4003,fv97,fw2099,fy97,f~-2050,gT-5078,gj878,h\"-2490,h'-2490,h1-3"
+            + "955,hT-7714,hV-5078,hW-5078,hY-9667,h\\-5078,hv-1806,hy-1806,i)341,i]341,it146,i}341,j)341,j]341,"
+            + "jt146,j}341,k+-5761,k--5761,k4-4541,k<-8496,kT-5664,kc-2246,kd-2246,ke-2246,kg-2246,ko-2246,kq-2"
+            + "246,kv781,ky781,k~-5761,l)1416,l]1416,l_1416,lt1269,lv976,ly976,l}1416,m\"-2490,m'-2490,m1-3955,m"
+            + "T-7714,mV-5078,mW-5078,mY-9667,m\\-5078,mv-1806,my-1806,n\"-2490,n'-2490,n1-3955,nT-7714,nV-5078,n"
+            + "W-5078,nY-9667,n\\-5078,nv-1806,ny-1806,o\"-2392,o'-2392,o)-1269,o1-3369,oA-3173,oT-8740,oV-6494,o"
+            + "W-5126,oX-2832,oY-11474,o\\-6494,o]-1269,oa927,ov-1806,ow-1367,ox-2148,oy-1806,oz-2050,o}-1269,p\""
+            + "-2392,p'-2392,p)-1269,p1-3369,pA-3173,pT-8740,pV-6494,pW-5126,pX-2832,pY-11474,p\\-6494,p]-1269,p"
+            + "a927,pv-1806,pw-1367,px-2148,py-1806,pz-2050,p}-1269,qT-5078,qj878,r+-3271,r,-6250,r--3271,r.-62"
+            + "50,r/-3076,r<-3613,rA-3955,rB1220,rD1220,rE1220,rF1220,rH1220,rI1220,rJ-5664,rK1220,rL1220,rM122"
+            + "0,rN1220,rP1220,rR1220,rT-5664,rZ-3369,ra-1220,rb1220,rc-2001,rd-2001,re-2001,rf1953,rg-2001,rh1"
+            + "220,ri488,rj1269,rk1220,rl1220,rm732,rn732,ro-2001,rp732,rq-2001,rr732,rt1953,rv1513,rw976,rx146"
+            + "4,ry1513,r|1220,r~-3271,s\"-1171,s'-1171,sT-7373,sV-4541,sW-3369,sY-7373,s\\-4541,st195,sv-244,sy-"
+            + "244,t+-1660,t--1660,t4-634,t<-2832,tB195,tD195,tE195,tF195,tH195,tI195,tK195,tL195,tM195,tN195,t"
+            + "P195,tR195,tT-3369,tV-439,tW-439,tY-732,t\\-439,ta585,tb195,tc-927,td-927,te-927,tf-3369,tg-927,t"
+            + "h195,tj634,tk195,tl195,to-927,tq-927,ts-732,tt-1757,tv2246,tw2099,ty2246,t|195,t~-1660,u+-3662,u"
+            + "--3662,u/-3369,u<-3955,uT-5078,uY-5664,u_-3369,u~-3662,v+-3515,v,-4589,v--3515,v.-4589,v/-5664,v"
+            + "<-3369,v=-3955,vA-6787,vB341,vD341,vE341,vF341,vH341,vI341,vJ-6250,vK341,vL341,vM341,vN341,vP341"
+            + ",vR341,vT-3369,vY-3369,v_-7910,va-1171,vb341,vc-1806,vd-1806,ve-1806,vf1513,vg-1806,vh341,vk341,"
+            + "vl341,vo-1806,vq-1806,vs-195,vt1708,v|341,v~-3515,w&-3369,w,-7373,w.-7373,wA-6787,wJ-5664,wT-507"
+            + "8,wZ-3369,wa-439,wc-1367,wd-1367,we-1367,wg-1367,wo-1367,wq-1367,x+-2246,x--2246,x=-3369,xT-3173"
+            + ",xa-390,xc-2197,xd-2197,xe-2197,xf1416,xg-2197,xo-2197,xq-2197,xt1416,x~-2246,y+-3515,y,-4589,y-"
+            + "-3515,y.-4589,y/-5664,y<-3369,y=-3955,yA-6787,yB341,yD341,yE341,yF341,yH341,yI341,yJ-6250,yK341,"
+            + "yL341,yM341,yN341,yP341,yR341,yT-3369,yY-3369,y_-7910,ya-1171,yb341,yc-1806,yd-1806,ye-1806,yf15"
+            + "13,yg-1806,yh341,yk341,yl341,yo-1806,yq-1806,ys-195,yt1708,y|341,y~-3515,zT-3369,zc-2050,zd-2050"
+            + ",ze-2050,zg-2050,zo-2050,zq-2050,{b1416,{c-537,{d-537,{e-537,{g-537,{h1416,{j1318,{k1416,{l1416,"
+            + "{m1416,{n1416,{o-537,{p1416,{q-537,{r1416,|*11425,|_1416,|t1269,|v976,|y976,~2-2148,~3-537,~7-28"
+            + "32,~A-3369,~J-4541,~T-7666,~V-4492,~W-2734,~X-4150,~Y-6396,~\\-4492,~v-439,~x-2246,~y-439,";
+    }
+    private static String Inter_0_2_kerning() {
+        return "!*12695,\"&-3369,\",-8349,\".-8349,\"4-6250,\"A-7910,\"J-16455,\"c-1464,\"d-1464,\"e-1464,\"g-1464,\"o-1464"
+            + ",\"q-1464,\"s-488,$*12695,$T-585,$X-732,%*12695,&\"-3369,&'-3369,&*12695,&T-5664,&V-6250,&W-3955,&Y"
+            + "-7373,&\\-6250,&v-3369,&w-3369,&y-3369,'&-3369,',-8349,'.-8349,'4-6250,'A-7910,'J-16455,'c-1464,'"
+            + "d-1464,'e-1464,'g-1464,'o-1464,'q-1464,'s-488,(c-1123,(d-1123,(e-1123,(g-1123,(j2832,(o-1123,(q-"
+            + "1123,*!12695,*$12695,*%12695,*&12695,*,-13623,*.-13623,*012695,*112695,*212695,*312695,*412695,*"
+            + "512695,*612695,*712695,*812695,*912695,*?12695,*@-976,*A9326,*B12695,*C12695,*D12695,*E12695,*F1"
+            + "2695,*G12695,*H12695,*I12695,*J12695,*K12695,*L12695,*M12695,*N12695,*O12695,*P12695,*Q12695,*R1"
+            + "2695,*S12695,*T9326,*U12695,*V8740,*W12695,*X8154,*Y8154,*Z12695,*_-6787,*|12695,+2-3369,+3-1123"
+            + ",+4-244,+7-2246,+A-3369,+J-4541,+T-7373,+V-5078,+W-5078,+X-3857,+Y-7910,+\\-5078,+v-146,+x-2246,+"
+            + "y-146,,\"-8349,,'-8349,,0-2636,,1-8740,,248,,3-2392,,4-97,,5-1318,,6-2636,,7-1562,,8-2001,,9-634,"
+            + ",?-9521,,@-4394,,C-4394,,G-4394,,O-4394,,Q-4394,,T-3369,,Y-3369,-2-3369,-3-1123,-4-244,-7-2246,-"
+            + ">-14208,-A-3369,-J-4541,-T-7373,-V-5078,-W-5078,-X-3857,-Y-7910,-\\-5078,-v-146,-x-2246,-y-146,.\""
+            + "-8349,.'-8349,.0-2636,.1-8740,.248,.3-2392,.4-97,.5-1318,.6-2636,.7-1562,.8-2001,.9-634,.?-9521,"
+            + ".@-4394,.C-4394,.G-4394,.O-4394,.Q-4394,.T-3369,.Y-3369,/,-3955,/.-3955,/A-2392,/J-6250,0*12695,"
+            + "0,-2636,0.-2636,07-1953,0A-488,0V-1416,0X-3076,0Y-3369,0\\-1416,0_-4541,0t1660,1*12695,1t1611,1v3"
+            + "41,1y341,2*12695,24-1562,3*12695,3,-2343,3.-2343,3X-1708,3^-1269,4*12695,4,-3369,4.-3369,41-2343"
+            + ",47-781,4^-3076,4t-292,5*12695,5,-2734,5.-2734,51-488,5^-292,5t-195,6*12695,6,-3222,6.-3222,6_-4"
+            + "541,7\u0023-5664,7%146,7&-4541,7*12695,7,-12500,7.-12500,70-1562,73-1660,74-5810,75-976,76-1562,77195"
+            + "3,78-1416,79-976,7:-3369,7;-3369,7A-10791,7J-9619,7^341,7_-15869,7a-4541,7c-5078,7d-5078,7e-5078"
+            + ",7g-5078,7m-5078,7n-5078,7o-5078,7p-5078,7q-5078,7r-5078,7s-4638,8*12695,8,-2343,8.-2343,8X-1708"
+            + ",8^-1269,9*12695,9,-2636,9.-2636,97-1953,9A-488,9V-1416,9X-3076,9Y-3369,9\\-1416,9_-4541,9t1660,:"
+            + "\\-6250,;T-3369,;V-6250,;\\-6250,<--14208,=>-34228,=A-5078,=T-4541,=V-6787,=W-6250,=X-5078,=Y-9619"
+            + ",=\\-6787,=v-3955,=x-3369,=y-3955,>\\-7373,?*12695,?A-6250,@,-4394,@.-4394,@/-3955,@\\-3369,@_-3955"
+            + ",A\"-7910,A'-7910,A*9326,A+-3369,A--3369,A/1953,A0-488,A1-4296,A6-488,A=-5078,A?-6250,AA1611,AC-2"
+            + "880,AG-2880,AO-2880,AQ-2880,AT-8789,AU-2294,AV-7470,AW-5712,AY-8105,A\\-7470,A^-7910,Ac-781,Ad-78"
+            + "1,Ae-781,Ag-781,Ai292,Ao-781,Aq-781,At-1806,Av-6787,Aw-6787,Ay-6787,A~-3369,B*12695,BT-5419,C*12"
+            + "695,CA-1464,CX-488,C_-3955,D*12695,D,-4394,D.-4394,D/-3955,DA-2880,DT-3564,DV-3369,DW-292,DX-327"
+            + "1,DY-3662,D\\-3369,D_-3955,E*12695,F*12695,F,-3955,F.-3369,F/-878,FA-9082,FC-146,FG-146,FJ-6787,F"
+            + "O-146,FQ-146,F_-3369,Fa-2148,Fc-3417,Fd-3417,Fe-3417,Fg-3417,Fm-3027,Fn-3027,Fo-3417,Fp-3027,Fq-"
+            + "3417,Fr-3027,Fu-3369,Fv-3369,Fy-3369,Fz-3369,G*12695,GA-2246,GT-2978,GV-2099,GX-488,GY-2246,G\\-2"
+            + "099,H*12695,Ht1611,Hv341,Hy341,I*12695,It1611,Iv341,Iy341,J*12695,J,-3369,J.-3369,J/-5664,JA-229"
+            + "4,J_-5078,K$-781,K*9326,K+-10791,K--10791,K=-3369,KC-3515,KG-3515,KO-3515,KQ-3515,KS-781,Kc-3955"
+            + ",Kd-3955,Ke-3955,Kg-3955,Ki1269,Ko-3955,Kq-3955,Ku-3369,Kv-3955,Kw-6250,Ky-3955,K~-10791,L\"-9082"
+            + ",L'-9082,L*9326,L+-8496,L--8496,L1-4541,L?-1171,LC-2832,LG-2832,LO-2832,LQ-2832,LT-9619,LV-6787,"
+            + "LY-6787,L\\-6787,L^-13037,Lt-2246,Lv-6787,Ly-6787,L~-8496,M*12695,Mt1611,Mv341,My341,N*12695,Nt16"
+            + "11,Nv341,Ny341,O*12695,O,-4394,O.-4394,O/-3955,OA-2880,OT-3564,OV-3369,OW-292,OX-3271,OY-3662,O\\"
+            + "-3369,O_-3955,P&-3369,P*12695,P+-4541,P,-3955,P--4541,P.-3369,PA-7373,PJ-9619,PT-146,Pa-341,Pc-8"
+            + "78,Pd-878,Pe-878,Pg-878,Pm-146,Pn-146,Po-878,Pp-146,Pq-878,Pr-146,P~-4541,Q*12695,Q,-4394,Q.-439"
+            + "4,Q/-3955,QA-2880,QT-3564,QV-3369,QW-292,QX-3271,QY-3662,Q\\-3369,Q_-3955,R*12695,RC-48,RG-48,RO-"
+            + "48,RQ-48,RT-292,RV-1611,RY-2441,R\\-1611,Ra-732,Rc-1513,Rd-1513,Re-1513,Rg-1513,Ro-1513,Rq-1513,S"
+            + "*12695,ST-585,SX-732,T&-3369,T*9326,T+-7373,T,-3369,T--7373,T.-3369,T/-5078,T0-3369,T4-6787,T6-3"
+            + "369,T7-7910,T:-3955,T;-3369,T=-3369,TA-8789,TC-3173,TG-3173,TJ-9082,TO-3173,TQ-3173,TY1513,T_-56"
+            + "64,Ta-7910,Tc-8837,Td-8837,Te-8837,Tf-195,Tg-8837,Tm-6201,Tn-6201,To-8837,Tp-6201,Tq-8837,Tr-620"
+            + "1,Ts-7958,Tt-8837,Tu-7910,Tv-6982,Tw-6933,Tx-6787,Ty-6982,Tz-5371,T~-7373,U*12695,U,-3369,U.-336"
+            + "9,U/-5664,UA-2294,U_-5078,V&-5078,V*8740,V+-5078,V,-9619,V--5078,V.-9619,V/-4882,V0-1416,V4-3369"
+            + ",V6-1416,V:-6250,V;-6250,V=-6250,VA-7470,VC-3369,VG-3369,VJ-9619,VO-3369,VQ-3369,VV1855,V\\1855,V"
+            + "_-7910,Va-5273,Vc-5419,Vd-5419,Ve-5419,Vg-5419,Vm-683,Vn-683,Vo-5419,Vp-683,Vq-5419,Vr-683,Vs-45"
+            + "41,V~-5078,W&-5078,W*12695,W+-5078,W,-9619,W--5078,W.-9619,W4-3369,W:-5078,W;-5078,W=-6250,WA-57"
+            + "12,WC-292,WG-292,WJ-6250,WO-292,WQ-292,WW2392,Wa-5078,Wc-5078,Wd-5078,We-5078,Wg-5078,Wm-2734,Wn"
+            + "-2734,Wo-5078,Wp-2734,Wq-5078,Wr-2734,Ws-3369,W~-5078,X$-732,X*8154,X+-3857,X--3857,X0-3076,X3-1"
+            + "708,X4-3955,X6-3076,X8-1708,X=-5078,XC-3271,XG-3271,XO-3271,XQ-3271,XS-732,XT-3369,Xa-5664,Xc-28"
+            + "32,Xd-2832,Xe-2832,Xg-2832,Xo-2832,Xq-2832,X~-3857,Y&-6250,Y*8740,Y+-7910,Y,-3369,Y--7910,Y.-336"
+            + "9,Y4-6787,Y:-6250,Y;-6250,Y=-9619,YA-8105,YC-3662,YG-3662,YJ-3369,YO-3662,YQ-3662,YT1513,Ya-7470"
+            + ",Yc-8007,Yd-8007,Ye-8007,Yg-8007,Yi-2832,Ym-4345,Yn-4345,Yo-8007,Yp-4345,Yq-8007,Yr-4345,Ys-6787"
+            + ",Yu-3955,Y~-7910,Z*12695,Z+-3955,Z--3955,ZC-3369,ZG-3369,ZO-3369,ZQ-3369,Z~-3955,[c-1123,[d-1123"
+            + ",[e-1123,[g-1123,[j2832,[o-1123,[q-1123,\\\"-7910,\\'-7910,\\*-7910,\\+-3369,\\--3369,\\/1953,\\0-488,\\1"
+            + "-4296,\\6-488,\\=-5078,\\?-6250,\\@-2880,\\A1611,\\C-2880,\\G-2880,\\O-2880,\\Q-2880,\\T-3955,\\U-2294,\\V-4"
+            + "882,\\W-5712,\\Y-8105,\\\\-4882,\\^-7910,\\c-781,\\d-781,\\e-781,\\g-781,\\i292,\\o-781,\\q-781,\\t-1806,\\v-5"
+            + "078,\\w-6787,\\y-5078,\\~-3369,^&-3369,^,-13623,^.-13623,^4-4541,^@-976,^A-7910,^C-976,^G-976,^J-96"
+            + "19,^O-976,^Q-976,^_-6787,_*-6787,_0-4541,_1-10791,_3-4541,_4-5664,_5-4541,_6-4541,_8-4541,_9-454"
+            + "1,_@-3955,_B2636,_C-3955,_D2636,_E2636,_F2636,_G-3955,_H2636,_I2636,_K2636,_L2636,_M2636,_N2636,"
+            + "_O-3955,_P2636,_Q-3955,_R2636,_T-5664,_U-3955,_V-7910,_\\-7910,_^-6787,_b2636,_h2636,_i2636,_j961"
+            + "9,_k2636,_l2636,_m2636,_n2636,_p2636,_r2636,_v-7910,_y-7910,_|2636,a\"-732,a'-732,a1-3955,aT-7275"
+            + ",aV-5078,aW-5078,aY-7373,a\\-5078,av-1757,ay-1757,b\"-1464,b'-1464,b)-1123,b1-3369,bA-3027,bT-8544"
+            + ",bV-5419,bW-5078,bX-2832,bY-8691,b\\-5419,b]-1123,ba927,bv-1953,bw-1806,bx-2343,by-1953,bz-1464,b"
+            + "}-1123,c\"-1464,c'-1464,c)-1123,c1-3369,cA-3027,cT-8544,cV-5419,cW-5078,cX-2832,cY-8691,c\\-5419,c"
+            + "]-1123,ca927,cv-1953,cw-1806,cx-2343,cy-1953,cz-1464,c}-1123,dt1611,dv341,dy341,e\"-1464,e'-1464,"
+            + "e)-1123,e1-3369,eA-3027,eT-8544,eV-5419,eW-5078,eX-2832,eY-8691,e\\-5419,e]-1123,ea927,ev-1953,ew"
+            + "-1806,ex-2343,ey-1953,ez-1464,e}-1123,f+-2832,f,-5664,f--2832,f.-5664,f/-2832,f4-6250,fA-3369,fJ"
+            + "-6250,fY976,f_-1416,fa-1513,fc-2099,fd-2099,fe-2099,ff-3125,fg-2099,fj244,fo-2099,fq-2099,fs-224"
+            + "6,ft-2294,fv48,fw2148,fy48,f~-2832,gT-5078,h\"-732,h'-732,h1-3955,hT-7275,hV-5078,hW-5078,hY-7373"
+            + ",h\\-5078,hv-1757,hy-1757,i)732,i]732,i_292,it146,i}732,j)732,j]732,j_292,jt146,j}732,k+-4541,k--"
+            + "4541,k4-4541,k<-8496,kT-5664,kc-2246,kd-2246,ke-2246,kg-2246,ko-2246,kq-2246,k~-4541,lt1611,lv34"
+            + "1,ly341,m\"-732,m'-732,m1-3955,mT-7275,mV-5078,mW-5078,mY-7373,m\\-5078,mv-1757,my-1757,n\"-732,n'-"
+            + "732,n1-3955,nT-7275,nV-5078,nW-5078,nY-7373,n\\-5078,nv-1757,ny-1757,o\"-1464,o'-1464,o)-1123,o1-3"
+            + "369,oA-3027,oT-8544,oV-5419,oW-5078,oX-2832,oY-8691,o\\-5419,o]-1123,oa927,ov-1953,ow-1806,ox-234"
+            + "3,oy-1953,oz-1464,o}-1123,p\"-1464,p'-1464,p)-1123,p1-3369,pA-3027,pT-8544,pV-5419,pW-5078,pX-283"
+            + "2,pY-8691,p\\-5419,p]-1123,pa927,pv-1953,pw-1806,px-2343,py-1953,pz-1464,p}-1123,qT-5078,r+-3955,"
+            + "r,-6250,r--3955,r.-6250,r/-3369,r<-3955,rA-3955,rB683,rD683,rE683,rF683,rH683,rI683,rJ-5664,rK68"
+            + "3,rL683,rM683,rN683,rP683,rR683,rT-5664,rZ-3369,ra-244,rb683,rc-1562,rd-1562,re-1562,rf1708,rg-1"
+            + "562,rh683,ri488,rj830,rk683,rl683,rm830,rn830,ro-1562,rp830,rq-1562,rr830,rt1708,rv1464,rw830,rx"
+            + "1318,ry1464,r|683,r~-3955,s\"-439,s'-439,sT-7373,sV-4541,sW-3369,sY-7373,s\\-4541,st146,sv-244,sy-"
+            + "244,t+-1953,t--1953,t4-1416,t<-2832,tT-3369,tV-976,tW-976,tY-1562,t\\-976,ta781,tc-830,td-830,te-"
+            + "830,tf-2148,tg-830,tj1123,to-830,tq-830,ts-976,tt-634,tv2294,tw2099,ty2294,t~-1953,u+-3955,u--39"
+            + "55,u/-3369,u<-3955,uT-5078,uY-5664,u_-3369,u~-3955,v+-3515,v,-4931,v--3515,v.-4931,v/-5664,v<-33"
+            + "69,v=-3955,vA-6787,vB341,vD341,vE341,vF341,vH341,vI341,vJ-6250,vK341,vL341,vM341,vN341,vP341,vR3"
+            + "41,vT-3369,vY-3369,v_-7910,va-927,vb341,vc-1953,vd-1953,ve-1953,vf1367,vg-1953,vh341,vk341,vl341"
+            + ",vo-1953,vq-1953,vs-195,vt1367,v|341,v~-3515,w&-3369,w,-7373,w.-7373,wA-6787,wJ-5664,wT-5078,wZ-"
+            + "3369,wa-48,wc-1806,wd-1806,we-1806,wg-1806,wo-1806,wq-1806,x+-2246,x--2246,x=-3369,xT-6250,xa-14"
+            + "6,xc-2343,xd-2343,xe-2343,xf1562,xg-2343,xo-2343,xq-2343,xt1562,x~-2246,y+-3515,y,-4931,y--3515,"
+            + "y.-4931,y/-5664,y<-3369,y=-3955,yA-6787,yB341,yD341,yE341,yF341,yH341,yI341,yJ-6250,yK341,yL341,"
+            + "yM341,yN341,yP341,yR341,yT-3369,yY-3369,y_-7910,ya-927,yb341,yc-1953,yd-1953,ye-1953,yf1367,yg-1"
+            + "953,yh341,yk341,yl341,yo-1953,yq-1953,ys-195,yt1367,y|341,y~-3515,zT-3369,zc-1464,zd-1464,ze-146"
+            + "4,zg-1464,zo-1464,zq-1464,{c-1123,{d-1123,{e-1123,{g-1123,{j2832,{o-1123,{q-1123,|*12695,|t1611,"
+            + "|v341,|y341,~2-3369,~3-1123,~4-244,~7-2246,~A-3369,~J-4541,~T-7373,~V-5078,~W-5078,~X-3857,~Y-79"
+            + "10,~\\-5078,~v-146,~x-2246,~y-146,";
+    }
+    private static String Inter_0_4_kerning() {
+        return "!*13427,\"&-3369,\",-8447,\".-8447,\"4-6250,\"A-7910,\"J-16455,\"c-2246,\"d-2246,\"e-2246,\"g-2246,\"o-2246"
+            + ",\"q-2246,\"s-927,$*13427,$7-48,$A-488,$T-781,$X-1220,%*13427,&\"-3369,&'-3369,&*13427,&T-5664,&V-6"
+            + "250,&W-3955,&Y-7373,&\\-6250,&v-3369,&w-3369,&y-3369,'&-3369,',-8447,'.-8447,'4-6250,'A-7910,'J-1"
+            + "6455,'c-2246,'d-2246,'e-2246,'g-2246,'o-2246,'q-2246,'s-927,(b488,(c-927,(d-927,(e-927,(g-927,(h"
+            + "488,(j2343,(k488,(l488,(m488,(n488,(o-927,(p488,(q-927,(r488,*!13427,*$13427,*%13427,*&13427,*,-"
+            + "13623,*.-13623,*013427,*113427,*213427,*313427,*413427,*513427,*613427,*713427,*813427,*913427,*"
+            + "?13427,*@-1025,*A10058,*B13427,*C13427,*D13427,*E13427,*F13427,*G13427,*H13427,*I13427,*J13427,*"
+            + "K13427,*L13427,*M13427,*N13427,*O13427,*P13427,*Q13427,*R13427,*S13427,*T10058,*U13427,*V9472,*W"
+            + "13427,*X8886,*Y8886,*Z13427,*_-6787,*|13427,+2-2978,+3-927,+7-2441,+A-3369,+J-4541,+T-7470,+V-48"
+            + "82,+W-4296,+X-3906,+Y-7421,+\\-4882,+v-292,+x-2246,+y-292,, -1025,,!-390,,\"-8789,,'-8789,,0-2685,"
+            + ",1-9082,,297,,3-2246,,5-1171,,6-2685,,7-1806,,8-2099,,9-878,,?-9960,,@-4394,,C-4394,,G-4394,,O-4"
+            + "394,,Q-4394,,T-3369,,Y-4394,-2-2978,-3-927,-7-2441,->-16894,-A-3369,-J-4541,-T-7470,-V-4882,-W-4"
+            + "296,-X-3906,-Y-7421,-\\-4882,-v-292,-x-2246,-y-292,. -1025,.!-390,.\"-8789,.'-8789,.0-2685,.1-9082"
+            + ",.297,.3-2246,.5-1171,.6-2685,.7-1806,.8-2099,.9-878,.?-9960,.@-4394,.C-4394,.G-4394,.O-4394,.Q-"
+            + "4394,.T-3369,.Y-4394,/,-3955,/.-3955,/A-2734,/J-6250,/V244,/W244,/\\244,0*13427,0,-2685,0.-2685,0"
+            + "7-1953,0A-585,0V-1806,0X-3564,0Y-3369,0\\-1806,0_-4541,0t1660,1*13427,1_488,1t1269,1v634,1y634,2*"
+            + "13427,24-1562,3*13427,3,-2148,3.-2148,3X-2050,3^-1513,4*13427,4,-3369,4.-3369,41-2978,47-927,4A-"
+            + "48,4^-3027,4t-537,5*13427,5,-2539,5.-2539,51-439,5^-585,5t-341,6*13427,6,-3076,6.-3076,6_-4541,7"
+            + "\u0023-5664,7%244,7&-4541,7*13427,7,-12500,7.-12500,70-1562,73-1660,74-5810,75-976,76-1562,771953,78-"
+            + "1416,79-976,7:-3369,7;-3369,7A-10791,7J-9619,7^390,7_-15869,7a-4541,7c-5078,7d-5078,7e-5078,7g-5"
+            + "078,7m-5078,7n-5078,7o-5078,7p-5078,7q-5078,7r-5078,7s-4443,8*13427,8,-2148,8.-2148,8X-2050,8^-1"
+            + "513,9*13427,9,-2685,9.-2685,97-1953,9A-585,9V-1806,9X-3564,9Y-3369,9\\-1806,9_-4541,9t1660,:\\-625"
+            + "0,;T-3369,;V-6250,;\\-6250,<--16894,=>-37353,=A-5078,=T-4541,=V-6787,=W-6250,=X-5078,=Y-9619,=\\-6"
+            + "787,=v-3955,=x-3369,=y-3955,>\\-7373,?*13427,?A-6250,@,-4394,@.-4394,@/-3955,@\\-3613,@_-3955,A\"-7"
+            + "910,A$-488,A'-7910,A*10058,A+-3369,A--3369,A/1708,A0-585,A1-4931,A6-585,A=-5078,A?-6250,AA1367,A"
+            + "C-3613,AG-3613,AO-3613,AQ-3613,AS-488,AT-8886,AU-2441,AV-7861,AW-6298,AY-8251,A\\-7861,A^-8447,Ac"
+            + "-1025,Ad-1025,Ae-1025,Af-390,Ag-1025,Ai341,Ao-1025,Aq-1025,As-390,At-2490,Av-6787,Aw-6787,Ay-678"
+            + "7,A~-3369,B*13427,BT-5175,C*13427,CA-2148,CX-830,C_-3955,Cv195,Cy195,D*13427,D,-4394,D.-4394,D/-"
+            + "3955,DA-3613,DT-3320,DV-3613,DW-1171,DX-4492,DY-4052,D\\-3613,D_-3955,E*13427,F*13427,F,-3955,F.-"
+            + "3369,F/-390,FA-9082,FC-195,FG-195,FJ-6787,FO-195,FQ-195,F_-3369,Fa-2050,Fc-2978,Fd-2978,Fe-2978,"
+            + "Fg-2978,Fm-2294,Fn-2294,Fo-2978,Fp-2294,Fq-2978,Fr-2294,Fu-3369,Fv-3369,Fy-3369,Fz-3369,G*13427,"
+            + "GA-2539,GT-3027,GV-2246,GX-830,GY-2441,G\\-2246,H*13427,H_488,Ht1269,Hv634,Hy634,I*13427,I_488,It"
+            + "1269,Iv634,Iy634,J*13427,J,-3369,J.-3369,J/-5664,JA-2441,J_-5078,K$-1269,K*10058,K+-9765,K--9765"
+            + ",K=-3369,KC-3759,KG-3759,KO-3759,KQ-3759,KS-1269,Kc-3955,Kd-3955,Ke-3955,Kg-3955,Ki976,Ko-3955,K"
+            + "q-3955,Ku-3369,Kv-3955,Kw-6250,Ky-3955,K~-9765,L\"-9082,L'-9082,L*10058,L+-7861,L--7861,L1-4541,L"
+            + "?-1416,LC-2832,LG-2832,LO-2832,LQ-2832,LT-9472,LV-7080,LW-1220,LY-7031,L\\-7080,L^-13037,Lt-2246,"
+            + "Lv-6787,Ly-6787,L~-7861,M*13427,M_488,Mt1269,Mv634,My634,N*13427,N_488,Nt1269,Nv634,Ny634,O*1342"
+            + "7,O,-4394,O.-4394,O/-3955,OA-3613,OT-3320,OV-3613,OW-1171,OX-4492,OY-4052,O\\-3613,O_-3955,P&-336"
+            + "9,P*13427,P+-3710,P,-3955,P--3710,P.-3369,PA-7666,PJ-9619,PT-195,Pa-878,Pc-1123,Pd-1123,Pe-1123,"
+            + "Pg-1123,Pm-195,Pn-195,Po-1123,Pp-195,Pq-1123,Pr-195,P~-3710,Q*13427,Q,-4394,Q.-4394,Q/-3955,QA-3"
+            + "613,QT-3320,QV-3613,QW-1171,QX-4492,QY-4052,Q\\-3613,Q_-3955,R*13427,RT-439,RV-1757,RY-2587,R\\-17"
+            + "57,Ra-634,Rc-1562,Rd-1562,Re-1562,Rg-1562,Ro-1562,Rq-1562,S*13427,S7-48,SA-488,ST-781,SX-1220,T$"
+            + "-195,T&-3369,T*10058,T+-6835,T,-3369,T--6835,T.-3369,T/-5078,T0-3369,T4-6787,T6-3369,T7-7910,T:-"
+            + "3955,T;-3369,T=-3369,TA-8886,TC-3320,TG-3320,TJ-9082,TO-3320,TQ-3320,TS-195,TY1269,T_-5664,Ta-81"
+            + "54,Tc-8740,Td-8740,Te-8740,Tf-244,Tg-8740,Tm-6298,Tn-6298,To-8740,Tp-6298,Tq-8740,Tr-6298,Ts-805"
+            + "6,Tt-8544,Tu-7861,Tv-7177,Tw-7080,Tx-5859,Ty-7177,Tz-5566,T~-6835,U*13427,U,-3369,U.-3369,U/-566"
+            + "4,UA-2441,U_-5078,V&-5078,V*9472,V+-5273,V,-9619,V--5273,V.-9619,V/-5029,V0-1806,V4-3369,V6-1806"
+            + ",V:-6250,V;-6250,V=-6250,VA-7861,VC-3613,VG-3613,VJ-9619,VO-3613,VQ-3613,VV1660,V\\1660,V_-7910,V"
+            + "a-5664,Vc-5810,Vd-5810,Ve-5810,Vg-5810,Vm-1074,Vn-1074,Vo-5810,Vp-1074,Vq-5810,Vr-1074,Vs-4541,V"
+            + "~-5273,W$-195,W&-5078,W*13427,W+-4785,W,-9619,W--4785,W.-9619,W/-1025,W4-3369,W:-5078,W;-5078,W="
+            + "-6250,WA-6298,WC-1171,WG-1171,WJ-6250,WO-1171,WQ-1171,WS-195,WV195,WW2197,W\\195,Wa-5322,Wc-5078,"
+            + "Wd-5078,We-5078,Wg-5078,Wm-3125,Wn-3125,Wo-5078,Wp-3125,Wq-5078,Wr-3125,Ws-3369,W~-4785,X$-1220,"
+            + "X*8886,X+-3906,X--3906,X0-3564,X3-2050,X4-3955,X6-3564,X8-2050,X=-5078,XC-4492,XG-4492,XO-4492,X"
+            + "Q-4492,XS-1220,XT-3076,Xa-5664,Xc-2832,Xd-2832,Xe-2832,Xg-2832,Xo-2832,Xq-2832,X~-3906,Y&-6250,Y"
+            + "*9472,Y+-7421,Y,-4394,Y--7421,Y.-4394,Y4-6787,Y:-6250,Y;-6250,Y=-9619,YA-8251,YC-4052,YG-4052,YJ"
+            + "-3369,YO-4052,YQ-4052,YT1269,Ya-8642,Yc-9130,Yd-9130,Ye-9130,Yg-9130,Yi-2587,Ym-4638,Yn-4638,Yo-"
+            + "9130,Yp-4638,Yq-9130,Yr-4638,Ys-6787,Yu-3955,Y~-7421,Z*13427,Z+-3857,Z--3857,ZC-3369,ZG-3369,ZO-"
+            + "3369,ZQ-3369,Z~-3857,[b488,[c-927,[d-927,[e-927,[g-927,[h488,[j2343,[k488,[l488,[m488,[n488,[o-9"
+            + "27,[p488,[q-927,[r488,\\\"-7910,\\$-488,\\'-7910,\\*-8447,\\+-3369,\\--3369,\\/1708,\\0-585,\\1-4931,\\6-58"
+            + "5,\\<-1269,\\=-5078,\\?-6250,\\@-3613,\\A1367,\\C-3613,\\G-3613,\\O-3613,\\Q-3613,\\S-488,\\T-3955,\\U-2441,"
+            + "\\V-5029,\\W-5712,\\Y-8251,\\\\-5029,\\^-8447,\\c-1025,\\d-1025,\\e-1025,\\f-390,\\g-1025,\\i341,\\o-1025,\\q-"
+            + "1025,\\s-390,\\t-2490,\\v-5078,\\w-6787,\\y-5078,\\~-3369,^&-3369,^,-13623,^.-13623,^4-4541,^@-1025,^A"
+            + "-8447,^C-1025,^G-1025,^J-9619,^O-1025,^Q-1025,^_-6787,_*-6787,_0-4541,_1-10791,_3-4541,_4-5664,_"
+            + "5-4541,_6-4541,_8-4541,_9-4541,_@-3955,_B2636,_C-3955,_D2636,_E2636,_F2636,_G-3955,_H2636,_I2636"
+            + ",_K2636,_L2636,_M2636,_N2636,_O-3955,_P2636,_Q-3955,_R2636,_T-5664,_U-3955,_V-7910,_\\-7910,_^-67"
+            + "87,_b2636,_h2636,_i2148,_j9619,_k2636,_l2636,_m2734,_n2734,_p2734,_r2734,_v-7910,_y-7910,_|2636,"
+            + "a\"-1562,a'-1562,a1-3955,aT-7568,aV-5078,aW-5078,aY-8154,a\\-5078,av-1708,ay-1708,b\"-2294,b'-2294,"
+            + "b)-1171,b1-3369,bA-3076,bT-8837,bV-5810,bW-5078,bX-2832,bY-9667,b\\-5810,b]-1171,ba878,bv-1904,bw"
+            + "-1660,bx-2294,by-1904,bz-1660,b}-1171,c\"-2294,c'-2294,c)-1171,c1-3369,cA-3076,cT-8837,cV-5810,cW"
+            + "-5078,cX-2832,cY-9667,c\\-5810,c]-1171,ca878,cv-1904,cw-1660,cx-2294,cy-1904,cz-1660,c}-1171,d)48"
+            + "8,d]488,d_488,dt1269,dv634,dy634,d}488,e\"-2294,e'-2294,e)-1171,e1-3369,eA-3076,eT-8837,eV-5810,e"
+            + "W-5078,eX-2832,eY-9667,e\\-5810,e]-1171,ea878,ev-1904,ew-1660,ex-2294,ey-1904,ez-1660,e}-1171,f+-"
+            + "2587,f,-5664,f--2587,f.-5664,f/-2343,f4-6250,fA-3369,fJ-6250,fY781,f_-1416,fa-1708,fc-2294,fd-22"
+            + "94,fe-2294,ff-3955,fg-2294,fi195,fj244,fo-2294,fq-2294,fs-2099,ft-3613,fv97,fw1904,fy97,f~-2587,"
+            + "gT-5078,gj292,h\"-1562,h'-1562,h1-3955,hT-7568,hV-5078,hW-5078,hY-8154,h\\-5078,hv-1708,hy-1708,i)"
+            + "634,i]634,it195,i}634,j)634,j]634,jt195,j}634,k+-4931,k--4931,k4-4541,k<-8496,kT-5664,kc-2246,kd"
+            + "-2246,ke-2246,kg-2246,ko-2246,kq-2246,kv244,ky244,k~-4931,l)488,l]488,l_488,lt1269,lv634,ly634,l"
+            + "}488,m\"-1562,m'-1562,m1-3955,mT-7568,mV-5078,mW-5078,mY-8154,m\\-5078,mv-1708,my-1708,n\"-1562,n'-"
+            + "1562,n1-3955,nT-7568,nV-5078,nW-5078,nY-8154,n\\-5078,nv-1708,ny-1708,o\"-2294,o'-2294,o)-1171,o1-"
+            + "3369,oA-3076,oT-8837,oV-5810,oW-5078,oX-2832,oY-9667,o\\-5810,o]-1171,oa878,ov-1904,ow-1660,ox-22"
+            + "94,oy-1904,oz-1660,o}-1171,p\"-2294,p'-2294,p)-1171,p1-3369,pA-3076,pT-8837,pV-5810,pW-5078,pX-28"
+            + "32,pY-9667,p\\-5810,p]-1171,pa878,pv-1904,pw-1660,px-2294,py-1904,pz-1660,p}-1171,qT-5078,qj292,r"
+            + "+-3710,r,-6250,r--3710,r.-6250,r/-3271,r<-3857,rA-3955,rB1074,rD1074,rE1074,rF1074,rH1074,rI1074"
+            + ",rJ-5664,rK1074,rL1074,rM1074,rN1074,rP1074,rR1074,rT-5664,rZ-3369,ra-634,rb1074,rc-1660,rd-1660"
+            + ",re-1660,rf1708,rg-1660,rh1074,ri683,rj1220,rk1074,rl1074,rm1074,rn1074,ro-1660,rp1074,rq-1660,r"
+            + "r1074,rt1708,rv1464,rw878,rx1269,ry1464,r|1074,r~-3710,s\"-830,s'-830,sT-7373,sV-4541,sW-3369,sY-"
+            + "7373,s\\-4541,st195,sv-292,sy-292,t+-1855,t--1855,t4-1171,t<-2832,tB48,tD48,tE48,tF48,tH48,tI48,t"
+            + "K48,tL48,tM48,tN48,tP48,tR48,tT-3369,tV-781,tW-781,tY-1269,t\\-781,ta683,tb48,tc-976,td-976,te-97"
+            + "6,tf-2539,tg-976,th48,tj878,tk48,tl48,to-976,tq-976,ts-878,tt-1074,tv2197,tw1806,ty2197,t|48,t~-"
+            + "1855,u+-3857,u--3857,u/-3369,u<-3955,uT-5078,uY-5664,u_-3369,u~-3857,v+-3369,v,-4736,v--3369,v.-"
+            + "4736,v/-5664,v<-3369,v=-3955,vA-6787,vB439,vD439,vE439,vF439,vH439,vI439,vJ-6250,vK439,vL439,vM4"
+            + "39,vN439,vP439,vR439,vT-3369,vY-3369,v_-7910,va-878,vb439,vc-1904,vd-1904,ve-1904,vf1562,vg-1904"
+            + ",vh439,vk439,vl439,vo-1904,vq-1904,vs-195,vt1611,v|439,v~-3369,w&-3369,w,-7373,w.-7373,wA-6787,w"
+            + "J-5664,wT-5078,wZ-3369,wa-195,wc-1660,wd-1660,we-1660,wg-1660,wo-1660,wq-1660,x+-2246,x--2246,x="
+            + "-3369,xT-5224,xa-244,xc-2343,xd-2343,xe-2343,xf1708,xg-2343,xo-2343,xq-2343,xt1708,x~-2246,y+-33"
+            + "69,y,-4736,y--3369,y.-4736,y/-5664,y<-3369,y=-3955,yA-6787,yB439,yD439,yE439,yF439,yH439,yI439,y"
+            + "J-6250,yK439,yL439,yM439,yN439,yP439,yR439,yT-3369,yY-3369,y_-7910,ya-878,yb439,yc-1904,yd-1904,"
+            + "ye-1904,yf1562,yg-1904,yh439,yk439,yl439,yo-1904,yq-1904,ys-195,yt1611,y|439,y~-3369,zT-3369,zc-"
+            + "1660,zd-1660,ze-1660,zg-1660,zo-1660,zq-1660,{b488,{c-927,{d-927,{e-927,{g-927,{h488,{j2343,{k48"
+            + "8,{l488,{m488,{n488,{o-927,{p488,{q-927,{r488,|*13427,|_488,|t1269,|v634,|y634,~2-2978,~3-927,~7"
+            + "-2441,~A-3369,~J-4541,~T-7470,~V-4882,~W-4296,~X-3906,~Y-7421,~\\-4882,~v-292,~x-2246,~y-292,";
+    }
+    private static String Inter_0_5_kerning() {
+        return "!*12402,\"&-3369,\",-8691,\".-8691,\"4-6250,\"A-7910,\"J-16455,\"c-2246,\"d-2246,\"e-2246,\"g-2246,\"o-2246"
+            + ",\"q-2246,\"s-1074,$*12402,$7-97,$A-1025,$T-878,$X-1367,%*12402,&\"-3369,&'-3369,&*12402,&T-5664,&V"
+            + "-6250,&W-3955,&Y-7373,&\\-6250,&v-3369,&w-3369,&y-3369,'&-3369,',-8691,'.-8691,'4-6250,'A-7910,'J"
+            + "-16455,'c-2246,'d-2246,'e-2246,'g-2246,'o-2246,'q-2246,'s-1074,(b927,(c-732,(d-732,(e-732,(g-732"
+            + ",(h927,(j1806,(k927,(l927,(m927,(n927,(o-732,(p927,(q-732,(r927,*!12402,*$12402,*%12402,*&12402,"
+            + "*,-13623,*.-13623,*012402,*112402,*212402,*312402,*412402,*512402,*612402,*712402,*812402,*91240"
+            + "2,*?12402,*@-1171,*A9033,*B12402,*C12402,*D12402,*E12402,*F12402,*G12402,*H12402,*I12402,*J12402"
+            + ",*K12402,*L12402,*M12402,*N12402,*O12402,*P12402,*Q12402,*R12402,*S12402,*T9033,*U12402,*V8447,*"
+            + "W12402,*X7861,*Y7861,*Z12402,*_-6787,*|12402,+2-2539,+3-732,+7-2636,+A-3369,+J-4541,+T-7568,+V-4"
+            + "687,+W-3515,+X-4052,+Y-6884,+\\-4687,+v-390,+x-2246,+y-390,, -2050,,!-830,,\"-9326,,'-9326,,0-2783"
+            + ",,1-9277,,248,,3-2197,,5-927,,6-2783,,7-2246,,8-2294,,9-1074,,?-10058,,@-4394,,C-4394,,G-4394,,O"
+            + "-4394,,Q-4394,,T-3369,,Y-5419,-2-2539,-3-732,-7-2636,->-17822,-A-3369,-J-4541,-T-7568,-V-4687,-W"
+            + "-3515,-X-4052,-Y-6884,-\\-4687,-v-390,-x-2246,-y-390,. -2050,.!-830,.\"-9326,.'-9326,.0-2783,.1-92"
+            + "77,.248,.3-2197,.5-927,.6-2783,.7-2246,.8-2294,.9-1074,.?-10058,.@-4394,.C-4394,.G-4394,.O-4394,"
+            + ".Q-4394,.T-3369,.Y-5419,/,-3955,/.-3955,/A-3027,/J-6250,/V488,/W488,/\\488,0*12402,0,-2783,0.-278"
+            + "3,07-1953,0A-683,0V-2343,0X-3662,0Y-3369,0\\-2343,0_-4541,0t1708,1*12402,1_927,1t1269,1v781,1y781"
+            + ",2*12402,24-1562,3*12402,3,-2050,3.-2050,3X-2148,3^-1269,4*12402,4,-3369,4.-3369,41-3515,47-1025"
+            + ",4A-97,4^-3515,4t-634,5*12402,5,-2392,5.-2392,51-439,5^-683,5t-341,6*12402,6,-2978,6.-2978,6_-45"
+            + "41,7\u0023-5664,7%292,7&-4541,7*12402,7,-12500,7.-12500,70-1562,73-1660,74-5810,75-976,76-1562,771953"
+            + ",78-1416,79-976,7:-3369,7;-3369,7A-10791,7J-9619,7^390,7_-15869,7a-4541,7c-5078,7d-5078,7e-5078,"
+            + "7g-5078,7m-5078,7n-5078,7o-5078,7p-5078,7q-5078,7r-5078,7s-4443,8*12402,8,-2050,8.-2050,8X-2148,"
+            + "8^-1269,9*12402,9,-2783,9.-2783,97-1953,9A-683,9V-2343,9X-3662,9Y-3369,9\\-2343,9_-4541,9t1708,:\\"
+            + "-6250,;T-3369,;V-6250,;\\-6250,<--17822,=>-38574,=A-5078,=T-4541,=V-6787,=W-6250,=X-5078,=Y-9619,"
+            + "=\\-6787,=v-3955,=x-3369,=y-3955,>\\-7373,?*12402,?A-6250,@,-4394,@.-4394,@/-3955,@\\-3857,@_-3955,"
+            + "A\"-7910,A$-1025,A'-7910,A*9033,A+-3369,A--3369,A/1464,A0-683,A1-5517,A6-683,A=-5078,A?-6250,AA14"
+            + "16,AC-3857,AG-3857,AO-3857,AQ-3857,AS-1025,AT-8984,AU-2441,AV-8203,AW-6933,AY-8398,A\\-8203,A^-89"
+            + "35,Ac-1660,Ad-1660,Ae-1660,Af-781,Ag-1660,Ai244,Ao-1660,Aq-1660,As-732,At-2734,Av-6787,Aw-6787,A"
+            + "y-6787,A~-3369,B*12402,BT-5126,C*12402,CA-2392,CX-1171,C_-3955,Cv390,Cy390,D*12402,D,-4394,D.-43"
+            + "94,D/-3955,DA-3857,DT-3320,DV-3857,DW-1855,DX-4980,DY-4248,D\\-3857,D_-3955,E*12402,F*12402,F,-39"
+            + "55,F.-3369,F/-537,FA-9082,FC-146,FG-146,FJ-6787,FO-146,FQ-146,F_-3369,Fa-1855,Fc-2685,Fd-2685,Fe"
+            + "-2685,Fg-2685,Fm-2001,Fn-2001,Fo-2685,Fp-2001,Fq-2685,Fr-2001,Fu-3369,Fv-3369,Fy-3369,Fz-3369,G*"
+            + "12402,GA-2832,GT-3027,GV-2246,GX-1171,GY-2636,G\\-2246,H*12402,H_927,Ht1269,Hv781,Hy781,I*12402,I"
+            + "_927,It1269,Iv781,Iy781,J*12402,J,-3369,J.-3369,J/-5664,JA-2441,J_-5078,K$-1367,K*9033,K+-8740,K"
+            + "--8740,K=-3369,KC-4003,KG-4003,KO-4003,KQ-4003,KS-1367,Kc-3955,Kd-3955,Ke-3955,Kg-3955,Ki781,Ko-"
+            + "3955,Kq-3955,Ku-3369,Kv-3955,Kw-6250,Ky-3955,K~-8740,L\"-9082,L'-9082,L*9033,L+-7275,L--7275,L1-4"
+            + "541,L?-1123,LC-2832,LG-2832,LO-2832,LQ-2832,LT-9277,LV-7421,LW-2441,LY-8349,L\\-7421,L^-13037,Lt-"
+            + "2246,Lv-6787,Ly-6787,L~-7275,M*12402,M_927,Mt1269,Mv781,My781,N*12402,N_927,Nt1269,Nv781,Ny781,O"
+            + "*12402,O,-4394,O.-4394,O/-3955,OA-3857,OT-3320,OV-3857,OW-1855,OX-4980,OY-4248,O\\-3857,O_-3955,P"
+            + "&-3369,P*12402,P+-2929,P,-3955,P--2929,P.-3369,PA-8007,PJ-9619,PT-195,Pa-1171,Pc-1171,Pd-1171,Pe"
+            + "-1171,Pg-1171,Pm-146,Pn-146,Po-1171,Pp-146,Pq-1171,Pr-146,P~-2929,Q*12402,Q,-4394,Q.-4394,Q/-395"
+            + "5,QA-3857,QT-3320,QV-3857,QW-1855,QX-4980,QY-4248,Q\\-3857,Q_-3955,R*12402,RC-48,RG-48,RO-48,RQ-4"
+            + "8,RT-488,RV-1855,RY-2734,R\\-1855,Ra-634,Rc-1513,Rd-1513,Re-1513,Rg-1513,Ro-1513,Rq-1513,S*12402,"
+            + "S7-97,SA-1025,ST-878,SX-1367,T$-390,T&-3369,T*9033,T+-6298,T,-3369,T--6298,T.-3369,T/-5078,T0-33"
+            + "69,T4-6787,T6-3369,T7-7910,T:-3955,T;-3369,T=-3369,TA-8984,TC-3320,TG-3320,TJ-9082,TO-3320,TQ-33"
+            + "20,TS-390,TY976,T_-5664,Ta-8105,Tc-8740,Td-8740,Te-8740,Tf-195,Tg-8740,Tm-6201,Tn-6201,To-8740,T"
+            + "p-6201,Tq-8740,Tr-6201,Ts-7910,Tt-8886,Tu-7958,Tv-6982,Tw-6884,Tx-4687,Ty-6982,Tz-5371,T~-6298,U"
+            + "*12402,U,-3369,U.-3369,U/-5664,UA-2441,U_-5078,V&-5078,V*8447,V+-5517,V,-9619,V--5517,V.-9619,V/"
+            + "-5273,V0-2343,V4-3369,V6-2343,V:-6250,V;-6250,V=-6250,VA-8203,VC-3857,VG-3857,VJ-9619,VO-3857,VQ"
+            + "-3857,VV1611,V\\1611,V_-7910,Va-5957,Vc-6152,Vd-6152,Ve-6152,Vg-6152,Vm-1269,Vn-1269,Vo-6152,Vp-1"
+            + "269,Vq-6152,Vr-1269,Vs-4541,V~-5517,W$-390,W&-5078,W*12402,W+-4443,W,-9619,W--4443,W.-9619,W/-20"
+            + "99,W4-3369,W:-5078,W;-5078,W=-6250,WA-6933,WC-1855,WG-1855,WJ-6250,WO-1855,WQ-1855,WS-390,WV390,"
+            + "WW2148,W\\390,Wa-5517,Wc-5126,Wd-5126,We-5126,Wg-5126,Wm-3173,Wn-3173,Wo-5126,Wp-3173,Wq-5126,Wr-"
+            + "3173,Ws-3369,W~-4443,X$-1367,X*7861,X+-4052,X--4052,X0-3662,X3-2148,X4-3955,X6-3662,X8-2148,X=-5"
+            + "078,XC-4980,XG-4980,XO-4980,XQ-4980,XS-1367,XT-3076,Xa-5664,Xc-2832,Xd-2832,Xe-2832,Xg-2832,Xo-2"
+            + "832,Xq-2832,X~-4052,Y&-6250,Y*8447,Y+-6884,Y,-5419,Y--6884,Y.-5419,Y4-6787,Y:-6250,Y;-6250,Y=-96"
+            + "19,YA-8398,YC-4248,YG-4248,YJ-3369,YO-4248,YQ-4248,YT976,Ya-9570,Yc-10156,Yd-10156,Ye-10156,Yg-1"
+            + "0156,Yi-2343,Ym-4687,Yn-4687,Yo-10156,Yp-4687,Yq-10156,Yr-4687,Ys-6787,Yu-3955,Y~-6884,Z*12402,Z"
+            + "+-3759,Z--3759,ZC-3369,ZG-3369,ZO-3369,ZQ-3369,Z~-3759,[b927,[c-732,[d-732,[e-732,[g-732,[h927,["
+            + "j1806,[k927,[l927,[m927,[n927,[o-732,[p927,[q-732,[r927,\\\"-7910,\\$-1025,\\'-7910,\\*-8935,\\+-3369,"
+            + "\\--3369,\\/1464,\\0-683,\\1-5517,\\6-683,\\<-2539,\\=-5078,\\?-6250,\\@-3857,\\A1416,\\C-3857,\\G-3857,\\O-3"
+            + "857,\\Q-3857,\\S-1025,\\T-3955,\\U-2441,\\V-5273,\\W-5761,\\Y-8398,\\\\-5273,\\^-8935,\\c-1660,\\d-1660,\\e-1"
+            + "660,\\f-781,\\g-1660,\\i244,\\o-1660,\\q-1660,\\s-732,\\t-2734,\\v-5078,\\w-6787,\\y-5078,\\~-3369,^&-3369,"
+            + "^,-13623,^.-13623,^4-4541,^@-1171,^A-8935,^C-1171,^G-1171,^J-9619,^O-1171,^Q-1171,^_-6787,_*-678"
+            + "7,_0-4541,_1-10791,_3-4541,_4-5664,_5-4541,_6-4541,_8-4541,_9-4541,_@-3955,_B2636,_C-3955,_D2636"
+            + ",_E2636,_F2636,_G-3955,_H2636,_I2636,_K2636,_L2636,_M2636,_N2636,_O-3955,_P2636,_Q-3955,_R2636,_"
+            + "T-5664,_U-3955,_V-7910,_\\-7910,_^-6787,_b2636,_h2636,_i1660,_j9619,_k2636,_l2636,_m2880,_n2880,_"
+            + "p2880,_r2880,_v-7910,_y-7910,_|2636,a\"-2001,a'-2001,a1-3955,aT-7617,aV-5078,aW-5078,aY-8886,a\\-5"
+            + "078,av-1757,ay-1757,b\"-2343,b'-2343,b)-1220,b1-3369,bA-3125,bT-8789,bV-6152,bW-5126,bX-2832,bY-1"
+            + "0546,b\\-6152,b]-1220,ba927,bv-1855,bw-1513,bx-2246,by-1855,bz-1855,b}-1220,c\"-2343,c'-2343,c)-12"
+            + "20,c1-3369,cA-3125,cT-8789,cV-6152,cW-5126,cX-2832,cY-10546,c\\-6152,c]-1220,ca927,cv-1855,cw-151"
+            + "3,cx-2246,cy-1855,cz-1855,c}-1220,d)927,d]927,d_927,dt1269,dv781,dy781,d}927,e\"-2343,e'-2343,e)-"
+            + "1220,e1-3369,eA-3125,eT-8789,eV-6152,eW-5126,eX-2832,eY-10546,e\\-6152,e]-1220,ea927,ev-1855,ew-1"
+            + "513,ex-2246,ey-1855,ez-1855,e}-1220,f+-2343,f,-5664,f--2343,f.-5664,f/-1806,f4-6250,fA-3369,fJ-6"
+            + "250,fY634,f_-1416,fa-1806,fc-2099,fd-2099,fe-2099,ff-4199,fg-2099,fi439,fj341,fo-2099,fq-2099,fs"
+            + "-1953,ft-3808,fv97,fw2001,fy97,f~-2343,gT-5078,gj585,h\"-2001,h'-2001,h1-3955,hT-7617,hV-5078,hW-"
+            + "5078,hY-8886,h\\-5078,hv-1757,hy-1757,i)488,i]488,it195,i}488,j)488,j]488,jt195,j}488,k+-5371,k--"
+            + "5371,k4-4541,k<-8496,kT-5664,kc-2246,kd-2246,ke-2246,kg-2246,ko-2246,kq-2246,kv488,ky488,k~-5371"
+            + ",l)927,l]927,l_927,lt1269,lv781,ly781,l}927,m\"-2001,m'-2001,m1-3955,mT-7617,mV-5078,mW-5078,mY-8"
+            + "886,m\\-5078,mv-1757,my-1757,n\"-2001,n'-2001,n1-3955,nT-7617,nV-5078,nW-5078,nY-8886,n\\-5078,nv-1"
+            + "757,ny-1757,o\"-2343,o'-2343,o)-1220,o1-3369,oA-3125,oT-8789,oV-6152,oW-5126,oX-2832,oY-10546,o\\-"
+            + "6152,o]-1220,oa927,ov-1855,ow-1513,ox-2246,oy-1855,oz-1855,o}-1220,p\"-2343,p'-2343,p)-1220,p1-33"
+            + "69,pA-3125,pT-8789,pV-6152,pW-5126,pX-2832,pY-10546,p\\-6152,p]-1220,pa927,pv-1855,pw-1513,px-224"
+            + "6,py-1855,pz-1855,p}-1220,qT-5078,qj585,r+-3515,r,-6250,r--3515,r.-6250,r/-3173,r<-3710,rA-3955,"
+            + "rB1171,rD1171,rE1171,rF1171,rH1171,rI1171,rJ-5664,rK1171,rL1171,rM1171,rN1171,rP1171,rR1171,rT-5"
+            + "664,rZ-3369,ra-927,rb1171,rc-1855,rd-1855,re-1855,rf1806,rg-1855,rh1171,ri585,rj1269,rk1171,rl11"
+            + "71,rm878,rn878,ro-1855,rp878,rq-1855,rr878,rt1806,rv1513,rw927,rx1367,ry1513,r|1171,r~-3515,s\"-9"
+            + "76,s'-976,sT-7373,sV-4541,sW-3369,sY-7373,s\\-4541,st195,sv-292,sy-292,t+-1757,t--1757,t4-927,t<-"
+            + "2832,tB146,tD146,tE146,tF146,tH146,tI146,tK146,tL146,tM146,tN146,tP146,tR146,tT-3369,tV-634,tW-6"
+            + "34,tY-976,t\\-634,ta634,tb146,tc-927,td-927,te-927,tf-2978,tg-927,th146,tj781,tk146,tl146,to-927,"
+            + "tq-927,ts-830,tt-1416,tv2246,tw1953,ty2246,t|146,t~-1757,u+-3759,u--3759,u/-3369,u<-3955,uT-5078"
+            + ",uY-5664,u_-3369,u~-3759,v+-3466,v,-4687,v--3466,v.-4687,v/-5664,v<-3369,v=-3955,vA-6787,vB390,v"
+            + "D390,vE390,vF390,vH390,vI390,vJ-6250,vK390,vL390,vM390,vN390,vP390,vR390,vT-3369,vY-3369,v_-7910"
+            + ",va-1025,vb390,vc-1855,vd-1855,ve-1855,vf1513,vg-1855,vh390,vk390,vl390,vo-1855,vq-1855,vs-195,v"
+            + "t1660,v|390,v~-3466,w&-3369,w,-7373,w.-7373,wA-6787,wJ-5664,wT-5078,wZ-3369,wa-341,wc-1513,wd-15"
+            + "13,we-1513,wg-1513,wo-1513,wq-1513,x+-2246,x--2246,x=-3369,xT-4199,xa-341,xc-2294,xd-2294,xe-229"
+            + "4,xf1562,xg-2294,xo-2294,xq-2294,xt1562,x~-2246,y+-3466,y,-4687,y--3466,y.-4687,y/-5664,y<-3369,"
+            + "y=-3955,yA-6787,yB390,yD390,yE390,yF390,yH390,yI390,yJ-6250,yK390,yL390,yM390,yN390,yP390,yR390,"
+            + "yT-3369,yY-3369,y_-7910,ya-1025,yb390,yc-1855,yd-1855,ye-1855,yf1513,yg-1855,yh390,yk390,yl390,y"
+            + "o-1855,yq-1855,ys-195,yt1660,y|390,y~-3466,zT-3369,zc-1855,zd-1855,ze-1855,zg-1855,zo-1855,zq-18"
+            + "55,{b927,{c-732,{d-732,{e-732,{g-732,{h927,{j1806,{k927,{l927,{m927,{n927,{o-732,{p927,{q-732,{r"
+            + "927,|*12402,|_927,|t1269,|v781,|y781,~2-2539,~3-732,~7-2636,~A-3369,~J-4541,~T-7568,~V-4687,~W-3"
+            + "515,~X-4052,~Y-6884,~\\-4687,~v-390,~x-2246,~y-390,";
+    }
+    private static String System_0_2_kerning() {
+        return "\"&-3295,\",-9522,\".-9522,\"0-1097,\"4-6470,\"6-1097,\"8-1097,\"A-7690,\"J-11105,\u00234-2076,\u00237-734,&\"-3786,"
+            + "&'-3786,&0-979,&1-2933,&2-1468,&3-1345,&4-1101,&5-1101,&6-979,&7-3055,&8-1101,&9-979,&C-367,&G-3"
+            + "67,&O-367,&Q-367,&T-5982,&V-6837,&W-5007,&Y-8180,&t-489,&v-2929,&w-2929,&y-2929,'&-3295,',-9522,"
+            + "'.-9522,'0-1097,'4-6470,'6-1097,'8-1097,'A-7690,'J-11105,(A-489,(C-489,(G-489,(O-489,(Q-489,(a-3"
+            + "67,(c-1710,(d-1710,(e-1710,(g-1710,(j3296,(o-1710,(q-1710,(s-367,*&-3785,*,-12815,*.-12815,*0-73"
+            + "1,*4-4761,*6-731,*7-1345,*A-7690,*J-9398,*X-1587,*Y-1709,*_-7238,+A-1464,+J-1709,+T-7079,+V-5494"
+            + ",+W-5494,+X-5980,+Y-7934,+Z-2441,+f-2197,+t-2197,+v-1588,+w-1098,+x-2197,+y-1588,+z-1343,,\"-9277"
+            + ",,&-2561,,'-9277,,*-12815,,/4151,,0-4151,,1-2684,,2-2442,,3-3296,,4-3663,,5-3602,,6-4151,,7-4029"
+            + ",,8-3785,,9-3416,,C-5736,,G-5736,,O-5736,,Q-5736,,T-8300,,U-4027,,V-9765,,W-9765,,Y-9765,,\\-4151"
+            + ",,^-12815,,c-1708,,d-1708,,e-1708,,f-2684,,g-1708,,m-367,,n-367,,o-1708,,p-367,,q-1708,,r-367,,t"
+            + "-1463,,v-7079,,w-7079,,y-7079,-A-1464,-J-1709,-T-7079,-V-5494,-W-5494,-X-5980,-Y-7934,-Z-2441,-f"
+            + "-2197,-t-2197,-v-1588,-w-1098,-x-2197,-y-1588,-z-1343,.\"-9277,.&-2561,.'-9277,.*-12815,./4151,.0"
+            + "-4151,.1-2684,.2-2442,.3-3296,.4-3663,.5-3602,.6-4151,.7-4029,.8-3785,.9-3416,.C-5736,.G-5736,.O"
+            + "-5736,.Q-5736,.T-8300,.U-4027,.V-9765,.W-9765,.Y-9765,.\\-4151,.^-12815,.c-1708,.d-1708,.e-1708,."
+            + "f-2684,.g-1708,.m-367,.n-367,.o-1708,.p-367,.q-1708,.r-367,.t-1463,.v-7079,.w-7079,.y-7079,/,-41"
+            + "51,/.-4151,/0244,/1367,/4-1953,/6244,/7244,/9244,/A-2929,/J-2929,/T1342,/U244,/V244,/W244,/Y244,"
+            + "/c-244,/d-244,/e-244,/g-244,/o-244,/q-244,/v244,/w244,/y244,0\"-1097,0'-1097,0*-731,0,-4518,0.-45"
+            + "18,0/-244,02-367,07-2320,0A-1221,0J-489,0T-3419,0V-1221,0W-1221,0X-2807,0Y-3540,0Z-1466,0\\2440,0"
+            + "^-731,0_-4674,0a-244,0v-731,0w-731,0x-731,0y-731,0z-244,1\"-1463,1&-731,1'-1463,1,-2808,1.-2808,1"
+            + "2-489,13-244,14-611,15-244,1Z-979,1f-489,1s-367,2&-489,2,-1097,2.-1097,20-244,24-2076,26-244,27-"
+            + "856,28-244,2@-365,2T-367,2V-244,2W-244,2X-122,2Y-1466,2Z-489,2c-610,2d-610,2e-610,2g-610,2o-610,"
+            + "2q-610,3\"-1097,3&-244,3'-1097,3,-3785,3.-3785,30-122,36-122,37-611,3A-610,3T-367,3V-1464,3W-1464"
+            + ",3X-977,3Y-3053,3Z-489,3\\1097,3_-2234,3x-244,4\"-367,4'-367,4*-2812,4,-3785,4.-3785,41-1098,42-85"
+            + "6,44-367,45-244,47-734,4:-611,4;-611,4T-1831,4V-1343,4W-1343,4Y-1587,4Z-365,4\\244,4^-2812,4v-146"
+            + "4,4w-1097,4x-610,4y-1464,4z-244,5\"-611,5&-244,5'-611,5*-856,5,-3785,5.-3785,50-244,51-611,52-979"
+            + ",53-244,54-244,56-244,57-611,5A-244,5T-734,5U-244,5V-611,5W-611,5X-489,5Y-1101,5Z-367,5\\1097,5^-"
+            + "856,5_-2112,5f-244,5v-734,5w-734,5x-489,5y-734,5z-489,6,-3540,6.-3540,6A-610,6V-367,6W-367,6X-73"
+            + "3,6Y-1833,6\\1342,6_-4797,6x-367,7\u0023-5982,7&-4884,7*-244,7,-10742,7.-10742,7/-2684,70-1954,72-734,"
+            + "73-1342,74-6716,75-1221,76-1954,771463,78-1464,79-1343,7:-3663,7;-3663,7<-8544,7@-1830,7A-9885,7"
+            + "C-1098,7G-1098,7J-9403,7O-1098,7Q-1098,7S-611,7X-734,7Y-489,7\\1708,7^-244,7_-14803,7a-4761,7c-53"
+            + "72,7d-5372,7e-5372,7g-5372,7m-489,7n-489,7o-5372,7p-489,7q-5372,7r-489,7s-4028,7t-122,7u-2441,7v"
+            + "-611,7w-611,7x-1830,7y-611,7z-611,8\"-1097,8&-244,8'-1097,8,-3785,8.-3785,80-122,86-122,87-611,8A"
+            + "-976,8T-367,8V-1587,8W-1587,8X-977,8Y-3053,8Z-489,8\\1097,8_-4797,8x-244,9\"-1097,9'-1097,9*-731,9"
+            + ",-4518,9.-4518,9/-244,92-367,97-2320,9A-1221,9J-489,9T-3419,9V-1221,9W-1221,9X-2807,9Y-979,9Z-14"
+            + "66,9\\2440,9^-731,9_-4674,9a-244,9v-731,9w-731,9x-731,9y-731,9z-244,:1-734,:2-1,:3-365,:4-1587,:7"
+            + "-1954,:T-3783,:V-5002,:W-4270,:Y-5369,;1-734,;2-1,;3-365,;4-1587,;7-1954,;T-3783,;V-5002,;W-4270"
+            + ",;Y-5369,=A-5249,=V-6592,=W-6592,=X-5372,=Y-9766,=v-4273,=w-3663,=x-3907,=y-4273,>7-6834,>A-2807"
+            + ",>T-7812,>V-6957,>W-6957,>X-5126,>Y-8911,>Z-5614,>v-3419,>w-2929,>x-3052,>y-3419,>z-2075,?4-2563"
+            + ",?A-5002,@2-976,@7-2197,@V-1587,@X-976,@Y-1953,@v-1342,@y-1342,A\"-7690,A'-7690,A)-489,A*-7690,A+"
+            + "-1464,A--1464,A0-1221,A1-3417,A5-488,A6-1221,A7-1587,A8-976,A9-976,A<-2807,A=-5249,A?-5125,AC-34"
+            + "17,AG-3417,AO-3417,AQ-3417,AT-8178,AU-1587,AV-6470,AW-5248,AY-7446,A\\-2197,A]-489,A^-7690,Aa-610"
+            + ",Ac-2807,Ad-2807,Ae-2807,Af-1587,Ag-2807,Ao-2807,Aq-2807,As-1098,At-2929,Au-2563,Av-6224,Aw-6224"
+            + ",Ax-488,Ay-6224,Az-976,A}-489,B2-122,BY-1708,CA-1708,CT-2808,CX-1220,CY-1464,C\\1342,C_-4308,D)-4"
+            + "89,D,-4639,D.-4639,D/-3783,D1-611,D2-367,D7-1588,DA-3417,DT-3174,DV-2686,DW-2929,DX-2196,DY-3417"
+            + ",DZ-2684,D\\244,D]-489,D_-4308,Dx-854,D}-489,E4-1710,E8-489,E\\1708,F&-2808,F,-7933,F.-7933,F/-549"
+            + "4,F0-1709,F1-367,F2-1710,F3-1588,F4-2566,F5-611,F6-1709,F8-1954,F9-489,F=-1954,FA-4274,FJ-5127,F"
+            + "\\976,F_-9765,Fa-4029,Fz-3662,G/-1097,GA-1342,GT-1709,GX-1097,GY-1097,H\\1708,I\\1708,J,-2686,J.-26"
+            + "86,J/-3903,JA-1587,J\\1463,J_-4308,K\"-731,K&-1342,K'-731,K+-10375,K--10375,K0-2565,K1-976,K2-856,"
+            + "K3-1466,K4-3053,K5-1343,K6-2565,K8-611,K9-1464,K<-6470,K=-2929,K@-1464,KC-3661,KG-3661,KO-3661,K"
+            + "Q-3661,KS-2319,Ka-1588,Kc-4028,Kd-4028,Ke-4028,Kf-1464,Kg-4028,Ko-4028,Kq-4028,Ks-2563,Kt-2075,K"
+            + "u-3540,Kv-5858,Kw-5735,Ky-5858,L\"-8911,L'-8911,L*-13305,L+-8056,L--8056,L0-2076,L1-4639,L2-367,L"
+            + "3-122,L4-2689,L5-489,L6-2076,L7-2076,L8-1833,L9-611,L<-3299,L?-6468,LC-3296,LG-3296,LO-3296,LQ-3"
+            + "296,LT-9277,LU-2319,LV-6835,LW-6835,LY-9277,L\\-2075,L^-13305,Lc-2686,Ld-2686,Le-2686,Lg-2686,Lo-"
+            + "2686,Lq-2686,Lt-2686,Lv-6713,Lw-6225,Ly-6713,M\\1708,N\\1708,O)-489,O,-4639,O.-4639,O/-3783,O1-611"
+            + ",O2-367,O7-1588,OA-3417,OT-3174,OV-2686,OW-2929,OX-2196,OY-3417,OZ-2684,O\\244,O]-489,O_-4308,Ox-"
+            + "854,O}-489,P&-2929,P+-856,P,-9520,P--856,P.-9520,P/-4760,P2-855,P3-122,P4-3786,P7-1100,PA-5128,P"
+            + "J-5493,PX-2440,PY-1830,PZ-2320,P\\1097,P_-9765,Pa-2320,Pc-1831,Pd-1831,Pe-1831,Pf2441,Pg-1831,Po-"
+            + "1831,Pq-1831,Ps-1831,Pt2441,Pv1830,Py1830,Q)-489,Q,-4639,Q.-4639,Q/-3783,Q1-611,Q2-367,Q7-1588,Q"
+            + "A-3417,QT-3174,QV-2686,QW-2929,QX-2196,QY-3417,QZ-2684,Q\\244,Q]-489,Q_-4308,Qx-854,Q}-489,R0-244"
+            + ",R4-1588,R6-244,R7-367,RV-1342,RW-1220,RY-2075,Ra-122,Rc-1709,Rd-1709,Re-1709,Rf731,Rg-1709,Ro-1"
+            + "709,Rq-1709,Rs-976,Rt1829,S7-611,SV-1098,SW-976,SX-488,SY-976,T&-3295,T+-7079,T,-8300,T--7079,T."
+            + "-8300,T/-6955,T0-3419,T2-367,T3-1098,T4-7325,T5-367,T6-3419,T8-367,T9-244,T:-3783,T;-3783,T<-781"
+            + "2,TA-8178,TC-3174,TG-3174,TJ-7201,TO-3174,TQ-3174,T\\1708,T_-5859,Ta-10621,Tc-10132,Td-10132,Te-1"
+            + "0132,Tg-10132,Ti-731,Tj-731,Tm-7079,Tn-7079,To-10132,Tp-7079,Tq-10132,Tr-7079,Ts-8180,Tu-7691,Tv"
+            + "-6225,Tw-6837,Tx-5736,Ty-6225,Tz-5859,U,-2686,U.-2686,U/-3903,UA-1587,U\\1463,U_-4308,V&-4393,V+-"
+            + "5494,V,-9765,V--5494,V.-9765,V/-6957,V0-1221,V4-3907,V6-1221,V8-1587,V9-610,V:-5002,V;-5002,V<-6"
+            + "957,V=-6592,V@-3417,VA-6470,VC-2686,VG-2686,VJ-6348,VO-2686,VQ-2686,VS-1098,V\\1708,V_-7812,Va-51"
+            + "27,Vc-5372,Vd-5372,Ve-5372,Vg-5372,Vm-2684,Vn-2684,Vo-5372,Vp-2684,Vq-5372,Vr-2684,Vs-4516,Vu-21"
+            + "96,Vv-1464,Vw-1342,Vx-1220,Vy-1464,Vz-1587,W&-4393,W+-5494,W,-9765,W--5494,W.-9765,W/-6346,W0-12"
+            + "21,W3-1342,W4-3907,W6-1221,W8-1587,W9-122,W:-4270,W;-4270,W<-6957,W=-6592,WA-5248,WC-2929,WG-292"
+            + "9,WJ-6104,WO-2929,WQ-2929,WS-244,W\\1708,W_-8215,Wa-4882,Wc-5127,Wd-5127,We-5127,Wg-5127,Wm-2684,"
+            + "Wn-2684,Wo-5127,Wp-2684,Wq-5127,Wr-2684,Ws-3540,Wu-2196,Wv-1342,Ww-1097,Wx-1220,Wy-1342,Wz-1587,"
+            + "X&-976,X*-1587,X+-5980,X--5980,X/-1464,X0-2807,X2-1098,X3-1342,X4-2076,X6-2807,X7-489,X8-977,X9-"
+            + "244,X<-5126,X=-5372,X@-976,XC-2196,XG-2196,XJ-1463,XO-2196,XQ-2196,XS-488,X\\731,X^-1587,Xa-1098,"
+            + "Xc-3295,Xd-3295,Xe-3295,Xg-3295,Xo-3295,Xq-3295,Xs-1342,Xt-2075,Xu-1464,Xv-2562,Xw-2562,Xy-2562,"
+            + "Y&-5736,Y*-1709,Y+-7934,Y,-9765,Y--7934,Y.-9765,Y/-6346,Y0-3540,Y2-1466,Y3-1953,Y4-6591,Y5-367,Y"
+            + "6-3540,Y7-489,Y8-3053,Y9-1833,Y:-5369,Y;-5369,Y<-10009,Y=-9766,Y@-1953,YA-7446,YC-3417,YG-3417,Y"
+            + "J-7446,YO-3417,YQ-3417,YS-976,Y\\1342,Y^-1709,Y_-9033,Ya-7445,Yc-7933,Yd-7933,Ye-7933,Yf-2686,Yg-"
+            + "7933,Ym-5371,Yn-5371,Yo-7933,Yp-5371,Yq-7933,Yr-5371,Ys-7324,Yt-976,Yu-5614,Yv-3295,Yw-3295,Yx-3"
+            + "417,Yy-3295,Yz-4394,Z+-3906,Z--3906,Z0-1466,Z2-489,Z3-244,Z4-3787,Z5-367,Z6-1466,Z8-367,Z<-5614,"
+            + "ZC-2684,ZG-2684,ZO-2684,ZQ-2684,Zc-1831,Zd-1831,Ze-1831,Zg-1831,Zo-1831,Zq-1831,[A-489,[C-489,[G"
+            + "-489,[O-489,[Q-489,[a-367,[c-1710,[d-1710,[e-1710,[g-1710,[j3296,[o-1710,[q-1710,[s-367,\\,4151,\\"
+            + ".4151,\\0-244,\\1-731,\\4-244,\\6-244,\\7-1831,\\A244,\\C-1342,\\G-1342,\\O-1342,\\Q-1342,\\T-4395,\\U-1463,"
+            + "\\V-4638,\\W-4638,\\X-731,\\Y-3906,\\j3296,\\m244,\\n244,\\p244,\\r244,\\v-3903,\\w-2440,\\y-3903,^&-3785,^,"
+            + "-12815,^.-12815,^0-731,^4-4761,^6-731,^7-1345,^A-7690,^J-9398,^X-1587,^Y-1709,^_-7238,_*-7238,_0"
+            + "-4674,_1-10043,_3-4185,_4-5773,_5-4552,_6-4674,_8-4797,_9-4185,_C-4308,_G-4308,_J-1867,_O-4308,_"
+            + "Q-4308,_T-5859,_U-4308,_V-7812,_W-8215,_Y-9033,_^-7238,__-3906,_a-976,_c-2929,_d-2929,_e-2929,_f"
+            + "-403,_g-2929,_j7078,_o-2929,_p939,_q-2929,_s-976,_u-1867,_v488,_w-7358,_y488,a1-4151,a2-244,a7-1"
+            + "831,aT-8425,aU-1464,aV-4882,aW-4882,aY-7079,av-1708,aw-1951,ay-1708,b)-979,b,-1098,b.-1098,b1-26"
+            + "86,b2-489,b7-3174,bA-2807,bT-10132,bV-5372,bW-5127,bX-3295,bY-7933,b]-979,b_-2929,bv-1830,bw-183"
+            + "0,bx-2074,by-1830,bz-1709,b}-979,c)-367,c2-122,c7-2075,cA-1464,cT-6470,cV-2195,cW-2195,cX-1097,c"
+            + "Y-4516,c]-367,c_-1464,cf1708,ct731,cz-244,c}-367,e)-611,e1-611,e7-2932,eA-1830,eT-10132,eV-5127,"
+            + "eW-5127,eX-1829,eY-7933,e]-611,e_-1953,ev-731,ex-1463,ey-731,e}-611,f&-1220,f+-2930,f,-4759,f--2"
+            + "930,f.-4759,f/-2074,f4-5736,f?611,fA-3050,fJ-5125,fY1464,f_-1867,fa-1709,fc-2380,fd-2380,fe-2380"
+            + ",fg-2380,fo-2380,fq-2380,fs-2319,ft244,fv367,fw367,fy367,g7-1097,g_2440,h1-4151,h2-244,h7-1831,h"
+            + "T-8425,hU-1464,hV-4882,hW-4882,hY-7079,hv-1708,hw-1951,hy-1708,i\"-1097,i'-1097,iT-731,i\\244,j\"-1"
+            + "097,j'-1097,jT-731,j\\244,k&-976,k+-4516,k--4516,k0-2074,k2-367,k4-4149,k6-2074,k7-1830,k8-244,k<"
+            + "-7321,k=-1098,kC-244,kG-244,kJ-733,kO-244,kQ-244,kT-5003,kV-1953,kW-1953,kY-3173,ka-1709,kc-2196"
+            + ",kd-2196,ke-2196,kg-2196,ko-2196,kq-2196,ks-1830,m1-4151,m2-244,m7-1831,mT-8425,mU-1464,mV-4882,"
+            + "mW-4882,mY-7079,mv-1708,mw-1951,my-1708,n1-4151,n2-244,n7-1831,nT-8425,nU-1464,nV-4882,nW-4882,n"
+            + "Y-7079,nv-1708,nw-1951,ny-1708,o)-979,o,-1098,o.-1098,o1-2686,o2-489,o7-3174,oA-2807,oT-10132,oV"
+            + "-5372,oW-5127,oX-3295,oY-7933,o]-979,o_-2929,ov-1830,ow-1830,ox-2074,oy-1830,oz-1709,o}-979,p)-9"
+            + "79,p,-1098,p.-1098,p1-2686,p2-489,p7-3174,pA-2807,pT-10132,pV-5372,pW-5127,pX-3295,pY-7933,p]-97"
+            + "9,p_-2929,pv-1830,pw-1830,px-2074,py-1830,pz-1709,p}-979,q7-1097,q_2440,r&-1098,r+-3539,r,-6470,"
+            + "r--3539,r.-6470,r/-3785,r4-3176,r7-1588,r<-4151,r=-611,r?2320,rA-3661,rJ-5003,rT-5126,rV-610,rW-"
+            + "610,rX-1221,rY-1466,rZ-2684,r_-3944,ra-734,rc-1587,rd-1587,re-1587,rf2562,rg-1587,rm731,rn731,ro"
+            + "-1587,rp731,rq-1587,rr731,rs-1098,rt976,rv365,ry365,s)-367,s1-1464,s7-1953,sA-1098,sT-8180,sV-45"
+            + "16,sW-3540,sX-1342,sY-7324,s]-367,s_-976,ss-976,st-365,sv-1220,sw-1220,sx-854,sy-1220,s}-367,t+-"
+            + "1708,t--1708,t0-244,t4-1953,t6-244,t7-367,t<-2196,tT-3417,tV-976,tW-976,tY-1953,ta-611,tc-915,td"
+            + "-915,te-915,tf244,tg-915,to-915,tq-915,ts-1098,u/244,u7-1098,uT-8057,uV-1830,uW-1830,uY-5248,uf1"
+            + "587,v&-2074,v+-1588,v,-6712,v--1588,v.-6712,v/-4269,v0-731,v4-1830,v6-731,v7-611,v<-3785,v=-4273"
+            + ",v@-1342,vA-6224,vJ-5492,vT-6225,vV-1464,vW-1342,vX-2562,vY-3295,vZ-2562,v\\244,v_-7567,va-1953,v"
+            + "c-1830,vd-1830,ve-1830,vg-1830,vo-1830,vq-1830,vs-1220,w&-2440,w+-1098,w,-6712,w--1098,w.-6712,w"
+            + "/-2440,w0-731,w4-1830,w6-731,w7-611,w<-2929,w=-3663,wA-6224,wJ-5003,wT-6837,wV-1342,wW-1097,wX-2"
+            + "562,wY-3295,wZ-2562,w\\244,w_-7358,wa-1587,wc-1830,wd-1830,we-1830,wg-1830,wo-1830,wq-1830,ws-122"
+            + "0,x&-488,x+-2197,x--2197,x0-731,x4-2075,x6-731,x7-1098,x8-244,x<-3052,x=-3907,xA-488,xC-854,xG-8"
+            + "54,xO-854,xQ-854,xT-5736,xV-1220,xW-1220,xY-3417,xc-2074,xd-2074,xe-2074,xf1953,xg-2074,xo-2074,"
+            + "xq-2074,xs-854,y&-2074,y+-1588,y,-6712,y--1588,y.-6712,y/-4269,y0-731,y4-1830,y6-731,y7-611,y<-3"
+            + "785,y=-4273,y@-1342,yA-6224,yJ-5492,yT-6225,yV-1464,yW-1342,yX-2562,yY-3295,yZ-2562,y\\244,y_-756"
+            + "7,ya-1953,yc-1830,yd-1830,ye-1830,yg-1830,yo-1830,yq-1830,ys-1220,z+-5002,z--5002,z0-244,z4-611,"
+            + "z6-244,z7-611,z<-4636,zA-976,zT-5859,zV-1587,zW-1587,zY-4394,zc-1709,zd-1709,ze-1709,zg-1709,zo-"
+            + "1709,zq-1709,{A-489,{C-489,{G-489,{O-489,{Q-489,{a-367,{c-1710,{d-1710,{e-1710,{g-1710,{j3296,{o"
+            + "-1710,{q-1710,{s-367,";
+    }
+    private static String System_1_2_kerning() {
+        return "\"&-3295,\",-9522,\".-9522,\"1731,\"4-3542,\"8-1097,\"A-9153,\"J-11105,\"a1097,\"c1829,\"d1829,\"e1829,\"f256"
+            + "1,\"g1829,\"o1829,\"q1829,\"s731,\"w1829,\u00234-2076,\u00237-734,&\"-3786,&'-3786,&0-979,&1-2933,&2-1468,&3-134"
+            + "5,&4-1101,&5-1101,&6-979,&7-3055,&8-1101,&9-979,&?-3659,&C-367,&G-367,&O-367,&Q-367,&T-7446,&V-5"
+            + "007,&W-6837,&Y-8546,&s-244,&t-244,&v-2929,&w-2929,&y-2929,'&-3295,',-9522,'.-9522,'1731,'4-3542,"
+            + "'8-1097,'A-9153,'J-11105,'a1097,'c1829,'d1829,'e1829,'f2561,'g1829,'o1829,'q1829,'s731,'w1829,(A"
+            + "-489,(C-367,(G-367,(O-367,(Q-367,(a-367,(c-1466,(d-1466,(e-1466,(g-1466,(j3663,(o-1466,(q-1466,("
+            + "s-367,*&-3785,*,-10616,*.-10616,*0-731,*4-5128,*5-122,*6-731,*7-1101,*A-9520,*J-9398,*T-367,*X-2"
+            + "927,*_-6835,*c1097,*d1097,*e1097,*g1097,*o1097,*q1097,*t2927,+A-1464,+J-367,+S-244,+T-6959,+V-51"
+            + "27,+W-5249,+X-5980,+Y-7812,+Z-2196,+v-1098,+w-1098,+x-2197,+y-1098,+z-731,,\"-9277,,'-9277,,*-114"
+            + "72,,/4151,,0-5492,,1-4272,,3-3903,,4-3294,,5-4027,,6-5492,,8-2199,,9-1830,,C-7205,,G-7205,,O-720"
+            + "5,,Q-7205,,T-8423,,U-4027,,V-10377,,W-10255,,Y-10622,,\\-4151,,^-11472,,c-976,,d-976,,e-976,,f-21"
+            + "97,,g-976,,j3659,,o-976,,q-976,,t-1463,,u-734,,v-5491,,w-5615,,y-5491,-A-1464,-J-367,-S-244,-T-6"
+            + "959,-V-5127,-W-5249,-X-5980,-Y-7812,-Z-2196,-v-1098,-w-1098,-x-2197,-y-1098,-z-731,.\"-9277,.'-92"
+            + "77,.*-11472,./4151,.0-5492,.1-4272,.3-3903,.4-3294,.5-4027,.6-5492,.8-2199,.9-1830,.C-7205,.G-72"
+            + "05,.O-7205,.Q-7205,.T-8423,.U-4027,.V-10377,.W-10255,.Y-10622,.\\-4151,.^-11472,.c-976,.d-976,.e-"
+            + "976,.f-2197,.g-976,.j3659,.o-976,.q-976,.t-1463,.u-734,.v-5491,.w-5615,.y-5491,/,-4151,/.-4151,/"
+            + "0244,/1367,/4-1953,/6244,/7244,/9244,/A-2684,/J-2562,/T1464,/U367,/V367,/W367,/Y367,/c-244,/d-24"
+            + "4,/e-244,/f367,/g-244,/o-244,/q-244,/v244,/w244,/y244,0\"-1463,0'-1463,0*-731,0,-4760,0.-4760,0/-"
+            + "244,02-367,07-2320,0A-1221,0J-489,0T-4882,0V-1953,0W-1221,0X-2807,0Y-4638,0Z-734,0\\2440,0^-731,0"
+            + "_-4272,0v-731,0w-731,0x-731,0y-731,1\"-1829,1'-1829,1*-244,1,-2563,1.-2563,12-489,13-244,14-611,1"
+            + "5-244,1Z-979,1^-244,1a244,1f-489,1s-367,2&-489,2*-244,20-244,24-2565,26-244,27-856,28-244,2@-365"
+            + ",2T-367,2V-1708,2W-244,2X-122,2Y-3295,2Z-489,2^-244,3\"-1097,3&-244,3'-1097,3*-122,3,-2563,3.-256"
+            + "3,30-122,36-122,37-611,3A-244,3T-2928,3V-2196,3W-1464,3X-977,3Y-3785,3Z-489,3\\1097,3^-122,3_-183"
+            + "1,4\"-3661,4'-3661,4*-4882,4,-2684,4.-2684,41-1098,42-856,44-367,45-244,47-734,4?-734,4T-1831,4V-"
+            + "1343,4W-1343,4X731,4Y-1953,4\\244,4^-4882,4v-1097,4w-1097,4x-365,4y-1097,4z-244,5\"-979,5&-244,5'-"
+            + "979,5*-611,5,-3295,5.-3295,50-244,51-611,52-979,53-244,54-244,56-244,57-611,5A-244,5T-734,5U-244"
+            + ",5V-611,5W-611,5X-489,5Y-2565,5Z-367,5\\1097,5^-611,5_-1709,5v-734,5w-734,5y-734,6\"-367,6'-367,6*"
+            + "-367,6,-2563,6.-2563,6A-244,6V-367,6W-367,6X-733,6Y-2930,6\\1342,6^-367,6_-4394,6v-122,6w-122,6y-"
+            + "122,7\u0023-5982,7&-4884,7*-367,7,-8546,7.-8546,7/-2684,70-1954,711097,72-734,73-1342,74-4886,75-489,"
+            + "76-1954,771463,78-367,79-611,7:-979,7;-979,7<-8544,7@-1830,7A-5860,7C-367,7G-367,7J-8305,7O-367,"
+            + "7Q-367,7S-611,7X-734,7Y-489,7\\1708,7^-367,7_-14401,7a-3173,7c-4393,7d-4393,7e-4393,7g-4393,7m-36"
+            + "7,7n-367,7o-4393,7p-367,7q-4393,7r-367,7s-3783,7t-122,7u-2441,7v-611,7w-611,7x-1585,7y-611,7z-36"
+            + "7,8\"-1097,8&-244,8'-1097,8*-122,8,-2563,8.-2563,80-122,86-122,87-611,8A-244,8T-2928,8V-2196,8W-1"
+            + "464,8X-977,8Y-3785,8Z-489,8\\1097,8^-122,8_-4394,9\"-1463,9'-1463,9*-731,9,-4760,9.-4760,9/-244,92"
+            + "-367,97-2320,9A-1221,9J-489,9T-4882,9V-1953,9W-1221,9X-2807,9Y-4638,9Z-734,9\\2440,9^-731,9_-4272"
+            + ",9v-731,9w-731,9x-731,9y-731,:1-2075,:2-1097,:4-1097,:7-1342,;1-1709,;2-1097,;4-1097,;7-1342,<J-"
+            + "367,=J-367,=T-734,=V-6225,=W-3663,=X-734,=Y-10982,=Z-2928,=v-367,=w-367,=x-367,=y-367,>7-6834,>A"
+            + "-2929,>J-367,>T-7322,>V-6957,>W-6225,>X-3296,>Y-7565,>Z-5125,>v-2562,>w-2562,>x-2929,>y-2562,>z-"
+            + "2196,?4-734,@2-976,@7-2197,@T-2562,@X-734,@Y-1831,@v-367,@y-367,A\"-9153,A&-1097,A'-9153,A)-489,A"
+            + "*-9520,A+-1464,A--1464,A/244,A0-1221,A1-3417,A5-1585,A6-1221,A7-1587,A8-244,A9-244,A<-2929,A=-36"
+            + "7,AC-3417,AG-3417,AO-3417,AQ-3417,AT-7813,AU-1587,AV-6837,AW-6102,AY-8179,A\\-2442,A]-489,A^-9520"
+            + ",Aa-731,Ac-2929,Ad-2929,Ae-2929,Af-1587,Ag-2929,Ao-2929,Aq-2929,As-1709,At-2684,Au-3295,Av-6225,"
+            + "Aw-5493,Ay-6225,A}-489,B*-244,B/-367,B2-734,BT-731,BV-1829,BY-2561,B\\1097,B^-244,C<-367,CA-855,C"
+            + "T-2686,CX-1220,CY-2321,C\\1464,C_-3906,D)-489,D*-2807,D,-4027,D.-4027,D/-3661,D1-611,D2-367,D7-23"
+            + "20,D<-367,D>-367,DA-1954,DT-3296,DV-3052,DW-3052,DX-2196,DY-5736,DZ-2684,D\\244,D]-489,D^-2807,D_"
+            + "-3906,Dx-854,D}-489,E+-367,E--367,E4-979,E8-489,E<-367,E=-367,E>-367,E\\1708,F,-7933,F.-7933,F/-4"
+            + "882,F0-611,F1-367,F2-979,F3-856,F4-1223,F5-611,F6-611,F8-856,F9-489,F<-367,F=-367,F>-367,FA-1833"
+            + ",FJ-4760,F\\976,F_-6591,Fa-244,Fc-122,Fd-122,Fe-122,Fg-122,Fo-122,Fq-122,Fs-244,Fv-1220,Fw-122,Fy"
+            + "-1220,G*-244,G/-1097,G41097,GT-1709,GV-2927,GW-1463,GX-1097,GY-3293,G^-244,H11097,H\\1708,I11097,"
+            + "I\\1708,J,-6711,J.-6711,J/-3903,J<-6220,J=-1829,JA-1587,J\\2197,J_-3906,Ja-731,K&-2561,K*-2929,K+-"
+            + "8057,K--8057,K0-2565,K1-976,K2-856,K3-2563,K4-3785,K5-1343,K6-2565,K8-611,K9-367,K<-6588,K=-734,"
+            + "K@-367,KC-3295,KG-3295,KO-3295,KQ-3295,KS-1587,KU-1829,K^-2929,Ka-1708,Kc-4760,Kd-4760,Ke-4760,K"
+            + "f-1464,Kg-4760,Ko-4760,Kq-4760,Ks-2929,Kt-2075,Ku-3661,Kv-5613,Kw-5613,Ky-5613,L\"-11350,L&-1097,"
+            + "L'-11350,L*-12329,L+-8421,L--8421,L0-3906,L1-5005,L2-367,L3-122,L4-2936,L5-1953,L6-3906,L7-3052,"
+            + "L8-2687,L9-2075,L<-8418,L=-734,L@-734,LC-3421,LG-3421,LO-3421,LQ-3421,LT-8545,LU-2684,LV-6835,LW"
+            + "-6835,LY-9277,L\\-2928,L^-12329,La-2440,Lc-3783,Ld-3783,Le-3783,Lf-244,Lg-3783,Lo-3783,Lq-3783,Ls"
+            + "-734,Lt-4027,Lu-3661,Lv-6346,Lw-5980,Ly-6346,M11097,M\\1708,N11097,N\\1708,O)-489,O*-2807,O,-4027,"
+            + "O.-4027,O/-3661,O1-611,O2-367,O7-2320,O<-367,O>-367,OA-1954,OT-3296,OV-3052,OW-3052,OX-2196,OY-5"
+            + "736,OZ-2684,O\\244,O]-489,O^-2807,O_-3906,Ox-854,O}-489,P&-2929,P+-489,P,-10863,P--489,P.-10863,P"
+            + "/-4638,P2-489,P3-122,P4-1713,P<-367,P=-367,PA-2686,PJ-5371,PX-2440,PY-1463,PZ-2075,P\\1097,P_-805"
+            + "6,Pa-1830,Pc-1221,Pd-1221,Pe-1221,Pf2319,Pg-1221,Po-1221,Pq-1221,Ps-122,Pt2319,Pv1708,Pw1708,Px2"
+            + "684,Py1708,Pz731,Q)-489,Q*-2807,Q,-4027,Q.-4027,Q/-3661,Q1-611,Q2-367,Q7-2320,Q<-367,Q>-367,QA-1"
+            + "954,QT-3296,QV-3052,QW-3052,QX-2196,QY-5736,QZ-2684,Q\\244,Q]-489,Q^-2807,Q_-3906,Qx-854,Q}-489,R"
+            + "+-244,R--244,R0-244,R4-856,R6-244,R7-367,R<-367,R=-367,RV-1220,RW-1220,RY-1343,Ra-122,Rc-488,Rd-"
+            + "488,Re-488,Rf1829,Rg-488,Ro-488,Rq-488,Rs-122,Rt1829,S7-611,ST-1463,SV-976,SW-976,SX-854,SY-2441"
+            + ",T&-3295,T+-9886,T,-7321,T--9886,T.-7321,T/-6955,T0-3419,T2-367,T3-1098,T4-3666,T5-367,T6-3419,T"
+            + "72195,T8-367,T9487,T<-7322,T=-734,T@-3294,TA-5617,TC-979,TG-979,TJ-7201,TO-979,TQ-979,T\\1830,T_-"
+            + "5493,Ta-9763,Tc-10375,Td-10375,Te-10375,Tg-10375,Ti-1097,Tj-731,Tm-6346,Tn-6346,To-10375,Tp-6346"
+            + ",Tq-10375,Tr-6346,Ts-7324,Tu-7201,Tv-6225,Tw-6225,Tx-5369,Ty-6225,Tz-5859,U,-6711,U.-6711,U/-390"
+            + "3,U<-6220,U=-1829,UA-1587,U\\2197,U_-3906,Ua-731,V&-4393,V+-5127,V,-9765,V--5127,V.-9765,V/-6346,"
+            + "V0-1221,V22195,V31463,V4-2809,V6-1221,V72927,V8-1587,V9609,V<-4761,V=-3298,VA-5006,VC-2317,VG-23"
+            + "17,VJ-6470,VO-2317,VQ-2317,VS-731,V\\1830,V_-7812,Va-3906,Vc-3053,Vd-3053,Ve-3053,Vg-3053,Vm-1830"
+            + ",Vn-1830,Vo-3053,Vp-1830,Vq-3053,Vr-1830,Vs-2929,Vt244,Vu-1708,Vv-1097,Vw-1097,Vx-1220,Vy-1097,V"
+            + "z-1587,W&-4393,W+-5249,W,-9643,W--5249,W.-9643,W/-6346,W0-1221,W11463,W21463,W4-3175,W6-1221,W8-"
+            + "1587,W9-122,W<-5127,W=-1834,WA-4272,WC-2929,WG-2929,WJ-6104,WO-2929,WQ-2929,W\\1830,W_-7812,Wa-46"
+            + "38,Wc-2687,Wd-2687,We-2687,Wg-2687,Wm-2562,Wn-2562,Wo-2687,Wp-2562,Wq-2687,Wr-2562,Ws-2563,Wu-20"
+            + "74,Wv-1097,Ww-731,Wx-1220,Wy-1097,Wz-1587,X&-2074,X+-5980,X--5980,X/-1097,X0-2075,X2-367,X3-244,"
+            + "X4-1344,X6-2075,X7974,X8-611,X9-244,X<-5126,X=-734,X@-734,XC-2196,XG-2196,XO-2196,XQ-2196,XS-365"
+            + ",X\\731,Xa-1098,Xc-3052,Xd-3052,Xe-3052,Xg-3052,Xo-3052,Xq-3052,Xs-1464,Xu-1830,Xv-2562,Xw-1830,X"
+            + "y-2562,Y&-5371,Y+-7812,Y,-9888,Y--7812,Y.-9888,Y/-6346,Y0-1710,Y1731,Y2-734,Y3-489,Y4-4153,Y5-36"
+            + "7,Y6-1710,Y7-489,Y8-2687,Y9-1101,Y<-7565,Y=-5493,Y@-2195,YA-5005,YC-1220,YG-1220,YJ-7446,YO-1220"
+            + ",YQ-1220,YS-731,Y\\1464,Y_-9765,Ya-5736,Yc-5493,Yd-5493,Ye-5493,Yg-5493,Ym-4639,Yn-4639,Yo-5493,Y"
+            + "p-4639,Yq-5493,Yr-4639,Ys-6226,Yt-244,Yu-4516,Yv-2929,Yw-2929,Yx-3052,Yy-2929,Yz-3296,Z+-3294,Z-"
+            + "-3294,Z0-734,Z2-489,Z3-1708,Z4-3787,Z5-367,Z6-734,Z8-367,Z<-5125,Z=-367,ZC-2684,ZG-2684,ZO-2684,"
+            + "ZQ-2684,Za-1098,Zc-1831,Zd-1831,Ze-1831,Zg-1831,Zo-1831,Zq-1831,Zs-367,Zu-1708,Zv-731,Zw-731,Zy-"
+            + "731,[A-489,[C-367,[G-367,[O-367,[Q-367,[a-367,[c-1466,[d-1466,[e-1466,[g-1466,[j3663,[o-1466,[q-"
+            + "1466,[s-367,\\,4151,\\.4151,\\0-244,\\1-731,\\4-244,\\6-244,\\7-1831,\\A244,\\C-3660,\\G-3660,\\J-367,\\O-36"
+            + "60,\\Q-3660,\\S-367,\\T-6225,\\U-1830,\\V-5127,\\W-5127,\\X-731,\\Y-4395,\\c-367,\\d-367,\\e-367,\\g-367,\\j3"
+            + "296,\\m244,\\n244,\\o-367,\\p244,\\q-367,\\r244,\\v-2440,\\w-3537,\\y-2440,^&-3785,^,-10616,^.-10616,^0-7"
+            + "31,^4-5128,^5-122,^6-731,^7-1101,^A-9520,^J-9398,^T-367,^X-2927,^_-6835,^c1097,^d1097,^e1097,^g1"
+            + "097,^o1097,^q1097,^t2927,_*-6835,_0-4272,_1-9640,_3-3782,_4-5371,_5-4149,_6-4272,_8-4394,_9-3782"
+            + ",_C-3906,_G-3906,_J-1464,_O-3906,_Q-3906,_T-5493,_U-3906,_V-7812,_W-7812,_Y-9765,_^-6835,_a-1953"
+            + ",_c-1464,_d-1464,_e-1464,_f-367,_g-1464,_j9399,_o-1464,_p4272,_q-1464,_s-1464,_u-1464,_v-5854,_w"
+            + "-5854,_y-5854,a\"-2927,a'-2927,a*-979,a/244,a1-3906,a7-1464,aT-10009,aU-731,aV-5980,aW-4882,aY-82"
+            + "99,a^-979,av-1951,aw-1951,ay-1951,az-731,b\"-4391,b'-4391,b)-1710,b*-1468,b,-1098,b.-1098,b1-2441"
+            + ",b2-367,b7-2929,b?-367,bA-2195,bT-11230,bV-5127,bW-5127,bX-2563,bY-9643,b]-1710,b^-1468,b_-1464,"
+            + "bv-2684,bw-1953,bx-2196,by-2684,bz-1709,b}-1710,c\"-731,c'-731,c)-367,c*-734,c7-1830,c?-367,cA-10"
+            + "97,cT-7934,cV-3174,cW-3419,cX-1097,cY-6712,c]-367,c^-734,c_-367,cf1708,ct1098,cv-244,cw-244,cx-1"
+            + "22,cy-244,cz-854,c}-367,d)734,d+-122,d,-2927,d--122,d.-2927,d]734,df2561,dj1097,dt2561,d}734,e\"-"
+            + "1829,e'-1829,e)-611,e*-1466,e7-2932,e?-489,eA-1463,eT-10742,eV-5006,eW-5127,eX-1463,eY-7933,e]-6"
+            + "11,e^-1466,e_-1464,ev-1830,ew-1098,ex-1585,ey-1830,ez-1463,e}-611,f\"1463,f&-1220,f'1463,f,-2563,"
+            + "f.-2563,f/-244,f4-4757,f<-367,fA-3050,fJ-4391,f_-1464,fa-1587,fc-2258,fd-2258,fe-2258,fg-2258,fo"
+            + "-2258,fq-2258,fs-2319,ft244,fv367,fw367,fy367,g7-1463,g?-367,gT-5856,gV-3050,gW-1587,gY-4756,g_3"
+            + "417,h\"-2927,h'-2927,h*-979,h/244,h1-3906,h7-1464,hT-10009,hU-731,hV-5980,hW-4882,hY-8299,h^-979,"
+            + "hv-1951,hw-1951,hy-1951,hz-731,iT-1097,iY-731,i\\244,jT-1097,jY-731,j\\244,k&-854,k+-4393,k--4393,"
+            + "k0-1829,k4-3905,k6-1829,k7-1464,k8-122,k9-122,k<-4757,k=-367,kC-1464,kG-1464,kO-1464,kQ-1464,kT-"
+            + "5003,kV-1587,kW-1953,kY-3173,ka-1464,kc-2319,kd-2319,ke-2319,kf1097,kg-2319,ko-2319,kq-2319,ks-2"
+            + "562,l)734,l+-122,l,-2927,l--122,l.-2927,l]734,lf2561,lj1097,lt2561,l}734,m\"-2927,m'-2927,m*-979,"
+            + "m/244,m1-3906,m7-1464,mT-10009,mU-731,mV-5980,mW-4882,mY-8299,m^-979,mv-1951,mw-1951,my-1951,mz-"
+            + "731,n\"-2927,n'-2927,n*-979,n/244,n1-3906,n7-1464,nT-10009,nU-731,nV-5980,nW-4882,nY-8299,n^-979,"
+            + "nv-1951,nw-1951,ny-1951,nz-731,o\"-4391,o'-4391,o)-1710,o*-1468,o,-1098,o.-1098,o1-2441,o2-367,o7"
+            + "-2929,o?-367,oA-2195,oT-11230,oV-5127,oW-5127,oX-2563,oY-9643,o]-1710,o^-1468,o_-1464,ov-2684,ow"
+            + "-1953,ox-2196,oy-2684,oz-1709,o}-1710,p\"-4391,p'-4391,p)-1710,p*-1468,p,-1098,p.-1098,p1-2441,p2"
+            + "-367,p7-2929,p?-367,pA-2195,pT-11230,pV-5127,pW-5127,pX-2563,pY-9643,p]-1710,p^-1468,p_-1464,pv-"
+            + "2684,pw-1953,px-2196,py-2684,pz-1709,p}-1710,q7-1463,q?-367,qT-5125,qV-3050,qW-1587,qY-4756,q_34"
+            + "17,r&-1098,r+-734,r,-6222,r--734,r.-6222,r4-1713,r7-1954,r<-734,r=-734,rA-2440,rJ-4759,rT-3295,r"
+            + "V-244,rW-244,rX-1221,rY-1831,rZ-2684,r_-3541,ra-1098,rc-1342,rd-1342,re-1342,rf2562,rg-1342,ro-1"
+            + "342,rq-1342,rs-1098,rt2562,s\"-731,s'-731,s)-367,s*-611,s1-367,s7-1830,s?-734,sA-365,sT-7688,sV-4"
+            + "272,sW-3540,sX-1097,sY-7324,s]-367,s^-611,ss-731,st-365,sv-1220,sw-1220,sx-731,sy-1220,s}-367,t+"
+            + "-1830,t--1830,t0-244,t4-367,t6-244,t7-367,t<-2196,t=-367,tT-2808,tV-1221,tW-1221,tY-1953,tc-733,"
+            + "td-733,te-733,tf244,tg-733,to-733,tq-733,ts-731,u/244,u7-1098,uA-731,uT-7567,uV-1953,uW-2319,uY-"
+            + "5248,uf1220,v&-2440,v+-1098,v,-5125,v--1098,v.-5125,v/-244,v0-731,v4-1830,v6-731,v7-611,v<-2197,"
+            + "v=-367,v@367,vA-5126,vJ-4881,vT-5859,vV-1220,vW-1097,vX-2562,vY-3295,vZ-2562,v\\244,v_-6955,va-85"
+            + "4,vc-610,vd-610,ve-610,vg-610,vo-610,vq-610,vs-1220,w&-2440,w+-1098,w,-6346,w--1098,w.-6346,w/-2"
+            + "44,w0-731,w4-1830,w6-731,w7-611,w<-1830,w=-367,wA-4760,wJ-4881,wT-6225,wV-1220,wW-1097,wX-2562,w"
+            + "Y-3295,wZ-2562,w\\244,w_-6955,wa-1220,wc-610,wd-610,we-610,wg-610,wo-610,wq-610,ws-1220,x&-488,x+"
+            + "-2197,x--2197,x0-731,x4-1708,x6-731,x7-976,x<-2929,x=-367,xC-976,xG-976,xO-976,xQ-976,xT-5369,xV"
+            + "-1342,xW-1464,xY-3417,xc-1708,xd-1708,xe-1708,xf1953,xg-1708,xo-1708,xq-1708,xs-488,y&-2440,y+-1"
+            + "098,y,-5125,y--1098,y.-5125,y/-244,y0-731,y4-1830,y6-731,y7-611,y<-2197,y=-367,y@367,yA-5126,yJ-"
+            + "4881,yT-5859,yV-1220,yW-1097,yX-2562,yY-3295,yZ-2562,y\\244,y_-6955,ya-854,yc-610,yd-610,ye-610,y"
+            + "g-610,yo-610,yq-610,ys-1220,z+-1098,z--1098,z0-244,z4-611,z6-244,z7-2075,z<-2075,zT-5859,zV-1587"
+            + ",zW-1587,zY-4028,za-1463,zc-2075,zd-2075,ze-2075,zg-2075,zo-2075,zq-2075,{A-489,{C-367,{G-367,{O"
+            + "-367,{Q-367,{a-367,{c-1466,{d-1466,{e-1466,{g-1466,{j3663,{o-1466,{q-1466,{s-367,}Y-1463,";
+    }
+    private static String System_0_4_kerning() {
+        return "\"&-2848,\",-9765,\".-9765,\"0-1220,\"4-5696,\"5-244,\"6-1220,\"8-1383,\"A-7731,\"J-11393,\"f244,\u00234-1383,&\""
+            + "-3173,&'-3173,&+-569,&--569,&1-1953,&5-488,&7-1220,&=-813,&@-325,&C-406,&G-406,&O-406,&Q-406,&T-"
+            + "6022,&V-6510,&W-4476,&Y-8056,&s-569,&t-325,&u-406,&v-3092,&w-3092,&x-325,&y-3092,&z-325,'&-2848,"
+            + "',-9765,'.-9765,'0-1220,'4-5696,'5-244,'6-1220,'8-1383,'A-7731,'J-11393,'f244,(c-813,(d-813,(e-8"
+            + "13,(g-813,(j2848,(o-813,(q-813,*&-3417,*,-13834,*.-13834,*0-813,*4-4231,*6-813,*A-7731,*J-9440,*"
+            + "X-1627,*Y-1546,*_-7096,+A-1871,+J-1220,+T-6673,+V-4801,+W-4801,+X-6022,+Y-7324,+Z-2034,+f-1627,+"
+            + "t-1627,+v-1220,+w-1220,+x-1953,+y-1220,+z-813,,\"-9765,,&-2848,,'-9765,,*-13834,,/3987,,0-4150,,1"
+            + "-3580,,2-1627,,3-2929,,4-2441,,5-3133,,6-4150,,7-3417,,8-3662,,9-3987,,C-5778,,G-5778,,O-5778,,Q"
+            + "-5778,,T-8463,,U-4313,,V-10091,,W-10091,,Y-10579,,\\-3987,,^-13834,,c-1953,,d-1953,,e-1953,,f-333"
+            + "6,,g-1953,,o-1953,,q-1953,,t-1627,,v-7161,,w-7161,,y-7161,-A-1871,-J-1220,-T-6673,-V-4801,-W-480"
+            + "1,-X-6022,-Y-7324,-Z-2034,-f-1627,-t-1627,-v-1220,-w-1220,-x-1953,-y-1220,-z-813,.\"-9765,.&-2848"
+            + ",.'-9765,.*-13834,./3987,.0-4150,.1-3580,.2-1627,.3-2929,.4-2441,.5-3133,.6-4150,.7-3417,.8-3662"
+            + ",.9-3987,.C-5778,.G-5778,.O-5778,.Q-5778,.T-8463,.U-4313,.V-10091,.W-10091,.Y-10579,.\\-3987,.^-1"
+            + "3834,.c-1953,.d-1953,.e-1953,.f-3336,.g-1953,.o-1953,.q-1953,.t-1627,.v-7161,.w-7161,.y-7161,/,-"
+            + "3987,/.-3987,/1162,/4-1627,/7325,/A-3011,/B162,/C162,/D162,/E162,/F162,/G162,/H162,/I162,/J-2766"
+            + ",/K162,/L162,/M162,/N162,/O162,/P162,/Q162,/R162,/T1383,/U162,/V162,/W162,/X162,/Y162,/b162,/f16"
+            + "2,/h162,/k162,/l162,0\"-1220,0'-1220,0*-813,0,-4313,0.-4313,03-244,07-1953,0A-1139,0T-2848,0V-105"
+            + "7,0W-1464,0X-2848,0Y-3743,0Z-813,0\\2604,0^-813,0_-4899,0v-813,0w-813,0x-813,0y-813,1\"-1627,1&-81"
+            + "3,1'-1627,1*-244,1,-2522,1.-2522,1^-244,2,-1220,2.-1220,24-1220,2@-406,2Y-976,2c-406,2d-406,2e-4"
+            + "06,2g-406,2o-406,2q-406,3\"-1383,3'-1383,3,-3580,3.-3580,30-162,36-162,39-81,3A-569,3V-1546,3W-18"
+            + "71,3X-813,3Y-2685,3\\1220,3_-2457,3c-162,3d-162,3e-162,3g-162,3o-162,3q-162,4*-1057,4,-2848,4.-28"
+            + "48,41-1057,4T-1220,4V-1302,4W-1139,4Y-1953,4Z-406,4^-1057,4v-1220,4w-1220,4x-406,4y-1220,5,-3580"
+            + ",5.-3580,51-325,5A-162,5Y-406,5\\1220,5_-2457,6,-3580,6.-3580,63-244,6A-1058,6V-244,6W-244,6X-569"
+            + ",6Y-1383,6\\1220,6_-4899,7\u0023-4720,7&-4150,7,-10904,7.-10904,7/-2685,70-1383,73-1302,74-5533,75-976"
+            + ",76-1383,771953,78-1383,79-976,7:-2766,7;-2766,7<-7812,7@-1627,7A-9846,7C-813,7G-813,7J-6998,7O-"
+            + "813,7Q-813,7\\1953,7_-15397,7a-3987,7c-4231,7d-4231,7e-4231,7g-4231,7o-4231,7q-4231,7s-3417,7u-20"
+            + "34,7x-1627,8\"-1383,8'-1383,8,-3580,8.-3580,80-162,86-162,89-81,8A-1139,8V-1546,8W-1871,8X-813,8Y"
+            + "-2685,8\\1220,8_-4899,8c-162,8d-162,8e-162,8g-162,8o-162,8q-162,9\"-1220,9'-1220,9*-813,9,-4313,9."
+            + "-4313,93-244,97-1953,9A-1139,9T-2848,9V-1057,9W-1464,9X-2848,9Y-895,9Z-813,9\\2604,9^-813,9_-4899"
+            + ",9v-813,9w-813,9x-813,9y-813,:2406,:3-406,:4-1220,:7-1464,:T-3255,:V-5289,:W-4882,:X-569,:Y-5778"
+            + ",;2406,;3-406,;4-1220,;7-1464,;T-3255,;V-5289,;W-4882,;X-569,;Y-5778,=&-651,=A-4882,=V-6266,=W-6"
+            + "103,=X-5045,=Y-8951,=v-3662,=w-3011,=x-3255,=y-3662,>7-6917,>A-2766,>T-7568,>V-6835,>W-6835,>X-5"
+            + "615,>Y-8626,>Z-4882,>v-2766,>w-2766,>x-2848,>y-2766,>z-1708,?4-2441,?A-5696,@&-569,@2-813,@7-211"
+            + "5,@V-1708,@W-406,@X-1464,@Y-2278,@v-1464,@w-244,@x-325,@y-1464,A\"-7731,A'-7731,A*-7731,A+-1871,A"
+            + "--1871,A0-1139,A1-3743,A5-895,A6-1139,A7-1546,A8-1139,A9-1139,A<-2766,A=-4882,A?-5859,AC-3336,AG"
+            + "-3336,AO-3336,AQ-3336,AT-8056,AU-1546,AV-6347,AW-5533,AY-7568,A\\-1790,A^-7731,Aa-569,Ac-2929,Ad-"
+            + "2929,Ae-2929,Af-1627,Ag-2929,Ao-2929,Aq-2929,As-1139,At-2929,Au-2604,Av-6673,Aw-6673,Ax-569,Ay-6"
+            + "673,Az-976,BY-1953,B_-504,Bx-162,Bz-162,CA-2034,CT-2115,CX-1627,CY-1627,C\\1383,C_-4492,D,-4557,D"
+            + ".-4557,D/-3417,D7-813,DA-3336,DT-2766,DV-2360,DW-2766,DX-2604,DY-3662,DZ-2766,D\\162,D_-4492,Da-1"
+            + "62,Ds-81,Dx-976,E4-813,E\\1790,F&-2278,F,-8219,F.-8219,F/-4475,F0-1464,F2-813,F3-813,F4-1220,F6-1"
+            + "464,F8-1302,F=-1546,FA-3580,FJ-4068,F\\976,F_-9521,Fa-3092,Fz-3011,G,-732,G.-732,G/-1220,GA-1546,"
+            + "GT-1220,GX-1627,GY-1627,G\\162,G_-911,Ga-162,Gz-162,H\\1790,I\\1790,J,-2767,J.-2767,J/-4231,JA-1546"
+            + ",J\\1790,J_-4329,Ja-244,Jc-406,Jd-406,Je-406,Jg-406,Jo-406,Jq-406,Jx-244,K\"-813,K&-1546,K'-813,K*"
+            + "-406,K+-9602,K--9602,K0-2115,K1-813,K3-895,K4-2522,K5-1220,K6-2115,K8-244,K9-1790,K<-6266,K=-301"
+            + "1,K@-1871,KC-4150,KG-4150,KO-4150,KQ-4150,KS-2441,K^-406,Ka-1383,Kc-3987,Kd-3987,Ke-3987,Kf-1871"
+            + ",Kg-3987,Ko-3987,Kq-3987,Ks-2604,Kt-2278,Ku-3417,Kv-5859,Kw-5859,Kx-325,Ky-5859,L\"-9196,L'-9196,"
+            + "L*-12695,L+-7324,L--7324,L0-1464,L1-5208,L4-813,L6-1464,L7-2115,L8-813,L<-2604,L?-6917,LC-2604,L"
+            + "G-2604,LO-2604,LQ-2604,LT-9277,LU-2034,LV-6917,LW-6917,LY-9358,L\\-1790,L^-12695,Lc-2441,Ld-2441,"
+            + "Le-2441,Lg-2441,Lo-2441,Lq-2441,Lt-2604,Lv-6835,Lw-6428,Ly-6835,M\\1790,N\\1790,O,-4557,O.-4557,O/"
+            + "-3417,O7-813,OA-3336,OT-2766,OV-2360,OW-2766,OX-2604,OY-3662,OZ-2766,O\\162,O_-4492,Oa-162,Os-81,"
+            + "Ox-976,P&-2848,P,-10416,P.-10416,P/-4720,P2-406,P4-3092,P7-813,PA-4557,PJ-4882,PX-3011,PY-2197,P"
+            + "Z-1790,P\\1302,P_-9765,Pa-1953,Pc-1464,Pd-1464,Pe-1464,Pf2441,Pg-1464,Po-1464,Pq-1464,Ps-1464,Pt2"
+            + "278,Pv1627,Py1627,Q,-4557,Q.-4557,Q/-3417,Q7-813,QA-3336,QT-2766,QV-2360,QW-2766,QX-2604,QY-3662"
+            + ",QZ-2766,Q\\162,Q_-4492,Qa-162,Qs-81,Qx-976,R4-813,RV-1627,RW-1627,RY-2034,Ra-81,Rc-1546,Rd-1546,"
+            + "Re-1546,Rf813,Rg-1546,Ro-1546,Rq-1546,Rs-895,Rt2034,SV-1057,SW-1220,SX-813,SY-1464,Sa-244,T&-358"
+            + "0,T+-6673,T,-8300,T--6673,T.-8300,T/-7161,T0-2848,T3-813,T4-6347,T6-2848,T:-3255,T;-3255,T<-7568"
+            + ",TA-8056,TC-2766,TG-2766,TJ-7324,TO-2766,TQ-2766,T\\1790,T_-5859,Ta-9928,Tc-9602,Td-9602,Te-9602,"
+            + "Tg-9602,Ti-976,Tj-813,Tm-6754,Tn-6754,To-9602,Tp-6754,Tq-9602,Tr-6754,Ts-7405,Tu-6591,Tv-5289,Tw"
+            + "-5289,Tx-4882,Ty-5289,Tz-5289,U,-2767,U.-2767,U/-4231,UA-1546,U\\1790,U_-4329,Ua-244,Uc-406,Ud-40"
+            + "6,Ue-406,Ug-406,Uo-406,Uq-406,Ux-244,V&-4882,V+-4801,V,-10091,V--4801,V.-10091,V/-7080,V0-1057,V"
+            + "4-3499,V6-1057,V8-1546,V9-569,V:-5289,V;-5289,V<-6835,V=-6266,V@-3336,VA-6347,VC-2360,VG-2360,VJ"
+            + "-5859,VO-2360,VQ-2360,VS-813,V\\1953,V_-8138,Va-5289,Vc-5208,Vd-5208,Ve-5208,Vg-5208,Vm-3092,Vn-3"
+            + "092,Vo-5208,Vp-3092,Vq-5208,Vr-3092,Vs-4638,Vu-2360,Vv-1383,Vw-1220,Vx-1302,Vy-1383,Vz-1627,W&-4"
+            + "882,W+-4801,W,-10091,W--4801,W.-10091,W/-6510,W0-1464,W3-1871,W4-3499,W5-488,W6-1464,W8-1871,W9-"
+            + "406,W:-4882,W;-4882,W<-6835,W=-6103,W@-406,WA-5533,WC-2766,WG-2766,WJ-5859,WO-2766,WQ-2766,WS-16"
+            + "2,W\\1953,W_-8561,Wa-5289,Wc-5208,Wd-5208,We-5208,Wg-5208,Wm-3092,Wn-3092,Wo-5208,Wp-3092,Wq-5208"
+            + ",Wr-3092,Ws-3824,Wu-2360,Wv-1383,Ww-1220,Wx-1302,Wy-1383,Wz-1871,X&-1383,X*-1627,X+-6022,X--6022"
+            + ",X/-1464,X0-2848,X2-1057,X3-1546,X4-1871,X6-2848,X8-813,X9-244,X:-569,X;-569,X<-5615,X=-5045,X@-"
+            + "1464,XC-2604,XG-2604,XJ-1627,XO-2604,XQ-2604,XS-651,X\\1139,X^-1627,Xa-1383,Xc-3824,Xd-3824,Xe-38"
+            + "24,Xf-569,Xg-3824,Xo-3824,Xq-3824,Xs-1871,Xt-2441,Xu-1953,Xv-3092,Xw-3173,Xy-3092,Y&-6022,Y*-154"
+            + "6,Y+-7324,Y,-10579,Y--7324,Y.-10579,Y/-6998,Y0-3743,Y1-406,Y2-1139,Y3-2115,Y4-6998,Y5-406,Y6-374"
+            + "3,Y8-2685,Y9-1220,Y:-5778,Y;-5778,Y<-9846,Y=-8951,Y@-2278,YA-7568,YC-3662,YG-3662,YJ-7731,YO-366"
+            + "2,YQ-3662,YS-1464,Y\\1546,Y^-1546,Y_-8951,Ya-8300,Yc-8707,Yd-8707,Ye-8707,Yf-2441,Yg-8707,Yi-406,"
+            + "Yj-406,Ym-5371,Yn-5371,Yo-8707,Yp-5371,Yq-8707,Yr-5371,Ys-7568,Yt-1464,Yu-5696,Yv-3499,Yw-3499,Y"
+            + "x-3662,Yy-3499,Yz-4475,Y{-325,Z+-3255,Z--3255,Z0-813,Z4-2034,Z6-813,Z<-4882,ZC-2766,ZG-2766,ZO-2"
+            + "766,ZQ-2766,Zc-1383,Zd-1383,Ze-1383,Zg-1383,Zo-1383,Zq-1383,[c-813,[d-813,[e-813,[g-813,[j2848,["
+            + "o-813,[q-813,\\,3987,\\.3987,\\1-813,\\2162,\\7-1464,\\881,\\A162,\\C-1220,\\G-1220,\\O-1220,\\Q-1220,\\T-34"
+            + "17,\\U-1627,\\V-4231,\\W-4231,\\X-813,\\Y-3499,\\j3499,\\m162,\\n162,\\p162,\\r162,\\v-4231,\\w-2604,\\y-4231"
+            + ",^&-3417,^,-13834,^.-13834,^0-813,^4-4231,^6-813,^A-7731,^J-9440,^X-1627,^Y-1546,^_-7096,_*-7096"
+            + ",_0-4899,_1-10758,_3-4899,_4-5631,_5-4899,_6-4899,_8-4899,_9-4899,_C-4492,_G-4492,_J-1725,_O-449"
+            + "2,_Q-4492,_T-5859,_U-4329,_V-8138,_W-8561,_Y-8951,_^-7096,__-3906,_a-976,_c-2929,_d-2929,_e-2929"
+            + ",_f-341,_g-2034,_j7975,_o-2929,_p1285,_q-2929,_s-976,_t-423,_u-2132,_v651,_w-8154,_y651,a/162,a1"
+            + "-3255,a7-1220,aT-7242,aU-1464,aV-5126,aW-5126,aX-162,aY-7812,av-1790,aw-2197,ay-1790,b)-569,b,-1"
+            + "139,b.-1139,b1-2441,b3-162,b7-2848,b8-162,b9-244,bA-2929,bS-244,bT-9358,bU-406,bV-5208,bW-5208,b"
+            + "X-3824,bY-8300,b]-569,b_-2929,bv-2034,bw-2034,bx-2604,by-2034,bz-1383,b}-569,c7-1871,cA-1708,cT-"
+            + "6591,cU-325,cV-3499,cW-3499,cX-1871,cY-5208,c_-1464,cf1627,ct813,cx-325,e/162,e7-2034,eA-2115,eT"
+            + "-9440,eU-406,eV-5208,eW-5208,eX-2685,eY-8544,e_-1953,ev-1139,ew-325,ex-2034,ey-1139,f&-1790,f+-2"
+            + "034,f,-5371,f--2034,f.-5371,f/-2197,f4-5045,fA-3743,fJ-5940,fX-325,fY1220,f_-2050,fa-1546,fc-207"
+            + "5,fd-2075,fe-2075,ff162,fg-2075,fo-2075,fq-2075,fs-2278,ft162,g7-1220,gV-651,gW-488,gY-1139,g_26"
+            + "04,gj406,h/162,h1-3255,h7-1220,hT-7242,hU-1464,hV-5126,hW-5126,hX-162,hY-7812,hv-1790,hw-2197,hy"
+            + "-1790,i\"-1220,i'-1220,iT-976,iY-406,j\"-1220,j'-1220,jT-976,jY-406,k&-1302,k(-162,k+-4150,k--4150"
+            + ",k0-2034,k4-3987,k5-488,k6-2034,k7-2034,k8-244,k9-244,k<-7893,k=-1220,k?-81,k@-325,kC-406,kG-406"
+            + ",kJ-651,kO-406,kQ-406,kS-325,kT-4475,kU-406,kV-2197,kW-2360,kY-3906,ka-1627,kc-2685,kd-2685,ke-2"
+            + "685,kf-325,kg-2685,ko-2685,kq-2685,ks-2034,kt-325,k{-406,m/162,m1-3255,m7-1220,mT-7242,mU-1464,m"
+            + "V-5126,mW-5126,mX-162,mY-7812,mv-1790,mw-2197,my-1790,n/162,n1-3255,n7-1220,nT-7242,nU-1464,nV-5"
+            + "126,nW-5126,nX-162,nY-7812,nv-1790,nw-2197,ny-1790,o)-569,o,-1139,o.-1139,o1-2441,o3-162,o7-2848"
+            + ",o8-162,o9-244,oA-2929,oS-244,oT-9358,oU-406,oV-5208,oW-5208,oX-3824,oY-8300,o]-569,o_-2929,ov-2"
+            + "034,ow-2034,ox-2604,oy-2034,oz-1383,o}-569,p)-569,p,-1139,p.-1139,p1-2441,p3-162,p7-2848,p8-162,"
+            + "p9-244,pA-2929,pS-244,pT-9358,pU-406,pV-5208,pW-5208,pX-3824,pY-8300,p]-569,p_-2929,pv-2034,pw-2"
+            + "034,px-2604,py-2034,pz-1383,p}-569,q7-1220,qV-651,qW-488,qY-1139,q_2604,qj406,r&-1220,r+-3662,r,"
+            + "-7080,r--3662,r.-7080,r/-3092,r4-1790,r7-813,r<-3255,r?1871,rA-4150,rJ-5452,rT-4720,rV-813,rW-81"
+            + "3,rX-1790,rY-1464,rZ-2604,r_-4166,ra-325,rc-1383,rd-1383,re-1383,rf2685,rg-1383,rm813,rn813,ro-1"
+            + "383,rp813,rq-1383,rr813,rs-1057,rt1057,rv651,rw244,ry651,s1-1383,s7-1871,sA-1139,sC-81,sG-81,sO-"
+            + "81,sQ-81,sT-7405,sV-4638,sW-3824,sX-1871,sY-7568,s_-976,ss-976,st-406,sv-1464,sw-1464,sx-1220,sy"
+            + "-1464,t+-1627,t--1627,t4-1627,t<-2034,tT-3092,tV-1464,tW-1464,tX-406,tY-2604,tc-610,td-610,te-61"
+            + "0,tf162,tg-610,to-610,tq-610,ts-813,tt162,u/162,u7-813,uT-7161,uV-2197,uW-2197,uY-5289,uf1383,v&"
+            + "-2441,v+-1220,v,-7161,v--1220,v.-7161,v/-4557,v0-813,v4-1627,v6-813,v<-3173,v=-3662,v@-1464,vA-6"
+            + "673,vJ-5452,vT-5289,vV-1383,vW-1383,vX-3092,vY-3499,vZ-2685,v\\162,v_-7975,va-1871,vc-2034,vd-203"
+            + "4,ve-2034,vf325,vg-2034,vo-2034,vq-2034,vs-1464,w&-3092,w+-1220,w,-7161,w--1220,w.-7161,w/-2604,"
+            + "w0-813,w4-1627,w6-813,w<-2766,w=-3011,w@-244,wA-6673,wJ-5045,wT-5289,wV-1220,wW-1220,wX-3173,wY-"
+            + "3499,wZ-2685,w\\162,w_-8154,wa-1464,wc-2034,wd-2034,we-2034,wf406,wg-2034,wo-2034,wq-2034,ws-1464"
+            + ",x&-813,x+-1953,x--1953,x0-813,x4-1627,x6-813,x7-813,x<-2848,x=-3255,x@-325,xA-569,xC-976,xG-976"
+            + ",xO-976,xQ-976,xT-4882,xU-244,xV-1302,xW-1302,xY-3662,xa-244,xc-2604,xd-2604,xe-2604,xf1871,xg-2"
+            + "604,xo-2604,xq-2604,xs-1220,y&-2441,y+-1220,y,-7161,y--1220,y.-7161,y/-4557,y0-813,y4-1627,y6-81"
+            + "3,y<-3173,y=-3662,y@-1464,yA-6673,yJ-5452,yT-5289,yV-1383,yW-1383,yX-3092,yY-3499,yZ-2685,y\\162,"
+            + "y_-7975,ya-1871,yc-2034,yd-2034,ye-2034,yf325,yg-2034,yo-2034,yq-2034,ys-1464,z+-4882,z--4882,z<"
+            + "-4557,zA-976,zC-162,zG-162,zJ-162,zO-162,zQ-162,zT-5289,zV-1627,zW-1871,zY-4475,zc-1383,zd-1383,"
+            + "ze-1383,zg-1383,zo-1383,zq-1383,{c-813,{d-813,{e-813,{g-813,{j2848,{o-813,{q-813,";
+    }
+    private static String System_1_4_kerning() {
+        return "\"&-2848,\",-9765,\".-9765,\"1813,\"4-2441,\"5-244,\"8-1383,\"A-9358,\"J-11393,\"a1220,\"c2034,\"d2034,\"e203"
+            + "4,\"f3092,\"g2034,\"o2034,\"q2034,\"s813,\"w2034,\u00234-1383,&\"-3173,&'-3173,&*-1058,&+-569,&--569,&1-1953"
+            + ",&5-488,&7-1627,&8-162,&9-406,&=-813,&?-4638,&@-325,&C-406,&G-406,&O-406,&Q-406,&T-7649,&V-4638,"
+            + "&W-6510,&Y-8463,&^-1058,&s-569,&t-325,&u-406,&v-3092,&w-3092,&x-325,&y-3092,&z-325,'&-2848,',-97"
+            + "65,'.-9765,'1813,'4-2441,'5-244,'8-1383,'A-9358,'J-11393,'a1220,'c2034,'d2034,'e2034,'f3092,'g20"
+            + "34,'o2034,'q2034,'s813,'w2034,(c-813,(d-813,(e-813,(g-813,(j2848,(o-813,(q-813,*&-3417,*,-12613,"
+            + "*.-12613,*0-813,*4-3824,*6-813,*7-162,*A-9195,*J-9277,*X-3662,*Y-325,*_-6835,*c1220,*d1220,*e122"
+            + "0,*g1220,*o1220,*q1220,*t3255,+A-2034,+T-6103,+V-4801,+W-4801,+X-6022,+Y-8056,+Z-2034,+v-1220,+w"
+            + "-1220,+x-1953,+y-1220,+z-813,,\"-9765,,'-9765,,*-12613,,/3987,,0-5778,,1-4882,,3-4557,,4-3255,,5-"
+            + "4150,,6-5778,,7-244,,8-2034,,9-2360,,C-6184,,G-6184,,O-6184,,Q-6184,,T-8707,,U-4313,,V-10416,,W-"
+            + "10091,,Y-10905,,\\-3987,,^-12613,,c-1139,,d-1139,,e-1139,,f-2522,,g-1139,,j4068,,o-1139,,q-1139,,"
+            + "t-1627,,v-6347,,w-5533,,y-6347,-A-2034,-T-6103,-V-4801,-W-4801,-X-6022,-Y-8056,-Z-2034,-v-1220,-"
+            + "w-1220,-x-1953,-y-1220,-z-813,.\"-9765,.'-9765,.*-12613,./3987,.0-5778,.1-4882,.3-4557,.4-3255,.5"
+            + "-4150,.6-5778,.7-244,.8-2034,.9-2360,.C-6184,.G-6184,.O-6184,.Q-6184,.T-8707,.U-4313,.V-10416,.W"
+            + "-10091,.Y-10905,.\\-3987,.^-12613,.c-1139,.d-1139,.e-1139,.f-2522,.g-1139,.j4068,.o-1139,.q-1139,"
+            + ".t-1627,.v-6347,.w-5533,.y-6347,/,-3987,/.-3987,/1162,/4-1627,/7325,/A-3011,/B162,/C162,/D162,/E"
+            + "162,/F162,/G162,/H162,/I162,/J-2441,/K162,/L162,/M162,/N162,/O162,/P162,/Q162,/R162,/T1383,/U162"
+            + ",/V162,/W162,/X162,/Y162,/b162,/f162,/h162,/k162,/l162,0\"-1627,0'-1627,0*-1302,0,-4964,0.-4964,0"
+            + "1-244,03-244,07-2197,09-244,0?-406,0A-1139,0T-4720,0V-2197,0W-1790,0X-2848,0Y-5289,0\\2604,0^-130"
+            + "2,0_-4638,0v-813,0w-813,0x-813,0y-813,1\"-2034,1'-2034,1*-244,1,-2522,1.-2522,1Y-325,1^-244,2*-16"
+            + "2,24-1627,2@-406,2V-1627,2Y-3662,2^-162,3\"-1383,3'-1383,3,-2685,3.-2685,30-162,36-162,39-81,3A-1"
+            + "62,3T-2848,3V-2360,3W-1871,3X-813,3Y-3499,3\\1220,3_-2197,4\"-3255,4'-3255,4*-4801,4,-2441,4.-2441"
+            + ",41-1057,4T-1220,4V-1302,4W-1139,4X813,4Y-2360,4^-4801,4v-1220,4w-1220,4x-406,4y-1220,5,-3580,5."
+            + "-3580,51-325,5:-81,5;-81,5Y-2034,5\\1220,5_-2197,6\"-244,6'-244,6*-406,6,-2767,6.-2767,63-244,6A-3"
+            + "25,6V-244,6W-244,6X-569,6Y-2848,6\\1220,6^-406,6_-4638,6w-244,7\u0023-4720,7&-4150,7,-8545,7.-8545,7/-"
+            + "2685,70-1302,711220,73-1302,74-3499,75-162,76-1302,771953,78-162,79-162,7:-325,7;-325,7<-7812,7@"
+            + "-1627,7A-5371,7J-6022,7\\1953,7_-15136,7a-3173,7c-4231,7d-4231,7e-4231,7g-4231,7o-4231,7q-4231,7s"
+            + "-3417,7u-2034,7x-1627,8\"-1383,8'-1383,8,-2685,8.-2685,80-162,86-162,89-81,8A-162,8T-2848,8V-2360"
+            + ",8W-1871,8X-813,8Y-3499,8\\1220,8_-4638,9\"-1627,9'-1627,9*-1302,9,-4964,9.-4964,91-244,93-244,97-"
+            + "2197,99-244,9?-406,9A-1139,9T-4720,9V-2197,9W-1790,9X-2848,9Y-5289,9\\2604,9^-1302,9_-4638,9v-813"
+            + ",9w-813,9x-813,9y-813,:1-1871,:2-1220,:4-1220,:5-162,:7-1546,:V-406,:W-813,:X-569,:Y-895,;1-1464"
+            + ",;2-1220,;4-1220,;5-162,;7-1546,;V-406,;W-813,;X-569,;Y-895,=&-651,=A-813,=V-6266,=W-3255,=X-976"
+            + ",=Y-11800,=Z-2848,=v-406,=w-569,=x-406,=y-406,>7-6917,>A-2766,>T-7568,>V-6835,>W-6022,>X-3580,>Y"
+            + "-8626,>Z-4882,>v-2766,>w-2766,>x-2848,>y-2766,>z-2115,?4-406,@&-569,@2-813,@7-2115,@T-2441,@V-73"
+            + "2,@W-406,@X-651,@Y-2278,@v-244,@w-244,@x-325,@y-244,A\"-9358,A&-1302,A'-9358,A*-9521,A+-2034,A--2"
+            + "034,A0-1709,A1-3743,A5-2034,A6-1709,A7-1383,A9-244,A<-3011,A=-813,A?-813,AC-3743,AG-3743,AO-3743"
+            + ",AQ-3743,AT-7405,AU-1546,AV-6510,AW-6591,AY-8138,A\\-1790,A^-9521,Aa-976,Ac-2929,Ad-2929,Ae-2929,"
+            + "Af-1627,Ag-2929,Ao-2929,Aq-2929,As-1546,At-2929,Au-3255,Av-6266,Aw-5452,Ax-162,Ay-6266,Az-162,B5"
+            + "-162,B7-81,BT-813,BV-2034,BW-244,BY-3173,B\\1220,B_-651,Bt-81,Bx-162,Bz-162,CA-569,CT-2441,CV-488"
+            + ",CW-244,CX-1627,CY-2115,C\\1383,C_-4231,D*-2441,D,-4313,D.-4313,D/-3417,D7-1627,DA-1464,DT-3255,D"
+            + "V-3255,DW-3092,DX-2604,DY-6184,DZ-2766,D^-2441,D_-4231,Da-162,Ds-162,Dx-976,E781,E\\1790,F,-8219,"
+            + "F.-8219,F/-4475,F=-325,FA-1383,FJ-4068,F\\976,F_-6591,Fa-244,Fv-1220,Fy-1220,Fz-162,G,-732,G.-732"
+            + ",G/-1220,G41220,GA-325,GT-1220,GV-3255,GW-1871,GX-1546,GY-4231,G\\162,G_-1058,Ga-162,Gz-162,H1122"
+            + "0,H\\1790,I11220,I\\1790,J,-7242,J.-7242,J/-4231,J<-6917,J=-2034,JA-1546,J\\1790,J_-4069,Ja-1057,Jc"
+            + "-406,Jd-406,Je-406,Jg-406,Jo-406,Jq-406,Jx-244,K&-3417,K*-2766,K+-7324,K--7324,K0-2278,K1-976,K3"
+            + "-2034,K4-3336,K5-1220,K6-2278,K8-244,K9-569,K<-7731,K=-569,K@-651,KC-3743,KG-3743,KO-3743,KQ-374"
+            + "3,KS-1627,KU-2034,K^-2766,Ka-2197,Kc-4801,Kd-4801,Ke-4801,Kf-1871,Kg-4801,Ko-4801,Kq-4801,Ks-301"
+            + "1,Kt-2278,Ku-3662,Kv-5859,Kw-5859,Kx-325,Ky-5859,L\"-12044,L&-1220,L'-12044,L*-11881,L+-8056,L--8"
+            + "056,L0-4150,L1-5615,L5-1627,L6-4150,L7-3336,L8-1627,L9-1627,L<-9521,L?-1220,LC-2115,LG-2115,LO-2"
+            + "115,LQ-2115,LT-8463,LU-2848,LV-6917,LW-6917,LY-9358,L\\-3011,L^-11881,La-2441,Lc-3662,Ld-3662,Le-"
+            + "3662,Lg-3662,Lo-3662,Lq-3662,Lt-4068,Lu-3255,Lv-6835,Lw-6428,Ly-6835,M11220,M\\1790,N11220,N\\1790"
+            + ",O*-2441,O,-4313,O.-4313,O/-3417,O7-1627,OA-1464,OT-3255,OV-3255,OW-3092,OX-2604,OY-6184,OZ-2766"
+            + ",O^-2441,O_-4231,Oa-162,Os-162,Ox-976,P&-2848,P,-11637,P.-11637,P/-4720,P4-651,P7-406,PA-2685,PJ"
+            + "-4882,PT-325,PV-406,PW-325,PX-3092,PY-2197,PZ-1790,P\\1302,P_-8951,Pa-1953,Pc-1057,Pd-1057,Pe-105"
+            + "7,Pf2441,Pg-1057,Po-1057,Pq-1057,Ps-244,Pt2278,Pv1627,Pw1627,Px2441,Py1627,Pz813,Q*-2441,Q,-4313"
+            + ",Q.-4313,Q/-3417,Q7-1627,QA-1464,QT-3255,QV-3255,QW-3092,QX-2604,QY-6184,QZ-2766,Q^-2441,Q_-4231"
+            + ",Qa-162,Qs-162,Qx-976,RV-1627,RW-1627,RY-1302,Ra-81,Rc-569,Rd-569,Re-569,Rf2034,Rg-569,Ro-569,Rq"
+            + "-569,Rs-81,Rt2034,ST-1790,SV-1057,SW-1220,SX-1220,SY-2685,Sa-244,T&-3580,T+-9114,T,-8382,T--9114"
+            + ",T.-8382,T/-7161,T0-2848,T3-813,T4-1627,T6-2848,T72441,T9813,T<-7568,T@-3255,TA-5208,TC-244,TG-2"
+            + "44,TJ-7324,TO-244,TQ-244,T\\1790,T_-5533,Ta-10172,Tc-10091,Td-10091,Te-10091,Tg-10091,Ti-1383,Tj-"
+            + "976,Tm-6184,Tn-6184,To-10091,Tp-6184,Tq-10091,Tr-6184,Ts-7405,Tu-6591,Tv-5289,Tw-5289,Tx-4882,Ty"
+            + "-5289,Tz-5289,U,-7242,U.-7242,U/-4231,U<-6917,U=-2034,UA-1546,U\\1790,U_-4069,Ua-1057,Uc-406,Ud-4"
+            + "06,Ue-406,Ug-406,Uo-406,Uq-406,Ux-244,V&-4638,V+-4801,V,-10172,V--4801,V.-10172,V/-6510,V0-1057,"
+            + "V22441,V31627,V4-2278,V6-1057,V73255,V8-1546,V9650,V:-406,V;-406,V<-4394,V=-3011,V@-488,VA-4720,"
+            + "VC-2522,VG-2522,VJ-6266,VO-2522,VQ-2522,VS-813,V\\1953,V_-8300,Va-4069,Vc-2522,Vd-2522,Ve-2522,Vg"
+            + "-2522,Vm-2278,Vn-2278,Vo-2522,Vp-2278,Vq-2522,Vr-2278,Vs-3417,Vu-1953,Vv-1220,Vw-1220,Vx-1302,Vy"
+            + "-1220,Vz-1871,W&-4882,W+-4801,W,-10091,W--4801,W.-10091,W/-6510,W0-1302,W11627,W21627,W3-651,W4-"
+            + "2685,W5-488,W6-1302,W8-1871,W9-406,W:-813,W;-813,W<-4801,W=-1220,W@-406,WA-4964,WC-2604,WG-2604,"
+            + "WJ-5859,WO-2604,WQ-2604,WS-162,W\\1953,W_-8300,Wa-5289,Wc-2441,Wd-2441,We-2441,Wg-2441,Wm-3092,Wn"
+            + "-3092,Wo-2441,Wp-3092,Wq-2441,Wr-3092,Ws-3011,Wu-2360,Wv-1220,Ww-813,Wx-1302,Wy-1220,Wz-1871,X&-"
+            + "2604,X*-406,X+-6022,X--6022,X/-1220,X0-2034,X4-1058,X6-2034,X71627,X8-406,X9-244,X:-569,X;-569,X"
+            + "<-5615,X=-976,X@-651,XC-2685,XG-2685,XO-2685,XQ-2685,XS-651,X\\1139,X^-406,Xa-1383,Xc-3417,Xd-341"
+            + "7,Xe-3417,Xf-569,Xg-3417,Xo-3417,Xq-3417,Xs-1871,Xt-813,Xu-2360,Xv-3173,Xw-2360,Xy-3173,Y&-5615,"
+            + "Y*-325,Y+-7812,Y,-10579,Y--7812,Y.-10579,Y/-6998,Y0-1464,Y1406,Y2-325,Y3-488,Y4-3743,Y5-406,Y6-1"
+            + "464,Y8-2278,Y9-406,Y:-895,Y;-895,Y<-8626,Y=-5696,Y@-3092,YA-5533,YC-1790,YG-1790,YJ-7731,YO-1790"
+            + ",YQ-1790,YS-1464,Y\\1546,Y^-325,Y_-9928,Ya-6429,Yc-5859,Yd-5859,Ye-5859,Yf-406,Yg-5859,Yi-406,Yj-"
+            + "406,Ym-4557,Yn-4557,Yo-5859,Yp-4557,Yq-5859,Yr-4557,Ys-6347,Yt-651,Yu-4475,Yv-3092,Yw-3092,Yx-32"
+            + "55,Yy-3092,Yz-3255,Z+-3255,Z--3255,Z3-1627,Z4-2034,Z<-4882,ZC-2766,ZG-2766,ZO-2766,ZQ-2766,Za-81"
+            + "3,Zc-1383,Zd-1383,Ze-1383,Zg-1383,Zo-1383,Zq-1383,Zu-1627,Zv-813,Zw-813,Zy-813,[c-813,[d-813,[e-"
+            + "813,[g-813,[j2848,[o-813,[q-813,\\,3987,\\.3987,\\1-813,\\2162,\\7-1464,\\881,\\A162,\\C-3661,\\G-3661,\\O"
+            + "-3661,\\Q-3661,\\T-5452,\\U-1627,\\V-4801,\\W-4231,\\X-813,\\Y-3987,\\j3499,\\m162,\\n162,\\p162,\\r162,\\v-2"
+            + "604,\\w-3824,\\y-2604,^&-3417,^,-12613,^.-12613,^0-813,^4-3824,^6-813,^7-162,^A-9195,^J-9277,^X-36"
+            + "62,^Y-325,^_-6835,^c1220,^d1220,^e1220,^g1220,^o1220,^q1220,^t3255,_*-6835,_0-4638,_1-10498,_3-4"
+            + "638,_4-5371,_5-4638,_6-4638,_8-4638,_9-4638,_C-4231,_G-4231,_J-1464,_O-4231,_Q-4231,_T-5533,_U-3"
+            + "906,_V-8300,_W-8300,_Y-9928,_^-6835,_a-2197,_c-1790,_d-1790,_e-1790,_f-488,_g-569,_j9521,_o-1790"
+            + ",_p4638,_q-1790,_s-1790,_t-569,_u-1790,_v-7893,_w-7893,_y-7893,a\"-3255,a'-3255,a*-651,a/162,a1-3"
+            + "255,a7-1220,aT-10416,aU-1057,aV-6673,aW-5126,aX-162,aY-9277,a^-651,av-2197,aw-2197,ay-2197,az-81"
+            + "3,b\"-5208,b'-5208,b)-1383,b*-976,b,-1139,b.-1139,b1-2441,b3-406,b7-2848,b8-162,b9-244,b?-244,bA-"
+            + "2929,bS-244,bT-11067,bU-406,bV-5208,bW-5126,bX-3011,bY-10091,b]-1383,b^-976,b_-1790,bv-2929,bw-2"
+            + "034,bx-2604,by-2929,bz-1383,b}-1383,c\"-813,c'-813,c*-488,c7-1627,cA-1708,cT-7812,cU-325,cV-3499,"
+            + "cW-3499,cX-1871,cY-7649,c^-488,c_-569,cf1627,ct813,cv-406,cw-488,cx-325,cy-406,cz-813,d,-3255,d."
+            + "-3255,df2848,dj1220,dt2848,e\"-2034,e'-2034,e*-1302,e/162,e1-325,e7-1871,e?-488,eA-2115,eT-10742,"
+            + "eU-406,eV-4801,eW-5208,eX-2278,eY-8707,e^-1302,e_-1790,ev-2115,ew-1139,ex-2197,ey-2115,ez-1627,f"
+            + "\"1627,f&-1790,f'1627,f,-2929,f.-2929,f/-162,f4-4882,f<-244,fA-3743,fJ-5940,fX-325,fY-244,f_-1790"
+            + ",fa-1546,fc-2075,fd-2075,fe-2075,ff162,fg-2075,fo-2075,fq-2075,fs-2278,ft162,g7-1627,gT-6184,gV-"
+            + "3499,gW-1708,gY-6428,g_3011,gj406,h\"-3255,h'-3255,h*-651,h/162,h1-3255,h7-1220,hT-10416,hU-1057,"
+            + "hV-6673,hW-5126,hX-162,hY-9277,h^-651,hv-2197,hw-2197,hy-2197,hz-813,iT-1464,iY-1220,jT-1464,jY-"
+            + "1220,k&-1302,k(-162,k*-325,k+-4557,k--4557,k0-2197,k1-162,k4-3987,k5-569,k6-2197,k7-1627,k8-244,"
+            + "k9-244,k<-5859,k=-406,k?-162,k@-325,kC-1627,kG-1627,kJ-244,kO-1627,kQ-1627,kS-325,kT-4475,kU-406"
+            + ",kV-1790,kW-2360,kY-3906,k^-325,ka-1627,kc-2685,kd-2685,ke-2685,kf895,kg-2685,ko-2685,kq-2685,ks"
+            + "-2848,kt-325,k{-406,l,-3255,l.-3255,lf2848,lj1220,lt2848,m\"-3255,m'-3255,m*-651,m/162,m1-3255,m7"
+            + "-1220,mT-10416,mU-1057,mV-6673,mW-5126,mX-162,mY-9277,m^-651,mv-2197,mw-2197,my-2197,mz-813,n\"-3"
+            + "255,n'-3255,n*-651,n/162,n1-3255,n7-1220,nT-10416,nU-1057,nV-6673,nW-5126,nX-162,nY-9277,n^-651,"
+            + "nv-2197,nw-2197,ny-2197,nz-813,o\"-5208,o'-5208,o)-1383,o*-976,o,-1139,o.-1139,o1-2441,o3-406,o7-"
+            + "2848,o8-162,o9-244,o?-244,oA-2929,oS-244,oT-11067,oU-406,oV-5208,oW-5126,oX-3011,oY-10091,o]-138"
+            + "3,o^-976,o_-1790,ov-2929,ow-2034,ox-2604,oy-2929,oz-1383,o}-1383,p\"-5208,p'-5208,p)-1383,p*-976,"
+            + "p,-1139,p.-1139,p1-2441,p3-406,p7-2848,p8-162,p9-244,p?-244,pA-2929,pS-244,pT-11067,pU-406,pV-52"
+            + "08,pW-5126,pX-3011,pY-10091,p]-1383,p^-976,p_-1790,pv-2929,pw-2034,px-2604,py-2929,pz-1383,p}-13"
+            + "83,q7-1627,qT-5371,qV-3499,qW-1708,qY-6428,q_3011,qj406,r&-1220,r+-406,r,-7731,r--406,r.-7731,r7"
+            + "-1220,rA-3336,rJ-5452,rT-3092,rV-406,rW-406,rX-1790,rY-1871,rZ-2604,r_-3906,ra-1057,rc-1383,rd-1"
+            + "383,re-1383,rf2685,rg-1383,ro-1383,rq-1383,rs-1057,rt2522,rv244,rw244,ry244,s\"-813,s'-813,s*-406"
+            + ",s7-1627,sA-732,sT-8219,sV-4638,sW-3824,sX-1953,sY-7568,s^-406,s_-569,ss-813,st-406,sv-1708,sw-1"
+            + "464,sx-1220,sy-1708,t+-1627,t--1627,t<-2034,tT-2278,tV-1464,tW-1464,tX-406,tY-2604,tc-569,td-569"
+            + ",te-569,tf162,tg-569,to-569,tq-569,ts-813,tt162,u/162,u7-813,uA-813,uT-7161,uV-2197,uW-2604,uY-5"
+            + "289,uf1383,v&-3092,v+-1220,v,-5940,v--1220,v.-5940,v/-81,v0-813,v4-1627,v6-813,v<-1953,v=-406,v@"
+            + "-244,vA-5452,vJ-5045,vT-4882,vV-1220,vW-1220,vX-3092,vY-3499,vZ-2685,v\\162,v_-7893,va-1057,vc-65"
+            + "1,vd-651,ve-651,vf325,vg-651,vo-651,vq-651,vs-1464,w&-3092,w+-1220,w,-6754,w--1220,w.-6754,w/-16"
+            + "2,w0-813,w4-1627,w6-813,w7-244,w<-1953,w=-569,w@-244,wA-5045,wJ-5045,wT-5289,wV-1220,wW-1220,wX-"
+            + "3092,wY-3499,wZ-2685,w\\162,w_-7893,wa-1464,wc-732,wd-732,we-732,wf406,wg-732,wo-732,wq-732,ws-14"
+            + "64,x&-813,x+-1953,x--1953,x0-813,x4-1627,x6-813,x7-813,x<-2848,x=-406,x@-325,xA-162,xC-976,xG-97"
+            + "6,xO-976,xQ-976,xT-4882,xU-406,xV-1383,xW-1302,xY-3662,xa-244,xc-2197,xd-2197,xe-2197,xf1871,xg-"
+            + "2197,xo-2197,xq-2197,xs-813,y&-3092,y+-1220,y,-5940,y--1220,y.-5940,y/-81,y0-813,y4-1627,y6-813,"
+            + "y<-1953,y=-406,y@-244,yA-5452,yJ-5045,yT-4882,yV-1220,yW-1220,yX-3092,yY-3499,yZ-2685,y\\162,y_-7"
+            + "893,ya-1057,yc-651,yd-651,ye-651,yf325,yg-651,yo-651,yq-651,ys-1464,z*-81,z+-813,z--813,z7-1627,"
+            + "z<-1708,zA-162,zC-162,zG-162,zJ-162,zO-162,zQ-162,zT-5289,zV-1871,zW-1871,zY-4231,z^-81,za-1627,"
+            + "zc-1790,zd-1790,ze-1790,zg-1790,zo-1790,zq-1790,{c-813,{d-813,{e-813,{g-813,{j2848,{o-813,{q-813"
+            + ",}Y-1627,";
+    }
+    private static String System_0_5_kerning() {
+        return "\"&-2278,\",-10253,\".-10253,\"0-976,\"4-5045,\"5-488,\"6-976,\"8-1302,\"A-7649,\"J-10579,\"f488,\u00234-1302,&\""
+            + "-3417,&'-3417,&+-1139,&--1139,&1-2441,&5-976,&7-976,&=-1627,&@-650,&C-813,&G-813,&O-813,&Q-813,&"
+            + "T-6673,&V-6673,&W-5045,&Y-8788,&s-1139,&t-650,&u-813,&v-3255,&w-3255,&x-650,&y-3255,&z-650,'&-22"
+            + "78,',-10253,'.-10253,'0-976,'4-5045,'5-488,'6-976,'8-1302,'A-7649,'J-10579,'f488,(c-651,(d-651,("
+            + "e-651,(g-651,(j2766,(o-651,(q-651,*&-3417,*,-13997,*.-13997,*0-651,*4-4069,*6-651,*A-7649,*J-911"
+            + "4,*X-1790,*Y-1627,*_-6868,+A-2278,+J-976,+T-6022,+V-4720,+W-4720,+X-5696,+Y-6835,+Z-1627,+f-1302"
+            + ",+t-1302,+v-1464,+w-1464,+x-1953,+y-1464,+z-651,,\"-10253,,&-2278,,'-10253,,*-13997,,/4069,,0-439"
+            + "4,,1-4231,,2-1302,,3-2929,,4-1953,,5-3092,,6-4394,,7-3417,,8-3906,,9-4069,,C-5696,,G-5696,,O-569"
+            + "6,,Q-5696,,T-8626,,U-4231,,V-10416,,W-10416,,Y-11393,,\\-4069,,^-13997,,c-1953,,d-1953,,e-1953,,f"
+            + "-3743,,g-1953,,o-1953,,q-1953,,t-1302,,v-6998,,w-6998,,y-6998,-A-2278,-J-976,-T-6022,-V-4720,-W-"
+            + "4720,-X-5696,-Y-6835,-Z-1627,-f-1302,-t-1302,-v-1464,-w-1464,-x-1953,-y-1464,-z-651,.\"-10253,.&-"
+            + "2278,.'-10253,.*-13997,./4069,.0-4394,.1-4231,.2-1302,.3-2929,.4-1953,.5-3092,.6-4394,.7-3417,.8"
+            + "-3906,.9-4069,.C-5696,.G-5696,.O-5696,.Q-5696,.T-8626,.U-4231,.V-10416,.W-10416,.Y-11393,.\\-4069"
+            + ",.^-13997,.c-1953,.d-1953,.e-1953,.f-3743,.g-1953,.o-1953,.q-1953,.t-1302,.v-6998,.w-6998,.y-699"
+            + "8,/,-4069,/.-4069,/1325,/4-1302,/7650,/A-3092,/B325,/C325,/D325,/E325,/F325,/G325,/H325,/I325,/J"
+            + "-2604,/K325,/L325,/M325,/N325,/O325,/P325,/Q325,/R325,/T1302,/U325,/V325,/W325,/X325,/Y325,/b325"
+            + ",/f325,/h325,/k325,/l325,0\"-976,0'-976,0*-651,0,-4720,0.-4720,03-488,07-1953,0A-1302,0T-2766,0V-"
+            + "1139,0W-1953,0X-2766,0Y-4068,0Z-651,0\\2278,0^-651,0_-4915,0v-651,0w-651,0x-651,0y-651,1\"-1302,1&"
+            + "-651,1'-1302,1*-488,1,-2604,1.-2604,1^-488,2,-976,2.-976,24-976,2@-325,2Y-976,2c-325,2d-325,2e-3"
+            + "25,2g-325,2o-325,2q-325,3\"-1302,3'-1302,3,-3743,3.-3743,30-325,36-325,39-162,3A-651,3V-1627,3W-2"
+            + "278,3X-1139,3Y-2929,3\\976,3_-2962,3c-325,3d-325,3e-325,3g-325,3o-325,3q-325,4*-1139,4,-2278,4.-2"
+            + "278,41-1139,4T-976,4V-1627,4W-1302,4Y-2441,4Z-325,4^-1139,4v-976,4w-976,4x-325,4y-976,5,-3743,5."
+            + "-3743,51-650,5A-325,5Y-813,5\\976,5_-2962,6,-3743,6.-3743,63-488,6A-1627,6V-488,6W-488,6X-651,6Y-"
+            + "1790,6\\976,6_-4915,7\u0023-4069,7&-3906,7,-11067,7.-11067,7/-2441,70-1302,73-1139,74-5208,75-976,76-1"
+            + "302,771953,78-1302,79-976,7:-2604,7;-2604,7<-6836,7@-1302,7A-8951,7C-651,7G-651,7J-6184,7O-651,7"
+            + "Q-651,7\\1953,7_-14681,7a-3580,7c-3580,7d-3580,7e-3580,7g-3580,7o-3580,7q-3580,7s-2929,7u-1627,7x"
+            + "-1302,8\"-1302,8'-1302,8,-3743,8.-3743,80-325,86-325,89-162,8A-1302,8V-1627,8W-2278,8X-1139,8Y-29"
+            + "29,8\\976,8_-4915,8c-325,8d-325,8e-325,8g-325,8o-325,8q-325,9\"-976,9'-976,9*-651,9,-4720,9.-4720,"
+            + "93-488,97-1953,9A-1302,9T-2766,9V-1139,9W-1953,9X-2766,9Y-1790,9Z-651,9\\2278,9^-651,9_-4915,9v-6"
+            + "51,9w-651,9x-651,9y-651,:2325,:3-325,:4-976,:7-1464,:T-2604,:V-4720,:W-4882,:X-1139,:Y-5696,;232"
+            + "5,;3-325,;4-976,;7-1464,;T-2604,;V-4720,;W-4882,;X-1139,;Y-5696,=&-1302,=A-4882,=V-6184,=W-5859,"
+            + "=X-5208,=Y-8626,=v-3417,=w-3092,=x-3092,=y-3417,>7-6510,>A-2604,>T-7324,>V-6347,>W-6347,>X-5859,"
+            + ">Y-8463,>Z-3906,>v-2604,>w-2604,>x-2766,>y-2604,>z-1464,?4-2441,?A-5533,@&-1139,@2-651,@7-2278,@"
+            + "V-1953,@W-813,@X-1953,@Y-2604,@v-1464,@w-488,@x-650,@y-1464,A\"-7649,A'-7649,A*-7649,A+-2278,A--2"
+            + "278,A0-1302,A1-4068,A5-1302,A6-1302,A7-1627,A8-1302,A9-1302,A<-2604,A=-4882,A?-5859,AC-3255,AG-3"
+            + "255,AO-3255,AQ-3255,AT-7812,AU-1627,AV-6347,AW-5696,AY-7812,A\\-1627,A^-7649,Aa-651,Ac-2929,Ad-29"
+            + "29,Ae-2929,Af-1790,Ag-2929,Ao-2929,Aq-2929,As-1302,At-2929,Au-2766,Av-6510,Aw-6510,Ax-651,Ay-651"
+            + "0,Az-976,BY-1953,B_-1009,Bx-325,Bz-325,CA-2115,CT-1790,CX-1790,CY-1790,C\\1302,C_-4589,D,-4720,D."
+            + "-4720,D/-2929,D7-651,DA-3255,DT-2604,DV-2278,DW-2604,DX-2766,DY-3906,DZ-2604,D\\325,D_-4589,Da-32"
+            + "5,Ds-162,Dx-976,E4-651,E\\1627,F&-2115,F,-8137,F.-8137,F/-4069,F0-1464,F2-651,F3-651,F4-976,F6-14"
+            + "64,F8-1139,F=-1627,FA-3743,FJ-3255,F\\976,F_-9277,Fa-2767,Fz-2604,G,-1464,G.-1464,G/-976,GA-1627,"
+            + "GT-976,GX-1790,GY-1790,G\\325,G_-1822,Ga-325,Gz-325,H\\1627,I\\1627,J,-3092,J.-3092,J/-3580,JA-1627"
+            + ",J\\1627,J_-4264,Ja-488,Jc-813,Jd-813,Je-813,Jg-813,Jo-813,Jq-813,Jx-488,K\"-651,K&-1627,K'-651,K*"
+            + "-813,K+-8463,K--8463,K0-2278,K1-651,K3-813,K4-2604,K5-1464,K6-2278,K8-488,K9-2115,K<-6184,K=-309"
+            + "2,K@-2278,KC-4394,KG-4394,KO-4394,KQ-4394,KS-2441,K^-813,Ka-1790,Kc-4069,Kd-4069,Ke-4069,Kf-2278"
+            + ",Kg-4069,Ko-4069,Kq-4069,Ks-2766,Kt-2604,Ku-3417,Kv-5371,Kw-5371,Kx-650,Ky-5371,L\"-9602,L'-9602,"
+            + "L*-12207,L+-6347,L--6347,L0-1464,L1-6022,L4-651,L6-1464,L7-2766,L8-651,L<-3255,L?-6998,LC-2278,L"
+            + "G-2278,LO-2278,LQ-2278,LT-9277,LU-1627,LV-6998,LW-6998,LY-9440,L\\-1627,L^-12207,Lc-2441,Ld-2441,"
+            + "Le-2441,Lg-2441,Lo-2441,Lq-2441,Lt-2766,Lv-6835,Lw-6510,Ly-6835,M\\1627,N\\1627,O,-4720,O.-4720,O/"
+            + "-2929,O7-651,OA-3255,OT-2604,OV-2278,OW-2604,OX-2766,OY-3906,OZ-2604,O\\325,O_-4589,Oa-325,Os-162"
+            + ",Ox-976,P&-2766,P,-11067,P.-11067,P/-4557,P2-325,P4-3255,P7-1139,PA-4720,PJ-4394,PX-3092,PY-2441"
+            + ",PZ-1627,P\\1139,P_-9765,Pa-1953,Pc-1464,Pd-1464,Pe-1464,Pf2441,Pg-1464,Po-1464,Pq-1464,Ps-1464,P"
+            + "t2115,Pv1302,Py1302,Q,-4720,Q.-4720,Q/-2929,Q7-651,QA-3255,QT-2604,QV-2278,QW-2604,QX-2766,QY-39"
+            + "06,QZ-2604,Q\\325,Q_-4589,Qa-325,Qs-162,Qx-976,R4-651,RV-1790,RW-1790,RY-2115,Ra-162,Rc-1627,Rd-1"
+            + "627,Re-1627,Rf651,Rg-1627,Ro-1627,Rq-1627,Rs-813,Rt1627,SV-1139,SW-1464,SX-1139,SY-1953,Sa-488,T"
+            + "&-3743,T+-6022,T,-8300,T--6022,T.-8300,T/-6510,T0-2766,T3-651,T4-5859,T6-2766,T:-2604,T;-2604,T<"
+            + "-7324,TA-7812,TC-2604,TG-2604,TJ-7324,TO-2604,TQ-2604,T\\1627,T_-5859,Ta-9602,Tc-9440,Td-9440,Te-"
+            + "9440,Tg-9440,Ti-976,Tj-651,Tm-6184,Tn-6184,To-9440,Tp-6184,Tq-9440,Tr-6184,Ts-7487,Tu-5859,Tv-42"
+            + "31,Tw-4231,Tx-3906,Ty-4231,Tz-4720,U,-3092,U.-3092,U/-3580,UA-1627,U\\1627,U_-4264,Ua-488,Uc-813,"
+            + "Ud-813,Ue-813,Ug-813,Uo-813,Uq-813,Ux-488,V&-4882,V+-4720,V,-10416,V--4720,V.-10416,V/-6835,V0-1"
+            + "139,V4-3580,V6-1139,V8-1627,V9-651,V:-4720,V;-4720,V<-6347,V=-6184,V@-3255,VA-6347,VC-2278,VG-22"
+            + "78,VJ-5859,VO-2278,VQ-2278,VS-651,V\\1953,V_-8463,Va-5696,Vc-5533,Vd-5533,Ve-5533,Vg-5533,Vm-3255"
+            + ",Vn-3255,Vo-5533,Vp-3255,Vq-5533,Vr-3255,Vs-4882,Vu-2278,Vv-1302,Vw-976,Vx-1139,Vy-1302,Vz-1790,"
+            + "W&-4882,W+-4720,W,-10416,W--4720,W.-10416,W/-6184,W0-1953,W3-2278,W4-3580,W5-976,W6-1953,W8-2278"
+            + ",W9-813,W:-4882,W;-4882,W<-6347,W=-5859,W@-813,WA-5696,WC-2604,WG-2604,WJ-5859,WO-2604,WQ-2604,W"
+            + "S-325,W\\1953,W_-8821,Wa-5696,Wc-5533,Wd-5533,We-5533,Wg-5533,Wm-3255,Wn-3255,Wo-5533,Wp-3255,Wq-"
+            + "5533,Wr-3255,Ws-4231,Wu-2278,Wv-1302,Ww-976,Wx-1139,Wy-1302,Wz-2278,X&-1790,X*-1790,X+-5696,X--5"
+            + "696,X/-1464,X0-2766,X2-1139,X3-1627,X4-2278,X6-2766,X8-1139,X9-488,X:-1139,X;-1139,X<-5859,X=-52"
+            + "08,X@-1953,XC-2766,XG-2766,XJ-1302,XO-2766,XQ-2766,XS-813,X\\1302,X^-1790,Xa-1790,Xc-4231,Xd-4231"
+            + ",Xe-4231,Xf-1139,Xg-4231,Xo-4231,Xq-4231,Xs-2278,Xt-2929,Xu-2441,Xv-3255,Xw-3417,Xy-3255,Y&-6184"
+            + ",Y*-1627,Y+-6835,Y,-11393,Y--6835,Y.-11393,Y/-7161,Y0-4068,Y1-813,Y2-1302,Y3-2278,Y4-7161,Y5-813"
+            + ",Y6-4068,Y8-2929,Y9-1464,Y:-5696,Y;-5696,Y<-9440,Y=-8626,Y@-2604,YA-7812,YC-3906,YG-3906,YJ-8137"
+            + ",YO-3906,YQ-3906,YS-1953,Y\\1627,Y^-1627,Y_-9114,Ya-8789,Yc-9114,Yd-9114,Ye-9114,Yf-2441,Yg-9114,"
+            + "Yi-813,Yj-813,Ym-5371,Yn-5371,Yo-9114,Yp-5371,Yq-9114,Yr-5371,Ys-7812,Yt-1953,Yu-5533,Yv-3580,Yw"
+            + "-3580,Yx-3906,Yy-3580,Yz-4557,Y{-650,Z+-2604,Z--2604,Z0-651,Z4-1627,Z6-651,Z<-3906,ZC-2604,ZG-26"
+            + "04,ZO-2604,ZQ-2604,Zc-1302,Zd-1302,Ze-1302,Zg-1302,Zo-1302,Zq-1302,[c-651,[d-651,[e-651,[g-651,["
+            + "j2766,[o-651,[q-651,\\,4069,\\.4069,\\1-651,\\2325,\\7-1464,\\8162,\\A325,\\C-976,\\G-976,\\O-976,\\Q-976,\\"
+            + "T-2929,\\U-1302,\\V-3580,\\W-3580,\\X-651,\\Y-3092,\\j4068,\\m325,\\n325,\\p325,\\r325,\\v-3580,\\w-2278,\\y-"
+            + "3580,^&-3417,^,-13997,^.-13997,^0-651,^4-4069,^6-651,^A-7649,^J-9114,^X-1790,^Y-1627,^_-6868,_*-"
+            + "6868,_0-4915,_1-10286,_3-4915,_4-5403,_5-4915,_6-4915,_8-4915,_9-4915,_C-4589,_G-4589,_J-1497,_O"
+            + "-4589,_Q-4589,_T-5859,_U-4264,_V-8463,_W-8821,_Y-9114,_^-6868,__-3906,_a-976,_c-2929,_d-2929,_e-"
+            + "2929,_f-683,_g-1139,_j8137,_o-2929,_p1595,_q-2929,_s-976,_t-846,_u-2311,_v813,_w-8007,_y813,a/32"
+            + "5,a1-2604,a7-976,aT-7161,aU-1464,aV-5371,aW-5371,aX-325,aY-8300,av-1627,aw-1953,ay-1627,b)-1139,"
+            + "b,-1302,b.-1302,b1-2441,b3-325,b7-2766,b8-325,b9-488,bA-2929,bS-488,bT-8951,bU-813,bV-5533,bW-55"
+            + "33,bX-4231,bY-8300,b]-1139,b_-2929,bv-2115,bw-2115,bx-2766,by-2115,bz-1302,b}-1139,c7-1790,cA-19"
+            + "53,cT-6835,cU-650,cV-4068,cW-4068,cX-2278,cY-6022,c_-1464,cf1302,ct651,cx-650,e/325,e7-2115,eA-2"
+            + "278,eT-9114,eU-813,eV-5533,eW-5533,eX-2929,eY-8789,e_-1953,ev-1302,ew-650,ex-2115,ey-1302,f&-211"
+            + "5,f+-1627,f,-5371,f--1627,f.-5371,f/-1953,f4-4231,fA-4068,fJ-6022,fX-650,fY976,f_-2148,fa-1627,f"
+            + "c-1953,fd-1953,fe-1953,ff325,fg-1953,fo-1953,fq-1953,fs-2115,ft325,g7-976,gV-1302,gW-976,gY-2278"
+            + ",g_2278,gj813,h/325,h1-2604,h7-976,hT-7161,hU-1464,hV-5371,hW-5371,hX-325,hY-8300,hv-1627,hw-195"
+            + "3,hy-1627,i\"-976,i'-976,iT-976,iY-813,j\"-976,j'-976,jT-976,jY-813,k&-1627,k(-325,k+-3906,k--3906"
+            + ",k0-1627,k4-3580,k5-976,k6-1627,k7-2115,k8-488,k9-488,k<-7487,k=-1464,k?-162,k@-650,kC-813,kG-81"
+            + "3,kJ-813,kO-813,kQ-813,kS-650,kT-3580,kU-813,kV-2441,kW-2766,kY-4394,ka-1790,kc-2929,kd-2929,ke-"
+            + "2929,kf-650,kg-2929,ko-2929,kq-2929,ks-2115,kt-650,k{-813,m/325,m1-2604,m7-976,mT-7161,mU-1464,m"
+            + "V-5371,mW-5371,mX-325,mY-8300,mv-1627,mw-1953,my-1627,n/325,n1-2604,n7-976,nT-7161,nU-1464,nV-53"
+            + "71,nW-5371,nX-325,nY-8300,nv-1627,nw-1953,ny-1627,o)-1139,o,-1302,o.-1302,o1-2441,o3-325,o7-2766"
+            + ",o8-325,o9-488,oA-2929,oS-488,oT-8951,oU-813,oV-5533,oW-5533,oX-4231,oY-8300,o]-1139,o_-2929,ov-"
+            + "2115,ow-2115,ox-2766,oy-2115,oz-1302,o}-1139,p)-1139,p,-1302,p.-1302,p1-2441,p3-325,p7-2766,p8-3"
+            + "25,p9-488,pA-2929,pS-488,pT-8951,pU-813,pV-5533,pW-5533,pX-4231,pY-8300,p]-1139,p_-2929,pv-2115,"
+            + "pw-2115,px-2766,py-2115,pz-1302,p}-1139,q7-976,qV-1302,qW-976,qY-2278,q_2278,qj813,r&-1464,r+-34"
+            + "17,r,-7812,r--3417,r.-7812,r/-2767,r4-1627,r7-651,r<-2604,r?1790,rA-4394,rJ-5533,rT-4069,rV-1139"
+            + ",rW-1139,rX-2604,rY-1953,rZ-2278,r_-4915,ra-650,rc-1302,rd-1302,re-1302,rf2441,rg-1302,rm651,rn6"
+            + "51,ro-1302,rp651,rq-1302,rr651,rs-1139,rt1139,rv813,rw488,ry813,s1-1302,s7-1790,sA-1302,sC-162,s"
+            + "G-162,sO-162,sQ-162,sT-7487,sV-4882,sW-4231,sX-2278,sY-7812,s_-976,ss-976,st-325,sv-1464,sw-1464"
+            + ",sx-1464,sy-1464,t+-1302,t--1302,t4-1302,t<-1627,tT-2767,tV-1953,tW-1953,tX-813,tY-3255,tc-488,t"
+            + "d-488,te-488,tf325,tg-488,to-488,tq-488,ts-651,tt325,u/325,u7-651,uT-6510,uV-2441,uW-2441,uY-520"
+            + "8,uf1302,v&-2441,v+-1464,v,-6998,v--1464,v.-6998,v/-3743,v0-651,v4-1302,v6-651,v<-2929,v=-3417,v"
+            + "@-1464,vA-6510,vJ-5045,vT-4231,vV-1302,vW-1302,vX-3255,vY-3580,vZ-2441,v\\325,v_-8137,va-1790,vc-"
+            + "2115,vd-2115,ve-2115,vf650,vg-2115,vo-2115,vq-2115,vs-1464,w&-3255,w+-1464,w,-6998,w--1464,w.-69"
+            + "98,w/-2278,w0-651,w4-1302,w6-651,w<-2604,w=-3092,w@-488,wA-6510,wJ-4720,wT-4231,wV-976,wW-976,wX"
+            + "-3417,wY-3580,wZ-2441,w\\325,w_-8007,wa-1464,wc-2115,wd-2115,we-2115,wf813,wg-2115,wo-2115,wq-211"
+            + "5,ws-1464,x&-1139,x+-1953,x--1953,x0-651,x4-1302,x6-651,x7-651,x<-2766,x=-3092,x@-650,xA-651,xC-"
+            + "976,xG-976,xO-976,xQ-976,xT-3906,xU-488,xV-1139,xW-1139,xY-3906,xa-488,xc-2766,xd-2766,xe-2766,x"
+            + "f1790,xg-2766,xo-2766,xq-2766,xs-1464,y&-2441,y+-1464,y,-6998,y--1464,y.-6998,y/-3743,y0-651,y4-"
+            + "1302,y6-651,y<-2929,y=-3417,y@-1464,yA-6510,yJ-5045,yT-4231,yV-1302,yW-1302,yX-3255,yY-3580,yZ-2"
+            + "441,y\\325,y_-8137,ya-1790,yc-2115,yd-2115,ye-2115,yf650,yg-2115,yo-2115,yq-2115,ys-1464,z+-3906,"
+            + "z--3906,z<-3743,zA-976,zC-325,zG-325,zJ-325,zO-325,zQ-325,zT-4720,zV-1790,zW-2278,zY-4557,zc-130"
+            + "2,zd-1302,ze-1302,zg-1302,zo-1302,zq-1302,{c-651,{d-651,{e-651,{g-651,{j2766,{o-651,{q-651,";
+    }
+    private static String System_1_5_kerning() {
+        return "\"&-2278,\",-10253,\".-10253,\"1651,\"4-2441,\"5-488,\"8-1302,\"A-8951,\"J-10579,\"a976,\"c1627,\"d1627,\"e16"
+            + "27,\"f2767,\"g1627,\"o1627,\"q1627,\"s651,\"w1627,\u00234-1302,&\"-3417,&'-3417,&*-2115,&+-1139,&--1139,&1-2"
+            + "441,&5-976,&7-1790,&8-325,&9-813,&=-1627,&?-4394,&@-650,&C-813,&G-813,&O-813,&Q-813,&T-7975,&V-5"
+            + "370,&W-6673,&Y-9114,&^-2115,&s-1139,&t-650,&u-813,&v-3255,&w-3255,&x-650,&y-3255,&z-650,'&-2278,"
+            + "',-10253,'.-10253,'1651,'4-2441,'5-488,'8-1302,'A-8951,'J-10579,'a976,'c1627,'d1627,'e1627,'f276"
+            + "7,'g1627,'o1627,'q1627,'s651,'w1627,(c-651,(d-651,(e-651,(g-651,(j2766,(o-651,(q-651,*&-3417,*,-"
+            + "13020,*.-13020,*0-651,*4-3255,*6-651,*7-325,*A-8626,*J-8789,*X-3417,*Y-650,*_-6835,*c976,*d976,*"
+            + "e976,*g976,*o976,*q976,*t2604,+A-2604,+T-5859,+V-4720,+W-4720,+X-5696,+Y-8300,+Z-1627,+v-1464,+w"
+            + "-1464,+x-1953,+y-1464,+z-651,,\"-10253,,'-10253,,*-13020,,/4069,,0-5696,,1-5371,,3-4231,,4-2604,,"
+            + "5-3906,,6-5696,,7-488,,8-2604,,9-2766,,C-6510,,G-6510,,O-6510,,Q-6510,,T-9114,,U-4231,,V-11067,,"
+            + "W-10416,,Y-12044,,\\-4069,,^-13020,,c-1302,,d-1302,,e-1302,,f-3092,,g-1302,,j3255,,o-1302,,q-1302"
+            + ",,t-1302,,v-6347,,w-5696,,y-6347,-A-2604,-T-5859,-V-4720,-W-4720,-X-5696,-Y-8300,-Z-1627,-v-1464"
+            + ",-w-1464,-x-1953,-y-1464,-z-651,.\"-10253,.'-10253,.*-13020,./4069,.0-5696,.1-5371,.3-4231,.4-260"
+            + "4,.5-3906,.6-5696,.7-488,.8-2604,.9-2766,.C-6510,.G-6510,.O-6510,.Q-6510,.T-9114,.U-4231,.V-1106"
+            + "7,.W-10416,.Y-12044,.\\-4069,.^-13020,.c-1302,.d-1302,.e-1302,.f-3092,.g-1302,.j3255,.o-1302,.q-1"
+            + "302,.t-1302,.v-6347,.w-5696,.y-6347,/,-4069,/.-4069,/1325,/4-1302,/7650,/A-3092,/B325,/C325,/D32"
+            + "5,/E325,/F325,/G325,/H325,/I325,/J-1953,/K325,/L325,/M325,/N325,/O325,/P325,/Q325,/R325,/T1302,/"
+            + "U325,/V325,/W325,/X325,/Y325,/b325,/f325,/h325,/k325,/l325,0\"-1302,0'-1302,0*-1627,0,-5045,0.-50"
+            + "45,01-488,03-488,07-2441,09-488,0?-813,0A-1302,0T-4557,0V-2441,0W-2604,0X-2766,0Y-5696,0\\2278,0^"
+            + "-1627,0_-4882,0v-651,0w-651,0x-651,0y-651,1\"-1627,1'-1627,1*-488,1,-2604,1.-2604,1Y-650,1^-488,2"
+            + "*-325,24-1302,2@-325,2V-1302,2Y-3906,2^-325,3\"-1302,3'-1302,3,-2929,3.-2929,30-325,36-325,39-162"
+            + ",3A-325,3T-2278,3V-2278,3W-2278,3X-1139,3Y-3580,3\\976,3_-2929,4\"-2604,4'-2604,4*-4720,4,-1953,4."
+            + "-1953,41-1139,4T-976,4V-1627,4W-1302,4X651,4Y-2766,4^-4720,4v-976,4w-976,4x-325,4y-976,5,-3743,5"
+            + ".-3743,51-650,5:-162,5;-162,5Y-2115,5\\976,5_-2929,6\"-488,6'-488,6*-813,6,-3092,6.-3092,63-488,6A"
+            + "-650,6V-488,6W-488,6X-651,6Y-3255,6\\976,6^-813,6_-4882,6w-488,7\u0023-4069,7&-3906,7,-9277,7.-9277,7/"
+            + "-2441,70-1139,71976,73-1139,74-3580,75-325,76-1139,771953,78-325,79-325,7:-650,7;-650,7<-6836,7@"
+            + "-1302,7A-5371,7J-5696,7\\1953,7_-14648,7a-2929,7c-3580,7d-3580,7e-3580,7g-3580,7o-3580,7q-3580,7s"
+            + "-2929,7u-1627,7x-1302,8\"-1302,8'-1302,8,-2929,8.-2929,80-325,86-325,89-162,8A-325,8T-2278,8V-227"
+            + "8,8W-2278,8X-1139,8Y-3580,8\\976,8_-4882,9\"-1302,9'-1302,9*-1627,9,-5045,9.-5045,91-488,93-488,97"
+            + "-2441,99-488,9?-813,9A-1302,9T-4557,9V-2441,9W-2604,9X-2766,9Y-5696,9\\2278,9^-1627,9_-4882,9v-65"
+            + "1,9w-651,9x-651,9y-651,:1-1790,:2-976,:4-976,:5-325,:7-1627,:V-813,:W-1627,:X-1139,:Y-1790,;1-14"
+            + "64,;2-976,;4-976,;5-325,;7-1627,;V-813,;W-1627,;X-1139,;Y-1790,=&-1302,=A-1627,=V-6184,=W-3580,="
+            + "X-1952,=Y-10904,=Z-2278,=v-813,=w-1139,=x-813,=y-813,>7-6510,>A-2604,>T-7324,>V-6347,>W-5696,>X-"
+            + "4231,>Y-8463,>Z-3906,>v-2604,>w-2604,>x-2766,>y-2604,>z-1790,?4-813,@&-1139,@2-651,@7-2278,@T-19"
+            + "53,@V-1464,@W-813,@X-1302,@Y-3092,@v-488,@w-488,@x-650,@y-488,A\"-8951,A&-1139,A'-8951,A*-9277,A+"
+            + "-2604,A--2604,A0-2441,A1-4068,A5-2115,A6-2441,A7-1302,A9-488,A<-3092,A=-1627,A?-1627,AC-4068,AG-"
+            + "4068,AO-4068,AQ-4068,AT-7487,AU-1627,AV-6673,AW-6835,AY-8463,A\\-1627,A^-9277,Aa-976,Ac-2929,Ad-2"
+            + "929,Ae-2929,Af-1790,Ag-2929,Ao-2929,Aq-2929,As-1627,At-2929,Au-3092,Av-6184,Aw-5533,Ax-325,Ay-61"
+            + "84,Az-325,B5-325,B7-162,BT-651,BV-1627,BW-488,BY-2929,B\\976,B_-1302,Bt-162,Bx-325,Bz-325,CA-651,"
+            + "CT-2441,CV-976,CW-488,CX-1790,CY-2766,C\\1302,C_-4557,D*-1953,D,-4231,D.-4231,D/-2929,D7-1302,DA-"
+            + "1464,DT-3580,DV-3580,DW-3255,DX-2766,DY-6510,DZ-2604,D^-1953,D_-4557,Da-325,Ds-325,Dx-976,E7162,"
+            + "E\\1627,F,-8137,F.-8137,F/-4069,F=-650,FA-1790,FJ-3255,F\\976,F_-6347,Fa-488,Fv-976,Fy-976,Fz-325,"
+            + "G,-1464,G.-1464,G/-976,G4976,GA-650,GT-976,GV-2604,GW-1790,GX-1627,GY-4069,G\\325,G_-2115,Ga-325,"
+            + "Gz-325,H1976,H\\1627,I1976,I\\1627,J,-6673,J.-6673,J/-3580,J<-5534,J=-1627,JA-1627,J\\1627,J_-4231,"
+            + "Ja-1139,Jc-813,Jd-813,Je-813,Jg-813,Jo-813,Jq-813,Jx-488,K&-3417,K*-2604,K+-6835,K--6835,K0-2604"
+            + ",K1-976,K3-1627,K4-3255,K5-1464,K6-2604,K8-488,K9-1139,K<-7649,K=-1139,K@-1302,KC-4068,KG-4068,K"
+            + "O-4068,KQ-4068,KS-1790,KU-1627,K^-2604,Ka-2441,Kc-4720,Kd-4720,Ke-4720,Kf-2278,Kg-4720,Ko-4720,K"
+            + "q-4720,Ks-3092,Kt-2604,Ku-3417,Kv-5371,Kw-5371,Kx-650,Ky-5371,L\"-11881,L&-976,L'-11881,L*-11556,"
+            + "L+-7324,L--7324,L0-4394,L1-6347,L5-1302,L6-4394,L7-3743,L8-1302,L9-1302,L<-8789,L?-2441,LC-2278,"
+            + "LG-2278,LO-2278,LQ-2278,LT-8626,LU-2766,LV-6998,LW-6998,LY-9440,L\\-2604,L^-11556,La-1953,Lc-3417"
+            + ",Ld-3417,Le-3417,Lg-3417,Lo-3417,Lq-3417,Lt-3743,Lu-2604,Lv-6835,Lw-6510,Ly-6835,M1976,M\\1627,N1"
+            + "976,N\\1627,O*-1953,O,-4231,O.-4231,O/-2929,O7-1302,OA-1464,OT-3580,OV-3580,OW-3255,OX-2766,OY-65"
+            + "10,OZ-2604,O^-1953,O_-4557,Oa-325,Os-325,Ox-976,P&-2766,P,-12044,P.-12044,P/-4557,P4-1302,P7-813"
+            + ",PA-2929,PJ-4394,PT-650,PV-813,PW-650,PX-3255,PY-2441,PZ-1627,P\\1139,P_-9602,Pa-1953,Pc-1139,Pd-"
+            + "1139,Pe-1139,Pf2441,Pg-1139,Po-1139,Pq-1139,Ps-488,Pt2115,Pv1302,Pw1302,Px1953,Py1302,Pz651,Q*-1"
+            + "953,Q,-4231,Q.-4231,Q/-2929,Q7-1302,QA-1464,QT-3580,QV-3580,QW-3255,QX-2766,QY-6510,QZ-2604,Q^-1"
+            + "953,Q_-4557,Qa-325,Qs-325,Qx-976,RV-1790,RW-1790,RY-1627,Ra-162,Rc-651,Rd-651,Re-651,Rf1627,Rg-6"
+            + "51,Ro-651,Rq-651,Rs-162,Rt1627,ST-1627,SV-1139,SW-1464,SX-1464,SY-2929,Sa-488,T&-3743,T+-7975,T,"
+            + "-8463,T--7975,T.-8463,T/-6510,T0-2766,T3-651,T4-1302,T6-2766,T71953,T9651,T<-7324,T@-2604,TA-553"
+            + "3,TC-488,TG-488,TJ-7324,TO-488,TQ-488,T\\1627,T_-5696,Ta-9602,Tc-9440,Td-9440,Te-9440,Tg-9440,Ti-"
+            + "1302,Tj-976,Tm-5533,Tn-5533,To-9440,Tp-5533,Tq-9440,Tr-5533,Ts-7487,Tu-5859,Tv-4231,Tw-4231,Tx-3"
+            + "906,Ty-4231,Tz-4720,U,-6673,U.-6673,U/-3580,U<-5534,U=-1627,UA-1627,U\\1627,U_-4231,Ua-1139,Uc-81"
+            + "3,Ud-813,Ue-813,Ug-813,Uo-813,Uq-813,Ux-488,V&-4394,V+-4720,V,-10579,V--4720,V.-10579,V/-6184,V0"
+            + "-1139,V21953,V31302,V4-2604,V6-1139,V72604,V8-1627,V9325,V:-813,V;-813,V<-4394,V=-3580,V@-976,VA"
+            + "-5045,VC-2115,VG-2115,VJ-6184,VO-2115,VQ-2115,VS-651,V\\1953,V_-8789,Va-4231,Vc-2604,Vd-2604,Ve-2"
+            + "604,Vg-2604,Vm-2604,Vn-2604,Vo-2604,Vp-2604,Vq-2604,Vr-2604,Vs-3906,Vu-1953,Vv-976,Vw-976,Vx-113"
+            + "9,Vy-976,Vz-2278,W&-4882,W+-4720,W,-10416,W--4720,W.-10416,W/-6184,W0-1627,W11302,W21302,W3-1302"
+            + ",W4-2929,W5-976,W6-1627,W8-2278,W9-813,W:-1627,W;-1627,W<-4720,W=-1952,W@-813,WA-5533,WC-2278,WG"
+            + "-2278,WJ-5859,WO-2278,WQ-2278,WS-325,W\\1953,W_-8789,Wa-5696,Wc-2929,Wd-2929,We-2929,Wg-2929,Wm-3"
+            + "255,Wn-3255,Wo-2929,Wp-3255,Wq-2929,Wr-3255,Ws-3580,Wu-2278,Wv-976,Ww-651,Wx-1139,Wy-976,Wz-2278"
+            + ",X&-2766,X*-813,X+-5696,X--5696,X/-976,X0-2115,X4-1627,X6-2115,X71302,X8-813,X9-488,X:-1139,X;-1"
+            + "139,X<-5859,X=-1952,X@-1302,XC-2929,XG-2929,XO-2929,XQ-2929,XS-813,X\\1302,X^-813,Xa-1790,Xc-3906"
+            + ",Xd-3906,Xe-3906,Xf-1139,Xg-3906,Xo-3906,Xq-3906,Xs-2278,Xt-1627,Xu-2766,Xv-3417,Xw-2766,Xy-3417"
+            + ",Y&-5859,Y*-650,Y+-7812,Y,-11393,Y--7812,Y.-11393,Y/-7161,Y0-1953,Y1-162,Y2-650,Y3-976,Y4-4557,Y"
+            + "5-813,Y6-1953,Y8-2604,Y9-813,Y:-1790,Y;-1790,Y<-8463,Y=-6022,Y@-3255,YA-6184,YC-2115,YG-2115,YJ-"
+            + "8137,YO-2115,YQ-2115,YS-1953,Y\\1627,Y^-650,Y_-10091,Ya-6998,Yc-6347,Yd-6347,Ye-6347,Yf-813,Yg-63"
+            + "47,Yi-813,Yj-813,Ym-4720,Yn-4720,Yo-6347,Yp-4720,Yq-6347,Yr-4720,Ys-6835,Yt-1302,Yu-4557,Yv-3255"
+            + ",Yw-3255,Yx-3580,Yy-3255,Yz-3580,Z+-2604,Z--2604,Z3-1302,Z4-1627,Z<-3906,ZC-2604,ZG-2604,ZO-2604"
+            + ",ZQ-2604,Za-651,Zc-1302,Zd-1302,Ze-1302,Zg-1302,Zo-1302,Zq-1302,Zu-1302,Zv-651,Zw-651,Zy-651,[c-"
+            + "651,[d-651,[e-651,[g-651,[j2766,[o-651,[q-651,\\,4069,\\.4069,\\1-651,\\2325,\\7-1464,\\8162,\\A325,\\C-"
+            + "2929,\\G-2929,\\O-2929,\\Q-2929,\\T-4557,\\U-1302,\\V-4720,\\W-3580,\\X-651,\\Y-4069,\\j4068,\\m325,\\n325,\\"
+            + "p325,\\r325,\\v-2278,\\w-3255,\\y-2278,^&-3417,^,-13020,^.-13020,^0-651,^4-3255,^6-651,^7-325,^A-862"
+            + "6,^J-8789,^X-3417,^Y-650,^_-6835,^c976,^d976,^e976,^g976,^o976,^q976,^t2604,_*-6835,_0-4882,_1-1"
+            + "0253,_3-4882,_4-5371,_5-4882,_6-4882,_8-4882,_9-4882,_C-4557,_G-4557,_J-1464,_O-4557,_Q-4557,_T-"
+            + "5696,_U-3906,_V-8789,_W-8789,_Y-10091,_^-6835,_a-2441,_c-2115,_d-2115,_e-2115,_f-976,_g325,_j976"
+            + "5,_o-2115,_p4882,_q-2115,_s-2115,_t-1139,_u-2115,_v-7975,_w-7975,_y-7975,a\"-2604,a'-2604,a*-1302"
+            + ",a/325,a1-2604,a7-976,aT-10579,aU-1139,aV-6998,aW-5371,aX-325,aY-9765,a^-1302,av-1953,aw-1953,ay"
+            + "-1953,az-651,b\"-4557,b'-4557,b)-1790,b*-1952,b,-1302,b.-1302,b1-2441,b3-813,b7-2766,b8-325,b9-48"
+            + "8,b?-488,bA-2929,bS-488,bT-10904,bU-813,bV-5533,bW-5371,bX-3580,bY-10416,b]-1790,b^-1952,b_-2115"
+            + ",bv-2929,bw-2115,bx-2766,by-2929,bz-1302,b}-1790,c\"-651,c'-651,c*-976,c7-1302,cA-1953,cT-7812,cU"
+            + "-650,cV-4068,cW-4068,cX-2278,cY-7975,c^-976,c_-1139,cf1302,ct651,cv-813,cw-976,cx-650,cy-813,cz-"
+            + "651,d,-2604,d.-2604,df2278,dj976,dt2278,e\"-1627,e'-1627,e*-1627,e/325,e1-650,e7-1790,e?-976,eA-2"
+            + "278,eT-10742,eU-813,eV-5208,eW-5533,eX-2604,eY-9114,e^-1627,e_-2115,ev-2278,ew-1302,ex-2441,ey-2"
+            + "278,ez-1302,f\"1302,f&-2115,f'1302,f,-3417,f.-3417,f/-325,f4-3906,f<-488,fA-4068,fJ-6022,fX-650,f"
+            + "Y-488,f_-2115,fa-1627,fc-1953,fd-1953,fe-1953,ff325,fg-1953,fo-1953,fq-1953,fs-2115,ft325,g7-130"
+            + "2,gT-5533,gV-3580,gW-1953,gY-6510,g_2604,gj813,h\"-2604,h'-2604,h*-1302,h/325,h1-2604,h7-976,hT-1"
+            + "0579,hU-1139,hV-6998,hW-5371,hX-325,hY-9765,h^-1302,hv-1953,hw-1953,hy-1953,hz-651,iT-1464,iY-14"
+            + "64,jT-1464,jY-1464,k&-1627,k(-325,k*-650,k+-4231,k--4231,k0-1953,k1-325,k4-3580,k5-1139,k6-1953,"
+            + "k7-1790,k8-488,k9-488,k<-5859,k=-813,k?-325,k@-650,kC-1790,kG-1790,kJ-488,kO-1790,kQ-1790,kS-650"
+            + ",kT-3580,kU-813,kV-2115,kW-2766,kY-4394,k^-650,ka-1790,kc-2929,kd-2929,ke-2929,kf325,kg-2929,ko-"
+            + "2929,kq-2929,ks-2766,kt-650,k{-813,l,-2604,l.-2604,lf2278,lj976,lt2278,m\"-2604,m'-2604,m*-1302,m"
+            + "/325,m1-2604,m7-976,mT-10579,mU-1139,mV-6998,mW-5371,mX-325,mY-9765,m^-1302,mv-1953,mw-1953,my-1"
+            + "953,mz-651,n\"-2604,n'-2604,n*-1302,n/325,n1-2604,n7-976,nT-10579,nU-1139,nV-6998,nW-5371,nX-325,"
+            + "nY-9765,n^-1302,nv-1953,nw-1953,ny-1953,nz-651,o\"-4557,o'-4557,o)-1790,o*-1952,o,-1302,o.-1302,o"
+            + "1-2441,o3-813,o7-2766,o8-325,o9-488,o?-488,oA-2929,oS-488,oT-10904,oU-813,oV-5533,oW-5371,oX-358"
+            + "0,oY-10416,o]-1790,o^-1952,o_-2115,ov-2929,ow-2115,ox-2766,oy-2929,oz-1302,o}-1790,p\"-4557,p'-45"
+            + "57,p)-1790,p*-1952,p,-1302,p.-1302,p1-2441,p3-813,p7-2766,p8-325,p9-488,p?-488,pA-2929,pS-488,pT"
+            + "-10904,pU-813,pV-5533,pW-5371,pX-3580,pY-10416,p]-1790,p^-1952,p_-2115,pv-2929,pw-2115,px-2766,p"
+            + "y-2929,pz-1302,p}-1790,q7-1302,qT-4882,qV-3580,qW-1953,qY-6510,q_2604,qj813,r&-1464,r+-813,r,-81"
+            + "37,r--813,r.-8137,r7-976,rA-3743,rJ-5533,rT-2767,rV-813,rW-813,rX-2604,rY-2278,rZ-2278,r_-4882,r"
+            + "a-1139,rc-1302,rd-1302,re-1302,rf2441,rg-1302,ro-1302,rq-1302,rs-1139,rt2115,rv488,rw488,ry488,s"
+            + "\"-651,s'-651,s*-813,s7-1302,sA-976,sT-8137,sV-4882,sW-4231,sX-2441,sY-7812,s^-813,s_-1139,ss-651"
+            + ",st-325,sv-1953,sw-1464,sx-1464,sy-1953,t+-1302,t--1302,t<-1627,tT-2115,tV-1953,tW-1953,tX-813,t"
+            + "Y-3255,tc-651,td-651,te-651,tf325,tg-651,to-651,tq-651,ts-651,tt325,u/325,u7-651,uA-651,uT-6510,"
+            + "uV-2441,uW-2766,uY-5208,uf1302,v&-3255,v+-1464,v,-6022,v--1464,v.-6022,v/-162,v0-651,v4-1302,v6-"
+            + "651,v<-1953,v=-813,v@-488,vA-5533,vJ-4720,vT-3906,vV-976,vW-976,vX-3255,vY-3580,vZ-2441,v\\325,v_"
+            + "-7975,va-1139,vc-813,vd-813,ve-813,vf650,vg-813,vo-813,vq-813,vs-1464,w&-3255,w+-1464,w,-6673,w-"
+            + "-1464,w.-6673,w/-325,w0-651,w4-1302,w6-651,w7-488,w<-1953,w=-1139,w@-488,wA-5208,wJ-4720,wT-4231"
+            + ",wV-976,wW-976,wX-3255,wY-3580,wZ-2441,w\\325,w_-7975,wa-1464,wc-976,wd-976,we-976,wf813,wg-976,w"
+            + "o-976,wq-976,ws-1464,x&-1139,x+-1953,x--1953,x0-651,x4-1302,x6-651,x7-651,x<-2766,x=-813,x@-650,"
+            + "xA-325,xC-976,xG-976,xO-976,xQ-976,xT-3906,xU-813,xV-1302,xW-1139,xY-3906,xa-488,xc-2441,xd-2441"
+            + ",xe-2441,xf1790,xg-2441,xo-2441,xq-2441,xs-1139,y&-3255,y+-1464,y,-6022,y--1464,y.-6022,y/-162,y"
+            + "0-651,y4-1302,y6-651,y<-1953,y=-813,y@-488,yA-5533,yJ-4720,yT-3906,yV-976,yW-976,yX-3255,yY-3580"
+            + ",yZ-2441,y\\325,y_-7975,ya-1139,yc-813,yd-813,ye-813,yf650,yg-813,yo-813,yq-813,ys-1464,z*-162,z+"
+            + "-651,z--651,z7-1302,z<-1464,zA-325,zC-325,zG-325,zJ-325,zO-325,zQ-325,zT-4720,zV-2278,zW-2278,zY"
+            + "-4557,z^-162,za-1302,zc-1627,zd-1627,ze-1627,zg-1627,zo-1627,zq-1627,{c-651,{d-651,{e-651,{g-651"
+            + ",{j2766,{o-651,{q-651,}Y-1302,";
     }
 }

@@ -46,7 +46,7 @@ void main() {
     expect(find.byType(RotatedBox), findsNothing,
         reason: 'a Label without SWT.SEPARATOR has no vertical mode in SWT');
 
-    final size = tester.getSize(find.byType(Text).first);
+    final size = tester.getSize(find.byWidgetPredicate((w) => w is Text).first);
     expect(size.width, greaterThan(size.height),
         reason: 'the message must read across the label, not down it');
   });

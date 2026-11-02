@@ -1063,7 +1063,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public void setChecked(boolean checked) {
         boolean newValue = checked;
         checkWidget();
-        if (this.checked != newValue) {
+        if (getChecked() != newValue) {
             getValue().markDirty(VTreeItem.CHECKED);
         }
         if ((parent.style & SWT.CHECK) == 0)

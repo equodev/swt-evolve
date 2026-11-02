@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.comm.MessageBatch;
+import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,14 +91,18 @@ class PaintListenerRemovalTest {
         }
     }
 
-    private String redrawAndCollectGcTraffic(Control control) {
+    private List<RecordingComm.Frame> redrawAndCollectGcTraffic(Control control) {
         bridge.comm.sent.clear();
         control.redraw();
         pumpAsync();
         return bridge.comm.sent.stream()
                 .filter(f -> f.event.startsWith("GC/") || f.event.equals(MessageBatch.EVENT))
-                .map(f -> f.event + f.json)
-                .reduce("", String::concat);
+                .toList();
+    }
+
+    /** Whether any entry of {@code traffic} is on a channel naming {@code op}. */
+    private static boolean sends(List<RecordingComm.Frame> traffic, String op) {
+        return BatchEntries.of(traffic).stream().anyMatch(e -> e.channel().contains(op));
     }
 
     @Test
@@ -105,14 +111,17 @@ class PaintListenerRemovalTest {
         Composite composite = composite();
         PaintListener overlay = e -> e.gc.fillRectangle(100, 100, 330, 20);
         composite.addPaintListener(overlay);
-        assertThat(redrawAndCollectGcTraffic(composite)).as("the overlay's paint").contains("gcDispose");
+        assertThat(sends(redrawAndCollectGcTraffic(composite), "gcDispose")).as("the overlay's paint").isTrue();
 
         composite.removePaintListener(overlay);
 
-        assertThat(redrawAndCollectGcTraffic(composite))
+        List<RecordingComm.Frame> repaint = redrawAndCollectGcTraffic(composite);
+        assertThat(sends(repaint, "gcDispose"))
                 .as("the repaint that replaces the overlay's last frame")
-                .contains("gcDispose")
-                .doesNotContain("fillRectangle");
+                .isTrue();
+        assertThat(sends(repaint, "fillRectangle"))
+                .as("the repaint that replaces the overlay's last frame")
+                .isFalse();
     }
 
     @Test

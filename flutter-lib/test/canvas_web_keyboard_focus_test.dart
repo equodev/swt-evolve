@@ -18,6 +18,7 @@ import 'package:swtflutter/src/gen/canvas.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 /// The generated CanvasSwt with sendEvent captured instead of handed to EquoCommService (a widget
 /// test has no live transport). The State and its real focus path are untouched.
@@ -27,7 +28,7 @@ class _CapturingCanvasSwt extends CanvasSwt<VCanvas> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VCanvas val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VCanvas val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VCanvas _childlessCanvas() => VCanvas()

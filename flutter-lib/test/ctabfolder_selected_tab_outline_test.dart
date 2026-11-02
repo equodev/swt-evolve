@@ -20,6 +20,7 @@ import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/utils/quiet_animations.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 const double _folderWidth = 360;
@@ -128,7 +129,7 @@ Matcher _sameInk(Color expected) => predicate<Color>(
 
 Rect _selectedTab(WidgetTester tester) => _inFolder(
   tester,
-  find.ancestor(of: find.text('View A'), matching: find.byType(AnimatedContainer)).first,
+  find.ancestor(of: find.text('View A'), matching: find.byType(QuietAnimatedContainer)).first,
 );
 
 void main() {

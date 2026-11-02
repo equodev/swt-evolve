@@ -1,7 +1,6 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -92,7 +91,6 @@ class TableArrowKeyTest extends KeyRoutingTestBase {
     }
 
     @Test
-    @Disabled("the top index never moves: the client neither scrolls to it nor reports its own scroll")
     @DisplayName("Page Up after two Page Downs goes to the first row of the page the view scrolled to")
     void pageUpReadsTheScrolledTopIndex() {
         Table table = longTable();

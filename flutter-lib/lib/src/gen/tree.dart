@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:json_annotation/json_annotation.dart';
 import '../comm/comm.dart';
+import '../comm/widget_wire.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/control.dart';
@@ -15,11 +15,10 @@ import '../gen/treecolumn.dart';
 import '../gen/treeeditor.dart';
 import '../gen/treeitem.dart';
 import '../gen/widget.dart';
+import '../gen/widgets.dart';
 import '../impl/tree_evolve.dart';
 import 'event.dart';
 import 'widgets.dart';
-
-part 'tree.g.dart';
 
 class TreeSwt<V extends VTree> extends CompositeSwt<V> {
   const TreeSwt({super.key, required super.value});
@@ -28,31 +27,30 @@ class TreeSwt<V extends VTree> extends CompositeSwt<V> {
   State createState() => TreeImpl<TreeSwt<VTree>, VTree>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, "Modify/Modify", payload);
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/DefaultSelection", payload);
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, "Selection/Selection", payload);
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendSetDataSetData(V val, VEvent? payload) {
-    sendEvent(val, "SetData/SetData", payload);
+    sendEvent(val, 89, payload); // SetData/SetData
   }
 
   void sendTreeCollapse(V val, VEvent? payload) {
-    sendEvent(val, "Tree/Collapse", payload);
+    sendEvent(val, 105, payload); // Tree/Collapse
   }
 
   void sendTreeExpand(V val, VEvent? payload) {
-    sendEvent(val, "Tree/Expand", payload);
+    sendEvent(val, 106, payload); // Tree/Expand
   }
 }
 
-@JsonSerializable()
 class VTree extends VComposite {
   VTree() : this.empty();
   VTree.empty() {
@@ -95,51 +93,158 @@ class VTree extends VComposite {
   }
 
   @override
-  void readProperty(String key, Map<String, dynamic> json) {
+  bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 'columnOrder':
-        columnOrder = (json['columnOrder'] as List<dynamic>?)
-            ?.map((e) => (e as num).toInt())
-            .toList();
-      case 'columns':
-        columns = (json['columns'] as List<dynamic>?)
-            ?.map((e) => VTreeColumn.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'editors':
-        editors = (json['editors'] as List<dynamic>?)
-            ?.map((e) => VTreeEditor.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'headerBackground':
-        headerBackground = VColor.read(json['headerBackground']);
-      case 'headerForeground':
-        headerForeground = VColor.read(json['headerForeground']);
-      case 'headerVisible':
-        headerVisible = json['headerVisible'] as bool?;
-      case 'items':
-        items = (json['items'] as List<dynamic>?)
-            ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'linesVisible':
-        linesVisible = json['linesVisible'] as bool?;
-      case 'selection':
-        selection = (json['selection'] as List<dynamic>?)
-            ?.map((e) => VTreeItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      case 'sortColumn':
-        sortColumn = json['sortColumn'] == null
-            ? null
-            : VTreeColumn.fromJson(json['sortColumn'] as Map<String, dynamic>);
-      case 'sortDirection':
-        sortDirection = (json['sortDirection'] as num?)?.toInt();
-      case 'topItem':
-        topItem = json['topItem'] == null
-            ? null
-            : VTreeItem.fromJson(json['topItem'] as Map<String, dynamic>);
-      case 'ownerDrawItemHeight':
-        ownerDrawItemHeight = (json['ownerDrawItemHeight'] as num?)?.toInt();
+      case 621: // columnOrder
+        columnOrder = r.ints();
+        return true;
+      case 622: // columns
+        columns = r.refs<VTreeColumn>();
+        return true;
+      case 623: // editors
+        editors = r.refs<VTreeEditor>();
+        return true;
+      case 624: // headerBackground
+        headerBackground = r.color();
+        return true;
+      case 625: // headerForeground
+        headerForeground = r.color();
+        return true;
+      case 626: // headerVisible
+        headerVisible = r.boolean();
+        return true;
+      case 627: // items
+        items = r.refs<VTreeItem>();
+        return true;
+      case 628: // linesVisible
+        linesVisible = r.boolean();
+        return true;
+      case 630: // selection
+        selection = r.refs<VTreeItem>();
+        return true;
+      case 631: // sortColumn
+        sortColumn = r.ref<VTreeColumn>();
+        return true;
+      case 632: // sortDirection
+        sortDirection = r.int32();
+        return true;
+      case 633: // topItem
+        topItem = r.ref<VTreeItem>();
+        return true;
+      case 629: // ownerDrawItemHeight
+        ownerDrawItemHeight = r.int32();
+        return true;
       default:
-        super.readProperty(key, json);
+        return super.readWire(key, r);
     }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = columnOrder;
+      if (v_ != null) {
+        w.key(621);
+        w.ints(v_);
+      }
+    }
+    {
+      final v_ = columns;
+      if (v_ != null) {
+        w.key(622);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = editors;
+      if (v_ != null) {
+        w.key(623);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = headerBackground;
+      if (v_ != null) {
+        w.key(624);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = headerForeground;
+      if (v_ != null) {
+        w.key(625);
+        w.colorValue(v_);
+      }
+    }
+    {
+      final v_ = headerVisible;
+      if (v_ != null) {
+        w.keyBoolean(626, v_);
+      }
+    }
+    {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(627);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = linesVisible;
+      if (v_ != null) {
+        w.keyBoolean(628, v_);
+      }
+    }
+    {
+      final v_ = selection;
+      if (v_ != null) {
+        w.key(630);
+        w.refs(v_);
+      }
+    }
+    {
+      final v_ = sortColumn;
+      if (v_ != null) {
+        w.keyRef(631, v_.id);
+      }
+    }
+    {
+      final v_ = sortDirection;
+      if (v_ != null) {
+        w.keyInt32(632, v_);
+      }
+    }
+    {
+      final v_ = topItem;
+      if (v_ != null) {
+        w.keyRef(633, v_.id);
+      }
+    }
+    {
+      final v_ = ownerDrawItemHeight;
+      if (v_ != null) {
+        w.keyInt32(629, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(621, columnOrder);
+    visit(622, columns);
+    visit(623, editors);
+    visit(624, headerBackground);
+    visit(625, headerForeground);
+    visit(626, headerVisible);
+    visit(627, items);
+    visit(628, linesVisible);
+    visit(630, selection);
+    visit(631, sortColumn);
+    visit(632, sortDirection);
+    visit(633, topItem);
+    visit(629, ownerDrawItemHeight);
   }
 
   @override
@@ -152,8 +257,4 @@ class VTree extends VComposite {
     sortColumn = VWidget.adoptOne(sortColumn, adopt);
     topItem = VWidget.adoptOne(topItem, adopt);
   }
-
-  factory VTree.fromJson(Map<String, dynamic> json) =>
-      _$VTreeFromJson(json)..isReference = json.containsKey('_r');
-  Map<String, dynamic> toJson() => _$VTreeToJson(this);
 }

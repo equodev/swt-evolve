@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.Serializer;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,8 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TableColumnDeliveryTest {
 
     private static final int CLIENT = 1;
-
-    private final Serializer serializer = new Serializer();
 
     @BeforeAll
     static void useEquo() {
@@ -61,7 +60,7 @@ class TableColumnDeliveryTest {
         name.setText("Name");
         table.setHeaderVisible(true);
 
-        assertThat(diffOf(table)).contains("\"columns\"").contains("\"headerVisible\"");
+        assertThat(diffOf(table)).containsKey("columns").containsKey("headerVisible");
     }
 
     @Test
@@ -75,21 +74,29 @@ class TableColumnDeliveryTest {
 
         value.dispose();
 
-        assertThat(diffOf(table)).contains("\"columns\"");
+        assertThat(diffOf(table)).containsKey("columns");
     }
 
     /** The update the table is due, or empty when it has nothing to say. */
-    private String diffOf(Table table) {
-        byte[] update = serializer.toDiff((DartTable) table.getImpl());
-        return update == null ? "" : new String(update, StandardCharsets.UTF_8);
+    private Map<String, Object> diffOf(Table table) {
+        return changeOf((DartWidget) table.getImpl());
+    }
+
+    /**
+     * What changed in {@code impl} since the client last heard of it, as its record names it; empty
+     * when nothing did. A widget with nothing changed is described whole on request, which says
+     * nothing about what an update names, so only a changed one is asked for, and it has to come back
+     * as a change: a whole record would hold every property, named or not.
+     */
+    private static Map<String, Object> changeOf(DartWidget impl) {
+        if (!impl.getValue().anyDirty()) return Map.of();
+        Map<String, Object> update = WireFrames.record(impl, CLIENT);
+        if (update == null) return Map.of();
+        if (!update.containsKey("_d")) throw new AssertionError("described whole, not as a change: " + update);
+        return update;
     }
 
     private void sendWhole(Table table) {
-        try {
-            serializer.to(table);
-            Serializer.markDelivered();
-        } catch (java.io.IOException e) {
-            throw new AssertionError(e);
-        }
+        WireFrames.record((DartWidget) table.getImpl(), CLIENT);
     }
 }

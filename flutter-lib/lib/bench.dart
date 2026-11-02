@@ -3,45 +3,48 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'src/comm/comm.dart';
+import 'src/comm/tagged_values.dart';
+import 'src/comm/v_registry.dart';
+import 'src/comm/widget_wire.dart';
+import 'src/gen/widgets.dart' show WireChannel;
 import 'src/gen/event.dart';
-import 'src/gen/widgets.dart';
+import 'src/comm/widget_key.dart';
 
 /// Bench handler — wired in from main.dart when widgetName == "BenchBridge".
 ///
 /// Cross-language RTT echo handlers in both directions: the receiver runs the real production
-/// codec (V*.fromJson/toJson on J→D, Event/base64-image decode on D→J) before acking, so each
-/// timing is a true Java↔Dart round trip.
+/// codec (a widget frame applied on J→D, an event or a base64 image decoded on D→J) before acking,
+/// so each timing is a true Java↔Dart round trip.
 ///
 /// D→J shapes are real VEvent variants only (production Dart only sends VEvent).
 void measureRequest(String bridge, int id) {
   final stopwatch = Stopwatch()..start();
-  final prefix = "$bridge/$id";
+  final type = WidgetKey.typeOf(bridge);
   final catalog = _D2jCatalog.build();
 
-  // ===== J→D codec — Dart receives, runs real V*.fromJson + toJson, acks =====
-  EquoCommService.onRaw("$prefix/bench/j2d/json/echo", (payload) {
-    _parseAndReencode(payload as Map<String, dynamic>);
-    EquoCommService.sendBytes("$prefix/bench/j2d/json/echoResponse", _ackBytes);
+  // ===== J→D codec — Dart receives a widget frame, applies it as production does, acks =====
+  EquoCommService.onBytes(type, id, WireChannel.benchJ2dEcho, (frame) {
+    _apply(frame);
+    EquoCommService.sendTo(type, id, WireChannel.benchJ2dEchoResponse, _ackBytes);
   });
 
-  // ===== D→J JSON — Dart re-encodes real VEvent each iteration, Java decodes via DSL-JSON =====
+  // ===== D→J — Dart writes a real VEvent each iteration, Java reads it field by field =====
   // Response handler is registered ONCE; the per-call completer is held in closure scope. Avoids
-  // register/remove races where a fast probeResponse could land between iterations and be lost
-  // to comm_ws's JSON-decode fallback (4 zero ack bytes aren't valid JSON).
-  Completer<int>? d2jJsonCompleter;
-  EquoCommService.onBytes("$prefix/bench/d2j/json/probeResponse", (resp) {
-    final c = d2jJsonCompleter;
+  // register/remove races where a fast probeResponse could land between iterations and be lost.
+  Completer<int>? d2jCompleter;
+  EquoCommService.onBytes(type, id, WireChannel.benchD2jProbeResponse, (resp) {
+    final c = d2jCompleter;
     if (c != null && !c.isCompleted) c.complete(stopwatch.elapsedMicroseconds);
   });
-  EquoCommService.onBytes("$prefix/bench/d2j/json/run", (runBytes) async {
+  EquoCommService.onBytes(type, id, WireChannel.benchD2jRun, (runBytes) async {
     final (seq, shape) = _decodeRun(runBytes);
     final payload = catalog.forShape(shape).payload;
-    d2jJsonCompleter = Completer<int>();
+    d2jCompleter = Completer<int>();
     final t1 = stopwatch.elapsedMicroseconds;
-    EquoCommService.sendPayload("$prefix/bench/d2j/json/probe", payload);
-    final t2 = await d2jJsonCompleter!.future;
-    d2jJsonCompleter = null;
-    _sendResult("$prefix/bench/d2j/json/result", seq, t2 - t1);
+    EquoCommService.sendTo(type, id, WireChannel.benchD2jProbe, payload);
+    final t2 = await d2jCompleter!.future;
+    d2jCompleter = null;
+    _sendResult(type, id, seq, t2 - t1);
   });
 }
 
@@ -54,22 +57,22 @@ void measureRequest(String bridge, int id) {
   return (seq, shape);
 }
 
-/// Decode the payload through the production polymorphic codec and re-encode it — exactly the J→D
-/// first-paint path. `mapWidgetValue` dispatches on the `swt` field to the right `V*.fromJson`,
-/// which recurses into `children`; for a real workbench root this rebuilds the entire tree
-/// (Shell → CTabFolders, Trees, Tables, StyledText, …) before re-encoding.
-void _parseAndReencode(Map<String, dynamic> json) {
-  mapWidgetValue(json).toJson();
+/// Applies a widget frame the way the client applies one on arrival, into a registry of its own so
+/// the client's widgets are untouched: for a real workbench root this builds the entire tree.
+void _apply(Uint8List frame) {
+  final registry = VRegistry();
+  registry.applyWire(frame);
+  registry.clear();
 }
 
 final Uint8List _ackBytes = Uint8List.fromList(const [0, 0, 0, 0]);
 
-void _sendResult(String channel, int seq, int rttMicros) {
+void _sendResult(int type, int id, int seq, int rttMicros) {
   final out = Uint8List(4 + 8);
   final v = ByteData.sublistView(out);
   v.setInt32(0, seq, Endian.big);
   _setInt64BE(v, 4, rttMicros);
-  EquoCommService.sendBytes(channel, out);
+  EquoCommService.sendTo(type, id, WireChannel.benchD2jResult, out);
 }
 
 /// Write a non-negative 64-bit value big-endian as two 32-bit halves. ByteData.setInt64 throws
@@ -97,15 +100,12 @@ class _D2jCatalog {
   }
 
   static _D2jCatalog build() {
-    final encoder = json.fuse(utf8);
     final entries = <String, _D2jEntry>{};
 
-    // Event shapes: the Map is sent via sendPayload; Java decodes it into org.eclipse.swt.widgets.Event.
+    // Event shapes: sent via sendPayload as the event's fields; Java reads them into an Event.
     void addEvent(String name, VEvent ev) {
-      final payload = ev.toJson();
-      final bytes = encoder.encode(payload) as Uint8List;
-      entries[name] = _D2jEntry(payload);
-      print('[bench.dart] D→J $name = ${bytes.length} bytes (event)');
+      entries[name] = _D2jEntry(ev);
+      print('[bench.dart] D→J $name = ${WidgetWireWriter.encode(ev).length} bytes (event)');
     }
 
     // Image shapes: the base64 String (current production wire form) is sent via sendPayload;
@@ -114,8 +114,7 @@ class _D2jCatalog {
       final raw = _pseudoImageBytes(rawSize);
       final b64 = base64Encode(raw);
       entries[name] = _D2jEntry(b64);
-      final jsonBytes = (encoder.encode(b64) as Uint8List).length;
-      print('[bench.dart] D→J $name = base64 ${jsonBytes}B (json)');
+      print('[bench.dart] D→J $name = base64 ${TaggedValues.encode(b64).length}B (tagged)');
     }
 
     addEvent('MOUSE_MOVE', _mouseMove());
@@ -163,7 +162,7 @@ class _D2jCatalog {
 }
 
 /// Deterministic, incompressible-ish byte buffer standing in for encoded image bytes. We only
-/// measure the comm-layer cost (base64 encode + JSON transport + decode), not PNG validity, so
+/// measure the comm-layer cost (base64 encode + transport + decode), not PNG validity, so
 /// synthetic bytes are faithful for that purpose.
 Uint8List _pseudoImageBytes(int n) {
   final out = Uint8List(n);
@@ -174,7 +173,7 @@ Uint8List _pseudoImageBytes(int n) {
 }
 
 class _D2jEntry {
-  /// Object passed to sendPayload on the cross-language path: a Map for events, a base64 String
+  /// Object passed to sendPayload on the cross-language path: a VEvent for events, a base64 String
   /// for images (the real production wire forms Java decodes).
   final dynamic payload;
   _D2jEntry(this.payload);

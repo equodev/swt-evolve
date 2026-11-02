@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'support/channels.dart';
 
 /// Regression: a comm socket that dropped long after boot was never reopened, and the
 /// transport kept believing it was open — so every later frame was handed to a dead socket
@@ -29,10 +30,7 @@ class _TestComm extends EquoCommBase {
   }
 
   @override
-  void rawSend(Uint8List frame) {
-    final nameLen = (frame[0] << 8) | frame[1];
-    sent.add(utf8.decode(frame.sublist(2, 2 + nameLen)));
-  }
+  void rawSend(Uint8List frame) => sent.add(EquoCommBase.decodeFrame(frame).$1);
 }
 
 void main() {
@@ -40,19 +38,19 @@ void main() {
       () {
     fakeAsync((async) {
       final comm = _TestComm()..openSocket();
-      comm.send('Button/1/Selection');
-      expect(comm.sent, ['Button/1/Selection']);
+      comm.sendNamed('Button/1/Selection/Selection');
+      expect(comm.sent, ['Button/1/Selection/Selection']);
 
       comm.socketAvailable = false;
       comm.markClosed();
-      comm.send('Button/2/Selection');
+      comm.sendNamed('Button/2/Selection/Selection');
 
       // The dead socket is never written to; the frame waits instead of being lost.
-      expect(comm.sent, ['Button/1/Selection']);
+      expect(comm.sent, ['Button/1/Selection/Selection']);
 
       comm.socketAvailable = true;
       async.elapse(const Duration(seconds: 1));
-      expect(comm.sent, ['Button/1/Selection', 'Button/2/Selection']);
+      expect(comm.sent, ['Button/1/Selection/Selection', 'Button/2/Selection/Selection']);
     });
   });
 
@@ -71,8 +69,8 @@ void main() {
 
       comm.socketAvailable = true;
       async.elapse(const Duration(seconds: 10));
-      comm.send('Button/1/Selection');
-      expect(comm.sent, ['Button/1/Selection']);
+      comm.sendNamed('Button/1/Selection/Selection');
+      expect(comm.sent, ['Button/1/Selection/Selection']);
     });
   });
 
@@ -98,7 +96,7 @@ void main() {
 
       final overflow = EquoCommBase.maxQueuedFrames + 100;
       for (var i = 0; i < overflow; i++) {
-        comm.send('Button/$i/Selection');
+        comm.sendNamed('Button/$i/Selection/Selection');
       }
 
       comm.socketAvailable = true;
@@ -106,8 +104,8 @@ void main() {
 
       // Oldest dropped, newest kept, order preserved.
       expect(comm.sent.length, EquoCommBase.maxQueuedFrames);
-      expect(comm.sent.first, 'Button/100/Selection');
-      expect(comm.sent.last, 'Button/${overflow - 1}/Selection');
+      expect(comm.sent.first, 'Button/100/Selection/Selection');
+      expect(comm.sent.last, 'Button/${overflow - 1}/Selection/Selection');
     });
   });
 }

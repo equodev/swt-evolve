@@ -16,17 +16,15 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/channel_header.dart';
 import 'package:swtflutter/main.dart' show registerImagePixelsListener;
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+import 'support/channels.dart' as channels;
+import 'support/channels.dart' show NamedChannels;
 
 Uint8List _frame(String actionId, List<int> body) {
-  final action = utf8.encode(actionId);
-  final out = Uint8List(2 + action.length + body.length);
-  out[0] = (action.length >> 8) & 0xFF;
-  out[1] = action.length & 0xFF;
-  out.setRange(2, 2 + action.length, action);
-  out.setRange(2 + action.length, out.length, body);
+  final out = channels.frame(actionId, Uint8List.fromList(body));
   return out;
 }
 
@@ -50,10 +48,10 @@ void main() {
     queuedPathTook = false;
     blocker = Completer<void>();
     // Replaces production's queued handler for this channel; the arrival handler is untouched.
-    EquoCommService.onBytes('Image/requestPixels', (_) {
+    EquoCommService.commForTesting.onBytesNamed('Image/requestPixels', (_) {
       queuedPathTook = true;
     });
-    EquoCommService.onBytes('test/blocker', (_) async => blocker.future);
+    EquoCommService.commForTesting.onBytesNamed('evolve.test.drag', (_) async => blocker.future);
   });
 
   tearDown(() => blocker.isCompleted ? null : blocker.complete());
@@ -62,7 +60,7 @@ void main() {
     const ref = 994242;
     ImageUtils.registerRemoteImage(ref, await createTestImage(width: 4, height: 4));
 
-    EquoCommService.commForTesting.receiveBinary(_frame('test/blocker', const []));
+    EquoCommService.commForTesting.receiveBinary(_frame('evolve.test.drag', const []));
     EquoCommService.commForTesting
         .receiveBinary(_frame('Image/requestPixels', _refBytes(ref)));
     await _settle();
@@ -80,7 +78,7 @@ void main() {
   test('a picture not yet rendered keeps its place in the queue', () async {
     const ref = 994243; // never registered: its render would itself be a queued frame
 
-    EquoCommService.commForTesting.receiveBinary(_frame('test/blocker', const []));
+    EquoCommService.commForTesting.receiveBinary(_frame('evolve.test.drag', const []));
     EquoCommService.commForTesting
         .receiveBinary(_frame('Image/requestPixels', _refBytes(ref)));
     await _settle();

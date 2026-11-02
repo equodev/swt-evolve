@@ -18,10 +18,7 @@ package org.eclipse.swt.graphics;
 import java.io.*;
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
-import com.dslplatform.json.CompiledJson;
-import com.dslplatform.json.CompiledJson.*;
 import dev.equo.swt.ImageDataCodec;
-import com.dslplatform.json.JsonAttribute;
 
 /**
  * Instances of this class are device-independent descriptions
@@ -41,19 +38,16 @@ import com.dslplatform.json.JsonAttribute;
  * @see <a href="https://eclipse.dev/eclipse/swt/examples.html">SWT Example: ImageAnalyzer</a>
  * @see <a href="https://eclipse.dev/eclipse/swt/">Sample code and further information</a>
  */
-@CompiledJson(objectFormatPolicy = ObjectFormatPolicy.EXPLICIT)
-public final class ImageData implements Cloneable {
+public final class ImageData implements Cloneable, dev.equo.swt.WireObject {
 
     /**
      * The width of the image, in pixels.
      */
-    @JsonAttribute()
     public int width;
 
     /**
      * The height of the image, in pixels.
      */
-    @JsonAttribute()
     public int height;
 
     /**
@@ -65,7 +59,6 @@ public final class ImageData implements Cloneable {
      * the image is direct color.  Check the associated
      * PaletteData's isDirect field for such determinations.
      */
-    @JsonAttribute()
     public int depth;
 
     /**
@@ -75,7 +68,6 @@ public final class ImageData implements Cloneable {
      * this number, it will be padded with zeros until it is.
      * </p>
      */
-    @JsonAttribute()
     public int scanlinePad;
 
     /**
@@ -84,7 +76,6 @@ public final class ImageData implements Cloneable {
      * This is a multiple of the scanline padding.
      * </p>
      */
-    @JsonAttribute()
     public int bytesPerLine;
 
     /**
@@ -101,7 +92,6 @@ public final class ImageData implements Cloneable {
     /**
      * The color table for the image.
      */
-    @JsonAttribute(ignore = true)
     public PaletteData palette;
 
     /**
@@ -112,7 +102,6 @@ public final class ImageData implements Cloneable {
      * The default is -1 which means 'no transparent pixel'.
      * </p>
      */
-    @JsonAttribute()
     public int transparentPixel;
 
     /**
@@ -125,7 +114,6 @@ public final class ImageData implements Cloneable {
      * The default is null which means 'no transparency mask'.
      * </p>
      */
-    @JsonAttribute()
     public byte[] maskData;
 
     /**
@@ -136,7 +124,6 @@ public final class ImageData implements Cloneable {
      * it is.
      * </p>
      */
-    @JsonAttribute()
     public int maskPad;
 
     /**
@@ -148,7 +135,6 @@ public final class ImageData implements Cloneable {
      * 'width'.
      * </p>
      */
-    @JsonAttribute()
     public byte[] alphaData;
 
     /**
@@ -162,7 +148,6 @@ public final class ImageData implements Cloneable {
      * The default is -1 which means 'no global alpha value'
      * </p>
      */
-    @JsonAttribute()
     public int alpha;
 
     /**
@@ -184,7 +169,6 @@ public final class ImageData implements Cloneable {
      * <dd>PNG file format</dd>
      * </dl>
      */
-    @JsonAttribute()
     public int type;
 
     /**
@@ -192,7 +176,6 @@ public final class ImageData implements Cloneable {
      * within the logical screen (this field corresponds to
      * the GIF89a Image Left Position value).
      */
-    @JsonAttribute()
     public int x;
 
     /**
@@ -200,7 +183,6 @@ public final class ImageData implements Cloneable {
      * within the logical screen (this field corresponds to
      * the GIF89a Image Top Position value).
      */
-    @JsonAttribute()
     public int y;
 
     /**
@@ -220,7 +202,6 @@ public final class ImageData implements Cloneable {
      * </dl>
      * (this field corresponds to the GIF89a Disposal Method value)
      */
-    @JsonAttribute()
     public int disposalMethod;
 
     /**
@@ -228,7 +209,6 @@ public final class ImageData implements Cloneable {
      * in an animation (this field corresponds to the GIF89a
      * Delay Time value).
      */
-    @JsonAttribute()
     public int delayTime;
 
     /**
@@ -2595,12 +2575,28 @@ public final class ImageData implements Cloneable {
         image.dispose();
     }
 
-    @JsonAttribute(name = "data")
     public byte[] getData() {
         return ImageDataCodec.encode(this);
     }
 
     public void setData(byte[] encoded) {
         ImageDataCodec.decode(this, encoded);
+    }
+
+    @Override
+    public int wireTypeId() {
+        return 57;
+    }
+
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        w.key(340);
+        w.write(getData());
+        w.key(341);
+        w.write(depth);
+        w.key(342);
+        w.write(height);
+        w.key(343);
+        w.write(width);
     }
 }

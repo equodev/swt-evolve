@@ -2,7 +2,10 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Color;
@@ -172,7 +175,8 @@ class CompositeInternalsTest {
         Image image = new Image(shell.getDisplay(), 4, 4);
         composite.setBackgroundImage(image);
         image.dispose();
-        composite.setBackground(new Color(shell.getDisplay(), 1, 2, 3));
+        Color colour = new Color(shell.getDisplay(), 1, 2, 3);
+        composite.setBackground(colour);
         Canvas surface = new Canvas(shell, SWT.NONE);
         surface.setBounds(0, 0, 20, 20);
         org.eclipse.swt.graphics.GC gc = new org.eclipse.swt.graphics.GC(surface);
@@ -182,8 +186,13 @@ class CompositeInternalsTest {
         } finally {
             gc.dispose();
         }
-        String wire = String.join("", bridge.comm.sent.stream().map(f -> f.json).toList());
-        assertThat(wire).contains("fillRectangleintintintint\",[0,0,5,5]]").contains("\"r\":1").doesNotContain("\"backgroundPattern\":{");
+        List<GcFrames.Entry> wire = BatchEntries.of(bridge.comm.sent);
+        assertThat(wire).anyMatch(e -> e.channel().endsWith("/fillRectangleintintintint")
+                && WireValues.same(e.value(), new int[] {0, 0, 5, 5}));
+        assertThat(WireValues.find(wire, m -> m.containsKey("background") && WireValues.same(m.get("background"), colour)))
+                .as("the colour is set").isNotEmpty();
+        assertThat(WireValues.find(wire, m -> m.get("backgroundPattern") instanceof java.util.Map))
+                .as("no pattern from the disposed image").isEmpty();
     }
 
     @Test

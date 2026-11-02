@@ -3,12 +3,7 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
-import java.util.ArrayList;
 
-@CompiledJson()
 public class VTabFolder extends VComposite {
 
     protected VTabFolder() {
@@ -22,10 +17,16 @@ public class VTabFolder extends VComposite {
         TabItem[] values = ((DartTabFolder) impl).items;
         if (values == null)
             return null;
-        ArrayList<TabItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TabItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TabItem[] result = new TabItem[kept];
+        kept = 0;
+        for (TabItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setItems(TabItem[] value) {
@@ -36,55 +37,97 @@ public class VTabFolder extends VComposite {
         TabItem[] values = ((DartTabFolder) impl).selection;
         if (values == null)
             return null;
-        ArrayList<TabItem> result = new ArrayList<>(values.length);
+        int kept = 0;
         for (TabItem v : values) if (v != null)
-            result.add(v);
-        return result.toArray(new TabItem[0]);
+            kept++;
+        if (kept == values.length)
+            return values;
+        TabItem[] result = new TabItem[kept];
+        kept = 0;
+        for (TabItem v : values) if (v != null)
+            result[kept++] = v;
+        return result;
     }
 
     public void setSelection(TabItem[] value) {
         ((DartTabFolder) impl).selection = value;
     }
 
-    public static final String ITEMS = "items";
+    public static final int ITEMS = 543;
 
-    public static final String SELECTION = "selection";
+    public static final int SELECTION = 544;
 
     @Override
-    protected void writeProperty(JsonWriter writer, String key) {
+    public String wireName(int key) {
         switch(key) {
-            case "items":
-                Serializer.writeKeyValue(writer, "items", getItems());
-                return;
-            case "selection":
-                Serializer.writeKeyValue(writer, "selection", getSelection());
-                return;
+            case ITEMS:
+                return "items";
+            case SELECTION:
+                return "selection";
         }
-        super.writeProperty(writer, key);
+        return super.wireName(key);
     }
 
-    @JsonConverter(target = TabFolder.class)
-    public static class TabFolderJson implements Configuration {
-
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartTabFolder.class, (JsonWriter.WriteObject<DartTabFolder>) (writer, impl) -> {
-                Serializer.writeWithId(json, writer, impl);
-            });
-            json.registerReader(DartTabFolder.class, (JsonReader.ReadObject<DartTabFolder>) reader -> {
-                return null;
-            });
+    @Override
+    public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 543:
+                w.refs(getItems());
+                return true;
+            case 544:
+                w.refs(getSelection());
+                return true;
         }
+        return super.writeWire(w, key);
+    }
 
-        public static TabFolder read(JsonReader<?> reader) throws IOException {
-            return null;
+    @Override
+    public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
+        switch(key) {
+            case 543:
+                {
+                    TabItem[] v_ = getItems();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(543);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 544:
+                {
+                    TabItem[] v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(544);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
+        return super.writeWireWhole(w, key);
+    }
 
-        public static void write(JsonWriter writer, TabFolder api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 543, 544 });
+
+    protected static int[] allWireKeys_() {
+        return wireKeys_;
+    }
+
+    @Override
+    public int[] wireKeys() {
+        return wireKeys_;
+    }
+
+    @Override
+    public boolean wireAlways(int key) {
+        return super.wireAlways(key);
+    }
+
+    @Override
+    public boolean wireKeepsEmpty(int key) {
+        return super.wireKeepsEmpty(key);
     }
 }

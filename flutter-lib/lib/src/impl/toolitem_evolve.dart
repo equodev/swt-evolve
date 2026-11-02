@@ -21,6 +21,7 @@ import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'toolbar_evolve.dart';
 import 'menu_evolve.dart' show OpenPopupMenuTracker;
+import 'utils/layered_layout_builder.dart';
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
@@ -497,7 +498,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     }
     }
 
-    Widget hoverableContent = LayoutBuilder(
+    Widget hoverableContent = LayeredLayoutBuilder(
       builder: (_, incoming) => buildHoverable(incoming.maxWidth),
     );
 

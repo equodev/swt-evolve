@@ -2,11 +2,7 @@ package org.eclipse.swt.printing;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.widgets.*;
-import com.dslplatform.json.*;
-import dev.equo.swt.Serializer;
-import java.io.IOException;
 
-@CompiledJson()
 public class VPrintDialog extends VDialog {
 
     protected VPrintDialog() {
@@ -32,7 +28,6 @@ public class VPrintDialog extends VDialog {
         ((DartPrintDialog) impl).printToFile = value;
     }
 
-    @JsonAttribute(ignore = true)
     public PrinterData getPrinterData() {
         return ((DartPrintDialog) impl).printerData;
     }
@@ -57,31 +52,21 @@ public class VPrintDialog extends VDialog {
         ((DartPrintDialog) impl).startPage = value;
     }
 
-    @JsonConverter(target = PrintDialog.class)
-    public static class PrintDialogJson implements Configuration {
+    @Override
+    public int wireTypeId() {
+        return 77;
+    }
 
-        @Override
-        public void configure(DslJson json) {
-            json.registerWriter(DartPrintDialog.class, (JsonWriter.WriteObject<DartPrintDialog>) (writer, impl) -> {
-                if (impl == null)
-                    writer.writeNull();
-                else
-                    writer.serializeObject(impl.getValue());
-            });
-            json.registerReader(DartPrintDialog.class, (JsonReader.ReadObject<DartPrintDialog>) reader -> {
-                return null;
-            });
-        }
-
-        public static PrintDialog read(JsonReader<?> reader) throws IOException {
-            return null;
-        }
-
-        public static void write(JsonWriter writer, PrintDialog api) {
-            if (api == null)
-                writer.writeNull();
-            else
-                writer.serializeObject(api.getImpl());
-        }
+    @Override
+    public void writeWireFields(dev.equo.swt.WidgetWire w) {
+        super.writeWireFields(w);
+        w.key(408);
+        w.write((int) getEndPage());
+        w.key(409);
+        w.write(getPrintToFile());
+        w.key(410);
+        w.write((int) getScope());
+        w.key(411);
+        w.write((int) getStartPage());
     }
 }

@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,8 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
@@ -36,15 +33,13 @@ import dev.equo.swt.comm.CommService;
  */
 public final class PaintPacing {
 
-    /** Sent by the client with {@code {"id": <control's id>}} when the frame showing its Paint begins. */
+    /** Sent by the client with the control's id when the frame showing its Paint begins. */
     static final String IN_FRAME = "GC/inFrame";
 
     static final int TIMEOUT_MS = 100;
 
     /** Paints of one control the client may have yet to take into a frame. */
     static final int IN_FLIGHT = 1;
-
-    private static final Pattern ID = Pattern.compile("\"id\"\\s*:\\s*(-?\\d+)");
 
     private static final String PACER_KEY = PaintPacing.class.getName();
 
@@ -70,19 +65,45 @@ public final class PaintPacing {
      * does), and a connection keeps one handler per message.
      */
     private static final class Router {
-        final Set<Pacer> pacers = ConcurrentHashMap.newKeySet();
+        /** Changed once per Display and comm, read on every answer: replaced whole, read without a lock. */
+        private volatile Pacer[] pacers = new Pacer[0];
 
-        void answered(byte[] bytes) {
-            if (bytes == null) return;
-            Matcher m = ID.matcher(new String(bytes, StandardCharsets.UTF_8));
-            if (!m.find()) return;
-            int id = Integer.parseInt(m.group(1));
-            for (Pacer pacer : pacers) {
+        synchronized void add(Pacer pacer) {
+            Pacer[] next = java.util.Arrays.copyOf(pacers, pacers.length + 1);
+            next[pacers.length] = pacer;
+            pacers = next;
+        }
+
+        synchronized void remove(Pacer pacer) {
+            Pacer[] held = pacers;
+            for (int i = 0; i < held.length; i++) {
+                if (held[i] != pacer) continue;
+                Pacer[] next = new Pacer[held.length - 1];
+                System.arraycopy(held, 0, next, 0, i);
+                System.arraycopy(held, i + 1, next, i, held.length - i - 1);
+                pacers = next;
+                return;
+            }
+        }
+
+        void answered(byte[] data, int offset, int length) {
+            if (length <= 0) return;
+            int id = (int) dev.equo.swt.WireReader.over(data, offset, length).int64();
+            Pacer[] all = pacers;
+            for (int i = 0; i < all.length; i++) {
+                Pacer pacer = all[i];
                 DartControl shown = pacer.byId.get(id);
-                if (shown != null && !pacer.display.isDisposed()) {
-                    pacer.display.asyncExec(() -> shown(shown));
-                    return;
+                if (shown == null) continue;
+                PaintState state = shown.paintState;
+                if (state == null) return;
+                // The answer only frees a slot; the UI thread is woken for it only when a Paint waits on it.
+                boolean waiting;
+                synchronized (state.inFlight) {
+                    state.inFlight.pollFirst();
+                    waiting = pacer.held.contains(shown);
                 }
+                if (waiting && !pacer.display.isDisposed()) pacer.display.asyncExec(() -> release(shown));
+                return;
             }
         }
     }
@@ -96,11 +117,16 @@ public final class PaintPacing {
         if (state.pacer == null) return false;
         ArrayDeque<Long> sent = state.inFlight;
         long now = System.nanoTime();
-        // A Paint the client never answered for stops counting once it has been waited on long enough.
-        while (!sent.isEmpty() && now - sent.peekFirst() >= TIMEOUT_MS * 1_000_000L) sent.pollFirst();
-        if (sent.size() < IN_FLIGHT) return false;
-        long oldest = sent.peekFirst();
-        state.pacer.held.add(c);
+        long oldest;
+        synchronized (sent) {
+            // A Paint the client never answered for stops counting once it has been waited on long enough.
+            while (!sent.isEmpty() && now - sent.peekFirst() >= TIMEOUT_MS * 1_000_000L) sent.pollFirst();
+            if (sent.size() < IN_FLIGHT) return false;
+            oldest = sent.peekFirst();
+            // Under the lock the answer frees the slot with, so it either sees this held or freed the
+            // slot before it was checked.
+            state.pacer.held.add(c);
+        }
         int remaining = (int) Math.max(1, TIMEOUT_MS - (now - oldest) / 1_000_000);
         c.getDisplay().timerExec(remaining, () -> timedOut(c, oldest));
         return true;
@@ -128,9 +154,11 @@ public final class PaintPacing {
         Pacer pacer = state.pacer;
         listen(pacer, (AbstractBinaryCommService) comm);
         pacer.byId.put(id, c);
-        state.inFlight.addLast(System.nanoTime());
+        synchronized (state.inFlight) {
+            state.inFlight.addLast(System.nanoTime());
+        }
         // Nothing of a repeat reached the client, so it is asked to answer for its next frame.
-        if (repeat) comm.send("GC/" + id + "/nextFrame");
+        if (repeat) comm.send(dev.equo.swt.WireTable.TYPE_GC, id, dev.equo.swt.WireTable.CHANNEL_NEXT_FRAME, null);
     }
 
     /** The Paint [drawable] is finishing repeats what its client shows and is not being sent. */
@@ -146,7 +174,7 @@ public final class PaintPacing {
         display.setData(PACER_KEY, pacer);
         // A connection outliving the Display must not keep routing to it, nor keep it reachable.
         display.disposeExec(() -> {
-            for (AbstractBinaryCommService comm : pacer.listening) router(comm).pacers.remove(pacer);
+            for (AbstractBinaryCommService comm : pacer.listening) router(comm).remove(pacer);
         });
         return pacer;
     }
@@ -159,32 +187,31 @@ public final class PaintPacing {
     private static Router router(AbstractBinaryCommService comm) {
         return comm.attachment(Router.class, () -> {
             Router router = new Router();
-            comm.on(IN_FRAME, byte[].class, router::answered);
+            comm.onBytes(0, 0, dev.equo.swt.WireTable.CHANNEL_GC_IN_FRAME, router::answered);
             return router;
         });
     }
 
     private static void listen(Pacer pacer, AbstractBinaryCommService comm) {
-        if (pacer.listening.add(comm)) router(comm).pacers.add(pacer);
-    }
-
-    /** The client took [c]'s oldest Paint in flight into a frame: a Paint held for room goes out. */
-    private static void shown(DartControl c) {
-        ControlHelper.paintState(c).inFlight.pollFirst();
-        release(c);
+        if (pacer.listening.add(comm)) router(comm).add(pacer);
     }
 
     /** Waiting on [c]'s Paint sent at [sent] timed out; one answered meanwhile has already made room. */
     private static void timedOut(DartControl c, long sent) {
-        ControlHelper.paintState(c).inFlight.remove(sent);
+        ArrayDeque<Long> inFlight = ControlHelper.paintState(c).inFlight;
+        synchronized (inFlight) {
+            inFlight.remove(sent);
+        }
         release(c);
     }
 
     /** Sends [c]'s held Paint if it now has room. */
     private static void release(DartControl c) {
         PaintState state = ControlHelper.paintState(c);
-        if (state.inFlight.size() >= IN_FLIGHT) return;
-        if (state.pacer == null || !state.pacer.held.remove(c)) return;
+        synchronized (state.inFlight) {
+            if (state.inFlight.size() >= IN_FLIGHT) return;
+            if (state.pacer == null || !state.pacer.held.remove(c)) return;
+        }
         if (!c.isDisposed()) ControlHelper.dispatchHeldPaint(c);
     }
 
@@ -192,24 +219,35 @@ public final class PaintPacing {
      * Called with the state a flush is about to send. Anything in it besides a held control's own
      * drawing releases every Paint its Display holds, so a control that repaints to follow another
      * (a ruler following its editor's scroll) is not shown a frame behind it. Another Display's
-     * state leaves them held.
+     * state leaves them held. Returns whether a Paint ran.
      */
-    public static void flushing(Collection<Object> states) {
+    public static boolean flushing(java.util.List<Object> states) {
         Display current = Display.getCurrent();
         if (current != null && current.isDisposed()) current = null;
         Pacer currentPacer = current == null ? null : existingPacer(current);
-        Set<Pacer> released = new HashSet<>();
-        for (Object state : states) {
+        // Nearly always one Display's pacing at most, so a set is made only for a second.
+        Pacer releasedFirst = null;
+        Set<Pacer> released = null;
+        boolean painted = false;
+        for (int i = 0; i < states.size(); i++) {
+            Object state = states.get(i);
             Object owner = state instanceof DartGC ? ((DartGC) state)._drawable()
                     : state instanceof DartWidget ? ((DartWidget) state).getApi() : null;
             Pacer pacer = pacerOf(owner, current, currentPacer);
-            if (pacer == null || released.contains(pacer) || pacer.held.isEmpty()) continue;
+            if (pacer == null || pacer == releasedFirst || (released != null && released.contains(pacer))
+                    || pacer.held.isEmpty()) continue;
             DartControl c = dartImpl(owner);
             if (c == null || !pacer.held.contains(c)) {
-                released.add(pacer);
-                releaseAll(pacer);
+                if (releasedFirst == null) {
+                    releasedFirst = pacer;
+                } else {
+                    if (released == null) released = new HashSet<>();
+                    released.add(pacer);
+                }
+                painted |= releaseAll(pacer);
             }
         }
+        return painted;
     }
 
     /**
@@ -232,14 +270,32 @@ public final class PaintPacing {
                 ? (DartControl) ((Control) o).getImpl() : null;
     }
 
-    private static void releaseAll(Pacer pacer) {
-        DartControl[] all;
-        synchronized (pacer.held) {
-            all = pacer.held.toArray(new DartControl[0]);
-            pacer.held.clear();
+    /** Rounds of {@link #releaseAll}: two controls that redraw each other would otherwise never stop. */
+    private static final int RELEASE_ROUNDS = 8;
+
+    private static boolean releaseAll(Pacer pacer) {
+        boolean painted = false;
+        // A released Paint can redraw another control (an editor's Paint redraws its ruler), and the
+        // pacing holds that one too: it follows the same change, so it goes out in this flush as well.
+        for (int round = 0; round < RELEASE_ROUNDS; round++) {
+            DartControl[] all;
+            synchronized (pacer.held) {
+                if (pacer.held.isEmpty()) break;
+                all = pacer.held.toArray(new DartControl[0]);
+                pacer.held.clear();
+            }
+            boolean paintedNow = false;
+            for (DartControl c : all) {
+                if (c.isDisposed()) continue;
+                if (c.getDisplay().getThread() == Thread.currentThread()) {
+                    paintedNow |= ControlHelper.paintHeldNow(c);
+                } else {
+                    ControlHelper.dispatchHeldPaint(c);
+                }
+            }
+            painted |= paintedNow;
+            if (!paintedNow) break;
         }
-        for (DartControl c : all) {
-            if (!c.isDisposed()) ControlHelper.dispatchHeldPaint(c);
-        }
+        return painted;
     }
 }

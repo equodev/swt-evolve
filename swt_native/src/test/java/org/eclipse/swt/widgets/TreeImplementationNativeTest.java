@@ -39,7 +39,7 @@ class TreeImplementationNativeTest extends SerializeTestBase {
         impl(tree).getValue().clearDirty();
     }
 
-    private static boolean named(Tree tree, String key) {
+    private static boolean named(Tree tree, int key) {
         return impl(tree).getValue().changedKeys().contains(key);
     }
 

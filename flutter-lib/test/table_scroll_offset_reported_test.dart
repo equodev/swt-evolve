@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/table_evolve.dart';
 
 import 'delivery/support/deliver.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 
 const double _viewportHeight = 200;
 const double _tableWidth = 200;
@@ -32,7 +33,7 @@ class _CapturingTableSwt extends TableSwt<VTable> {
   final void Function(String ev, VEvent? payload) onEvent;
 
   @override
-  void sendEvent(VTable val, String ev, VEvent? payload) => onEvent(ev, payload);
+  void sendEvent(VTable val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
 VTable _table({int rows = _rows, int seq = 1}) => VTable()

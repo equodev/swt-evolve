@@ -50,7 +50,7 @@ EdgeInsets _appliedPadding(WidgetTester tester) {
   final AnimatedContainer container = tester.widget<AnimatedContainer>(
     find.descendant(
       of: find.byType(ButtonSwt<VButton>),
-      matching: find.byType(AnimatedContainer),
+      matching: find.byWidgetPredicate((w) => w is AnimatedContainer),
     ),
   );
   return container.padding! as EdgeInsets;

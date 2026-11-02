@@ -1,8 +1,8 @@
-import 'dart:convert';
-
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
+import 'package:flutter/widgets.dart' show BuildContext, VoidCallback;
 
 import '../comm/comm.dart';
+import '../gen/widgets.dart' show WireChannel;
 
 /// Keyboard focus asked for by Java -- `Control.setFocus()`, a JFace cell editor activating, a
 /// part activation. The render side owns the real focus, so the request has to cross the bridge or
@@ -12,26 +12,29 @@ import '../comm/comm.dart';
 /// delivered on the target's own channel: Java can focus a control it created in the same
 /// event-loop pass, and that control only exists client-side one frame after its parent's state
 /// push, so a per-widget listener would not be registered yet when the request lands.
-class FocusRequests extends ChangeNotifier {
+class FocusRequests {
   FocusRequests._();
 
   static final FocusRequests instance = FocusRequests._();
 
-  static const String channel = 'swt.evolve.focus';
-
-  /// Where each request's `seq` is echoed back as soon as it arrives. Java holds a request until
-  /// then and drops the focus reports that reach it first: they were sent before this client knew
-  /// of the request, so they name the focus it held before, and applying them would undo it.
-  static const String seenChannel = 'swt.evolve.focus.seen';
-
-  /// Which control Java holds as its focus control, when it changes without a Display push (which
-  /// carries it as `VDisplay.focusHolderId`). It never moves the client's keyboard focus; Tab
-  /// traverses from it (see `TraversalVetoScope`).
-  static const String holderChannel = 'swt.evolve.focusHolder';
 
   static bool _listening = false;
 
   int? _pendingId;
+
+  /// Who can claim a request, by the id it is for: a request reaches only the widgets of its id, and
+  /// a widget stops watching in constant time however many others are.
+  final _watchers = <int, List<VoidCallback>>{};
+
+  /// Calls [onRequest] whenever a request for [id] arrives.
+  void watch(int id, VoidCallback onRequest) => (_watchers[id] ??= []).add(onRequest);
+
+  void unwatch(int id, VoidCallback onRequest) {
+    final watchers = _watchers[id];
+    if (watchers == null) return;
+    watchers.remove(onRequest);
+    if (watchers.isEmpty) _watchers.remove(id);
+  }
 
   int? _holderId;
 
@@ -41,16 +44,19 @@ class FocusRequests extends ChangeNotifier {
   static void listen() {
     if (_listening) return;
     _listening = true;
-    EquoCommService.onRaw(channel, (dynamic args) {
-      final decoded = args is String ? jsonDecode(args) : args;
+    EquoCommService.on(0, 0, WireChannel.swtEvolveFocus, (dynamic decoded) {
       if (decoded is! Map) return;
       final seq = decoded['seq'];
-      if (seq is num) EquoCommService.sendPayload(seenChannel, {'seq': seq});
+      // Echoed as it arrives: Java holds the request until then and drops the focus reports that reach
+      // it first, since they were sent before this client knew of the request.
+      if (seq is num) EquoCommService.sendOn(WireChannel.swtEvolveFocusSeen, {'seq': seq});
       final id = (decoded['id'] as num?)?.toInt();
       if (id != null) instance.request(id);
     });
-    EquoCommService.onRaw(holderChannel, (dynamic args) {
-      final decoded = args is String ? jsonDecode(args) : args;
+    // Which control Java holds as its focus control, when it changes without a Display push (which
+    // carries it as `VDisplay.focusHolderId`). It never moves the client's keyboard focus; Tab
+    // traverses from it (see `TraversalVetoScope`).
+    EquoCommService.on(0, 0, WireChannel.swtEvolveFocusHolder, (dynamic decoded) {
       if (decoded is! Map) return;
       instance._holderId = (decoded['id'] as num?)?.toInt();
     });
@@ -74,9 +80,17 @@ class FocusRequests extends ChangeNotifier {
     return context != null && context.mounted ? context : null;
   }
 
+  /// The latest request, claimed or not.
+  int? _requestedId;
+
   void request(int id) {
+    _requestedId = id;
     _pendingId = id;
-    notifyListeners();
+    final watchers = _watchers[id];
+    if (watchers == null) return;
+    for (final onRequest in [...watchers]) {
+      onRequest();
+    }
   }
 
   /// Whether [id] is the outstanding request, consuming it if so. A request is honoured once, so a
@@ -87,9 +101,16 @@ class FocusRequests extends ChangeNotifier {
     return true;
   }
 
+  /// Hands back a request [claim]ed by an element disposed before it could apply it, for whichever
+  /// element now shows that control, unless a later request has replaced it.
+  void giveBack(int id) {
+    if (_pendingId == null && _requestedId == id) request(id);
+  }
+
   @visibleForTesting
   void reset() {
     _pendingId = null;
+    _requestedId = null;
     _holderId = null;
   }
 }

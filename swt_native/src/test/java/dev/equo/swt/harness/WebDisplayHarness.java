@@ -1,7 +1,5 @@
 package dev.equo.swt.harness;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.HeadlessChrome;
 import dev.equo.swt.comm.CommService;
@@ -11,8 +9,6 @@ import org.eclipse.swt.widgets.Widget;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +34,6 @@ public final class WebDisplayHarness {
     private static final int BOOT_ATTEMPTS = Integer.getInteger("harness.bootAttempts", 3);
     private static final long BOOT_ATTEMPT_MS = Long.getLong("harness.bootAttemptMs", 12_000);
 
-    private final Gson gson = new Gson();
     private final AtomicInteger ids = new AtomicInteger();
     private final Map<Integer, CompletableFuture<Map<String, Object>>> pending = new ConcurrentHashMap<>();
 
@@ -67,10 +62,10 @@ public final class WebDisplayHarness {
         display = new Display();
         comm = FlutterBridge.resolveDisplayGcComm(display);
         if (comm == null) throw new IllegalStateException("the Display did not start a web bridge");
-        comm.on(Q_RESPONSE, byte[].class, bytes -> complete(bytes, "queryId"));
-        comm.on(FRAME_SYNCED, byte[].class, bytes -> complete(bytes, "syncId"));
-        comm.on(FRAME_COST_RESPONSE, byte[].class, bytes -> complete(bytes, "costId"));
-        comm.on(STYLEDTEXT_PERF_RESPONSE, byte[].class, bytes -> complete(bytes, "perfId"));
+        dev.equo.swt.harness.Channels.on(comm, Q_RESPONSE, byte[].class, bytes -> complete(bytes, "queryId"));
+        dev.equo.swt.harness.Channels.on(comm, FRAME_SYNCED, byte[].class, bytes -> complete(bytes, "syncId"));
+        dev.equo.swt.harness.Channels.on(comm, FRAME_COST_RESPONSE, byte[].class, bytes -> complete(bytes, "costId"));
+        dev.equo.swt.harness.Channels.on(comm, STYLEDTEXT_PERF_RESPONSE, byte[].class, bytes -> complete(bytes, "perfId"));
         String url = FlutterBridgeSpi.getWebServerUrl(display);
         String binary = HeadlessChrome.resolveBinary(configured);
         if (binary == null) throw new IllegalStateException("Chrome/Chromium not found; set -Dequo.swt.browser=<path>");
@@ -168,6 +163,16 @@ public final class WebDisplayHarness {
         }
     }
 
+    /** Runs the Display until {@code condition} holds, or {@code timeoutMs} passes; whether it held. */
+    public boolean pumpUntil(java.util.function.BooleanSupplier condition, long timeoutMs) {
+        StallTolerantDeadline deadline = new StallTolerantDeadline(timeoutMs);
+        while (!condition.getAsBoolean()) {
+            if (!deadline.hasTimeLeft()) return false;
+            if (!drain()) sleep();
+        }
+        return true;
+    }
+
     /** Units of Display work run so far, to tell a quiet period. */
     public long dispatched() {
         return dispatched;
@@ -179,7 +184,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(FRAME_SYNC, ("{\"syncId\":" + id + "}").getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.send(comm, FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", id), null));
         return await(f, timeoutMs) != null;
     }
 
@@ -188,11 +193,12 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(Q_REQUEST, ("{\"queryId\":" + id + ",\"targetId\":" + w.hashCode() + "}")
-                .getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.send(comm, Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", id, "targetId", w.hashCode()), null));
         Map<String, Object> response = await(f, TIMEOUT_MS);
         if (response == null) throw new IllegalStateException("no answer to the state query for " + w + lastStall);
-        return response;
+        Map<String, Object> named = new java.util.HashMap<>(response);
+        named.put("state", WireFrames.named(response.get("state")));
+        return named;
     }
 
     /** The engine's frame cost since the last call, as {@code {build, raster}} in ms. */
@@ -201,7 +207,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(FRAME_COST, ("{\"costId\":" + id + "}").getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.send(comm, FRAME_COST, dev.equo.swt.comm.TaggedValues.encode(Map.of("costId", id), null));
         Map<String, Object> response = await(f, TIMEOUT_MS);
         Object frames = response == null ? null : response.get("frames");
         return frames instanceof List ? (List<Map<String, Object>>) frames : List.of();
@@ -213,7 +219,7 @@ public final class WebDisplayHarness {
         int id = ids.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        comm.send(STYLEDTEXT_PERF, ("{\"perfId\":" + id + "}").getBytes(StandardCharsets.UTF_8));
+        dev.equo.swt.harness.Channels.send(comm, STYLEDTEXT_PERF, dev.equo.swt.comm.TaggedValues.encode(Map.of("perfId", id), null));
         Map<String, Object> response = await(f, TIMEOUT_MS);
         Object perf = response == null ? null : response.get("perf");
         return perf instanceof Map ? (Map<String, Object>) perf : Map.of();
@@ -230,12 +236,20 @@ public final class WebDisplayHarness {
     /** Where {@code w} is rendered on the page: {x, y, width, height}. */
     @SuppressWarnings("unchecked")
     public double[] renderedRect(Widget w) {
-        Map<String, Object> render = (Map<String, Object>) queryState(w).get("render");
-        Map<String, Object> rect = render == null ? null : (Map<String, Object>) render.get("rect");
-        if (rect == null) throw new IllegalStateException(w + " is not rendered");
-        return new double[] {
-                ((Number) rect.get("x")).doubleValue(), ((Number) rect.get("y")).doubleValue(),
-                ((Number) rect.get("width")).doubleValue(), ((Number) rect.get("height")).doubleValue() };
+        // The client lays a widget out in the frame after its record lands, so one just made is asked
+        // for again until it is drawn.
+        StallTolerantDeadline deadline = new StallTolerantDeadline(5_000);
+        while (true) {
+            Map<String, Object> render = (Map<String, Object>) queryState(w).get("render");
+            Map<String, Object> rect = render == null ? null : (Map<String, Object>) render.get("rect");
+            if (rect != null) {
+                return new double[] {
+                        ((Number) rect.get("x")).doubleValue(), ((Number) rect.get("y")).doubleValue(),
+                        ((Number) rect.get("width")).doubleValue(), ((Number) rect.get("height")).doubleValue() };
+            }
+            if (!deadline.hasTimeLeft()) throw new IllegalStateException(w + " is not rendered" + deadline.stallSuffix());
+            if (!drain()) sleep();
+        }
     }
 
     private Map<String, Object> await(CompletableFuture<Map<String, Object>> f, long timeoutMs) {
@@ -250,10 +264,15 @@ public final class WebDisplayHarness {
     /** {@link StallTolerantDeadline#stallSuffix()} of the last wait, for its failure message. */
     private String lastStall = "";
 
+    /** A reply from the client: tagged values, a map at the top. */
+    @SuppressWarnings("unchecked")
     private void complete(byte[] bytes, String idKey) {
         if (bytes == null) return;
-        Type type = new TypeToken<Map<String, Object>>() {}.getType();
-        Map<String, Object> message = gson.fromJson(new String(bytes, StandardCharsets.UTF_8), type);
+        Object value = GcFrames.value(bytes);
+        Map<String, Object> message = value instanceof Map ? (Map<String, Object>) value : null;
+        if (message != null && message.get("error") != null) {
+            System.err.println("[WebDisplayHarness] the client could not answer: " + message.get("error"));
+        }
         Object id = message == null ? null : message.get(idKey);
         if (id == null) return;
         CompletableFuture<Map<String, Object>> f = pending.remove(((Number) id).intValue());

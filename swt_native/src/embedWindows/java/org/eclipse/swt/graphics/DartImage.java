@@ -2699,7 +2699,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void _releaseRemoteRefOnDart(Long ref) {
         if (ref != null)
-            _sendAfterQueuedDraws("Image/releaseRemoteRef", ref);
+            _sendAfterQueuedDraws(dev.equo.swt.WireTable.CHANNEL_IMAGE_RELEASE_REMOTE_REF, ref);
     }
 
     boolean describedToClient;
@@ -2710,15 +2710,15 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     private void _forgetOnDart() {
         if (describedToClient)
-            _sendAfterQueuedDraws("Image/forget", dev.equo.swt.FlutterBridge.id(this));
+            _sendAfterQueuedDraws(dev.equo.swt.WireTable.CHANNEL_IMAGE_FORGET, dev.equo.swt.FlutterBridge.id(this));
     }
 
-    private void _sendAfterQueuedDraws(String event, long id) {
+    private void _sendAfterQueuedDraws(int channel, long id) {
         if (device instanceof Display) {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send(event, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send(0, 0, channel, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
             }
         }
     }
@@ -2763,19 +2763,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     private void _ensureRemotePixels() {
         if (!remotePixelsStale || remoteRef == null || remoteComm == null)
             return;
-        // Generous: a GPU-less browser can take seconds to answer the first read of a kind of
-        // image, and an answer that arrives after the bound is lost.
-        byte[] png = GCHelper.fetchRemotePixels(device, remoteComm, remoteRef, 30000);
-        if (png == null || png.length == 0) {
-            SWT.error(SWT.ERROR_IO, null, " [the render side did not return the pixels for image " + remoteRef + "]");
+        ImageData read = GCHelper.readRemotePixels(device, remoteComm, remoteRef, getBounds());
+        if (read == null)
             return;
-        }
-        try {
-            this.imageData = new ImageData(new java.io.ByteArrayInputStream(png));
-            remotePixelsStale = false;
-        } catch (Exception e) {
-            System.err.println("[Image] Could not decode the pixels Flutter returned for remoteRef " + remoteRef + ": " + e.getMessage());
-        }
+        this.imageData = read;
+        remotePixelsStale = false;
     }
 
     public void cancelRenderFuture() {
