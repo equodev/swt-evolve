@@ -40,7 +40,9 @@ public class TreeHelper {
 
     public static int scrollOffsetY(DartTree tree) {
         org.eclipse.swt.graphics.Point offset = SCROLL_OFFSETS.get(tree);
-        return offset == null ? 0 : offset.y;
+        if (offset == null) return 0;
+        // A scroll asked for before the tree had its size, or before rows went away, is clamped by Flutter.
+        return Math.min(offset.y, maxScrollOffset(tree, visibleItems(tree).size(), Math.max(1, tree.getItemHeight())));
     }
 
     /** Cell bounds are in the tree's client area, as natively, so they move left by this much. */
@@ -58,8 +60,7 @@ public class TreeHelper {
         java.util.List<TreeItem> rows = visibleItems(tree);
         if (rows.isEmpty()) return null;
         int itemHeight = Math.max(1, tree.getItemHeight());
-        int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
-        return rows.get(Math.min(offset / itemHeight, rows.size() - 1));
+        return rows.get(Math.min(scrollOffsetY(tree) / itemHeight, rows.size() - 1));
     }
 
     /** Scrolls so that {@code item} is the row at the top, as far as the rows below it allow. */
@@ -76,7 +77,7 @@ public class TreeHelper {
         if (row < 0) return;
         int itemHeight = Math.max(1, tree.getItemHeight());
         int viewport = viewportHeight(tree);
-        int offset = Math.min(scrollOffsetY(tree), maxScrollOffset(tree, rows.size(), itemHeight));
+        int offset = scrollOffsetY(tree);
         if (row * itemHeight < offset) {
             scrollToRow(tree, rows, row);
         } else if ((row + 1) * itemHeight > offset + viewport) {
@@ -685,6 +686,17 @@ public class TreeHelper {
         item.getValue().markDirty(VTreeItem.IMAGES);
         item.getValue().markDirty(VTreeItem.TEXTS);
         item.getValue().markDirty(VTreeItem.PAINTED_TEXTS);
+    }
+
+    /**
+     * Expanding or collapsing an item moves the rows under the tree's child controls. Natively the
+     * tree repaints with its children, and a child placed on a row (TreeCursor) checks its row in
+     * that Paint; a hidden child gets none. The tree itself is not repainted: Flutter lays out its rows.
+     */
+    static void redrawChildren(DartTree tree) {
+        for (Control child : tree._getChildren()) {
+            if (child.isVisible()) child.redraw();
+        }
     }
 
     public static String[] getTexts(DartTreeItem item) {

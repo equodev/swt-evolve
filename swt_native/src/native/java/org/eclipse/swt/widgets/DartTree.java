@@ -2423,6 +2423,7 @@ public class DartTree extends DartComposite implements ITree {
         getValue().markDirty(VTree.ITEMS);
         if (expanded)
             loadVirtualPage(item);
+        TreeHelper.redrawChildren(this);
     }
 
     public void _addEditor(TreeEditor value) {
