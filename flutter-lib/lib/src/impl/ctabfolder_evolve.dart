@@ -178,23 +178,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     widget.sendMenuDetectMenuDetect(state, e);
   }
 
-  /// A strip whose height the application fixed keeps exactly that height: the tabs and buttons
-  /// are laid out as usual and cut to it, and a height of 0 leaves no strip at all.
-  Widget _fitTabStrip(double height, bool isTabBottom, Widget strip) {
-    if (height == _defaultTabStripHeight) return strip;
-    if (height == 0) return const SizedBox.shrink();
-    return SizedBox(
-      height: height,
-      child: ClipRect(
-        child: OverflowBox(
-          alignment: isTabBottom ? Alignment.bottomCenter : Alignment.topCenter,
-          minHeight: 0,
-          maxHeight: math.max(height, _defaultTabStripHeight),
-          child: strip,
-        ),
-      ),
-    );
-  }
+  /// A strip height of 0 leaves no strip at all; any other fixed height is fitted by [_CTabBar].
+  Widget _fitTabStrip(double height, Widget strip) =>
+      height == 0 ? const SizedBox.shrink() : strip;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +242,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     Widget column = Column(
       children: [
         if (!isTabBottom)
-          _fitTabStrip(stripHeight, isTabBottom, _CTabBar(
+          _fitTabStrip(stripHeight, _CTabBar(
             state: state,
             folderWidget: widget,
             selectedIndex: _selectedIndex,
@@ -316,7 +302,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           ),
         ),
         if (isTabBottom)
-          _fitTabStrip(stripHeight, isTabBottom, _CTabBar(
+          _fitTabStrip(stripHeight, _CTabBar(
             state: state,
             folderWidget: widget,
             selectedIndex: _selectedIndex,
@@ -664,8 +650,8 @@ class _CTabBar extends StatefulWidget {
   /// The folder's outline, which the strip carries along its page-side edge and over the selected
   /// tab; null when the folder draws none.
   final BorderSide? outline;
-  /// How much of the laid-out strip the folder clips off on its page side to fit a shorter
-  /// tabHeight; the outline runs along the edge that stays visible.
+  /// How much of the laid-out tab row is clipped off on its page side to fit a shorter tabHeight;
+  /// the outline runs along the edge that stays visible.
   final double stripClip;
   final VComposite? topRightComposite;
   final ValueChanged<int> onTabSelected;
@@ -1003,8 +989,11 @@ class _CTabBarState extends State<_CTabBar> {
 
     final scrollableTabs = Expanded(child: tabRowWithDrag);
 
-    final wrappedBounds =
-        height == null ? null : _wrappedTopRightBounds(topRightComposite, topRightAlignment, height);
+    // The height the tab row keeps on screen once cut to a fixed tabHeight.
+    final double? shownHeight = height == null ? null : height - widget.stripClip;
+    final wrappedBounds = shownHeight == null
+        ? null
+        : _wrappedTopRightBounds(topRightComposite, topRightAlignment, shownHeight);
 
     final topRightControls = _buildTopRightControls(
       context: context,
@@ -1040,16 +1029,16 @@ class _CTabBarState extends State<_CTabBar> {
       final (row, rowHeight) = _buildWrappedTopRightRow(
         topRightComposite!,
         wrappedBounds,
-        height!,
+        shownHeight!,
         isTabBottom,
         widgetTheme.tabBarBackgroundColor,
       );
-      final tabRow = SizedBox(height: height, child: header);
+      final tabRow = _clipToShownHeight(SizedBox(height: height, child: header), height!, isTabBottom);
       bar = Column(children: isTabBottom ? [row, tabRow] : [tabRow, row]);
-      barHeight = height + rowHeight;
+      barHeight = shownHeight + rowHeight;
     }
 
-    return MouseRegion(
+    final strip = MouseRegion(
       // A held button keeps the mouse with the control it was pressed on: a drag passing over the
       // bar reveals none of its controls; the first move after release does.
       onEnter: (_) {
@@ -1064,6 +1053,26 @@ class _CTabBarState extends State<_CTabBar> {
         height: barHeight,
         child: bar,
         isTabBottom: isTabBottom,
+        // A wrapped row keeps the bar's page-side edge on screen.
+        clipped: wrappedBounds == null ? _clippedEdge(isTabBottom) : EdgeInsets.zero,
+      ),
+    );
+    if (wrappedBounds != null || height == null) return strip;
+    return _clipToShownHeight(strip, height, isTabBottom);
+  }
+
+  /// [child], laid out [height] tall, cut on its page side to the tabHeight Java fixed.
+  Widget _clipToShownHeight(Widget child, double height, bool isTabBottom) {
+    if (widget.stripClip == 0) return child;
+    return SizedBox(
+      height: height - widget.stripClip,
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: isTabBottom ? Alignment.bottomCenter : Alignment.topCenter,
+          minHeight: 0,
+          maxHeight: height,
+          child: child,
+        ),
       ),
     );
   }
@@ -1848,6 +1857,7 @@ class _CTabBarState extends State<_CTabBar> {
     required double? height,
     required Widget child,
     required bool isTabBottom,
+    EdgeInsets? clipped,
   }) {
     final borderVisible = widget.state.borderVisible ?? true;
     final outline = widget.outline;
@@ -1885,7 +1895,7 @@ class _CTabBarState extends State<_CTabBar> {
             top: isTabBottom ? outline : BorderSide.none,
             bottom: isTabBottom ? BorderSide.none : outline,
           ),
-          clipped: _clippedEdge(isTabBottom),
+          clipped: clipped ?? _clippedEdge(isTabBottom),
         ),
         child: child,
       );

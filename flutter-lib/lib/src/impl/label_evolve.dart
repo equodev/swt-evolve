@@ -386,7 +386,9 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
 ///
 /// The text is laid out once at its natural width, and that width decides what the label does with
 /// it: a line too wide for the padding drops the horizontal padding, and one too wide for the bounds
-/// by at most 40% is scaled down to fit. Anything else is laid out again at the available width, where
+/// by at most 40% is scaled down to fit. A line up to 40% taller than the bounds, as when the bounds
+/// come from the font's own line height and the theme draws the text larger, is scaled down to fit
+/// too, rather than clipped. Anything else is laid out again at the available width, where
 /// it ellipsizes; a paragraph laid out again at a new width keeps its shaped text.
 class _LabelLineFit extends SingleChildRenderObjectWidget {
   const _LabelLineFit({
@@ -418,6 +420,9 @@ class _LabelLineFit extends SingleChildRenderObjectWidget {
 
 class RenderLabelLineFit extends RenderBox with RenderObjectWithChildMixin<RenderBox> {
   RenderLabelLineFit(this._padding, this._boundsWidth, this._boundsHeight, this._alignment);
+
+  /// A line at most this many times wider or taller than the bounds is scaled down to fit them.
+  static const _maxFitOverflow = 1.4;
 
   EdgeInsets _padding;
   set padding(EdgeInsets value) {
@@ -472,7 +477,11 @@ class RenderLabelLineFit extends RenderBox with RenderObjectWithChildMixin<Rende
     final maxWidth = math.min(inner.maxWidth, _boundsWidth);
     final maxHeight = math.min(inner.maxHeight, _boundsHeight);
     _scale = 1;
-    if (natural > _boundsWidth && natural <= _boundsWidth * 1.4) {
+    final slightlyTooWide = natural > _boundsWidth && natural <= _boundsWidth * _maxFitOverflow;
+    final slightlyTooTall = natural <= _boundsWidth &&
+        child.size.height > maxHeight &&
+        child.size.height <= maxHeight * _maxFitOverflow;
+    if (slightlyTooWide || slightlyTooTall) {
       final s = math.min(maxWidth / child.size.width, maxHeight / child.size.height);
       if (s < 1) _scale = math.max(s, 0);
     } else if (child.size.width > maxWidth || child.size.height > maxHeight) {
