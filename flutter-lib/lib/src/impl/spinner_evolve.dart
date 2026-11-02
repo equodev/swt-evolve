@@ -46,9 +46,6 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     final minimum = state.minimum ?? widgetTheme.defaultMinimum;
     final maximum = state.maximum ?? widgetTheme.defaultMaximum;
     final selection = state.selection ?? widgetTheme.defaultSelection;
-    final increment = state.increment ?? widgetTheme.defaultIncrement;
-    final pageIncrement =
-        state.pageIncrement ?? widgetTheme.defaultPageIncrement;
     final digits = state.digits ?? widgetTheme.defaultDigits;
     final textLimit = state.textLimit ?? widgetTheme.defaultTextLimit;
 
@@ -90,11 +87,9 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         value: currentValue,
         min: minimum,
         max: maximum,
-        increment: increment,
         digits: digits,
         decimalSeparator: decimalSeparator(),
         keptText: state.keptText,
-        pageIncrement: pageIncrement,
         textLimit: textLimit,
         enabled: enabled,
         readOnly: readOnly,
@@ -107,13 +102,8 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         textColor: textColor,
         borderColor: borderColor,
         textStyle: textStyle,
-        onChanged: (value) {
-          state.selection = value;
-          widget.sendSelectionSelection(
-            state,
-            VEvent()..index = state.selection,
-          );
-        },
+        onArrow: (direction) =>
+            widget.sendSelectionSelection(state, VEvent()..detail = direction),
         onEdited: (edit) => widget.sendModifyModify(state, edit),
         onSubmitted: (value) {
           state.selection = value;
@@ -141,12 +131,10 @@ class _ThemedSpinner extends StatefulWidget {
   final int value;
   final int min;
   final int max;
-  final int increment;
   final int digits;
   final String decimalSeparator;
   // The text a refused Verify kept over the selection; null while the text follows the value.
   final String? keptText;
-  final int pageIncrement;
   final int textLimit;
   final bool enabled;
   final bool readOnly;
@@ -160,7 +148,8 @@ class _ThemedSpinner extends StatefulWidget {
   final Color textColor;
   final Color borderColor;
   final TextStyle textStyle;
-  final ValueChanged<int> onChanged;
+  // An arrow click, as SWT.ARROW_UP or SWT.ARROW_DOWN: Java steps the value and sends it back.
+  final ValueChanged<int> onArrow;
   final ValueChanged<VEvent> onEdited;
   final ValueChanged<int> onSubmitted;
   final ValueChanged<bool> onFocusChanged;
@@ -169,11 +158,9 @@ class _ThemedSpinner extends StatefulWidget {
     required this.value,
     required this.min,
     required this.max,
-    required this.increment,
     required this.digits,
     required this.decimalSeparator,
     this.keptText,
-    required this.pageIncrement,
     required this.textLimit,
     required this.enabled,
     required this.readOnly,
@@ -186,7 +173,7 @@ class _ThemedSpinner extends StatefulWidget {
     required this.textColor,
     required this.borderColor,
     required this.textStyle,
-    required this.onChanged,
+    required this.onArrow,
     required this.onEdited,
     required this.onSubmitted,
     required this.onFocusChanged,
@@ -366,7 +353,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       animationDuration: widget.widgetTheme.animationDuration,
       enabled: isInteractive,
       showBottomBorder: true,
-      onTap: isInteractive ? _incrementValue : null,
+      onTap: isInteractive ? () => widget.onArrow(SWT.ARROW_UP) : null,
       onHoverChanged: (isHovered) => setState(() => _isUpHovered = isHovered),
       onPressedChanged: (isPressed) => setState(() => _isUpPressed = isPressed),
     );
@@ -393,7 +380,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       animationDuration: widget.widgetTheme.animationDuration,
       enabled: isInteractive,
       showBottomBorder: false,
-      onTap: isInteractive ? _decrementValue : null,
+      onTap: isInteractive ? () => widget.onArrow(SWT.ARROW_DOWN) : null,
       onHoverChanged: (isHovered) => setState(() => _isDownHovered = isHovered),
       onPressedChanged: (isPressed) =>
           setState(() => _isDownPressed = isPressed),
@@ -423,25 +410,6 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       multiplier *= 10;
     }
     return multiplier;
-  }
-
-  // Value manipulation
-  void _incrementValue() {
-    final newValue = (widget.value + widget.increment).clamp(
-      widget.min,
-      widget.max,
-    );
-    _controller.text = _formatValue(newValue);
-    widget.onChanged(newValue);
-  }
-
-  void _decrementValue() {
-    final newValue = (widget.value - widget.increment).clamp(
-      widget.min,
-      widget.max,
-    );
-    _controller.text = _formatValue(newValue);
-    widget.onChanged(newValue);
   }
 
   // Event handlers

@@ -47,8 +47,6 @@ class SpinnerThemeExtension extends ThemeExtension<SpinnerThemeExtension> with _
   final int defaultMinimum;
   final int defaultMaximum;
   final int defaultSelection;
-  final int defaultIncrement;
-  final int defaultPageIncrement;
   final int defaultDigits;
   final int defaultTextLimit;
 
@@ -80,8 +78,6 @@ class SpinnerThemeExtension extends ThemeExtension<SpinnerThemeExtension> with _
     required this.defaultMinimum,
     required this.defaultMaximum,
     required this.defaultSelection,
-    required this.defaultIncrement,
-    required this.defaultPageIncrement,
     required this.defaultDigits,
     required this.defaultTextLimit,
     required this.minTextContrast,

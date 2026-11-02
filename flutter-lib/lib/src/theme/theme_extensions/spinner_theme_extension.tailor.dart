@@ -36,8 +36,6 @@ mixin _$SpinnerThemeExtensionTailorMixin
   int get defaultMinimum;
   int get defaultMaximum;
   int get defaultSelection;
-  int get defaultIncrement;
-  int get defaultPageIncrement;
   int get defaultDigits;
   int get defaultTextLimit;
   double get minTextContrast;
@@ -69,8 +67,6 @@ mixin _$SpinnerThemeExtensionTailorMixin
     int? defaultMinimum,
     int? defaultMaximum,
     int? defaultSelection,
-    int? defaultIncrement,
-    int? defaultPageIncrement,
     int? defaultDigits,
     int? defaultTextLimit,
     double? minTextContrast,
@@ -103,8 +99,6 @@ mixin _$SpinnerThemeExtensionTailorMixin
       defaultMinimum: defaultMinimum ?? this.defaultMinimum,
       defaultMaximum: defaultMaximum ?? this.defaultMaximum,
       defaultSelection: defaultSelection ?? this.defaultSelection,
-      defaultIncrement: defaultIncrement ?? this.defaultIncrement,
-      defaultPageIncrement: defaultPageIncrement ?? this.defaultPageIncrement,
       defaultDigits: defaultDigits ?? this.defaultDigits,
       defaultTextLimit: defaultTextLimit ?? this.defaultTextLimit,
       minTextContrast: minTextContrast ?? this.minTextContrast,
@@ -175,10 +169,6 @@ mixin _$SpinnerThemeExtensionTailorMixin
       defaultMinimum: t < 0.5 ? defaultMinimum : other.defaultMinimum,
       defaultMaximum: t < 0.5 ? defaultMaximum : other.defaultMaximum,
       defaultSelection: t < 0.5 ? defaultSelection : other.defaultSelection,
-      defaultIncrement: t < 0.5 ? defaultIncrement : other.defaultIncrement,
-      defaultPageIncrement: t < 0.5
-          ? defaultPageIncrement
-          : other.defaultPageIncrement,
       defaultDigits: t < 0.5 ? defaultDigits : other.defaultDigits,
       defaultTextLimit: t < 0.5 ? defaultTextLimit : other.defaultTextLimit,
       minTextContrast: t < 0.5 ? minTextContrast : other.minTextContrast,
@@ -273,14 +263,6 @@ mixin _$SpinnerThemeExtensionTailorMixin
               other.defaultSelection,
             ) &&
             const DeepCollectionEquality().equals(
-              defaultIncrement,
-              other.defaultIncrement,
-            ) &&
-            const DeepCollectionEquality().equals(
-              defaultPageIncrement,
-              other.defaultPageIncrement,
-            ) &&
-            const DeepCollectionEquality().equals(
               defaultDigits,
               other.defaultDigits,
             ) &&
@@ -323,8 +305,6 @@ mixin _$SpinnerThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(defaultMinimum),
       const DeepCollectionEquality().hash(defaultMaximum),
       const DeepCollectionEquality().hash(defaultSelection),
-      const DeepCollectionEquality().hash(defaultIncrement),
-      const DeepCollectionEquality().hash(defaultPageIncrement),
       const DeepCollectionEquality().hash(defaultDigits),
       const DeepCollectionEquality().hash(defaultTextLimit),
       const DeepCollectionEquality().hash(minTextContrast),
@@ -362,8 +342,6 @@ extension SpinnerThemeExtensionBuildContextProps on BuildContext {
   int get defaultMinimum => spinnerThemeExtension.defaultMinimum;
   int get defaultMaximum => spinnerThemeExtension.defaultMaximum;
   int get defaultSelection => spinnerThemeExtension.defaultSelection;
-  int get defaultIncrement => spinnerThemeExtension.defaultIncrement;
-  int get defaultPageIncrement => spinnerThemeExtension.defaultPageIncrement;
   int get defaultDigits => spinnerThemeExtension.defaultDigits;
   int get defaultTextLimit => spinnerThemeExtension.defaultTextLimit;
   double get minTextContrast => spinnerThemeExtension.minTextContrast;

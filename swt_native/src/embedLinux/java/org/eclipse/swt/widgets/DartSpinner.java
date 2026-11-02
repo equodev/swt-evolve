@@ -923,7 +923,7 @@ public class DartSpinner extends DartComposite implements ISpinner {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        SpinnerHelper.selectedInFlutter(this, e.index);
+                        SpinnerHelper.selectedInFlutter(this, e);
                     });
                     return;
                 }

@@ -44,13 +44,14 @@ VSpinner _spinner({int selection = 123}) => VSpinner()
     ..width = 160
     ..height = 32);
 
-Future<void> _pump(WidgetTester tester, List<(String, VEvent?)> sent) async {
+Future<void> _pump(WidgetTester tester, List<(String, VEvent?)> sent,
+    {VSpinner? spinner}) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
       alignment: Alignment.topLeft,
       child: _CapturingSpinnerSwt(
-        value: _spinner(),
+        value: spinner ?? _spinner(),
         onEvent: (ev, payload) => sent.add((ev, payload)),
       ),
     ),
@@ -60,6 +61,12 @@ Future<void> _pump(WidgetTester tester, List<(String, VEvent?)> sent) async {
 
 String _shown(WidgetTester tester) =>
     tester.widget<EditableText>(find.byType(EditableText)).controller.text;
+
+// The direction of each arrow click sent, SWT.ARROW_UP or SWT.ARROW_DOWN.
+List<int?> _arrows(List<(String, VEvent?)> sent) => [
+      for (final (ev, payload) in sent)
+        if (ev == 'Selection/Selection') payload!.detail
+    ];
 
 List<VEvent> _edits(List<(String, VEvent?)> sent) =>
     [for (final (ev, payload) in sent) if (ev == 'Modify/Modify') payload!];
@@ -138,20 +145,32 @@ void main() {
     expect(edits[1].count, 1);
   });
 
-  testWidgets('an arrow sends the new value as a Selection and no edit',
+  testWidgets('an arrow sends its direction as a Selection and no edit',
       (WidgetTester tester) async {
     final sent = <(String, VEvent?)>[];
     await _pump(tester, sent);
 
     await tester.tap(find.byIcon(Icons.arrow_drop_up));
+    await tester.tap(find.byIcon(Icons.arrow_drop_down));
     await tester.pump();
 
     expect(_edits(sent), isEmpty, reason: 'Java notifies Modify for an arrow');
-    final selections = [
-      for (final (ev, payload) in sent)
-        if (ev == 'Selection/Selection') payload!.index
-    ];
-    expect(selections, [124]);
+    expect(_arrows(sent), [SWT.ARROW_UP, SWT.ARROW_DOWN]);
+  });
+
+  // Java steps the value as for the arrow keys: it wraps a WRAP spinner, and a step that moves nothing
+  // notifies nothing. The field shows what Java sends back.
+  testWidgets('an arrow leaves the value to Java, even at the end of the range',
+      (WidgetTester tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pump(tester, sent,
+        spinner: _spinner(selection: 100000)..style = SWT.BORDER | SWT.WRAP);
+
+    await tester.tap(find.byIcon(Icons.arrow_drop_up));
+    await tester.pump();
+
+    expect(_arrows(sent), [SWT.ARROW_UP]);
+    expect(_shown(tester), '100000');
   });
 
   testWidgets('Enter after typing still commits the value',

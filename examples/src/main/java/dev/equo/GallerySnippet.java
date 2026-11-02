@@ -500,6 +500,12 @@ public class GallerySnippet {
         spinner.setMaximum(100);
         spinner.setSelection(25);
         spinner.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Spinner at " + spinner.getSelection())));
+        // Starts at its maximum, so its up arrow wraps to the minimum.
+        Spinner wrapSpinner = new Spinner(valueGroup, SWT.BORDER | SWT.WRAP);
+        wrapSpinner.setMinimum(0);
+        wrapSpinner.setMaximum(10);
+        wrapSpinner.setSelection(10);
+        wrapSpinner.addSelectionListener(widgetSelectedAdapter(e -> status.setText("Wrap Spinner at " + wrapSpinner.getSelection())));
 
         // ProgressBar / DateTime — the ProgressBar is display-only, so a Button advances it from
         // the Java side and the suite asserts the state render; the DateTime starts on a fixed
@@ -782,6 +788,7 @@ public class GallerySnippet {
             slider.setSelection(25);
             scale.setSelection(25);
             spinner.setSelection(25);
+            wrapSpinner.setSelection(10);
             progressBar.setSelection(30);
             date.setDate(2026, 6, 15);
             dropDownDate.setDate(2026, 6, 15);
