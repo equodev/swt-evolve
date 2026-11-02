@@ -321,25 +321,76 @@ class TextImpl<T extends TextSwt, V extends VText>
       record?.call();
       return newValue;
     }
-    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _controller.value = newValue, record);
+    _holdEdit(oldValue, newValue, () => _controller.value = newValue, record);
     return oldValue;
   }
 
-  /// Sends [text] to Java as the Modify proposal it decides on, and shows it with [apply] once
-  /// allowed; [record] then takes the undo step.
-  void _proposeModify(String text, int start, void Function() apply, VoidCallback? record) {
+  /// The Modify Java is deciding on; one at a time, so that Java never decides on, or commits, an
+  /// edit made on top of one it may veto.
+  _ProposedEdit? _inFlight;
+
+  /// The edits made while [_inFlight] waits for its verdict, oldest first. The field shows none of
+  /// them yet; each is made on the text the verdicts before it leave.
+  final List<_EditAtSelection> _held = [];
+
+  /// Proposes the edit from [oldValue] to [newValue], or holds it while another one is in flight.
+  /// [apply] shows [newValue] once allowed; [record] then takes the undo step.
+  void _holdEdit(TextEditingValue oldValue, TextEditingValue newValue, void Function() apply, VoidCallback? record) {
+    if (_inFlight == null) {
+      _proposeModify(_ProposedEdit(newValue.text, newValue.selection.baseOffset, apply, record));
+    } else {
+      _held.add(_EditAtSelection.between(oldValue.text, oldValue.selection, newValue.text, newValue.selection));
+    }
+  }
+
+  /// Sends [proposal] to Java as the Modify it decides on, shows it once allowed, then proposes the
+  /// next held edit.
+  void _proposeModify(_ProposedEdit proposal) {
+    _inFlight = proposal;
+    var sent = false;
+    var answered = false;
     _modifyGate.propose((doit) {
+      if (!identical(_inFlight, proposal)) return;
+      _inFlight = null;
       if (!doit) {
         // The held edit was never rendered, so it just drops; stop suppressing Java's echoes.
         clearSentTextEchoes();
-        return;
+      } else if (mounted) {
+        proposal.apply();
+        state.text = proposal.text;
+        proposal.record?.call();
       }
-      if (!mounted) return;
-      apply();
-      state.text = text;
-      record?.call();
+      answered = true;
+      // A verdict that came before its own Modify went out waits for it, to keep the wire order.
+      if (sent) _proposeHeld();
     });
-    _sendModify(text, start);
+    _sendModify(proposal.text, proposal.start);
+    sent = true;
+    if (answered) _proposeHeld();
+  }
+
+  /// Proposes the oldest held edit on what the field now shows; applies them all when Java no
+  /// longer answers.
+  void _proposeHeld() {
+    while (_held.isNotEmpty && _inFlight == null && mounted) {
+      final edit = _held.removeAt(0);
+      final (fromText, fromSelection) =
+          _usesLines ? (_lineController.text, _lineController.selection) : (_controller.text, _controller.selection);
+      final (text, selection) = edit.on(fromText, fromSelection);
+      if (text == fromText) continue;
+      final record = _undoRecorder(fromText, fromSelection, text, selection, TextRange.empty);
+      final void Function() apply = _usesLines
+          ? () => _lineController.value = _lineController.value.editedTo(text, selection)
+          : () => _controller.value = TextEditingValue(text: text, selection: selection);
+      if (_modifyGate.armed) {
+        _proposeModify(_ProposedEdit(text, selection.baseOffset, apply, record));
+      } else {
+        apply();
+        state.text = text;
+        record?.call();
+        _sendModify(text, selection.baseOffset);
+      }
+    }
   }
 
   void _sendModify(String text, int start) {
@@ -471,7 +522,8 @@ class TextImpl<T extends TextSwt, V extends VText>
       record?.call();
       return newValue;
     }
-    _proposeModify(newValue.text, newValue.selection.baseOffset, () => _lineController.value = newValue, record);
+    _holdEdit(TextEditingValue(text: oldValue.text, selection: oldValue.selection),
+        TextEditingValue(text: newValue.text, selection: newValue.selection), () => _lineController.value = newValue, record);
     return oldValue;
   }
 
@@ -995,6 +1047,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     } else {
       // Java re-arms per focus (DisplayBridge.setFocus).
       _modifyGate.armed = false;
+      _inFlight = null;
+      _held.clear();
       clearSentTextEchoes();
       widget.sendFocusFocusOut(state, null);
       if (OpenMenus.any || OpenMenus.opening) _lendFocusToMenu();
@@ -1051,6 +1105,56 @@ class TextImpl<T extends TextSwt, V extends VText>
     _restFocus.dispose();
     super.dispose();
   }
+}
+
+/// An edit placed by the selection it was made at, so that it can be made on another text: what it
+/// removed around the selection, what it inserted there, and where it left the selection.
+class _EditAtSelection {
+  _EditAtSelection._(this.removedBefore, this.removedAfter, this.inserted, this.base, this.extent);
+
+  factory _EditAtSelection.between(String from, TextSelection fromSelection, String to, TextSelection toSelection) {
+    final (at, deleted, added) = TextImpl._editBetween(from, fromSelection, to, toSelection);
+    final selection = fromSelection.isValid ? fromSelection : TextSelection.collapsed(offset: at + deleted.length);
+    final after = toSelection.isValid ? toSelection : TextSelection.collapsed(offset: at + added.length);
+    return _EditAtSelection._(selection.start - at, at + deleted.length - selection.end, added,
+        after.baseOffset - at, after.extentOffset - at);
+  }
+
+  final int removedBefore;
+  final int removedAfter;
+  final String inserted;
+
+  /// The selection after the edit, from where it inserted.
+  final int base;
+  final int extent;
+
+  (String, TextSelection) on(String text, TextSelection selection) {
+    final at = selection.isValid ? selection : TextSelection.collapsed(offset: text.length);
+    final start = (at.start - removedBefore).clamp(0, text.length);
+    final end = (at.end + removedAfter).clamp(start, text.length);
+    final edited = text.replaceRange(start, end, inserted);
+    return (
+      edited,
+      TextSelection(
+          baseOffset: (start + base).clamp(0, edited.length), extentOffset: (start + extent).clamp(0, edited.length)),
+    );
+  }
+}
+
+/// A Modify sent to Java and not yet answered.
+class _ProposedEdit {
+  _ProposedEdit(this.text, this.start, this.apply, this.record);
+
+  final String text;
+
+  /// The caret offset sent with [text].
+  final int start;
+
+  /// Shows [text] in the field.
+  final void Function() apply;
+
+  /// Takes the undo step, once shown.
+  final VoidCallback? record;
 }
 
 /// One line of text laid out and painted the way an unfocused, unscrolled single-line EditableText

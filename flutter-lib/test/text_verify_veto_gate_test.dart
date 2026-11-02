@@ -20,8 +20,10 @@ import 'package:swtflutter/main.dart';
 // The io transport directly: `flutter test` runs on the VM, where comm.dart resolves to it —
 // but the analyzer resolves the conditional export to the web variant, which has no test hook.
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireChannel;
 
 import 'delivery/support/deliver.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
@@ -123,4 +125,82 @@ void main() {
             'as a stale echo');
     expect(find.text('12347'), findsNothing);
   });
+
+  group('keystrokes typed before their verdicts arrive', () {
+    late List<String> modifies;
+    late Finder field;
+
+    Future<void> pumpVetoable(WidgetTester tester) async {
+      modifies = [];
+      await tester.pumpWidget(_app(SizedBox(
+        width: 200,
+        height: 30,
+        child: _RecordingTextSwt(value: _value(''), modifies: modifies),
+      )));
+      _deliver('Text/1/modify/vetoable', {'value': true});
+      await tester.pump();
+      field = find.byType(EditableText);
+    }
+
+    String shown(WidgetTester tester) => tester.widget<EditableText>(field).controller.text;
+
+    // Each keystroke edits what the field shows, as the platform's text input does.
+    Future<void> typeEach(WidgetTester tester, String chars) async {
+      for (final char in chars.split('')) {
+        await tester.enterText(field, shown(tester) + char);
+        await tester.pump();
+      }
+    }
+
+    Future<void> answer(WidgetTester tester, List<bool> verdicts) async {
+      for (final doit in verdicts) {
+        _deliver('Text/1/modify/verdict', {'doit': doit});
+        await tester.pump();
+      }
+    }
+
+    testWidgets('all survive', (tester) async {
+      await pumpVetoable(tester);
+      await typeEach(tester, 'abc');
+      await answer(tester, [true, true, true]);
+
+      expect(shown(tester), 'abc', reason: 'every allowed keystroke of a burst is kept');
+      expect(modifies, ['a', 'ab', 'abc'],
+          reason: 'Java decides each keystroke on the text it already allowed');
+    });
+
+    testWidgets('lose only the one Java vetoes', (tester) async {
+      await pumpVetoable(tester);
+      await typeEach(tester, 'a b');
+      // Java vetoes the space and allows the rest.
+      await answer(tester, [true, false, true]);
+
+      expect(shown(tester), 'ab');
+      expect(modifies, ['a', 'a ', 'ab'],
+          reason: 'the keystroke after a veto is proposed on the text without the vetoed one');
+    });
+
+    testWidgets('never reach Java on top of a vetoed one', (tester) async {
+      await pumpVetoable(tester);
+      await typeEach(tester, '1a2');
+      // A listener that lets through what has no typed character allows all but the 'a'.
+      await answer(tester, [true, false, true]);
+
+      expect(modifies.skip(2), everyElement(isNot(contains('a'))),
+          reason: 'Java must not decide on, or commit, a text carrying the keystroke it vetoed');
+      expect(shown(tester), '12');
+    });
+  });
+}
+
+/// Records the text of every Modify the field sends to Java.
+class _RecordingTextSwt extends TextSwt<VText> {
+  final List<String> modifies;
+  const _RecordingTextSwt({required super.value, required this.modifies});
+
+  @override
+  void sendEvent(VText val, int channel, VEvent? payload) {
+    if (channel == WireChannel.modifyModify) modifies.add(payload?.text ?? '');
+    super.sendEvent(val, channel, payload);
+  }
 }

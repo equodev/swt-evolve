@@ -120,6 +120,25 @@ void main() {
     expect(_lines(tester).text, '124');
   });
 
+  testWidgets('keystrokes typed before their verdicts arrive all survive', semanticsEnabled: false, (tester) async {
+    await _pump(tester, _value('12'));
+    await _focus(tester);
+    _deliver('Text/1/modify/vetoable', {'value': true});
+    await tester.pump();
+
+    for (final char in '3 4'.split('')) {
+      _type(tester, _lines(tester).text + char);
+      await tester.pump();
+    }
+    // Java vetoes the space and allows the rest.
+    for (final doit in [true, false, true]) {
+      _deliver('Text/1/modify/verdict', {'doit': doit});
+      await tester.pump();
+    }
+
+    expect(_lines(tester).text, '1234', reason: 'every allowed keystroke is kept, the vetoed one alone dropped');
+  });
+
   testWidgets('an edit past the text limit is cut to fit', semanticsEnabled: false, (tester) async {
     await _pump(tester, _value('ab', textLimit: 5));
     await _focus(tester);

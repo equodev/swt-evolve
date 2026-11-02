@@ -61,6 +61,16 @@ public class GallerySnippet {
 
     /** Baseline Value cells of the OwnerDraw Table, restored by the "Reset Gallery" listener. */
     private static final String[] OWNER_DRAW_BASELINE = {"alpha", "beta"};
+
+    /** Hint of the identifier-validating Text, which starts empty. */
+    private static final String IDENTIFIER_TEXT_MESSAGE = "Identifier";
+
+    /**
+     * How long the identifier Text's VerifyListener takes over each keystroke: longer than the
+     * E2E driver's 80 ms between keystrokes, so a typed word outruns its verdicts, and short
+     * enough that a short word's verdicts all arrive before the client stops waiting (400 ms).
+     */
+    private static final long IDENTIFIER_VERIFY_DELAY_MS = 100;
     public static void main(String[] args) throws IOException {
         Config.forceEquo();
 
@@ -179,6 +189,26 @@ public class GallerySnippet {
         GridData styledTextData = new GridData(SWT.FILL, SWT.CENTER, true, false);
         styledTextData.heightHint = 60;
         styledText.setLayoutData(styledTextData);
+        // Validates every keystroke as an identifier, slowly enough that a fast burst is typed
+        // before its first verdicts arrive: each keystroke must still land, and only the
+        // rejected ones must be dropped.
+        Text identifierText = new Text(textGroup, SWT.BORDER);
+        identifierText.setMessage(IDENTIFIER_TEXT_MESSAGE);
+        identifierText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+        identifierText.addVerifyListener(e -> {
+            try {
+                Thread.sleep(IDENTIFIER_VERIFY_DELAY_MS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+            for (char c : e.text.toCharArray()) {
+                if (!Character.isJavaIdentifierPart(c)) {
+                    e.doit = false;
+                    return;
+                }
+            }
+        });
+        identifierText.addModifyListener(e -> status.setText("Identifier: " + identifierText.getText()));
 
         // Combo / CCombo / List
         Group selectGroup = section(root, "Combo / CCombo / List");
@@ -759,6 +789,10 @@ public class GallerySnippet {
             String styledBaseline = "Multi-line\nstyled text\nwith several lines.";
             if (!styledBaseline.equals(styledText.getText())) {
                 styledText.setText(styledBaseline);
+            }
+            // Same echo concern as the StyledText above.
+            if (!identifierText.getText().isEmpty()) {
+                identifierText.setText("");
             }
             table.deselectAll();
             // A scenario may leave the cell editor open, and its ticks toggled; both are this
