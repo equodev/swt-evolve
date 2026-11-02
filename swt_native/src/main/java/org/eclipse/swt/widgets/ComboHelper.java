@@ -196,19 +196,22 @@ public class ComboHelper {
         if (readOnly(combo)) {
             syncReadOnlyText(combo);
             combo.sendEvent(SWT.Modify);
-        } else if (getCharCount(combo) > 0) {
-            String text = verify(combo, "", 0, getCharCount(combo));
-            // A listener that deselected again has already emptied the text and said so.
-            if (text != null && !text.equals(combo.text))
-                setText(combo, text, true, false);
+        } else {
+            emptyText(combo);
         }
     }
 
-    /** Empties the text of an editable combo, and so the selection in it. */
-    private static void clearText(DartCombo combo) {
-        combo.text = "";
-        combo.selection = new Point(0, 0);
-        combo.getValue().markDirty(VCombo.TEXT);
+    /**
+     * Empties an editable combo's text, as GTK does: the Verify listeners may keep or rewrite it, and the Modify
+     * listeners hear of the text it ends up with.
+     */
+    private static void emptyText(DartCombo combo) {
+        if (getCharCount(combo) == 0)
+            return;
+        String text = verify(combo, "", 0, getCharCount(combo));
+        // A listener that emptied the text again has already said so.
+        if (text != null && !text.equals(combo.text))
+            setText(combo, text, true, false);
     }
 
     /** An item went in at {@code index}: the selected item stays selected, wherever it moved to. */
@@ -232,8 +235,9 @@ public class ComboHelper {
     }
 
     /**
-     * Takes the item at {@code index} out. Removing the selected item deselects it, empties the text and says so;
-     * the selection follows an item before which one was removed.
+     * Takes the item at {@code index} out. Removing the selected item deselects it and empties the text, which an
+     * editable combo asks the Verify listeners about first; the selection follows an item before which one was
+     * removed.
      */
     public static void removeAt(DartCombo combo, int index) {
         combo.getValue().markDirty(VCombo.ITEMS);
@@ -242,11 +246,12 @@ public class ComboHelper {
         combo.selectedIndex = ListItemsHelper.indexAfterRemove(selected, index, index);
         if (index != selected)
             return;
+        if (!readOnly(combo)) {
+            emptyText(combo);
+            return;
+        }
         String shown = combo.text;
-        if (readOnly(combo))
-            syncReadOnlyText(combo);
-        else
-            clearText(combo);
+        syncReadOnlyText(combo);
         if (!shown.isEmpty())
             combo.sendEvent(SWT.Modify);
     }
