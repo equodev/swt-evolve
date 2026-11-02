@@ -135,7 +135,7 @@ public final class FontMetricsUtil {
     /**
      * The DPI Win32 and GTK render a point-sized font at. Upstream GTK writes the same literal
      * ({@code SwtDevice#getScreenDPI}); Win32 normalises {@code GetDeviceCaps} by the autoscale
-     * zoom and lands on it too, the display's own scaling being carried by {@code DPIUtil}.
+     * zoom and lands on it whenever that zoom is the monitor's own ({@link #screenDPI}).
      */
     private static final int WIN32_GTK_DPI = 96;
 
@@ -162,6 +162,23 @@ public final class FontMetricsUtil {
     private static final int HOST_DPI = hostDpi(System.getProperty("os.name"));
 
     /**
+     * The DPI {@code Device#getDPI} reports: the host's DPI over the zoom SWT draws at, as Win32
+     * scales {@code GetDeviceCaps(LOGPIXELSX)} down by it. That zoom is the monitor's own unless
+     * {@code swt.autoScale} rounds it: a 150 % monitor reports 144 under {@code integer}, whose zoom
+     * is 100. Applications size what holds text by this figure, NatTable its rows and columns, so it
+     * carries the zoom on every host; native GTK and Cocoa keep their base DPI at any zoom.
+     */
+    public static org.eclipse.swt.graphics.Point screenDPI() {
+        return screenDPI(HOST_DPI, Config.uiScale());
+    }
+
+    /** {@code uiScale} as {@link Config#uiScale} gives it. */
+    public static org.eclipse.swt.graphics.Point screenDPI(int hostDpi, double uiScale) {
+        int dpi = uiScale > 0 ? (int) Math.round(hostDpi / uiScale) : hostDpi;
+        return new org.eclipse.swt.graphics.Point(dpi, dpi);
+    }
+
+    /**
      * Logical pixels per SWT font point — {@code dpi / 72} by SWT's own definition.
      * {@link GenFontMetrics} stores point advances while text is painted at the display DPI, so
      * widths derived from the table must be multiplied by this to land on painted glyphs. Divided
@@ -178,32 +195,11 @@ public final class FontMetricsUtil {
      * <p>This is what travels to the render side in {@code ConfigFlags.font_point_scale}, because
      * the zoom does not travel with it: the client learns the monitor late, and a flag carrying the
      * ratio would be read there before that and again after, with no way to tell one from the other.
-     * Each side divides by the zoom it currently holds instead.
+     * Each side divides by the zoom it currently holds instead. For the same reason this reads the
+     * host's DPI rather than {@code Display#getDPI}, which carries the zoom.
      */
     public static double rawDpiScale() {
-        Display display = Display.getCurrent();
-        int x = display == null ? 0 : dpiOf(display);
-        return (x > 0 ? x : HOST_DPI) / POINTS_PER_INCH;
-    }
-
-    /** A display and its DPI, which is fixed: read on every flags read, so worked out once. */
-    private static final class DisplayDpi extends java.lang.ref.WeakReference<Display> {
-        final int x;
-
-        DisplayDpi(Display display, int x) {
-            super(display);
-            this.x = x;
-        }
-    }
-
-    private static volatile DisplayDpi lastDpi = new DisplayDpi(null, 0);
-
-    private static int dpiOf(Display display) {
-        DisplayDpi held = lastDpi;
-        if (held.get() == display) return held.x;
-        int x = display.getDPI().x;
-        lastDpi = new DisplayDpi(display, x);
-        return x;
+        return HOST_DPI / POINTS_PER_INCH;
     }
 
     /**

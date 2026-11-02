@@ -172,7 +172,7 @@ public class DartMocks {
         makeCurrent(d);
         when(d.getThread()).thenCallRealMethod();
         when(d.getImpl()).thenReturn(dartDisplay);
-        when(d.getDPI()).thenReturn(dev.equo.swt.FontMetricsUtil.hostScreenDPI());
+        when(d.getDPI()).thenReturn(dev.equo.swt.FontMetricsUtil.screenDPI());
         Color systemColor = new Color(d, red(), green(), blue());
         when(d.getSystemColor(anyInt())).thenReturn(systemColor);
         // A control with no colour of its own resolves one through defaultForeground(), which asks

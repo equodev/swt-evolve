@@ -14,6 +14,8 @@ import java.lang.reflect.Method;
  * system property on every {@code DPIUtil.setDeviceZoom}, so the property is swapped there, except
  * for "integer", which they already apply when it is unset. In every case
  * a {@code DPIUtil.setDeviceZoom} inside the block applies the policy.
+ *
+ * <p>A {@code null} policy is an application that sets none: each release's own default applies.
  */
 public final class AutoScalePolicy {
 
@@ -78,11 +80,12 @@ public final class AutoScalePolicy {
         String saved = System.getProperty("swt.autoScale");
         // Unset, these releases already round to whole multiples of 100 (capped at 200), and an
         // unset property is how an application that chose no policy looks to Config.
-        if (saved == null && "integer".equals(policy)) {
+        if (saved == null && (policy == null || "integer".equals(policy))) {
             action.run();
             return;
         }
-        System.setProperty("swt.autoScale", policy);
+        if (policy == null) System.clearProperty("swt.autoScale");
+        else System.setProperty("swt.autoScale", policy);
         try {
             action.run();
         } finally {
