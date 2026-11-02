@@ -80,8 +80,12 @@ class SecondaryShellShrinkFlutterTest {
         assertThat(recorder.getBounds())
                 .as("the recorder must get its own sane default size, not the full display bounds "
                         + "(the original bug: a secondary shell clobbered to full size races its "
-                        + "first Flutter frame and renders blank)")
-                .isEqualTo(new Rectangle(0, 0, 1036, 605));
+                        + "first Flutter frame and renders blank): the size native SWT creates it at")
+                .isEqualTo(switch (SWT.getPlatform()) {
+                    case "win32" -> new Rectangle(0, 0, 1222, 626);
+                    case "gtk" -> new Rectangle(0, 0, 1086, 659);
+                    default -> new Rectangle(0, 0, 1080, 631);
+                });
     }
 
     @Test

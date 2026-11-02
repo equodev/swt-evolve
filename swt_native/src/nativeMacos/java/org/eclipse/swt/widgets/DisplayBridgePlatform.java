@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.ConfigFlags;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.cocoa.CGPoint;
 import org.eclipse.swt.internal.cocoa.NSApplication;
 import org.eclipse.swt.internal.cocoa.NSEvent;
@@ -183,5 +184,13 @@ final class DisplayBridgePlatform {
         NSEvent event;
         while ((event = application.nextEventMatchingMask(OS.NSAnyEventMask, null, OS.NSDefaultRunLoopMode, true)) != null)
             application.sendEvent(event);
+    }
+
+    /**
+     * The size native SWT creates a shell at when the application gives it none: Cocoa makes every
+     * shell, dialog or not, 5/8 of the screen each way, and the window rounds it to whole points.
+     */
+    static Point defaultShellSize(Rectangle screen, DartShell shell) {
+        return new Point((int) Math.round(screen.width * 0.625), (int) Math.round(screen.height * 0.625));
     }
 }

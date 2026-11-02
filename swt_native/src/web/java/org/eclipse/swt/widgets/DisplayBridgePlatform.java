@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 
 /**
  * Per-OS native init hook for the Display surfaces ({@link WebDisplayBridge} / {@link DeskDisplayBridge}).
@@ -54,5 +55,10 @@ final class DisplayBridgePlatform {
      */
     static boolean dismissLauncherSplash() {
         return false;
+    }
+
+    /** A shell the application gives no size: 5/8 of the viewport each way, truncated, as GTK sizes its client area. */
+    static Point defaultShellSize(Rectangle screen, DartShell shell) {
+        return new Point(screen.width * 5 / 8, screen.height * 5 / 8);
     }
 }

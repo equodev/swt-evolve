@@ -63,6 +63,10 @@ class FloatingShellChromeScope extends InheritedWidget {
       activeShellId != oldWidget.activeShellId;
 }
 
+/// A shell is placed on whole pixels: its position goes to Java as integers and comes back as the
+/// shell's bounds, so a half pixel here would move the shell once Java repeats it.
+Offset wholePixels(Offset offset) => Offset(offset.dx.roundToDouble(), offset.dy.roundToDouble());
+
 class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T, V> {
   Offset? _offset;
   Size? _size;
@@ -392,7 +396,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       if (!viewport.maxWidth.isFinite || !viewport.maxHeight.isFinite) return wanted;
       final maxX = math.max(0.0, viewport.maxWidth - w - chromeEdge);
       final maxY = math.max(0.0, viewport.maxHeight - frameH - chromeEdge);
-      return Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY));
+      return wholePixels(Offset(wanted.dx.clamp(0.0, maxX), wanted.dy.clamp(0.0, maxY)));
     }
 
     // A floating shell's bounds are a SCREEN position; this offset is measured from the window
@@ -419,10 +423,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         return Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
       }
       // What is left is a shell nobody placed: a dialog opened at the platform's default.
-      return Offset(
+      return wholePixels(Offset(
         (viewport.maxWidth - bodyW) / 2,
         (viewport.maxHeight - headerH - bodyH) / 2,
-      );
+      ));
     }
 
     final offset = resolvedOffset();

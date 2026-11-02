@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.gtk.OS;
 
 /**
@@ -57,6 +58,29 @@ final class DisplayBridgePlatform {
      */
     static boolean dismissLauncherSplash() {
         return false;
+    }
+
+    /**
+     * The size native SWT creates a shell at when the application gives it none: GTK makes the client
+     * area of every shell, dialog or not, 5/8 of the monitor each way, truncated, and its bounds add
+     * the trim of {@link #defaultTrim}.
+     */
+    static Point defaultShellSize(Rectangle screen, DartShell shell) {
+        Point trim = defaultTrim(shell.getApi().style);
+        return new Point(screen.width * 5 / 8 + trim.x, screen.height * 5 / 8 + trim.y);
+    }
+
+    /**
+     * The trim GTK SWT adds to a shell's client area before the window manager reports the real one
+     * (its {@code Display.trimWidths} and {@code trimHeights}, picked by {@code Shell.trimWidth()}).
+     */
+    private static Point defaultTrim(int style) {
+        int onTopResize = SWT.ON_TOP | SWT.RESIZE;
+        if ((style & SWT.NO_TRIM) != 0 || (style & onTopResize) == onTopResize) return new Point(0, 0);
+        boolean title = (style & (SWT.MIN | SWT.MAX | SWT.TITLE | SWT.MENU)) != 0;
+        boolean resize = (style & SWT.RESIZE) != 0, border = (style & SWT.BORDER) != 0;
+        if (title) return resize ? new Point(6, 29) : border ? new Point(5, 28) : new Point(0, 23);
+        return resize ? new Point(6, 6) : border ? new Point(4, 4) : new Point(0, 0);
     }
 
     /**

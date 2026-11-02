@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterNative;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.win32.OS;
 
 /**
@@ -52,6 +53,31 @@ final class DisplayBridgePlatform {
         if (hwnd == 0 || nativeLibraryOff() || OS.GetWindowThreadProcessId(hwnd, new int[1]) != OS.GetCurrentThreadId())
             return false;
         return OS.DestroyWindow(hwnd);
+    }
+
+    /** Height of the Windows 11 taskbar at 100%: Evolve's Display has no work area to read it from. */
+    private static final int TASKBAR_HEIGHT = 48;
+
+    /** What Win32 takes off the work area height before sizing a default window. */
+    private static final int DEFAULT_HEIGHT_INSET = 28;
+
+    /**
+     * How much smaller than a top-level window a default dialog is: it starts 100 pixels right of and
+     * below its parent and ends at the next cascade slot, 26 pixels on, when the parent sits at its own
+     * default slot.
+     */
+    private static final int DIALOG_CASCADE_INSET = 100 - 26;
+
+    /**
+     * The size native SWT creates a shell at when the application gives it none, which Win32 leaves to
+     * the system: 3/4 of the work area wide and 3/4 of the work area less {@link #DEFAULT_HEIGHT_INSET}
+     * high, the work area being the screen above a {@link #TASKBAR_HEIGHT} taskbar. A dialog is
+     * {@link #DIALOG_CASCADE_INSET} smaller each way.
+     */
+    static Point defaultShellSize(Rectangle screen, DartShell shell) {
+        int width = (int) Math.round(screen.width * 0.75);
+        int height = (int) Math.round((screen.height - TASKBAR_HEIGHT - DEFAULT_HEIGHT_INSET) * 0.75);
+        return shell.parent != null ?new Point(width - DIALOG_CASCADE_INSET, height - DIALOG_CASCADE_INSET) : new Point(width, height);
     }
 
     /**
