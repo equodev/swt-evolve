@@ -327,6 +327,12 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     // text to semantics, and Flutter Web would expose duplicated DOM text.
     return Semantics(
       identifier: identifier,
+      // A tooltip-only-named node has no accessible name, so Flutter Web collapses it
+      // into its unnamed child leaf and drops the flt-semantics-identifier; keep it an
+      // explicit container instead. Nodes named by their own text, or by a child's
+      // merged label (a GC-drawn Canvas), rely on that merge and are left alone.
+      explicitChildNodes:
+          !namedByOwnText && tooltip != null && tooltip.isNotEmpty,
       tooltip: namedByOwnText || tooltip == null || tooltip.isEmpty
           ? null
           : tooltip,
