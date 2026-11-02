@@ -1011,19 +1011,13 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void insertEditText(String string) {
-        int length = string.length();
         Point selection = getSelection();
         if (selection.x > getCharCount() || selection.y > getCharCount()) {
             int _l = getCharCount();
             selection = new Point(Math.min(selection.x, _l), Math.min(selection.y, _l));
         }
         String oldText = getText();
-        if (textLimit != Text.LIMIT) {
-            int charCount = oldText.length();
-            if (charCount - (selection.y - selection.x) + length > textLimit) {
-                string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
-            }
-        }
+        string = TextHelper.clipToLimit(this, string, selection);
         String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
         clearSegments(false);
         setEditText(newText);
@@ -1080,27 +1074,7 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void _paste(boolean enableUndo) {
-        if ((getApi().style & SWT.READ_ONLY) != 0)
-            return;
-        String newText = getClipboardText();
-        if (newText == null)
-            return;
-        if (hooks(SWT.Verify) || filters(SWT.Verify)) {
-            Point selection = getSelection();
-            newText = verifyText(newText, selection.x, selection.y);
-            if (newText == null)
-                return;
-        }
-        if (textLimit != Text.LIMIT) {
-            Point sel = getSelection();
-            int charCount = getCharCount();
-            if (charCount - (sel.y - sel.x) + newText.length() > textLimit) {
-                newText = newText.substring(0, Math.max(0, textLimit - charCount + (sel.y - sel.x)));
-            }
-        }
-        apiEdits.record(this, TextApiEdits.PASTE, newText);
-        _insertEditText(newText, enableUndo);
-        sendEvent(SWT.Modify);
+        TextPasteHelper.paste(this);
     }
 
     @Override

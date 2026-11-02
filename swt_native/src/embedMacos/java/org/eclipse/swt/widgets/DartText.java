@@ -1019,19 +1019,13 @@ public class DartText extends DartScrollable implements IText {
     }
 
     void insertEditText(String string) {
-        int length = string.length();
         Point selection = getSelection();
         if (selection.x > getCharCount() || selection.y > getCharCount()) {
             int _l = getCharCount();
             selection = new Point(Math.min(selection.x, _l), Math.min(selection.y, _l));
         }
         String oldText = getText();
-        if (textLimit != Text.LIMIT) {
-            int charCount = oldText.length();
-            if (charCount - (selection.y - selection.x) + length > textLimit) {
-                string = string.substring(0, textLimit - charCount + (selection.y - selection.x));
-            }
-        }
+        string = TextHelper.clipToLimit(this, string, selection);
         String newText = oldText.substring(0, selection.x) + string + oldText.substring(selection.y);
         clearSegments(false);
         setEditText(newText);

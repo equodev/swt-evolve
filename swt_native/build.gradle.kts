@@ -365,9 +365,6 @@ sourceSets {
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/TreeAccessorsNativeTest.java")
             // Shell.setMaximumSize/getMaximumSize were added in 3.116.
             if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
-            // Text's paste goes through _paste(boolean) from 3.114.100 on, where the Verify fix and the clipboard recipe live.
-            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextPasteVerifyTest.java")
-            if (swtMinorNative < 114) exclude("org/eclipse/swt/widgets/TextClipboardPasteTest.java")
             // StyledText.setLineVerticalIndent was added in 3.109.
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
@@ -584,6 +581,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/StyledTextMeasurements.java",
     "**/ImeHelper.java",
     "**/TrackerHelper.java",
+    "**/TextPasteHelper.java",
     "**/ShellActivation.java",
     "**/NativeCursorHotspot.java",
     "**/TextApiEdits.java",
