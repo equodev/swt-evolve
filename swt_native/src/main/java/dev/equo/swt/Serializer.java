@@ -375,6 +375,13 @@ public class Serializer {
         /** The images and editors this tape has described; a widget is marked on its value instead. */
         private final java.util.Set<Object> described =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        /**
+         * The first image id to carry each distinct pixel content in this frame. A later image with
+         * the same content is written as a name of that id rather than a second copy of the pixels,
+         * so one icon on a thousand nodes travels once. Reset per frame: the ids it points at
+         * are all live and described in the same frame, so a name always resolves.
+         */
+        private final java.util.Map<Long, Long> canonicalImageId = new java.util.HashMap<>();
         /** This tape, as the widgets it describes are marked with: {@link SentHashes#describedOn}. */
         private long serial;
 
@@ -386,6 +393,7 @@ public class Serializer {
             this.connection = connection;
             this.named = mayReference();
             serial = tapeSerial.incrementAndGet();
+            canonicalImageId.clear();
             frame.reset();
             frame.begin();
             frame.names(this);
@@ -407,6 +415,7 @@ public class Serializer {
         public void release() {
             owed.clear();
             described.clear();
+            canonicalImageId.clear();
             underUnheld.clear();
             insideUnheld = 0;
             frame.names(null);
@@ -453,6 +462,23 @@ public class Serializer {
             if (named && canReferenceResource(((DartImage) image.getImpl()).getValue())) return;
             described.add(image);
             owed.add(image);
+        }
+
+        @Override
+        public long imageRef(org.eclipse.swt.graphics.Image image) {
+            // The key is a CRC of the pixels, so two genuinely different icons could in principle
+            // collide and the second would render as the first. The window is one frame and the
+            // consequence a wrong icon rather than corruption or a crash; the same key already
+            // decides the PNG-encode cache, so the risk is one the wire has long accepted.
+            long content = wireContentKey(image);
+            if (content != 0) {
+                Long canonical = canonicalImageId.get(content);
+                // A twin's pixels are already in this frame under that id: name it, send nothing.
+                if (canonical != null) return canonical;
+                canonicalImageId.put(content, (long) image.hashCode());
+            }
+            image(image);
+            return image.hashCode();
         }
 
         /** A dirty widget's record, and whatever it names that the client lacks. */
@@ -1012,6 +1038,21 @@ public class Serializer {
         if (!(value instanceof VImage)) return false;
         VImage image = (VImage) value;
         return image.getImageData() != null || image.getSvgContent() != null;
+    }
+
+    /**
+     * A key equal for two images whose wire form is identical, for deduping a repeated icon within a
+     * frame ({@link Tape#imageRef}). Zero when the image carries no pixels by value — its content is
+     * a remote render ref the client already caches by id, so there is nothing to dedupe.
+     */
+    static long wireContentKey(org.eclipse.swt.graphics.Image image) {
+        if (image == null || !(image.getImpl() instanceof DartImage)) return 0;
+        VImage value = ((DartImage) image.getImpl()).getValue();
+        if (value == null) return 0;
+        String svg = value.getSvgContent();
+        if (svg != null) return ImageDataCodec.contentKey(svg);
+        org.eclipse.swt.graphics.ImageData data = value.getImageData();
+        return data == null || data.data == null ? 0 : ImageDataCodec.contentKey(data);
     }
 
     /**

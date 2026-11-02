@@ -59,6 +59,17 @@ public final class WidgetWire {
         void widget(Object widget);
 
         void image(Image image);
+
+        /**
+         * The id to write for {@code image}, after arranging for whatever the client lacks to
+         * follow. Normally the image's own id, with its pixels sent under it; an implementation that
+         * dedupes a repeated icon returns the id of the twin already in the frame instead, and sends
+         * nothing more.
+         */
+        default long imageRef(Image image) {
+            image(image);
+            return image.hashCode();
+        }
     }
 
     private static final Names IGNORE = new Names() {
@@ -557,8 +568,7 @@ public final class WidgetWire {
             varint(0);
             return;
         }
-        names.image(v);
-        long id = v.hashCode();
+        long id = names.imageRef(v);
         varlong(((id << 1) ^ (id >> 63)) + 1);
     }
 
