@@ -270,7 +270,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   /// Asks Java for a full-area Paint. The GC drawer calls this when scoped repaints have stacked
-  /// deep enough to be worth collapsing back into a single display list.
+  /// deep enough to be worth collapsing back into a single display list, or when the scene was
+  /// drawn under another Canvas theme.
   void requestFullRepaint() {
     if (!mounted) return;
     beforePaintRequest();

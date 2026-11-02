@@ -201,8 +201,9 @@ class GCDrawer extends GCDrawerBase {
 
   final void Function(List<Shape>)? onGCDispose;
 
-  /// Called when scoped repaints have stacked past [_maxRegionLayers]; the Canvas answers with a
-  /// full-area Paint, which collapses them back into one display list.
+  /// Called when scoped repaints have stacked past [_maxRegionLayers], or when the scene was drawn
+  /// under another Canvas theme; the Canvas answers with a full-area Paint, which redraws the scene
+  /// as one display list.
   final void Function()? onFullRepaintNeeded;
 
   // Layers inside a later damage are dropped, so only damage that keeps shifting by less than its
@@ -211,6 +212,9 @@ class GCDrawer extends GCDrawerBase {
 
   // Set once the full-area Paint is asked for, so the cycles before it arrives don't ask again.
   bool _fullRepaintRequested = false;
+
+  // The Canvas theme the last full-area cycle resolved its colors from.
+  CanvasThemeExtension? _sceneTheme;
 
   /// Embedded mode: registers comm listeners for state + all draw ops + gcDispose.
   /// onShapesUpdated triggers GCImpl.setState().
@@ -228,13 +232,14 @@ class GCDrawer extends GCDrawerBase {
       _staging = _spareStaging ?? [];
       _spareStaging = null;
       _settleNormalFill();
+      final cycleTheme = _canvasTheme;
       // Nothing to wait for: committed now, with nothing made for the wait.
       if (_pendingImages.isEmpty && _commitsInFlight == 0) {
-        _commit(cycleStaging, fullRepaint, damage);
+        _commit(cycleStaging, fullRepaint, damage, cycleTheme);
         _spareStaging = cycleStaging..clear();
         return null;
       }
-      return _commitWhenReady(cycleStaging, fullRepaint, damage);
+      return _commitWhenReady(cycleStaging, fullRepaint, damage, cycleTheme);
     };
     // A repaint of what is already shown is not resent; Java still waits for the frame it is due in.
     _nextFrame = (frame, start) => _reportInFrame();
@@ -242,7 +247,8 @@ class GCDrawer extends GCDrawerBase {
 
   /// Commits a cycle that has images still decoding, or that an earlier one is still committing
   /// ahead of: decoding runs concurrently across cycles; only the commit is serialized.
-  Future<void> _commitWhenReady(List<Shape> cycleStaging, bool fullRepaint, Rect? damage) async {
+  Future<void> _commitWhenReady(List<Shape> cycleStaging, bool fullRepaint, Rect? damage,
+      CanvasThemeExtension? cycleTheme) async {
     final pending = List<Future<Shape>>.from(_pendingImages);
     _pendingImages.clear();
 
@@ -259,7 +265,7 @@ class GCDrawer extends GCDrawerBase {
         }
       }
       await previousCommit;
-      _commit(cycleStaging, fullRepaint, damage);
+      _commit(cycleStaging, fullRepaint, damage, cycleTheme);
     } finally {
       _commitsInFlight--;
       thisCommit.complete();
@@ -276,8 +282,10 @@ class GCDrawer extends GCDrawerBase {
   final Set<ui.Image> _keep = {};
 
   /// Makes [cycleStaging] what the control shows: over the last frame within [damage], instead
-  /// of it when [fullRepaint], else over what it does not cover.
-  void _commit(List<Shape> cycleStaging, bool fullRepaint, Rect? damage) {
+  /// of it when [fullRepaint], else over what it does not cover. [cycleTheme] is the Canvas theme
+  /// the cycle's colors were resolved from.
+  void _commit(
+      List<Shape> cycleStaging, bool fullRepaint, Rect? damage, CanvasThemeExtension? cycleTheme) {
     var kept = 0;
     for (var k = 0; k < cycleStaging.length; k++) {
       final shape = cycleStaging[k];
@@ -311,6 +319,7 @@ class GCDrawer extends GCDrawerBase {
       // survives it; a GC opened outside one (draw2d/GEF feedback) composites on top instead.
       if (fullRepaint) {
         _fullRepaintRequested = false;
+        _sceneTheme = cycleTheme;
         disposeShapeImages(shapes, keep: keep);
         shapes.clear();
       } else {
@@ -452,6 +461,19 @@ class GCDrawer extends GCDrawerBase {
   void syncContext(BuildContext ctx) {
     _context = ctx;
     _canvasTheme = Theme.of(ctx).extension<CanvasThemeExtension>();
+    _repaintIfThemeChanged();
+  }
+
+  // Themed colors are resolved as the drawing arrives, so a scene drawn under another Canvas theme
+  // changes only when Java draws it again. The theme is this side's, so this side asks, as a native
+  // window is invalidated when the system theme changes. A switch animates, so an answer drawn
+  // mid-animation asks again until one is drawn under the final theme.
+  void _repaintIfThemeChanged() {
+    if (_fullRepaintRequested || shapes.isEmpty || !_useThemeColors) return;
+    final painted = _sceneTheme;
+    if (painted == null || painted == _canvasTheme) return;
+    _fullRepaintRequested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) => onFullRepaintNeeded?.call());
   }
 
   Object? _matrixOf;

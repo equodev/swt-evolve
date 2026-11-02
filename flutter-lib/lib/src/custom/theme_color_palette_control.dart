@@ -41,7 +41,8 @@ void _syncThemeColor(String hex6or8) {
   _sendThemeFlags(_ThemeFlags(themeColor: trimmed));
 }
 
-void _syncThemeName(String themeName, {String? forceTheme}) =>
+/// Asks Java to switch to the named theme, as picking it on the toolbar palette does.
+void syncThemeName(String themeName, {String? forceTheme}) =>
     _sendThemeFlags(_ThemeFlags(themeName: themeName, forceTheme: forceTheme));
 
 List<String> _parseSampleHexCsv(String csv) =>
@@ -117,7 +118,7 @@ class ThemeColorToolbarPaletteControl extends StatelessWidget {
           color: scheme.primary,
           background: scheme.surface,
           label: pick.label,
-          onTap: () => _syncThemeName(pick.key, forceTheme: pick.forceTheme),
+          onTap: () => syncThemeName(pick.key, forceTheme: pick.forceTheme),
         ),
       ];
     }).toList();
