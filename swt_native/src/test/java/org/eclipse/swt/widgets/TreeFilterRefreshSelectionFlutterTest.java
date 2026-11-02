@@ -78,6 +78,13 @@ class TreeFilterRefreshSelectionFlutterTest {
             public boolean hasChildren(Object element) {
                 return CATEGORIES.containsKey(element);
             }
+
+            // JFace 3.10 declares these abstract.
+            public void dispose() {
+            }
+
+            public void inputChanged(Viewer changed, Object oldInput, Object newInput) {
+            }
         });
         viewer.setLabelProvider(new LabelProvider());
         viewer.setInput(CATEGORIES);

@@ -49,7 +49,7 @@ public class ImageDataCodecFidelityTest {
         // The image then reaches Flutter fully opaque and paints over whatever it is blitted onto.
         ImageData pixels = new ImageData(4, 4, 24, new PaletteData(0xFF0000, 0x00FF00, 0x0000FF));
         ImageData mask = new ImageData(4, 4, 1,
-                new PaletteData(new RGB(0, 0, 0), new RGB(255, 255, 255)));
+                new PaletteData(new RGB[] {new RGB(0, 0, 0), new RGB(255, 255, 255)}));
         mask.setPixel(3, 3, 1);
         ImageData combined = new ImageData(pixels.width, pixels.height, pixels.depth,
                 pixels.palette, pixels.scanlinePad, pixels.data);
@@ -92,7 +92,7 @@ public class ImageDataCodecFidelityTest {
     public void a_transparent_palette_index_stays_transparent() {
         // A 1-bit stipple: one index drawn, the other see-through.
         ImageData source = new ImageData(4, 4, 1,
-                new PaletteData(new RGB(0x1B, 0x76, 0x99), new RGB(255, 255, 255)));
+                new PaletteData(new RGB[] {new RGB(0x1B, 0x76, 0x99), new RGB(255, 255, 255)}));
         source.setPixel(0, 0, 0);
         source.setPixel(1, 0, 1);
         source.transparentPixel = 1;
@@ -126,7 +126,7 @@ public class ImageDataCodecFidelityTest {
 
     private static ImageData withMask(ImageData pixels, int opaqueX, int opaqueY) {
         ImageData mask = new ImageData(pixels.width, pixels.height, 1,
-                new PaletteData(new RGB(0, 0, 0), new RGB(255, 255, 255)));
+                new PaletteData(new RGB[] {new RGB(0, 0, 0), new RGB(255, 255, 255)}));
         mask.setPixel(opaqueX, opaqueY, 1);
         ImageData combined = new ImageData(pixels.width, pixels.height, pixels.depth,
                 pixels.palette, pixels.scanlinePad, pixels.data);

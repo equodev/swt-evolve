@@ -103,6 +103,10 @@ public class GTKWrapper {
         return GDK.gdk_get_pointer(display);
     }
 
+    public static boolean isX11() {
+        return OS.isX11();
+    }
+
     public static boolean gtk_widget_translate_coordinates(long src_widget, long dest_widget, double src_x, double src_y, double[] dest_x, double[] dest_y) {
         return GTK4.gtk_widget_translate_coordinates(src_widget, dest_widget, src_x, src_y, dest_x, dest_y);
     }

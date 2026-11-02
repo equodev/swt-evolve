@@ -5,6 +5,7 @@ import dev.equo.swt.SerializeTestBase;
 import dev.equo.swt.harness.WireAssert;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.widgets.Mocks;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ class CTabFolderColorSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabFolder")
                .containsEntry("style", w.getStyle())
-               .node("selectionBackground").isEqualTo(String.format("#%02x%02x%02x%02x", color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue()));
+               .node("selectionBackground").isEqualTo(String.format("#%02x%02x%02x%02x", GraphicsUtils.getAlpha(color), color.getRed(), color.getGreen(), color.getBlue()));
     }
 
 }

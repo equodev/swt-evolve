@@ -1046,7 +1046,7 @@ public class Config {
     public static int uiZoom() {
         boolean browserTab = !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode();
         if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom;
-        return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+        return DartWidget.swtDeviceZoom();
     }
 
     static double uiScaleFor(int uiZoom, int monitorZoom) {

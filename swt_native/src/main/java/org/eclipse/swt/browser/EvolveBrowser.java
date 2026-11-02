@@ -66,7 +66,7 @@ public class EvolveBrowser extends WebBrowser {
         ((DartBrowser) browser.getImpl()).getValue().markDirty(VBrowser.URL);
     }
 
-    @Override
+    // Overrides WebBrowser's where the release declares it (not in 3.103).
     public Object evaluate(String script, boolean trusted) throws SWTException {
         return BrowserScripting.evaluate(getDartWidget(), display, script);
     }

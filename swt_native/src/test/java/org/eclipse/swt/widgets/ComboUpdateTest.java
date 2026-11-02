@@ -54,7 +54,7 @@ class ComboUpdateTest {
     /** A combo the client has seen whole, with items "a", "bb", "ccc" and the item at {@code selected} selected. */
     private Combo delivered(int style, int selected) {
         Combo combo = new Combo(Mocks.shell(), style);
-        combo.setItems("a", "bb", "ccc");
+        combo.setItems(new String[] {"a", "bb", "ccc"});
         if (selected != -1)
             combo.select(selected);
         WireFrames.record((DartWidget) combo.getImpl(), CLIENT);
@@ -120,7 +120,7 @@ class ComboUpdateTest {
         assertThat(update(combo)).containsKey("text");
 
         combo = delivered(SWT.READ_ONLY, 1);
-        combo.setItems("m", "n");
+        combo.setItems(new String[] {"m", "n"});
         assertThat(update(combo)).containsKey("text");
     }
 

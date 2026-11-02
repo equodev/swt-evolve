@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import dev.equo.swt.comm.CommService;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
@@ -512,7 +513,7 @@ public final class WidgetWire {
     public void write(Color v) {
         if (v != null && v.isDisposed()) v = null;
         if (!present(v != null)) return;
-        int argb = (v.getAlpha() << 24) | (v.getRed() << 16) | (v.getGreen() << 8) | v.getBlue();
+        int argb = (GraphicsUtils.getAlpha(v) << 24) | (v.getRed() << 16) | (v.getGreen() << 8) | v.getBlue();
         ensure(4);
         buf[size++] = (byte) argb;
         buf[size++] = (byte) (argb >> 8);

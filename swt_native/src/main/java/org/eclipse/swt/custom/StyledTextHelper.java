@@ -10,6 +10,7 @@ import org.eclipse.swt.graphics.DartFont;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.ControlHelper;
@@ -741,7 +742,7 @@ public class StyledTextHelper {
 
         private static int colourName(org.eclipse.swt.graphics.Color colour) {
             if (colour == null || colour.isDisposed()) return 0;
-            return (colour.getAlpha() << 24) | (colour.getRed() << 16)
+            return (GraphicsUtils.getAlpha(colour) << 24) | (colour.getRed() << 16)
                     | (colour.getGreen() << 8) | colour.getBlue();
         }
 

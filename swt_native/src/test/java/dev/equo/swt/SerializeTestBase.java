@@ -805,7 +805,7 @@ public class SerializeTestBase {
                     return;
                 }
                 at(n).isEqualTo(String.format("#%02x%02x%02x%02x",
-                        value.getAlpha(), value.getRed(), value.getGreen(), value.getBlue()));
+                        GraphicsUtils.getAlpha(value), value.getRed(), value.getGreen(), value.getBlue()));
             };
         }
 

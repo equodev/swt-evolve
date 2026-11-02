@@ -47,7 +47,7 @@ class ComboHeightTest {
         Text text = new Text(shell(), SWT.BORDER);
         text.setText("m");
         Combo combo = new Combo(shell(), comboStyle);
-        combo.setItems("", "m", "w");
+        combo.setItems(new String[] {"", "m", "w"});
         combo.select(1);
 
         int textHeight = text.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;

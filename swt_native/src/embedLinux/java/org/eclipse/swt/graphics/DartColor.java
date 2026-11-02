@@ -332,7 +332,7 @@ public final class DartColor extends DartResource implements IColor {
             return false;
         if (this.getBlue() != color.getBlue())
             return false;
-        if (this.getAlpha() != color.getAlpha())
+        if (this.getAlpha() != color.getImpl().getAlpha())
             return false;
         return true;
     }
@@ -526,6 +526,12 @@ public final class DartColor extends DartResource implements IColor {
 
     public int _red() {
         return red;
+    }
+
+    public Color _copy() {
+        DartColor copy = new DartColor(device, red, green, blue, null);
+        copy.alpha = alpha;
+        return copy.getApi();
     }
 
     public Color getApi() {

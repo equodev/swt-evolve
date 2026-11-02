@@ -1615,6 +1615,10 @@ public abstract class DartWidget implements IWidget {
         return data;
     }
 
+    public static int swtDeviceZoom() {
+        return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+    }
+
     void register() {
         _hookEvents();
         bridge = SwtEmbeddedBridge.of(this);

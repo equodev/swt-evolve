@@ -48,7 +48,7 @@ class ComboCaretReportTest {
 
     private static Combo combo(int style) {
         Combo combo = new Combo(Mocks.shell(), style);
-        combo.setItems("Initial", "Other");
+        combo.setItems(new String[] {"Initial", "Other"});
         combo.setText("Initial");
         return combo;
     }

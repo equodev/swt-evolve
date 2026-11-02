@@ -117,11 +117,14 @@ class CTabFolderHitTestFollowsTheStripTest {
     void fallsBackToTheLayoutItHas() {
         CTabFolder folder = crowdedFolder();
 
-        CTabItem first = folder.getItem(0);
-        Rectangle bounds = first.getBounds();
-        assertThat(bounds.width).as("the premise: this side did lay the first tab out").isPositive();
+        // Which tabs a crowded strip lays out depends on the release's tab priority: before 3.105 an
+        // appended tab goes ahead of the first one, which then gets no width.
+        CTabItem laidOut = java.util.Arrays.stream(folder.getItems())
+                .filter(item -> item.getBounds().width > 0 && item.getBounds().x >= 0 && item.getBounds().x < STRIP_WIDTH)
+                .findFirst().orElse(null);
+        assertThat(laidOut).as("the premise: this side did lay a tab out in the strip").isNotNull();
 
-        assertThat(hitAt(folder, bounds.x + 1)).isSameAs(first);
+        assertThat(hitAt(folder, laidOut.getBounds().x + 1)).isSameAs(laidOut);
     }
 
     @Test

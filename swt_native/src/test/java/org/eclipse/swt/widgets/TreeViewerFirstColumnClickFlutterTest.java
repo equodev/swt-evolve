@@ -14,6 +14,7 @@ import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.TreeViewerColumn;
 import org.eclipse.jface.viewers.TreeViewerEditor;
+import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -109,6 +110,13 @@ class TreeViewerFirstColumnClickFlutterTest {
 
             public boolean hasChildren(Object element) {
                 return false;
+            }
+
+            // JFace 3.10 declares these abstract.
+            public void dispose() {
+            }
+
+            public void inputChanged(Viewer changed, Object oldInput, Object newInput) {
             }
         });
         viewer.setInput(List.of(ADD_NEW));

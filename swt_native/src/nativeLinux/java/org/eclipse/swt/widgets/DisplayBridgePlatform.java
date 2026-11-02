@@ -3,7 +3,6 @@ package org.eclipse.swt.widgets;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.internal.gtk.OS;
 
 /**
  * Per-OS native init shared by the two Display surfaces on Linux — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
@@ -120,7 +119,7 @@ final class DisplayBridgePlatform {
     }
 
     private static boolean globalPointer() {
-        return !nativeLibraryOff() && !GTKWrapper.IS_GTK4 && OS.isX11();
+        return !nativeLibraryOff() && !GTKWrapper.IS_GTK4 && GTKWrapper.isX11();
     }
 
     /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */

@@ -987,15 +987,24 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         int storedZoom = logicalWidth > 0 && this.imageData.width != logicalWidth ? Math.round(100f * this.imageData.width / logicalWidth) : 100;
         if (zoom == storedZoom)
             return GraphicsUtils.copyImageData(this.imageData);
-        ImageData atZoom = GraphicsUtils.imageDataAtZoom(imageDataProvider, imageFileNameProvider, zoom);
-        if (atZoom != null)
-            return atZoom;
+        // The provider is asked for any zoom, as GTK and Win32 do; Cocoa only asks it for 200%.
+        if (imageDataProvider != null) {
+            ImageData atZoom = imageDataProvider.getImageData(zoom);
+            if (atZoom != null)
+                return GraphicsUtils.copyImageData(atZoom);
+        } else if (imageFileNameProvider != null) {
+            String atZoomPath = imageFileNameProvider.getImagePath(zoom);
+            if (atZoomPath != null)
+                return new ImageData(atZoomPath);
+        }
         if (storedZoom != 100 && org.eclipse.swt.internal.DPIUtil.isSmoothScalingEnabled() && this.imageData.getTransparencyType() != SWT.TRANSPARENCY_MASK)
             return GraphicsUtils.scaleRasterBuffer(device, this.imageData, logicalWidth, logicalHeight, zoom);
         // Scale to the requested zoom (matches upstream, which falls back to
-        // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). It already returns a
-        // fresh ImageData. DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
-        return org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, storedZoom);
+        // DPIUtil.scaleImageData(device, getImageData(100), zoom, 100)). A device that does not
+        // auto-scale gets the data back unchanged, so that is copied too.
+        // DPIUtil renamed autoScaleImageData -> scaleImageData in 3.127.
+        ImageData scaled = org.eclipse.swt.internal.DPIUtil.scaleImageData(device, this.imageData, zoom, storedZoom);
+        return scaled == this.imageData ? GraphicsUtils.copyImageData(scaled) : scaled;
     }
 
     /**

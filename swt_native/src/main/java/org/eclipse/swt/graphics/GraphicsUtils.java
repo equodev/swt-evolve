@@ -296,23 +296,6 @@ public class GraphicsUtils {
         return copyImage(display, image);
     }
 
-    /**
-     * The pixels an image built from a provider answers for {@code zoom} when that is not the zoom it is held at, or
-     * null to scale the held pixels instead. The provider is asked for any zoom, as GTK and Win32 do; Cocoa only
-     * asks it for 200%.
-     */
-    public static ImageData imageDataAtZoom(ImageDataProvider dataProvider, ImageFileNameProvider fileNameProvider, int zoom) {
-        if (dataProvider != null) {
-            ImageData data = dataProvider.getImageData(zoom);
-            return data == null ? null : copyImageData(data);
-        }
-        if (fileNameProvider != null) {
-            String path = fileNameProvider.getImagePath(zoom);
-            return path == null ? null : new ImageData(path);
-        }
-        return null;
-    }
-
     /** The colour of the image data's transparent pixel, or null when it has none. */
     public static Color transparentColor(Device device, ImageData data) {
         if (data == null || data.transparentPixel == -1) return null;
@@ -339,8 +322,12 @@ public class GraphicsUtils {
         if (color.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        DartColor copy = new DartColor(color.getDevice(), color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), null);
-        return copy.getApi();
+        return ((DartColor) color.getImpl())._copy();
+    }
+
+    /** The color's alpha, 255 on a release whose Color has no alpha. */
+    public static int getAlpha(Color color) {
+        return color.getImpl().getAlpha();
     }
 
     private static java.util.Map<String, java.io.File> assetFilesCache = null;

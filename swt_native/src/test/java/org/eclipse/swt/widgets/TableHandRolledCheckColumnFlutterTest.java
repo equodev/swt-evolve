@@ -124,7 +124,7 @@ class TableHandRolledCheckColumnFlutterTest {
                 }
                 if (column != 1)
                     return;
-                IStructuredSelection sel = viewer.getStructuredSelection();
+                IStructuredSelection sel = (IStructuredSelection) viewer.getSelection();
                 Validator v = (Validator) sel.getFirstElement();
                 if (v == null)
                     return;

@@ -186,7 +186,7 @@ class WidgetWireFlutterTest {
 
     @Test
     void stringArray() {
-        Map<String, Object> state = changed(new Combo(shell, SWT.READ_ONLY), c -> c.setItems("a", "β", ""));
+        Map<String, Object> state = changed(new Combo(shell, SWT.READ_ONLY), c -> c.setItems(new String[] {"a", "β", ""}));
         assertThat((List<Object>) state.get("items")).containsExactly("a", "β", "");
     }
 }
