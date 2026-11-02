@@ -21,4 +21,17 @@ class SystemFontWebMetricsTest {
                 .as("bold is measured with bold widths, not the regular ones")
                 .isGreaterThan(FontMetricsUtil.getFontSize(TEXT, FontMetricsUtil.getId("System", false, false), SIZE).x() + 1);
     }
+
+    /** CanvasKit paints an unknown family in its fallback face ("System Web"), weight kept. */
+    @Test
+    void aFamilyWithoutMetricsIsMeasuredWithTheWebSystemWidthsOfItsStyle() {
+        WebFontSubstitutions.ensureRegistered();
+
+        assertThat(FontMetricsUtil.getFontSize(TEXT, FontMetricsUtil.getId("system", false, true), SIZE).x())
+                .as("bold")
+                .isEqualTo(FontMetricsUtil.getFontSize(TEXT, "System Web-0-6", SIZE).x());
+        assertThat(FontMetricsUtil.getFontSize(TEXT, FontMetricsUtil.getId("system", false, false), SIZE).x())
+                .as("regular")
+                .isEqualTo(FontMetricsUtil.getFontSize(TEXT, "System Web-0-3", SIZE).x());
+    }
 }

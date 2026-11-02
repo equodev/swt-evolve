@@ -31,8 +31,10 @@ Future<void> main(List<String> args) async {
   print('Wrote ${jsonFile.path}');
 
   final javaSrc = generateJava(out);
+  // The embedded backend's table for this OS, which the desktop surface measures with too.
+  final sourceSet = 'embed${os[0].toUpperCase()}${os.substring(1)}';
   final javaFile = File(
-    '../swt_native/src/$os/java/dev/equo/swt/GenFontMetrics.java',
+    '../swt_native/src/$sourceSet/java/dev/equo/swt/GenFontMetrics.java',
   );
   javaFile.parent.createSync(recursive: true);
   javaFile.writeAsStringSync(javaSrc);

@@ -2208,9 +2208,12 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         double extra = _lineSpaceExtra[line];
         int hanging = extra > 0 ? TextLayoutHelper.visibleEnd(text, ls, le) - ls : n;
         double[] width = new double[n];
-        for (int c = 0; c < n; c++) {
+        // Measured after the character before it, so a box carries the pair's kerning as _xAt does.
+        for (int c = 0, previous = -1; c < n; c++) {
             int after = _nextChar(ls + c, le);
-            width[c] = c >= hanging ? 0 : _advance(ls, ls + c, after, indent) + (text.charAt(ls + c) == ' ' ? extra : 0);
+            double advance = previous < 0 ? _advance(ls, ls + c, after, indent) : _advance(ls, ls + previous, after, indent) - _advance(ls, ls + previous, ls + c, indent);
+            width[c] = c >= hanging ? 0 : advance + (text.charAt(ls + c) == ' ' ? extra : 0);
+            previous = c;
             if (after - ls == c + 2)
                 c++;
         }

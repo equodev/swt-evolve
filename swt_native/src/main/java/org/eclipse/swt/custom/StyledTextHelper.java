@@ -1521,52 +1521,10 @@ public class StyledTextHelper {
         if (text == null || text.isEmpty()) {
             return 0;
         }
-        if (font == null) {
+        if (font == null || font.isDisposed()) {
             return text.length() * 8;
         }
-
-        FontData[] fontDatas = font.getFontData();
-        if (fontDatas == null || fontDatas.length == 0) {
-            return text.length() * 8;
-        }
-
-        FontData fd = fontDatas[0];
-        String fontId = FontMetricsUtil.getId(fd);
-        int fontSizePoints = fd.getHeight();
-        double fontSizePixels = fontSizePoints * dpiScale();
-
-        Metrics metrics = FontMetricsUtil.metrics(fontId);
-        if (metrics == null) {
-            String baseFontId = fd.getName() + "-0-3";
-            metrics = FontMetricsUtil.metrics(baseFontId);
-        }
-
-        if (metrics == null) {
-            return text.length() * (int) Math.round(fontSizePixels * 0.5);
-        }
-
-        double scale = fontSizePixels / FONT_METRICS_BASE;
-        double width = 0;
-
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            i += Character.charCount(cp);
-
-            double glyphWidth;
-            if (metrics.glyphWidths() != null) {
-                int index = cp - GLYPH_START;
-                if (index >= 0 && index < metrics.glyphWidths().length) {
-                    glyphWidth = metrics.glyphWidths()[index];
-                } else {
-                    glyphWidth = metrics.avgCharWidth();
-                }
-            } else {
-                glyphWidth = metrics.avgCharWidth();
-            }
-            width += glyphWidth * scale;
-        }
-
-        return (int) Math.round(width);
+        return (int) Math.round(FontMetricsUtil.getFontSize(text, font).x() * dpiScale());
     }
 
     /**

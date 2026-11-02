@@ -227,10 +227,9 @@ public final class FontMetricsUtil {
     public static int[] computeFontMetrics(Font font) {
         if (font == null) return null;
         FontData fd = font.getFontData()[0];
-        Metrics m = metrics(getId(fd));
         // The same fallback text is measured with (lineHeight, measureLine), so a line's extent and
         // the font's height agree for a family without metrics of its own.
-        if (m == null) m = metrics("System-0-3");
+        Metrics m = measuredMetrics(getId(fd));
         if (m == null) m = metrics("Verdana-0-3");
         if (m == null) return null;
         Display display = Display.getCurrent();
@@ -416,23 +415,37 @@ public final class FontMetricsUtil {
         return new PointD(w, h);
     }
 
-    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+    /**
+     * A family without metrics is painted in the default face at the requested weight and slant, so
+     * it is measured as "System" of the same style (substituted: "System Web" on the web).
+     */
+    private static Metrics measuredMetrics(String fontId) {
         Metrics metrics = metrics(fontId);
+        if (metrics != null) return metrics;
+        String system = substituteFontName("System");
+        int styleAt = fontId.lastIndexOf('-', fontId.lastIndexOf('-') - 1);
+        if (styleAt >= 0) metrics = metrics(system + fontId.substring(styleAt));
+        if (metrics == null) metrics = metrics(system + "-0-3");
         if (metrics == null) metrics = metrics("System-0-3");
+        return metrics;
+    }
+
+    private static double lineHeight(String fontId, int fontSize, double fontHeight) {
+        Metrics metrics = measuredMetrics(fontId);
         if (metrics == null) return fontSize;
         return fontHeight != 0 ? fontHeight * fontSize : metrics.height() * fontSize;
     }
 
     private static double measureLine(String text, String fontId, int fontSize) {
-        Metrics metrics = metrics(fontId);
-        if (metrics == null)
-            metrics = metrics("System-0-3");
+        Metrics metrics = measuredMetrics(fontId);
         if (metrics == null)
             return 0;
 
         double scale = (double) fontSize / GenFontMetrics.BASE;
 
+        // Add each pair's kerning, as the run is painted with it.
         double w = 0.0;
+        int previous = -1;
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
@@ -446,7 +459,9 @@ public final class FontMetricsUtil {
             } else {
                 glyphWidth = metrics.avgCharWidth();
             }
+            if (previous >= 0) glyphWidth += metrics.kerning(previous, cp);
             w += glyphWidth * scale;
+            previous = cp;
         }
         return w;
     }

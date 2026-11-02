@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
@@ -14,6 +15,7 @@ import static org.assertj.core.api.Assertions.within;
  * with the metrics taken from that stack — the ones the embedded backend already uses on this OS.
  * The web surface paints with the fonts it bundles and substitutes, and keeps its own table.
  */
+@ExtendWith(WithoutFontSubstitutions.class)
 class DesktopFontMetricsTest {
 
     private static final String SYSTEM_FONT = FontMetricsUtil.getId("system", false, false);

@@ -35,6 +35,7 @@ Map<String, dynamic> measureFonts(List<(String, FontStyle, FontWeight)> fonts) {
     final hgt = <double>[];
 
     Map<String, double>? baseGlyphs;
+    Map<String, int> kerning = const {};
 
     for (final size in sizes) {
       final double fontSize = size.toDouble();
@@ -60,13 +61,10 @@ Map<String, dynamic> measureFonts(List<(String, FontStyle, FontWeight)> fonts) {
       if (size == BASE_SIZE) {
         final m = <String, double>{};
         for (final cp in glyphs) {
-          final p = TextPainter(
-            text: TextSpan(text: String.fromCharCode(cp), style: textStyle),
-            textDirection: TextDirection.ltr,
-          )..layout();
-          m['$cp'] = p.width;
+          m['$cp'] = _width(String.fromCharCode(cp), textStyle);
         }
         baseGlyphs = m;
+        kerning = _measureKerning(glyphs, m, textStyle);
       }
 
       print(
@@ -85,6 +83,7 @@ Map<String, dynamic> measureFonts(List<(String, FontStyle, FontWeight)> fonts) {
     var fk = "$font-${styleKey(style)}-${weightKey(weight)}";
     out[fk] = {
       if (!isMonospace) "glyphs": baseGlyphs,
+      if (!isMonospace && kerning.isNotEmpty) "kerning": kerning,
       "ascent": ascentFactor,
       "descent": descentFactor,
       "height": heightFactor,
@@ -110,6 +109,39 @@ Map<String, dynamic> measureFonts(List<(String, FontStyle, FontWeight)> fonts) {
   }
 
   return out;
+}
+
+double _width(String text, TextStyle style) {
+  final p = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final width = p.width;
+  p.dispose();
+  return width;
+}
+
+/// What each pair of [glyphs] adds to the sum of its two widths when laid out together (kerning),
+/// in ten-thousandths of a pixel at [BASE_SIZE]. Pairs with no adjustment are left out.
+Map<String, int> _measureKerning(
+  List<int> glyphs,
+  Map<String, double> glyphWidths,
+  TextStyle style,
+) {
+  final kerning = <String, int>{};
+  final scale = pow(10, DECIMALS);
+  for (final first in glyphs) {
+    for (final second in glyphs) {
+      final pair = String.fromCharCodes([first, second]);
+      final adjustment =
+          _width(pair, style) -
+          glyphWidths['$first']! -
+          glyphWidths['$second']!;
+      final units = (adjustment * scale).truncate();
+      if (units != 0) kerning[pair] = units;
+    }
+  }
+  return kerning;
 }
 
 int weightKey(FontWeight weight) => weight.index;
@@ -233,8 +265,30 @@ String generateJava(Map<String, dynamic> data) {
     if (dupGlyphsFont != null) {
       fm.remove('glyphs');
     }
+    final kerning = fm['kerning'] as Map<String, int>?;
+    String kerningArg = '';
+    if (kerning != null) {
+      final code = _encodeKerning(kerning);
+      fm['kerningCode'] = code;
+      final dupKerningFont = data.entries
+          .where(
+            (e) =>
+                e.key != font &&
+                (e.value as Map<String, dynamic>)['processed'] == true &&
+                (e.value as Map<String, dynamic>)['kerningCode'] == code &&
+                (e.value as Map<String, dynamic>)['kerningShared'] != true,
+          )
+          .map((e) => e.key)
+          .firstOrNull;
+      if (dupKerningFont != null) {
+        fm['kerningShared'] = true;
+        kerningArg = ', DATA.get("${fontKey(dupKerningFont)}").kerning()';
+      } else {
+        kerningArg = ', ${jMethod(font)}_kerning()';
+      }
+    }
     sb.writeln(
-      '        DATA.put("${fontKey(font)}", new Metrics($ascent, $descent, $height, $avg, $glyphsArg));',
+      '        DATA.put("${fontKey(font)}", new Metrics($ascent, $descent, $height, $avg, $glyphsArg$kerningArg));',
     );
   });
   sb.writeln('    }');
@@ -262,9 +316,55 @@ String generateJava(Map<String, dynamic> data) {
     }
   });
 
+  data.forEach((font, metrics) {
+    final fm = metrics as Map<String, dynamic>;
+    final code = fm['kerningCode'] as String?;
+    if (code == null || fm['kerningShared'] == true) return;
+    sb.writeln('    private static String ${jMethod(font)}_kerning() {');
+    for (var at = 0; at < code.length; at += _kerningLineLength) {
+      final end = min(at + _kerningLineLength, code.length);
+      final line = _javaString(code.substring(at, end));
+      sb.writeln(
+        '${at == 0 ? '        return ' : '            + '}"$line"${end == code.length ? ';' : ''}',
+      );
+    }
+    sb.writeln('    }');
+  });
+
   sb.writeln('}');
   return sb.toString();
 }
+
+/// Characters of a kerning table per line of the generated source.
+const _kerningLineLength = 96;
+
+/// javac's limit for a string constant, in bytes (a kerning table is ASCII).
+const _javaConstantLimit = 65535;
+
+/// The kerning table as `Metrics` reads it: pair, adjustment, comma (`Te-1953,`), sorted.
+String _encodeKerning(Map<String, int> kerning) {
+  final pairs = kerning.keys.toList()..sort();
+  final sb = StringBuffer();
+  for (final pair in pairs) {
+    sb
+      ..write(pair)
+      ..write(kerning[pair])
+      ..write(',');
+  }
+  final code = sb.toString();
+  if (code.length > _javaConstantLimit) {
+    throw StateError(
+      'A kerning table of ${pairs.length} pairs does not fit a Java string constant',
+    );
+  }
+  return code;
+}
+
+/// [text] as a Java string literal body; `#` is escaped so `#<digits>` never reads as a reference.
+String _javaString(String text) => text
+    .replaceAll('\\', '\\\\')
+    .replaceAll('"', '\\"')
+    .replaceAll('#', r'\u0023');
 
 String jMethod(String font) => font.replaceAll(RegExp('[\\s-.]'), '_');
 
