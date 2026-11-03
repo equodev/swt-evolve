@@ -242,13 +242,18 @@ public class GallerySnippet {
         Table table = new Table(tableGroup, SWT.BORDER | SWT.FULL_SELECTION);
         table.setHeaderVisible(true);
         table.setLinesVisible(true);
-        for (String col : new String[] {"Name", "Role"}) {
+        // The columns are wider than the section, so the table scrolls sideways.
+        String[] columnNames = {"Name", "Role", "Known for"};
+        int[] columnWidths = {150, 150, 500};
+        for (int i = 0; i < columnNames.length; i++) {
+            String col = columnNames[i];
             TableColumn c = new TableColumn(table, SWT.NONE);
             c.setText(col);
-            c.setWidth(150);
+            c.setWidth(columnWidths[i]);
             c.addSelectionListener(widgetSelectedAdapter(e -> status.setText(col + " column clicked")));
         }
-        String[][] rows = {{"Ada", "Engineer"}, {"Grace", "Admiral"}, {"Linus", "Maintainer"}};
+        String[][] rows = {{"Ada", "Engineer", "Analytical Engine notes"}, {"Grace", "Admiral", "COBOL"},
+                {"Linus", "Maintainer", "Linux kernel"}};
         for (String[] row : rows) {
             TableItem ti = new TableItem(table, SWT.NONE);
             ti.setText(row);

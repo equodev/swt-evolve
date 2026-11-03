@@ -61,6 +61,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
   Map<int, TableColumnWidth>? _cachedColumnWidths;
   final ScrollController _verticalScrollController = ScrollController();
 
+  /// Scrolls header and rows together when an H_SCROLL table's columns are wider than it.
+  final ScrollController _horizontalScrollController = ScrollController();
+
   final DoubleTapDetector _rowTapDetector = DoubleTapDetector();
 
   /// The second click of a double click on a header is the column's DefaultSelection, as on Win32
@@ -123,6 +126,11 @@ class TableImpl<T extends TableSwt, V extends VTable>
     super.initState();
     _verticalScrollController.addListener(_verticalScrolled);
     _verticalScrollController.addListener(_reportUserScroll);
+    _horizontalScrollController.addListener(_reportScrollOffset);
+    // Editors are laid over the table, not in the rows, so they are placed again as the columns move.
+    _horizontalScrollController.addListener(() {
+      if (state.editors?.isNotEmpty ?? false) setState(() {});
+    });
     if (state.topIndex != null) _scrollToTopIndexAfterLayout();
   }
 
@@ -165,7 +173,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// How far the rows are scrolled.
   double get verticalScrollOffset => _verticalScrollController.scrolledBy;
 
+  /// How far header and rows are scrolled sideways; 0 when the columns fit.
+  double get horizontalScrollOffset =>
+      _horizontalScrollController.hasClients ? _horizontalScrollController.offset : 0;
+
   int _reportedScrollOffset = 0;
+  int _reportedHorizontalOffset = 0;
   bool _scrollingToTopIndex = false;
 
   void _reportUserScroll() => _reportScrollOffset(byUser: !_scrollingToTopIndex);
@@ -174,13 +187,18 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// are computed from it. A scroll the user made carries the detail Java's vertical ScrollBar
   /// Selection reports: [SWT.PAGE_UP] or [SWT.PAGE_DOWN], as Win32 names a wheel notch. A thumb drag
   /// is reported the same way. Any other scroll carries [SWT.NONE].
+  ///
+  /// The sideways scroll goes with it, as x: a cell's bounds are in the table's client area.
   void _reportScrollOffset({bool byUser = false}) {
     if (!_verticalScrollController.hasClients) return;
     final offset = _verticalScrollController.offset.round();
-    if (offset == _reportedScrollOffset) return;
+    final across = horizontalScrollOffset.round();
+    if (offset == _reportedScrollOffset && across == _reportedHorizontalOffset) return;
     final previous = _reportedScrollOffset;
     _reportedScrollOffset = offset;
+    _reportedHorizontalOffset = across;
     widget.sendEvent(state, WireChannel.scrollScroll, VEvent()
+      ..x = across
       ..y = offset
       ..detail = !byUser ? SWT.NONE : (offset < previous ? SWT.PAGE_UP : SWT.PAGE_DOWN));
   }
@@ -278,15 +296,21 @@ class TableImpl<T extends TableSwt, V extends VTable>
             child: LayeredLayoutBuilder(
               builder: (context, constraints) {
                 final bounded = constraints.maxHeight.isFinite;
+                final across = horizontalExtent(columns, columnWidths, constraints.maxWidth);
+                final header = showHeader
+                    ? buildHeader(context, columns, showLines, widgetTheme, columnWidths)
+                    : null;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: bounded ? MainAxisSize.max : MainAxisSize.min,
                   children: <Widget>[
-                    if (showHeader)
-                      buildHeader(context, columns, showLines, widgetTheme, columnWidths),
+                    if (header != null)
+                      across == null ? header : _scrolledAcross(header, across),
                     bounded
-                        ? Expanded(child: body)
-                        : SizedBox(height: naturalBodyHeight, child: body),
+                        ? Expanded(child: across == null ? body : _scrollableAcross(context, body, across))
+                        : SizedBox(
+                            height: naturalBodyHeight,
+                            child: across == null ? body : _scrollableAcross(context, body, across)),
                   ],
                 );
               },
@@ -317,8 +341,68 @@ class TableImpl<T extends TableSwt, V extends VTable>
   void dispose() {
     MenuDetectGate.forget(state.id);
     _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
+
+  /// How wide an H_SCROLL table's columns lay out: the widths Java set, scrolled when wider than
+  /// [viewportWidth], else the viewport. The rows stay in the sideways viewport whether or not the
+  /// columns overflow, so crossing that width keeps their vertical position, as Tree does. Null
+  /// when the table cannot scroll sideways.
+  double? horizontalExtent(
+    List<VTableColumn> columns,
+    Map<int, TableColumnWidth>? columnWidths,
+    double viewportWidth,
+  ) {
+    if (columns.isEmpty || !StyleBits(state.style).has(SWT.H_SCROLL)) return null;
+    if (!viewportWidth.isFinite) return null;
+    final total = calculateTotalWidth(columns, columnWidths);
+    if (total == null) return null;
+    return math.max(total, viewportWidth);
+  }
+
+  /// The header moved by the rows' sideways scroll, so each title stays over its column.
+  Widget _scrolledAcross(Widget header, double across) => ClipRect(
+        child: AnimatedBuilder(
+          animation: _horizontalScrollController,
+          builder: (context, child) =>
+              Transform.translate(offset: Offset(-horizontalScrollOffset, 0), child: child),
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            fit: OverflowBoxFit.deferToChild,
+            minWidth: across,
+            maxWidth: across,
+            child: header,
+          ),
+        ),
+      );
+
+  /// The rows in a sideways viewport [across] wide. The vertical bar stays on the table's right
+  /// edge: it sits outside the horizontal viewport, so it listens one scrollable deep.
+  Widget _scrollableAcross(BuildContext context, Widget rows, double across) => Scrollbar(
+        controller: _verticalScrollController,
+        notificationPredicate: (notification) =>
+            notification.metrics.axis == Axis.vertical && notification.depth == 1,
+        child: Scrollbar(
+          controller: _horizontalScrollController,
+          thumbVisibility: true,
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+            // A resize clamps the offset without notifying the controller; Java is told it.
+            child: NotificationListener<ScrollMetricsNotification>(
+              onNotification: (notification) {
+                if (notification.metrics.axis == Axis.horizontal) _reportScrollOffset();
+                return false;
+              },
+              child: SingleChildScrollView(
+                controller: _horizontalScrollController,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(width: across, child: rows),
+              ),
+            ),
+          ),
+        ),
+      );
 
   Widget buildHeader(
     BuildContext context,
@@ -1043,7 +1127,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
       if (columns.isNotEmpty && columnWidths != null && columnIndex < columns.length) {
         final order = displayOrder;
         editorX += columnLefts(fixedColumnWidths(columns.length), order)[columnIndex] +
-            lineWidth * order.indexOf(columnIndex);
+            lineWidth * order.indexOf(columnIndex) -
+            horizontalScrollOffset;
 
         final colW = columnWidths[columnIndex];
         if (colW is FixedColumnWidth) {

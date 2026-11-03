@@ -2514,6 +2514,8 @@ public class DartTable extends DartComposite implements ITable {
 
     int scrollOffset;
 
+    int scrollOffsetX;
+
     int columnlessWidth;
 
     boolean loadingVirtualData = false;

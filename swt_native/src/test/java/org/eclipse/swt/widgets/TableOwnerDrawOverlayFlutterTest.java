@@ -138,6 +138,44 @@ class TableOwnerDrawOverlayFlutterTest {
         green.dispose();
     }
 
+    /**
+     * The overlay scrolls sideways with its row, while the cell bounds the listeners draw at are in
+     * the table's client area: the row's GC puts the scrolled distance back.
+     */
+    @Test
+    void rowDrawing_landsUnderItsColumn_whenTheTableIsScrolledSideways() {
+        int scrolled = 300;
+        Shell shell = new Shell(display);
+        Table table = new Table(shell, SWT.H_SCROLL | SWT.V_SCROLL);
+        table.setBounds(0, 0, 200, 200);
+        new TableColumn(table, SWT.NONE).setWidth(100);
+        new TableColumn(table, SWT.NONE).setWidth(600);
+        table.addListener(SWT.EraseItem, event -> { });
+        table.addListener(SWT.PaintItem, event -> event.gc.drawString("x", event.x, event.y, true));
+        TableItem row = new TableItem(table, SWT.NONE);
+        int columnLeft = row.getBounds(1).x;
+
+        Event scroll = new Event();
+        scroll.x = scrolled;
+        bridge.comm.fireContaining(FlutterBridge.event((DartWidget) table.getImpl(), "Scroll", "Scroll"), scroll);
+        while (display.readAndDispatch()) {
+            // run the handler's asyncExec
+        }
+        assertThat(row.getBounds(1).x).as("the cell in the client area").isEqualTo(columnLeft - scrolled);
+
+        bridge.comm.sent.clear();
+        reportOverlayListening(table, row);
+        ((DartTableItem) row.getImpl()).getTexts();
+
+        String channel = "GC/" + row.hashCode();
+        List<Object> state = BatchEntries.of(bridge.comm.sent).stream().filter(e -> e.channel().equals(channel))
+                .map(GcFrames.Entry::value).collect(Collectors.toList());
+        assertThat(WireValues.find(state, m -> m.containsKey("transform")).stream()
+                .anyMatch(m -> holdsNumber(m.get("transform"), scrolled)))
+                .as("the row's GC is moved right by the scrolled distance, back to the overlay's origin")
+                .isTrue();
+    }
+
     private void reportOverlayListening(Table table, TableItem row) {
         Event e = new Event();
         e.segments = new int[] { row.hashCode() };

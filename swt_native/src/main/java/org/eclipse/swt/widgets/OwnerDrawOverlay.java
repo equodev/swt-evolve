@@ -108,7 +108,8 @@ public final class OwnerDrawOverlay {
 
     /** Where the row's overlay starts: a Tree row after the tree's edge gap, a Table row at the table's edge. */
     private static float rowLeft(Control parent, Item row) {
-        if (row instanceof TableItem) return 0;
+        // A table's overlay scrolls sideways with its row, while the cell bounds are in the client area.
+        if (row instanceof TableItem) return -TableHelper.scrollOffsetX((DartTable) parent.getImpl());
         return (float) dev.equo.swt.size.TreeSizes.getRowLeft((DartTree) parent.getImpl());
     }
 
