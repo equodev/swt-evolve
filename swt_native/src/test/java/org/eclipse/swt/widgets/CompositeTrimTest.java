@@ -4,8 +4,10 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -28,6 +30,7 @@ class CompositeTrimTest {
 
     private static final int BAR = Sizes.SCROLL_BAR_SIZE;
     private static final int LINE = ControlHelper.BORDER_WIDTH;
+    private static final int HEADER = 24;
 
     @BeforeAll
     static void useEquo() {
@@ -52,6 +55,27 @@ class CompositeTrimTest {
     private static Composite sized(Composite composite) {
         composite.setSize(100, 50);
         return composite;
+    }
+
+    /** A layout that always asks for the same size. */
+    private static Layout fixedLayout(int width, int height) {
+        return new Layout() {
+            @Override
+            protected Point computeSize(Composite c, int wHint, int hHint, boolean flushCache) {
+                return new Point(width, height);
+            }
+
+            @Override
+            protected void layout(Composite c, boolean flushCache) {
+            }
+        };
+    }
+
+    /** A trim that reserves a header strip above the content, as a subclass that paints one does. */
+    private static Rectangle withHeader(Rectangle trim) {
+        trim.y -= HEADER;
+        trim.height += HEADER;
+        return trim;
     }
 
     @Test
@@ -104,17 +128,64 @@ class CompositeTrimTest {
     @DisplayName("the preferred size of a scrolled composite leaves its layout the room it asked for")
     void thePreferredSizeLeavesTheLayoutItsRoom() {
         Composite composite = new Composite(Mocks.shell(), SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
-        composite.setLayout(new Layout() {
-            @Override
-            protected org.eclipse.swt.graphics.Point computeSize(Composite c, int wHint, int hHint, boolean flushCache) {
-                return new org.eclipse.swt.graphics.Point(100, 50);
-            }
-
-            @Override
-            protected void layout(Composite c, boolean flushCache) {
-            }
-        });
+        composite.setLayout(fixedLayout(100, 50));
         composite.setSize(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
         assertThat(composite.getClientArea()).isEqualTo(new Rectangle(0, 0, 100, 50));
+    }
+
+    @Test
+    @DisplayName("the preferred size of a subclass that reserves a header in computeTrim includes the header")
+    void thePreferredSizeGoesThroughAnOverriddenTrim() {
+        Composite composite = new Composite(Mocks.shell(), SWT.NONE) {
+            @Override
+            public Rectangle computeTrim(int x, int y, int width, int height) {
+                return withHeader(super.computeTrim(x, y, width, height));
+            }
+        };
+        composite.setLayout(fixedLayout(100, 50));
+        assertThat(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(100, 50 + HEADER));
+    }
+
+    @Test
+    @DisplayName("without a layout, the preferred size measures the children from a subclass's own client area")
+    void thePreferredSizeGoesThroughAnOverriddenClientArea() {
+        Composite composite = new Composite(Mocks.shell(), SWT.NONE) {
+            @Override
+            public Rectangle getClientArea() {
+                Rectangle area = super.getClientArea();
+                area.y += HEADER;
+                area.height = Math.max(0, area.height - HEADER);
+                return area;
+            }
+        };
+        Composite child = new Composite(composite, SWT.NONE);
+        child.setBounds(10, HEADER + 5, 30, 20);
+        // Native Composite.minimumSize: each child's far edge, less the client area's origin.
+        assertThat(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(10 + 30, 5 + 20));
+    }
+
+    @Test
+    @DisplayName("a styled text or tab folder subclass that reserves a header in computeTrim is that much taller")
+    void subclassableScrollablesGoThroughAnOverriddenTrim() {
+        Shell shell = Mocks.shell();
+        StyledText plainText = new StyledText(shell, SWT.NONE);
+        StyledText headedText = new StyledText(shell, SWT.NONE) {
+            @Override
+            public Rectangle computeTrim(int x, int y, int width, int height) {
+                return withHeader(super.computeTrim(x, y, width, height));
+            }
+        };
+        assertThat(headedText.computeSize(SWT.DEFAULT, SWT.DEFAULT).y)
+                .isEqualTo(plainText.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + HEADER);
+
+        CTabFolder plainFolder = new CTabFolder(shell, SWT.NONE);
+        CTabFolder headedFolder = new CTabFolder(shell, SWT.NONE) {
+            @Override
+            public Rectangle computeTrim(int x, int y, int width, int height) {
+                return withHeader(super.computeTrim(x, y, width, height));
+            }
+        };
+        assertThat(headedFolder.computeSize(SWT.DEFAULT, SWT.DEFAULT).y)
+                .isEqualTo(plainFolder.computeSize(SWT.DEFAULT, SWT.DEFAULT).y + HEADER);
     }
 }

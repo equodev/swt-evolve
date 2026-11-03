@@ -132,7 +132,8 @@ public class Sizes {
             size.x = wHint;
         if (hHint != SWT.DEFAULT)
             size.y = hHint;
-        Rectangle trim = composite.computeTrim(0, 0, size.x, size.y);
+        // Through the API object: a subclass may override computeTrim to reserve room it paints itself.
+        Rectangle trim = composite.getApi().computeTrim(0, 0, size.x, size.y);
         return new Point(trim.width, trim.height);
     }
 
@@ -221,7 +222,7 @@ public class Sizes {
         if (height == 0) height = DartWidget.DEFAULT_HEIGHT;
         if (wHint != SWT.DEFAULT) width = wHint;
         if (hHint != SWT.DEFAULT) height = hHint;
-        Rectangle rect = c.computeTrim(0, 0, width + wTrim, height + hTrim);
+        Rectangle rect = c.getApi().computeTrim(0, 0, width + wTrim, height + hTrim);
         return new Point(rect.width, rect.height);
     }
 
@@ -1083,7 +1084,8 @@ public class Sizes {
     }
 
     public static Point minimumSize(DartComposite composite, int wHint, int hHint, boolean changed) {
-        Rectangle clientArea = composite.getClientArea();
+        // Through the API object: a subclass may override getClientArea to reserve room it paints itself.
+        Rectangle clientArea = composite.getApi().getClientArea();
         int width = 0, height = 0;
         for (Control child : composite._getChildren()) {
             Rectangle rect = child.getBounds();
