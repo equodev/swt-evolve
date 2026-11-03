@@ -1,5 +1,6 @@
 package dev.equo.swt.awt;
 
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Window;
 import java.lang.reflect.Method;
@@ -83,6 +84,14 @@ public final class SwingIslandHost {
     static final String CLOSE_EVENT = "swingIsland.close";
 
     /**
+     * Whether a modal window's Shell is modal to SWT too. {@code false} leaves its modality to AWT, as
+     * a native dialog's is: a host that blocks SWT itself while a Swing dialog is open then sees no
+     * modal Shell of ours.
+     */
+    static final boolean SWT_MODAL_SURFACES =
+            !"false".equals(System.getProperty("swt.evolve.swing_island_swt_modal"));
+
+    /**
      * Java's answer to a Shell request for a window that already has a live island:
      * {@code {windowId}}, to the bundle.
      *
@@ -135,9 +144,12 @@ public final class SwingIslandHost {
         mount(child, window[0], window[1], false);
 
         // The child goes with the EMBEDDED composite, so this covers the parent's dispose too.
+        // Off AWT's dispatch thread, Window.dispose waits for that thread, and a host that suspends
+        // AWT dispatch while the workbench closes never answers: the frame goes when AWT runs again.
         child.addListener(SWT.Dispose, e -> {
-            frame.dispose();
             dropFromAwtShutdown(frame);
+            if (EventQueue.isDispatchThread()) frame.dispose();
+            else EventQueue.invokeLater(frame::dispose);
         });
         parent.setData(EMBEDDED_FRAME_KEY, frame);
         return frame;
@@ -447,7 +459,7 @@ public final class SwingIslandHost {
             // Swing's document and toolkit modality collapse to APPLICATION_MODAL.
             int style = "dialog".equals(kind)
                     ? SWT.DIALOG_TRIM | (resizable ? SWT.RESIZE : 0)
-                            | (Boolean.TRUE.equals(request.get("modal")) ? SWT.APPLICATION_MODAL : 0)
+                            | (Boolean.TRUE.equals(request.get("modal")) && SWT_MODAL_SURFACES ? SWT.APPLICATION_MODAL : 0)
                     : SWT.NO_TRIM;
             shell = parent != null ? new Shell(parent, style) : new Shell(display, style);
         }
