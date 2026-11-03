@@ -15,6 +15,7 @@ void main() {
       onMinimize: () => calls.add('min'),
       onMaxRestore: (max) => calls.add(max ? 'maximize' : 'restore'),
       onClose: () => calls.add('close'),
+      onFullScreen: (on) => calls.add(on ? 'fullscreen' : 'exitfullscreen'),
     );
   });
 
@@ -42,12 +43,12 @@ void main() {
         await pump(tester, os);
 
         await tester.tap(ctl('Minimize'));
-        // maximize label differs by OS (Zoom on mac, Maximize elsewhere)
-        await tester.tap(ctl(os == 'mac' ? 'Zoom' : 'Maximize'));
+        // The mac green button enters full screen; elsewhere the middle control maximizes.
+        await tester.tap(ctl(os == 'mac' ? 'Enter Full Screen' : 'Maximize'));
         await tester.tap(ctl('Close'));
         await tester.pump();
 
-        expect(calls, ['min', 'maximize', 'close']);
+        expect(calls, ['min', os == 'mac' ? 'fullscreen' : 'maximize', 'close']);
         handle?.dispose();
       });
 
@@ -55,8 +56,8 @@ void main() {
         final handle = os == 'mac' ? tester.ensureSemantics() : null;
         csdMaximized.value = true;
         await pump(tester, os);
-        // When maximized, the middle control offers Restore.
-        expect(ctl('Restore'), findsOneWidget);
+        // When maximized, the middle control offers to restore.
+        expect(ctl(os == 'mac' ? 'Exit Full Screen' : 'Restore'), findsOneWidget);
         handle?.dispose();
       });
     });

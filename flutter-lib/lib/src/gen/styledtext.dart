@@ -69,11 +69,11 @@ class StyledTextSwt<V extends VStyledText> extends CanvasSwt<V> {
   }
 
   void sendWordMovementgetNextOffset(V val, VEvent? payload) {
-    sendEvent(val, 127, payload); // WordMovement/getNextOffset
+    sendEvent(val, 132, payload); // WordMovement/getNextOffset
   }
 
   void sendWordMovementgetPreviousOffset(V val, VEvent? payload) {
-    sendEvent(val, 128, payload); // WordMovement/getPreviousOffset
+    sendEvent(val, 133, payload); // WordMovement/getPreviousOffset
   }
 }
 

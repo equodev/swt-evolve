@@ -48,12 +48,18 @@ class EquoWindow {
   static double get screenAvailWidth => 0;
   static double get screenAvailHeight => 0;
 
-  /// Wires window focus changes so the macOS controls grey out when inactive. The native
-  /// embedder pushes `active(bool)` calls over the same channel.
-  static void installWindowStateListeners(void Function(bool active) onActive) {
+  /// Wires window focus changes so the macOS controls grey out when inactive, and full-screen
+  /// changes the window made on its own. The native embedder pushes `active(bool)` and
+  /// `fullScreen(bool)` calls over the same channel.
+  static void installWindowStateListeners(
+    void Function(bool active) onActive, {
+    void Function(bool fullScreen)? onFullScreen,
+  }) {
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'active') {
         onActive(call.arguments == true);
+      } else if (call.method == 'fullScreen') {
+        onFullScreen?.call(call.arguments == true);
       }
       return null;
     });

@@ -88,7 +88,13 @@ class EquoWindow {
   /// is inactive. We don't seed from document.hasFocus() — at main() time the page isn't
   /// focused yet, so it returns false and (since focus never changes afterward) the window
   /// stays wrongly "inactive". The notifier defaults to active; blur/focus refine it.
-  static void installWindowStateListeners(void Function(bool active) onActive) {
+  ///
+  /// [onFullScreen] is never called here: a browser page gets no signal when its window enters or
+  /// leaves full screen on its own.
+  static void installWindowStateListeners(
+    void Function(bool active) onActive, {
+    void Function(bool fullScreen)? onFullScreen,
+  }) {
     web.window.addEventListener(
       'focus',
       ((web.Event _) => onActive(true)).toJS,

@@ -521,6 +521,73 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         });
     }
 
+    /**
+     * Wires full screen between the main shell and its host window. {@code WinFullScreen} /
+     * {@code WinExitFullScreen} are requests from the client-drawn window controls (the macOS green
+     * traffic light) and drive the window through the main shell's {@code setFullScreen}.
+     * {@code WinDidEnterFullScreen} / {@code WinDidExitFullScreen} report a change the window made on
+     * its own (the OS, accessibility tools), which only updates the shell. Either way the client is told
+     * the resulting state, so its controls follow.
+     */
+    protected void registerDisplayFullScreen(DartDisplay display) {
+        long id = display.getApi().hashCode();
+        int type = dev.equo.swt.WireTable.TYPE_DISPLAY;
+        comm().on(type, id, dev.equo.swt.WireTable.CHANNEL_WIN_FULL_SCREEN, String.class,
+                s -> onMainShellFullScreen(display, true, false));
+        comm().on(type, id, dev.equo.swt.WireTable.CHANNEL_WIN_EXIT_FULL_SCREEN, String.class,
+                s -> onMainShellFullScreen(display, false, false));
+        comm().on(type, id, dev.equo.swt.WireTable.CHANNEL_WIN_DID_ENTER_FULL_SCREEN, String.class,
+                s -> onMainShellFullScreen(display, true, true));
+        comm().on(type, id, dev.equo.swt.WireTable.CHANNEL_WIN_DID_EXIT_FULL_SCREEN, String.class,
+                s -> onMainShellFullScreen(display, false, true));
+    }
+
+    private void onMainShellFullScreen(DartDisplay display, boolean fullScreen, boolean fromWindow) {
+        Display api = display.getApi();
+        if (api == null || api.isDisposed())
+            return;
+        api.asyncExec(() -> {
+            if (fromWindow)
+                reportedWindowFullScreen = fullScreen;
+            Shell shell = mainShell(display);
+            if (shell == null || shell.isDisposed())
+                return;
+            if (fromWindow)
+                applyClientBounds(() -> shell.setFullScreen(fullScreen));
+            else
+                shell.setFullScreen(fullScreen);
+            publishFullScreen(display);
+        });
+    }
+
+    /** The full-screen state the host window last reported on its own, or {@code null} before any. */
+    private Boolean reportedWindowFullScreen;
+
+    /** The full-screen state last sent to the client, so a repeat is not re-sent. */
+    private Boolean publishedFullScreen;
+
+    /**
+     * Whether the host window is in full screen right now, or {@code null} when this surface cannot
+     * ask it. The base answer is the last state the window reported through the client.
+     */
+    protected Boolean hostWindowFullScreen() {
+        return reportedWindowFullScreen;
+    }
+
+    /** Tells the client whether the main shell is in full screen, when that changed. */
+    protected void publishFullScreen(DartDisplay display) {
+        if (display == null || display.getApi() == null || display.getApi().isDisposed())
+            return;
+        Shell shell = mainShell(display);
+        if (shell == null || shell.isDisposed())
+            return;
+        boolean fullScreen = shell.getFullScreen();
+        if (publishedFullScreen != null && publishedFullScreen == fullScreen)
+            return;
+        publishedFullScreen = fullScreen;
+        sendDisplayGate(display, dev.equo.swt.WireTable.CHANNEL_WIN_FULL_SCREEN_STATE, "fullScreen", fullScreen);
+    }
+
     private void routeKeyToFocused(DartDisplay display, int type, Event ev) {
         Display api = display.getApi();
         if (api == null || api.isDisposed())
@@ -689,15 +756,29 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return Math.max(min, Math.min(pos, min + span - size));
     }
 
-    /** Runs {@code apply} (which resizes shells) with the window-echo suppressed. */
+    /**
+     * Runs {@code apply} (which resizes shells) with the window-echo suppressed. SWT's
+     * {@code setBounds} leaves full screen, which is right for an application call but not for
+     * geometry the window reports, so the main shell keeps the full-screen state the window is in.
+     */
     protected void applyClientBounds(Runnable apply) {
         boolean previous = applyingClientBounds;
+        Shell main = previous || forDisplay == null ? null : mainShell(forDisplay);
+        boolean wasFullScreen = main != null && !main.isDisposed() && main.getFullScreen();
         applyingClientBounds = true;
         try {
             apply.run();
+            if (main != null && !main.isDisposed()) {
+                Boolean host = hostWindowFullScreen();
+                boolean fullScreen = host != null ? host : wasFullScreen;
+                if (main.getFullScreen() != fullScreen)
+                    main.setFullScreen(fullScreen);
+            }
         } finally {
             applyingClientBounds = previous;
         }
+        if (main != null)
+            publishFullScreen(forDisplay);
     }
 
     /**

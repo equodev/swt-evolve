@@ -161,6 +161,7 @@ public class WebDisplayBridge extends DisplayBridge {
 
         registerDisplayClientReady(display);
         registerDisplayKeyEvents(display);
+        registerDisplayFullScreen(display);
         registerWindowControls(display);
         registerClipboard(displayId);
 
@@ -713,8 +714,17 @@ public class WebDisplayBridge extends DisplayBridge {
 
     @Override
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
+        if (applyingClientBounds)
+            return; // the state came from the window, so there is nothing to tell it
         if (isChromiumWindow(control))
-            chromiumLauncher.setFullscreen(fullScreen);
+            forwardWindowFullScreen(fullScreen);
+        if (control instanceof DartShell && isMainShell(forDisplay, (Shell) ((DartShell) control).getApi()))
+            publishFullScreen(forDisplay);
+    }
+
+    /** Puts the Chromium window in or out of full screen. Seam for tests to observe. */
+    protected void forwardWindowFullScreen(boolean fullScreen) {
+        chromiumLauncher.setFullscreen(fullScreen);
     }
 
     @Override

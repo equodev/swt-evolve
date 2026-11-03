@@ -180,7 +180,9 @@ void main(List<String> args) async {
     // Track window focus so the macOS controls grey out when the window is inactive.
     EquoWindow.installWindowStateListeners(
       (active) => csdWindowActive.value = active,
+      onFullScreen: csdReportWindowFullScreen,
     );
+    csdListenFullScreenState(widgetId);
   }
   if (widgetName == "Display") {
     // Display-scoped, as GC/create is: one channel for the whole session, so a detached window

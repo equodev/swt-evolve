@@ -11,10 +11,15 @@ class WindowControlActions {
   final void Function(bool maximize) onMaxRestore;
   final VoidCallback onClose;
 
+  /// What the macOS green traffic light does: enter (true) or leave (false) full screen. Falls
+  /// back to [onMaxRestore] when not given.
+  final void Function(bool fullScreen)? onFullScreen;
+
   const WindowControlActions({
     required this.onMinimize,
     required this.onMaxRestore,
     required this.onClose,
+    this.onFullScreen,
   });
 
   /// Drives the real host window, keeping [csdMaximized] in sync. Maximize/close route
@@ -23,6 +28,7 @@ class WindowControlActions {
     onMinimize: csdMinimize,
     onMaxRestore: csdSetMaximized,
     onClose: csdClose,
+    onFullScreen: csdSetFullScreen,
   );
 }
 
@@ -48,6 +54,9 @@ class _WindowControlsState extends State<WindowControls> {
 
   void _onMaxRestore() => _actions.onMaxRestore(!csdMaximized.value);
 
+  void _onFullScreen() =>
+      (_actions.onFullScreen ?? _actions.onMaxRestore)(!csdMaximized.value);
+
   @override
   Widget build(BuildContext context) {
     final os = widget.osOverride ?? getConfigFlags().csd_os ?? 'linux';
@@ -59,7 +68,7 @@ class _WindowControlsState extends State<WindowControls> {
             return MacTrafficLights(
               isMaximized: maximized,
               onMinimize: _actions.onMinimize,
-              onMaxRestore: _onMaxRestore,
+              onMaxRestore: _onFullScreen,
               onClose: _actions.onClose,
             );
           case 'windows':
@@ -199,7 +208,9 @@ class _MacTrafficLightsState extends State<MacTrafficLights> {
                           ? WindowGlyph.restore
                           : WindowGlyph.maximize,
                       widget.onMaxRestore,
-                      widget.isMaximized ? 'Restore' : 'Zoom',
+                      widget.isMaximized
+                          ? 'Exit Full Screen'
+                          : 'Enter Full Screen',
                       showGlyph: _hovering,
                     ),
                   ],

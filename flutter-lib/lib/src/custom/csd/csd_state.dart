@@ -30,12 +30,64 @@ void csdMinimize() => EquoWindow.minimize();
 /// The window's bounds captured just before maximizing, so restore returns there.
 VRectangle? _preMaximizeBounds;
 
+/// Whether [csdMaximized] currently stands for full screen rather than a maximized window, so a
+/// restore from either control leaves the state the window is actually in.
+bool _fullScreen = false;
+
+/// Full screen: the window takes a Space of its own and the Dock hides, which is what the macOS
+/// green traffic light does to a native window. Java applies it to the main Shell
+/// (`Shell.setFullScreen`), so SWT's own full-screen state follows the window.
+void csdSetFullScreen(bool fullScreen) {
+  csdMaximized.value = fullScreen;
+  _fullScreen = fullScreen;
+  final id = csdMainWindowId;
+  if (id == null) return;
+  EquoCommService.sendTo(
+    WireType.display,
+    id,
+    fullScreen ? WireChannel.winFullScreen : WireChannel.winExitFullScreen,
+  );
+}
+
+/// The host window entered or left full screen on its own (the OS, accessibility tools). Java
+/// updates the main Shell and answers with [csdApplyFullScreenState].
+void csdReportWindowFullScreen(bool fullScreen) {
+  final id = csdMainWindowId;
+  if (id == null) return;
+  EquoCommService.sendTo(
+    WireType.display,
+    id,
+    fullScreen ? WireChannel.winDidEnterFullScreen : WireChannel.winDidExitFullScreen,
+  );
+}
+
+/// The main Shell's full-screen state as Java holds it, whatever changed it, so the controls show
+/// what the window really is.
+void csdApplyFullScreenState(bool fullScreen) {
+  if (fullScreen == _fullScreen && csdMaximized.value == fullScreen) return;
+  _fullScreen = fullScreen;
+  csdMaximized.value = fullScreen;
+}
+
+/// Listens for [csdApplyFullScreenState] updates addressed to the window [id].
+void csdListenFullScreenState(int id) {
+  EquoCommService.on(WireType.display, id, WireChannel.winFullScreenState, (dynamic args) {
+    if (args is Map && args['fullScreen'] is bool) {
+      csdApplyFullScreenState(args['fullScreen'] as bool);
+    }
+  });
+}
+
 /// Maximize/restore. Routed through the SWT bridge (`Display/$id/WinMaximize|WinRestore`)
 /// because `window.equo.maximize()` deadlocks the mac message pump. We compute the target
 /// bounds here (the Dart side has the real screen + window geometry; the Java DartDisplay's
 /// monitor is zero-sized) and Java just applies them via setWindowBounds. Falls back to the
 /// direct API when the main window id is unknown.
 void csdSetMaximized(bool maximize) {
+  if (!maximize && _fullScreen) {
+    csdSetFullScreen(false);
+    return;
+  }
   csdMaximized.value = maximize;
   final id = csdMainWindowId;
   final mode = getConfigFlags().csd_maximize ?? 'direct';

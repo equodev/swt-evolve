@@ -105,6 +105,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     protected void start(DartDisplay display) {
         registerDisplayClientReady(display);
         registerDisplayKeyEvents(display);
+        registerDisplayFullScreen(display);
 
         long displayId = display.getApi().hashCode();
 
@@ -943,6 +944,11 @@ public class DeskDisplayBridge extends DisplayBridge {
         return hasWindowSurface() && !windowClosed;
     }
 
+    /** Puts the native window in or out of full screen. Seam for tests to observe. */
+    protected void forwardWindowFullScreen(boolean fullScreen) {
+        setShellWindowState(windowContext, fullScreen ? ShellWindow.STATE_FULLSCREEN : ShellWindow.STATE_NORMAL);
+    }
+
     /** Whether a native window surface was created at all. Seam: tests stand one in without JNI. */
     protected boolean hasWindowSurface() {
         return windowContext != 0;
@@ -1085,7 +1091,10 @@ public class DeskDisplayBridge extends DisplayBridge {
     public void setWindowFullScreen(DartControl control, boolean fullScreen) {
         if (fullScreen) fillMonitorIfUnsized(control);
         if (isMainWindow(control)) {
-            setShellWindowState(windowContext, fullScreen ? ShellWindow.STATE_FULLSCREEN : ShellWindow.STATE_NORMAL);
+            if (applyingClientBounds)
+                return; // the state came from the window, so there is nothing to tell it
+            forwardWindowFullScreen(fullScreen);
+            publishFullScreen(forDisplay);
             return;
         }
         super.setWindowFullScreen(control, fullScreen);

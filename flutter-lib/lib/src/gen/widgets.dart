@@ -155,7 +155,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = -620780330;
+const int wireFingerprint = -1940320440;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -1257,128 +1257,133 @@ const Map<int, String> wireChannelNames = {
   116: 'VisibilityWindow/hide',
   117: 'VisibilityWindow/show',
   118: 'WinClose',
-  119: 'WinMaximize',
-  120: 'WinMinimize',
-  121: 'WinRestore',
-  122: 'WinUnload',
-  123: 'WindowBounds',
-  124: 'WindowOpenFailed',
-  125: 'WindowState',
-  126: 'WindowTitle',
-  127: 'WordMovement/getNextOffset',
-  128: 'WordMovement/getPreviousOffset',
-  129: 'activate',
-  130: 'activation',
-  131: 'b',
-  132: 'back',
-  133: 'bench/d2j/probe',
-  134: 'bench/d2j/probeResponse',
-  135: 'bench/d2j/result',
-  136: 'bench/d2j/run',
-  137: 'bench/j2d/echo',
-  138: 'bench/j2d/echoResponse',
-  139: 'browserFunctionCall',
-  140: 'c',
-  141: 'close',
-  142: 'cookie',
-  143: 'copyAreaImageintint',
-  144: 'copyAreaImageintintResponse',
-  145: 'copyAreaintintintintintintboolean',
-  146: 'drawArcintintintintintint',
-  147: 'drawFocusintintintint',
-  148: 'drawImageImageintint',
-  149: 'drawImageImageintintintint',
-  150: 'drawImageImageintintintintintintintint',
-  151: 'drawLineintintintint',
-  152: 'drawOvalintintintint',
-  153: 'drawPathPath',
-  154: 'drawPointintint',
-  155: 'drawPolygonint',
-  156: 'drawPolylineint',
-  157: 'drawRectangleintintintint',
-  158: 'drawRoundRectangleintintintintintint',
-  159: 'drawTextStringintintint',
-  160: 'evaluate',
-  161: 'evaluate/result',
-  162: 'evolve.test.drag',
-  163: 'evolve.test.dragDone',
-  164: 'evolve.test.frameCost',
-  165: 'evolve.test.frameCostResponse',
-  166: 'evolve.test.frameStats',
-  167: 'evolve.test.frameStatsResponse',
-  168: 'evolve.test.frameSync',
-  169: 'evolve.test.frameSynced',
-  170: 'evolve.test.iframeLoaded',
-  171: 'evolve.test.query',
-  172: 'evolve.test.queryResponse',
-  173: 'evolve.test.styledTextPerf',
-  174: 'evolve.test.styledTextPerfResponse',
-  175: 'evolve.test.wireStats',
-  176: 'evolve.test.wireStatsResponse',
-  177: 'execute',
-  178: 'fillArcintintintintintint',
-  179: 'fillGradientRectangleintintintintboolean',
-  180: 'fillOvalintintintint',
-  181: 'fillPathPath',
-  182: 'fillPolygonint',
-  183: 'fillRectangleintintintint',
-  184: 'fillRoundRectangleintintintintintint',
-  185: 'fontSizeRequest',
-  186: 'fontSizeResponse',
-  187: 'forward',
-  188: 'gcDispose',
-  189: 'getCookie',
-  190: 'imageInit',
-  191: 'imageResult',
-  192: 'imageSizeRequest',
-  193: 'imageSizeResponse',
-  194: 'imageSnapshotResult',
-  195: 'key/verdict',
-  196: 'key/vetoable',
-  197: 'locationchanging/result',
-  198: 'menu/verdict',
-  199: 'modify/verdict',
-  200: 'modify/vetoable',
-  201: 'navigate',
-  202: 'navigateRequest',
-  203: 'navigationState',
-  204: 'nextFrame',
-  205: 'openMenu',
-  206: 'pixelsResult',
-  207: 'reload',
-  208: 'renderSnapshot',
-  209: 'setCookie',
-  210: 'shown',
-  211: 'stop',
-  212: 'swing',
-  213: 'swing.open',
-  214: 'swingIsland',
-  215: 'swingIsland.close',
-  216: 'swingIsland.dispose',
-  217: 'swingIsland.island',
-  218: 'swingIsland.opened',
-  219: 'swingIsland.resize',
-  220: 'swingIsland.surface',
-  221: 'swingIsland.title',
-  222: 'swt.evolve.batch',
-  223: 'swt.evolve.focus',
-  224: 'swt.evolve.focus.seen',
-  225: 'swt.evolve.focusHolder',
-  226: 'swt.evolve.properties',
-  227: 'swt.evolve.property.set',
-  228: 'swt.evolve.test.runUi',
-  229: 'swt.evolve.test.runUiResponse',
-  230: 'swt.evolve.timing.bare',
-  231: 'swt.evolve.timing.ping',
-  232: 'swt.evolve.timing.pong',
-  233: 'swt.evolve.url.open',
-  234: 'swt.evolve.widget.refresh',
-  235: 'swt.evolve.wire',
-  236: 'traverse/verdict',
-  237: 'traverse/vetoable',
-  238: 'v',
-  239: 'widgetSizeRequest',
-  240: 'widgetSizeResponse',
+  119: 'WinDidEnterFullScreen',
+  120: 'WinDidExitFullScreen',
+  121: 'WinExitFullScreen',
+  122: 'WinFullScreen',
+  123: 'WinFullScreenState',
+  124: 'WinMaximize',
+  125: 'WinMinimize',
+  126: 'WinRestore',
+  127: 'WinUnload',
+  128: 'WindowBounds',
+  129: 'WindowOpenFailed',
+  130: 'WindowState',
+  131: 'WindowTitle',
+  132: 'WordMovement/getNextOffset',
+  133: 'WordMovement/getPreviousOffset',
+  134: 'activate',
+  135: 'activation',
+  136: 'b',
+  137: 'back',
+  138: 'bench/d2j/probe',
+  139: 'bench/d2j/probeResponse',
+  140: 'bench/d2j/result',
+  141: 'bench/d2j/run',
+  142: 'bench/j2d/echo',
+  143: 'bench/j2d/echoResponse',
+  144: 'browserFunctionCall',
+  145: 'c',
+  146: 'close',
+  147: 'cookie',
+  148: 'copyAreaImageintint',
+  149: 'copyAreaImageintintResponse',
+  150: 'copyAreaintintintintintintboolean',
+  151: 'drawArcintintintintintint',
+  152: 'drawFocusintintintint',
+  153: 'drawImageImageintint',
+  154: 'drawImageImageintintintint',
+  155: 'drawImageImageintintintintintintintint',
+  156: 'drawLineintintintint',
+  157: 'drawOvalintintintint',
+  158: 'drawPathPath',
+  159: 'drawPointintint',
+  160: 'drawPolygonint',
+  161: 'drawPolylineint',
+  162: 'drawRectangleintintintint',
+  163: 'drawRoundRectangleintintintintintint',
+  164: 'drawTextStringintintint',
+  165: 'evaluate',
+  166: 'evaluate/result',
+  167: 'evolve.test.drag',
+  168: 'evolve.test.dragDone',
+  169: 'evolve.test.frameCost',
+  170: 'evolve.test.frameCostResponse',
+  171: 'evolve.test.frameStats',
+  172: 'evolve.test.frameStatsResponse',
+  173: 'evolve.test.frameSync',
+  174: 'evolve.test.frameSynced',
+  175: 'evolve.test.iframeLoaded',
+  176: 'evolve.test.query',
+  177: 'evolve.test.queryResponse',
+  178: 'evolve.test.styledTextPerf',
+  179: 'evolve.test.styledTextPerfResponse',
+  180: 'evolve.test.wireStats',
+  181: 'evolve.test.wireStatsResponse',
+  182: 'execute',
+  183: 'fillArcintintintintintint',
+  184: 'fillGradientRectangleintintintintboolean',
+  185: 'fillOvalintintintint',
+  186: 'fillPathPath',
+  187: 'fillPolygonint',
+  188: 'fillRectangleintintintint',
+  189: 'fillRoundRectangleintintintintintint',
+  190: 'fontSizeRequest',
+  191: 'fontSizeResponse',
+  192: 'forward',
+  193: 'gcDispose',
+  194: 'getCookie',
+  195: 'imageInit',
+  196: 'imageResult',
+  197: 'imageSizeRequest',
+  198: 'imageSizeResponse',
+  199: 'imageSnapshotResult',
+  200: 'key/verdict',
+  201: 'key/vetoable',
+  202: 'locationchanging/result',
+  203: 'menu/verdict',
+  204: 'modify/verdict',
+  205: 'modify/vetoable',
+  206: 'navigate',
+  207: 'navigateRequest',
+  208: 'navigationState',
+  209: 'nextFrame',
+  210: 'openMenu',
+  211: 'pixelsResult',
+  212: 'reload',
+  213: 'renderSnapshot',
+  214: 'setCookie',
+  215: 'shown',
+  216: 'stop',
+  217: 'swing',
+  218: 'swing.open',
+  219: 'swingIsland',
+  220: 'swingIsland.close',
+  221: 'swingIsland.dispose',
+  222: 'swingIsland.island',
+  223: 'swingIsland.opened',
+  224: 'swingIsland.resize',
+  225: 'swingIsland.surface',
+  226: 'swingIsland.title',
+  227: 'swt.evolve.batch',
+  228: 'swt.evolve.focus',
+  229: 'swt.evolve.focus.seen',
+  230: 'swt.evolve.focusHolder',
+  231: 'swt.evolve.properties',
+  232: 'swt.evolve.property.set',
+  233: 'swt.evolve.test.runUi',
+  234: 'swt.evolve.test.runUiResponse',
+  235: 'swt.evolve.timing.bare',
+  236: 'swt.evolve.timing.ping',
+  237: 'swt.evolve.timing.pong',
+  238: 'swt.evolve.url.open',
+  239: 'swt.evolve.widget.refresh',
+  240: 'swt.evolve.wire',
+  241: 'traverse/verdict',
+  242: 'traverse/vetoable',
+  243: 'v',
+  244: 'widgetSizeRequest',
+  245: 'widgetSizeResponse',
 };
 
 /// Every channel's number, for what sends or answers a channel by the number a frame names.
@@ -1503,142 +1508,147 @@ abstract final class WireChannel {
   static const int visibilityWindowHide = 116; // VisibilityWindow/hide
   static const int visibilityWindowShow = 117; // VisibilityWindow/show
   static const int winClose = 118; // WinClose
-  static const int winMaximize = 119; // WinMaximize
-  static const int winMinimize = 120; // WinMinimize
-  static const int winRestore = 121; // WinRestore
-  static const int winUnload = 122; // WinUnload
-  static const int windowBounds = 123; // WindowBounds
-  static const int windowOpenFailed = 124; // WindowOpenFailed
-  static const int windowState = 125; // WindowState
-  static const int windowTitle = 126; // WindowTitle
+  static const int winDidEnterFullScreen = 119; // WinDidEnterFullScreen
+  static const int winDidExitFullScreen = 120; // WinDidExitFullScreen
+  static const int winExitFullScreen = 121; // WinExitFullScreen
+  static const int winFullScreen = 122; // WinFullScreen
+  static const int winFullScreenState = 123; // WinFullScreenState
+  static const int winMaximize = 124; // WinMaximize
+  static const int winMinimize = 125; // WinMinimize
+  static const int winRestore = 126; // WinRestore
+  static const int winUnload = 127; // WinUnload
+  static const int windowBounds = 128; // WindowBounds
+  static const int windowOpenFailed = 129; // WindowOpenFailed
+  static const int windowState = 130; // WindowState
+  static const int windowTitle = 131; // WindowTitle
   static const int wordMovementGetNextOffset =
-      127; // WordMovement/getNextOffset
+      132; // WordMovement/getNextOffset
   static const int wordMovementGetPreviousOffset =
-      128; // WordMovement/getPreviousOffset
-  static const int activate = 129; // activate
-  static const int activation = 130; // activation
-  static const int b = 131; // b
-  static const int back = 132; // back
-  static const int benchD2jProbe = 133; // bench/d2j/probe
-  static const int benchD2jProbeResponse = 134; // bench/d2j/probeResponse
-  static const int benchD2jResult = 135; // bench/d2j/result
-  static const int benchD2jRun = 136; // bench/d2j/run
-  static const int benchJ2dEcho = 137; // bench/j2d/echo
-  static const int benchJ2dEchoResponse = 138; // bench/j2d/echoResponse
-  static const int browserFunctionCall = 139; // browserFunctionCall
-  static const int c = 140; // c
-  static const int close = 141; // close
-  static const int cookie = 142; // cookie
-  static const int copyAreaImageintint = 143; // copyAreaImageintint
+      133; // WordMovement/getPreviousOffset
+  static const int activate = 134; // activate
+  static const int activation = 135; // activation
+  static const int b = 136; // b
+  static const int back = 137; // back
+  static const int benchD2jProbe = 138; // bench/d2j/probe
+  static const int benchD2jProbeResponse = 139; // bench/d2j/probeResponse
+  static const int benchD2jResult = 140; // bench/d2j/result
+  static const int benchD2jRun = 141; // bench/d2j/run
+  static const int benchJ2dEcho = 142; // bench/j2d/echo
+  static const int benchJ2dEchoResponse = 143; // bench/j2d/echoResponse
+  static const int browserFunctionCall = 144; // browserFunctionCall
+  static const int c = 145; // c
+  static const int close = 146; // close
+  static const int cookie = 147; // cookie
+  static const int copyAreaImageintint = 148; // copyAreaImageintint
   static const int copyAreaImageintintResponse =
-      144; // copyAreaImageintintResponse
+      149; // copyAreaImageintintResponse
   static const int copyAreaintintintintintintboolean =
-      145; // copyAreaintintintintintintboolean
-  static const int drawArcintintintintintint = 146; // drawArcintintintintintint
-  static const int drawFocusintintintint = 147; // drawFocusintintintint
-  static const int drawImageImageintint = 148; // drawImageImageintint
+      150; // copyAreaintintintintintintboolean
+  static const int drawArcintintintintintint = 151; // drawArcintintintintintint
+  static const int drawFocusintintintint = 152; // drawFocusintintintint
+  static const int drawImageImageintint = 153; // drawImageImageintint
   static const int drawImageImageintintintint =
-      149; // drawImageImageintintintint
+      154; // drawImageImageintintintint
   static const int drawImageImageintintintintintintintint =
-      150; // drawImageImageintintintintintintintint
-  static const int drawLineintintintint = 151; // drawLineintintintint
-  static const int drawOvalintintintint = 152; // drawOvalintintintint
-  static const int drawPathPath = 153; // drawPathPath
-  static const int drawPointintint = 154; // drawPointintint
-  static const int drawPolygonint = 155; // drawPolygonint
-  static const int drawPolylineint = 156; // drawPolylineint
-  static const int drawRectangleintintintint = 157; // drawRectangleintintintint
+      155; // drawImageImageintintintintintintintint
+  static const int drawLineintintintint = 156; // drawLineintintintint
+  static const int drawOvalintintintint = 157; // drawOvalintintintint
+  static const int drawPathPath = 158; // drawPathPath
+  static const int drawPointintint = 159; // drawPointintint
+  static const int drawPolygonint = 160; // drawPolygonint
+  static const int drawPolylineint = 161; // drawPolylineint
+  static const int drawRectangleintintintint = 162; // drawRectangleintintintint
   static const int drawRoundRectangleintintintintintint =
-      158; // drawRoundRectangleintintintintintint
-  static const int drawTextStringintintint = 159; // drawTextStringintintint
-  static const int evaluate = 160; // evaluate
-  static const int evaluateResult = 161; // evaluate/result
-  static const int evolveTestDrag = 162; // evolve.test.drag
-  static const int evolveTestDragDone = 163; // evolve.test.dragDone
-  static const int evolveTestFrameCost = 164; // evolve.test.frameCost
+      163; // drawRoundRectangleintintintintintint
+  static const int drawTextStringintintint = 164; // drawTextStringintintint
+  static const int evaluate = 165; // evaluate
+  static const int evaluateResult = 166; // evaluate/result
+  static const int evolveTestDrag = 167; // evolve.test.drag
+  static const int evolveTestDragDone = 168; // evolve.test.dragDone
+  static const int evolveTestFrameCost = 169; // evolve.test.frameCost
   static const int evolveTestFrameCostResponse =
-      165; // evolve.test.frameCostResponse
-  static const int evolveTestFrameStats = 166; // evolve.test.frameStats
+      170; // evolve.test.frameCostResponse
+  static const int evolveTestFrameStats = 171; // evolve.test.frameStats
   static const int evolveTestFrameStatsResponse =
-      167; // evolve.test.frameStatsResponse
-  static const int evolveTestFrameSync = 168; // evolve.test.frameSync
-  static const int evolveTestFrameSynced = 169; // evolve.test.frameSynced
-  static const int evolveTestIframeLoaded = 170; // evolve.test.iframeLoaded
-  static const int evolveTestQuery = 171; // evolve.test.query
-  static const int evolveTestQueryResponse = 172; // evolve.test.queryResponse
-  static const int evolveTestStyledTextPerf = 173; // evolve.test.styledTextPerf
+      172; // evolve.test.frameStatsResponse
+  static const int evolveTestFrameSync = 173; // evolve.test.frameSync
+  static const int evolveTestFrameSynced = 174; // evolve.test.frameSynced
+  static const int evolveTestIframeLoaded = 175; // evolve.test.iframeLoaded
+  static const int evolveTestQuery = 176; // evolve.test.query
+  static const int evolveTestQueryResponse = 177; // evolve.test.queryResponse
+  static const int evolveTestStyledTextPerf = 178; // evolve.test.styledTextPerf
   static const int evolveTestStyledTextPerfResponse =
-      174; // evolve.test.styledTextPerfResponse
-  static const int evolveTestWireStats = 175; // evolve.test.wireStats
+      179; // evolve.test.styledTextPerfResponse
+  static const int evolveTestWireStats = 180; // evolve.test.wireStats
   static const int evolveTestWireStatsResponse =
-      176; // evolve.test.wireStatsResponse
-  static const int execute = 177; // execute
-  static const int fillArcintintintintintint = 178; // fillArcintintintintintint
+      181; // evolve.test.wireStatsResponse
+  static const int execute = 182; // execute
+  static const int fillArcintintintintintint = 183; // fillArcintintintintintint
   static const int fillGradientRectangleintintintintboolean =
-      179; // fillGradientRectangleintintintintboolean
-  static const int fillOvalintintintint = 180; // fillOvalintintintint
-  static const int fillPathPath = 181; // fillPathPath
-  static const int fillPolygonint = 182; // fillPolygonint
-  static const int fillRectangleintintintint = 183; // fillRectangleintintintint
+      184; // fillGradientRectangleintintintintboolean
+  static const int fillOvalintintintint = 185; // fillOvalintintintint
+  static const int fillPathPath = 186; // fillPathPath
+  static const int fillPolygonint = 187; // fillPolygonint
+  static const int fillRectangleintintintint = 188; // fillRectangleintintintint
   static const int fillRoundRectangleintintintintintint =
-      184; // fillRoundRectangleintintintintintint
-  static const int fontSizeRequest = 185; // fontSizeRequest
-  static const int fontSizeResponse = 186; // fontSizeResponse
-  static const int forward = 187; // forward
-  static const int gcDispose = 188; // gcDispose
-  static const int getCookie = 189; // getCookie
-  static const int imageInit = 190; // imageInit
-  static const int imageResult = 191; // imageResult
-  static const int imageSizeRequest = 192; // imageSizeRequest
-  static const int imageSizeResponse = 193; // imageSizeResponse
-  static const int imageSnapshotResult = 194; // imageSnapshotResult
-  static const int keyVerdict = 195; // key/verdict
-  static const int keyVetoable = 196; // key/vetoable
-  static const int locationchangingResult = 197; // locationchanging/result
-  static const int menuVerdict = 198; // menu/verdict
-  static const int modifyVerdict = 199; // modify/verdict
-  static const int modifyVetoable = 200; // modify/vetoable
-  static const int navigate = 201; // navigate
-  static const int navigateRequest = 202; // navigateRequest
-  static const int navigationState = 203; // navigationState
-  static const int nextFrame = 204; // nextFrame
-  static const int openMenu = 205; // openMenu
-  static const int pixelsResult = 206; // pixelsResult
-  static const int reload = 207; // reload
-  static const int renderSnapshot = 208; // renderSnapshot
-  static const int setCookie = 209; // setCookie
-  static const int shown = 210; // shown
-  static const int stop = 211; // stop
-  static const int swing = 212; // swing
-  static const int swingOpen = 213; // swing.open
-  static const int swingIsland = 214; // swingIsland
-  static const int swingIslandClose = 215; // swingIsland.close
-  static const int swingIslandDispose = 216; // swingIsland.dispose
-  static const int swingIslandIsland = 217; // swingIsland.island
-  static const int swingIslandOpened = 218; // swingIsland.opened
-  static const int swingIslandResize = 219; // swingIsland.resize
-  static const int swingIslandSurface = 220; // swingIsland.surface
-  static const int swingIslandTitle = 221; // swingIsland.title
-  static const int swtEvolveBatch = 222; // swt.evolve.batch
-  static const int swtEvolveFocus = 223; // swt.evolve.focus
-  static const int swtEvolveFocusSeen = 224; // swt.evolve.focus.seen
-  static const int swtEvolveFocusHolder = 225; // swt.evolve.focusHolder
-  static const int swtEvolveProperties = 226; // swt.evolve.properties
-  static const int swtEvolvePropertySet = 227; // swt.evolve.property.set
-  static const int swtEvolveTestRunUi = 228; // swt.evolve.test.runUi
+      189; // fillRoundRectangleintintintintintint
+  static const int fontSizeRequest = 190; // fontSizeRequest
+  static const int fontSizeResponse = 191; // fontSizeResponse
+  static const int forward = 192; // forward
+  static const int gcDispose = 193; // gcDispose
+  static const int getCookie = 194; // getCookie
+  static const int imageInit = 195; // imageInit
+  static const int imageResult = 196; // imageResult
+  static const int imageSizeRequest = 197; // imageSizeRequest
+  static const int imageSizeResponse = 198; // imageSizeResponse
+  static const int imageSnapshotResult = 199; // imageSnapshotResult
+  static const int keyVerdict = 200; // key/verdict
+  static const int keyVetoable = 201; // key/vetoable
+  static const int locationchangingResult = 202; // locationchanging/result
+  static const int menuVerdict = 203; // menu/verdict
+  static const int modifyVerdict = 204; // modify/verdict
+  static const int modifyVetoable = 205; // modify/vetoable
+  static const int navigate = 206; // navigate
+  static const int navigateRequest = 207; // navigateRequest
+  static const int navigationState = 208; // navigationState
+  static const int nextFrame = 209; // nextFrame
+  static const int openMenu = 210; // openMenu
+  static const int pixelsResult = 211; // pixelsResult
+  static const int reload = 212; // reload
+  static const int renderSnapshot = 213; // renderSnapshot
+  static const int setCookie = 214; // setCookie
+  static const int shown = 215; // shown
+  static const int stop = 216; // stop
+  static const int swing = 217; // swing
+  static const int swingOpen = 218; // swing.open
+  static const int swingIsland = 219; // swingIsland
+  static const int swingIslandClose = 220; // swingIsland.close
+  static const int swingIslandDispose = 221; // swingIsland.dispose
+  static const int swingIslandIsland = 222; // swingIsland.island
+  static const int swingIslandOpened = 223; // swingIsland.opened
+  static const int swingIslandResize = 224; // swingIsland.resize
+  static const int swingIslandSurface = 225; // swingIsland.surface
+  static const int swingIslandTitle = 226; // swingIsland.title
+  static const int swtEvolveBatch = 227; // swt.evolve.batch
+  static const int swtEvolveFocus = 228; // swt.evolve.focus
+  static const int swtEvolveFocusSeen = 229; // swt.evolve.focus.seen
+  static const int swtEvolveFocusHolder = 230; // swt.evolve.focusHolder
+  static const int swtEvolveProperties = 231; // swt.evolve.properties
+  static const int swtEvolvePropertySet = 232; // swt.evolve.property.set
+  static const int swtEvolveTestRunUi = 233; // swt.evolve.test.runUi
   static const int swtEvolveTestRunUiResponse =
-      229; // swt.evolve.test.runUiResponse
-  static const int swtEvolveTimingBare = 230; // swt.evolve.timing.bare
-  static const int swtEvolveTimingPing = 231; // swt.evolve.timing.ping
-  static const int swtEvolveTimingPong = 232; // swt.evolve.timing.pong
-  static const int swtEvolveUrlOpen = 233; // swt.evolve.url.open
-  static const int swtEvolveWidgetRefresh = 234; // swt.evolve.widget.refresh
-  static const int swtEvolveWire = 235; // swt.evolve.wire
-  static const int traverseVerdict = 236; // traverse/verdict
-  static const int traverseVetoable = 237; // traverse/vetoable
-  static const int v = 238; // v
-  static const int widgetSizeRequest = 239; // widgetSizeRequest
-  static const int widgetSizeResponse = 240; // widgetSizeResponse
+      234; // swt.evolve.test.runUiResponse
+  static const int swtEvolveTimingBare = 235; // swt.evolve.timing.bare
+  static const int swtEvolveTimingPing = 236; // swt.evolve.timing.ping
+  static const int swtEvolveTimingPong = 237; // swt.evolve.timing.pong
+  static const int swtEvolveUrlOpen = 238; // swt.evolve.url.open
+  static const int swtEvolveWidgetRefresh = 239; // swt.evolve.widget.refresh
+  static const int swtEvolveWire = 240; // swt.evolve.wire
+  static const int traverseVerdict = 241; // traverse/verdict
+  static const int traverseVetoable = 242; // traverse/vetoable
+  static const int v = 243; // v
+  static const int widgetSizeRequest = 244; // widgetSizeRequest
+  static const int widgetSizeResponse = 245; // widgetSizeResponse
 }
 
 /// Map keys by the number a map sent as tagged values names them with.

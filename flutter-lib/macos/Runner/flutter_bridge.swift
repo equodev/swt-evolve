@@ -623,6 +623,16 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         notifyActive(false)
     }
 
+    // Full screen can be entered or left without SWT asking (the OS, accessibility tools), so the
+    // window reports every change and SWT's Shell.getFullScreen() follows it.
+    func windowDidEnterFullScreen(_ notification: Notification) {
+        windowChannel?.invokeMethod("fullScreen", arguments: true)
+    }
+
+    func windowDidExitFullScreen(_ notification: Notification) {
+        windowChannel?.invokeMethod("fullScreen", arguments: false)
+    }
+
     /// The active state this window has not been able to tell Dart about yet, or nil when it has.
     private var pendingActive: Bool?
 
