@@ -73,6 +73,7 @@ public final class OwnerDrawOverlay {
             toRow.translate(-rowLeft(parent, row), -first.y);
             gc.setTransform(toRow);
             for (int i = 0; i < columnCount; i++) {
+                if (isHiddenColumn(parent, i)) continue;
                 Rectangle cell = bounds(row, i);
                 // Native SWT hands the listeners a GC already set to the cell's colors and font,
                 // and an owner-drawing app draws with them rather than setting its own.
@@ -111,6 +112,22 @@ public final class OwnerDrawOverlay {
         // A table's overlay scrolls sideways with its row, while the cell bounds are in the client area.
         if (row instanceof TableItem) return -TableHelper.scrollOffsetX((DartTable) parent.getImpl());
         return (float) dev.equo.swt.size.TreeSizes.getRowLeft((DartTree) parent.getImpl());
+    }
+
+    /**
+     * Whether column {@code index} of {@code parent} is a column of width 0. Native SWT runs no
+     * owner-draw listener for such a cell on Windows (custom draw skips an empty sub-item before
+     * MeasureItem, EraseItem and PaintItem) and clips it to nothing on GTK and Cocoa.
+     */
+    static boolean isHiddenColumn(Control parent, int index) {
+        Item column = null;
+        if (parent instanceof Table && index < ((Table) parent).getColumnCount()) {
+            column = ((Table) parent).getColumn(index);
+        } else if (parent instanceof Tree && index < ((Tree) parent).getColumnCount()) {
+            column = ((Tree) parent).getColumn(index);
+        }
+        if (column instanceof TableColumn) return ((TableColumn) column).getWidth() == 0;
+        return column instanceof TreeColumn && ((TreeColumn) column).getWidth() == 0;
     }
 
     private static Rectangle bounds(Item row, int index) {

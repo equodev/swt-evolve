@@ -28,6 +28,7 @@ class DateTimeSerializeTest extends SerializeTestBase {
                .containsEntry("minutes", w.getMinutes())
                .containsEntry("month", w.getMonth())
                .containsEntry("seconds", w.getSeconds())
+               .containsEntry("enabled", w.getEnabled())
                .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
@@ -39,7 +40,6 @@ class DateTimeSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
-        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));

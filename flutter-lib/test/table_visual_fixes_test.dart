@@ -108,12 +108,9 @@ void main() {
       expect(widths[cols.length], isA<FlexColumnWidth>());
     });
 
-    testWidgets('mixed widths: a null-width column sizes to content, not 0',
-        (tester) async {
-      // A "Find Actions"-style shape: the category column has no explicit width
-      // while the label column does. A null width must size to content, not
-      // collapse to 0 (which hid the category column entirely).
-      final cols = [_col(1), _col(2, width: 300)];
+    testWidgets('mixed widths: a column of width 0 takes no space', (tester) async {
+      // setWidth(0) is how an application hides a column; native SWT gives it no space.
+      final cols = [_col(1, width: 0), _col(2, width: 300)];
       final value = _table(
           columns: cols, items: [_item(10, ['Editors', 'Toggle Split Editor'])]);
 
@@ -123,11 +120,10 @@ void main() {
       final widths =
           tester.state<TableImpl>(find.byType(TableSwt<VTable>)).cachedColumnWidths!;
 
-      expect((widths[0] as FixedColumnWidth).value, greaterThan(0.0),
-          reason:
-              'a column with no explicit width must size to content, not 0');
+      expect((widths[0] as FixedColumnWidth).value, equals(0.0),
+          reason: 'a column of width 0 is hidden');
       expect((widths[1] as FixedColumnWidth).value, equals(300.0),
-          reason: 'columns with an explicit width keep it');
+          reason: 'columns with a width keep it');
     });
 
     testWidgets('fixed columns keep their declared pixel widths', (tester) async {

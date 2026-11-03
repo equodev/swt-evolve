@@ -1259,21 +1259,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
       return null;
     }
 
-    final hasExplicitWidths = columns.any((col) => col.width != null);
-    final hasCheckStyle = hasStyle(SWT.CHECK);
-
-    final Map<int, TableColumnWidth> widths;
-    if (hasExplicitWidths) {
-      widths =
-          _calculateExplicitColumnWidths(context, columns, theme, hasCheckStyle);
-    } else {
-      widths = _calculateIntrinsicColumnWidths(
-        context,
-        columns,
-        theme,
-        hasCheckStyle,
-      );
-    }
+    final widths = _calculateExplicitColumnWidths(
+        context, columns, theme, hasStyle(SWT.CHECK));
     widths[columns.length] = const FlexColumnWidth(1);
     return widths;
   }
@@ -1296,24 +1283,16 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     for (int i = 0; i < columns.length; i++) {
       final column = columns[i];
-      double width;
-      if (column.width != null) {
-        width = column.width!.toDouble();
-        if (hasCheckStyle && i == 0) {
-          width += checkboxWidth + theme.cellPadding.left;
-        }
-        if (!_userResizedColumns.contains(column.id)) {
-          width = math.max(
-            width,
-            _headerTextFloor(column, headerTextStyle, theme, hasCheckStyle, i,
-                checkboxWidth),
-          );
-        }
-      } else {
-        // No explicit width (e.g. Find Actions' category column): size to
-        // content instead of collapsing to 0, which would hide the column.
-        width = _intrinsicColumnWidth(
-            context, columns, i, theme, hasCheckStyle, checkboxWidth);
+      double width = (column.width ?? 0).toDouble();
+      if (hasCheckStyle && i == 0) {
+        width += checkboxWidth + theme.cellPadding.left;
+      }
+      if (!_userResizedColumns.contains(column.id)) {
+        width = math.max(
+          width,
+          _headerTextFloor(column, headerTextStyle, theme, hasCheckStyle, i,
+              checkboxWidth),
+        );
       }
       widths[i] = FixedColumnWidth(width);
     }
@@ -1340,167 +1319,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
       floor += (headerTextStyle.fontSize ?? 16.0) + theme.headerPadding.left;
     }
     return floor;
-  }
-
-  /// Content-based width for a single column (widest of its header and cells),
-  /// mirroring [_calculateIntrinsicColumnWidths] for one column.
-  double _intrinsicColumnWidth(
-    BuildContext context,
-    List<VTableColumn> columns,
-    int i,
-    TableThemeExtension theme,
-    bool hasCheckStyle,
-    double checkboxWidth,
-  ) {
-    final headerTextStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      textColor: getTableHeaderTextColor(context, state,theme),
-      baseTextStyle: theme.headerTextStyle,
-    );
-    final rowTextStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      // The Table's own colour when the application set one, else the theme's row colour.
-      textColor: getForegroundColor(
-        foreground: state.foreground,
-        defaultColor: theme.rowTextColor,
-        context: context,
-        minContrast: theme.minTextContrast,
-      ),
-      baseTextStyle: theme.rowTextStyle,
-    );
-
-    double maxWidth = _calculateHeaderWidth(columns[i], headerTextStyle, theme);
-    for (final item in getItems()) {
-      final cellWidth = _calculateCellWidth(
-          context, item, i, rowTextStyle, theme, hasCheckStyle, checkboxWidth);
-      if (cellWidth > maxWidth) maxWidth = cellWidth;
-    }
-    if (hasCheckStyle &&
-        i == 0 &&
-        maxWidth < checkboxWidth + theme.cellPadding.left) {
-      maxWidth = checkboxWidth + theme.cellPadding.left;
-    }
-    return maxWidth > 0 ? maxWidth : 50.0;
-  }
-
-  Map<int, TableColumnWidth> _calculateIntrinsicColumnWidths(
-    BuildContext context,
-    List<VTableColumn> columns,
-    TableThemeExtension theme,
-    bool hasCheckStyle,
-  ) {
-    final Map<int, TableColumnWidth> widths = {};
-    final headerTextStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      textColor: getTableHeaderTextColor(context, state,theme),
-      baseTextStyle: theme.headerTextStyle,
-    );
-    final rowTextStyle = getTextStyle(
-      context: context,
-      font: state.font,
-      // The Table's own colour when the application set one, else the theme's row colour.
-      textColor: getForegroundColor(
-        foreground: state.foreground,
-        defaultColor: theme.rowTextColor,
-        context: context,
-        minContrast: theme.minTextContrast,
-      ),
-      baseTextStyle: theme.rowTextStyle,
-    );
-    final items = getItems();
-    const double checkboxWidth = 20.0;
-
-    for (int i = 0; i < columns.length; i++) {
-      final column = columns[i];
-      double maxWidth = _calculateHeaderWidth(column, headerTextStyle, theme);
-
-      for (final item in items) {
-        final cellWidth = _calculateCellWidth(
-          context,
-          item,
-          i,
-          rowTextStyle,
-          theme,
-          hasCheckStyle,
-          checkboxWidth,
-        );
-        if (cellWidth > maxWidth) {
-          maxWidth = cellWidth;
-        }
-      }
-
-      if (hasCheckStyle &&
-          i == 0 &&
-          maxWidth < checkboxWidth + theme.cellPadding.left) {
-        maxWidth = checkboxWidth + theme.cellPadding.left;
-      }
-
-      widths[i] = FixedColumnWidth(maxWidth > 0 ? maxWidth : 50.0);
-    }
-    return widths;
-  }
-
-  double _calculateHeaderWidth(
-    VTableColumn column,
-    TextStyle headerTextStyle,
-    TableThemeExtension theme,
-  ) {
-    final headerText = stripAccelerators(column.text);
-    if (headerText.isEmpty) return 0.0;
-
-    return textSize(headerText, headerTextStyle).width + theme.headerPadding.horizontal;
-  }
-
-  double _calculateCellWidth(
-    BuildContext context,
-    VTableItem item,
-    int columnIndex,
-    TextStyle rowTextStyle,
-    TableThemeExtension theme,
-    bool hasCheckStyle,
-    double checkboxWidth,
-  ) {
-    final cellTexts = item.texts ?? [];
-    final cellText = columnIndex < cellTexts.length
-        ? (cellTexts[columnIndex] ?? "")
-        : "";
-
-    final cellFont = item.font ?? state.font;
-    final cellTextStyle = getTextStyle(
-      context: context,
-      font: cellFont,
-      textColor: getTableRowTextColor(context, item, theme, false, true,
-          parentForeground: state.foreground),
-      baseTextStyle: rowTextStyle,
-    );
-
-    double cellWidth = theme.cellPadding.horizontal;
-
-    if (cellText.isNotEmpty) {
-      cellWidth += textSize(cellText, cellTextStyle).width;
-    }
-
-    // Account for the image icon width + gap if this column has an image
-    final cellImage = _cellImageForItem(item, columnIndex);
-    if (cellImage != null) {
-      final iconSize = cellTextStyle.fontSize ?? 16.0;
-      cellWidth += iconSize + theme.cellPadding.left;
-    }
-
-    if (hasCheckStyle && columnIndex == 0) {
-      cellWidth += checkboxWidth + theme.cellPadding.left;
-    }
-    return cellWidth;
-  }
-
-  VImage? _cellImageForItem(VTableItem item, int columnIndex) {
-    final imgs = item.images;
-    if (imgs != null && columnIndex < imgs.length) return imgs[columnIndex];
-    if (imgs == null && columnIndex == 0) return item.image;
-    return null;
   }
 
   List<VTableColumn> getColumns() {

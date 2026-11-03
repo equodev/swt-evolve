@@ -24,10 +24,10 @@ class MenuItemSerializeTest extends SerializeTestBase {
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "MenuItem")
+               .containsEntry("enabled", w.getEnabled())
                .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("accelerator").equalsTo(w.getAccelerator(), orAbsentIf0));
-        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));

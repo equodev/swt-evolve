@@ -27,6 +27,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "StyledText")
                .containsEntry("text", w.getText())
+               .containsEntry("enabled", w.getEnabled())
                .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
@@ -62,7 +63,6 @@ class StyledTextSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
-        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));

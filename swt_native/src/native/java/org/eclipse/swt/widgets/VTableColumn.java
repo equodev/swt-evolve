@@ -119,8 +119,6 @@ public class VTableColumn extends VItem {
             case 562:
                 {
                     boolean v_ = getResizable();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(562);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
@@ -128,8 +126,6 @@ public class VTableColumn extends VItem {
             case 563:
                 {
                     int v_ = getWidth();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(563);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
@@ -151,6 +147,11 @@ public class VTableColumn extends VItem {
 
     @Override
     public boolean wireAlways(int key) {
+        switch(key) {
+            case 562:
+            case 563:
+                return true;
+        }
         return super.wireAlways(key);
     }
 

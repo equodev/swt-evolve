@@ -829,7 +829,7 @@ public class TreeHelper {
             }
             suppressed = suppressedForegrounds(item, parent, count, gc);
             for (int i = 0; i < count; i++) {
-                if (!suppressed[i] && own[i] != null) {
+                if (OwnerDrawOverlay.isHiddenColumn(item.parent, i) || (!suppressed[i] && own[i] != null)) {
                     continue;
                 }
                 StringBuilder text = new StringBuilder();
@@ -878,6 +878,7 @@ public class TreeHelper {
         }
         int measured = itemHeight;
         for (int i = 0; i < count; i++) {
+            if (OwnerDrawOverlay.isHiddenColumn(item.parent, i)) continue;
             Event event = new Event();
             event.item = item.getApi();
             event.index = i;
@@ -900,6 +901,7 @@ public class TreeHelper {
             return suppressed;
         }
         for (int i = 0; i < count; i++) {
+            if (OwnerDrawOverlay.isHiddenColumn(item.parent, i)) continue;
             Event event = new Event();
             event.item = item.getApi();
             event.index = i;

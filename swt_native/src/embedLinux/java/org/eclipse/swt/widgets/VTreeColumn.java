@@ -119,8 +119,6 @@ public class VTreeColumn extends VItem {
             case 637:
                 {
                     boolean v_ = getResizable();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(637);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
@@ -128,8 +126,6 @@ public class VTreeColumn extends VItem {
             case 638:
                 {
                     int v_ = getWidth();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(638);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
@@ -151,6 +147,11 @@ public class VTreeColumn extends VItem {
 
     @Override
     public boolean wireAlways(int key) {
+        switch(key) {
+            case 637:
+            case 638:
+                return true;
+        }
         return super.wireAlways(key);
     }
 

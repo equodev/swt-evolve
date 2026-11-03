@@ -26,18 +26,30 @@ public final class ColumnHelper {
         return positions(widths(table.getColumns()), order);
     }
 
-    /** Tells the columns shown after {@code column} that they moved, as a resize of it does natively. */
+    /**
+     * Tells the columns shown after {@code column} that they moved, as a resize of it does natively,
+     * and has an owner-drawn tree's rows drawn again: native SWT repaints the cells a resize moves, and
+     * a column that had width 0 was never drawn.
+     */
     public static void columnResized(Tree tree, TreeColumn column) {
         if (column.isDisposed() || tree == null || tree.isDisposed())
             return;
         sendMovesAfter(tree.getColumns(), tree.getColumnOrder(), tree.indexOf(column));
+        DartTree impl = (DartTree) tree.getImpl();
+        if (impl.hooks(SWT.PaintItem)) TreeHelper.nameOwnerDrawnCells(impl);
     }
 
-    /** Tells the columns shown after {@code column} that they moved, as a resize of it does natively. */
+    /**
+     * Tells the columns shown after {@code column} that they moved, as a resize of it does natively,
+     * and has an owner-drawn table's rows drawn again: native SWT repaints the cells a resize moves,
+     * and a column that had width 0 was never drawn.
+     */
     public static void columnResized(Table table, TableColumn column) {
         if (column.isDisposed() || table == null || table.isDisposed())
             return;
         sendMovesAfter(table.getColumns(), table.getColumnOrder(), table.indexOf(column));
+        DartTable impl = (DartTable) table.getImpl();
+        if (impl.hooks(SWT.PaintItem)) TableHelper.nameOwnerDrawnCells(impl);
     }
 
     /** Where column {@code index} is shown, or -1. */

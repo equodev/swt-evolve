@@ -24,9 +24,9 @@ class MenuSerializeTest extends SerializeTestBase {
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Menu")
+               .containsEntry("enabled", w.getEnabled())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
-        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("location").equalsTo(value(w).getLocation(), orAbsentIfNull));
         assertJ.satisfies(node("orientation").equalsTo(w.getOrientation(), orAbsentIf0));
     }

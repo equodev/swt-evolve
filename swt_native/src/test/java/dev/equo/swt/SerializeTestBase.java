@@ -499,13 +499,15 @@ public class SerializeTestBase {
             sc.setContent(new Composite(sc, SWT.NONE));
             sc.setOrigin(1, 1);
         } else if (w instanceof Table t) {
-            new TableColumn(t, SWT.NONE);
-            new TableColumn(t, SWT.NONE);
+            // A column of width 0 is hidden and gets no owner-draw events: size them as an app does.
+            new TableColumn(t, SWT.NONE).setWidth(50);
+            new TableColumn(t, SWT.NONE).setWidth(50);
             t.setColumnOrder(reversedOrder(t.getColumnCount()));
             measureTallRow(t, new TableItem(t, SWT.NONE));
         } else if (w instanceof Tree t) {
-            new TreeColumn(t, SWT.NONE);
-            new TreeColumn(t, SWT.NONE);
+            // A column of width 0 is hidden and gets no owner-draw events: size them as an app does.
+            new TreeColumn(t, SWT.NONE).setWidth(50);
+            new TreeColumn(t, SWT.NONE).setWidth(50);
             t.setColumnOrder(reversedOrder(t.getColumnCount()));
             // The fill sets the direction to a number SWT refuses.
             t.setSortDirection(SWT.UP);

@@ -24,12 +24,12 @@ class ToolItemSerializeTest extends SerializeTestBase {
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ToolItem")
+               .containsEntry("enabled", w.getEnabled())
                .containsEntry("toolTipText", w.getToolTipText())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
         assertJ.satisfies(node("disabledImage").equalsTo(w.getDisabledImage(), orAbsentIfNull));
-        assertJ.satisfies(node("enabled").equalsTo(w.getEnabled(), orAbsentIfFalse));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("hotImage").equalsTo(w.getHotImage(), orAbsentIfNull));
         assertJ.satisfies(node("selection").equalsTo(w.getSelection(), orAbsentIfFalse));

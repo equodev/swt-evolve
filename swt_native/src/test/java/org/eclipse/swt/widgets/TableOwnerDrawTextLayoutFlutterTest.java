@@ -66,8 +66,9 @@ class TableOwnerDrawTextLayoutFlutterTest {
     void textDrawnThroughATextLayout_replacesTheSuppressedModelText() {
         Shell shell = new Shell(display);
         Table table = new Table(shell, SWT.NONE);
-        new TableColumn(table, SWT.LEFT);
-        new TableColumn(table, SWT.LEFT);
+        // QuickAccess sizes its columns through a TableColumnLayout; a column of width 0 would be hidden.
+        new TableColumn(table, SWT.LEFT).setWidth(100);
+        new TableColumn(table, SWT.LEFT).setWidth(300);
 
         table.addListener(SWT.EraseItem, event -> event.detail &= ~SWT.FOREGROUND);
         table.addListener(SWT.PaintItem, event -> {

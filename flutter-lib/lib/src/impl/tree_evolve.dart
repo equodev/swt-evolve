@@ -704,7 +704,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final available = availableWidth - prefix;
     // Java places cells (getBounds, owner-draw events) at the widths it set, so they are kept as
     // given, as in SWT: past the tree's width they scroll, or are clipped on a NO_SCROLL tree.
-    // A width of 0 is not sent: a column without one is a hidden column.
+    // A column of width 0 is hidden.
     if (columns.any((c) => (c.width ?? 0) > 0)) {
       final hasMultiColumn = columns.length > 1;
       final gapFraction = hasMultiColumn
