@@ -20,6 +20,10 @@ public final class FlutterNative {
     private FlutterNative() {
     }
 
+    /** Loads the native bridge, unless {@code -Ddev.equo.swt.loadLibrary=false}; a no-op once loaded. */
+    public static void ensureLoaded() {
+    }
+
     /**
      * {@link #pump} status: the user asked the window to close (title-bar X, Alt+F4, Cmd+W) and the
      * runner <em>vetoed</em> the OS teardown, so the window is still up. The bridge must answer with

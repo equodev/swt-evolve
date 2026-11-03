@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -191,6 +192,9 @@ public final class EvolveSwingHost {
      * heavyweight descendant redrawing itself has no other path back into it.
      */
     private static final Map<Container, Runnable> HEAVYWEIGHT_REPAINT_HOOKS = new ConcurrentHashMap<>();
+
+    /** Each active embedding's paint-and-push that repaints none of its OpenGL canvases unasked, see {@link CanvasDamage}. */
+    static final Map<Container, Runnable> HEAVYWEIGHT_PUSHES = new ConcurrentHashMap<>();
 
     private static final AtomicBoolean OUTSIDE_CLICK_FILTER_INSTALLED = new AtomicBoolean(false);
 
@@ -584,6 +588,7 @@ public final class EvolveSwingHost {
         root.dropHeld();
         EMBEDDINGS.remove(frame);
         HEAVYWEIGHT_REPAINT_HOOKS.remove(root);
+        HEAVYWEIGHT_PUSHES.remove(root);
         REPAINT_PENDING.remove(root);
         LAST_REPAINT.remove(root);
     }
@@ -617,17 +622,30 @@ public final class EvolveSwingHost {
      */
     private static void installHeavyweightRepaintListener() {
         Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-            if (!(event instanceof PaintEvent)) return;
-            if (Boolean.TRUE.equals(BLITTING.get())) return;
-            Component source = ((PaintEvent) event).getComponent();
-            for (Map.Entry<Container, Runnable> entry : HEAVYWEIGHT_REPAINT_HOOKS.entrySet()) {
-                Container root = entry.getKey();
-                if (root == source || root.isAncestorOf(source)) {
-                    coalesceRepaint(root, entry.getValue());
-                    return;
-                }
-            }
+            if (event instanceof PaintEvent) heavyweightRepainted((PaintEvent) event);
         }, AWTEvent.PAINT_EVENT_MASK);
+    }
+
+    /** Records what {@code paint} asks to repaint and schedules a push of the embedding it belongs to. */
+    static void heavyweightRepainted(PaintEvent paint) {
+        if (Boolean.TRUE.equals(BLITTING.get())) return;
+        Component source = paint.getComponent();
+        for (Map.Entry<Container, Runnable> entry : HEAVYWEIGHT_PUSHES.entrySet()) {
+            Container root = entry.getKey();
+            if (root == source || root.isAncestorOf(source)) {
+                CanvasDamage.repaintRequested(source, paint.getUpdateRect());
+                coalesceRepaint(root, entry.getValue());
+                return;
+            }
+        }
+    }
+
+    /** {@code push} after marking every canvas under {@code root} to be painted again in full. */
+    static Runnable forceRepaint(Container root, Runnable push) {
+        return () -> {
+            CanvasDamage.damageAll(root);
+            push.run();
+        };
     }
 
     /**
@@ -891,6 +909,132 @@ public final class EvolveSwingHost {
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             // A component that refuses the switch keeps painting the way it did before.
         }
+        if (GlFrontBuffer.enabled()) {
+            GlFrontBuffer.start(EvolveSwingHost::showFrontBufferOverlays);
+            GlFrontBuffer.track(heavy);
+        }
+    }
+
+    /** Whether {@code heavy} is a canvas rendering off screen, see {@link #enableOffscreenRendering}. */
+    static boolean isOffscreen(Component heavy) {
+        Method[] toggle = OFFSCREEN_TOGGLE.get(heavy.getClass());
+        if (toggle == null) return false;
+        try {
+            return Boolean.TRUE.equals(toggle[0].invoke(heavy));
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
+
+    /** Pushes every embedding's last frame again with its heavyweights' front-buffer drawing on top. */
+    static void showFrontBufferOverlays() {
+        for (Host host : EMBEDDINGS.values()) host.content.showFrontBufferOverlays();
+    }
+
+    /**
+     * XORs {@code overlay} ({@code [width, height, rgb...]}, top row first) into the {@code sw}x{@code sh}
+     * region at ({@code px0}, {@code py0}) of the {@code w}x{@code h} frame, stretched to the region and
+     * clipped to the frame. The overlay was drawn with XOR over black, so this is what the same drawing
+     * would leave on screen, and applying it twice restores the frame. Alpha is left as it is.
+     */
+    static void xorOverlay(int[] frame, int w, int h, int px0, int py0, int sw, int sh, int[] overlay) {
+        int ow = overlay[0], oh = overlay[1];
+        if (ow <= 0 || oh <= 0 || sw <= 0 || sh <= 0) return;
+        for (int row = 0; row < sh; row++) {
+            int py = py0 + row;
+            if (py < 0 || py >= h) continue;
+            int srcRow = 2 + (int) ((long) row * oh / sh) * ow;
+            for (int col = 0; col < sw; col++) {
+                int px = px0 + col;
+                if (px < 0 || px >= w) continue;
+                int bits = overlay[srcRow + (int) ((long) col * ow / sw)] & 0xFFFFFF;
+                if (bits != 0) frame[py * w + px] ^= bits;
+            }
+        }
+    }
+
+    /**
+     * {@code base}, a {@code w}x{@code h} frame of {@code root} at the given scale, with each heavyweight's
+     * front-buffer drawing from {@code overlays} XORed on top; {@code base} itself when there is none.
+     */
+    static int[] withFrontBufferOverlays(Container root, int[] base, int w, int h, double scaleX, double scaleY,
+            Function<Component, int[]> overlays) {
+        if (!GlFrontBuffer.enabled()) return base;
+        int[][] frame = {base};
+        visitHeavyweights(root, 0, 0, (heavy, x, y) -> {
+            int[] overlay = overlays.apply(heavy);
+            if (overlay == null) return;
+            if (frame[0] == base) frame[0] = base.clone();
+            xorOverlay(frame[0], w, h, (int) Math.round(x * scaleX), (int) Math.round(y * scaleY),
+                    Math.max(1, (int) Math.round(heavy.getWidth() * scaleX)),
+                    Math.max(1, (int) Math.round(heavy.getHeight() * scaleY)), overlay);
+        });
+        return frame[0];
+    }
+
+    /**
+     * {@code JLightweightFrame}'s own paint cycle only reaches lightweight
+     * descendants (the same {@code GraphicsCallback} filter stock AWT's
+     * {@code Container.paint()} uses) — a heavyweight child (e.g. a hosted app's
+     * {@code JApplet}) is meant to be painted by its own native peer responding to
+     * {@code WM_PAINT}, which never happens here since this frame has no on-screen
+     * native window. Paint it ourselves and composite the result directly into the
+     * snapshot before it goes out, so a heavyweight subtree isn't silently blank.
+     * Runs on the EDT (this method is itself part of JLightweightFrame's own
+     * Swing-driven paint dispatch), same thread {@link Component#paint} expects.
+     */
+    static void paintHeavyweights(Container root, int[] snapshot, int w, int h, double scaleX, double scaleY) {
+        visitHeavyweights(root, 0, 0, (heavy, x, y) -> blitHeavyweight(heavy, x, y, snapshot, w, h, scaleX, scaleY));
+    }
+
+    /** Paints one heavyweight component off-screen and composites it (premultiplied) into snapshot. */
+    private static void blitHeavyweight(Component heavy, int destX, int destY, int[] snapshot, int w, int h,
+            double scaleX, double scaleY) {
+        int cw = heavy.getWidth(), ch = heavy.getHeight();
+        if (cw <= 0 || ch <= 0) return;
+        if (OFFSCREEN_HEAVYWEIGHTS) enableOffscreenRendering(heavy);
+        // The component reports its geometry in points while snapshot is the frame's pixel
+        // buffer, so render it at the display scale and place it at the scaled offset —
+        // otherwise a heavyweight child lands undersized in the top-left of where it belongs.
+        int sw = Math.max(1, (int) Math.round(cw * scaleX));
+        int sh = Math.max(1, (int) Math.round(ch * scaleY));
+        int px0 = (int) Math.round(destX * scaleX);
+        int py0 = (int) Math.round(destY * scaleY);
+        BufferedImage img;
+        if (GlFrontBuffer.enabled() && isOffscreen(heavy)) {
+            img = CanvasDamage.image(heavy, sw, sh, scaleX, scaleY,
+                    g -> GlFrontBuffer.paint(heavy, () -> heavy.paint(g)));
+            if (img == null) return;
+        } else {
+            img = new BufferedImage(sw, sh, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = img.createGraphics();
+            try {
+                g2.scale(scaleX, scaleY);
+                heavy.paint(g2);
+            } catch (Throwable t) {
+                return; // A component that can't paint off-cycle leaves that region as JLightweightFrame left it.
+            } finally {
+                g2.dispose();
+            }
+        }
+        int[] src = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+        for (int row = 0; row < sh; row++) {
+            int py = py0 + row;
+            if (py < 0 || py >= h) continue;
+            int rowBase = row * sw;
+            int destRowBase = py * w;
+            for (int col = 0; col < sw; col++) {
+                int px = px0 + col;
+                if (px < 0 || px >= w) continue;
+                int argb = src[rowBase + col];
+                int a = (argb >>> 24) & 0xFF;
+                if (a == 0) continue;
+                int r = (((argb >> 16) & 0xFF) * a) / 255;
+                int g = (((argb >> 8) & 0xFF) * a) / 255;
+                int b = ((argb & 0xFF) * a) / 255;
+                snapshot[destRowBase + px] = (a << 24) | (r << 16) | (g << 8) | b;
+            }
+        }
     }
 
     /**
@@ -1014,7 +1158,7 @@ public final class EvolveSwingHost {
         private final ContentRoot contentRoot = new ContentRoot(this::pushSoon);
         private final EvolveContent content = new EvolveContent();
         private volatile JLightweightFrame frame;
-        private volatile Runnable forceRepaint;
+        private volatile Runnable push;
         private volatile EmbedCursor cursor;
         private final AwtDropBridge drops;
         // Guards the container-listener reentrancy while we relocate app-added children.
@@ -1046,7 +1190,7 @@ public final class EvolveSwingHost {
          * immediate — the hosted application recomputes what it paints on its own schedule, so a
          * single immediate push captures the previous frame.
          *
-         * <p>{@code forceRepaint} is registered globally too, so a heavyweight's own
+         * <p>A plain push is registered globally too, so a heavyweight's own
          * {@code repaint()} reaches the screen; {@link AwtInput}'s drag timer covers the remaining
          * case, immediate-mode {@code getGraphics()} drawing, which posts no {@link PaintEvent} at
          * all.
@@ -1056,9 +1200,11 @@ public final class EvolveSwingHost {
             drops.bind(frame);
             interceptAdds(frame);
             canvas.addPaintListener(this::paint);
-            Runnable forceRepaint = () -> content.imageUpdated(0, 0, 0, 0);
-            this.forceRepaint = forceRepaint;
+            Runnable push = () -> content.imageUpdated(0, 0, 0, 0);
+            Runnable forceRepaint = forceRepaint(contentRoot, push);
+            this.push = push;
             HEAVYWEIGHT_REPAINT_HOOKS.put(contentRoot, forceRepaint);
+            HEAVYWEIGHT_PUSHES.put(contentRoot, push);
             AwtInput.attach(canvas, frame, contentRoot, forceRepaint);
             EmbedCursor embedCursor = new EmbedCursor(canvas, display, frame);
             embedCursor.attach();
@@ -1153,7 +1299,7 @@ public final class EvolveSwingHost {
         }
 
         private void pushSoon() {
-            Runnable push = forceRepaint;
+            Runnable push = this.push;
             if (push != null && !BLITTING.get()) coalesceRepaint(contentRoot, push);
         }
 
@@ -1259,6 +1405,10 @@ public final class EvolveSwingHost {
             private double scaleX = 1.0;
             private double scaleY = 1.0;
             private final Object lock = new Object();
+            // The last frame as painted, before any front-buffer drawing goes on top. Event thread only.
+            private int[] baseFrame;
+            private int baseWidth;
+            private int baseHeight;
 
             @Override
             public JComponent getComponent() {
@@ -1299,66 +1449,19 @@ public final class EvolveSwingHost {
                     h = pixelExtent(bufHeight, scaleY);
                     snapshot = copyFrameBuffer(buffer, stride, w, h);
                 }
-                paintHeavyweightDescendants(contentRoot, 0, 0, snapshot, w, h);
-                frameProduced(snapshot, w, h);
+                paintHeavyweights(contentRoot, snapshot, w, h, scaleX, scaleY);
+                baseFrame = snapshot;
+                baseWidth = w;
+                baseHeight = h;
+                frameProduced(withFrontBufferOverlays(contentRoot, snapshot, w, h, scaleX, scaleY,
+                        GlFrontBuffer::overlay), w, h);
             }
 
-            /**
-             * {@code JLightweightFrame}'s own paint cycle only reaches lightweight
-             * descendants (the same {@code GraphicsCallback} filter stock AWT's
-             * {@code Container.paint()} uses) — a heavyweight child (e.g. a hosted app's
-             * {@code JApplet}) is meant to be painted by its own native peer responding to
-             * {@code WM_PAINT}, which never happens here since this frame has no on-screen
-             * native window. Paint it ourselves and composite the result directly into the
-             * snapshot before it goes out, so a heavyweight subtree isn't silently blank.
-             * Runs on the EDT (this method is itself part of JLightweightFrame's own
-             * Swing-driven paint dispatch), same thread {@link Component#paint} expects.
-             */
-            private void paintHeavyweightDescendants(Container root, int offsetX, int offsetY,
-                    int[] snapshot, int w, int h) {
-                visitHeavyweights(root, offsetX, offsetY,
-                        (heavy, x, y) -> blitHeavyweight(heavy, x, y, snapshot, w, h));
-            }
-
-            /** Paints one heavyweight component off-screen and composites it (premultiplied) into snapshot. */
-            private void blitHeavyweight(Component heavy, int destX, int destY, int[] snapshot, int w, int h) {
-                int cw = heavy.getWidth(), ch = heavy.getHeight();
-                if (cw <= 0 || ch <= 0) return;
-                if (OFFSCREEN_HEAVYWEIGHTS) enableOffscreenRendering(heavy);
-                // The component reports its geometry in points while snapshot is the frame's pixel
-                // buffer, so render it at the display scale and place it at the scaled offset —
-                // otherwise a heavyweight child lands undersized in the top-left of where it belongs.
-                int sw = Math.max(1, (int) Math.round(cw * scaleX));
-                int sh = Math.max(1, (int) Math.round(ch * scaleY));
-                int px0 = (int) Math.round(destX * scaleX);
-                int py0 = (int) Math.round(destY * scaleY);
-                BufferedImage img = new BufferedImage(sw, sh, BufferedImage.TYPE_INT_ARGB);
-                Graphics2D g2 = img.createGraphics();
-                try {
-                    g2.scale(scaleX, scaleY);
-                    heavy.paint(g2);
-                } catch (Throwable t) {
-                    return; // A component that can't paint off-cycle leaves that region as JLightweightFrame left it.
-                } finally {
-                    g2.dispose();
-                }
-                int[] src = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
-                for (int row = 0; row < sh; row++) {
-                    int py = py0 + row;
-                    if (py < 0 || py >= h) continue;
-                    int rowBase = row * sw;
-                    int destRowBase = py * w;
-                    for (int col = 0; col < sw; col++) {
-                        int px = px0 + col;
-                        if (px < 0 || px >= w) continue;
-                        int argb = src[rowBase + col];
-                        int a = (argb >>> 24) & 0xFF;
-                        if (a == 0) continue;
-                        int r = (((argb >> 16) & 0xFF) * a) / 255;
-                        int g = (((argb >> 8) & 0xFF) * a) / 255;
-                        int b = ((argb & 0xFF) * a) / 255;
-                        snapshot[destRowBase + px] = (a << 24) | (r << 16) | (g << 8) | b;
-                    }
+            void showFrontBufferOverlays() {
+                int[] base = baseFrame;
+                if (base != null) {
+                    frameProduced(withFrontBufferOverlays(contentRoot, base, baseWidth, baseHeight, scaleX, scaleY,
+                            GlFrontBuffer::overlay), baseWidth, baseHeight);
                 }
             }
 
