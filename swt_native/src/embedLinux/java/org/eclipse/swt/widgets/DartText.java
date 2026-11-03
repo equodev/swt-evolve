@@ -1926,6 +1926,8 @@ public class DartText extends DartScrollable implements IText {
         return topIndex;
     }
 
+    Event routedReturn;
+
     void updateAutoTextDirectionIfNeeded() {
     }
 
@@ -2061,15 +2063,7 @@ public class DartText extends DartScrollable implements IText {
                             }
                             return;
                         }
-                        if (!traverse(SWT.TRAVERSE_RETURN)) {
-                            Event crEvent = new Event();
-                            crEvent.keyCode = SWT.CR;
-                            crEvent.character = '\r';
-                            sendEvent(SWT.KeyDown, crEvent);
-                        }
-                        if (!isDisposed()) {
-                            sendEvent(SWT.DefaultSelection, e);
-                        }
+                        TextHelper.submitReturn(this, e);
                     });
                     return;
                 }

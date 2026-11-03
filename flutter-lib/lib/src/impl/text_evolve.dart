@@ -881,12 +881,18 @@ class TextImpl<T extends TextSwt, V extends VText>
       style: textStyle,
       decoration: decoration,
       keyboardType: isMultiLine ? TextInputType.multiline : TextInputType.text,
+      // Return with Flutter's default `done` restarts the input connection, and on the web the
+      // restarted one has no input element until the field lays out again: typing after it is lost.
+      textInputAction: isMultiLine ? null : TextInputAction.unspecified,
       maxLength: state.textLimit,
       // SWT rejects the keystroke at the limit; Flutter's default on web lets over-limit
       // text stand until composition ends, which briefly renders it.
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
       inputFormatters: [TextInputFormatter.withFunction(_gateEdit)],
       onChanged: _handleTextChanged,
+      // Flutter's default here also unfocuses the field. An SWT Text keeps the focus on Return:
+      // Java goes on routing keys to it, so the next keystroke typed has to land in it too.
+      onEditingComplete: _controller.clearComposing,
       onSubmitted: _handleSubmitted,
       onTapOutside: (_) {},
       cursorColor: cursorColor,
@@ -1026,6 +1032,9 @@ class TextImpl<T extends TextSwt, V extends VText>
   bool _takesTyping() => (state.editable ?? true) && !hasStyle(state.style, SWT.READ_ONLY);
 
   void _handleSubmitted(String value) {
+    // Shift+Return is only a key in a single-line Text (Cocoa, GTK and the desktop embedders do not
+    // submit on it); the web's input element submits on any Enter.
+    if (HardwareKeyboard.instance.isShiftPressed) return;
     widget.sendSelectionDefaultSelection(state, null);
   }
 

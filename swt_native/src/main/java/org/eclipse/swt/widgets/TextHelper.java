@@ -12,6 +12,41 @@ public class TextHelper {
     private TextHelper() {
     }
 
+    /**
+     * Records a Return the key route ran on {@code text}: the client submits the field on that same
+     * keystroke, and the traversal must not run twice. A consumed key is recorded vetoed.
+     */
+    static void returnRouted(DartText text, Event key, boolean traversed) {
+        if (traversed) {
+            Event consumed = new Event();
+            consumed.doit = false;
+            text.routedReturn = consumed;
+        } else {
+            text.routedReturn = key;
+        }
+    }
+
+    /**
+     * The client submitted the field on Return. As on every platform, the Return traversal runs first,
+     * up to the shell's default button, and consumes the key when it goes through; otherwise the field
+     * gets the KeyDown and, unless a listener vetoed it, DefaultSelection. When the key route already
+     * ran that keystroke ({@link #returnRouted}), only its DefaultSelection is left to send.
+     */
+    public static void submitReturn(DartText text, Event e) {
+        Event key = text.routedReturn;
+        text.routedReturn = null;
+        if (key == null) {
+            if (text.traverse(SWT.TRAVERSE_RETURN, '\r', SWT.CR, 0, 0, true) || text.isDisposed())
+                return;
+            key = new Event();
+            key.keyCode = SWT.CR;
+            key.character = '\r';
+            text.sendEvent(SWT.KeyDown, key);
+        }
+        if (key.doit && !text.isDisposed())
+            text.sendEvent(SWT.DefaultSelection, e);
+    }
+
     public static void insertEditText(DartText text, String string) {
         int length = string.length();
         Point selection = text.getSelection();

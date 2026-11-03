@@ -211,6 +211,26 @@ class ControlFocusRequestFlutterTest {
     }
 
     @Test
+    void theFieldADialogFocusesBeforeItOpensAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell main = openShell();
+        new Text(main, SWT.SINGLE).setFocus();
+        Shell dialog = new Shell(main, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        Text pattern = new Text(dialog, SWT.SINGLE | SWT.BORDER);
+        dialog.setSize(300, 200);
+        web.comm.sent.clear();
+
+        // The shape of Eclipse's Open Resource: a JFace Dialog focuses its field while it is built
+        // and opens the shell afterwards.
+        pattern.setFocus();
+        dialog.open();
+
+        assertThat(focusRequests(web))
+                .as("the client is told to move keyboard focus onto the dialog's field")
+                .containsExactly(String.valueOf(pattern.hashCode()));
+    }
+
+    @Test
     void theFirstShellOpeningOnAFieldIsLeftToTheRenderSide() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell shell = new Shell(display);

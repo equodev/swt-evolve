@@ -185,6 +185,8 @@ public class ControlHelper {
             traversed = wholeTraversal(control, key, SWT.TRAVERSE_ESCAPE);
         } else if (detail == SWT.TRAVERSE_RETURN) {
             traversed = wholeTraversal(control, key, SWT.TRAVERSE_RETURN);
+            if (control instanceof DartText)
+                TextHelper.returnRouted((DartText) control, key, traversed);
         } else if (detail != SWT.TRAVERSE_NONE) {
             Event e = new Event();
             e.character = key.character;
