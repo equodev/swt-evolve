@@ -10,7 +10,11 @@ import org.eclipse.swt.graphics.Rectangle;
 
 import java.lang.reflect.Field;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -227,6 +231,16 @@ public class DartMocks {
         // What a display with no shells answers; a test that stubbed it otherwise must not leave a
         // later one disposing a shell against null.
         when(display.getShells()).thenReturn(new Shell[0]);
+        // Tests stub these to deliver events, run or drop runnables, keep data, or place the screen
+        // and the pointer; left in place, the next test inherits them (real listeners against a
+        // display with no exception handler, another test's screen size).
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
+        doNothing().when(display).asyncExec(any(Runnable.class));
+        doNothing().when(display).setData(anyString(), any());
+        doReturn(null).when(display).getData(anyString());
+        doReturn(null).when(display).getBounds();
+        doReturn(null).when(display).getCursorLocation();
     }
 
     /** {@code Font systemFont}/{@code Point dpi} live on {@code DartDevice} (package
