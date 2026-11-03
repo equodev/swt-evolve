@@ -42,9 +42,9 @@ public final class PathData implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(395);
+        w.key(396);
         w.write(types);
-        w.key(394);
+        w.key(395);
         w.write(points);
     }
 }

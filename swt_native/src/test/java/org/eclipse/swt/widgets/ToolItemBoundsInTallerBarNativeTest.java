@@ -7,6 +7,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * them, so a popup placed under an item with {@code toDisplay} lands under what the user sees.
  */
 @Tag("native-unit")
+@ExtendWith(ImageMeasuredToolItems.class)
 class ToolItemBoundsInTallerBarNativeTest {
 
     /** A 16x16 image item: the image plus 7x6 of padding. */

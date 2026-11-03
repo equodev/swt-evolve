@@ -156,6 +156,9 @@ bool get preserveIconColors => getConfigFlags().preserve_icon_colors ?? false;
 /// ToolItemThemeExtension.hoverZoom* and TableThemeExtension.cellHoverZoom*.
 bool get hoverZoom => !(getConfigFlags().disable_hover_zoom ?? false);
 
+/// True when ToolItem icons are drawn at the theme's icon size; false draws each at its image's size.
+bool get biggerIconSize => getConfigFlags().bigger_icon_size ?? false;
+
 /// Whether [widget] (an SWT class name) draws text in the foreground the application set rather
 /// than the theme's: `-Dswt.evolve.use_swt_font_colors_<widget>`, else `-Dswt.use_swt_font_colors`, else
 /// `use_swt_fonts`.

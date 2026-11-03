@@ -868,6 +868,11 @@ public class Config {
         return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
     }
 
+    /** Whether application icons can be swapped for themed ones: Evolve's set or a client pack. */
+    static boolean replacesIcons(ConfigFlags flags) {
+        return !flags.disable_evolve_icons || (flags.assets_path != null && !flags.assets_path.trim().isEmpty());
+    }
+
     public static ConfigFlags getConfigFlags() {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
@@ -937,7 +942,8 @@ public class Config {
             //   -Ddev.equo.swt.csd.os=mac|windows|linux
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
             configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
-            configFlags.bigger_icon_size = Boolean.getBoolean("swt.evolve.bigger_icon_size");
+            configFlags.bigger_icon_size = replacesIcons(configFlags)
+                    && Boolean.parseBoolean(System.getProperty("swt.evolve.bigger_icon_size", "true"));
             configFlags.transparent_menu_check_box = Boolean.getBoolean("swt.evolve.transparent_menu_check_box");
             configFlags.scale_vertical_minimum_at_top = Boolean.getBoolean("swt.evolve.scale_vertical_minimum_at_top");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —

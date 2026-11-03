@@ -95,43 +95,43 @@ class VTree extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 622: // columnOrder
+      case 623: // columnOrder
         columnOrder = r.ints();
         return true;
-      case 623: // columns
+      case 624: // columns
         columns = r.refs<VTreeColumn>();
         return true;
-      case 624: // editors
+      case 625: // editors
         editors = r.refs<VTreeEditor>();
         return true;
-      case 625: // headerBackground
+      case 626: // headerBackground
         headerBackground = r.color();
         return true;
-      case 626: // headerForeground
+      case 627: // headerForeground
         headerForeground = r.color();
         return true;
-      case 627: // headerVisible
+      case 628: // headerVisible
         headerVisible = r.boolean();
         return true;
-      case 628: // items
+      case 629: // items
         items = r.refs<VTreeItem>();
         return true;
-      case 629: // linesVisible
+      case 630: // linesVisible
         linesVisible = r.boolean();
         return true;
-      case 631: // selection
+      case 632: // selection
         selection = r.refs<VTreeItem>();
         return true;
-      case 632: // sortColumn
+      case 633: // sortColumn
         sortColumn = r.ref<VTreeColumn>();
         return true;
-      case 633: // sortDirection
+      case 634: // sortDirection
         sortDirection = r.int32();
         return true;
-      case 634: // topItem
+      case 635: // topItem
         topItem = r.ref<VTreeItem>();
         return true;
-      case 630: // ownerDrawItemHeight
+      case 631: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
         return true;
       default:
@@ -145,86 +145,86 @@ class VTree extends VComposite {
     {
       final v_ = columnOrder;
       if (v_ != null) {
-        w.key(622);
+        w.key(623);
         w.ints(v_);
       }
     }
     {
       final v_ = columns;
       if (v_ != null) {
-        w.key(623);
+        w.key(624);
         w.refs(v_);
       }
     }
     {
       final v_ = editors;
       if (v_ != null) {
-        w.key(624);
+        w.key(625);
         w.refs(v_);
       }
     }
     {
       final v_ = headerBackground;
       if (v_ != null) {
-        w.key(625);
+        w.key(626);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerForeground;
       if (v_ != null) {
-        w.key(626);
+        w.key(627);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerVisible;
       if (v_ != null) {
-        w.keyBoolean(627, v_);
+        w.keyBoolean(628, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(628);
+        w.key(629);
         w.refs(v_);
       }
     }
     {
       final v_ = linesVisible;
       if (v_ != null) {
-        w.keyBoolean(629, v_);
+        w.keyBoolean(630, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(631);
+        w.key(632);
         w.refs(v_);
       }
     }
     {
       final v_ = sortColumn;
       if (v_ != null) {
-        w.keyRef(632, v_.id);
+        w.keyRef(633, v_.id);
       }
     }
     {
       final v_ = sortDirection;
       if (v_ != null) {
-        w.keyInt32(633, v_);
+        w.keyInt32(634, v_);
       }
     }
     {
       final v_ = topItem;
       if (v_ != null) {
-        w.keyRef(634, v_.id);
+        w.keyRef(635, v_.id);
       }
     }
     {
       final v_ = ownerDrawItemHeight;
       if (v_ != null) {
-        w.keyInt32(630, v_);
+        w.keyInt32(631, v_);
       }
     }
   }
@@ -232,19 +232,19 @@ class VTree extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(622, columnOrder);
-    visit(623, columns);
-    visit(624, editors);
-    visit(625, headerBackground);
-    visit(626, headerForeground);
-    visit(627, headerVisible);
-    visit(628, items);
-    visit(629, linesVisible);
-    visit(631, selection);
-    visit(632, sortColumn);
-    visit(633, sortDirection);
-    visit(634, topItem);
-    visit(630, ownerDrawItemHeight);
+    visit(623, columnOrder);
+    visit(624, columns);
+    visit(625, editors);
+    visit(626, headerBackground);
+    visit(627, headerForeground);
+    visit(628, headerVisible);
+    visit(629, items);
+    visit(630, linesVisible);
+    visit(632, selection);
+    visit(633, sortColumn);
+    visit(634, sortDirection);
+    visit(635, topItem);
+    visit(631, ownerDrawItemHeight);
   }
 
   @override

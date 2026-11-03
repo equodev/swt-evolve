@@ -80,6 +80,10 @@ class ConfigFlags implements WireReadable {
   /// side (`swt.evolve.push_button_margin`). 0 paints the button over its whole bounds.
   int? push_button_margin;
 
+  /// ToolItem icons are drawn at the theme's icon size rather than their image's
+  /// (`swt.evolve.bigger_icon_size`). Java turns it on whenever icons are replaced, unless that property is false.
+  bool? bigger_icon_size;
+
   /// CHECK and RADIO menu items draw no box or ring, only the mark while selected
   /// (`swt.evolve.transparent_menu_check_box`). Off by default: the theme's box is drawn.
   bool? transparent_menu_check_box;
@@ -181,6 +185,8 @@ class ConfigFlags implements WireReadable {
         use_swt_border = r.boolean();
       case WireKey.k_ConfigFlags_scale_vertical_minimum_at_top:
         scale_vertical_minimum_at_top = r.boolean();
+      case WireKey.k_ConfigFlags_bigger_icon_size:
+        bigger_icon_size = r.boolean();
       default:
         return false;
     }

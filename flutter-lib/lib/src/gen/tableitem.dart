@@ -55,37 +55,37 @@ class VTableItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 566: // background
+      case 567: // background
         background = r.color();
         return true;
-      case 567: // backgrounds
+      case 568: // backgrounds
         backgrounds = r.list((r) => r.color());
         return true;
-      case 568: // checked
+      case 569: // checked
         checked = r.boolean();
         return true;
-      case 569: // font
+      case 570: // font
         font = r.object(VFont.new);
         return true;
-      case 570: // fonts
+      case 571: // fonts
         fonts = r.list((r) => r.object(VFont.new));
         return true;
-      case 571: // foreground
+      case 572: // foreground
         foreground = r.color();
         return true;
-      case 572: // foregrounds
+      case 573: // foregrounds
         foregrounds = r.list((r) => r.color());
         return true;
-      case 573: // grayed
+      case 574: // grayed
         grayed = r.boolean();
         return true;
-      case 574: // images
+      case 575: // images
         images = r.list((r) => r.image());
         return true;
-      case 575: // paintedTexts
+      case 576: // paintedTexts
         paintedTexts = r.ints();
         return true;
-      case 576: // texts
+      case 577: // texts
         texts = r.strings();
         return true;
       default:
@@ -99,75 +99,75 @@ class VTableItem extends VItem {
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(566);
+        w.key(567);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgrounds;
       if (v_ != null) {
-        w.key(567);
+        w.key(568);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = checked;
       if (v_ != null) {
-        w.keyBoolean(568, v_);
+        w.keyBoolean(569, v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(569);
+        w.key(570);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = fonts;
       if (v_ != null) {
-        w.key(570);
+        w.key(571);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(571);
+        w.key(572);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregrounds;
       if (v_ != null) {
-        w.key(572);
+        w.key(573);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = grayed;
       if (v_ != null) {
-        w.keyBoolean(573, v_);
+        w.keyBoolean(574, v_);
       }
     }
     {
       final v_ = images;
       if (v_ != null) {
-        w.key(574);
+        w.key(575);
         w.list(v_, (e) => w.ref(e?.id));
       }
     }
     {
       final v_ = paintedTexts;
       if (v_ != null) {
-        w.key(575);
+        w.key(576);
         w.ints(v_);
       }
     }
     {
       final v_ = texts;
       if (v_ != null) {
-        w.key(576);
+        w.key(577);
         w.strings(v_);
       }
     }
@@ -176,16 +176,16 @@ class VTableItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(566, background);
-    visit(567, backgrounds);
-    visit(568, checked);
-    visit(569, font);
-    visit(570, fonts);
-    visit(571, foreground);
-    visit(572, foregrounds);
-    visit(573, grayed);
-    visit(574, images);
-    visit(575, paintedTexts);
-    visit(576, texts);
+    visit(567, background);
+    visit(568, backgrounds);
+    visit(569, checked);
+    visit(570, font);
+    visit(571, fonts);
+    visit(572, foreground);
+    visit(573, foregrounds);
+    visit(574, grayed);
+    visit(575, images);
+    visit(576, paintedTexts);
+    visit(577, texts);
   }
 }

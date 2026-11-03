@@ -50,6 +50,15 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     return math.min(defaultSize, cap);
   }
 
+  /// The larger side of [image] as Java sent it: the icon is drawn in that square rather than at the theme's size.
+  double? _imageSize(VImage? image) {
+    int? positive(int? a, int? b) => (a != null && a > 0) ? a : ((b != null && b > 0) ? b : null);
+    final w = positive(image?.width, image?.imageData?.width);
+    final h = positive(image?.height, image?.imageData?.height);
+    if (w == null || h == null) return null;
+    return math.max(w, h).toDouble();
+  }
+
   /// Hover feedback asked for by applications whose toolbars are dense enough that the background
   /// highlight alone is easy to miss. The item keeps the box `Sizes.computeSize` laid the toolbar
   /// out from, so hovering never reflows it.
@@ -552,9 +561,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       baseTextStyle: widgetTheme.fontStyle,
     );
 
-    final effectiveDefaultIconSize = constraints != null
-        ? _calculateIconSize(constraints, widgetTheme.defaultIconSize)
-        : widgetTheme.defaultIconSize;
+    final iconSize = biggerIconSize
+        ? widgetTheme.defaultIconSize
+        // Java measures the item from `image` alone, so the hot or disabled image is drawn at that size.
+        : _imageSize(state.image) ??
+            _imageSize(_getImageForState(enabled)) ??
+            widgetTheme.defaultIconSize;
+    final effectiveDefaultIconSize =
+        constraints != null ? _calculateIconSize(constraints, iconSize) : iconSize;
 
     return tagSemantics(Container(
       constraints: constraints,

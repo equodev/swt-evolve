@@ -87,15 +87,15 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).visible = value;
     }
 
-    public static final int ENABLED = 366;
+    public static final int ENABLED = 367;
 
-    public static final int ITEMS = 367;
+    public static final int ITEMS = 368;
 
-    public static final int LOCATION = 368;
+    public static final int LOCATION = 369;
 
-    public static final int ORIENTATION = 369;
+    public static final int ORIENTATION = 370;
 
-    public static final int VISIBLE = 370;
+    public static final int VISIBLE = 371;
 
     @Override
     public String wireName(int key) {
@@ -117,19 +117,19 @@ public class VMenu extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 366:
+            case 367:
                 w.write(getEnabled());
                 return true;
-            case 367:
+            case 368:
                 w.refs(getItems());
                 return true;
-            case 368:
+            case 369:
                 w.write(getLocation());
                 return true;
-            case 369:
+            case 370:
                 w.write((int) getOrientation());
                 return true;
-            case 370:
+            case 371:
                 w.write(getVisible());
                 return true;
         }
@@ -139,46 +139,46 @@ public class VMenu extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 366:
+            case 367:
                 {
                     boolean v_ = getEnabled();
-                    w.key(366);
+                    w.key(367);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 367:
+            case 368:
                 {
                     MenuItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(367);
-                    w.refs(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 368:
-                {
-                    Point v_ = getLocation();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(368);
-                    w.write(v_);
+                    w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 369:
                 {
-                    int v_ = getOrientation();
-                    if (v_ == 0)
+                    Point v_ = getLocation();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(369);
-                    w.write((int) v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 370:
                 {
-                    boolean v_ = getVisible();
+                    int v_ = getOrientation();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(370);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 371:
+                {
+                    boolean v_ = getVisible();
+                    w.key(371);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -186,7 +186,7 @@ public class VMenu extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 366, 367, 368, 369, 370 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 367, 368, 369, 370, 371 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -200,8 +200,8 @@ public class VMenu extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 366:
-            case 370:
+            case 367:
+            case 371:
                 return true;
         }
         return super.wireAlways(key);

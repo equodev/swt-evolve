@@ -164,33 +164,33 @@ public class VTreeItem extends VItem {
         return ((DartTreeItem) impl)._itemCount();
     }
 
-    public static final int BACKGROUND = 642;
+    public static final int BACKGROUND = 643;
 
-    public static final int BACKGROUNDS = 643;
+    public static final int BACKGROUNDS = 644;
 
-    public static final int CHECKED = 644;
+    public static final int CHECKED = 645;
 
-    public static final int EXPANDED = 645;
+    public static final int EXPANDED = 646;
 
-    public static final int FONT = 646;
+    public static final int FONT = 647;
 
-    public static final int FONTS = 647;
+    public static final int FONTS = 648;
 
-    public static final int FOREGROUND = 648;
+    public static final int FOREGROUND = 649;
 
-    public static final int FOREGROUNDS = 649;
+    public static final int FOREGROUNDS = 650;
 
-    public static final int GRAYED = 650;
+    public static final int GRAYED = 651;
 
-    public static final int IMAGES = 651;
+    public static final int IMAGES = 652;
 
-    public static final int ITEM_COUNT = 652;
+    public static final int ITEM_COUNT = 653;
 
-    public static final int ITEMS = 653;
+    public static final int ITEMS = 654;
 
-    public static final int PAINTED_TEXTS = 654;
+    public static final int PAINTED_TEXTS = 655;
 
-    public static final int TEXTS = 655;
+    public static final int TEXTS = 656;
 
     @Override
     public String wireName(int key) {
@@ -230,10 +230,10 @@ public class VTreeItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 642:
+            case 643:
                 w.write(getBackground());
                 return true;
-            case 643:
+            case 644:
                 {
                     Color[] a_ = getBackgrounds();
                     if (a_ == null)
@@ -244,16 +244,16 @@ public class VTreeItem extends VItem {
                     }
                 }
                 return true;
-            case 644:
+            case 645:
                 w.write(getChecked());
                 return true;
-            case 645:
+            case 646:
                 w.write(getExpanded());
                 return true;
-            case 646:
+            case 647:
                 w.object((getFont() == null || getFont().isDisposed() ? null : ((DartFont) getFont().getImpl()).getValue()));
                 return true;
-            case 647:
+            case 648:
                 {
                     Font[] a_ = getFonts();
                     if (a_ == null)
@@ -264,10 +264,10 @@ public class VTreeItem extends VItem {
                     }
                 }
                 return true;
-            case 648:
+            case 649:
                 w.write(getForeground());
                 return true;
-            case 649:
+            case 650:
                 {
                     Color[] a_ = getForegrounds();
                     if (a_ == null)
@@ -278,10 +278,10 @@ public class VTreeItem extends VItem {
                     }
                 }
                 return true;
-            case 650:
+            case 651:
                 w.write(getGrayed());
                 return true;
-            case 651:
+            case 652:
                 {
                     Image[] a_ = getImages();
                     if (a_ == null)
@@ -292,16 +292,16 @@ public class VTreeItem extends VItem {
                     }
                 }
                 return true;
-            case 653:
+            case 654:
                 w.refs(getItems());
                 return true;
-            case 654:
+            case 655:
                 w.write(getPaintedTexts());
                 return true;
-            case 655:
+            case 656:
                 w.write(getTexts());
                 return true;
-            case 652:
+            case 653:
                 w.write((int) getItemCount());
                 return true;
         }
@@ -311,23 +311,23 @@ public class VTreeItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 642:
+            case 643:
                 {
                     Color v_ = getBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(642);
+                    w.key(643);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 643:
+            case 644:
                 {
                     Color[] v_ = getBackgrounds();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(643);
+                    w.key(644);
                     {
                         Color[] a_ = v_;
                         if (a_ == null)
@@ -339,18 +339,9 @@ public class VTreeItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 644:
-                {
-                    boolean v_ = getChecked();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(644);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 645:
                 {
-                    boolean v_ = getExpanded();
+                    boolean v_ = getChecked();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(645);
@@ -359,22 +350,31 @@ public class VTreeItem extends VItem {
                 }
             case 646:
                 {
+                    boolean v_ = getExpanded();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(646);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 647:
+                {
                     Font v_ = getFont();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartFont) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(646);
+                    w.key(647);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 647:
+            case 648:
                 {
                     Font[] v_ = getFonts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(647);
+                    w.key(648);
                     {
                         Font[] a_ = v_;
                         if (a_ == null)
@@ -386,23 +386,23 @@ public class VTreeItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 648:
+            case 649:
                 {
                     Color v_ = getForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(648);
+                    w.key(649);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 649:
+            case 650:
                 {
                     Color[] v_ = getForegrounds();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(649);
+                    w.key(650);
                     {
                         Color[] a_ = v_;
                         if (a_ == null)
@@ -414,23 +414,23 @@ public class VTreeItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 650:
+            case 651:
                 {
                     boolean v_ = getGrayed();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(650);
+                    w.key(651);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 651:
+            case 652:
                 {
                     Image[] v_ = getImages();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(651);
+                    w.key(652);
                     {
                         Image[] a_ = v_;
                         if (a_ == null)
@@ -442,43 +442,43 @@ public class VTreeItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 653:
+            case 654:
                 {
                     TreeItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(653);
+                    w.key(654);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 654:
+            case 655:
                 {
                     int[] v_ = getPaintedTexts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(654);
+                    w.key(655);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 655:
+            case 656:
                 {
                     String[] v_ = getTexts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(655);
+                    w.key(656);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 652:
+            case 653:
                 {
                     int v_ = getItemCount();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(652);
+                    w.key(653);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -486,7 +486,7 @@ public class VTreeItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 642, 643, 644, 645, 646, 647, 648, 649, 650, 651, 653, 654, 655, 652 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 643, 644, 645, 646, 647, 648, 649, 650, 651, 652, 654, 655, 656, 653 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -505,7 +505,7 @@ public class VTreeItem extends VItem {
     @Override
     public boolean wireKeepsEmpty(int key) {
         switch(key) {
-            case 654:
+            case 655:
                 return true;
         }
         return super.wireKeepsEmpty(key);

@@ -7,6 +7,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * item's bounds. The numbers are asymmetric and not guessable, which is the point of measuring them.
  */
 @Tag("native-unit")
+@ExtendWith(ImageMeasuredToolItems.class)
 class ToolBarSizeParityNativeTest {
 
     /** Native adds this much around an item's image. Asymmetric — it is not one inset twice. */

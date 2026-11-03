@@ -36,9 +36,9 @@ public class VDirectoryDialog extends VDialog {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(175);
-        w.write(getFilterPath());
         w.key(176);
+        w.write(getFilterPath());
+        w.key(177);
         w.write(getMessage());
     }
 }

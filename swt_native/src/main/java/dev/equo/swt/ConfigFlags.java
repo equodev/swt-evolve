@@ -219,8 +219,9 @@ public class ConfigFlags implements WireObject {
 
     /** Measures every {@code ToolItem} image as an icon of the theme's size, whatever the size of the
      *  image, so every ToolBar draws its icons at that one size and none is shrunk to fit its bar.
-     *  Off by default: an item is measured from its image, as the platform does.
-     *  Set with {@code -Dswt.evolve.bigger_icon_size=true}. */
+     *  On whenever icons are replaced (Evolve's set, or an {@code assets_path} pack); off otherwise,
+     *  and then an item is measured from its image, as the platform does.
+     *  Turn it off with {@code -Dswt.evolve.bigger_icon_size=false}. */
     public boolean bigger_icon_size;
 
     /** Draws a CHECK or RADIO menu item without its box or ring: only the mark, in the item text
@@ -257,6 +258,7 @@ public class ConfigFlags implements WireObject {
             "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
             "scale_vertical_minimum_at_top",
+            "bigger_icon_size",
     };
 
     /** The flags the client sets (a theme picked on its side). */
@@ -357,6 +359,8 @@ public class ConfigFlags implements WireObject {
         w.write(use_swt_border);
         w.key(WireTable.CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP);
         w.write(scale_vertical_minimum_at_top);
+        w.key(WireTable.CONFIG_FLAGS_BIGGER_ICON_SIZE);
+        w.write(bigger_icon_size);
     }
 
     public static ConfigFlags use_swt_fonts(boolean v) {

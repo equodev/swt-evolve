@@ -31,7 +31,7 @@ public class VFont extends VResource {
         ((DartFont) impl).fontData = value;
     }
 
-    public static final int FONT_DATA = 232;
+    public static final int FONT_DATA = 233;
 
     @Override
     public String wireName(int key) {
@@ -45,7 +45,7 @@ public class VFont extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 232:
+            case 233:
                 {
                     FontData[] a_ = getFontData();
                     if (a_ == null)
@@ -63,14 +63,14 @@ public class VFont extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 232:
+            case 233:
                 {
                     FontData[] v_ = getFontData();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(232);
+                    w.key(233);
                     {
                         FontData[] a_ = v_;
                         if (a_ == null)
@@ -86,7 +86,7 @@ public class VFont extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 232 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 233 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -115,7 +115,7 @@ public class VFont extends VResource {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(232);
+        w.key(233);
         {
             FontData[] a_ = getFontData();
             if (a_ == null)

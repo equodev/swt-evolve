@@ -13,16 +13,16 @@ class VRectangle implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 419: // height
+      case 420: // height
         height = r.int32();
         return true;
-      case 420: // width
+      case 421: // width
         width = r.int32();
         return true;
-      case 421: // x
+      case 422: // x
         x = r.int32();
         return true;
-      case 422: // y
+      case 423: // y
         y = r.int32();
         return true;
       default:
@@ -32,29 +32,29 @@ class VRectangle implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(419, height);
-    visit(420, width);
-    visit(421, x);
-    visit(422, y);
+    visit(420, height);
+    visit(421, width);
+    visit(422, x);
+    visit(423, y);
   }
 
   @override
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = height;
-      w.keyInt32(419, v_);
-    }
-    {
-      final v_ = width;
       w.keyInt32(420, v_);
     }
     {
-      final v_ = x;
+      final v_ = width;
       w.keyInt32(421, v_);
     }
     {
-      final v_ = y;
+      final v_ = x;
       w.keyInt32(422, v_);
+    }
+    {
+      final v_ = y;
+      w.keyInt32(423, v_);
     }
   }
 }

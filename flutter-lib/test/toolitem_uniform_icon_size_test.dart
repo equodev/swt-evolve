@@ -15,6 +15,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_settings/toolitem_theme_settings.dart';
 
 const List<int> _pngBytes = <int>[
@@ -123,7 +125,10 @@ Future<Size> _iconSize(WidgetTester tester, VToolBar bar) async {
 }
 
 void main() {
+  tearDown(resetConfigFlags);
+
   testWidgets('with bigger_icon_size every bar draws its icons at the theme size', (tester) async {
+    setConfigFlags(ConfigFlags()..bigger_icon_size = true);
     final withDropDown = await _iconSize(tester, _bar(3, _themeIconSize, dropDown: true));
     final withControl = await _iconSize(tester, _bar(2, _themeIconSize, hostsControl: true));
     final iconsOnly = await _iconSize(tester, _bar(1, _themeIconSize));
@@ -150,5 +155,31 @@ void main() {
     expect(tester.getRect(find.byType(ToolItemSwt<VToolItem>).first).width,
         lessThanOrEqualTo(_imageSize + _padW + 0.5),
         reason: 'an icon item must fit the width Java measured for it');
+  });
+
+  testWidgets('without bigger_icon_size an icon is drawn at its image size, not stretched',
+      (tester) async {
+    final icon = await _iconSize(tester, _bar(1, _imageSize));
+
+    expect(icon.width, moreOrLessEquals(_imageSize.toDouble(), epsilon: 0.5),
+        reason: 'a 16 px image must not be stretched towards the theme size');
+  });
+
+  testWidgets('a disabled image of another size is drawn at the size Java measured from the image',
+      (tester) async {
+    final bar = _bar(1, _imageSize);
+    for (final item in bar.items!) {
+      item
+        ..enabled = false
+        ..disabledImage = (VImage()
+          ..imageData = (VImageData()
+            ..width = 32
+            ..height = 32
+            ..data = _pngBytes));
+    }
+    final icon = await _iconSize(tester, bar);
+
+    expect(icon.width, moreOrLessEquals(_imageSize.toDouble(), epsilon: 0.5),
+        reason: 'Sizes.computeSize measures `image` only, so the disabled image must fit that box');
   });
 }

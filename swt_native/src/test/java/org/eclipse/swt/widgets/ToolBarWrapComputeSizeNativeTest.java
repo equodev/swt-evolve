@@ -8,11 +8,13 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** A {@link SWT#WRAP} bar measured at a given extent answers with the runs its layout wraps it into. */
 @Tag("native-unit")
+@ExtendWith(ImageMeasuredToolItems.class)
 class ToolBarWrapComputeSizeNativeTest {
 
     /** A 16x16 image item: the image plus 7x6 of padding. */

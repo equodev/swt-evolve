@@ -59,22 +59,22 @@ class VSlider extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 456: // increment
+      case 457: // increment
         increment = r.int32();
         return true;
-      case 457: // maximum
+      case 458: // maximum
         maximum = r.int32();
         return true;
-      case 458: // minimum
+      case 459: // minimum
         minimum = r.int32();
         return true;
-      case 459: // pageIncrement
+      case 460: // pageIncrement
         pageIncrement = r.int32();
         return true;
-      case 460: // selection
+      case 461: // selection
         selection = r.int32();
         return true;
-      case 461: // thumb
+      case 462: // thumb
         thumb = r.int32();
         return true;
       default:
@@ -88,37 +88,37 @@ class VSlider extends VControl {
     {
       final v_ = increment;
       if (v_ != null) {
-        w.keyInt32(456, v_);
+        w.keyInt32(457, v_);
       }
     }
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(457, v_);
+        w.keyInt32(458, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(458, v_);
+        w.keyInt32(459, v_);
       }
     }
     {
       final v_ = pageIncrement;
       if (v_ != null) {
-        w.keyInt32(459, v_);
+        w.keyInt32(460, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(460, v_);
+        w.keyInt32(461, v_);
       }
     }
     {
       final v_ = thumb;
       if (v_ != null) {
-        w.keyInt32(461, v_);
+        w.keyInt32(462, v_);
       }
     }
   }
@@ -126,11 +126,11 @@ class VSlider extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(456, increment);
-    visit(457, maximum);
-    visit(458, minimum);
-    visit(459, pageIncrement);
-    visit(460, selection);
-    visit(461, thumb);
+    visit(457, increment);
+    visit(458, maximum);
+    visit(459, minimum);
+    visit(460, pageIncrement);
+    visit(461, selection);
+    visit(462, thumb);
   }
 }

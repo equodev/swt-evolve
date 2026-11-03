@@ -8,6 +8,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * at the running total of the items before it, separators included.
  */
 @Tag("native-unit")
+@ExtendWith(ImageMeasuredToolItems.class)
 class ToolBarItemBoundsNativeTest {
 
     /** Native's size for a 16x16 image item: the image plus an asymmetric 7x6 of padding. */

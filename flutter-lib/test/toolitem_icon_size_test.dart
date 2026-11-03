@@ -8,6 +8,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
@@ -50,7 +52,11 @@ VToolBar _toolBar(VToolItem item) => VToolBar()
 void main() {
   const double themeIconSize = 30.0;
 
-  testWidgets('a push item renders its icon at the toolbar icon size', (tester) async {
+  tearDown(resetConfigFlags);
+
+  testWidgets('with bigger_icon_size a push item renders its icon at the toolbar icon size',
+      (tester) async {
+    setConfigFlags(ConfigFlags()..bigger_icon_size = true);
     await tester.pumpWidget(EvolveApp(
       theme: ThemeMode.light,
       contentWidget: SizedBox(

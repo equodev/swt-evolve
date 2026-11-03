@@ -144,27 +144,27 @@ public class VTableItem extends VItem {
         ((DartTableItem) impl).strings = value;
     }
 
-    public static final int BACKGROUND = 566;
+    public static final int BACKGROUND = 567;
 
-    public static final int BACKGROUNDS = 567;
+    public static final int BACKGROUNDS = 568;
 
-    public static final int CHECKED = 568;
+    public static final int CHECKED = 569;
 
-    public static final int FONT = 569;
+    public static final int FONT = 570;
 
-    public static final int FONTS = 570;
+    public static final int FONTS = 571;
 
-    public static final int FOREGROUND = 571;
+    public static final int FOREGROUND = 572;
 
-    public static final int FOREGROUNDS = 572;
+    public static final int FOREGROUNDS = 573;
 
-    public static final int GRAYED = 573;
+    public static final int GRAYED = 574;
 
-    public static final int IMAGES = 574;
+    public static final int IMAGES = 575;
 
-    public static final int PAINTED_TEXTS = 575;
+    public static final int PAINTED_TEXTS = 576;
 
-    public static final int TEXTS = 576;
+    public static final int TEXTS = 577;
 
     @Override
     public String wireName(int key) {
@@ -198,10 +198,10 @@ public class VTableItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 566:
+            case 567:
                 w.write(getBackground());
                 return true;
-            case 567:
+            case 568:
                 {
                     Color[] a_ = getBackgrounds();
                     if (a_ == null)
@@ -212,13 +212,13 @@ public class VTableItem extends VItem {
                     }
                 }
                 return true;
-            case 568:
+            case 569:
                 w.write(getChecked());
                 return true;
-            case 569:
+            case 570:
                 w.object((getFont() == null || getFont().isDisposed() ? null : getFont().getImpl() instanceof DartFont ? ((DartFont) getFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getFont()).getImpl()).getValue()));
                 return true;
-            case 570:
+            case 571:
                 {
                     Font[] a_ = getFonts();
                     if (a_ == null)
@@ -229,10 +229,10 @@ public class VTableItem extends VItem {
                     }
                 }
                 return true;
-            case 571:
+            case 572:
                 w.write(getForeground());
                 return true;
-            case 572:
+            case 573:
                 {
                     Color[] a_ = getForegrounds();
                     if (a_ == null)
@@ -243,10 +243,10 @@ public class VTableItem extends VItem {
                     }
                 }
                 return true;
-            case 573:
+            case 574:
                 w.write(getGrayed());
                 return true;
-            case 574:
+            case 575:
                 {
                     Image[] a_ = getImages();
                     if (a_ == null)
@@ -257,10 +257,10 @@ public class VTableItem extends VItem {
                     }
                 }
                 return true;
-            case 575:
+            case 576:
                 w.write(getPaintedTexts());
                 return true;
-            case 576:
+            case 577:
                 w.write(getTexts());
                 return true;
         }
@@ -270,23 +270,23 @@ public class VTableItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 566:
+            case 567:
                 {
                     Color v_ = getBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(566);
+                    w.key(567);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 567:
+            case 568:
                 {
                     Color[] v_ = getBackgrounds();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(567);
+                    w.key(568);
                     {
                         Color[] a_ = v_;
                         if (a_ == null)
@@ -298,33 +298,33 @@ public class VTableItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 568:
+            case 569:
                 {
                     boolean v_ = getChecked();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(568);
+                    w.key(569);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 569:
+            case 570:
                 {
                     Font v_ = getFont();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(569);
+                    w.key(570);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 570:
+            case 571:
                 {
                     Font[] v_ = getFonts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(570);
+                    w.key(571);
                     {
                         Font[] a_ = v_;
                         if (a_ == null)
@@ -336,23 +336,23 @@ public class VTableItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 571:
+            case 572:
                 {
                     Color v_ = getForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(571);
+                    w.key(572);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 572:
+            case 573:
                 {
                     Color[] v_ = getForegrounds();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(572);
+                    w.key(573);
                     {
                         Color[] a_ = v_;
                         if (a_ == null)
@@ -364,23 +364,23 @@ public class VTableItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 573:
+            case 574:
                 {
                     boolean v_ = getGrayed();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(573);
+                    w.key(574);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 574:
+            case 575:
                 {
                     Image[] v_ = getImages();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(574);
+                    w.key(575);
                     {
                         Image[] a_ = v_;
                         if (a_ == null)
@@ -392,23 +392,23 @@ public class VTableItem extends VItem {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 575:
+            case 576:
                 {
                     int[] v_ = getPaintedTexts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(575);
+                    w.key(576);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 576:
+            case 577:
                 {
                     String[] v_ = getTexts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(576);
+                    w.key(577);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -416,7 +416,7 @@ public class VTableItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 566, 567, 568, 569, 570, 571, 572, 573, 574, 575, 576 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 567, 568, 569, 570, 571, 572, 573, 574, 575, 576, 577 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -435,7 +435,7 @@ public class VTableItem extends VItem {
     @Override
     public boolean wireKeepsEmpty(int key) {
         switch(key) {
-            case 575:
+            case 576:
                 return true;
         }
         return super.wireKeepsEmpty(key);

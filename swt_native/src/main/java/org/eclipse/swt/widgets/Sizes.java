@@ -522,7 +522,8 @@ public class Sizes {
                 int textWidth = 0, textHeight = 0;
 
                 if (hasImage) {
-                    if (Config.getConfigFlags().bigger_icon_size) {
+                    // A folder's own buttons are not application icons, and must fit its tab row.
+                    if (Config.getConfigFlags().bigger_icon_size && !CTabFolderHelper.ownsToolBar(w.parent)) {
                         imageWidth = imageHeight = (int) Math.round(ToolItemSizes.ICON_SIZE);
                     } else {
                         Rectangle imageBounds = w.image.getBounds();

@@ -516,48 +516,48 @@ public class TextStyle implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(589);
-        w.object((font == null || font.isDisposed() ? null : font.getImpl() instanceof DartFont ? ((DartFont) font.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(font).getImpl()).getValue()));
         w.key(590);
-        w.write(foreground);
-        w.key(586);
-        w.write(background);
-        w.key(595);
-        w.write(underline);
-        w.key(596);
-        w.write(underlineColor);
-        w.key(597);
-        w.write((int) underlineStyle);
-        w.key(593);
-        w.write(strikeout);
-        w.key(594);
-        w.write(strikeoutColor);
-        w.key(588);
-        w.write((int) borderStyle);
-        w.key(587);
-        w.write(borderColor);
+        w.object((font == null || font.isDisposed() ? null : font.getImpl() instanceof DartFont ? ((DartFont) font.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(font).getImpl()).getValue()));
         w.key(591);
-        w.object(metrics);
+        w.write(foreground);
+        w.key(587);
+        w.write(background);
+        w.key(596);
+        w.write(underline);
+        w.key(597);
+        w.write(underlineColor);
+        w.key(598);
+        w.write((int) underlineStyle);
+        w.key(594);
+        w.write(strikeout);
+        w.key(595);
+        w.write(strikeoutColor);
+        w.key(589);
+        w.write((int) borderStyle);
+        w.key(588);
+        w.write(borderColor);
         w.key(592);
+        w.object(metrics);
+        w.key(593);
         w.write((int) rise);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 595:
+            case 596:
                 underline = r.bool();
                 return true;
-            case 597:
+            case 598:
                 underlineStyle = r.int32();
                 return true;
-            case 593:
+            case 594:
                 strikeout = r.bool();
                 return true;
-            case 588:
+            case 589:
                 borderStyle = r.int32();
                 return true;
-            case 592:
+            case 593:
                 rise = r.int32();
                 return true;
         }

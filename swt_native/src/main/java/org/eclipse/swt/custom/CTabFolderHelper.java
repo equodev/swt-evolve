@@ -17,6 +17,7 @@ import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Sizes;
+import org.eclipse.swt.widgets.ToolBar;
 
 public class CTabFolderHelper {
     // Constants from CTabFolderRenderer
@@ -62,6 +63,13 @@ public class CTabFolderHelper {
         for (CTabItem item : folder.items)
             if (!item.isDisposed()) growth = Math.max(growth, imageGrowth(item.getImage()));
         return growth;
+    }
+
+    /** Whether {@code bar} is the one a folder builds for its own minimize, maximize or chevron button. */
+    public static boolean ownsToolBar(ToolBar bar) {
+        if (!(bar.getParent() instanceof CTabFolder)) return false;
+        DartCTabFolder folder = (DartCTabFolder) bar.getParent().getImpl();
+        return bar == folder.minMaxTb || bar == folder.chevronTb;
     }
 
     private static int imageGrowth(Image image) {

@@ -55,19 +55,19 @@ class VMenu extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 366: // enabled
+      case 367: // enabled
         enabled = r.boolean();
         return true;
-      case 367: // items
+      case 368: // items
         items = r.refs<VMenuItem>();
         return true;
-      case 368: // location
+      case 369: // location
         location = r.point();
         return true;
-      case 369: // orientation
+      case 370: // orientation
         orientation = r.int32();
         return true;
-      case 370: // visible
+      case 371: // visible
         visible = r.boolean();
         return true;
       default:
@@ -81,33 +81,33 @@ class VMenu extends VWidget {
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.keyBoolean(366, v_);
+        w.keyBoolean(367, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(367);
+        w.key(368);
         w.refs(v_);
       }
     }
     {
       final v_ = location;
       if (v_ != null) {
-        w.key(368);
+        w.key(369);
         w.pointValue(v_);
       }
     }
     {
       final v_ = orientation;
       if (v_ != null) {
-        w.keyInt32(369, v_);
+        w.keyInt32(370, v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(370, v_);
+        w.keyBoolean(371, v_);
       }
     }
   }
@@ -115,11 +115,11 @@ class VMenu extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(366, enabled);
-    visit(367, items);
-    visit(368, location);
-    visit(369, orientation);
-    visit(370, visible);
+    visit(367, enabled);
+    visit(368, items);
+    visit(369, location);
+    visit(370, orientation);
+    visit(371, visible);
   }
 
   @override

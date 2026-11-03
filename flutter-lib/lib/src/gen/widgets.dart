@@ -155,7 +155,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = -822819000;
+const int wireFingerprint = 1662969180;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -246,575 +246,576 @@ abstract final class WireKey {
   static const int k_Composite_backgroundMode = 85;
   static const int k_Composite_children = 86;
   static const int k_ConfigFlags_assets_path = 87;
-  static const int k_ConfigFlags_csd_maximize = 88;
-  static const int k_ConfigFlags_csd_os = 89;
-  static const int k_ConfigFlags_csd_placement = 90;
-  static const int k_ConfigFlags_csd_titlebar_color = 91;
-  static const int k_ConfigFlags_ctabfolder_tab_scroll = 92;
-  static const int k_ConfigFlags_ctabfolder_topright_auto_hide = 93;
-  static const int k_ConfigFlags_ctabfolder_visible_controls = 94;
-  static const int k_ConfigFlags_custom_tooltip = 95;
-  static const int k_ConfigFlags_decimal_separator = 96;
-  static const int k_ConfigFlags_decorations_align = 97;
-  static const int k_ConfigFlags_disable_control_gc_overlay = 98;
-  static const int k_ConfigFlags_disable_evolve_icons = 99;
-  static const int k_ConfigFlags_disable_hover_zoom = 100;
-  static const int k_ConfigFlags_disable_swt_canvas_colors = 101;
-  static const int k_ConfigFlags_double_click_timeout_ms = 102;
-  static const int k_ConfigFlags_focus_indicators = 103;
-  static const int k_ConfigFlags_font_point_scale = 104;
-  static const int k_ConfigFlags_force_theme = 105;
-  static const int k_ConfigFlags_gc_icons_replacement = 106;
-  static const int k_ConfigFlags_hover_delay_ms = 107;
-  static const int k_ConfigFlags_image_disable_icons_replacement = 108;
-  static const int k_ConfigFlags_locale = 109;
-  static const int k_ConfigFlags_notification_popup = 110;
-  static const int k_ConfigFlags_preserve_icon_colors = 111;
-  static const int k_ConfigFlags_print_move = 112;
-  static const int k_ConfigFlags_push_button_margin = 113;
-  static const int k_ConfigFlags_scale_vertical_minimum_at_top = 114;
-  static const int k_ConfigFlags_show_scaling_control = 115;
-  static const int k_ConfigFlags_show_theme_color_palette = 116;
-  static const int k_ConfigFlags_system_menu_bar = 117;
-  static const int k_ConfigFlags_theme_color = 118;
-  static const int k_ConfigFlags_theme_colors_by_widget = 119;
-  static const int k_ConfigFlags_theme_name = 120;
-  static const int k_ConfigFlags_transparent_menu_check_box = 121;
-  static const int k_ConfigFlags_ui_zoom = 122;
-  static const int k_ConfigFlags_use_special_dropdown_button = 123;
-  static const int k_ConfigFlags_use_swt_border = 124;
-  static const int k_ConfigFlags_use_swt_colors = 125;
-  static const int k_ConfigFlags_use_swt_font_colors = 126;
-  static const int k_ConfigFlags_use_swt_font_colors_by_widget = 127;
-  static const int k_ConfigFlags_use_swt_fonts = 128;
-  static const int k_Control_background = 129;
-  static const int k_Control_backgroundImage = 130;
-  static const int k_Control_bounds = 131;
-  static const int k_Control_cursor = 132;
-  static const int k_Control_dragDetect = 133;
-  static const int k_Control_dragSource = 134;
-  static const int k_Control_dragSourceId = 135;
-  static const int k_Control_dropTargetId = 136;
-  static const int k_Control_enabled = 137;
-  static const int k_Control_font = 138;
-  static const int k_Control_foreground = 139;
-  static const int k_Control_hasOwnBackground = 140;
-  static const int k_Control_inheritsBackground = 141;
-  static const int k_Control_menu = 142;
-  static const int k_Control_region = 143;
-  static const int k_Control_tabStop = 144;
-  static const int k_Control_toolTipText = 145;
-  static const int k_Control_visible = 146;
-  static const int k_ControlEditor_editor = 147;
-  static const int k_CoolBar_itemOrder = 148;
-  static const int k_CoolBar_itemSizes = 149;
-  static const int k_CoolBar_items = 150;
-  static const int k_CoolBar_wrapIndices = 151;
-  static const int k_CoolItem_control = 152;
-  static const int k_CoolItem_preferredSize = 153;
-  static const int k_Cursor_cursorStyle = 154;
-  static const int k_Cursor_hotspotX = 155;
-  static const int k_Cursor_hotspotY = 156;
-  static const int k_Cursor_image = 157;
-  static const int k_DateTime_day = 158;
-  static const int k_DateTime_hours = 159;
-  static const int k_DateTime_minutes = 160;
-  static const int k_DateTime_month = 161;
-  static const int k_DateTime_seconds = 162;
-  static const int k_DateTime_year = 163;
-  static const int k_Decorations_menuBar = 164;
-  static const int k_Decorations_menuStripHeight = 165;
-  static const int k_Decorations_ownMenuStrip = 166;
-  static const int k_Decorations_text = 167;
-  static const int k_Device_fontList = 168;
-  static const int k_Device_tracking = 169;
-  static const int k_Device_warnings = 170;
-  static const int k_Dialog_id = 171;
-  static const int k_Dialog_style = 172;
-  static const int k_Dialog_swt = 173;
-  static const int k_Dialog_text = 174;
-  static const int k_DirectoryDialog_filterPath = 175;
-  static const int k_DirectoryDialog_message = 176;
-  static const int k_Display_activeShellId = 177;
-  static const int k_Display_config = 178;
-  static const int k_Display_focusHolderId = 179;
-  static const int k_Display_mainShellId = 180;
-  static const int k_Display_popups = 181;
-  static const int k_Display_shells = 182;
-  static const int k_Display_systemMenu = 183;
-  static const int k_Display_tooltips = 184;
-  static const int k_Display_windowedShellIds = 185;
-  static const int k_Event_button = 186;
-  static const int k_Event_character = 187;
-  static const int k_Event_count = 188;
-  static const int k_Event_currentDataTypeId = 189;
-  static const int k_Event_detail = 190;
-  static const int k_Event_doit = 191;
-  static const int k_Event_dragImage = 192;
-  static const int k_Event_end = 193;
-  static const int k_Event_feedback = 194;
-  static const int k_Event_gc = 195;
-  static const int k_Event_height = 196;
-  static const int k_Event_index = 197;
-  static const int k_Event_item = 198;
-  static const int k_Event_itemId = 199;
-  static const int k_Event_keyCode = 200;
-  static const int k_Event_keyLocation = 201;
-  static const int k_Event_magnification = 202;
-  static const int k_Event_operations = 203;
-  static const int k_Event_rotation = 204;
-  static const int k_Event_segments = 205;
-  static const int k_Event_segmentsChars = 206;
-  static const int k_Event_start = 207;
-  static const int k_Event_stateMask = 208;
-  static const int k_Event_text = 209;
-  static const int k_Event_time = 210;
-  static const int k_Event_touches = 211;
-  static const int k_Event_type = 212;
-  static const int k_Event_widget = 213;
-  static const int k_Event_width = 214;
-  static const int k_Event_x = 215;
-  static const int k_Event_xDirection = 216;
-  static const int k_Event_y = 217;
-  static const int k_Event_yDirection = 218;
-  static const int k_ExpandBar_items = 219;
-  static const int k_ExpandBar_spacing = 220;
-  static const int k_ExpandItem_control = 221;
-  static const int k_ExpandItem_expanded = 222;
-  static const int k_ExpandItem_headerHeight = 223;
-  static const int k_ExpandItem_height = 224;
-  static const int k_FileDialog_fileName = 225;
-  static const int k_FileDialog_fileNames = 226;
-  static const int k_FileDialog_filterExtensions = 227;
-  static const int k_FileDialog_filterIndex = 228;
-  static const int k_FileDialog_filterNames = 229;
-  static const int k_FileDialog_filterPath = 230;
-  static const int k_FileDialog_overwrite = 231;
-  static const int k_Font_fontData = 232;
-  static const int k_FontData_height = 233;
-  static const int k_FontData_name = 234;
-  static const int k_FontData_style = 235;
-  static const int k_FontDialog_RGB = 236;
-  static const int k_FontDialog_effectsVisible = 237;
-  static const int k_FontDialog_fontData = 238;
-  static const int k_FontDialog_fontList = 239;
-  static const int k_FormAttachment_alignment = 240;
-  static const int k_FormAttachment_control = 241;
-  static const int k_FormAttachment_denominator = 242;
-  static const int k_FormAttachment_numerator = 243;
-  static const int k_FormAttachment_offset = 244;
-  static const int k_FormData_bottom = 245;
-  static const int k_FormData_cacheBottom = 246;
-  static const int k_FormData_cacheHeight = 247;
-  static const int k_FormData_cacheLeft = 248;
-  static const int k_FormData_cacheRight = 249;
-  static const int k_FormData_cacheTop = 250;
-  static const int k_FormData_cacheWidth = 251;
-  static const int k_FormData_currentHeight = 252;
-  static const int k_FormData_currentHhint = 253;
-  static const int k_FormData_currentWhint = 254;
-  static const int k_FormData_currentWidth = 255;
-  static const int k_FormData_defaultHeight = 256;
-  static const int k_FormData_defaultHhint = 257;
-  static const int k_FormData_defaultWhint = 258;
-  static const int k_FormData_defaultWidth = 259;
-  static const int k_FormData_height = 260;
-  static const int k_FormData_isVisited = 261;
-  static const int k_FormData_left = 262;
-  static const int k_FormData_needed = 263;
-  static const int k_FormData_right = 264;
-  static const int k_FormData_top = 265;
-  static const int k_FormData_width = 266;
-  static const int k_GC_XORMode = 267;
-  static const int k_GC_alpha = 268;
-  static const int k_GC_antialias = 269;
-  static const int k_GC_background = 270;
-  static const int k_GC_backgroundPattern = 271;
-  static const int k_GC_bufferScale = 272;
-  static const int k_GC_clipping = 273;
-  static const int k_GC_clippingPath = 274;
-  static const int k_GC_clippingRects = 275;
-  static const int k_GC_clippingText = 276;
-  static const int k_GC_fillRule = 277;
-  static const int k_GC_font = 278;
-  static const int k_GC_foreground = 279;
-  static const int k_GC_foregroundPattern = 280;
-  static const int k_GC_hoverFills = 281;
-  static const int k_GC_interpolation = 282;
-  static const int k_GC_lineCap = 283;
-  static const int k_GC_lineDash = 284;
-  static const int k_GC_lineDashOffset = 285;
-  static const int k_GC_lineJoin = 286;
-  static const int k_GC_lineStyle = 287;
-  static const int k_GC_lineWidth = 288;
-  static const int k_GC_selectionFills = 289;
-  static const int k_GC_style = 290;
-  static const int k_GC_themedCanvas = 291;
-  static const int k_GC_transform = 292;
-  static const int k_GLData_accumAlphaSize = 293;
-  static const int k_GLData_accumBlueSize = 294;
-  static const int k_GLData_accumGreenSize = 295;
-  static const int k_GLData_accumRedSize = 296;
-  static const int k_GLData_alphaSize = 297;
-  static const int k_GLData_blueSize = 298;
-  static const int k_GLData_depthSize = 299;
-  static const int k_GLData_doubleBuffer = 300;
-  static const int k_GLData_greenSize = 301;
-  static const int k_GLData_redSize = 302;
-  static const int k_GLData_sampleBuffers = 303;
-  static const int k_GLData_samples = 304;
-  static const int k_GLData_shareContext = 305;
-  static const int k_GLData_stencilSize = 306;
-  static const int k_GLData_stereo = 307;
-  static const int k_GlyphMetrics_ascent = 308;
-  static const int k_GlyphMetrics_descent = 309;
-  static const int k_GlyphMetrics_width = 310;
-  static const int k_GridData_cacheHeight = 311;
-  static const int k_GridData_cacheWidth = 312;
-  static const int k_GridData_currentHeight = 313;
-  static const int k_GridData_currentHhint = 314;
-  static const int k_GridData_currentWhint = 315;
-  static const int k_GridData_currentWidth = 316;
-  static const int k_GridData_defaultHeight = 317;
-  static const int k_GridData_defaultHhint = 318;
-  static const int k_GridData_defaultWhint = 319;
-  static const int k_GridData_defaultWidth = 320;
-  static const int k_GridData_exclude = 321;
-  static const int k_GridData_grabExcessHorizontalSpace = 322;
-  static const int k_GridData_grabExcessVerticalSpace = 323;
-  static const int k_GridData_heightHint = 324;
-  static const int k_GridData_horizontalAlignment = 325;
-  static const int k_GridData_horizontalIndent = 326;
-  static const int k_GridData_horizontalSpan = 327;
-  static const int k_GridData_minimumHeight = 328;
-  static const int k_GridData_minimumWidth = 329;
-  static const int k_GridData_verticalAlignment = 330;
-  static const int k_GridData_verticalIndent = 331;
-  static const int k_GridData_verticalSpan = 332;
-  static const int k_GridData_widthHint = 333;
-  static const int k_Group_text = 334;
-  static const int k_Image_filename = 335;
-  static const int k_Image_height = 336;
-  static const int k_Image_imageData = 337;
-  static const int k_Image_remoteRef = 338;
-  static const int k_Image_svgContent = 339;
-  static const int k_Image_width = 340;
-  static const int k_ImageData_data = 341;
-  static const int k_ImageData_depth = 342;
-  static const int k_ImageData_height = 343;
-  static const int k_ImageData_width = 344;
-  static const int k_Item_image = 345;
-  static const int k_Item_text = 346;
-  static const int k_Label_image = 347;
-  static const int k_Label_text = 348;
-  static const int k_LineInfo_alignment = 349;
-  static const int k_LineInfo_background = 350;
-  static const int k_LineInfo_flags = 351;
-  static const int k_LineInfo_indent = 352;
-  static const int k_LineInfo_justify = 353;
-  static const int k_LineInfo_segments = 354;
-  static const int k_LineInfo_segmentsChars = 355;
-  static const int k_LineInfo_tabStops = 356;
-  static const int k_LineInfo_verticalIndent = 357;
-  static const int k_LineInfo_wrapIndent = 358;
-  static const int k_LineSizeInfo_height = 359;
-  static const int k_LineSizeInfo_width = 360;
-  static const int k_Link_linkForeground = 361;
-  static const int k_Link_text = 362;
-  static const int k_List_items = 363;
-  static const int k_List_selection = 364;
-  static const int k_List_topIndex = 365;
-  static const int k_Menu_enabled = 366;
-  static const int k_Menu_items = 367;
-  static const int k_Menu_location = 368;
-  static const int k_Menu_orientation = 369;
-  static const int k_Menu_visible = 370;
-  static const int k_MenuItem_accelerator = 371;
-  static const int k_MenuItem_enabled = 372;
-  static const int k_MenuItem_menu = 373;
-  static const int k_MenuItem_selection = 374;
-  static const int k_MenuItem_toolTipText = 375;
-  static const int k_MessageBox_buttonLabels = 376;
-  static const int k_MessageBox_message = 377;
-  static const int k_Monitor_clientHeight = 378;
-  static const int k_Monitor_clientWidth = 379;
-  static const int k_Monitor_clientX = 380;
-  static const int k_Monitor_clientY = 381;
-  static const int k_Monitor_handle = 382;
-  static const int k_Monitor_height = 383;
-  static const int k_Monitor_width = 384;
-  static const int k_Monitor_x = 385;
-  static const int k_Monitor_y = 386;
-  static const int k_Monitor_zoom = 387;
-  static const int k_PDFDocument_height = 388;
-  static const int k_PDFDocument_width = 389;
-  static const int k_Path_pathData = 390;
-  static const int k_Path_textFonts = 391;
-  static const int k_Path_textOrigins = 392;
-  static const int k_Path_textStrings = 393;
-  static const int k_PathData_points = 394;
-  static const int k_PathData_types = 395;
-  static const int k_Pattern_color1 = 396;
-  static const int k_Pattern_color2 = 397;
-  static const int k_Pattern_endX = 398;
-  static const int k_Pattern_endY = 399;
-  static const int k_Pattern_image = 400;
-  static const int k_Pattern_startX = 401;
-  static const int k_Pattern_startY = 402;
-  static const int k_Point_x = 403;
-  static const int k_Point_y = 404;
-  static const int k_PopupList_font = 405;
-  static const int k_PopupList_items = 406;
-  static const int k_PopupList_minimumWidth = 407;
-  static const int k_PopupList_selection = 408;
-  static const int k_PrintDialog_endPage = 409;
-  static const int k_PrintDialog_printToFile = 410;
-  static const int k_PrintDialog_scope = 411;
-  static const int k_PrintDialog_startPage = 412;
-  static const int k_ProgressBar_maximum = 413;
-  static const int k_ProgressBar_minimum = 414;
-  static const int k_ProgressBar_selection = 415;
-  static const int k_RGB_blue = 416;
-  static const int k_RGB_green = 417;
-  static const int k_RGB_red = 418;
-  static const int k_Rectangle_height = 419;
-  static const int k_Rectangle_width = 420;
-  static const int k_Rectangle_x = 421;
-  static const int k_Rectangle_y = 422;
-  static const int k_Region_rects = 423;
-  static const int k_RowData_exclude = 424;
-  static const int k_RowData_height = 425;
-  static const int k_RowData_width = 426;
-  static const int k_SashForm_maximizedControl = 427;
-  static const int k_SashForm_sashWidth = 428;
-  static const int k_SashForm_weights = 429;
-  static const int k_Scale_maximum = 430;
-  static const int k_Scale_minimum = 431;
-  static const int k_Scale_selection = 432;
-  static const int k_ScrollBar_enabled = 433;
-  static const int k_ScrollBar_increment = 434;
-  static const int k_ScrollBar_maximum = 435;
-  static const int k_ScrollBar_minimum = 436;
-  static const int k_ScrollBar_selection = 437;
-  static const int k_ScrollBar_thumb = 438;
-  static const int k_ScrollBar_visible = 439;
-  static const int k_Scrollable_horizontalBar = 440;
-  static const int k_Scrollable_verticalBar = 441;
-  static const int k_ScrolledComposite_alwaysShowScrollBars = 442;
-  static const int k_ScrolledComposite_content = 443;
-  static const int k_ScrolledComposite_expandHorizontal = 444;
-  static const int k_ScrolledComposite_expandVertical = 445;
-  static const int k_ScrolledComposite_minHeight = 446;
-  static const int k_ScrolledComposite_minWidth = 447;
-  static const int k_ScrolledComposite_origin = 448;
-  static const int k_ScrolledComposite_originRequest = 449;
-  static const int k_Shell_alpha = 450;
-  static const int k_Shell_dialogs = 451;
-  static const int k_Shell_fullScreen = 452;
-  static const int k_Shell_maximumSize = 453;
-  static const int k_Shell_minimumSize = 454;
-  static const int k_Shell_modified = 455;
-  static const int k_Slider_increment = 456;
-  static const int k_Slider_maximum = 457;
-  static const int k_Slider_minimum = 458;
-  static const int k_Slider_pageIncrement = 459;
-  static const int k_Slider_selection = 460;
-  static const int k_Slider_thumb = 461;
-  static const int k_Spinner_digits = 462;
-  static const int k_Spinner_increment = 463;
-  static const int k_Spinner_keptText = 464;
-  static const int k_Spinner_maximum = 465;
-  static const int k_Spinner_minimum = 466;
-  static const int k_Spinner_pageIncrement = 467;
-  static const int k_Spinner_selection = 468;
-  static const int k_Spinner_textLimit = 469;
-  static const int k_StyleRange_fontStyle = 470;
-  static const int k_StyleRange_length = 471;
-  static const int k_StyleRange_start = 472;
-  static const int k_StyledText_alignment = 473;
-  static const int k_StyledText_alwaysShowScrollBars = 474;
-  static const int k_StyledText_blockSelection = 475;
-  static const int k_StyledText_blockSelectionBounds = 476;
-  static const int k_StyledText_bottomMargin = 477;
-  static const int k_StyledText_caretOffset = 478;
-  static const int k_StyledText_caretOffsets = 479;
-  static const int k_StyledText_doubleClickEnabled = 480;
-  static const int k_StyledText_editable = 481;
-  static const int k_StyledText_fixedLineHeight = 482;
-  static const int k_StyledText_horizontalPixel = 483;
-  static const int k_StyledText_indent = 484;
-  static const int k_StyledText_justify = 485;
-  static const int k_StyledText_leftMargin = 486;
-  static const int k_StyledText_lineSpacing = 487;
-  static const int k_StyledText_marginColor = 488;
-  static const int k_StyledText_renderer = 489;
-  static const int k_StyledText_rightMargin = 490;
-  static const int k_StyledText_selection = 491;
-  static const int k_StyledText_selectionBackground = 492;
-  static const int k_StyledText_selectionForeground = 493;
-  static const int k_StyledText_selectionRanges = 494;
-  static const int k_StyledText_styleIndex = 495;
-  static const int k_StyledText_styles = 496;
-  static const int k_StyledText_tabStops = 497;
-  static const int k_StyledText_tabs = 498;
-  static const int k_StyledText_text = 499;
-  static const int k_StyledText_topMargin = 500;
-  static const int k_StyledText_topPixel = 501;
-  static const int k_StyledText_wordWrap = 502;
-  static const int k_StyledText_wrapIndent = 503;
-  static const int k_StyledTextPrintOptions_footer = 504;
-  static const int k_StyledTextPrintOptions_header = 505;
-  static const int k_StyledTextPrintOptions_jobName = 506;
-  static const int k_StyledTextPrintOptions_lineLabels = 507;
-  static const int k_StyledTextPrintOptions_printLineBackground = 508;
-  static const int k_StyledTextPrintOptions_printLineNumbers = 509;
-  static const int k_StyledTextPrintOptions_printTextBackground = 510;
-  static const int k_StyledTextPrintOptions_printTextFontStyle = 511;
-  static const int k_StyledTextPrintOptions_printTextForeground = 512;
-  static const int k_StyledTextRenderer_ascent = 513;
-  static const int k_StyledTextRenderer_averageCharWidth = 514;
-  static const int k_StyledTextRenderer_averageLineHeight = 515;
-  static const int k_StyledTextRenderer_boldFont = 516;
-  static const int k_StyledTextRenderer_boldItalicFont = 517;
-  static const int k_StyledTextRenderer_bulletTexts = 518;
-  static const int k_StyledTextRenderer_bulletsIndices = 519;
-  static const int k_StyledTextRenderer_descent = 520;
-  static const int k_StyledTextRenderer_fixedPitch = 521;
-  static const int k_StyledTextRenderer_hasLinks = 522;
-  static const int k_StyledTextRenderer_idleRunning = 523;
-  static const int k_StyledTextRenderer_italicFont = 524;
-  static const int k_StyledTextRenderer_lineCount = 525;
-  static const int k_StyledTextRenderer_lineSizes = 526;
-  static const int k_StyledTextRenderer_lineSpacingComputing = 527;
-  static const int k_StyledTextRenderer_lineSpacings = 528;
-  static const int k_StyledTextRenderer_lines = 529;
-  static const int k_StyledTextRenderer_linesInAverageLineHeight = 530;
-  static const int k_StyledTextRenderer_maxWidth = 531;
-  static const int k_StyledTextRenderer_maxWidthLineIndex = 532;
-  static const int k_StyledTextRenderer_ranges = 533;
-  static const int k_StyledTextRenderer_redrawLines = 534;
-  static const int k_StyledTextRenderer_regularFont = 535;
-  static const int k_StyledTextRenderer_styleCount = 536;
-  static const int k_StyledTextRenderer_styledText = 537;
-  static const int k_StyledTextRenderer_styles = 538;
-  static const int k_StyledTextRenderer_stylesSet = 539;
-  static const int k_StyledTextRenderer_stylesSetCount = 540;
-  static const int k_StyledTextRenderer_tabLength = 541;
-  static const int k_StyledTextRenderer_tabWidth = 542;
-  static const int k_StyledTextRenderer_topIndex = 543;
-  static const int k_TabFolder_items = 544;
-  static const int k_TabFolder_selection = 545;
-  static const int k_TabItem_control = 546;
-  static const int k_TabItem_toolTipText = 547;
-  static const int k_Table_columnOrder = 548;
-  static const int k_Table_columns = 549;
-  static const int k_Table_editors = 550;
-  static const int k_Table_headerBackground = 551;
-  static const int k_Table_headerForeground = 552;
-  static const int k_Table_headerVisible = 553;
-  static const int k_Table_itemCount = 554;
-  static const int k_Table_items = 555;
-  static const int k_Table_linesVisible = 556;
-  static const int k_Table_ownerDrawItemHeight = 557;
-  static const int k_Table_selection = 558;
-  static const int k_Table_topIndex = 559;
-  static const int k_TableColumn_alignment = 560;
-  static const int k_TableColumn_moveable = 561;
-  static const int k_TableColumn_resizable = 562;
-  static const int k_TableColumn_width = 563;
-  static const int k_TableEditor_column = 564;
-  static const int k_TableEditor_item = 565;
-  static const int k_TableItem_background = 566;
-  static const int k_TableItem_backgrounds = 567;
-  static const int k_TableItem_checked = 568;
-  static const int k_TableItem_font = 569;
-  static const int k_TableItem_fonts = 570;
-  static const int k_TableItem_foreground = 571;
-  static const int k_TableItem_foregrounds = 572;
-  static const int k_TableItem_grayed = 573;
-  static const int k_TableItem_images = 574;
-  static const int k_TableItem_paintedTexts = 575;
-  static const int k_TableItem_texts = 576;
-  static const int k_Text_caretPosition = 577;
-  static const int k_Text_echoCharacter = 578;
-  static const int k_Text_editTexts = 579;
-  static const int k_Text_editable = 580;
-  static const int k_Text_edits = 581;
-  static const int k_Text_message = 582;
-  static const int k_Text_selection = 583;
-  static const int k_Text_text = 584;
-  static const int k_Text_textLimit = 585;
-  static const int k_TextStyle_background = 586;
-  static const int k_TextStyle_borderColor = 587;
-  static const int k_TextStyle_borderStyle = 588;
-  static const int k_TextStyle_font = 589;
-  static const int k_TextStyle_foreground = 590;
-  static const int k_TextStyle_metrics = 591;
-  static const int k_TextStyle_rise = 592;
-  static const int k_TextStyle_strikeout = 593;
-  static const int k_TextStyle_strikeoutColor = 594;
-  static const int k_TextStyle_underline = 595;
-  static const int k_TextStyle_underlineColor = 596;
-  static const int k_TextStyle_underlineStyle = 597;
-  static const int k_ToolBar_items = 598;
-  static const int k_ToolItem_background = 599;
-  static const int k_ToolItem_control = 600;
-  static const int k_ToolItem_disabledImage = 601;
-  static const int k_ToolItem_enabled = 602;
-  static const int k_ToolItem_foreground = 603;
-  static const int k_ToolItem_hotImage = 604;
-  static const int k_ToolItem_selection = 605;
-  static const int k_ToolItem_toolTipText = 606;
-  static const int k_ToolItem_width = 607;
-  static const int k_ToolTip_location = 608;
-  static const int k_ToolTip_message = 609;
-  static const int k_ToolTip_text = 610;
-  static const int k_ToolTip_visible = 611;
-  static const int k_Touch_id = 612;
-  static const int k_Touch_primary = 613;
-  static const int k_Touch_source = 614;
-  static const int k_Touch_state = 615;
-  static const int k_Touch_x = 616;
-  static const int k_Touch_y = 617;
-  static const int k_TouchSource_bounds = 618;
-  static const int k_TouchSource_direct = 619;
-  static const int k_TouchSource_handle = 620;
-  static const int k_Transform_elements = 621;
-  static const int k_Tree_columnOrder = 622;
-  static const int k_Tree_columns = 623;
-  static const int k_Tree_editors = 624;
-  static const int k_Tree_headerBackground = 625;
-  static const int k_Tree_headerForeground = 626;
-  static const int k_Tree_headerVisible = 627;
-  static const int k_Tree_items = 628;
-  static const int k_Tree_linesVisible = 629;
-  static const int k_Tree_ownerDrawItemHeight = 630;
-  static const int k_Tree_selection = 631;
-  static const int k_Tree_sortColumn = 632;
-  static const int k_Tree_sortDirection = 633;
-  static const int k_Tree_topItem = 634;
-  static const int k_TreeColumn_alignment = 635;
-  static const int k_TreeColumn_moveable = 636;
-  static const int k_TreeColumn_resizable = 637;
-  static const int k_TreeColumn_width = 638;
-  static const int k_TreeEditor_column = 639;
-  static const int k_TreeEditor_editor = 640;
-  static const int k_TreeEditor_item = 641;
-  static const int k_TreeItem_background = 642;
-  static const int k_TreeItem_backgrounds = 643;
-  static const int k_TreeItem_checked = 644;
-  static const int k_TreeItem_expanded = 645;
-  static const int k_TreeItem_font = 646;
-  static const int k_TreeItem_fonts = 647;
-  static const int k_TreeItem_foreground = 648;
-  static const int k_TreeItem_foregrounds = 649;
-  static const int k_TreeItem_grayed = 650;
-  static const int k_TreeItem_images = 651;
-  static const int k_TreeItem_itemCount = 652;
-  static const int k_TreeItem_items = 653;
-  static const int k_TreeItem_paintedTexts = 654;
-  static const int k_TreeItem_texts = 655;
-  static const int k_Widget_style = 656;
+  static const int k_ConfigFlags_bigger_icon_size = 88;
+  static const int k_ConfigFlags_csd_maximize = 89;
+  static const int k_ConfigFlags_csd_os = 90;
+  static const int k_ConfigFlags_csd_placement = 91;
+  static const int k_ConfigFlags_csd_titlebar_color = 92;
+  static const int k_ConfigFlags_ctabfolder_tab_scroll = 93;
+  static const int k_ConfigFlags_ctabfolder_topright_auto_hide = 94;
+  static const int k_ConfigFlags_ctabfolder_visible_controls = 95;
+  static const int k_ConfigFlags_custom_tooltip = 96;
+  static const int k_ConfigFlags_decimal_separator = 97;
+  static const int k_ConfigFlags_decorations_align = 98;
+  static const int k_ConfigFlags_disable_control_gc_overlay = 99;
+  static const int k_ConfigFlags_disable_evolve_icons = 100;
+  static const int k_ConfigFlags_disable_hover_zoom = 101;
+  static const int k_ConfigFlags_disable_swt_canvas_colors = 102;
+  static const int k_ConfigFlags_double_click_timeout_ms = 103;
+  static const int k_ConfigFlags_focus_indicators = 104;
+  static const int k_ConfigFlags_font_point_scale = 105;
+  static const int k_ConfigFlags_force_theme = 106;
+  static const int k_ConfigFlags_gc_icons_replacement = 107;
+  static const int k_ConfigFlags_hover_delay_ms = 108;
+  static const int k_ConfigFlags_image_disable_icons_replacement = 109;
+  static const int k_ConfigFlags_locale = 110;
+  static const int k_ConfigFlags_notification_popup = 111;
+  static const int k_ConfigFlags_preserve_icon_colors = 112;
+  static const int k_ConfigFlags_print_move = 113;
+  static const int k_ConfigFlags_push_button_margin = 114;
+  static const int k_ConfigFlags_scale_vertical_minimum_at_top = 115;
+  static const int k_ConfigFlags_show_scaling_control = 116;
+  static const int k_ConfigFlags_show_theme_color_palette = 117;
+  static const int k_ConfigFlags_system_menu_bar = 118;
+  static const int k_ConfigFlags_theme_color = 119;
+  static const int k_ConfigFlags_theme_colors_by_widget = 120;
+  static const int k_ConfigFlags_theme_name = 121;
+  static const int k_ConfigFlags_transparent_menu_check_box = 122;
+  static const int k_ConfigFlags_ui_zoom = 123;
+  static const int k_ConfigFlags_use_special_dropdown_button = 124;
+  static const int k_ConfigFlags_use_swt_border = 125;
+  static const int k_ConfigFlags_use_swt_colors = 126;
+  static const int k_ConfigFlags_use_swt_font_colors = 127;
+  static const int k_ConfigFlags_use_swt_font_colors_by_widget = 128;
+  static const int k_ConfigFlags_use_swt_fonts = 129;
+  static const int k_Control_background = 130;
+  static const int k_Control_backgroundImage = 131;
+  static const int k_Control_bounds = 132;
+  static const int k_Control_cursor = 133;
+  static const int k_Control_dragDetect = 134;
+  static const int k_Control_dragSource = 135;
+  static const int k_Control_dragSourceId = 136;
+  static const int k_Control_dropTargetId = 137;
+  static const int k_Control_enabled = 138;
+  static const int k_Control_font = 139;
+  static const int k_Control_foreground = 140;
+  static const int k_Control_hasOwnBackground = 141;
+  static const int k_Control_inheritsBackground = 142;
+  static const int k_Control_menu = 143;
+  static const int k_Control_region = 144;
+  static const int k_Control_tabStop = 145;
+  static const int k_Control_toolTipText = 146;
+  static const int k_Control_visible = 147;
+  static const int k_ControlEditor_editor = 148;
+  static const int k_CoolBar_itemOrder = 149;
+  static const int k_CoolBar_itemSizes = 150;
+  static const int k_CoolBar_items = 151;
+  static const int k_CoolBar_wrapIndices = 152;
+  static const int k_CoolItem_control = 153;
+  static const int k_CoolItem_preferredSize = 154;
+  static const int k_Cursor_cursorStyle = 155;
+  static const int k_Cursor_hotspotX = 156;
+  static const int k_Cursor_hotspotY = 157;
+  static const int k_Cursor_image = 158;
+  static const int k_DateTime_day = 159;
+  static const int k_DateTime_hours = 160;
+  static const int k_DateTime_minutes = 161;
+  static const int k_DateTime_month = 162;
+  static const int k_DateTime_seconds = 163;
+  static const int k_DateTime_year = 164;
+  static const int k_Decorations_menuBar = 165;
+  static const int k_Decorations_menuStripHeight = 166;
+  static const int k_Decorations_ownMenuStrip = 167;
+  static const int k_Decorations_text = 168;
+  static const int k_Device_fontList = 169;
+  static const int k_Device_tracking = 170;
+  static const int k_Device_warnings = 171;
+  static const int k_Dialog_id = 172;
+  static const int k_Dialog_style = 173;
+  static const int k_Dialog_swt = 174;
+  static const int k_Dialog_text = 175;
+  static const int k_DirectoryDialog_filterPath = 176;
+  static const int k_DirectoryDialog_message = 177;
+  static const int k_Display_activeShellId = 178;
+  static const int k_Display_config = 179;
+  static const int k_Display_focusHolderId = 180;
+  static const int k_Display_mainShellId = 181;
+  static const int k_Display_popups = 182;
+  static const int k_Display_shells = 183;
+  static const int k_Display_systemMenu = 184;
+  static const int k_Display_tooltips = 185;
+  static const int k_Display_windowedShellIds = 186;
+  static const int k_Event_button = 187;
+  static const int k_Event_character = 188;
+  static const int k_Event_count = 189;
+  static const int k_Event_currentDataTypeId = 190;
+  static const int k_Event_detail = 191;
+  static const int k_Event_doit = 192;
+  static const int k_Event_dragImage = 193;
+  static const int k_Event_end = 194;
+  static const int k_Event_feedback = 195;
+  static const int k_Event_gc = 196;
+  static const int k_Event_height = 197;
+  static const int k_Event_index = 198;
+  static const int k_Event_item = 199;
+  static const int k_Event_itemId = 200;
+  static const int k_Event_keyCode = 201;
+  static const int k_Event_keyLocation = 202;
+  static const int k_Event_magnification = 203;
+  static const int k_Event_operations = 204;
+  static const int k_Event_rotation = 205;
+  static const int k_Event_segments = 206;
+  static const int k_Event_segmentsChars = 207;
+  static const int k_Event_start = 208;
+  static const int k_Event_stateMask = 209;
+  static const int k_Event_text = 210;
+  static const int k_Event_time = 211;
+  static const int k_Event_touches = 212;
+  static const int k_Event_type = 213;
+  static const int k_Event_widget = 214;
+  static const int k_Event_width = 215;
+  static const int k_Event_x = 216;
+  static const int k_Event_xDirection = 217;
+  static const int k_Event_y = 218;
+  static const int k_Event_yDirection = 219;
+  static const int k_ExpandBar_items = 220;
+  static const int k_ExpandBar_spacing = 221;
+  static const int k_ExpandItem_control = 222;
+  static const int k_ExpandItem_expanded = 223;
+  static const int k_ExpandItem_headerHeight = 224;
+  static const int k_ExpandItem_height = 225;
+  static const int k_FileDialog_fileName = 226;
+  static const int k_FileDialog_fileNames = 227;
+  static const int k_FileDialog_filterExtensions = 228;
+  static const int k_FileDialog_filterIndex = 229;
+  static const int k_FileDialog_filterNames = 230;
+  static const int k_FileDialog_filterPath = 231;
+  static const int k_FileDialog_overwrite = 232;
+  static const int k_Font_fontData = 233;
+  static const int k_FontData_height = 234;
+  static const int k_FontData_name = 235;
+  static const int k_FontData_style = 236;
+  static const int k_FontDialog_RGB = 237;
+  static const int k_FontDialog_effectsVisible = 238;
+  static const int k_FontDialog_fontData = 239;
+  static const int k_FontDialog_fontList = 240;
+  static const int k_FormAttachment_alignment = 241;
+  static const int k_FormAttachment_control = 242;
+  static const int k_FormAttachment_denominator = 243;
+  static const int k_FormAttachment_numerator = 244;
+  static const int k_FormAttachment_offset = 245;
+  static const int k_FormData_bottom = 246;
+  static const int k_FormData_cacheBottom = 247;
+  static const int k_FormData_cacheHeight = 248;
+  static const int k_FormData_cacheLeft = 249;
+  static const int k_FormData_cacheRight = 250;
+  static const int k_FormData_cacheTop = 251;
+  static const int k_FormData_cacheWidth = 252;
+  static const int k_FormData_currentHeight = 253;
+  static const int k_FormData_currentHhint = 254;
+  static const int k_FormData_currentWhint = 255;
+  static const int k_FormData_currentWidth = 256;
+  static const int k_FormData_defaultHeight = 257;
+  static const int k_FormData_defaultHhint = 258;
+  static const int k_FormData_defaultWhint = 259;
+  static const int k_FormData_defaultWidth = 260;
+  static const int k_FormData_height = 261;
+  static const int k_FormData_isVisited = 262;
+  static const int k_FormData_left = 263;
+  static const int k_FormData_needed = 264;
+  static const int k_FormData_right = 265;
+  static const int k_FormData_top = 266;
+  static const int k_FormData_width = 267;
+  static const int k_GC_XORMode = 268;
+  static const int k_GC_alpha = 269;
+  static const int k_GC_antialias = 270;
+  static const int k_GC_background = 271;
+  static const int k_GC_backgroundPattern = 272;
+  static const int k_GC_bufferScale = 273;
+  static const int k_GC_clipping = 274;
+  static const int k_GC_clippingPath = 275;
+  static const int k_GC_clippingRects = 276;
+  static const int k_GC_clippingText = 277;
+  static const int k_GC_fillRule = 278;
+  static const int k_GC_font = 279;
+  static const int k_GC_foreground = 280;
+  static const int k_GC_foregroundPattern = 281;
+  static const int k_GC_hoverFills = 282;
+  static const int k_GC_interpolation = 283;
+  static const int k_GC_lineCap = 284;
+  static const int k_GC_lineDash = 285;
+  static const int k_GC_lineDashOffset = 286;
+  static const int k_GC_lineJoin = 287;
+  static const int k_GC_lineStyle = 288;
+  static const int k_GC_lineWidth = 289;
+  static const int k_GC_selectionFills = 290;
+  static const int k_GC_style = 291;
+  static const int k_GC_themedCanvas = 292;
+  static const int k_GC_transform = 293;
+  static const int k_GLData_accumAlphaSize = 294;
+  static const int k_GLData_accumBlueSize = 295;
+  static const int k_GLData_accumGreenSize = 296;
+  static const int k_GLData_accumRedSize = 297;
+  static const int k_GLData_alphaSize = 298;
+  static const int k_GLData_blueSize = 299;
+  static const int k_GLData_depthSize = 300;
+  static const int k_GLData_doubleBuffer = 301;
+  static const int k_GLData_greenSize = 302;
+  static const int k_GLData_redSize = 303;
+  static const int k_GLData_sampleBuffers = 304;
+  static const int k_GLData_samples = 305;
+  static const int k_GLData_shareContext = 306;
+  static const int k_GLData_stencilSize = 307;
+  static const int k_GLData_stereo = 308;
+  static const int k_GlyphMetrics_ascent = 309;
+  static const int k_GlyphMetrics_descent = 310;
+  static const int k_GlyphMetrics_width = 311;
+  static const int k_GridData_cacheHeight = 312;
+  static const int k_GridData_cacheWidth = 313;
+  static const int k_GridData_currentHeight = 314;
+  static const int k_GridData_currentHhint = 315;
+  static const int k_GridData_currentWhint = 316;
+  static const int k_GridData_currentWidth = 317;
+  static const int k_GridData_defaultHeight = 318;
+  static const int k_GridData_defaultHhint = 319;
+  static const int k_GridData_defaultWhint = 320;
+  static const int k_GridData_defaultWidth = 321;
+  static const int k_GridData_exclude = 322;
+  static const int k_GridData_grabExcessHorizontalSpace = 323;
+  static const int k_GridData_grabExcessVerticalSpace = 324;
+  static const int k_GridData_heightHint = 325;
+  static const int k_GridData_horizontalAlignment = 326;
+  static const int k_GridData_horizontalIndent = 327;
+  static const int k_GridData_horizontalSpan = 328;
+  static const int k_GridData_minimumHeight = 329;
+  static const int k_GridData_minimumWidth = 330;
+  static const int k_GridData_verticalAlignment = 331;
+  static const int k_GridData_verticalIndent = 332;
+  static const int k_GridData_verticalSpan = 333;
+  static const int k_GridData_widthHint = 334;
+  static const int k_Group_text = 335;
+  static const int k_Image_filename = 336;
+  static const int k_Image_height = 337;
+  static const int k_Image_imageData = 338;
+  static const int k_Image_remoteRef = 339;
+  static const int k_Image_svgContent = 340;
+  static const int k_Image_width = 341;
+  static const int k_ImageData_data = 342;
+  static const int k_ImageData_depth = 343;
+  static const int k_ImageData_height = 344;
+  static const int k_ImageData_width = 345;
+  static const int k_Item_image = 346;
+  static const int k_Item_text = 347;
+  static const int k_Label_image = 348;
+  static const int k_Label_text = 349;
+  static const int k_LineInfo_alignment = 350;
+  static const int k_LineInfo_background = 351;
+  static const int k_LineInfo_flags = 352;
+  static const int k_LineInfo_indent = 353;
+  static const int k_LineInfo_justify = 354;
+  static const int k_LineInfo_segments = 355;
+  static const int k_LineInfo_segmentsChars = 356;
+  static const int k_LineInfo_tabStops = 357;
+  static const int k_LineInfo_verticalIndent = 358;
+  static const int k_LineInfo_wrapIndent = 359;
+  static const int k_LineSizeInfo_height = 360;
+  static const int k_LineSizeInfo_width = 361;
+  static const int k_Link_linkForeground = 362;
+  static const int k_Link_text = 363;
+  static const int k_List_items = 364;
+  static const int k_List_selection = 365;
+  static const int k_List_topIndex = 366;
+  static const int k_Menu_enabled = 367;
+  static const int k_Menu_items = 368;
+  static const int k_Menu_location = 369;
+  static const int k_Menu_orientation = 370;
+  static const int k_Menu_visible = 371;
+  static const int k_MenuItem_accelerator = 372;
+  static const int k_MenuItem_enabled = 373;
+  static const int k_MenuItem_menu = 374;
+  static const int k_MenuItem_selection = 375;
+  static const int k_MenuItem_toolTipText = 376;
+  static const int k_MessageBox_buttonLabels = 377;
+  static const int k_MessageBox_message = 378;
+  static const int k_Monitor_clientHeight = 379;
+  static const int k_Monitor_clientWidth = 380;
+  static const int k_Monitor_clientX = 381;
+  static const int k_Monitor_clientY = 382;
+  static const int k_Monitor_handle = 383;
+  static const int k_Monitor_height = 384;
+  static const int k_Monitor_width = 385;
+  static const int k_Monitor_x = 386;
+  static const int k_Monitor_y = 387;
+  static const int k_Monitor_zoom = 388;
+  static const int k_PDFDocument_height = 389;
+  static const int k_PDFDocument_width = 390;
+  static const int k_Path_pathData = 391;
+  static const int k_Path_textFonts = 392;
+  static const int k_Path_textOrigins = 393;
+  static const int k_Path_textStrings = 394;
+  static const int k_PathData_points = 395;
+  static const int k_PathData_types = 396;
+  static const int k_Pattern_color1 = 397;
+  static const int k_Pattern_color2 = 398;
+  static const int k_Pattern_endX = 399;
+  static const int k_Pattern_endY = 400;
+  static const int k_Pattern_image = 401;
+  static const int k_Pattern_startX = 402;
+  static const int k_Pattern_startY = 403;
+  static const int k_Point_x = 404;
+  static const int k_Point_y = 405;
+  static const int k_PopupList_font = 406;
+  static const int k_PopupList_items = 407;
+  static const int k_PopupList_minimumWidth = 408;
+  static const int k_PopupList_selection = 409;
+  static const int k_PrintDialog_endPage = 410;
+  static const int k_PrintDialog_printToFile = 411;
+  static const int k_PrintDialog_scope = 412;
+  static const int k_PrintDialog_startPage = 413;
+  static const int k_ProgressBar_maximum = 414;
+  static const int k_ProgressBar_minimum = 415;
+  static const int k_ProgressBar_selection = 416;
+  static const int k_RGB_blue = 417;
+  static const int k_RGB_green = 418;
+  static const int k_RGB_red = 419;
+  static const int k_Rectangle_height = 420;
+  static const int k_Rectangle_width = 421;
+  static const int k_Rectangle_x = 422;
+  static const int k_Rectangle_y = 423;
+  static const int k_Region_rects = 424;
+  static const int k_RowData_exclude = 425;
+  static const int k_RowData_height = 426;
+  static const int k_RowData_width = 427;
+  static const int k_SashForm_maximizedControl = 428;
+  static const int k_SashForm_sashWidth = 429;
+  static const int k_SashForm_weights = 430;
+  static const int k_Scale_maximum = 431;
+  static const int k_Scale_minimum = 432;
+  static const int k_Scale_selection = 433;
+  static const int k_ScrollBar_enabled = 434;
+  static const int k_ScrollBar_increment = 435;
+  static const int k_ScrollBar_maximum = 436;
+  static const int k_ScrollBar_minimum = 437;
+  static const int k_ScrollBar_selection = 438;
+  static const int k_ScrollBar_thumb = 439;
+  static const int k_ScrollBar_visible = 440;
+  static const int k_Scrollable_horizontalBar = 441;
+  static const int k_Scrollable_verticalBar = 442;
+  static const int k_ScrolledComposite_alwaysShowScrollBars = 443;
+  static const int k_ScrolledComposite_content = 444;
+  static const int k_ScrolledComposite_expandHorizontal = 445;
+  static const int k_ScrolledComposite_expandVertical = 446;
+  static const int k_ScrolledComposite_minHeight = 447;
+  static const int k_ScrolledComposite_minWidth = 448;
+  static const int k_ScrolledComposite_origin = 449;
+  static const int k_ScrolledComposite_originRequest = 450;
+  static const int k_Shell_alpha = 451;
+  static const int k_Shell_dialogs = 452;
+  static const int k_Shell_fullScreen = 453;
+  static const int k_Shell_maximumSize = 454;
+  static const int k_Shell_minimumSize = 455;
+  static const int k_Shell_modified = 456;
+  static const int k_Slider_increment = 457;
+  static const int k_Slider_maximum = 458;
+  static const int k_Slider_minimum = 459;
+  static const int k_Slider_pageIncrement = 460;
+  static const int k_Slider_selection = 461;
+  static const int k_Slider_thumb = 462;
+  static const int k_Spinner_digits = 463;
+  static const int k_Spinner_increment = 464;
+  static const int k_Spinner_keptText = 465;
+  static const int k_Spinner_maximum = 466;
+  static const int k_Spinner_minimum = 467;
+  static const int k_Spinner_pageIncrement = 468;
+  static const int k_Spinner_selection = 469;
+  static const int k_Spinner_textLimit = 470;
+  static const int k_StyleRange_fontStyle = 471;
+  static const int k_StyleRange_length = 472;
+  static const int k_StyleRange_start = 473;
+  static const int k_StyledText_alignment = 474;
+  static const int k_StyledText_alwaysShowScrollBars = 475;
+  static const int k_StyledText_blockSelection = 476;
+  static const int k_StyledText_blockSelectionBounds = 477;
+  static const int k_StyledText_bottomMargin = 478;
+  static const int k_StyledText_caretOffset = 479;
+  static const int k_StyledText_caretOffsets = 480;
+  static const int k_StyledText_doubleClickEnabled = 481;
+  static const int k_StyledText_editable = 482;
+  static const int k_StyledText_fixedLineHeight = 483;
+  static const int k_StyledText_horizontalPixel = 484;
+  static const int k_StyledText_indent = 485;
+  static const int k_StyledText_justify = 486;
+  static const int k_StyledText_leftMargin = 487;
+  static const int k_StyledText_lineSpacing = 488;
+  static const int k_StyledText_marginColor = 489;
+  static const int k_StyledText_renderer = 490;
+  static const int k_StyledText_rightMargin = 491;
+  static const int k_StyledText_selection = 492;
+  static const int k_StyledText_selectionBackground = 493;
+  static const int k_StyledText_selectionForeground = 494;
+  static const int k_StyledText_selectionRanges = 495;
+  static const int k_StyledText_styleIndex = 496;
+  static const int k_StyledText_styles = 497;
+  static const int k_StyledText_tabStops = 498;
+  static const int k_StyledText_tabs = 499;
+  static const int k_StyledText_text = 500;
+  static const int k_StyledText_topMargin = 501;
+  static const int k_StyledText_topPixel = 502;
+  static const int k_StyledText_wordWrap = 503;
+  static const int k_StyledText_wrapIndent = 504;
+  static const int k_StyledTextPrintOptions_footer = 505;
+  static const int k_StyledTextPrintOptions_header = 506;
+  static const int k_StyledTextPrintOptions_jobName = 507;
+  static const int k_StyledTextPrintOptions_lineLabels = 508;
+  static const int k_StyledTextPrintOptions_printLineBackground = 509;
+  static const int k_StyledTextPrintOptions_printLineNumbers = 510;
+  static const int k_StyledTextPrintOptions_printTextBackground = 511;
+  static const int k_StyledTextPrintOptions_printTextFontStyle = 512;
+  static const int k_StyledTextPrintOptions_printTextForeground = 513;
+  static const int k_StyledTextRenderer_ascent = 514;
+  static const int k_StyledTextRenderer_averageCharWidth = 515;
+  static const int k_StyledTextRenderer_averageLineHeight = 516;
+  static const int k_StyledTextRenderer_boldFont = 517;
+  static const int k_StyledTextRenderer_boldItalicFont = 518;
+  static const int k_StyledTextRenderer_bulletTexts = 519;
+  static const int k_StyledTextRenderer_bulletsIndices = 520;
+  static const int k_StyledTextRenderer_descent = 521;
+  static const int k_StyledTextRenderer_fixedPitch = 522;
+  static const int k_StyledTextRenderer_hasLinks = 523;
+  static const int k_StyledTextRenderer_idleRunning = 524;
+  static const int k_StyledTextRenderer_italicFont = 525;
+  static const int k_StyledTextRenderer_lineCount = 526;
+  static const int k_StyledTextRenderer_lineSizes = 527;
+  static const int k_StyledTextRenderer_lineSpacingComputing = 528;
+  static const int k_StyledTextRenderer_lineSpacings = 529;
+  static const int k_StyledTextRenderer_lines = 530;
+  static const int k_StyledTextRenderer_linesInAverageLineHeight = 531;
+  static const int k_StyledTextRenderer_maxWidth = 532;
+  static const int k_StyledTextRenderer_maxWidthLineIndex = 533;
+  static const int k_StyledTextRenderer_ranges = 534;
+  static const int k_StyledTextRenderer_redrawLines = 535;
+  static const int k_StyledTextRenderer_regularFont = 536;
+  static const int k_StyledTextRenderer_styleCount = 537;
+  static const int k_StyledTextRenderer_styledText = 538;
+  static const int k_StyledTextRenderer_styles = 539;
+  static const int k_StyledTextRenderer_stylesSet = 540;
+  static const int k_StyledTextRenderer_stylesSetCount = 541;
+  static const int k_StyledTextRenderer_tabLength = 542;
+  static const int k_StyledTextRenderer_tabWidth = 543;
+  static const int k_StyledTextRenderer_topIndex = 544;
+  static const int k_TabFolder_items = 545;
+  static const int k_TabFolder_selection = 546;
+  static const int k_TabItem_control = 547;
+  static const int k_TabItem_toolTipText = 548;
+  static const int k_Table_columnOrder = 549;
+  static const int k_Table_columns = 550;
+  static const int k_Table_editors = 551;
+  static const int k_Table_headerBackground = 552;
+  static const int k_Table_headerForeground = 553;
+  static const int k_Table_headerVisible = 554;
+  static const int k_Table_itemCount = 555;
+  static const int k_Table_items = 556;
+  static const int k_Table_linesVisible = 557;
+  static const int k_Table_ownerDrawItemHeight = 558;
+  static const int k_Table_selection = 559;
+  static const int k_Table_topIndex = 560;
+  static const int k_TableColumn_alignment = 561;
+  static const int k_TableColumn_moveable = 562;
+  static const int k_TableColumn_resizable = 563;
+  static const int k_TableColumn_width = 564;
+  static const int k_TableEditor_column = 565;
+  static const int k_TableEditor_item = 566;
+  static const int k_TableItem_background = 567;
+  static const int k_TableItem_backgrounds = 568;
+  static const int k_TableItem_checked = 569;
+  static const int k_TableItem_font = 570;
+  static const int k_TableItem_fonts = 571;
+  static const int k_TableItem_foreground = 572;
+  static const int k_TableItem_foregrounds = 573;
+  static const int k_TableItem_grayed = 574;
+  static const int k_TableItem_images = 575;
+  static const int k_TableItem_paintedTexts = 576;
+  static const int k_TableItem_texts = 577;
+  static const int k_Text_caretPosition = 578;
+  static const int k_Text_echoCharacter = 579;
+  static const int k_Text_editTexts = 580;
+  static const int k_Text_editable = 581;
+  static const int k_Text_edits = 582;
+  static const int k_Text_message = 583;
+  static const int k_Text_selection = 584;
+  static const int k_Text_text = 585;
+  static const int k_Text_textLimit = 586;
+  static const int k_TextStyle_background = 587;
+  static const int k_TextStyle_borderColor = 588;
+  static const int k_TextStyle_borderStyle = 589;
+  static const int k_TextStyle_font = 590;
+  static const int k_TextStyle_foreground = 591;
+  static const int k_TextStyle_metrics = 592;
+  static const int k_TextStyle_rise = 593;
+  static const int k_TextStyle_strikeout = 594;
+  static const int k_TextStyle_strikeoutColor = 595;
+  static const int k_TextStyle_underline = 596;
+  static const int k_TextStyle_underlineColor = 597;
+  static const int k_TextStyle_underlineStyle = 598;
+  static const int k_ToolBar_items = 599;
+  static const int k_ToolItem_background = 600;
+  static const int k_ToolItem_control = 601;
+  static const int k_ToolItem_disabledImage = 602;
+  static const int k_ToolItem_enabled = 603;
+  static const int k_ToolItem_foreground = 604;
+  static const int k_ToolItem_hotImage = 605;
+  static const int k_ToolItem_selection = 606;
+  static const int k_ToolItem_toolTipText = 607;
+  static const int k_ToolItem_width = 608;
+  static const int k_ToolTip_location = 609;
+  static const int k_ToolTip_message = 610;
+  static const int k_ToolTip_text = 611;
+  static const int k_ToolTip_visible = 612;
+  static const int k_Touch_id = 613;
+  static const int k_Touch_primary = 614;
+  static const int k_Touch_source = 615;
+  static const int k_Touch_state = 616;
+  static const int k_Touch_x = 617;
+  static const int k_Touch_y = 618;
+  static const int k_TouchSource_bounds = 619;
+  static const int k_TouchSource_direct = 620;
+  static const int k_TouchSource_handle = 621;
+  static const int k_Transform_elements = 622;
+  static const int k_Tree_columnOrder = 623;
+  static const int k_Tree_columns = 624;
+  static const int k_Tree_editors = 625;
+  static const int k_Tree_headerBackground = 626;
+  static const int k_Tree_headerForeground = 627;
+  static const int k_Tree_headerVisible = 628;
+  static const int k_Tree_items = 629;
+  static const int k_Tree_linesVisible = 630;
+  static const int k_Tree_ownerDrawItemHeight = 631;
+  static const int k_Tree_selection = 632;
+  static const int k_Tree_sortColumn = 633;
+  static const int k_Tree_sortDirection = 634;
+  static const int k_Tree_topItem = 635;
+  static const int k_TreeColumn_alignment = 636;
+  static const int k_TreeColumn_moveable = 637;
+  static const int k_TreeColumn_resizable = 638;
+  static const int k_TreeColumn_width = 639;
+  static const int k_TreeEditor_column = 640;
+  static const int k_TreeEditor_editor = 641;
+  static const int k_TreeEditor_item = 642;
+  static const int k_TreeItem_background = 643;
+  static const int k_TreeItem_backgrounds = 644;
+  static const int k_TreeItem_checked = 645;
+  static const int k_TreeItem_expanded = 646;
+  static const int k_TreeItem_font = 647;
+  static const int k_TreeItem_fonts = 648;
+  static const int k_TreeItem_foreground = 649;
+  static const int k_TreeItem_foregrounds = 650;
+  static const int k_TreeItem_grayed = 651;
+  static const int k_TreeItem_images = 652;
+  static const int k_TreeItem_itemCount = 653;
+  static const int k_TreeItem_items = 654;
+  static const int k_TreeItem_paintedTexts = 655;
+  static const int k_TreeItem_texts = 656;
+  static const int k_Widget_style = 657;
 }
 
 /// The properties whose values name widgets.
@@ -825,40 +826,40 @@ const Set<int> wireRefKeys = {
   61,
   68,
   86,
-  142,
-  147,
-  150,
-  152,
-  195,
-  198,
-  213,
-  219,
-  221,
-  241,
-  367,
-  373,
-  427,
-  440,
+  143,
+  148,
+  151,
+  153,
+  196,
+  199,
+  214,
+  220,
+  222,
+  242,
+  368,
+  374,
+  428,
   441,
-  443,
-  544,
+  442,
+  444,
   545,
   546,
-  549,
+  547,
   550,
-  555,
-  565,
-  598,
-  600,
-  623,
+  551,
+  556,
+  566,
+  599,
+  601,
   624,
-  628,
-  631,
+  625,
+  629,
   632,
-  634,
-  640,
+  633,
+  635,
   641,
-  653,
+  642,
+  654,
 };
 
 /// Every type's number, for what names a widget by its type's number.
@@ -1661,443 +1662,444 @@ const Map<int, String> wireMapKeyNames = {
   31: 'backgroundMode',
   32: 'backgroundPattern',
   33: 'backgrounds',
-  34: 'blinkRate',
-  35: 'blockSelection',
-  36: 'blockSelectionBounds',
-  37: 'blue',
-  38: 'blueSize',
-  39: 'boldFont',
-  40: 'boldItalicFont',
-  41: 'borderColor',
-  42: 'borderStyle',
-  43: 'borderVisible',
-  44: 'bottom',
-  45: 'bottomMargin',
-  46: 'bounds',
-  47: 'browser',
-  48: 'bufferScale',
-  49: 'bulletTexts',
-  50: 'bulletsIndices',
-  51: 'button',
-  52: 'buttonLabels',
-  53: 'cacheBottom',
-  54: 'cacheHeight',
-  55: 'cacheLeft',
-  56: 'cacheRight',
-  57: 'cacheTop',
-  58: 'cacheWidth',
-  59: 'caret',
-  60: 'caretOffset',
-  61: 'caretOffsets',
-  62: 'caretPosition',
-  63: 'charCount',
-  64: 'character',
-  65: 'checked',
-  66: 'chevronVisible',
-  67: 'children',
-  68: 'clientHeight',
-  69: 'clientWidth',
-  70: 'clientX',
-  71: 'clientY',
-  72: 'clipping',
-  73: 'clippingPath',
-  74: 'clippingRects',
-  75: 'clippingText',
-  76: 'color1',
-  77: 'color2',
-  78: 'column',
-  79: 'columnOrder',
-  80: 'columns',
-  81: 'config',
-  82: 'content',
-  83: 'control',
-  84: 'cookie',
-  85: 'count',
-  86: 'csd_maximize',
-  87: 'csd_os',
-  88: 'csd_placement',
-  89: 'csd_titlebar_color',
-  90: 'ctabfolder_tab_scroll',
-  91: 'ctabfolder_topright_auto_hide',
-  92: 'ctabfolder_visible_controls',
-  93: 'currentDataTypeId',
-  94: 'currentHeight',
-  95: 'currentHhint',
-  96: 'currentWhint',
-  97: 'currentWidth',
-  98: 'cursor',
-  99: 'cursorStyle',
-  100: 'custom_tooltip',
-  101: 'damage',
-  102: 'data',
-  103: 'day',
-  104: 'decimal_separator',
-  105: 'decorations_align',
-  106: 'defaultHeight',
-  107: 'defaultHhint',
-  108: 'defaultWhint',
-  109: 'defaultWidth',
-  110: 'denominator',
-  111: 'depth',
-  112: 'depthSize',
-  113: 'descent',
-  114: 'detail',
-  115: 'dialogs',
-  116: 'digits',
-  117: 'direct',
-  118: 'disable_control_gc_overlay',
-  119: 'disable_evolve_icons',
-  120: 'disable_hover_zoom',
-  121: 'disable_swt_canvas_colors',
-  122: 'disabledImage',
-  123: 'doit',
-  124: 'doubleBuffer',
-  125: 'doubleClickEnabled',
-  126: 'double_click_timeout_ms',
-  127: 'dragDetect',
-  128: 'dragImage',
-  129: 'dragSource',
-  130: 'dragSourceId',
-  131: 'dropTargetId',
-  132: 'echoCharacter',
-  133: 'editTexts',
-  134: 'editable',
-  135: 'editor',
-  136: 'editors',
-  137: 'edits',
-  138: 'effectsVisible',
-  139: 'elements',
-  140: 'enabled',
-  141: 'end',
-  142: 'endPage',
-  143: 'endX',
-  144: 'endY',
-  145: 'error',
-  146: 'exclude',
-  147: 'expandHorizontal',
-  148: 'expandVertical',
-  149: 'expanded',
-  150: 'expires',
-  151: 'feedback',
-  152: 'fileName',
-  153: 'fileNames',
-  154: 'filename',
-  155: 'fillRule',
-  156: 'filterExtensions',
-  157: 'filterIndex',
-  158: 'filterNames',
-  159: 'filterPath',
-  160: 'fixedLineHeight',
-  161: 'fixedPitch',
-  162: 'flags',
-  163: 'focus',
-  164: 'focusHolderId',
-  165: 'focus_indicators',
-  166: 'focused',
-  167: 'font',
-  168: 'fontData',
-  169: 'fontList',
-  170: 'fontStyle',
-  171: 'font_point_scale',
-  172: 'fonts',
-  173: 'footer',
-  174: 'force_theme',
-  175: 'foreground',
-  176: 'foregroundPattern',
-  177: 'foregrounds',
-  178: 'fullRepaint',
-  179: 'fullScreen',
-  180: 'functionNames',
-  181: 'g',
-  182: 'gc',
-  183: 'gc_icons_replacement',
-  184: 'grabExcessHorizontalSpace',
-  185: 'grabExcessVerticalSpace',
-  186: 'gradientColors',
-  187: 'gradientPercents',
-  188: 'gradientVertical',
-  189: 'grayed',
-  190: 'green',
-  191: 'greenSize',
-  192: 'hHint',
-  193: 'handle',
-  194: 'hasLinks',
-  195: 'hasOwnBackground',
-  196: 'header',
-  197: 'headerBackground',
-  198: 'headerForeground',
-  199: 'headerHeight',
-  200: 'headerVisible',
-  201: 'headers',
-  202: 'height',
-  203: 'heightHint',
-  204: 'highlight',
-  205: 'highlightEnabled',
-  206: 'horizontalAlignment',
-  207: 'horizontalBar',
-  208: 'horizontalIndent',
-  209: 'horizontalPixel',
-  210: 'horizontalSpan',
-  211: 'hotImage',
-  212: 'hotspotX',
-  213: 'hotspotY',
-  214: 'hours',
-  215: 'hoverFills',
-  216: 'hover_delay_ms',
-  217: 'id',
-  218: 'idleRunning',
-  219: 'image',
-  220: 'imageData',
-  221: 'image_disable_icons_replacement',
-  222: 'images',
-  223: 'increment',
-  224: 'indent',
-  225: 'index',
-  226: 'inheritsBackground',
-  227: 'interpolation',
-  228: 'isVisited',
-  229: 'italicFont',
-  230: 'item',
-  231: 'itemCount',
-  232: 'itemId',
-  233: 'itemOrder',
-  234: 'itemSizes',
-  235: 'itemTooltips',
-  236: 'items',
-  237: 'javascriptEnabled',
-  238: 'jobName',
-  239: 'justify',
-  240: 'keptText',
-  241: 'keyCode',
-  242: 'keyLocation',
-  243: 'left',
-  244: 'leftMargin',
-  245: 'length',
-  246: 'lineCap',
-  247: 'lineCount',
-  248: 'lineDash',
-  249: 'lineDashOffset',
-  250: 'lineJoin',
-  251: 'lineLabels',
-  252: 'lineSizes',
-  253: 'lineSpacing',
-  254: 'lineSpacingComputing',
-  255: 'lineSpacings',
-  256: 'lineStyle',
-  257: 'lineWidth',
-  258: 'lines',
-  259: 'linesInAverageLineHeight',
-  260: 'linesVisible',
-  261: 'linkForeground',
-  262: 'listVisible',
-  263: 'localFileBase',
-  264: 'localFilePath',
-  265: 'localFileText',
-  266: 'locale',
-  267: 'location',
-  268: 'magnification',
-  269: 'mainShellId',
-  270: 'map',
-  271: 'marginColor',
-  272: 'maxWidth',
-  273: 'maxWidthLineIndex',
-  274: 'maximizeVisible',
-  275: 'maximized',
-  276: 'maximizedControl',
-  277: 'maximum',
-  278: 'maximumSize',
-  279: 'menu',
-  280: 'menuBar',
-  281: 'menuStripHeight',
-  282: 'message',
-  283: 'metrics',
-  284: 'minHeight',
-  285: 'minWidth',
-  286: 'minimizeVisible',
-  287: 'minimized',
-  288: 'minimum',
-  289: 'minimumCharacters',
-  290: 'minimumHeight',
-  291: 'minimumSize',
-  292: 'minimumWidth',
-  293: 'minutes',
-  294: 'modified',
-  295: 'month',
-  296: 'moveable',
-  297: 'name',
-  298: 'needed',
-  299: 'notification_popup',
-  300: 'numerator',
-  301: 'offset',
-  302: 'operations',
-  303: 'orientation',
-  304: 'origin',
-  305: 'originRequest',
-  306: 'overwrite',
-  307: 'ownMenuStrip',
-  308: 'ownerDrawItemHeight',
-  309: 'pageIncrement',
-  310: 'paintedTexts',
-  311: 'pathData',
-  312: 'pixels',
-  313: 'points',
-  314: 'popups',
-  315: 'port',
-  316: 'postData',
-  317: 'preferredSize',
-  318: 'preserve_icon_colors',
-  319: 'primary',
-  320: 'printLineBackground',
-  321: 'printLineNumbers',
-  322: 'printTextBackground',
-  323: 'printTextFontStyle',
-  324: 'printTextForeground',
-  325: 'printToFile',
-  326: 'print_move',
-  327: 'push_button_margin',
-  328: 'r',
-  329: 'ranges',
-  330: 'rects',
-  331: 'red',
-  332: 'redSize',
-  333: 'redrawLines',
-  334: 'ref',
-  335: 'region',
-  336: 'regularFont',
-  337: 'remoteRef',
-  338: 'renderer',
-  339: 'replaced',
-  340: 'reqId',
-  341: 'resizable',
-  342: 'result',
-  343: 'retain',
-  344: 'right',
-  345: 'rightMargin',
-  346: 'rise',
-  347: 'rotation',
-  348: 'sampleBuffers',
-  349: 'samples',
-  350: 'sashWidth',
-  351: 'scale_vertical_minimum_at_top',
-  352: 'scope',
-  353: 'script',
-  354: 'seconds',
-  355: 'segments',
-  356: 'segmentsChars',
-  357: 'selectedImageVisible',
-  358: 'selection',
-  359: 'selectionBackground',
-  360: 'selectionBarThickness',
-  361: 'selectionBgImage',
-  362: 'selectionFills',
-  363: 'selectionForeground',
-  364: 'selectionRanges',
-  365: 'seq',
-  366: 'shareContext',
-  367: 'shells',
-  368: 'showChevron',
-  369: 'showClose',
-  370: 'showListPopupSeq',
-  371: 'show_scaling_control',
-  372: 'show_theme_color_palette',
-  373: 'showing',
-  374: 'single',
-  375: 'sortColumn',
-  376: 'sortDirection',
-  377: 'source',
-  378: 'spacing',
-  379: 'start',
-  380: 'startPage',
-  381: 'startX',
-  382: 'startY',
-  383: 'state',
-  384: 'stateMask',
-  385: 'stencilSize',
-  386: 'stereo',
-  387: 'strikeout',
-  388: 'strikeoutColor',
-  389: 'style',
-  390: 'styleCount',
-  391: 'styleIndex',
-  392: 'styledText',
-  393: 'styles',
-  394: 'stylesSet',
-  395: 'stylesSetCount',
-  396: 'svgContent',
-  397: 'swt',
-  398: 'systemMenu',
-  399: 'system_menu_bar',
-  400: 'tabHeight',
-  401: 'tabLength',
-  402: 'tabPosition',
-  403: 'tabStop',
-  404: 'tabStops',
-  405: 'tabWidth',
-  406: 'tabs',
-  407: 'text',
-  408: 'textFonts',
-  409: 'textLimit',
-  410: 'textOrigins',
-  411: 'textStrings',
-  412: 'texts',
-  413: 'theme_color',
-  414: 'theme_colors_by_widget',
-  415: 'theme_name',
-  416: 'themedCanvas',
-  417: 'thumb',
-  418: 'time',
-  419: 'toolTipText',
-  420: 'tooltips',
-  421: 'top',
-  422: 'topIndex',
-  423: 'topItem',
-  424: 'topMargin',
-  425: 'topPixel',
-  426: 'topRight',
-  427: 'topRightAlignment',
-  428: 'touches',
-  429: 'tracking',
-  430: 'transform',
-  431: 'transparent_menu_check_box',
-  432: 'type',
-  433: 'types',
-  434: 'ui_zoom',
-  435: 'underline',
-  436: 'underlineColor',
-  437: 'underlineStyle',
-  438: 'unselectedCloseVisible',
-  439: 'unselectedImageVisible',
-  440: 'url',
-  441: 'use_special_dropdown_button',
-  442: 'use_swt_border',
-  443: 'use_swt_colors',
-  444: 'use_swt_font_colors',
-  445: 'use_swt_font_colors_by_widget',
-  446: 'use_swt_fonts',
-  447: 'value',
-  448: 'verdict',
-  449: 'verticalAlignment',
-  450: 'verticalBar',
-  451: 'verticalIndent',
-  452: 'verticalSpan',
-  453: 'visible',
-  454: 'wHint',
-  455: 'warnings',
-  456: 'weights',
-  457: 'widget',
-  458: 'width',
-  459: 'widthHint',
-  460: 'windowId',
-  461: 'windowedShellIds',
-  462: 'wordWrap',
-  463: 'wrapIndent',
-  464: 'wrapIndices',
-  465: 'x',
-  466: 'xDirection',
-  467: 'y',
-  468: 'yDirection',
-  469: 'year',
-  470: 'zoom',
+  34: 'bigger_icon_size',
+  35: 'blinkRate',
+  36: 'blockSelection',
+  37: 'blockSelectionBounds',
+  38: 'blue',
+  39: 'blueSize',
+  40: 'boldFont',
+  41: 'boldItalicFont',
+  42: 'borderColor',
+  43: 'borderStyle',
+  44: 'borderVisible',
+  45: 'bottom',
+  46: 'bottomMargin',
+  47: 'bounds',
+  48: 'browser',
+  49: 'bufferScale',
+  50: 'bulletTexts',
+  51: 'bulletsIndices',
+  52: 'button',
+  53: 'buttonLabels',
+  54: 'cacheBottom',
+  55: 'cacheHeight',
+  56: 'cacheLeft',
+  57: 'cacheRight',
+  58: 'cacheTop',
+  59: 'cacheWidth',
+  60: 'caret',
+  61: 'caretOffset',
+  62: 'caretOffsets',
+  63: 'caretPosition',
+  64: 'charCount',
+  65: 'character',
+  66: 'checked',
+  67: 'chevronVisible',
+  68: 'children',
+  69: 'clientHeight',
+  70: 'clientWidth',
+  71: 'clientX',
+  72: 'clientY',
+  73: 'clipping',
+  74: 'clippingPath',
+  75: 'clippingRects',
+  76: 'clippingText',
+  77: 'color1',
+  78: 'color2',
+  79: 'column',
+  80: 'columnOrder',
+  81: 'columns',
+  82: 'config',
+  83: 'content',
+  84: 'control',
+  85: 'cookie',
+  86: 'count',
+  87: 'csd_maximize',
+  88: 'csd_os',
+  89: 'csd_placement',
+  90: 'csd_titlebar_color',
+  91: 'ctabfolder_tab_scroll',
+  92: 'ctabfolder_topright_auto_hide',
+  93: 'ctabfolder_visible_controls',
+  94: 'currentDataTypeId',
+  95: 'currentHeight',
+  96: 'currentHhint',
+  97: 'currentWhint',
+  98: 'currentWidth',
+  99: 'cursor',
+  100: 'cursorStyle',
+  101: 'custom_tooltip',
+  102: 'damage',
+  103: 'data',
+  104: 'day',
+  105: 'decimal_separator',
+  106: 'decorations_align',
+  107: 'defaultHeight',
+  108: 'defaultHhint',
+  109: 'defaultWhint',
+  110: 'defaultWidth',
+  111: 'denominator',
+  112: 'depth',
+  113: 'depthSize',
+  114: 'descent',
+  115: 'detail',
+  116: 'dialogs',
+  117: 'digits',
+  118: 'direct',
+  119: 'disable_control_gc_overlay',
+  120: 'disable_evolve_icons',
+  121: 'disable_hover_zoom',
+  122: 'disable_swt_canvas_colors',
+  123: 'disabledImage',
+  124: 'doit',
+  125: 'doubleBuffer',
+  126: 'doubleClickEnabled',
+  127: 'double_click_timeout_ms',
+  128: 'dragDetect',
+  129: 'dragImage',
+  130: 'dragSource',
+  131: 'dragSourceId',
+  132: 'dropTargetId',
+  133: 'echoCharacter',
+  134: 'editTexts',
+  135: 'editable',
+  136: 'editor',
+  137: 'editors',
+  138: 'edits',
+  139: 'effectsVisible',
+  140: 'elements',
+  141: 'enabled',
+  142: 'end',
+  143: 'endPage',
+  144: 'endX',
+  145: 'endY',
+  146: 'error',
+  147: 'exclude',
+  148: 'expandHorizontal',
+  149: 'expandVertical',
+  150: 'expanded',
+  151: 'expires',
+  152: 'feedback',
+  153: 'fileName',
+  154: 'fileNames',
+  155: 'filename',
+  156: 'fillRule',
+  157: 'filterExtensions',
+  158: 'filterIndex',
+  159: 'filterNames',
+  160: 'filterPath',
+  161: 'fixedLineHeight',
+  162: 'fixedPitch',
+  163: 'flags',
+  164: 'focus',
+  165: 'focusHolderId',
+  166: 'focus_indicators',
+  167: 'focused',
+  168: 'font',
+  169: 'fontData',
+  170: 'fontList',
+  171: 'fontStyle',
+  172: 'font_point_scale',
+  173: 'fonts',
+  174: 'footer',
+  175: 'force_theme',
+  176: 'foreground',
+  177: 'foregroundPattern',
+  178: 'foregrounds',
+  179: 'fullRepaint',
+  180: 'fullScreen',
+  181: 'functionNames',
+  182: 'g',
+  183: 'gc',
+  184: 'gc_icons_replacement',
+  185: 'grabExcessHorizontalSpace',
+  186: 'grabExcessVerticalSpace',
+  187: 'gradientColors',
+  188: 'gradientPercents',
+  189: 'gradientVertical',
+  190: 'grayed',
+  191: 'green',
+  192: 'greenSize',
+  193: 'hHint',
+  194: 'handle',
+  195: 'hasLinks',
+  196: 'hasOwnBackground',
+  197: 'header',
+  198: 'headerBackground',
+  199: 'headerForeground',
+  200: 'headerHeight',
+  201: 'headerVisible',
+  202: 'headers',
+  203: 'height',
+  204: 'heightHint',
+  205: 'highlight',
+  206: 'highlightEnabled',
+  207: 'horizontalAlignment',
+  208: 'horizontalBar',
+  209: 'horizontalIndent',
+  210: 'horizontalPixel',
+  211: 'horizontalSpan',
+  212: 'hotImage',
+  213: 'hotspotX',
+  214: 'hotspotY',
+  215: 'hours',
+  216: 'hoverFills',
+  217: 'hover_delay_ms',
+  218: 'id',
+  219: 'idleRunning',
+  220: 'image',
+  221: 'imageData',
+  222: 'image_disable_icons_replacement',
+  223: 'images',
+  224: 'increment',
+  225: 'indent',
+  226: 'index',
+  227: 'inheritsBackground',
+  228: 'interpolation',
+  229: 'isVisited',
+  230: 'italicFont',
+  231: 'item',
+  232: 'itemCount',
+  233: 'itemId',
+  234: 'itemOrder',
+  235: 'itemSizes',
+  236: 'itemTooltips',
+  237: 'items',
+  238: 'javascriptEnabled',
+  239: 'jobName',
+  240: 'justify',
+  241: 'keptText',
+  242: 'keyCode',
+  243: 'keyLocation',
+  244: 'left',
+  245: 'leftMargin',
+  246: 'length',
+  247: 'lineCap',
+  248: 'lineCount',
+  249: 'lineDash',
+  250: 'lineDashOffset',
+  251: 'lineJoin',
+  252: 'lineLabels',
+  253: 'lineSizes',
+  254: 'lineSpacing',
+  255: 'lineSpacingComputing',
+  256: 'lineSpacings',
+  257: 'lineStyle',
+  258: 'lineWidth',
+  259: 'lines',
+  260: 'linesInAverageLineHeight',
+  261: 'linesVisible',
+  262: 'linkForeground',
+  263: 'listVisible',
+  264: 'localFileBase',
+  265: 'localFilePath',
+  266: 'localFileText',
+  267: 'locale',
+  268: 'location',
+  269: 'magnification',
+  270: 'mainShellId',
+  271: 'map',
+  272: 'marginColor',
+  273: 'maxWidth',
+  274: 'maxWidthLineIndex',
+  275: 'maximizeVisible',
+  276: 'maximized',
+  277: 'maximizedControl',
+  278: 'maximum',
+  279: 'maximumSize',
+  280: 'menu',
+  281: 'menuBar',
+  282: 'menuStripHeight',
+  283: 'message',
+  284: 'metrics',
+  285: 'minHeight',
+  286: 'minWidth',
+  287: 'minimizeVisible',
+  288: 'minimized',
+  289: 'minimum',
+  290: 'minimumCharacters',
+  291: 'minimumHeight',
+  292: 'minimumSize',
+  293: 'minimumWidth',
+  294: 'minutes',
+  295: 'modified',
+  296: 'month',
+  297: 'moveable',
+  298: 'name',
+  299: 'needed',
+  300: 'notification_popup',
+  301: 'numerator',
+  302: 'offset',
+  303: 'operations',
+  304: 'orientation',
+  305: 'origin',
+  306: 'originRequest',
+  307: 'overwrite',
+  308: 'ownMenuStrip',
+  309: 'ownerDrawItemHeight',
+  310: 'pageIncrement',
+  311: 'paintedTexts',
+  312: 'pathData',
+  313: 'pixels',
+  314: 'points',
+  315: 'popups',
+  316: 'port',
+  317: 'postData',
+  318: 'preferredSize',
+  319: 'preserve_icon_colors',
+  320: 'primary',
+  321: 'printLineBackground',
+  322: 'printLineNumbers',
+  323: 'printTextBackground',
+  324: 'printTextFontStyle',
+  325: 'printTextForeground',
+  326: 'printToFile',
+  327: 'print_move',
+  328: 'push_button_margin',
+  329: 'r',
+  330: 'ranges',
+  331: 'rects',
+  332: 'red',
+  333: 'redSize',
+  334: 'redrawLines',
+  335: 'ref',
+  336: 'region',
+  337: 'regularFont',
+  338: 'remoteRef',
+  339: 'renderer',
+  340: 'replaced',
+  341: 'reqId',
+  342: 'resizable',
+  343: 'result',
+  344: 'retain',
+  345: 'right',
+  346: 'rightMargin',
+  347: 'rise',
+  348: 'rotation',
+  349: 'sampleBuffers',
+  350: 'samples',
+  351: 'sashWidth',
+  352: 'scale_vertical_minimum_at_top',
+  353: 'scope',
+  354: 'script',
+  355: 'seconds',
+  356: 'segments',
+  357: 'segmentsChars',
+  358: 'selectedImageVisible',
+  359: 'selection',
+  360: 'selectionBackground',
+  361: 'selectionBarThickness',
+  362: 'selectionBgImage',
+  363: 'selectionFills',
+  364: 'selectionForeground',
+  365: 'selectionRanges',
+  366: 'seq',
+  367: 'shareContext',
+  368: 'shells',
+  369: 'showChevron',
+  370: 'showClose',
+  371: 'showListPopupSeq',
+  372: 'show_scaling_control',
+  373: 'show_theme_color_palette',
+  374: 'showing',
+  375: 'single',
+  376: 'sortColumn',
+  377: 'sortDirection',
+  378: 'source',
+  379: 'spacing',
+  380: 'start',
+  381: 'startPage',
+  382: 'startX',
+  383: 'startY',
+  384: 'state',
+  385: 'stateMask',
+  386: 'stencilSize',
+  387: 'stereo',
+  388: 'strikeout',
+  389: 'strikeoutColor',
+  390: 'style',
+  391: 'styleCount',
+  392: 'styleIndex',
+  393: 'styledText',
+  394: 'styles',
+  395: 'stylesSet',
+  396: 'stylesSetCount',
+  397: 'svgContent',
+  398: 'swt',
+  399: 'systemMenu',
+  400: 'system_menu_bar',
+  401: 'tabHeight',
+  402: 'tabLength',
+  403: 'tabPosition',
+  404: 'tabStop',
+  405: 'tabStops',
+  406: 'tabWidth',
+  407: 'tabs',
+  408: 'text',
+  409: 'textFonts',
+  410: 'textLimit',
+  411: 'textOrigins',
+  412: 'textStrings',
+  413: 'texts',
+  414: 'theme_color',
+  415: 'theme_colors_by_widget',
+  416: 'theme_name',
+  417: 'themedCanvas',
+  418: 'thumb',
+  419: 'time',
+  420: 'toolTipText',
+  421: 'tooltips',
+  422: 'top',
+  423: 'topIndex',
+  424: 'topItem',
+  425: 'topMargin',
+  426: 'topPixel',
+  427: 'topRight',
+  428: 'topRightAlignment',
+  429: 'touches',
+  430: 'tracking',
+  431: 'transform',
+  432: 'transparent_menu_check_box',
+  433: 'type',
+  434: 'types',
+  435: 'ui_zoom',
+  436: 'underline',
+  437: 'underlineColor',
+  438: 'underlineStyle',
+  439: 'unselectedCloseVisible',
+  440: 'unselectedImageVisible',
+  441: 'url',
+  442: 'use_special_dropdown_button',
+  443: 'use_swt_border',
+  444: 'use_swt_colors',
+  445: 'use_swt_font_colors',
+  446: 'use_swt_font_colors_by_widget',
+  447: 'use_swt_fonts',
+  448: 'value',
+  449: 'verdict',
+  450: 'verticalAlignment',
+  451: 'verticalBar',
+  452: 'verticalIndent',
+  453: 'verticalSpan',
+  454: 'visible',
+  455: 'wHint',
+  456: 'warnings',
+  457: 'weights',
+  458: 'widget',
+  459: 'width',
+  460: 'widthHint',
+  461: 'windowId',
+  462: 'windowedShellIds',
+  463: 'wordWrap',
+  464: 'wrapIndent',
+  465: 'wrapIndices',
+  466: 'x',
+  467: 'xDirection',
+  468: 'y',
+  469: 'yDirection',
+  470: 'year',
+  471: 'zoom',
 };
 
 /// The empty value of each widget type a frame can name.

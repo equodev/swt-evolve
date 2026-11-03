@@ -5075,7 +5075,7 @@ public final class DartGC extends DartResource implements IGC {
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
         if (clippingText != null) {
-            getValue().markDirty(276);
+            getValue().markDirty(277);
             clippingText.dispose();
         }
         clippingPath = null;

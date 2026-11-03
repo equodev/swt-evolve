@@ -760,7 +760,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     int dndFeedback = DND.FEEDBACK_NONE;
 
-    private final DropAnswer answer = new DropAnswer(190, 194, 189, 34);
+    private final DropAnswer answer = new DropAnswer(191, 195, 190, 34);
 
     private DNDEvent toNegotiationEvent(int eventType, Event e) {
         DNDEvent event = new DNDEvent();

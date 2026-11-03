@@ -82,15 +82,33 @@ class ToolItemUniformIconSizeTest {
     }
 
     @Test
-    void the_system_property_turns_it_on() {
-        String saved = System.getProperty("swt.evolve.bigger_icon_size");
+    void it_follows_icon_replacement_unless_turned_off() {
+        assertThat(flagsFrom(null, null, null)).as("Evolve's set replaces icons by default").isTrue();
+        assertThat(flagsFrom(null, "true", "/client/icons")).as("a client pack replaces icons").isTrue();
+        assertThat(flagsFrom("false", null, null)).as("turned off by the application").isFalse();
+        assertThat(flagsFrom(null, "true", null)).as("the application's own icons are kept").isFalse();
+        assertThat(flagsFrom("true", "true", null)).as("no replaced icon to enlarge").isFalse();
+        assertThat(flagsFrom(null, "true", "  ")).as("a blank assets_path is no pack").isFalse();
+    }
+
+    /** {@code bigger_icon_size} as read from the given {@code bigger_icon_size}, {@code disable_evolve_icons} and {@code assets_path}. */
+    private static boolean flagsFrom(String biggerIconSize, String disableEvolveIcons, String assetsPath) {
+        String[] keys = {"swt.evolve.bigger_icon_size", "swt.evolve.disable_evolve_icons", "swt.evolve.assets_path"};
+        String[] values = {biggerIconSize, disableEvolveIcons, assetsPath};
+        String[] saved = new String[keys.length];
         try {
-            System.setProperty("swt.evolve.bigger_icon_size", "true");
+            for (int i = 0; i < keys.length; i++) {
+                saved[i] = System.getProperty(keys[i]);
+                if (values[i] == null) System.clearProperty(keys[i]);
+                else System.setProperty(keys[i], values[i]);
+            }
             Config.setConfigFlags(null);
-            assertThat(Config.getConfigFlags().bigger_icon_size).isTrue();
+            return Config.getConfigFlags().bigger_icon_size;
         } finally {
-            if (saved == null) System.clearProperty("swt.evolve.bigger_icon_size");
-            else System.setProperty("swt.evolve.bigger_icon_size", saved);
+            for (int i = 0; i < keys.length; i++) {
+                if (saved[i] == null) System.clearProperty(keys[i]);
+                else System.setProperty(keys[i], saved[i]);
+            }
         }
     }
 }

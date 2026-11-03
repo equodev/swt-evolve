@@ -36,10 +36,10 @@ class VTabItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 546: // control
+      case 547: // control
         control = r.ref<VControl>();
         return true;
-      case 547: // toolTipText
+      case 548: // toolTipText
         toolTipText = r.string();
         return true;
       default:
@@ -53,13 +53,13 @@ class VTabItem extends VItem {
     {
       final v_ = control;
       if (v_ != null) {
-        w.keyRef(546, v_.id);
+        w.keyRef(547, v_.id);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(547);
+        w.key(548);
         w.string(v_);
       }
     }
@@ -68,8 +68,8 @@ class VTabItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(546, control);
-    visit(547, toolTipText);
+    visit(547, control);
+    visit(548, toolTipText);
   }
 
   @override
