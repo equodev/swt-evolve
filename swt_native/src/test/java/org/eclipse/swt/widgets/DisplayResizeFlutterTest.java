@@ -302,6 +302,29 @@ class DisplayResizeFlutterTest {
     }
 
     @Test
+    void web_clientReadyOnTheCommThread_writesTheClientPlatformOnTheDisplayThread() throws InterruptedException {
+        TestWebBridge web = install(TestWebBridge::new);
+        newMainShell();
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
+        p.width = 1024;
+        p.height = 768;
+        p.isFirst = true;
+        p.targetPlatform = "linux";
+
+        Thread comm = new Thread(() -> web.comm.fireContaining("ClientReady", p), "comm");
+        comm.start();
+        comm.join();
+
+        assertThat(display.getData(dev.equo.swt.ClientPlatform.DISPLAY_DATA_KEY))
+                .as("Display data is the Display thread's: written from the comm thread, it raced the Display's own writes")
+                .isNull();
+        while (display.readAndDispatch()) {
+        }
+        assertThat(display.getData(dev.equo.swt.ClientPlatform.DISPLAY_DATA_KEY)).isNotNull();
+    }
+
+    @Test
     void web_resizeSequence_keepsDisplayAndShellInLockstep() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell shell = newMainShell();

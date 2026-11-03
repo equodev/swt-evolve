@@ -228,10 +228,13 @@ final class StyledTextFlutterStage {
         boolean traversed = traversal != SWT.TRAVERSE_NONE && twin.traverse(traversal, offered);
         twinTraversed |= traversed;
         if (traversed) {
+            // The focus moved while the key was down, so its release, and the modifiers', go to the
+            // control it focused, not to the twin.
             subject.setFocus();
-        } else {
-            twin.notifyListeners(SWT.KeyDown, keyEvent(key, modifiers));
+            settle();
+            return;
         }
+        twin.notifyListeners(SWT.KeyDown, keyEvent(key, modifiers));
         twin.notifyListeners(SWT.KeyUp, keyEvent(key, modifiers));
         for (int i = order.length - 1; i >= 0; i--) {
             if ((modifiers & order[i]) == 0) continue;

@@ -48,6 +48,9 @@ class VetoGate {
   bool _armed = false;
   bool? _earlyVerdict;
   final List<_Proposal> _queue = [];
+  int _proposed = 0;
+  int _applied = 0;
+  final List<(int, void Function())> _afterApplied = [];
   int? _id;
   int _type = -1;
   int _vetoableChannel = -1;
@@ -136,6 +139,35 @@ class VetoGate {
     cancelAll();
   }
 
+  /// How many actions have been withheld so far.
+  int get proposed => _proposed;
+
+  /// Runs [action] once the first [count] withheld actions have their answer applied, a microtask
+  /// after the last of them: a focus that answer moves is applied in one. Actions run in the order
+  /// they were given.
+  void afterApplied(int count, void Function() action) {
+    _afterApplied.add((count, action));
+    _releaseApplied();
+  }
+
+  void _settle(int count) {
+    _applied += count;
+    _releaseApplied();
+  }
+
+  void _releaseApplied() {
+    final due = <void Function()>[];
+    while (_afterApplied.isNotEmpty && _afterApplied.first.$1 <= _applied) {
+      due.add(_afterApplied.removeAt(0).$2);
+    }
+    if (due.isEmpty) return;
+    scheduleMicrotask(() {
+      for (final action in due) {
+        action();
+      }
+    });
+  }
+
   /// Registers a withheld action. [onVerdict] runs exactly once — with Java's answer, or `true` on
   /// [timeout]. Call before sending the event so queue order matches wire order.
   void propose(void Function(bool doit) onVerdict) {
@@ -147,6 +179,7 @@ class VetoGate {
     }
     final proposal = _Proposal(onVerdict);
     _queue.add(proposal);
+    _proposed++;
     proposal.timer = Timer(timeout, () => _failOpen(proposal));
   }
 
@@ -155,8 +188,10 @@ class VetoGate {
     for (final proposal in _queue) {
       proposal.timer?.cancel();
     }
+    final unanswered = _queue.where((proposal) => !proposal.spent).length;
     _queue.clear();
     _earlyVerdict = null;
+    _settle(unanswered);
   }
 
   void _resolveHead(bool doit) {
@@ -177,6 +212,7 @@ class VetoGate {
     // timer already committed, instead of letting it resolve the proposal behind it.
     if (head.spent) return;
     head.onVerdict(doit);
+    _settle(1);
   }
 
   void _failOpen(_Proposal proposal) {
@@ -187,6 +223,7 @@ class VetoGate {
     // the `armed` setter would drop the spent entry needed to absorb this proposal's late verdict.
     if (!_optimistic) _armed = false;
     proposal.onVerdict(true);
+    _settle(1);
   }
 }
 

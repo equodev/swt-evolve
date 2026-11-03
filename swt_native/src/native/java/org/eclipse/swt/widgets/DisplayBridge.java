@@ -402,8 +402,24 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (p == null) return;
             display.clientPlatform = p.targetPlatform;
             DisplayHelper.clientReady(display.getApi(), p.targetPlatform);
-            if (p.targetPlatform != null)
-                display.getApi().setData(ClientPlatform.DISPLAY_DATA_KEY, ClientPlatform.of(display.getApi()));
+            if (p.targetPlatform != null) {
+                // Display data is the Display thread's: written from the comm thread, it races the
+                // Display's own writes to the same arrays.
+                Display api = display.getApi();
+                Runnable publish = () -> {
+                    if (!api.isDisposed())
+                        api.setData(ClientPlatform.DISPLAY_DATA_KEY, ClientPlatform.of(api));
+                };
+                if (api.getThread() == Thread.currentThread()) {
+                    publish.run();
+                } else {
+                    try {
+                        api.asyncExec(publish);
+                    } catch (org.eclipse.swt.SWTException disposed) {
+                        // The display went away between the check and asyncExec.
+                    }
+                }
+            }
             // A client that reconnects reporting p.isFirst=true — a fresh Flutter instance re-established
             // the socket (e.g. a browser refresh) but is NOT the bridge's first ClientReady — needs the
             // swt.evolve properties re-pushed, or its theme/config init is lost on refresh.

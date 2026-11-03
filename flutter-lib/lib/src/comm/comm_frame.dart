@@ -868,6 +868,9 @@ abstract class EquoCommBase {
   static void observeSend(String actionId, Payload? payload) =>
       sendObserverForTesting?.call(actionId, payload);
 
+  /// Told the channel of every event [sendTo] has sent (see `TraversalOrder`).
+  static void Function(int channel)? afterSend;
+
   /// Sends [payload] on the channel numbered [channel] (see [WireChannel]) of the widget of type
   /// [type] numbered [id], the header written from the numbers: no channel name is built.
   void sendTo(int type, int id, int channel, [Payload? payload]) {
@@ -878,6 +881,7 @@ abstract class EquoCommBase {
     // Owed pushes write with the same writer, so they go first.
     payOwed();
     _sendWritten(WidgetWireWriter.writeTo(type, id, channel, payload));
+    afterSend?.call(channel);
   }
 
   /// Sends the frame [w] holds: lent to the transport when the socket is open, so nothing is

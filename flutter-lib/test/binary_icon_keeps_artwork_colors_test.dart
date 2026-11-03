@@ -76,6 +76,18 @@ Future<Color> _centerPixel(WidgetTester tester, String png, int side) async {
   });
   await tester.pumpAndSettle();
 
+  // The widget decodes the bitmap on the real clock, which pumpAndSettle does not wait for: until
+  // it has, nothing is painted. A wrong color is painted too, so it still fails.
+  var center = await _readCenter(tester, boundaryKey, side);
+  for (var i = 0; i < 100 && center.a == 0; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pump();
+    center = await _readCenter(tester, boundaryKey, side);
+  }
+  return center;
+}
+
+Future<Color> _readCenter(WidgetTester tester, GlobalKey boundaryKey, int side) async {
   late ByteData bytes;
   await tester.runAsync(() async {
     final boundary =

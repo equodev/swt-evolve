@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../focus_requests.dart';
 import 'tab_only_focus_node.dart';
+import 'traversal_order.dart';
 import 'veto_gate.dart';
 
 /// Withholds Flutter's own focus traversal inside [child] while a `TraverseListener` could veto it.
@@ -98,13 +99,18 @@ class _GatedTraversal<T extends Intent> extends Action<T> {
 
   @override
   void invoke(T intent) {
+    final traversal = TraversalOrder.begin();
     final gate = this.gate;
     if (gate == null || !gate.armed) {
       _move();
+      traversal.moved();
       return;
     }
     gate.propose((doit) {
       if (doit) _move();
+      traversal.moved(focusChanges: doit);
     });
+    // A proposal the gate drops unanswered moves nothing.
+    gate.afterApplied(gate.proposed, () => traversal.moved(focusChanges: false));
   }
 }

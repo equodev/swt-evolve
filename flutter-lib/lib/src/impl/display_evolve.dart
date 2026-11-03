@@ -26,6 +26,7 @@ import 'utils/key_edit_order.dart';
 import 'utils/pending_move.dart';
 import 'focus_requests.dart';
 import 'utils/traversal_veto_scope.dart';
+import 'utils/traversal_order.dart';
 import 'utils/veto_gate.dart';
 import 'widget_config.dart';
 import '../comm/v_registry.dart';
@@ -136,6 +137,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
   bool _forwardKeyToSwt(KeyEvent event) {
     // A focused widget with its own keyboard pipeline (a Swing island) forwards its own keys.
     if (keyboardClaimed) return false;
+    // Counted as it comes: a key a menu holds and plays later waits only for the Tabs before it.
+    _traversalsBefore[event] = TraversalOrder.begun;
     // Keys typed while a pop-up opens wait for it, behind the ones already waiting: the menu can
     // be open a frame before it has the focus.
     if (OpenMenus.holding) {
@@ -162,8 +165,41 @@ class _DisplaySwtState extends State<DisplaySwt> {
       }
       return false;
     }
-    _forwardKey(event);
+    _forwardBehindTraversals(event);
     return false;
+  }
+
+  /// Keys held behind the traversals begun before them ([TraversalOrder]): Java sends a key to its
+  /// focus control, which those have not moved yet. Only the traversals before it: Java answers a
+  /// Tab only once it has its KeyDown.
+  int _keysBehindTraversals = 0;
+
+  final Expando<int> _traversalsBefore = Expando();
+
+  /// Keys typing into a field, from press to release: never held, as the field applies the
+  /// character at once and Java must get the key on the field that took its edit.
+  final Set<PhysicalKeyboardKey> _typingKeys = {};
+
+  void _forwardBehindTraversals(KeyEvent event) {
+    final begun = _traversalsBefore[event] ?? TraversalOrder.begun;
+    if (event is KeyDownEvent &&
+        KeyEditOrder.instance.editorFocused &&
+        _typesCharacter(mapNewKeyEventToSwt(event).character ?? 0)) {
+      _typingKeys.add(event.physicalKey);
+    }
+    final typing = _typingKeys.contains(event.physicalKey);
+    if (event is KeyUpEvent) _typingKeys.remove(event.physicalKey);
+    if (typing || (_keysBehindTraversals == 0 && TraversalOrder.settledUpTo(begun))) {
+      _forwardKey(event);
+      return;
+    }
+    _keysBehindTraversals++;
+    // Mapped now: the modifiers are the ones held when the key came, not when it is sent.
+    final mapped = mapNewKeyEventToSwt(event);
+    TraversalOrder.after(begun, () {
+      _keysBehindTraversals--;
+      if (mounted) _forwardKey(event, mapped: mapped);
+    });
   }
 
   /// Keys waiting for the menus to read the keys before them, in the order they came.
@@ -175,11 +211,11 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (!mounted) return;
     for (final key in keys) {
       if (keyboardClaimed || (key.menuMayTakeIt && OpenMenus.any)) continue;
-      _forwardKey(key.event);
+      _forwardBehindTraversals(key.event);
     }
   }
 
-  void _forwardKey(KeyEvent event) {
+  void _forwardKey(KeyEvent event, {VEvent? mapped}) {
     final int id = widget.value.id ?? 0;
     if (openListClaimsKey(event)) return;
     // A move held back by the throttle happened before this key, so it goes first.
@@ -191,7 +227,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
       if (compositionOwnsKey(event.character ?? '')) return;
-      final v = mapNewKeyEventToSwt(event);
+      final v = mapped ?? mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
           typed: _typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
@@ -199,7 +235,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
         );
       }
     } else if (event is KeyUpEvent) {
-      final v = mapNewKeyEventToSwt(event);
+      final v = mapped ?? mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
           typed: false,
