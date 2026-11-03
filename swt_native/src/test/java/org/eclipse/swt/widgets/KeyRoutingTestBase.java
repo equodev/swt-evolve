@@ -9,7 +9,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 
@@ -30,6 +34,19 @@ abstract class KeyRoutingTestBase {
     @BeforeEach
     void setUpBridge() {
         FlutterBridge.set(new RecordingBridge());
+    }
+
+    /**
+     * The client platform and the lone Alt live in the display's data, which the mock does not keep.
+     * One map per test: the display mock is shared by the JVM, so a map left from another test would
+     * hand this one its platform.
+     */
+    @BeforeEach
+    void keepDisplayData() {
+        Display display = Mocks.display();
+        Map<String, Object> data = new HashMap<>();
+        doAnswer(inv -> data.put(inv.getArgument(0), inv.getArgument(1))).when(display).setData(anyString(), any());
+        doAnswer(inv -> data.get(inv.getArgument(0))).when(display).getData(anyString());
     }
 
     @AfterEach

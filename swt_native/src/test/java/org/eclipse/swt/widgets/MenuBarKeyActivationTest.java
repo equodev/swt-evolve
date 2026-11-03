@@ -8,15 +8,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 /**
@@ -36,12 +31,7 @@ class MenuBarKeyActivationTest extends KeyRoutingTestBase {
         shell = shell();
         focus = new Text(shell, SWT.BORDER);
         when(shell.getChildren()).thenReturn(new Control[] {focus});
-        // The lone Alt is remembered in the Display's data, which the mocked display does not keep.
-        Map<String, Object> displayData = new HashMap<>();
-        Display display = shell.getDisplay();
-        doAnswer(inv -> displayData.put(inv.getArgument(0), inv.getArgument(1))).when(display).setData(anyString(), any());
-        doAnswer(inv -> displayData.get(inv.getArgument(0))).when(display).getData(anyString());
-        DisplayHelper.clientReady(display, "windows");
+        DisplayHelper.clientReady(shell.getDisplay(), "windows");
     }
 
     @Test
