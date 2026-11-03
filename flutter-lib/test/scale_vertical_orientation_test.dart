@@ -1,11 +1,10 @@
 // A vertical SWT `Scale` has its minimum at the bottom, as on Cocoa: `selection == minimum` draws the
-// knob at the bottom, dragging it up raises the selection, and the Up arrow raises it.
+// knob at the bottom, and dragging it up raises the selection.
 // `swt.evolve.scale_vertical_minimum_at_top` puts the minimum at the top instead, as on GTK
-// (`gtk_scale_new` with no inversion) and Win32 (a bare `TBS_VERT` trackbar), where Up lowers it.
-// Left and Right step down and up either way, as they do on a horizontal Scale.
+// (`gtk_scale_new` with no inversion) and Win32 (a bare `TBS_VERT` trackbar). The arrows step it in
+// Java (ScaleHelper.stepByKey).
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -59,15 +58,6 @@ Future<List<int?>> _pumpScale(WidgetTester tester, int selection) async {
   return selections;
 }
 
-Future<List<int?>> _pressKey(WidgetTester tester, LogicalKeyboardKey key) async {
-  final selections = await _pumpScale(tester, 50);
-  tester.widget<Slider>(find.byType(Slider)).focusNode!.requestFocus();
-  await tester.pump();
-  await tester.sendKeyEvent(key);
-  await tester.pump();
-  return selections;
-}
-
 /// Where the Slider's minimum and maximum ends land on screen: the Material Slider keeps its minimum
 /// at its local left edge, wherever the rotation puts it.
 (Offset, Offset) _ends(WidgetTester tester) {
@@ -105,18 +95,6 @@ void main() {
       expect(selections, isNotEmpty);
       expect(selections.last, greaterThan(60));
     });
-
-    testWidgets('the Up arrow raises a vertical Scale selection', (tester) async {
-      final selections = await _pressKey(tester, LogicalKeyboardKey.arrowUp);
-      expect(selections, hasLength(1));
-      expect(selections.single, greaterThan(50));
-    });
-
-    testWidgets('the Down arrow lowers a vertical Scale selection', (tester) async {
-      final selections = await _pressKey(tester, LogicalKeyboardKey.arrowDown);
-      expect(selections, hasLength(1));
-      expect(selections.single, lessThan(50));
-    });
   });
 
   group('with scale_vertical_minimum_at_top, as on GTK and Win32', () {
@@ -133,32 +111,5 @@ void main() {
       expect(selections, isNotEmpty);
       expect(selections.last, lessThan(40));
     });
-
-    testWidgets('the Up arrow lowers a vertical Scale selection', (tester) async {
-      final selections = await _pressKey(tester, LogicalKeyboardKey.arrowUp);
-      expect(selections, hasLength(1));
-      expect(selections.single, lessThan(50));
-    });
-
-    testWidgets('the Down arrow raises a vertical Scale selection', (tester) async {
-      final selections = await _pressKey(tester, LogicalKeyboardKey.arrowDown);
-      expect(selections, hasLength(1));
-      expect(selections.single, greaterThan(50));
-    });
   });
-
-  for (final minimumAtTop in [false, true]) {
-    final how = minimumAtTop ? ' (minimum at the top)' : '';
-    testWidgets('the Left arrow lowers a vertical Scale selection$how', (tester) async {
-      if (minimumAtTop) setConfigFlags(ConfigFlags()..scale_vertical_minimum_at_top = true);
-      final selections = await _pressKey(tester, LogicalKeyboardKey.arrowLeft);
-      expect(selections.single, lessThan(50));
-    });
-
-    testWidgets('the Right arrow raises a vertical Scale selection$how', (tester) async {
-      if (minimumAtTop) setConfigFlags(ConfigFlags()..scale_vertical_minimum_at_top = true);
-      final selections = await _pressKey(tester, LogicalKeyboardKey.arrowRight);
-      expect(selections.single, greaterThan(50));
-    });
-  }
 }

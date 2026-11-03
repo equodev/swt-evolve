@@ -159,9 +159,8 @@ class _ThemedScale extends StatefulWidget {
 }
 
 class _ThemedScaleState extends State<_ThemedScale> {
-  /// The value this Scale last reported, shown until the application has it: the Slider steps its
-  /// keys from the value it shows, so a key pressed before the round trip completes would otherwise
-  /// step from the value before it.
+  /// The value this Scale last reported, shown until the application has it, so the knob follows a
+  /// drag ahead of the round trip.
   double? _localValue;
 
   /// The values reported and not yet seen back from the application, oldest first.
@@ -181,51 +180,31 @@ class _ThemedScaleState extends State<_ThemedScale> {
   void initState() {
     super.initState();
     widget.focusNode.addListener(_reportFocus);
-    widget.focusNode.onKeyEvent = _handleKey;
+    widget.focusNode.onKeyEvent = _keepArrowsFromSlider;
   }
 
   @override
   void dispose() {
     _confirmTimeout?.cancel();
     widget.focusNode.removeListener(_reportFocus);
-    if (widget.focusNode.onKeyEvent == _handleKey) widget.focusNode.onKeyEvent = null;
+    if (widget.focusNode.onKeyEvent == _keepArrowsFromSlider) widget.focusNode.onKeyEvent = null;
     super.dispose();
   }
 
-  /// The arrows the Slider would take, stepped by its own unit from the value this Scale last
-  /// reported. The Slider steps from the value it last rendered, so a second key pressed before the
-  /// next frame would step from where the first one started and report nothing new.
-  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (!widget.enabled || event is KeyUpEvent) return KeyEventResult.ignored;
-    final keyboard = HardwareKeyboard.instance;
-    if (keyboard.isShiftPressed || keyboard.isControlPressed || keyboard.isAltPressed || keyboard.isMetaPressed) {
-      return KeyEventResult.ignored;
-    }
-    final traditional = MediaQuery.maybeNavigationModeOf(context) != NavigationMode.directional;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    final bool increase;
-    final key = event.logicalKey;
-    // Up moves the knob up: it lowers a vertical Scale whose minimum is at the top.
-    if (key == LogicalKeyboardKey.arrowUp && traditional) {
-      increase = !widget.minimumAtTop;
-    } else if (key == LogicalKeyboardKey.arrowDown && traditional) {
-      increase = widget.minimumAtTop;
-    } else if (key == LogicalKeyboardKey.arrowLeft) {
-      increase = rtl;
-    } else if (key == LogicalKeyboardKey.arrowRight) {
-      increase = !rtl;
-    } else {
-      return KeyEventResult.ignored;
-    }
-    final range = widget.max - widget.min;
-    if (range <= 0) return KeyEventResult.ignored;
-    final unit = _sliderKeyUnit(Theme.of(context).platform) * range;
-    final current = (_localValue ?? widget.value).clamp(widget.min, widget.max).toDouble();
-    final next = (current + (increase ? unit : -unit)).clamp(widget.min, widget.max).toDouble();
-    _handleChanged(next);
-    _handleChangeEnd(next);
-    return KeyEventResult.handled;
-  }
+  static final _arrows = {
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+  };
+
+  /// The arrows step a Scale in Java, by its increment and only when no KeyDown listener vetoed
+  /// them, so the Slider's own shortcuts, which step by a platform fraction of the range, never see
+  /// them. The Display has already forwarded the key to Java.
+  KeyEventResult _keepArrowsFromSlider(FocusNode node, KeyEvent event) =>
+      event is! KeyUpEvent && _arrows.contains(event.logicalKey)
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored;
 
   @override
   void didUpdateWidget(_ThemedScale old) {
@@ -468,12 +447,6 @@ class _ThemedScaleState extends State<_ThemedScale> {
     widget.onChangeEnd(value);
   }
 }
-
-/// The share of the range one arrow moves a Slider with no divisions, as Flutter's Slider has it.
-double _sliderKeyUnit(TargetPlatform platform) => switch (platform) {
-      TargetPlatform.iOS || TargetPlatform.macOS => 0.1,
-      _ => 0.05,
-    };
 
 /// Where [value] sits along a track of [length] that the slider insets by [pad] at each end.
 double _valueToX(double value, double min, double max, double length, double pad) =>
