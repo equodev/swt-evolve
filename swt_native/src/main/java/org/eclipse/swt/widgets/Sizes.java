@@ -723,7 +723,8 @@ public class Sizes {
             return new Rectangle(inset, y, width, itemHeight);
         }
         TableColumn[] columns = dartTable.getColumns();
-        int x = tableColumnLeft(dartTable, index);
+        // In the table's client area: a table scrolled sideways moves its cells left by that much.
+        int x = tableColumnLeft(dartTable, index) - TableHelper.scrollOffsetX(dartTable);
         int width = index < columns.length ? columns[index].getWidth() : 0;
         if (index == 0)
             return new Rectangle(x + inset, y, Math.max(0, width - inset), itemHeight);

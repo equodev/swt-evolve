@@ -16,6 +16,14 @@ import java.lang.reflect.Array;
 public class TableHelper {
 
     /**
+     * How far Flutter has scrolled the table sideways, which one whose columns are wider than it does
+     * with H_SCROLL. Cell bounds are in the table's client area, as natively, so they move left by this much.
+     */
+    public static int scrollOffsetX(DartTable table) {
+        return table.scrollOffsetX;
+    }
+
+    /**
      * A row of a table without columns was given what it shows, {@code width} wide: the one cell grows to hold
      * it, as Win32 and Cocoa grow their one column to the widest row. GTK stretches it across the table.
      */
@@ -43,6 +51,7 @@ public class TableHelper {
      * Selection on the vertical ScrollBar; a scroll the API asked for carries {@code SWT.NONE} and is not.
      */
     public static void recordScrollOffset(DartTable table, Event event) {
+        table.scrollOffsetX = Math.max(0, event.x);
         int before = table.scrollOffset;
         table.scrollOffset = Math.max(0, event.y);
         if (table.scrollOffset == before) return;
