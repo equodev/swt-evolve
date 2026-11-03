@@ -94,23 +94,23 @@ public class VToolItem extends VItem {
         ((DartToolItem) impl).width = value;
     }
 
-    public static final int BACKGROUND = 598;
+    public static final int BACKGROUND = 599;
 
-    public static final int CONTROL = 599;
+    public static final int CONTROL = 600;
 
-    public static final int DISABLED_IMAGE = 600;
+    public static final int DISABLED_IMAGE = 601;
 
-    public static final int ENABLED = 601;
+    public static final int ENABLED = 602;
 
-    public static final int FOREGROUND = 602;
+    public static final int FOREGROUND = 603;
 
-    public static final int HOT_IMAGE = 603;
+    public static final int HOT_IMAGE = 604;
 
-    public static final int SELECTION = 604;
+    public static final int SELECTION = 605;
 
-    public static final int TOOL_TIP_TEXT = 605;
+    public static final int TOOL_TIP_TEXT = 606;
 
-    public static final int WIDTH = 606;
+    public static final int WIDTH = 607;
 
     @Override
     public String wireName(int key) {
@@ -140,31 +140,31 @@ public class VToolItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 598:
+            case 599:
                 w.write(getBackground());
                 return true;
-            case 599:
+            case 600:
                 w.ref(getControl());
                 return true;
-            case 600:
+            case 601:
                 w.image(getDisabledImage());
                 return true;
-            case 601:
+            case 602:
                 w.write(getEnabled());
                 return true;
-            case 602:
+            case 603:
                 w.write(getForeground());
                 return true;
-            case 603:
+            case 604:
                 w.image(getHotImage());
                 return true;
-            case 604:
+            case 605:
                 w.write(getSelection());
                 return true;
-            case 605:
+            case 606:
                 w.write(getToolTipText());
                 return true;
-            case 606:
+            case 607:
                 w.write((int) getWidth());
                 return true;
         }
@@ -174,84 +174,84 @@ public class VToolItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 598:
+            case 599:
                 {
                     Color v_ = getBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(598);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 599:
-                {
-                    Control v_ = getControl();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(599);
-                    w.ref(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 600:
                 {
-                    Image v_ = getDisabledImage();
-                    if (v_ == null || v_.isDisposed())
+                    Control v_ = getControl();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(600);
-                    w.image(v_);
+                    w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 601:
                 {
-                    boolean v_ = getEnabled();
+                    Image v_ = getDisabledImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(601);
-                    w.write(v_);
+                    w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 602:
                 {
-                    Color v_ = getForeground();
-                    if (v_ == null || v_.isDisposed())
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    boolean v_ = getEnabled();
                     w.key(602);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 603:
                 {
-                    Image v_ = getHotImage();
+                    Color v_ = getForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(603);
-                    w.image(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 604:
                 {
-                    boolean v_ = getSelection();
-                    if (!v_)
+                    Image v_ = getHotImage();
+                    if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(604);
-                    w.write(v_);
+                    w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 605:
                 {
-                    String v_ = getToolTipText();
-                    if (v_ == null)
+                    boolean v_ = getSelection();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.isEmpty())
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(605);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 606:
                 {
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(606);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 607:
+                {
                     int v_ = getWidth();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(606);
+                    w.key(607);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -259,7 +259,7 @@ public class VToolItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 598, 599, 600, 601, 602, 603, 604, 605, 606 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 599, 600, 601, 602, 603, 604, 605, 606, 607 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -273,7 +273,7 @@ public class VToolItem extends VItem {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 601:
+            case 602:
                 return true;
         }
         return super.wireAlways(key);

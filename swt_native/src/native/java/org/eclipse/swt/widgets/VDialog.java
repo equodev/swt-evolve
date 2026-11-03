@@ -56,13 +56,13 @@ public class VDialog implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(171);
-        w.write((int) getStyle());
-        w.key(173);
-        w.write(getText());
         w.key(172);
+        w.write((int) getStyle());
+        w.key(174);
+        w.write(getText());
+        w.key(173);
         w.write(getSwt());
-        w.key(170);
+        w.key(171);
         w.write(getId());
     }
 }

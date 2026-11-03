@@ -13,6 +13,7 @@ import '../theme/theme_extensions/scale_theme_extension.dart';
 import '../theme/theme_settings/scale_theme_settings.dart';
 import 'utils/widget_utils.dart';
 import 'utils/quiet_animations.dart';
+import 'widget_config.dart';
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
@@ -82,6 +83,7 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         width: size.width,
         height: size.height,
         isVertical: isVertical,
+        minimumAtTop: isVertical && scaleMinimumAtTop,
         widgetTheme: widgetTheme,
         onMarginPress: () => _pressOnMargin = true,
         // The value is the application's: it changes when the application sends it back, which is
@@ -123,6 +125,9 @@ class _ThemedScale extends StatefulWidget {
   final double width;
   final double height;
   final bool isVertical;
+  /// A vertical Scale with its minimum at the top, as on GTK and Win32; at the bottom, as on Cocoa,
+  /// unless the application asks for this.
+  final bool minimumAtTop;
   final ScaleThemeExtension widgetTheme;
   final ValueChanged<double> onChanged;
   final ValueChanged<double> onChangeEnd;
@@ -140,6 +145,7 @@ class _ThemedScale extends StatefulWidget {
     required this.width,
     required this.height,
     required this.isVertical,
+    required this.minimumAtTop,
     required this.widgetTheme,
     required this.onChanged,
     required this.onMarginPress,
@@ -199,10 +205,11 @@ class _ThemedScaleState extends State<_ThemedScale> {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final bool increase;
     final key = event.logicalKey;
+    // Up moves the knob up: it lowers a vertical Scale whose minimum is at the top.
     if (key == LogicalKeyboardKey.arrowUp && traditional) {
-      increase = true;
+      increase = !widget.minimumAtTop;
     } else if (key == LogicalKeyboardKey.arrowDown && traditional) {
-      increase = false;
+      increase = widget.minimumAtTop;
     } else if (key == LogicalKeyboardKey.arrowLeft) {
       increase = rtl;
     } else if (key == LogicalKeyboardKey.arrowRight) {
@@ -356,6 +363,19 @@ class _ThemedScaleState extends State<_ThemedScale> {
               width: _marginWidth(left: left),
               child: _InertMargin(onPress: widget.onMarginPress),
             ),
+          // Beside the track, across it, a press only focuses the Scale, as on Win32 and GTK.
+          for (final top in [true, false])
+            Positioned(
+              left: 0,
+              right: 0,
+              top: top ? 0 : null,
+              bottom: top ? null : 0,
+              height: _besideTrackThickness(),
+              child: _InertMargin(onPress: () {
+                widget.onMarginPress();
+                widget.focusNode.requestFocus();
+              }),
+            ),
         ],
       ),
     );
@@ -370,6 +390,13 @@ class _ThemedScaleState extends State<_ThemedScale> {
     final centre = _valueToX(widget.value, widget.min, widget.max, length, pad);
     final edge = left ? centre - widget.widgetTheme.thumbRadius : length - centre - widget.widgetTheme.thumbRadius;
     return math.max(0, math.min(pad, edge));
+  }
+
+  /// The strip on each side of the track beyond the knob's reach: the track takes the padding's
+  /// width on either side of its centre line.
+  double _besideTrackThickness() {
+    final across = widget.isVertical ? widget.width : widget.height;
+    return math.max(0, across / 2 - widget.widgetTheme.horizontalPadding);
   }
 
   Widget _buildHorizontalScale(Widget scale) {
@@ -395,8 +422,9 @@ class _ThemedScaleState extends State<_ThemedScale> {
       width: widget.width,
       height: widget.height,
       color: _appBackground(context),
+      // Clockwise, one quarter turn puts the Slider's minimum at the top, three at the bottom.
       child: RotatedBox(
-        quarterTurns: 3,
+        quarterTurns: widget.minimumAtTop ? 1 : 3,
         child: SizedBox(
           width: widget.height,
           height: widget.width,

@@ -244,19 +244,19 @@ public sealed class Point implements Serializable, Cloneable, dev.equo.swt.WireO
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(402);
-        w.write((int) x);
         w.key(403);
+        w.write((int) x);
+        w.key(404);
         w.write((int) y);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 402:
+            case 403:
                 x = r.int32();
                 return true;
-            case 403:
+            case 404:
                 y = r.int32();
                 return true;
         }

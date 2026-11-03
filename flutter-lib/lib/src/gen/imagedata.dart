@@ -13,16 +13,16 @@ class VImageData implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 340: // data
+      case 341: // data
         data = r.bytes();
         return true;
-      case 341: // depth
+      case 342: // depth
         depth = r.int32();
         return true;
-      case 342: // height
+      case 343: // height
         height = r.int32();
         return true;
-      case 343: // width
+      case 344: // width
         width = r.int32();
         return true;
       default:
@@ -35,35 +35,35 @@ class VImageData implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = data;
       if (v_ != null) {
-        w.key(340);
+        w.key(341);
         w.bytes(v_);
       }
     }
     {
       final v_ = depth;
       if (v_ != null) {
-        w.keyInt32(341, v_);
+        w.keyInt32(342, v_);
       }
     }
     {
       final v_ = height;
       if (v_ != null) {
-        w.keyInt32(342, v_);
+        w.keyInt32(343, v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(343, v_);
+        w.keyInt32(344, v_);
       }
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(340, data);
-    visit(341, depth);
-    visit(342, height);
-    visit(343, width);
+    visit(341, data);
+    visit(342, depth);
+    visit(343, height);
+    visit(344, width);
   }
 }

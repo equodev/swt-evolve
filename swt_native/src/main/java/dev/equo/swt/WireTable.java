@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -2143690368;
+    public static final int FINGERPRINT = -822819000;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -741,6 +741,7 @@ public final class WireTable {
             "sampleBuffers",
             "samples",
             "sashWidth",
+            "scale_vertical_minimum_at_top",
             "scope",
             "script",
             "seconds",
@@ -978,6 +979,7 @@ public final class WireTable {
             "ConfigFlags.preserve_icon_colors",
             "ConfigFlags.print_move",
             "ConfigFlags.push_button_margin",
+            "ConfigFlags.scale_vertical_minimum_at_top",
             "ConfigFlags.show_scaling_control",
             "ConfigFlags.show_theme_color_palette",
             "ConfigFlags.system_menu_bar",
@@ -1638,6 +1640,7 @@ public final class WireTable {
             "bool",
             "bool",
             "int",
+            "bool",
             "bool",
             "bool",
             "bool",
@@ -3281,31 +3284,31 @@ public final class WireTable {
     public static final int TYPE_WIDGET_SIZE_BRIDGE = 133;
 
     /** The display's `activeShellId`. */
-    public static final int DISPLAY_ACTIVE_SHELL_ID = 176;
+    public static final int DISPLAY_ACTIVE_SHELL_ID = 177;
 
     /** The display's `config`. */
-    public static final int DISPLAY_CONFIG = 177;
+    public static final int DISPLAY_CONFIG = 178;
 
     /** The display's `focusHolderId`. */
-    public static final int DISPLAY_FOCUS_HOLDER_ID = 178;
+    public static final int DISPLAY_FOCUS_HOLDER_ID = 179;
 
     /** The display's `mainShellId`. */
-    public static final int DISPLAY_MAIN_SHELL_ID = 179;
+    public static final int DISPLAY_MAIN_SHELL_ID = 180;
 
     /** The display's `popups`. */
-    public static final int DISPLAY_POPUPS = 180;
+    public static final int DISPLAY_POPUPS = 181;
 
     /** The display's `shells`. */
-    public static final int DISPLAY_SHELLS = 181;
+    public static final int DISPLAY_SHELLS = 182;
 
     /** The display's `systemMenu`. */
-    public static final int DISPLAY_SYSTEM_MENU = 182;
+    public static final int DISPLAY_SYSTEM_MENU = 183;
 
     /** The display's `tooltips`. */
-    public static final int DISPLAY_TOOLTIPS = 183;
+    public static final int DISPLAY_TOOLTIPS = 184;
 
     /** The display's `windowedShellIds`. */
-    public static final int DISPLAY_WINDOWED_SHELL_IDS = 184;
+    public static final int DISPLAY_WINDOWED_SHELL_IDS = 185;
 
     /** The flag `assets_path`. */
     public static final int CONFIG_FLAGS_ASSETS_PATH = 87;
@@ -3388,45 +3391,48 @@ public final class WireTable {
     /** The flag `push_button_margin`. */
     public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 113;
 
+    /** The flag `scale_vertical_minimum_at_top`. */
+    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 114;
+
     /** The flag `show_scaling_control`. */
-    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 114;
+    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 115;
 
     /** The flag `show_theme_color_palette`. */
-    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 115;
+    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 116;
 
     /** The flag `system_menu_bar`. */
-    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 116;
+    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 117;
 
     /** The flag `theme_color`. */
-    public static final int CONFIG_FLAGS_THEME_COLOR = 117;
+    public static final int CONFIG_FLAGS_THEME_COLOR = 118;
 
     /** The flag `theme_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 118;
+    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 119;
 
     /** The flag `theme_name`. */
-    public static final int CONFIG_FLAGS_THEME_NAME = 119;
+    public static final int CONFIG_FLAGS_THEME_NAME = 120;
 
     /** The flag `transparent_menu_check_box`. */
-    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 120;
+    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 121;
 
     /** The flag `ui_zoom`. */
-    public static final int CONFIG_FLAGS_UI_ZOOM = 121;
+    public static final int CONFIG_FLAGS_UI_ZOOM = 122;
 
     /** The flag `use_special_dropdown_button`. */
-    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 122;
+    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 123;
 
     /** The flag `use_swt_border`. */
-    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 123;
+    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 124;
 
     /** The flag `use_swt_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 124;
+    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 125;
 
     /** The flag `use_swt_font_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 125;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 126;
 
     /** The flag `use_swt_font_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 126;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 127;
 
     /** The flag `use_swt_fonts`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 127;
+    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 128;
 }

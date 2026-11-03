@@ -15,7 +15,7 @@ public class VRegion extends VResource {
         return org.eclipse.swt.graphics.RegionHelper.flatten(((DartRegion) impl).rects);
     }
 
-    public static final int RECTS = 422;
+    public static final int RECTS = 423;
 
     @Override
     public String wireName(int key) {
@@ -29,7 +29,7 @@ public class VRegion extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 422:
+            case 423:
                 w.write(getRects());
                 return true;
         }
@@ -39,14 +39,14 @@ public class VRegion extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 422:
+            case 423:
                 {
                     int[] v_ = getRects();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(422);
+                    w.key(423);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -54,7 +54,7 @@ public class VRegion extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 422 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 423 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -83,7 +83,7 @@ public class VRegion extends VResource {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(422);
+        w.key(423);
         w.write(getRects());
     }
 }

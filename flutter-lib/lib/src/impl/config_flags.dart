@@ -88,6 +88,10 @@ class ConfigFlags implements WireReadable {
   /// (`swt.use_swt_border`). Off by default: the theme's flat frame is drawn.
   bool? use_swt_border;
 
+  /// A vertical Scale has its minimum at the top, as on GTK and Win32
+  /// (`swt.evolve.scale_vertical_minimum_at_top`). Off by default: at the bottom, as on Cocoa.
+  bool? scale_vertical_minimum_at_top;
+
   /// The flags as an object of a binary frame, read field by field.
   @override
   bool readWire(int key, WidgetWireReader r) {
@@ -175,6 +179,8 @@ class ConfigFlags implements WireReadable {
         transparent_menu_check_box = r.boolean();
       case WireKey.k_ConfigFlags_use_swt_border:
         use_swt_border = r.boolean();
+      case WireKey.k_ConfigFlags_scale_vertical_minimum_at_top:
+        scale_vertical_minimum_at_top = r.boolean();
       default:
         return false;
     }

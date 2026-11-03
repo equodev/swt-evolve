@@ -32,9 +32,9 @@ public class VMessageBox extends VDialog {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(376);
+        w.key(377);
         w.write(getMessage());
-        w.key(375);
+        w.key(376);
         w.write(getButtonLabels());
     }
 }

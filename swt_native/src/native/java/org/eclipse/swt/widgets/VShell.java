@@ -98,17 +98,17 @@ public class VShell extends VDecorations {
         ((DartShell) impl).shells = value;
     }
 
-    public static final int ALPHA = 449;
+    public static final int ALPHA = 450;
 
-    public static final int DIALOGS = 450;
+    public static final int DIALOGS = 451;
 
-    public static final int FULL_SCREEN = 451;
+    public static final int FULL_SCREEN = 452;
 
-    public static final int MAXIMUM_SIZE = 452;
+    public static final int MAXIMUM_SIZE = 453;
 
-    public static final int MINIMUM_SIZE = 453;
+    public static final int MINIMUM_SIZE = 454;
 
-    public static final int MODIFIED = 454;
+    public static final int MODIFIED = 455;
 
     @Override
     public String wireName(int key) {
@@ -132,10 +132,10 @@ public class VShell extends VDecorations {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 449:
+            case 450:
                 w.write((int) getAlpha());
                 return true;
-            case 450:
+            case 451:
                 {
                     Dialog[] a_ = getDialogs();
                     if (a_ == null)
@@ -146,16 +146,16 @@ public class VShell extends VDecorations {
                     }
                 }
                 return true;
-            case 451:
+            case 452:
                 w.write(getFullScreen());
                 return true;
-            case 452:
+            case 453:
                 w.write(getMaximumSize());
                 return true;
-            case 453:
+            case 454:
                 w.write(getMinimumSize());
                 return true;
-            case 454:
+            case 455:
                 w.write(getModified());
                 return true;
         }
@@ -165,21 +165,21 @@ public class VShell extends VDecorations {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 449:
+            case 450:
                 {
                     int v_ = getAlpha();
-                    w.key(449);
+                    w.key(450);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 450:
+            case 451:
                 {
                     Dialog[] v_ = getDialogs();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(450);
+                    w.key(451);
                     {
                         Dialog[] a_ = v_;
                         if (a_ == null)
@@ -191,19 +191,10 @@ public class VShell extends VDecorations {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 451:
+            case 452:
                 {
                     boolean v_ = getFullScreen();
                     if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(451);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 452:
-                {
-                    Point v_ = getMaximumSize();
-                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(452);
                     w.write(v_);
@@ -211,7 +202,7 @@ public class VShell extends VDecorations {
                 }
             case 453:
                 {
-                    Point v_ = getMinimumSize();
+                    Point v_ = getMaximumSize();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(453);
@@ -220,10 +211,19 @@ public class VShell extends VDecorations {
                 }
             case 454:
                 {
+                    Point v_ = getMinimumSize();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(454);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 455:
+                {
                     boolean v_ = getModified();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(454);
+                    w.key(455);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -231,7 +231,7 @@ public class VShell extends VDecorations {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VDecorations.allWireKeys_(), new int[] { 449, 450, 451, 452, 453, 454 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VDecorations.allWireKeys_(), new int[] { 450, 451, 452, 453, 454, 455 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -245,7 +245,7 @@ public class VShell extends VDecorations {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 449:
+            case 450:
                 return true;
         }
         return super.wireAlways(key);
