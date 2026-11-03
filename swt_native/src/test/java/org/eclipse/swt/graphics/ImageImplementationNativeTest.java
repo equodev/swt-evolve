@@ -13,6 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -284,18 +286,41 @@ class ImageImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("images built from different sources or flags are not equal")
+    @DisplayName("an image read from a stream sends its pixels to the client")
+    void streamPixelsReachTheWire() {
+        ByteArrayOutputStream png = new ByteArrayOutputStream();
+        ImageLoader loader = new ImageLoader();
+        loader.data = new ImageData[] {direct(2, 2)};
+        loader.save(png, SWT.IMAGE_PNG);
+        Image image = new Image(display, new ByteArrayInputStream(png.toByteArray()));
+
+        assertThat(((DartImage) image.getImpl())._imageDataForWire()).isNotNull();
+        image.dispose();
+    }
+
+    @Test
+    @DisplayName("images built from different sources are not equal")
     void equalityBySource() {
-        ImageDataProvider provider = zoom -> direct(2, 2);
-        Image fromProvider = new Image(display, provider);
-        Image gray = new Image(display, fromProvider, SWT.IMAGE_GRAY);
+        Image fromProvider = new Image(display, (ImageDataProvider) zoom -> direct(2, 2));
         Image plain = new Image(display, 2, 2);
 
-        assertThat(gray).isNotEqualTo(fromProvider);
         assertThat(fromProvider).isNotEqualTo(plain);
         assertThat(plain).isNotEqualTo(fromProvider);
-        gray.dispose();
         plain.dispose();
+        fromProvider.dispose();
+    }
+
+    // SWT 3.106 (build 4763) copies the provider into a flagged image and compares only the providers,
+    // natively too, so there a gray copy equals its source.
+    @Test
+    @DisplayName("a style flag tells a copy from the image it was made of")
+    void equalityByStyleFlag() {
+        assumeTrue(SWT.getVersion() != 4763);
+        Image fromProvider = new Image(display, (ImageDataProvider) zoom -> direct(2, 2));
+        Image gray = new Image(display, fromProvider, SWT.IMAGE_GRAY);
+
+        assertThat(gray).isNotEqualTo(fromProvider);
+        gray.dispose();
         fromProvider.dispose();
     }
 }
