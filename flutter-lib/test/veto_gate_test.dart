@@ -10,7 +10,7 @@ import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/impl/utils/veto_gate.dart';
 import 'package:swtflutter/src/comm/tagged_values.dart';
 import 'support/channels.dart' as channels;
-import 'package:swtflutter/src/gen/widgets.dart' show WireType;
+import 'package:swtflutter/src/gen/widgets.dart' show WireChannel, WireType;
 
 void _deliver(String actionId, Object payload) {
   final body = TaggedValues.encode(payload);
@@ -49,6 +49,42 @@ void main() {
     _deliver('Text/3/key/verdict', {'doit': false});
     await tester.pump();
     expect(seen, ['first:false', 'second:true', 'third:false']);
+  });
+
+  testWidgets('a DragStart verdict without its doit is a veto', (tester) async {
+    // The DragStart event leaves a false `doit` out, so a refusal can arrive empty.
+    final gate = VetoGate.dragStart()..attach(WireType.canvas, 9);
+    addTearDown(gate.detach);
+
+    final seen = <bool>[];
+    gate.propose(seen.add);
+    _deliver('Canvas/9/DragDetect/dragStartResult', <String, Object?>{});
+    await tester.pump();
+    expect(seen, [false]);
+  });
+
+  testWidgets('a key verdict without its doit allows', (tester) async {
+    final gate = VetoGate.key()..attach(WireType.text, 13);
+    addTearDown(gate.detach);
+    _deliver('Text/13/key/vetoable', {'value': true});
+    await tester.pump();
+
+    final seen = <bool>[];
+    gate.propose(seen.add);
+    _deliver('Text/13/key/verdict', <String, Object?>{});
+    await tester.pump();
+    expect(seen, [true]);
+  });
+
+  testWidgets('a menu verdict without its doit allows', (tester) async {
+    final gate = VetoGate.optimistic(WireChannel.menuVerdict)..attach(WireType.canvas, 14);
+    addTearDown(gate.detach);
+
+    final seen = <bool>[];
+    gate.propose(seen.add);
+    _deliver('Canvas/14/menu/verdict', <String, Object?>{});
+    await tester.pump();
+    expect(seen, [true]);
   });
 
   testWidgets('a proposal fails open when no verdict arrives', (tester) async {

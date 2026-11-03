@@ -37,43 +37,43 @@ class StyledTextSwt<V extends VStyledText> extends CanvasSwt<V> {
   }
 
   void sendExtendedModifymodifyText(V val, VEvent? payload) {
-    sendEvent(val, 37, payload); // ExtendedModify/modifyText
+    sendEvent(val, 44, payload); // ExtendedModify/modifyText
   }
 
   void sendLineBackgroundlineGetBackground(V val, VEvent? payload) {
-    sendEvent(val, 56, payload); // LineBackground/lineGetBackground
+    sendEvent(val, 63, payload); // LineBackground/lineGetBackground
   }
 
   void sendLineStylelineGetStyle(V val, VEvent? payload) {
-    sendEvent(val, 57, payload); // LineStyle/lineGetStyle
+    sendEvent(val, 64, payload); // LineStyle/lineGetStyle
   }
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 65, payload); // Modify/Modify
+    sendEvent(val, 72, payload); // Modify/Modify
   }
 
   void sendPaintObjectpaintObject(V val, VEvent? payload) {
-    sendEvent(val, 78, payload); // PaintObject/paintObject
+    sendEvent(val, 85, payload); // PaintObject/paintObject
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, 107, payload); // Verify/Verify
+    sendEvent(val, 114, payload); // Verify/Verify
   }
 
   void sendVerifyKeyverifyKey(V val, VEvent? payload) {
-    sendEvent(val, 108, payload); // VerifyKey/verifyKey
+    sendEvent(val, 115, payload); // VerifyKey/verifyKey
   }
 
   void sendWordMovementgetNextOffset(V val, VEvent? payload) {
-    sendEvent(val, 120, payload); // WordMovement/getNextOffset
+    sendEvent(val, 127, payload); // WordMovement/getNextOffset
   }
 
   void sendWordMovementgetPreviousOffset(V val, VEvent? payload) {
-    sendEvent(val, 121, payload); // WordMovement/getPreviousOffset
+    sendEvent(val, 128, payload); // WordMovement/getPreviousOffset
   }
 }
 

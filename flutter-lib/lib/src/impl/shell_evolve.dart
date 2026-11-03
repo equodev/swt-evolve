@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,7 @@ import '../impl/decorations_evolve.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
+import '../impl/utils/dnd_utils.dart';
 import '../impl/utils/region_clip.dart';
 import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/tracker_session.dart';
@@ -101,6 +103,41 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     });
   }
 
+  /// A drag from another window over this shell, which Java sends here with its position relative
+  /// to the shell's bounds.
+  final RemoteDragReceiver _remoteDrag = RemoteDragReceiver();
+  int? _remoteDragId;
+  Object? _remoteDragToken;
+
+  void _listenRemoteDrag(int id) {
+    _unlistenRemoteDrag();
+    _remoteDragId = id;
+    _remoteDragToken = EquoCommService.on(gen.WireType.shell, id, gen.WireChannel.dnDRemoteDrag, _receiveRemoteDrag);
+  }
+
+  void _unlistenRemoteDrag() {
+    final id = _remoteDragId;
+    if (id != null) EquoCommService.remove(gen.WireType.shell, id, gen.WireChannel.dnDRemoteDrag, _remoteDragToken);
+    _remoteDragId = null;
+  }
+
+  void _receiveRemoteDrag(dynamic payload) {
+    if (!mounted || payload is! Map) return;
+    final box = context.findRenderObject() as RenderBox?;
+    final global = box != null && box.hasSize
+        ? box.localToGlobal(Offset(_num(payload['x']), _num(payload['y'])))
+        : null;
+    final png = payload['segments'];
+    final hasImage = png is List<int> && png.isNotEmpty;
+    if (!_remoteDrag.handle(context, payload['text'] as String? ?? '', global,
+        png: hasImage ? Uint8List.fromList(png) : null,
+        imageSize: hasImage ? Size(_num(payload['width']), _num(payload['height'])) : null)) {
+      widget.sendEvent(state, gen.WireChannel.dnDRemoteDropNone, VEvent());
+    }
+  }
+
+  static double _num(Object? value) => (value as num?)?.toDouble() ?? 0;
+
   void Function()? _stopPopupRecords;
 
   /// Popups opened over this shell, when this client is the window drawing it. Empty in every other
@@ -125,6 +162,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   ///
   /// The top-left is the frame's, title bar included: Java's bounds for a shell start there too, and
   /// its toDisplay adds the title bar to reach the client area.
+  Offset toDisplay(Offset windowPosition) => _toDisplay(windowPosition);
+
   Offset _toDisplay(Offset windowPosition) {
     if (!mounted) return logicalToSwt(windowPosition);
     final box = context.findRenderObject() as RenderBox?;
@@ -141,7 +180,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // Again on every update, because the channel is keyed by id and this State outlives a change
     // of it: subscribing once at mount leaves the Shell listening on an id Java no longer sends
     // to, and a Tracker opened after that is never driven -- it just times out and its drop is
-    // discarded.
+    // discarded. The remote-drag channel is keyed by id the same way.
     _attachTrackerHost();
   }
 
@@ -152,6 +191,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     if (_trackerHostId != null && _trackerHostId != id) TrackerSession.detachHost(_trackerHostId!);
     _trackerHostId = id;
     TrackerSession.attachHost(state.swt, id, toDisplay: _toDisplay);
+    if (_remoteDragId != id) _listenRemoteDrag(id);
   }
 
   @override
@@ -160,6 +200,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     if (trackerHost != null) TrackerSession.detachHost(trackerHost);
     _stopPopupRecords?.call();
     VRegistry.instance.holdsAt(_popupsKey, const []);
+    _unlistenRemoteDrag();
+    _remoteDrag.dispose();
     _opacityNotifier.dispose();
     _focusScopeNode.removeListener(_handleFocusScopeChange);
     _focusScopeNode.dispose();

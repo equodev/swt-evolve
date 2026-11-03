@@ -23,11 +23,11 @@ class ListSwt<V extends VList> extends ScrollableSwt<V> {
   State createState() => ListImpl<ListSwt<VList>, VList>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 }
 

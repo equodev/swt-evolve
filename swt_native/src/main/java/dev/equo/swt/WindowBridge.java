@@ -53,4 +53,13 @@ public interface WindowBridge {
     default long nativeWindowHandle(Object shell) {
         return 0;
     }
+
+    /**
+     * Identifies the window this shell is drawn into: the shell rooting a window of its own that is
+     * {@code shell} or its nearest ancestor, or null for the bridge's own window. Two shells with the
+     * same answer are drawn by the same client.
+     */
+    default Object windowOf(Object shell) {
+        return null;
+    }
 }

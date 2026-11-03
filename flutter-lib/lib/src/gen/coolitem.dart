@@ -18,11 +18,11 @@ class CoolItemSwt<V extends VCoolItem> extends ItemSwt<V> {
   State createState() => CoolItemImpl<CoolItemSwt<VCoolItem>, VCoolItem>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 }
 

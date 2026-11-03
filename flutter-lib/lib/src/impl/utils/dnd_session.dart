@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueNotifier;
 import 'package:flutter/gestures.dart';
 import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
@@ -115,7 +116,7 @@ class DndSession {
   static int get listenedDropTargets => _listeners.length;
 }
 
-/// Whether the drag in flight was vetoed by Java's `dragStart` listener.
+/// Where the drag in flight stands with Java's `dragStart` listener, and whether Escape cancelled it.
 ///
 /// The answer arrives on the *source* control's channel while the check happens on the *drop
 /// target* — a different widget — so the link between them lives here for one gesture.
@@ -124,39 +125,69 @@ class DragStartVeto {
 
   /// One gate per control that starts drags, by id, from its first drag until it goes away.
   static final Map<int, VetoGate> _gates = {};
-  static VetoGate? _inFlight;
+  static int _drag = 0;
   static bool _vetoed = false;
 
+  /// Counts the drags Escape cancelled; drop targets listen to it.
+  static final ValueNotifier<int> cancels = ValueNotifier<int>(0);
+
+  /// Whether the drag in flight drops nothing: its DragStart refused it or Escape cancelled it.
   static bool get isVetoed => _vetoed;
+
+  /// Whether drop targets hear the drag in flight: not after a refusal or Escape.
+  static bool get reachesTargets => !_vetoed;
 
   /// Clears the verdict for a gesture that has none to wait for — a drag started on a control
   /// with no SWT DragSource (a CTabFolder reordering its own tabs). Without this it would
   /// inherit whatever the previous drag was told.
   static void reset() {
     _vetoed = false;
-    _inFlight = null;
+    _drag++;
   }
 
-  static void begin(int controlType, int controlId) {
+  /// [onVerdict] runs once with Java's answer if this drag is the one in flight when it arrives.
+  /// [onNoVerdict] runs if the answer is slow to come; the drag goes on as allowed, and a refusal
+  /// arriving later ends it and the targets hear it leave.
+  static void begin(int controlType, int controlId,
+      {void Function(bool doit)? onVerdict, void Function()? onNoVerdict}) {
     _vetoed = false;
+    final drag = ++_drag;
     final gate = _gates.putIfAbsent(controlId, () {
-      final created = VetoGate.optimistic(WireChannel.dragDetectDragStartResult);
+      final created = VetoGate.dragStart();
       created.attach(controlType, controlId);
       return created;
     });
-    _inFlight = gate;
+    var waitedOut = false;
     gate.propose((doit) {
       // Without this guard a late verdict rejects whatever drag is in flight next.
-      if (!doit && identical(_inFlight, gate)) _vetoed = true;
+      if (drag != _drag) return;
+      if (!doit) {
+        if (waitedOut) {
+          cancel();
+        } else {
+          _vetoed = true;
+        }
+      }
+      onVerdict?.call(doit);
+    }, onTimeout: () {
+      waitedOut = true;
+      if (drag == _drag) onNoVerdict?.call();
     });
   }
 
+  /// Escape cancelled the drag in flight: it drops nothing, and the targets it is over hear it leave.
+  static void cancel() {
+    if (_vetoed) return;
+    _vetoed = true;
+    cancels.value++;
+  }
+
+  /// The drag in flight ended: a verdict on its way no longer applies to anything.
+  static void end() => _drag++;
+
   /// Drops the gate of the control [controlId], when it goes away.
   static void forget(int controlId) {
-    final gate = _gates.remove(controlId);
-    if (gate == null) return;
-    if (identical(_inFlight, gate)) _inFlight = null;
-    gate.detach();
+    _gates.remove(controlId)?.detach();
   }
 
   @visibleForTesting

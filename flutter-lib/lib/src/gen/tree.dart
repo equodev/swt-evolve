@@ -27,27 +27,27 @@ class TreeSwt<V extends VTree> extends CompositeSwt<V> {
   State createState() => TreeImpl<TreeSwt<VTree>, VTree>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 65, payload); // Modify/Modify
+    sendEvent(val, 72, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 
   void sendSetDataSetData(V val, VEvent? payload) {
-    sendEvent(val, 89, payload); // SetData/SetData
+    sendEvent(val, 96, payload); // SetData/SetData
   }
 
   void sendTreeCollapse(V val, VEvent? payload) {
-    sendEvent(val, 105, payload); // Tree/Collapse
+    sendEvent(val, 112, payload); // Tree/Collapse
   }
 
   void sendTreeExpand(V val, VEvent? payload) {
-    sendEvent(val, 106, payload); // Tree/Expand
+    sendEvent(val, 113, payload); // Tree/Expand
   }
 }
 

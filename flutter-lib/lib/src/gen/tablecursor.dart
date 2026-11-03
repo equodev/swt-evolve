@@ -26,11 +26,11 @@ class TableCursorSwt<V extends VTableCursor> extends CanvasSwt<V> {
       TableCursorImpl<TableCursorSwt<VTableCursor>, VTableCursor>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 }
 

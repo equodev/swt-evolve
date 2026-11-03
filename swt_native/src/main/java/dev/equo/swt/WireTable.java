@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 1662969180;
+    public static final int FINGERPRINT = -620780330;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -37,11 +37,18 @@ public final class WireTable {
             "Control/Move",
             "Control/Resize",
             "Dispose/Dispose",
+            "DnD/remoteDrag",
+            "DnD/remoteDropNone",
             "Drag/dragFinished",
             "Drag/dragSetData",
             "Drag/dragStart",
             "DragDetect/DragDetect",
+            "DragDetect/dragCancel",
+            "DragDetect/dragImage",
+            "DragDetect/dragMove",
+            "DragDetect/dragRelease",
             "DragDetect/dragStartResult",
+            "DragDetect/remoteAnswer",
             "Drop/dragEnter",
             "Drop/dragLeave",
             "Drop/dragOperationChanged",
@@ -2254,638 +2261,659 @@ public final class WireTable {
     /** The channel `Dispose/Dispose`. */
     public static final int CHANNEL_DISPOSE_DISPOSE = 22;
 
+    /** The channel `DnD/remoteDrag`. */
+    public static final int CHANNEL_DN_D_REMOTE_DRAG = 23;
+
+    /** The channel `DnD/remoteDropNone`. */
+    public static final int CHANNEL_DN_D_REMOTE_DROP_NONE = 24;
+
     /** The channel `Drag/dragFinished`. */
-    public static final int CHANNEL_DRAG_DRAG_FINISHED = 23;
+    public static final int CHANNEL_DRAG_DRAG_FINISHED = 25;
 
     /** The channel `Drag/dragSetData`. */
-    public static final int CHANNEL_DRAG_DRAG_SET_DATA = 24;
+    public static final int CHANNEL_DRAG_DRAG_SET_DATA = 26;
 
     /** The channel `Drag/dragStart`. */
-    public static final int CHANNEL_DRAG_DRAG_START = 25;
+    public static final int CHANNEL_DRAG_DRAG_START = 27;
 
     /** The channel `DragDetect/DragDetect`. */
-    public static final int CHANNEL_DRAG_DETECT_DRAG_DETECT = 26;
+    public static final int CHANNEL_DRAG_DETECT_DRAG_DETECT = 28;
+
+    /** The channel `DragDetect/dragCancel`. */
+    public static final int CHANNEL_DRAG_DETECT_DRAG_CANCEL = 29;
+
+    /** The channel `DragDetect/dragImage`. */
+    public static final int CHANNEL_DRAG_DETECT_DRAG_IMAGE = 30;
+
+    /** The channel `DragDetect/dragMove`. */
+    public static final int CHANNEL_DRAG_DETECT_DRAG_MOVE = 31;
+
+    /** The channel `DragDetect/dragRelease`. */
+    public static final int CHANNEL_DRAG_DETECT_DRAG_RELEASE = 32;
 
     /** The channel `DragDetect/dragStartResult`. */
-    public static final int CHANNEL_DRAG_DETECT_DRAG_START_RESULT = 27;
+    public static final int CHANNEL_DRAG_DETECT_DRAG_START_RESULT = 33;
+
+    /** The channel `DragDetect/remoteAnswer`. */
+    public static final int CHANNEL_DRAG_DETECT_REMOTE_ANSWER = 34;
 
     /** The channel `Drop/dragEnter`. */
-    public static final int CHANNEL_DROP_DRAG_ENTER = 28;
+    public static final int CHANNEL_DROP_DRAG_ENTER = 35;
 
     /** The channel `Drop/dragLeave`. */
-    public static final int CHANNEL_DROP_DRAG_LEAVE = 29;
+    public static final int CHANNEL_DROP_DRAG_LEAVE = 36;
 
     /** The channel `Drop/dragOperationChanged`. */
-    public static final int CHANNEL_DROP_DRAG_OPERATION_CHANGED = 30;
+    public static final int CHANNEL_DROP_DRAG_OPERATION_CHANGED = 37;
 
     /** The channel `Drop/dragOver`. */
-    public static final int CHANNEL_DROP_DRAG_OVER = 31;
+    public static final int CHANNEL_DROP_DRAG_OVER = 38;
 
     /** The channel `Drop/drop`. */
-    public static final int CHANNEL_DROP_DROP = 32;
+    public static final int CHANNEL_DROP_DROP = 39;
 
     /** The channel `Drop/dropAccept`. */
-    public static final int CHANNEL_DROP_DROP_ACCEPT = 33;
+    public static final int CHANNEL_DROP_DROP_ACCEPT = 40;
 
     /** The channel `Drop/negotiationResult`. */
-    public static final int CHANNEL_DROP_NEGOTIATION_RESULT = 34;
+    public static final int CHANNEL_DROP_NEGOTIATION_RESULT = 41;
 
     /** The channel `Expand/Collapse`. */
-    public static final int CHANNEL_EXPAND_COLLAPSE = 35;
+    public static final int CHANNEL_EXPAND_COLLAPSE = 42;
 
     /** The channel `Expand/Expand`. */
-    public static final int CHANNEL_EXPAND_EXPAND = 36;
+    public static final int CHANNEL_EXPAND_EXPAND = 43;
 
     /** The channel `ExtendedModify/modifyText`. */
-    public static final int CHANNEL_EXTENDED_MODIFY_MODIFY_TEXT = 37;
+    public static final int CHANNEL_EXTENDED_MODIFY_MODIFY_TEXT = 44;
 
     /** The channel `Focus/FocusIn`. */
-    public static final int CHANNEL_FOCUS_FOCUS_IN = 38;
+    public static final int CHANNEL_FOCUS_FOCUS_IN = 45;
 
     /** The channel `Focus/FocusOut`. */
-    public static final int CHANNEL_FOCUS_FOCUS_OUT = 39;
+    public static final int CHANNEL_FOCUS_FOCUS_OUT = 46;
 
     /** The channel `GC/create`. */
-    public static final int CHANNEL_GC_CREATE = 40;
+    public static final int CHANNEL_GC_CREATE = 47;
 
     /** The channel `GC/inFrame`. */
-    public static final int CHANNEL_GC_IN_FRAME = 41;
+    public static final int CHANNEL_GC_IN_FRAME = 48;
 
     /** The channel `Gesture/Gesture`. */
-    public static final int CHANNEL_GESTURE_GESTURE = 42;
+    public static final int CHANNEL_GESTURE_GESTURE = 49;
 
     /** The channel `GetIdFromPoint`. */
-    public static final int CHANNEL_GET_ID_FROM_POINT = 43;
+    public static final int CHANNEL_GET_ID_FROM_POINT = 50;
 
     /** The channel `GetIdFromPointResponse`. */
-    public static final int CHANNEL_GET_ID_FROM_POINT_RESPONSE = 44;
+    public static final int CHANNEL_GET_ID_FROM_POINT_RESPONSE = 51;
 
     /** The channel `GetItemBounds`. */
-    public static final int CHANNEL_GET_ITEM_BOUNDS = 45;
+    public static final int CHANNEL_GET_ITEM_BOUNDS = 52;
 
     /** The channel `GetItemBoundsResponse`. */
-    public static final int CHANNEL_GET_ITEM_BOUNDS_RESPONSE = 46;
+    public static final int CHANNEL_GET_ITEM_BOUNDS_RESPONSE = 53;
 
     /** The channel `GetItemHeight`. */
-    public static final int CHANNEL_GET_ITEM_HEIGHT = 47;
+    public static final int CHANNEL_GET_ITEM_HEIGHT = 54;
 
     /** The channel `GetItemHeightResponse`. */
-    public static final int CHANNEL_GET_ITEM_HEIGHT_RESPONSE = 48;
+    public static final int CHANNEL_GET_ITEM_HEIGHT_RESPONSE = 55;
 
     /** The channel `Help/Help`. */
-    public static final int CHANNEL_HELP_HELP = 49;
+    public static final int CHANNEL_HELP_HELP = 56;
 
     /** The channel `Image/forget`. */
-    public static final int CHANNEL_IMAGE_FORGET = 50;
+    public static final int CHANNEL_IMAGE_FORGET = 57;
 
     /** The channel `Image/releaseRemoteRef`. */
-    public static final int CHANNEL_IMAGE_RELEASE_REMOTE_REF = 51;
+    public static final int CHANNEL_IMAGE_RELEASE_REMOTE_REF = 58;
 
     /** The channel `Image/requestPixels`. */
-    public static final int CHANNEL_IMAGE_REQUEST_PIXELS = 52;
+    public static final int CHANNEL_IMAGE_REQUEST_PIXELS = 59;
 
     /** The channel `ImeComposition`. */
-    public static final int CHANNEL_IME_COMPOSITION = 53;
+    public static final int CHANNEL_IME_COMPOSITION = 60;
 
     /** The channel `Key/KeyDown`. */
-    public static final int CHANNEL_KEY_KEY_DOWN = 54;
+    public static final int CHANNEL_KEY_KEY_DOWN = 61;
 
     /** The channel `Key/KeyUp`. */
-    public static final int CHANNEL_KEY_KEY_UP = 55;
+    public static final int CHANNEL_KEY_KEY_UP = 62;
 
     /** The channel `LineBackground/lineGetBackground`. */
-    public static final int CHANNEL_LINE_BACKGROUND_LINE_GET_BACKGROUND = 56;
+    public static final int CHANNEL_LINE_BACKGROUND_LINE_GET_BACKGROUND = 63;
 
     /** The channel `LineStyle/lineGetStyle`. */
-    public static final int CHANNEL_LINE_STYLE_LINE_GET_STYLE = 57;
+    public static final int CHANNEL_LINE_STYLE_LINE_GET_STYLE = 64;
 
     /** The channel `List/Visible`. */
-    public static final int CHANNEL_LIST_VISIBLE = 58;
+    public static final int CHANNEL_LIST_VISIBLE = 65;
 
     /** The channel `Location/changed`. */
-    public static final int CHANNEL_LOCATION_CHANGED = 59;
+    public static final int CHANNEL_LOCATION_CHANGED = 66;
 
     /** The channel `Location/changing`. */
-    public static final int CHANNEL_LOCATION_CHANGING = 60;
+    public static final int CHANNEL_LOCATION_CHANGING = 67;
 
     /** The channel `Menu/Hide`. */
-    public static final int CHANNEL_MENU_HIDE = 61;
+    public static final int CHANNEL_MENU_HIDE = 68;
 
     /** The channel `Menu/Show`. */
-    public static final int CHANNEL_MENU_SHOW = 62;
+    public static final int CHANNEL_MENU_SHOW = 69;
 
     /** The channel `MenuDetect/MenuDetect`. */
-    public static final int CHANNEL_MENU_DETECT_MENU_DETECT = 63;
+    public static final int CHANNEL_MENU_DETECT_MENU_DETECT = 70;
 
     /** The channel `MenuKey`. */
-    public static final int CHANNEL_MENU_KEY = 64;
+    public static final int CHANNEL_MENU_KEY = 71;
 
     /** The channel `Modify/Modify`. */
-    public static final int CHANNEL_MODIFY_MODIFY = 65;
+    public static final int CHANNEL_MODIFY_MODIFY = 72;
 
     /** The channel `Mouse/MouseDoubleClick`. */
-    public static final int CHANNEL_MOUSE_MOUSE_DOUBLE_CLICK = 66;
+    public static final int CHANNEL_MOUSE_MOUSE_DOUBLE_CLICK = 73;
 
     /** The channel `Mouse/MouseDown`. */
-    public static final int CHANNEL_MOUSE_MOUSE_DOWN = 67;
+    public static final int CHANNEL_MOUSE_MOUSE_DOWN = 74;
 
     /** The channel `Mouse/MouseUp`. */
-    public static final int CHANNEL_MOUSE_MOUSE_UP = 68;
+    public static final int CHANNEL_MOUSE_MOUSE_UP = 75;
 
     /** The channel `MouseMove/MouseMove`. */
-    public static final int CHANNEL_MOUSE_MOVE_MOUSE_MOVE = 69;
+    public static final int CHANNEL_MOUSE_MOVE_MOUSE_MOVE = 76;
 
     /** The channel `MouseTrack/MouseEnter`. */
-    public static final int CHANNEL_MOUSE_TRACK_MOUSE_ENTER = 70;
+    public static final int CHANNEL_MOUSE_TRACK_MOUSE_ENTER = 77;
 
     /** The channel `MouseTrack/MouseExit`. */
-    public static final int CHANNEL_MOUSE_TRACK_MOUSE_EXIT = 71;
+    public static final int CHANNEL_MOUSE_TRACK_MOUSE_EXIT = 78;
 
     /** The channel `MouseTrack/MouseHover`. */
-    public static final int CHANNEL_MOUSE_TRACK_MOUSE_HOVER = 72;
+    public static final int CHANNEL_MOUSE_TRACK_MOUSE_HOVER = 79;
 
     /** The channel `MouseWheel/MouseWheel`. */
-    public static final int CHANNEL_MOUSE_WHEEL_MOUSE_WHEEL = 73;
+    public static final int CHANNEL_MOUSE_WHEEL_MOUSE_WHEEL = 80;
 
     /** The channel `OpenWindow`. */
-    public static final int CHANNEL_OPEN_WINDOW = 74;
+    public static final int CHANNEL_OPEN_WINDOW = 81;
 
     /** The channel `OpenWindow/open`. */
-    public static final int CHANNEL_OPEN_WINDOW_OPEN = 75;
+    public static final int CHANNEL_OPEN_WINDOW_OPEN = 82;
 
     /** The channel `Paint/Paint`. */
-    public static final int CHANNEL_PAINT_PAINT = 76;
+    public static final int CHANNEL_PAINT_PAINT = 83;
 
     /** The channel `PaintItem/PaintItem`. */
-    public static final int CHANNEL_PAINT_ITEM_PAINT_ITEM = 77;
+    public static final int CHANNEL_PAINT_ITEM_PAINT_ITEM = 84;
 
     /** The channel `PaintObject/paintObject`. */
-    public static final int CHANNEL_PAINT_OBJECT_PAINT_OBJECT = 78;
+    public static final int CHANNEL_PAINT_OBJECT_PAINT_OBJECT = 85;
 
     /** The channel `Popups`. */
-    public static final int CHANNEL_POPUPS = 79;
+    public static final int CHANNEL_POPUPS = 86;
 
     /** The channel `Progress/changed`. */
-    public static final int CHANNEL_PROGRESS_CHANGED = 80;
+    public static final int CHANNEL_PROGRESS_CHANGED = 87;
 
     /** The channel `Progress/completed`. */
-    public static final int CHANNEL_PROGRESS_COMPLETED = 81;
+    public static final int CHANNEL_PROGRESS_COMPLETED = 88;
 
     /** The channel `ResendGeometry`. */
-    public static final int CHANNEL_RESEND_GEOMETRY = 82;
+    public static final int CHANNEL_RESEND_GEOMETRY = 89;
 
     /** The channel `ResendText`. */
-    public static final int CHANNEL_RESEND_TEXT = 83;
+    public static final int CHANNEL_RESEND_TEXT = 90;
 
     /** The channel `Scroll/Scroll`. */
-    public static final int CHANNEL_SCROLL_SCROLL = 84;
+    public static final int CHANNEL_SCROLL_SCROLL = 91;
 
     /** The channel `Segment/Segments`. */
-    public static final int CHANNEL_SEGMENT_SEGMENTS = 85;
+    public static final int CHANNEL_SEGMENT_SEGMENTS = 92;
 
     /** The channel `Selection/DefaultSelection`. */
-    public static final int CHANNEL_SELECTION_DEFAULT_SELECTION = 86;
+    public static final int CHANNEL_SELECTION_DEFAULT_SELECTION = 93;
 
     /** The channel `Selection/OpenMenu`. */
-    public static final int CHANNEL_SELECTION_OPEN_MENU = 87;
+    public static final int CHANNEL_SELECTION_OPEN_MENU = 94;
 
     /** The channel `Selection/Selection`. */
-    public static final int CHANNEL_SELECTION_SELECTION = 88;
+    public static final int CHANNEL_SELECTION_SELECTION = 95;
 
     /** The channel `SetData/SetData`. */
-    public static final int CHANNEL_SET_DATA_SET_DATA = 89;
+    public static final int CHANNEL_SET_DATA_SET_DATA = 96;
 
     /** The channel `Shell/Activate`. */
-    public static final int CHANNEL_SHELL_ACTIVATE = 90;
+    public static final int CHANNEL_SHELL_ACTIVATE = 97;
 
     /** The channel `Shell/Close`. */
-    public static final int CHANNEL_SHELL_CLOSE = 91;
+    public static final int CHANNEL_SHELL_CLOSE = 98;
 
     /** The channel `Shell/Deactivate`. */
-    public static final int CHANNEL_SHELL_DEACTIVATE = 92;
+    public static final int CHANNEL_SHELL_DEACTIVATE = 99;
 
     /** The channel `Shell/Deiconify`. */
-    public static final int CHANNEL_SHELL_DEICONIFY = 93;
+    public static final int CHANNEL_SHELL_DEICONIFY = 100;
 
     /** The channel `Shell/Iconify`. */
-    public static final int CHANNEL_SHELL_ICONIFY = 94;
+    public static final int CHANNEL_SHELL_ICONIFY = 101;
 
     /** The channel `Shell/SetBounds`. */
-    public static final int CHANNEL_SHELL_SET_BOUNDS = 95;
+    public static final int CHANNEL_SHELL_SET_BOUNDS = 102;
 
     /** The channel `StatusText/changed`. */
-    public static final int CHANNEL_STATUS_TEXT_CHANGED = 96;
+    public static final int CHANNEL_STATUS_TEXT_CHANGED = 103;
 
     /** The channel `TextChange`. */
-    public static final int CHANNEL_TEXT_CHANGE = 97;
+    public static final int CHANNEL_TEXT_CHANGE = 104;
 
     /** The channel `TextGeometry`. */
-    public static final int CHANNEL_TEXT_GEOMETRY = 98;
+    public static final int CHANNEL_TEXT_GEOMETRY = 105;
 
     /** The channel `Title/changed`. */
-    public static final int CHANNEL_TITLE_CHANGED = 99;
+    public static final int CHANNEL_TITLE_CHANGED = 106;
 
     /** The channel `Touch/Touch`. */
-    public static final int CHANNEL_TOUCH_TOUCH = 100;
+    public static final int CHANNEL_TOUCH_TOUCH = 107;
 
     /** The channel `Tracker/cancel`. */
-    public static final int CHANNEL_TRACKER_CANCEL = 101;
+    public static final int CHANNEL_TRACKER_CANCEL = 108;
 
     /** The channel `Tracker/close`. */
-    public static final int CHANNEL_TRACKER_CLOSE = 102;
+    public static final int CHANNEL_TRACKER_CLOSE = 109;
 
     /** The channel `Tracker/open`. */
-    public static final int CHANNEL_TRACKER_OPEN = 103;
+    public static final int CHANNEL_TRACKER_OPEN = 110;
 
     /** The channel `Traverse/Traverse`. */
-    public static final int CHANNEL_TRAVERSE_TRAVERSE = 104;
+    public static final int CHANNEL_TRAVERSE_TRAVERSE = 111;
 
     /** The channel `Tree/Collapse`. */
-    public static final int CHANNEL_TREE_COLLAPSE = 105;
+    public static final int CHANNEL_TREE_COLLAPSE = 112;
 
     /** The channel `Tree/Expand`. */
-    public static final int CHANNEL_TREE_EXPAND = 106;
+    public static final int CHANNEL_TREE_EXPAND = 113;
 
     /** The channel `Verify/Verify`. */
-    public static final int CHANNEL_VERIFY_VERIFY = 107;
+    public static final int CHANNEL_VERIFY_VERIFY = 114;
 
     /** The channel `VerifyKey/verifyKey`. */
-    public static final int CHANNEL_VERIFY_KEY_VERIFY_KEY = 108;
+    public static final int CHANNEL_VERIFY_KEY_VERIFY_KEY = 115;
 
     /** The channel `VisibilityWindow/hide`. */
-    public static final int CHANNEL_VISIBILITY_WINDOW_HIDE = 109;
+    public static final int CHANNEL_VISIBILITY_WINDOW_HIDE = 116;
 
     /** The channel `VisibilityWindow/show`. */
-    public static final int CHANNEL_VISIBILITY_WINDOW_SHOW = 110;
+    public static final int CHANNEL_VISIBILITY_WINDOW_SHOW = 117;
 
     /** The channel `WinClose`. */
-    public static final int CHANNEL_WIN_CLOSE = 111;
+    public static final int CHANNEL_WIN_CLOSE = 118;
 
     /** The channel `WinMaximize`. */
-    public static final int CHANNEL_WIN_MAXIMIZE = 112;
+    public static final int CHANNEL_WIN_MAXIMIZE = 119;
 
     /** The channel `WinMinimize`. */
-    public static final int CHANNEL_WIN_MINIMIZE = 113;
+    public static final int CHANNEL_WIN_MINIMIZE = 120;
 
     /** The channel `WinRestore`. */
-    public static final int CHANNEL_WIN_RESTORE = 114;
+    public static final int CHANNEL_WIN_RESTORE = 121;
 
     /** The channel `WinUnload`. */
-    public static final int CHANNEL_WIN_UNLOAD = 115;
+    public static final int CHANNEL_WIN_UNLOAD = 122;
 
     /** The channel `WindowBounds`. */
-    public static final int CHANNEL_WINDOW_BOUNDS = 116;
+    public static final int CHANNEL_WINDOW_BOUNDS = 123;
 
     /** The channel `WindowOpenFailed`. */
-    public static final int CHANNEL_WINDOW_OPEN_FAILED = 117;
+    public static final int CHANNEL_WINDOW_OPEN_FAILED = 124;
 
     /** The channel `WindowState`. */
-    public static final int CHANNEL_WINDOW_STATE = 118;
+    public static final int CHANNEL_WINDOW_STATE = 125;
 
     /** The channel `WindowTitle`. */
-    public static final int CHANNEL_WINDOW_TITLE = 119;
+    public static final int CHANNEL_WINDOW_TITLE = 126;
 
     /** The channel `WordMovement/getNextOffset`. */
-    public static final int CHANNEL_WORD_MOVEMENT_GET_NEXT_OFFSET = 120;
+    public static final int CHANNEL_WORD_MOVEMENT_GET_NEXT_OFFSET = 127;
 
     /** The channel `WordMovement/getPreviousOffset`. */
-    public static final int CHANNEL_WORD_MOVEMENT_GET_PREVIOUS_OFFSET = 121;
+    public static final int CHANNEL_WORD_MOVEMENT_GET_PREVIOUS_OFFSET = 128;
 
     /** The channel `activate`. */
-    public static final int CHANNEL_ACTIVATE = 122;
+    public static final int CHANNEL_ACTIVATE = 129;
 
     /** The channel `activation`. */
-    public static final int CHANNEL_ACTIVATION = 123;
+    public static final int CHANNEL_ACTIVATION = 130;
 
     /** The channel `b`. */
-    public static final int CHANNEL_B = 124;
+    public static final int CHANNEL_B = 131;
 
     /** The channel `back`. */
-    public static final int CHANNEL_BACK = 125;
+    public static final int CHANNEL_BACK = 132;
 
     /** The channel `bench/d2j/probe`. */
-    public static final int CHANNEL_BENCH_D2J_PROBE = 126;
+    public static final int CHANNEL_BENCH_D2J_PROBE = 133;
 
     /** The channel `bench/d2j/probeResponse`. */
-    public static final int CHANNEL_BENCH_D2J_PROBE_RESPONSE = 127;
+    public static final int CHANNEL_BENCH_D2J_PROBE_RESPONSE = 134;
 
     /** The channel `bench/d2j/result`. */
-    public static final int CHANNEL_BENCH_D2J_RESULT = 128;
+    public static final int CHANNEL_BENCH_D2J_RESULT = 135;
 
     /** The channel `bench/d2j/run`. */
-    public static final int CHANNEL_BENCH_D2J_RUN = 129;
+    public static final int CHANNEL_BENCH_D2J_RUN = 136;
 
     /** The channel `bench/j2d/echo`. */
-    public static final int CHANNEL_BENCH_J2D_ECHO = 130;
+    public static final int CHANNEL_BENCH_J2D_ECHO = 137;
 
     /** The channel `bench/j2d/echoResponse`. */
-    public static final int CHANNEL_BENCH_J2D_ECHO_RESPONSE = 131;
+    public static final int CHANNEL_BENCH_J2D_ECHO_RESPONSE = 138;
 
     /** The channel `browserFunctionCall`. */
-    public static final int CHANNEL_BROWSER_FUNCTION_CALL = 132;
+    public static final int CHANNEL_BROWSER_FUNCTION_CALL = 139;
 
     /** The channel `c`. */
-    public static final int CHANNEL_C = 133;
+    public static final int CHANNEL_C = 140;
 
     /** The channel `close`. */
-    public static final int CHANNEL_CLOSE = 134;
+    public static final int CHANNEL_CLOSE = 141;
 
     /** The channel `cookie`. */
-    public static final int CHANNEL_COOKIE = 135;
+    public static final int CHANNEL_COOKIE = 142;
 
     /** The channel `copyAreaImageintint`. */
-    public static final int CHANNEL_COPY_AREA_IMAGEINTINT = 136;
+    public static final int CHANNEL_COPY_AREA_IMAGEINTINT = 143;
 
     /** The channel `copyAreaImageintintResponse`. */
-    public static final int CHANNEL_COPY_AREA_IMAGEINTINT_RESPONSE = 137;
+    public static final int CHANNEL_COPY_AREA_IMAGEINTINT_RESPONSE = 144;
 
     /** The channel `copyAreaintintintintintintboolean`. */
-    public static final int CHANNEL_COPY_AREAINTINTINTINTINTINTBOOLEAN = 138;
+    public static final int CHANNEL_COPY_AREAINTINTINTINTINTINTBOOLEAN = 145;
 
     /** The channel `drawArcintintintintintint`. */
-    public static final int CHANNEL_DRAW_ARCINTINTINTINTINTINT = 139;
+    public static final int CHANNEL_DRAW_ARCINTINTINTINTINTINT = 146;
 
     /** The channel `drawFocusintintintint`. */
-    public static final int CHANNEL_DRAW_FOCUSINTINTINTINT = 140;
+    public static final int CHANNEL_DRAW_FOCUSINTINTINTINT = 147;
 
     /** The channel `drawImageImageintint`. */
-    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINT = 141;
+    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINT = 148;
 
     /** The channel `drawImageImageintintintint`. */
-    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINT = 142;
+    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINT = 149;
 
     /** The channel `drawImageImageintintintintintintintint`. */
-    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT = 143;
+    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT = 150;
 
     /** The channel `drawLineintintintint`. */
-    public static final int CHANNEL_DRAW_LINEINTINTINTINT = 144;
+    public static final int CHANNEL_DRAW_LINEINTINTINTINT = 151;
 
     /** The channel `drawOvalintintintint`. */
-    public static final int CHANNEL_DRAW_OVALINTINTINTINT = 145;
+    public static final int CHANNEL_DRAW_OVALINTINTINTINT = 152;
 
     /** The channel `drawPathPath`. */
-    public static final int CHANNEL_DRAW_PATH_PATH = 146;
+    public static final int CHANNEL_DRAW_PATH_PATH = 153;
 
     /** The channel `drawPointintint`. */
-    public static final int CHANNEL_DRAW_POINTINTINT = 147;
+    public static final int CHANNEL_DRAW_POINTINTINT = 154;
 
     /** The channel `drawPolygonint`. */
-    public static final int CHANNEL_DRAW_POLYGONINT = 148;
+    public static final int CHANNEL_DRAW_POLYGONINT = 155;
 
     /** The channel `drawPolylineint`. */
-    public static final int CHANNEL_DRAW_POLYLINEINT = 149;
+    public static final int CHANNEL_DRAW_POLYLINEINT = 156;
 
     /** The channel `drawRectangleintintintint`. */
-    public static final int CHANNEL_DRAW_RECTANGLEINTINTINTINT = 150;
+    public static final int CHANNEL_DRAW_RECTANGLEINTINTINTINT = 157;
 
     /** The channel `drawRoundRectangleintintintintintint`. */
-    public static final int CHANNEL_DRAW_ROUND_RECTANGLEINTINTINTINTINTINT = 151;
+    public static final int CHANNEL_DRAW_ROUND_RECTANGLEINTINTINTINTINTINT = 158;
 
     /** The channel `drawTextStringintintint`. */
-    public static final int CHANNEL_DRAW_TEXT_STRINGINTINTINT = 152;
+    public static final int CHANNEL_DRAW_TEXT_STRINGINTINTINT = 159;
 
     /** The channel `evaluate`. */
-    public static final int CHANNEL_EVALUATE = 153;
+    public static final int CHANNEL_EVALUATE = 160;
 
     /** The channel `evaluate/result`. */
-    public static final int CHANNEL_EVALUATE_RESULT = 154;
+    public static final int CHANNEL_EVALUATE_RESULT = 161;
 
     /** The channel `evolve.test.drag`. */
-    public static final int CHANNEL_EVOLVE_TEST_DRAG = 155;
+    public static final int CHANNEL_EVOLVE_TEST_DRAG = 162;
 
     /** The channel `evolve.test.dragDone`. */
-    public static final int CHANNEL_EVOLVE_TEST_DRAG_DONE = 156;
+    public static final int CHANNEL_EVOLVE_TEST_DRAG_DONE = 163;
 
     /** The channel `evolve.test.frameCost`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST = 157;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST = 164;
 
     /** The channel `evolve.test.frameCostResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST_RESPONSE = 158;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST_RESPONSE = 165;
 
     /** The channel `evolve.test.frameStats`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS = 159;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS = 166;
 
     /** The channel `evolve.test.frameStatsResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS_RESPONSE = 160;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS_RESPONSE = 167;
 
     /** The channel `evolve.test.frameSync`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNC = 161;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNC = 168;
 
     /** The channel `evolve.test.frameSynced`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNCED = 162;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNCED = 169;
 
     /** The channel `evolve.test.iframeLoaded`. */
-    public static final int CHANNEL_EVOLVE_TEST_IFRAME_LOADED = 163;
+    public static final int CHANNEL_EVOLVE_TEST_IFRAME_LOADED = 170;
 
     /** The channel `evolve.test.query`. */
-    public static final int CHANNEL_EVOLVE_TEST_QUERY = 164;
+    public static final int CHANNEL_EVOLVE_TEST_QUERY = 171;
 
     /** The channel `evolve.test.queryResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_QUERY_RESPONSE = 165;
+    public static final int CHANNEL_EVOLVE_TEST_QUERY_RESPONSE = 172;
 
     /** The channel `evolve.test.styledTextPerf`. */
-    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF = 166;
+    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF = 173;
 
     /** The channel `evolve.test.styledTextPerfResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF_RESPONSE = 167;
+    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF_RESPONSE = 174;
 
     /** The channel `evolve.test.wireStats`. */
-    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS = 168;
+    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS = 175;
 
     /** The channel `evolve.test.wireStatsResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS_RESPONSE = 169;
+    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS_RESPONSE = 176;
 
     /** The channel `execute`. */
-    public static final int CHANNEL_EXECUTE = 170;
+    public static final int CHANNEL_EXECUTE = 177;
 
     /** The channel `fillArcintintintintintint`. */
-    public static final int CHANNEL_FILL_ARCINTINTINTINTINTINT = 171;
+    public static final int CHANNEL_FILL_ARCINTINTINTINTINTINT = 178;
 
     /** The channel `fillGradientRectangleintintintintboolean`. */
-    public static final int CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN = 172;
+    public static final int CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN = 179;
 
     /** The channel `fillOvalintintintint`. */
-    public static final int CHANNEL_FILL_OVALINTINTINTINT = 173;
+    public static final int CHANNEL_FILL_OVALINTINTINTINT = 180;
 
     /** The channel `fillPathPath`. */
-    public static final int CHANNEL_FILL_PATH_PATH = 174;
+    public static final int CHANNEL_FILL_PATH_PATH = 181;
 
     /** The channel `fillPolygonint`. */
-    public static final int CHANNEL_FILL_POLYGONINT = 175;
+    public static final int CHANNEL_FILL_POLYGONINT = 182;
 
     /** The channel `fillRectangleintintintint`. */
-    public static final int CHANNEL_FILL_RECTANGLEINTINTINTINT = 176;
+    public static final int CHANNEL_FILL_RECTANGLEINTINTINTINT = 183;
 
     /** The channel `fillRoundRectangleintintintintintint`. */
-    public static final int CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT = 177;
+    public static final int CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT = 184;
 
     /** The channel `fontSizeRequest`. */
-    public static final int CHANNEL_FONT_SIZE_REQUEST = 178;
+    public static final int CHANNEL_FONT_SIZE_REQUEST = 185;
 
     /** The channel `fontSizeResponse`. */
-    public static final int CHANNEL_FONT_SIZE_RESPONSE = 179;
+    public static final int CHANNEL_FONT_SIZE_RESPONSE = 186;
 
     /** The channel `forward`. */
-    public static final int CHANNEL_FORWARD = 180;
+    public static final int CHANNEL_FORWARD = 187;
 
     /** The channel `gcDispose`. */
-    public static final int CHANNEL_GC_DISPOSE = 181;
+    public static final int CHANNEL_GC_DISPOSE = 188;
 
     /** The channel `getCookie`. */
-    public static final int CHANNEL_GET_COOKIE = 182;
+    public static final int CHANNEL_GET_COOKIE = 189;
 
     /** The channel `imageInit`. */
-    public static final int CHANNEL_IMAGE_INIT = 183;
+    public static final int CHANNEL_IMAGE_INIT = 190;
 
     /** The channel `imageResult`. */
-    public static final int CHANNEL_IMAGE_RESULT = 184;
+    public static final int CHANNEL_IMAGE_RESULT = 191;
 
     /** The channel `imageSizeRequest`. */
-    public static final int CHANNEL_IMAGE_SIZE_REQUEST = 185;
+    public static final int CHANNEL_IMAGE_SIZE_REQUEST = 192;
 
     /** The channel `imageSizeResponse`. */
-    public static final int CHANNEL_IMAGE_SIZE_RESPONSE = 186;
+    public static final int CHANNEL_IMAGE_SIZE_RESPONSE = 193;
 
     /** The channel `imageSnapshotResult`. */
-    public static final int CHANNEL_IMAGE_SNAPSHOT_RESULT = 187;
+    public static final int CHANNEL_IMAGE_SNAPSHOT_RESULT = 194;
 
     /** The channel `key/verdict`. */
-    public static final int CHANNEL_KEY_VERDICT = 188;
+    public static final int CHANNEL_KEY_VERDICT = 195;
 
     /** The channel `key/vetoable`. */
-    public static final int CHANNEL_KEY_VETOABLE = 189;
+    public static final int CHANNEL_KEY_VETOABLE = 196;
 
     /** The channel `locationchanging/result`. */
-    public static final int CHANNEL_LOCATIONCHANGING_RESULT = 190;
+    public static final int CHANNEL_LOCATIONCHANGING_RESULT = 197;
 
     /** The channel `menu/verdict`. */
-    public static final int CHANNEL_MENU_VERDICT = 191;
+    public static final int CHANNEL_MENU_VERDICT = 198;
 
     /** The channel `modify/verdict`. */
-    public static final int CHANNEL_MODIFY_VERDICT = 192;
+    public static final int CHANNEL_MODIFY_VERDICT = 199;
 
     /** The channel `modify/vetoable`. */
-    public static final int CHANNEL_MODIFY_VETOABLE = 193;
+    public static final int CHANNEL_MODIFY_VETOABLE = 200;
 
     /** The channel `navigate`. */
-    public static final int CHANNEL_NAVIGATE = 194;
+    public static final int CHANNEL_NAVIGATE = 201;
 
     /** The channel `navigateRequest`. */
-    public static final int CHANNEL_NAVIGATE_REQUEST = 195;
+    public static final int CHANNEL_NAVIGATE_REQUEST = 202;
 
     /** The channel `navigationState`. */
-    public static final int CHANNEL_NAVIGATION_STATE = 196;
+    public static final int CHANNEL_NAVIGATION_STATE = 203;
 
     /** The channel `nextFrame`. */
-    public static final int CHANNEL_NEXT_FRAME = 197;
+    public static final int CHANNEL_NEXT_FRAME = 204;
 
     /** The channel `openMenu`. */
-    public static final int CHANNEL_OPEN_MENU = 198;
+    public static final int CHANNEL_OPEN_MENU = 205;
 
     /** The channel `pixelsResult`. */
-    public static final int CHANNEL_PIXELS_RESULT = 199;
+    public static final int CHANNEL_PIXELS_RESULT = 206;
 
     /** The channel `reload`. */
-    public static final int CHANNEL_RELOAD = 200;
+    public static final int CHANNEL_RELOAD = 207;
 
     /** The channel `renderSnapshot`. */
-    public static final int CHANNEL_RENDER_SNAPSHOT = 201;
+    public static final int CHANNEL_RENDER_SNAPSHOT = 208;
 
     /** The channel `setCookie`. */
-    public static final int CHANNEL_SET_COOKIE = 202;
+    public static final int CHANNEL_SET_COOKIE = 209;
 
     /** The channel `shown`. */
-    public static final int CHANNEL_SHOWN = 203;
+    public static final int CHANNEL_SHOWN = 210;
 
     /** The channel `stop`. */
-    public static final int CHANNEL_STOP = 204;
+    public static final int CHANNEL_STOP = 211;
 
     /** The channel `swing`. */
-    public static final int CHANNEL_SWING = 205;
+    public static final int CHANNEL_SWING = 212;
 
     /** The channel `swing.open`. */
-    public static final int CHANNEL_SWING_OPEN = 206;
+    public static final int CHANNEL_SWING_OPEN = 213;
 
     /** The channel `swingIsland`. */
-    public static final int CHANNEL_SWING_ISLAND = 207;
+    public static final int CHANNEL_SWING_ISLAND = 214;
 
     /** The channel `swingIsland.close`. */
-    public static final int CHANNEL_SWING_ISLAND_CLOSE = 208;
+    public static final int CHANNEL_SWING_ISLAND_CLOSE = 215;
 
     /** The channel `swingIsland.dispose`. */
-    public static final int CHANNEL_SWING_ISLAND_DISPOSE = 209;
+    public static final int CHANNEL_SWING_ISLAND_DISPOSE = 216;
 
     /** The channel `swingIsland.island`. */
-    public static final int CHANNEL_SWING_ISLAND_ISLAND = 210;
+    public static final int CHANNEL_SWING_ISLAND_ISLAND = 217;
 
     /** The channel `swingIsland.opened`. */
-    public static final int CHANNEL_SWING_ISLAND_OPENED = 211;
+    public static final int CHANNEL_SWING_ISLAND_OPENED = 218;
 
     /** The channel `swingIsland.resize`. */
-    public static final int CHANNEL_SWING_ISLAND_RESIZE = 212;
+    public static final int CHANNEL_SWING_ISLAND_RESIZE = 219;
 
     /** The channel `swingIsland.surface`. */
-    public static final int CHANNEL_SWING_ISLAND_SURFACE = 213;
+    public static final int CHANNEL_SWING_ISLAND_SURFACE = 220;
 
     /** The channel `swingIsland.title`. */
-    public static final int CHANNEL_SWING_ISLAND_TITLE = 214;
+    public static final int CHANNEL_SWING_ISLAND_TITLE = 221;
 
     /** The channel `swt.evolve.batch`. */
-    public static final int CHANNEL_SWT_EVOLVE_BATCH = 215;
+    public static final int CHANNEL_SWT_EVOLVE_BATCH = 222;
 
     /** The channel `swt.evolve.focus`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS = 216;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS = 223;
 
     /** The channel `swt.evolve.focus.seen`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS_SEEN = 217;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS_SEEN = 224;
 
     /** The channel `swt.evolve.focusHolder`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS_HOLDER = 218;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS_HOLDER = 225;
 
     /** The channel `swt.evolve.properties`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 219;
+    public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 226;
 
     /** The channel `swt.evolve.property.set`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 220;
+    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 227;
 
     /** The channel `swt.evolve.test.runUi`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 221;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 228;
 
     /** The channel `swt.evolve.test.runUiResponse`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 222;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 229;
 
     /** The channel `swt.evolve.timing.bare`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 223;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 230;
 
     /** The channel `swt.evolve.timing.ping`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 224;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 231;
 
     /** The channel `swt.evolve.timing.pong`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 225;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 232;
 
     /** The channel `swt.evolve.url.open`. */
-    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 226;
+    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 233;
 
     /** The channel `swt.evolve.widget.refresh`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 227;
+    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 234;
 
     /** The channel `swt.evolve.wire`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIRE = 228;
+    public static final int CHANNEL_SWT_EVOLVE_WIRE = 235;
 
     /** The channel `traverse/verdict`. */
-    public static final int CHANNEL_TRAVERSE_VERDICT = 229;
+    public static final int CHANNEL_TRAVERSE_VERDICT = 236;
 
     /** The channel `traverse/vetoable`. */
-    public static final int CHANNEL_TRAVERSE_VETOABLE = 230;
+    public static final int CHANNEL_TRAVERSE_VETOABLE = 237;
 
     /** The channel `v`. */
-    public static final int CHANNEL_V = 231;
+    public static final int CHANNEL_V = 238;
 
     /** The channel `widgetSizeRequest`. */
-    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 232;
+    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 239;
 
     /** The channel `widgetSizeResponse`. */
-    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 233;
+    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 240;
 
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;

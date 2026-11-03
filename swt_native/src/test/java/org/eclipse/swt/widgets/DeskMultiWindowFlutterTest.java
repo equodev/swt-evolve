@@ -9,6 +9,7 @@ import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.*;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
@@ -822,6 +823,367 @@ class DeskMultiWindowFlutterTest {
                 .as("its window draws the shell without a Flutter title bar, so a point mapped through "
                         + "one lands that much below what is painted")
                 .isEqualTo(new Point(1760, 332));
+    }
+
+    // ---- a drag that leaves its window ---------------------------------------------------------------
+
+    @Test
+    @DisplayName("a drag over another window is relayed to the shell under the pointer, in its own coordinates")
+    void dragOverAnotherWindowReachesItsShell() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+
+        assertThat(remoteDrags(desk, main))
+                .as("the main window's client is the only one that can find the drop target there")
+                .containsExactly("over@130,250");
+    }
+
+    @Test
+    @DisplayName("a drag dropped on another window's DropTarget reaches it with the source's data")
+    void dropOnAnotherWindowsDropTarget() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Composite inventory = new Composite(main, SWT.NONE);
+        List<String> targetEvents = new ArrayList<>();
+        DropTarget target = new DropTarget(inventory, DND.DROP_MOVE | DND.DROP_COPY);
+        target.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        target.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                targetEvents.add("dragEnter");
+            }
+
+            @Override
+            public void drop(DropTargetEvent event) {
+                targetEvents.add("drop:" + event.data);
+            }
+        });
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        targetClientSends(desk, target, "dragEnter");
+        dragRelease(desk, source, 140, 260);
+
+        assertThat(remoteDrags(desk, main)).containsExactly("over@130,250", "over@140,260", "drop@140,260");
+        assertThat(sourceEvents).as("the other window has not dropped yet").containsExactly("dragStart");
+        targetClientSends(desk, target, "drop");
+        assertThat(targetEvents).containsExactly("dragEnter", "drop:row");
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_MOVE);
+    }
+
+    @Test
+    @DisplayName("a drag dropped on another window ends once, with the drop's operation, whatever its client says after")
+    void aCrossWindowDropEndsOnce() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        DropTarget target = new DropTarget(new Composite(main, SWT.NONE), DND.DROP_MOVE | DND.DROP_COPY);
+        target.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        DragSource drag = dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        targetClientSends(desk, target, "dragEnter");
+        dragRelease(desk, source, 140, 260);
+        targetClientSends(desk, target, "drop");
+        sourceClientEndsDrag(desk, drag);
+
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_MOVE);
+    }
+
+    @Test
+    @DisplayName("a drag released over no window ends once, with nothing dropped, whatever its client says after")
+    void aDragDroppedOutsideEveryWindowEndsOnce() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        DragSource drag = dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragMove(desk, source, 1000, 200);
+        dragRelease(desk, source, 1000, 200);
+        sourceClientEndsDrag(desk, drag);
+
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("a drop another window finds no DropTarget for ends once, whatever the source's client says after")
+    void aRemoteDropNoneEndsOnce() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        DragSource drag = dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragRelease(desk, source, 130, 250);
+        inbound(desk, FlutterBridge.event(main.getImpl(), "DnD", "remoteDropNone"), pointAt(0, 0));
+        sourceClientEndsDrag(desk, drag);
+
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("a drag that returns to its own window leaves the shell it was over, even where that window covers it")
+    void dragBackIntoItsWindowLeaves() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(600, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        dragMove(desk, source, 700, 200);
+
+        assertThat(remoteDrags(desk, main)).containsExactly("over@130,250", "leave@0,0");
+    }
+
+    @Test
+    @DisplayName("a drag released over no other window ends with nothing dropped")
+    void releaseOverNoOtherWindowEndsTheDrag() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragRelease(desk, source, 1000, 200);
+
+        assertThat(remoteDrags(desk, main)).isEmpty();
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("a drop the other window finds no DropTarget for ends the drag with nothing dropped")
+    void dropWithNoTargetThereEndsTheDrag() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragRelease(desk, source, 130, 250);
+        assertThat(sourceEvents).as("the other window has not answered yet").containsExactly("dragStart");
+        inbound(desk, FlutterBridge.event(main.getImpl(), "DnD", "remoteDropNone"), pointAt(0, 0));
+
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("the shell a drag was dropped on stops listening for its answer once the drag ends")
+    void aFinishedDragLeavesNoDropAnswerHandler() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        DropTarget target = new DropTarget(new Composite(main, SWT.NONE), DND.DROP_MOVE | DND.DROP_COPY);
+        target.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+        String dropNone = FlutterBridge.event(main.getImpl(), "DnD", "remoteDropNone");
+
+        startDrag(source);
+        dragRelease(desk, source, 130, 250);
+        assertThat(desk.comm.handlers).containsKey(dropNone);
+        inbound(desk, dropNone, pointAt(0, 0));
+        assertThat(desk.comm.handlers).as("answered").doesNotContainKey(dropNone);
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        targetClientSends(desk, target, "dragEnter");
+        dragRelease(desk, source, 140, 260);
+        assertThat(desk.comm.handlers).containsKey(dropNone);
+        targetClientSends(desk, target, "drop");
+        assertThat(sourceEvents).containsExactly(
+                "dragStart", "dragEnd:" + DND.DROP_NONE, "dragStart", "dragEnd:" + DND.DROP_MOVE);
+        assertThat(desk.comm.handlers).as("a DropTarget took the drop").doesNotContainKey(dropNone);
+    }
+
+    @Test
+    @DisplayName("what another window's DropTarget answers reaches the window the drag started in, which draws the cursor")
+    void remoteAnswerReachesTheSource() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Composite inventory = new Composite(main, SWT.NONE);
+        DropTarget target = new DropTarget(inventory, DND.DROP_MOVE | DND.DROP_COPY);
+        target.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        target.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                event.detail = DND.DROP_COPY;
+            }
+        });
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        targetClientSends(desk, target, "dragEnter");
+        dragMove(desk, source, 850, 50);
+
+        assertThat(remoteAnswers(desk, source))
+                .as("none until the DropTarget answers, then its answer, then none again over no window")
+                .containsExactly(DND.DROP_NONE, DND.DROP_COPY, DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("the drag image goes with the first move over each other window, which draws it")
+    void dragImageGoesToTheWindowUnderThePointer() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        Event image = new Event();
+        image.segments = new int[]{137, 80, 78, 71};
+        image.width = 40;
+        image.height = 20;
+        inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragImage"), image);
+        dragMove(desk, source, 130, 250);
+        dragMove(desk, source, 140, 260);
+        dragMove(desk, source, 850, 50);
+        dragMove(desk, source, 150, 270);
+
+        String channel = FlutterBridge.eventName(main.getImpl(), "DnD/remoteDrag");
+        List<Boolean> carriesImage = new ArrayList<>();
+        for (RecordingComm.Frame frame : desk.comm.sent) {
+            if (!frame.event.equals(channel) || !"over".equals(frame.state().get("text"))) continue;
+            // Read back from the bytes sent: the PNG travels as bytes, not as a list of numbers.
+            Object png = ((Map<?, ?>) dev.equo.swt.comm.TaggedValues.decode(frame.bytes, 0, frame.bytes.length))
+                    .get("segments");
+            carriesImage.add(png instanceof byte[]
+                    && java.util.Arrays.equals((byte[]) png, new byte[]{(byte) 137, 80, 78, 71})
+                    && Long.valueOf(40).equals(((Number) frame.state().get("width")).longValue()));
+        }
+        assertThat(carriesImage).containsExactly(true, false, true);
+    }
+
+    private List<Integer> remoteAnswers(TestDeskBridge desk, Control source) {
+        String channel = FlutterBridge.eventName(source.getImpl(), "DragDetect/remoteAnswer");
+        List<Integer> answers = new ArrayList<>();
+        for (RecordingComm.Frame frame : desk.comm.sent) {
+            if (!frame.event.equals(channel)) continue;
+            Object sent = frame.state().get("detail");
+            answers.add(sent instanceof Number ? ((Number) sent).intValue() : DND.DROP_NONE);
+        }
+        return answers;
+    }
+
+    private DragSource dragSource(Control control, List<String> events) {
+        DragSource drag = new DragSource(control, DND.DROP_MOVE | DND.DROP_COPY);
+        drag.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        drag.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragStart(DragSourceEvent event) {
+                events.add("dragStart");
+            }
+
+            @Override
+            public void dragSetData(DragSourceEvent event) {
+                event.data = "row";
+            }
+
+            @Override
+            public void dragFinished(DragSourceEvent event) {
+                events.add("dragEnd:" + event.detail);
+            }
+        });
+        return drag;
+    }
+
+    private void startDrag(Control control) {
+        control.notifyListeners(SWT.DragDetect, new Event());
+    }
+
+    private void dragMove(TestDeskBridge desk, Control source, int x, int y) {
+        inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragMove"), pointAt(x, y));
+    }
+
+    private void dragRelease(TestDeskBridge desk, Control source, int x, int y) {
+        inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragRelease"), pointAt(x, y));
+    }
+
+    /** The source's client reports its drag over, as it does for every drag that ends there. */
+    private void sourceClientEndsDrag(TestDeskBridge desk, DragSource drag) {
+        inbound(desk, FlutterBridge.event(drag.getImpl(), "Drag", "dragFinished"), new Event());
+    }
+
+    /** What the window drawing {@code target} sends once it has found it under a relayed drag. */
+    private void targetClientSends(TestDeskBridge desk, DropTarget target, String event) {
+        inbound(desk, FlutterBridge.event(target.getImpl(), "Drop", event), pointAt(20, 30));
+    }
+
+    private static Event pointAt(int x, int y) {
+        Event e = new Event();
+        e.x = x;
+        e.y = y;
+        return e;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void inbound(TestDeskBridge desk, String channel, Event event) {
+        Consumer<Event> handler = (Consumer<Event>) desk.comm.handlers.get(channel);
+        assertThat(handler).as("nothing listens on " + channel).isNotNull();
+        handler.accept(event);
+        drainEventLoop();
+    }
+
+    /** The relayed drag phases {@code shell}'s client was sent, as {@code phase@x,y}. */
+    private List<String> remoteDrags(TestDeskBridge desk, Shell shell) {
+        String channel = FlutterBridge.eventName(shell.getImpl(), "DnD/remoteDrag");
+        List<String> phases = new ArrayList<>();
+        for (RecordingComm.Frame frame : desk.comm.sent) {
+            if (!frame.event.equals(channel)) continue;
+            Map<String, Object> values = frame.state();
+            phases.add(values.get("text") + "@" + values.getOrDefault("x", 0) + "," + values.getOrDefault("y", 0));
+        }
+        return phases;
     }
 
     // ---- harness ---------------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import org.eclipse.swt.widgets.Widget;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,15 @@ public final class WebDisplayHarness {
 
     void injectBootFailures(int count) {
         bootFailuresToInject = count;
+    }
+
+    /** The browser's device pixel ratio, 0 for its own. */
+    private double deviceScaleFactor;
+
+    /** Boots the client as on a monitor at {@code factor} (1.5 for 150 %). Call before {@link #boot()}. */
+    public WebDisplayHarness deviceScaleFactor(double factor) {
+        deviceScaleFactor = factor;
+        return this;
     }
 
     public Display boot() {
@@ -91,9 +101,11 @@ public final class WebDisplayHarness {
             openUrl = "data:text/html,harness-forced-boot-failure";
         }
         try {
+            List<String> args = new ArrayList<>(List.of("--remote-debugging-port=0",
+                    "--disable-frame-rate-limit", "--disable-gpu-vsync"));
+            if (deviceScaleFactor > 0) args.add("--force-device-scale-factor=" + deviceScaleFactor);
             chrome = HeadlessChrome.launch(binary, openUrl, headless, console,
-                    console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, "--remote-debugging-port=0",
-                    "--disable-frame-rate-limit", "--disable-gpu-vsync");
+                    console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, args.toArray(new String[0]));
         } catch (IOException e) {
             throw new IllegalStateException("could not launch Chrome", e);
         }

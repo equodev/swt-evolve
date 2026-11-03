@@ -16,15 +16,15 @@ class MenuSwt<V extends VMenu> extends WidgetSwt<V> {
   State createState() => MenuImpl<MenuSwt<VMenu>, VMenu>();
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, 49, payload); // Help/Help
+    sendEvent(val, 56, payload); // Help/Help
   }
 
   void sendMenuHide(V val, VEvent? payload) {
-    sendEvent(val, 61, payload); // Menu/Hide
+    sendEvent(val, 68, payload); // Menu/Hide
   }
 
   void sendMenuShow(V val, VEvent? payload) {
-    sendEvent(val, 62, payload); // Menu/Show
+    sendEvent(val, 69, payload); // Menu/Show
   }
 }
 

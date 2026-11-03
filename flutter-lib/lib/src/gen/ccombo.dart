@@ -25,19 +25,19 @@ class CComboSwt<V extends VCCombo> extends CompositeSwt<V> {
   State createState() => CComboImpl<CComboSwt<VCCombo>, VCCombo>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 65, payload); // Modify/Modify
+    sendEvent(val, 72, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, 107, payload); // Verify/Verify
+    sendEvent(val, 114, payload); // Verify/Verify
   }
 }
 

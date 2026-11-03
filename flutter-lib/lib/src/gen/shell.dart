@@ -28,27 +28,27 @@ class ShellSwt<V extends VShell> extends DecorationsSwt<V> {
   State createState() => ShellImpl<ShellSwt<VShell>, VShell>();
 
   void sendShellActivate(V val, VEvent? payload) {
-    sendEvent(val, 90, payload); // Shell/Activate
+    sendEvent(val, 97, payload); // Shell/Activate
   }
 
   void sendShellClose(V val, VEvent? payload) {
-    sendEvent(val, 91, payload); // Shell/Close
+    sendEvent(val, 98, payload); // Shell/Close
   }
 
   void sendShellDeactivate(V val, VEvent? payload) {
-    sendEvent(val, 92, payload); // Shell/Deactivate
+    sendEvent(val, 99, payload); // Shell/Deactivate
   }
 
   void sendShellDeiconify(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Shell/Deiconify
+    sendEvent(val, 100, payload); // Shell/Deiconify
   }
 
   void sendShellIconify(V val, VEvent? payload) {
-    sendEvent(val, 94, payload); // Shell/Iconify
+    sendEvent(val, 101, payload); // Shell/Iconify
   }
 
   void sendShellSetBounds(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Shell/SetBounds
+    sendEvent(val, 102, payload); // Shell/SetBounds
   }
 }
 

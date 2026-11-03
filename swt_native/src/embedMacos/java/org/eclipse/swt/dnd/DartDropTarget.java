@@ -239,8 +239,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         }
         control.setData(DND.DROP_TARGET_KEY, this.getApi());
         this.bridge = ((DartWidget) control.getImpl()).getBridge();
-        if (this.bridge != null) {
-            this.bridge.dirty((DartWidget) control.getImpl());
+        if (this.bridge != null && control.getImpl() instanceof DartControl) {
+            ((DartControl) control.getImpl()).getValue().markDirty(VControl.DROP_TARGET_ID);
         }
         _hookEvents();
         controlListener = event -> {
@@ -334,8 +334,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
             control.removeListener(SWT.Dispose, controlListener);
         controlListener = null;
         control.setData(DND.DROP_TARGET_KEY, null);
-        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartWidget) {
-            this.bridge.dirty((DartWidget) control.getImpl());
+        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartControl) {
+            ((DartControl) control.getImpl()).getValue().markDirty(VControl.DROP_TARGET_ID);
         }
         transferAgents = null;
         control = null;
@@ -490,47 +490,33 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
     @Override
     public void sendEvent(int eventType, Event event) {
         if (eventType == DND.Drop) {
-            DNDEvent dropEvent = toDropEvent(event);
-            super.sendEvent(DND.Drop, dropEvent);
-            notifyDragSourceOfDragEnd(dropEvent.detail);
+            if (matchingDragSource() == null && ActiveDrag.refused(getDisplay())) {
+                ActiveDrag.endRefused(getDisplay());
+                return;
+            }
+            dropHelper.drop(event);
             return;
         }
-        if (eventType == DND.DragEnter || eventType == DND.DragOver || eventType == DND.DragOperationChanged || eventType == DND.DragLeave || eventType == DND.DropAccept) {
-            // A drag over this target starts afresh: its first answer is sent whatever the last one was.
-            if (eventType == DND.DragEnter)
-                answer.reset();
-            DNDEvent negotiationEvent = toNegotiationEvent(eventType, event);
-            super.sendEvent(eventType, negotiationEvent);
-            selectedDataType = negotiationEvent.dataType;
-            selectedOperation = negotiationEvent.detail;
-            dndFeedback = negotiationEvent.feedback;
-            answer.sendIfChanged(this, selectedOperation, dndFeedback, selectedDataType != null ? (int) selectedDataType.type : 0);
-            if (eventType == DND.DragLeave)
-                answer.reset();
+        if (eventType == DND.DragLeave) {
+            dropHelper.leave(event);
+            return;
+        }
+        if (eventType == DND.DragEnter || eventType == DND.DragOver || eventType == DND.DragOperationChanged || eventType == DND.DropAccept) {
+            dropHelper.negotiate(eventType, event);
             return;
         }
         super.sendEvent(eventType, event);
     }
 
-    int dndFeedback = DND.FEEDBACK_NONE;
-
     private final DropAnswer answer = new DropAnswer(191, 195, 190, 34);
 
-    private DNDEvent toNegotiationEvent(int eventType, Event e) {
-        DNDEvent event = new DNDEvent();
-        event.widget = this.getApi();
-        event.time = e.time;
-        setDisplayLocation(event, e);
-        event.item = e.item != null ? e.item : resolveItem(e);
-        event.operations = getStyle();
-        event.dataTypes = computeMutualDataTypes(matchingDragSource());
-        event.dataType = selectedDataType != null ? selectedDataType : (event.dataTypes.length > 0 ? event.dataTypes[0] : null);
-        event.detail = eventType == DND.DragEnter ? DND.DROP_DEFAULT : (selectedOperation != DND.DROP_NONE ? selectedOperation : DND.DROP_DEFAULT);
-        event.feedback = DND.FEEDBACK_SELECT;
-        return event;
+    final DropTargetHelper dropHelper = new DropTargetHelper(this, answer);
+
+    void deliver(int eventType, DNDEvent event) {
+        super.sendEvent(eventType, event);
     }
 
-    private TransferData[] computeMutualDataTypes(DartDragSource source) {
+    TransferData[] computeMutualDataTypes(DartDragSource source) {
         if (source == null)
             return new TransferData[0];
         java.util.List<TransferData> mutual = new java.util.ArrayList<>();
@@ -554,44 +540,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return mutual.toArray(new TransferData[0]);
     }
 
-    private void setDisplayLocation(DNDEvent event, Event e) {
-        org.eclipse.swt.graphics.Point onDisplay = control.toDisplay(e.x, e.y);
-        event.x = onDisplay.x;
-        event.y = onDisplay.y;
-    }
-
-    private DNDEvent toDropEvent(Event e) {
-        DNDEvent event = new DNDEvent();
-        event.widget = this.getApi();
-        event.time = e.time;
-        setDisplayLocation(event, e);
-        event.doit = true;
-        int detail = e.detail != DND.DROP_NONE ? e.detail : selectedOperation;
-        event.detail = detail == DND.DROP_DEFAULT ? resolveDefaultOperation() : detail;
-        event.item = e.item != null ? e.item : resolveItem(e);
-        DartDragSource source = matchingDragSource();
-        TransferData[] mutual = computeMutualDataTypes(source);
-        TransferData type = selectedDataType != null ? selectedDataType : (mutual.length > 0 ? mutual[0] : null);
-        event.dataTypes = mutual;
-        event.dataType = type;
-        if (source != null && type != null) {
-            event.data = source.requestData(type);
-        }
-        return event;
-    }
-
-    private int resolveDefaultOperation() {
-        int operations = getStyle();
-        if ((operations & DND.DROP_MOVE) != 0)
-            return DND.DROP_MOVE;
-        if ((operations & DND.DROP_COPY) != 0)
-            return DND.DROP_COPY;
-        if ((operations & DND.DROP_LINK) != 0)
-            return DND.DROP_LINK;
-        return DND.DROP_NONE;
-    }
-
-    private Widget resolveItem(Event e) {
+    Widget resolveItem(Event e) {
         if (e.itemId != 0) {
             Widget found = DropTargetHelper.findItemById(control, e.itemId);
             if (found != null)
@@ -600,9 +549,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         if (control instanceof Table && e.index >= 0 && e.index < ((Table) control).getItemCount()) {
             Table table = (Table) control;
             return table.getItem(e.index);
-        } else if (control instanceof Tree && e.index >= 0 && e.index < ((Tree) control).getItemCount()) {
-            Tree tree = (Tree) control;
-            return tree.getItem(e.index);
         } else if (control instanceof org.eclipse.swt.custom.CTabFolder && e.index >= 0 && e.index < ((org.eclipse.swt.custom.CTabFolder) control).getItemCount()) {
             org.eclipse.swt.custom.CTabFolder folder = (org.eclipse.swt.custom.CTabFolder) control;
             return folder.getItem(e.index);
@@ -610,13 +556,13 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         return null;
     }
 
-    private void notifyDragSourceOfDragEnd(int detail) {
+    void notifyDragSourceOfDragEnd(int detail) {
         DartDragSource source = matchingDragSource();
         if (source != null)
             source.fireDragEnd(detail);
     }
 
-    private DartDragSource matchingDragSource() {
+    DartDragSource matchingDragSource() {
         DragSource source = ActiveDrag.of(getDisplay());
         return source != null ? (DartDragSource) source.getImpl() : null;
     }

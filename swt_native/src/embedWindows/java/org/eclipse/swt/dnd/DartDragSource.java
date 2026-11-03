@@ -163,8 +163,9 @@ public class DartDragSource extends DartWidget implements IDragSource {
         }
         control.setData(DND.DRAG_SOURCE_KEY, this.getApi());
         this.bridge = ((DartWidget) control.getImpl()).getBridge();
-        if (this.bridge != null) {
-            this.bridge.dirty((DartWidget) control.getImpl());
+        if (this.bridge != null && control.getImpl() instanceof DartControl) {
+            ((DartControl) control.getImpl()).getValue().markDirty(VControl.DRAG_SOURCE);
+            ((DartControl) control.getImpl()).getValue().markDirty(VControl.DRAG_SOURCE_ID);
         }
         _hookEvents();
         controlListener = event -> {
@@ -408,8 +409,9 @@ public class DartDragSource extends DartWidget implements IDragSource {
         }
         controlListener = null;
         control.setData(DND.DRAG_SOURCE_KEY, null);
-        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartWidget) {
-            this.bridge.dirty((DartWidget) control.getImpl());
+        if (this.bridge != null && !control.isDisposed() && control.getImpl() instanceof DartControl) {
+            ((DartControl) control.getImpl()).getValue().markDirty(VControl.DRAG_SOURCE);
+            ((DartControl) control.getImpl()).getValue().markDirty(VControl.DRAG_SOURCE_ID);
         }
         control = null;
         transferAgents = null;
@@ -519,6 +521,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
         FlutterBridge.send((DartWidget) control.getImpl(), dev.equo.swt.WireTable.CHANNEL_DRAG_DETECT_DRAG_START_RESULT, dev.equo.swt.Java8.map("doit", doit));
     }
 
+    final RemoteDrag remoteDrag = new RemoteDrag(this);
+
     Object lastDragData;
 
     Object requestData(TransferData type) {
@@ -541,6 +545,7 @@ public class DartDragSource extends DartWidget implements IDragSource {
         event.doit = detail != DND.DROP_NONE;
         notifyListeners(DND.DragEnd, event);
         lastDragData = null;
+        remoteDrag.end();
         ActiveDrag.end(getApi());
     }
 
@@ -567,6 +572,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
                             return;
                         if (ActiveDrag.is(getApi()))
                             fireDragEnd(DND.DROP_NONE);
+                        else
+                            ActiveDrag.end(getApi());
                     });
                     return;
                 }

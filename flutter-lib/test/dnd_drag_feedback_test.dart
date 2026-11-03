@@ -52,7 +52,7 @@ Future<void> _pumpTree(WidgetTester tester) async {
 }
 
 /// Presses on 'Source' and moves onto 'Target' with a mouse, leaving the button held.
-Future<TestGesture> _dragOntoTarget(WidgetTester tester) async {
+Future<TestGesture> _dragOntoTarget(WidgetTester tester, {String source = 'Tree/1'}) async {
   final start = tester.getCenter(find.text('Source'));
   final end = tester.getCenter(find.text('Target'));
   final gesture = await tester.createGesture(
@@ -65,7 +65,14 @@ Future<TestGesture> _dragOntoTarget(WidgetTester tester) async {
     await gesture.moveTo(Offset.lerp(start, end, i / steps)!);
     await tester.pump(const Duration(milliseconds: 20));
   }
+  await _allowDrag(tester, source);
   return gesture;
+}
+
+/// Java's DragStart lets the drag of [source] go ahead; the drag shows from then on.
+Future<void> _allowDrag(WidgetTester tester, String source) async {
+  await deliverFrame('$source/DragDetect/dragStartResult', {'doit': true});
+  await tester.pump();
 }
 
 Future<void> _answer({required int detail, required int feedback}) => deliverEvent(
@@ -75,7 +82,7 @@ Future<void> _finish(WidgetTester tester, TestGesture gesture) async {
   await gesture.up();
   await gesture.removePointer();
   await tester.pumpAndSettle();
-  // Nothing answers the dragStart verdict here; let the fail-open timer run out.
+  // A drag whose DragStart answer never came fails open on a timer; let it run out.
   await tester.pump(const Duration(milliseconds: 400));
 }
 
@@ -98,6 +105,7 @@ Future<TestGesture> _dragBy(WidgetTester tester, Offset by) async {
     await gesture.moveTo(start + by * (i / steps));
     await tester.pump(const Duration(milliseconds: 20));
   }
+  await _allowDrag(tester, 'Tree/1');
   return gesture;
 }
 
@@ -183,6 +191,7 @@ void main() {
       await gesture.moveTo(start + Offset(60.0 * i, 0));
       await tester.pump(const Duration(milliseconds: 20));
     }
+    await _allowDrag(tester, 'Tree/1');
 
     expect(_activeCursor(), SystemMouseCursors.noDrop);
 
@@ -226,7 +235,7 @@ void main() {
       contentWidget: SizedBox(width: 400, height: 300, child: TableSwt<VTable>(value: _table())),
     ));
     await tester.pump();
-    final gesture = await _dragOntoTarget(tester);
+    final gesture = await _dragOntoTarget(tester, source: 'Table/2');
 
     await _answer(detail: Dnd.dropMove, feedback: Dnd.feedbackInsertBefore);
     await tester.pump();

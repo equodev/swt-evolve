@@ -32,39 +32,39 @@ class BrowserSwt<V extends VBrowser> extends CompositeSwt<V> {
   }
 
   void sendLocationchanged(V val, VEvent? payload) {
-    sendEvent(val, 59, payload); // Location/changed
+    sendEvent(val, 66, payload); // Location/changed
   }
 
   void sendLocationchanging(V val, VEvent? payload) {
-    sendEvent(val, 60, payload); // Location/changing
+    sendEvent(val, 67, payload); // Location/changing
   }
 
   void sendOpenWindowopen(V val, VEvent? payload) {
-    sendEvent(val, 75, payload); // OpenWindow/open
+    sendEvent(val, 82, payload); // OpenWindow/open
   }
 
   void sendProgresschanged(V val, VEvent? payload) {
-    sendEvent(val, 80, payload); // Progress/changed
+    sendEvent(val, 87, payload); // Progress/changed
   }
 
   void sendProgresscompleted(V val, VEvent? payload) {
-    sendEvent(val, 81, payload); // Progress/completed
+    sendEvent(val, 88, payload); // Progress/completed
   }
 
   void sendStatusTextchanged(V val, VEvent? payload) {
-    sendEvent(val, 96, payload); // StatusText/changed
+    sendEvent(val, 103, payload); // StatusText/changed
   }
 
   void sendTitlechanged(V val, VEvent? payload) {
-    sendEvent(val, 99, payload); // Title/changed
+    sendEvent(val, 106, payload); // Title/changed
   }
 
   void sendVisibilityWindowhide(V val, VEvent? payload) {
-    sendEvent(val, 109, payload); // VisibilityWindow/hide
+    sendEvent(val, 116, payload); // VisibilityWindow/hide
   }
 
   void sendVisibilityWindowshow(V val, VEvent? payload) {
-    sendEvent(val, 110, payload); // VisibilityWindow/show
+    sendEvent(val, 117, payload); // VisibilityWindow/show
   }
 }
 

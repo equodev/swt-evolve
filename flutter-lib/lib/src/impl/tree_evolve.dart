@@ -238,6 +238,22 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     });
   }
 
+  /// The one height every row is laid out, hit-tested and reported at, as `TreeSizes.getItemHeight`
+  /// computes it: the theme's row, or the font's line and the row's padding when that is taller.
+  double _rowHeight(BuildContext context, TreeThemeExtension theme, bool hasMultiColumn) {
+    final double themeRow =
+        hasMultiColumn ? theme.itemHeightWithCols : theme.itemHeight + theme.itemPadding.vertical;
+    final style = getTextStyle(
+      context: context,
+      font: state.font,
+      textColor: theme.itemTextColor,
+      baseTextStyle: theme.itemTextStyle,
+    );
+    final double line = FontUtils.measureTextWidget('Ag', style).height +
+        (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).vertical;
+    return (line > themeRow ? line : themeRow).ceilToDouble();
+  }
+
   Widget createTreeView() {
     return LayeredLayoutBuilder(
       builder: (context, constraints) {
@@ -271,9 +287,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         _cachedHeaderHeight = hasMultiColumn
             ? widgetTheme!.headerHeightWithCols
             : widgetTheme!.headerHeight;
-        _cachedItemHeight = hasMultiColumn
-            ? widgetTheme!.itemHeightWithCols
-            : widgetTheme!.itemHeight + widgetTheme!.itemPadding.vertical;
+        _cachedItemHeight = _rowHeight(context, widgetTheme!, hasMultiColumn);
 
         final double contentHeight =
             (state.headerVisible == true ? _cachedHeaderHeight! : 0.0) +

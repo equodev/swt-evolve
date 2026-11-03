@@ -99,6 +99,73 @@ class DndFlutterTest {
     }
 
     @Test
+    @DisplayName("a drag its DragSource refused drops nothing where it is released")
+    void refusedDragDropsNothing() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragStart(DragSourceEvent event) {
+                event.doit = false;
+            }
+        });
+
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<Integer> drops = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetEvent event) {
+                drops.add(event.detail);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+
+        assertThat(drops).as("natively a refused drag never starts, so no DropTarget sees a drop").isEmpty();
+    }
+
+    @Test
+    @DisplayName("the client is told a DragStart refusal in so many words")
+    void dragStartRefusalCarriesItsDoit() {
+        Label source = new Label(shell, SWT.NONE);
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        boolean[] allow = {false};
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragStart(DragSourceEvent event) {
+                event.doit = allow[0];
+            }
+        });
+        shell.open();
+        flutter.flush();
+
+        List<Object> results = new ArrayList<>();
+        FlutterBridge.setSendObserver((eventName, payload) -> {
+            if (eventName.endsWith("DragDetect/dragStartResult"))
+                results.add(dev.equo.swt.harness.GcFrames.decode(eventName, payload).value());
+        });
+        try {
+            DartDragSource impl = (DartDragSource) dragSource.getImpl();
+            impl.startDrag(new Event());
+            allow[0] = true;
+            impl.startDrag(new Event());
+            impl.fireDragEnd(DND.DROP_NONE);
+        } finally {
+            FlutterBridge.setSendObserver(null);
+        }
+
+        assertThat(results).as("the client reads a result without doit as a refusal, so both say it")
+                .containsExactly(Map.of("doit", false), Map.of("doit", true));
+    }
+
+    @Test
     @DisplayName("dragEnter only offers types the DropTarget actually accepts")
     void mutualDataTypesAreNegotiated() {
         Label source = new Label(shell, SWT.NONE);
@@ -347,6 +414,27 @@ class DndFlutterTest {
     }
 
     @Test
+    @DisplayName("a drag its DragStart refused never ends, as natively, even when the client says it is over")
+    void aRefusedDragNeverEnds() {
+        Label source = new Label(shell, SWT.NONE);
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragStart(DragSourceEvent event) {
+                event.doit = false;
+            }
+        });
+        List<DragSourceEvent> ends = recordDragEnds(dragSource);
+        shell.open();
+
+        ((DartDragSource) dragSource.getImpl()).startDrag(new Event());
+        clientEndsDrag(dragSource);
+
+        assertThat(ends).as("native DragSource.drag returns right after a refused DragStart").isEmpty();
+    }
+
+    @Test
     @DisplayName("a control tells the client which DragSource its drags end on")
     void aControlNamesItsDragSource() {
         Label source = new Label(shell, SWT.NONE);
@@ -471,6 +559,302 @@ class DndFlutterTest {
         impl.sendEvent(DND.DragOver, new Event());
 
         assertThat(seen).containsExactly(DND.FEEDBACK_SELECT, DND.FEEDBACK_SELECT);
+    }
+
+    private DragSource textSource(org.eclipse.swt.widgets.Control control, int operations, String data) {
+        DragSource source = new DragSource(control, operations);
+        source.setTransfer(TextTransfer.getInstance());
+        source.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragSetData(DragSourceEvent event) {
+                event.data = data;
+            }
+        });
+        return source;
+    }
+
+    @Test
+    @DisplayName("drag events offer the source's operations ANDed with the target's, and DROP_DEFAULT resolves to MOVE")
+    void negotiationOffersTheMutualOperationsAndMove() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource dragSource = textSource(source, DND.DROP_COPY | DND.DROP_MOVE, "text");
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<String> seen = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                seen.add("enter " + event.detail + "/" + event.operations);
+            }
+
+            @Override
+            public void dragOver(DropTargetEvent event) {
+                seen.add("over " + event.detail + "/" + event.operations);
+            }
+
+            @Override
+            public void drop(DropTargetEvent event) {
+                seen.add("drop " + event.detail + "/" + event.operations + " feedback " + event.feedback);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+
+        int mutual = DND.DROP_COPY | DND.DROP_MOVE;
+        assertThat(seen).containsExactly(
+                "enter " + DND.DROP_MOVE + "/" + mutual,
+                "over " + DND.DROP_MOVE + "/" + mutual,
+                "drop " + DND.DROP_MOVE + "/" + mutual + " feedback " + DND.FEEDBACK_SELECT);
+    }
+
+    @Test
+    @DisplayName("a drag that left a target leaves nothing of its negotiation to the next drag over it")
+    void aDragAfterALeaveNegotiatesAfresh() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource dragSource = textSource(source, DND.DROP_COPY | DND.DROP_MOVE, "text");
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_COPY | DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<Integer> overs = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                event.detail = DND.DROP_COPY;
+            }
+
+            @Override
+            public void dragOver(DropTargetEvent event) {
+                overs.add(event.detail);
+            }
+        });
+        shell.open();
+        DartDropTarget impl = (DartDropTarget) dropTarget.getImpl();
+
+        ((DartDragSource) dragSource.getImpl()).startDrag(new Event());
+        impl.sendEvent(DND.DragEnter, new Event());
+        impl.sendEvent(DND.DragOver, new Event());
+        impl.sendEvent(DND.DragLeave, new Event());
+        clientEndsDrag(dragSource);
+        // The second drag's DragEnter never arrives.
+        ((DartDragSource) dragSource.getImpl()).startDrag(new Event());
+        impl.sendEvent(DND.DragOver, new Event());
+
+        assertThat(overs).as("the second drag starts from the default operation, not the first drag's COPY")
+                .containsExactly(DND.DROP_COPY, DND.DROP_MOVE);
+    }
+
+    @Test
+    @DisplayName("a refused drag that is over leaves the next drop alone")
+    void aDropAfterARefusedDragIsDelivered() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource dragSource = new DragSource(source, DND.DROP_MOVE);
+        dragSource.setTransfer(TextTransfer.getInstance());
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragStart(DragSourceEvent event) {
+                event.doit = false;
+            }
+        });
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<Integer> drops = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void drop(DropTargetEvent event) {
+                drops.add(event.detail);
+            }
+        });
+        shell.open();
+
+        ((DartDragSource) dragSource.getImpl()).startDrag(new Event());
+        clientEndsDrag(dragSource);
+        DartDropTarget impl = (DartDropTarget) dropTarget.getImpl();
+        impl.sendEvent(DND.DragEnter, new Event());
+        impl.sendEvent(DND.Drop, new Event());
+
+        assertThat(drops).as("a drop from outside the application, after the refused drag ended")
+                .containsExactly(DND.DROP_MOVE);
+    }
+
+    @Test
+    @DisplayName("a drop is announced by DragLeave, then DropAccept, then Drop")
+    void dropIsPrecededByDragLeaveThenDropAccept() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource dragSource = textSource(source, DND.DROP_MOVE, "text");
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<String> order = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetListener() {
+            public void dragEnter(DropTargetEvent event) { order.add("DragEnter"); }
+            public void dragLeave(DropTargetEvent event) { order.add("DragLeave"); }
+            public void dragOperationChanged(DropTargetEvent event) { order.add("DragOperationChanged"); }
+            public void dragOver(DropTargetEvent event) { order.add("DragOver"); }
+            public void drop(DropTargetEvent event) { order.add("Drop"); }
+            public void dropAccept(DropTargetEvent event) { order.add("DropAccept " + event.detail + "/" + event.operations); }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+
+        assertThat(order).containsExactly("DragEnter", "DragOver", "DragLeave", "DropAccept " + DND.DROP_MOVE + "/" + DND.DROP_MOVE, "Drop");
+    }
+
+    @Test
+    @DisplayName("a drop the DropAccept listener refuses never reaches Drop, and the source sees DROP_NONE")
+    void dropRefusedInDropAcceptIsNotDelivered() {
+        Label source = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource dragSource = textSource(source, DND.DROP_MOVE, "text");
+        List<Integer> finished = new ArrayList<>();
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragFinished(DragSourceEvent event) {
+                finished.add(event.detail);
+            }
+        });
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<Integer> drops = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dropAccept(DropTargetEvent event) {
+                event.detail = DND.DROP_NONE;
+            }
+
+            @Override
+            public void drop(DropTargetEvent event) {
+                drops.add(event.detail);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+
+        assertThat(drops).isEmpty();
+        assertThat(finished).containsExactly(DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("each drag starts from one of its own data types, not the previous drag's")
+    void eachDragNegotiatesItsOwnDataType() {
+        Label first = new Label(shell, SWT.NONE);
+        Label second = new Label(shell, SWT.NONE);
+        Label target = new Label(shell, SWT.NONE);
+        DragSource firstSource = textSource(first, DND.DROP_MOVE, "text");
+        DragSource secondSource = new DragSource(second, DND.DROP_MOVE);
+        secondSource.setTransfer(URLTransfer.getInstance());
+        secondSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragSetData(DragSourceEvent event) {
+                event.data = "https://example.org";
+            }
+        });
+        DropTarget dropTarget = new DropTarget(target, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance(), URLTransfer.getInstance());
+        List<String> dropped = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                dropped.add("enter " + URLTransfer.getInstance().isSupportedType(event.currentDataType));
+            }
+
+            @Override
+            public void drop(DropTargetEvent event) {
+                dropped.add("drop " + URLTransfer.getInstance().isSupportedType(event.currentDataType) + " " + event.data);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(firstSource, dropTarget, e -> {
+        });
+        dropped.clear();
+        dragAndDrop(secondSource, dropTarget, e -> {
+        });
+
+        assertThat(dropped).containsExactly("enter true", "drop true https://example.org");
+    }
+
+    @Test
+    @DisplayName("a drop on a Tree's blank space has no item")
+    void dropOnBlankTreeSpaceHasNoItem() {
+        Tree tree = new Tree(shell, SWT.NONE);
+        new TreeItem(tree, SWT.NONE).setText("root");
+        DragSource dragSource = textSource(new Label(shell, SWT.NONE), DND.DROP_MOVE, "text");
+        DropTarget dropTarget = new DropTarget(tree, DND.DROP_MOVE);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        List<Object> items = new ArrayList<>();
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragOver(DropTargetEvent event) {
+                items.add(event.item);
+            }
+
+            @Override
+            public void drop(DropTargetEvent event) {
+                items.add(event.item);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+
+        assertThat(items).containsExactly(null, null);
+    }
+
+    @Test
+    @DisplayName("a target that keeps detail only when operations allows it and DropAccept came first adds the dragged row")
+    void strictDropTargetAddsTheDraggedRow() {
+        Table table = new Table(shell, SWT.NONE);
+        new TableItem(table, SWT.NONE).setText("row");
+        Tree tree = new Tree(shell, SWT.NONE);
+        new TreeItem(tree, SWT.NONE).setText("inventory");
+        DragSource dragSource = textSource(table, DND.DROP_COPY | DND.DROP_MOVE, "row");
+        List<Integer> finished = new ArrayList<>();
+        dragSource.addDragListener(new DragSourceAdapter() {
+            @Override
+            public void dragFinished(DragSourceEvent event) {
+                finished.add(event.detail);
+            }
+        });
+        DropTarget dropTarget = new DropTarget(tree, DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK);
+        dropTarget.setTransfer(TextTransfer.getInstance());
+        boolean[] accepted = new boolean[1];
+        dropTarget.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                accepted[0] = false;
+            }
+
+            @Override
+            public void dropAccept(DropTargetEvent event) {
+                accepted[0] = true;
+            }
+
+            @Override
+            public void drop(DropTargetEvent event) {
+                if (!accepted[0] || (event.operations & event.detail) == 0 || event.data == null) {
+                    event.detail = DND.DROP_NONE;
+                    return;
+                }
+                new TreeItem(tree.getItem(0), SWT.NONE).setText((String) event.data);
+            }
+        });
+
+        shell.open();
+        dragAndDrop(dragSource, dropTarget, e -> {
+        });
+
+        assertThat(tree.getItem(0).getItemCount()).isEqualTo(1);
+        assertThat(tree.getItem(0).getItem(0).getText()).isEqualTo("row");
+        assertThat(finished).containsExactly(DND.DROP_MOVE);
     }
 
     @Test

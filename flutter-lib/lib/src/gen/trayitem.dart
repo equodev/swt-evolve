@@ -16,15 +16,15 @@ class TrayItemSwt<V extends VTrayItem> extends ItemSwt<V> {
   State createState() => TrayItemImpl<TrayItemSwt<VTrayItem>, VTrayItem>();
 
   void sendMenuDetectMenuDetect(V val, VEvent? payload) {
-    sendEvent(val, 63, payload); // MenuDetect/MenuDetect
+    sendEvent(val, 70, payload); // MenuDetect/MenuDetect
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 }
 

@@ -22,11 +22,11 @@ class TrackerSwt<V extends VTracker> extends WidgetSwt<V> {
   }
 
   void sendKeyKeyDown(V val, VEvent? payload) {
-    sendEvent(val, 54, payload); // Key/KeyDown
+    sendEvent(val, 61, payload); // Key/KeyDown
   }
 
   void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, 55, payload); // Key/KeyUp
+    sendEvent(val, 62, payload); // Key/KeyUp
   }
 }
 

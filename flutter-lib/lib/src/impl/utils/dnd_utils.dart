@@ -1,11 +1,19 @@
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb;
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart' show TargetPlatform, ValueListenable, defaultTargetPlatform, kIsWeb;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import '../../comm/comm.dart';
 import '../../gen/control.dart';
 import '../../gen/dragsource.dart';
 import '../../gen/droptarget.dart';
 import '../../gen/event.dart';
 import '../../gen/widget.dart';
+import '../shell_evolve.dart';
 import 'dnd_session.dart';
 import '../../gen/widgets.dart' show WireChannel;
 import 'widget_utils.dart';
@@ -271,7 +279,7 @@ Widget _withDropCursor(Widget visual) {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: _cursorSlop, top: _cursorSlop),
-          child: visual,
+          child: _DragImageCapture(child: visual),
         ),
         if (DndDropAnswer.drawsOperationBadge)
           // Below and right of the arrow's tip, clear of the arrow itself.
@@ -326,6 +334,83 @@ class _DropCursorState extends State<_DropCursor> {
   }
 }
 
+/// Sends the drag image once it is drawn, for another window the drag crosses into to draw it: the
+/// image this window draws ends at its border.
+class _DragImageCapture extends StatefulWidget {
+  const _DragImageCapture({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DragImageCapture> createState() => _DragImageCaptureState();
+}
+
+class _DragImageCaptureState extends State<_DragImageCapture> {
+  @override
+  void initState() {
+    super.initState();
+    final drag = _RemoteDragReporter.drag;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _capture(drag));
+  }
+
+  Future<void> _capture(int drag) async {
+    if (!mounted || !_RemoteDragReporter.isReporting(drag)) return;
+    final boundary = context.findRenderObject();
+    // A drag with no image (a Canvas's) has none to send, as natively.
+    if (boundary is! RenderRepaintBoundary || !boundary.hasSize || boundary.size.isEmpty) return;
+    final size = boundary.size;
+    final image = await boundary.toImage(pixelRatio: View.of(context).devicePixelRatio);
+    try {
+      final png = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (png != null) _RemoteDragReporter.image(drag, png.buffer.asUint8List(), size);
+    } finally {
+      image.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => RepaintBoundary(child: widget.child);
+}
+
+/// The drag image a drag from another window carries, drawn here where the source window cannot:
+/// at the pointer, as the source draws it, with the operation badge for what this window's drop
+/// target answered.
+class _RemoteDragImage extends StatelessWidget {
+  const _RemoteDragImage({required this.at, required this.png, required this.size});
+
+  final ValueListenable<Offset> at;
+  final Uint8List png;
+  final Size size;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<Offset>(
+        valueListenable: at,
+        builder: (_, at, __) => Positioned(
+          left: at.dx,
+          top: at.dy,
+          child: IgnorePointer(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Image.memory(png, width: size.width, height: size.height, gaplessPlayback: true),
+                if (DndDropAnswer.drawsOperationBadge)
+                  Positioned(
+                    left: 10,
+                    top: 16,
+                    child: ValueListenableBuilder<int>(
+                      valueListenable: DndDropAnswer.operation,
+                      builder: (_, op, __) => DndDropAnswer._isDrop(op)
+                          ? DropOperationBadge(operation: op)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
 class DragDetectGate {
   static const double thresholdPx = 4.0;
 
@@ -346,12 +431,245 @@ class DragDetectGate {
   }
 }
 
+/// Reports where a DragSource's drag goes, in display coordinates, so Java can carry it to a shell
+/// another window draws: no other window sees a drag that leaves this one. One drag at a time per
+/// engine, kept here because the Draggable's callbacks are rebuilt with the control.
+class _RemoteDragReporter {
+  /// At most one move a frame; the last one of a frame is sent when the frame ends.
+  static const _frame = Duration(milliseconds: 16);
+
+  static ControlSwt? _widget;
+  static VControl? _state;
+  static Offset Function(Offset)? _toDisplay;
+  static ui.FlutterView? _view;
+  static Offset? _last;
+  static Offset? _lastReported;
+  static Timer? _throttle;
+
+  /// Counts drags, so an image captured for one that has ended is not sent for the next.
+  static int drag = 0;
+
+  /// What the drop target in another window under the pointer answered, which Java relays.
+  static int _answer = Dnd.dropNone;
+  static (int, int)? _answerOn;
+  static Object? _answerToken;
+
+  /// Whether the cursor was set here, outside the view, where Flutter's own cursor tracking finds
+  /// nothing under the pointer and shows the arrow.
+  static bool _cursorSet = false;
+
+  static void start(ControlSwt widget, VControl state, Offset Function(Offset) toDisplay, ui.FlutterView view) {
+    stop();
+    drag++;
+    _widget = widget;
+    _state = state;
+    _toDisplay = toDisplay;
+    _view = view;
+    final on = (state.wireType, state.id);
+    _answerOn = on;
+    _answerToken = EquoCommService.on(on.$1, on.$2, WireChannel.dragDetectRemoteAnswer, (payload) {
+      if (_answerOn != on || payload is! Map) return;
+      _answer = (payload['detail'] as num?)?.toInt() ?? Dnd.dropNone;
+      _showCursor();
+    });
+  }
+
+  static bool get reporting => _widget != null;
+
+  static bool isReporting(int drag) => _widget != null && drag == _RemoteDragReporter.drag;
+
+  static void image(int drag, Uint8List png, Size size) {
+    if (!isReporting(drag)) return;
+    _widget!.sendEvent(
+        _state!,
+        WireChannel.dragDetectDragImage,
+        VEvent()
+          ..segments = png
+          ..width = size.width.round()
+          ..height = size.height.round());
+  }
+
+  /// The window a drag starts in keeps the pointer until the release, so it sets the cursor over
+  /// the other windows too.
+  static void _showCursor() {
+    final at = _last;
+    final view = _view;
+    if (at == null || view == null) return;
+    final outside = !(Offset.zero & (view.physicalSize / view.devicePixelRatio)).contains(at);
+    if (!outside && !_cursorSet) return;
+    // Back in the view, Flutter takes the cursor over again, but it does not know it was changed.
+    final op = outside ? _answer : DndDropAnswer.operation.value;
+    _cursorSet = outside;
+    final cursor = DndDropAnswer.cursorFor(op);
+    if (cursor is! SystemMouseCursor) return;
+    SystemChannels.mouseCursor.invokeMethod<void>(
+        'activateSystemCursor', <String, dynamic>{'device': 0, 'kind': cursor.kind});
+  }
+
+  static void move(Offset global) {
+    if (_widget == null) return;
+    _last = global;
+    _showCursor();
+    if (_throttle != null) return;
+    _report(WireChannel.dragDetectDragMove, global);
+  }
+
+  static void _endFrame() {
+    _throttle = null;
+    final last = _last;
+    if (_widget != null && last != null && last != _lastReported) _report(WireChannel.dragDetectDragMove, last);
+  }
+
+  /// The drag ended with no drop target in this window taking it.
+  static void release(Offset global) {
+    if (_widget == null) return;
+    _report(WireChannel.dragDetectDragRelease, global);
+    stop();
+  }
+
+  /// Escape cancelled the drag: the window it is over hears it leave, and it ends with nothing dropped.
+  static void cancel() {
+    final widget = _widget;
+    final state = _state;
+    if (widget == null || state == null) return;
+    stop();
+    widget.sendEvent(state, WireChannel.dragDetectDragCancel, VEvent());
+  }
+
+  static void stop() {
+    _throttle?.cancel();
+    _throttle = null;
+    _widget = null;
+    _state = null;
+    _toDisplay = null;
+    _view = null;
+    _last = null;
+    _lastReported = null;
+    _answer = Dnd.dropNone;
+    _cursorSet = false;
+    final on = _answerOn;
+    if (on != null) EquoCommService.remove(on.$1, on.$2, WireChannel.dragDetectRemoteAnswer, _answerToken);
+    _answerOn = null;
+    _answerToken = null;
+  }
+
+  static void _report(int channel, Offset global) {
+    _throttle?.cancel();
+    _throttle = Timer(_frame, _endFrame);
+    _lastReported = global;
+    final display = _toDisplay!(global);
+    _widget!.sendEvent(
+        _state!,
+        channel,
+        VEvent()
+          ..x = display.dx.round()
+          ..y = display.dy.round());
+  }
+}
+
+/// Escape cancels the DragSource drag in flight, as it cancels an OLE drag. The window the drag
+/// started in keeps the keyboard until the release, and the Escape goes to no control.
+class _EscapeCancelsDrag {
+  static KeyEventCallback? _handler;
+
+  static void arm(VoidCallback onEscape) {
+    disarm();
+    bool handler(KeyEvent event) {
+      if (event.logicalKey != LogicalKeyboardKey.escape) return false;
+      if (event is KeyDownEvent) onEscape();
+      return true;
+    }
+    _handler = handler;
+    HardwareKeyboard.instance.addHandler(handler);
+  }
+
+  static void disarm() {
+    final handler = _handler;
+    _handler = null;
+    if (handler != null) HardwareKeyboard.instance.removeHandler(handler);
+  }
+}
+
+/// A Draggable whose drag starts only once the pointer has moved [DragDetectGate.thresholdPx] from
+/// the press. Flutter hands the pointer to a lone drag recognizer at the press, which made every
+/// click on a control with nothing else competing for it a drag, entering and dropping on the drop
+/// target under it.
+class _ThresholdDraggable<T extends Object> extends Draggable<T> {
+  const _ThresholdDraggable({
+    required super.child,
+    required super.feedback,
+    super.data,
+    super.dragAnchorStrategy,
+    super.ignoringFeedbackPointer,
+    super.childWhenDragging,
+    super.onDragStarted,
+    super.onDragUpdate,
+    super.onDraggableCanceled,
+    super.onDragCompleted,
+    super.onDragEnd,
+  });
+
+  @override
+  MultiDragGestureRecognizer createRecognizer(GestureMultiDragStartCallback onStart) =>
+      _ThresholdMultiDragRecognizer(allowedButtonsFilter: allowedButtonsFilter)..onStart = onStart;
+}
+
+class _ThresholdMultiDragRecognizer extends MultiDragGestureRecognizer {
+  _ThresholdMultiDragRecognizer({super.allowedButtonsFilter}) : super(debugOwner: null);
+
+  @override
+  MultiDragPointerState createNewPointerState(PointerDownEvent event) =>
+      _ThresholdPointerState(event.position, event.kind, gestureSettings);
+
+  @override
+  String get debugDescription => 'threshold multidrag';
+}
+
+class _ThresholdPointerState extends MultiDragPointerState {
+  _ThresholdPointerState(super.initialPosition, super.kind, super.gestureSettings);
+
+  /// Starts the drag; held when the arena accepts the pointer before it has moved far enough.
+  GestureMultiDragStartCallback? _starter;
+
+  bool get _moved => (pendingDelta?.distance ?? 0) >= DragDetectGate.thresholdPx;
+
+  @override
+  void checkForResolutionAfterMove() {
+    if (!_moved) return;
+    resolve(GestureDisposition.accepted);
+    final starter = _starter;
+    _starter = null;
+    starter?.call(initialPosition);
+  }
+
+  @override
+  void accepted(GestureMultiDragStartCallback starter) {
+    if (_moved) {
+      starter(initialPosition);
+    } else {
+      _starter = starter;
+    }
+  }
+
+  @override
+  void dispose() {
+    _starter = null;
+    super.dispose();
+  }
+}
+
+/// The Draggable (its context) whose drag Java's DragStart allowed, while that drag is in flight.
+/// A DragSource's drag shows only then: one that DragStart refuses must look like no drag at all.
+final ValueNotifier<Object?> _shownDrag = ValueNotifier<Object?>(null);
+
 Widget wrapDraggable<T extends Object>({
   required Widget child,
   required T data,
   required ControlSwt widget,
   required VControl state,
   VoidCallback? onDragStarted,
+  // Java's DragStart answer for the drag this Draggable started, once it arrives.
+  ValueChanged<bool>? onDragStartVerdict,
   // What native SWT does on the mouse down that starts the drag, so DragStart listeners see it:
   // a Tree or Table selects the item under the pointer before DragDetect is raised.
   VoidCallback? beforeDragDetect,
@@ -370,13 +688,48 @@ Widget wrapDraggable<T extends Object>({
     widget.sendDragDetectDragDetect(state, dragDetectEvent?.call() ?? VEvent());
   }
 
+  // The context under which the drag starts, to find the shell it starts in.
+  BuildContext? anchor;
+
   void onUpdate(DragUpdateDetails d) {
-    if (dragDetectGate!.passed(d.delta)) sendDragDetect();
+    if (dragDetectGate?.passed(d.delta) ?? false) sendDragDetect();
+    if (hasDragSource) _RemoteDragReporter.move(d.globalPosition);
+  }
+
+  void startReporting() {
+    final context = anchor;
+    if (!hasDragSource || context == null || !context.mounted) return;
+    final shell = context.findAncestorStateOfType<ShellImpl>();
+    if (shell != null) _RemoteDragReporter.start(widget, state, shell.toDisplay, View.of(context));
   }
 
   void fireDragDetect() {
     if (hasDragSource) {
-      DragStartVeto.begin(state.wireType, state.id);
+      final source = anchor;
+      var shownHere = false;
+      void show() {
+        if (shownHere) return;
+        shownHere = true;
+        _shownDrag.value = source;
+        startReporting();
+        _EscapeCancelsDrag.arm(() {
+          DragStartVeto.cancel();
+          if (identical(_shownDrag.value, source)) _shownDrag.value = null;
+          _RemoteDragReporter.cancel();
+        });
+      }
+
+      DragStartVeto.begin(state.wireType, state.id, onVerdict: (doit) {
+        if (doit) {
+          show();
+        } else if (shownHere) {
+          // Refused after it was shown for want of an answer: it never started for Java.
+          _EscapeCancelsDrag.disarm();
+          if (identical(_shownDrag.value, source)) _shownDrag.value = null;
+          _RemoteDragReporter.stop();
+        }
+        onDragStartVerdict?.call(doit);
+      }, onNoVerdict: show);
     } else {
       DragStartVeto.reset();
     }
@@ -419,7 +772,7 @@ Widget wrapDraggable<T extends Object>({
   // the feedback's offset as where the drop happens, so its origin has to stay at the pointer. A
   // layer of its own: the image moves with every frame of the drag, and moving a layer does not
   // paint what is in it again.
-  final feedback = RepaintBoundary(
+  final dragFeedback = RepaintBoundary(
     child: hasDragSource
         ? Transform.translate(
             offset: const Offset(-_cursorSlop, -_cursorSlop),
@@ -427,31 +780,94 @@ Widget wrapDraggable<T extends Object>({
           )
         : visual,
   );
-  // The same widget dragged or not, so that what is dragged is dimmed rather than built again.
-  final atRest = _DimmedWhileDragged(dimmed: false, child: child);
-  final childWhenDragging = _DimmedWhileDragged(dimmed: true, child: child);
 
-  return useLongPress
-      ? LongPressDraggable<T>(
-          data: data,
-          dragAnchorStrategy: pointerDragAnchorStrategy,
-          feedback: feedback,
-          childWhenDragging: childWhenDragging,
-          onDragStarted: fireDragDetect,
-          onDragUpdate: dragDetectGate == null ? null : onUpdate,
-          onDragEnd: sendDragFinished,
-          child: atRest,
-        )
-      : Draggable<T>(
-          data: data,
-          dragAnchorStrategy: pointerDragAnchorStrategy,
-          feedback: feedback,
-          childWhenDragging: childWhenDragging,
-          onDragStarted: fireDragDetect,
-          onDragUpdate: dragDetectGate == null ? null : onUpdate,
-          onDragEnd: sendDragFinished,
-          child: atRest,
-        );
+  bool shown(Object? drag) => drag != null && identical(drag, anchor);
+  // A DragSource's Draggable keeps drawing its child as is until Java allows the drag. The same
+  // widget dragged or not, so that what is dragged is dimmed rather than built again: rebuilt under
+  // a new parent, the control would lose its state while it still holds the pointer.
+  final Widget feedback;
+  final Widget? childWhenDragging;
+  final Widget draggableChild;
+  if (hasDragSource) {
+    feedback = ValueListenableBuilder<Object?>(
+      valueListenable: _shownDrag,
+      builder: (_, drag, __) => shown(drag) ? dragFeedback : const SizedBox.shrink(),
+    );
+    childWhenDragging = null;
+    draggableChild = ValueListenableBuilder<Object?>(
+      valueListenable: _shownDrag,
+      builder: (_, drag, __) => _DimmedWhileDragged(dimmed: shown(drag), child: child),
+    );
+  } else {
+    feedback = dragFeedback;
+    childWhenDragging = _DimmedWhileDragged(dimmed: true, child: child);
+    draggableChild = _DimmedWhileDragged(dimmed: false, child: child);
+  }
+
+  void endDrag() {
+    if (!hasDragSource) return;
+    _EscapeCancelsDrag.disarm();
+    DragStartVeto.end();
+    if (identical(_shownDrag.value, anchor)) _shownDrag.value = null;
+  }
+
+  final onUpdateOrNull = dragDetectGate == null && !hasDragSource ? null : onUpdate;
+  void onCanceled(Velocity _, Offset offset) {
+    if (hasDragSource) _RemoteDragReporter.release(offset);
+    endDrag();
+  }
+  void onCompleted() {
+    if (hasDragSource) _RemoteDragReporter.stop();
+    endDrag();
+  }
+  // Runs before onCanceled. A drag the other windows hear about ends with its release, which Java
+  // takes to the window under the pointer: a DragEnd sent now would end it before that drop.
+  void onDragEnd(DraggableDetails details) {
+    if (!details.wasAccepted && _RemoteDragReporter.reporting) return;
+    sendDragFinished(details);
+  }
+
+  return Builder(builder: (context) {
+    anchor = context;
+    return useLongPress
+        ? LongPressDraggable<T>(
+            data: data,
+            dragAnchorStrategy: pointerDragAnchorStrategy,
+            feedback: feedback,
+            childWhenDragging: childWhenDragging,
+            onDragStarted: fireDragDetect,
+            onDragUpdate: onUpdateOrNull,
+            onDraggableCanceled: onCanceled,
+            onDragCompleted: onCompleted,
+            onDragEnd: onDragEnd,
+            child: draggableChild,
+          )
+        : dragDetectGate != null
+        ? _ThresholdDraggable<T>(
+            data: data,
+            dragAnchorStrategy: pointerDragAnchorStrategy,
+            feedback: feedback,
+            childWhenDragging: childWhenDragging,
+            onDragStarted: fireDragDetect,
+            onDragUpdate: onUpdateOrNull,
+            onDraggableCanceled: onCanceled,
+            onDragCompleted: onCompleted,
+            onDragEnd: onDragEnd,
+            child: draggableChild,
+          )
+        : Draggable<T>(
+            data: data,
+            dragAnchorStrategy: pointerDragAnchorStrategy,
+            feedback: feedback,
+            childWhenDragging: childWhenDragging,
+            onDragStarted: fireDragDetect,
+            onDragUpdate: onUpdateOrNull,
+            onDraggableCanceled: onCanceled,
+            onDragCompleted: onCompleted,
+            onDragEnd: onDragEnd,
+            child: draggableChild,
+          );
+  });
 }
 
 /// What a drag picked up, faded to [_alpha] while it is being dragged. Not an [Opacity]: one at
@@ -579,11 +995,156 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
   State<_DropTargetNegotiator<T>> createState() => _DropTargetNegotiatorState<T>();
 }
 
+/// A drag from another window, which Java carries to the shell under the pointer: it enters the
+/// drop targets drawn here as a drag in this window would, the innermost one under the pointer.
+class RemoteDragReceiver {
+  _DropTargetNegotiatorState? _current;
+  OverlayEntry? _image;
+  final ValueNotifier<Offset> _imageAt = ValueNotifier(Offset.zero);
+
+  /// Handles `over`, `leave` and `drop` at [global], a position in [context]'s view. The first
+  /// `over` in this window carries the drag image, as [png] of [imageSize]. Answers false for a drop
+  /// no drop target here takes.
+  bool handle(BuildContext context, String phase, Offset? global, {Uint8List? png, Size? imageSize}) {
+    if (phase == 'over' && global != null) {
+      _showImage(context, global, png, imageSize);
+    } else {
+      _hideImage();
+    }
+    if (phase == 'leave' || global == null) {
+      _enter(null, null);
+      return phase != 'drop';
+    }
+    final target = _targetAt(context, global);
+    if (phase == 'over') {
+      if (!identical(target, _current)) _enter(target, global);
+      target?.remoteOver(global);
+      return true;
+    }
+    if (phase != 'drop') return true;
+    if (!identical(target, _current)) {
+      _enter(target, global);
+      target?.remoteOver(global);
+    }
+    _current = null;
+    if (target == null) return false;
+    target.remoteDrop(global);
+    return true;
+  }
+
+  void _showImage(BuildContext context, Offset global, Uint8List? png, Size? size) {
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+    final box = overlay.context.findRenderObject();
+    _imageAt.value = box is RenderBox && box.hasSize ? box.globalToLocal(global) : global;
+    if (png == null || size == null || size.isEmpty) return;
+    _hideImage();
+    final entry = OverlayEntry(builder: (_) => _RemoteDragImage(at: _imageAt, png: png, size: size));
+    _image = entry;
+    overlay.insert(entry);
+  }
+
+  void _hideImage() {
+    final entry = _image;
+    _image = null;
+    entry?.remove();
+    entry?.dispose();
+  }
+
+  void dispose() {
+    _hideImage();
+    _current = null;
+    _imageAt.dispose();
+  }
+
+  void _enter(_DropTargetNegotiatorState? target, Offset? global) {
+    final previous = _current;
+    _current = target;
+    if (previous != null && previous.mounted) previous.remoteLeave();
+    if (target != null) target.remoteEnter(global!);
+  }
+
+  static _DropTargetNegotiatorState? _targetAt(BuildContext context, Offset global) {
+    final result = HitTestResult();
+    RendererBinding.instance.hitTestInView(result, global, View.of(context).viewId);
+    for (final entry in result.path) {
+      final target = entry.target;
+      if (target is! RenderMetaData) continue;
+      final negotiator = target.metaData;
+      if (negotiator is _DropTargetNegotiatorState && negotiator.mounted && negotiator.acceptsRemote) {
+        return negotiator;
+      }
+    }
+    return null;
+  }
+}
+
 class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNegotiator<T>> {
+  /// What a drag from another window carries: its data stays with the source, on the Java side.
+  static const _remotePayload = DndDragPayload(sourceControlId: 0);
+
+  /// Whether a drag from another window is over this target.
+  bool _remoteHover = false;
+
+  bool get acceptsRemote => widget.dropTargetId != null && _remotePayload is T;
+
+  DragTargetDetails<T> _remoteDetails(Offset global) =>
+      DragTargetDetails<T>(data: _remotePayload as T, offset: global);
+
+  void remoteEnter(Offset global) {
+    DndSession.clear(widget.dropTargetId!);
+    DndDropAnswer.enter(this, Dnd.dropDefault);
+    setState(() => _remoteHover = true);
+    _sendNegotiation(WireChannel.dropDragEnter, _remoteDetails(global));
+  }
+
+  void remoteOver(Offset global) => _dragOver(_remoteDetails(global));
+
+  void remoteLeave() {
+    _stopRepeat();
+    DndDropAnswer.leave(this);
+    setState(() => _remoteHover = false);
+    widget.onLeave?.call();
+    _sendNegotiation(WireChannel.dropDragLeave, null);
+  }
+
+  void remoteDrop(Offset global) {
+    _stopRepeat();
+    DndDropAnswer.leave(this);
+    setState(() => _remoteHover = false);
+    widget.onLeave?.call();
+    final details = _remoteDetails(global);
+    final index = widget.resolveIndex?.call(details);
+    final itemId = widget.resolveItemId?.call(details);
+    widget.onDrop(details.data, index, itemId, _resolvePosition(details));
+  }
+
+  /// Whether Java heard this window's drag enter this target. A DragSource's drag reaches it only
+  /// once DragStart allowed it, so DragEnter can come with a later move.
+  bool _entered = false;
+
+  void _enterOnce(DragTargetDetails<T> details) {
+    if (_entered || widget.dropTargetId == null || !DragStartVeto.reachesTargets) return;
+    _entered = true;
+    _sendNegotiation(WireChannel.dropDragEnter, details);
+  }
+
+  /// Escape cancelled the drag: it leaves the target it is over.
+  void _onCancel() {
+    if (!_entered) return;
+    _entered = false;
+    _stopRepeat();
+    DndDropAnswer.leave(this);
+    widget.onLeave?.call();
+    _sendNegotiation(WireChannel.dropDragLeave, null);
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
     _subscribe(widget.dropTargetId);
+    DragStartVeto.cancels.addListener(_onCancel);
   }
 
   @override
@@ -597,8 +1158,48 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
 
   @override
   void dispose() {
+    DragStartVeto.cancels.removeListener(_onCancel);
+    _stopRepeat();
     _unsubscribe(widget.dropTargetId);
     super.dispose();
+  }
+
+  /// How often DragOver is sent again while the pointer rests, as the OLE drag loop does.
+  static const _repeatInterval = Duration(milliseconds: 50);
+
+  /// Where the drag over this target last was, while it is over it.
+  DragTargetDetails<T>? _over;
+  Timer? _repeat;
+
+  void _dragOver(DragTargetDetails<T> details) {
+    _over = details;
+    _sendNegotiation(WireChannel.dropDragOver, details);
+  }
+
+  /// A drag resting over the target keeps hearing DragOver while the listener asks for
+  /// FEEDBACK_SCROLL or FEEDBACK_EXPAND, which act after the drag has rested a while. Each one
+  /// resolves the item again, as the rows under the pointer move when the target scrolls.
+  void _syncRepeat() {
+    final id = widget.dropTargetId;
+    final rests = id != null &&
+        _over != null &&
+        DndSession.stateFor(id).feedback & (Dnd.feedbackScroll | Dnd.feedbackExpand) != 0;
+    if (!rests) {
+      _repeat?.cancel();
+      _repeat = null;
+      return;
+    }
+    _repeat ??= Timer.periodic(_repeatInterval, (_) {
+      final over = _over;
+      if (!mounted || over == null) return _stopRepeat();
+      _sendNegotiation(WireChannel.dropDragOver, over);
+    });
+  }
+
+  void _stopRepeat() {
+    _over = null;
+    _repeat?.cancel();
+    _repeat = null;
   }
 
   void _subscribe(int? id) {
@@ -613,11 +1214,13 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
 
   void _onNegotiationUpdate(DndNegotiationState state) {
     DndDropAnswer.update(this, state.detail);
+    _syncRepeat();
     if (mounted) widget.onAnswer?.call(state);
   }
 
   @override
   void deactivate() {
+    _stopRepeat();
     DndDropAnswer.leave(this);
     super.deactivate();
   }
@@ -657,6 +1260,15 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
 
   @override
   Widget build(BuildContext context) {
+    // Found by RemoteDragReceiver's hit test.
+    return MetaData(
+      metaData: this,
+      behavior: HitTestBehavior.translucent,
+      child: _dragTarget(context),
+    );
+  }
+
+  Widget _dragTarget(BuildContext context) {
     return DragTarget<T>(
       onWillAcceptWithDetails: (details) {
         final id = widget.dropTargetId;
@@ -668,19 +1280,28 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
         // A previous drag's answer would otherwise show until Java answers this one.
         DndSession.clear(id);
         DndDropAnswer.enter(this, Dnd.dropDefault);
-        _sendNegotiation(WireChannel.dropDragEnter, details);
+        _entered = false;
+        _enterOnce(details);
         return true;
       },
-      onMove: (details) => _sendNegotiation(WireChannel.dropDragOver, details),
+      onMove: (details) {
+        if (!DragStartVeto.reachesTargets) return;
+        _enterOnce(details);
+        _dragOver(details);
+      },
       onLeave: (_) {
+        _stopRepeat();
         DndDropAnswer.leave(this);
         widget.onLeave?.call();
-        if (widget.dropTargetId == null) return;
+        if (widget.dropTargetId == null || !_entered) return;
+        _entered = false;
         _sendNegotiation(WireChannel.dropDragLeave, null);
       },
       onAcceptWithDetails: (details) {
+        _stopRepeat();
         DndDropAnswer.leave(this);
         widget.onLeave?.call();
+        _entered = false;
         if (widget.dropTargetId == null && !widget.alwaysAccepts) return;
         if (DragStartVeto.isVetoed) return;
         final index = widget.resolveIndex != null ? widget.resolveIndex!(details) : null;
@@ -688,7 +1309,7 @@ class _DropTargetNegotiatorState<T extends Object> extends State<_DropTargetNego
         widget.onDrop(details.data, index, itemId, _resolvePosition(details));
       },
       builder: (context, candidateData, rejectedData) => widget.builder != null
-          ? widget.builder!(context, widget.child, candidateData.isNotEmpty)
+          ? widget.builder!(context, widget.child, candidateData.isNotEmpty || _remoteHover)
           : widget.child,
     );
   }

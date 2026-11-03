@@ -1151,6 +1151,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return false;
     }
 
+    @Override
+    public Object windowOf(Object shell) {
+        Composite current = shell instanceof Shell ? (Shell) shell : null;
+        while (current instanceof Shell && !current.isDisposed()) {
+            if (shellWindows.containsKey(current)) return current;
+            current = current.getParent();
+        }
+        return null;
+    }
+
     /** Whether {@code shell} is drawn in a window of its own rather than inside the Display's. */
     boolean isShellWindowed(Shell shell) {
         return shellWindows.containsKey(shell);

@@ -25,11 +25,11 @@ class ExpandBarSwt<V extends VExpandBar> extends CompositeSwt<V> {
   State createState() => ExpandBarImpl<ExpandBarSwt<VExpandBar>, VExpandBar>();
 
   void sendExpandCollapse(V val, VEvent? payload) {
-    sendEvent(val, 35, payload); // Expand/Collapse
+    sendEvent(val, 42, payload); // Expand/Collapse
   }
 
   void sendExpandExpand(V val, VEvent? payload) {
-    sendEvent(val, 36, payload); // Expand/Expand
+    sendEvent(val, 43, payload); // Expand/Expand
   }
 }
 

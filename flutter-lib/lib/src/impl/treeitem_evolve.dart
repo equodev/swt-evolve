@@ -103,9 +103,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         final itemIndex = _context!.treeImpl!.findItemIndex(state.id);
         final hasMultiColumn =
             (_context!.treeImpl!.getTreeColumns().length) > 1;
-        final itemHeight = hasMultiColumn
-            ? widgetTheme.itemHeightWithCols
-            : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical);
+        final itemHeight = _context!.treeImpl!.cachedItemHeight ??
+            (hasMultiColumn
+                ? widgetTheme.itemHeightWithCols
+                : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical));
 
         // Calculate header offset
         double headerOffset = 0.0;
@@ -1173,7 +1174,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             },
             child: Container(
               width: double.infinity,
-              constraints: BoxConstraints(minHeight: effectiveItemHeight),
+              // Every row is exactly the height the tree hit-tests and Java reports; content
+              // taller than that (a line plus its cell padding) is centred in it, as a native row.
+              constraints: BoxConstraints.tightFor(height: effectiveItemHeight),
               // Never null: a Container with no margin leaves out the box that applies one, and the
               // row would be built again from scratch each time it was selected or deselected.
               margin: selected
@@ -1206,22 +1209,26 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               padding: hasMultiColumn
                   ? widgetTheme.itemPaddingWithCols
                   : widgetTheme.itemPadding,
-              child: _buildRowWithColumns(
-                context,
-                texts,
-                text,
-                textColor,
-                widgetTheme,
-                level,
-                hasChildren,
-                expanded,
-                isCheckMode,
-                checked,
-                grayed,
-                enabled,
-                selected,
-                image,
-                hasMultiColumn,
+              child: OverflowBox(
+                minHeight: 0,
+                maxHeight: double.infinity,
+                child: _buildRowWithColumns(
+                  context,
+                  texts,
+                  text,
+                  textColor,
+                  widgetTheme,
+                  level,
+                  hasChildren,
+                  expanded,
+                  isCheckMode,
+                  checked,
+                  grayed,
+                  enabled,
+                  selected,
+                  image,
+                  hasMultiColumn,
+                ),
               ),
             ),
           )),

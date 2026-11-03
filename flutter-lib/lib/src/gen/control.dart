@@ -24,79 +24,79 @@ abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
   }
 
   void sendDragDetectDragDetect(V val, VEvent? payload) {
-    sendEvent(val, 26, payload); // DragDetect/DragDetect
+    sendEvent(val, 28, payload); // DragDetect/DragDetect
   }
 
   void sendFocusFocusIn(V val, VEvent? payload) {
-    sendEvent(val, 38, payload); // Focus/FocusIn
+    sendEvent(val, 45, payload); // Focus/FocusIn
   }
 
   void sendFocusFocusOut(V val, VEvent? payload) {
-    sendEvent(val, 39, payload); // Focus/FocusOut
+    sendEvent(val, 46, payload); // Focus/FocusOut
   }
 
   void sendGestureGesture(V val, VEvent? payload) {
-    sendEvent(val, 42, payload); // Gesture/Gesture
+    sendEvent(val, 49, payload); // Gesture/Gesture
   }
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, 49, payload); // Help/Help
+    sendEvent(val, 56, payload); // Help/Help
   }
 
   void sendKeyKeyDown(V val, VEvent? payload) {
-    sendEvent(val, 54, payload); // Key/KeyDown
+    sendEvent(val, 61, payload); // Key/KeyDown
   }
 
   void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, 55, payload); // Key/KeyUp
+    sendEvent(val, 62, payload); // Key/KeyUp
   }
 
   void sendMenuDetectMenuDetect(V val, VEvent? payload) {
-    sendEvent(val, 63, payload); // MenuDetect/MenuDetect
+    sendEvent(val, 70, payload); // MenuDetect/MenuDetect
   }
 
   void sendMouseMouseDoubleClick(V val, VEvent? payload) {
-    sendEvent(val, 66, payload); // Mouse/MouseDoubleClick
+    sendEvent(val, 73, payload); // Mouse/MouseDoubleClick
   }
 
   void sendMouseMouseDown(V val, VEvent? payload) {
-    sendEvent(val, 67, payload); // Mouse/MouseDown
+    sendEvent(val, 74, payload); // Mouse/MouseDown
   }
 
   void sendMouseMouseUp(V val, VEvent? payload) {
-    sendEvent(val, 68, payload); // Mouse/MouseUp
+    sendEvent(val, 75, payload); // Mouse/MouseUp
   }
 
   void sendMouseMoveMouseMove(V val, VEvent? payload) {
-    sendEvent(val, 69, payload); // MouseMove/MouseMove
+    sendEvent(val, 76, payload); // MouseMove/MouseMove
   }
 
   void sendMouseTrackMouseEnter(V val, VEvent? payload) {
-    sendEvent(val, 70, payload); // MouseTrack/MouseEnter
+    sendEvent(val, 77, payload); // MouseTrack/MouseEnter
   }
 
   void sendMouseTrackMouseExit(V val, VEvent? payload) {
-    sendEvent(val, 71, payload); // MouseTrack/MouseExit
+    sendEvent(val, 78, payload); // MouseTrack/MouseExit
   }
 
   void sendMouseTrackMouseHover(V val, VEvent? payload) {
-    sendEvent(val, 72, payload); // MouseTrack/MouseHover
+    sendEvent(val, 79, payload); // MouseTrack/MouseHover
   }
 
   void sendMouseWheelMouseWheel(V val, VEvent? payload) {
-    sendEvent(val, 73, payload); // MouseWheel/MouseWheel
+    sendEvent(val, 80, payload); // MouseWheel/MouseWheel
   }
 
   void sendPaintPaint(V val, VEvent? payload) {
-    sendEvent(val, 76, payload); // Paint/Paint
+    sendEvent(val, 83, payload); // Paint/Paint
   }
 
   void sendTouchTouch(V val, VEvent? payload) {
-    sendEvent(val, 100, payload); // Touch/Touch
+    sendEvent(val, 107, payload); // Touch/Touch
   }
 
   void sendTraverseTraverse(V val, VEvent? payload) {
-    sendEvent(val, 104, payload); // Traverse/Traverse
+    sendEvent(val, 111, payload); // Traverse/Traverse
   }
 }
 

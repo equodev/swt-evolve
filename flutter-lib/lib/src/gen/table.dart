@@ -27,19 +27,19 @@ class TableSwt<V extends VTable> extends CompositeSwt<V> {
   State createState() => TableImpl<TableSwt<VTable>, VTable>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 65, payload); // Modify/Modify
+    sendEvent(val, 72, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 
   void sendSetDataSetData(V val, VEvent? payload) {
-    sendEvent(val, 89, payload); // SetData/SetData
+    sendEvent(val, 96, payload); // SetData/SetData
   }
 }
 

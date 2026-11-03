@@ -18,15 +18,15 @@ class ToolItemSwt<V extends VToolItem> extends ItemSwt<V> {
   State createState() => ToolItemImpl<ToolItemSwt<VToolItem>, VToolItem>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionOpenMenu(V val, VEvent? payload) {
-    sendEvent(val, 87, payload); // Selection/OpenMenu
+    sendEvent(val, 94, payload); // Selection/OpenMenu
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 }
 

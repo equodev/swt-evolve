@@ -24,23 +24,23 @@ class TextSwt<V extends VText> extends ScrollableSwt<V> {
   State createState() => TextImpl<TextSwt<VText>, VText>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 65, payload); // Modify/Modify
+    sendEvent(val, 72, payload); // Modify/Modify
   }
 
   void sendSegmentSegments(V val, VEvent? payload) {
-    sendEvent(val, 85, payload); // Segment/Segments
+    sendEvent(val, 92, payload); // Segment/Segments
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 86, payload); // Selection/DefaultSelection
+    sendEvent(val, 93, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 88, payload); // Selection/Selection
+    sendEvent(val, 95, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, 107, payload); // Verify/Verify
+    sendEvent(val, 114, payload); // Verify/Verify
   }
 }
 

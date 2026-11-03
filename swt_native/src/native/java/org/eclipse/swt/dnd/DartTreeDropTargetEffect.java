@@ -89,6 +89,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragEnter(DropTargetEvent event) {
+        effectHelper.dragEnter();
     }
 
     /**
@@ -107,10 +108,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragLeave(DropTargetEvent event) {
-        if (shouldEnableScrolling) {
-            shouldEnableScrolling = false;
-            control.redraw();
-        }
+        effectHelper.dragLeave();
     }
 
     /**
@@ -133,17 +131,14 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragOver(DropTargetEvent event) {
-        int effect = checkEffect(event.feedback);
-        ((DartDropTarget) ((DropTarget) event.widget).getImpl()).feedback = effect;
-        if ((effect & DND.FEEDBACK_SCROLL) == 0) {
-            shouldEnableScrolling = true;
-        } else {
-        }
+        effectHelper.dragOver(event);
     }
 
     public boolean _shouldEnableScrolling() {
         return shouldEnableScrolling;
     }
+
+    final TreeDropTargetEffectHelper effectHelper = new TreeDropTargetEffectHelper((Tree) control);
 
     public TreeDropTargetEffect getApi() {
         if (api == null)

@@ -17,6 +17,7 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
 
+import 'package:swtflutter/src/impl/tree_evolve.dart';
 import 'package:swtflutter/src/impl/utils/dnd_utils.dart';
 
 import 'delivery/support/deliver.dart';

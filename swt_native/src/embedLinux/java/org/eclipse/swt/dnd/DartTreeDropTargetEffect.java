@@ -109,10 +109,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragEnter(DropTargetEvent event) {
-        expandBeginTime = 0;
-        expandIndex = -1;
-        scrollBeginTime = 0;
-        scrollIndex = -1;
+        effectHelper.dragEnter();
     }
 
     /**
@@ -131,12 +128,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragLeave(DropTargetEvent event) {
-        Tree tree = (Tree) control;
-        ownsInsertMark = false;
-        scrollBeginTime = 0;
-        scrollIndex = -1;
-        expandBeginTime = 0;
-        expandIndex = -1;
+        effectHelper.dragLeave();
     }
 
     /**
@@ -159,50 +151,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragOver(DropTargetEvent event) {
-        Tree tree = (Tree) control;
-        int effect = checkEffect(event.feedback);
-        long[] path = new long[1];
-        int index = -1;
-        if (path[0] != 0) {
-        }
-        if ((effect & DND.FEEDBACK_SCROLL) == 0) {
-            scrollBeginTime = 0;
-            scrollIndex = -1;
-        } else {
-            if (index != -1 && scrollIndex == index && scrollBeginTime != 0) {
-                if (System.currentTimeMillis() >= scrollBeginTime) {
-                    scrollBeginTime = 0;
-                    scrollIndex = -1;
-                }
-            } else {
-                scrollBeginTime = System.currentTimeMillis() + SCROLL_HYSTERESIS;
-                scrollIndex = index;
-            }
-        }
-        if ((effect & DND.FEEDBACK_EXPAND) == 0) {
-            expandBeginTime = 0;
-            expandIndex = -1;
-        } else {
-            if (index != -1 && expandIndex == index && expandBeginTime != 0) {
-                if (System.currentTimeMillis() >= expandBeginTime) {
-                    expandBeginTime = 0;
-                    expandIndex = -1;
-                }
-            } else {
-                expandBeginTime = System.currentTimeMillis() + EXPAND_HYSTERESIS;
-                expandIndex = index;
-            }
-        }
-        if (path[0] != 0) {
-            int position = -1;
-            if (position != -1) {
-                ownsInsertMark = true;
-            } else if (ownsInsertMark) {
-                ownsInsertMark = false;
-            }
-        } else if (ownsInsertMark) {
-            ownsInsertMark = false;
-        }
+        effectHelper.dragOver(event);
     }
 
     public int _scrollIndex() {
@@ -220,6 +169,8 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
     public long _expandBeginTime() {
         return expandBeginTime;
     }
+
+    final TreeDropTargetEffectHelper effectHelper = new TreeDropTargetEffectHelper((Tree) control);
 
     public TreeDropTargetEffect getApi() {
         if (api == null)

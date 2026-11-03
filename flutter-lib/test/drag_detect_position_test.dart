@@ -87,4 +87,31 @@ void main() {
     await gesture.up();
     await tester.pump();
   });
+
+  testWidgets('DragDetect names the pressed button in button and leaves it out of stateMask', (tester) async {
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 300,
+          height: 200,
+          child: CompositeSwt<VComposite>(value: _surface()),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final impl = tester.state<CompositeImpl>(find.byType(CompositeSwt<VComposite>));
+
+    final gesture = await tester.startGesture(const Offset(140, 120), kind: PointerDeviceKind.mouse);
+    await tester.pump();
+
+    final payload = impl.dragDetectPayload();
+    expect(payload.button, 1);
+    expect(payload.stateMask! & SWT.BUTTON_MASK, 0, reason: 'as GTK reports it, the parity oracle');
+
+    await gesture.up();
+    await tester.pump();
+  });
 }

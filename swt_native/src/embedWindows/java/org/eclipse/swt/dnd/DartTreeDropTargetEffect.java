@@ -110,12 +110,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragEnter(DropTargetEvent event) {
-        dropIndex = -1;
-        insertItem = null;
-        expandBeginTime = 0;
-        expandIndex = -1;
-        scrollBeginTime = 0;
-        scrollIndex = -1;
+        effectHelper.dragEnter();
     }
 
     /**
@@ -134,18 +129,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragLeave(DropTargetEvent event) {
-        Tree tree = (Tree) control;
-        if (dropIndex != -1) {
-            dropIndex = -1;
-        }
-        if (insertItem != null) {
-            tree.setInsertMark(null, false);
-            insertItem = null;
-        }
-        expandBeginTime = 0;
-        expandIndex = -1;
-        scrollBeginTime = 0;
-        scrollIndex = -1;
+        effectHelper.dragLeave();
     }
 
     /**
@@ -168,37 +152,7 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
      */
     @Override
     public void dragOver(DropTargetEvent event) {
-        Tree tree = (Tree) getControl();
-        int effect = checkEffect(event.feedback);
-        if ((effect & DND.FEEDBACK_SCROLL) == 0) {
-            scrollBeginTime = 0;
-            scrollIndex = -1;
-        } else {
-            {
-                scrollBeginTime = System.currentTimeMillis() + SCROLL_HYSTERESIS;
-            }
-        }
-        if ((effect & DND.FEEDBACK_EXPAND) == 0) {
-            expandBeginTime = 0;
-            expandIndex = -1;
-        } else {
-            {
-                expandBeginTime = System.currentTimeMillis() + EXPAND_HYSTERESIS;
-            }
-        }
-        if ((effect & DND.FEEDBACK_INSERT_BEFORE) != 0 || (effect & DND.FEEDBACK_INSERT_AFTER) != 0) {
-            {
-                if (insertItem != null) {
-                    tree.setInsertMark(null, false);
-                }
-                insertItem = null;
-            }
-        } else {
-            if (insertItem != null) {
-                tree.setInsertMark(null, false);
-            }
-            insertItem = null;
-        }
+        effectHelper.dragOver(event);
     }
 
     public long _dropIndex() {
@@ -228,6 +182,8 @@ public class DartTreeDropTargetEffect extends DartDropTargetEffect implements IT
     public boolean _insertBefore() {
         return insertBefore;
     }
+
+    final TreeDropTargetEffectHelper effectHelper = new TreeDropTargetEffectHelper((Tree) control);
 
     public TreeDropTargetEffect getApi() {
         if (api == null)

@@ -423,7 +423,34 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _blockNode?.dispose();
   }
 
+  /// Whether this control's DragSource drag is in flight. Natively the drag owns the pointer until
+  /// the release: the control sees no MouseMove, and a table that selects rows from moves with the
+  /// button held (NatTable) would otherwise change what is being dragged.
+  bool _dndDragging = false;
+
+  /// Java's DragStart answer for this press's drag, null until it arrives, however late. Natively a
+  /// refused drag never starts, so the moves held until the answer go to the control then, and the
+  /// rest follow. Kept until the release, so an answer that comes before the drag starts still holds.
+  bool? _dndDragAllowed;
+  final List<VEvent> _movesBeforeDragStart = [];
+
+  void _startDndDrag() {
+    _dndDragging = state.dragSource == true && state.dragDetect != false;
+    _movesBeforeDragStart.clear();
+  }
+
+  void _dragStartAnswered(bool doit) {
+    _dndDragAllowed = doit;
+    final held = List.of(_movesBeforeDragStart);
+    _movesBeforeDragStart.clear();
+    if (doit || !mounted) return;
+    for (final move in held) {
+      widget.sendMouseMoveMouseMove(state, move);
+    }
+  }
+
   void sendThrottledDragMove(V state, VEvent event, PointerMoveEvent e) {
+    if (_dndDragging && _dndDragAllowed == true) return;
     // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
     // with the press.
     final held = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
@@ -433,6 +460,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _lastDragMoveMs = now;
       _lastHeld = held;
       event.stateMask = moveStateMask(e.buttons);
+      if (_dndDragging && _dndDragAllowed == null) {
+        _movesBeforeDragStart.add(event);
+        return;
+      }
       widget.sendMouseMoveMouseMove(state, event);
       RoundTripTiming.trace();
     }
@@ -627,6 +658,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       ..x = (at?.dx ?? 0).round()
       ..y = (at?.dy ?? 0).round()
       ..button = swtButton
+      // The pressed button is in `button` and left out of stateMask, as GTK does.
       ..stateMask = swtStateMask(released: false);
   }
 
@@ -639,6 +671,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   void forgetDragDetect(int pointer) {
+    _dndDragging = false;
+    _dndDragAllowed = null;
+    _movesBeforeDragStart.clear();
     if (pointer != _dragDetectPointer) return;
     _dragDetectPointer = null;
     _dragDetectOrigin = null;
@@ -868,6 +903,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       feedbackBuilder: (_) => const SizedBox.shrink(),
       dragDetectEvent: dragDetectPayload,
       dragDetectGate: _dragDetectGate,
+      onDragStarted: _startDndDrag,
+      onDragStartVerdict: _dragStartAnswered,
     );
   }
 

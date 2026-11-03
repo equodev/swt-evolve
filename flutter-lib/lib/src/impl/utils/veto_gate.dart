@@ -18,15 +18,22 @@ class VetoGate {
   VetoGate(int vetoable, int verdict, {this.timeout = const Duration(milliseconds: 400)})
       : _vetoable = vetoable,
         _verdict = verdict,
-        _optimistic = false;
+        _optimistic = false,
+        _absentDoit = true;
 
   /// For an action that cannot be withheld, so it happens and is undone on a veto (`DragDetect`:
   /// Flutter's gesture arena commits before any listener could run). No arming leg, one channel.
-  VetoGate.optimistic(int verdict, {this.timeout = const Duration(milliseconds: 400)})
+  /// [absentDoit] is the answer of a verdict that leaves `doit` out.
+  VetoGate.optimistic(int verdict,
+      {this.timeout = const Duration(milliseconds: 400), bool absentDoit = true})
       : _vetoable = -1,
         _verdict = verdict,
         _optimistic = true,
+        _absentDoit = absentDoit,
         _armed = true;
+
+  /// The gate of a drag's start. Its verdict is the DragStart event, which leaves a false `doit` out.
+  VetoGate.dragStart() : this.optimistic(WireChannel.dragDetectDragStartResult, absentDoit: false);
 
   /// The gate of key presses.
   VetoGate.key() : this(WireChannel.keyVetoable, WireChannel.keyVerdict);
@@ -45,6 +52,7 @@ class VetoGate {
   final Duration timeout;
 
   final bool _optimistic;
+  final bool _absentDoit;
   bool _armed = false;
   bool? _earlyVerdict;
   final List<_Proposal> _queue = [];
@@ -84,7 +92,7 @@ class VetoGate {
         return (int id, Uint8List frame, int start, int end) {
           final gate = gates[id];
           if (gate == null) return false;
-          gate._resolveHead(TaggedValues.boolField(frame, start, _doitKey) ?? true);
+          gate._resolveHead(TaggedValues.boolField(frame, start, _doitKey) ?? gate._absentDoit);
           return true;
         };
       }();
@@ -169,15 +177,16 @@ class VetoGate {
   }
 
   /// Registers a withheld action. [onVerdict] runs exactly once — with Java's answer, or `true` on
-  /// [timeout]. Call before sending the event so queue order matches wire order.
-  void propose(void Function(bool doit) onVerdict) {
+  /// [timeout]. With [onTimeout], the timeout runs that instead and [onVerdict] still gets Java's
+  /// answer whenever it arrives. Call before sending the event so queue order matches wire order.
+  void propose(void Function(bool doit) onVerdict, {void Function()? onTimeout}) {
     final early = _earlyVerdict;
     if (early != null) {
       _earlyVerdict = null;
       onVerdict(early);
       return;
     }
-    final proposal = _Proposal(onVerdict);
+    final proposal = _Proposal(onVerdict, onTimeout);
     _queue.add(proposal);
     _proposed++;
     proposal.timer = Timer(timeout, () => _failOpen(proposal));
@@ -210,7 +219,10 @@ class VetoGate {
     head.timer?.cancel();
     // Exactly one entry per verdict: a spent head consumes the late answer to the proposal its
     // timer already committed, instead of letting it resolve the proposal behind it.
-    if (head.spent) return;
+    if (head.spent) {
+      if (head.onTimeout != null) head.onVerdict(doit);
+      return;
+    }
     head.onVerdict(doit);
     _settle(1);
   }
@@ -222,15 +234,21 @@ class VetoGate {
     // Java isn't answering: back to the fast path until the next focus re-arms us. Set directly —
     // the `armed` setter would drop the spent entry needed to absorb this proposal's late verdict.
     if (!_optimistic) _armed = false;
-    proposal.onVerdict(true);
+    final onTimeout = proposal.onTimeout;
+    if (onTimeout != null) {
+      onTimeout();
+    } else {
+      proposal.onVerdict(true);
+    }
     _settle(1);
   }
 }
 
 class _Proposal {
-  _Proposal(this.onVerdict);
+  _Proposal(this.onVerdict, this.onTimeout);
 
   final void Function(bool doit) onVerdict;
+  final void Function()? onTimeout;
   Timer? timer;
 
   /// Committed by the fail-open timer; stays queued to absorb its own late verdict.
