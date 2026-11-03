@@ -131,7 +131,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         // here would make the Flutter theme render a pure-black background.
         Color bg = forDisplay.getApi().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
         int backgroundColor = (bg.getRed() << 16) | (bg.getGreen() << 8) | bg.getBlue();
-        String theme = Config.systemDarkTheme() ? "dark" : "light";
+        String theme = Config.windowTheme(forDisplay.systemAppearance);
         return FlutterNative.initialize(comm().getPort(), owner, widgetId, widgetName, theme,
                 backgroundColor, backgroundColor, width, height);
     }

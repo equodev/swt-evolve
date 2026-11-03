@@ -4,12 +4,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.function.Supplier;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The widget/list system colors report the scheme the theme paints in, whatever the desktop looks
+ * The widget/list system colors report the scheme the theme paints in, whatever the system looks
  * like. One that mixes them with fixed colors such as {@code COLOR_WHITE} keeps them light under a
  * dark theme with {@code swt.evolve.system_colors=light}.
  */
@@ -18,20 +16,18 @@ class ConfigSystemColorsTest {
     private static final String SYSTEM_COLORS = "swt.evolve.system_colors";
 
     private ConfigFlags savedFlags;
-    private Supplier<String> savedOsAppearance;
     private String savedSystemColors;
+    private SystemAppearance system;
 
     @BeforeEach
     void captureState() {
         savedFlags = Config.getConfigFlags();
-        savedOsAppearance = EclipseWorkspaceTheme.osAppearance;
         savedSystemColors = System.getProperty(SYSTEM_COLORS);
         System.clearProperty(SYSTEM_COLORS);
     }
 
     @AfterEach
     void restoreState() {
-        EclipseWorkspaceTheme.osAppearance = savedOsAppearance;
         if (savedSystemColors == null) System.clearProperty(SYSTEM_COLORS);
         else System.setProperty(SYSTEM_COLORS, savedSystemColors);
         Config.setConfigFlags(savedFlags);
@@ -41,42 +37,33 @@ class ConfigSystemColorsTest {
     void applicationColorsAreDarkUnderADarkTheme() {
         start("dark", false, false, "dark");
 
-        assertThat(Config.systemColorsAreDark()).isTrue();
+        assertThat(colorsAreDark()).isTrue();
     }
 
     @Test
     void aDarkThemeForcedOnALightDesktopStillReportsDarkColors() {
         start("dark", false, false, "light");
 
-        assertThat(Config.systemColorsAreDark())
+        assertThat(colorsAreDark())
                 .as("an application coloring its containers from this palette must get the scheme "
                         + "the theme paints in, or it paints them light on a dark theme")
                 .isTrue();
     }
 
     @Test
-    void aDarkThemeReportsDarkColorsWhenTheDesktopCannotBeRead() {
+    void aDarkThemeReportsDarkColorsWhenTheSystemIsUnknown() {
         start("dark", false, false, null);
 
-        assertThat(Config.systemColorsAreDark()).isTrue();
+        assertThat(colorsAreDark()).isTrue();
     }
 
     @Test
-    void theDesktopAppearanceIsNeverRead() {
-        int[] reads = { 0 };
-        start("dark", false, false, "light");
-        EclipseWorkspaceTheme.osAppearance = () -> {
-            reads[0]++;
-            return "light";
-        };
+    void withNoThemeOfItsOwnTheColorsFollowTheSystem() {
+        start(null, false, false, "dark");
+        assertThat(colorsAreDark()).isTrue();
 
-        Config.systemColorsAreDark();
-        Config.systemColorsAreDark();
-
-        assertThat(reads[0])
-                .as("the desktop already decides force_theme when nothing else does; reading it "
-                        + "again here would undo a theme forced against it")
-                .isZero();
+        start(null, false, false, "light");
+        assertThat(colorsAreDark()).isFalse();
     }
 
     @Test
@@ -84,32 +71,37 @@ class ConfigSystemColorsTest {
         System.setProperty(SYSTEM_COLORS, "light");
         start("dark", false, false, "dark");
 
-        assertThat(Config.systemColorsAreDark()).isFalse();
+        assertThat(colorsAreDark()).isFalse();
     }
 
     @Test
     void themedCanvasIsDarkWhateverTheDesktop() {
         start("dark", true, false, "light");
 
-        assertThat(Config.systemColorsAreDark()).isTrue();
+        assertThat(colorsAreDark()).isTrue();
     }
 
     @Test
     void lightThemeStaysLightOnADarkDesktop() {
         start("light", false, false, "dark");
 
-        assertThat(Config.systemColorsAreDark()).isFalse();
+        assertThat(colorsAreDark()).isFalse();
     }
 
     @Test
     void useSwtColorsStaysLightOnADarkDesktop() {
         start("dark", true, true, "dark");
 
-        assertThat(Config.systemColorsAreDark()).isFalse();
+        assertThat(colorsAreDark()).isFalse();
     }
 
-    private static void start(String theme, boolean themedCanvas, boolean useSwtColors, String desktop) {
-        EclipseWorkspaceTheme.osAppearance = () -> desktop;
+    private boolean colorsAreDark() {
+        return Config.systemColorsAreDark(Config.darkTheme(system));
+    }
+
+    private void start(String theme, boolean themedCanvas, boolean useSwtColors, String reported) {
+        system = new SystemAppearance();
+        system.report(reported);
         ConfigFlags flags = new ConfigFlags();
         flags.force_theme = theme;
         flags.disable_swt_canvas_colors = themedCanvas;

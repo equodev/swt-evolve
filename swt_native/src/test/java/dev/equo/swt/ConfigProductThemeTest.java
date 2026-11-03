@@ -93,10 +93,10 @@ class ConfigProductThemeTest {
     }
 
     @Test
-    void a_products_own_theme_falls_back_to_the_desktop_instead_of_dark() throws IOException {
+    void a_products_own_theme_with_no_variant_leaves_it_to_the_system() throws IOException {
         workspaceThemedWith("com.acme.rcp.theme.corporate");
 
-        assertThat(Config.getConfigFlags().force_theme).isEqualTo("light");
+        assertThat(Config.getConfigFlags().force_theme).isNull();
     }
 
     @Test
@@ -123,7 +123,7 @@ class ConfigProductThemeTest {
 
         ConfigFlags flags = Config.getConfigFlags();
 
-        assertThat(flags.force_theme).isEqualTo("dark");
+        assertThat(flags.force_theme).isNull();
         assertThat(flags.use_swt_colors).isFalse();
     }
 

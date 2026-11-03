@@ -912,18 +912,13 @@ public class Config {
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
+            // The theme the application defines: the flag, else the variant its workspace theme names.
+            // Null leaves it to the system the client runs on (see darkTheme).
             String forceTheme = System.getProperty("swt.evolve.force_theme");
             if (forceTheme == null) {
                 forceTheme = EclipseWorkspaceTheme.classify(eclipseThemeId);
             }
-            if (forceTheme == null && eclipseThemeId != null
-                    && !EclipseWorkspaceTheme.isBuiltIn(eclipseThemeId)) {
-                // The id names a theme only the product knows, so the desktop is the closest thing
-                // to an answer; falling through to the "dark" default below would show a dark UI to
-                // a product whose own theme is light.
-                forceTheme = EclipseWorkspaceTheme.osAppearance.get();
-            }
-            configFlags.force_theme = forceTheme != null ? forceTheme : "dark";
+            configFlags.force_theme = forceTheme;
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name", "equo");
             configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
             // Client-Side Decorations: a single property selects placement and on/off
@@ -1301,10 +1296,43 @@ public class Config {
     private static volatile java.lang.reflect.Method systemDarkThemeMethod;
     private static volatile boolean systemDarkThemeLookedUp;
 
+    /** "dark" or "light" for a value naming one, in any case; null for anything else. */
+    static String themeVariant(String value) {
+        if (value == null) return null;
+        String variant = value.trim().toLowerCase(java.util.Locale.ROOT);
+        return "dark".equals(variant) || "light".equals(variant) ? variant : null;
+    }
+
+    /** The theme the application defines, "dark" or "light"; null when it defines none. */
+    public static String appTheme() {
+        return themeVariant(getConfigFlags().force_theme);
+    }
+
+    /**
+     * Whether Evolve paints dark. The application's theme prevails; without one, the system decides:
+     * {@code system}, the appearance a Display's client reports, or null where there is no Display
+     * to ask. Light when nothing answers, as native SWT is.
+     */
+    public static boolean darkTheme(SystemAppearance system) {
+        String theme = appTheme();
+        if (theme == null) theme = (system != null ? system : new SystemAppearance()).get();
+        return "dark".equals(theme);
+    }
+
+    /**
+     * The theme a new client window opens in: the application's, else the one this Display's client
+     * reported, else {@code "system"}, which the client resolves against its own appearance.
+     */
+    public static String windowTheme(SystemAppearance system) {
+        String theme = appTheme();
+        if (theme == null && system != null) theme = system.reported();
+        return theme != null ? theme : "system";
+    }
+
     /**
      * Whether the system theme is dark. {@code Display.isSystemDarkTheme()} is SWT API from 3.112;
-     * an older release has no notion of a system theme, so the theme the application forced is the
-     * only answer there is. Looked up reflectively because this class compiles against every
+     * an older release has no notion of a system theme, so the theme Evolve paints is the only answer
+     * there is. Looked up reflectively because this class compiles against every
      * release, and resolving it eagerly would load {@code Display} during this class' own init.
      */
     public static boolean systemDarkTheme() {
@@ -1321,10 +1349,10 @@ public class Config {
             try {
                 return (Boolean) m.invoke(null);
             } catch (ReflectiveOperationException e) {
-                // fall through to the forced theme
+                // fall through to the painted theme
             }
         }
-        return "dark".equals(getConfigFlags().force_theme);
+        return darkTheme(null);
     }
 
     /**
@@ -1333,16 +1361,16 @@ public class Config {
      * — Eclipse Forms takes its container background from {@code COLOR_LIST_BACKGROUND} — has to be
      * handed the scheme the theme actually paints in, or it colors them for the other one.
      * <p>
-     * The desktop's own appearance is not consulted: it already decides {@code force_theme} when
-     * nothing else does, so reading it again here would keep the colors light exactly when a theme
-     * was forced against it.
+     * {@code darkTheme} is the theme the Display paints in ({@link #darkTheme}): the system's appearance
+     * already counts there when the application defines no theme, and only there, so a theme forced
+     * against the desktop keeps its own scheme.
      * <p>
      * An application that mixes them with fixed colors such as {@code COLOR_WHITE}, and so needs one
      * light scheme under a dark theme, keeps them light with {@code -Dswt.evolve.system_colors=light}.
      */
-    public static boolean systemColorsAreDark() {
+    public static boolean systemColorsAreDark(boolean darkTheme) {
         ConfigFlags flags = getConfigFlags();
-        if (!"dark".equals(flags.force_theme) || flags.use_swt_colors)
+        if (!darkTheme || flags.use_swt_colors)
             return false;
         if (flags.disable_swt_canvas_colors)
             return true;

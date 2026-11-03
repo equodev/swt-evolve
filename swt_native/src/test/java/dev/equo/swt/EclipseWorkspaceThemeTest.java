@@ -11,8 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * The workbench theme ids Evolve has to map. "System" is the one that carries no variant of its
- * own: it delegates to the desktop, so classifying it as anything fixed would show a dark UI to
- * someone whose desktop is light.
+ * own: it leaves the answer to the system the client runs on, which on web is the browser, not
+ * the desktop this JVM reads.
  */
 class EclipseWorkspaceThemeTest {
 
@@ -34,28 +34,10 @@ class EclipseWorkspaceThemeTest {
     }
 
     @Test
-    void the_system_theme_follows_the_desktop() {
-        EclipseWorkspaceTheme.osAppearance = () -> "light";
-        assertThat(EclipseWorkspaceTheme.classify("org.eclipse.e4.ui.css.theme.e4_system"))
-                .isEqualTo("light");
-
+    void the_system_theme_names_no_variant_whatever_the_desktop() {
         EclipseWorkspaceTheme.osAppearance = () -> "dark";
-        assertThat(EclipseWorkspaceTheme.classify("org.eclipse.e4.ui.css.theme.e4_system"))
-                .isEqualTo("dark");
-    }
-
-    @Test
-    void the_system_theme_reports_nothing_when_the_desktop_cannot_be_read() {
-        EclipseWorkspaceTheme.osAppearance = () -> null;
         assertThat(EclipseWorkspaceTheme.classify("org.eclipse.e4.ui.css.theme.e4_system")).isNull();
-    }
-
-    @Test
-    void only_the_platforms_own_namespace_counts_as_a_built_in_theme() {
-        assertThat(EclipseWorkspaceTheme.isBuiltIn("org.eclipse.e4.ui.css.theme.e4_dark")).isTrue();
-        // A product is free to call its own theme "dark"; the name is not what identifies it.
-        assertThat(EclipseWorkspaceTheme.isBuiltIn("com.acme.rcp.theme.dark")).isFalse();
-        assertThat(EclipseWorkspaceTheme.isBuiltIn(null)).isFalse();
+        assertThat(EclipseWorkspaceTheme.classify("Default (System)")).isNull();
     }
 
     @Test

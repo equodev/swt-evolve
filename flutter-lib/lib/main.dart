@@ -56,6 +56,7 @@ import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
+import 'src/impl/system_appearance.dart' show systemThemeMode;
 
 /// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
 Future<void> _loadWebFallbackFonts() async {
@@ -159,7 +160,8 @@ void main(List<String> args) async {
     return;
   }
 
-  var theme = getTheme(args) == "dark" ? ThemeMode.dark : ThemeMode.light;
+  // The theme Java opened this window in; "system", or none, leaves it to this client's system.
+  var theme = parseForcedThemeMode(getTheme(args)) ?? systemThemeMode;
   int? backgroundColor = getBackgroundColor(args);
   int? parentBackgroundColor = getParentBackgroundColor(args);
   setCurrentTheme(theme == ThemeMode.dark);

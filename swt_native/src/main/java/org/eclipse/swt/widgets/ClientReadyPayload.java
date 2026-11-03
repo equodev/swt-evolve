@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.WireReader;
 import dev.equo.swt.WireReadable;
 
-/** What the client reports when it is ready: its fields numbered 1 to 10, in declaration order. */
+/** What the client reports when it is ready: its fields numbered 1 to 11, in declaration order. */
 public class ClientReadyPayload implements WireReadable {
     /** The client viewport (window content) logical size — drives the main shell on desk, the Display on web. */
     public int width;
@@ -33,6 +33,11 @@ public class ClientReadyPayload implements WireReadable {
      * {@code linux}, {@code iOS}, {@code android}). Null from a client that does not report it.
      */
     public String targetPlatform;
+    /**
+     * The light/dark appearance of the system the client runs on ({@code dark} or {@code light}): the browser's on
+     * web, the OS's on desktop. Null from a client that does not report it.
+     */
+    public String appearance;
 
     @Override
     public boolean readWire(int key, WireReader r) {
@@ -47,6 +52,7 @@ public class ClientReadyPayload implements WireReadable {
             case 8: wireFingerprint = r.int32(); return true;
             case 9: locale = r.string(); return true;
             case 10: targetPlatform = r.string(); return true;
+            case 11: appearance = r.string(); return true;
         }
         return false;
     }

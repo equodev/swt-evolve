@@ -63,6 +63,15 @@ void main() {
     expect(sent.single.$3['targetPlatform'], 'macOS');
   });
 
+  test('the client reports the light/dark appearance of its system', () {
+    reporter = ClientReadyReporter(
+        (type, id, payload) async => sent.add((type, id, payload as Map<String, Object>)), null, () => 'dark');
+
+    report(1280, 800);
+
+    expect(sent.single.$3['appearance'], 'dark');
+  });
+
   test('after a restart the same area is reported again, as a fresh client', () {
     report(1280, 800);
     reporter.restart();

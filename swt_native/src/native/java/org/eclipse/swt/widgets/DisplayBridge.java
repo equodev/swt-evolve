@@ -401,6 +401,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         onClientReady(dev.equo.swt.WireTable.TYPE_DISPLAY, displayId, ClientReadyPayload.class, (p, first) -> {
             if (p == null) return;
             display.clientPlatform = p.targetPlatform;
+            display.systemAppearance.report(p.appearance);
             DisplayHelper.clientReady(display.getApi(), p.targetPlatform);
             if (p.targetPlatform != null) {
                 // Display data is the Display thread's: written from the comm thread, it races the

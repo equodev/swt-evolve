@@ -102,7 +102,7 @@ String? getWidgetName(List<String> _) {
 
 String? getTheme(List<String> args) {
   final params = Uri.base.queryParameters;
-  return params['theme'] ?? _theme?.toDart ?? "light";
+  return params['theme'] ?? _theme?.toDart;
 }
 
 int? getBackgroundColor(List<String> args) {

@@ -330,7 +330,7 @@ public class WebDisplayBridge extends DisplayBridge {
     protected ShellWindow createShellWindow(Shell shell) {
         Rectangle bounds = shell.getBounds();
         String url = shellWindowUrl(webServer.getApplicationUrl(), shell.hashCode(),
-                effectiveTheme(), isTestSemanticsEnabled());
+                dev.equo.swt.Config.windowTheme(forDisplay.systemAppearance), isTestSemanticsEnabled());
         WebShellWindow window = new WebShellWindow(shell);
         window.command(dev.equo.swt.WireTable.CHANNEL_OPEN_WINDOW, Java8.map(
                 "shellId", (long) shell.hashCode(),
@@ -364,16 +364,6 @@ public class WebDisplayBridge extends DisplayBridge {
     /** Whether the served page is asked to build the semantics tree (the E2E runtime toggle). */
     private static boolean isTestSemanticsEnabled() {
         return Boolean.getBoolean("dev.equo.swt.web.enableTestSemantics");
-    }
-
-    /** The theme a new window should open in: what the application forces, else the system's. */
-    private static String effectiveTheme() {
-        String forced = dev.equo.swt.Config.getConfigFlags().force_theme;
-        if (forced != null) {
-            String normalized = forced.trim().toLowerCase();
-            if ("dark".equals(normalized) || "light".equals(normalized)) return normalized;
-        }
-        return dev.equo.swt.Config.systemDarkTheme() ? "dark" : "light";
     }
 
     /** The browser would not open the window: remember it, and re-push so the shell is drawn inline. */

@@ -11,15 +11,13 @@ import java.util.function.Supplier;
 /**
  * Reads the active Eclipse workbench theme from the running workspace's e4 CSS theme preferences,
  * so swt-evolve's own Flutter rendering can match the theme the host application actually has
- * configured, instead of guessing independently. Two answers come out of the same preference: the
- * light/dark variant, and whether the theme is one of the platform's or one the product brought
- * itself -- see {@link #isBuiltIn(String)}.
+ * configured, instead of guessing independently.
  */
 public final class EclipseWorkspaceTheme {
     private EclipseWorkspaceTheme() {
     }
 
-    /** Host OS appearance lookup, replaced in tests so no real process is spawned. */
+    /** The desktop's appearance lookup, replaced in tests so no real process is spawned. */
     static Supplier<String> osAppearance = EclipseWorkspaceTheme::readOsAppearance;
 
     /** Returns "dark", "light", or null if no Eclipse workspace/theme preference is found. */
@@ -29,8 +27,7 @@ public final class EclipseWorkspaceTheme {
 
     /**
      * The raw e4 theme id the running workspace is configured with, or null when there is no
-     * workspace to read one from. Kept separate from {@link #detect()} because an id Evolve has no
-     * theme for still carries information: it means the product brought its own CSS theme.
+     * workspace to read one from.
      */
     public static String detectThemeId() {
         try {
@@ -57,30 +54,16 @@ public final class EclipseWorkspaceTheme {
         }
     }
 
-    /**
-     * True when the workbench theme is one of the platform's own, which Evolve ships a matching
-     * theme for. False for a product's own CSS theme: there Evolve has nothing that can match it,
-     * and the colors the CSS engine sets on the widgets are the only description of it.
-     * <p>
-     * The test is the id's namespace, not its name: every platform theme is contributed under
-     * {@code org.eclipse.}, while a product names its themes in its own namespace -- and it may
-     * well call one of them "dark", which a name-based test would read as the platform's.
-     */
-    public static boolean isBuiltIn(String themeId) {
-        return themeId != null && themeId.startsWith("org.eclipse.");
-    }
-
     /** Maps an e4 theme id to "dark"/"light", or null when it carries no usable variant. */
     static String classify(String themeId) {
         if (themeId == null) {
             return null;
         }
         String lower = themeId.toLowerCase(java.util.Locale.ROOT);
-        // "System" means "follow the desktop", so it is the OS that holds the answer -- checked
-        // before the substring matches below, which would otherwise classify a name like
-        // "default (system)" on its other half.
+        // "System" names no variant: the system the client runs on decides. Checked before the
+        // substring matches below, which would otherwise classify "default (system)" on its other half.
         if (lower.contains("system")) {
-            return osAppearance.get();
+            return null;
         }
         if (lower.contains("dark")) {
             return "dark";

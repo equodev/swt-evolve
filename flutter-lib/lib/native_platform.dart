@@ -32,7 +32,7 @@ String? getTheme(List<String> args) {
   if (args.length >= 4) {
     return args[3];
   }
-  return "light"; // default fallback
+  return null;
 }
 
 int? getBackgroundColor(List<String> args) {
