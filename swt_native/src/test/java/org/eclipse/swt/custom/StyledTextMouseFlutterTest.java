@@ -2,12 +2,16 @@ package org.eclipse.swt.custom;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 /**
  * Pointer input on a StyledText: caret placement, multi-click and drag selection, wheel, mouse
@@ -166,6 +170,73 @@ class StyledTextMouseFlutterTest {
         assertThat(stage.renderedSelections(text)).containsExactly(new Point(6, 30));
         assertThat(stage.subjectLog.ofType(SWT.Selection)).last()
                 .satisfies(e -> assertThat(new Point(e.x, e.y)).isEqualTo(new Point(6, 30)));
+    }
+
+    @Test
+    @DisplayName("in block selection mode, a drag across lines selects a rectangle, and the screen paints it")
+    void blockSelectionDragSelectsARectangle() {
+        fresh(SWT.MULTI, "alpha beta gamma\ndelta epsilon zeta\neta theta iota");
+        blockDrag(2, text.getOffsetAtLine(2) + 7);
+
+        Rectangle bounds = text.getBlockSelectionBounds();
+        assertThat(bounds.width).as("block width").isGreaterThan(0);
+        assertThat(bounds.height).as("block height").isEqualTo(3 * text.getLineHeight());
+        assertThat(text.getSelectionRanges()).as("one range per line").hasSize(6);
+        assertPaintedBlock(bounds);
+    }
+
+    @Test
+    @DisplayName("in block selection mode, a drag over short, empty and indented lines highlights only what lies inside the block")
+    void blockSelectionOverShortLinesHighlightsInsideTheBlock() {
+        fresh(SWT.MULTI, "\tpublic void run() {\n\t\tint x = 1;\n\n\t}\n\tprivate final String name = \"value\";");
+        blockDrag(text.getOffsetAtLine(0) + 9, text.getOffsetAtLine(4) + 22);
+
+        assertThat(text.getSelectionRanges()).as("one range per line").hasSize(10);
+        assertThat(stage.renderedSelections(text)).as("shown selection").containsExactlyElementsOf(nonEmpty(text.getSelectionRanges()));
+        assertPaintedBlock(text.getBlockSelectionBounds());
+    }
+
+    @Test
+    @DisplayName("in block selection mode, a click selects no block and the screen paints none")
+    void blockSelectionClickPaintsNoBlock() {
+        fresh(SWT.MULTI, "alpha beta gamma\ndelta epsilon zeta");
+        stage.focusAt(0);
+        text.setBlockSelection(true);
+        stage.pushState();
+        stage.clickAt(stage.pointAt(text, 8), 1, 0);
+
+        assertThat(stage.facts(text).get("blockSelection")).as("painted block").isNull();
+    }
+
+    private void blockDrag(int fromOffset, int toOffset) {
+        stage.focusAt(0);
+        text.setBlockSelection(true);
+        stage.pushState();
+        Point from = stage.pointAt(text, fromOffset);
+        Point to = stage.pointAt(text, toOffset);
+        double[] a = stage.page(text, from.x, from.y);
+        double[] b = stage.page(text, to.x, to.y);
+        stage.separateFromLastClick();
+        stage.input().drag(a[0], a[1], b[0], b[1], 8);
+        stage.settle();
+    }
+
+    private void assertPaintedBlock(Rectangle bounds) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> block = (Map<String, Object>) stage.facts(text).get("blockSelection");
+        assertThat(block).as("painted block").isNotNull();
+        assertThat(StyledTextFlutterStage.num(block.get("x"))).isCloseTo(bounds.x, within(1.0));
+        assertThat(StyledTextFlutterStage.num(block.get("y"))).isCloseTo(bounds.y, within(1.0));
+        assertThat(StyledTextFlutterStage.num(block.get("width"))).isCloseTo(bounds.width, within(1.0));
+        assertThat(StyledTextFlutterStage.num(block.get("height"))).isCloseTo(bounds.height, within(1.0));
+    }
+
+    /** The ranges as start/end points, without the empty ones a short line yields: those paint nothing. */
+    private static java.util.List<Point> nonEmpty(int[] ranges) {
+        java.util.List<Point> points = new java.util.ArrayList<>();
+        for (int i = 0; i + 1 < ranges.length; i += 2)
+            if (ranges[i + 1] != 0) points.add(new Point(ranges[i], ranges[i] + ranges[i + 1]));
+        return points;
     }
 
     @Test

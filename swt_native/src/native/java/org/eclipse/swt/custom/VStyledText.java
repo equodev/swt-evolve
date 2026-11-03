@@ -51,14 +51,6 @@ public class VStyledText extends VCanvas {
         ((DartStyledText) impl).blockSelection = value;
     }
 
-    public Rectangle getBlockSelectionBounds() {
-        return ((DartStyledText) impl).blockSelectionBounds;
-    }
-
-    public void setBlockSelectionBounds(Rectangle value) {
-        ((DartStyledText) impl).blockSelectionBounds = value;
-    }
-
     public int getBottomMargin() {
         return ((DartStyledText) impl).getBottomMargin();
     }
@@ -355,6 +347,10 @@ public class VStyledText extends VCanvas {
         return ((DartStyledText) impl).caretOffsets;
     }
 
+    public Rectangle getBlockSelectionBounds() {
+        return ((DartStyledText) impl).wireBlockSelectionBounds();
+    }
+
     public StyleRange[] getStyles() {
         return ((DartStyledText) impl).wireStyles();
     }
@@ -438,8 +434,6 @@ public class VStyledText extends VCanvas {
                 return "alwaysShowScrollBars";
             case BLOCK_SELECTION:
                 return "blockSelection";
-            case BLOCK_SELECTION_BOUNDS:
-                return "blockSelectionBounds";
             case BOTTOM_MARGIN:
                 return "bottomMargin";
             case CARET_OFFSET:
@@ -488,6 +482,8 @@ public class VStyledText extends VCanvas {
                 return "selectionRanges";
             case CARET_OFFSETS:
                 return "caretOffsets";
+            case BLOCK_SELECTION_BOUNDS:
+                return "blockSelectionBounds";
             case STYLES:
                 return "styles";
             case STYLE_INDEX:
@@ -509,9 +505,6 @@ public class VStyledText extends VCanvas {
                 return true;
             case 476:
                 w.write(getBlockSelection());
-                return true;
-            case 477:
-                w.write(getBlockSelectionBounds());
                 return true;
             case 478:
                 w.write((int) getBottomMargin());
@@ -585,6 +578,9 @@ public class VStyledText extends VCanvas {
             case 480:
                 w.write(getCaretOffsets());
                 return true;
+            case 477:
+                w.write(getBlockSelectionBounds());
+                return true;
             case 497:
                 {
                     StyleRange[] a_ = getStyles();
@@ -633,15 +629,6 @@ public class VStyledText extends VCanvas {
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(476);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 477:
-                {
-                    Rectangle v_ = getBlockSelectionBounds();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(477);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -870,6 +857,15 @@ public class VStyledText extends VCanvas {
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
+            case 477:
+                {
+                    Rectangle v_ = getBlockSelectionBounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(477);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
             case 497:
                 {
                     StyleRange[] v_ = getStyles();
@@ -913,7 +909,7 @@ public class VStyledText extends VCanvas {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 474, 475, 476, 477, 478, 479, 481, 482, 484, 485, 486, 487, 488, 489, 491, 492, 493, 494, 498, 499, 500, 501, 502, 503, 504, 490, 495, 480, 497, 496, 483 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 474, 475, 476, 478, 479, 481, 482, 484, 485, 486, 487, 488, 489, 491, 492, 493, 494, 498, 499, 500, 501, 502, 503, 504, 490, 495, 480, 477, 497, 496, 483 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
