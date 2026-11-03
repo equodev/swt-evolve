@@ -761,6 +761,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void createItem(CTabItem item, int index) {
+        CTabFolderHelper.itemsChanged(this);
         if (0 > index || index > getItemCount())
             SWT.error(SWT.ERROR_INVALID_RANGE);
         ((DartCTabItem) item.getImpl()).parent = this.getApi();
@@ -793,6 +794,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void destroyItem(CTabItem item) {
+        CTabFolderHelper.itemsChanged(this);
         if (inDispose)
             return;
         int index = indexOf(item);
@@ -2939,6 +2941,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     /*public*/
     void setItemOrder(int[] indices) {
+        CTabFolderHelper.itemsChanged(this);
         checkWidget();
         if (indices == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -4240,18 +4243,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     String _getToolTip(int x, int y) {
-        CTabItem item = getItem(new Point(x, y));
-        if (item == null)
-            return null;
-        if (!((DartCTabItem) item.getImpl()).showing)
-            return null;
-        if (((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
-            if (showClose || ((DartCTabItem) item.getImpl()).showClose) {
-                //$NON-NLS-1$
-                return SWT.getMessage("SWT_Close");
-            }
-        }
-        return item.getToolTipText();
+        return CTabFolderHelper.toolTipAt(this, x, y);
     }
 
     /**
@@ -4799,6 +4791,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     int[] drawnCloseButtons;
 
     int[] shownStrip;
+
+    int[] drawnShortened;
 
     int stripHeight;
 

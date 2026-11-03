@@ -151,7 +151,7 @@ void main() {
       return stripReport(folder, [DrawnTab(tab, null)]);
     }
 
-    expect(await reportWith(nanOffset: false), '0,108;0,0,0,0');
+    expect(await reportWith(nanOffset: false), '0,108;0,0,0,0;;0');
     expect(await reportWith(nanOffset: true), isNull,
         reason: 'a folder laid out at an infinite size aligns its tabs at NaN for that frame');
   });

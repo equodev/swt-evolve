@@ -162,7 +162,7 @@ void main() {
     await _pump(tester, 70);
 
     final sections = _strips.last.split(';');
-    expect(sections, hasLength(3), reason: 'tabs; close buttons; shown part of the strip');
+    expect(sections, hasLength(4), reason: 'tabs; close buttons; shown part of the strip; shortened labels');
     final shown = sections[2].split(',').map(int.parse).toList();
     final right = shown[0] + shown[1];
     final tabs = _reportedTabs();
@@ -171,6 +171,23 @@ void main() {
     expect(tabs.where((tab) => tab.$1 >= right), isNotEmpty,
         reason: 'Java counts the parked tabs as not showing, so the chevron list bolds them');
   });
+
+  for (final width in [120.0, 400.0, 1200.0]) {
+    testWidgets('ctabfolder_tab_scroll=false: the strip report names the labels drawn shortened at $width px',
+        (tester) async {
+      _useTabScroll(false);
+      await _pump(tester, width);
+
+      final expected = [
+        for (final label in _labels) find.text(label).evaluate().isEmpty ? '1' : '0',
+      ];
+      expect(_strips.last.split(';')[3], expected.join(','),
+          reason: 'Java shows the whole text as the tooltip of a tab whose label is shortened');
+      if (width == 400) {
+        expect(expected, containsAll(['0', '1']), reason: 'sanity: some labels fit whole, some do not');
+      }
+    });
+  }
 
   testWidgets('ctabfolder_tab_scroll=false: a folder wide enough shows full labels', (tester) async {
     _useTabScroll(false);

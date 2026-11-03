@@ -131,7 +131,8 @@ public class CTabFolderHelper {
     /**
      * The strip, then after a {@code ;} each tab's drawn close button as {@code x, y, width, height}
      * in the folder's own coordinates, with a zero width for a tab that shows none, then after
-     * another {@code ;} the part of the strip that is shown, as {@code x, width}.
+     * another {@code ;} the part of the strip that is shown, as {@code x, width}, then after another
+     * {@code ;} a {@code 1} for each tab whose label is drawn shortened and a {@code 0} for the others.
      */
     public static void handleStripLaidOut(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
@@ -139,16 +140,43 @@ public class CTabFolderHelper {
             stripLayout.remove(obj);
             obj.shownStrip = null;
             obj.drawnCloseButtons = null;
+            obj.drawnShortened = null;
             return;
         }
         String[] sections = e.text.split(";", -1);
         int[] strip = parseInts(sections[0]);
         int[] close = sections.length > 1 ? parseInts(sections[1]) : new int[0];
         int[] viewport = sections.length > 2 ? parseInts(sections[2]) : new int[0];
-        if (strip == null || close == null || viewport == null) return;
+        int[] shortened = sections.length > 3 ? parseInts(sections[3]) : new int[0];
+        if (strip == null || close == null || viewport == null || shortened == null) return;
         stripLayout.put(obj, strip);
         obj.shownStrip = viewport.length == 2 ? viewport : null;
         obj.drawnCloseButtons = close;
+        obj.drawnShortened = shortened;
+    }
+
+    /**
+     * Drops the render side's shortened labels, which it reports by index: a tab inserted, moved or
+     * disposed would shift them onto the wrong tabs until the next strip report.
+     */
+    public static void itemsChanged(DartCTabFolder folder) {
+        folder.drawnShortened = null;
+    }
+
+    /**
+     * Upstream's {@code CTabItem.getToolTipText}: the tab's own tooltip, else its whole text when its
+     * label is drawn shortened. The render side draws the labels, so it says which ones it shortened;
+     * this side's renderer never paints a tab and so never records a shortened text of its own.
+     */
+    public static String toolTipText(DartCTabItem item) {
+        if (item.toolTipText != null || item.parent == null) return item.toolTipText;
+        DartCTabFolder folder = (DartCTabFolder) item.parent.getImpl();
+        int[] shortened = folder.drawnShortened;
+        int index = item.parent.indexOf(item.getApi());
+        if (shortened != null && index >= 0 && index < shortened.length && shortened[index] != 0) {
+            return item.getText();
+        }
+        return null;
     }
 
     /**
@@ -183,6 +211,35 @@ public class CTabFolderHelper {
     }
 
     /**
+     * The folder's tooltip at a point, as upstream's {@code _getToolTip}, against the strip as it is
+     * drawn: this side's own layout can park a drawn tab off screen or put its close rectangle where
+     * the drawing has none.
+     */
+    public static String toolTipAt(DartCTabFolder folder, int x, int y) {
+        CTabItem item = folder.getItem(new Point(x, y));
+        if (item == null) return null;
+        DartCTabItem impl = (DartCTabItem) item.getImpl();
+        if (!isShowing(impl)) return null;
+        if ((folder.showClose || impl.showClose) && onCloseButton(folder, impl, x, y)) {
+            return SWT.getMessage("SWT_Close"); //$NON-NLS-1$
+        }
+        return item.getToolTipText();
+    }
+
+    private static boolean onCloseButton(DartCTabFolder folder, DartCTabItem item, int x, int y) {
+        int[] close = folder.drawnCloseButtons;
+        int i = 4 * folder.getApi().indexOf(item.getApi());
+        if (close == null || i + 3 >= close.length) return item.closeRect.contains(x, y);
+        return onDrawnCloseButton(close, i, x, y);
+    }
+
+    /** Whether a point lies on the drawn close button that starts at {@code i} in {@code close}. */
+    private static boolean onDrawnCloseButton(int[] close, int i, int x, int y) {
+        return close[i + 2] > 0 && x >= close[i] && x < close[i] + close[i + 2]
+                && y >= close[i + 1] && y < close[i + 1] + close[i + 3];
+    }
+
+    /**
      * Upstream's rule that a drag starting on a close button is not a drag, tested against the close
      * buttons as they are drawn. This side's own close rectangles come from a layout that does not
      * match the drawing: a narrow folder puts one under the middle of a tab drawn without it.
@@ -191,8 +248,7 @@ public class CTabFolderHelper {
         int[] close = folder.drawnCloseButtons;
         if (close == null) return;
         for (int i = 0; i + 3 < close.length; i += 4) {
-            int x = close[i], y = close[i + 1], width = close[i + 2], height = close[i + 3];
-            if (width > 0 && event.x >= x && event.x < x + width && event.y >= y && event.y < y + height) {
+            if (onDrawnCloseButton(close, i, event.x, event.y)) {
                 event.type = SWT.None;
                 return;
             }

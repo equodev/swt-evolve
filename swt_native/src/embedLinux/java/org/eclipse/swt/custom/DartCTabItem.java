@@ -337,12 +337,7 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public String getToolTipText() {
         checkWidget();
-        if (toolTipText == null && shortenedText != null) {
-            String text = getText();
-            if (!shortenedText.equals(text))
-                return text;
-        }
-        return toolTipText;
+        return CTabFolderHelper.toolTipText(this);
     }
 
     /**

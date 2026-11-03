@@ -64,7 +64,7 @@ void main() {
     expect(chevron, findsOneWidget, reason: 'sanity: twelve tabs overflow a 600 px strip');
 
     final sections = reports.last.split(';');
-    expect(sections, hasLength(3), reason: 'tabs; close buttons; shown part of the strip');
+    expect(sections, hasLength(4), reason: 'tabs; close buttons; shown part of the strip; shortened labels');
     final shown = sections[2].split(',').map(int.parse).toList();
     final folder = tester.getRect(find.byWidgetPredicate((w) => w is CTabFolderSwt<VCTabFolder>));
     final chevronLeft = tester.getRect(chevron).left - folder.left;

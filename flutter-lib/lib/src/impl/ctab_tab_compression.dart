@@ -41,6 +41,10 @@ String ctabShortenText(String text, double width, double Function(String) measur
   return clusters.isEmpty ? '' : clusters.first;
 }
 
+/// Marks a tab label drawn shortened, which upstream's CTabItem.getToolTipText answers with the
+/// whole text when the tab has no tooltip of its own.
+const ctabShortenedLabel = #ctabShortenedLabel;
+
 /// A tab label that a compressed strip can shrink: its minimum intrinsic width is the label SWT
 /// measures at [minimumCharacters], and it draws its text shortened to the width it is given.
 class ShrinkableTabLabel extends StatelessWidget {
@@ -78,12 +82,15 @@ class ShrinkableTabLabel extends StatelessWidget {
       height: full.height,
       child: LayoutBuilder(builder: (context, constraints) {
         if (full.width <= constraints.maxWidth + 0.5) return MnemonicText(text, style: style);
-        return Text(
-          ctabShortenText(plain, constraints.maxWidth, (value) => measure(value).width),
-          style: style,
-          maxLines: 1,
-          softWrap: false,
-          overflow: TextOverflow.clip,
+        return MetaData(
+          metaData: ctabShortenedLabel,
+          child: Text(
+            ctabShortenText(plain, constraints.maxWidth, (value) => measure(value).width),
+            style: style,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.clip,
+          ),
         );
       }),
     );

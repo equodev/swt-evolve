@@ -2153,19 +2153,23 @@ class _CTabInsertionMarkerPainter extends CustomPainter {
 /// Marks a tab's close button, so the strip report can find where it is drawn.
 const _tabCloseButton = #ctabCloseButton;
 
-/// The render boxes a tab and its close button are drawn by.
+/// The render boxes a tab and its close button are drawn by, and whether its label is drawn
+/// shortened.
 class DrawnTab {
   final RenderBox tab;
   final RenderBox? close;
+  final bool shortened;
 
-  const DrawnTab(this.tab, this.close);
+  const DrawnTab(this.tab, this.close, {this.shortened = false});
 }
 
 /// Where each of [tabs] is drawn in [folder], as `x,width` pairs in the folder's own coordinates -
 /// what `CTabFolder.getItem(Point)` is asked about, and how the workbench decides which view a drag
 /// picked up - then, after a `;`, each tab's close button as `x,y,width,height` (zeros for a tab
 /// drawn without one), then, after another `;`, the part of the strip that is shown as `x,width`:
-/// the scrolled viewport, which ends where the chevron and the top-right controls begin.
+/// the scrolled viewport, which ends where the chevron and the top-right controls begin (empty when
+/// there is none), then, after another `;`, a `1` for each tab whose label is drawn shortened and a
+/// `0` for the others.
 ///
 /// Null when a tab cannot be placed: a folder laid out under unbounded constraints for a frame has
 /// an infinite size, and aligning its children in it puts NaN in every offset below it.
@@ -2173,6 +2177,7 @@ class DrawnTab {
 String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
   final strip = <String>[];
   final close = <String>[];
+  final shortened = <String>[];
   for (final tab in tabs) {
     final local = _rectIn(folder, tab.tab);
     final button = tab.close == null ? null : _rectIn(folder, tab.close!);
@@ -2182,15 +2187,16 @@ String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
         ? '0,0,0,0'
         : '${button.left.round()},${button.top.round()},'
             '${button.width.round()},${button.height.round()}');
+    shortened.add(tab.shortened ? '1' : '0');
   }
   final Object? viewport = tabs.isEmpty ? null : _shownStrip(tabs.first.tab);
   var shown = '';
   if (viewport is RenderBox && viewport.hasSize) {
     final area = _rectIn(folder, viewport);
     if (!area.isFinite) return null;
-    shown = ';${area.left.round()},${area.width.round()}';
+    shown = '${area.left.round()},${area.width.round()}';
   }
-  return '${strip.join(',')};${close.join(',')}$shown';
+  return '${strip.join(',')};${close.join(',')};$shown;${shortened.join(',')}';
 }
 
 /// The box that bounds the shown tabs: the scrolled viewport, or a compressed row, which ends where
@@ -2212,11 +2218,12 @@ Rect _rectIn(RenderBox folder, RenderBox child) => Rect.fromPoints(
 Rect _globalRect(RenderBox box) => Rect.fromPoints(
     box.localToGlobal(Offset.zero), box.localToGlobal(box.size.bottomRight(Offset.zero)));
 
-RenderBox? _closeButtonIn(RenderObject root) {
+/// The first laid-out box under [root] marked with [marker].
+RenderBox? _markedIn(RenderObject root, Object marker) {
   RenderBox? found;
   void visit(RenderObject node) {
     if (found != null) return;
-    if (node is RenderMetaData && node.metaData == _tabCloseButton && node.hasSize) {
+    if (node is RenderMetaData && node.metaData == marker && node.hasSize) {
       found = node;
       return;
     }
@@ -2316,8 +2323,8 @@ class _TabDragRowState extends State<TabDragRow> {
     for (var i = 0; i < widget.children.length; i++) {
       final box = _itemBox(i);
       if (box == null || !box.hasSize) return;
-      final close = _closeButtonIn(box);
-      tabs.add(DrawnTab(box, close));
+      final close = _markedIn(box, _tabCloseButton);
+      tabs.add(DrawnTab(box, close, shortened: _markedIn(box, ctabShortenedLabel) != null));
     }
     // The folder can be laid out again without this row being rebuilt or scrolled, which is all
     // that otherwise asks for a report, so a frame that could not place the tabs asks again.
