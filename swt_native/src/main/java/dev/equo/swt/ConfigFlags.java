@@ -233,6 +233,11 @@ public class ConfigFlags implements WireObject {
      *  Set with {@code -Dswt.use_swt_border=true}. */
     public boolean use_swt_border;
 
+    /** Puts a vertical Scale's minimum at the top, as GTK and Win32 do, so Up lowers it. Off by
+     *  default: the minimum is at the bottom, as on Cocoa, and Up raises it. Set with
+     *  {@code -Dswt.evolve.scale_vertical_minimum_at_top=true}. */
+    public boolean scale_vertical_minimum_at_top;
+
     /** Not a type a value names at runtime: the flags only ever travel as the display's. */
     @Override
     public int wireTypeId() {
@@ -251,6 +256,7 @@ public class ConfigFlags implements WireObject {
             "csd_maximize", "system_menu_bar", "double_click_timeout_ms", "csd_titlebar_color",
             "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
+            "scale_vertical_minimum_at_top",
     };
 
     /** The flags the client sets (a theme picked on its side). */
@@ -349,6 +355,8 @@ public class ConfigFlags implements WireObject {
         w.write(transparent_menu_check_box);
         w.key(WireTable.CONFIG_FLAGS_USE_SWT_BORDER);
         w.write(use_swt_border);
+        w.key(WireTable.CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP);
+        w.write(scale_vertical_minimum_at_top);
     }
 
     public static ConfigFlags use_swt_fonts(boolean v) {
@@ -399,6 +407,7 @@ public class ConfigFlags implements WireObject {
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", use_swt_border=" + use_swt_border +
+                ", scale_vertical_minimum_at_top=" + scale_vertical_minimum_at_top +
                 ", system_menu_bar=" + system_menu_bar +
                 ", decimal_separator='" + decimal_separator + '\'' +
                 ", locale='" + locale + '\'' +

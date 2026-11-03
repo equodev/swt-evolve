@@ -171,6 +171,10 @@ bool useSwtFontColors([String? widget]) {
 /// theme's flat one: `-Dswt.use_swt_border`.
 bool get useSwtBorder => getConfigFlags().use_swt_border ?? false;
 
+/// True when a vertical Scale has its minimum at the top, as on GTK and Win32, rather than at the
+/// bottom, as on Cocoa: `-Dswt.evolve.scale_vertical_minimum_at_top`.
+bool get scaleMinimumAtTop => getConfigFlags().scale_vertical_minimum_at_top ?? false;
+
 /// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the named theme's default.
 bool get focusIndicators {
   final flags = getConfigFlags();

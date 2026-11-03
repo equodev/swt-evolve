@@ -53,9 +53,9 @@ public class VTabFolder extends VComposite {
         ((DartTabFolder) impl).selection = value;
     }
 
-    public static final int ITEMS = 543;
+    public static final int ITEMS = 544;
 
-    public static final int SELECTION = 544;
+    public static final int SELECTION = 545;
 
     @Override
     public String wireName(int key) {
@@ -71,10 +71,10 @@ public class VTabFolder extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 543:
+            case 544:
                 w.refs(getItems());
                 return true;
-            case 544:
+            case 545:
                 w.refs(getSelection());
                 return true;
         }
@@ -84,20 +84,9 @@ public class VTabFolder extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 543:
-                {
-                    TabItem[] v_ = getItems();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(543);
-                    w.refs(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 544:
                 {
-                    TabItem[] v_ = getSelection();
+                    TabItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
@@ -106,11 +95,22 @@ public class VTabFolder extends VComposite {
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
+            case 545:
+                {
+                    TabItem[] v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(545);
+                    w.refs(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 543, 544 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 544, 545 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

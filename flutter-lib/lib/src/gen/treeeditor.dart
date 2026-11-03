@@ -44,13 +44,13 @@ class VTreeEditor extends VControlEditor {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 638: // column
+      case 639: // column
         column = r.int32();
         return true;
-      case 639: // editor
+      case 640: // editor
         editor = r.ref<VControl>();
         return true;
-      case 640: // item
+      case 641: // item
         item = r.ref<VTreeItem>();
         return true;
       default:
@@ -64,19 +64,19 @@ class VTreeEditor extends VControlEditor {
     {
       final v_ = column;
       if (v_ != null) {
-        w.keyInt32(638, v_);
+        w.keyInt32(639, v_);
       }
     }
     {
       final v_ = editor;
       if (v_ != null) {
-        w.keyRef(639, v_.id);
+        w.keyRef(640, v_.id);
       }
     }
     {
       final v_ = item;
       if (v_ != null) {
-        w.keyRef(640, v_.id);
+        w.keyRef(641, v_.id);
       }
     }
   }
@@ -84,9 +84,9 @@ class VTreeEditor extends VControlEditor {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(638, column);
-    visit(639, editor);
-    visit(640, item);
+    visit(639, column);
+    visit(640, editor);
+    visit(641, item);
   }
 
   @override

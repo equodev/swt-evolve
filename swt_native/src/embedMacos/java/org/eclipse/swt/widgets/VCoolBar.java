@@ -76,13 +76,13 @@ public class VCoolBar extends VComposite {
         ((DartCoolBar) impl).wrapIndices = value;
     }
 
-    public static final int ITEM_ORDER = 147;
+    public static final int ITEM_ORDER = 148;
 
-    public static final int ITEM_SIZES = 148;
+    public static final int ITEM_SIZES = 149;
 
-    public static final int ITEMS = 149;
+    public static final int ITEMS = 150;
 
-    public static final int WRAP_INDICES = 150;
+    public static final int WRAP_INDICES = 151;
 
     @Override
     public String wireName(int key) {
@@ -102,10 +102,10 @@ public class VCoolBar extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 148:
                 w.write(getItemOrder());
                 return true;
-            case 148:
+            case 149:
                 {
                     Point[] a_ = getItemSizes();
                     if (a_ == null)
@@ -116,10 +116,10 @@ public class VCoolBar extends VComposite {
                     }
                 }
                 return true;
-            case 149:
+            case 150:
                 w.refs(getItems());
                 return true;
-            case 150:
+            case 151:
                 w.write(getWrapIndices());
                 return true;
         }
@@ -129,25 +129,25 @@ public class VCoolBar extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 148:
                 {
                     int[] v_ = getItemOrder();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(147);
+                    w.key(148);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 148:
+            case 149:
                 {
                     Point[] v_ = getItemSizes();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(148);
+                    w.key(149);
                     {
                         Point[] a_ = v_;
                         if (a_ == null)
@@ -159,25 +159,25 @@ public class VCoolBar extends VComposite {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 149:
+            case 150:
                 {
                     CoolItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(149);
+                    w.key(150);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 150:
+            case 151:
                 {
                     int[] v_ = getWrapIndices();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(150);
+                    w.key(151);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -185,7 +185,7 @@ public class VCoolBar extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 147, 148, 149, 150 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 148, 149, 150, 151 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

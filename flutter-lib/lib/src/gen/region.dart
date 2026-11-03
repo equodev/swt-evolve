@@ -13,7 +13,7 @@ class VRegion implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 422: // rects
+      case 423: // rects
         rects = r.ints();
         return true;
       default:
@@ -26,7 +26,7 @@ class VRegion implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = rects;
       if (v_ != null) {
-        w.key(422);
+        w.key(423);
         w.ints(v_);
       }
     }
@@ -34,6 +34,6 @@ class VRegion implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(422, rects);
+    visit(423, rects);
   }
 }

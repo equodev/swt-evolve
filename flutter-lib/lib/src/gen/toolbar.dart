@@ -42,7 +42,7 @@ class VToolBar extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 597: // items
+      case 598: // items
         items = r.refs<VToolItem>();
         return true;
       default:
@@ -56,7 +56,7 @@ class VToolBar extends VComposite {
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(597);
+        w.key(598);
         w.refs(v_);
       }
     }
@@ -65,7 +65,7 @@ class VToolBar extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(597, items);
+    visit(598, items);
   }
 
   @override

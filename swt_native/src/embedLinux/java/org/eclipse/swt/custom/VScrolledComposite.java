@@ -92,21 +92,21 @@ public class VScrolledComposite extends VComposite {
         return ((DartScrolledComposite) impl).wireOriginRequest();
     }
 
-    public static final int ALWAYS_SHOW_SCROLL_BARS = 441;
+    public static final int ALWAYS_SHOW_SCROLL_BARS = 442;
 
-    public static final int CONTENT = 442;
+    public static final int CONTENT = 443;
 
-    public static final int EXPAND_HORIZONTAL = 443;
+    public static final int EXPAND_HORIZONTAL = 444;
 
-    public static final int EXPAND_VERTICAL = 444;
+    public static final int EXPAND_VERTICAL = 445;
 
-    public static final int MIN_HEIGHT = 445;
+    public static final int MIN_HEIGHT = 446;
 
-    public static final int MIN_WIDTH = 446;
+    public static final int MIN_WIDTH = 447;
 
-    public static final int ORIGIN = 447;
+    public static final int ORIGIN = 448;
 
-    public static final int ORIGIN_REQUEST = 448;
+    public static final int ORIGIN_REQUEST = 449;
 
     @Override
     public String wireName(int key) {
@@ -134,28 +134,28 @@ public class VScrolledComposite extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 441:
+            case 442:
                 w.write(getAlwaysShowScrollBars());
                 return true;
-            case 442:
+            case 443:
                 w.ref(getContent());
                 return true;
-            case 443:
+            case 444:
                 w.write(getExpandHorizontal());
                 return true;
-            case 444:
+            case 445:
                 w.write(getExpandVertical());
                 return true;
-            case 445:
+            case 446:
                 w.write((int) getMinHeight());
                 return true;
-            case 446:
+            case 447:
                 w.write((int) getMinWidth());
                 return true;
-            case 447:
+            case 448:
                 w.write(getOrigin());
                 return true;
-            case 448:
+            case 449:
                 w.write((int) getOriginRequest());
                 return true;
         }
@@ -165,36 +165,27 @@ public class VScrolledComposite extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 441:
+            case 442:
                 {
                     boolean v_ = getAlwaysShowScrollBars();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(441);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 442:
-                {
-                    Control v_ = getContent();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(442);
-                    w.ref(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 443:
                 {
-                    boolean v_ = getExpandHorizontal();
-                    if (!v_)
+                    Control v_ = getContent();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(443);
-                    w.write(v_);
+                    w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 444:
                 {
-                    boolean v_ = getExpandVertical();
+                    boolean v_ = getExpandHorizontal();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(444);
@@ -203,16 +194,16 @@ public class VScrolledComposite extends VComposite {
                 }
             case 445:
                 {
-                    int v_ = getMinHeight();
-                    if (v_ == 0)
+                    boolean v_ = getExpandVertical();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(445);
-                    w.write((int) v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 446:
                 {
-                    int v_ = getMinWidth();
+                    int v_ = getMinHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(446);
@@ -221,19 +212,28 @@ public class VScrolledComposite extends VComposite {
                 }
             case 447:
                 {
-                    Point v_ = getOrigin();
-                    if (v_ == null)
+                    int v_ = getMinWidth();
+                    if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(447);
-                    w.write(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 448:
                 {
+                    Point v_ = getOrigin();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(448);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 449:
+                {
                     int v_ = getOriginRequest();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(448);
+                    w.key(449);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -241,7 +241,7 @@ public class VScrolledComposite extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 441, 442, 443, 444, 445, 446, 447, 448 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 442, 443, 444, 445, 446, 447, 448, 449 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -81,22 +81,22 @@ class VShell extends VDecorations {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 449: // alpha
+      case 450: // alpha
         alpha = r.int32();
         return true;
-      case 451: // fullScreen
+      case 452: // fullScreen
         fullScreen = r.boolean();
         return true;
-      case 452: // maximumSize
+      case 453: // maximumSize
         maximumSize = r.point();
         return true;
-      case 453: // minimumSize
+      case 454: // minimumSize
         minimumSize = r.point();
         return true;
-      case 454: // modified
+      case 455: // modified
         modified = r.boolean();
         return true;
-      case 450: // dialogs
+      case 451: // dialogs
         dialogs = r.polys<VDialog>(newDialogValue);
         return true;
       default:
@@ -110,39 +110,39 @@ class VShell extends VDecorations {
     {
       final v_ = alpha;
       if (v_ != null) {
-        w.keyInt32(449, v_);
+        w.keyInt32(450, v_);
       }
     }
     {
       final v_ = fullScreen;
       if (v_ != null) {
-        w.keyBoolean(451, v_);
+        w.keyBoolean(452, v_);
       }
     }
     {
       final v_ = maximumSize;
-      if (v_ != null) {
-        w.key(452);
-        w.pointValue(v_);
-      }
-    }
-    {
-      final v_ = minimumSize;
       if (v_ != null) {
         w.key(453);
         w.pointValue(v_);
       }
     }
     {
+      final v_ = minimumSize;
+      if (v_ != null) {
+        w.key(454);
+        w.pointValue(v_);
+      }
+    }
+    {
       final v_ = modified;
       if (v_ != null) {
-        w.keyBoolean(454, v_);
+        w.keyBoolean(455, v_);
       }
     }
     {
       final v_ = dialogs;
       if (v_ != null) {
-        w.key(450);
+        w.key(451);
         w.polys(v_, (e) => e.swt);
       }
     }
@@ -151,11 +151,11 @@ class VShell extends VDecorations {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(449, alpha);
-    visit(451, fullScreen);
-    visit(452, maximumSize);
-    visit(453, minimumSize);
-    visit(454, modified);
-    visit(450, dialogs);
+    visit(450, alpha);
+    visit(452, fullScreen);
+    visit(453, maximumSize);
+    visit(454, minimumSize);
+    visit(455, modified);
+    visit(451, dialogs);
   }
 }

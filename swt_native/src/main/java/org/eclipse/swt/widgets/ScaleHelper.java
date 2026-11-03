@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 
 public class ScaleHelper {
@@ -19,20 +20,37 @@ public class ScaleHelper {
     }
 
     /**
-     * Page Down and Page Up move a Scale by its page increment, Home and End to its minimum and
-     * maximum, as Win32 and GTK do for a key no listener vetoed, each with a Selection. The arrows are
-     * the client's slider's own.
+     * The arrows move a Scale by its increment, Page Up and Page Down by its page increment, Home and
+     * End to its minimum and maximum, as Win32 and GTK do for a key no listener vetoed, each with a
+     * Selection. Right, Up and Page Up raise a Scale, as on Cocoa, whose vertical Scale has its
+     * maximum at the top; on a vertical Scale with its minimum at the top
+     * ({@code scale_vertical_minimum_at_top}, as on GTK and Win32) Up and Page Up lower it.
      */
     public static void stepByKey(DartScale c, Event key) {
         if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
             return;
+        boolean minimumAtTop = (c.getApi().getStyle() & SWT.VERTICAL) != 0
+                && Config.getConfigFlags().scale_vertical_minimum_at_top;
+        int up = minimumAtTop ? -1 : 1;
         int value;
         switch (key.keyCode) {
-            case SWT.PAGE_DOWN:
-                value = c.selection + c.pageIncrement;
+            case SWT.ARROW_RIGHT:
+                value = c.selection + c.increment;
+                break;
+            case SWT.ARROW_LEFT:
+                value = c.selection - c.increment;
+                break;
+            case SWT.ARROW_UP:
+                value = c.selection + up * c.increment;
+                break;
+            case SWT.ARROW_DOWN:
+                value = c.selection - up * c.increment;
                 break;
             case SWT.PAGE_UP:
-                value = c.selection - c.pageIncrement;
+                value = c.selection + up * c.pageIncrement;
+                break;
+            case SWT.PAGE_DOWN:
+                value = c.selection - up * c.pageIncrement;
                 break;
             case SWT.HOME:
                 value = c.minimum;

@@ -13,6 +13,7 @@ import '../theme/theme_extensions/scale_theme_extension.dart';
 import '../theme/theme_settings/scale_theme_settings.dart';
 import 'utils/widget_utils.dart';
 import 'utils/quiet_animations.dart';
+import 'widget_config.dart';
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
@@ -82,6 +83,7 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
         width: size.width,
         height: size.height,
         isVertical: isVertical,
+        minimumAtTop: isVertical && scaleMinimumAtTop,
         widgetTheme: widgetTheme,
         onMarginPress: () => _pressOnMargin = true,
         // The value is the application's: it changes when the application sends it back, which is
@@ -123,6 +125,9 @@ class _ThemedScale extends StatefulWidget {
   final double width;
   final double height;
   final bool isVertical;
+  /// A vertical Scale with its minimum at the top, as on GTK and Win32; at the bottom, as on Cocoa,
+  /// unless the application asks for this.
+  final bool minimumAtTop;
   final ScaleThemeExtension widgetTheme;
   final ValueChanged<double> onChanged;
   final ValueChanged<double> onChangeEnd;
@@ -140,6 +145,7 @@ class _ThemedScale extends StatefulWidget {
     required this.width,
     required this.height,
     required this.isVertical,
+    required this.minimumAtTop,
     required this.widgetTheme,
     required this.onChanged,
     required this.onMarginPress,
@@ -153,9 +159,8 @@ class _ThemedScale extends StatefulWidget {
 }
 
 class _ThemedScaleState extends State<_ThemedScale> {
-  /// The value this Scale last reported, shown until the application has it: the Slider steps its
-  /// keys from the value it shows, so a key pressed before the round trip completes would otherwise
-  /// step from the value before it.
+  /// The value this Scale last reported, shown until the application has it, so the knob follows a
+  /// drag ahead of the round trip.
   double? _localValue;
 
   /// The values reported and not yet seen back from the application, oldest first.
@@ -175,50 +180,31 @@ class _ThemedScaleState extends State<_ThemedScale> {
   void initState() {
     super.initState();
     widget.focusNode.addListener(_reportFocus);
-    widget.focusNode.onKeyEvent = _handleKey;
+    widget.focusNode.onKeyEvent = _keepArrowsFromSlider;
   }
 
   @override
   void dispose() {
     _confirmTimeout?.cancel();
     widget.focusNode.removeListener(_reportFocus);
-    if (widget.focusNode.onKeyEvent == _handleKey) widget.focusNode.onKeyEvent = null;
+    if (widget.focusNode.onKeyEvent == _keepArrowsFromSlider) widget.focusNode.onKeyEvent = null;
     super.dispose();
   }
 
-  /// The arrows the Slider would take, stepped by its own unit from the value this Scale last
-  /// reported. The Slider steps from the value it last rendered, so a second key pressed before the
-  /// next frame would step from where the first one started and report nothing new.
-  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    if (!widget.enabled || event is KeyUpEvent) return KeyEventResult.ignored;
-    final keyboard = HardwareKeyboard.instance;
-    if (keyboard.isShiftPressed || keyboard.isControlPressed || keyboard.isAltPressed || keyboard.isMetaPressed) {
-      return KeyEventResult.ignored;
-    }
-    final traditional = MediaQuery.maybeNavigationModeOf(context) != NavigationMode.directional;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    final bool increase;
-    final key = event.logicalKey;
-    if (key == LogicalKeyboardKey.arrowUp && traditional) {
-      increase = true;
-    } else if (key == LogicalKeyboardKey.arrowDown && traditional) {
-      increase = false;
-    } else if (key == LogicalKeyboardKey.arrowLeft) {
-      increase = rtl;
-    } else if (key == LogicalKeyboardKey.arrowRight) {
-      increase = !rtl;
-    } else {
-      return KeyEventResult.ignored;
-    }
-    final range = widget.max - widget.min;
-    if (range <= 0) return KeyEventResult.ignored;
-    final unit = _sliderKeyUnit(Theme.of(context).platform) * range;
-    final current = (_localValue ?? widget.value).clamp(widget.min, widget.max).toDouble();
-    final next = (current + (increase ? unit : -unit)).clamp(widget.min, widget.max).toDouble();
-    _handleChanged(next);
-    _handleChangeEnd(next);
-    return KeyEventResult.handled;
-  }
+  static final _arrows = {
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+  };
+
+  /// The arrows step a Scale in Java, by its increment and only when no KeyDown listener vetoed
+  /// them, so the Slider's own shortcuts, which step by a platform fraction of the range, never see
+  /// them. The Display has already forwarded the key to Java.
+  KeyEventResult _keepArrowsFromSlider(FocusNode node, KeyEvent event) =>
+      event is! KeyUpEvent && _arrows.contains(event.logicalKey)
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored;
 
   @override
   void didUpdateWidget(_ThemedScale old) {
@@ -356,6 +342,19 @@ class _ThemedScaleState extends State<_ThemedScale> {
               width: _marginWidth(left: left),
               child: _InertMargin(onPress: widget.onMarginPress),
             ),
+          // Beside the track, across it, a press only focuses the Scale, as on Win32 and GTK.
+          for (final top in [true, false])
+            Positioned(
+              left: 0,
+              right: 0,
+              top: top ? 0 : null,
+              bottom: top ? null : 0,
+              height: _besideTrackThickness(),
+              child: _InertMargin(onPress: () {
+                widget.onMarginPress();
+                widget.focusNode.requestFocus();
+              }),
+            ),
         ],
       ),
     );
@@ -370,6 +369,13 @@ class _ThemedScaleState extends State<_ThemedScale> {
     final centre = _valueToX(widget.value, widget.min, widget.max, length, pad);
     final edge = left ? centre - widget.widgetTheme.thumbRadius : length - centre - widget.widgetTheme.thumbRadius;
     return math.max(0, math.min(pad, edge));
+  }
+
+  /// The strip on each side of the track beyond the knob's reach: the track takes the padding's
+  /// width on either side of its centre line.
+  double _besideTrackThickness() {
+    final across = widget.isVertical ? widget.width : widget.height;
+    return math.max(0, across / 2 - widget.widgetTheme.horizontalPadding);
   }
 
   Widget _buildHorizontalScale(Widget scale) {
@@ -395,8 +401,9 @@ class _ThemedScaleState extends State<_ThemedScale> {
       width: widget.width,
       height: widget.height,
       color: _appBackground(context),
+      // Clockwise, one quarter turn puts the Slider's minimum at the top, three at the bottom.
       child: RotatedBox(
-        quarterTurns: 3,
+        quarterTurns: widget.minimumAtTop ? 1 : 3,
         child: SizedBox(
           width: widget.height,
           height: widget.width,
@@ -440,12 +447,6 @@ class _ThemedScaleState extends State<_ThemedScale> {
     widget.onChangeEnd(value);
   }
 }
-
-/// The share of the range one arrow moves a Slider with no divisions, as Flutter's Slider has it.
-double _sliderKeyUnit(TargetPlatform platform) => switch (platform) {
-      TargetPlatform.iOS || TargetPlatform.macOS => 0.1,
-      _ => 0.05,
-    };
 
 /// Where [value] sits along a track of [length] that the slider insets by [pad] at each end.
 double _valueToX(double value, double min, double max, double length, double pad) =>

@@ -14,16 +14,16 @@ class VCursor implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 153: // cursorStyle
+      case 154: // cursorStyle
         cursorStyle = r.int32();
         return true;
-      case 154: // hotspotX
+      case 155: // hotspotX
         hotspotX = r.int32();
         return true;
-      case 155: // hotspotY
+      case 156: // hotspotY
         hotspotY = r.int32();
         return true;
-      case 156: // image
+      case 157: // image
         image = r.image();
         return true;
       default:
@@ -36,34 +36,34 @@ class VCursor implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = cursorStyle;
       if (v_ != null) {
-        w.keyInt32(153, v_);
+        w.keyInt32(154, v_);
       }
     }
     {
       final v_ = hotspotX;
       if (v_ != null) {
-        w.keyInt32(154, v_);
+        w.keyInt32(155, v_);
       }
     }
     {
       final v_ = hotspotY;
       if (v_ != null) {
-        w.keyInt32(155, v_);
+        w.keyInt32(156, v_);
       }
     }
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(156, v_.id);
+        w.keyRef(157, v_.id);
       }
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(153, cursorStyle);
-    visit(154, hotspotX);
-    visit(155, hotspotY);
-    visit(156, image);
+    visit(154, cursorStyle);
+    visit(155, hotspotX);
+    visit(156, hotspotY);
+    visit(157, image);
   }
 }

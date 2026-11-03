@@ -79,31 +79,31 @@ class VText extends VScrollable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 576: // caretPosition
+      case 577: // caretPosition
         caretPosition = r.int32();
         return true;
-      case 577: // echoCharacter
+      case 578: // echoCharacter
         echoCharacter = r.int32();
         return true;
-      case 579: // editable
+      case 580: // editable
         editable = r.boolean();
         return true;
-      case 581: // message
+      case 582: // message
         message = r.string();
         return true;
-      case 582: // selection
+      case 583: // selection
         selection = r.point();
         return true;
-      case 583: // text
+      case 584: // text
         text = r.string();
         return true;
-      case 584: // textLimit
+      case 585: // textLimit
         textLimit = r.int32();
         return true;
-      case 580: // edits
+      case 581: // edits
         edits = r.ints();
         return true;
-      case 578: // editTexts
+      case 579: // editTexts
         editTexts = r.strings()?.map((e) => e ?? '').toList();
         return true;
       default:
@@ -117,59 +117,59 @@ class VText extends VScrollable {
     {
       final v_ = caretPosition;
       if (v_ != null) {
-        w.keyInt32(576, v_);
+        w.keyInt32(577, v_);
       }
     }
     {
       final v_ = echoCharacter;
       if (v_ != null) {
-        w.keyInt32(577, v_);
+        w.keyInt32(578, v_);
       }
     }
     {
       final v_ = editable;
       if (v_ != null) {
-        w.keyBoolean(579, v_);
+        w.keyBoolean(580, v_);
       }
     }
     {
       final v_ = message;
       if (v_ != null) {
-        w.key(581);
+        w.key(582);
         w.string(v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(582);
+        w.key(583);
         w.pointValue(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(583);
+        w.key(584);
         w.string(v_);
       }
     }
     {
       final v_ = textLimit;
       if (v_ != null) {
-        w.keyInt32(584, v_);
+        w.keyInt32(585, v_);
       }
     }
     {
       final v_ = edits;
       if (v_ != null) {
-        w.key(580);
+        w.key(581);
         w.ints(v_);
       }
     }
     {
       final v_ = editTexts;
       if (v_ != null) {
-        w.key(578);
+        w.key(579);
         w.strings(v_);
       }
     }
@@ -178,15 +178,15 @@ class VText extends VScrollable {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(576, caretPosition);
-    visit(577, echoCharacter);
-    visit(579, editable);
-    visit(581, message);
-    visit(582, selection);
-    visit(583, text);
-    visit(584, textLimit);
-    visit(580, edits);
-    visit(578, editTexts);
+    visit(577, caretPosition);
+    visit(578, echoCharacter);
+    visit(580, editable);
+    visit(582, message);
+    visit(583, selection);
+    visit(584, text);
+    visit(585, textLimit);
+    visit(581, edits);
+    visit(579, editTexts);
   }
 
   @override

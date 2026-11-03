@@ -60,19 +60,19 @@ class VMenuItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 370: // accelerator
+      case 371: // accelerator
         accelerator = r.int32();
         return true;
-      case 371: // enabled
+      case 372: // enabled
         enabled = r.boolean();
         return true;
-      case 372: // menu
+      case 373: // menu
         menu = r.ref<VMenu>();
         return true;
-      case 373: // selection
+      case 374: // selection
         selection = r.boolean();
         return true;
-      case 374: // toolTipText
+      case 375: // toolTipText
         toolTipText = r.string();
         return true;
       default:
@@ -86,31 +86,31 @@ class VMenuItem extends VItem {
     {
       final v_ = accelerator;
       if (v_ != null) {
-        w.keyInt32(370, v_);
+        w.keyInt32(371, v_);
       }
     }
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.keyBoolean(371, v_);
+        w.keyBoolean(372, v_);
       }
     }
     {
       final v_ = menu;
       if (v_ != null) {
-        w.keyRef(372, v_.id);
+        w.keyRef(373, v_.id);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyBoolean(373, v_);
+        w.keyBoolean(374, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(374);
+        w.key(375);
         w.string(v_);
       }
     }
@@ -119,11 +119,11 @@ class VMenuItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(370, accelerator);
-    visit(371, enabled);
-    visit(372, menu);
-    visit(373, selection);
-    visit(374, toolTipText);
+    visit(371, accelerator);
+    visit(372, enabled);
+    visit(373, menu);
+    visit(374, selection);
+    visit(375, toolTipText);
   }
 
   @override
