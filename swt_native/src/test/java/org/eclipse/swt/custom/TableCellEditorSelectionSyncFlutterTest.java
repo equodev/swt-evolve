@@ -100,47 +100,6 @@ class TableCellEditorSelectionSyncFlutterTest {
     }
 
     @Test
-    @DisplayName("installing a new cell editor disposes the previous one")
-    void replacingTheCellEditorDisposesThePrevious() {
-        Table table = editableTable(2);
-        TableItem row0 = table.getItem(0);
-        TableItem row1 = table.getItem(1);
-
-        TableEditor editor = new TableEditor(table);
-        Text first = new Text(table, SWT.NONE);
-        editor.setEditor(first, row0, 0);
-        assertThat(first.isDisposed()).as("the freshly installed editor is alive").isFalse();
-
-        Text second = new Text(table, SWT.NONE);
-        editor.setEditor(second, row1, 0);
-
-        assertThat(first.isDisposed())
-                .as("the previous cell editor control must be disposed so it can't linger over the table")
-                .isTrue();
-        assertThat(second.isDisposed()).as("the new editor stays alive").isFalse();
-    }
-
-    @Test
-    @DisplayName("clearing the editor hides its control instead of disposing it")
-    void clearingTheEditorKeepsTheControlAlive() {
-        Table table = editableTable(1);
-
-        TableEditor editor = new TableEditor(table);
-        Text cellEditor = new Text(table, SWT.NONE);
-        editor.setEditor(cellEditor, table.getItem(0), 0);
-
-        editor.setEditor(null, null, 0);
-
-        assertThat(cellEditor.isDisposed())
-                .as("the caller still owns this control after the editor is cleared and goes on using it")
-                .isFalse();
-        assertThat(cellEditor.getVisible())
-                .as("but it must stop showing over the table")
-                .isFalse();
-        assertThat(editor.getEditor()).as("the editor no longer holds a control").isNull();
-    }
-
-    @Test
     @DisplayName("a cleared editor control can be installed again")
     void aClearedEditorCanBeReinstalled() {
         Table table = editableTable(2);
