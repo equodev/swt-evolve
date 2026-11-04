@@ -1267,10 +1267,12 @@ public class ControlHelper {
     /**
      * Lays out the composites from {@code control}'s parent up to its shell once the current event is
      * over, so the size its new text gives it reaches their layouts. The steps are those of
-     * {@code shell.layout(new Control[] { control })}, save one: native setText never calls a layout's
-     * {@code flushCache}, so a layout whose {@code flushCache} cannot take a child's layout data (it
-     * casts the data to its own type) gets its composite laid out as changed instead, as
-     * {@code layout(true)} does without asking it to flush that child.
+     * {@code shell.layout(new Control[] { control })}: mark the chain bottom-up, then update it
+     * top-down, so a composite already laid out by its parent's resize is not laid out again. One
+     * step differs: native setText never calls a layout's {@code flushCache}, so a layout whose
+     * {@code flushCache} cannot take a child's layout data (it casts the data to its own type) gets
+     * its composite marked as changed instead, as {@code layout(true)} does without asking it to
+     * flush that child.
      */
     public static void relayoutAfterTextChange(Control control) {
         control.getDisplay().asyncExec(() -> {
@@ -1278,16 +1280,16 @@ public class ControlHelper {
                 return;
             Shell shell = control.getShell();
             List<Composite> chain = new ArrayList<>();
-            List<Boolean> changed = new ArrayList<>();
+            control.getImpl().markLayout(false, false);
             Control child = control;
             while (child != shell) {
                 Composite composite = child.getParent();
+                composite.getImpl().markLayout(layoutChanged(composite.getLayout(), child), false);
                 chain.add(composite);
-                changed.add(layoutChanged(composite.getLayout(), child));
                 child = composite;
             }
             for (int i = chain.size() - 1; i >= 0; i--) {
-                chain.get(i).layout(changed.get(i));
+                chain.get(i).getImpl().updateLayout(false);
             }
         });
     }

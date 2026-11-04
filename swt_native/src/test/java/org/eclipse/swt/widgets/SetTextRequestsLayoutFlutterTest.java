@@ -129,4 +129,48 @@ class SetTextRequestsLayoutFlutterTest {
         cLabel.setText("a considerably longer clabel");
         assertSchedulesRelayoutWithoutDeferring(shell, composite);
     }
+
+    /** Counts its layout passes and gives its children a new size on every pass. */
+    static final class ResizingLayout extends Layout {
+        int layouts;
+
+        @Override
+        protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+            return new Point(300, 300);
+        }
+
+        @Override
+        protected void layout(Composite composite, boolean flushCache) {
+            layouts++;
+            for (Control child : composite.getChildren()) {
+                child.setBounds(0, 0, 200 + layouts, 200);
+            }
+        }
+    }
+
+    /**
+     * Like {@code shell.layout(new Control[] { label })}, the relayout lays each ancestor out once:
+     * a composite resized by its parent's layout is laid out by that resize, not a second time.
+     */
+    @Test
+    void labelSetText_laysOutAnAncestorResizedByItsParentOnce() {
+        Shell shell = new Shell(display);
+        shell.setSize(500, 500);
+        shell.setLayout(new FillLayout());
+        Composite outer = new Composite(shell, SWT.NONE);
+        outer.setLayout(new ResizingLayout());
+        Composite inner = new Composite(outer, SWT.NONE);
+        ResizingLayout innerLayout = new ResizingLayout();
+        inner.setLayout(innerLayout);
+        Label label = new Label(inner, SWT.NONE);
+        shell.layout(true, true);
+        innerLayout.layouts = 0;
+
+        label.setText("a text set after the shell was laid out");
+        for (int i = 0; i < 100 && display.readAndDispatch(); i++) {
+            // drain the async queue as a live event loop would
+        }
+
+        assertThat(innerLayout.layouts).as("layout passes of the resized ancestor").isEqualTo(1);
+    }
 }
