@@ -7,13 +7,19 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Stream;
 
 /**
  * Manages the extraction and loading of native Flutter libraries.
@@ -40,6 +46,7 @@ public class FlutterLibraryLoader {
     private static final String MACOS_LIB_NAME = "libflutter_bridge.dylib";
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
+    private static final String LINKS_SUFFIX = ".links";
     // With -Ddev.equo.swt.dartDebug=true the desktop Flutter frameworks were built with --debug (JIT)
     // so the embedded engine exposes a Dart VM Service (DTD/MCP introspection). Flutter writes those
     // artifacts under its Debug/debug output dirs instead of Release/release. Only the dev (build-dir)
@@ -139,7 +146,8 @@ public class FlutterLibraryLoader {
             File baseDir = bundledDirectory(SWTFLUTTER_APP, targetDir, lib,
                     frameworks + "FlutterMacOS.framework/Versions/A/FlutterMacOS",
                     frameworks + "FlutterMacOS.framework/Versions/A/Resources/icudtl.dat",
-                    frameworks + "App.framework/Versions/A/App");
+                    frameworks + "App.framework/Versions/A/App",
+                    SWTFLUTTER_APP + LINKS_SUFFIX);
             File libFile = new File(baseDir, SWTFLUTTER_APP + SEP + CONTENTS + SEP + MACOS_LIB_NAME);
             loadLibrary(libFile.getAbsolutePath());
         } else {
@@ -273,6 +281,7 @@ public class FlutterLibraryLoader {
                 throw new IOException("'" + directoryPath + "' not found in bundle directory " + codeSource.getAbsolutePath());
             }
             System.out.println("Loading '" + directoryPath + "' in place from " + codeSource.getAbsolutePath());
+            createLinks(codeSource, directoryPath);
             return codeSource;
         }
         extractDirectoryFromJar(codeSource, directoryPath, extractionBase, mover, requiredFiles);
@@ -303,7 +312,7 @@ public class FlutterLibraryLoader {
         try (BootTrace.Span span = BootTrace.span("extract " + directoryPathInJar)) {
             String stamp = jarFileSource.length() + ":" + jarFileSource.lastModified();
             File stampFile = new File(targetBaseDir, directoryPathInJar + ".stamp");
-            if (isExtracted(stampFile, stamp, targetBaseDir, requiredFiles)) {
+            if (isExtracted(stampFile, stamp, targetBaseDir, directoryPathInJar, requiredFiles)) {
                 return;
             }
 
@@ -322,14 +331,20 @@ public class FlutterLibraryLoader {
                         allReplaced &= extractAtomically(jarFile, entry, targetFile, mover);
                     }
                 }
+                JarEntry links = jarFile.getJarEntry(directoryPathInJar + LINKS_SUFFIX);
+                if (links != null) {
+                    allReplaced &= extractAtomically(jarFile, links, new File(targetBaseDir, links.getName()), mover);
+                }
             }
+            createLinks(targetBaseDir, directoryPathInJar);
             if (allReplaced) {
                 writeAtomically(stampFile, stamp);
             }
         }
     }
 
-    private static boolean isExtracted(File stampFile, String stamp, File targetBaseDir, String... requiredFiles) throws IOException {
+    private static boolean isExtracted(File stampFile, String stamp, File targetBaseDir, String directoryPath,
+                                       String... requiredFiles) throws IOException {
         if (!stampFile.isFile() || !stamp.equals(new String(Files.readAllBytes(stampFile.toPath()), StandardCharsets.UTF_8))) {
             return false;
         }
@@ -338,7 +353,73 @@ public class FlutterLibraryLoader {
                 return false;
             }
         }
+        for (Map.Entry<String, String> link : readLinks(targetBaseDir, directoryPath).entrySet()) {
+            if (!isLink(targetBaseDir.toPath().resolve(link.getKey()), link.getValue())) {
+                return false;
+            }
+        }
         return true;
+    }
+
+    /**
+     * The symlinks a jar cannot hold (a macOS framework's {@code Versions/Current}, and the links to it),
+     * listed in {@code <directoryPath>.links} as {@code link<TAB>target} lines relative to {@code base}.
+     */
+    private static Map<String, String> readLinks(File base, String directoryPath) throws IOException {
+        Map<String, String> links = new LinkedHashMap<>();
+        File list = new File(base, directoryPath + LINKS_SUFFIX);
+        if (!list.isFile()) {
+            return links;
+        }
+        for (String line : Files.readAllLines(list.toPath(), StandardCharsets.UTF_8)) {
+            int tab = line.indexOf('\t');
+            if (tab > 0) {
+                links.put(line.substring(0, tab), line.substring(tab + 1));
+            }
+        }
+        return links;
+    }
+
+    /**
+     * Creates the links {@link #readLinks} lists that are not already in place. Each one is created
+     * under a temporary name and renamed over its path, so a process starting at the same time sees
+     * either the old entry or the link. A directory in its place, a copy an older extraction made by
+     * following the link, is deleted first.
+     */
+    static void createLinks(File base, String directoryPath) throws IOException {
+        for (Map.Entry<String, String> link : readLinks(base, directoryPath).entrySet()) {
+            Path path = base.toPath().resolve(link.getKey());
+            if (isLink(path, link.getValue())) {
+                continue;
+            }
+            if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+                deleteRecursively(path);
+            }
+            ensureDirectoryExists(path.getParent().toFile());
+            Path temp = path.resolveSibling(path.getFileName() + "." + UUID.randomUUID() + ".link");
+            try {
+                Files.createSymbolicLink(temp, Paths.get(link.getValue()));
+                Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                if (!isLink(path, link.getValue())) {
+                    throw new IOException("Cannot create the link " + path + " -> " + link.getValue(), e);
+                }
+            } finally {
+                Files.deleteIfExists(temp);
+            }
+        }
+    }
+
+    private static boolean isLink(Path path, String target) throws IOException {
+        return Files.isSymbolicLink(path) && Files.readSymbolicLink(path).equals(Paths.get(target));
+    }
+
+    private static void deleteRecursively(Path directory) throws IOException {
+        try (Stream<Path> paths = Files.walk(directory)) {
+            for (Path path : paths.sorted(Comparator.reverseOrder()).toArray(Path[]::new)) {
+                Files.deleteIfExists(path);
+            }
+        }
     }
 
     /**

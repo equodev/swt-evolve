@@ -1,3 +1,5 @@
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
@@ -1111,9 +1113,14 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
     val modeCap = mode.replaceFirstChar { it.uppercase() }
     val modeLower = mode
     when (os) {
-        "macos" -> from("../flutter-lib/build/macos/Build/Products/$modeCap/swtflutter.app") {
-            into("swtflutter.app")
-            exclude(libertyFontExclude)
+        "macos" -> {
+            val app = file("../flutter-lib/build/macos/Build/Products/$modeCap/swtflutter.app")
+            from(app) {
+                into("swtflutter.app")
+                exclude(libertyFontExclude)
+                // Each file once, under its real path; writeMacAppLinks lists the links to recreate.
+                exclude { underSymlink(app, it.file) }
+            }
         }
         "linux" -> {
             from("../flutter-lib/build/linux/$flutterArch/$modeLower/runner") {
@@ -1136,6 +1143,39 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
             into("runner")
         }
     }
+}
+
+fun underSymlink(root: File, file: File): Boolean {
+    val rootPath = root.toPath()
+    var path: Path? = file.toPath()
+    while (path != null && path != rootPath && path.startsWith(rootPath)) {
+        if (Files.isSymbolicLink(path)) return true
+        path = path.parent
+    }
+    return false
+}
+
+// Flutter's macOS frameworks link X.framework/X, X.framework/Resources and Versions/Current into
+// Versions/A. A jar cannot hold a symlink (a JarFile reads one as a file holding its target), so the
+// fragment ships each file once and lists the links: swtflutter.app.links for FlutterLibraryLoader,
+// which creates them after extracting, and META-INF/p2.inf for p2, which creates them when it
+// installs the fragment as a directory.
+fun writeMacAppLinks(app: File, nativesDir: File) {
+    val root = app.toPath()
+    val linkPaths: List<Path> = Files.walk(root).use { paths ->
+        paths.filter { Files.isSymbolicLink(it) }.sorted().iterator().asSequence().toList()
+    }
+    val links: List<Pair<String, String>> = linkPaths.map { link ->
+        "swtflutter.app/" + root.relativize(link).joinToString("/") to
+            Files.readSymbolicLink(link).joinToString("/")
+    }
+    if (links.isEmpty()) throw GradleException("No framework symlinks found in $app")
+    File(nativesDir, "swtflutter.app.links").writeText(links.joinToString("") { (link, target) -> "$link\t$target\n" })
+    // Not force: `ln -sf` onto an existing link to a directory would create the link inside it.
+    File(nativesDir, "META-INF/p2.inf").apply { parentFile.mkdirs() }.writeText(
+        "instructions.install = " + links.joinToString("") { (link, target) ->
+            "ln(targetDir:@artifact,linkTarget:$target,linkName:$link);"
+        } + "\n")
 }
 
 // Single shared Flutter web build — all web platform JARs depend on this one task.
@@ -1275,7 +1315,14 @@ platforms.forEach { platform ->
             val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
             copyFlutterNatives(info.os, flutterArch, dartMode)
 
-            into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
+            val nativesDir = layout.buildDirectory.dir("natives/${info.desktopPlatform}")
+            into(nativesDir)
+            if (info.os == "macos") {
+                val app = file("../flutter-lib/build/macos/Build/Products/${dartMode.replaceFirstChar { it.uppercase() }}/swtflutter.app")
+                // A copy never deletes: an earlier build's app would keep the files this one leaves out.
+                doFirst { delete(nativesDir.get().dir("swtflutter.app")) }
+                doLast { writeMacAppLinks(app, nativesDir.get().asFile) }
+            }
         }
 
         tasks.register<Copy>("${info.desktopPlatform}ExtractNatives") {

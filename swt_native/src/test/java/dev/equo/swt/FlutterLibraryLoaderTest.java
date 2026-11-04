@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,6 +159,93 @@ class FlutterLibraryLoaderTest {
         assertThatThrownBy(() -> FlutterLibraryLoader.bundledDirectory(bundle, "runner", tmp.resolve("lib").toFile()))
             .isInstanceOf(IOException.class)
             .hasMessageContaining("runner");
+    }
+
+    private static final String FRAMEWORK = "swtflutter.app/Contents/Frameworks/App.framework/";
+    private static final String LINKS = FRAMEWORK + "Versions/Current\tA\n"
+        + FRAMEWORK + "App\tVersions/Current/App\n"
+        + FRAMEWORK + "Resources\tVersions/Current/Resources\n";
+
+    private Map<String, String> frameworkJar() {
+        Map<String, String> files = new LinkedHashMap<>();
+        files.put(FRAMEWORK + "Versions/A/App", "app-binary");
+        files.put(FRAMEWORK + "Versions/A/Resources/Info.plist", "plist");
+        files.put("swtflutter.app.links", LINKS);
+        return files;
+    }
+
+    @Test
+    void bundledDirectory_extractionCreatesTheListedLinks() throws IOException {
+        File jar = jar("mac", frameworkJar());
+        File base = tmp.resolve("lib").toFile();
+
+        FlutterLibraryLoader.bundledDirectory(jar, "swtflutter.app", base);
+
+        assertThat(Files.readSymbolicLink(base.toPath().resolve(FRAMEWORK + "Versions/Current"))).isEqualTo(Paths.get("A"));
+        assertThat(Files.isSymbolicLink(base.toPath().resolve(FRAMEWORK + "App"))).isTrue();
+        assertThat(read(base, FRAMEWORK + "App")).isEqualTo("app-binary");
+        assertThat(read(base, FRAMEWORK + "Resources/Info.plist")).isEqualTo("plist");
+    }
+
+    @Test
+    void bundledDirectory_missingLinkIsRecreated() throws IOException {
+        File jar = jar("mac", frameworkJar());
+        File base = tmp.resolve("lib").toFile();
+        FlutterLibraryLoader.bundledDirectory(jar, "swtflutter.app", base);
+        Files.delete(base.toPath().resolve(FRAMEWORK + "Resources"));
+
+        FlutterLibraryLoader.bundledDirectory(jar, "swtflutter.app", base);
+
+        assertThat(read(base, FRAMEWORK + "Resources/Info.plist")).isEqualTo("plist");
+    }
+
+    @Test
+    void bundledDirectory_directoryAnOlderExtractionCopiedIsReplacedByTheLink() throws IOException {
+        File base = tmp.resolve("lib").toFile();
+        // An extraction from a jar that stored the linked directories as copies, then a new jar.
+        write(base, FRAMEWORK + "Versions/Current/App", "stale-copy");
+        write(base, FRAMEWORK + "Resources/Info.plist", "stale-copy");
+        File jar = jar("mac", frameworkJar());
+
+        FlutterLibraryLoader.bundledDirectory(jar, "swtflutter.app", base);
+
+        assertThat(Files.isSymbolicLink(base.toPath().resolve(FRAMEWORK + "Versions/Current"))).isTrue();
+        assertThat(Files.isSymbolicLink(base.toPath().resolve(FRAMEWORK + "Resources"))).isTrue();
+        assertThat(read(base, FRAMEWORK + "Resources/Info.plist")).isEqualTo("plist");
+    }
+
+    @Test
+    void bundledDirectory_explodedBundleWithItsLinksWritesNothing() throws IOException {
+        File bundle = tmp.resolve("plugins/org.eclipse.swt.cocoa.macosx.aarch64_1.0.0").toFile();
+        for (Map.Entry<String, String> file : frameworkJar().entrySet()) {
+            write(bundle, file.getKey(), file.getValue());
+        }
+        Path framework = bundle.toPath().resolve(FRAMEWORK);
+        Files.createSymbolicLink(framework.resolve("Versions/Current"), Paths.get("A"));
+        Files.createSymbolicLink(framework.resolve("App"), Paths.get("Versions/Current/App"));
+        Files.createSymbolicLink(framework.resolve("Resources"), Paths.get("Versions/Current/Resources"));
+        // What p2 leaves: links in place, in a directory the user may not be able to write.
+        framework.toFile().setWritable(false);
+        try {
+            File dir = FlutterLibraryLoader.bundledDirectory(bundle, "swtflutter.app", tmp.resolve("lib").toFile());
+
+            assertThat(dir).isEqualTo(bundle);
+            assertThat(read(bundle, FRAMEWORK + "Resources/Info.plist")).isEqualTo("plist");
+        } finally {
+            framework.toFile().setWritable(true);
+        }
+    }
+
+    @Test
+    void bundledDirectory_explodedBundleWithoutItsLinksGetsThem() throws IOException {
+        File bundle = tmp.resolve("plugins/org.eclipse.swt.cocoa.macosx.aarch64_1.0.0").toFile();
+        for (Map.Entry<String, String> file : frameworkJar().entrySet()) {
+            write(bundle, file.getKey(), file.getValue());
+        }
+
+        FlutterLibraryLoader.bundledDirectory(bundle, "swtflutter.app", tmp.resolve("lib").toFile());
+
+        assertThat(read(bundle, FRAMEWORK + "App")).isEqualTo("app-binary");
     }
 
     private File jar(String name, Map<String, String> files) throws IOException {
