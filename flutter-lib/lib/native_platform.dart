@@ -2,6 +2,8 @@
 import 'dart:async';
 import 'dart:ui' show Size;
 
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart';
 
 //late final ShellListener? listener;
@@ -55,6 +57,22 @@ int? getParentBackgroundColor(List<String> args) {
 /// Native builds are never embedded in a web iframe. Present to satisfy the
 /// shared platform interface with web_platform.dart.
 bool isSelfEmbeddedBrowserWidget() => false;
+
+/// Whether the host has a touch-aware pointer device attached, which is what
+/// `Display.getTouchEnabled` answers.
+///
+/// Phones and tablets have a touchscreen. macOS counts because its pointer devices — the built-in
+/// trackpad, the Magic Trackpad, the Magic Mouse — are multi-touch, which is why Cocoa's own SWT
+/// answers true there. Windows and Linux carry a digitizer only sometimes and Flutter cannot ask,
+/// so they answer false rather than guess: a pointer device can still be reported per event.
+bool isTouchDeviceAttached() => switch (defaultTargetPlatform) {
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.fuchsia ||
+      TargetPlatform.macOS =>
+        true,
+      _ => false,
+    };
 
 Size? getViewportSize() {
   // No window.innerWidth on native; main.dart falls back to the Flutter view's

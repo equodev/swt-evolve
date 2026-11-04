@@ -57,8 +57,8 @@ class DisplaySystemColorFallbackFlutterTest {
         // foreground: those follow the theme now, and this test runs under whichever one the host has.
         assertThat(display.getSystemColor(SWT.COLOR_LIST_SELECTION).getRGB()).isEqualTo(new RGB(51, 153, 255));
         assertThat(rgba(display.getSystemColor(SWT.COLOR_TRANSPARENT)))
-                .as("COLOR_TRANSPARENT is a mapped id and stays fully transparent")
-                .isEqualTo(new int[] { 0, 0, 0, 0 });
+                .as("COLOR_TRANSPARENT is a mapped id: white with no alpha, as Device answers it")
+                .isEqualTo(new int[] { 255, 255, 255, 0 });
     }
 
     private static int[] rgba(Color color) {

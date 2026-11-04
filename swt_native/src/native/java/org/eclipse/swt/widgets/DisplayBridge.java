@@ -434,6 +434,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             Runnable apply = () -> {
                 // A refreshed page draws every shell from the bounds held here, so no report it sends is stale.
                 if (!first && p.isFirst) repositionedShells.clear();
+                display.applyClientTouchEnabled(p.touchEnabled);
                 int uiZoomBefore = dev.equo.swt.Config.uiZoom();
                 display.applyClientDeviceZoom(p.zoom);
                 // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over

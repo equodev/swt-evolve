@@ -98,4 +98,21 @@ void main() {
       comm.clearSentFrames();
     }
   });
+
+  // Display.getTouchEnabled answers this, so a client that cannot tell must report no touch device
+  // rather than leave the field out.
+  test('the touch device the host has is part of the report', () {
+    report(1280, 800);
+    expect(sent.single.$3['touchEnabled'], isFalse);
+
+    reporter.report(WireType.display, 1,
+        width: 1280,
+        height: 800,
+        displayWidth: 1920,
+        displayHeight: 1080,
+        zoom: 150,
+        touchEnabled: true);
+
+    expect(sent.last.$3['touchEnabled'], isTrue);
+  });
 }

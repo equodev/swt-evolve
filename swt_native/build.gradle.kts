@@ -312,6 +312,14 @@ sourceSets {
                 exclude("org/eclipse/swt/graphics/ImageAtSizeDrawNativeTest.java")
                 exclude("org/eclipse/swt/graphics/ImageSvgNativeTest.java")
             }
+            // The fields DartDisplay reports, DPIUtil.getNativeDeviceZoom() and the exceptions dispose collects are 3.134's.
+            if (swtMinorNative < 134) exclude("org/eclipse/swt/widgets/DisplayImplementationCurrentReleaseFlutterTest.java")
+            // Display.setRuntimeExceptionHandler and setErrorHandler were added in 3.106 (absent in the
+            // cocoa Display of 3.105.3, present in 3.106.3).
+            if (swtMinorNative < 106) exclude("org/eclipse/swt/widgets/DisplayTimerExceptionHandlerFlutterTest.java")
+            // DartDisplay.USE_SYSTEM_THEME comes from the cocoa Display, which names it from 3.112 on
+            // (absent in 3.108.0, present in 3.112.0), as does Display.isSystemDarkTheme below.
+            if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplaySystemThemePropertyFlutterTest.java")
             // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
             if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")

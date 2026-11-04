@@ -127,7 +127,12 @@ public abstract class DartDevice implements Drawable, IDevice {
             }
             //check and create pool
             create(data);
-            init();
+            try {
+                init();
+            } catch (RuntimeException | Error bootFailure) {
+                bootFailureCleanup();
+                throw bootFailure;
+            }
         }
     }
 
@@ -857,7 +862,7 @@ public abstract class DartDevice implements Drawable, IDevice {
         return fontList;
     }
 
-    void bootFailureCleanup() {
+    protected void bootFailureCleanup() {
     }
 
     final java.util.concurrent.atomic.AtomicBoolean disposeStarted = new java.util.concurrent.atomic.AtomicBoolean();

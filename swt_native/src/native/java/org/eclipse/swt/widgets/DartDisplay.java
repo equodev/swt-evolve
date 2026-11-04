@@ -587,10 +587,6 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     @Override
     public void checkDevice() {
-        if (thread == null)
-            error(SWT.ERROR_WIDGET_DISPOSED);
-        //if (thread != Thread.currentThread())
-        //    error(SWT.ERROR_THREAD_INVALID_ACCESS);
         if (isDisposed())
             error(SWT.ERROR_DEVICE_DISPOSED);
     }
@@ -630,7 +626,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @see Widget#checkSubclass
      */
     public void checkSubclass() {
-        if (!DartDisplay.isValidClass(getClass()))
+        if (!DartDisplay.isValidClass(getApi().getClass()))
             error(SWT.ERROR_INVALID_SUBCLASS);
     }
 
@@ -818,7 +814,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public void create(DeviceData data) {
-        checkSubclass();
+        getApi().checkSubclass();
         checkDisplay(thread = Thread.currentThread(), false);
         createDisplay(data);
         register(this.getApi());
@@ -1060,7 +1056,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public Rectangle getBounds() {
-        return bounds;
+        checkDevice();
+        return new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
     }
 
     /**
@@ -1469,6 +1466,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * </ul>
      */
     public Shell[] getShells() {
+        checkDevice();
         return shells.clone();
     }
 
@@ -1537,39 +1535,42 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public Color getSystemColor(int id) {
+        checkDevice();
         switch(id) {
             case SWT.COLOR_WHITE:
-                return new Color(this.getApi(), 255, 255, 255);
+                return _COLOR_WHITE();
             case SWT.COLOR_BLACK:
-                return new Color(this.getApi(), 0, 0, 0);
+                return _COLOR_BLACK();
             case SWT.COLOR_RED:
-                return new Color(this.getApi(), 255, 0, 0);
+                return _COLOR_RED();
             case SWT.COLOR_DARK_RED:
-                return new Color(this.getApi(), 128, 0, 0);
+                return _COLOR_DARK_RED();
             case SWT.COLOR_GREEN:
-                return new Color(this.getApi(), 0, 255, 0);
+                return _COLOR_GREEN();
             case SWT.COLOR_DARK_GREEN:
-                return new Color(this.getApi(), 0, 128, 0);
+                return _COLOR_DARK_GREEN();
             case SWT.COLOR_YELLOW:
-                return new Color(this.getApi(), 255, 255, 0);
+                return _COLOR_YELLOW();
             case SWT.COLOR_DARK_YELLOW:
-                return new Color(this.getApi(), 128, 128, 0);
+                return _COLOR_DARK_YELLOW();
             case SWT.COLOR_BLUE:
-                return new Color(this.getApi(), 0, 0, 255);
+                return _COLOR_BLUE();
             case SWT.COLOR_DARK_BLUE:
-                return new Color(this.getApi(), 0, 0, 128);
+                return _COLOR_DARK_BLUE();
             case SWT.COLOR_MAGENTA:
-                return new Color(this.getApi(), 255, 0, 255);
+                return _COLOR_MAGENTA();
             case SWT.COLOR_DARK_MAGENTA:
-                return new Color(this.getApi(), 128, 0, 128);
+                return _COLOR_DARK_MAGENTA();
             case SWT.COLOR_CYAN:
-                return new Color(this.getApi(), 0, 255, 255);
+                return _COLOR_CYAN();
             case SWT.COLOR_DARK_CYAN:
-                return new Color(this.getApi(), 0, 128, 128);
+                return _COLOR_DARK_CYAN();
             case SWT.COLOR_GRAY:
-                return new Color(this.getApi(), 192, 192, 192);
+                return _COLOR_GRAY();
             case SWT.COLOR_DARK_GRAY:
-                return new Color(this.getApi(), 128, 128, 128);
+                return _COLOR_DARK_GRAY();
+            case SWT.COLOR_TRANSPARENT:
+                return _COLOR_TRANSPARENT();
             default:
                 return getWidgetColor(id);
         }
@@ -1640,15 +1641,13 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return new Color(this.getApi(), 213, 213, 213);
             case SWT.COLOR_LINK_FOREGROUND:
                 return new Color(this.getApi(), 0, 102, 204);
-            case SWT.COLOR_TRANSPARENT:
-                return new Color(this.getApi(), 0, 0, 0, 0);
             case SWT.COLOR_TEXT_DISABLED_BACKGROUND:
                 return new Color(this.getApi(), 240, 240, 240);
             case SWT.COLOR_WIDGET_DISABLED_FOREGROUND:
                 return new Color(this.getApi(), 128, 128, 128);
             // Device.getSystemColor falls back to black for any id it does not map; throwing here would escape into the caller's listener.
             default:
-                return new Color(this.getApi(), 0, 0, 0);
+                return _COLOR_BLACK();
         }
     }
 
@@ -1736,7 +1735,26 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Image getSystemImage(int id) {
         checkDevice();
-        return null;
+        switch(DisplayHelper.systemIconOf(id)) {
+            case SWT.ICON_ERROR:
+                if (errorImage == null)
+                    errorImage = DisplayHelper.systemIcon(getApi(), SWT.ICON_ERROR);
+                return errorImage;
+            case SWT.ICON_INFORMATION:
+                if (infoImage == null)
+                    infoImage = DisplayHelper.systemIcon(getApi(), SWT.ICON_INFORMATION);
+                return infoImage;
+            case SWT.ICON_QUESTION:
+                if (questionImage == null)
+                    questionImage = DisplayHelper.systemIcon(getApi(), SWT.ICON_QUESTION);
+                return questionImage;
+            case SWT.ICON_WARNING:
+                if (warningImage == null)
+                    warningImage = DisplayHelper.systemIcon(getApi(), SWT.ICON_WARNING);
+                return warningImage;
+            default:
+                return null;
+        }
     }
 
     /**
@@ -1873,7 +1891,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public boolean getTouchEnabled() {
         checkDevice();
-        return true;
+        return clientTouchEnabled;
     }
 
     int getToolTipTime() {
@@ -2613,6 +2631,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         if (warningImage != null)
             warningImage.dispose();
         errorImage = infoImage = warningImage = null;
+        if (questionImage != null)
+            questionImage.dispose();
+        questionImage = null;
         currentCaret = null;
         if (caretTimer != null)
             timerExec(-1, caretTimer);
@@ -2920,8 +2941,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
             sendPreEvent(SWT.None);
             try {
                 r.run();
-            } catch (RuntimeException | Error e) {
-                e.printStackTrace();
+            } catch (RuntimeException e) {
+                runtimeExceptionHandler.accept(e);
+            } catch (Error e) {
+                errorHandler.accept(e);
             } finally {
                 if (!isDisposed())
                     sendPostEvent(SWT.None);
@@ -3983,6 +4006,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return shells;
     }
 
+    Image questionImage;
+
     volatile int lastEventTime;
 
     Menu[] shownPopups = new Menu[0];
@@ -4036,7 +4061,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         return bridge == null || bridge.hostsActiveWindow(shell);
     }
 
-    void bootFailureCleanup() {
+    @Override
+    protected void bootFailureCleanup() {
         synchronized (DartDisplay.class) {
             if (Default == this.getApi())
                 Default = null;
@@ -4045,6 +4071,12 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     Rectangle bounds = new Rectangle(0, 0, 1920, 1080);
+
+    boolean clientTouchEnabled;
+
+    void applyClientTouchEnabled(boolean touchAware) {
+        this.clientTouchEnabled = touchAware;
+    }
 
     Shell awaitedActivation;
 

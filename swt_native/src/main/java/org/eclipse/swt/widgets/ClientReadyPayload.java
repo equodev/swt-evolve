@@ -3,7 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.WireReader;
 import dev.equo.swt.WireReadable;
 
-/** What the client reports when it is ready: its fields numbered 1 to 11, in declaration order. */
+/** What the client reports when it is ready: its fields numbered 1 to 12, in declaration order. */
 public class ClientReadyPayload implements WireReadable {
     /** The client viewport (window content) logical size — drives the main shell on desk, the Display on web. */
     public int width;
@@ -38,6 +38,11 @@ public class ClientReadyPayload implements WireReadable {
      * web, the OS's on desktop. Null from a client that does not report it.
      */
     public String appearance;
+    /**
+     * Whether the host has a touch-aware pointer device attached and enabled, which is what
+     * {@code Display.getTouchEnabled} answers. False from a client that cannot tell.
+     */
+    public boolean touchEnabled;
 
     @Override
     public boolean readWire(int key, WireReader r) {
@@ -53,6 +58,7 @@ public class ClientReadyPayload implements WireReadable {
             case 9: locale = r.string(); return true;
             case 10: targetPlatform = r.string(); return true;
             case 11: appearance = r.string(); return true;
+            case 12: touchEnabled = r.bool(); return true;
         }
         return false;
     }

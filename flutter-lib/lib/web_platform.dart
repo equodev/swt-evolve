@@ -28,6 +28,9 @@ external JSNumber? get _innerWidth;
 @JS('window.innerHeight')
 external JSNumber? get _innerHeight;
 
+@JS('window.navigator.maxTouchPoints')
+external JSNumber? get _maxTouchPoints;
+
 @JS('window.addEventListener')
 external void _addWindowEventListener(JSString type, JSFunction listener);
 
@@ -132,6 +135,11 @@ bool isSelfEmbeddedBrowserWidget() {
   final n = _windowName?.toDart;
   return n != null && n.startsWith('equo-browser-');
 }
+
+/// Whether the host has a touch-aware pointer device attached, which is what
+/// `Display.getTouchEnabled` answers. `navigator.maxTouchPoints` is the browser's own count of
+/// simultaneous touch points the hardware supports, and 0 on a machine with none.
+bool isTouchDeviceAttached() => (_maxTouchPoints?.toDartInt ?? 0) > 0;
 
 Size? getViewportSize() {
   final width = _innerWidth?.toDartDouble;

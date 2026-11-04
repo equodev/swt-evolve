@@ -8,8 +8,9 @@ import '../comm/widget_key.dart' show WidgetKey;
 import 'system_appearance.dart' as system;
 
 /// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on,
-/// that monitor's zoom, the height of the title strip the client draws above the shell, the OS the
-/// client runs on and its light/dark appearance, and on web the browser's locale, which Java formats
+/// that monitor's zoom, the height of the title strip the client draws above the shell, whether the
+/// host has a touch-aware pointer device (what `Display.getTouchEnabled` answers), the OS the client
+/// runs on and its light/dark appearance, and on web the browser's locale, which Java formats
 /// numbers in. A desktop client sends no locale: the JVM's applies.
 ///
 /// A report equal to the last one on its channel is not sent again: a change that moves the scale
@@ -42,6 +43,7 @@ class ClientReadyReporter {
       required int displayHeight,
       required int zoom,
       int insetTop = 0,
+      bool touchEnabled = false,
       TargetPlatform? platform}) {
     final isFirst = !_firstSent;
     _firstSent = true;
@@ -59,6 +61,7 @@ class ClientReadyReporter {
       if (locale != null) 'locale': locale,
       'targetPlatform': (platform ?? defaultTargetPlatform).name,
       'appearance': _appearance(),
+      'touchEnabled': touchEnabled,
     };
     if (!isFirst && mapEquals(payload, _lastSent[key])) return;
     _lastSent[key] = payload;
@@ -68,7 +71,7 @@ class ClientReadyReporter {
   }
 }
 
-/// Java's ClientReadyPayload numbers its fields 1 to 11, in the order of the report's keys.
+/// Java's ClientReadyPayload numbers its fields 1 to 12, in the order of the report's keys.
 Future _sendWire(int type, int id, Object payload) async {
   final p = payload as Map<String, Object>;
   sendWireWith(type, id, WireChannel.clientReady, (w) {
@@ -95,6 +98,8 @@ Future _sendWire(int type, int id, Object payload) async {
       ..key(10)
       ..string(p['targetPlatform'] as String)
       ..key(11)
-      ..string(p['appearance'] as String);
+      ..string(p['appearance'] as String)
+      ..key(12)
+      ..boolean(p['touchEnabled'] as bool);
   });
 }
