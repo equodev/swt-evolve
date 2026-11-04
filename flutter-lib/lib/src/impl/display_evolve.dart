@@ -124,6 +124,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     _stopRecords?.call();
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
     if (OpenMenus.forwardHeld == _forwardUnheldKey) OpenMenus.forwardHeld = null;
+    OpenMenus.dropKeyboardTrigger();
     _traverseGate.detach();
     final id = _liveId;
     if (id != null && identical(_live[id], this)) _live.remove(id);
@@ -222,6 +223,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     PendingMove.flush();
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.contextMenu) {
       EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.menuKey, VEvent());
+      OpenMenus.holdForKeyboardTrigger();
       return;
     }
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
@@ -233,6 +235,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
           typed: _typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
           send: () => EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.keyKeyDown, v),
         );
+      }
+      if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.f10 &&
+          HardwareKeyboard.instance.isShiftPressed) {
+        OpenMenus.holdForKeyboardTrigger();
       }
     } else if (event is KeyUpEvent) {
       final v = mapped ?? mapNewKeyEventToSwt(event);

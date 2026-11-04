@@ -136,6 +136,8 @@ void main() {
   // picked the item and closed the menu.
   testWidgets('a key typed while held keys are still being played waits behind them', (tester) async {
     await _rightClickWithoutAnswer(tester);
+    // The menu opens with no item armed: the first Down arms First, the second the next.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
     deliverMenuShown(_menuId);
@@ -200,6 +202,8 @@ void main() {
   testWidgets('Down and Enter before Java answers the Show pick the second item', (tester) async {
     await _rightClickWithoutAnswer(tester);
 
+    // The menu opens with no item armed: the first Down arms First, the second the next.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();

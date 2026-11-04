@@ -33,9 +33,12 @@ public class MenuHelper {
             }
             e.detail = 0;
             FlutterBridge.hold(menu, () -> onClientHid(menu, e));
-            // A pick whose Selection never arrives must not leave its menus shown.
+            // A pick whose Selection never arrives must not leave its menus shown. A menu disposed by
+            // then has nothing left to hide, and no bridge to find through its released parent.
             Display display = menu.getDisplay();
-            display.asyncExec(() -> display.timerExec(PICK_TIMEOUT_MS, () -> FlutterBridge.runHeld(menu)));
+            display.asyncExec(() -> display.timerExec(PICK_TIMEOUT_MS, () -> {
+                if (!menu.isDisposed()) FlutterBridge.runHeld(menu);
+            }));
         });
         FlutterBridge.on(menu, dev.equo.swt.WireTable.CHANNEL_MENU_SHOW, e -> {
             menu.getDisplay().asyncExec(() -> {

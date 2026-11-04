@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import '../gen/event.dart';
 import '../gen/swt.dart';
+import 'menu_evolve.dart';
 
 /// Shared key+character mapping from a [LogicalKeyboardKey] and the optional
 /// character string produced by the event.  Returns SWT-compatible
@@ -153,16 +154,17 @@ int _modifierBit(LogicalKeyboardKey key) {
 /// SWT-compatible keyCode, character and stateMask values.
 ///
 /// A modifier key's own event carries SWT's state before the key changed it, which
-/// [HardwareKeyboard] has already applied, so that bit is flipped back.
+/// [HardwareKeyboard] has already applied, so that bit is flipped back. A key a pop-up held carries
+/// the modifiers of when it was typed.
 VEvent mapNewKeyEventToSwt(KeyEvent event) {
   final mapped = _mapLogicalKey(event.logicalKey, event.character);
 
-  final kb = HardwareKeyboard.instance;
+  final mods = OpenMenus.modifiersWhenTyped ?? KeyModifiers.now();
   int stateMask = 0;
-  if (kb.isControlPressed) stateMask |= SWT.CTRL;
-  if (kb.isShiftPressed) stateMask |= SWT.SHIFT;
-  if (kb.isAltPressed) stateMask |= SWT.ALT;
-  if (kb.isMetaPressed) stateMask |= SWT.COMMAND;
+  if (mods.control) stateMask |= SWT.CTRL;
+  if (mods.shift) stateMask |= SWT.SHIFT;
+  if (mods.alt) stateMask |= SWT.ALT;
+  if (mods.meta) stateMask |= SWT.COMMAND;
   final own = _modifierBit(event.logicalKey);
   if (own != 0) {
     stateMask = event is KeyUpEvent ? stateMask | own : stateMask & ~own;

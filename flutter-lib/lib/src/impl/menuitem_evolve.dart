@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import 'package:flutter/services.dart';
@@ -74,6 +75,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
         subMenu: state.menu!,
         onArm: _sendArm,
+        onHelp: _helpOnF1,
       ));
     }
 
@@ -107,15 +109,13 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isChecked = _localSelection ?? false;
     final notifier = MenuChangeNotifier.of(context);
-    final isAutofocusTarget = notifier?.autofocusItem == state;
     final split = splitMenuItemText(state.text);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
-      autofocus: isAutofocusTarget,
-      focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
       onArm: _sendArm,
+      onHelp: _helpOnF1,
       onTap: isEnabled ? _onCheckPressed : null,
       leading: _buildToggleLeading(
         indicator: _MenuCheckbox(
@@ -154,15 +154,13 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final textStyle = getMenuItemTextStyle(widgetTheme, isEnabled: isEnabled);
     final isSelected = _localSelection ?? false;
     final notifier = MenuChangeNotifier.of(context);
-    final isAutofocusTarget = notifier?.autofocusItem == state;
     final split = splitMenuItemText(state.text);
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
-      autofocus: isAutofocusTarget,
-      focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
       onArm: _sendArm,
+      onHelp: _helpOnF1,
       onTap: isEnabled ? _onRadioPressed : null,
       leading: _buildToggleLeading(
         indicator: _MenuRadioButton(
@@ -191,14 +189,12 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final capturedWidget = widget;
 
     final split = splitMenuItemText(capturedState.text);
-    final isAutofocusTarget = notifier?.autofocusItem == capturedState;
 
     return _MenuItemRow(
       widgetTheme: widgetTheme,
       isEnabled: isEnabled,
-      autofocus: isAutofocusTarget,
-      focusNode: isAutofocusTarget ? notifier?.autofocusItemFocusNode : null,
       onArm: _sendArm,
+      onHelp: _helpOnF1,
       onTap: isEnabled ? () {
         if (notifier == null) {
           capturedWidget.sendSelectionSelection(capturedState, null);
@@ -275,14 +271,23 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
 
   void _sendArm() => widget.sendArmArm(state, null);
 
-  void _sendSelectionEvent() {
+  /// Win32's menu loop answers F1 on the armed item: the menu closes, then the item hears its Help.
+  VoidCallback? get _helpOnF1 => defaultTargetPlatform == TargetPlatform.windows ? _sendHelp : null;
+
+  void _sendHelp() {
+    _sendOnceClosed(() => widget.sendHelpHelp(state, null), pick: false);
+    MenuChangeNotifier.of(context)?.closeMenu();
+  }
+
+  void _sendSelectionEvent() => _sendOnceClosed(() => widget.sendSelectionSelection(state, null));
+
+  /// Sends once the item's menus are hidden, as natively; at once outside a menu.
+  void _sendOnceClosed(VoidCallback send, {bool pick = true}) {
     final notifier = MenuChangeNotifier.of(context);
     if (notifier != null) {
-      notifier.registerPendingChange(() {
-        widget.sendSelectionSelection(state, null);
-      });
+      notifier.registerPendingChange(send, pick: pick);
     } else {
-      widget.sendSelectionSelection(state, null);
+      send();
     }
   }
 }
@@ -296,24 +301,20 @@ class _MenuItemRow extends StatefulWidget {
   final Widget? trailing;
   /// The item's text, `&` marker included, for [MenuMnemonics].
   final String label;
-  final bool autofocus;
-  // Externally-supplied so the owning MenuImpl can explicitly requestFocus() on this exact item
-  // a frame after the menu opens (see MenuImpl._focusFirstItemNextFrame) instead of relying
-  // solely on Focus(autofocus:)'s own timing. Null means "use an internal, unmanaged FocusNode".
-  final FocusNode? focusNode;
   final VoidCallback? onArm;
+  /// F1 on the item: its Help, as Win32's menu loop sends it.
+  final VoidCallback? onHelp;
 
   const _MenuItemRow({
     required this.widgetTheme,
     required this.isEnabled,
     this.onArm,
+    this.onHelp,
     this.onTap,
     this.leading,
     required this.child,
     this.trailing,
     required this.label,
-    this.autofocus = false,
-    this.focusNode,
   });
 
   @override
@@ -321,15 +322,12 @@ class _MenuItemRow extends StatefulWidget {
 }
 
 class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
-  FocusNode? _ownFocusNode;
+  final FocusNode _focusNode = FocusNode(debugLabel: 'MenuItem');
   bool _isFocused = false;
-
-  FocusNode get _focusNode =>
-      widget.focusNode ?? (_ownFocusNode ??= FocusNode(debugLabel: 'MenuItem'));
 
   @override
   void dispose() {
-    _ownFocusNode?.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -353,6 +351,10 @@ class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
       return KeyEventResult.ignored;
     }
     final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.f1 && widget.onHelp != null) {
+      widget.onHelp!();
+      return KeyEventResult.handled;
+    }
     if (widget.onTap != null &&
         (key == LogicalKeyboardKey.enter ||
             key == LogicalKeyboardKey.numpadEnter ||
@@ -370,7 +372,6 @@ class _MenuItemRowState extends State<_MenuItemRow> with MenuMnemonicItem {
       opacity: widget.isEnabled ? 1.0 : widget.widgetTheme.disabledOpacity,
       child: Focus(
         focusNode: _focusNode,
-        autofocus: widget.isEnabled && widget.autofocus,
         canRequestFocus: widget.isEnabled,
         onKeyEvent: _handleKeyEvent,
         onFocusChange: _handleFocusChange,
@@ -460,6 +461,8 @@ class _CascadeMenuItemRow extends StatefulWidget {
   final Widget? trailing;
   final VMenu subMenu;
   final VoidCallback onArm;
+  /// F1 while the cascade is the armed item; see [_MenuItemRow.onHelp].
+  final VoidCallback? onHelp;
 
   const _CascadeMenuItemRow({
     required this.widgetTheme,
@@ -470,6 +473,7 @@ class _CascadeMenuItemRow extends StatefulWidget {
     this.trailing,
     required this.subMenu,
     required this.onArm,
+    this.onHelp,
   });
 
   @override
@@ -589,6 +593,10 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   KeyEventResult _enterOpenSubmenu(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
     if (event is KeyDownEvent) _keyDownHere = key;
+    if (event is KeyDownEvent && key == LogicalKeyboardKey.f1 && widget.onHelp != null) {
+      widget.onHelp!();
+      return KeyEventResult.handled;
+    }
     // Flutter's own Escape on a submenu button closes every menu up to the root.
     if (event is KeyDownEvent && key == LogicalKeyboardKey.escape) {
       if (_menuController.isOpen) {

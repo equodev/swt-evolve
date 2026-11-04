@@ -106,6 +106,8 @@ void main() {
   testWidgets('ArrowRight opens the cascade and moves into it', (tester) async {
     await _open(tester);
 
+    // The menu opens with no item armed: Down arms Open..., the second Down the cascade.
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowRight);
     expect(find.text('First'), findsOneWidget, reason: 'ArrowRight must open the cascade');

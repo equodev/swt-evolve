@@ -83,8 +83,10 @@ void main() {
     await ackMenuShown(tester, 10);
     expect(find.text('Analysis'), findsOneWidget, reason: 'the menu must be open');
 
+    expect(_sent('Arm/Arm'), isEmpty, reason: 'an opening popup arms no item');
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     expect(_sent('Arm/Arm').where((c) => c.contains('/$_analysisId/')), isNotEmpty,
-        reason: 'the first cascade must be the current item; focus: ${FocusManager.instance.primaryFocus}');
+        reason: 'Down must arm the first cascade; focus: ${FocusManager.instance.primaryFocus}');
 
     expect(find.text('Chart'), findsNothing, reason: 'being the current item must not open the cascade');
 
@@ -111,6 +113,7 @@ void main() {
     await ackMenuShown(tester, 10);
     EquoCommService.commForTesting.clearSentFrames();
 
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
 
     expect(_sent('Arm/Arm').where((c) => c.contains('/$_reportsId/')), isNotEmpty,

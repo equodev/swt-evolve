@@ -98,6 +98,8 @@ bool _lit(WidgetTester tester, String label) {
 void main() {
   testWidgets('hovering a parent item closes a cascade opened from the keyboard', (tester) async {
     await _open(tester);
+    // The menu opens with no item armed: Down arms Open..., the second Down the cascade.
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowDown);
     await _press(tester, LogicalKeyboardKey.arrowRight);
     await _press(tester, LogicalKeyboardKey.arrowDown);

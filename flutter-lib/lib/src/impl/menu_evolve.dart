@@ -117,7 +117,7 @@ class OpenMenus {
   static void remove(MenuController controller) => _controllers.remove(controller);
 
   static final Set<Object> _opening = {};
-  static final List<KeyEvent> _held = [];
+  static final List<({KeyEvent event, KeyModifiers modifiers})> _held = [];
 
   /// Where a held key goes when no menu took it: the Display's forwarding to Java.
   static bool Function(KeyEvent event)? forwardHeld;
@@ -131,9 +131,42 @@ class OpenMenus {
   /// the menu is down, in the order it was typed.
   static bool get holding => _opening.isNotEmpty || _held.isNotEmpty;
 
-  static void startOpening(Object menu) => _opening.add(menu);
+  static void startOpening(Object menu) {
+    // A menu the keyboard trigger asked for holds the keys itself now.
+    _opening.remove(_keyboardTrigger);
+    _triggerLimit?.cancel();
+    _opening.add(menu);
+  }
 
-  static void hold(KeyEvent event) => _held.add(event);
+  static void hold(KeyEvent event) => _held.add((event: event, modifiers: KeyModifiers.now()));
+
+  /// Shift+F10 or the menu key, just sent to Java, whose menu has not started opening yet.
+  static final Object _keyboardTrigger = Object();
+  static Timer? _triggerLimit;
+
+  /// How long the keys after a keyboard menu trigger wait for its menu to start opening. The control
+  /// may have no menu, and nothing says so.
+  static const Duration triggerLimit = Duration(milliseconds: 300);
+
+  /// Shift+F10 or the menu key went to Java: the keys after it, its own release first, belong to the
+  /// menu it may open, so they wait until that menu starts opening, or [triggerLimit].
+  static void holdForKeyboardTrigger() {
+    _opening.add(_keyboardTrigger);
+    _triggerLimit?.cancel();
+    _triggerLimit = Timer(triggerLimit, () => endOpening(_keyboardTrigger));
+  }
+
+  /// The Display that sent the trigger is gone: nothing answers it, and nothing is left to play to.
+  static void dropKeyboardTrigger() {
+    _triggerLimit?.cancel();
+    _triggerLimit = null;
+    if (_opening.remove(_keyboardTrigger) && _opening.isEmpty) _held.clear();
+  }
+
+  static KeyModifiers? _playedModifiers;
+
+  /// The modifiers held when the key being played to Java was typed; null when the key is live.
+  static KeyModifiers? get modifiersWhenTyped => _playedModifiers;
 
   /// Ends [menu]'s opening and plays the keys held meanwhile, in order, to the open menu's focus or,
   /// once none is open (an Escape among them closed it), to Java.
@@ -147,9 +180,15 @@ class OpenMenus {
   /// settles before the next is read.
   static void _playNextHeld() {
     if (_held.isEmpty || opening) return;
-    final event = _held.removeAt(0);
+    final held = _held.removeAt(0);
+    final event = held.event;
     if (!any) {
-      forwardHeld?.call(event);
+      _playedModifiers = held.modifiers;
+      try {
+        forwardHeld?.call(event);
+      } finally {
+        _playedModifiers = null;
+      }
       _playNextHeld();
       return;
     }
@@ -166,21 +205,13 @@ class OpenMenus {
 VEvent? menuHideEvent({required bool picked}) => picked ? (VEvent()..detail = 1) : null;
 
 class MenuChangeNotifier extends InheritedWidget {
-  final void Function(void Function()) registerPendingChange;
+  /// Queues work for once the menu has closed; [pick] when it is an item's Selection, which the
+  /// menu's Hide then announces.
+  final void Function(void Function() callback, {bool pick}) registerPendingChange;
   /// Whether an item pick is waiting to be sent once the menu has closed.
   final bool Function()? hasPendingChange;
   final MenuState menuState;
   final VoidCallback closeMenu;
-  // The item MenuItemImpl should build with this FocusNode (and autofocus: true) -- the menu's
-  // content FocusScope is built with skipTraversal: true (Flutter's own
-  // material/menu_anchor.dart), so arrow keys never auto-enter it on their own. Without one item
-  // actively claiming focus, nothing inside the menu is ever focusable at all (see
-  // _MenuItemRow), so neither arrow-key navigation nor Enter-to-activate has anything to act on.
-  // MenuImpl also explicitly re-requests focus on this exact node a frame after opening (see
-  // MenuImpl._focusFirstItemNextFrame) rather than relying on Focus(autofocus:)'s own timing,
-  // which was observed to lose a race against the menu's anchor focus node.
-  final VMenuItem? autofocusItem;
-  final FocusNode? autofocusItemFocusNode;
 
   const MenuChangeNotifier({
     Key? key,
@@ -188,8 +219,6 @@ class MenuChangeNotifier extends InheritedWidget {
     this.hasPendingChange,
     required this.menuState,
     required this.closeMenu,
-    this.autofocusItem,
-    this.autofocusItemFocusNode,
     required Widget child,
   }) : super(key: key, child: child);
 
@@ -205,19 +234,16 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     extends WidgetSwtState<T, V> {
   final MenuController _menuController = MenuController();
   final List<void Function()> _pendingChanges = [];
+  bool _pickPending = false;
   final MenuState _menuState = MenuState();
-  // Fallback target if the menu has no focusable item at all (e.g. every item disabled) --
-  // RawMenuAnchor.open() only requests focus for an anchor when a childFocusNode is supplied
-  // (widgets/raw_menu_anchor.dart: `if (_isRootOverlayAnchor) { widget.childFocusNode?.requestFocus(); }`),
-  // but this is deliberately NOT wired up as that childFocusNode: doing so raced against
-  // _firstItemFocusNode's own autofocus (whichever requested focus later won, nondeterministically),
-  // so instead nothing auto-requests it and _focusFirstItemNextFrame() below is the only thing
-  // that ever calls requestFocus() on either node, after the frame settles.
+  // Fallback target if the menu's own content is not mounted. Deliberately not RawMenuAnchor's
+  // childFocusNode: _focusMenuNextFrame() is the only thing that requests focus on open.
   final FocusNode _popupAnchorFocusNode = FocusNode(debugLabel: 'MenuAnchor.popup');
-  // The actual keyboard-entry point into the menu: see MenuChangeNotifier.autofocusItemFocusNode.
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'MenuItem.autofocus');
   // Holds the open menu's items, so a menu made only of cascades can focus its first one.
   final FocusNode _itemsFocusNode = FocusNode(debugLabel: 'Menu.items');
+  // The keyboard's place in an open popup menu: natively a popup arms no item as it opens, whether
+  // the pointer, the keyboard or the application opened it, and the first Down arms the first one.
+  final FocusNode _unarmedFocusNode = FocusNode(debugLabel: 'Menu.unarmed', skipTraversal: true);
   // True only while the open menu was opened by Java (the `visible && !isOpen` branch below). A
   // context menu opened imperatively from Dart (openContextMenuAt, on right-click) keeps
   // state.visible == false the whole time, so the symmetric close must NOT read that steady false
@@ -337,8 +363,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
     _unsubscribeRawChannels();
     _barFocusNode.dispose();
     _popupAnchorFocusNode.dispose();
-    _firstItemFocusNode.dispose();
     _itemsFocusNode.dispose();
+    _unarmedFocusNode.dispose();
     super.dispose();
   }
 
@@ -366,34 +392,23 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _openedFromVisibleFlag = _pendingOpenFromVisibleFlag;
       _pendingOpenFromVisibleFlag = false;
       _menuController.open(position: position);
-      _focusFirstItemNextFrame();
+      _focusMenuNextFrame();
     });
     // The ack arrives in a microtask, so nothing has scheduled the frame this callback needs.
     // Without this the menu silently never opens.
     WidgetsBinding.instance.ensureVisualUpdate();
   }
 
-  // Runs after the overlay's first frame (build + layout + paint) so it always has the final
-  // word over both RawMenuAnchor's own (now-unused) anchor-focus logic and _MenuItemRow's
-  // Focus(autofocus:) -- relying on either of those alone was a race with no guaranteed winner.
-  void _focusFirstItemNextFrame() {
+  // Runs after the overlay's first frame (build + layout + paint), once the menu's content is mounted.
+  void _focusMenuNextFrame() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _menuController.isOpen) _focusFirstItem();
+      if (mounted && _menuController.isOpen) _focusMenu();
       OpenMenus.endOpening(this);
     });
   }
 
-  void _focusFirstItem() {
-    if (_firstItemFocusNode.context != null) {
-      _firstItemFocusNode.requestFocus();
-      return;
-    }
-    final items = _itemsFocusNode.traversalDescendants;
-    if (items.isNotEmpty) {
-      items.first.requestFocus();
-    } else {
-      _popupAnchorFocusNode.requestFocus();
-    }
+  void _focusMenu() {
+    (_unarmedFocusNode.context != null ? _unarmedFocusNode : _popupAnchorFocusNode).requestFocus();
   }
 
   @override
@@ -662,6 +677,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           ? Offset(location.x.toDouble(), location.y.toDouble()) - windowOrigin
           : const Offset(100, 100);
       _pendingOpenFromVisibleFlag = true;
+      OpenMenus.startOpening(this);
       _showSent = true;
       widget.sendMenuShow(state, null);
     } else if (_openedFromVisibleFlag && !visible && _menuController.isOpen) {
@@ -721,7 +737,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         // Sent whichever path opened it. A right-click leaves state.visible false, so gating this
         // on it left Java believing the popup was still up — and the Display skips re-showing a
         // popup it still counts as shown, which killed every later opening of that menu.
-        widget.sendMenuHide(state, menuHideEvent(picked: _pendingChanges.isNotEmpty));
+        widget.sendMenuHide(state, menuHideEvent(picked: _pickPending));
         // A chosen item is selected after its menus are hidden, as natively.
         _sendPendingChanges();
       },
@@ -731,59 +747,58 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           hasPendingChange: _hasPendingChange,
           menuState: _menuState,
           closeMenu: _menuController.close,
-          autofocusItem: _firstFocusableMenuItem(menuItems),
-          autofocusItemFocusNode: _firstItemFocusNode,
           // No extra Semantics wrapper: with the anchor untagged, each item's own tagSemantics
           // materializes on its own (a tagged anchor merges them away; an added wrapper here
           // duplicates every item node instead).
           child: MenuMnemonics(
             focusNode: _itemsFocusNode,
             close: _menuController.close,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: menuItems
-                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                  .toList(),
+            child: Focus(
+              focusNode: _unarmedFocusNode,
+              onKeyEvent: _armFromUnarmed,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: menuItems
+                    .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                    .toList(),
+              ),
             ),
           ),
         )),
       ],
       // _popupAnchorFocusNode only needs to be attached (not auto-requested -- see
-      // _focusFirstItemNextFrame) so it is a valid fallback target if the menu ends up with no
-      // focusable item at all.
+      // _focusMenuNextFrame) so it is a valid fallback target.
       builder: (context, controller, child) =>
           Focus(focusNode: _popupAnchorFocusNode, child: const SizedBox.shrink()),
     );
   }
 
-  void _registerPendingChange(void Function() callback) {
-    _pendingChanges.add(callback);
-  }
-
-  bool _hasPendingChange() => _pendingChanges.isNotEmpty;
-
-  /// The item MenuChangeNotifier.autofocusItem should point at: the first enabled, non-separator,
-  /// non-cascade item, so a freshly-opened menu always has something keyboard-focused to
-  /// navigate from. Cascade (SWT.CASCADE, has a submenu) items render through
-  /// _CascadeMenuItemRow, a separate widget that uses Flutter's own SubmenuButton -- already
-  /// natively focusable -- rather than our custom _MenuItemRow, so it would never honor
-  /// autofocusItemFocusNode at all if picked here.
-  VMenuItem? _firstFocusableMenuItem(List<VMenuItem> menuItems) {
-    for (final item in menuItems) {
-      final style = StyleBits(item.style);
-      if (style.has(SWT.SEPARATOR)) continue;
-      if (style.has(SWT.CASCADE) && item.menu != null) continue;
-      if (item.enabled == false) continue;
-      return item;
+  /// Down arms the first item of a menu with none armed, and Up the last, as natively.
+  KeyEventResult _armFromUnarmed(FocusNode node, KeyEvent event) {
+    if (!node.hasPrimaryFocus || event is KeyUpEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key != LogicalKeyboardKey.arrowDown && key != LogicalKeyboardKey.arrowUp) {
+      return KeyEventResult.ignored;
     }
-    return null;
+    final items = _itemsFocusNode.traversalDescendants.toList();
+    if (items.isEmpty) return KeyEventResult.handled;
+    (key == LogicalKeyboardKey.arrowDown ? items.first : items.last).requestFocus();
+    return KeyEventResult.handled;
   }
+
+  void _registerPendingChange(void Function() callback, {bool pick = true}) {
+    _pendingChanges.add(callback);
+    _pickPending |= pick;
+  }
+
+  bool _hasPendingChange() => _pickPending;
 
   void _sendPendingChanges() {
     for (final callback in _pendingChanges) {
       callback();
     }
     _pendingChanges.clear();
+    _pickPending = false;
   }
 
   List<VMenuItem> _getMenuItems() {
@@ -839,7 +854,9 @@ class _MenuBarItem extends StatefulWidget {
 
   /// Left (-1) or Right (1) in the open drop-down: the neighbouring title's drop-down takes its place.
   final void Function(int step) onMoveTitle;
-  final void Function(void Function()) registerPendingChange;
+  /// Queues work for once the menu has closed; [pick] when it is an item's Selection, which the
+  /// menu's Hide then announces.
+  final void Function(void Function() callback, {bool pick}) registerPendingChange;
   final bool Function() hasPendingChange;
   final MenuState menuState;
 
@@ -1137,6 +1154,23 @@ class _MenuBarItemState extends State<_MenuBarItem> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Which modifier keys are down.
+class KeyModifiers {
+  final bool control, shift, alt, meta;
+
+  const KeyModifiers({required this.control, required this.shift, required this.alt, required this.meta});
+
+  factory KeyModifiers.now() {
+    final keyboard = HardwareKeyboard.instance;
+    return KeyModifiers(
+      control: keyboard.isControlPressed,
+      shift: keyboard.isShiftPressed,
+      alt: keyboard.isAltPressed,
+      meta: keyboard.isMetaPressed,
     );
   }
 }

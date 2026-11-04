@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'menu_evolve.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -211,6 +212,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   void _handleFocusScopeChange() {
     final hasFocusNow = _focusScopeNode.hasFocus;
     if (hasFocusNow == _hasFocus) return;
+    // A popup menu the Display shows is drawn outside every shell; it takes the keyboard without
+    // deactivating the shell it opened over, as natively.
+    if (!hasFocusNow && OpenMenus.any) return;
     _hasFocus = hasFocusNow;
     if (_hasFocus) {
       widget.sendShellActivate(state, null);

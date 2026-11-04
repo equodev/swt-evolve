@@ -246,6 +246,8 @@ class _MenuMnemonicsState extends State<MenuMnemonics> {
     final current = focused == null || (!_focusMoved && focused == _openingFocus)
         ? -1
         : items.indexOf(focused);
+    // The letter makes its own item current: the next shared letter goes on from there.
+    _focusMoved = true;
     matches
         .firstWhere((item) => items.indexOf(item) > current, orElse: () => matches.first)
         .requestFocus();

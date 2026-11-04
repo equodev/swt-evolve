@@ -90,6 +90,7 @@ enum Status {
     kNoMemoryNearOpengl = 4,
     kNotWritable = 5,
     kClearNotPatchable = 6,
+    kUnsupportedArchitecture = 7,
 };
 
 // The opengl32 entry points used; draw_buffer and flush are the trampolines to the original code.
@@ -159,6 +160,9 @@ Overlay* Find(HWND window) {
     }
     return nullptr;
 }
+
+// The hooks patch x86-64 prologues with x86-64 jumps; on other architectures nothing is redirected.
+#if defined(_M_X64)
 
 // The overlay of the canvas that |dc| (whose window is |window|) belongs to, and the buffer that
 // holds it there. Callers hold g_lock.
@@ -362,6 +366,8 @@ void WINAPI FlushDetour() {
     ::SetEvent(g_flushed);
 }
 
+#endif  // defined(_M_X64)
+
 // JAWT_GetAWT from the jawt.dll next to the awt.dll this JVM loaded: the JVM's directory is not on
 // every launcher's DLL search path.
 GetAwtFn ResolveGetAwt() {
@@ -397,6 +403,8 @@ HWND WindowOf(JNIEnv* env, jobject component) {
     awt.FreeDrawingSurface(surface);
     return window;
 }
+
+#if defined(_M_X64)
 
 // Length of one instruction of the kind a compiler puts in a function prologue, and where its
 // RIP-relative displacement sits (-1 for none). 0 for anything else, branches included.
@@ -632,6 +640,12 @@ int Install() {
     Hook hooks[] = {flush_hook, clear_hook, draw_buffer_hook};
     return PatchAll(hooks, sizeof(hooks) / sizeof(hooks[0])) ? kInstalled : kNotWritable;
 }
+
+#else
+
+int Install() { return kUnsupportedArchitecture; }
+
+#endif  // defined(_M_X64)
 
 }  // namespace
 

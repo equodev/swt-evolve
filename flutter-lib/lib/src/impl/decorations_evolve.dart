@@ -202,7 +202,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       onClose: _onClose,
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(
-          registerPendingChange: (cb) => _pendingChanges.add(cb),
+          registerPendingChange: (cb, {bool pick = true}) => _pendingChanges.add(cb),
           menuState: _menuState,
           closeMenu: _controller.close,
           child: MenuMnemonics(
