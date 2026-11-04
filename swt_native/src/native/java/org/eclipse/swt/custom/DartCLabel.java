@@ -802,11 +802,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         checkWidget();
         if (!java.util.Objects.equals(this.text, text)) {
             getValue().markDirty(VCLabel.TEXT);
-            getDisplay().asyncExec(() -> {
-                org.eclipse.swt.widgets.Control control = (org.eclipse.swt.widgets.Control) getApi();
-                if (!control.isDisposed())
-                    getShell().layout(new org.eclipse.swt.widgets.Control[] { control });
-            });
+            org.eclipse.swt.widgets.ControlHelper.relayoutAfterTextChange(getApi());
         }
         //$NON-NLS-1$
         if (text == null)

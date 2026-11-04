@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
@@ -103,6 +104,9 @@ class SetTextRelayoutForeignLayoutDataFlutterTest {
                 // drain the async queue as a live event loop would
             }
         }).doesNotThrowAnyException();
+        assertThat(control.getSize())
+                .as("the relayout still lays the control out")
+                .isEqualTo(new Point(composite.getClientArea().width, composite.getClientArea().height));
     }
 
     private static void setText(Control control, String text) {

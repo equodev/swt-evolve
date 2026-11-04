@@ -501,7 +501,7 @@ public class DartLink extends DartControl implements ILink {
         if (!java.util.Objects.equals(this.text, string)) {
             getValue().markDirty(VLink.TEXT);
             getValue().markDirty(VControl.TAB_STOP);
-            LinkHelper.relayout(this);
+            ControlHelper.relayoutAfterTextChange(getApi());
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);

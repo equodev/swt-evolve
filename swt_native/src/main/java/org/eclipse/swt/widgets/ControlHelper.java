@@ -1265,6 +1265,44 @@ public class ControlHelper {
     }
 
     /**
+     * Lays out the composites from {@code control}'s parent up to its shell once the current event is
+     * over, so the size its new text gives it reaches their layouts. The steps are those of
+     * {@code shell.layout(new Control[] { control })}, save one: native setText never calls a layout's
+     * {@code flushCache}, so a layout whose {@code flushCache} cannot take a child's layout data (it
+     * casts the data to its own type) gets its composite laid out as changed instead, as
+     * {@code layout(true)} does without asking it to flush that child.
+     */
+    public static void relayoutAfterTextChange(Control control) {
+        control.getDisplay().asyncExec(() -> {
+            if (control.isDisposed())
+                return;
+            Shell shell = control.getShell();
+            List<Composite> chain = new ArrayList<>();
+            List<Boolean> changed = new ArrayList<>();
+            Control child = control;
+            while (child != shell) {
+                Composite composite = child.getParent();
+                chain.add(composite);
+                changed.add(layoutChanged(composite.getLayout(), child));
+                child = composite;
+            }
+            for (int i = chain.size() - 1; i >= 0; i--) {
+                chain.get(i).layout(changed.get(i));
+            }
+        });
+    }
+
+    private static boolean layoutChanged(Layout layout, Control child) {
+        if (layout == null)
+            return false;
+        try {
+            return !layout.flushCache(child);
+        } catch (ClassCastException foreignLayoutData) {
+            return true;
+        }
+    }
+
+    /**
      * [detail] carries what caused the activation, the way Shell.setActiveControl(control, type)
      * stamps it natively. A listener is allowed to react only to a user click — Eclipse's stack
      * renderer activates a tab's part solely for SWT.MouseDown — so a click reported by the render

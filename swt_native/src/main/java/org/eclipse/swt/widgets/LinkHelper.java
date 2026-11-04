@@ -5,7 +5,7 @@ import org.eclipse.swt.SWT;
 
 /**
  * Logic of {@code DartLink} kept out of the generated implementation: the text a Link shows for its markup,
- * the relayout that follows a change of it, and the anchor that holds the Link's focus.
+ * and the anchor that holds the Link's focus.
  * <p>
  * A focused Link gives the keyboard to one of its anchors, as every native does: Enter or Space selects
  * it, and Tab or Shift+Tab moves to the next or previous one before it leaves the Link.
@@ -125,18 +125,6 @@ public class LinkHelper {
     private static void append(String text, int start, int end, StringBuilder result) {
         if (end > start)
             result.append(Mnemonics.display(text.substring(start, end)));
-    }
-
-    /**
-     * Lays the Link out again once the current event is over: its size follows the text it shows, which
-     * {@link #displayText} only answers after the new markup is stored.
-     */
-    public static void relayout(DartLink link) {
-        link.getDisplay().asyncExec(() -> {
-            Control control = link.getApi();
-            if (!control.isDisposed())
-                control.getShell().layout(new Control[] { control });
-        });
     }
 
     /** The anchor holding the Link's focus, or -1 when it has none. */
