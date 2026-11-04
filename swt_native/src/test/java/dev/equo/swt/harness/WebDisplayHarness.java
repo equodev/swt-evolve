@@ -34,6 +34,7 @@ public final class WebDisplayHarness {
     private static final long TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 10_000);
     private static final int BOOT_ATTEMPTS = Integer.getInteger("harness.bootAttempts", 3);
     private static final long BOOT_ATTEMPT_MS = Long.getLong("harness.bootAttemptMs", 12_000);
+    private static final long SYNC_POLL_MS = 1_000;
 
     private final AtomicInteger ids = new AtomicInteger();
     private final Map<Integer, CompletableFuture<Map<String, Object>>> pending = new ConcurrentHashMap<>();
@@ -81,25 +82,37 @@ public final class WebDisplayHarness {
         if (binary == null) throw new IllegalStateException("Chrome/Chromium not found; set -Dequo.swt.browser=<path>");
         boolean headless = Boolean.parseBoolean(System.getProperty("harness.web.headless", "true"));
         boolean console = Boolean.getBoolean("harness.web.console");
-        // Headless Chrome intermittently wedges during startup in the CI container and never loads
-        // the app; a fresh browser clears it, so each attempt is short and a wedged one is replaced.
-        for (int attempt = 1; !awaitClient(binary, url, headless, console); attempt++) {
-            if (attempt == BOOT_ATTEMPTS)
-                throw new IllegalStateException("the web client did not connect after " + BOOT_ATTEMPTS
-                        + " browser launches of " + BOOT_ATTEMPT_MS + "ms each");
+        Display booting = display;
+        BootPolicy boot = BootPolicy.polling(BOOT_ATTEMPTS, BOOT_ATTEMPT_MS, SYNC_POLL_MS,
+                () -> org.eclipse.swt.widgets.WebDisplayBridge.requestsServed(booting));
+        launch(boot, binary, url, headless, console);
+        while (!syncFrame(SYNC_POLL_MS)) {
+            switch (boot.check()) {
+                case WAIT:
+                    break;
+                case RELAUNCH:
+                    chrome.close();
+                    launch(boot, binary, url, headless, console);
+                    break;
+                case GIVE_UP:
+                    chrome.close();
+                    chrome = null;
+                    throw new IllegalStateException("the web client did not connect after " + boot.describe());
+            }
         }
         devTools = DevTools.connect(chrome.profileDir(), url);
         input = new UserInput(devTools);
         return display;
     }
 
-    /** Launches a browser on {@code url}; true once its client paints, false after it was closed for not doing so. */
-    private boolean awaitClient(String binary, String url, boolean headless, boolean console) {
+    /** Launches a browser on {@code url}, or on a page that never connects while failures are being injected. */
+    private void launch(BootPolicy boot, String binary, String url, boolean headless, boolean console) {
         String openUrl = url;
         if (bootFailuresToInject > 0) {
             bootFailuresToInject--;
             openUrl = "data:text/html,harness-forced-boot-failure";
         }
+        boot.launched();
         try {
             List<String> args = new ArrayList<>(List.of("--remote-debugging-port=0",
                     "--disable-frame-rate-limit", "--disable-gpu-vsync"));
@@ -109,15 +122,6 @@ public final class WebDisplayHarness {
         } catch (IOException e) {
             throw new IllegalStateException("could not launch Chrome", e);
         }
-        long deadline = System.currentTimeMillis() + BOOT_ATTEMPT_MS;
-        while (!syncFrame(1_000)) {
-            if (System.currentTimeMillis() > deadline) {
-                chrome.close();
-                chrome = null;
-                return false;
-            }
-        }
-        return true;
     }
 
     public void teardown() {
@@ -192,8 +196,26 @@ public final class WebDisplayHarness {
 
     private long dispatched;
 
+    /** The id of the last frame sync sent; the client's answer carries it (see {@link #syncAnswerId}). */
+    public int lastSyncId() {
+        return lastSyncId;
+    }
+
+    /** The sync id a frame the client sent answers, or -1 when it is not a frame-sync answer. */
+    @SuppressWarnings("unchecked")
+    public static int syncAnswerId(byte[] frame) {
+        dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, 0, frame.length);
+        if (header == null || !FRAME_SYNCED.equals(header.channel())) return -1;
+        Object value = GcFrames.value(java.util.Arrays.copyOfRange(frame, header.payloadStart(), frame.length));
+        Object id = value instanceof Map ? ((Map<String, Object>) value).get("syncId") : null;
+        return id instanceof Number ? ((Number) id).intValue() : -1;
+    }
+
+    private volatile int lastSyncId;
+
     private boolean syncFrame(long timeoutMs) {
         int id = ids.incrementAndGet();
+        lastSyncId = id;
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
         dev.equo.swt.harness.Channels.send(comm, FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", id), null));

@@ -173,7 +173,8 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
 // Creates a visible top-level window hosting the whole Display (desktop-native, 100% Flutter).
 FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std::string widgetName, std::string theme, int backgroundColor, int width, int height, bool csdEnabled, bool impeller) {
     std::cout << "FlutterNative.createDisplayWindow port:" << port << " id:" << displayId
-              << " name:" << widgetName << " " << width << "x" << height << std::endl;
+              << " name:" << widgetName << " " << width << "x" << height
+              << " impeller:" << (impeller ? "on" : "off") << std::endl;
 
     if (!::AttachConsole(ATTACH_PARENT_PROCESS) && ::IsDebuggerPresent()) {
         CreateAndAttachConsole();

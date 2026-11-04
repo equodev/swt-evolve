@@ -128,6 +128,15 @@ public class WebDisplayBridge extends DisplayBridge {
         return bridge.webServer.getApplicationUrl();
     }
 
+    /** Requests the Display's web server has answered, or -1 off the web or before it started. */
+    public static long requestsServed(Display display) {
+        if (display == null || !(display.getImpl() instanceof DartDisplay)) return -1;
+        DartDisplay dartDisplay = (DartDisplay) display.getImpl();
+        if (!(dartDisplay.displayBridge instanceof WebDisplayBridge)) return -1;
+        WebDisplayBridge bridge = (WebDisplayBridge) dartDisplay.displayBridge;
+        return bridge.webServer != null ? bridge.webServer.requestsServed() : -1;
+    }
+
     /** The cookie jar of the Display's web server, or null off the web or before it started. */
     static dev.equo.swt.ProxyCookieJar lookupProxyCookies(Object displayObj) {
         if (!(displayObj instanceof Display)) return null;

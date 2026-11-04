@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +52,8 @@ class PaintPacingTest {
     private final List<Runnable> timers = new CopyOnWriteArrayList<>();
     private final List<Runnable> disposeExecs = new CopyOnWriteArrayList<>();
     private final AtomicInteger paints = new AtomicInteger();
+    /** The pacing's clock, in nanoseconds: a Paint ages only when a test moves it. */
+    private final AtomicLong now = new AtomicLong();
     /** Whether each paint draws something new, so none is dropped as a repeat of the last. */
     private boolean varies = true;
 
@@ -135,6 +138,28 @@ class PaintPacingTest {
         pumpAsync();
         assertThat(timers).as("a timeout armed for the held paint").hasSize(1);
         timers.remove(0).run();
+        pumpAsync();
+        assertThat(paints).hasValue(PaintPacing.IN_FLIGHT + 1);
+    }
+
+    @Test
+    @DisplayName("an unanswered paint still holds the next one just before the timeout")
+    void anUnansweredPaintHoldsUntilTheTimeout() {
+        Canvas canvas = inFlightFull();
+
+        now.addAndGet(TimeUnit.MILLISECONDS.toNanos(PaintPacing.TIMEOUT_MS - 1));
+        canvas.redraw();
+        pumpAsync();
+        assertThat(paints).hasValue(PaintPacing.IN_FLIGHT);
+    }
+
+    @Test
+    @DisplayName("an unanswered paint as old as the timeout no longer holds the next one")
+    void anUnansweredPaintStopsCountingAtTheTimeout() {
+        Canvas canvas = inFlightFull();
+
+        now.addAndGet(TimeUnit.MILLISECONDS.toNanos(PaintPacing.TIMEOUT_MS));
+        canvas.redraw();
         pumpAsync();
         assertThat(paints).hasValue(PaintPacing.IN_FLIGHT + 1);
     }
@@ -308,6 +333,7 @@ class PaintPacingTest {
             disposeExecs.add(inv.getArgument(0));
             return null;
         }).when(display).disposeExec(any(Runnable.class));
+        PaintPacing.pacer(display, now::get);
         Canvas canvas = new Canvas(shell, SWT.NONE);
         canvas.setBounds(0, 0, 100, 100);
         canvas.addPaintListener(e -> {

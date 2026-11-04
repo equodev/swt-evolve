@@ -66,8 +66,31 @@ class StyledTextWireCensusFlutterTest {
         JsonObject response = params.getAsJsonObject("response");
         if (response == null || response.get("opcode").getAsInt() != 2) return;
         byte[] bytes = Base64.getDecoder().decode(response.get("payloadData").getAsString());
+        int answered = fromJava ? -1 : dev.equo.swt.harness.WebDisplayHarness.syncAnswerId(bytes);
         synchronized (frames) {
             frames.add(new Frame(fromJava, bytes));
+            lastAnswer = Math.max(lastAnswer, answered);
+        }
+    }
+
+    /** The newest frame-sync answer DevTools has reported; guarded by {@link #frames}. */
+    private int lastAnswer = -1;
+
+    /**
+     * Waits until DevTools has reported every frame the client sent so far. It reports them on its own
+     * connection, behind the comm, and in order: once the answer to this fresh frame sync is in, so is
+     * everything the client sent before it. An earlier sync's answer reported late does not count.
+     */
+    private void heardEverything() {
+        stage.flutter.flush();
+        int mine = stage.flutter.lastSyncId();
+        dev.equo.swt.harness.StallTolerantDeadline deadline = new dev.equo.swt.harness.StallTolerantDeadline(10_000);
+        while (true) {
+            synchronized (frames) {
+                if (lastAnswer >= mine) return;
+            }
+            assertThat(deadline.hasTimeLeft()).as("DevTools reported the frame sync's answer").isTrue();
+            Thread.onSpinWait();
         }
     }
 
@@ -534,6 +557,7 @@ class StyledTextWireCensusFlutterTest {
         }
         action.run();
         stage.settle();
+        heardEverything();
         List<Frame> taken;
         synchronized (frames) {
             taken = new ArrayList<>(frames);

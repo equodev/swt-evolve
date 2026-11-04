@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -105,6 +106,7 @@ public class WebFlutterServer {
 
     private HttpServer httpServer;
     private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicLong requestsServed = new AtomicLong();
     /** One per server, so per Display: two sessions never share a proxied site's cookies. */
     private final ProxyCookieJar proxyCookies = new ProxyCookieJar(WebFlutterServer::proxyAllowed);
     /** The headless Chrome we launched (see {@link #launchHeadless}); reaped in {@link #stop}. */
@@ -153,7 +155,7 @@ public class WebFlutterServer {
         }
 
         httpServer = bind();
-        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance));
+        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance, requestsServed));
         httpServer.createContext(INSTANCE_PATH, this::answerInstance);
         httpServer.createContext("/proxy", new ProxyHandler(proxyCookies));
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
@@ -270,6 +272,11 @@ public class WebFlutterServer {
      */
     public boolean isRunning() {
         return running.get();
+    }
+
+    /** Requests for the app's files answered so far: a browser that asked for none has not begun loading it. */
+    public long requestsServed() {
+        return requestsServed.get();
     }
 
     /**
@@ -408,9 +415,10 @@ public class WebFlutterServer {
         private final boolean serveServiceWorker;
         private final boolean enableTestSemantics;
         private final String instance;
+        private final AtomicLong requestsServed;
 
         StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker,
-                boolean enableTestSemantics, String instance) {
+                boolean enableTestSemantics, String instance, AtomicLong requestsServed) {
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
             this.widgetId = widgetId;
@@ -418,10 +426,12 @@ public class WebFlutterServer {
             this.serveServiceWorker = serveServiceWorker;
             this.enableTestSemantics = enableTestSemantics;
             this.instance = instance;
+            this.requestsServed = requestsServed;
         }
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            requestsServed.incrementAndGet();
             try {
                 // Only GET and HEAD are meaningful for static files
                 String method = exchange.getRequestMethod();

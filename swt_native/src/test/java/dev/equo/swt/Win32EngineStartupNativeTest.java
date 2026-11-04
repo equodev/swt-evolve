@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 
 /**
@@ -21,6 +22,8 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
  */
 @Tag("native-unit")
 @EnabledOnOs(org.junit.jupiter.api.condition.OS.WINDOWS)
+@DisabledIfSystemProperty(named = "os.arch", matches = "aarch64",
+        disabledReason = "the arm64 Windows engine starts with Impeller even when the runner disables it")
 public class Win32EngineStartupNativeTest {
 
     private static final long BUDGET_MS = 300;

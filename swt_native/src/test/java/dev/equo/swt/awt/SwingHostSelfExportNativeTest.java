@@ -133,7 +133,12 @@ public class SwingHostSelfExportNativeTest {
             command.add(System.getProperty("java.class.path"));
             command.add(main.getName());
             Process child = new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile()).start();
-            if (!child.waitFor(TIMEOUT_MS, TimeUnit.MILLISECONDS)) child.destroyForcibly();
+            if (!child.waitFor(TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+                // destroyForcibly returns before the child is gone, and Windows cannot delete the log it holds open.
+                child.destroyForcibly().waitFor();
+                throw new AssertionError("the probe JVM did not exit within " + TIMEOUT_MS + " ms; its output: "
+                        + new String(Files.readAllBytes(log), StandardCharsets.UTF_8));
+            }
             return new String(Files.readAllBytes(log), StandardCharsets.UTF_8);
         } finally {
             Files.deleteIfExists(log);

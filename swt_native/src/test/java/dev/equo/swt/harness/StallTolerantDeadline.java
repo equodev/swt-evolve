@@ -20,7 +20,7 @@ import java.util.function.LongSupplier;
 public final class StallTolerantDeadline {
 
     /** An iteration longer than this measured nothing — the process was not running. */
-    private static final long DEFAULT_STALL_MS = Long.getLong("harness.stallThresholdMs", 500);
+    static final long DEFAULT_STALL_MS = Long.getLong("harness.stallThresholdMs", 500);
 
     private final long maxCreditMs;
     private final long stallMs;

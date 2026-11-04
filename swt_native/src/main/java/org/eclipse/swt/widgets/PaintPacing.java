@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.DartGC;
@@ -53,9 +54,12 @@ public final class PaintPacing {
         /** By the id the client answers with; a control leaves when it is disposed. */
         final Map<Integer, DartControl> byId = new ConcurrentHashMap<>();
         final Set<AbstractBinaryCommService> listening = ConcurrentHashMap.newKeySet();
+        /** Nanoseconds; what a Paint's age, and so its timeout, is measured against. */
+        final LongSupplier clock;
 
-        Pacer(Display display) {
+        Pacer(Display display, LongSupplier clock) {
             this.display = display;
+            this.clock = clock;
         }
     }
 
@@ -116,7 +120,7 @@ public final class PaintPacing {
         PaintState state = ControlHelper.paintState(c);
         if (state.pacer == null) return false;
         ArrayDeque<Long> sent = state.inFlight;
-        long now = System.nanoTime();
+        long now = state.pacer.clock.getAsLong();
         long oldest;
         synchronized (sent) {
             // A Paint the client never answered for stops counting once it has been waited on long enough.
@@ -155,7 +159,7 @@ public final class PaintPacing {
         listen(pacer, (AbstractBinaryCommService) comm);
         pacer.byId.put(id, c);
         synchronized (state.inFlight) {
-            state.inFlight.addLast(System.nanoTime());
+            state.inFlight.addLast(pacer.clock.getAsLong());
         }
         // Nothing of a repeat reached the client, so it is asked to answer for its next frame.
         if (repeat) comm.send(dev.equo.swt.WireTable.TYPE_GC, id, dev.equo.swt.WireTable.CHANNEL_NEXT_FRAME, null);
@@ -168,9 +172,14 @@ public final class PaintPacing {
     }
 
     private static Pacer pacer(Display display) {
+        return pacer(display, System::nanoTime);
+    }
+
+    /** [display]'s pacing, made on [clock] if it has none yet. */
+    static Pacer pacer(Display display, LongSupplier clock) {
         Pacer existing = existingPacer(display);
         if (existing != null) return existing;
-        Pacer pacer = new Pacer(display);
+        Pacer pacer = new Pacer(display, clock);
         display.setData(PACER_KEY, pacer);
         // A connection outliving the Display must not keep routing to it, nor keep it reachable.
         display.disposeExec(() -> {

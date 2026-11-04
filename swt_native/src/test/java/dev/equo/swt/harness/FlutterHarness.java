@@ -41,12 +41,16 @@ public abstract class FlutterHarness extends EmbeddedBridge {
     private static final boolean CHROMIUM = ConfigFlags.isChromiumMode();
     protected static final long READY_TIMEOUT_MS = Long.getLong("harness.readyTimeoutMs", 30_000);
     protected static final long QUERY_TIMEOUT_MS = Long.getLong("harness.queryTimeoutMs", 10_000);
+    private static final int BOOT_ATTEMPTS = Integer.getInteger("harness.bootAttempts", 3);
+    private static final long BOOT_ATTEMPT_MS = Long.getLong("harness.bootAttemptMs", 12_000);
 
     private long context;
     private ChromiumStandaloneLauncher chromiumLauncher;
     private WebFlutterServer webServer;
     /** The headless Chrome we launched (see {@link #launchBrowser}); reaped in {@link #teardown}. */
     private HeadlessChrome harnessChrome;
+    /** When the headless browser is replaced during this boot; null when it cannot be. */
+    private BootPolicy boot;
     /** Boot-resilience self-test knob: number of upcoming browser launches to force to fail (load a
      *  blank page that never connects), so {@link #awaitClientReadyResilient}'s relaunch path is
      *  exercised deterministically. 0 (default) in CI/production. */
@@ -94,6 +98,7 @@ public abstract class FlutterHarness extends EmbeddedBridge {
             chromiumLauncher = null;
         }
         if (webServer != null) webServer.stop();
+        boot = null;
         if (context != 0) {
             dev.equo.swt.FlutterNative.dispose(context);
             context = 0;
@@ -149,42 +154,29 @@ public abstract class FlutterHarness extends EmbeddedBridge {
     }
 
     /**
-     * Await ClientReady, but for the headless-web client relaunch a fresh Chrome if it hasn't
-     * reported ready within {@code harness.bootAttemptMs}. Headless Chrome intermittently wedges
-     * during startup in the CI container — it hangs right after its dbus/GCM/optimization-guide init
-     * and never loads the Flutter app, so the comm never even opens and the whole boot times out.
-     * A one-off hang clears on a clean relaunch (the other boots in the same run prove it's
-     * intermittent), so we kill the wedged Chrome and try again. This is boot resilience, not a
-     * longer timeout: each attempt is short and we make a few. Only the headless path can relaunch;
-     * native / Chromium-standalone / browser-disabled fall back to the single {@link #awaitClientReady}.
+     * Await ClientReady, replacing the headless browser when {@link BootPolicy} says it wedged.
+     * Only the headless path can relaunch; native / Chromium-standalone / browser-disabled fall back
+     * to the single {@link #awaitClientReady}.
      */
     protected void awaitClientReadyResilient() {
-        boolean canRelaunch = WEB && !CHROMIUM
-                && !"none".equalsIgnoreCase(System.getProperty("equo.swt.browser", ""));
-        if (!canRelaunch) {
+        if (boot == null) {
             awaitClientReady();
             return;
         }
-        int attempts = Integer.getInteger("harness.bootAttempts", 3);
-        long perAttemptMs = Long.getLong("harness.bootAttemptMs", 12_000);
-        for (int attempt = 1; attempt <= attempts; attempt++) {
-            if (awaitReadyFor(perAttemptMs)) return;
-            if (attempt < attempts) {
-                System.out.println("[FlutterHarness] Flutter client not ready in " + perAttemptMs
-                        + "ms (attempt " + attempt + "/" + attempts + "); relaunching Chrome");
-                relaunchBrowser();
+        while (!clientReady.isDone()) {
+            switch (boot.check()) {
+                case WAIT:
+                    pump(1);
+                    break;
+                case RELAUNCH:
+                    System.out.println("[FlutterHarness] the browser asked for nothing in "
+                            + BOOT_ATTEMPT_MS + "ms; relaunching Chrome");
+                    relaunchBrowser();
+                    break;
+                case GIVE_UP:
+                    throw new IllegalStateException("Flutter client did not become ready after " + boot.describe());
             }
         }
-        if (!clientReady.isDone())
-            throw new IllegalStateException("Flutter client did not become ready after " + attempts
-                    + " boot attempts of " + perAttemptMs + "ms each");
-    }
-
-    /** Pump the loop until ClientReady arrives or {@code ms} elapses; returns whether it is ready. */
-    private boolean awaitReadyFor(long ms) {
-        StallTolerantDeadline deadline = new StallTolerantDeadline(ms);
-        while (!clientReady.isDone() && deadline.hasTimeLeft()) pump(1);
-        return clientReady.isDone();
     }
 
     /** Kill a wedged Chrome and launch a fresh one against the still-running server + comm. */
@@ -258,6 +250,8 @@ public abstract class FlutterHarness extends EmbeddedBridge {
                 chromiumLauncher.open(url);
                 System.out.println("[FlutterHarness] opened Chromium standalone window");
             } else {
+                if (!"none".equalsIgnoreCase(System.getProperty("equo.swt.browser", "")))
+                    boot = BootPolicy.stallTolerant(BOOT_ATTEMPTS, BOOT_ATTEMPT_MS, webServer::requestsServed);
                 launchBrowser(url);
             }
         } catch (IOException e) {
@@ -278,7 +272,7 @@ public abstract class FlutterHarness extends EmbeddedBridge {
         boolean headless = Boolean.parseBoolean(System.getProperty("harness.web.headless", "true"));
         boolean console = Boolean.getBoolean("harness.web.console");
         // Boot-resilience self-test: when harness.web.failBoots>0, the first N launches load a blank
-        // page that never connects, forcing awaitClientReadyResilient() to relaunch — so the retry path
+        // page that never connects, forcing the boot to relaunch — so the retry path
         // can be exercised deterministically (off by default).
         String openUrl = url;
         if (bootFailuresToInject > 0) {
@@ -287,6 +281,7 @@ public abstract class FlutterHarness extends EmbeddedBridge {
             System.out.println("[FlutterHarness] injecting boot failure (blank page); "
                     + bootFailuresToInject + " more to inject");
         }
+        if (boot != null) boot.launched();
         // The harness inherits Chrome's stdio so -Dharness.web.console output is visible.
         harnessChrome = HeadlessChrome.launch(chrome, openUrl, headless, console, HeadlessChrome.Io.INHERIT);
         System.out.println("[FlutterHarness] launched Chrome (headless=" + headless + ") at " + openUrl);

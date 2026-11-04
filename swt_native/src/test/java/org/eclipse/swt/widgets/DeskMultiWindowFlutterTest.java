@@ -1470,6 +1470,13 @@ class DeskMultiWindowFlutterTest {
             visibility.computeIfAbsent(context, c -> new ArrayList<>()).add(visible);
         }
 
+        // A fake handle must never reach the runner: with it loaded in the same JVM, native code
+        // would read it as a window. True is what the bridge answers when it cannot ask.
+        @Override
+        protected boolean windowActive(long context) {
+            return true;
+        }
+
         @Override
         protected int pumpShellWindow(long context) {
             pumps.merge(context, 1, Integer::sum);
