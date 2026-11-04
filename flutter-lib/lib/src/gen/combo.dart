@@ -69,16 +69,16 @@ class VCombo extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 81: // caretPosition
+      case 82: // caretPosition
         caretPosition = r.int32();
         return true;
-      case 82: // items
+      case 83: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 83: // listVisible
+      case 84: // listVisible
         listVisible = r.boolean();
         return true;
-      case 84: // text
+      case 85: // text
         text = r.string();
         return true;
       default:
@@ -92,26 +92,26 @@ class VCombo extends VComposite {
     {
       final v_ = caretPosition;
       if (v_ != null) {
-        w.keyInt32(81, v_);
+        w.keyInt32(82, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(82);
+        w.key(83);
         w.strings(v_);
       }
     }
     {
       final v_ = listVisible;
       if (v_ != null) {
-        w.keyBoolean(83, v_);
+        w.keyBoolean(84, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(84);
+        w.key(85);
         w.string(v_);
       }
     }
@@ -120,10 +120,10 @@ class VCombo extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(81, caretPosition);
-    visit(82, items);
-    visit(83, listVisible);
-    visit(84, text);
+    visit(82, caretPosition);
+    visit(83, items);
+    visit(84, listVisible);
+    visit(85, text);
   }
 
   @override

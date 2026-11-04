@@ -162,7 +162,8 @@ void main() {
     await _pump(tester, 70);
 
     final sections = _strips.last.split(';');
-    expect(sections, hasLength(4), reason: 'tabs; close buttons; shown part of the strip; shortened labels');
+    expect(sections, hasLength(6),
+        reason: 'tabs; close buttons; shown part of the strip; shortened labels; folder width; layout seq');
     final shown = sections[2].split(',').map(int.parse).toList();
     final right = shown[0] + shown[1];
     final tabs = _reportedTabs();

@@ -581,7 +581,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   bool _handleStripLayout(List<DrawnTab> tabs) {
     final box = context.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return true;
-    final report = stripReport(box, tabs);
+    final report = stripReport(box, tabs, layoutSeq: state.stripLayoutSeq ?? 0);
     if (report == null) return false;
     if (report == _reportedStrip) return true;
     _reportedStrip = report;
@@ -2169,12 +2169,15 @@ class DrawnTab {
 /// drawn without one), then, after another `;`, the part of the strip that is shown as `x,width`:
 /// the scrolled viewport, which ends where the chevron and the top-right controls begin (empty when
 /// there is none), then, after another `;`, a `1` for each tab whose label is drawn shortened and a
-/// `0` for the others.
+/// `0` for the others, then, after another `;`, the folder's width, then, after another `;`, the
+/// `stripLayoutSeq` of the value drawn: Java lays the tabs out again on its own, so it uses a report
+/// only when both still match its own.
 ///
 /// Null when a tab cannot be placed: a folder laid out under unbounded constraints for a frame has
 /// an infinite size, and aligning its children in it puts NaN in every offset below it.
 @visibleForTesting
-String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
+String? stripReport(RenderBox folder, List<DrawnTab> tabs, {int layoutSeq = 0}) {
+  if (!folder.size.width.isFinite) return null;
   final strip = <String>[];
   final close = <String>[];
   final shortened = <String>[];
@@ -2196,7 +2199,7 @@ String? stripReport(RenderBox folder, List<DrawnTab> tabs) {
     if (!area.isFinite) return null;
     shown = '${area.left.round()},${area.width.round()}';
   }
-  return '${strip.join(',')};${close.join(',')};$shown;${shortened.join(',')}';
+  return '${strip.join(',')};${close.join(',')};$shown;${shortened.join(',')};${folder.size.width.round()};$layoutSeq';
 }
 
 /// The box that bounds the shown tabs: the scrolled viewport, or a compressed row, which ends where

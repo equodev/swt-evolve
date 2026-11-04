@@ -593,10 +593,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         int maxWidth = size.x - borderLeft - leftWidth - borderRight;
         int availableWidth = Math.max(0, maxWidth - itemWidth - rightWidth);
-        if (spacingRight)
-            availableWidth -= SPACING * 2;
+        availableWidth -= spacingRight ? SPACING * 2 : SPACING;
         x = size.x - borderRight - SPACING;
-        if (itemWidth + allWidth <= maxWidth) {
+        if (itemWidth + allWidth + SPACING <= maxWidth) {
             //Everything fits
             for (int i = 0; i < controls.length; i++) {
                 int alignment = controlAlignments[i];
@@ -4782,6 +4781,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     int showListPopupSeq = 0;
+
+    int stripLayoutSeq = 0;
 
     int[] drawnCloseButtons;
 

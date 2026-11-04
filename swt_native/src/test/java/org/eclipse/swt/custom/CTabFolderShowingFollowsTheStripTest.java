@@ -7,6 +7,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterAll;
@@ -111,6 +112,72 @@ class CTabFolderShowingFollowsTheStripTest {
         reportsStrip(folder, "0,0,0,0,0,0,0,0,0,0;;0,0");
 
         assertThat(folder.getItem(0).isShowing()).isFalse();
+    }
+
+    @Test
+    @DisplayName("a strip drawn at another folder width does not say which tabs show")
+    void aStripDrawnAtAnotherWidthDoesNotDecide() {
+        CTabFolder folder = crowdedFolder();
+        folder.setBounds(0, 0, 600, 300);
+        // Every tab fits the wide folder.
+        reportsStrip(folder, "0,100,100,80,180,120,300,90,390,110;;0,600;0,0,0,0,0;600");
+
+        folder.setBounds(0, 0, STRIP_WIDTH, 300);
+
+        for (CTabItem item : folder.getItems()) {
+            boolean laidOutOnScreen = item.getBounds().x < STRIP_WIDTH;
+            assertThat(item.isShowing()).as(item.getText()).isEqualTo(laidOutOnScreen);
+        }
+    }
+
+    @Test
+    @DisplayName("a strip drawn before the tabs were laid out again does not say which tabs show")
+    void aStripDrawnForAnOlderLayoutDoesNotDecide() {
+        Shell shell = Mocks.shell();
+        when(shell.getDisplay().getBounds()).thenReturn(new Rectangle(0, 0, 1920, 1080));
+        CTabFolder folder = new CTabFolder(shell, SWT.NONE);
+        folder.setBounds(0, 0, 400, 300);
+        folder.setTabHeight(TAB_HEIGHT);
+        for (String label : new String[]{"One", "Two", "Three"}) new CTabItem(folder, SWT.NONE).setText(label);
+        Rectangle last = folder.getItem(2).getBounds();
+        int width = last.x + last.width + 4;
+        folder.setBounds(0, 0, width, 300);
+        assertThat(folder.getItem(2).getBounds().x).as("sanity: every tab fits").isLessThan(width);
+        int seq = ((DartCTabFolder) folder.getImpl()).stripLayoutSeq;
+        reportsStrip(folder, drawnAtJavaBounds(folder) + ";;0," + width + ";0,0,0;" + width + ";" + seq);
+
+        // At the same width, a top-right control takes the room of the last tab.
+        Label topRight = new Label(folder, SWT.NONE);
+        topRight.setText("TopRight");
+        folder.setTopRight(topRight, SWT.RIGHT);
+        folder.getItem(new Point(0, 0));
+
+        assertThat(folder.getItem(2).getBounds().x).as("sanity: the last tab is parked").isGreaterThanOrEqualTo(width);
+        for (CTabItem item : folder.getItems()) {
+            boolean laidOutOnScreen = item.getBounds().x < width;
+            assertThat(item.isShowing()).as(item.getText()).isEqualTo(laidOutOnScreen);
+        }
+    }
+
+    private static String drawnAtJavaBounds(CTabFolder folder) {
+        StringBuilder text = new StringBuilder();
+        for (CTabItem item : folder.getItems()) {
+            Rectangle bounds = item.getBounds();
+            if (text.length() > 0) text.append(',');
+            text.append(bounds.x).append(',').append(bounds.width);
+        }
+        return text.toString();
+    }
+
+    @Test
+    @DisplayName("a strip drawn at the folder's width decides which tabs show")
+    void aStripDrawnAtTheFolderWidthDecides() {
+        CTabFolder folder = crowdedFolder();
+
+        reportsStrip(folder, "-390,100,-290,80,-210,120,-90,90,0,110;;0,150;0,0,0,0,0;" + STRIP_WIDTH);
+
+        assertThat(folder.getItem(0).isShowing()).isFalse();
+        assertThat(folder.getItem(4).isShowing()).isTrue();
     }
 
     @Test

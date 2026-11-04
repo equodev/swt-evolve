@@ -125,14 +125,46 @@ public class CTabFolderHelper {
      * <p>Not part of the widget's state, and not something this side can work out: it lays the strip
      * out itself, without a scroll and with whatever does not fit parked off screen.
      */
-    private static final java.util.Map<DartCTabFolder, int[]> stripLayout =
+    private static final java.util.Map<DartCTabFolder, DrawnStrip> stripLayout =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /**
+     * A strip report, with the folder width it was drawn at and the {@code stripLayoutSeq} it was
+     * drawn for, each -1 when the report does not say.
+     */
+    private static final class DrawnStrip {
+        final int[] tabs;
+        final int folderWidth;
+        final int layoutSeq;
+
+        DrawnStrip(int[] tabs, int folderWidth, int layoutSeq) {
+            this.tabs = tabs;
+            this.folderWidth = folderWidth;
+            this.layoutSeq = layoutSeq;
+        }
+    }
+
+    /**
+     * The tabs as the render side last drew them, or null when it has not drawn this folder's
+     * current layout yet. A report is sent after the frame is painted, so it can land after this
+     * side has laid the tabs out again (a resize, a top-right control, a tab added) and then
+     * describes a strip that is no longer there.
+     */
+    static int[] drawnTabs(DartCTabFolder folder) {
+        DrawnStrip drawn = stripLayout.get(folder);
+        if (drawn == null) return null;
+        if (drawn.folderWidth >= 0 && drawn.folderWidth != folder.getApi().getSize().x) return null;
+        if (drawn.layoutSeq >= 0 && drawn.layoutSeq != folder.stripLayoutSeq) return null;
+        return drawn.tabs;
+    }
 
     /**
      * The strip, then after a {@code ;} each tab's drawn close button as {@code x, y, width, height}
      * in the folder's own coordinates, with a zero width for a tab that shows none, then after
      * another {@code ;} the part of the strip that is shown, as {@code x, width}, then after another
-     * {@code ;} a {@code 1} for each tab whose label is drawn shortened and a {@code 0} for the others.
+     * {@code ;} a {@code 1} for each tab whose label is drawn shortened and a {@code 0} for the others,
+     * then after another {@code ;} the width of the folder the strip was drawn in, then after another
+     * {@code ;} the {@code stripLayoutSeq} it was drawn for.
      */
     public static void handleStripLaidOut(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
@@ -148,8 +180,11 @@ public class CTabFolderHelper {
         int[] close = sections.length > 1 ? parseInts(sections[1]) : new int[0];
         int[] viewport = sections.length > 2 ? parseInts(sections[2]) : new int[0];
         int[] shortened = sections.length > 3 ? parseInts(sections[3]) : new int[0];
-        if (strip == null || close == null || viewport == null || shortened == null) return;
-        stripLayout.put(obj, strip);
+        int[] width = sections.length > 4 ? parseInts(sections[4]) : new int[0];
+        int[] seq = sections.length > 5 ? parseInts(sections[5]) : new int[0];
+        if (strip == null || close == null || viewport == null || shortened == null || width == null
+                || seq == null) return;
+        stripLayout.put(obj, new DrawnStrip(strip, width.length == 1 ? width[0] : -1, seq.length == 1 ? seq[0] : -1));
         obj.shownStrip = viewport.length == 2 ? viewport : null;
         obj.drawnCloseButtons = close;
         obj.drawnShortened = shortened;
@@ -187,7 +222,7 @@ public class CTabFolderHelper {
     public static boolean isShowing(DartCTabItem item) {
         CTabFolder parent = item.parent;
         DartCTabFolder folder = (DartCTabFolder) parent.getImpl();
-        int[] drawn = stripLayout.get(folder);
+        int[] drawn = drawnTabs(folder);
         int index = parent.indexOf(item.getApi());
         if (drawn == null || index < 0 || 2 * index + 1 >= drawn.length) return item.showing;
         int[] viewport = folder.shownStrip;
@@ -275,10 +310,10 @@ public class CTabFolderHelper {
         int tabHeight = folder.getApi().getTabHeight();
         int top = folder.onBottom ? size.y - tabHeight : 0;
         if (pt.y < top || pt.y >= top + tabHeight) return null;
-        int[] drawn = stripLayout.get(folder);
+        int[] drawn = drawnTabs(folder);
         if (drawn == null) {
-            // Nothing drawn yet, or nothing that reports where: upstream's own answer, from the
-            // bounds this side laid out, is better than none.
+            // Nothing drawn at this width yet, or nothing that reports where: upstream's own answer,
+            // from the bounds this side laid out, is better than none.
             for (int element : folder.priority) {
                 CTabItem item = items[element];
                 if (item.getBounds().contains(pt)) return item;
@@ -501,6 +536,10 @@ public class CTabFolderHelper {
         changed |= obj.setItemLocation(gc);
         obj.setButtonBounds();
         changed |= chevronChanged;
+        if (changed) {
+            obj.stripLayoutSeq++;
+            obj.getValue().markDirty(VCTabFolder.STRIP_LAYOUT_SEQ);
+        }
         if (changed && obj.getToolTipText() != null) {
             Point pt = obj.getDisplay().getCursorLocation();
             pt = obj.toControl(pt);

@@ -12,13 +12,13 @@ class VFontData implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 234: // height
+      case 235: // height
         height = r.int32();
         return true;
-      case 235: // name
+      case 236: // name
         name = r.string() ?? '';
         return true;
-      case 236: // style
+      case 237: // style
         style = r.int32();
         return true;
       default:
@@ -30,23 +30,23 @@ class VFontData implements WireReadable, WireWritable, WireVisitable {
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = height;
-      w.keyInt32(234, v_);
+      w.keyInt32(235, v_);
     }
     {
       final v_ = name;
-      w.key(235);
+      w.key(236);
       w.string(v_);
     }
     {
       final v_ = style;
-      w.keyInt32(236, v_);
+      w.keyInt32(237, v_);
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(234, height);
-    visit(235, name);
-    visit(236, style);
+    visit(235, height);
+    visit(236, name);
+    visit(237, style);
   }
 }

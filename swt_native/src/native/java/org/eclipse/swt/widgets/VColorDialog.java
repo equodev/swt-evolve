@@ -48,9 +48,9 @@ public class VColorDialog extends VDialog {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(79);
-        w.write(getRGB());
         w.key(80);
+        w.write(getRGB());
+        w.key(81);
         {
             RGB[] a_ = getRGBs();
             if (a_ == null)

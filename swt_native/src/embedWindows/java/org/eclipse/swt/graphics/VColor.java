@@ -39,13 +39,13 @@ public class VColor extends VResource {
     public void setRed(int value) {
     }
 
-    public static final int A = 75;
+    public static final int A = 76;
 
-    public static final int B = 76;
+    public static final int B = 77;
 
-    public static final int G = 77;
+    public static final int G = 78;
 
-    public static final int R = 78;
+    public static final int R = 79;
 
     @Override
     public String wireName(int key) {
@@ -65,16 +65,16 @@ public class VColor extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 75:
+            case 76:
                 w.write((int) getAlpha());
                 return true;
-            case 76:
+            case 77:
                 w.write((int) getBlue());
                 return true;
-            case 77:
+            case 78:
                 w.write((int) getGreen());
                 return true;
-            case 78:
+            case 79:
                 w.write((int) getRed());
                 return true;
         }
@@ -84,18 +84,9 @@ public class VColor extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 75:
-                {
-                    int v_ = getAlpha();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(75);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 76:
                 {
-                    int v_ = getBlue();
+                    int v_ = getAlpha();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(76);
@@ -104,7 +95,7 @@ public class VColor extends VResource {
                 }
             case 77:
                 {
-                    int v_ = getGreen();
+                    int v_ = getBlue();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(77);
@@ -113,10 +104,19 @@ public class VColor extends VResource {
                 }
             case 78:
                 {
-                    int v_ = getRed();
+                    int v_ = getGreen();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(78);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 79:
+                {
+                    int v_ = getRed();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(79);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -124,7 +124,7 @@ public class VColor extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 75, 76, 77, 78 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 76, 77, 78, 79 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -153,13 +153,13 @@ public class VColor extends VResource {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(75);
-        w.write((int) getAlpha());
         w.key(76);
-        w.write((int) getBlue());
+        w.write((int) getAlpha());
         w.key(77);
-        w.write((int) getGreen());
+        w.write((int) getBlue());
         w.key(78);
+        w.write((int) getGreen());
+        w.key(79);
         w.write((int) getRed());
     }
 }

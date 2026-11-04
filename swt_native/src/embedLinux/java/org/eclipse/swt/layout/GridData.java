@@ -626,124 +626,124 @@ public final class GridData implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(332);
-        w.write((int) verticalAlignment);
-        w.key(327);
-        w.write((int) horizontalAlignment);
-        w.key(335);
-        w.write((int) widthHint);
-        w.key(326);
-        w.write((int) heightHint);
-        w.key(328);
-        w.write((int) horizontalIndent);
         w.key(333);
-        w.write((int) verticalIndent);
+        w.write((int) verticalAlignment);
+        w.key(328);
+        w.write((int) horizontalAlignment);
+        w.key(336);
+        w.write((int) widthHint);
+        w.key(327);
+        w.write((int) heightHint);
         w.key(329);
-        w.write((int) horizontalSpan);
+        w.write((int) horizontalIndent);
         w.key(334);
-        w.write((int) verticalSpan);
-        w.key(324);
-        w.write(grabExcessHorizontalSpace);
-        w.key(325);
-        w.write(grabExcessVerticalSpace);
-        w.key(331);
-        w.write((int) minimumWidth);
+        w.write((int) verticalIndent);
         w.key(330);
+        w.write((int) horizontalSpan);
+        w.key(335);
+        w.write((int) verticalSpan);
+        w.key(325);
+        w.write(grabExcessHorizontalSpace);
+        w.key(326);
+        w.write(grabExcessVerticalSpace);
+        w.key(332);
+        w.write((int) minimumWidth);
+        w.key(331);
         w.write((int) minimumHeight);
-        w.key(323);
+        w.key(324);
         w.write(exclude);
-        w.key(314);
-        w.write((int) cacheWidth);
-        w.key(313);
-        w.write((int) cacheHeight);
-        w.key(321);
-        w.write((int) defaultWhint);
-        w.key(320);
-        w.write((int) defaultHhint);
-        w.key(322);
-        w.write((int) defaultWidth);
-        w.key(319);
-        w.write((int) defaultHeight);
-        w.key(317);
-        w.write((int) currentWhint);
-        w.key(316);
-        w.write((int) currentHhint);
-        w.key(318);
-        w.write((int) currentWidth);
         w.key(315);
+        w.write((int) cacheWidth);
+        w.key(314);
+        w.write((int) cacheHeight);
+        w.key(322);
+        w.write((int) defaultWhint);
+        w.key(321);
+        w.write((int) defaultHhint);
+        w.key(323);
+        w.write((int) defaultWidth);
+        w.key(320);
+        w.write((int) defaultHeight);
+        w.key(318);
+        w.write((int) currentWhint);
+        w.key(317);
+        w.write((int) currentHhint);
+        w.key(319);
+        w.write((int) currentWidth);
+        w.key(316);
         w.write((int) currentHeight);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 332:
+            case 333:
                 verticalAlignment = r.int32();
                 return true;
-            case 327:
+            case 328:
                 horizontalAlignment = r.int32();
                 return true;
-            case 335:
+            case 336:
                 widthHint = r.int32();
                 return true;
-            case 326:
+            case 327:
                 heightHint = r.int32();
                 return true;
-            case 328:
+            case 329:
                 horizontalIndent = r.int32();
                 return true;
-            case 333:
+            case 334:
                 verticalIndent = r.int32();
                 return true;
-            case 329:
+            case 330:
                 horizontalSpan = r.int32();
                 return true;
-            case 334:
+            case 335:
                 verticalSpan = r.int32();
                 return true;
-            case 324:
+            case 325:
                 grabExcessHorizontalSpace = r.bool();
                 return true;
-            case 325:
+            case 326:
                 grabExcessVerticalSpace = r.bool();
                 return true;
-            case 331:
+            case 332:
                 minimumWidth = r.int32();
                 return true;
-            case 330:
+            case 331:
                 minimumHeight = r.int32();
                 return true;
-            case 323:
+            case 324:
                 exclude = r.bool();
                 return true;
-            case 314:
+            case 315:
                 cacheWidth = r.int32();
                 return true;
-            case 313:
+            case 314:
                 cacheHeight = r.int32();
                 return true;
-            case 321:
+            case 322:
                 defaultWhint = r.int32();
                 return true;
-            case 320:
+            case 321:
                 defaultHhint = r.int32();
                 return true;
-            case 322:
+            case 323:
                 defaultWidth = r.int32();
                 return true;
-            case 319:
+            case 320:
                 defaultHeight = r.int32();
                 return true;
-            case 317:
+            case 318:
                 currentWhint = r.int32();
                 return true;
-            case 316:
+            case 317:
                 currentHhint = r.int32();
                 return true;
-            case 318:
+            case 319:
                 currentWidth = r.int32();
                 return true;
-            case 315:
+            case 316:
                 currentHeight = r.int32();
                 return true;
         }

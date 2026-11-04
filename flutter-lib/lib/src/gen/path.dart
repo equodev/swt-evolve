@@ -16,16 +16,16 @@ class VPath implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 392: // pathData
+      case 393: // pathData
         pathData = r.object(VPathData.new);
         return true;
-      case 395: // textStrings
+      case 396: // textStrings
         textStrings = r.strings();
         return true;
-      case 394: // textOrigins
+      case 395: // textOrigins
         textOrigins = r.floats();
         return true;
-      case 393: // textFonts
+      case 394: // textFonts
         textFonts = r.list((r) => r.object(VFont.new));
         return true;
       default:
@@ -38,28 +38,28 @@ class VPath implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = pathData;
       if (v_ != null) {
-        w.key(392);
+        w.key(393);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = textStrings;
       if (v_ != null) {
-        w.key(395);
+        w.key(396);
         w.strings(v_);
       }
     }
     {
       final v_ = textOrigins;
       if (v_ != null) {
-        w.key(394);
+        w.key(395);
         w.floats(v_);
       }
     }
     {
       final v_ = textFonts;
       if (v_ != null) {
-        w.key(393);
+        w.key(394);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
@@ -67,9 +67,9 @@ class VPath implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(392, pathData);
-    visit(395, textStrings);
-    visit(394, textOrigins);
-    visit(393, textFonts);
+    visit(393, pathData);
+    visit(396, textStrings);
+    visit(395, textOrigins);
+    visit(394, textFonts);
   }
 }

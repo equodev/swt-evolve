@@ -101,21 +101,21 @@ public final class TouchSource implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(622);
+        w.key(623);
         w.write(handle);
-        w.key(621);
+        w.key(622);
         w.write(direct);
-        w.key(620);
+        w.key(621);
         w.write(bounds);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 622:
+            case 623:
                 handle = r.int64();
                 return true;
-            case 621:
+            case 622:
                 direct = r.bool();
                 return true;
         }

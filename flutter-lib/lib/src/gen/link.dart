@@ -51,10 +51,10 @@ class VLink extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 363: // linkForeground
+      case 364: // linkForeground
         linkForeground = r.color();
         return true;
-      case 364: // text
+      case 365: // text
         text = r.string();
         return true;
       default:
@@ -68,14 +68,14 @@ class VLink extends VControl {
     {
       final v_ = linkForeground;
       if (v_ != null) {
-        w.key(363);
+        w.key(364);
         w.colorValue(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(364);
+        w.key(365);
         w.string(v_);
       }
     }
@@ -84,8 +84,8 @@ class VLink extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(363, linkForeground);
-    visit(364, text);
+    visit(364, linkForeground);
+    visit(365, text);
   }
 
   @override

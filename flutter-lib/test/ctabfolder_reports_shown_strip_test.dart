@@ -29,6 +29,7 @@ VCTabFolder _folder(int count) => VCTabFolder()
   ..style = SWT.NONE
   ..enabled = true
   ..selection = 0
+  ..stripLayoutSeq = 7
   ..items = List.generate(
     count,
     (i) => VCTabItem()
@@ -64,7 +65,8 @@ void main() {
     expect(chevron, findsOneWidget, reason: 'sanity: twelve tabs overflow a 600 px strip');
 
     final sections = reports.last.split(';');
-    expect(sections, hasLength(4), reason: 'tabs; close buttons; shown part of the strip; shortened labels');
+    expect(sections, hasLength(6),
+        reason: 'tabs; close buttons; shown part of the strip; shortened labels; folder width; layout seq');
     final shown = sections[2].split(',').map(int.parse).toList();
     final folder = tester.getRect(find.byWidgetPredicate((w) => w is CTabFolderSwt<VCTabFolder>));
     final chevronLeft = tester.getRect(chevron).left - folder.left;
@@ -72,6 +74,9 @@ void main() {
     expect(shown[0], 0);
     expect(shown[0] + shown[1], lessThanOrEqualTo(chevronLeft.round()),
         reason: 'what lies under the chevron is not shown');
+    expect(int.parse(sections[4]), folder.width.round(),
+        reason: 'Java ignores a report drawn at a width other than the folder\'s');
+    expect(sections[5], '7', reason: 'Java ignores a report drawn for an older layout of its tabs');
 
   });
 

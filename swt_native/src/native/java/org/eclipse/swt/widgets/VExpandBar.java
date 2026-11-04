@@ -41,9 +41,9 @@ public class VExpandBar extends VComposite {
         ((DartExpandBar) impl).spacing = value;
     }
 
-    public static final int ITEMS = 220;
+    public static final int ITEMS = 221;
 
-    public static final int SPACING = 221;
+    public static final int SPACING = 222;
 
     @Override
     public String wireName(int key) {
@@ -59,10 +59,10 @@ public class VExpandBar extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 220:
+            case 221:
                 w.refs(getItems());
                 return true;
-            case 221:
+            case 222:
                 w.write((int) getSpacing());
                 return true;
         }
@@ -72,23 +72,23 @@ public class VExpandBar extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 220:
+            case 221:
                 {
                     ExpandItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(220);
+                    w.key(221);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 221:
+            case 222:
                 {
                     int v_ = getSpacing();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(221);
+                    w.key(222);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -96,7 +96,7 @@ public class VExpandBar extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 220, 221 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 221, 222 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

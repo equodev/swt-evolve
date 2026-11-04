@@ -54,10 +54,10 @@ class VExpandBar extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 220: // items
+      case 221: // items
         items = r.refs<VExpandItem>();
         return true;
-      case 221: // spacing
+      case 222: // spacing
         spacing = r.int32();
         return true;
       default:
@@ -71,14 +71,14 @@ class VExpandBar extends VComposite {
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(220);
+        w.key(221);
         w.refs(v_);
       }
     }
     {
       final v_ = spacing;
       if (v_ != null) {
-        w.keyInt32(221, v_);
+        w.keyInt32(222, v_);
       }
     }
   }
@@ -86,8 +86,8 @@ class VExpandBar extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(220, items);
-    visit(221, spacing);
+    visit(221, items);
+    visit(222, spacing);
   }
 
   @override

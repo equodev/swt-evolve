@@ -81,13 +81,13 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).visibleCount = value;
     }
 
-    public static final int CARET_POSITION = 81;
+    public static final int CARET_POSITION = 82;
 
-    public static final int ITEMS = 82;
+    public static final int ITEMS = 83;
 
-    public static final int LIST_VISIBLE = 83;
+    public static final int LIST_VISIBLE = 84;
 
-    public static final int TEXT = 84;
+    public static final int TEXT = 85;
 
     @Override
     public String wireName(int key) {
@@ -107,16 +107,16 @@ public class VCombo extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 81:
+            case 82:
                 w.write((int) getCaretPosition());
                 return true;
-            case 82:
+            case 83:
                 w.write(getItems());
                 return true;
-            case 83:
+            case 84:
                 w.write(getListVisible());
                 return true;
-            case 84:
+            case 85:
                 w.write(getText());
                 return true;
         }
@@ -126,43 +126,43 @@ public class VCombo extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 81:
+            case 82:
                 {
                     int v_ = getCaretPosition();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(81);
+                    w.key(82);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 82:
+            case 83:
                 {
                     String[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(82);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 83:
-                {
-                    boolean v_ = getListVisible();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(83);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 84:
                 {
+                    boolean v_ = getListVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(84);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 85:
+                {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(84);
+                    w.key(85);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -170,7 +170,7 @@ public class VCombo extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 81, 82, 83, 84 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 82, 83, 84, 85 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

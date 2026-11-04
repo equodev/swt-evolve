@@ -395,95 +395,95 @@ public final class FormData implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(267);
+        w.key(268);
         w.write((int) width);
-        w.key(261);
-        w.write((int) height);
-        w.key(263);
-        w.object(left);
-        w.key(265);
-        w.object(right);
-        w.key(266);
-        w.object(top);
-        w.key(246);
-        w.object(bottom);
-        w.key(252);
-        w.write((int) cacheWidth);
-        w.key(248);
-        w.write((int) cacheHeight);
-        w.key(259);
-        w.write((int) defaultWhint);
-        w.key(258);
-        w.write((int) defaultHhint);
-        w.key(260);
-        w.write((int) defaultWidth);
-        w.key(257);
-        w.write((int) defaultHeight);
-        w.key(255);
-        w.write((int) currentWhint);
-        w.key(254);
-        w.write((int) currentHhint);
-        w.key(256);
-        w.write((int) currentWidth);
-        w.key(253);
-        w.write((int) currentHeight);
-        w.key(249);
-        w.object(cacheLeft);
-        w.key(250);
-        w.object(cacheRight);
-        w.key(251);
-        w.object(cacheTop);
-        w.key(247);
-        w.object(cacheBottom);
         w.key(262);
-        w.write(isVisited);
+        w.write((int) height);
         w.key(264);
+        w.object(left);
+        w.key(266);
+        w.object(right);
+        w.key(267);
+        w.object(top);
+        w.key(247);
+        w.object(bottom);
+        w.key(253);
+        w.write((int) cacheWidth);
+        w.key(249);
+        w.write((int) cacheHeight);
+        w.key(260);
+        w.write((int) defaultWhint);
+        w.key(259);
+        w.write((int) defaultHhint);
+        w.key(261);
+        w.write((int) defaultWidth);
+        w.key(258);
+        w.write((int) defaultHeight);
+        w.key(256);
+        w.write((int) currentWhint);
+        w.key(255);
+        w.write((int) currentHhint);
+        w.key(257);
+        w.write((int) currentWidth);
+        w.key(254);
+        w.write((int) currentHeight);
+        w.key(250);
+        w.object(cacheLeft);
+        w.key(251);
+        w.object(cacheRight);
+        w.key(252);
+        w.object(cacheTop);
+        w.key(248);
+        w.object(cacheBottom);
+        w.key(263);
+        w.write(isVisited);
+        w.key(265);
         w.write(needed);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 267:
+            case 268:
                 width = r.int32();
                 return true;
-            case 261:
+            case 262:
                 height = r.int32();
                 return true;
-            case 252:
+            case 253:
                 cacheWidth = r.int32();
                 return true;
-            case 248:
+            case 249:
                 cacheHeight = r.int32();
                 return true;
-            case 259:
+            case 260:
                 defaultWhint = r.int32();
                 return true;
-            case 258:
+            case 259:
                 defaultHhint = r.int32();
                 return true;
-            case 260:
+            case 261:
                 defaultWidth = r.int32();
                 return true;
-            case 257:
+            case 258:
                 defaultHeight = r.int32();
                 return true;
-            case 255:
+            case 256:
                 currentWhint = r.int32();
                 return true;
-            case 254:
+            case 255:
                 currentHhint = r.int32();
                 return true;
-            case 256:
+            case 257:
                 currentWidth = r.int32();
                 return true;
-            case 253:
+            case 254:
                 currentHeight = r.int32();
                 return true;
-            case 262:
+            case 263:
                 isVisited = r.bool();
                 return true;
-            case 264:
+            case 265:
                 needed = r.bool();
                 return true;
         }

@@ -48,25 +48,25 @@ class VCTabItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 61: // control
+      case 62: // control
         control = r.ref<VControl>();
         return true;
-      case 62: // font
+      case 63: // font
         font = r.object(VFont.new);
         return true;
-      case 63: // foreground
+      case 64: // foreground
         foreground = r.color();
         return true;
-      case 64: // selectionForeground
+      case 65: // selectionForeground
         selectionForeground = r.color();
         return true;
-      case 65: // showClose
+      case 66: // showClose
         showClose = r.boolean();
         return true;
-      case 66: // showing
+      case 67: // showing
         showing = r.boolean();
         return true;
-      case 67: // toolTipText
+      case 68: // toolTipText
         toolTipText = r.string();
         return true;
       default:
@@ -80,46 +80,46 @@ class VCTabItem extends VItem {
     {
       final v_ = control;
       if (v_ != null) {
-        w.keyRef(61, v_.id);
+        w.keyRef(62, v_.id);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(62);
+        w.key(63);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(63);
+        w.key(64);
         w.colorValue(v_);
       }
     }
     {
       final v_ = selectionForeground;
       if (v_ != null) {
-        w.key(64);
+        w.key(65);
         w.colorValue(v_);
       }
     }
     {
       final v_ = showClose;
       if (v_ != null) {
-        w.keyBoolean(65, v_);
+        w.keyBoolean(66, v_);
       }
     }
     {
       final v_ = showing;
       if (v_ != null) {
-        w.keyBoolean(66, v_);
+        w.keyBoolean(67, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(67);
+        w.key(68);
         w.string(v_);
       }
     }
@@ -128,13 +128,13 @@ class VCTabItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(61, control);
-    visit(62, font);
-    visit(63, foreground);
-    visit(64, selectionForeground);
-    visit(65, showClose);
-    visit(66, showing);
-    visit(67, toolTipText);
+    visit(62, control);
+    visit(63, font);
+    visit(64, foreground);
+    visit(65, selectionForeground);
+    visit(66, showClose);
+    visit(67, showing);
+    visit(68, toolTipText);
   }
 
   @override

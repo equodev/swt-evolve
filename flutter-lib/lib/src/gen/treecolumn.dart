@@ -58,16 +58,16 @@ class VTreeColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 637: // alignment
+      case 638: // alignment
         alignment = r.int32();
         return true;
-      case 638: // moveable
+      case 639: // moveable
         moveable = r.boolean();
         return true;
-      case 639: // resizable
+      case 640: // resizable
         resizable = r.boolean();
         return true;
-      case 640: // width
+      case 641: // width
         width = r.int32();
         return true;
       default:
@@ -81,25 +81,25 @@ class VTreeColumn extends VItem {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(637, v_);
+        w.keyInt32(638, v_);
       }
     }
     {
       final v_ = moveable;
       if (v_ != null) {
-        w.keyBoolean(638, v_);
+        w.keyBoolean(639, v_);
       }
     }
     {
       final v_ = resizable;
       if (v_ != null) {
-        w.keyBoolean(639, v_);
+        w.keyBoolean(640, v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(640, v_);
+        w.keyInt32(641, v_);
       }
     }
   }
@@ -107,9 +107,9 @@ class VTreeColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(637, alignment);
-    visit(638, moveable);
-    visit(639, resizable);
-    visit(640, width);
+    visit(638, alignment);
+    visit(639, moveable);
+    visit(640, resizable);
+    visit(641, width);
   }
 }

@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -668862759;
+    public static final int FINGERPRINT = -1628577677;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -793,6 +793,7 @@ public final class WireTable {
             "stereo",
             "strikeout",
             "strikeoutColor",
+            "stripLayoutSeq",
             "style",
             "styleCount",
             "styleIndex",
@@ -934,6 +935,7 @@ public final class WireTable {
             "CTabFolder.showChevron",
             "CTabFolder.showListPopupSeq",
             "CTabFolder.single",
+            "CTabFolder.stripLayoutSeq",
             "CTabFolder.tabHeight",
             "CTabFolder.tabPosition",
             "CTabFolder.topRight",
@@ -1597,6 +1599,7 @@ public final class WireTable {
             "bool",
             "int",
             "bool",
+            "int",
             "int?",
             "int",
             "ref",
@@ -3338,158 +3341,158 @@ public final class WireTable {
     public static final int TYPE_WIDGET_SIZE_BRIDGE = 133;
 
     /** The display's `activeShellId`. */
-    public static final int DISPLAY_ACTIVE_SHELL_ID = 178;
+    public static final int DISPLAY_ACTIVE_SHELL_ID = 179;
 
     /** The display's `config`. */
-    public static final int DISPLAY_CONFIG = 179;
+    public static final int DISPLAY_CONFIG = 180;
 
     /** The display's `focusHolderId`. */
-    public static final int DISPLAY_FOCUS_HOLDER_ID = 180;
+    public static final int DISPLAY_FOCUS_HOLDER_ID = 181;
 
     /** The display's `mainShellId`. */
-    public static final int DISPLAY_MAIN_SHELL_ID = 181;
+    public static final int DISPLAY_MAIN_SHELL_ID = 182;
 
     /** The display's `popups`. */
-    public static final int DISPLAY_POPUPS = 182;
+    public static final int DISPLAY_POPUPS = 183;
 
     /** The display's `shells`. */
-    public static final int DISPLAY_SHELLS = 183;
+    public static final int DISPLAY_SHELLS = 184;
 
     /** The display's `systemMenu`. */
-    public static final int DISPLAY_SYSTEM_MENU = 184;
+    public static final int DISPLAY_SYSTEM_MENU = 185;
 
     /** The display's `tooltips`. */
-    public static final int DISPLAY_TOOLTIPS = 185;
+    public static final int DISPLAY_TOOLTIPS = 186;
 
     /** The display's `windowedShellIds`. */
-    public static final int DISPLAY_WINDOWED_SHELL_IDS = 186;
+    public static final int DISPLAY_WINDOWED_SHELL_IDS = 187;
 
     /** The flag `assets_path`. */
-    public static final int CONFIG_FLAGS_ASSETS_PATH = 87;
+    public static final int CONFIG_FLAGS_ASSETS_PATH = 88;
 
     /** The flag `bigger_icon_size`. */
-    public static final int CONFIG_FLAGS_BIGGER_ICON_SIZE = 88;
+    public static final int CONFIG_FLAGS_BIGGER_ICON_SIZE = 89;
 
     /** The flag `csd_maximize`. */
-    public static final int CONFIG_FLAGS_CSD_MAXIMIZE = 89;
+    public static final int CONFIG_FLAGS_CSD_MAXIMIZE = 90;
 
     /** The flag `csd_os`. */
-    public static final int CONFIG_FLAGS_CSD_OS = 90;
+    public static final int CONFIG_FLAGS_CSD_OS = 91;
 
     /** The flag `csd_placement`. */
-    public static final int CONFIG_FLAGS_CSD_PLACEMENT = 91;
+    public static final int CONFIG_FLAGS_CSD_PLACEMENT = 92;
 
     /** The flag `csd_titlebar_color`. */
-    public static final int CONFIG_FLAGS_CSD_TITLEBAR_COLOR = 92;
+    public static final int CONFIG_FLAGS_CSD_TITLEBAR_COLOR = 93;
 
     /** The flag `ctabfolder_tab_scroll`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL = 93;
+    public static final int CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL = 94;
 
     /** The flag `ctabfolder_topright_auto_hide`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE = 94;
+    public static final int CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE = 95;
 
     /** The flag `ctabfolder_visible_controls`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS = 95;
+    public static final int CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS = 96;
 
     /** The flag `custom_tooltip`. */
-    public static final int CONFIG_FLAGS_CUSTOM_TOOLTIP = 96;
+    public static final int CONFIG_FLAGS_CUSTOM_TOOLTIP = 97;
 
     /** The flag `decimal_separator`. */
-    public static final int CONFIG_FLAGS_DECIMAL_SEPARATOR = 97;
+    public static final int CONFIG_FLAGS_DECIMAL_SEPARATOR = 98;
 
     /** The flag `decorations_align`. */
-    public static final int CONFIG_FLAGS_DECORATIONS_ALIGN = 98;
+    public static final int CONFIG_FLAGS_DECORATIONS_ALIGN = 99;
 
     /** The flag `disable_control_gc_overlay`. */
-    public static final int CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY = 99;
+    public static final int CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY = 100;
 
     /** The flag `disable_evolve_icons`. */
-    public static final int CONFIG_FLAGS_DISABLE_EVOLVE_ICONS = 100;
+    public static final int CONFIG_FLAGS_DISABLE_EVOLVE_ICONS = 101;
 
     /** The flag `disable_hover_zoom`. */
-    public static final int CONFIG_FLAGS_DISABLE_HOVER_ZOOM = 101;
+    public static final int CONFIG_FLAGS_DISABLE_HOVER_ZOOM = 102;
 
     /** The flag `disable_swt_canvas_colors`. */
-    public static final int CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS = 102;
+    public static final int CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS = 103;
 
     /** The flag `double_click_timeout_ms`. */
-    public static final int CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS = 103;
+    public static final int CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS = 104;
 
     /** The flag `focus_indicators`. */
-    public static final int CONFIG_FLAGS_FOCUS_INDICATORS = 104;
+    public static final int CONFIG_FLAGS_FOCUS_INDICATORS = 105;
 
     /** The flag `font_point_scale`. */
-    public static final int CONFIG_FLAGS_FONT_POINT_SCALE = 105;
+    public static final int CONFIG_FLAGS_FONT_POINT_SCALE = 106;
 
     /** The flag `force_theme`. */
-    public static final int CONFIG_FLAGS_FORCE_THEME = 106;
+    public static final int CONFIG_FLAGS_FORCE_THEME = 107;
 
     /** The flag `gc_icons_replacement`. */
-    public static final int CONFIG_FLAGS_GC_ICONS_REPLACEMENT = 107;
+    public static final int CONFIG_FLAGS_GC_ICONS_REPLACEMENT = 108;
 
     /** The flag `hover_delay_ms`. */
-    public static final int CONFIG_FLAGS_HOVER_DELAY_MS = 108;
+    public static final int CONFIG_FLAGS_HOVER_DELAY_MS = 109;
 
     /** The flag `image_disable_icons_replacement`. */
-    public static final int CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT = 109;
+    public static final int CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT = 110;
 
     /** The flag `locale`. */
-    public static final int CONFIG_FLAGS_LOCALE = 110;
+    public static final int CONFIG_FLAGS_LOCALE = 111;
 
     /** The flag `notification_popup`. */
-    public static final int CONFIG_FLAGS_NOTIFICATION_POPUP = 111;
+    public static final int CONFIG_FLAGS_NOTIFICATION_POPUP = 112;
 
     /** The flag `preserve_icon_colors`. */
-    public static final int CONFIG_FLAGS_PRESERVE_ICON_COLORS = 112;
+    public static final int CONFIG_FLAGS_PRESERVE_ICON_COLORS = 113;
 
     /** The flag `print_move`. */
-    public static final int CONFIG_FLAGS_PRINT_MOVE = 113;
+    public static final int CONFIG_FLAGS_PRINT_MOVE = 114;
 
     /** The flag `push_button_margin`. */
-    public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 114;
+    public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 115;
 
     /** The flag `scale_vertical_minimum_at_top`. */
-    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 115;
+    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 116;
 
     /** The flag `show_scaling_control`. */
-    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 116;
+    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 117;
 
     /** The flag `show_theme_color_palette`. */
-    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 117;
+    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 118;
 
     /** The flag `system_menu_bar`. */
-    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 118;
+    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 119;
 
     /** The flag `theme_color`. */
-    public static final int CONFIG_FLAGS_THEME_COLOR = 119;
+    public static final int CONFIG_FLAGS_THEME_COLOR = 120;
 
     /** The flag `theme_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 120;
+    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 121;
 
     /** The flag `theme_name`. */
-    public static final int CONFIG_FLAGS_THEME_NAME = 121;
+    public static final int CONFIG_FLAGS_THEME_NAME = 122;
 
     /** The flag `transparent_menu_check_box`. */
-    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 122;
+    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 123;
 
     /** The flag `ui_zoom`. */
-    public static final int CONFIG_FLAGS_UI_ZOOM = 123;
+    public static final int CONFIG_FLAGS_UI_ZOOM = 124;
 
     /** The flag `use_special_dropdown_button`. */
-    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 124;
+    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 125;
 
     /** The flag `use_swt_border`. */
-    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 125;
+    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 126;
 
     /** The flag `use_swt_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 126;
+    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 127;
 
     /** The flag `use_swt_font_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 127;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 128;
 
     /** The flag `use_swt_font_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 128;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 129;
 
     /** The flag `use_swt_fonts`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 129;
+    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 130;
 }

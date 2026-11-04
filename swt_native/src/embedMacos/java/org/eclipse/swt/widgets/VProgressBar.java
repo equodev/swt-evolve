@@ -36,11 +36,11 @@ public class VProgressBar extends VControl {
         ((DartProgressBar) impl).selection = value;
     }
 
-    public static final int MAXIMUM = 415;
+    public static final int MAXIMUM = 416;
 
-    public static final int MINIMUM = 416;
+    public static final int MINIMUM = 417;
 
-    public static final int SELECTION = 417;
+    public static final int SELECTION = 418;
 
     @Override
     public String wireName(int key) {
@@ -58,13 +58,13 @@ public class VProgressBar extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 415:
+            case 416:
                 w.write((int) getMaximum());
                 return true;
-            case 416:
+            case 417:
                 w.write((int) getMinimum());
                 return true;
-            case 417:
+            case 418:
                 w.write((int) getSelection());
                 return true;
         }
@@ -74,18 +74,9 @@ public class VProgressBar extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 415:
-                {
-                    int v_ = getMaximum();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(415);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 416:
                 {
-                    int v_ = getMinimum();
+                    int v_ = getMaximum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(416);
@@ -94,10 +85,19 @@ public class VProgressBar extends VControl {
                 }
             case 417:
                 {
-                    int v_ = getSelection();
+                    int v_ = getMinimum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(417);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 418:
+                {
+                    int v_ = getSelection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(418);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -105,7 +105,7 @@ public class VProgressBar extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 415, 416, 417 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 416, 417, 418 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

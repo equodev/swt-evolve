@@ -73,21 +73,21 @@ public class VSpinner extends VComposite {
         return ((DartSpinner) impl).wireKeptText();
     }
 
-    public static final int DIGITS = 464;
+    public static final int DIGITS = 465;
 
-    public static final int INCREMENT = 465;
+    public static final int INCREMENT = 466;
 
-    public static final int KEPT_TEXT = 466;
+    public static final int KEPT_TEXT = 467;
 
-    public static final int MAXIMUM = 467;
+    public static final int MAXIMUM = 468;
 
-    public static final int MINIMUM = 468;
+    public static final int MINIMUM = 469;
 
-    public static final int PAGE_INCREMENT = 469;
+    public static final int PAGE_INCREMENT = 470;
 
-    public static final int SELECTION = 470;
+    public static final int SELECTION = 471;
 
-    public static final int TEXT_LIMIT = 471;
+    public static final int TEXT_LIMIT = 472;
 
     @Override
     public String wireName(int key) {
@@ -115,28 +115,28 @@ public class VSpinner extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 464:
+            case 465:
                 w.write((int) getDigits());
                 return true;
-            case 465:
+            case 466:
                 w.write((int) getIncrement());
                 return true;
-            case 467:
+            case 468:
                 w.write((int) getMaximum());
                 return true;
-            case 468:
+            case 469:
                 w.write((int) getMinimum());
                 return true;
-            case 469:
+            case 470:
                 w.write((int) getPageIncrement());
                 return true;
-            case 470:
+            case 471:
                 w.write((int) getSelection());
                 return true;
-            case 471:
+            case 472:
                 w.write((int) getTextLimit());
                 return true;
-            case 466:
+            case 467:
                 w.write(getKeptText());
                 return true;
         }
@@ -146,36 +146,27 @@ public class VSpinner extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 464:
-                {
-                    int v_ = getDigits();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(464);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 465:
                 {
-                    int v_ = getIncrement();
+                    int v_ = getDigits();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(465);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 467:
+            case 466:
                 {
-                    int v_ = getMaximum();
+                    int v_ = getIncrement();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(467);
+                    w.key(466);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 468:
                 {
-                    int v_ = getMinimum();
+                    int v_ = getMaximum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(468);
@@ -184,7 +175,7 @@ public class VSpinner extends VComposite {
                 }
             case 469:
                 {
-                    int v_ = getPageIncrement();
+                    int v_ = getMinimum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(469);
@@ -193,7 +184,7 @@ public class VSpinner extends VComposite {
                 }
             case 470:
                 {
-                    int v_ = getSelection();
+                    int v_ = getPageIncrement();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(470);
@@ -202,21 +193,30 @@ public class VSpinner extends VComposite {
                 }
             case 471:
                 {
-                    int v_ = getTextLimit();
+                    int v_ = getSelection();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(471);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 466:
+            case 472:
+                {
+                    int v_ = getTextLimit();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(472);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 467:
                 {
                     String v_ = getKeptText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(466);
+                    w.key(467);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -224,7 +224,7 @@ public class VSpinner extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 464, 465, 467, 468, 469, 470, 471, 466 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 465, 466, 468, 469, 470, 471, 472, 467 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

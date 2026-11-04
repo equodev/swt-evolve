@@ -275,6 +275,13 @@ public class VCTabFolder extends VComposite {
         ((DartCTabFolder) impl).single = value;
     }
 
+    public int getStripLayoutSeq() {
+        return ((DartCTabFolder) impl).stripLayoutSeq;
+    }
+
+    public void setStripLayoutSeq(int value) {
+    }
+
     public Integer getTabHeight() {
         int value = ((DartCTabFolder) impl)._displayedTabHeight();
         return value == dev.equo.swt.size.CTabFolderSizes.TAB_STRIP_HEIGHT ? null : value;
@@ -365,17 +372,19 @@ public class VCTabFolder extends VComposite {
 
     public static final int SINGLE = 54;
 
-    public static final int TAB_HEIGHT = 55;
+    public static final int STRIP_LAYOUT_SEQ = 55;
 
-    public static final int TAB_POSITION = 56;
+    public static final int TAB_HEIGHT = 56;
 
-    public static final int TOP_RIGHT = 57;
+    public static final int TAB_POSITION = 57;
 
-    public static final int TOP_RIGHT_ALIGNMENT = 58;
+    public static final int TOP_RIGHT = 58;
 
-    public static final int UNSELECTED_CLOSE_VISIBLE = 59;
+    public static final int TOP_RIGHT_ALIGNMENT = 59;
 
-    public static final int UNSELECTED_IMAGE_VISIBLE = 60;
+    public static final int UNSELECTED_CLOSE_VISIBLE = 60;
+
+    public static final int UNSELECTED_IMAGE_VISIBLE = 61;
 
     @Override
     public String wireName(int key) {
@@ -418,6 +427,8 @@ public class VCTabFolder extends VComposite {
                 return "showListPopupSeq";
             case SINGLE:
                 return "single";
+            case STRIP_LAYOUT_SEQ:
+                return "stripLayoutSeq";
             case TAB_HEIGHT:
                 return "tabHeight";
             case TAB_POSITION:
@@ -495,21 +506,24 @@ public class VCTabFolder extends VComposite {
                 w.write(getSingle());
                 return true;
             case 55:
-                w.write(getTabHeight());
+                w.write((int) getStripLayoutSeq());
                 return true;
             case 56:
-                w.write((int) getTabPosition());
+                w.write(getTabHeight());
                 return true;
             case 57:
-                w.ref(getTopRight());
+                w.write((int) getTabPosition());
                 return true;
             case 58:
-                w.write((int) getTopRightAlignment());
+                w.ref(getTopRight());
                 return true;
             case 59:
-                w.write(getUnselectedCloseVisible());
+                w.write((int) getTopRightAlignment());
                 return true;
             case 60:
+                w.write(getUnselectedCloseVisible());
+                return true;
+            case 61:
                 w.write(getUnselectedImageVisible());
                 return true;
         }
@@ -692,55 +706,64 @@ public class VCTabFolder extends VComposite {
                 }
             case 55:
                 {
-                    Integer v_ = getTabHeight();
-                    if (v_ == null)
+                    int v_ = getStripLayoutSeq();
+                    if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(55);
-                    w.write(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 56:
                 {
-                    int v_ = getTabPosition();
-                    if (v_ == 0)
+                    Integer v_ = getTabHeight();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(56);
-                    w.write((int) v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 57:
                 {
-                    Control v_ = getTopRight();
-                    if (v_ == null)
+                    int v_ = getTabPosition();
+                    if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(57);
-                    w.ref(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 58:
                 {
-                    int v_ = getTopRightAlignment();
-                    if (v_ == 0)
+                    Control v_ = getTopRight();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(58);
-                    w.write((int) v_);
+                    w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 59:
                 {
-                    boolean v_ = getUnselectedCloseVisible();
-                    if (!v_)
+                    int v_ = getTopRightAlignment();
+                    if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(59);
-                    w.write(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 60:
                 {
-                    boolean v_ = getUnselectedImageVisible();
+                    boolean v_ = getUnselectedCloseVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(60);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 61:
+                {
+                    boolean v_ = getUnselectedImageVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(61);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -748,7 +771,7 @@ public class VCTabFolder extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

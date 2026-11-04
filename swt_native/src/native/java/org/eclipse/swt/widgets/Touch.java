@@ -104,36 +104,36 @@ public final class Touch implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(614);
-        w.write(id);
-        w.key(616);
-        w.object(source);
-        w.key(617);
-        w.write((int) state);
         w.key(615);
-        w.write(primary);
+        w.write(id);
+        w.key(617);
+        w.object(source);
         w.key(618);
-        w.write((int) x);
+        w.write((int) state);
+        w.key(616);
+        w.write(primary);
         w.key(619);
+        w.write((int) x);
+        w.key(620);
         w.write((int) y);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 614:
+            case 615:
                 id = r.int64();
                 return true;
-            case 617:
+            case 618:
                 state = r.int32();
                 return true;
-            case 615:
+            case 616:
                 primary = r.bool();
                 return true;
-            case 618:
+            case 619:
                 x = r.int32();
                 return true;
-            case 619:
+            case 620:
                 y = r.int32();
                 return true;
         }

@@ -91,6 +91,7 @@ class VCTabFolder extends VComposite {
   bool? showChevron;
   int? showListPopupSeq;
   bool? single;
+  int? stripLayoutSeq;
   int? tabHeight;
   int? tabPosition;
   VControl? topRight;
@@ -121,6 +122,7 @@ class VCTabFolder extends VComposite {
       showChevron = other.showChevron;
       showListPopupSeq = other.showListPopupSeq;
       single = other.single;
+      stripLayoutSeq = other.stripLayoutSeq;
       tabHeight = other.tabHeight;
       tabPosition = other.tabPosition;
       topRight = other.topRight;
@@ -190,22 +192,25 @@ class VCTabFolder extends VComposite {
       case 54: // single
         single = r.boolean();
         return true;
-      case 55: // tabHeight
+      case 55: // stripLayoutSeq
+        stripLayoutSeq = r.int32();
+        return true;
+      case 56: // tabHeight
         tabHeight = r.intBoxed();
         return true;
-      case 56: // tabPosition
+      case 57: // tabPosition
         tabPosition = r.int32();
         return true;
-      case 57: // topRight
+      case 58: // topRight
         topRight = r.ref<VControl>();
         return true;
-      case 58: // topRightAlignment
+      case 59: // topRightAlignment
         topRightAlignment = r.int32();
         return true;
-      case 59: // unselectedCloseVisible
+      case 60: // unselectedCloseVisible
         unselectedCloseVisible = r.boolean();
         return true;
-      case 60: // unselectedImageVisible
+      case 61: // unselectedImageVisible
         unselectedImageVisible = r.boolean();
         return true;
       default:
@@ -334,40 +339,46 @@ class VCTabFolder extends VComposite {
       }
     }
     {
+      final v_ = stripLayoutSeq;
+      if (v_ != null) {
+        w.keyInt32(55, v_);
+      }
+    }
+    {
       final v_ = tabHeight;
       if (v_ != null) {
-        w.key(55);
+        w.key(56);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = tabPosition;
       if (v_ != null) {
-        w.keyInt32(56, v_);
+        w.keyInt32(57, v_);
       }
     }
     {
       final v_ = topRight;
       if (v_ != null) {
-        w.keyRef(57, v_.id);
+        w.keyRef(58, v_.id);
       }
     }
     {
       final v_ = topRightAlignment;
       if (v_ != null) {
-        w.keyInt32(58, v_);
+        w.keyInt32(59, v_);
       }
     }
     {
       final v_ = unselectedCloseVisible;
       if (v_ != null) {
-        w.keyBoolean(59, v_);
+        w.keyBoolean(60, v_);
       }
     }
     {
       final v_ = unselectedImageVisible;
       if (v_ != null) {
-        w.keyBoolean(60, v_);
+        w.keyBoolean(61, v_);
       }
     }
   }
@@ -394,12 +405,13 @@ class VCTabFolder extends VComposite {
     visit(52, showChevron);
     visit(53, showListPopupSeq);
     visit(54, single);
-    visit(55, tabHeight);
-    visit(56, tabPosition);
-    visit(57, topRight);
-    visit(58, topRightAlignment);
-    visit(59, unselectedCloseVisible);
-    visit(60, unselectedImageVisible);
+    visit(55, stripLayoutSeq);
+    visit(56, tabHeight);
+    visit(57, tabPosition);
+    visit(58, topRight);
+    visit(59, topRightAlignment);
+    visit(60, unselectedCloseVisible);
+    visit(61, unselectedImageVisible);
   }
 
   @override
