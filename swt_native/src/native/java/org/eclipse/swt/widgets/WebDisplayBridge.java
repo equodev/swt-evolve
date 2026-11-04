@@ -504,6 +504,11 @@ public class WebDisplayBridge extends DisplayBridge {
     @Override
     public void onUpdate() {
         super.onUpdate();
+        pumpEngineOnly();
+    }
+
+    @Override
+    public void pumpEngineOnly() {
         if (chromiumLauncher != null)
             chromiumLauncher.pump();
     }

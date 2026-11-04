@@ -939,42 +939,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             dgc.requestRenderSnapshotAndWait();
         } else {
             java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
-            if (f != null && !f.isDone()) {
-                Display display = Display.getCurrent();
-                if (display != null && !display.isDisposed()) {
-                    if (dev.equo.swt.ConfigFlags.isDesktopMode()) {
-                        // The render request may share the Display's one comm channel with every other
-                        // widget/event on it instead of using an isolated per-image engine (see
-                        // DisplayBridge#sharedCommFor / GCImageDrawer#resolveSharedComm) — under CI load
-                        // it can queue behind unrelated traffic, so this bound is generous either way.
-                        long deadline = System.nanoTime() + 30_000_000_000L;
-                        Runnable wakeOnTimeout = () -> {
-                        };
-                        display.timerExec(30000, wakeOnTimeout);
-                        try {
-                            while (!f.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
-                                // GC(Image) uses an off-screen Flutter engine whose startup and
-                                // rendering require SWT's event loop on every desktop platform.
-                                // Sleeping without dispatching can prevent ClientReady from running.
-                                if (!display.readAndDispatch()) {
-                                    display.sleep();
-                                }
-                            }
-                        } finally {
-                            if (!display.isDisposed()) {
-                                display.timerExec(-1, wakeOnTimeout);
-                            }
-                        }
-                    } else {
-                        try {
-                            f.get(30000, java.util.concurrent.TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
-                        }
-                    }
-                }
-            }
+            if (f != null && !f.isDone())
+                _awaitRender(f);
         }
         // Everything above settles a render that is already in flight. This is the other
         // case: the render finished on the Flutter side and its pixels never crossed, so
@@ -1356,6 +1322,10 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     public void _memGC(GC gc) {
         memGC = gc;
+    }
+
+    static void _awaitRender(java.util.concurrent.Future<?> render) {
+        org.eclipse.swt.widgets.DisplayBridge.awaitWithoutDispatch(Display.getCurrent(), render, 30000);
     }
 
     private void _releaseRemoteRefOnDart(Long ref) {

@@ -1468,6 +1468,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
+     * Advances the surface's own event loop once, and nothing else: unlike {@link #onUpdate()} it
+     * syncs no shell bounds or menu bar, and a close the loop reports is only queued with asyncExec.
+     * What {@link #awaitWithoutDispatch} pumps on a {@link #needsPump()} surface. No-op by default.
+     */
+    public void pumpEngineOnly() {
+    }
+
+    /**
      * Idle wait between event-loop turns, called from {@code DartDisplay.sleep()} when {@link
      * #needsPump()} is true. Parks the thread by default; the native-window surface overrides this to
      * block inside the OS event loop so input/window events wake it immediately (see
@@ -1499,6 +1507,50 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * woken by it, hence the no-op default.
      */
     public void wake() {
+    }
+
+    /**
+     * Waits for {@code done}, at most {@code timeoutMillis}, without running application code: no
+     * asyncExec, timer, paint or deferred event, as none runs inside a native call SWT answers
+     * synchronously (an image's pixels, say). A JFace page caches its size the first time it is
+     * asked, so a layout queued earlier and run inside the wait measures a half-built page. The
+     * client's answers arrive on the comm thread; only a pump-driven surface needs its event loop
+     * pumped for its engine to make progress, through {@link #pumpEngineOnly()}.
+     */
+    public static void awaitWithoutDispatch(Display api, java.util.concurrent.Future<?> done, int timeoutMillis) {
+        if (api == null || api.isDisposed() || !(api.getImpl() instanceof DartDisplay))
+            return;
+        DartDisplay display = (DartDisplay) api.getImpl();
+        DisplayBridge bridge = display.displayBridge;
+        // Only the display's thread may drive its event loop.
+        if (bridge == null || !bridge.needsPump() || display.thread != Thread.currentThread()) {
+            try {
+                done.get(timeoutMillis, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+                // The caller reads whatever the image holds.
+            }
+            return;
+        }
+        long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+        while (!done.isDone() && !display.isDisposed()) {
+            long left = (deadline - System.nanoTime()) / 1_000_000L;
+            if (left <= 0)
+                return;
+            FlutterBridge.updateFrame();
+            bridge.pumpEngineOnly();
+            try {
+                // Armed before the last check, so an answer landing in between still ends the sleep.
+                bridge.armWake();
+                if (done.isDone())
+                    return;
+                bridge.sleep((int) Math.min(left, bridge.parkCapMillis()));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     @Override

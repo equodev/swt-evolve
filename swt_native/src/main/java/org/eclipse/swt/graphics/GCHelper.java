@@ -296,6 +296,29 @@ public class GCHelper {
     }
 
     /**
+     * Waits for {@code render}, at most {@code timeoutMillis}, while running {@code display}'s event
+     * loop, which an off-screen engine driven by SWT's loop needs to start and render.
+     */
+    public static void awaitRenderPumping(Display display, java.util.concurrent.Future<?> render, int timeoutMillis) {
+        if (display == null || display.isDisposed())
+            return;
+        long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
+        // Display#sleep() has no timeout of its own: this timer wakes it to re-check the deadline.
+        Runnable wakeOnTimeout = () -> {
+        };
+        display.timerExec(timeoutMillis, wakeOnTimeout);
+        try {
+            while (!render.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
+                if (!display.readAndDispatch())
+                    display.sleep();
+            }
+        } finally {
+            if (!display.isDisposed())
+                display.timerExec(-1, wakeOnTimeout);
+        }
+    }
+
+    /**
      * Updates an image from raw PNG bytes received over the binary comm channel — the desktop
      * D→J image path. No base64 is involved (the bytes arrive verbatim via {@code sendBytes}).
      */
@@ -453,19 +476,7 @@ public class GCHelper {
             }
             return;
         }
-        // Display#sleep() blocks with no timeout of its own, so a display with nothing else
-        // happening would never wake to re-check the deadline.
-        long deadline = System.nanoTime() + timeoutMs * 1_000_000L;
-        Runnable wakeOnTimeout = () -> {
-        };
-        display.timerExec((int) timeoutMs, wakeOnTimeout);
-        try {
-            while (!future.isDone() && !display.isDisposed() && System.nanoTime() < deadline) {
-                if (!display.readAndDispatch()) display.sleep();
-            }
-        } finally {
-            if (!display.isDisposed()) display.timerExec(-1, wakeOnTimeout);
-        }
+        awaitRenderPumping(display, future, (int) timeoutMs);
     }
 
 

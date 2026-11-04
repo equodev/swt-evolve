@@ -164,7 +164,17 @@ public class DeskDisplayBridge extends DisplayBridge {
         Shell main = mainShell(forDisplay);
         fitShellTakingOverWindow(main);
         applyWindowOrigin(main, mainWindowOrigin());
+        pumpWindows(true);
+    }
 
+    /** The windows' event loops only: no shell bounds or origin sync, and a close is only queued. */
+    @Override
+    public void pumpEngineOnly() {
+        if (hasNativeWindow())
+            pumpWindows(false);
+    }
+
+    private void pumpWindows(boolean syncShellOrigins) {
         // A turn that found work instead of waiting left the wait armed.
         waitState.set(RUNNING);
         int status = pumpWindow();
@@ -173,7 +183,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         } else if (status < 0) {
             onWindowClosed();
         }
-        pumpShellWindows();
+        pumpShellWindows(syncShellOrigins);
     }
 
     // ---- one native window per detached shell (see WindowPolicy) ----------------------------------
@@ -436,7 +446,7 @@ public class DeskDisplayBridge extends DisplayBridge {
      * still has to be asked at all. Learning it a few passes late is not observable: the loop turns
      * continuously, and a close gesture is answered on the next pass either way.
      */
-    private void pumpShellWindows() {
+    private void pumpShellWindows(boolean syncShellOrigin) {
         shellWindowsToPump.removeIf(window -> !window.isAlive());
         if (shellWindowsToPump.isEmpty()) {
             nextShellWindowToPump = 0;
@@ -447,7 +457,7 @@ public class DeskDisplayBridge extends DisplayBridge {
 
         // One window per pass, the same budget the pump already works to: a window the user moved
         // reports its new origin on the next turn, the same freshness a close gets.
-        applyWindowOrigin(window.shell, window.origin());
+        if (syncShellOrigin) applyWindowOrigin(window.shell, window.origin());
 
         int status = window.pump();
         if (status == FlutterNative.PUMP_CLOSE_REQUESTED) {
