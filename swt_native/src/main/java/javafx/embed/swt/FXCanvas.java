@@ -66,6 +66,14 @@ import com.sun.javafx.stage.EmbeddedWindow;
  *       <em>input</em> forwarding and lifecycle. A snapshot is requested after
  *       scene set, resize, and every forwarded input event; when it completes the
  *       canvas is redrawn and {@link #paintControl} blits the cached frame.</li>
+ *   <li><b>SWT-thread scene access.</b> Host applications build and mutate the JavaFX scene graph
+ *       from the SWT thread, exactly as upstream {@code FXCanvas} allows by running JavaFX on that
+ *       thread. Once a scene is hosted this canvas honours that contract by switching JavaFX to its
+ *       single-thread model — the SWT thread becomes JavaFX's user thread, the separate Monocle
+ *       thread is quiesced, and the SWT thread drains JavaFX's deferred-runnable queue itself — so
+ *       scene-graph mutations on the SWT thread are legal, {@code Platform.runLater} still runs (on
+ *       the SWT thread, as upstream), and this canvas renders from the SWT thread too. See
+ *       {@link #adoptSwtThreadAsFxUserThread()}. (Amends ADR-019.)</li>
  * </ul>
  *
  * <p>v1 scope: a single interactive scene with pointer + key forwarding, resize,
@@ -75,6 +83,27 @@ public class FXCanvas extends Canvas {
 
     private static final AtomicBoolean TOOLKIT_STARTED = new AtomicBoolean(false);
     private static final AtomicBoolean UNAVAILABLE_WARNED = new AtomicBoolean(false);
+
+    // Once a scene is hosted, JavaFX is switched to the upstream single-thread model — the SWT
+    // Display thread becomes the FX user thread, the separate Monocle thread is quiesced, and the
+    // SWT thread drains JavaFX's deferred-runnable queue itself (see FxPump). See
+    // adoptSwtThreadAsFxUserThread(). Process-wide and idempotent: JavaFX has one toolkit and one
+    // Toolkit.fxUserThread per JVM, so this is a global switch, not a per-canvas one.
+    private static final AtomicBoolean SWT_THREAD_ADOPTED = new AtomicBoolean(false);
+    // Releases the parked Monocle thread and the thread-owner fields it saved, so adoption is
+    // reversible at JVM shutdown (and in tests). Set once, when adoption parks that thread.
+    private static volatile java.util.concurrent.CountDownLatch monocleParkRelease;
+    private static volatile Object parkedFxUserThread;    // the Monocle thread, restored on release
+    private static volatile Object parkedGlassEventThread; // ditto, the glass event-thread owner
+
+    // While adopted, the SWT thread services JavaFX's deferred-runnable queue by reposting a drain to
+    // the Display. Held so release() can cancel it; null when not adopted or no Display drives it (a
+    // Display-less test drives the drain directly via drainFxRunnables()). SWT-thread only.
+    private static volatile Display pumpDisplay;
+    private static volatile Runnable pumpTick;
+    // How often the SWT thread drains queued FX runnables (Platform.runLater work, animation pulses)
+    // while adopted. A frame's worth: responsive to runLater without busying the loop when idle.
+    private static final int FX_PUMP_INTERVAL_MS = 16;
 
     // Created on demand, NOT in a field initializer. Instantiating it defines HostContainer,
     // which implements com.sun.javafx.embed.HostInterface — and a host that loads JavaFX into
@@ -198,7 +227,16 @@ public class FXCanvas extends Canvas {
             // handed to JavaFX and the canvas renders nothing.
             return;
         }
-        Platform.runLater(() -> {
+        // Switch to the SWT-thread single-thread model BEFORE the embedded window exists, so that
+        // once setScene returns the host can keep building and mutating the scene graph on the SWT
+        // thread (the upstream FXCanvas contract) without tripping checkFxUserThread. Fail-closed: if
+        // adoption is unavailable the work below still runs, on the separate FX thread, as before.
+        if (newScene != null && adoptSwtThreadAsFxUserThread()) {
+            // Parking the Monocle thread stopped it draining Platform.runLater; the SWT thread now
+            // drives that drain so the host's (and JavaFX's own) deferred work keeps running.
+            startFxPump(getDisplaySafe());
+        }
+        runOnFxThread(() -> {
             if (pulseScene != null) {
                 pulseScene.removePostLayoutPulseListener(pulseListener);
                 pulseScene = null;
@@ -522,7 +560,7 @@ public class FXCanvas extends Canvas {
             return;
         }
         if (snapshotPending.compareAndSet(false, true)) {
-            Platform.runLater(() -> {
+            postToFxThread(() -> {
                 snapshotPending.set(false);
                 snapshotNow();
             });
@@ -630,7 +668,7 @@ public class FXCanvas extends Canvas {
             if (fxHostUnavailable) {
                 return;
             }
-            Platform.runLater(() -> {
+            runOnFxThread(() -> {
                 if (stagePeer != null) {
                     stagePeer.setSize(fw, fh);
                     // setEmbeddedStage usually runs before the first paint (size still 0) and
@@ -879,6 +917,240 @@ public class FXCanvas extends Canvas {
     }
 
     /**
+     * Switches JavaFX to the upstream single-thread model: the calling (SWT Display) thread becomes
+     * JavaFX's user thread and the SWT thread thereafter owns both the scene graph and JavaFX's
+     * deferred-runnable queue — the contract upstream {@code FXCanvas} gives by running JavaFX on the
+     * SWT thread outright. A host application can then build and mutate the scene graph from the SWT
+     * thread, and {@code Platform.runLater} still runs (on the SWT thread).
+     *
+     * <p>Evolve otherwise renders JavaFX on its own Monocle thread (ADR-005/019). Here that thread is
+     * parked on a latch so nothing touches the scene graph concurrently with the SWT thread. But a
+     * parked thread also stops draining JavaFX's runnable queue, which would starve every
+     * {@code Platform.runLater} the host (and JavaFX itself — animation, CSS, dialogs) issues. So the
+     * SWT thread takes over that drain: {@link FxPump} reaches the headless toolkit's runnable queue
+     * and {@link #drainFxRunnables()} runs its entries on the SWT thread, reposted each frame via the
+     * Display (see {@link #startFxPump(Display)}). Queued animation pulses therefore run too — on the
+     * SWT thread, as upstream. Both owner gates are repointed together — {@code Toolkit.fxUserThread}
+     * and {@code com.sun.glass.ui.Application.eventThread} — for the reason ADR-019 documents.
+     *
+     * <p>Process-wide and idempotent: JavaFX has a single toolkit and a single
+     * {@code Toolkit.fxUserThread} per JVM, so this is a one-time global switch. (A second SWT Display
+     * thread in the same JVM cannot also own JavaFX — that is JavaFX's own single-thread constraint,
+     * not one added here.) Fail-closed: if the FX internals or the toolkit's runnable queue are
+     * unreachable, or the Monocle thread cannot be parked within {@link #FX_PARK_TIMEOUT_MS}, this
+     * returns false and leaves the separate-FX-thread path in place — never a parked thread with no
+     * drain, which would hang.
+     *
+     * <p>Package-visible so {@code FXCanvasSceneBuildOnSwtThreadNativeTest} can drive the real
+     * park-and-repoint against a live headless toolkit with no SWT Display.
+     *
+     * @return true once the SWT thread owns the JavaFX scene graph
+     */
+    static boolean adoptSwtThreadAsFxUserThread() {
+        if (SWT_THREAD_ADOPTED.get()) {
+            return true;
+        }
+        // Only adopt where Monocle is the backend we actually started (Linux/macOS — needsMonocle()).
+        // On a native Glass backend (Windows) the FX thread drains Platform.runLater itself, and
+        // FxPump would resolve an inactive Monocle queue, not that backend's — so parking there would
+        // starve the real queue and hang. Leave the separate-FX-thread path in place instead.
+        if (!needsMonocle() || !monocleAvailable()) {
+            return false;
+        }
+        // The pump is what keeps Platform.runLater alive once the Monocle thread is parked. Without a
+        // reachable runnable queue to drain, parking would starve runLater — so refuse to adopt and
+        // leave the separate-FX-thread path in place.
+        if (!FxDispatch.READY || !FxPump.READY) {
+            return false;
+        }
+        synchronized (SWT_THREAD_ADOPTED) {
+            if (SWT_THREAD_ADOPTED.get()) {
+                return true;
+            }
+            Thread swt = Thread.currentThread();
+            // Same park handshake as runAsFxUserThread, run from the SWT thread (setScene is on it):
+            // the still-live Monocle thread reaches the parking runnable and signals back in well under
+            // a frame, so this bounded wait does not stall the UI thread; it fails closed on timeout.
+            java.util.concurrent.CountDownLatch parked = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+            try {
+                Platform.runLater(() -> {
+                    parked.countDown();
+                    try {
+                        release.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            } catch (Throwable toolkitNotRunning) {
+                return false;
+            }
+            try {
+                if (!parked.await(FX_PARK_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                    release.countDown(); // let the late parking runnable fall straight through
+                    return false;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                release.countDown();
+                return false;
+            }
+            try {
+                parkedFxUserThread = FxDispatch.FX_USER_THREAD.get(null);
+                parkedGlassEventThread = FxDispatch.GLASS_EVENT_THREAD.get(null);
+                FxDispatch.FX_USER_THREAD.set(null, swt);
+                FxDispatch.GLASS_EVENT_THREAD.set(null, swt);
+            } catch (IllegalAccessException impossible) {
+                release.countDown();
+                return false;
+            }
+            monocleParkRelease = release;
+            // A parked non-daemon FX thread must not keep the JVM from shutting down: release it as
+            // the JVM exits so it can run to completion.
+            try {
+                Runtime.getRuntime().addShutdownHook(
+                        new Thread(FXCanvas::releaseSwtThreadAdoption, "fxcanvas-monocle-unpark"));
+            } catch (IllegalStateException alreadyShuttingDown) {
+                // Nothing to keep alive if the JVM is already on its way down.
+            }
+            SWT_THREAD_ADOPTED.set(true);
+            return true;
+        }
+    }
+
+    /**
+     * Starts the SWT-thread drain of JavaFX's deferred-runnable queue. While adopted the Monocle
+     * thread is parked and no longer services that queue, so the SWT thread must — otherwise every
+     * {@code Platform.runLater} (the host's, and JavaFX's own animation/CSS/dialog work) is lost. A
+     * {@link Display#timerExec} reposts {@link #drainFxRunnables()} every {@link #FX_PUMP_INTERVAL_MS}
+     * until adoption is released. No-op if already running or the toolkit is not adopted. Must be
+     * called on the SWT thread.
+     *
+     * <p>A Display-less test needs no pump: it drives {@link #drainFxRunnables()} directly.
+     */
+    private static void startFxPump(Display display) {
+        if (display == null || display.isDisposed() || !SWT_THREAD_ADOPTED.get()) {
+            return;
+        }
+        if (pumpTick != null) {
+            return; // already pumping
+        }
+        pumpDisplay = display;
+        pumpTick = new Runnable() {
+            @Override
+            public void run() {
+                if (!SWT_THREAD_ADOPTED.get() || display.isDisposed()) {
+                    return;
+                }
+                drainFxRunnables();
+                display.timerExec(FX_PUMP_INTERVAL_MS, this);
+            }
+        };
+        display.timerExec(FX_PUMP_INTERVAL_MS, pumpTick);
+    }
+
+    /**
+     * Runs every runnable currently queued on the headless toolkit's deferred-runnable queue, on the
+     * calling (SWT) thread — the thread that now owns JavaFX. This is the drain that keeps
+     * {@code Platform.runLater} working after the Monocle thread is parked. Non-blocking: it takes a
+     * snapshot of what is queued now and stops, so a runnable that itself posts more does not spin the
+     * drain; the next pump tick picks those up. Only entries queued at entry are drained, to bound a
+     * single tick's work.
+     *
+     * <p>Package-visible so {@code FXCanvasSceneBuildOnSwtThreadNativeTest} can drive it with no
+     * Display, proving {@code Platform.runLater} still runs after adoption.
+     */
+    static void drainFxRunnables() {
+        if (!FxPump.READY) {
+            return;
+        }
+        // Bound to what is queued at entry: reading the count once, then polling that many times,
+        // keeps a tick finite even if drained runnables enqueue more (those run on the next tick).
+        int budget = FxPump.queuedCount();
+        for (int i = 0; i < budget; i++) {
+            Runnable r = FxPump.poll();
+            if (r == null) {
+                break;
+            }
+            try {
+                r.run();
+            } catch (Throwable fxWorkThrew) {
+                // A runLater body throws to the FX thread's uncaught handler upstream, never to the
+                // host's loop. Preserve that: log, keep draining.
+                System.err.println("[FXCanvas] queued JavaFX runnable threw on the SWT thread: " + fxWorkThrew);
+                fxWorkThrew.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Reverses {@link #adoptSwtThreadAsFxUserThread()}: stops the SWT-thread pump, restores the
+     * Monocle thread as JavaFX's owner and releases it from its park. Idempotent. Called from the
+     * shutdown hook, and by tests so a sibling test sees a pristine toolkit.
+     */
+    static void releaseSwtThreadAdoption() {
+        if (!SWT_THREAD_ADOPTED.compareAndSet(true, false)) {
+            return;
+        }
+        Display d = pumpDisplay;
+        Runnable tick = pumpTick;
+        pumpTick = null;
+        pumpDisplay = null;
+        if (d != null && tick != null && !d.isDisposed()) {
+            try {
+                d.timerExec(-1, tick); // cancel the reposting drain
+            } catch (Throwable ignored) {
+                // A disposed/wrong-thread Display just means the pump is already dead.
+            }
+        }
+        // Drain whatever is still queued before handing the queue back, so nothing posted during
+        // adoption is stranded when the Monocle thread resumes owning it.
+        drainFxRunnables();
+        try {
+            FxDispatch.FX_USER_THREAD.set(null, parkedFxUserThread);
+            FxDispatch.GLASS_EVENT_THREAD.set(null, parkedGlassEventThread);
+        } catch (IllegalAccessException impossible) {
+            // Leave the fields as they are; releasing the parked thread matters more.
+        }
+        java.util.concurrent.CountDownLatch r = monocleParkRelease;
+        if (r != null) {
+            r.countDown();
+        }
+    }
+
+    /**
+     * Runs scene-graph work on the thread that owns the scene graph. Under the SWT-thread model
+     * ({@link #adoptSwtThreadAsFxUserThread()}) that is the SWT thread — where every caller here
+     * already runs — so the work runs inline; otherwise it is posted to the separate FX thread, as
+     * before. (When not adopted the Monocle thread is live and services {@code Platform.runLater};
+     * when adopted it is parked and would never run the posted work, which is exactly why adoption
+     * moves this onto the SWT thread.)
+     */
+    private void runOnFxThread(Runnable fxWork) {
+        if (SWT_THREAD_ADOPTED.get()) {
+            fxWork.run();
+        } else {
+            Platform.runLater(fxWork);
+        }
+    }
+
+    /**
+     * Posts scene-graph work to run asynchronously on the owning thread — coalesced through the
+     * Display onto the SWT thread under the SWT-thread model, or onto the separate FX thread
+     * otherwise. Used where the work must be deferred/coalesced rather than run inline.
+     */
+    private void postToFxThread(Runnable fxWork) {
+        if (SWT_THREAD_ADOPTED.get()) {
+            Display d = getDisplaySafe();
+            if (d != null) {
+                d.asyncExec(fxWork);
+            }
+        } else {
+            Platform.runLater(fxWork);
+        }
+    }
+
+    /**
      * Reflective handles for SWT-thread input dispatch, resolved once. All optional: if any
      * JavaFX internal is unreachable (host loaded JavaFX into its own {@code ModuleLayer} and left
      * it closed, or a future JavaFX renamed a field), {@link #READY} stays false and dispatch
@@ -929,6 +1201,115 @@ public class FXCanvas extends Canvas {
         }
 
         private FxDispatch() {
+        }
+    }
+
+    /**
+     * Reflective access to the headless (Monocle) toolkit's deferred-runnable queue, so the SWT
+     * thread can drain {@code Platform.runLater} work itself once the Monocle thread is parked. The
+     * queue is {@code com.sun.glass.ui.monocle.RunnableQueue}, a FIFO of {@code Runnable} behind
+     * {@code NativePlatform.getRunnableProcessor()}; {@code Platform.runLater} ends up calling
+     * {@code RunnableProcessor.invokeLater} → {@code RunnableQueue.postRunnable}, which the Monocle
+     * thread would normally drain in {@code RunnableProcessor.runLoop}.
+     *
+     * <p>All optional: resolved only when the host carries Monocle (the backend this canvas uses when
+     * it adopts the SWT thread — see {@code needsMonocle()}). If any internal is unreachable (a host
+     * running a different Glass backend, or a future JavaFX that renamed these), {@link #READY} stays
+     * false, {@link FXCanvas#adoptSwtThreadAsFxUserThread()} refuses to adopt, and the separate-FX-
+     * thread path stands — never a parked thread with no drain. The private array fields are read and
+     * advanced under the queue's own monitor, matching how {@code RunnableQueue} guards itself, so the
+     * still-running pulse timer can post concurrently without corrupting the ring.
+     */
+    private static final class FxPump {
+        static final boolean READY;
+        private static final Object QUEUE;        // com.sun.glass.ui.monocle.RunnableQueue instance
+        private static final java.lang.reflect.Field RING;  // Runnable[] RunnableQueue.queue
+        private static final java.lang.reflect.Field START; // int RunnableQueue.start
+        private static final java.lang.reflect.Field COUNT;  // int RunnableQueue.count
+
+        static {
+            Object queue = null;
+            java.lang.reflect.Field ring = null;
+            java.lang.reflect.Field start = null;
+            java.lang.reflect.Field count = null;
+            boolean ok = false;
+            try {
+                openFxInternals();
+                Class<?> factory = Class.forName("com.sun.glass.ui.monocle.NativePlatformFactory");
+                java.lang.reflect.Method getPlatform = factory.getMethod("getNativePlatform");
+                getPlatform.setAccessible(true);
+                Object platform = getPlatform.invoke(null);
+                // getRunnableProcessor() is declared on NativePlatform, the superclass of the concrete
+                // headless platform the factory returns.
+                java.lang.reflect.Field rpField =
+                        Class.forName("com.sun.glass.ui.monocle.NativePlatform")
+                                .getDeclaredField("runnableProcessor");
+                rpField.setAccessible(true);
+                Object processor = rpField.get(platform);
+                java.lang.reflect.Field qField = processor.getClass().getDeclaredField("queue");
+                qField.setAccessible(true);
+                queue = qField.get(processor);
+                Class<?> queueClass = queue.getClass();
+                ring = queueClass.getDeclaredField("queue");
+                start = queueClass.getDeclaredField("start");
+                count = queueClass.getDeclaredField("count");
+                ring.setAccessible(true);
+                start.setAccessible(true);
+                count.setAccessible(true);
+                ok = true;
+            } catch (Throwable unavailable) {
+                // Left unresolved — adoption refuses and the separate-FX-thread path stands.
+            }
+            QUEUE = queue;
+            RING = ring;
+            START = start;
+            COUNT = count;
+            READY = ok;
+        }
+
+        /** How many runnables are queued right now. */
+        static int queuedCount() {
+            if (!READY) {
+                return 0;
+            }
+            synchronized (QUEUE) {
+                try {
+                    return COUNT.getInt(QUEUE);
+                } catch (IllegalAccessException impossible) {
+                    return 0;
+                }
+            }
+        }
+
+        /** Removes and returns the head runnable, or null if the queue is empty. Non-blocking. */
+        static Runnable poll() {
+            if (!READY) {
+                return null;
+            }
+            synchronized (QUEUE) {
+                try {
+                    int c = COUNT.getInt(QUEUE);
+                    if (c == 0) {
+                        return null;
+                    }
+                    Runnable[] ring = (Runnable[]) RING.get(QUEUE);
+                    int s = START.getInt(QUEUE);
+                    Runnable r = ring[s];
+                    ring[s] = null;
+                    int next = s + 1;
+                    if (next >= ring.length) {
+                        next -= ring.length;
+                    }
+                    START.setInt(QUEUE, next);
+                    COUNT.setInt(QUEUE, c - 1);
+                    return r;
+                } catch (IllegalAccessException impossible) {
+                    return null;
+                }
+            }
+        }
+
+        private FxPump() {
         }
     }
 
@@ -991,7 +1372,7 @@ public class FXCanvas extends Canvas {
         scenePeer = null;
         stagePeer = null;
         if (s != null || ps != null) {
-            Platform.runLater(() -> {
+            runOnFxThread(() -> {
                 try {
                     if (ps != null) ps.removePostLayoutPulseListener(pulseListener);
                     if (s != null) s.hide();

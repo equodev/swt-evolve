@@ -20,6 +20,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +79,14 @@ class FXCanvasPixelDensityNativeTest {
             up.countDown();
         }
         assertThat(up.await(20, TimeUnit.SECONDS)).as("JavaFX toolkit started").isTrue();
+    }
+
+    @AfterAll
+    static void release() {
+        // setScene adopts the test thread as JavaFX's user thread and parks the Monocle thread
+        // process-wide; undo it so a sibling FX test in the same JVM sees a pristine, self-draining
+        // toolkit.
+        FXCanvas.releaseSwtThreadAdoption();
     }
 
     @BeforeEach
@@ -248,6 +257,18 @@ class FXCanvasPixelDensityNativeTest {
                 done.countDown();
             }
         });
-        assertThat(done.await(20, TimeUnit.SECONDS)).as("FX thread drained").isTrue();
+        // setScene adopts the calling (test) thread as JavaFX's user thread and parks the Monocle
+        // thread, so this thread now owns the deferred-runnable queue — the same single-thread
+        // contract a real SWT loop honours by pumping. A real Display reposts the drain for us; this
+        // Display-less test drives it here so the posted work runs on this thread instead of
+        // deadlocking an await on a parked drainer.
+        long deadline = System.currentTimeMillis() + 20_000;
+        while (done.getCount() > 0 && System.currentTimeMillis() < deadline) {
+            FXCanvas.drainFxRunnables();
+            if (done.getCount() > 0) {
+                Thread.sleep(2);
+            }
+        }
+        assertThat(done.getCount()).as("FX thread drained").isEqualTo(0L);
     }
 }
