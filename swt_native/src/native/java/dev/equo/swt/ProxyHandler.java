@@ -164,9 +164,9 @@ class ProxyHandler implements HttpHandler {
 
             Fetched resp = fetch(target, method, requestBody, forwardedHeaders, headerLines, cookies,
                     connectTimeoutMillis, readTimeoutMillis);
-            String contentType = resp.contentType != null ? resp.contentType : "text/html; charset=utf-8";
             byte[] body = resp.body;
-            String lowerContentType = contentType.toLowerCase(java.util.Locale.ROOT);
+            String contentType = resp.contentType != null ? resp.contentType : guessContentType(resp.finalUrl, body);
+            String lowerContentType = contentType == null ? "" : contentType.toLowerCase(java.util.Locale.ROOT);
             // The URL a rewritten link routes through: this server's own origin, not the target's.
             // A page we serve carries an injected <base href> pointing at the *target* (so the
             // target's own untouched relative references keep resolving against it) -- so a
@@ -177,18 +177,19 @@ class ProxyHandler implements HttpHandler {
             if (lowerContentType.contains("html")) {
                 String html = new String(body, StandardCharsets.UTF_8);
                 URI finalUri = URI.create(resp.finalUrl);
+                // The page's relative references resolve against its own <base href>, if it has one.
+                URI documentBase = documentBase(html, finalUri);
                 // Rewrite first, inject the <base> afterwards: rewriteResourceUrls rewrites every
                 // href=, so a <base> already in place would itself be rewritten to a /proxy?url=
                 // wrapper -- and the page's real address is read back from document.baseURI.
-                html = rewriteResourceUrls(html, finalUri, headerLines, selfOrigin);
+                html = rewriteResourceUrls(html, documentBase, headerLines, selfOrigin);
                 html = rewriteModuleScripts(html, selfOrigin);
-                html = rewriteFormActions(html, finalUri, headerLines, selfOrigin);
-                html = injectModuleImportMap(html, finalUri, selfOrigin);
-                html = injectBaseHref(html, resp.finalUrl);
+                html = rewriteFormActions(html, documentBase, headerLines, selfOrigin);
+                html = injectModuleImportMap(html, documentBase, selfOrigin);
+                html = injectBaseHref(html, documentBase.toString());
                 html = injectNavigationShim(html, originOf(finalUri), headerLines, selfOrigin);
-                if (!headerLines.isEmpty()) {
-                    html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
-                }
+                html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
+                html = injectSocketShim(html, resp.finalUrl);
                 html = BrowserFunctionBootstrap.inject(html);
                 body = html.getBytes(StandardCharsets.UTF_8);
             } else if (lowerContentType.contains("css")) {
@@ -202,7 +203,8 @@ class ProxyHandler implements HttpHandler {
                 body = css.getBytes(StandardCharsets.UTF_8);
             }
             // Serve from this origin; deliberately do NOT copy X-Frame-Options / CSP frame-ancestors.
-            exchange.getResponseHeaders().set("Content-Type", contentType);
+            // No type known: none is sent, and the browser sniffs it as it would from the origin.
+            if (contentType != null) exchange.getResponseHeaders().set("Content-Type", contentType);
             // Cached as the origin says, unless the response depends on what the browser's cache key
             // cannot see: a page (the cookie jar, the shims), header lines (a rewritten stylesheet
             // embeds them), a redirect (the headers belong to another URL), or a Vary on
@@ -418,6 +420,45 @@ class ProxyHandler implements HttpHandler {
                 + "try{new MutationObserver(function(){pin(b);}).observe(b,{attributes:true,attributeFilter:['href']});}catch(e){}}"
                 + "})();</script>";
         return insertAfterHead(html, baseTag + pinScript);
+    }
+
+    private static final Pattern BASE_HREF = Pattern.compile(
+            "<base\\b[^>]*?\\shref\\s*=\\s*([\"'])([^\"']*)\\1", Pattern.CASE_INSENSITIVE);
+
+    /** The URL {@code html}'s relative references resolve against: its first {@code <base href>}, else the page's. */
+    static URI documentBase(String html, URI pageUri) {
+        Matcher m = BASE_HREF.matcher(html);
+        if (!m.find()) return pageUri;
+        try {
+            URI base = pageUri.resolve(decodeCharRefs(m.group(2).trim()));
+            String scheme = base.getScheme();
+            if (scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) return base;
+        } catch (IllegalArgumentException ignored) { }
+        return pageUri;
+    }
+
+    /** The type of a response whose origin sent none, from its name or its first bytes; null when neither tells. */
+    static String guessContentType(String url, byte[] body) {
+        String type = null;
+        try {
+            type = java.net.URLConnection.guessContentTypeFromName(URI.create(url).getPath());
+        } catch (IllegalArgumentException ignored) { }
+        if (type == null) {
+            int start = leadingBomAndWhitespace(body);
+            try {
+                type = java.net.URLConnection.guessContentTypeFromStream(
+                        new java.io.ByteArrayInputStream(body, start, body.length - start));
+            } catch (IOException ignored) { }
+        }
+        return type;
+    }
+
+    /** How many bytes a UTF-8 byte-order mark and whitespace take at the start of {@code body}. */
+    private static int leadingBomAndWhitespace(byte[] body) {
+        int i = 0;
+        if (body.length >= 3 && (body[0] & 0xFF) == 0xEF && (body[1] & 0xFF) == 0xBB && (body[2] & 0xFF) == 0xBF) i = 3;
+        while (i < body.length && (body[i] == ' ' || body[i] == '\t' || body[i] == '\n' || body[i] == '\r' || body[i] == '\f')) i++;
+        return i;
     }
 
     private static final Pattern HEAD_TAG = Pattern.compile("<head(?:\\s[^>]*)?>", Pattern.CASE_INSENSITIVE);
@@ -673,8 +714,13 @@ class ProxyHandler implements HttpHandler {
                     ? (Map<String, Object>) scopes.get(root) : new LinkedHashMap<String, Object>();
             if (!inRoot.containsKey(selfOrigin + "/")) inRoot.put(selfOrigin + "/", root);
             // The longest prefix wins: a proxied module's relative imports, already in the path form,
-            // match this identity entry and are left alone by the one above.
-            if (!inRoot.containsKey(selfOrigin + PATH_FORM)) inRoot.put(selfOrigin + PATH_FORM, selfOrigin + PATH_FORM);
+            // match these identity entries and are left alone by the one above. Each names a whole
+            // origin: what follows a shorter /proxy/ prefix is an absolute URL, which the browser
+            // refuses as an address that leaves its prefix.
+            for (String proxied : origins) {
+                String proxiedRoot = pathFormUrl(selfOrigin, proxied + "/");
+                if (!inRoot.containsKey(proxiedRoot)) inRoot.put(proxiedRoot, proxiedRoot);
+            }
             scopes.put(root, inRoot);
         }
         map.put("imports", imports);
@@ -793,6 +839,10 @@ class ProxyHandler implements HttpHandler {
      * the same auth headers embedded directly — no dependency on the server-side per-target cache
      * having already seen that exact path.
      *
+     * <p>Every page gets the fetch/XHR part: with no header lines, a request to the page's own server
+     * is still cross-origin from this one and CORS refuses it. The DOM part, for resource elements,
+     * only carries header lines, so a page without them doesn't get it.
+     *
      * <p>Still incomplete by nature: a WebSocket connection, a request built from a string this
      * shim can't recognize as absolute before the browser resolves it, or a request signed/shaped
      * in a way the target only accepts from its own real origin remain out of reach.
@@ -836,7 +886,15 @@ class ProxyHandler implements HttpHandler {
                 + "try{var abs=resolveAgainstTarget(url);"
                 + "if(abs&&sameTargetOrigin(abs)){arguments[1]=buildProxyUrl(abs);}"
                 + "}catch(e){}"
-                + "return origOpen.apply(this,arguments);};"
+                + "return origOpen.apply(this,arguments);};";
+        // Loaded natively, a resource element needs no CORS: only a header line is missing there.
+        if (!headerLines.isEmpty()) script += domRewriteScript();
+        return insertAfterHead(html, script + "})();</script>");
+    }
+
+    /** The fetch shim's part that sends resource elements the page adds or repoints through the proxy. */
+    private static String domRewriteScript() {
+        return ""
                 // A resource element (an <img> built from JSON data after load, say) the page adds
                 // or repoints via straight DOM/property writes never touches fetch or XHR at all --
                 // the browser loads it natively. Its src/href, built relative to this document,
@@ -897,7 +955,61 @@ class ProxyHandler implements HttpHandler {
                 + "if(r.attributeName==='style'){rewriteBackgroundImage(r.target);}else{rewriteAttr(r.target,r.attributeName);}"
                 + "}else if(r.addedNodes){for(var j=0;j<r.addedNodes.length;j++)scanNode(r.addedNodes[j]);}}"
                 + "}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','href','style']});"
-                + "}catch(e){}"
+                + "}catch(e){}";
+    }
+
+    /**
+     * The URL a proxied page meant by a request it sent to this server ({@code referer} is the
+     * page): a URL the page built from its own {@code location.host}, which is this server's. Same
+     * path and query on the page's own origin; null when {@code referer} is not a proxied page or
+     * the proxy may not serve that origin.
+     */
+    static String ownHostTarget(String referer, URI request) {
+        if (referer == null) return null;
+        URI ref;
+        try {
+            ref = URI.create(referer);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        String page = pathFormTarget(ref);
+        if (page == null && ref.getRawPath() != null && ref.getRawPath().endsWith("/proxy")) {
+            page = queryParam(ref.getRawQuery(), "url");
+        }
+        if (page == null) return null;
+        String target;
+        try {
+            URI pageUri = URI.create(page);
+            if (pageUri.getScheme() == null || pageUri.getAuthority() == null) return null;
+            String query = request.getRawQuery();
+            target = originOf(pageUri) + request.getRawPath() + (query == null ? "" : "?" + query);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        return WebFlutterServer.proxyAllowed(target) ? target : null;
+    }
+
+    /**
+     * Sends a page's WebSocket to this server's host on to the page's own server, which this
+     * server cannot relay. A proxied page builds such a URL from its {@code location}: the host is
+     * this server's, and a path built from its {@code location.pathname} starts with
+     * {@code /proxy}, which stands for the page's own directory. Injected first in {@code <head>}.
+     */
+    static String injectSocketShim(String html, String pageUrl) {
+        String script = "<script>(function(){"
+                + "var Native=window.WebSocket;if(!Native)return;"
+                + "var page;try{page=new URL(" + jsStringLiteral(pageUrl) + ");}catch(e){return;}"
+                + "var dir=page.pathname.substring(0,page.pathname.lastIndexOf('/'));"
+                + "function route(url){try{var u=new URL(url,location.href);"
+                + "if(u.host!==location.host)return url;"
+                + "var p=u.pathname;if(p==='/proxy'||p.indexOf('/proxy/')===0)p=dir+p.substring(6);"
+                + "u.protocol=page.protocol==='https:'?'wss:':'ws:';u.host=page.host;u.pathname=p;"
+                + "return u.href;}catch(e){return url;}}"
+                + "var Routed=function WebSocket(url,protocols){"
+                + "return arguments.length>1?new Native(route(url),protocols):new Native(route(url));};"
+                + "Routed.prototype=Native.prototype;"
+                + "Routed.CONNECTING=0;Routed.OPEN=1;Routed.CLOSING=2;Routed.CLOSED=3;"
+                + "window.WebSocket=Routed;"
                 + "})();</script>";
         return insertAfterHead(html, script);
     }

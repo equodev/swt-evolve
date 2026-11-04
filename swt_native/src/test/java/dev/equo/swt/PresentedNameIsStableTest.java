@@ -99,7 +99,7 @@ class PresentedNameIsStableTest {
         Shell shell = Mocks.shell();
         Composite perspective = new Composite(shell, SWT.NONE);
         Composite sash = new Composite(perspective, SWT.NONE);
-        sash.setLayout(new ConfigMainSashCompositeTest.FakeSashLayout());
+        sash.setLayout(new org.eclipse.e4.ui.workbench.renderers.swt.SashLayout());
         return (DartComposite) sash.getImpl();
     }
 

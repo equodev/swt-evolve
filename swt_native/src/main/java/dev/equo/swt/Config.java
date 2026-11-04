@@ -363,7 +363,8 @@ public class Config {
         return parent != null && parent.getImpl() instanceof DartAccessible;
     }
 
-    private static final String E4_TOOLBAR_CLASS = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
+    /** The e4 main window's layout: it marks the main Shell. */
+    private static final String E4_TRIMMED_PART_LAYOUT = "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
     private static final String E4_TOOLBAR_METHOD = "getTrimComposite";
 
     /** Lazily reflected+cached [top, bottom, left, right] fields of TrimmedPartLayout. */
@@ -374,10 +375,8 @@ public class Config {
     /** Returns the e4 TrimmedPartLayout instance if {@code parent} is the main Shell, else null. */
     private static Object trimLayout(Composite parent) {
         if (!(parent instanceof Shell)) return null;
-        Shell shell = (Shell) parent;
-        Layout layout = shell.getLayout();
-        if (layout == null) return null;
-        return E4_TOOLBAR_CLASS.equals(layout.getClass().getName()) ? layout : null;
+        Layout layout = ((Shell) parent).getLayout();
+        return isMainShellLayout(layout) ? layout : null;
     }
 
     private static java.lang.reflect.Field[] trimFields(Object layout) {
@@ -436,7 +435,7 @@ public class Config {
         if (layout == null) return -1;
         java.lang.reflect.Field[] f = trimFields(layout);
         if (f == null) return -1;
-        if (!isInStackTrace(E4_TOOLBAR_CLASS, E4_TOOLBAR_METHOD)) return -1;
+        if (!isInStackTrace(E4_TRIMMED_PART_LAYOUT, E4_TOOLBAR_METHOD)) return -1;
         try {
             int fromModel = modelTrimSide(parent);
             // A side whose field is already assigned cannot be the one under construction.
@@ -649,9 +648,23 @@ public class Config {
     private static final Map<DartWidget, String> presented =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
+    private static final String E4_SASH_LAYOUT = "org.eclipse.e4.ui.workbench.renderers.swt.SashLayout";
+
+    /**
+     * Matched by class name, as e4 is not a dependency. Never through {@code toString()}: a layout's
+     * may compute sizes (GroupLayout's does), and sizing names widgets, which lands back here.
+     */
+    private static boolean hasLayoutClass(Layout layout, String className) {
+        return layout != null && className.equals(layout.getClass().getName());
+    }
+
     private static boolean isSashLayout(Layout layout) {
-        return layout != null
-                && layout.toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.SashLayout");
+        return hasLayoutClass(layout, E4_SASH_LAYOUT);
+    }
+
+    /** Whether {@code layout} is the e4 main window's, which marks the main Shell. */
+    public static boolean isMainShellLayout(Layout layout) {
+        return hasLayoutClass(layout, E4_TRIMMED_PART_LAYOUT);
     }
 
     private static boolean hasChildOfType(Control[] children, Class<?> type) {
@@ -800,7 +813,7 @@ public class Config {
             int position;
             if (idParent == null || idParent.getChildren() == null) {
                 if (child instanceof Shell) { Shell shell = (Shell) child;
-                    if (shell.getLayout() != null && shell.getLayout().toString().contains("org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout")) {
+                    if (isMainShellLayout(shell.getLayout())) {
                         position = 0; // Main Shell
                     } else {
                         position = -1;

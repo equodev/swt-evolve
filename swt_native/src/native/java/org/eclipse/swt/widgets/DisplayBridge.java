@@ -929,13 +929,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
     }
 
-    /** Class name of the Eclipse e4 workbench's main-window layout, checked by name only (no hard
-     *  dependency on the e4 workbench jar). Also used by {@code dev.equo.swt.Config}. */
-    private static final String E4_MAIN_SHELL_LAYOUT =
-            "org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout";
-
     /** The top-level, display-tracking shell that drives (and is slaved to) the viewport, or null.
-     *  Prefers a shell laid out with {@link #E4_MAIN_SHELL_LAYOUT}, then the first visible trackable
+     *  Prefers a shell laid out with the e4 main window's layout, then the first visible trackable
      *  shell, then the first trackable one. Visibility outranks construction order because a pre-e4
      *  workbench creates a top-level shell it never shows ahead of its window.
      *
@@ -983,8 +978,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (shellWindows.containsKey(shell)) {
                 continue;
             }
-            Layout layout = shell.getLayout();
-            if (layout != null && E4_MAIN_SHELL_LAYOUT.equals(layout.getClass().getName())) {
+            if (dev.equo.swt.Config.isMainShellLayout(shell.getLayout())) {
                 return shell;
             }
             if (firstVisible == null && shell.getVisible()) {

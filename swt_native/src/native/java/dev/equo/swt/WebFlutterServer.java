@@ -480,6 +480,15 @@ public class WebFlutterServer {
                         LocalFileHandler.serveResolvedFile(exchange, localFile, method);
                         return;
                     }
+                    // A proxied page's URL built from its own location.host: it means its own server.
+                    String pageTarget = ProxyHandler.ownHostTarget(referer, exchange.getRequestURI());
+                    if (pageTarget != null) {
+                        exchange.getResponseHeaders().set("Location",
+                                "/proxy?url=" + Java8.urlEncode(pageTarget, StandardCharsets.UTF_8));
+                        setCrossOriginHeaders(exchange);
+                        exchange.sendResponseHeaders(307, -1);
+                        return;
+                    }
                     // For single-page apps, fall back to index.html for navigation routes
                     File fallback = rootDir.resolve("index.html").toFile();
                     if (fallback.isFile() && fallback.canRead()) {

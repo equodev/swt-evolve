@@ -1,7 +1,7 @@
 package dev.equo.swt;
 
+import org.eclipse.e4.ui.workbench.renderers.swt.SashLayout;
 import org.eclipse.swt.custom.CTabFolder;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -20,28 +20,10 @@ import static org.mockito.Mockito.when;
  *
  * <p>{@link Config#isMainSashComposite} replaces that with a structural rule: the composite whose
  * layout is the e4 {@code SashLayout} and whose direct children are the part-stacks (CTabFolders).
- * These are pure-logic tests over stubbed layout/children, so they need no live SWT or e4. A fake
- * layout whose {@code toString()} carries the SashLayout class name stands in for the real e4
- * layout, which {@code hasSashLayout} matches by name.
+ * These are pure-logic tests over stubbed layout/children, so they need no live SWT or e4. The
+ * test-only {@link SashLayout} carries the e4 class name the detection matches.
  */
 class ConfigMainSashCompositeTest {
-
-    /** A stand-in whose name matches the e4 SashLayout that {@link Config#isMainSashComposite} keys off. */
-    static final class FakeSashLayout extends Layout {
-        @Override
-        protected Point computeSize(Composite composite, int wHint, int hHint, boolean flush) {
-            return new Point(0, 0);
-        }
-
-        @Override
-        protected void layout(Composite composite, boolean flush) {
-        }
-
-        @Override
-        public String toString() {
-            return "org.eclipse.e4.ui.workbench.renderers.swt.SashLayout@fake";
-        }
-    }
 
     private static Composite composite(Layout layout, Control... children) {
         Composite c = mock(Composite.class);
@@ -53,7 +35,7 @@ class ConfigMainSashCompositeTest {
 
     @Test
     void sashLayout_with_ctabfolder_children_is_the_main_composite() {
-        Composite sash = composite(new FakeSashLayout(), mock(CTabFolder.class));
+        Composite sash = composite(new SashLayout(), mock(CTabFolder.class));
 
         assertThat(Config.isMainSashComposite(sash)).isTrue();
     }
@@ -63,7 +45,7 @@ class ConfigMainSashCompositeTest {
         // The outer structural sash whose only child is another wrapper must NOT be picked: the
         // panel treatment wraps DIRECT children, so choosing it would wrap the whole area as one
         // panel and leave the real parts blended -- exactly the pre-fix symptom.
-        Composite outerSash = composite(new FakeSashLayout(), mock(Composite.class));
+        Composite outerSash = composite(new SashLayout(), mock(Composite.class));
 
         assertThat(Config.isMainSashComposite(outerSash)).isFalse();
     }

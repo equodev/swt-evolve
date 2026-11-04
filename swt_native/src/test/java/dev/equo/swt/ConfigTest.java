@@ -551,6 +551,46 @@ public class ConfigTest {
 
             assertThat(id).isEqualTo("/" + C + "/-1/" + C + "/2/" + C + "/2/Button/3");
         }
+
+        private Shell rootShell(Layout layout) {
+            Shell shell = mock(Shell.class);
+            when(shell.getParent()).thenReturn(null);
+            when(shell.getChildren()).thenReturn(new Control[]{});
+            when(shell.getLayout()).thenReturn(layout);
+            return shell;
+        }
+
+        @Test
+        void shell_laid_out_by_the_workbench_trim_layout_is_the_main_shell() {
+            Shell shell = rootShell(new org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout());
+
+            String id = Config.getId(Composite.class, shell);
+
+            assertThat(id).isEqualTo("/" + S + "/0/Composite/1");
+        }
+
+        @Test
+        void shell_layout_is_recognised_without_calling_its_toString() {
+            Shell shell = rootShell(new Layout() {
+                @Override
+                protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+                    return new Point(0, 0);
+                }
+
+                @Override
+                protected void layout(Composite composite, boolean flushCache) {
+                }
+
+                @Override
+                public String toString() {
+                    throw new AssertionError("a layout's toString may compute sizes");
+                }
+            });
+
+            String id = Config.getId(Composite.class, shell);
+
+            assertThat(id).isEqualTo("/" + S + "/-1/Composite/1");
+        }
     }
 
 }

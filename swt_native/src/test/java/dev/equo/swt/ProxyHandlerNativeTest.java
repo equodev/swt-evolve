@@ -226,7 +226,7 @@ public class ProxyHandlerNativeTest {
                 "http://127.0.0.1:9000/", SELF + "/proxy/http://127.0.0.1:9000/"));
         Map<String, Object> inTarget = new LinkedHashMap<>();
         inTarget.put(SELF + "/", SELF + "/proxy/http://127.0.0.1:9000/");
-        inTarget.put(SELF + "/proxy/", SELF + "/proxy/");
+        inTarget.put(SELF + "/proxy/http://127.0.0.1:9000/", SELF + "/proxy/http://127.0.0.1:9000/");
         assertThat(map.get("scopes")).isEqualTo(Collections.singletonMap(SELF + "/proxy/http://127.0.0.1:9000/", inTarget));
         assertThat(html.indexOf("importmap")).isLessThan(html.indexOf("type=\"module\""));
     }
@@ -245,6 +245,45 @@ public class ProxyHandlerNativeTest {
                 .containsEntry("cdn", "https://not-proxied.test/x.js")
                 .containsEntry("http://127.0.0.1:9000/", SELF + "/proxy/http://127.0.0.1:9000/");
         assertThat(map.get("integrity")).isEqualTo(Collections.singletonMap(SELF + "/proxy/http://127.0.0.1:9000/vendor/lib.js", "sha384-abc"));
+    }
+
+    @Test
+    public void a_proxied_module_imports_its_neighbours_and_its_server_root_through_the_path_form() {
+        String target = SELF + "/proxy/http://127.0.0.1:9000/";
+        Map<String, Object> map = importMap(ProxyHandler.injectModuleImportMap(
+                "<head></head><script type=\"module\" src=\"" + target + "app/main.js\"></script>", PAGE, SELF));
+        URI main = URI.create(target + "app/main.js");
+
+        assertThat(resolveModule(map, main, "./chunk.js")).isEqualTo(target + "app/chunk.js");
+        assertThat(resolveModule(map, main, "/lib/b.js")).isEqualTo(target + "lib/b.js");
+    }
+
+    /**
+     * A specifier as the HTML spec's import map resolution reads it: resolved against its referrer,
+     * then mapped by the longest matching prefix of the referrer's scope, refusing an address that
+     * leaves its prefix (the browser throws a TypeError there).
+     */
+    @SuppressWarnings("unchecked")
+    private static String resolveModule(Map<String, Object> map, URI referrer, String specifier) {
+        String url = resolveUrl(referrer.toString(), specifier);
+        Map<String, Object> scopes = (Map<String, Object>) map.get("scopes");
+        String scope = scopes.keySet().stream().filter(s -> referrer.toString().startsWith(s))
+                .max(java.util.Comparator.comparingInt(String::length)).orElse(null);
+        Map<String, Object> entries = scope == null ? (Map<String, Object>) map.get("imports") : (Map<String, Object>) scopes.get(scope);
+        String prefix = entries.keySet().stream().filter(k -> k.endsWith("/") && url.startsWith(k))
+                .max(java.util.Comparator.comparingInt(String::length)).orElse(null);
+        if (prefix == null) return url;
+        String address = (String) entries.get(prefix);
+        String mapped = resolveUrl(address, url.substring(prefix.length()));
+        if (!mapped.startsWith(address)) throw new IllegalStateException("backtracks out of " + address + ": " + mapped);
+        return mapped;
+    }
+
+    /** {@code ref} against {@code base} as a browser's URL parser does; {@link URI#resolve} drops a path's empty segments. */
+    private static String resolveUrl(String base, String ref) {
+        if (ref.matches("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")) return ref;
+        if (ref.startsWith("/")) return base.substring(0, base.indexOf('/', base.indexOf("//") + 2)) + ref;
+        return base.substring(0, base.lastIndexOf('/') + 1) + (ref.startsWith("./") ? ref.substring(2) : ref);
     }
 
     @Test

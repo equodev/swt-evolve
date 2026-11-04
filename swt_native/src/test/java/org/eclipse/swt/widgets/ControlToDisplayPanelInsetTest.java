@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.SerializeTestBase;
+import org.eclipse.e4.ui.workbench.renderers.swt.SashLayout;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.graphics.Point;
@@ -26,23 +27,6 @@ class ControlToDisplayPanelInsetTest extends SerializeTestBase {
     private static final int MAIN_Y = 40;
     private static final int MAIN_W = 1400;
     private static final int MAIN_H = 824;
-
-    /** What the e4 SashLayout's class name looks like to the main-area detection. */
-    private static final class SashLayout extends Layout {
-        @Override
-        protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
-            return new Point(0, 0);
-        }
-
-        @Override
-        protected void layout(Composite composite, boolean flushCache) {
-        }
-
-        @Override
-        public String toString() {
-            return "org.eclipse.e4.ui.workbench.renderers.swt.SashLayout@0";
-        }
-    }
 
     private static Composite mainArea(Composite parent, int y, int height) {
         Composite main = new Composite(parent, SWT.NONE);
