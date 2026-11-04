@@ -778,7 +778,9 @@ private func isWakeEvent(_ event: NSEvent) -> Bool {
 @_cdecl("Java_dev_equo_swt_FlutterNative_Wake")
 public func FlutterNative_wake(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) {
     DispatchQueue.main.async {
-        guard let wakeEvent = NSEvent.otherEvent(with: .applicationDefined,
+        // No application yet, no event loop to wake.
+        guard let app = NSApp,
+              let wakeEvent = NSEvent.otherEvent(with: .applicationDefined,
                                                  location: .zero,
                                                  modifierFlags: [],
                                                  timestamp: ProcessInfo.processInfo.systemUptime,
@@ -787,7 +789,7 @@ public func FlutterNative_wake(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, 
                                                  subtype: wakeEventSubtype,
                                                  data1: 0,
                                                  data2: 0) else { return }
-        NSApp.postEvent(wakeEvent, atStart: true)
+        app.postEvent(wakeEvent, atStart: true)
     }
 }
 
@@ -810,6 +812,23 @@ public func FlutterNative_getOrigin(env: UnsafeMutablePointer<JNIEnv?>, cls: jcl
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_IsActive")
 public func FlutterNative_isActive(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jboolean {
     return (surfaceFrom(context)?.isActive() ?? false) ? jboolean(1) : jboolean(0)
+}
+
+// The work area, and reading or moving the pointer, are asked of the Windows runner only; here they
+// answer FlutterNative's "unknown".
+@_cdecl("Java_dev_equo_swt_FlutterNative_GetWorkAreaTop")
+public func FlutterNative_getWorkAreaTop(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong, x: jint, y: jint, width: jint, height: jint) -> jint {
+    return jint(Int32.min)
+}
+
+@_cdecl("Java_dev_equo_swt_FlutterNative_GetCursorLocation")
+public func FlutterNative_getCursorLocation(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass) -> jlong {
+    return jlong(Int64.min)
+}
+
+@_cdecl("Java_dev_equo_swt_FlutterNative_SetCursorLocation")
+public func FlutterNative_setCursorLocation(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, x: jint, y: jint) -> jboolean {
+    return jboolean(0)
 }
 
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_SetVisible")

@@ -2,6 +2,7 @@ package dev.equo.swt;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.condition.OS.LINUX;
+import static org.junit.jupiter.api.condition.OS.MAC;
 import static org.junit.jupiter.api.condition.OS.WINDOWS;
 
 import java.lang.reflect.InvocationTargetException;
@@ -19,13 +20,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 
 /**
- * Every native method of {@link FlutterNative} has to resolve in the Windows and Linux runners. A JNI
- * entry point the runner defines without the header's {@code extern "C"} still compiles and exports,
- * but under its C++-decorated name, and the first call to it throws {@link UnsatisfiedLinkError} in
- * the middle of whatever Java was doing. The macOS runner exports its symbols with {@code @_cdecl}.
+ * Every native method of {@link FlutterNative} has to resolve in every runner. Nothing checks it at build
+ * time: a native the runner does not export, or one the Windows or Linux runner defines without the
+ * header's {@code extern "C"} (exported under its C++-decorated name), throws {@link UnsatisfiedLinkError}
+ * on its first call, in the middle of whatever Java was doing.
  */
 @Tag("native-unit")
-@EnabledOnOs({WINDOWS, LINUX})
+@EnabledOnOs({WINDOWS, LINUX, MAC})
 public class FlutterNativeLinkageNativeTest {
 
     /**

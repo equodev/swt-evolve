@@ -652,7 +652,8 @@ Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv *env, jclass cls, jint maxMe
 
 // Pumps a window surface's event loop. Returns -2 once per user close gesture (the window is still
 // up — "delete-event" was vetoed) and -1 once the window is really gone. Both are FlutterNative's
-// pump contract; -2 is PUMP_CLOSE_REQUESTED there.
+// pump contract; -2 is PUMP_CLOSE_REQUESTED there. The struct outlives a -1: Java keeps the handle
+// and still asks it things until it calls Dispose, which frees it.
 JNIEXPORT jint JNICALL
 Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
   FlutterWindow *ctx = reinterpret_cast<FlutterWindow *>(context);
@@ -669,7 +670,6 @@ Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
       fl_method_channel_set_method_call_handler(ctx->window_channel, nullptr, nullptr, nullptr);
       g_clear_object(&ctx->window_channel);
     }
-    delete ctx;  // safe: Java zeroes windowContext after a -1 and makes no further calls with it
     return -1;
   }
   if (ctx && ctx->close_requested) {
@@ -726,6 +726,24 @@ Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv *env, jclass cls, jlong context
   gdk_window_get_origin(gdk, &x, &y);
   return (static_cast<jlong>(x) << 32)
          | (static_cast<jlong>(static_cast<guint32>(y)));
+}
+
+// The work area, and reading or moving the pointer, are asked of the Windows runner only; here they
+// answer FlutterNative's "unknown".
+JNIEXPORT jint JNICALL
+Java_dev_equo_swt_FlutterNative_GetWorkAreaTop(JNIEnv *env, jclass cls, jlong context, jint x, jint y,
+                                               jint width, jint height) {
+  return INT_MIN;
+}
+
+JNIEXPORT jlong JNICALL
+Java_dev_equo_swt_FlutterNative_GetCursorLocation(JNIEnv *env, jclass cls) {
+  return LLONG_MIN;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_dev_equo_swt_FlutterNative_SetCursorLocation(JNIEnv *env, jclass cls, jint x, jint y) {
+  return JNI_FALSE;
 }
 
 // Whether the window holds the keyboard focus the OS grants. GTK tracks this per toplevel, so it

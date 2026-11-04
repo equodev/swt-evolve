@@ -57,6 +57,16 @@ Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv *env, jclass cls, jlong context
 JNIEXPORT jboolean JNICALL
 Java_dev_equo_swt_FlutterNative_IsActive(JNIEnv *env, jclass cls, jlong context);
 
+JNIEXPORT jint JNICALL
+Java_dev_equo_swt_FlutterNative_GetWorkAreaTop(JNIEnv *env, jclass cls, jlong context, jint x, jint y,
+                                               jint width, jint height);
+
+JNIEXPORT jlong JNICALL
+Java_dev_equo_swt_FlutterNative_GetCursorLocation(JNIEnv *env, jclass cls);
+
+JNIEXPORT jboolean JNICALL
+Java_dev_equo_swt_FlutterNative_SetCursorLocation(JNIEnv *env, jclass cls, jint x, jint y);
+
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong context, jboolean visible);
 
