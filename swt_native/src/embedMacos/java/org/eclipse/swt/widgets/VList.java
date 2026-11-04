@@ -49,11 +49,11 @@ public class VList extends VScrollable {
         ((DartList) impl).topIndex = value;
     }
 
-    public static final int ITEMS = 364;
+    public static final int ITEMS = 365;
 
-    public static final int SELECTION = 365;
+    public static final int SELECTION = 366;
 
-    public static final int TOP_INDEX = 366;
+    public static final int TOP_INDEX = 367;
 
     @Override
     public String wireName(int key) {
@@ -71,13 +71,13 @@ public class VList extends VScrollable {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 364:
+            case 365:
                 w.write(getItems());
                 return true;
-            case 365:
+            case 366:
                 w.write(getSelection());
                 return true;
-            case 366:
+            case 367:
                 w.write((int) getTopIndex());
                 return true;
         }
@@ -87,20 +87,9 @@ public class VList extends VScrollable {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 364:
-                {
-                    String[] v_ = getItems();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(364);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 365:
                 {
-                    int[] v_ = getSelection();
+                    String[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
@@ -111,10 +100,21 @@ public class VList extends VScrollable {
                 }
             case 366:
                 {
+                    int[] v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(366);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 367:
+                {
                     int v_ = getTopIndex();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(366);
+                    w.key(367);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -122,7 +122,7 @@ public class VList extends VScrollable {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 364, 365, 366 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VScrollable.allWireKeys_(), new int[] { 365, 366, 367 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

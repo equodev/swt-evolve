@@ -3524,22 +3524,29 @@ public final class DartGC extends DartResource implements IGC {
 
     org.eclipse.swt.graphics.Rectangle paintDamage;
 
-    private float bufferScale = 1f;
+    private float bufferScale = 1f, bufferScaleY = 1f;
 
     private void applyImageBufferScale(Image image) {
         if (image == null || !(image.getImpl() instanceof DartImage))
             return;
         DartImage buffer = (DartImage) image.getImpl();
-        int logical = buffer._logicalWidth();
-        int pixels = buffer._wireWidth();
-        if (logical <= 0 || pixels <= logical)
+        int logicalWidth = buffer._logicalWidth(), logicalHeight = buffer._logicalHeight();
+        int pixelWidth = buffer._wireWidth(), pixelHeight = buffer._wireHeight();
+        // The two logical sizes are set together, and an Image rejects either being <= 0.
+        if (logicalWidth <= 0 || (pixelWidth <= logicalWidth && pixelHeight <= logicalHeight))
             return;
-        bufferScale = (float) pixels / logical;
+        bufferScale = (float) pixelWidth / logicalWidth;
+        bufferScaleY = (float) pixelHeight / logicalHeight;
         getValue().markDirty(VGC.BUFFER_SCALE);
+        getValue().markDirty(VGC.BUFFER_SCALE_Y);
     }
 
     float wireBufferScale() {
         return bufferScale;
+    }
+
+    float wireBufferScaleY() {
+        return bufferScaleY;
     }
 
     Boolean wireThemedCanvas() {
@@ -3601,7 +3608,7 @@ public final class DartGC extends DartResource implements IGC {
         DartPath source = path == null ? null : (DartPath) path.getImpl();
         if (source != null && source.hasText()) {
             clippingText = new Path(path.getDevice(), path, 0);
-            getValue().markDirty(277);
+            getValue().markDirty(278);
             Rectangle bounds = source.textBounds();
             if (data != null && data.types.length > 0)
                 bounds = bounds.union(pathBounds(data));
@@ -3650,7 +3657,7 @@ public final class DartGC extends DartResource implements IGC {
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
         if (clippingText != null) {
-            getValue().markDirty(277);
+            getValue().markDirty(278);
             clippingText.dispose();
         }
         clippingPath = null;

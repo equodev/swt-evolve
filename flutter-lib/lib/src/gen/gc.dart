@@ -56,6 +56,7 @@ class VGC extends VWidget {
   VPath? clippingText;
   double? lineDashOffset;
   double? bufferScale;
+  double? bufferScaleY;
   bool? themedCanvas;
   List<VRGB?>? hoverFills;
   List<VRGB?>? selectionFills;
@@ -86,6 +87,7 @@ class VGC extends VWidget {
       clippingText = other.clippingText;
       lineDashOffset = other.lineDashOffset;
       bufferScale = other.bufferScale;
+      bufferScaleY = other.bufferScaleY;
       themedCanvas = other.themedCanvas;
       hoverFills = other.hoverFills;
       selectionFills = other.selectionFills;
@@ -110,67 +112,70 @@ class VGC extends VWidget {
       case 272: // backgroundPattern
         backgroundPattern = r.object(VPattern.new);
         return true;
-      case 274: // clipping
+      case 275: // clipping
         clipping = r.rect();
         return true;
-      case 275: // clippingPath
+      case 276: // clippingPath
         clippingPath = r.object(VPathData.new);
         return true;
-      case 276: // clippingRects
+      case 277: // clippingRects
         clippingRects = r.ints();
         return true;
-      case 278: // fillRule
+      case 279: // fillRule
         fillRule = r.intBoxed();
         return true;
-      case 279: // font
+      case 280: // font
         font = r.object(VFont.new);
         return true;
-      case 280: // foreground
+      case 281: // foreground
         foreground = r.color();
         return true;
-      case 281: // foregroundPattern
+      case 282: // foregroundPattern
         foregroundPattern = r.object(VPattern.new);
         return true;
-      case 283: // interpolation
+      case 284: // interpolation
         interpolation = r.int32();
         return true;
-      case 284: // lineCap
+      case 285: // lineCap
         lineCap = r.intBoxed();
         return true;
-      case 285: // lineDash
+      case 286: // lineDash
         lineDash = r.ints();
         return true;
-      case 287: // lineJoin
+      case 288: // lineJoin
         lineJoin = r.intBoxed();
         return true;
-      case 288: // lineStyle
+      case 289: // lineStyle
         lineStyle = r.intBoxed();
         return true;
-      case 289: // lineWidth
+      case 290: // lineWidth
         lineWidth = r.int32();
         return true;
-      case 293: // transform
+      case 294: // transform
         transform = r.object(VTransform.new);
         return true;
-      case 277: // clippingText
+      case 278: // clippingText
         clippingText = r.object(VPath.new);
         return true;
-      case 286: // lineDashOffset
+      case 287: // lineDashOffset
         lineDashOffset = r.float32();
         return true;
       case 273: // bufferScale
         bufferScale = r.float32();
         return true;
-      case 292: // themedCanvas
+      case 274: // bufferScaleY
+        bufferScaleY = r.float32();
+        return true;
+      case 293: // themedCanvas
         themedCanvas = r.boolBoxed();
         return true;
-      case 282: // hoverFills
+      case 283: // hoverFills
         hoverFills = r.list((r) => r.rgb());
         return true;
-      case 290: // selectionFills
+      case 291: // selectionFills
         selectionFills = r.list((r) => r.rgb());
         return true;
-      case 291: // style
+      case 292: // style
         style = r.int32();
         return true;
       default:
@@ -217,110 +222,110 @@ class VGC extends VWidget {
     {
       final v_ = clipping;
       if (v_ != null) {
-        w.key(274);
+        w.key(275);
         w.rectValue(v_);
       }
     }
     {
       final v_ = clippingPath;
       if (v_ != null) {
-        w.key(275);
+        w.key(276);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clippingRects;
       if (v_ != null) {
-        w.key(276);
+        w.key(277);
         w.ints(v_);
       }
     }
     {
       final v_ = fillRule;
       if (v_ != null) {
-        w.key(278);
+        w.key(279);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(279);
+        w.key(280);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(280);
+        w.key(281);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregroundPattern;
       if (v_ != null) {
-        w.key(281);
+        w.key(282);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = interpolation;
       if (v_ != null) {
-        w.keyInt32(283, v_);
+        w.keyInt32(284, v_);
       }
     }
     {
       final v_ = lineCap;
       if (v_ != null) {
-        w.key(284);
+        w.key(285);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineDash;
       if (v_ != null) {
-        w.key(285);
+        w.key(286);
         w.ints(v_);
       }
     }
     {
       final v_ = lineJoin;
       if (v_ != null) {
-        w.key(287);
+        w.key(288);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineStyle;
       if (v_ != null) {
-        w.key(288);
+        w.key(289);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineWidth;
       if (v_ != null) {
-        w.keyInt32(289, v_);
+        w.keyInt32(290, v_);
       }
     }
     {
       final v_ = transform;
       if (v_ != null) {
-        w.key(293);
+        w.key(294);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clippingText;
       if (v_ != null) {
-        w.key(277);
+        w.key(278);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = lineDashOffset;
       if (v_ != null) {
-        w.key(286);
+        w.key(287);
         w.float32(v_.toDouble());
       }
     }
@@ -332,27 +337,34 @@ class VGC extends VWidget {
       }
     }
     {
+      final v_ = bufferScaleY;
+      if (v_ != null) {
+        w.key(274);
+        w.float32(v_.toDouble());
+      }
+    }
+    {
       final v_ = themedCanvas;
       if (v_ != null) {
-        w.key(292);
+        w.key(293);
         w.boolBoxed(v_);
       }
     }
     {
       final v_ = hoverFills;
       if (v_ != null) {
-        w.key(282);
+        w.key(283);
         w.list(v_, (e) => w.rgbValue(e));
       }
     }
     {
       final v_ = selectionFills;
       if (v_ != null) {
-        w.key(290);
+        w.key(291);
         w.list(v_, (e) => w.rgbValue(e));
       }
     }
-    w.keyInt32(291, style);
+    w.keyInt32(292, style);
   }
 
   @override
@@ -363,27 +375,28 @@ class VGC extends VWidget {
     visit(270, antialias);
     visit(271, background);
     visit(272, backgroundPattern);
-    visit(274, clipping);
-    visit(275, clippingPath);
-    visit(276, clippingRects);
-    visit(278, fillRule);
-    visit(279, font);
-    visit(280, foreground);
-    visit(281, foregroundPattern);
-    visit(283, interpolation);
-    visit(284, lineCap);
-    visit(285, lineDash);
-    visit(287, lineJoin);
-    visit(288, lineStyle);
-    visit(289, lineWidth);
-    visit(293, transform);
-    visit(277, clippingText);
-    visit(286, lineDashOffset);
+    visit(275, clipping);
+    visit(276, clippingPath);
+    visit(277, clippingRects);
+    visit(279, fillRule);
+    visit(280, font);
+    visit(281, foreground);
+    visit(282, foregroundPattern);
+    visit(284, interpolation);
+    visit(285, lineCap);
+    visit(286, lineDash);
+    visit(288, lineJoin);
+    visit(289, lineStyle);
+    visit(290, lineWidth);
+    visit(294, transform);
+    visit(278, clippingText);
+    visit(287, lineDashOffset);
     visit(273, bufferScale);
-    visit(292, themedCanvas);
-    visit(282, hoverFills);
-    visit(290, selectionFills);
-    visit(291, style);
+    visit(274, bufferScaleY);
+    visit(293, themedCanvas);
+    visit(283, hoverFills);
+    visit(291, selectionFills);
+    visit(292, style);
   }
 }
 

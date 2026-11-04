@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -1940320440;
+    public static final int FINGERPRINT = -668862759;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -452,6 +452,7 @@ public final class WireTable {
             "bounds",
             "browser",
             "bufferScale",
+            "bufferScaleY",
             "bulletTexts",
             "bulletsIndices",
             "button",
@@ -1152,6 +1153,7 @@ public final class WireTable {
             "GC.background",
             "GC.backgroundPattern",
             "GC.bufferScale",
+            "GC.bufferScaleY",
             "GC.clipping",
             "GC.clippingPath",
             "GC.clippingRects",
@@ -1813,6 +1815,7 @@ public final class WireTable {
             "int",
             "color",
             "object:VPattern",
+            "float",
             "float",
             "rect",
             "object:VPathData",

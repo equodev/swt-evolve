@@ -1413,19 +1413,20 @@ class GCDrawer extends GCDrawerBase {
   }
 
   /// Pixels per GC unit of the Image being drawn on: its buffer may be denser than the size the
-  /// application gave it, and the ops are in the application's units.
+  /// application gave it, and the ops are in the application's units. Each axis is rounded to
+  /// pixels on its own, so the vertical scale can differ from the horizontal one.
   double get _bufferScale => state.bufferScale ?? 1;
+  double get _bufferScaleY => state.bufferScaleY ?? _bufferScale;
 
   void _scaleToBuffer(ui.Canvas canvas) {
-    final scale = _bufferScale;
-    if (scale != 1) canvas.scale(scale);
+    final sx = _bufferScale, sy = _bufferScaleY;
+    if (sx != 1 || sy != 1) canvas.scale(sx, sy);
   }
 
   /// Whether an opaque op in [shapesToRender] paints over the whole image, hiding the base.
   bool _hidesBase(List<Shape> shapesToRender) {
-    final scale = _bufferScale;
-    final whole = ui.Rect.fromLTWH(0, 0, (_imgWidth > 0 ? _imgWidth : 1) / scale,
-        (_imgHeight > 0 ? _imgHeight : 1) / scale);
+    final whole = ui.Rect.fromLTWH(0, 0, (_imgWidth > 0 ? _imgWidth : 1) / _bufferScale,
+        (_imgHeight > 0 ? _imgHeight : 1) / _bufferScaleY);
     for (final shape in shapesToRender) {
       final covered = shape.opaqueCoverage;
       if (covered != null && _containsRect(covered, whole)) return true;
@@ -1562,9 +1563,9 @@ class GCDrawer extends GCDrawerBase {
   /// [sourceScale] is the picture's units per unit of [srcRect], as [ImageShape.sourceScale].
   static ImageShape _boundedPicture(
       ui.Picture picture, Rect srcRect, Rect destRect, Rect clip,
-      {int alpha = 255, double sourceScale = 1}) {
-    final k = sourceScale;
-    final source = Rect.fromLTRB(srcRect.left * k, srcRect.top * k, srcRect.right * k, srcRect.bottom * k);
+      {int alpha = 255, double sourceScale = 1, double? sourceScaleY}) {
+    final k = sourceScale, ky = sourceScaleY ?? sourceScale;
+    final source = Rect.fromLTRB(srcRect.left * k, srcRect.top * ky, srcRect.right * k, srcRect.bottom * ky);
     final raster = picture.toImageSync(source.right.ceil(), source.bottom.ceil());
     return ImageShape.raster(raster, source, destRect, clipRect: clip, alpha: alpha);
   }
@@ -1578,17 +1579,19 @@ class GCDrawer extends GCDrawerBase {
     required Offset destOffset,
     Offset baseOffset = Offset.zero,
     double bufferScale = 1,
+    double? bufferScaleY,
   }) {
     final destRect = srcRect.shift(destOffset);
-    // The base is in the buffer's pixels, [bufferScale] to a unit of the area copied.
-    final s = bufferScale;
+    // The base is in the buffer's pixels, [bufferScale] (and [bufferScaleY] down) to a unit of
+    // the area copied.
+    final s = bufferScale, sy = bufferScaleY ?? bufferScale;
     return [
       // Under the shapes drawn through this GC, so the copy keeps their z-order.
       if (basePicture != null)
-        _boundedPicture(basePicture, srcRect, destRect, destRect, sourceScale: s)
+        _boundedPicture(basePicture, srcRect, destRect, destRect, sourceScale: s, sourceScaleY: sy)
       else if (baseImage != null)
         ImageShape.raster(baseImage.clone(),
-            Rect.fromLTRB(srcRect.left * s, srcRect.top * s, srcRect.right * s, srcRect.bottom * s)
+            Rect.fromLTRB(srcRect.left * s, srcRect.top * sy, srcRect.right * s, srcRect.bottom * sy)
                 .shift(baseOffset),
             destRect, clipRect: destRect),
       for (final shape in painted.where((s) => _shapeIntersects(s, srcRect)))
@@ -1987,6 +1990,7 @@ class GCDrawer extends GCDrawerBase {
       baseOffset: captured?.offset ?? Offset.zero,
       // A control's GC captures what the control shows, at its own units.
       bufferScale: captured == null ? _bufferScale : 1,
+      bufferScaleY: captured == null ? _bufferScaleY : 1,
     );
     // Whether the screen as captured is what the copy starts from is known when the cycle ends.
     if (captured != null) copied[0] = _ScreenCopy(copied[0] as ImageShape, srcRect, destOffset);

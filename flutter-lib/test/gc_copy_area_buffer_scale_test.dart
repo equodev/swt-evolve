@@ -48,6 +48,75 @@ void main() {
     // scroll makes them.
     await _copiesAtItsSize(gcId: 9961, keptPaints: 10);
   });
+
+  test(
+    'a copy of the bottom band lands where it was asked, on a buffer scaled more down than across',
+    () => _copiesBottomBand(gcId: 9971, keptPaints: 1),
+  );
+
+  test('so does a copy of the bottom band of a render flattened to pixels', () async {
+    await _copiesBottomBand(gcId: 9981, keptPaints: 10);
+  });
+}
+
+/// A 9x100 Image at a raster scale of 1.6 is 14x160 pixels: 14/9 across and 1.6 down. A red band
+/// fills its last 10 rows (pixels 144 to 159); the next GC copies it 10 rows up (pixels 128 to 143).
+Future<void> _copiesBottomBand({required int gcId, required int keptPaints}) async {
+  final comm = EquoCommService.commForTesting;
+
+  GCDrawer.standalone(
+    VGC()
+      ..swt = 'GC'
+      ..id = gcId,
+  );
+
+  comm.receiveBinary(
+    _frame(
+      'GC/$gcId/b',
+      gcState(VGC.empty()
+        ..alpha = 255
+        ..bufferScale = 14 / 9
+        ..bufferScaleY = 1.6
+        ..clippingRects = []
+        ..background = colourOf(255, 0, 0)
+        ..foreground = colourOf(0, 0, 0)),
+    ),
+  );
+  comm.receiveBinary(_frame(
+      'GC/$gcId/imageInit',
+      imageInit(VImage()
+        ..width = 14
+        ..height = 160)));
+  comm.receiveBinary(_frame('GC/$gcId/b', gcOp('fillRectangleintintintint', [0, 90, 9, 10])));
+  for (var paint = 0; paint < keptPaints; paint++) {
+    comm.receiveBinary(
+      _frame(
+        'GC/$gcId/gcDispose',
+        gcDisposeOf({'ref': gcId * 100 + paint, 'pixels': false, 'retain': true}),
+      ),
+    );
+    await _settle();
+  }
+
+  comm.receiveBinary(
+      _frame('GC/$gcId/b', gcOp('copyAreaintintintintintintboolean', [0, 90, 9, 10, 0, 80, false])));
+  comm.receiveBinary(
+    _frame(
+      'GC/$gcId/gcDispose',
+      gcDisposeOf({'ref': gcId * 100 + 99, 'pixels': false, 'retain': false}),
+    ),
+  );
+  await _settle();
+
+  final rendered = await ImageUtils.decodeVImageToUIImage(VImage()..remoteRef = gcId * 100 + 99);
+  expect(rendered, isNotNull, reason: 'the cycle produced no render at all');
+  expect(rendered!.height, 160);
+  expect(await _pixelAt(rendered, 13, 159), _red,
+      reason: 'the band reaches the last row of the buffer');
+  expect(await _pixelAt(rendered, 13, 128), _red,
+      reason: 'the copy starts at row 80 of the Image: pixel 128');
+  expect(await _pixelAt(rendered, 13, 126), isNot(_red),
+      reason: 'and no higher: the band read from the base starts at pixel 144');
 }
 
 Future<void> _copiesAtItsSize({required int gcId, required int keptPaints}) async {

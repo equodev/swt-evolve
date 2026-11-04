@@ -24,40 +24,40 @@ class VTextStyle implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 587: // background
+      case 588: // background
         background = r.color();
         return true;
-      case 588: // borderColor
+      case 589: // borderColor
         borderColor = r.color();
         return true;
-      case 589: // borderStyle
+      case 590: // borderStyle
         borderStyle = r.int32();
         return true;
-      case 590: // font
+      case 591: // font
         font = r.object(VFont.new);
         return true;
-      case 591: // foreground
+      case 592: // foreground
         foreground = r.color();
         return true;
-      case 592: // metrics
+      case 593: // metrics
         metrics = r.object(VGlyphMetrics.new);
         return true;
-      case 593: // rise
+      case 594: // rise
         rise = r.int32();
         return true;
-      case 594: // strikeout
+      case 595: // strikeout
         strikeout = r.boolean();
         return true;
-      case 595: // strikeoutColor
+      case 596: // strikeoutColor
         strikeoutColor = r.color();
         return true;
-      case 596: // underline
+      case 597: // underline
         underline = r.boolean();
         return true;
-      case 597: // underlineColor
+      case 598: // underlineColor
         underlineColor = r.color();
         return true;
-      case 598: // underlineStyle
+      case 599: // underlineStyle
         underlineStyle = r.int32();
         return true;
       default:
@@ -67,18 +67,18 @@ class VTextStyle implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(587, background);
-    visit(588, borderColor);
-    visit(589, borderStyle);
-    visit(590, font);
-    visit(591, foreground);
-    visit(592, metrics);
-    visit(593, rise);
-    visit(594, strikeout);
-    visit(595, strikeoutColor);
-    visit(596, underline);
-    visit(597, underlineColor);
-    visit(598, underlineStyle);
+    visit(588, background);
+    visit(589, borderColor);
+    visit(590, borderStyle);
+    visit(591, font);
+    visit(592, foreground);
+    visit(593, metrics);
+    visit(594, rise);
+    visit(595, strikeout);
+    visit(596, strikeoutColor);
+    visit(597, underline);
+    visit(598, underlineColor);
+    visit(599, underlineStyle);
   }
 
   @override
@@ -86,31 +86,31 @@ class VTextStyle implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = borderStyle;
       if (v_ != null) {
-        w.keyInt32(589, v_);
+        w.keyInt32(590, v_);
       }
     }
     {
       final v_ = rise;
       if (v_ != null) {
-        w.keyInt32(593, v_);
+        w.keyInt32(594, v_);
       }
     }
     {
       final v_ = strikeout;
       if (v_ != null) {
-        w.keyBoolean(594, v_);
+        w.keyBoolean(595, v_);
       }
     }
     {
       final v_ = underline;
       if (v_ != null) {
-        w.keyBoolean(596, v_);
+        w.keyBoolean(597, v_);
       }
     }
     {
       final v_ = underlineStyle;
       if (v_ != null) {
-        w.keyInt32(598, v_);
+        w.keyInt32(599, v_);
       }
     }
   }

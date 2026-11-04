@@ -48,16 +48,16 @@ class VToolTip extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 609: // location
+      case 610: // location
         location = r.point();
         return true;
-      case 610: // message
+      case 611: // message
         message = r.string();
         return true;
-      case 611: // text
+      case 612: // text
         text = r.string();
         return true;
-      case 612: // visible
+      case 613: // visible
         visible = r.boolean();
         return true;
       default:
@@ -71,28 +71,28 @@ class VToolTip extends VWidget {
     {
       final v_ = location;
       if (v_ != null) {
-        w.key(609);
+        w.key(610);
         w.pointValue(v_);
       }
     }
     {
       final v_ = message;
       if (v_ != null) {
-        w.key(610);
+        w.key(611);
         w.string(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(611);
+        w.key(612);
         w.string(v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(612, v_);
+        w.keyBoolean(613, v_);
       }
     }
   }
@@ -100,10 +100,10 @@ class VToolTip extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(609, location);
-    visit(610, message);
-    visit(611, text);
-    visit(612, visible);
+    visit(610, location);
+    visit(611, message);
+    visit(612, text);
+    visit(613, visible);
   }
 
   @override

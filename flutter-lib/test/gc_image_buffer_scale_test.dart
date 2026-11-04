@@ -73,4 +73,40 @@ void main() {
     expect(await _pixelAt(rendered, 11, 11), const ui.Color(0xFFFFFFFF),
         reason: 'and no more');
   });
+
+  test('a full-size fill on an Image whose width and height round to different scales reaches its last row',
+      () async {
+    const gcId = 9922;
+    const ref = 9931;
+    final comm = EquoCommService.commForTesting;
+
+    GCDrawer.standalone(VGC()
+      ..swt = 'GC'
+      ..id = gcId);
+
+    // A 9x100 Image at a raster scale of 1.6: 14x160 pixels, 14/9 across and 1.6 down.
+    comm.receiveBinary(_frame('GC/$gcId/b', gcState(VGC.empty()
+      ..alpha = 255
+      ..bufferScale = 14 / 9
+      ..bufferScaleY = 1.6
+      ..clippingRects = []
+      ..background = colourOf(255, 0, 0)
+      ..foreground = colourOf(0, 0, 0))));
+    comm.receiveBinary(_frame(
+        'GC/$gcId/imageInit',
+        imageInit(VImage()
+          ..width = 14
+          ..height = 160)));
+    comm.receiveBinary(_frame('GC/$gcId/b', gcOp('fillRectangleintintintint', [0, 0, 9, 100])));
+    comm.receiveBinary(_frame('GC/$gcId/gcDispose',
+        gcDisposeOf({'ref': ref, 'pixels': false, 'retain': false})));
+
+    await _settle();
+
+    final rendered = await ImageUtils.decodeVImageToUIImage(VImage()..remoteRef = ref);
+    expect(rendered, isNotNull, reason: 'the cycle produced no render at all');
+    expect(rendered!.height, 160);
+    expect(await _pixelAt(rendered, 13, 159), const ui.Color(0xFFFF0000),
+        reason: 'the fill covers the bottom-right pixel of the buffer');
+  });
 }

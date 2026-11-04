@@ -5013,10 +5013,14 @@ public final class DartGC extends DartResource implements IGC {
 
     org.eclipse.swt.graphics.Rectangle paintDamage;
 
-    private float bufferScale = 1f;
+    private float bufferScale = 1f, bufferScaleY = 1f;
 
     float wireBufferScale() {
         return bufferScale;
+    }
+
+    float wireBufferScaleY() {
+        return bufferScaleY;
     }
 
     Boolean wireThemedCanvas() {
@@ -5075,7 +5079,7 @@ public final class DartGC extends DartResource implements IGC {
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
         if (clippingText != null) {
-            getValue().markDirty(277);
+            getValue().markDirty(278);
             clippingText.dispose();
         }
         clippingPath = null;

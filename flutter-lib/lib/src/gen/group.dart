@@ -41,7 +41,7 @@ class VGroup extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 335: // text
+      case 336: // text
         text = r.string();
         return true;
       default:
@@ -55,7 +55,7 @@ class VGroup extends VComposite {
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(335);
+        w.key(336);
         w.string(v_);
       }
     }
@@ -64,7 +64,7 @@ class VGroup extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(335, text);
+    visit(336, text);
   }
 
   @override

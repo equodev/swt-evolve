@@ -11,10 +11,10 @@ class VPathData implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 395: // points
+      case 396: // points
         points = r.floats();
         return true;
-      case 396: // types
+      case 397: // types
         types = r.bytes();
         return true;
       default:
@@ -27,14 +27,14 @@ class VPathData implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = points;
       if (v_ != null) {
-        w.key(395);
+        w.key(396);
         w.floats(v_);
       }
     }
     {
       final v_ = types;
       if (v_ != null) {
-        w.key(396);
+        w.key(397);
         w.bytes(v_);
       }
     }
@@ -42,7 +42,7 @@ class VPathData implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(395, points);
-    visit(396, types);
+    visit(396, points);
+    visit(397, types);
   }
 }

@@ -68,19 +68,19 @@ public class VPattern extends VResource {
         ((DartPattern) impl).startY = value;
     }
 
-    public static final int COLOR1 = 397;
+    public static final int COLOR1 = 398;
 
-    public static final int COLOR2 = 398;
+    public static final int COLOR2 = 399;
 
-    public static final int END_X = 399;
+    public static final int END_X = 400;
 
-    public static final int END_Y = 400;
+    public static final int END_Y = 401;
 
-    public static final int IMAGE = 401;
+    public static final int IMAGE = 402;
 
-    public static final int START_X = 402;
+    public static final int START_X = 403;
 
-    public static final int START_Y = 403;
+    public static final int START_Y = 404;
 
     @Override
     public String wireName(int key) {
@@ -106,25 +106,25 @@ public class VPattern extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 397:
+            case 398:
                 w.write(getColor1());
                 return true;
-            case 398:
+            case 399:
                 w.write(getColor2());
                 return true;
-            case 399:
+            case 400:
                 w.write(getEndX());
                 return true;
-            case 400:
+            case 401:
                 w.write(getEndY());
                 return true;
-            case 401:
+            case 402:
                 w.image(getImage());
                 return true;
-            case 402:
+            case 403:
                 w.write(getStartX());
                 return true;
-            case 403:
+            case 404:
                 w.write(getStartY());
                 return true;
         }
@@ -134,18 +134,9 @@ public class VPattern extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 397:
-                {
-                    Color v_ = getColor1();
-                    if (v_ == null || v_.isDisposed())
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(397);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 398:
                 {
-                    Color v_ = getColor2();
+                    Color v_ = getColor1();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(398);
@@ -154,38 +145,47 @@ public class VPattern extends VResource {
                 }
             case 399:
                 {
-                    float v_ = getEndX();
+                    Color v_ = getColor2();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(399);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 400:
                 {
-                    float v_ = getEndY();
+                    float v_ = getEndX();
                     w.key(400);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 401:
                 {
-                    Image v_ = getImage();
-                    if (v_ == null || v_.isDisposed())
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    float v_ = getEndY();
                     w.key(401);
-                    w.image(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 402:
                 {
-                    float v_ = getStartX();
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(402);
-                    w.write(v_);
+                    w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 403:
                 {
-                    float v_ = getStartY();
+                    float v_ = getStartX();
                     w.key(403);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 404:
+                {
+                    float v_ = getStartY();
+                    w.key(404);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -193,7 +193,7 @@ public class VPattern extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 397, 398, 399, 400, 401, 402, 403 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 398, 399, 400, 401, 402, 403, 404 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -222,19 +222,19 @@ public class VPattern extends VResource {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(397);
-        w.write(getColor1());
         w.key(398);
-        w.write(getColor2());
+        w.write(getColor1());
         w.key(399);
-        w.write(getEndX());
+        w.write(getColor2());
         w.key(400);
-        w.write(getEndY());
+        w.write(getEndX());
         w.key(401);
-        w.image(getImage());
+        w.write(getEndY());
         w.key(402);
-        w.write(getStartX());
+        w.image(getImage());
         w.key(403);
+        w.write(getStartX());
+        w.key(404);
         w.write(getStartY());
     }
 }

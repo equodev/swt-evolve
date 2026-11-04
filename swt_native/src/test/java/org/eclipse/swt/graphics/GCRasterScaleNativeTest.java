@@ -82,6 +82,41 @@ class GCRasterScaleNativeTest {
     }
 
     @Test
+    @DisplayName("a GC on an off-screen image whose width doesn't scale evenly still reaches its last pixel row")
+    void gcCoversTheWholeBufferAtAFractionalScale() {
+        Config.setClientDeviceZoom(160);
+        // 9 x 1.6 = 14.4 pixels wide, rounded to 14; 100 x 1.6 = 160 pixels tall
+        Image image = new Image(display, 9, 100);
+        DartImage impl = (DartImage) image.getImpl();
+        GC gc = new GC(image);
+        DartGC dartGc = (DartGC) gc.getImpl();
+
+        assertThat(Math.round(impl._logicalWidth() * dartGc.wireBufferScale())).isEqualTo(impl._wireWidth());
+        assertThat(Math.round(impl._logicalHeight() * dartGc.wireBufferScaleY())).as("pixel rows a full-height fill reaches")
+                .isEqualTo(impl._wireHeight());
+        gc.dispose();
+        image.dispose();
+    }
+
+    @Test
+    @DisplayName("a GC on an off-screen image whose width keeps its pixel count still scales its rows")
+    void gcScalesTheRowsWhenOnlyTheHeightGrows() {
+        Config.setClientDeviceZoom(125);
+        // 1 x 1.25 rounds back to 1 pixel wide; 10 x 1.25 = 12.5 rounds to 13 pixels tall
+        Image image = new Image(display, 1, 10);
+        DartImage impl = (DartImage) image.getImpl();
+        GC gc = new GC(image);
+        DartGC dartGc = (DartGC) gc.getImpl();
+
+        assertThat(impl._wireWidth()).isEqualTo(1);
+        assertThat(dartGc.wireBufferScale()).isEqualTo(1f);
+        assertThat(Math.round(impl._logicalHeight() * dartGc.wireBufferScaleY())).as("pixel rows a full-height fill reaches")
+                .isEqualTo(impl._wireHeight());
+        gc.dispose();
+        image.dispose();
+    }
+
+    @Test
     @DisplayName("a blit of an off-screen image sends its pixels into the area the application named")
     void blitSendsThePixels() {
         Image image = new Image(display, 10, 10);
