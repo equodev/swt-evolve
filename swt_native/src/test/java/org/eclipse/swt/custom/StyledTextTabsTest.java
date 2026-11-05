@@ -13,17 +13,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * setTabs reaches the renderer as setFont(null, tabs), which measures the tab width again with the
  * font it already has: the width every TextLayout the renderer builds places its tab stops by.
  */
-// setText routes renderer font metrics into GTK/GDI on the Linux/Windows embed backends, which
-// cannot run under the mocked display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextTabsTest {
 

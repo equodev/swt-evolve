@@ -1475,6 +1475,21 @@ public class StyledTextHelper {
     }
 
     /**
+     * Sets the renderer's tab width for {@code tabLength} spaces of its regular font, on every
+     * {@code setFont(font, tabs)} as upstream does, the font unchanged included: that is how
+     * {@code setTabs} reaches it. The width is the font's average character width times the count;
+     * a negative count throws what upstream's allocation of that many spaces throws.
+     */
+    public static void updateRendererTabWidth(DartStyledTextRenderer renderer, int tabLength) {
+        if (tabLength < 0) throw new NegativeArraySizeException(String.valueOf(tabLength));
+        int tabWidth = calculateFontMetrics(renderer.regularFont, tabLength).tabWidth;
+        if (renderer.tabWidth != tabWidth) {
+            renderer.tabWidth = tabWidth;
+            markRendererDirty(renderer);
+        }
+    }
+
+    /**
      * Updates the renderer's font metrics based on the given font.
      * This method should be called whenever the font changes.
      *
@@ -1482,16 +1497,6 @@ public class StyledTextHelper {
      * @param font the new font
      * @param tabLength the number of spaces per tab
      */
-    /**
-     * Sets the renderer's tab width for {@code tabLength} spaces of its regular font. Upstream measures
-     * it on every {@code setFont(font, tabs)}, the font unchanged included, which is how
-     * {@code setTabs} reaches it; a negative count fails there allocating that many spaces.
-     */
-    public static void updateRendererTabWidth(DartStyledTextRenderer renderer, int tabLength) {
-        if (tabLength < 0) throw new NegativeArraySizeException(String.valueOf(tabLength));
-        renderer.tabWidth = calculateFontMetrics(renderer.regularFont, tabLength).tabWidth;
-    }
-
     public static void updateRendererFontMetrics(DartStyledTextRenderer renderer, Font font, int tabLength) {
         RendererFontMetrics metrics = calculateFontMetrics(font, tabLength);
         boolean fixedPitch = isFixedPitch(font);
