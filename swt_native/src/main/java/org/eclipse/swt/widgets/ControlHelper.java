@@ -566,6 +566,7 @@ public class ControlHelper {
         switch (keyCode) {
             // Escape is not here: it runs the whole traversal straight away; see wholeTraversal.
             case SWT.CR:
+            case SWT.KEYPAD_CR:
                 return SWT.TRAVERSE_RETURN;
             case SWT.ARROW_DOWN:
             case SWT.ARROW_RIGHT:

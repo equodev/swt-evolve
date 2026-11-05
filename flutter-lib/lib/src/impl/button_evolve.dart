@@ -26,6 +26,11 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
   bool _hasFocus = false;
 
+  final FocusNode _focusNode = FocusNode(debugLabel: 'Button');
+
+  @override
+  FocusNode? get swtFocusNode => _focusNode;
+
   static IconData _getArrowIcon(int alignment) {
     switch (alignment) {
       case SWT.UP:
@@ -70,6 +75,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   @override
   void dispose() {
     _selectionTicks.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -466,6 +472,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
         onTap: _onPressed,
+        focusNode: _focusNode,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         splashColor: widgetTheme.splashColor,
@@ -573,30 +580,28 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         );
       },
       onTap: enabled ? _onPressed : null,
+      focusNode: _focusNode,
       onFocusChange: _onFocusChange,
     );
 
     Widget button = GestureDetector(
       onTap: enabled ? _onPressed : null,
-      child: Focus(
-        onFocusChange: _onFocusChange,
-        child: Container(
-          constraints: constraints,
-          child: _buildButtonContent(
-            context,
-            text,
-            widgetTheme,
-            enabled,
-            enabled
-                ? widgetTheme.checkboxTextColor
-                : widgetTheme.disabledForegroundColor,
-            widgetTheme.checkboxFontStyle,
-            hasBounds: hasValidBounds,
-            leadingWidget: checkboxWidget,
-            leadingSpacing: widgetTheme.radioButtonTextSpacing,
-          ),
+      child: _pressedBySpace(Container(
+        constraints: constraints,
+        child: _buildButtonContent(
+          context,
+          text,
+          widgetTheme,
+          enabled,
+          enabled
+              ? widgetTheme.checkboxTextColor
+              : widgetTheme.disabledForegroundColor,
+          widgetTheme.checkboxFontStyle,
+          hasBounds: hasValidBounds,
+          leadingWidget: checkboxWidget,
+          leadingSpacing: widgetTheme.radioButtonTextSpacing,
         ),
-      ),
+      )),
     );
 
     return wrap(_wrapWithSwtBackground(context, button));
@@ -671,30 +676,28 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
         );
       },
       onTap: enabled ? _onPressed : null,
+      focusNode: _focusNode,
       onFocusChange: _onFocusChange,
     );
 
     Widget button = GestureDetector(
       onTap: enabled ? _onPressed : null,
-      child: Focus(
-        onFocusChange: _onFocusChange,
-        child: Container(
-          constraints: constraints,
-          child: _buildButtonContent(
-            context,
-            text,
-            widgetTheme,
-            enabled,
-            enabled
-                ? widgetTheme.radioButtonTextColor
-                : widgetTheme.disabledForegroundColor,
-            widgetTheme.radioButtonFontStyle,
-            hasBounds: hasValidBounds,
-            leadingWidget: radioWidget,
-            leadingSpacing: widgetTheme.radioButtonTextSpacing,
-          ),
+      child: _pressedBySpace(Container(
+        constraints: constraints,
+        child: _buildButtonContent(
+          context,
+          text,
+          widgetTheme,
+          enabled,
+          enabled
+              ? widgetTheme.radioButtonTextColor
+              : widgetTheme.disabledForegroundColor,
+          widgetTheme.radioButtonFontStyle,
+          hasBounds: hasValidBounds,
+          leadingWidget: radioWidget,
+          leadingSpacing: widgetTheme.radioButtonTextSpacing,
         ),
-      ),
+      )),
     );
 
     return wrap(_wrapWithSwtBackground(context, button));
@@ -716,6 +719,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
       child: InkWell(
         onTap: _onPressed,
+        focusNode: _focusNode,
+        // An arrow button is NO_FOCUS in SWT: never focused, and no tab stop.
+        canRequestFocus: false,
         onFocusChange: _onFocusChange,
         borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
         child: QuietAnimatedContainer(
@@ -927,6 +933,18 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     }
   }
 
+  /// Space presses a focused check box or radio button, as it does a push button (whose InkWell
+  /// already answers it).
+  Widget _pressedBySpace(Widget child) => Actions(
+        actions: <Type, Action<Intent>>{
+          ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) {
+            _onPressed();
+            return null;
+          }),
+        },
+        child: child,
+      );
+
   /// Called on every change of a focus node's properties, such as its enablement, and not only of
   /// its focus.
   void _onFocusChange(bool hasFocus) {
@@ -995,6 +1013,7 @@ class _HoverableButtonState extends State<_HoverableButton> {
       borderRadius: radius,
       child: InkWell(
         onTap: _host._onPressed,
+        focusNode: _host._focusNode,
         onFocusChange: _host._onFocusChange,
         borderRadius: radius,
         splashColor: widget.widgetTheme.splashColor,
@@ -1119,6 +1138,7 @@ class _HoverableCheckboxRadio extends StatefulWidget {
   final Listenable selection;
   final _CheckboxRadioBox Function(bool hovering) box;
   final VoidCallback? onTap;
+  final FocusNode focusNode;
   final ValueChanged<bool> onFocusChange;
 
   const _HoverableCheckboxRadio({
@@ -1126,6 +1146,7 @@ class _HoverableCheckboxRadio extends StatefulWidget {
     required this.selection,
     required this.box,
     this.onTap,
+    required this.focusNode,
     required this.onFocusChange,
   });
 
@@ -1148,7 +1169,10 @@ class _HoverableCheckboxRadioState extends State<_HoverableCheckboxRadio> {
       },
       child: GestureDetector(
         onTap: widget.onTap,
+        // The button's only Focus, so it is one tab stop: a Focus nested in another would hear an
+        // enablement change during the build (see ControlImpl.blockWhenDisabled).
         child: Focus(
+          focusNode: widget.focusNode,
           onFocusChange: widget.onFocusChange,
           // The box animates on every selection or hover change; the label beside it need not
           // repaint with each step.
