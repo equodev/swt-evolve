@@ -14,6 +14,7 @@ import org.gradle.workers.WorkerExecutor
 plugins {
     java
     `java-library`
+    `java-test-fixtures`
     jacoco
     alias(libs.plugins.errorprone)
 }
@@ -155,15 +156,15 @@ val swtVersionProvider = provider {
 
 dependencies {
     implementation(libs.java.websocket)
-    // Alternative WS impl, selectable at runtime via -Dcomm.impl=jetty (Jetty 12 core, no servlets).
-    // compileOnly so Jetty's transitive jars never ship in the platform JARs; it's a bench-only
-    // alternative (production always uses java-websocket). testRuntimeOnly puts it back on the
-    // bench JVM's classpath so -Dcomm.impl=jetty can load JettyBinaryCommService.
-    compileOnly(libs.jetty.server)
-    compileOnly(libs.jetty.websocket.server)
-    testRuntimeOnly(libs.jetty.server)
-    testRuntimeOnly(libs.jetty.websocket.server)
     compileOnly(libs.equo.chromium)
+
+    // The harness and mocks the tests share, published so a build outside this one can run tests
+    // against the same Display.
+    testFixturesImplementation(platform(libs.junit.bom))
+    testFixturesImplementation(libs.junit.jupiter)
+    testFixturesImplementation(libs.assertj)
+    testFixturesImplementation(libs.mockito.core)
+    testFixturesImplementation(libs.instancio.junit)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
@@ -171,8 +172,7 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.assertj)
     // Gson, for the JSON tests read from outside: Chrome DevTools Protocol messages, the case file the
-    // canonical form shares with Dart, the workbench.json the bench generator reads, and the result
-    // files measurement tests write for tools.
+    // canonical form shares with Dart, and the result files measurement tests write for tools.
     testImplementation(libs.gson)
     testImplementation(libs.mockito.core)
     testImplementation(libs.instancio.junit)
@@ -263,11 +263,8 @@ sourceSets {
         }
     }
 
-    // The web comm benchmark drives the production Flutter web build through a browser, so it
-    // reuses the production WebFlutterServer (from src/native) to serve it — rather than duplicating
-    // an HTTP server in test scope. WebFlutterServer is pure JDK + FlutterLibraryLoader (which is
-    // in main), so we expose just that one file on the test classpath via this tiny source set,
-    // instead of pulling the whole web tree (thousands of files) into every test build.
+    // WebFlutterServer, WebFontSubstitutions and HeadlessChrome from src/native, on embedTest's
+    // classpath without the whole web tree (thousands of files).
     val webShared = create("webShared") {
         java {
             setSrcDirs(listOf("src/native/java"))
@@ -301,7 +298,7 @@ sourceSets {
             test {
                 resources {
                     srcDirs("src/${os}/java")
-                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties", "**/bench/*.json")
+                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties")
                 }
             }
         }
@@ -364,16 +361,8 @@ sourceSets {
                 exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
                 exclude("org/eclipse/swt/graphics/ImageGcDrawerEqualityNativeTest.java")
             }
-            // The committed WorkbenchTree bench fixture is generated against the DEFAULT SWT and
-            // bakes in APIs newer than the oldest supported versions (e.g.
-            // CTabFolder.setSelectionBarThickness, added in 3.121). The bench suite is tagged
-            // 'bench' and never runs in a version job — it only needs to compile — so below that
-            // baseline it is dropped rather than made to compile.
-            if (swtMinorNative < 121) {
-                exclude("dev/equo/swt/bench/**")
-                // MessageBox.setButtonLabels was added in 3.121.
-                exclude("org/eclipse/swt/widgets/MessageBoxButtonLabelsNativeTest.java")
-            }
+            // MessageBox.setButtonLabels was added in 3.121.
+            if (swtMinorNative < 121) exclude("org/eclipse/swt/widgets/MessageBoxButtonLabelsNativeTest.java")
             // org.eclipse.swt.internal.DPIUtil is absent from 3.103. IntegerOn150 and AutoScalePolicy
             // import it, so the tests built on them go with it.
             if (swtMinorNative < 104) {
@@ -814,8 +803,6 @@ tasks.register<Test>("embedTest") {
     testClassesDirs = sourceSets["embedTest"].output.classesDirs
     classpath = sourceSets["embedTest"].runtimeClasspath
     useJUnitPlatform {
-        // Bench tests are slow + write artifacts; always excluded from the default test run.
-        excludeTags("bench")
         // Flutter integration tests need a Flutter web build + Chrome; not run by default.
         excludeTags("flutter-it")
         excludeTags(*excludedTags())
@@ -871,7 +858,6 @@ tasks.test {
         // Everything in the source set runs; tags only say what to leave out. An includeTags list
         // here meant a class had to be tagged to run at all, and one that was not was compiled and
         // then silently skipped.
-        excludeTags("bench")
         // 'web-known-broken': the widget-size suite the web/CanvasKit client cannot measure
         // correctly yet — part of it needs the native image decoder this backend deliberately does
         // not ship, the rest is real Java-vs-Flutter measurement drift. Tracked on its own; until
@@ -919,28 +905,6 @@ tasks.test {
         "dev.equo.swt.debug", "dev.equo.swt.web.deflate", "stress.frames", "stress.seed", "stress.rounds", "stress.inFlight", "stress.heapLimitMb", "stress.unpacedFrames")
 }
 
-// Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
-// 'bench'-tagged test run, full logging, and always-rerun. Per-task specifics (deps, jvmArgs,
-// system properties) are layered on by the caller.
-// It measures the comm protocol against the whole-tree-Flutter backend, in desk and web mode both,
-// so it runs from the `test` source set.
-fun Test.configureCommBench() {
-    group = "verification"
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform { includeTags("bench") }
-    configureTestLogging()
-    outputs.upToDateWhen { false } // always rerun benchmarks
-    // Discovery loads every test class, and some extend restricted AWT types (see the test task).
-    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED",
-            "--add-exports", "jdk.unsupported.desktop/jdk.swing.interop=ALL-UNNAMED")
-    forwardSystemProperties("bench.runs", "bench.jfr")
-    System.getProperty("bench.jfr")?.let {
-        jvmArgs("-XX:StartFlightRecording=filename=$it,settings=profile,jdk.ExecutionSample#period=1ms")
-    }
-}
-
 fun Test.configureTestLogging() {
     testLogging {
         if (System.getProperty("quietTests") != null) {
@@ -956,35 +920,6 @@ fun Test.configureTestLogging() {
 // Forward each given -D system property from the Gradle CLI JVM into the test JVM (only those set).
 fun Test.forwardSystemProperties(vararg keys: String) {
     keys.forEach { key -> System.getProperty(key)?.let { systemProperty(key, it) } }
-}
-
-tasks.register<Test>("benchmark") {
-    description = "Runs comm-protocol benchmarks (tagged 'bench'). Writes results to build/bench-results/."
-    configureCommBench()
-    dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
-    // 1g heap headroom for LARGE-shape serialization churn (~50KB byte[] per iter × 1000+ iters).
-    // Default 512m goes into GC thrash territory; 1g is comfortable.
-    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
-        jvmArgs("-XstartOnFirstThread", "-Xmx1g")
-    else
-        jvmArgs("-Xmx1g")
-    systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
-    forwardSystemProperties("bench.warmup", "bench.measured", "bench.timeoutMs", "comm.impl", "bench.comm.label")
-}
-
-// Web comm benchmark: drives the Flutter WEB build in a browser instead of the native engine.
-// Reuses CommBenchTest/BenchBridge; BenchBridge branches on -Dbench.client=web. Requires Stage B
-// (binary equo-comm.js) for the new comm — otherwise the browser's text frames are ignored.
-tasks.register<Test>("webBenchmark") {
-    description = "Runs the comm benchmark against the Flutter WEB build (browser client)."
-    configureCommBench()
-    if (System.getProperty("skipFlutterLib") == null)
-        dependsOn("webFlutterLib")
-    jvmArgs("-Xmx1g")
-    systemProperty("bench.client", "web")
-    systemProperty("dev.equo.swt.loadLibrary", "false")
-    systemProperty("bench.comm.label", System.getProperty("bench.comm.label", "web"))
-    forwardSystemProperties("bench.warmup", "bench.measured", "bench.timeoutMs", "comm.impl", "equo.swt.browser", "bench.web.headless")
 }
 
 tasks.jar {
@@ -1445,7 +1380,9 @@ platforms.forEach { platform ->
         }
 
         tasks.register<Copy>("${info.desktopPlatform}ExtractNatives") {
-            from(configurations["${info.desktopPlatform}SwtImpl"].map { zipTree(it) })
+            // Resolved when the task runs: a task another build depends on is created without this
+            // build's lock, and resolving there is refused.
+            from(provider { configurations["${info.desktopPlatform}SwtImpl"].map { zipTree(it) } })
             into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
             include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css", "**/SWTMessages*.properties", "**/SWTMessages.properties")
             includeEmptyDirs = false

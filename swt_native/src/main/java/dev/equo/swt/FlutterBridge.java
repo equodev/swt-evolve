@@ -4,7 +4,7 @@ import dev.equo.swt.comm.AbstractBinaryCommService;
 import dev.equo.swt.comm.BinaryCommService;
 import dev.equo.swt.comm.ChannelHeader;
 import dev.equo.swt.comm.CommService;
-import dev.equo.swt.comm.JettyBinaryCommService;
+import dev.equo.swt.comm.CommServiceProvider;
 import dev.equo.swt.comm.MessageBatch;
 import org.eclipse.swt.graphics.GCHelper;
 import dev.equo.swt.spi.FlutterBridgeSpi;
@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -159,8 +160,15 @@ public abstract class FlutterBridge {
      * channels to it. Each comm is independent, so web Displays each get their own.
      */
     protected static CommService newComm() {
-        String impl = System.getProperty("comm.impl", "java-websocket");
-        return wire("jetty".equals(impl) ? new JettyBinaryCommService() : new BinaryCommService());
+        return wire(newTransport(System.getProperty("comm.impl", "java-websocket"),
+                ServiceLoader.load(CommServiceProvider.class)));
+    }
+
+    static CommService newTransport(String impl, Iterable<CommServiceProvider> providers) {
+        for (CommServiceProvider provider : providers) {
+            if (provider.name().equals(impl)) return provider.create();
+        }
+        return new BinaryCommService();
     }
 
     private static CommService wire(CommService comm) {

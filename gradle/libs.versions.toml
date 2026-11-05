@@ -3,7 +3,6 @@ kotlin = "2.1.20"
 junit = "5.13.1"
 assertj = "3.25.3"
 java-websocket = "1.5.7"
-jetty = "12.0.16"
 equo-chromium = "[128.0.44,129.0.0)"
 equo-chromium-cef = "[128.0.39,129.0.0)"
 auto-value = "1.10.4"
@@ -37,11 +36,6 @@ instancio-junit = { group = "org.instancio", name = "instancio-junit", version.r
 # Core dependencies
 java-websocket = { group = "org.java-websocket", name = "Java-WebSocket", version.ref = "java-websocket" }
 equo-chromium = { group = "com.equo", name = "com.equo.chromium", version.ref = "equo-chromium" }
-
-# Alternative WebSocket implementation for benchmarking (-Dcomm.impl=jetty).
-# Jetty 12 core flavor (no servlets) — websocket artifact renamed from websocket-jetty-server.
-jetty-server = { group = "org.eclipse.jetty", name = "jetty-server", version.ref = "jetty" }
-jetty-websocket-server = { group = "org.eclipse.jetty.websocket", name = "jetty-websocket-jetty-server", version.ref = "jetty" }
 
 # Static analysis
 errorprone-core = { group = "com.google.errorprone", name = "error_prone_core", version.ref = "errorprone" }

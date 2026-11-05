@@ -29,9 +29,9 @@ import java.util.concurrent.CompletableFuture;
  * the Flutter web build in a headless browser; {@code -Dharness.client=native} uses the native engine
  * and {@code -Ddev.equo.swt.mode=chromium} a CEF standalone window.
  *
- * <p>Known subclasses: {@link WidgetFlutterHarness} (widget-tree tests), {@code GenericSizeBridge} /
+ * <p>Known subclasses: {@code WidgetFlutterHarness} (widget-tree tests), {@code GenericSizeBridge} /
  * {@code FontMeasureBridge} (size-measurement bridges with no widget tree), and
- * {@link dev.equo.swt.bench.BenchBridge} (reuses the shared bridge plumbing).
+ * {@code BenchBridge} (reuses the shared bridge plumbing).
  */
 public abstract class FlutterHarness extends EmbeddedBridge {
 
@@ -69,7 +69,7 @@ public abstract class FlutterHarness extends EmbeddedBridge {
 
     /**
      * Whether this harness owns a private comm (default) or shares the JVM-wide desktop comm.
-     * {@link dev.equo.swt.bench.BenchBridge} overrides this to {@code false} to preserve its original
+     * {@code BenchBridge} overrides this to {@code false} to preserve its original
      * shared-comm behavior.
      */
     protected boolean ownComm() {
@@ -292,7 +292,7 @@ public abstract class FlutterHarness extends EmbeddedBridge {
 
     /** Locate {@code flutter-lib/build/web} relative to the test working dir. */
     protected static File resolveWebDir() {
-        for (String p : new String[]{"../flutter-lib/build/web", "flutter-lib/build/web"}) {
+        for (String p : new String[]{"../flutter-lib/build/web", "flutter-lib/build/web", "../swt-evolve/flutter-lib/build/web"}) {
             File f = new File(p);
             if (f.isDirectory()) return f.getAbsoluteFile();
         }
