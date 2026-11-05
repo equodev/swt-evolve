@@ -29,9 +29,7 @@ public class CrashReporter {
     }
 
     static void init() {
-        if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
-        String url = System.getProperty("dev.equo.swt.crashReportUrl");
-        if (url == null || url.trim().isEmpty()) return;
+        if (!enabled()) return;
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> handleCrash(throwable));
         Thread initThread = new Thread(() -> {
             boolean cleanShutdown = checkAndWriteSessionMarker();
@@ -93,9 +91,7 @@ public class CrashReporter {
     }
 
     public static void writeCleanShutdownMarker() {
-        if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
-        String url = System.getProperty("dev.equo.swt.crashReportUrl");
-        if (url == null || url.trim().isEmpty()) return;
+        if (!enabled()) return;
         try {
             Path marker = getCleanShutdownMarker();
             Files.createDirectories(marker.getParent());
@@ -105,12 +101,19 @@ public class CrashReporter {
         }
     }
 
+    /** Crash reporting runs only when a report URL is configured and it is not disabled. */
+    static boolean enabled() {
+        if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return false;
+        String url = System.getProperty("dev.equo.swt.crashReportUrl");
+        return url != null && !url.trim().isEmpty();
+    }
+
     public static void handleCrash(Throwable throwable) {
         doHandle(throwable, true);
     }
 
     private static void doHandle(Throwable throwable, boolean fatal) {
-        if (Boolean.getBoolean("dev.equo.swt.crashReport.disabled")) return;
+        if (!enabled()) return;
         if (handling) return;
         handling = true;
         try {

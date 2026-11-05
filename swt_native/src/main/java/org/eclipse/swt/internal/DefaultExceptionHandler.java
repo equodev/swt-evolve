@@ -16,17 +16,19 @@
 package org.eclipse.swt.internal;
 
 import java.util.function.*;
-import dev.equo.swt.CrashReporter;
 
+/**
+ * Rethrows, as SWT's default handlers do: the caller may catch the exception and keep running. One
+ * nobody catches reaches the thread's uncaught exception handler, which, when crash reporting is
+ * enabled, treats it as a crash.
+ */
 public class DefaultExceptionHandler {
 
     public static final Consumer<RuntimeException> RUNTIME_EXCEPTION_HANDLER = exception -> {
-        CrashReporter.handleCrash(exception);
         throw exception;
     };
 
     public static final Consumer<Error> RUNTIME_ERROR_HANDLER = error -> {
-        CrashReporter.handleCrash(error);
         throw error;
     };
 }
