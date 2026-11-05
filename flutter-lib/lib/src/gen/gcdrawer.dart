@@ -11,29 +11,29 @@ import '../gen/widgets.dart';
 
 /// Each op's argument types, by the number a frame defines it with (see GcWireReader).
 const Map<int, String> gcOpSignatures = {
-  148: 'wii',
-  150: 'iiiiiib',
-  151: 'iiiiii',
-  152: 'iiii',
-  153: 'wii',
-  154: 'wiiii',
-  155: 'wiiiiiiii',
-  156: 'iiii',
-  157: 'iiii',
-  158: 'w',
-  159: 'ii',
-  160: 'I',
-  161: 'I',
-  162: 'iiii',
-  163: 'iiiiii',
-  164: 'siii',
-  183: 'iiiiii',
-  184: 'iiiib',
-  185: 'iiii',
-  186: 'w',
-  187: 'I',
-  188: 'iiii',
-  189: 'iiiiii',
+  150: 'wii',
+  152: 'iiiiiib',
+  153: 'iiiiii',
+  154: 'iiii',
+  155: 'wii',
+  156: 'wiiii',
+  157: 'wiiiiiiii',
+  158: 'iiii',
+  159: 'iiii',
+  160: 'w',
+  161: 'ii',
+  162: 'I',
+  163: 'I',
+  164: 'iiii',
+  165: 'iiiiii',
+  166: 'siii',
+  185: 'iiiiii',
+  186: 'iiiib',
+  187: 'iiii',
+  188: 'w',
+  189: 'I',
+  190: 'iiii',
+  191: 'iiiiii',
 };
 
 abstract class GCDrawerBase {
@@ -135,32 +135,32 @@ abstract class GCDrawerBase {
   static final List<void Function(GCDrawerBase, GcWireReader)?> _binaryOps =
       () {
         final ops = List<void Function(GCDrawerBase, GcWireReader)?>.filled(
-          190,
+          192,
           null,
         );
-        ops[148] = _opCopyAreaImageintint;
-        ops[150] = _opCopyAreaintintintintintintboolean;
-        ops[151] = _opDrawArcintintintintintint;
-        ops[152] = _opDrawFocusintintintint;
-        ops[153] = _opDrawImageImageintint;
-        ops[154] = _opDrawImageImageintintintint;
-        ops[155] = _opDrawImageImageintintintintintintintint;
-        ops[156] = _opDrawLineintintintint;
-        ops[157] = _opDrawOvalintintintint;
-        ops[158] = _opDrawPathPath;
-        ops[159] = _opDrawPointintint;
-        ops[160] = _opDrawPolygonint;
-        ops[161] = _opDrawPolylineint;
-        ops[162] = _opDrawRectangleintintintint;
-        ops[163] = _opDrawRoundRectangleintintintintintint;
-        ops[164] = _opDrawTextStringintintint;
-        ops[183] = _opFillArcintintintintintint;
-        ops[184] = _opFillGradientRectangleintintintintboolean;
-        ops[185] = _opFillOvalintintintint;
-        ops[186] = _opFillPathPath;
-        ops[187] = _opFillPolygonint;
-        ops[188] = _opFillRectangleintintintint;
-        ops[189] = _opFillRoundRectangleintintintintintint;
+        ops[150] = _opCopyAreaImageintint;
+        ops[152] = _opCopyAreaintintintintintintboolean;
+        ops[153] = _opDrawArcintintintintintint;
+        ops[154] = _opDrawFocusintintintint;
+        ops[155] = _opDrawImageImageintint;
+        ops[156] = _opDrawImageImageintintintint;
+        ops[157] = _opDrawImageImageintintintintintintintint;
+        ops[158] = _opDrawLineintintintint;
+        ops[159] = _opDrawOvalintintintint;
+        ops[160] = _opDrawPathPath;
+        ops[161] = _opDrawPointintint;
+        ops[162] = _opDrawPolygonint;
+        ops[163] = _opDrawPolylineint;
+        ops[164] = _opDrawRectangleintintintint;
+        ops[165] = _opDrawRoundRectangleintintintintintint;
+        ops[166] = _opDrawTextStringintintint;
+        ops[185] = _opFillArcintintintintintint;
+        ops[186] = _opFillGradientRectangleintintintintboolean;
+        ops[187] = _opFillOvalintintintint;
+        ops[188] = _opFillPathPath;
+        ops[189] = _opFillPolygonint;
+        ops[190] = _opFillRectangleintintintint;
+        ops[191] = _opFillRoundRectangleintintintintintint;
         return ops;
       }();
 
