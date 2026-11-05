@@ -2147,7 +2147,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // back fights the window manager -- the same loop the main shell avoids.
         if (applyingClientBounds || bounds == null) return;
         ShellWindow window = shellWindowFor(control);
-        if (window != null) window.setBounds(bounds);
+        if (window == null) return;
+        // A maximized or full-screen window takes its geometry from that state, not from the shell.
+        Shell shell = (Shell) ((DartShell) control).getApi();
+        if (shell.getMaximized() || shell.getFullScreen()) return;
+        window.setBounds(bounds);
     }
 
     @Override

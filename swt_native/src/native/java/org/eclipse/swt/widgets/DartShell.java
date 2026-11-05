@@ -1385,8 +1385,8 @@ public class DartShell extends DartDecorations implements IShell {
         super.setMaximized(maximized);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowMaximized(this, maximized);
-        if (maximized)
-            bounds = display.getBounds();
+        if (maximized && !_getFullScreen())
+            setBounds(display.getBounds());
     }
 
     /**

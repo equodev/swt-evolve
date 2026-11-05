@@ -21,6 +21,7 @@ import 'package:swtflutter/main.dart';
 // The io transport directly: `flutter test` runs on the VM, where comm.dart resolves to it —
 // but the analyzer resolves the conditional export to the web variant, which has no test hook.
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/label.dart';
@@ -35,6 +36,7 @@ import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/key_forwarding.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/test_harness.dart';
 
 // DisplaySwt caches the last state it saw per display id, so each test uses its own id —
 // otherwise the second one starts with the first one's popup already mounted.
@@ -182,6 +184,58 @@ void main() {
           'VerifyKeyListener',
     );
   });
+
+  testWidgets(
+    'the proposal list and its documentation popup leave the keyboard with the editor',
+    (tester) async {
+      final base = _idsFor(5);
+      await tester.pumpWidget(
+        EvolveApp(
+          theme: ThemeMode.light,
+          contentWidget: DisplaySwt(
+            value: _display(base, shells: [_mainShell(base)], activeShellId: base + 1),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(60, 40));
+      FocusRequests.instance.request(base + 3);
+      addTearDown(FocusRequests.instance.reset);
+      await tester.pumpAndSettle();
+      expect(canvasEditorFocused, isTrue, reason: 'sanity: a clicked StyledText holds the keyboard');
+
+      final proposals = _popupShell(base, children: _proposalList(base));
+      _javaDescribesDisplay(
+        'Display/$base',
+        _display(base, shells: [_mainShell(base), proposals], activeShellId: base + 1),
+      );
+      await tester.pumpAndSettle();
+      expect(canvasEditorFocused, isTrue, reason: 'the proposal list alone');
+      expect(queryPrimaryFocus(), 'StyledText/${base + 3}');
+
+      final info = VShell()
+        ..swt = 'Shell'
+        ..id = base + 20
+        ..style = SWT.ON_TOP | SWT.TOOL | SWT.RESIZE
+        ..bounds = _rect(420, 140, 300, 200)
+        ..children = [
+          VComposite()
+            ..swt = 'Composite'
+            ..id = base + 21
+            ..style = SWT.NONE
+            ..enabled = true
+            ..visible = true
+            ..bounds = _rect(0, 0, 300, 200),
+        ];
+      _javaDescribesDisplay(
+        'Display/$base',
+        _display(base, shells: [_mainShell(base), proposals, info], activeShellId: base + 1),
+      );
+      await tester.pumpAndSettle();
+      expect(queryPrimaryFocus(), 'StyledText/${base + 3}', reason: 'with the documentation popup');
+      expect(canvasEditorFocused, isTrue, reason: 'with the documentation popup');
+    },
+  );
 
   testWidgets('a shell SWT activated does take the keyboard', (tester) async {
     expect(
