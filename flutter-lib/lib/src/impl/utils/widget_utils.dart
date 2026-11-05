@@ -71,7 +71,7 @@ TextAlign getTextAlignFromStyle(int style, TextAlign defaultAlign) {
 }
 
 /// Whether the application's own backgrounds are painted: `use_swt_colors`, or a [SwtColorScope].
-bool _appPaintsColors(BuildContext? context) =>
+bool appPaintsColors(BuildContext? context) =>
     (getConfigFlags().use_swt_colors ?? false) ||
     (context != null && SwtColorScope.isActive(context));
 
@@ -81,7 +81,7 @@ Color? getBackgroundColor({
   required Color? defaultColor,
   BuildContext? context,
 }) {
-  if (_appPaintsColors(context) && background != null) {
+  if (appPaintsColors(context) && background != null) {
     return colorFromVColor(background, defaultColor: defaultColor);
   }
 
@@ -177,7 +177,7 @@ Color getForegroundColor({
 
   if (useSwtForeground && foreground != null) {
     final color = colorFromVColor(foreground, defaultColor: defaultColor);
-    if (_appPaintsColors(context)) return color;
+    if (appPaintsColors(context)) return color;
     return legibleOn(color, background ?? Theme.of(context).colorScheme.surface,
         minRatio: minContrast);
   }

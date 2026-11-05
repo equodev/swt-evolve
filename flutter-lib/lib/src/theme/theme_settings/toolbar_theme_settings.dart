@@ -47,7 +47,6 @@ ToolBarThemeExtension _getToolBarTheme({
     dividerVerticalPadding: 6.0,
     separatorThickness: 1.0,
     separatorWidth: 16.0,
-    separatorHeight: 20.0,
   );
 }
 

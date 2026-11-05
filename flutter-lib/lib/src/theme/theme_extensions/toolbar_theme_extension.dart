@@ -19,7 +19,6 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
   final double dividerVerticalPadding;
   final double separatorThickness;
   final double separatorWidth;
-  final double separatorHeight;
 
   const ToolBarThemeExtension({
     required this.backgroundColor,
@@ -36,7 +35,6 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
     this.dividerVerticalPadding = 6.0,
     this.separatorThickness = 1.0,
     this.separatorWidth = 8.0,
-    this.separatorHeight = 24.0,
   });
 }
 

@@ -25,7 +25,6 @@ mixin _$ToolBarThemeExtensionTailorMixin
   double get dividerVerticalPadding;
   double get separatorThickness;
   double get separatorWidth;
-  double get separatorHeight;
 
   @override
   ToolBarThemeExtension copyWith({
@@ -43,7 +42,6 @@ mixin _$ToolBarThemeExtensionTailorMixin
     double? dividerVerticalPadding,
     double? separatorThickness,
     double? separatorWidth,
-    double? separatorHeight,
   }) {
     return ToolBarThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -63,7 +61,6 @@ mixin _$ToolBarThemeExtensionTailorMixin
           dividerVerticalPadding ?? this.dividerVerticalPadding,
       separatorThickness: separatorThickness ?? this.separatorThickness,
       separatorWidth: separatorWidth ?? this.separatorWidth,
-      separatorHeight: separatorHeight ?? this.separatorHeight,
     );
   }
 
@@ -100,7 +97,6 @@ mixin _$ToolBarThemeExtensionTailorMixin
           ? separatorThickness
           : other.separatorThickness,
       separatorWidth: t < 0.5 ? separatorWidth : other.separatorWidth,
-      separatorHeight: t < 0.5 ? separatorHeight : other.separatorHeight,
     );
   }
 
@@ -164,10 +160,6 @@ mixin _$ToolBarThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               separatorWidth,
               other.separatorWidth,
-            ) &&
-            const DeepCollectionEquality().equals(
-              separatorHeight,
-              other.separatorHeight,
             ));
   }
 
@@ -189,7 +181,6 @@ mixin _$ToolBarThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(dividerVerticalPadding),
       const DeepCollectionEquality().hash(separatorThickness),
       const DeepCollectionEquality().hash(separatorWidth),
-      const DeepCollectionEquality().hash(separatorHeight),
     );
   }
 }
@@ -214,5 +205,4 @@ extension ToolBarThemeExtensionBuildContextProps on BuildContext {
       toolBarThemeExtension.dividerVerticalPadding;
   double get separatorThickness => toolBarThemeExtension.separatorThickness;
   double get separatorWidth => toolBarThemeExtension.separatorWidth;
-  double get separatorHeight => toolBarThemeExtension.separatorHeight;
 }

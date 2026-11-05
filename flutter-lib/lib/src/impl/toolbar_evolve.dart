@@ -273,7 +273,8 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
                     alignment: isRightToLeft
                         ? Alignment.centerRight
                         : Alignment.centerLeft,
-                    child: Row(
+                    child: _ItemFlex(
+                      direction: Axis.horizontal,
                       mainAxisSize: MainAxisSize.min,
                       textDirection: isRightToLeft
                           ? TextDirection.rtl
@@ -287,12 +288,14 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
           );
         } else {
           final itemRow = isVertical
-              ? Column(
+              ? _ItemFlex(
+                  direction: Axis.vertical,
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: toolItems,
                 )
-              : Row(
+              : _ItemFlex(
+                  direction: Axis.horizontal,
                   mainAxisSize: MainAxisSize.min,
                   textDirection: isRightToLeft
                       ? TextDirection.rtl
@@ -418,7 +421,7 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
         if (item.control != null) {
           widget = ToolItemSwt(value: item);
         } else {
-          widget = _buildToolBarSeparator(isVertical, toolbarTheme);
+          widget = _buildToolBarSeparator(context, isVertical, toolbarTheme);
         }
       } else if (item.image != null || item.text != null) {
         if (contentIndex < contentWidgets.length) {
@@ -453,32 +456,21 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     return rows;
   }
 
-  Widget _buildToolBarSeparator(bool isVertical, ToolBarThemeExtension theme) {
-    final thickness = theme.separatorThickness;
-    final width = theme.separatorWidth;
-    final height = theme.separatorHeight;
-    final color = theme.borderColor;
-    if (isVertical) {
-      return Padding(
-        padding: theme.itemPadding,
-        child: Center(
-          child: Container(
-            width: height,
-            height: thickness,
-            color: color,
-          ),
-        ),
-      );
+  Widget _buildToolBarSeparator(
+      BuildContext context, bool isVertical, ToolBarThemeExtension theme) {
+    final axis = isVertical ? Axis.vertical : Axis.horizontal;
+    // Enlarged icons split their groups by a plain gap; the vertical one keeps its 1 px extent.
+    if (biggerIconSize) {
+      return isVertical
+          ? SizedBox(height: theme.separatorThickness)
+          : SizedBox(width: theme.separatorWidth);
     }
-    return Padding(
-      padding: theme.itemPadding,
-      child: Center(
-        child: VerticalDivider(
-          width: width,
-          thickness: thickness,
-          color: color,
-        ),
-      ),
+    final itemTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
+    return _ToolBarSeparator(
+      axis: axis,
+      extent: theme.separatorWidth,
+      thickness: theme.separatorThickness,
+      color: appPaintsColors(context) ? _swtWidgetNormalShadow : itemTheme.separatorColor,
     );
   }
 
@@ -613,6 +605,189 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
     }
 
     return result;
+  }
+}
+
+/// A [Flex] of tool items that stretches each [_ToolBarSeparator] across its cross axis, as native
+/// bars do. The items lay out in an unbounded box (the bar's [FittedBox]), so the cross extent is
+/// only known once the other items have laid out.
+class _ItemFlex extends Flex {
+  const _ItemFlex({
+    required super.direction,
+    super.mainAxisSize,
+    super.crossAxisAlignment,
+    super.textDirection,
+    super.children,
+  });
+
+  @override
+  RenderFlex createRenderObject(BuildContext context) => _RenderItemFlex(
+        direction: direction,
+        mainAxisAlignment: mainAxisAlignment,
+        mainAxisSize: mainAxisSize,
+        crossAxisAlignment: crossAxisAlignment,
+        textDirection: getEffectiveTextDirection(context),
+        verticalDirection: verticalDirection,
+        textBaseline: textBaseline,
+        clipBehavior: clipBehavior,
+        spacing: spacing,
+      );
+}
+
+class _RenderItemFlex extends RenderFlex {
+  _RenderItemFlex({
+    required super.direction,
+    required super.mainAxisAlignment,
+    required super.mainAxisSize,
+    required super.crossAxisAlignment,
+    required super.textDirection,
+    required super.verticalDirection,
+    required super.textBaseline,
+    required super.clipBehavior,
+    required super.spacing,
+  });
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final horizontal = direction == Axis.horizontal;
+    final cross = horizontal ? size.height : size.width;
+    var child = firstChild;
+    while (child != null) {
+      final data = child.parentData! as FlexParentData;
+      if (child is _RenderToolBarSeparator) {
+        final extent = horizontal ? child.size.width : child.size.height;
+        child.layout(horizontal
+            ? BoxConstraints.tightFor(width: extent, height: cross)
+            : BoxConstraints.tightFor(width: cross, height: extent));
+        data.offset = horizontal ? Offset(data.offset.dx, 0) : Offset(0, data.offset.dy);
+      }
+      child = data.nextSibling;
+    }
+  }
+}
+
+/// SWT.COLOR_WIDGET_NORMAL_SHADOW, the value `DartDisplay.getSystemColor` answers for it: a
+/// separator's line when the application's colours are used instead of the theme's.
+const _swtWidgetNormalShadow = Color(0xFF808080);
+
+/// The share of the bar's cross extent a separator line leaves clear at each end.
+const _separatorLineInset = 0.2;
+
+/// A SWT.SEPARATOR item: [extent] along the bar, and a [thickness] line in [color] across it,
+/// short of the bar's edges by [_separatorLineInset].
+class _ToolBarSeparator extends LeafRenderObjectWidget {
+  const _ToolBarSeparator({
+    required this.axis,
+    required this.extent,
+    required this.thickness,
+    required this.color,
+  });
+
+  /// The bar's direction.
+  final Axis axis;
+  final double extent;
+  final double thickness;
+  final Color color;
+
+  @override
+  _RenderToolBarSeparator createRenderObject(BuildContext context) => _RenderToolBarSeparator(
+      axis, extent, thickness, color, MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderToolBarSeparator renderObject) {
+    renderObject
+      ..axis = axis
+      ..extent = extent
+      ..thickness = thickness
+      ..color = color
+      ..devicePixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0;
+  }
+}
+
+class _RenderToolBarSeparator extends RenderBox {
+  _RenderToolBarSeparator(
+      this._axis, this._extent, this._thickness, this._color, this._devicePixelRatio);
+
+  double _devicePixelRatio;
+  set devicePixelRatio(double value) {
+    if (value == _devicePixelRatio) return;
+    _devicePixelRatio = value;
+    markNeedsPaint();
+  }
+
+  Axis _axis;
+  set axis(Axis value) {
+    if (value == _axis) return;
+    _axis = value;
+    markNeedsLayout();
+  }
+
+  double _extent;
+  set extent(double value) {
+    if (value == _extent) return;
+    _extent = value;
+    markNeedsLayout();
+  }
+
+  double _thickness;
+  set thickness(double value) {
+    if (value == _thickness) return;
+    _thickness = value;
+    markNeedsPaint();
+  }
+
+  Color _color;
+  set color(Color value) {
+    if (value == _color) return;
+    _color = value;
+    markNeedsPaint();
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) => _axis == Axis.horizontal ? _extent : 0;
+  @override
+  double computeMaxIntrinsicWidth(double height) => computeMinIntrinsicWidth(height);
+  @override
+  double computeMinIntrinsicHeight(double width) => _axis == Axis.vertical ? _extent : 0;
+  @override
+  double computeMaxIntrinsicHeight(double width) => computeMinIntrinsicHeight(width);
+
+  /// Across the bar it takes what its parent bounds it to; [_RenderItemFlex] then stretches it.
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final horizontal = _axis == Axis.horizontal;
+    final crossMax = horizontal ? constraints.maxHeight : constraints.maxWidth;
+    final cross = crossMax.isFinite ? crossMax : 0.0;
+    return constraints.constrain(horizontal ? Size(_extent, cross) : Size(cross, _extent));
+  }
+
+  @override
+  void performLayout() {
+    size = computeDryLayout(constraints);
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (_color.a == 0) return;
+    // On whole device pixels, through any scale above (the bar's FittedBox): a thin line
+    // between two pixels blurs into a fainter, wider one.
+    final horizontal = _axis == Axis.horizontal;
+    final toGlobal = getTransformTo(null);
+    final scale = (horizontal ? toGlobal.entry(0, 0) : toGlobal.entry(1, 1)) * _devicePixelRatio;
+    final origin = (horizontal ? toGlobal.entry(0, 3) : toGlobal.entry(1, 3)) * _devicePixelRatio;
+    var start = ((horizontal ? size.width : size.height) - _thickness) / 2;
+    var thickness = _thickness;
+    if (scale > 0) {
+      start = ((scale * start + origin).roundToDouble() - origin) / scale;
+      thickness = (scale * _thickness).roundToDouble().clamp(1.0, double.infinity) / scale;
+    }
+    final cross = horizontal ? size.height : size.width;
+    final inset = cross * _separatorLineInset;
+    final line = horizontal
+        ? Rect.fromLTWH(offset.dx + start, offset.dy + inset, thickness, cross - 2 * inset)
+        : Rect.fromLTWH(offset.dx + inset, offset.dy + start, cross - 2 * inset, thickness);
+    context.canvas.drawRect(line, Paint()..color = _color);
   }
 }
 
