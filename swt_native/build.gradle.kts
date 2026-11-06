@@ -330,14 +330,6 @@ sourceSets {
                 exclude("org/eclipse/swt/graphics/ImageAtSizeDrawNativeTest.java")
                 exclude("org/eclipse/swt/graphics/ImageSvgNativeTest.java")
             }
-            // The fields DartDisplay reports, DPIUtil.getNativeDeviceZoom() and the exceptions dispose collects are 3.134's.
-            if (swtMinorNative < 134) exclude("org/eclipse/swt/widgets/DisplayImplementationCurrentReleaseFlutterTest.java")
-            // Display.setRuntimeExceptionHandler and setErrorHandler were added in 3.106 (absent in the
-            // cocoa Display of 3.105.3, present in 3.106.3).
-            if (swtMinorNative < 106) exclude("org/eclipse/swt/widgets/DisplayTimerExceptionHandlerFlutterTest.java")
-            // DartDisplay.USE_SYSTEM_THEME comes from the cocoa Display, which names it from 3.112 on
-            // (absent in 3.108.0, present in 3.112.0), as does Display.isSystemDarkTheme below.
-            if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplaySystemThemePropertyFlutterTest.java")
             // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
             if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
@@ -373,25 +365,17 @@ sourceSets {
                 exclude("org/eclipse/swt/graphics/DeviceDpiAutoScaleTest.java")
                 exclude("org/eclipse/swt/graphics/HostScreenDpiNativeTest.java")
                 exclude("javafx/embed/swt/FXCanvasPixelDensityNativeTest.java")
-                exclude("org/eclipse/swt/widgets/DeskMultiWindowFlutterTest.java")
                 exclude("org/eclipse/swt/widgets/DeskWindowUnitsTest.java")
-                exclude("org/eclipse/swt/widgets/DisplayResizeFlutterTest.java")
                 exclude("org/eclipse/swt/widgets/ShellMenuBarClientAreaNativeTest.java")
                 // Also absent from 3.103: ImageDataProvider and ImageFileNameProvider,
                 // SWT.AUTO_TEXT_DIRECTION, SWT.Pre/PostExternalEventDispatch, SWT.COLOR_TRANSPARENT
-                // with Color.getAlpha, Control.requestLayout, Link.setLinkForeground and
-                // Browser.evaluate(String, boolean), which the BrowserKit harness wraps.
+                // with Color.getAlpha, Control.requestLayout and Link.setLinkForeground.
                 exclude("org/eclipse/swt/graphics/ImageDataProviderConstructorTest.java")
                 exclude("org/eclipse/swt/graphics/ImageDataProviderZoomTest.java")
                 exclude("org/eclipse/swt/graphics/ImageImplementationNativeTest.java")
                 exclude("org/eclipse/swt/graphics/TextLayoutRulesNativeTest.java")
-                exclude("org/eclipse/swt/widgets/DisplayWakeFlutterTest.java")
-                exclude("org/eclipse/swt/widgets/DisplaySystemColorFallbackFlutterTest.java")
-                exclude("org/eclipse/swt/widgets/RequestLayoutRunsLayoutFlutterTest.java")
                 exclude("org/eclipse/swt/widgets/LinkImplementationNativeTest.java")
                 exclude("org/eclipse/swt/widgets/AutoTextDirectionTest.java")
-                exclude("dev/equo/swt/harness/*BrowserKit.java")
-                exclude("dev/equo/swt/test/BrowserSetTextLocalResourceFlutterTest.java")
             }
             // Image.getImageData(int zoom) was added in 3.106.
             if (swtMinorNative < 106) {
@@ -412,8 +396,6 @@ sourceSets {
             // cannot compile against older baselines. Layout subclassing itself stays covered by
             // LayoutSubclassTest, which does not touch BorderLayout.
             if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
-            // StyledText's multi-selection API (setSelectionRanges) was added in 3.117.
-            if (swtMinorNative < 117) exclude("org/eclipse/swt/custom/StyledTextMultiSelectionFlutterTest.java")
             // CCombo.setAlignment was added in 3.113.
             if (swtMinorNative < 113) exclude("org/eclipse/swt/custom/CComboSetAlignmentTest.java")
             // Tree.setHeaderForeground was added in 3.106.
@@ -422,32 +404,14 @@ sourceSets {
             if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/TreeAccessorsNativeTest.java")
             // Shell.setMaximumSize/getMaximumSize were added in 3.116.
             if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
-            // StyledText.setLineVerticalIndent was added in 3.109.
-            if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextVerticalIndentFlutterTest.java")
             // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
             if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextLineProvidersWireNativeTest.java")
             // TextLayout.setVerticalIndent was added in 3.109.
             if (swtMinorNative < 109) exclude("org/eclipse/swt/graphics/TextLayoutVerticalIndentNativeTest.java")
-            // Display.isSystemDarkTheme() was added in 3.112; the test asserts it directly.
-            if (swtMinorNative < 112) exclude("org/eclipse/swt/widgets/DisplayIsSystemDarkThemeFlutterTest.java")
-            // 3.107 added the lambda listener factories (ProgressListener.completedAdapter,
-            // LocationListener.changedAdapter), StyledText.getOffsetAtPoint and
-            // StyledText.setLineSpacingProvider, which these tests call directly.
-            if (swtMinorNative < 107) {
-                exclude("dev/equo/swt/test/BrowserFlutterTest.java")
-                exclude("dev/equo/swt/test/BrowserFileUrlFlutterTest.java")
-                exclude("dev/equo/swt/test/BrowserFirstLoadFlutterTest.java")
-                exclude("dev/equo/swt/test/BrowserProgressPlaceholderFlutterTest.java")
-                exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
-                exclude("org/eclipse/swt/custom/StyledTextEditingGeometryFlutterTest.java")
-                exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
-            }
             // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
             // CompositeImageDescriptor API ships with the JFace paired with it, and CTabFolder only
             // highlights the active stack (onActivate/onDeactivate) from that release on.
             if (swtMinorNative < 106) {
-                exclude("org/eclipse/swt/custom/CTabFolderActiveHighlightFlutterTest.java")
-                exclude("org/eclipse/swt/dnd/DndFlutterTest.java")
                 exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
                 // Image.getImageData(int zoom) is package-private in 3.105 and public from 3.106 on,
                 // so the API class the generator writes only carries it from there; this test reads
@@ -461,6 +425,15 @@ sourceSets {
         // .css/.png/SWTMessages that sit beside the generated Java.
         compileClasspath += nativeBackend.output + nativeBackend.compileClasspath
         runtimeClasspath += output + nativeBackend.output + nativeBackend.runtimeClasspath
+    }
+
+    // AutoScalePolicy and IntegerOn150 import org.eclipse.swt.internal.DPIUtil, absent from 3.103.
+    named("testFixtures") {
+        java {
+            if ((swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE) < 104) {
+                exclude("dev/equo/swt/AutoScalePolicy.java", "dev/equo/swt/IntegerOn150.java")
+            }
+        }
     }
 
     // What is left of the embedded suite: the tests whose subject is Dart and Swt widgets coexisting
@@ -506,14 +479,6 @@ run {
         "testRuntimeOnly"("org.testfx:openjfx-monocle:${libs.versions.openjfx.monocle.get()}") {
             isTransitive = false
         }
-    }
-}
-
-val chromiumMode = System.getProperty("mode.chromium", "false") == "true"
-if (chromiumMode) {
-    dependencies {
-        "testRuntimeOnly"(libs.equo.chromium)
-        "testRuntimeOnly"("com.equo:com.equo.chromium.cef.${getSwtWs(currentOs)}.${getSwtOs(currentOs)}.${getSwtArch(arch)}:${libs.versions.equo.chromium.cef.get()}")
     }
 }
 
@@ -827,82 +792,37 @@ tasks.register<Test>("embedTest") {
 
 tasks.test {
     group = "verification"
-    description = "Runs the tests that need the whole-tree-Flutter (native/web) Java backend — every " +
-            "widget, including Display/Shell, is Dart-backed, no Swt* classes involved. That is the " +
-            "Flutter integration tests (tagged 'flutter-it', defaulting to the WEB render client, " +
-            "headless Chrome + CanvasKit; pass -Dharness.client=native for the desktop Flutter engine) " +
-            "plus the renderer-free unit tests of native-only classes (tagged 'native-unit')."
-    // One JVM holds the whole suite plus a headless browser and its comm; Gradle's 512m default
-    // dies mid-run with OutOfMemoryError, blamed on whatever allocated next. Allocation rate, not
-    // retention: a mixed collection returns this suite to 12-15M, and the peak simply tracks the
-    // ceiling given (974M of 1024M, 1423M of 2048M). The number buys the collector headroom, so it
-    // is headroom that can be traded away: -DtestHeap=1g is what lets several forks share a
-    // container, and the suite is green on it.
+    description = "Runs the tests that need no renderer, against the whole-tree-Flutter Java backend " +
+            "(src/main + src/native + src/native<currentOs>)."
     maxHeapSize = System.getProperty("testHeap") ?: "2g"
-    // Each fork is its own JVM with its own browser on an ephemeral port, so the shared statics
-    // this suite is sensitive to (the mock display registry, FlutterBridge's dirty set) cannot
-    // cross between them. Off by default all the same, because how many fit depends on the machine:
-    // the callers that know their own headroom (preMerge, the CI job) pass -DtestForks.
-    // Capped by the cores actually visible to this JVM: a caller asking for more than the machine
-    // (or the container's quota) has just adds JVMs that wait for each other.
+    // Capped by the cores actually visible to this JVM: asking for more only adds JVMs that wait.
     maxParallelForks = (System.getProperty("testForks")?.toIntOrNull() ?: 1)
         .coerceIn(1, Runtime.getRuntime().availableProcessors())
-    // Gradle deals every candidate class to the forks in turn, in path order. With helper and nested
-    // classes among the candidates, where a heavy class landed depended on how many of them sorted
-    // before it. @Nested classes still run, through their outer class.
+    // @Nested classes run through their outer class; listing them too deals them to forks twice.
     include("**/*Test.class", "**/*Tests.class")
     exclude("**/*$*.class")
-    if (chromiumMode)
-        classpath = sourceSets["native${currentOs.replaceFirstChar { it.titlecase() }}"].output + sourceSets["test"].runtimeClasspath
     useJUnitPlatform {
-        // Everything in the source set runs; tags only say what to leave out. An includeTags list
-        // here meant a class had to be tagged to run at all, and one that was not was compiled and
-        // then silently skipped.
-        // 'web-known-broken': the widget-size suite the web/CanvasKit client cannot measure
-        // correctly yet — part of it needs the native image decoder this backend deliberately does
-        // not ship, the rest is real Java-vs-Flutter measurement drift. Tracked on its own; until
-        // it is fixed no run wants it.
         // 'transport-copies': the WebSocket library copies every frame it sends and queues the
         // copies without bound, so senders that outrun the client grow the heap; red until the
         // transport writes from buffers it does not have to copy.
-        excludeTags(*excludedTags("web-known-broken", "transport-copies"))
+        excludeTags(*excludedTags("transport-copies"))
     }
     configureTestLogging()
-    if (System.getProperty("skipFlutterLib") == null)
-        dependsOn("webFlutterLib")
-    // The Flutter web bundle the suite runs against is not a declared input (with -DskipFlutterLib
-    // it comes prebuilt from outside Gradle), so a cached result could stand for a different bundle.
-    outputs.cacheIf { false }
-    systemProperty("harness.client", "web")
     systemProperty("dev.equo.swt.loadLibrary", "false")
     // An exception in a Display runnable must fail the test that caused it; the crash dialog's
     // modal loop would instead block the run until the task times out.
     systemProperty("dev.equo.swt.crashReport.disabled", "true")
-    systemProperty("dev.equo.swt.mode", if (chromiumMode) "chromium" else "web")
-    // The Browser scripting / same-origin cases (evaluate, BrowserFunction,
-    // Title/StatusText, redirect) need the iframe content to be same-origin,
-    // which the opt-in reverse proxy provides. Default it ON for tests so the
-    // suite reflects the supported feature set; override with
-    // -Ddev.equo.swt.web.proxy=<all|host,host> or = (empty) to disable.
-    systemProperty("dev.equo.swt.web.proxy", System.getProperty("dev.equo.swt.web.proxy") ?: "all")
+    systemProperty("dev.equo.swt.mode", "web")
     // A test that builds a real web Display by mistake would open the developer's own browser on a
     // localhost page that dies with the run; any such Display gets headless Chrome instead.
     systemProperty("dev.equo.swt.web.headless", "true")
-    // Needed on macOS for the desktop Flutter engine (-Dharness.client=native) and for chromium
-    // mode; harmless (unused) for the default headless-browser web client.
     if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
         jvmArgs = listOf("-XstartOnFirstThread")
     // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
     // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
             "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
-    // equo.swt.diff: lets this suite run against either way of delivering state, so the whole
-    // end-to-end path can be compared between them rather than only the Java side.
-    // fontsize.seed: FontSizeTest fuzzes over random sizes and texts and prints the seed it used,
-    // so a red run can be repeated with -Dfontsize.seed=<the printed value>. Read in the test JVM,
-    // so it has to be forwarded rather than left on the Gradle one.
-    forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "equo.swt.binaryWire", "fontsize.seed",
-        "dev.equo.swt.debug", "dev.equo.swt.web.deflate", "stress.frames", "stress.seed", "stress.rounds", "stress.inFlight", "stress.heapLimitMb", "stress.unpacedFrames")
+    forwardSystemProperties("equo.swt.diff", "equo.swt.binaryWire", "dev.equo.swt.debug")
 }
 
 fun Test.configureTestLogging() {
