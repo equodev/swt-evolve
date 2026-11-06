@@ -37,12 +37,9 @@ allprojects {
     }
 }
 
-// SWT releases older than 3.105.2 are not on Maven Central. A build that includes this one and
-// builds such a release hands over, as `eclipseP2Script` in its Gradle object's extra properties, the
-// script that resolves them from the release's p2 repository; it goes to the projects that need SWT.
-((gradle.parent as ExtensionAware?)?.extra?.properties?.get("eclipseP2Script") as File?)?.let { script ->
-    listOf(":swt_native", ":examples").mapNotNull { findProject(it) }.forEach { it.apply(from = script) }
-}
+// A build that includes this one can extend it: the script it hands over as `extensionScript` in its
+// Gradle object's extra properties is applied to this root project.
+((gradle.parent as ExtensionAware?)?.extra?.properties?.get("extensionScript") as File?)?.let { apply(from = it) }
 
 dependencies {
 }
