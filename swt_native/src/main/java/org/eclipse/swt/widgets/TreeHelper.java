@@ -258,7 +258,13 @@ public class TreeHelper {
             // placeholder child as one, and asks for the real child count, while it has no data.
             dartTree.sendEvent(expand ? SWT.Expand : SWT.Collapse, event);
             if (item.isDisposed()) return;
-            item.setExpanded(expand);
+            if (item.getItemCount() == 0) {
+                VTreeItem value = ((DartTreeItem) item.getImpl()).getValue();
+                value.setExpanded(expand);
+                value.markDirty(VTreeItem.EXPANDED);
+            } else {
+                item.setExpanded(expand);
+            }
             dartTree.getBridge().dirty(dartTree);
         }
     }

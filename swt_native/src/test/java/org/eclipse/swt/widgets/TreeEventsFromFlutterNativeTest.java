@@ -2,6 +2,7 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import dev.equo.swt.harness.WireFrames;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +29,8 @@ import static org.mockito.Mockito.when;
  */
 @Tag("native-unit")
 class TreeEventsFromFlutterNativeTest {
+
+    private static final int CLIENT = 1;
 
     private RecordingBridge bridge;
     private Display display;
@@ -389,6 +393,83 @@ class TreeEventsFromFlutterNativeTest {
 
         assertThat(items[0].isDisposed()).isTrue();
         assertThat(tree.getItemCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("an Expand listener that removes the item's only child leaves the item expanded, as Cocoa and GTK do")
+    void anExpandListenerRemovingTheOnlyChild() {
+        Tree tree = tree(SWT.SINGLE);
+        TreeItem project = roots(tree, 2)[0];
+        new TreeItem(project, SWT.NONE).setText("Loading...");
+        tree.addListener(SWT.Expand, e -> {
+            for (TreeItem child : project.getItems()) child.dispose();
+        });
+
+        fromFlutter(tree, "Tree/Expand", item(project));
+        runQueued();
+
+        assertThat(project.getItemCount()).as("the Expand listener ran").isZero();
+        assertThat(project.getExpanded()).isTrue();
+    }
+
+    @Test
+    @DisplayName("an item emptied by its Expand listener closes when it gets a child back and is collapsed")
+    void anItemEmptiedOnExpandClosesWhenCollapsedWithAChildAgain() {
+        // A lazy TreeViewer whose loading is cancelled drops its placeholder, then collapses the item
+        // twice, putting the placeholder back after each collapse.
+        Tree tree = tree(SWT.SINGLE);
+        TreeItem project = roots(tree, 2)[0];
+        new TreeItem(project, SWT.NONE).setText("Loading...");
+        List<Boolean> expandedAfterEachCollapse = new ArrayList<>();
+        tree.addListener(SWT.Expand, e -> {
+            for (TreeItem child : project.getItems()) child.dispose();
+            display.asyncExec(() -> {
+                for (int i = 0; i < 2; i++) {
+                    project.setExpanded(false);
+                    expandedAfterEachCollapse.add(project.getExpanded());
+                    if (project.getItemCount() == 0) new TreeItem(project, SWT.NONE).setText("Loading...");
+                }
+            });
+        });
+
+        fromFlutter(tree, "Tree/Expand", item(project));
+        runQueued();
+        runQueued();
+
+        assertThat(project.getItemCount()).as("the placeholder is back").isOne();
+        assertThat(expandedAfterEachCollapse)
+                .as("a collapse of the empty item is ignored, so the second one, with the placeholder back, closes it")
+                .containsExactly(true, false);
+    }
+
+    @Test
+    @DisplayName("the client is told an item emptied by its Expand listener is closed once it is collapsed with a child again")
+    void theClientIsToldTheEmptiedItemClosed() {
+        // The client opened the row itself; only a change of "expanded" in the next update closes it there.
+        // The writer leaves out a value equal to the last one it sent, so the open state must go out first.
+        Tree tree = tree(SWT.SINGLE);
+        TreeItem project = roots(tree, 2)[0];
+        new TreeItem(project, SWT.NONE).setText("Loading...");
+        DartTreeItem impl = (DartTreeItem) project.getImpl();
+        tree.addListener(SWT.Expand, e -> {
+            for (TreeItem child : project.getItems()) child.dispose();
+            display.asyncExec(() -> {
+                for (int i = 0; i < 2; i++) {
+                    project.setExpanded(false);
+                    if (project.getItemCount() == 0) new TreeItem(project, SWT.NONE).setText("Loading...");
+                }
+            });
+        });
+        WireFrames.record(impl, CLIENT); // the client holds the closed item
+
+        fromFlutter(tree, "Tree/Expand", item(project));
+        runQueued();
+        Map<String, Object> answer = WireFrames.record(impl, CLIENT);
+        runQueued();
+        Map<String, Object> afterCollapses = WireFrames.record(impl, CLIENT);
+
+        assertThat(answer).as("the update answering the Expand").containsEntry("expanded", true);
+        assertThat(afterCollapses).as("the update after the collapses").containsEntry("expanded", false);
     }
 
     @Test
