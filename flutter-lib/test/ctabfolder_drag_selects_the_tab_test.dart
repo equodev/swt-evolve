@@ -80,6 +80,8 @@ void main() {
 
     expect(selections.map((e) => e.index), contains(2),
         reason: 'the workbench renders the selected part, and it is the one being dragged');
+    expect(selections.where((e) => e.index == 2).map((e) => e.detail), everyElement(SWT.DRAG),
+        reason: 'a drag moves no focus, so Java must tell its selection from a click');
   });
 
   testWidgets('it does so with an application DragSource too', (WidgetTester tester) async {

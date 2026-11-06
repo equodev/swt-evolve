@@ -90,6 +90,7 @@ void main() {
 
     expect(dragDetects, isNotEmpty, reason: 'the workbench is told a drag started on a tab');
     final reported = dragDetects.last;
+    expect(reported.button, 1, reason: 'a drag is the primary button\'s, as natively');
     expect(reported.x, greaterThanOrEqualTo((drawn.left - folder.left).round()));
     expect(reported.x, lessThanOrEqualTo((drawn.right - folder.left).round()),
         reason: 'inside the tab where it is drawn, not where it would be without the scroll');

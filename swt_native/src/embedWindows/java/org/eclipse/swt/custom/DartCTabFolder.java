@@ -1861,6 +1861,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void onMouse(Event event) {
+        CTabFolderHelper.notePress(this, event);
         if (isDisposed()) {
             return;
         }
@@ -1948,7 +1949,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         }
                     }
                     if (item != null) {
-                        if ((showClose || ((DartCTabItem) item.getImpl()).showClose) && ((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                        if ((showClose || ((DartCTabItem) item.getImpl()).showClose) && CTabFolderHelper.onCloseButton(this, (DartCTabItem) item.getImpl(), x, y)) {
                             ((DartCTabItem) item.getImpl()).closeImageState = SWT.SELECTED;
                             redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
                             update();
@@ -1981,7 +1982,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         close = false;
                         if (containsPoint(item, x, y)) {
                             close = true;
-                            if (((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                            if (CTabFolderHelper.onCloseButton(this, (DartCTabItem) item.getImpl(), x, y)) {
                                 if (((DartCTabItem) item.getImpl()).closeImageState != SWT.SELECTED && ((DartCTabItem) item.getImpl()).closeImageState != SWT.HOT) {
                                     ((DartCTabItem) item.getImpl()).closeImageState = SWT.HOT;
                                     redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
@@ -2033,7 +2034,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         }
                     }
                     if (item != null) {
-                        if ((showClose || ((DartCTabItem) item.getImpl()).showClose) && ((DartCTabItem) item.getImpl()).closeRect.contains(x, y)) {
+                        if ((showClose || ((DartCTabItem) item.getImpl()).showClose) && CTabFolderHelper.releaseClosesTab()) {
                             boolean selected = ((DartCTabItem) item.getImpl()).closeImageState == SWT.SELECTED;
                             ((DartCTabItem) item.getImpl()).closeImageState = SWT.HOT;
                             redraw(((DartCTabItem) item.getImpl()).closeRect.x, ((DartCTabItem) item.getImpl()).closeRect.y, ((DartCTabItem) item.getImpl()).closeRect.width, ((DartCTabItem) item.getImpl()).closeRect.height, false);
@@ -4791,6 +4792,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     int stripLayoutSeq = 0;
 
     int[] drawnCloseButtons;
+
+    Integer selectionAtPress;
 
     int[] shownStrip;
 

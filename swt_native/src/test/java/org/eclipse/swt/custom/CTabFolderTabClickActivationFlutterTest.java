@@ -4,7 +4,9 @@ import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.FocusTrackingBridge;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -103,8 +105,61 @@ class CTabFolderTabClickActivationFlutterTest {
                 .isOne();
     }
 
-    /** Fire the folder's own Dart→Java Selection handler and drain the asyncExec it hops through. */
+    @Test
+    @DisplayName("clicking an unselected tab selects it and leaves the focus where it was")
+    void clickOnUnselectedTabTakesNoFocus() {
+        withToolBarsLaidOut();
+        clickTab(1);
+
+        assertThat(folder.getSelectionIndex()).isEqualTo(1);
+        assertThat(focusedInFolder())
+                .as("a native click on an unselected tab only selects it: nothing in the folder is focused")
+                .isNull();
+    }
+
+    @Test
+    @DisplayName("clicking the selected tab of a folder without a page focuses the folder, not its toolbar")
+    void clickOnSelectedTabWithoutPageFocusesTheFolder() {
+        withToolBarsLaidOut();
+        clickTab(1);
+
+        clickTab(1);
+
+        assertThat(focusedInFolder())
+                .as("upstream forces the focus onto the folder itself; setFocus would hand it to the min/max ToolBar")
+                .isSameAs(folder);
+    }
+
+    /**
+     * The min/max ToolBar a setFocus could fall to, and the folder laid out, so upstream's own press
+     * handling finds the tab under the press as it does on screen.
+     */
+    private void withToolBarsLaidOut() {
+        folder.setMinimizeVisible(true);
+        folder.setMaximizeVisible(true);
+        folder.setBounds(0, 0, 300, 100);
+    }
+
+    /** The folder, or the control inside it, that holds the focus; null when none does. */
+    private Control focusedInFolder() {
+        if (folder.isFocusControl()) return folder;
+        for (Control child : folder.getChildren()) {
+            if (child.isFocusControl()) return child;
+        }
+        return null;
+    }
+
+    /**
+     * A click as the render side reports it: the press, which reaches upstream's own mouse handling
+     * first, then the folder's Dart→Java Selection handler; drains the asyncExec it hops through.
+     */
     private void clickTab(int index) {
+        Rectangle tab = folder.getItem(index).getBounds();
+        Event down = new Event();
+        down.button = 1;
+        down.x = tab.x + tab.width / 2;
+        down.y = tab.y + tab.height / 2;
+        folder.notifyListeners(SWT.MouseDown, down);
         String channel = FlutterBridge.event((DartWidget) folder.getImpl(), "Selection", "Selection");
         Event e = new Event();
         e.index = index;

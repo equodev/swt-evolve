@@ -102,6 +102,18 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 
   @override
+  void dispose() {
+    final popup = _chevronPopupRoute;
+    if (popup != null && popup.isActive) {
+      // The navigator cannot change routes while the tree that disposes this folder is locked.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (popup.isActive) popup.navigator?.removeRoute(popup);
+      });
+    }
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
@@ -169,14 +181,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     }
   }
 
-  void _handleTabSecondaryTap(Offset globalPosition) {
-    final box = context.findRenderObject() as RenderBox?;
-    final localPos = box != null ? box.globalToLocal(globalPosition) : globalPosition;
-    final e = VEvent()
-      ..x = localPos.dx.round()
-      ..y = localPos.dy.round();
-    widget.sendMenuDetectMenuDetect(state, e);
-  }
 
   /// A strip height of 0 leaves no strip at all; any other fixed height is fitted by [_CTabBar].
   Widget _fitTabStrip(double height, Widget strip) =>
@@ -256,7 +260,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabClose: _handleTabClose,
             onMinimize: _toggleMinimize,
             onMaximize: _toggleMaximize,
-            onSecondaryTap: _handleTabSecondaryTap,
             onTabReorder: _handleTabReorder,
             onTabDrop: _handleTabDrop,
             onTabDragStarted: _handleTabDragStarted,
@@ -316,7 +319,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabClose: _handleTabClose,
             onMinimize: _toggleMinimize,
             onMaximize: _toggleMaximize,
-            onSecondaryTap: _handleTabSecondaryTap,
             onTabReorder: _handleTabReorder,
             onTabDrop: _handleTabDrop,
             onTabDragStarted: _handleTabDragStarted,
@@ -374,14 +376,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         )))));
   }
 
-  void _handleTabSelection(int index) {
+  /// [detail] is `SWT.DRAG` when a drag selects the tab, which natively never moves the focus.
+  void _handleTabSelection(int index, {int detail = 0}) {
     if (state.enabled != true) return;
     _pendingTabIndex = index;
     setState(() {
       _selectedIndex = index;
       state.selection = index;
     });
-    var e = VEvent()..index = index;
+    var e = VEvent()
+      ..index = index
+      ..detail = detail;
     widget.sendSelectionSelection(state, e);
   }
 
@@ -467,6 +472,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   Rect? _chevronButtonRect;
 
+  /// The chevron's list while it is open; it goes with the folder, as a native's list menu does.
+  ModalRoute<dynamic>? _chevronPopupRoute;
+
   void _handleChevronShowList(BuildContext buttonContext, CTabFolderThemeExtension widgetTheme) {
     final RenderBox? box = buttonContext.findRenderObject() as RenderBox?;
     if (box != null && box.hasSize) {
@@ -529,13 +537,24 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     showMenu<int>(
       context: ctx,
       position: position,
-      items: hiddenEntries.map((entry) => PopupMenuItem<int>(
-        value: entry.key,
-        height: widgetTheme.chevronMenuItemHeight,
-        padding: widgetTheme.chevronMenuItemPadding,
-        child: Text(entry.value.text ?? ''),
-      )).toList(),
+      items: [
+        for (final (i, entry) in hiddenEntries.indexed)
+          PopupMenuItem<int>(
+            value: entry.key,
+            height: widgetTheme.chevronMenuItemHeight,
+            padding: widgetTheme.chevronMenuItemPadding,
+            // showMenu hands back only the result, so the route it pushes is read from inside it,
+            // once, by the first item.
+            child: i > 0
+                ? Text(entry.value.text ?? '')
+                : Builder(builder: (itemContext) {
+                    _chevronPopupRoute ??= ModalRoute.of(itemContext);
+                    return Text(entry.value.text ?? '');
+                  }),
+          ),
+      ],
     ).then((selectedIndex) {
+      _chevronPopupRoute = null;
       if (selectedIndex != null) {
         _handleTabSelection(selectedIndex);
       }
@@ -597,7 +616,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   /// own `dragSetData` needs it too: it identifies the tab being moved through
   /// `folder.getSelection()`, the same idiom Table and Tree DND use.
   void _handleTabDragStarted(int index) {
-    _handleTabSelection(index);
+    _handleTabSelection(index, detail: SWT.DRAG);
   }
 
   void _handleTabDrop(int insertIndex, int? targetItemId, Offset position) {
@@ -658,7 +677,6 @@ class _CTabBar extends StatefulWidget {
   final ValueChanged<int> onTabClose;
   final VoidCallback onMinimize;
   final VoidCallback onMaximize;
-  final void Function(Offset globalPosition)? onSecondaryTap;
   final void Function(int fromIndex, int toIndex)? onTabReorder;
   final void Function(int insertIndex, int? targetItemId, Offset position)? onTabDrop;
   final ValueChanged<int>? onTabDragStarted;
@@ -690,7 +708,6 @@ class _CTabBar extends StatefulWidget {
     required this.onTabClose,
     required this.onMinimize,
     required this.onMaximize,
-    this.onSecondaryTap,
     this.onTabReorder,
     this.onTabDrop,
     this.onTabDragStarted,
@@ -1246,8 +1263,6 @@ class _CTabBarState extends State<_CTabBar> {
       onExit: (_) => onHoverExit(),
       child: GestureDetector(
         onTap: onTap,
-        onSecondaryTapDown: (details) =>
-            widget.onSecondaryTap?.call(details.globalPosition),
         child: CustomPaint(
           foregroundPainter: _RectangularSides(border),
           child: QuietAnimatedContainer(
@@ -1476,8 +1491,6 @@ class _CTabBarState extends State<_CTabBar> {
       onExit: (_) => onHoverExit(),
       child: GestureDetector(
         onTap: onTap,
-        onSecondaryTapDown: (details) =>
-            widget.onSecondaryTap?.call(details.globalPosition),
         child: CustomPaint(
           foregroundPainter: _RectangularSides(
             border,
@@ -2432,7 +2445,9 @@ class _TabDragRowState extends State<TabDragRow> {
         final point = box == null
             ? Offset.zero
             : widget.dragPointFor?.call(_globalRect(box), _pressAt) ?? Offset.zero;
+        // A drag is the primary button's, as natively.
         return VEvent()
+          ..button = 1
           ..x = point.dx.round()
           ..y = point.dy.round();
       },

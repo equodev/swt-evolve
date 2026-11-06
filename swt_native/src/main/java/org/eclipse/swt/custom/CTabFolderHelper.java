@@ -93,18 +93,26 @@ public class CTabFolderHelper {
             FlutterBridge.send(folder, dev.equo.swt.WireTable.CHANNEL_ACTIVATION, dev.equo.swt.Java8.map("active", folder._highlight()));
     }
 
+    /** Called first in {@code onMouse}: the selection the press found, before upstream acts on it. */
+    static void notePress(DartCTabFolder folder, Event event) {
+        if (event.type == SWT.MouseDown && event.button == 1) folder.selectionAtPress = folder.selectedIndex;
+    }
+
     /**
-     * A tab click from Flutter. setSelection(int, boolean) notifies only when the index actually
-     * changes, so a click on the already-selected tab would leave no trace at all — while a native
-     * one still moves focus onto the tab (SwtCTabFolder.onMouse, SWT.MouseDown) and so still reaches
-     * anything that tracks which tab's content the user is working in. Focus takes the same route it
-     * takes when the render side reports it, since that is what announces activation here.
+     * A tab click from Flutter, which reaches Java after the press it ends, so after upstream's
+     * {@code onMouse} has already selected the tab. A native click selects an unselected tab and does
+     * nothing else; only a click on the tab that was already selected moves focus onto the folder
+     * (SwtCTabFolder.onMouse, SWT.MouseDown), and so reaches anything that tracks which tab's
+     * content the user is working in. Focus takes the same route it takes when the render side
+     * reports it, since that is what announces activation here. A drag that selects its tab
+     * ({@code detail} {@code SWT.DRAG}) moves no focus either.
      */
     public static void handleTabClick(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
-        int previous = obj.getSelectionIndex();
+        Integer atPress = obj.selectionAtPress;
+        obj.selectionAtPress = null;
         obj.setSelection(e.index, true);
-        if (obj.isDisposed() || previous != obj.getSelectionIndex()) return;
+        if (obj.isDisposed() || e.detail == SWT.DRAG || atPress == null || atPress != e.index || obj.getSelectionIndex() != e.index) return;
         CTabItem selected = obj.getSelection();
         Control content = selected == null || selected.isDisposed() ? null : selected.getControl();
         DartControl target = content != null && !content.isDisposed() && content.getImpl() instanceof DartControl
@@ -112,10 +120,12 @@ public class CTabFolderHelper {
                 : obj;
         FlutterBridge bridge = target.getBridge();
         if (bridge != null && bridge.hasFocus(target)) return;
-        // Taking the focus is what announces the activation here (ControlHelper.takeFocus), and
+        // Taking the focus is what announces the activation here (ControlHelper.takeFocus). A page's
         // Composite.setFocus() hands it to a descendant, so the announcement starts deep enough to
-        // pass through every control in between — which is where an embedder hangs its listener.
-        target.getApi().setFocus();
+        // pass through every control in between, which is where an embedder hangs its listener; the
+        // folder itself takes it as upstream gives it, or setFocus would hand it to its own ToolBars.
+        if (target == obj) obj.forceFocus();
+        else target.getApi().setFocus();
     }
 
     /**
@@ -261,7 +271,32 @@ public class CTabFolderHelper {
         return item.getToolTipText();
     }
 
-    private static boolean onCloseButton(DartCTabFolder folder, DartCTabItem item, int x, int y) {
+    /**
+     * Where the render side draws tab {@code index}'s close button, in the folder's own coordinates;
+     * null when that tab shows none, or before the render side has reported its strip.
+     */
+    public static Rectangle drawnCloseButton(CTabFolder folder, int index) {
+        if (!(folder.getImpl() instanceof DartCTabFolder)) return null;
+        int[] close = ((DartCTabFolder) folder.getImpl()).drawnCloseButtons;
+        int i = 4 * index;
+        if (close == null || index < 0 || i + 3 >= close.length || close[i + 2] <= 0) return null;
+        return new Rectangle(close[i], close[i + 1], close[i + 2], close[i + 3]);
+    }
+
+    /**
+     * Whether upstream's release on a close button closes the tab: never here. The render side closes
+     * it when its drawn button is clicked ({@link #handleClose}), so a close on the release as well
+     * would close two.
+     */
+    static boolean releaseClosesTab() {
+        return false;
+    }
+
+    /**
+     * Whether a point is on {@code item}'s close button as it is drawn; this side's own
+     * {@code closeRect} until the render side has said where it draws them.
+     */
+    static boolean onCloseButton(DartCTabFolder folder, DartCTabItem item, int x, int y) {
         int[] close = folder.drawnCloseButtons;
         int i = 4 * folder.getApi().indexOf(item.getApi());
         if (close == null || i + 3 >= close.length) return item.closeRect.contains(x, y);
