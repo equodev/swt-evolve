@@ -296,6 +296,15 @@ class BrowserFlutterTest {
             assertThat(browser.getUrl()).contains("/a");
         }
 
+        /** A client-side router finds its route in the page's location, which the proxy serves it under. */
+        @Test
+        void setUrl_pageSeesItsOwnPath() {
+            assumeProxy();
+            load(browser, url("/a"));
+            pumpUntil(() -> "/a".equals(browser.evaluate("return location.pathname;")), ACTION_TIMEOUT);
+            assertThat(browser.evaluate("return location.pathname;")).isEqualTo("/a");
+        }
+
         @Test
         void setUrl_reachesRenderedState() {
             browser.setUrl(url("/a"));

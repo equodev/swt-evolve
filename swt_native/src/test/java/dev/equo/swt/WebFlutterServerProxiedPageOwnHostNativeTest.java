@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -36,8 +37,11 @@ class WebFlutterServerProxiedPageOwnHostNativeTest {
     private WebFlutterServer app;
     private File appDir;
     private HttpServer origin;
+    private HttpServer otherOrigin;
     private final HttpClient client = HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL).build();
+    private final HttpClient noRedirects = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NEVER).build();
 
     @BeforeEach
     void boot() throws Exception {
@@ -53,9 +57,15 @@ class WebFlutterServerProxiedPageOwnHostNativeTest {
                 .build();
         app.start();
 
-        origin = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        origin.createContext("/", exchange -> {
-            String body = "<html><head></head><body>served " + exchange.getRequestURI() + "</body></html>";
+        origin = startOrigin("first");
+        otherOrigin = startOrigin("second");
+    }
+
+    private static HttpServer startOrigin(String name) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", exchange -> {
+            String body = "<html><head></head><body>" + name + " served " + exchange.getRequestURI()
+                    + "</body></html>";
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -64,13 +74,15 @@ class WebFlutterServerProxiedPageOwnHostNativeTest {
             }
             exchange.close();
         });
-        origin.start();
+        server.start();
+        return server;
     }
 
     @AfterEach
     void teardown() {
         if (app != null) app.stop();
         if (origin != null) origin.stop(0);
+        if (otherOrigin != null) otherOrigin.stop(0);
         deleteRecursively(appDir);
     }
 
@@ -108,6 +120,58 @@ class WebFlutterServerProxiedPageOwnHostNativeTest {
     }
 
     @Test
+    void anElementBuiltFromAProxiedPageLocationLoadsFromThePageServer() throws Exception {
+        get(proxyUrl(originUrl("/designer/form.html")), null);
+
+        HttpResponse<String> image = send(noRedirects, app.getApplicationUrl() + "/img/logo.png",
+                app.getApplicationUrl() + "/designer/form.html");
+
+        assertThat(image.statusCode()).isEqualTo(307);
+        assertThat(image.headers().firstValue("Location"))
+                .hasValue("/proxy?url=" + URLEncoder.encode(originUrl("/img/logo.png"), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void aPathShownByPagesOfTwoServersBelongsToTheLaterOne() throws Exception {
+        get(proxyUrl(originUrl("/designer/form.html")), null);
+        get(proxyUrl(otherOriginUrl("/designer/form.html")), null);
+
+        HttpResponse<String> image = get(app.getApplicationUrl() + "/img/logo.png",
+                app.getApplicationUrl() + "/designer/form.html");
+
+        assertThat(image.body()).contains("second served /img/logo.png");
+    }
+
+    @Test
+    void aMissingFileTheAppAsksForGetsTheAppWhileAProxiedPageShowsItsAddress() throws Exception {
+        get(proxyUrl(originUrl("/")), null);
+        get(proxyUrl(originUrl("/index.html")), null);
+
+        for (String appDocument : new String[] {"/", "/index.html", "/?x", "/index.html?x"}) {
+            HttpResponse<String> missing = send(noRedirects, app.getApplicationUrl() + "/some/route",
+                    app.getApplicationUrl() + appDocument);
+
+            assertThat(missing.statusCode()).as("asked from %s", appDocument).isEqualTo(200);
+            assertThat(missing.body()).as("asked from %s", appDocument).contains(APP_MARKER);
+        }
+    }
+
+    @Test
+    void aProxiedPageShownAtTheAppDocumentLoadsItsLocationBuiltElementsFromTheApp() throws Exception {
+        for (String appDocument : new String[] {"/", "/index.html"}) {
+            get(proxyUrl(originUrl(appDocument)), null);
+
+            HttpResponse<String> image = get(app.getApplicationUrl() + "/img/logo.png",
+                    app.getApplicationUrl() + appDocument);
+
+            assertThat(image.body())
+                    .as("shown at %s, the app's own document, whose requests the app answers", appDocument)
+                    .contains(APP_MARKER)
+                    .doesNotContain("served /img/logo.png");
+        }
+    }
+
+    @Test
     void aProxiedPageSocketToTheAppHostGoesToThePageServer() {
         String html = ProxyHandler.injectSocketShim(
                 "<html><head><script src=\"app.js\"></script></head></html>",
@@ -122,14 +186,22 @@ class WebFlutterServerProxiedPageOwnHostNativeTest {
         return "http://127.0.0.1:" + origin.getAddress().getPort() + pathAndQuery;
     }
 
+    private String otherOriginUrl(String pathAndQuery) {
+        return "http://127.0.0.1:" + otherOrigin.getAddress().getPort() + pathAndQuery;
+    }
+
     private String proxyUrl(String target) {
         return app.getApplicationUrl() + "/proxy?url=" + URLEncoder.encode(target, StandardCharsets.UTF_8);
     }
 
     private HttpResponse<String> get(String url, String referer) throws Exception {
+        return send(client, url, referer);
+    }
+
+    private static HttpResponse<String> send(HttpClient via, String url, String referer) throws Exception {
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(url)).GET();
         if (referer != null) request.header("Referer", referer);
-        return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+        return via.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private static void deleteRecursively(File dir) {

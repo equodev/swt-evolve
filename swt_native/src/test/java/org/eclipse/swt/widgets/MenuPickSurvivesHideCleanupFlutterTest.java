@@ -129,6 +129,27 @@ class MenuPickSurvivesHideCleanupFlutterTest {
         assertThat(popup.isVisible()).isFalse();
     }
 
+    @Test
+    void aPickTimeoutAfterTheMenuIsDisposedDoesNothing() throws InterruptedException {
+        Menu popup = new Menu(shell, SWT.POP_UP);
+        new MenuItem(popup, SWT.PUSH).setText("Copy");
+        // A menu is not a Control: outside an injected harness bridge it reaches the client through its parent's.
+        ((DartMenu) popup.getImpl()).bridge = null;
+        popup.setVisible(true);
+        drain();
+
+        clientHid(popup);
+        drain();
+        popup.dispose();
+
+        long end = System.currentTimeMillis() + 2 * 500;
+        while (System.currentTimeMillis() < end) {
+            drain();
+            Thread.sleep(10);
+        }
+        assertThat(popup.isDisposed()).isTrue();
+    }
+
     /** The client hides a menu because one of its items was picked. */
     private void clientHid(Menu menu) {
         Event e = new Event();

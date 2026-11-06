@@ -405,7 +405,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (_inlineDocuments.pending) return false;
     if (!_expectSameOrigin || _params == null) return true;
     try {
-      final href = browserEvalInFrame(_params, 'location.href');
+      final href = browserEvalInFrame(_params, _requestedUrlJs);
       if (!_isAwaitedDocument(href)) return false;
       // The placeholder about:blank shares our origin, so being readable does
       // not make it the setText document.
@@ -423,6 +423,10 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// requested url; reporting it hands the new navigation a completion that is not its own.
   Uri? _awaitedFrameUrl;
 
+  /// The URL that requested the frame's document. A proxied page shows its own path instead
+  /// (`ProxyHandler.injectLocationShim`) and keeps the requesting one aside.
+  static const _requestedUrlJs = 'document.__equoRequestedUrl || location.href';
+
   /// Whether the frame, at [href], holds the document the last navigation is waiting for, or none is.
   bool _isAwaitedDocument(Object? href) {
     final awaited = _awaitedFrameUrl;
@@ -436,7 +440,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   bool _urlChangeIsLive() {
     if (!_expectSameOrigin || _params == null || _awaitedFrameUrl == null) return true;
     try {
-      return _isAwaitedDocument(browserEvalInFrame(_params, 'location.href'));
+      return _isAwaitedDocument(browserEvalInFrame(_params, _requestedUrlJs));
     } catch (_) {
       return false;
     }

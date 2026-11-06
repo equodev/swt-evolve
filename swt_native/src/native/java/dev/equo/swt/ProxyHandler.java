@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -83,6 +84,23 @@ class ProxyHandler implements HttpHandler {
     // The header lines last sent for an origin on this server: a module requested in path form has
     // no query of its own to carry them. One per server, like the cookie jar.
     private final Map<String, List<String>> originAuthCache = lruMap(TARGET_AUTH_CACHE_MAX);
+
+    // The origin of each page served, keyed by the path and query its document shows on this
+    // server (injectLocationShim): a request that page sends to this server's host carries that
+    // address as its Referer. One per server, like the cookie jar. Pages of two servers showing the
+    // same address share one entry: the one served last owns it.
+    private final Map<String, String> pageOrigins = lruMap(PAGE_ORIGINS_MAX);
+    private static final int PAGE_ORIGINS_MAX = 64;
+
+    // The addresses of the app's own document: a request with one of them as its Referer is the
+    // app's, even when a proxied page shows the same address.
+    private static final List<String> APP_DOCUMENT_PATHS = Collections.unmodifiableList(
+            Arrays.asList("/", "/index.html"));
+
+    // The paths WebFlutterServer answers itself; any other path on its origin is a proxied page's.
+    static final List<String> SERVER_PATHS = Collections.unmodifiableList(Arrays.asList(
+            "/proxy", WebFlutterServer.INSTANCE_PATH, "/equo-browser-function", "/local-file",
+            InlineDocumentHandler.PATH));
 
     private static <K, V> Map<K, V> lruMap(final int max) {
         return Collections.synchronizedMap(new LinkedHashMap<K, V>(16, 0.75f, true) {
@@ -190,6 +208,8 @@ class ProxyHandler implements HttpHandler {
                 html = injectNavigationShim(html, originOf(finalUri), headerLines, selfOrigin);
                 html = injectFetchShim(html, originOf(finalUri), headerLines, selfOrigin);
                 html = injectSocketShim(html, resp.finalUrl);
+                html = injectLocationShim(html, resp.finalUrl);
+                pageOrigins.put(pathAndQuery(finalUri), originOf(finalUri));
                 html = BrowserFunctionBootstrap.inject(html);
                 body = html.getBytes(StandardCharsets.UTF_8);
             } else if (lowerContentType.contains("css")) {
@@ -806,12 +826,7 @@ class ProxyHandler implements HttpHandler {
      * and POST submissions are left to {@link #rewriteFormActions}.
      */
     static String injectNavigationShim(String html, String targetOrigin, List<String> headerLines, String selfOrigin) {
-        StringBuilder headersJs = new StringBuilder("[");
-        for (int i = 0; i < headerLines.size(); i++) {
-            if (i > 0) headersJs.append(",");
-            headersJs.append(jsStringLiteral(headerLines.get(i)));
-        }
-        headersJs.append("]");
+        String headersJs = jsStringArray(headerLines);
         String script = "<script>(function(){"
                 + "var nav=window.navigation;if(!nav)return;"
                 + "var TARGET_ORIGIN;try{TARGET_ORIGIN=new URL(" + jsStringLiteral(targetOrigin) + ").origin;}catch(e){return;}"
@@ -819,7 +834,12 @@ class ProxyHandler implements HttpHandler {
                 + "var HEADERS=" + headersJs + ";"
                 + "nav.addEventListener('navigate',function(e){"
                 + "try{if(!e.cancelable||e.hashChange||e.downloadRequest||e.formData)return;"
-                + "var dest=new URL(e.destination.url);if(dest.origin!==TARGET_ORIGIN)return;"
+                + "var dest=new URL(e.destination.url);"
+                // The document shows the page's path on this server (injectLocationShim), so a
+                // reload asks this server for it.
+                + "if(e.navigationType==='reload'&&dest.origin===location.origin)"
+                + "dest=new URL(dest.pathname+dest.search+dest.hash,TARGET_ORIGIN);"
+                + "if(dest.origin!==TARGET_ORIGIN)return;"
                 + "var u=SELF_ORIGIN+'/proxy?url='+encodeURIComponent(dest.href);"
                 + "for(var i=0;i<HEADERS.length;i++){u+='&header='+encodeURIComponent(HEADERS[i]);}"
                 + "e.preventDefault();location.href=u;}catch(err){}"
@@ -848,12 +868,7 @@ class ProxyHandler implements HttpHandler {
      * in a way the target only accepts from its own real origin remain out of reach.
      */
     private static String injectFetchShim(String html, String targetOrigin, List<String> headerLines, String selfOrigin) {
-        StringBuilder headersJs = new StringBuilder("[");
-        for (int i = 0; i < headerLines.size(); i++) {
-            if (i > 0) headersJs.append(",");
-            headersJs.append(jsStringLiteral(headerLines.get(i)));
-        }
-        headersJs.append("]");
+        String headersJs = jsStringArray(headerLines);
         String script = "<script>(function(){"
                 + "var TARGET_ORIGIN=" + jsStringLiteral(targetOrigin) + ";"
                 + "var SELF_ORIGIN=" + jsStringLiteral(selfOrigin) + ";"
@@ -873,17 +888,26 @@ class ProxyHandler implements HttpHandler {
                 + "try{return new URL(url).href;}catch(e){}"
                 + "try{return new URL(url,TARGET_ORIGIN+'/').href;}catch(e){return null;}}"
                 + "function sameTargetOrigin(abs){try{return new URL(abs).origin===TARGET_ORIGIN;}catch(e){return false;}}"
+                // The document shows the page's path on this server (injectLocationShim), so a URL
+                // the page builds from its own location means the target, unless this server
+                // answers that path itself.
+                + "var SERVER_PATHS=" + jsStringArray(SERVER_PATHS) + ";"
+                + "function selfToTarget(abs){try{var u=new URL(abs);if(u.origin!==location.origin)return abs;"
+                + "for(var i=0;i<SERVER_PATHS.length;i++){var p=SERVER_PATHS[i];"
+                + "if(u.pathname===p||u.pathname.indexOf(p+'/')===0)return abs;}"
+                + "return TARGET_ORIGIN+u.pathname+u.search+u.hash;}catch(e){return abs;}}"
+                + "function resolveRequest(url){var abs=resolveAgainstTarget(url);return abs&&selfToTarget(abs);}"
                 + "var origFetch=window.fetch;"
                 + "if(origFetch){window.fetch=function(input,init){"
                 + "try{var url=typeof input==='string'?input:(input&&input.url);"
-                + "if(url){var abs=resolveAgainstTarget(url);"
+                + "if(url){var abs=resolveRequest(url);"
                 + "if(abs&&sameTargetOrigin(abs)){var proxied=buildProxyUrl(abs);"
                 + "input=typeof input==='string'?proxied:new Request(proxied,input);}}"
                 + "}catch(e){}"
                 + "return origFetch.call(this,input,init);};}"
                 + "var origOpen=XMLHttpRequest.prototype.open;"
                 + "XMLHttpRequest.prototype.open=function(method,url){"
-                + "try{var abs=resolveAgainstTarget(url);"
+                + "try{var abs=resolveRequest(url);"
                 + "if(abs&&sameTargetOrigin(abs)){arguments[1]=buildProxyUrl(abs);}"
                 + "}catch(e){}"
                 + "return origOpen.apply(this,arguments);};";
@@ -964,7 +988,7 @@ class ProxyHandler implements HttpHandler {
      * path and query on the page's own origin; null when {@code referer} is not a proxied page or
      * the proxy may not serve that origin.
      */
-    static String ownHostTarget(String referer, URI request) {
+    String ownHostTarget(String referer, URI request) {
         if (referer == null) return null;
         URI ref;
         try {
@@ -972,17 +996,25 @@ class ProxyHandler implements HttpHandler {
         } catch (IllegalArgumentException e) {
             return null;
         }
+        String pageOrigin = null;
         String page = pathFormTarget(ref);
         if (page == null && ref.getRawPath() != null && ref.getRawPath().endsWith("/proxy")) {
             page = queryParam(ref.getRawQuery(), "url");
         }
-        if (page == null) return null;
+        if (page == null && ref.getRawPath() != null
+                && !APP_DOCUMENT_PATHS.contains(ref.getRawPath().isEmpty() ? "/" : ref.getRawPath())) {
+            pageOrigin = pageOrigins.get(pathAndQuery(ref));
+        }
+        if (page == null && pageOrigin == null) return null;
         String target;
         try {
-            URI pageUri = URI.create(page);
-            if (pageUri.getScheme() == null || pageUri.getAuthority() == null) return null;
+            if (pageOrigin == null) {
+                URI pageUri = URI.create(page);
+                if (pageUri.getScheme() == null || pageUri.getAuthority() == null) return null;
+                pageOrigin = originOf(pageUri);
+            }
             String query = request.getRawQuery();
-            target = originOf(pageUri) + request.getRawPath() + (query == null ? "" : "?" + query);
+            target = pageOrigin + request.getRawPath() + (query == null ? "" : "?" + query);
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -1012,6 +1044,44 @@ class ProxyHandler implements HttpHandler {
                 + "window.WebSocket=Routed;"
                 + "})();</script>";
         return insertAfterHead(html, script);
+    }
+
+    private static String pathAndQuery(URI uri) {
+        String path = uri.getRawPath() == null || uri.getRawPath().isEmpty() ? "/" : uri.getRawPath();
+        return uri.getRawQuery() == null ? path : path + "?" + uri.getRawQuery();
+    }
+
+    /**
+     * Gives the proxied page its own path and query: a client-side router reads its route from
+     * {@code location.pathname}, which a {@code /proxy?url=} document would show as {@code /proxy}.
+     * The document's address becomes the page's path on this server; a {@code pushState} or
+     * {@code replaceState} to the page's own server (where the injected {@code <base>} resolves its
+     * relative URLs) keeps its path on this one, since history may not leave the document's
+     * origin. {@code document.__equoRequestedUrl} keeps the URL that requested the document.
+     */
+    static String injectLocationShim(String html, String pageUrl) {
+        String script = "<script>(function(){"
+                + "var H=window.history;if(!H||!H.replaceState)return;"
+                + "var page;try{page=new URL(" + jsStringLiteral(pageUrl) + ");}catch(e){return;}"
+                + "try{Object.defineProperty(document,'__equoRequestedUrl',{value:location.href});}catch(e){}"
+                + "function own(url){try{var u=new URL(url,document.baseURI);"
+                + "if(u.origin!==page.origin)return url;"
+                + "return location.origin+u.pathname+u.search+u.hash;}catch(e){return url;}}"
+                + "var push=H.pushState,replace=H.replaceState;"
+                + "H.pushState=function(s,t,u){if(u!=null)arguments[2]=own(u);return push.apply(this,arguments);};"
+                + "H.replaceState=function(s,t,u){if(u!=null)arguments[2]=own(u);return replace.apply(this,arguments);};"
+                + "try{replace.call(H,H.state,'',location.origin+page.pathname+page.search+location.hash);}catch(e){}"
+                + "})();</script>";
+        return insertAfterHead(html, script);
+    }
+
+    private static String jsStringArray(List<String> values) {
+        StringBuilder out = new StringBuilder("[");
+        for (int i = 0; i < values.size(); i++) {
+            if (i > 0) out.append(",");
+            out.append(jsStringLiteral(values.get(i)));
+        }
+        return out.append("]").toString();
     }
 
     private static String jsStringLiteral(String s) {

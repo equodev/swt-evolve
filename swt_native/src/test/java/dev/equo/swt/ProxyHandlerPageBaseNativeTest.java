@@ -36,6 +36,7 @@ public class ProxyHandlerPageBaseNativeTest {
 
     private HttpServer server;
     private HttpServer proxy;
+    private ProxyHandler handler;
     private String origin;
 
     @BeforeEach
@@ -55,7 +56,8 @@ public class ProxyHandlerPageBaseNativeTest {
         server.start();
         origin = "http://127.0.0.1:" + server.getAddress().getPort();
         proxy = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        proxy.createContext("/proxy", new ProxyHandler(new ProxyCookieJar(WebFlutterServer::proxyAllowed)));
+        handler = new ProxyHandler(new ProxyCookieJar(WebFlutterServer::proxyAllowed));
+        proxy.createContext("/proxy", handler);
         proxy.start();
     }
 
@@ -75,6 +77,15 @@ public class ProxyHandlerPageBaseNativeTest {
         Matcher firstBase = Pattern.compile("<base href=\"([^\"]*)\"").matcher(html);
         assertThat(firstBase.find()).isTrue();
         assertThat(firstBase.group(1)).isEqualTo(origin + "/");
+    }
+
+    @Test
+    public void a_request_from_a_page_showing_its_own_path_goes_to_the_page_server() throws Exception {
+        get("/proxy?url=" + enc(origin + "/app/form/index.html"));
+        String self = "http://localhost:" + proxy.getAddress().getPort();
+
+        assertThat(handler.ownHostTarget(self + "/app/form/index.html", URI.create("/rest/items?page=2")))
+                .isEqualTo(origin + "/rest/items?page=2");
     }
 
     @Test

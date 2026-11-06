@@ -155,9 +155,10 @@ public class WebFlutterServer {
         }
 
         httpServer = bind();
-        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance, requestsServed));
+        ProxyHandler proxy = new ProxyHandler(proxyCookies);
+        httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance, requestsServed, proxy));
         httpServer.createContext(INSTANCE_PATH, this::answerInstance);
-        httpServer.createContext("/proxy", new ProxyHandler(proxyCookies));
+        httpServer.createContext("/proxy", proxy);
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
         httpServer.createContext(InlineDocumentHandler.PATH, new InlineDocumentHandler());
@@ -416,9 +417,11 @@ public class WebFlutterServer {
         private final boolean enableTestSemantics;
         private final String instance;
         private final AtomicLong requestsServed;
+        private final ProxyHandler proxy;
 
         StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker,
-                boolean enableTestSemantics, String instance, AtomicLong requestsServed) {
+                boolean enableTestSemantics, String instance, AtomicLong requestsServed, ProxyHandler proxy) {
+            this.proxy = proxy;
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
             this.widgetId = widgetId;
@@ -491,7 +494,7 @@ public class WebFlutterServer {
                         return;
                     }
                     // A proxied page's URL built from its own location.host: it means its own server.
-                    String pageTarget = ProxyHandler.ownHostTarget(referer, exchange.getRequestURI());
+                    String pageTarget = proxy.ownHostTarget(referer, exchange.getRequestURI());
                     if (pageTarget != null) {
                         exchange.getResponseHeaders().set("Location",
                                 "/proxy?url=" + Java8.urlEncode(pageTarget, StandardCharsets.UTF_8));
