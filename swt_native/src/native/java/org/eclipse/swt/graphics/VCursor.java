@@ -154,7 +154,7 @@ public class VCursor extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 25;
+        return 24;
     }
 
     @Override

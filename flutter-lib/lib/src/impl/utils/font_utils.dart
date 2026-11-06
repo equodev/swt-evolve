@@ -4,6 +4,7 @@ import '../../gen/font.dart';
 import '../../gen/fontdata.dart';
 import '../../gen/color.dart';
 import '../widget_config.dart';
+import 'bundled_assets.dart';
 import 'deferred_fonts.dart';
 
 /// Utility class to convert SWT Font/FontData to Flutter TextStyle
@@ -21,7 +22,9 @@ class FontUtils {
   /// does not have resolves to the engine's default font, which Java's measurements assume; a
   /// fallback list would take its place.
   static List<String>? fallbackFor(String? family) =>
-      _withoutSymbols.contains(family) ? fallbackFamilies : null;
+      _withoutSymbols.contains(BundledAssets.bundledFamily(family))
+          ? [for (final fallback in fallbackFamilies) BundledAssets.family(fallback)]
+          : null;
 
   /// Calls [onChange] whenever the system fonts change: a font that finishes loading changes how
   /// text lays out, so a cache of laid-out text has to be dropped. Returns false when there is no
@@ -171,10 +174,10 @@ class FontUtils {
     final swtStyle = fontData.style;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
-    DeferredFonts.request(fontName);
+    DeferredFonts.request(BundledAssets.family(fontName));
     return TextStyle(
       inherit: inherit,
-      fontFamily: fontName,
+      fontFamily: BundledAssets.family(fontName),
       fontFamilyFallback: fallbackFor(fontName),
       fontSize: fontSize,
       fontWeight: fontWeight,

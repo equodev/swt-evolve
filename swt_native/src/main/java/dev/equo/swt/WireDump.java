@@ -13,9 +13,11 @@ import java.util.Map;
  */
 public final class WireDump {
 
+    private static final String[] TYPE_NAMES = WireNames.types();
+
     /** Record type names by number. */
     private static String typeName(int number) {
-        return number > 0 && number < WireTable.TYPES.length ? WireTable.TYPES[number] : null;
+        return number > 0 && number < TYPE_NAMES.length ? TYPE_NAMES[number] : null;
     }
 
     /** One record: its kind ({@link WidgetWire#WHOLE} and so on), what it names, and its properties by name. */

@@ -59,7 +59,7 @@ public class VDevice implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 28;
+        return 27;
     }
 
     @Override

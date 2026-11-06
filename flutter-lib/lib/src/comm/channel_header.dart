@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import '../gen/widgets.dart' show wireChannelNames, wireTypeNames;
+import 'wire_names.dart';
 
 /// What a message opens with: its channel, as numbers (Java's `ChannelHeader`). Both sides number
 /// channels and widget types alike, so a channel travels as them rather than as its name.
@@ -30,12 +30,12 @@ abstract final class ChannelHeader {
     final r = _Reader(data)..pos = start;
     final first = r.varint();
     if (first == null || first == 0) return null;
-    final name = wireChannelNames[first ~/ 2];
+    final name = WireNames.channels[first ~/ 2];
     if (name == null) return null;
     if (first.isEven) return (name, r.pos);
     final type = r.varint();
     final zigzag = r.varint();
-    final typeName = type == null ? null : wireTypeNames[type];
+    final typeName = type == null ? null : WireNames.types[type];
     if (typeName == null || zigzag == null) return null;
     final id = zigzag.isEven ? zigzag ~/ 2 : -(zigzag ~/ 2) - 1;
     return (name.isEmpty ? '$typeName/$id' : '$typeName/$id/$name', r.pos);

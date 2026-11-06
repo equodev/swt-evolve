@@ -35,7 +35,7 @@ public class VBrowserFunction implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 6;
+        return 5;
     }
 
     @Override

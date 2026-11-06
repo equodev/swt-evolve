@@ -9,7 +9,7 @@ import '../gen/point.dart';
 import '../gen/rectangle.dart';
 import '../gen/rgb.dart';
 import '../gen/widget.dart';
-import '../gen/widgets.dart' show wireTypeNames;
+import 'wire_names.dart';
 import 'comm.dart';
 import 'tagged_values.dart';
 import 'widget_key.dart';
@@ -461,9 +461,7 @@ class WidgetWireWriter {
     }
   }
 
-  static final Map<String, int> _typeNumbers = {
-    for (final e in wireTypeNames.entries) e.value: e.key,
-  };
+  static Map<String, int> get _typeNumbers => WireNames.typeNumbers;
 
   /// Bytes as they are, length first; null for none.
   void bytes(List<int>? v) {
@@ -1146,7 +1144,7 @@ class WidgetWireReader {
     final list = <T>[];
     for (var i = 0; i < count - 1; i++) {
       if (!_present()) continue;
-      final value = create(wireTypeNames[varint()] ?? '');
+      final value = create(WireNames.types[varint()] ?? '');
       if (value is! WireReadable) throw StateError('no value class for a polymorphic element');
       _fields(value);
       if (value is T) list.add(value as T);

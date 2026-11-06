@@ -147,7 +147,7 @@ public class VColor extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 18;
+        return 17;
     }
 
     @Override

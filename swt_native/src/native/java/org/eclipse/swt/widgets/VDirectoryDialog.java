@@ -30,7 +30,7 @@ public class VDirectoryDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 30;
+        return 29;
     }
 
     @Override

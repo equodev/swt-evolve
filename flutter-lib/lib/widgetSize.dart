@@ -17,6 +17,7 @@ import 'main.dart';
 import 'src/comm/comm.dart';
 import 'src/comm/v_registry.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
+import 'src/impl/utils/bundled_assets.dart';
 
 const SCREENSHOT = false;
 
@@ -192,7 +193,8 @@ void measureRequest(String bridge, int id) {
             : null,
         'textStyle': result.textStyle != null
             ? {
-                'name': result.textStyle!.fontFamily,
+                'name': BundledAssets.bundledFamily(result.textStyle!.fontFamily) ??
+                    result.textStyle!.fontFamily,
                 'size': result.textStyle!.fontSize,
                 'italic': result.textStyle!.fontStyle == FontStyle.italic,
                 'weight': result.textStyle!.fontWeight?.value ?? 400,

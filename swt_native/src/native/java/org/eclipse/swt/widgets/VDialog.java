@@ -51,7 +51,7 @@ public class VDialog implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 29;
+        return 28;
     }
 
     @Override

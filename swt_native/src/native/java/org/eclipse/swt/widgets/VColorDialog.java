@@ -42,7 +42,7 @@ public class VColorDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 19;
+        return 18;
     }
 
     @Override

@@ -65,7 +65,7 @@ public class VClipboard implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 17;
+        return 16;
     }
 
     @Override

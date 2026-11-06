@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../styles.dart';
 import '../impl/config_flags.dart';
 import '../impl/widget_config.dart';
+import '../impl/utils/bundled_assets.dart';
 import 'theme_settings/button_theme_settings.dart';
 import 'theme_settings/label_theme_settings.dart';
 import 'theme_settings/text_theme_settings.dart';
@@ -446,7 +447,7 @@ ColorSchemeExtension _createColorSchemeExtensionFromColorScheme(ColorScheme colo
 TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
   return TextTheme(
     displayLarge: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 48.0,
       fontWeight: FontWeight.w500,
       letterSpacing: -0.96,
@@ -454,7 +455,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     headlineLarge: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 32.0,
       fontWeight: FontWeight.w600,
       letterSpacing: -1.0,
@@ -462,7 +463,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     titleLarge: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 24.0,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.0,
@@ -470,7 +471,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
       ),
     titleMedium: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 16.0,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.32,
@@ -478,7 +479,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     titleSmall: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 14.0,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.14,
@@ -486,7 +487,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     labelMedium: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 14.0,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.0,
@@ -494,7 +495,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     labelSmall: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 11.0,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.0,
@@ -502,7 +503,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     bodyLarge: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 14.0,
       fontWeight: FontWeight.w500,
       height: 20.0 / 14.0,
@@ -510,7 +511,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     bodyMedium: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 14.0,
       fontWeight: FontWeight.w500,
       letterSpacing: 0.0,
@@ -518,7 +519,7 @@ TextTheme createMaterialTextTheme(ColorScheme colorScheme) {
       color: colorScheme.onSurface,
     ),
     bodySmall: TextStyle(
-      fontFamily: 'Inter',
+      fontFamily: BundledAssets.family('Inter'),
       fontSize: 12.0,
       fontWeight: FontWeight.w400,
       letterSpacing: 0.24,

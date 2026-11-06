@@ -1,4 +1,4 @@
-import '../gen/widgets.dart' show wireTypeNames;
+import 'wire_names.dart';
 
 /// A widget as one number: its type and its id together, which is what its channel `<type>/<id>`
 /// names. The id alone is not enough, since a control's GC overlay shares its control's id.
@@ -15,9 +15,6 @@ abstract final class WidgetKey {
   /// because a shift is 32 bits on the web.
   static const int _firstNamedChannel = 4503599627370496;
 
-  static final Map<String, int> _typeNumbers = {
-    for (final e in wireTypeNames.entries) e.value: e.key,
-  };
   static final Map<String, int> _namedChannels = {};
 
   /// The key of the widget of type number [type] with [id].
@@ -26,10 +23,10 @@ abstract final class WidgetKey {
   /// The number the wire gives the type [swt]. Every type has one, given when the code is generated:
   /// one without is a mistake, and throws.
   static int typeOf(String swt) =>
-      _typeNumbers[swt] ?? (throw ArgumentError('type "$swt" has no wire number: add it to the generator\'s types'));
+      WireNames.typeNumbers[swt] ?? (throw ArgumentError('type "$swt" has no wire number: add it to the generator\'s types'));
 
   /// The name of type number [type].
-  static String typeName(int type) => wireTypeNames[type] ?? '';
+  static String typeName(int type) => WireNames.types[type] ?? '';
 
   /// The type number of the widget [key].
   static int typeOfKey(int key) => key % _typeSlots;

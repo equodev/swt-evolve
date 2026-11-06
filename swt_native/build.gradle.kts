@@ -969,10 +969,6 @@ tasks.register<BackgroundCommand>("flutterTest") {
             "is sound; this answers whether it behaves)."
     workingDir.set(file("../flutter-lib"))
     dependsOn(pub, flutterTestBundles)
-    // 'bench' is the Dart side of the tag the Java suite already excludes: measurements that print
-    // rather than assert. -DrunDartBench=true runs them.
-    val benchTags = if (System.getProperty("runDartBench") == "true") emptyList()
-                    else listOf("--exclude-tags=bench")
     // -DredrawRecord=true prints each redraw test's measured costs as a budget table instead of
     // checking them (test/redraw/support/budget.dart).
     val redrawRecord = if (System.getProperty("redrawRecord") == "true") listOf("--dart-define=REDRAW_RECORD=true")
@@ -982,12 +978,12 @@ tasks.register<BackgroundCommand>("flutterTest") {
     val standalone = file("../flutter-lib/build/standalone_tests.txt")
     val bundles = (0 until flutterTestBundleCount).map { "test/bundle_${it}_of_${flutterTestBundleCount}_test.dart" }
     command.set(provider {
-        flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + benchTags + redrawRecord +
+        flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + redrawRecord +
             (only.ifEmpty { bundles + standalone.readLines().filter { it.isNotBlank() } })
     })
     dartSourcesAsInputs()
-    // Measurements and re-recordings print what they find, so they run every time.
-    if (benchTags.isEmpty() || redrawRecord.isNotEmpty()) outputs.upToDateWhen { false }
+    // Re-recordings print what they find, so they run every time.
+    if (redrawRecord.isNotEmpty()) outputs.upToDateWhen { false }
 }
 
 val dart = tasks.register<Exec>("dartRunner") {

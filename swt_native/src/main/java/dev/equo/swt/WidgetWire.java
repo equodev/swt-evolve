@@ -135,11 +135,12 @@ public final class WidgetWire {
     private int emptyAt = -1;
     private Names names = IGNORE;
 
-    /** Record types by name, numbered as the client knows them ({@link WireTable}, generated). */
+    /** Record types by name, numbered as the client knows them ({@link WireNames}). */
     private static final Map<String, Integer> TYPE_NUMBERS = new HashMap<>();
 
     static {
-        for (int i = 1; i < WireTable.TYPES.length; i++) TYPE_NUMBERS.put(WireTable.TYPES[i], i);
+        String[] types = WireNames.types();
+        for (int i = 1; i < types.length; i++) TYPE_NUMBERS.put(types[i], i);
     }
 
     private static final byte[] HEADER = dev.equo.swt.comm.ChannelHeader.encode(0, 0, WireTable.CHANNEL_SWT_EVOLVE_WIRE);

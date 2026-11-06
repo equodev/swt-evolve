@@ -43,7 +43,6 @@ import 'src/impl/focus_requests.dart';
 import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
-import 'bench.dart' as bench;
 import 'test_harness.dart' as test_harness;
 import 'semantics_ghost_guard_stub.dart'
     if (dart.library.js_interop) 'semantics_ghost_guard_web.dart';
@@ -52,6 +51,7 @@ import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/deferred_fonts.dart';
 import 'src/impl/utils/frame_presentation.dart';
+import 'src/impl/utils/bundled_assets.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/control_evolve.dart' show ControlImpl;
 import 'src/impl/utils/raw_pointer_moves.dart';
@@ -61,6 +61,10 @@ import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
 import 'src/impl/system_appearance.dart' show systemThemeMode;
 import 'src/testing/boot_trace.dart';
+
+/// Clients an app built on this one adds, by the widget name Java opens them with. Each answers
+/// in place of a window, as the size bridges do, and is reported ready once it is listening.
+final Map<String, void Function(String bridge, int id)> clientBridges = {};
 
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
@@ -105,6 +109,8 @@ void main(List<String> args) async {
   listenRawPointerMoves(ControlImpl.rawMove);
   BootTrace.recordFirstFrames(4);
   DeferredFonts.configure(getDeferredFontManifest());
+  final assetsStart = BootTrace.nowMicros();
+  final bundledAssets = BundledAssets.resolve();
   // Registered before the first await: Java hands a client what it sent before the comm connected
   // (setPort) as soon as it connects, possibly while the fonts load, and a frame nothing listens to is
   // replayed in order on its own channel only, so an Image GC's drawer has to exist first.
@@ -115,6 +121,8 @@ void main(List<String> args) async {
   // Display-scoped: GC/create is one channel for the whole session, so a detached window listening
   // too would draw every GC a second time.
   if (widgetName == "Display") _registerGcCreateListener();
+  await bundledAssets;
+  BootTrace.step('bundledAssets', assetsStart);
   // This client is a window in its own right: the Display's window, or a shell Java put in a
   // window of its own (see WindowPolicy). Both get the window chrome, the window-state listeners
   // and the viewport handshake. Every other client — the size bridges, a child browser view — is
@@ -167,8 +175,8 @@ void main(List<String> args) async {
     sendClientReady(widgetName, widgetId);
     return;
   }
-  else if (widgetName == "BenchBridge") {
-    bench.measureRequest(widgetName, widgetId);
+  else if (clientBridges[widgetName] case final bridge?) {
+    bridge(widgetName, widgetId);
     sendClientReady(widgetName, widgetId);
     return;
   }

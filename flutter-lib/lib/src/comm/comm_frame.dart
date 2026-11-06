@@ -11,6 +11,7 @@ import '../gen/widget.dart';
 import '../gen/widgets.dart';
 import 'channel_header.dart';
 import 'widget_key.dart';
+import 'wire_names.dart';
 import 'tagged_values.dart';
 import 'comm_api.dart' show BytesAtHandler, WidgetOpHandler;
 import 'gc_wire.dart';
@@ -413,7 +414,7 @@ abstract class EquoCommBase {
     }
     // A number this client's table does not have: Java was generated from another table, so nothing
     // it sends can be trusted to mean what it says.
-    if (wireChannelNames[_opChannel] == null || (_opType > 0 && wireTypeNames[_opType] == null)) {
+    if (WireNames.channels[_opChannel] == null || (_opType > 0 && WireNames.types[_opType] == null)) {
       throw StateError('Java sent channel $_opChannel, type $_opType, which the wire table has no number for: '
           'Java and this client were not generated together');
     }
@@ -563,7 +564,7 @@ abstract class EquoCommBase {
           if (handled is! bool) return _batchAfterOp(handled, type, channel, id, body, at, pos, end);
           if (!handled) _holdWidgetOp(type, channel, id, body, at, pos);
         } catch (e, st) {
-          _logHandlerError(wireChannelNames[channel] ?? '$channel', e, st);
+          _logHandlerError(WireNames.channels[channel] ?? '$channel', e, st);
         }
         continue;
       }
@@ -598,7 +599,7 @@ abstract class EquoCommBase {
     try {
       if (!await handled) _holdWidgetOp(type, channel, id, body, at, end);
     } catch (e, st) {
-      _logHandlerError(wireChannelNames[channel] ?? '$channel', e, st);
+      _logHandlerError(WireNames.channels[channel] ?? '$channel', e, st);
     }
     await _applyBinaryBatch(body, end, batchEnd);
   }
@@ -798,7 +799,7 @@ abstract class EquoCommBase {
             return;
           }
         } catch (e, st) {
-          _logHandlerError(wireChannelNames[channel] ?? '$channel', e, st);
+          _logHandlerError(WireNames.channels[channel] ?? '$channel', e, st);
         }
       }
     } finally {
@@ -831,7 +832,7 @@ abstract class EquoCommBase {
     try {
       if (!await handled) _holdWidgetOp(type, channel, id, frame, start, end);
     } catch (e, st) {
-      _logHandlerError(wireChannelNames[channel] ?? '$channel', e, st);
+      _logHandlerError(WireNames.channels[channel] ?? '$channel', e, st);
     }
     _drainNow();
   }
@@ -989,7 +990,7 @@ abstract class EquoCommBase {
   void sendTo(int type, int id, int channel, [Payload? payload]) {
     final observer = sendObserverForTesting;
     if (observer != null) {
-      observer('${WidgetKey.typeName(type)}/$id/${wireChannelNames[channel] ?? channel}', payload);
+      observer('${WidgetKey.typeName(type)}/$id/${WireNames.channels[channel] ?? channel}', payload);
     }
     // Owed pushes write with the same writer, so they go first.
     payOwed();
@@ -1031,7 +1032,7 @@ abstract class EquoCommBase {
   /// Sends [payload] on the global channel numbered [channel] (see [WireChannel]).
   void sendOn(int channel, [Payload? payload]) {
     final observer = sendObserverForTesting;
-    if (observer != null) observer(wireChannelNames[channel] ?? '$channel', payload);
+    if (observer != null) observer(WireNames.channels[channel] ?? '$channel', payload);
     payOwed();
     _sendWritten(WidgetWireWriter.writeOn(channel, payload));
   }
@@ -1094,7 +1095,7 @@ abstract class EquoCommBase {
         // A binary frame of changes decodes as it applies, so its whole cost counts as applying.
         final startedAt = timer.now();
         final applied = handler(data, start, end);
-        timer.received(wireChannelNames[number]!, end - start, startedAt, startedAt, timer.now());
+        timer.received(WireNames.channels[number]!, end - start, startedAt, startedAt, timer.now());
         return applied is Future ? applied.then(_handled) : true;
       }
       final applied = handler(data, start, end);
@@ -1188,7 +1189,7 @@ class _Named {
 
   /// The channel's name, for logs: built only when one asks.
   late final String name = () {
-    final rest = wireChannelNames[channel] ?? '$channel';
+    final rest = WireNames.channels[channel] ?? '$channel';
     if (type <= 0) return rest;
     final owner = '${WidgetKey.typeName(type)}/$id';
     return rest.isEmpty ? owner : '$owner/$rest';

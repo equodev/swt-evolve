@@ -5,8 +5,8 @@ import java.util.Map;
 
 /**
  * What a message opens with: its channel, as numbers. Both sides number channels and widget types
- * alike ({@link dev.equo.swt.WireTable}, generated), so a channel travels as them rather than as its
- * name.
+ * alike ({@link dev.equo.swt.WireNames}: the generated {@link dev.equo.swt.WireTable} and its
+ * extensions), so a channel travels as them rather than as its name.
  *
  * <p>The first varint says which form follows:
  * <ul>
@@ -19,10 +19,10 @@ import java.util.Map;
  */
 public final class ChannelHeader {
 
-    private static final Map<String, Integer> CHANNELS = numbers(dev.equo.swt.WireTable.CHANNELS);
-    private static final Map<String, Integer> TYPES = numbers(dev.equo.swt.WireTable.TYPES);
-    private static final String[] channelNames = dev.equo.swt.WireTable.CHANNELS;
-    private static final String[] typeNames = dev.equo.swt.WireTable.TYPES;
+    private static final String[] channelNames = dev.equo.swt.WireNames.channels();
+    private static final String[] typeNames = dev.equo.swt.WireNames.types();
+    private static final Map<String, Integer> CHANNELS = numbers(channelNames);
+    private static final Map<String, Integer> TYPES = numbers(typeNames);
 
     private ChannelHeader() {
     }

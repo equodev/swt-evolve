@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/utils/bundled_assets.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 class AssetsManager {
@@ -88,7 +89,7 @@ class AssetsManager {
 
     for (final format in formats) {
       try {
-        final assetPath = 'assets/icons/$base.$format';
+        final assetPath = BundledAssets.path('assets/icons/$base.$format');
         if (format == 'svg') {
           try {
             final content = _stripBom(await rootBundle.loadString(assetPath));

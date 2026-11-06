@@ -4,6 +4,7 @@ import 'package:swtflutter/src/gen/point.dart';
 import 'src/comm/comm.dart';
 import 'src/gen/widgets.dart' show WireChannel;
 import 'src/comm/widget_key.dart' show WidgetKey;
+import 'src/impl/utils/bundled_assets.dart';
 
 Size measureText(String text, TextStyle style) {
   final painter = TextPainter(
@@ -40,7 +41,7 @@ void measureRequest(String bridge, int id) {
     final size = measureText(
       text,
       TextStyle(
-        fontFamily: font,
+        fontFamily: BundledAssets.family(font),
         fontSize: height.toDouble(),
         fontStyle: italic ? FontStyle.italic : FontStyle.normal,
         fontWeight: fontWeight,
