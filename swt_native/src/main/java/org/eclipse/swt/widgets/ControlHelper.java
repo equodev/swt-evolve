@@ -210,7 +210,11 @@ public class ControlHelper {
                         traversed = hasTabStop(control.getApi().getShell());
                         break;
                     case SWT.TRAVERSE_MNEMONIC:
-                        traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode);
+                        traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode, key.stateMask);
+                        break;
+                    case SWT.TRAVERSE_PAGE_NEXT:
+                    case SWT.TRAVERSE_PAGE_PREVIOUS:
+                        traversed = TabFolderHelper.traversePage(control, e.detail == SWT.TRAVERSE_PAGE_NEXT, key.stateMask);
                         break;
                     // A lone radio has no sibling to move to and keeps the key, as natively.
                     case SWT.TRAVERSE_ARROW_NEXT:
@@ -258,6 +262,8 @@ public class ControlHelper {
             SpinnerHelper.stepByKey((DartSpinner) control, key);
         else if (control instanceof DartScale)
             ScaleHelper.stepByKey((DartScale) control, key);
+        else if (control instanceof DartTabFolder)
+            TabFolderHelper.moveSelectionByKey((DartTabFolder) control, key);
     }
 
     /** Shift+F10, which Win32 and GTK turn into a context-menu request (Cocoa has no such key). */
@@ -1012,8 +1018,7 @@ public class ControlHelper {
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;
-        boolean focuses = takesFocusOnPress(control, event.button);
-        if (!focuses || control.isFocusControl())
+        if (!takesFocusOnPress(control, event) || control.isFocusControl())
             return;
         boolean focused = org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control.getApi())
                 ? control.getApi().setFocus() : control.forceFocus();
@@ -1028,18 +1033,23 @@ public class ControlHelper {
     }
 
     /**
-     * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS.
+     * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS. The press's
+     * position decides it only for a TabFolder, through the overload that takes the press.
      * <p>
      * Button 1 focuses the controls Win32 and GTK agree on, StyledText included. Any other Canvas is
      * left to its own press handling, since natively it takes the focus only while it hooks key
-     * events. A TabFolder takes it only from a click that switches tabs (its client sends it), not
-     * from one on its strip or on the selected tab, as on GTK.
+     * events. A TabFolder takes it only from a press on one of its tabs, not on its strip, as on GTK:
+     * see {@link TabFolderHelper#pressFocuses}.
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
      * MenuDetect (GTK). A DateTime keeps no focus from it on Win32 and Cocoa, so it is left out, and
      * so is a READ_ONLY Combo, which no native focuses on a right press.
      */
+    static boolean takesFocusOnPress(DartControl control, Event press) {
+        return takesFocusOnPress(control, press.button) || TabFolderHelper.pressFocuses(control, press);
+    }
+
     static boolean takesFocusOnPress(DartControl control, int button) {
         Control api = control.getApi();
         if (org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(api))

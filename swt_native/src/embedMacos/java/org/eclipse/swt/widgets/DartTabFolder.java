@@ -663,7 +663,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        setSelection(e.index, true, false);
+                        TabFolderHelper.select(this, e.index, e.stateMask);
                     });
                     return;
                 }

@@ -96,6 +96,55 @@ public class TabFolderHelper {
         return new Rectangle(0, 0, 0, 0);
     }
 
+    /**
+     * Whether a press focuses the folder ahead of its MouseDown: a primary press on one of its tabs
+     * does and one on the strip past them does not, as on GTK. Win32 focuses on a press anywhere but
+     * on a tab it switches to, Cocoa never.
+     */
+    static boolean pressFocuses(DartControl control, Event press) {
+        if (!(control instanceof DartTabFolder) || press.button != 1) return false;
+        if ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0) return false;
+        return itemAt((DartTabFolder) control, new Point(press.x, press.y)) != null;
+    }
+
+    /**
+     * Selects tab {@code index} and announces it with the input's {@code stateMask}: the button of a
+     * tab click, Ctrl of a page traversal. A tab already selected is no change and fires nothing.
+     */
+    public static void select(DartTabFolder folder, int index, int stateMask) {
+        if (index == folder.getSelectionIndex()) return;
+        folder.setSelection(index);
+        Event event = new Event();
+        event.item = folder.getApi().getItem(index);
+        event.stateMask = stateMask;
+        folder.sendSelectionEvent(SWT.Selection, event, true);
+    }
+
+    /** ← and → on the focused folder select the tab beside the selected one, without wrapping. */
+    static void moveSelectionByKey(DartTabFolder folder, Event key) {
+        int step = key.keyCode == SWT.ARROW_RIGHT ? 1 : key.keyCode == SWT.ARROW_LEFT ? -1 : 0;
+        if (step == 0 || (key.stateMask & SWT.MODIFIER_MASK) != 0) return;
+        int index = folder.getSelectionIndex() + step;
+        if (index >= 0 && index < folder.getItemCount()) select(folder, index, 0);
+    }
+
+    /**
+     * Ctrl+PgDn or Ctrl+PgUp: the nearest folder at or above {@code control} turns the page, wrapping
+     * around, as {@code TabFolder.traversePage} does natively, and announces it with Ctrl held.
+     */
+    static boolean traversePage(DartControl control, boolean next, int stateMask) {
+        for (Control c = control.getApi(); c != null; c = c.getParent()) {
+            if (!(c.getImpl() instanceof DartTabFolder)) continue;
+            DartTabFolder folder = (DartTabFolder) c.getImpl();
+            int count = folder.getItemCount();
+            if (count == 0) return false;
+            // A folder with items always has a selection.
+            select(folder, (folder.getSelectionIndex() + (next ? 1 : -1) + count) % count, stateMask);
+            return true;
+        }
+        return false;
+    }
+
     public static TabItem itemAt(DartTabFolder folder, Point point) {
         TabFolder api = folder.getApi();
         int y = tabTop(api);

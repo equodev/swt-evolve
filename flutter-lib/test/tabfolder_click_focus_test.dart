@@ -1,5 +1,5 @@
-// A click that switches a TabFolder's tab takes the focus, as on GTK; a click on the selected tab
-// does not.
+// A click on a TabFolder's tab takes the focus and selects that tab on the press, as on GTK and
+// Win32; a click on the selected tab takes the focus and selects nothing.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -89,9 +89,10 @@ void main() {
         reason: '${FocusManager.instance.primaryFocus}');
   });
 
-  testWidgets('a click on the selected tab takes no focus', (tester) async {
+  testWidgets('a click on the selected tab takes the focus and selects nothing', (tester) async {
     final calls = await _tap(tester, 'One');
-    expect(calls, isNot(contains('Focus/FocusIn')));
+    expect(calls, contains('Focus/FocusIn'));
+    expect(calls, isNot(contains('Selection/Selection')));
   });
 
   testWidgets('an arrow key from outside the folder does not walk into its tabs', (tester) async {

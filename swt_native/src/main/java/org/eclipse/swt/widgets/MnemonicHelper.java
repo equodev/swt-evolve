@@ -26,14 +26,17 @@ public final class MnemonicHelper {
     private MnemonicHelper() {
     }
 
-    /** Activates the widget whose mnemonic matches {@code key} within {@code focus}'s shell. */
-    public static boolean dispatch(Control focus, char key) {
+    /**
+     * Activates the widget whose mnemonic matches {@code key} within {@code focus}'s shell. A tab it
+     * selects is announced with {@code stateMask}, the modifiers of the key, as natively.
+     */
+    public static boolean dispatch(Control focus, char key, int stateMask) {
         if (focus == null || focus.isDisposed())
             return false;
         Shell shell = focus.getShell();
         if (shell == null || shell.isDisposed())
             return false;
-        return walk(shell, Character.toLowerCase(key));
+        return walk(shell, Character.toLowerCase(key), stateMask);
     }
 
     /**
@@ -56,21 +59,21 @@ public final class MnemonicHelper {
         }
     }
 
-    private static boolean walk(Composite parent, char target) {
+    private static boolean walk(Composite parent, char target, int stateMask) {
         for (Control c : parent.getChildren()) {
             if (c == null || c.isDisposed() || !c.getVisible() || !c.isEnabled())
                 continue;
-            if (activate(c, target))
+            if (activate(c, target, stateMask))
                 return true;
             // Recurse into composites that did not themselves match (a Group whose own mnemonic
             // matched has already been handled and returned above).
-            if (c instanceof Composite && walk(((Composite) c), target))
+            if (c instanceof Composite && walk(((Composite) c), target, stateMask))
                 return true;
         }
         return false;
     }
 
-    private static boolean activate(Control c, char target) {
+    private static boolean activate(Control c, char target, int stateMask) {
         if (c instanceof Button) { Button b = (Button) c;
             if (!matches(b.getText(), target))
                 return false;
@@ -101,6 +104,7 @@ public final class MnemonicHelper {
                 tf.setSelection(item);
                 Event e = new Event();
                 e.item = item;
+                e.stateMask = stateMask;
                 tf.notifyListeners(SWT.Selection, e);
                 return true;
             }

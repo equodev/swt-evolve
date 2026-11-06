@@ -43,15 +43,23 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     return _tabNodes[index];
   }
 
-  /// A press that switches tabs focuses the folder, as on GTK: the pressed tab takes the client's
-  /// focus, so keys and Tab start from it. A press on the strip or on the selected tab does not.
+  /// A primary press on a tab moves the client's focus to that tab, so keys and Tab start from it,
+  /// as GTK focuses the folder (Java decides the SWT focus: ControlHelper.takesFocusOnPress), and
+  /// selects the tab. A press on the strip past the tabs does neither.
   @override
   void takeFocusOnPress() {
     final index = _pressedTab;
     _pressedTab = null;
-    if (index == null || index == _selectedIndex || state.enabled != true) return;
+    if (index == null || state.enabled != true) return;
     _tabNode(index).requestFocus();
     _focusReport.update(true, focusIn: () => widget.sendFocusFocusIn(state, null), focusOut: () {});
+    _selectPressedTab(index);
+  }
+
+  /// GTK and Win32 switch tabs on the press, ahead of the release, and report it with the primary
+  /// button held: the mask a move with that button down carries.
+  void _selectPressedTab(int index) {
+    if (index != _selectedIndex) _handleTabSelection(index, stateMask: moveStateMask(kPrimaryButton));
   }
 
   @override
@@ -198,7 +206,6 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
                   isSelected: index == _selectedIndex,
                   tab: tab,
                   vItem: vItem,
-                  onTap: () => _handleTabSelection(index),
                   index: index,
                 ),
               );
@@ -215,7 +222,6 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     required bool isSelected,
     required TabItem tab,
     required VTabItem vItem,
-    required VoidCallback onTap,
     required int index,
   }) {
     final enabled = state.enabled ?? false;
@@ -250,7 +256,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
         color: Colors.transparent,
         child: InkWell(
           focusNode: _tabNode(index),
-          onTap: enabled ? () => _handleTabTap(index, onTap) : null,
+          onTap: enabled ? () => _handleTabTap(index) : null,
           onFocusChange: (focused) => _onTabFocusChange(index, focused),
           child: _Overhang(
             amount: isSelected && enabled ? widgetTheme.tabSelectedBorderWidth : 0,
@@ -348,19 +354,24 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     });
   }
 
-  void _handleTabSelection(int index) {
+  void _handleTabSelection(int index, {int stateMask = 0}) {
     if (state.enabled != true) return;
     _updateSelection(index);
-    var e = VEvent()..index = index;
+    var e = VEvent()
+      ..index = index
+      ..stateMask = stateMask;
     widget.sendSelectionSelection(state, e);
   }
 
-  void _handleTabTap(int index, VoidCallback onSingle) {
+  /// A pointer press has already selected the tab; a tap with no press before it (the keyboard, or
+  /// an accessibility action) selects it here. A second click on the tab is the folder's
+  /// DefaultSelection.
+  void _handleTabTap(int index) {
     if (_tabTap.registerTap(key: index) == 2) {
       _handleDefaultSelection(index);
       return;
     }
-    onSingle();
+    if (index != _selectedIndex) _handleTabSelection(index);
   }
 
   void _handleDefaultSelection(int index) {
