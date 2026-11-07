@@ -105,6 +105,10 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
       result = IntrinsicWidth(child: IntrinsicHeight(child: result));
     }
 
+    // Tab stops on the bar (VControl.tabStop), whose keys Java applies to the header holding its focus;
+    // with no item there is no header to stop on.
+    result = wrapSurfaceFocus(result, tabStop: (state.tabStop ?? false) && expandItems.isNotEmpty);
+
     return inOwnLayer(SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result))));
   }
 

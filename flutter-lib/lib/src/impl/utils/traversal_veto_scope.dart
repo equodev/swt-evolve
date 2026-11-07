@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../focus_requests.dart';
+import 'no_directional_focus_node.dart';
 import 'tab_only_focus_node.dart';
 import 'traversal_order.dart';
 import 'veto_gate.dart';
@@ -18,9 +19,12 @@ class TraversalVetoScope extends StatelessWidget {
   /// Tab and Shift+Tab for the whole app, for when the client's focus sits above every Display --
   /// on the root or the route scope, where nothing inside [TraversalVetoScope] is asked. Ungated:
   /// no control the client focused is there to veto it.
+  ///
+  /// The arrows' directional traversal leaves a control's own stop out (NoDirectionalFocusNode).
   static final Map<Type, Action<Intent>> appActions = <Type, Action<Intent>>{
     NextFocusIntent: _GatedTraversal<NextFocusIntent>(null, forward: true),
     PreviousFocusIntent: _GatedTraversal<PreviousFocusIntent>(null, forward: false),
+    DirectionalFocusIntent: ControlAwareDirectionalFocusAction(),
   };
 
   @override

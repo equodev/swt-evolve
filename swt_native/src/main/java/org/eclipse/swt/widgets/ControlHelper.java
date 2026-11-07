@@ -383,6 +383,9 @@ public class ControlHelper {
         // A ToolBar with no enabled item has nowhere for Tab to stop, on every native.
         if (control instanceof ToolBar)
             return hasEnabledItem((ToolBar) control);
+        // An ExpandBar with no item has no header for Tab to stop on: GTK and Cocoa pass it, as Evolve does.
+        if (control instanceof ExpandBar)
+            return ((ExpandBar) control).getItemCount() > 0;
         if (isTabStop(control))
             return true;
         if (control instanceof Composite) {
@@ -413,6 +416,10 @@ public class ControlHelper {
         // A ToolBar is one stop, entered on its first enabled item, which the client picks: GTK's bar is
         // one tab group and Cocoa focuses its first item. Win32 alone makes one that is not FLAT NO_FOCUS.
         if (control instanceof ToolBar)
+            return true;
+        // An ExpandBar is one stop, on the header holding its focus, which its keys open, close and move;
+        // the client stops on it only while it has an item.
+        if (control instanceof ExpandBar)
             return true;
         // Composite.setTabGroupFocus: a Canvas or plain Composite takes Tab when it hooks a key event,
         // children or not.

@@ -55,6 +55,18 @@ class TabWithNowhereToGoTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("an ExpandBar is a tab stop once it holds an item, whose header its keys act on")
+    void expandBarNeedsAnItem() {
+        Composite parent = new Composite(shell(), SWT.NONE);
+        ExpandBar bar = new ExpandBar(parent, SWT.NONE);
+        assertThat(ControlHelper.isTabStop(bar)).as("the client stops on it once it has an item").isTrue();
+        assertThat(ControlHelper.hasTabStop(bar)).isFalse();
+
+        new ExpandItem(bar, SWT.NONE).setText("One");
+        assertThat(ControlHelper.hasTabStop(bar)).isTrue();
+    }
+
+    @Test
     @DisplayName("a Link holds a link only for <a followed by > or a space, as Link.parse reads one")
     void linkTextIsReadAsLinkParseDoes() {
         assertThat(ControlHelper.holdsLink("see <a>the docs</a>")).isTrue();

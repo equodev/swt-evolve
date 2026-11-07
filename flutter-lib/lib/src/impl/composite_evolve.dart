@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import '../nolayout.dart';
+import 'utils/no_directional_focus_node.dart';
 import '../gen/color.dart';
 import '../gen/composite.dart';
 import '../gen/decorations.dart';
@@ -241,7 +242,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   @override
   Color? get renderedGround => _renderedGround;
 
-  final FocusNode _surfaceFocus = FocusNode(debugLabel: 'CompositeSurface');
+  final FocusNode _surfaceFocus = NoDirectionalFocusNode(debugLabel: 'CompositeSurface');
 
   /// Stands in for [_surfaceFocus] around the children of a Composite that is no Tab stop, so the
   /// tree keeps its shape and the surface node stays unmounted: a request for it waits until the
@@ -257,6 +258,16 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   /// The node that takes this Composite's own focus, for a subclass that builds its own tree.
   @protected
   FocusNode get surfaceFocusNode => _surfaceFocus;
+
+  /// [child] with this Composite's own focus stop, which Tab reaches only while [tabStop], for a
+  /// subclass that builds its own tree.
+  @protected
+  Widget wrapSurfaceFocus(Widget child, {required bool tabStop}) => Focus(
+        focusNode: _surfaceFocus,
+        canRequestFocus: tabStop,
+        skipTraversal: !tabStop,
+        child: child,
+      );
 
   /// Mounted when the Composite is childless, or has children and is a Tab stop (VControl.tabStop).
   /// A request while it is unmounted waits until it is mounted.
