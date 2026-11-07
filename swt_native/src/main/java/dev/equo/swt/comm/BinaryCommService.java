@@ -31,8 +31,10 @@ public class BinaryCommService extends AbstractBinaryCommService {
     private final CountDownLatch started = new CountDownLatch(1);
 
     public BinaryCommService() {
-        server = new WsServer();
-        try {
+        try (dev.equo.swt.BootTrace.Span span = dev.equo.swt.BootTrace.span("WsServer.new")) {
+            server = new WsServer();
+        }
+        try (dev.equo.swt.BootTrace.Span span = dev.equo.swt.BootTrace.span("WsServer.start")) {
             server.start();
         } catch (Exception e) {
             try {
@@ -174,6 +176,7 @@ public class BinaryCommService extends AbstractBinaryCommService {
 
         @Override
         public void onStart() {
+            dev.equo.swt.BootTrace.markOnce("comm.bound");
             started.countDown();
         }
     }

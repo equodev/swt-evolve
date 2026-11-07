@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -1226951345;
+    public static final int FINGERPRINT = 1346628195;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -183,6 +183,8 @@ public final class WireTable {
             "drawTextStringintintint",
             "evaluate",
             "evaluate/result",
+            "evolve.test.bootTrace",
+            "evolve.test.bootTraceResponse",
             "evolve.test.drag",
             "evolve.test.dragDone",
             "evolve.test.frameCost",
@@ -2717,257 +2719,263 @@ public final class WireTable {
     /** The channel `evaluate/result`. */
     public static final int CHANNEL_EVALUATE_RESULT = 168;
 
+    /** The channel `evolve.test.bootTrace`. */
+    public static final int CHANNEL_EVOLVE_TEST_BOOT_TRACE = 169;
+
+    /** The channel `evolve.test.bootTraceResponse`. */
+    public static final int CHANNEL_EVOLVE_TEST_BOOT_TRACE_RESPONSE = 170;
+
     /** The channel `evolve.test.drag`. */
-    public static final int CHANNEL_EVOLVE_TEST_DRAG = 169;
+    public static final int CHANNEL_EVOLVE_TEST_DRAG = 171;
 
     /** The channel `evolve.test.dragDone`. */
-    public static final int CHANNEL_EVOLVE_TEST_DRAG_DONE = 170;
+    public static final int CHANNEL_EVOLVE_TEST_DRAG_DONE = 172;
 
     /** The channel `evolve.test.frameCost`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST = 171;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST = 173;
 
     /** The channel `evolve.test.frameCostResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST_RESPONSE = 172;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST_RESPONSE = 174;
 
     /** The channel `evolve.test.frameStats`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS = 173;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS = 175;
 
     /** The channel `evolve.test.frameStatsResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS_RESPONSE = 174;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS_RESPONSE = 176;
 
     /** The channel `evolve.test.frameSync`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNC = 175;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNC = 177;
 
     /** The channel `evolve.test.frameSynced`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNCED = 176;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNCED = 178;
 
     /** The channel `evolve.test.iframeLoaded`. */
-    public static final int CHANNEL_EVOLVE_TEST_IFRAME_LOADED = 177;
+    public static final int CHANNEL_EVOLVE_TEST_IFRAME_LOADED = 179;
 
     /** The channel `evolve.test.query`. */
-    public static final int CHANNEL_EVOLVE_TEST_QUERY = 178;
+    public static final int CHANNEL_EVOLVE_TEST_QUERY = 180;
 
     /** The channel `evolve.test.queryResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_QUERY_RESPONSE = 179;
+    public static final int CHANNEL_EVOLVE_TEST_QUERY_RESPONSE = 181;
 
     /** The channel `evolve.test.styledTextPerf`. */
-    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF = 180;
+    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF = 182;
 
     /** The channel `evolve.test.styledTextPerfResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF_RESPONSE = 181;
+    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF_RESPONSE = 183;
 
     /** The channel `evolve.test.wireStats`. */
-    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS = 182;
+    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS = 184;
 
     /** The channel `evolve.test.wireStatsResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS_RESPONSE = 183;
+    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS_RESPONSE = 185;
 
     /** The channel `execute`. */
-    public static final int CHANNEL_EXECUTE = 184;
+    public static final int CHANNEL_EXECUTE = 186;
 
     /** The channel `fillArcintintintintintint`. */
-    public static final int CHANNEL_FILL_ARCINTINTINTINTINTINT = 185;
+    public static final int CHANNEL_FILL_ARCINTINTINTINTINTINT = 187;
 
     /** The channel `fillGradientRectangleintintintintboolean`. */
-    public static final int CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN = 186;
+    public static final int CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN = 188;
 
     /** The channel `fillOvalintintintint`. */
-    public static final int CHANNEL_FILL_OVALINTINTINTINT = 187;
+    public static final int CHANNEL_FILL_OVALINTINTINTINT = 189;
 
     /** The channel `fillPathPath`. */
-    public static final int CHANNEL_FILL_PATH_PATH = 188;
+    public static final int CHANNEL_FILL_PATH_PATH = 190;
 
     /** The channel `fillPolygonint`. */
-    public static final int CHANNEL_FILL_POLYGONINT = 189;
+    public static final int CHANNEL_FILL_POLYGONINT = 191;
 
     /** The channel `fillRectangleintintintint`. */
-    public static final int CHANNEL_FILL_RECTANGLEINTINTINTINT = 190;
+    public static final int CHANNEL_FILL_RECTANGLEINTINTINTINT = 192;
 
     /** The channel `fillRoundRectangleintintintintintint`. */
-    public static final int CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT = 191;
+    public static final int CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT = 193;
 
     /** The channel `fontSizeRequest`. */
-    public static final int CHANNEL_FONT_SIZE_REQUEST = 192;
+    public static final int CHANNEL_FONT_SIZE_REQUEST = 194;
 
     /** The channel `fontSizeResponse`. */
-    public static final int CHANNEL_FONT_SIZE_RESPONSE = 193;
+    public static final int CHANNEL_FONT_SIZE_RESPONSE = 195;
 
     /** The channel `forward`. */
-    public static final int CHANNEL_FORWARD = 194;
+    public static final int CHANNEL_FORWARD = 196;
 
     /** The channel `gcDispose`. */
-    public static final int CHANNEL_GC_DISPOSE = 195;
+    public static final int CHANNEL_GC_DISPOSE = 197;
 
     /** The channel `getCookie`. */
-    public static final int CHANNEL_GET_COOKIE = 196;
+    public static final int CHANNEL_GET_COOKIE = 198;
 
     /** The channel `imageInit`. */
-    public static final int CHANNEL_IMAGE_INIT = 197;
+    public static final int CHANNEL_IMAGE_INIT = 199;
 
     /** The channel `imageResult`. */
-    public static final int CHANNEL_IMAGE_RESULT = 198;
+    public static final int CHANNEL_IMAGE_RESULT = 200;
 
     /** The channel `imageSizeRequest`. */
-    public static final int CHANNEL_IMAGE_SIZE_REQUEST = 199;
+    public static final int CHANNEL_IMAGE_SIZE_REQUEST = 201;
 
     /** The channel `imageSizeResponse`. */
-    public static final int CHANNEL_IMAGE_SIZE_RESPONSE = 200;
+    public static final int CHANNEL_IMAGE_SIZE_RESPONSE = 202;
 
     /** The channel `imageSnapshotResult`. */
-    public static final int CHANNEL_IMAGE_SNAPSHOT_RESULT = 201;
+    public static final int CHANNEL_IMAGE_SNAPSHOT_RESULT = 203;
 
     /** The channel `key/verdict`. */
-    public static final int CHANNEL_KEY_VERDICT = 202;
+    public static final int CHANNEL_KEY_VERDICT = 204;
 
     /** The channel `key/vetoable`. */
-    public static final int CHANNEL_KEY_VETOABLE = 203;
+    public static final int CHANNEL_KEY_VETOABLE = 205;
 
     /** The channel `locationchanging/result`. */
-    public static final int CHANNEL_LOCATIONCHANGING_RESULT = 204;
+    public static final int CHANNEL_LOCATIONCHANGING_RESULT = 206;
 
     /** The channel `menu/verdict`. */
-    public static final int CHANNEL_MENU_VERDICT = 205;
+    public static final int CHANNEL_MENU_VERDICT = 207;
 
     /** The channel `modify/verdict`. */
-    public static final int CHANNEL_MODIFY_VERDICT = 206;
+    public static final int CHANNEL_MODIFY_VERDICT = 208;
 
     /** The channel `modify/vetoable`. */
-    public static final int CHANNEL_MODIFY_VETOABLE = 207;
+    public static final int CHANNEL_MODIFY_VETOABLE = 209;
 
     /** The channel `navigate`. */
-    public static final int CHANNEL_NAVIGATE = 208;
+    public static final int CHANNEL_NAVIGATE = 210;
 
     /** The channel `navigateRequest`. */
-    public static final int CHANNEL_NAVIGATE_REQUEST = 209;
+    public static final int CHANNEL_NAVIGATE_REQUEST = 211;
 
     /** The channel `navigationState`. */
-    public static final int CHANNEL_NAVIGATION_STATE = 210;
+    public static final int CHANNEL_NAVIGATION_STATE = 212;
 
     /** The channel `nextFrame`. */
-    public static final int CHANNEL_NEXT_FRAME = 211;
+    public static final int CHANNEL_NEXT_FRAME = 213;
 
     /** The channel `openMenu`. */
-    public static final int CHANNEL_OPEN_MENU = 212;
+    public static final int CHANNEL_OPEN_MENU = 214;
 
     /** The channel `pixelsResult`. */
-    public static final int CHANNEL_PIXELS_RESULT = 213;
+    public static final int CHANNEL_PIXELS_RESULT = 215;
 
     /** The channel `rebuild`. */
-    public static final int CHANNEL_REBUILD = 214;
+    public static final int CHANNEL_REBUILD = 216;
 
     /** The channel `reload`. */
-    public static final int CHANNEL_RELOAD = 215;
+    public static final int CHANNEL_RELOAD = 217;
 
     /** The channel `renderSnapshot`. */
-    public static final int CHANNEL_RENDER_SNAPSHOT = 216;
+    public static final int CHANNEL_RENDER_SNAPSHOT = 218;
 
     /** The channel `setCookie`. */
-    public static final int CHANNEL_SET_COOKIE = 217;
+    public static final int CHANNEL_SET_COOKIE = 219;
 
     /** The channel `shown`. */
-    public static final int CHANNEL_SHOWN = 218;
+    public static final int CHANNEL_SHOWN = 220;
 
     /** The channel `stop`. */
-    public static final int CHANNEL_STOP = 219;
+    public static final int CHANNEL_STOP = 221;
 
     /** The channel `subtree`. */
-    public static final int CHANNEL_SUBTREE = 220;
+    public static final int CHANNEL_SUBTREE = 222;
 
     /** The channel `subtree/request`. */
-    public static final int CHANNEL_SUBTREE_REQUEST = 221;
+    public static final int CHANNEL_SUBTREE_REQUEST = 223;
 
     /** The channel `swing`. */
-    public static final int CHANNEL_SWING = 222;
+    public static final int CHANNEL_SWING = 224;
 
     /** The channel `swing.open`. */
-    public static final int CHANNEL_SWING_OPEN = 223;
+    public static final int CHANNEL_SWING_OPEN = 225;
 
     /** The channel `swingIsland`. */
-    public static final int CHANNEL_SWING_ISLAND = 224;
+    public static final int CHANNEL_SWING_ISLAND = 226;
 
     /** The channel `swingIsland.close`. */
-    public static final int CHANNEL_SWING_ISLAND_CLOSE = 225;
+    public static final int CHANNEL_SWING_ISLAND_CLOSE = 227;
 
     /** The channel `swingIsland.dispose`. */
-    public static final int CHANNEL_SWING_ISLAND_DISPOSE = 226;
+    public static final int CHANNEL_SWING_ISLAND_DISPOSE = 228;
 
     /** The channel `swingIsland.island`. */
-    public static final int CHANNEL_SWING_ISLAND_ISLAND = 227;
+    public static final int CHANNEL_SWING_ISLAND_ISLAND = 229;
 
     /** The channel `swingIsland.opened`. */
-    public static final int CHANNEL_SWING_ISLAND_OPENED = 228;
+    public static final int CHANNEL_SWING_ISLAND_OPENED = 230;
 
     /** The channel `swingIsland.resize`. */
-    public static final int CHANNEL_SWING_ISLAND_RESIZE = 229;
+    public static final int CHANNEL_SWING_ISLAND_RESIZE = 231;
 
     /** The channel `swingIsland.surface`. */
-    public static final int CHANNEL_SWING_ISLAND_SURFACE = 230;
+    public static final int CHANNEL_SWING_ISLAND_SURFACE = 232;
 
     /** The channel `swingIsland.title`. */
-    public static final int CHANNEL_SWING_ISLAND_TITLE = 231;
+    public static final int CHANNEL_SWING_ISLAND_TITLE = 233;
 
     /** The channel `swt.evolve.batch`. */
-    public static final int CHANNEL_SWT_EVOLVE_BATCH = 232;
+    public static final int CHANNEL_SWT_EVOLVE_BATCH = 234;
 
     /** The channel `swt.evolve.focus`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS = 233;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS = 235;
 
     /** The channel `swt.evolve.focus.seen`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS_SEEN = 234;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS_SEEN = 236;
 
     /** The channel `swt.evolve.focusHolder`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS_HOLDER = 235;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS_HOLDER = 237;
 
     /** The channel `swt.evolve.properties`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 236;
+    public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 238;
 
     /** The channel `swt.evolve.property.set`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 237;
+    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 239;
 
     /** The channel `swt.evolve.test.runUi`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 238;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 240;
 
     /** The channel `swt.evolve.test.runUiResponse`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 239;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 241;
 
     /** The channel `swt.evolve.timing.bare`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 240;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 242;
 
     /** The channel `swt.evolve.timing.ping`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 241;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 243;
 
     /** The channel `swt.evolve.timing.pong`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 242;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 244;
 
     /** The channel `swt.evolve.url.open`. */
-    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 243;
+    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 245;
 
     /** The channel `swt.evolve.widget.refresh`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 244;
+    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 246;
 
     /** The channel `swt.evolve.wire`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIRE = 245;
+    public static final int CHANNEL_SWT_EVOLVE_WIRE = 247;
 
     /** The channel `transport`. */
-    public static final int CHANNEL_TRANSPORT = 246;
+    public static final int CHANNEL_TRANSPORT = 248;
 
     /** The channel `transport/request`. */
-    public static final int CHANNEL_TRANSPORT_REQUEST = 247;
+    public static final int CHANNEL_TRANSPORT_REQUEST = 249;
 
     /** The channel `traverse/verdict`. */
-    public static final int CHANNEL_TRAVERSE_VERDICT = 248;
+    public static final int CHANNEL_TRAVERSE_VERDICT = 250;
 
     /** The channel `traverse/vetoable`. */
-    public static final int CHANNEL_TRAVERSE_VETOABLE = 249;
+    public static final int CHANNEL_TRAVERSE_VETOABLE = 251;
 
     /** The channel `v`. */
-    public static final int CHANNEL_V = 250;
+    public static final int CHANNEL_V = 252;
 
     /** The channel `widgetSizeRequest`. */
-    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 251;
+    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 253;
 
     /** The channel `widgetSizeResponse`. */
-    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 252;
+    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 254;
 
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;

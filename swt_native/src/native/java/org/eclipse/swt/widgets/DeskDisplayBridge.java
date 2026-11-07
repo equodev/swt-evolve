@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.BootTrace;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterNative;
@@ -97,7 +98,9 @@ public class DeskDisplayBridge extends DisplayBridge {
         super(display);
         // The native window is the client; never fall back to a browser/chromium launch.
         ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
-        DisplayBridgePlatform.init();
+        try (BootTrace.Span span = BootTrace.span("platform.init")) {
+            DisplayBridgePlatform.init();
+        }
     }
 
     /** Creates the native window for the given Display and wires the comm handshake. */
@@ -132,9 +135,18 @@ public class DeskDisplayBridge extends DisplayBridge {
         // here would make the Flutter theme render a pure-black background.
         Color bg = forDisplay.getApi().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
         int backgroundColor = (bg.getRed() << 16) | (bg.getGreen() << 8) | bg.getBlue();
-        String theme = Config.windowTheme(forDisplay.systemAppearance);
-        return FlutterNative.initialize(comm().getPort(), owner, widgetId, widgetName, theme,
-                backgroundColor, backgroundColor, width, height);
+        String theme;
+        try (BootTrace.Span span = BootTrace.span("windowTheme")) {
+            theme = Config.windowTheme(forDisplay.systemAppearance);
+        }
+        int port;
+        try (BootTrace.Span span = BootTrace.span("comm.port")) {
+            port = comm().getPort();
+        }
+        try (BootTrace.Span span = BootTrace.span(BootTrace.enabled() ? "FlutterNative.initialize " + widgetName : null)) {
+            return FlutterNative.initialize(port, owner, widgetId, widgetName, theme,
+                    backgroundColor, backgroundColor, width, height);
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ import 'package:meta/meta.dart';
 import 'dart:typed_data';
 
 import '../impl/utils/perf_marks.dart';
+import '../testing/boot_trace.dart';
 
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
@@ -168,7 +169,10 @@ abstract class EquoCommBase {
   void Function()? onReconnected;
 
   /// Subclasses call this once the socket is open; flushes any queued frames.
+  bool _everReceived = false;
+
   void markOpen() {
+    BootTrace.markOnce('comm.open');
     final bool reconnected = _everOpened;
     _open = true;
     _everOpened = true;
@@ -295,6 +299,10 @@ abstract class EquoCommBase {
   static final Stopwatch clock = Stopwatch()..start();
 
   void receiveBinary(Uint8List data) {
+    if (!_everReceived) {
+      _everReceived = true;
+      BootTrace.mark('comm.firstMessage');
+    }
     lastReceivedMicros = clock.elapsedMicroseconds;
     // A frame for a channel answered per kind of widget goes to its handler as numbers: no channel
     // name, no view of its body, no closure to queue it.

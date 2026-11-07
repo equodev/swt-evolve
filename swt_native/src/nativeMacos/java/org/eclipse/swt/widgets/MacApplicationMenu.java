@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.AppMenuMessages;
+import dev.equo.swt.BootTrace;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.Callback;
@@ -63,60 +64,76 @@ final class MacApplicationMenu {
             return;
         installed = true;
 
-        NSApplication application = NSApplication.sharedApplication();
-        String appName = applicationName();
-        NSString empty = NSString.string();
-        NSString name = NSString.stringWith(appName);
+        if (BootTrace.enabled()) {
+            // Loads SWT's Cocoa library on its own, so its time is told apart from AppKit's start.
+            try (BootTrace.Span span = BootTrace.span("load SWT Cocoa library")) {
+                Class.forName("org.eclipse.swt.internal.cocoa.OS", true, MacApplicationMenu.class.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        NSApplication application;
+        try (BootTrace.Span span = BootTrace.span("NSApplication.sharedApplication")) {
+            application = NSApplication.sharedApplication();
+        }
+        BootTrace.Span build = BootTrace.span("build app menu");
+        try {
+            String appName = applicationName();
+            NSString empty = NSString.string();
+            NSString name = NSString.stringWith(appName);
 
-        NSMenu mainMenu = (NSMenu) new NSMenu().alloc();
-        mainMenu.initWithTitle(empty);
-        // Cocoa's own enabling only keeps an item live while something in the responder chain
-        // implements its action; the SWT-driven items have none, so it is done explicitly here.
-        mainMenu.setAutoenablesItems(false);
+            NSMenu mainMenu = (NSMenu) new NSMenu().alloc();
+            mainMenu.initWithTitle(empty);
+            // Cocoa's own enabling only keeps an item live while something in the responder chain
+            // implements its action; the SWT-driven items have none, so it is done explicitly here.
+            mainMenu.setAutoenablesItems(false);
 
-        NSMenuItem appItem = mainMenu.addItemWithTitle(empty, 0, empty);
-        appItem.setTitle(name);
+            NSMenuItem appItem = mainMenu.addItemWithTitle(empty, 0, empty);
+            appItem.setTitle(name);
 
-        NSMenu appMenu = (NSMenu) new NSMenu().alloc();
-        appMenu.initWithTitle(name);
-        appMenu.setAutoenablesItems(false);
-        // Tells Cocoa which submenu is the application menu, so it gets the bold app-name styling.
-        OS.objc_msgSend(application.id, OS.sel_registerName("setAppleMenu:"), appMenu.id);
+            NSMenu appMenu = (NSMenu) new NSMenu().alloc();
+            appMenu.initWithTitle(name);
+            appMenu.setAutoenablesItems(false);
+            // Tells Cocoa which submenu is the application menu, so it gets the bold app-name styling.
+            OS.objc_msgSend(application.id, OS.sel_registerName("setAppleMenu:"), appMenu.id);
 
-        // About and Settings are the two the application contributes to, and it does so by hooking
-        // the SWT MenuItem carrying the matching id in the mirror below -- which is a different
-        // object from this native item, unlike in native SWT where they are one and the same. So
-        // both carry an action that looks the contribution up and raises SWT.Selection on it.
-        contributed(add(appMenu, AppMenuMessages.label("SWT_About") + " " + appName, 0, empty, SWT.ID_ABOUT));
-        appMenu.addItem(NSMenuItem.separatorItem());
-        contributed(add(appMenu, AppMenuMessages.label("SWT_Preferences"), 0, NSString.stringWith(","), SWT.ID_PREFERENCES));
-        appMenu.addItem(NSMenuItem.separatorItem());
+            // About and Settings are the two the application contributes to, and it does so by hooking
+            // the SWT MenuItem carrying the matching id in the mirror below -- which is a different
+            // object from this native item, unlike in native SWT where they are one and the same. So
+            // both carry an action that looks the contribution up and raises SWT.Selection on it.
+            contributed(add(appMenu, AppMenuMessages.label("SWT_About") + " " + appName, 0, empty, SWT.ID_ABOUT));
+            appMenu.addItem(NSMenuItem.separatorItem());
+            contributed(add(appMenu, AppMenuMessages.label("SWT_Preferences"), 0, NSString.stringWith(","), SWT.ID_PREFERENCES));
+            appMenu.addItem(NSMenuItem.separatorItem());
 
-        NSMenuItem servicesItem = add(appMenu, AppMenuMessages.label("SWT_Services"), 0, empty, 0);
-        NSMenu servicesMenu = (NSMenu) new NSMenu().alloc();
-        servicesMenu.initWithTitle(empty);
-        appMenu.setSubmenu(servicesMenu, servicesItem);
-        servicesMenu.release();
-        application.setServicesMenu(servicesMenu);
-        appMenu.addItem(NSMenuItem.separatorItem());
+            NSMenuItem servicesItem = add(appMenu, AppMenuMessages.label("SWT_Services"), 0, empty, 0);
+            NSMenu servicesMenu = (NSMenu) new NSMenu().alloc();
+            servicesMenu.initWithTitle(empty);
+            appMenu.setSubmenu(servicesMenu, servicesItem);
+            servicesMenu.release();
+            application.setServicesMenu(servicesMenu);
+            appMenu.addItem(NSMenuItem.separatorItem());
 
-        add(appMenu, AppMenuMessages.label("SWT_Hide") + " " + appName,
-                OS.sel_hide_, NSString.stringWith("h"), SWT.ID_HIDE);
-        NSMenuItem hideOthers = add(appMenu, AppMenuMessages.label("SWT_HideOthers"),
-                OS.sel_hideOtherApplications_, NSString.stringWith("h"), SWT.ID_HIDE_OTHERS);
-        hideOthers.setKeyEquivalentModifierMask(AppKitValues.COMMAND_KEY_MASK | AppKitValues.ALTERNATE_KEY_MASK);
-        add(appMenu, AppMenuMessages.label("SWT_ShowAll"),
-                OS.sel_unhideAllApplications_, empty, SWT.ID_SHOW_ALL);
-        appMenu.addItem(NSMenuItem.separatorItem());
+            add(appMenu, AppMenuMessages.label("SWT_Hide") + " " + appName,
+                    OS.sel_hide_, NSString.stringWith("h"), SWT.ID_HIDE);
+            NSMenuItem hideOthers = add(appMenu, AppMenuMessages.label("SWT_HideOthers"),
+                    OS.sel_hideOtherApplications_, NSString.stringWith("h"), SWT.ID_HIDE_OTHERS);
+            hideOthers.setKeyEquivalentModifierMask(AppKitValues.COMMAND_KEY_MASK | AppKitValues.ALTERNATE_KEY_MASK);
+            add(appMenu, AppMenuMessages.label("SWT_ShowAll"),
+                    OS.sel_unhideAllApplications_, empty, SWT.ID_SHOW_ALL);
+            appMenu.addItem(NSMenuItem.separatorItem());
 
-        NSMenuItem quit = add(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName,
-                quitSelector(), NSString.stringWith("q"), SWT.ID_QUIT);
-        quit.setTarget(target());
+            NSMenuItem quit = add(appMenu, AppMenuMessages.label("SWT_Quit") + " " + appName,
+                    quitSelector(), NSString.stringWith("q"), SWT.ID_QUIT);
+            quit.setTarget(target());
 
-        mainMenu.setSubmenu(appMenu, appItem);
-        appMenu.release();
-        application.setMainMenu(mainMenu);
-        mainMenu.release();
+            mainMenu.setSubmenu(appMenu, appItem);
+            appMenu.release();
+            application.setMainMenu(mainMenu);
+            mainMenu.release();
+        } finally {
+            if (build != null) build.close();
+        }
     }
 
     /**

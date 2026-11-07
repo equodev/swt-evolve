@@ -197,6 +197,7 @@ public abstract class AbstractBinaryCommService implements CommService {
      * before a client was connected, delivering them to the just-connected session.
      */
     protected void onClientConnected(Consumer<byte[]> sendToSession) {
+        dev.equo.swt.BootTrace.markOnce("comm.clientConnected");
         if (firstClientConnected) {
             // A different client from the one everything so far was written for. It holds none of
             // it, so it is given a new id and every widget is described to it in full again.

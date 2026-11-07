@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import '../comm/widget_wire.dart' show sendWireWith;
 import '../gen/widgets.dart' show WireChannel, wireFingerprint;
 import '../comm/widget_key.dart' show WidgetKey;
+import '../testing/boot_trace.dart';
 import 'system_appearance.dart' as system;
 
 /// The viewport handshake a window sends Java: the area the app lays out in, the monitor it is on,
@@ -67,6 +68,7 @@ class ClientReadyReporter {
     _lastSent[key] = payload;
     print('[ClientReady] $type/$widgetId isFirst=$isFirst size=${width}x$height '
         'monitor=${displayWidth}x$displayHeight');
+    if (isFirst) BootTrace.mark('clientReady.sent');
     _send(type, widgetId, payload);
   }
 }

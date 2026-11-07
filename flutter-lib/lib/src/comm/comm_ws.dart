@@ -10,6 +10,7 @@ import '../gen/widget.dart';
 import 'comm_api.dart';
 import 'comm_frame.dart';
 import 'widget_wire.dart' show WidgetWireWriter;
+import '../testing/boot_trace.dart';
 
 /// Desktop comm: a `dart:io` WebSocket speaking the binary frame protocol. All
 /// protocol logic lives in [EquoCommBase]; this class only owns the socket.
@@ -17,6 +18,7 @@ class _DesktopComm extends EquoCommBase {
   WebSocket? _socket;
 
   _DesktopComm({required String host, required int port}) {
+    BootTrace.markOnce('comm.connect');
     WebSocket.connect("ws://$host:$port").then((ws) {
       _socket = ws;
       markOpen();

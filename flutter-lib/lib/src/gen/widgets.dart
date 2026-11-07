@@ -155,7 +155,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = -1226951345;
+const int wireFingerprint = 1346628195;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -1309,90 +1309,92 @@ const Map<int, String> wireChannelNames = {
   166: 'drawTextStringintintint',
   167: 'evaluate',
   168: 'evaluate/result',
-  169: 'evolve.test.drag',
-  170: 'evolve.test.dragDone',
-  171: 'evolve.test.frameCost',
-  172: 'evolve.test.frameCostResponse',
-  173: 'evolve.test.frameStats',
-  174: 'evolve.test.frameStatsResponse',
-  175: 'evolve.test.frameSync',
-  176: 'evolve.test.frameSynced',
-  177: 'evolve.test.iframeLoaded',
-  178: 'evolve.test.query',
-  179: 'evolve.test.queryResponse',
-  180: 'evolve.test.styledTextPerf',
-  181: 'evolve.test.styledTextPerfResponse',
-  182: 'evolve.test.wireStats',
-  183: 'evolve.test.wireStatsResponse',
-  184: 'execute',
-  185: 'fillArcintintintintintint',
-  186: 'fillGradientRectangleintintintintboolean',
-  187: 'fillOvalintintintint',
-  188: 'fillPathPath',
-  189: 'fillPolygonint',
-  190: 'fillRectangleintintintint',
-  191: 'fillRoundRectangleintintintintintint',
-  192: 'fontSizeRequest',
-  193: 'fontSizeResponse',
-  194: 'forward',
-  195: 'gcDispose',
-  196: 'getCookie',
-  197: 'imageInit',
-  198: 'imageResult',
-  199: 'imageSizeRequest',
-  200: 'imageSizeResponse',
-  201: 'imageSnapshotResult',
-  202: 'key/verdict',
-  203: 'key/vetoable',
-  204: 'locationchanging/result',
-  205: 'menu/verdict',
-  206: 'modify/verdict',
-  207: 'modify/vetoable',
-  208: 'navigate',
-  209: 'navigateRequest',
-  210: 'navigationState',
-  211: 'nextFrame',
-  212: 'openMenu',
-  213: 'pixelsResult',
-  214: 'rebuild',
-  215: 'reload',
-  216: 'renderSnapshot',
-  217: 'setCookie',
-  218: 'shown',
-  219: 'stop',
-  220: 'subtree',
-  221: 'subtree/request',
-  222: 'swing',
-  223: 'swing.open',
-  224: 'swingIsland',
-  225: 'swingIsland.close',
-  226: 'swingIsland.dispose',
-  227: 'swingIsland.island',
-  228: 'swingIsland.opened',
-  229: 'swingIsland.resize',
-  230: 'swingIsland.surface',
-  231: 'swingIsland.title',
-  232: 'swt.evolve.batch',
-  233: 'swt.evolve.focus',
-  234: 'swt.evolve.focus.seen',
-  235: 'swt.evolve.focusHolder',
-  236: 'swt.evolve.properties',
-  237: 'swt.evolve.property.set',
-  238: 'swt.evolve.test.runUi',
-  239: 'swt.evolve.test.runUiResponse',
-  240: 'swt.evolve.timing.bare',
-  241: 'swt.evolve.timing.ping',
-  242: 'swt.evolve.timing.pong',
-  243: 'swt.evolve.url.open',
-  244: 'swt.evolve.widget.refresh',
-  245: 'swt.evolve.wire',
-  246: 'transport',
-  247: 'transport/request',
-  248: 'traverse/verdict',
-  249: 'traverse/vetoable',
-  250: 'v',
-  251: 'widgetSizeRequest',
-  252: 'widgetSizeResponse',
+  169: 'evolve.test.bootTrace',
+  170: 'evolve.test.bootTraceResponse',
+  171: 'evolve.test.drag',
+  172: 'evolve.test.dragDone',
+  173: 'evolve.test.frameCost',
+  174: 'evolve.test.frameCostResponse',
+  175: 'evolve.test.frameStats',
+  176: 'evolve.test.frameStatsResponse',
+  177: 'evolve.test.frameSync',
+  178: 'evolve.test.frameSynced',
+  179: 'evolve.test.iframeLoaded',
+  180: 'evolve.test.query',
+  181: 'evolve.test.queryResponse',
+  182: 'evolve.test.styledTextPerf',
+  183: 'evolve.test.styledTextPerfResponse',
+  184: 'evolve.test.wireStats',
+  185: 'evolve.test.wireStatsResponse',
+  186: 'execute',
+  187: 'fillArcintintintintintint',
+  188: 'fillGradientRectangleintintintintboolean',
+  189: 'fillOvalintintintint',
+  190: 'fillPathPath',
+  191: 'fillPolygonint',
+  192: 'fillRectangleintintintint',
+  193: 'fillRoundRectangleintintintintintint',
+  194: 'fontSizeRequest',
+  195: 'fontSizeResponse',
+  196: 'forward',
+  197: 'gcDispose',
+  198: 'getCookie',
+  199: 'imageInit',
+  200: 'imageResult',
+  201: 'imageSizeRequest',
+  202: 'imageSizeResponse',
+  203: 'imageSnapshotResult',
+  204: 'key/verdict',
+  205: 'key/vetoable',
+  206: 'locationchanging/result',
+  207: 'menu/verdict',
+  208: 'modify/verdict',
+  209: 'modify/vetoable',
+  210: 'navigate',
+  211: 'navigateRequest',
+  212: 'navigationState',
+  213: 'nextFrame',
+  214: 'openMenu',
+  215: 'pixelsResult',
+  216: 'rebuild',
+  217: 'reload',
+  218: 'renderSnapshot',
+  219: 'setCookie',
+  220: 'shown',
+  221: 'stop',
+  222: 'subtree',
+  223: 'subtree/request',
+  224: 'swing',
+  225: 'swing.open',
+  226: 'swingIsland',
+  227: 'swingIsland.close',
+  228: 'swingIsland.dispose',
+  229: 'swingIsland.island',
+  230: 'swingIsland.opened',
+  231: 'swingIsland.resize',
+  232: 'swingIsland.surface',
+  233: 'swingIsland.title',
+  234: 'swt.evolve.batch',
+  235: 'swt.evolve.focus',
+  236: 'swt.evolve.focus.seen',
+  237: 'swt.evolve.focusHolder',
+  238: 'swt.evolve.properties',
+  239: 'swt.evolve.property.set',
+  240: 'swt.evolve.test.runUi',
+  241: 'swt.evolve.test.runUiResponse',
+  242: 'swt.evolve.timing.bare',
+  243: 'swt.evolve.timing.ping',
+  244: 'swt.evolve.timing.pong',
+  245: 'swt.evolve.url.open',
+  246: 'swt.evolve.widget.refresh',
+  247: 'swt.evolve.wire',
+  248: 'transport',
+  249: 'transport/request',
+  250: 'traverse/verdict',
+  251: 'traverse/vetoable',
+  252: 'v',
+  253: 'widgetSizeRequest',
+  254: 'widgetSizeResponse',
 };
 
 /// Every channel's number, for what sends or answers a channel by the number a frame names.
@@ -1574,97 +1576,100 @@ abstract final class WireChannel {
   static const int drawTextStringintintint = 166; // drawTextStringintintint
   static const int evaluate = 167; // evaluate
   static const int evaluateResult = 168; // evaluate/result
-  static const int evolveTestDrag = 169; // evolve.test.drag
-  static const int evolveTestDragDone = 170; // evolve.test.dragDone
-  static const int evolveTestFrameCost = 171; // evolve.test.frameCost
+  static const int evolveTestBootTrace = 169; // evolve.test.bootTrace
+  static const int evolveTestBootTraceResponse =
+      170; // evolve.test.bootTraceResponse
+  static const int evolveTestDrag = 171; // evolve.test.drag
+  static const int evolveTestDragDone = 172; // evolve.test.dragDone
+  static const int evolveTestFrameCost = 173; // evolve.test.frameCost
   static const int evolveTestFrameCostResponse =
-      172; // evolve.test.frameCostResponse
-  static const int evolveTestFrameStats = 173; // evolve.test.frameStats
+      174; // evolve.test.frameCostResponse
+  static const int evolveTestFrameStats = 175; // evolve.test.frameStats
   static const int evolveTestFrameStatsResponse =
-      174; // evolve.test.frameStatsResponse
-  static const int evolveTestFrameSync = 175; // evolve.test.frameSync
-  static const int evolveTestFrameSynced = 176; // evolve.test.frameSynced
-  static const int evolveTestIframeLoaded = 177; // evolve.test.iframeLoaded
-  static const int evolveTestQuery = 178; // evolve.test.query
-  static const int evolveTestQueryResponse = 179; // evolve.test.queryResponse
-  static const int evolveTestStyledTextPerf = 180; // evolve.test.styledTextPerf
+      176; // evolve.test.frameStatsResponse
+  static const int evolveTestFrameSync = 177; // evolve.test.frameSync
+  static const int evolveTestFrameSynced = 178; // evolve.test.frameSynced
+  static const int evolveTestIframeLoaded = 179; // evolve.test.iframeLoaded
+  static const int evolveTestQuery = 180; // evolve.test.query
+  static const int evolveTestQueryResponse = 181; // evolve.test.queryResponse
+  static const int evolveTestStyledTextPerf = 182; // evolve.test.styledTextPerf
   static const int evolveTestStyledTextPerfResponse =
-      181; // evolve.test.styledTextPerfResponse
-  static const int evolveTestWireStats = 182; // evolve.test.wireStats
+      183; // evolve.test.styledTextPerfResponse
+  static const int evolveTestWireStats = 184; // evolve.test.wireStats
   static const int evolveTestWireStatsResponse =
-      183; // evolve.test.wireStatsResponse
-  static const int execute = 184; // execute
-  static const int fillArcintintintintintint = 185; // fillArcintintintintintint
+      185; // evolve.test.wireStatsResponse
+  static const int execute = 186; // execute
+  static const int fillArcintintintintintint = 187; // fillArcintintintintintint
   static const int fillGradientRectangleintintintintboolean =
-      186; // fillGradientRectangleintintintintboolean
-  static const int fillOvalintintintint = 187; // fillOvalintintintint
-  static const int fillPathPath = 188; // fillPathPath
-  static const int fillPolygonint = 189; // fillPolygonint
-  static const int fillRectangleintintintint = 190; // fillRectangleintintintint
+      188; // fillGradientRectangleintintintintboolean
+  static const int fillOvalintintintint = 189; // fillOvalintintintint
+  static const int fillPathPath = 190; // fillPathPath
+  static const int fillPolygonint = 191; // fillPolygonint
+  static const int fillRectangleintintintint = 192; // fillRectangleintintintint
   static const int fillRoundRectangleintintintintintint =
-      191; // fillRoundRectangleintintintintintint
-  static const int fontSizeRequest = 192; // fontSizeRequest
-  static const int fontSizeResponse = 193; // fontSizeResponse
-  static const int forward = 194; // forward
-  static const int gcDispose = 195; // gcDispose
-  static const int getCookie = 196; // getCookie
-  static const int imageInit = 197; // imageInit
-  static const int imageResult = 198; // imageResult
-  static const int imageSizeRequest = 199; // imageSizeRequest
-  static const int imageSizeResponse = 200; // imageSizeResponse
-  static const int imageSnapshotResult = 201; // imageSnapshotResult
-  static const int keyVerdict = 202; // key/verdict
-  static const int keyVetoable = 203; // key/vetoable
-  static const int locationchangingResult = 204; // locationchanging/result
-  static const int menuVerdict = 205; // menu/verdict
-  static const int modifyVerdict = 206; // modify/verdict
-  static const int modifyVetoable = 207; // modify/vetoable
-  static const int navigate = 208; // navigate
-  static const int navigateRequest = 209; // navigateRequest
-  static const int navigationState = 210; // navigationState
-  static const int nextFrame = 211; // nextFrame
-  static const int openMenu = 212; // openMenu
-  static const int pixelsResult = 213; // pixelsResult
-  static const int rebuild = 214; // rebuild
-  static const int reload = 215; // reload
-  static const int renderSnapshot = 216; // renderSnapshot
-  static const int setCookie = 217; // setCookie
-  static const int shown = 218; // shown
-  static const int stop = 219; // stop
-  static const int subtree = 220; // subtree
-  static const int subtreeRequest = 221; // subtree/request
-  static const int swing = 222; // swing
-  static const int swingOpen = 223; // swing.open
-  static const int swingIsland = 224; // swingIsland
-  static const int swingIslandClose = 225; // swingIsland.close
-  static const int swingIslandDispose = 226; // swingIsland.dispose
-  static const int swingIslandIsland = 227; // swingIsland.island
-  static const int swingIslandOpened = 228; // swingIsland.opened
-  static const int swingIslandResize = 229; // swingIsland.resize
-  static const int swingIslandSurface = 230; // swingIsland.surface
-  static const int swingIslandTitle = 231; // swingIsland.title
-  static const int swtEvolveBatch = 232; // swt.evolve.batch
-  static const int swtEvolveFocus = 233; // swt.evolve.focus
-  static const int swtEvolveFocusSeen = 234; // swt.evolve.focus.seen
-  static const int swtEvolveFocusHolder = 235; // swt.evolve.focusHolder
-  static const int swtEvolveProperties = 236; // swt.evolve.properties
-  static const int swtEvolvePropertySet = 237; // swt.evolve.property.set
-  static const int swtEvolveTestRunUi = 238; // swt.evolve.test.runUi
+      193; // fillRoundRectangleintintintintintint
+  static const int fontSizeRequest = 194; // fontSizeRequest
+  static const int fontSizeResponse = 195; // fontSizeResponse
+  static const int forward = 196; // forward
+  static const int gcDispose = 197; // gcDispose
+  static const int getCookie = 198; // getCookie
+  static const int imageInit = 199; // imageInit
+  static const int imageResult = 200; // imageResult
+  static const int imageSizeRequest = 201; // imageSizeRequest
+  static const int imageSizeResponse = 202; // imageSizeResponse
+  static const int imageSnapshotResult = 203; // imageSnapshotResult
+  static const int keyVerdict = 204; // key/verdict
+  static const int keyVetoable = 205; // key/vetoable
+  static const int locationchangingResult = 206; // locationchanging/result
+  static const int menuVerdict = 207; // menu/verdict
+  static const int modifyVerdict = 208; // modify/verdict
+  static const int modifyVetoable = 209; // modify/vetoable
+  static const int navigate = 210; // navigate
+  static const int navigateRequest = 211; // navigateRequest
+  static const int navigationState = 212; // navigationState
+  static const int nextFrame = 213; // nextFrame
+  static const int openMenu = 214; // openMenu
+  static const int pixelsResult = 215; // pixelsResult
+  static const int rebuild = 216; // rebuild
+  static const int reload = 217; // reload
+  static const int renderSnapshot = 218; // renderSnapshot
+  static const int setCookie = 219; // setCookie
+  static const int shown = 220; // shown
+  static const int stop = 221; // stop
+  static const int subtree = 222; // subtree
+  static const int subtreeRequest = 223; // subtree/request
+  static const int swing = 224; // swing
+  static const int swingOpen = 225; // swing.open
+  static const int swingIsland = 226; // swingIsland
+  static const int swingIslandClose = 227; // swingIsland.close
+  static const int swingIslandDispose = 228; // swingIsland.dispose
+  static const int swingIslandIsland = 229; // swingIsland.island
+  static const int swingIslandOpened = 230; // swingIsland.opened
+  static const int swingIslandResize = 231; // swingIsland.resize
+  static const int swingIslandSurface = 232; // swingIsland.surface
+  static const int swingIslandTitle = 233; // swingIsland.title
+  static const int swtEvolveBatch = 234; // swt.evolve.batch
+  static const int swtEvolveFocus = 235; // swt.evolve.focus
+  static const int swtEvolveFocusSeen = 236; // swt.evolve.focus.seen
+  static const int swtEvolveFocusHolder = 237; // swt.evolve.focusHolder
+  static const int swtEvolveProperties = 238; // swt.evolve.properties
+  static const int swtEvolvePropertySet = 239; // swt.evolve.property.set
+  static const int swtEvolveTestRunUi = 240; // swt.evolve.test.runUi
   static const int swtEvolveTestRunUiResponse =
-      239; // swt.evolve.test.runUiResponse
-  static const int swtEvolveTimingBare = 240; // swt.evolve.timing.bare
-  static const int swtEvolveTimingPing = 241; // swt.evolve.timing.ping
-  static const int swtEvolveTimingPong = 242; // swt.evolve.timing.pong
-  static const int swtEvolveUrlOpen = 243; // swt.evolve.url.open
-  static const int swtEvolveWidgetRefresh = 244; // swt.evolve.widget.refresh
-  static const int swtEvolveWire = 245; // swt.evolve.wire
-  static const int transport = 246; // transport
-  static const int transportRequest = 247; // transport/request
-  static const int traverseVerdict = 248; // traverse/verdict
-  static const int traverseVetoable = 249; // traverse/vetoable
-  static const int v = 250; // v
-  static const int widgetSizeRequest = 251; // widgetSizeRequest
-  static const int widgetSizeResponse = 252; // widgetSizeResponse
+      241; // swt.evolve.test.runUiResponse
+  static const int swtEvolveTimingBare = 242; // swt.evolve.timing.bare
+  static const int swtEvolveTimingPing = 243; // swt.evolve.timing.ping
+  static const int swtEvolveTimingPong = 244; // swt.evolve.timing.pong
+  static const int swtEvolveUrlOpen = 245; // swt.evolve.url.open
+  static const int swtEvolveWidgetRefresh = 246; // swt.evolve.widget.refresh
+  static const int swtEvolveWire = 247; // swt.evolve.wire
+  static const int transport = 248; // transport
+  static const int transportRequest = 249; // transport/request
+  static const int traverseVerdict = 250; // traverse/verdict
+  static const int traverseVetoable = 251; // traverse/vetoable
+  static const int v = 252; // v
+  static const int widgetSizeRequest = 253; // widgetSizeRequest
+  static const int widgetSizeResponse = 254; // widgetSizeResponse
 }
 
 /// Map keys by the number a map sent as tagged values names them with.

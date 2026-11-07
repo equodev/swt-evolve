@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.BootTrace;
 import dev.equo.swt.ChromiumStandaloneLauncher;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.Java8;
@@ -53,7 +54,9 @@ public class WebDisplayBridge extends DisplayBridge {
 
     WebDisplayBridge(DartDisplay display) {
         super(display);
-        DisplayBridgePlatform.init();
+        try (BootTrace.Span span = BootTrace.span("platform.init")) {
+            DisplayBridgePlatform.init();
+        }
         // In a browser the splash is drawn like any other shell; the launcher's own window is left
         // on the desktop with no event loop behind it.
         DisplayBridgePlatform.dismissLauncherSplash();
@@ -174,7 +177,10 @@ public class WebDisplayBridge extends DisplayBridge {
         registerWindowControls(display);
         registerClipboard(displayId);
 
-        int port = comm.getPort();
+        int port;
+        try (BootTrace.Span span = BootTrace.span("comm.port")) {
+            port = comm.getPort();
+        }
 
         // Dev/introspection path (Phase 2): serve the app via a live `flutter run -d chrome` instead
         // of static WebFlutterServer, so the Dart VM Service is available for DTD/MCP + flutter_driver.
@@ -199,15 +205,21 @@ public class WebDisplayBridge extends DisplayBridge {
         // the desktop ExternalBundleProvider path). Standalone Evolve finds no provider.
         String webDirOverride = System.getProperty("dev.equo.swt.web.dir");
         if (webDirOverride == null || webDirOverride.trim().isEmpty()) {
-            webDirOverride = dev.equo.swt.FlutterLibraryLoader.firstExternalWebDir(
-                    java.util.ServiceLoader.load(dev.equo.swt.ExternalWebBundleProvider.class));
+            try (BootTrace.Span span = BootTrace.span("externalWebBundle")) {
+                webDirOverride = dev.equo.swt.FlutterLibraryLoader.firstExternalWebDir(
+                        java.util.ServiceLoader.load(dev.equo.swt.ExternalWebBundleProvider.class));
+            }
         }
         if (webDirOverride != null && !webDirOverride.trim().isEmpty()) {
             serverBuilder.webDirectory(new java.io.File(webDirOverride));
         }
-        webServer = serverBuilder.build();
+        try (BootTrace.Span span = BootTrace.span("webServer.build")) {
+            webServer = serverBuilder.build();
+        }
         try {
-            webServer.start();
+            try (BootTrace.Span span = BootTrace.span("webServer.start")) {
+                webServer.start();
+            }
             WebFlutterServer.carryPortAcrossRelaunch(webServer.getPort());
             if (isChromium) {
                 try {
@@ -224,7 +236,9 @@ public class WebDisplayBridge extends DisplayBridge {
             } else if (webServer.servesRelaunchedPage()) {
                 launchBrowserUnlessThePageReturns(webServer);
             } else {
-                webServer.launchBrowser();
+                try (BootTrace.Span span = BootTrace.span("webServer.launchBrowser")) {
+                    webServer.launchBrowser();
+                }
                 if (webServer.launchedHeadlessBrowser()) awaitHeadlessClient(comm);
             }
         } catch (Exception e) {

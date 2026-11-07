@@ -27,13 +27,13 @@ const Map<int, String> gcOpSignatures = {
   164: 'iiii',
   165: 'iiiiii',
   166: 'siii',
-  185: 'iiiiii',
-  186: 'iiiib',
-  187: 'iiii',
-  188: 'w',
-  189: 'I',
-  190: 'iiii',
-  191: 'iiiiii',
+  187: 'iiiiii',
+  188: 'iiiib',
+  189: 'iiii',
+  190: 'w',
+  191: 'I',
+  192: 'iiii',
+  193: 'iiiiii',
 };
 
 abstract class GCDrawerBase {
@@ -135,7 +135,7 @@ abstract class GCDrawerBase {
   static final List<void Function(GCDrawerBase, GcWireReader)?> _binaryOps =
       () {
         final ops = List<void Function(GCDrawerBase, GcWireReader)?>.filled(
-          192,
+          194,
           null,
         );
         ops[150] = _opCopyAreaImageintint;
@@ -154,13 +154,13 @@ abstract class GCDrawerBase {
         ops[164] = _opDrawRectangleintintintint;
         ops[165] = _opDrawRoundRectangleintintintintintint;
         ops[166] = _opDrawTextStringintintint;
-        ops[185] = _opFillArcintintintintintint;
-        ops[186] = _opFillGradientRectangleintintintintboolean;
-        ops[187] = _opFillOvalintintintint;
-        ops[188] = _opFillPathPath;
-        ops[189] = _opFillPolygonint;
-        ops[190] = _opFillRectangleintintintint;
-        ops[191] = _opFillRoundRectangleintintintintintint;
+        ops[187] = _opFillArcintintintintintint;
+        ops[188] = _opFillGradientRectangleintintintintboolean;
+        ops[189] = _opFillOvalintintintint;
+        ops[190] = _opFillPathPath;
+        ops[191] = _opFillPolygonint;
+        ops[192] = _opFillRectangleintintintint;
+        ops[193] = _opFillRoundRectangleintintintintintint;
         return ops;
       }();
 

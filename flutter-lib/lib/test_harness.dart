@@ -18,6 +18,7 @@ import 'src/comm/widget_wire.dart' show WireVisitable;
 import 'src/custom/theme_color_palette_control.dart' show syncThemeName;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
 import 'src/gen/widget.dart';
+import 'src/testing/boot_trace.dart';
 import 'src/testing/frame_stats.dart';
 import 'src/testing/wire_stats.dart';
 import 'src/testing/render_facts.dart';
@@ -174,6 +175,13 @@ void registerTestQueryChannel() {
       stats = WireStats.stop();
     }
     _reply(WireChannel.evolveTestWireStatsResponse, {'statsId': statsId, 'stats': stats});
+  });
+
+  // Where the client's start went: `evolve.test.bootTrace` {traceId} answers on
+  // `evolve.test.bootTraceResponse` {traceId, steps: [{name, depth, startUs, endUs}]}.
+  EquoCommService.on(0, 0, WireChannel.evolveTestBootTrace, (dynamic req) async {
+    final traceId = req is Map ? req['traceId'] : null;
+    _reply(WireChannel.evolveTestBootTraceResponse, {'traceId': traceId, 'steps': await BootTrace.snapshot()});
   });
 
   // Result channel for the debug UI-thread runner (see test_harness_actions.dart `openPref` /

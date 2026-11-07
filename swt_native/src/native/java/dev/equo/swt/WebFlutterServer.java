@@ -435,6 +435,15 @@ public class WebFlutterServer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             requestsServed.incrementAndGet();
+            long startMicros = BootTrace.enabled() ? BootTrace.nowMicros() : 0;
+            try {
+                serve(exchange);
+            } finally {
+                if (startMicros != 0) BootTrace.endOnce("http " + exchange.getRequestURI().getPath(), startMicros);
+            }
+        }
+
+        private void serve(HttpExchange exchange) throws IOException {
             try {
                 // Only GET and HEAD are meaningful for static files
                 String method = exchange.getRequestMethod();

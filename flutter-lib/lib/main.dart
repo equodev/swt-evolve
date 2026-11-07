@@ -57,6 +57,7 @@ import 'src/impl/utils/swt_zoom_scale.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
 import 'src/impl/system_appearance.dart' show systemThemeMode;
+import 'src/testing/boot_trace.dart';
 
 /// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
 Future<void> _loadWebFallbackFonts() async {
@@ -72,6 +73,7 @@ bool _swtEvolvePropertiesListenerRegistered = false;
 _WindowMetricsReporter? _windowMetricsReporter;
 
 void main(List<String> args) async {
+  BootTrace.mark('main');
   int? port = getPort(args);
   if (port != null) {
     print("Using port $port");
@@ -101,8 +103,12 @@ void main(List<String> args) async {
     return;
   }
 
+  final bindingStart = BootTrace.nowMicros();
   WidgetsFlutterBinding.ensureInitialized();
+  BootTrace.step('binding.ensureInitialized', bindingStart);
   FramePresentation.ensureTracking();
+  BootTrace.recordFirstFrames(4);
+  final fontsStart = BootTrace.nowMicros();
   final fallbackFonts = _loadWebFallbackFonts();
   // Registered before the first await: Java hands a client what it sent before the comm connected
   // (setPort) as soon as it connects, possibly while the fonts load, and a frame nothing listens to is
@@ -115,6 +121,7 @@ void main(List<String> args) async {
   // too would draw every GC a second time.
   if (widgetName == "Display") _registerGcCreateListener(fallbackFonts);
   await fallbackFonts;
+  BootTrace.step('fallbackFonts', fontsStart);
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
@@ -192,6 +199,9 @@ void main(List<String> args) async {
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
 
+  final runAppStart = BootTrace.nowMicros();
+  WidgetsBinding.instance.waitUntilFirstFrameRasterized
+      .then((_) => BootTrace.mark('firstFrameRasterized'));
   runApp(
     EvolveApp(
       contentWidget: contentWidget,
@@ -200,6 +210,7 @@ void main(List<String> args) async {
       isMainWindow: isWindowRoot,
     ),
   );
+  BootTrace.step('runApp', runAppStart);
 
   if (isWindowRoot) {
     _windowMetricsReporter ??= _WindowMetricsReporter(widgetName, widgetId);

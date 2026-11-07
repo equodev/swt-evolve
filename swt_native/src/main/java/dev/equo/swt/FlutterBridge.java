@@ -2023,6 +2023,7 @@ public abstract class FlutterBridge {
             // A (re)attaching client cannot be assumed to hold anything already sent.
             boolean first = !clientReady.isDone();
             if (first) {
+                if (BootTrace.enabled()) BootTrace.mark("clientReady " + ChannelHeader.typeName(ownerType) + "/" + ownerId);
                 System.out.println("ClientReady " + ChannelHeader.typeName(ownerType) + "/" + ownerId);
                 clientReady.complete(true);
                 displayBootstrapped = true;

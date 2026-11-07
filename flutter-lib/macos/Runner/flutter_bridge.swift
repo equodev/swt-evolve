@@ -28,6 +28,26 @@ import ObjectiveC
 private var deskAppConsideredRunning = false
 private var isRunningOverrideInstalled = false
 
+/// Steps of the native side's start, in microseconds since the epoch (the clock the Java and Dart
+/// sides of the boot trace read), answered on the window channel's `bootTrace`. Only the first
+/// window's start is recorded, so the list stays bounded however many windows the app opens.
+private var bootSteps: [[String: Any]] = []
+private var bootRecording = true
+
+private func bootNowMicros() -> Int64 {
+    return Int64(Date().timeIntervalSince1970 * 1_000_000)
+}
+
+@MainActor @discardableResult
+private func bootStep<T>(_ name: String, _ body: @MainActor () -> T) -> T {
+    let start = bootNowMicros()
+    let value = body()
+    if bootRecording {
+        bootSteps.append(["name": name, "depth": 1, "startUs": start, "endUs": bootNowMicros()])
+    }
+    return value
+}
+
 @MainActor
 private func installIsRunningOverride() {
     if isRunningOverrideInstalled { return }
@@ -264,8 +284,8 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         // never showed it, because there is no event being dispatched then.
         let firstWindow = !deskAppConsideredRunning
         if firstWindow {
-            app.setActivationPolicy(.regular)
-            setupMainMenuIfNeeded(app)
+            bootStep("NSApp activation policy") { app.setActivationPolicy(.regular) }
+            bootStep("main menu") { setupMainMenuIfNeeded(app) }
             // Report the app as "running" (see the note at the top) so embedded AWT/Swing coexists
             // with our hand-driven pump() instead of hijacking the main thread with its own [NSApp run].
             installIsRunningOverride()
@@ -276,10 +296,11 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         let bg = String(backgroundColor)
         let arguments = [String(port), String(displayId), widgetName, theme, bg, bg]
         let frameworkPath = bundleBase()! + "/Frameworks/App.framework"
-        let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
+        let project = bootStep("FlutterDartProject") { FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath)) }
         project.dartEntrypointArguments = arguments
-        let fvc = FlutterViewController(project: project)
+        let fvc = bootStep("FlutterViewController (engine start)") { FlutterViewController(project: project) }
         self.flutterViewController = fvc
+        let windowStart = bootNowMicros()
 
         // .fullSizeContentView only when Flutter draws the title bar: it extends the content under
         // the title bar area, which is what CSD needs and what would otherwise leave the system
@@ -326,23 +347,27 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         win.isReleasedWhenClosed = false
         self.window = win
         self.ownerWindow = owner
+        if bootRecording {
+            bootSteps.append(["name": "NSWindow", "depth": 1, "startUs": windowStart, "endUs": bootNowMicros()])
+        }
 
-        RegisterGeneratedPlugins(registry: fvc)
+        bootStep("RegisterGeneratedPlugins") { RegisterGeneratedPlugins(registry: fvc) }
         setupWindowChannel(fvc)
 
         if firstWindow {
             // Bootstrap the app without entering the modal run loop (so this JNI call returns to
             // Java). The SWT event loop then services Cocoa via pump().
-            app.finishLaunching()
+            bootStep("finishLaunching") { app.finishLaunching() }
             // From here we service the AppKit loop ourselves via pump(); treat the app as running.
             deskAppConsideredRunning = true
-            win.makeKeyAndOrderFront(nil)
+            bootStep("makeKeyAndOrderFront") { win.makeKeyAndOrderFront(nil) }
             // Only the first window takes the application forward. Repeating it for every window
             // pulls activation out from under whatever is being dispatched at the time.
-            app.activate(ignoringOtherApps: true)
+            bootStep("activate") { app.activate(ignoringOtherApps: true) }
         } else {
             win.makeKeyAndOrderFront(nil)
         }
+        bootRecording = false
         attachToOwner()
     }
 
@@ -538,6 +563,10 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
             binaryMessenger: fvc.engine.binaryMessenger)
         channel.setMethodCallHandler { [weak self] call, result in
             assumingMainActor {
+                if call.method == "bootTrace" {
+                    result(bootSteps)
+                    return
+                }
                 guard let win = self?.window else {
                     result(nil)
                     return

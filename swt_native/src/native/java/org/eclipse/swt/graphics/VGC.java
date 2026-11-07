@@ -896,7 +896,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 185;
+            return 187;
         }
 
         @Override
@@ -938,7 +938,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 186;
+            return 188;
         }
 
         @Override
@@ -977,7 +977,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 187;
+            return 189;
         }
 
         @Override
@@ -1009,7 +1009,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 188;
+            return 190;
         }
 
         @Override
@@ -1047,7 +1047,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 189;
+            return 191;
         }
 
         @Override
@@ -1082,7 +1082,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 190;
+            return 192;
         }
 
         @Override
@@ -1124,7 +1124,7 @@ public class VGC extends VResource {
 
         @Override
         public int number() {
-            return 191;
+            return 193;
         }
 
         @Override

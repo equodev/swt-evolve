@@ -76,14 +76,16 @@ public class FlutterLibraryLoader {
         try {
             if (loaded) return;
             loaded = true;
-            extractAndLoadFlutterLibraries();
+            try (BootTrace.Span span = BootTrace.span("natives")) {
+                extractAndLoadFlutterLibraries();
+            }
         } catch (Exception e) {
             throw new LibraryLoaderException("Failed to initialize Flutter libraries", e);
         }
     }
 
     public static File initializeWeb() {
-        try {
+        try (BootTrace.Span span = BootTrace.span("natives.web")) {
             return extractWebFlutterLibraries();
         } catch (Exception e) {
             throw new LibraryLoaderException("Failed to initialize Flutter libraries", e);
@@ -115,7 +117,9 @@ public class FlutterLibraryLoader {
         } else {
             throw new UnsupportedOperationException("Unsupported OS: " + os + ". Equo SWT currently supports macOS, Windows and Linux.");
         }
-        applyExternalBundleOverride();
+        try (BootTrace.Span span = BootTrace.span("externalBundleOverride")) {
+            applyExternalBundleOverride();
+        }
     }
 
     private static File extractWebFlutterLibraries() throws IOException {
@@ -243,7 +247,8 @@ public class FlutterLibraryLoader {
 
         System.out.println("Extracting '" + directoryPathInJar + "' from " + jarFileSource.getAbsolutePath() + " to " + targetBaseDir.getAbsolutePath());
 
-        try (JarFile jarFile = new JarFile(jarFileSource)) {
+        try (BootTrace.Span span = BootTrace.span("extract " + directoryPathInJar);
+             JarFile jarFile = new JarFile(jarFileSource)) {
             String normalizedPath = directoryPathInJar.endsWith("/") ? directoryPathInJar : directoryPathInJar + "/";
             Enumeration<JarEntry> entries = jarFile.entries();
 
@@ -310,7 +315,7 @@ public class FlutterLibraryLoader {
      * @throws LibraryLoaderException if loading the library fails.
      */
     private static void loadLibrary(String absoluteLibPath) {
-        try {
+        try (BootTrace.Span span = BootTrace.span(BootTrace.enabled() ? "load " + new File(absoluteLibPath).getName() : null)) {
             System.load(absoluteLibPath);
             System.out.println("Successfully loaded library: " + absoluteLibPath);
         } catch (UnsatisfiedLinkError e) {
@@ -334,7 +339,9 @@ public class FlutterLibraryLoader {
     }
 
     private static boolean isDevelopmentMode() {
-        return findFlutterBuildDirectory() != null;
+        try (BootTrace.Span span = BootTrace.span("findFlutterBuildDirectory")) {
+            return findFlutterBuildDirectory() != null;
+        }
     }
 
     /**

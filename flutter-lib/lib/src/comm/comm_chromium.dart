@@ -7,6 +7,7 @@ import 'package:web/web.dart' as web;
 import '../gen/widget.dart';
 import 'comm_api.dart';
 import 'comm_frame.dart';
+import '../testing/boot_trace.dart';
 import 'server_replacement.dart';
 import 'widget_wire.dart' show WidgetWireWriter;
 
@@ -47,6 +48,7 @@ class _BrowserComm extends EquoCommBase {
   Timer? _replacementWatch;
 
   _BrowserComm(String url) : _url = url {
+    BootTrace.markOnce('comm.connect');
     openSocket();
   }
 

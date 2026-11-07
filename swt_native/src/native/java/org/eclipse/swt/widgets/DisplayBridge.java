@@ -1,5 +1,6 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.BootTrace;
 import dev.equo.swt.ClientPlatform;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
@@ -125,7 +126,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     protected CommService comm() {
         if (comm == null) {
-            comm = createComm();
+            try (BootTrace.Span span = BootTrace.span("comm.new")) {
+                comm = createComm();
+            }
         }
         return comm;
     }
@@ -151,13 +154,20 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // Creating a per-Display bridge here would double-boot a second server. Skip it; leaving
         // displayBridge null is safe — all its uses are null-guarded.
         if (FlutterBridge.injected() != null) return null;
-        DisplayBridge bridge = isDesktopMode()
-                ? new DeskDisplayBridge(display)
-                : new WebDisplayBridge(display);
-        display.setBridge(bridge);
-        bridge.start(display);
-        FlutterBridge.setDisplayGcCommResolver(DisplayBridge::sharedCommFor);
-        return bridge;
+        try (BootTrace.Span span = BootTrace.span("display.bridge")) {
+            DisplayBridge bridge;
+            try (BootTrace.Span ctor = BootTrace.span("bridge.new")) {
+                bridge = isDesktopMode()
+                        ? new DeskDisplayBridge(display)
+                        : new WebDisplayBridge(display);
+            }
+            display.setBridge(bridge);
+            try (BootTrace.Span start = BootTrace.span("bridge.start")) {
+                bridge.start(display);
+            }
+            FlutterBridge.setDisplayGcCommResolver(DisplayBridge::sharedCommFor);
+            return bridge;
+        }
     }
 
     // comm() is safe to hand out before the client connects — the comm layer buffers pre-connect
@@ -333,13 +343,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * size, completes {@link #clientReady}, pushes the swt.evolve properties and the first update.
      */
     protected void registerDisplayClientReady(DartDisplay display) {
-        long displayId = display.getApi().hashCode();
-        relayoutWhenUiScaleSettles(display);
-        // Queued ahead of everything else the client is sent: what it draws before its ClientReady,
-        // a GC's paint included, is measured with these flags on this side.
-        broadcastSwtEvolveProperties();
-        registerClientReadyHandler(display, displayId);
-        registerFocusRequestSeen(display);
+        try (BootTrace.Span span = BootTrace.span("bridge.registerClientReady")) {
+            long displayId = display.getApi().hashCode();
+            relayoutWhenUiScaleSettles(display);
+            // Queued ahead of everything else the client is sent: what it draws before its ClientReady,
+            // a GC's paint included, is measured with these flags on this side.
+            broadcastSwtEvolveProperties();
+            registerClientReadyHandler(display, displayId);
+            registerFocusRequestSeen(display);
+        }
     }
 
     /**
@@ -432,27 +444,35 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
             Display api = display.getApi();
             Runnable apply = () -> {
-                // A refreshed page draws every shell from the bounds held here, so no report it sends is stale.
-                if (!first && p.isFirst) repositionedShells.clear();
-                display.applyClientTouchEnabled(p.touchEnabled);
-                int uiZoomBefore = dev.equo.swt.Config.uiZoom();
-                display.applyClientDeviceZoom(p.zoom);
-                // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
-                // this one, and the UI zoom is what that call just derived.
-                dev.equo.swt.Config.setClientDeviceZoom(p.zoom);
-                // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
-                // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
-                // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.
-                if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
-                    broadcastSwtEvolveProperties();
+                BootTrace.Span span = first ? BootTrace.span("clientReady applied on the UI thread") : null;
+                try {
+                    // A refreshed page draws every shell from the bounds held here, so no report it sends is stale.
+                    if (!first && p.isFirst) repositionedShells.clear();
+                    display.applyClientTouchEnabled(p.touchEnabled);
+                    int uiZoomBefore = dev.equo.swt.Config.uiZoom();
+                    display.applyClientDeviceZoom(p.zoom);
+                    // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
+                    // this one, and the UI zoom is what that call just derived.
+                    dev.equo.swt.Config.setClientDeviceZoom(p.zoom);
+                    // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
+                    // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
+                    // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.
+                    if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
+                        broadcastSwtEvolveProperties();
+                    }
+                    display.applyClientLocale(p.locale);
+                    applyClientInsetTop(p.insetTop);
+                    boolean changed = applyClientViewport(display,
+                            new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
+                    // Only for a client that holds nothing (first ClientReady, or a page refresh): a
+                    // viewport change resizes shells, which travel on their own; the Display has no bounds.
+                    if (first || p.isFirst) sendDisplayUpdate(display);
+                } finally {
+                    if (span != null) {
+                        span.close();
+                        BootTrace.freeze();
+                    }
                 }
-                display.applyClientLocale(p.locale);
-                applyClientInsetTop(p.insetTop);
-                boolean changed = applyClientViewport(display,
-                        new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
-                // Only for a client that holds nothing (first ClientReady, or a page refresh): a
-                // viewport change resizes shells, which travel on their own; the Display has no bounds.
-                if (first || p.isFirst) sendDisplayUpdate(display);
             };
             // applyClientViewport touches shells (setBounds/layout) so it must run on the Display thread.
             // In production this handler runs on the comm (WebSocket) thread: a syncExec would block it
