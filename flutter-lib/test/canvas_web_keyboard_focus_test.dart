@@ -10,6 +10,7 @@
 // whole-tree mode (displayLevelKeyForwardingActive), so Focus/FocusIn is the ONLY path that makes it
 // typeable there.
 
+import 'package:flutter/gestures.dart' show kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -66,5 +67,24 @@ void main() {
         reason: 'a Canvas that took keyboard focus must send Focus/FocusIn so Java makes it the '
             'focus control that web-mode display-level key routing delivers keystrokes to; without '
             'it the terminal Canvas is un-typeable in web mode');
+  });
+
+  testWidgets('a secondary press does not focus a Canvas: natively only the primary button does',
+      (tester) async {
+    final events = <String>[];
+
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: _CapturingCanvasSwt(
+        value: _childlessCanvas(),
+        onEvent: (ev, _) => events.add(ev),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tapAt(tester.getCenter(find.byType(_CapturingCanvasSwt)), buttons: kSecondaryButton);
+    await tester.pumpAndSettle();
+
+    expect(events, isNot(contains('Focus/FocusIn')));
   });
 }

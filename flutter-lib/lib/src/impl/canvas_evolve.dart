@@ -235,8 +235,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       onPointerDown: (e) {
         // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
         // the Canvas hosts child widgets — they manage their own focus and stealing
-        // it on every click would break them.
-        if (!hasActiveChildren && focusesOnPress) _keyboardFocus.requestFocus();
+        // it on every click would break them. Natively only the primary button focuses.
+        if (!hasActiveChildren && focusesOnPress && (e.buttons & kPrimaryButton) != 0) {
+          _keyboardFocus.requestFocus();
+        }
       },
       child: wrapWithScrollbars(base),
     );
@@ -248,6 +250,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       focusNode: _keyboardFocus,
       onKeyEvent: (node, event) {
         if (!node.hasPrimaryFocus) {
+          return KeyEventResult.ignored;
+        }
+        // Java has the Tab already and decides it; the Display's traversal scope waits for that verdict.
+        if (displayLevelKeyForwardingActive && event.logicalKey == LogicalKeyboardKey.tab && event is! KeyUpEvent) {
           return KeyEventResult.ignored;
         }
         final vEvent = mapNewKeyEventToSwt(event);

@@ -1043,9 +1043,9 @@ public class ControlHelper {
      * Whether a press of {@code button} focuses the control natively; never with NO_FOCUS. The press's
      * position decides it only for a TabFolder, through the overload that takes the press.
      * <p>
-     * Button 1 focuses the controls Win32 and GTK agree on, StyledText included. Any other Canvas is
-     * left to its own press handling, since natively it takes the focus only while it hooks key
-     * events. A TabFolder takes it only from a press on one of its tabs, not on its strip, as on GTK:
+     * Button 1 focuses the controls Win32 and GTK agree on, StyledText included, and an empty Canvas
+     * or Composite while it hooks key events. Any other Canvas is left to its own press handling. A
+     * TabFolder takes it only from a press on one of its tabs, not on its strip, as on GTK:
      * see {@link TabFolderHelper#pressFocuses}.
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
@@ -1069,7 +1069,24 @@ public class ControlHelper {
             return fieldOrItemView && !(api instanceof Combo && (api.getStyle() & SWT.READ_ONLY) != 0);
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
                 || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
-                || api instanceof org.eclipse.swt.custom.StyledText);
+                || api instanceof org.eclipse.swt.custom.StyledText
+                || isBareSurface(api) && ((DartComposite) control).hooksKeys());
+    }
+
+    /**
+     * Whether the control is an empty Canvas or plain Composite, natively a bare surface rather than
+     * one of the native controls, and not a shell. Decided by the implementation, which an
+     * application subclass of the API class does not change. SashForm, ScrolledComposite, ViewForm
+     * and CBanner are plain Composites natively too, but stay out: declining the client's focus
+     * leaves it on the surface, and for them that strands the keyboard.
+     */
+    static boolean isBareSurface(Control api) {
+        if (!(api instanceof Composite) || api instanceof Decorations)
+            return false;
+        Class<?> impl = ((Composite) api).getImpl().getClass();
+        if (impl != DartCanvas.class && impl != DartComposite.class)
+            return false;
+        return ((Composite) api).getChildren().length == 0 && (api.getStyle() & SWT.EMBEDDED) == 0;
     }
 
     /**

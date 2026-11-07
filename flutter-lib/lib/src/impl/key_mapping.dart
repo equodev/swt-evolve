@@ -157,7 +157,7 @@ int _modifierBit(LogicalKeyboardKey key) {
 /// [HardwareKeyboard] has already applied, so that bit is flipped back. A key a pop-up held carries
 /// the modifiers of when it was typed.
 VEvent mapNewKeyEventToSwt(KeyEvent event) {
-  final mapped = _mapLogicalKey(event.logicalKey, event.character);
+  final mapped = _mapLogicalKey(event.logicalKey, _characterOf(event));
 
   final mods = OpenMenus.modifiersWhenTyped ?? KeyModifiers.now();
   int stateMask = 0;
@@ -174,6 +174,22 @@ VEvent mapNewKeyEventToSwt(KeyEvent event) {
     ..keyCode = mapped.keyCode
     ..character = mapped.character
     ..stateMask = stateMask;
+}
+
+/// The character each key's last press typed. A [KeyUpEvent] carries none, and a release reports
+/// what its press typed: Shift+Z releases 'Z'. Kept past the release, since one event is mapped
+/// more than once.
+final Map<PhysicalKeyboardKey, String> _pressedCharacters = {};
+
+String? _characterOf(KeyEvent event) {
+  if (event is KeyUpEvent) return _pressedCharacters[event.physicalKey];
+  final character = event.character;
+  if (character == null) {
+    _pressedCharacters.remove(event.physicalKey);
+  } else {
+    _pressedCharacters[event.physicalKey] = character;
+  }
+  return character;
 }
 
 /// DOM `KeyboardEvent.key` names for the non-printable keys, so they share the SWT table above.

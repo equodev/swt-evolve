@@ -80,6 +80,34 @@ class FocusOnPressTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("button 1 focuses an empty Canvas or Composite that hooks key events; no other button does")
+    void keyListeningSurfacePress() {
+        Shell shell = shell();
+        Control[] listening = {new Canvas(shell, SWT.NONE), new Composite(shell, SWT.NONE)};
+        for (Control c : listening) {
+            c.addListener(SWT.KeyDown, e -> { });
+            assertThat(new boolean[] {focuses(c, 1), focuses(c, 2), focuses(c, 3)}).as(c.toString())
+                    .containsExactly(true, false, false);
+        }
+        Canvas keyUpOnly = new Canvas(shell, SWT.NONE);
+        keyUpOnly.addListener(SWT.KeyUp, e -> { });
+        assertThat(focuses(keyUpOnly, 1)).isTrue();
+    }
+
+    @Test
+    @DisplayName("a key-listening Canvas with children or with NO_FOCUS is not focused by the press")
+    void keyListeningSurfaceExceptions() {
+        Shell shell = shell();
+        Canvas parent = new Canvas(shell, SWT.NONE);
+        new Button(parent, SWT.PUSH);
+        Canvas noFocus = new Canvas(shell, SWT.NO_FOCUS);
+        for (Control c : new Control[] {parent, noFocus}) {
+            c.addListener(SWT.KeyDown, e -> { });
+            assertThat(focuses(c, 1)).as(c.toString()).isFalse();
+        }
+    }
+
+    @Test
     @DisplayName("the middle button focuses nothing, and NO_FOCUS refuses every press")
     void middleAndNoFocus() {
         Shell shell = shell();
