@@ -136,7 +136,7 @@ sourceSets {
 }
 
 tasks.withType<JavaExec>().configureEach {
-    if (currentOs == "macos" && name != "runWebExample") {
+    if (currentOs == "macos") {
         jvmArgs("-XstartOnFirstThread")
     }
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
@@ -170,33 +170,18 @@ tasks.register<JavaExec>("runExample") {
         jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
-// fvm-aware flutter command for the -PdartDebug web launcher (mirrors swt_native's resolution): prefer the
-// repo-pinned SDK via `fvm flutter` when flutter-lib has a .fvmrc and fvm is on PATH; else plain flutter.
-fun resolveFlutterCmd(): String {
-    val hasPin = file("../flutter-lib/.fvmrc").exists()
-    val pathDirs = (System.getenv("PATH") ?: "").split(File.pathSeparator)
-    val fvmOnPath = pathDirs.any { dir -> File(dir, "fvm").canExecute() }
-    return if (hasPin && fvmOnPath) "fvm flutter" else "flutter"
-}
-
 // Identifies the caller's session (one per git worktree) so its JVMs can be found and torn down
 // without touching another session's. -PsessionId, else EQUO_SESSION_ID, else unstamped.
 fun sessionId(): String? =
     (project.findProperty("sessionId") as String?)?.takeIf { it.isNotBlank() }
         ?: System.getenv("EQUO_SESSION_ID")?.takeIf { it.isNotBlank() }
 
-// webOnlyAware: only "runWebExample" supports -PwebOnly=true, which swaps in the plain
-// browser-only "webJar" instead of the hybrid "${currentPlatform}Jar" -- that hybrid jar always
-// bundles the desktop Flutter build (see swt_native's `tasks.jar`), which on Windows needs the
-// matching Visual Studio toolchain / Developer Mode for symlinks. "runDeskExample" always needs
-// the desktop build, so it has no webOnly variant.
-fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = false) =
+// jarTaskName is the swt_native jar the example runs on.
+fun registerFlutterExample(name: String, mode: String, jarTaskName: String = "${currentPlatform}Jar") =
     tasks.register<JavaExec>(name) {
         group = "examples"
-        description = "Run an example in '$mode' render mode. Usage: ./gradlew :examples:$name -PmainClass=dev.equo.ButtonSnippet" +
-                if (webOnlyAware) " (add -PwebOnly=true to use the plain browser-only web jar, skipping the desktop Flutter build)" else ""
+        description = "Run an example in '$mode' render mode. Usage: ./gradlew :examples:$name -PmainClass=dev.equo.ButtonSnippet"
 
-        val jarTaskName = if (webOnlyAware && project.hasProperty("webOnly")) "webJar" else "${currentPlatform}Jar"
         val jar = project(":swt_native").tasks.named<Jar>(jarTaskName)
         dependsOn(jar)
         // A plain `.filter{}` on configurations["runtimeClasspath"] still resolves (and therefore
@@ -212,26 +197,15 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
         mainClass.set(project.findProperty("mainClass")?.toString() ?: "dev.equo.ButtonSnippet")
         // -PsessionId stamps this JVM so a caller can tear down exactly its own run. Several
         // worktrees drive their own app on one machine; matching on the task name instead
-        // (`pkill -f runWebExample`) reaps all of them.
+        // (`pkill -f runDeskExample`) reaps all of them.
         sessionId()?.let { systemProperty("dev.equo.session", it) }
         systemProperty("dev.equo.swt.crashReport.disabled", "true")
-        // Off unless asked for (-Ddev.equo.swt.web.crossOriginIsolated=true): isolation is what gives
-        // the wasm renderer its threads, and what makes a Browser's iframe refuse external pages.
-        systemProperty("dev.equo.swt.web.crossOriginIsolated",
-            System.getProperty("dev.equo.swt.web.crossOriginIsolated") ?: "false")
         systemProperty("dev.equo.swt.mode", mode)
         // -Pdebug turns on the Java-side DebugLog (Config.isDebug): prints every `send:` of a widget's
         // V* payload to Flutter. That's the Java side of the Phase 3 Flutter-vs-V* cross-check. It can
         // also still be enabled directly via -Ddev.equo.swt.debug.
         if (project.hasProperty("debug") || System.getProperty("dev.equo.swt.debug") != null)
             systemProperty("dev.equo.swt.debug", "true")
-        // Forward e.g. -Dequo.swt.browser=none so an external driver (Playwright, etc.) can be
-        // the only WebSocket client instead of racing the auto-launched system browser tab.
-        System.getProperty("equo.swt.browser")?.let { systemProperty("equo.swt.browser", it) }
-        // Forward a fixed HTTP port for an external driver (Playwright, etc.) to target.
-        System.getProperty("dev.equo.swt.web.httpPort")?.let { systemProperty("dev.equo.swt.web.httpPort", it) }
-        // Forward the runtime (no-rebuild) semantics toggle — see WebFlutterServer.Builder#enableTestSemantics.
-        System.getProperty("dev.equo.swt.web.enableTestSemantics")?.let { systemProperty("dev.equo.swt.web.enableTestSemantics", it) }
         // Forward the theming switches, so a snippet can be run the way a themed product runs:
         // an application that paints itself (e4 CSS) needs its own colors/fonts, not Evolve's theme.
         for (name in listOf("swt.use_swt_colors", "swt.use_swt_fonts",
@@ -253,9 +227,8 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
             .filter { it.startsWith("swt.evolve.") }
             .forEach { systemProperty(it, System.getProperty(it)) }
         // -PdartDebug: run the Dart/Flutter rendering side in debug so its Dart VM Service is available
-        // for DTD/MCP + flutter_driver. One flag for both render modes: desk builds the frameworks with
-        // --debug (JIT) and FlutterLibraryLoader loads the Debug build-dir; web serves via a live
-        // `flutter run -d chrome`. See docs/design/flutter-dtd-introspection.md (Phases 1 & 2).
+        // for DTD/MCP + flutter_driver: the frameworks are built with --debug (JIT) and
+        // FlutterLibraryLoader loads the Debug build-dir. See docs/design/flutter-dtd-introspection.md.
         if (project.hasProperty("dartDebug")) {
             systemProperty("dev.equo.swt.dartDebug", "true")
             if (mode == "desktop") {
@@ -270,19 +243,6 @@ fun registerFlutterExample(name: String, mode: String, webOnlyAware: Boolean = f
                 environment("FLUTTER_ENGINE_SWITCHES", "2")
                 environment("FLUTTER_ENGINE_SWITCH_1", "vm-service-port=$vmPort")
                 environment("FLUTTER_ENGINE_SWITCH_2", "disable-service-auth-codes=true")
-            } else {
-                // Web: WebDisplayBridge spawns `flutter run` with the Display's comm port as --dart-define
-                // instead of static WebFlutterServer. Give it the flutter-lib dir + fvm flutter command,
-                // and disable the Java-side browser (flutter run opens Chrome itself).
-                systemProperty("dev.equo.swt.flutterLibDir", file("../flutter-lib").absolutePath)
-                systemProperty("dev.equo.swt.flutterCmd", resolveFlutterCmd())
-                systemProperty("equo.swt.browser", "none")
-                // -PdartDriver (needs -PdartDebug too): launch lib/main_driver.dart instead of lib/main.dart
-                // so ext.flutter.driver is live -- scripted taps/typing via driver_cmd.dart for a repro that
-                // doesn't depend on a human clicking the right pixel. Web only; see WebDisplayBridge.
-                if (project.hasProperty("dartDriver")) {
-                    systemProperty("dev.equo.swt.dartDriver", "true")
-                }
             }
         }
         // Attach the JaCoCo agent when a driving E2E suite asks for it: this app JVM is the thing under
@@ -324,49 +284,15 @@ fun registerExampleClasspath(name: String, jarTaskName: String, fileName: String
             file.writeText(entries.files.joinToString("\n") { it.absolutePath })
         }
     }
-registerExampleClasspath("webExampleClasspath", "webJar", "web-example-classpath.txt", "browser-only")
 registerExampleClasspath("deskExampleClasspath", "${currentPlatform}Jar", "desk-example-classpath.txt", "desktop")
 
-registerFlutterExample("runWebExample", if (chromiumMode) "chromium" else "web", webOnlyAware = true)
 registerFlutterExample("runDeskExample", "desktop")
 
-// What `runWebExample -PwebOnly=true` would launch, written as JSON so an external driver can fork the
-// example JVM itself instead of paying a nested Gradle build for it. The JVM arguments (system
-// properties included) are read from runWebExample itself, so the two cannot drift; the main class
-// and per-run properties (port, browser, ...) are left to the caller.
-tasks.register("webExampleLaunchSpec") {
-    group = "examples"
-    description = "Writes the java executable, working directory, JVM arguments and browser-only " +
-            "classpath runWebExample -PwebOnly=true would use, as JSON."
-    val jar = project(":swt_native").tasks.named<Jar>("webJar")
-    dependsOn(jar, tasks.named("classes"))
-    val runWebExample = tasks.named<JavaExec>("runWebExample")
-    val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
-        !(dep is ProjectDependency && dep.path == ":swt_native")
-    }
-    val mainOutput = sourceSets["main"].output
-    val outputFile = layout.buildDirectory.file("web-example-launch.json")
-    outputs.file(outputFile)
-    outputs.upToDateWhen { false }
-    doLast {
-        val run = runWebExample.get()
-        val classpath = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
-        // allJvmArgs holds the system properties and Gradle's defaults but, until the task runs, not
-        // the jvmArguments property (where jvmArgs(...) lands), so both are taken.
-        val jvmArgs = run.jvmArguments.get() +
-                run.jvmArgumentProviders.flatMap { it.asArguments() } +
-                run.allJvmArgs
-        val spec = mapOf(
-            "java" to run.javaLauncher.get().executablePath.asFile.absolutePath,
-            "workingDir" to run.workingDir.absolutePath,
-            "jvmArgs" to jvmArgs,
-            "classpath" to classpath.files.map { it.absolutePath },
-        )
-        val file = outputFile.get().asFile
-        file.parentFile.mkdirs()
-        file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(spec)))
-    }
-}
+// A build that includes this one registers runs of its own with the same setup.
+extra["registerFlutterExample"] = { name: String, mode: String, jarTaskName: String ->
+    registerFlutterExample(name, mode, jarTaskName) }
+extra["registerExampleClasspath"] = { name: String, jarTaskName: String, fileName: String, renderMode: String ->
+    registerExampleClasspath(name, jarTaskName, fileName, renderMode) }
 
 // Embedded: the per-widget native-SWT scenario (embed-<os>-<arch>.jar) -- a real native SWT shell
 // that renders Equo-enabled widgets (per Config.equoEnabled) through Flutter and everything else

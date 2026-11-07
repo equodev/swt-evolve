@@ -46,7 +46,6 @@ val platforms = listOf(
     "windows-x86_64", "windows-aarch64",
     "linux-x86_64", "linux-aarch64",
     "macos-x86_64", "macos-aarch64",
-    "web",
 )
 
 val currentOs = when {
@@ -846,11 +845,6 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(layout.buildDirectory.dir("natives/$currentPlatform"))
 
-    dependsOn(copyWebBinaries)
-    from(layout.buildDirectory.dir("natives/web")) {
-        into("web")
-    }
-
     // Add all dependencies to the JAR
     from(configurations.runtimeClasspath.map { cp -> cp.map { if (it.isDirectory) it else zipTree(it) } })
     exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/LICENSE*", "META-INF/NOTICE*", "OSGI-OPT/")
@@ -1005,24 +999,22 @@ val dart = tasks.register<Exec>("dartRunner") {
     commandLine = dartCmd() + listOf("run", "build_runner", "build", "--delete-conflicting-outputs")
 }
 
-data class WebPlatformMeta(
+data class PlatformMeta(
     val os: String,
     val arch: String,
     val isHybrid: Boolean,
-    val isWeb: Boolean = false,
 ) {
     val desktopPlatform: String get() = "$os-$arch"
-    val sourceSet: String get() = when { isWeb -> "web"; isHybrid -> "native${os.replaceFirstChar { it.titlecase() }}"; else -> "embed${os.replaceFirstChar { it.titlecase() }}" }
+    val sourceSet: String get() = (if (isHybrid) "native" else "embed") + os.replaceFirstChar { it.titlecase() }
     val swtWs: String get() = getSwtWs(os)
     val swtOs: String get() = getSwtOs(os)
 }
 
-fun parsePlatform(platform: String): WebPlatformMeta {
-    if (platform == "web") return WebPlatformMeta("web", "", isHybrid = true, isWeb = true)
+fun parsePlatform(platform: String): PlatformMeta {
     val isEmbed = platform.startsWith("embed-")
     var parts = platform.split("-")
     if (isEmbed) parts = parts.drop(1)
-    return WebPlatformMeta(parts[0], parts[1], isHybrid = !isEmbed)
+    return PlatformMeta(parts[0], parts[1], isHybrid = !isEmbed)
 }
 
 // Liberation fonts substitute system fonts for CanvasKit's web renderer, which can't reach
@@ -1033,7 +1025,6 @@ val libertyFontExclude = "**/flutter_assets/assets/fonts/Liberation*.ttf"
 // Dart debug/JIT build: `-PdartDebug` builds the desktop Flutter frameworks in --debug (JIT) mode
 // instead of the default --release (AOT), so the embedded engine exposes a Dart VM Service that
 // DTD/MCP tooling (and flutter_driver) can attach to. Release is unchanged and remains the default.
-// (One flag across render modes — web interprets it as `flutter run`; see examples/build.gradle.kts.)
 // See docs/design/flutter-dtd-introspection.md (Phases 1 & 2).
 val dartDebug = project.hasProperty("dartDebug")
 
@@ -1113,35 +1104,6 @@ fun writeMacAppLinks(app: File, nativesDir: File) {
         } + "\n")
 }
 
-// Single shared Flutter web build — all web platform JARs depend on this one task.
-// Test semantics are NOT a build-time concern: the semantics tree is toggled purely at runtime via
-// -Ddev.equo.swt.web.enableTestSemantics=true on the embedding app's JVM (see WebFlutterServer and
-// main.dart's getEnableTestSemantics), so one bundle serves both production and E2E — no separate build.
-val webFlutterLib = tasks.register<Exec>("webFlutterLib") {
-    group = "build"
-    description = "Builds Flutter web app (shared by all web platform JARs)"
-    dependsOn(dart, pub)
-    workingDir = file("../flutter-lib")
-    inputs.dir("../flutter-lib/lib")
-    inputs.dir("../flutter-lib/web")
-    inputs.dir("../flutter-lib/assets")
-    outputs.dir("../flutter-lib/build/web")
-    // Both builds in one bundle: the loader runs the wasm one (Skwasm, which rasterises off the
-    // main thread when the page is cross-origin isolated) where the browser supports WasmGC, and
-    // the JavaScript one (CanvasKit) everywhere else. A pixel read-back shares Skwasm's frame
-    // surface; ImageUtils.toBytes keeps it out of a frame's way (see FramePresentation).
-    commandLine = flutterCmd() + listOf("build", "web", "--wasm")
-}
-
-val copyWebBinaries = tasks.register<Copy>("webCopyFlutterBinaries") {
-    group = "build"
-    description = "Copies Flutter binaries for web"
-    if (System.getProperty("skipFlutterLib") == null)
-        dependsOn(webFlutterLib)
-    from("../flutter-lib/build/web")
-    into(layout.buildDirectory.dir("natives/web"))
-}
-
 val bundleVendor = "Equo Tech, Inc."
 val chromiumImportPackage = "com.equo.chromium;resolution:=optional," +
         "com.equo.chromium.utils;resolution:=optional," +
@@ -1171,7 +1133,7 @@ val macosCdsJvmArgs = listOf(
     "-Xlog:cds*=error",
 )
 val shipsMacosCdsArchive = (minJavaRelease ?: 21) >= 19
-fun isMacosHybrid(info: WebPlatformMeta) = info.isHybrid && !info.isWeb && info.os == "macos"
+fun isMacosHybrid(info: PlatformMeta) = info.isHybrid && info.os == "macos"
 // One p2.inf per macOS hybrid fragment: the framework links writeMacAppLinks lists, then these lines.
 fun registerMacosFragmentP2Inf(platform: String) = tasks.register("${platform}FragmentP2Inf") {
     val linksP2Inf = layout.buildDirectory.file("natives/$platform/META-INF/p2.inf")
@@ -1223,7 +1185,7 @@ fun swtExportPackage(swtWs: String?): String = (
         + (swtWs?.let { listOf("org.eclipse.swt.internal.$it; x-friends:=\"org.eclipse.ui\"") } ?: emptyList())
         + "com.equo.chromium.swt"
     ).joinToString(",")
-val webExportPackage = swtExportPackage(null) +
+val hostExportPackage = swtExportPackage(null) +
     ",org.eclipse.swt.internal.cloudready,dev.equo.swt.spi"
 
 platforms.forEach { platform ->
@@ -1317,14 +1279,8 @@ platforms.forEach { platform ->
         if (isMacosHybrid(info)) {
             from(layout.buildDirectory.dir("natives/${info.desktopPlatform}")) { exclude("META-INF/p2.inf") }
             from(tasks.named("${info.desktopPlatform}FragmentP2Inf"))
-        } else if (!info.isWeb)
+        } else
             from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
-        if (info.isHybrid) {
-            dependsOn(copyWebBinaries)
-            from(layout.buildDirectory.dir("natives/web")) {
-                into("web")
-            }
-        }
 
         // Add all dependencies to the JAR
         from(configurations.runtimeClasspath.map { cp -> cp.map { if (it.isDirectory) it else zipTree(it) } })
@@ -1334,49 +1290,39 @@ platforms.forEach { platform ->
         // keeping the export without classes resolves the host's import against an empty package.
         if (excludeFxCanvas) exclude("javafx/embed/swt/**")
 
-        val bsn = if (info.isWeb) "dev.equo.swt_evolve.web"
-                  else "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}"
+        val bsn = "org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}"
         manifest {
             attributes(
                 "Fragment-Host" to fragmentHostHeader(),
-                "Bundle-Name" to (if (info.isWeb) "SWT Evolve for Web" else "SWT Evolve for ${info.swtOs} on ${info.arch}"),
+                "Bundle-Name" to "SWT Evolve for ${info.swtOs} on ${info.arch}",
                 "Bundle-Vendor" to bundleVendor,
                 "Bundle-SymbolicName" to "$bsn; singleton:=true",
                 // Published (p2/mvn) version: distinct host version per variant (`-embed`/`-hyb`). The
                 // eclipse_run in-place swap re-stamps this to the target app's SWT version at swap time
                 // (reading the jar it replaces), so the build no longer needs the app's version here.
-                "Bundle-Version" to when {
-                    info.isWeb -> evolveVersion()
-                    info.isHybrid -> hostVersion("hyb")
-                    else -> hostVersion("embed")
-                },
+                "Bundle-Version" to hostVersion(if (info.isHybrid) "hyb" else "embed"),
                 "Bundle-ManifestVersion" to 2,
-                "Export-Package" to (if (info.isWeb) webExportPackage else swtExportPackage(info.swtWs)),
-                "SWT-WS" to (if (info.isWeb) "web" else info.swtWs),
+                "Export-Package" to swtExportPackage(info.swtWs),
+                "SWT-WS" to info.swtWs,
                 "Automatic-Module-Name" to bsn,
                 "Evolve-Version" to evolveVersion(),
+                "Eclipse-PlatformFilter" to "(& (osgi.ws=${info.swtWs}) (osgi.os=${info.swtOs}) (osgi.arch=${info.arch}) )",
+                "SWT-OS" to info.swtOs,
+                "SWT-Arch" to info.arch,
                 // Installed as a directory, so FlutterLibraryLoader loads the Flutter natives in place.
                 "Eclipse-BundleShape" to "dir",
             )
-            if (!info.isWeb)
-                attributes(
-                    "Eclipse-PlatformFilter" to "(& (osgi.ws=${info.swtWs}) (osgi.os=${info.swtOs}) (osgi.arch=${info.arch}) )",
-                    "SWT-OS" to info.swtOs,
-                    "SWT-Arch" to info.arch,
-                )
             if (info.isHybrid)
                 attributes("Import-Package" to "$chromiumImportPackage,$fxImportPackges")
             else
                 attributes("Import-Package" to fxImportPackges)
         }
-        if (!info.isWeb) {
-            dependsOn("${info.desktopPlatform}ExtractNatives")
-            dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
-        }
+        dependsOn("${info.desktopPlatform}ExtractNatives")
+        dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
     }
 }
 
-fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: String, frags: () -> List<WebPlatformMeta>) =
+fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: String, frags: () -> List<PlatformMeta>) =
     tasks.register(taskName) {
         val verProvider = hostVersion(suffix)
         inputs.property("${suffix}HostVersion", verProvider)
@@ -1397,7 +1343,7 @@ fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: Strin
 
 val hybridHostP2Inf = layout.buildDirectory.file("host-hybrid/p2.inf")
 val genHybridHostP2Inf = genHostP2Inf("genHybridHostP2Inf", hybridHostP2Inf, "hyb") {
-    platforms.map { parsePlatform(it) }.filter { it.isHybrid && !it.isWeb }
+    platforms.map { parsePlatform(it) }.filter { it.isHybrid }
 }
 val embedHostP2Inf = layout.buildDirectory.file("host-embed/p2.inf")
 val genEmbedHostP2Inf = genHostP2Inf("genEmbedHostP2Inf", embedHostP2Inf, "embed") {
@@ -1418,14 +1364,13 @@ fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, versi
             "Bundle-SymbolicName" to "org.eclipse.swt; singleton:=true",
             "Bundle-Version" to version,
             "Bundle-ManifestVersion" to 2,
-            "Export-Package" to webExportPackage,
+            "Export-Package" to hostExportPackage,
             "Eclipse-ExtensibleAPI" to "true",
             "Automatic-Module-Name" to "org.eclipse.swt",
             "Evolve-Version" to evolveVersion(),
         )
     }
 }
-registerHostJar("swtHostJar", "org.eclipse.swt", "metadata/host/p2.inf", hostVersion("web"))
 registerHostJar("swtHostHybridJar", "org.eclipse.swt-hybrid", files(hybridHostP2Inf).builtBy(genHybridHostP2Inf), hostVersion("hyb"))
 registerHostJar("swtHostEmbedJar", "org.eclipse.swt-embed", files(embedHostP2Inf).builtBy(genEmbedHostP2Inf), hostVersion("embed"))
 
@@ -1437,5 +1382,5 @@ tasks.register("buildAllPlatforms") {
 
 // Configure the default build task to include all platform JARs
 tasks.build {
-    dependsOn("buildAllPlatforms", "swtHostJar", "swtHostHybridJar", "swtHostEmbedJar")
+    dependsOn("buildAllPlatforms", "swtHostHybridJar", "swtHostEmbedJar")
 }
