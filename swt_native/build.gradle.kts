@@ -1333,6 +1333,8 @@ platforms.forEach { platform ->
                 "SWT-WS" to (if (info.isWeb) "web" else info.swtWs),
                 "Automatic-Module-Name" to bsn,
                 "Evolve-Version" to evolveVersion(),
+                // Installed as a directory, so FlutterLibraryLoader loads the Flutter natives in place.
+                "Eclipse-BundleShape" to "dir",
             )
             if (!info.isWeb)
                 attributes(

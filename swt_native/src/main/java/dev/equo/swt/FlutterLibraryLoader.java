@@ -3,9 +3,12 @@ package dev.equo.swt;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.ServiceLoader;
@@ -14,7 +17,8 @@ import java.util.jar.JarFile;
 
 /**
  * Manages the extraction and loading of native Flutter libraries.
- * Libraries are extracted to a subdirectory within the user's home directory.
+ * From a jar, libraries are extracted to a subdirectory within the user's home directory, once per
+ * jar content; from an exploded bundle directory (an Eclipse install), they load in place.
  */
 public class FlutterLibraryLoader {
 
@@ -63,7 +67,7 @@ public class FlutterLibraryLoader {
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
     private static boolean loaded;
-    private static boolean loadedWeb;
+    private static File loadedWeb;
 
     /**
      * Initializes the Flutter library loader. This is the main public entry point.
@@ -103,8 +107,6 @@ public class FlutterLibraryLoader {
         String os = getOS();
         File equoLibDir = new File(USER_HOME, EQUO_LIB_PATH_SUFFIX);
 
-        ensureDirectoryExists(equoLibDir);
-
         boolean isDevelopmentMode = isDevelopmentMode();
         System.out.println("Running in development: " + isDevelopmentMode);
 
@@ -125,8 +127,6 @@ public class FlutterLibraryLoader {
     private static File extractWebFlutterLibraries() throws IOException {
         File equoLibDir = new File(USER_HOME, EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME);
 
-        ensureDirectoryExists(equoLibDir);
-
         boolean isDevelopmentMode = isDevelopmentMode();
         System.out.println("Running in development: " + isDevelopmentMode);
         return extractAndLoadWebLibraries(equoLibDir, isDevelopmentMode);
@@ -134,8 +134,13 @@ public class FlutterLibraryLoader {
 
     private static void extractAndLoadMacOSLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
-            extractDirectoryFromJar(SWTFLUTTER_APP, targetDir);
-            File libFile = new File(targetDir, SWTFLUTTER_APP + SEP + CONTENTS + SEP + MACOS_LIB_NAME);
+            String lib = SWTFLUTTER_APP + SEP + CONTENTS + SEP + MACOS_LIB_NAME;
+            String frameworks = SWTFLUTTER_APP + SEP + CONTENTS + SEP + "Frameworks" + SEP;
+            File baseDir = bundledDirectory(SWTFLUTTER_APP, targetDir, lib,
+                    frameworks + "FlutterMacOS.framework/Versions/A/FlutterMacOS",
+                    frameworks + "FlutterMacOS.framework/Versions/A/Resources/icudtl.dat",
+                    frameworks + "App.framework/Versions/A/App");
+            File libFile = new File(baseDir, SWTFLUTTER_APP + SEP + CONTENTS + SEP + MACOS_LIB_NAME);
             loadLibrary(libFile.getAbsolutePath());
         } else {
             loadOSLibraries(SWTFLUTTER_APP_CONTENTS, MACOS_LIB_NAME);
@@ -144,11 +149,10 @@ public class FlutterLibraryLoader {
 
     private static File extractAndLoadWebLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
-            if (!loadedWeb) {
-                loadedWeb = true;
-                extractDirectoryFromJar("web", targetDir);
+            if (loadedWeb == null) {
+                loadedWeb = bundledDirectory("web", targetDir, "web" + SEP + "index.html", "web" + SEP + "main.dart.js");
             }
-            return new File(targetDir, "web");
+            return new File(loadedWeb, "web");
         } else {
             System.out.println("Development mode: loading Flutter libraries directly from build directory");
             File flutterBuildDir = findFlutterBuildDirectory();
@@ -166,17 +170,21 @@ public class FlutterLibraryLoader {
 
     private static void extractAndLoadLinuxLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
-            extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
-            extractDirectoryFromJar(LINUX_BUNDLE_DIR_NAME, targetDir);
+            String bundleLib = LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP;
+            File baseDir = bundledDirectory(RUNNER_DIR_NAME, targetDir, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
+            bundledDirectory(LINUX_BUNDLE_DIR_NAME, targetDir, bundleLib + LINUX_ENGINE_LIB_NAME, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME,
+                    bundleLib + "libapp.so", LINUX_BUNDLE_DIR_NAME + SEP + "data" + SEP + "icudtl.dat");
 
-            File bundleLibDir = new File(targetDir, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME);
+            File bundleLibDir = new File(baseDir, LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME);
             File flutFile = new File(bundleLibDir, LINUX_ENGINE_LIB_NAME);
             File webviewFile = new File(bundleLibDir, LINUX_WEBVIEW_PLUGIN_NAME);
-            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
+            File libFile = new File(baseDir, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
             for (File required : new File[] { flutFile, webviewFile, libFile }) {
                 if (!required.exists())
                     throw new IOException("Essential Linux library not found after extraction: " + required.getAbsolutePath());
-                setExecutablePermission(required);
+                // A bundle directory may be read-only (a shared Eclipse install); dlopen does not need the execute bit.
+                if (baseDir.equals(targetDir))
+                    setExecutablePermission(required);
             }
             // Pre-load the engine, then the bridge (which links against it). The webview plugin is not
             // pre-loaded: the bridge dlopens it lazily, so a missing libwebkit2gtk-4.1 leaves the Browser
@@ -193,12 +201,14 @@ public class FlutterLibraryLoader {
 
     private static void extractAndLoadWinLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
-            extractDirectoryFromJar(RUNNER_DIR_NAME, targetDir);
+            File baseDir = bundledDirectory(RUNNER_DIR_NAME, targetDir,
+                    RUNNER_DIR_NAME + SEP + WIN_LIB1_NAME, RUNNER_DIR_NAME + SEP + WIN_LIB_NAME,
+                    RUNNER_DIR_NAME + SEP + "data" + SEP + "app.so", RUNNER_DIR_NAME + SEP + "data" + SEP + "icudtl.dat");
 
-            File lib1File = new File(targetDir, RUNNER_DIR_NAME + SEP + WIN_LIB1_NAME);
-            File libFile = new File(targetDir, RUNNER_DIR_NAME + SEP + WIN_LIB_NAME);
-            File libWebFile1 = new File(targetDir, RUNNER_DIR_NAME + SEP + "WebView2Loader.dll");
-            File libWebFile = new File(targetDir, RUNNER_DIR_NAME + SEP + "webview_all_windows_plugin.dll");
+            File lib1File = new File(baseDir, RUNNER_DIR_NAME + SEP + WIN_LIB1_NAME);
+            File libFile = new File(baseDir, RUNNER_DIR_NAME + SEP + WIN_LIB_NAME);
+            File libWebFile1 = new File(baseDir, RUNNER_DIR_NAME + SEP + "WebView2Loader.dll");
+            File libWebFile = new File(baseDir, RUNNER_DIR_NAME + SEP + "webview_all_windows_plugin.dll");
             if (!libFile.exists() || !lib1File.exists()) {
                 throw new IOException("Essential Windows library not found after extraction: " + libFile.getAbsolutePath() + ", "+lib1File.getAbsolutePath());
             }
@@ -235,36 +245,100 @@ public class FlutterLibraryLoader {
     }
 
     /**
-     * Extracts a directory and its contents from the JAR file to a target directory.
-     * This method now fails fast if any file cannot be extracted.
+     * Returns the directory that holds {@code directoryPath}: the bundle directory itself when this
+     * class loads from an exploded bundle, else {@code extractionBase}, after extracting the
+     * directory from the jar into it. {@code requiredFiles}, relative to the returned directory, are
+     * the files the caller loads.
      */
-    private static void extractDirectoryFromJar(String directoryPathInJar, File targetBaseDir) throws IOException {
+    private static File bundledDirectory(String directoryPath, File extractionBase, String... requiredFiles) throws IOException {
+        return bundledDirectory(codeSourceLocation(), directoryPath, extractionBase, requiredFiles);
+    }
+
+    static File bundledDirectory(File codeSource, String directoryPath, File extractionBase, String... requiredFiles) throws IOException {
+        return bundledDirectory(codeSource, directoryPath, extractionBase, MOVE, requiredFiles);
+    }
+
+    /** Moves an extracted file into place; a test substitutes one that fails, as a file in use does on Windows. */
+    interface Mover {
+        void move(Path from, Path to) throws IOException;
+    }
+
+    private static final Mover MOVE = (from, to) ->
+            Files.move(from, to, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+
+    static File bundledDirectory(File codeSource, String directoryPath, File extractionBase, Mover mover,
+                                 String... requiredFiles) throws IOException {
+        if (codeSource.isDirectory()) {
+            if (!new File(codeSource, directoryPath).isDirectory()) {
+                throw new IOException("'" + directoryPath + "' not found in bundle directory " + codeSource.getAbsolutePath());
+            }
+            System.out.println("Loading '" + directoryPath + "' in place from " + codeSource.getAbsolutePath());
+            return codeSource;
+        }
+        extractDirectoryFromJar(codeSource, directoryPath, extractionBase, mover, requiredFiles);
+        return extractionBase;
+    }
+
+    private static File codeSourceLocation() throws IOException {
         URL classUrl = FlutterLibraryLoader.class.getProtectionDomain().getCodeSource().getLocation();
         if (classUrl == null) {
-            throw new IOException("Cannot determine JAR location to extract directory: " + directoryPathInJar);
+            throw new IOException("Cannot determine the location of the Flutter libraries");
         }
-        File jarFileSource = new File(classUrl.getPath());
+        try {
+            return Paths.get(classUrl.toURI()).toFile();
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            return new File(classUrl.getPath());
+        }
+    }
 
-        System.out.println("Extracting '" + directoryPathInJar + "' from " + jarFileSource.getAbsolutePath() + " to " + targetBaseDir.getAbsolutePath());
+    /**
+     * Extracts a directory and its contents from the jar to a target directory, unless a previous
+     * launch already extracted it from this same jar. The jar is identified by its size and
+     * modification time, so a launch that skips the extraction never opens it. The stamp is
+     * written last, and only when every file was replaced, so an interrupted extraction, or one
+     * that had to keep a file another process holds, is redone on the next launch.
+     */
+    private static void extractDirectoryFromJar(File jarFileSource, String directoryPathInJar, File targetBaseDir,
+                                                Mover mover, String... requiredFiles) throws IOException {
+        try (BootTrace.Span span = BootTrace.span("extract " + directoryPathInJar)) {
+            String stamp = jarFileSource.length() + ":" + jarFileSource.lastModified();
+            File stampFile = new File(targetBaseDir, directoryPathInJar + ".stamp");
+            if (isExtracted(stampFile, stamp, targetBaseDir, requiredFiles)) {
+                return;
+            }
 
-        try (BootTrace.Span span = BootTrace.span("extract " + directoryPathInJar);
-             JarFile jarFile = new JarFile(jarFileSource)) {
-            String normalizedPath = directoryPathInJar.endsWith("/") ? directoryPathInJar : directoryPathInJar + "/";
-            Enumeration<JarEntry> entries = jarFile.entries();
-
-            while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
-                if (entry.getName().startsWith(normalizedPath)) {
-                    File targetFile = new File(targetBaseDir, entry.getName());
-                    if (entry.isDirectory()) {
-                        ensureDirectoryExists(targetFile);
-                    } else {
+            System.out.println("Extracting '" + directoryPathInJar + "' from " + jarFileSource.getAbsolutePath() + " to " + targetBaseDir.getAbsolutePath());
+            ensureDirectoryExists(targetBaseDir);
+            Files.deleteIfExists(stampFile.toPath());
+            boolean allReplaced = true;
+            try (JarFile jarFile = new JarFile(jarFileSource)) {
+                String normalizedPath = directoryPathInJar.endsWith("/") ? directoryPathInJar : directoryPathInJar + "/";
+                Enumeration<JarEntry> entries = jarFile.entries();
+                while (entries.hasMoreElements()) {
+                    JarEntry entry = entries.nextElement();
+                    if (entry.getName().startsWith(normalizedPath) && !entry.isDirectory()) {
+                        File targetFile = new File(targetBaseDir, entry.getName());
                         ensureDirectoryExists(targetFile.getParentFile());
-                        extractAtomically(jarFile, entry, targetFile);
+                        allReplaced &= extractAtomically(jarFile, entry, targetFile, mover);
                     }
                 }
             }
+            if (allReplaced) {
+                writeAtomically(stampFile, stamp);
+            }
         }
+    }
+
+    private static boolean isExtracted(File stampFile, String stamp, File targetBaseDir, String... requiredFiles) throws IOException {
+        if (!stampFile.isFile() || !stamp.equals(new String(Files.readAllBytes(stampFile.toPath()), StandardCharsets.UTF_8))) {
+            return false;
+        }
+        for (String required : requiredFiles) {
+            if (!new File(targetBaseDir, required).isFile()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -348,8 +422,10 @@ public class FlutterLibraryLoader {
      * Writes the entry next to its target and moves it into place, so a process starting at the
      * same time never loads a half-written file. If the move fails while the target exists (another
      * process put it there first, and it may already be loaded), that file is used.
+     *
+     * @return false when the existing file was kept instead
      */
-    private static void extractAtomically(JarFile jarFile, JarEntry entry, File targetFile) throws IOException {
+    private static boolean extractAtomically(JarFile jarFile, JarEntry entry, File targetFile, Mover mover) throws IOException {
         Path target = targetFile.toPath();
         Path temp = Files.createTempFile(target.getParent(), targetFile.getName(), ".part");
         try {
@@ -357,12 +433,25 @@ public class FlutterLibraryLoader {
                 Files.copy(inputStream, temp, StandardCopyOption.REPLACE_EXISTING);
             }
             try {
-                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                mover.move(temp, target);
+                return true;
             } catch (IOException moveFailed) {
                 if (!Files.isRegularFile(target)) {
                     throw moveFailed;
                 }
+                return false;
             }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+    }
+
+    private static void writeAtomically(File targetFile, String content) throws IOException {
+        Path target = targetFile.toPath();
+        Path temp = Files.createTempFile(target.getParent(), targetFile.getName(), ".part");
+        try {
+            Files.write(temp, content.getBytes(StandardCharsets.UTF_8));
+            Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } finally {
             Files.deleteIfExists(temp);
         }
