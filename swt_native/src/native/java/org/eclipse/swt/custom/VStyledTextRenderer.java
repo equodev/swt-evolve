@@ -548,17 +548,17 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(516);
+        w.key(517);
         w.write((int) getAscent());
-        w.key(523);
+        w.key(524);
         w.write((int) getDescent());
-        w.key(538);
-        w.object((getRegularFont() == null || getRegularFont().isDisposed() ? null : ((DartFont) getRegularFont().getImpl()).getValue()));
-        w.key(536);
-        w.write(getRanges());
         w.key(539);
+        w.object((getRegularFont() == null || getRegularFont().isDisposed() ? null : ((DartFont) getRegularFont().getImpl()).getValue()));
+        w.key(537);
+        w.write(getRanges());
+        w.key(540);
         w.write((int) getStyleCount());
-        w.key(532);
+        w.key(533);
         {
             VStyledTextRenderer.VLineInfo[] a_ = getLines();
             if (a_ == null)
@@ -568,9 +568,9 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
                 for (VStyledTextRenderer.VLineInfo e_ : a_) w.object(e_);
             }
         }
-        w.key(531);
+        w.key(532);
         w.write(getLineSpacings());
-        w.key(521);
+        w.key(522);
         w.write(getBulletTexts());
     }
 }

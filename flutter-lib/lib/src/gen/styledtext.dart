@@ -157,97 +157,97 @@ class VStyledText extends VCanvas {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 476: // alignment
+      case 477: // alignment
         alignment = r.int32();
         return true;
-      case 477: // alwaysShowScrollBars
+      case 478: // alwaysShowScrollBars
         alwaysShowScrollBars = r.boolean();
         return true;
-      case 478: // blockSelection
+      case 479: // blockSelection
         blockSelection = r.boolean();
         return true;
-      case 479: // blockSelectionBounds
+      case 480: // blockSelectionBounds
         blockSelectionBounds = r.rect();
         return true;
-      case 480: // bottomMargin
+      case 481: // bottomMargin
         bottomMargin = r.int32();
         return true;
-      case 481: // caretOffset
+      case 482: // caretOffset
         caretOffset = r.int32();
         return true;
-      case 483: // doubleClickEnabled
+      case 484: // doubleClickEnabled
         doubleClickEnabled = r.boolean();
         return true;
-      case 484: // editable
+      case 485: // editable
         editable = r.boolean();
         return true;
-      case 486: // horizontalPixel
+      case 487: // horizontalPixel
         horizontalPixel = r.int32();
         return true;
-      case 487: // indent
+      case 488: // indent
         indent = r.int32();
         return true;
-      case 488: // justify
+      case 489: // justify
         justify = r.boolean();
         return true;
-      case 489: // leftMargin
+      case 490: // leftMargin
         leftMargin = r.int32();
         return true;
-      case 490: // lineSpacing
+      case 491: // lineSpacing
         lineSpacing = r.int32();
         return true;
-      case 491: // marginColor
+      case 492: // marginColor
         marginColor = r.color();
         return true;
-      case 493: // rightMargin
+      case 494: // rightMargin
         rightMargin = r.int32();
         return true;
-      case 494: // selection
+      case 495: // selection
         selection = r.point();
         return true;
-      case 495: // selectionBackground
+      case 496: // selectionBackground
         selectionBackground = r.color();
         return true;
-      case 496: // selectionForeground
+      case 497: // selectionForeground
         selectionForeground = r.color();
         return true;
-      case 497: // selectionRanges
+      case 498: // selectionRanges
         selectionRanges = r.ints();
         return true;
-      case 500: // tabStops
+      case 501: // tabStops
         tabStops = r.ints();
         return true;
-      case 501: // tabs
+      case 502: // tabs
         tabs = r.int32();
         return true;
-      case 502: // text
+      case 503: // text
         text = r.string();
         return true;
-      case 503: // topMargin
+      case 504: // topMargin
         topMargin = r.int32();
         return true;
-      case 504: // topPixel
+      case 505: // topPixel
         topPixel = r.int32();
         return true;
-      case 505: // wordWrap
+      case 506: // wordWrap
         wordWrap = r.boolean();
         return true;
-      case 506: // wrapIndent
+      case 507: // wrapIndent
         wrapIndent = r.int32();
         return true;
-      case 492: // renderer
+      case 493: // renderer
         renderer = r.object(VStyledTextRenderer.new);
         return true;
-      case 482: // caretOffsets
+      case 483: // caretOffsets
         caretOffsets = r.ints();
         return true;
-      case 499: // styles
+      case 500: // styles
         styles = r.list((r) => r.object(VStyleRange.new));
         return true;
-      case 498: // styleIndex
+      case 499: // styleIndex
         styleIndex = r.ints();
         return true;
-      case 485: // fixedLineHeight
+      case 486: // fixedLineHeight
         fixedLineHeight = r.boolean();
         return true;
       default:
@@ -261,199 +261,199 @@ class VStyledText extends VCanvas {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(476, v_);
+        w.keyInt32(477, v_);
       }
     }
     {
       final v_ = alwaysShowScrollBars;
       if (v_ != null) {
-        w.keyBoolean(477, v_);
+        w.keyBoolean(478, v_);
       }
     }
     {
       final v_ = blockSelection;
       if (v_ != null) {
-        w.keyBoolean(478, v_);
+        w.keyBoolean(479, v_);
       }
     }
     {
       final v_ = blockSelectionBounds;
       if (v_ != null) {
-        w.key(479);
+        w.key(480);
         w.rectValue(v_);
       }
     }
     {
       final v_ = bottomMargin;
       if (v_ != null) {
-        w.keyInt32(480, v_);
+        w.keyInt32(481, v_);
       }
     }
     {
       final v_ = caretOffset;
       if (v_ != null) {
-        w.keyInt32(481, v_);
+        w.keyInt32(482, v_);
       }
     }
     {
       final v_ = doubleClickEnabled;
       if (v_ != null) {
-        w.keyBoolean(483, v_);
+        w.keyBoolean(484, v_);
       }
     }
     {
       final v_ = editable;
       if (v_ != null) {
-        w.keyBoolean(484, v_);
+        w.keyBoolean(485, v_);
       }
     }
     {
       final v_ = horizontalPixel;
       if (v_ != null) {
-        w.keyInt32(486, v_);
+        w.keyInt32(487, v_);
       }
     }
     {
       final v_ = indent;
       if (v_ != null) {
-        w.keyInt32(487, v_);
+        w.keyInt32(488, v_);
       }
     }
     {
       final v_ = justify;
       if (v_ != null) {
-        w.keyBoolean(488, v_);
+        w.keyBoolean(489, v_);
       }
     }
     {
       final v_ = leftMargin;
       if (v_ != null) {
-        w.keyInt32(489, v_);
+        w.keyInt32(490, v_);
       }
     }
     {
       final v_ = lineSpacing;
       if (v_ != null) {
-        w.keyInt32(490, v_);
+        w.keyInt32(491, v_);
       }
     }
     {
       final v_ = marginColor;
       if (v_ != null) {
-        w.key(491);
+        w.key(492);
         w.colorValue(v_);
       }
     }
     {
       final v_ = rightMargin;
       if (v_ != null) {
-        w.keyInt32(493, v_);
+        w.keyInt32(494, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(494);
+        w.key(495);
         w.pointValue(v_);
       }
     }
     {
       final v_ = selectionBackground;
       if (v_ != null) {
-        w.key(495);
+        w.key(496);
         w.colorValue(v_);
       }
     }
     {
       final v_ = selectionForeground;
       if (v_ != null) {
-        w.key(496);
+        w.key(497);
         w.colorValue(v_);
       }
     }
     {
       final v_ = selectionRanges;
       if (v_ != null) {
-        w.key(497);
+        w.key(498);
         w.ints(v_);
       }
     }
     {
       final v_ = tabStops;
       if (v_ != null) {
-        w.key(500);
+        w.key(501);
         w.ints(v_);
       }
     }
     {
       final v_ = tabs;
       if (v_ != null) {
-        w.keyInt32(501, v_);
+        w.keyInt32(502, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(502);
+        w.key(503);
         w.string(v_);
       }
     }
     {
       final v_ = topMargin;
       if (v_ != null) {
-        w.keyInt32(503, v_);
+        w.keyInt32(504, v_);
       }
     }
     {
       final v_ = topPixel;
       if (v_ != null) {
-        w.keyInt32(504, v_);
+        w.keyInt32(505, v_);
       }
     }
     {
       final v_ = wordWrap;
       if (v_ != null) {
-        w.keyBoolean(505, v_);
+        w.keyBoolean(506, v_);
       }
     }
     {
       final v_ = wrapIndent;
       if (v_ != null) {
-        w.keyInt32(506, v_);
+        w.keyInt32(507, v_);
       }
     }
     {
       final v_ = renderer;
       if (v_ != null) {
-        w.key(492);
+        w.key(493);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = caretOffsets;
       if (v_ != null) {
-        w.key(482);
+        w.key(483);
         w.ints(v_);
       }
     }
     {
       final v_ = styles;
       if (v_ != null) {
-        w.key(499);
+        w.key(500);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = styleIndex;
       if (v_ != null) {
-        w.key(498);
+        w.key(499);
         w.ints(v_);
       }
     }
     {
       final v_ = fixedLineHeight;
       if (v_ != null) {
-        w.keyBoolean(485, v_);
+        w.keyBoolean(486, v_);
       }
     }
   }
@@ -461,37 +461,37 @@ class VStyledText extends VCanvas {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(476, alignment);
-    visit(477, alwaysShowScrollBars);
-    visit(478, blockSelection);
-    visit(479, blockSelectionBounds);
-    visit(480, bottomMargin);
-    visit(481, caretOffset);
-    visit(483, doubleClickEnabled);
-    visit(484, editable);
-    visit(486, horizontalPixel);
-    visit(487, indent);
-    visit(488, justify);
-    visit(489, leftMargin);
-    visit(490, lineSpacing);
-    visit(491, marginColor);
-    visit(493, rightMargin);
-    visit(494, selection);
-    visit(495, selectionBackground);
-    visit(496, selectionForeground);
-    visit(497, selectionRanges);
-    visit(500, tabStops);
-    visit(501, tabs);
-    visit(502, text);
-    visit(503, topMargin);
-    visit(504, topPixel);
-    visit(505, wordWrap);
-    visit(506, wrapIndent);
-    visit(492, renderer);
-    visit(482, caretOffsets);
-    visit(499, styles);
-    visit(498, styleIndex);
-    visit(485, fixedLineHeight);
+    visit(477, alignment);
+    visit(478, alwaysShowScrollBars);
+    visit(479, blockSelection);
+    visit(480, blockSelectionBounds);
+    visit(481, bottomMargin);
+    visit(482, caretOffset);
+    visit(484, doubleClickEnabled);
+    visit(485, editable);
+    visit(487, horizontalPixel);
+    visit(488, indent);
+    visit(489, justify);
+    visit(490, leftMargin);
+    visit(491, lineSpacing);
+    visit(492, marginColor);
+    visit(494, rightMargin);
+    visit(495, selection);
+    visit(496, selectionBackground);
+    visit(497, selectionForeground);
+    visit(498, selectionRanges);
+    visit(501, tabStops);
+    visit(502, tabs);
+    visit(503, text);
+    visit(504, topMargin);
+    visit(505, topPixel);
+    visit(506, wordWrap);
+    visit(507, wrapIndent);
+    visit(493, renderer);
+    visit(483, caretOffsets);
+    visit(500, styles);
+    visit(499, styleIndex);
+    visit(486, fixedLineHeight);
   }
 
   @override

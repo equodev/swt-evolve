@@ -606,6 +606,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setPageIncrement(int value) {
         checkWidget();
+        if (this.pageIncrement != value) {
+            getValue().markDirty(VScrollBar.PAGE_INCREMENT);
+        }
         if (value < 1)
             return;
         pageIncrement = value;
@@ -685,6 +688,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         checkWidget();
         if (this.thumb != thumb) {
             getValue().markDirty(VScrollBar.THUMB);
+        }
+        if (this.pageIncrement != pageIncrement) {
+            getValue().markDirty(VScrollBar.PAGE_INCREMENT);
         }
         if (this.minimum != minimum) {
             getValue().markDirty(VScrollBar.MINIMUM);

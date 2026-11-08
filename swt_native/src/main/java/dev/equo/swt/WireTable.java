@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 1346628195;
+    public static final int FINGERPRINT = -730575274;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -1329,6 +1329,7 @@ public final class WireTable {
             "ScrollBar.increment",
             "ScrollBar.maximum",
             "ScrollBar.minimum",
+            "ScrollBar.pageIncrement",
             "ScrollBar.selection",
             "ScrollBar.thumb",
             "ScrollBar.visible",
@@ -1990,6 +1991,7 @@ public final class WireTable {
             "int",
             "int",
             "bool",
+            "int",
             "int",
             "int",
             "int",

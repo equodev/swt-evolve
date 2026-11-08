@@ -53,13 +53,13 @@ public class VTreeColumn extends VItem {
         ((DartTreeColumn) impl).lastWidth = value;
     }
 
-    public static final int ALIGNMENT = 638;
+    public static final int ALIGNMENT = 639;
 
-    public static final int MOVEABLE = 639;
+    public static final int MOVEABLE = 640;
 
-    public static final int RESIZABLE = 640;
+    public static final int RESIZABLE = 641;
 
-    public static final int WIDTH = 641;
+    public static final int WIDTH = 642;
 
     @Override
     public String wireName(int key) {
@@ -79,16 +79,16 @@ public class VTreeColumn extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 638:
+            case 639:
                 w.write((int) getAlignment());
                 return true;
-            case 639:
+            case 640:
                 w.write(getMoveable());
                 return true;
-            case 640:
+            case 641:
                 w.write(getResizable());
                 return true;
-            case 641:
+            case 642:
                 w.write((int) getWidth());
                 return true;
         }
@@ -98,35 +98,35 @@ public class VTreeColumn extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 638:
+            case 639:
                 {
                     int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(638);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 639:
-                {
-                    boolean v_ = getMoveable();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(639);
-                    w.write(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 640:
                 {
-                    boolean v_ = getResizable();
+                    boolean v_ = getMoveable();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(640);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 641:
                 {
-                    int v_ = getWidth();
+                    boolean v_ = getResizable();
                     w.key(641);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 642:
+                {
+                    int v_ = getWidth();
+                    w.key(642);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -134,7 +134,7 @@ public class VTreeColumn extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 638, 639, 640, 641 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 639, 640, 641, 642 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -148,8 +148,8 @@ public class VTreeColumn extends VItem {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 640:
             case 641:
+            case 642:
                 return true;
         }
         return super.wireAlways(key);

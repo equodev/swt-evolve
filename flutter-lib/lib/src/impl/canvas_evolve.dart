@@ -235,7 +235,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       onPointerDown: (e) {
         // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
         // the Canvas hosts child widgets — they manage their own focus and stealing
-        // it on every click would break them. Natively only the primary button focuses.
+        // it on every click would break them. Natively only the primary button focuses, and a
+        // press on a scroll bar, outside the client area, focuses nothing.
+        if (scrollBarPointers.contains(e.pointer)) return;
         if (!hasActiveChildren && focusesOnPress && (e.buttons & kPrimaryButton) != 0) {
           _keyboardFocus.requestFocus();
         }
@@ -603,6 +605,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   Timer? _dragThrottleTimer;
   // Kept as a value: the registry updates the bar in place, so oldWidget.bar is widget.bar.
   int? _lastSelection;
+  /// A press on the track moved the thumb and holds it until the button comes up or a drag takes over.
+  bool _trackHeld = false;
 
   @override
   void initState() {
@@ -631,6 +635,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   int get _minimum => widget.bar.minimum ?? 0;
   int get _maximum => widget.bar.maximum ?? 100;
   int get _thumb => widget.bar.thumb ?? 10;
+  int get _pageIncrement => widget.bar.pageIncrement ?? 10;
   int get _selection => widget.bar.selection ?? _minimum;
 
   int get _displaySelection => _currentDragSelection ?? _selection;
@@ -654,6 +659,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
   }
 
   void _onDragStart(DragStartDetails details) {
+    _trackHeld = false;
     _dragStartPointerOffset =
         widget.vertical ? details.localPosition.dy : details.localPosition.dx;
     // From where the thumb is shown, which a press on the track may already have moved.
@@ -680,24 +686,31 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragThrottleTimer ??= Timer(const Duration(milliseconds: 50), () {
       _dragThrottleTimer = null;
       final sel = _currentDragSelection;
-      if (sel != null) _send(sel);
+      if (sel != null) _send(sel, SWT.DRAG);
     });
   }
 
   /// Java keeps a selection the bar sends without echoing it, so the model takes it here; any
   /// value Java sends later, the pre-drag one included, then shows as a change.
-  void _send(int sel) {
+  /// [detail] is the SWT scroll detail of what moved the thumb: DRAG while it is held, a page,
+  /// or NONE once it is let go.
+  void _send(int sel, int detail) {
     widget.bar.selection = sel;
     _lastSelection = sel;
-    widget.onSelection(widget.bar, sel, 0);
+    widget.onSelection(widget.bar, sel, detail);
   }
 
-  /// Centres the thumb under a track press, so a drag that follows carries on from there.
+  /// Centres the thumb under a track press and holds it there, so a drag that follows carries on
+  /// from there. With Shift the press pages towards the pointer instead.
   void _onTrackPress(PointerDownEvent event, double trackSize) {
     if (event.buttons != kPrimaryButton) return;
     final at = widget.vertical ? event.localPosition.dy : event.localPosition.dx;
     final thumbOff = _thumbOffset(trackSize);
     if (at >= thumbOff && at <= thumbOff + _thumbSize(trackSize)) return;
+    if (HardwareKeyboard.instance.isShiftPressed) {
+      _page(forward: at > thumbOff);
+      return;
+    }
     final target = scrollBarSelectionAt(
       at,
       trackSize: trackSize,
@@ -708,7 +721,24 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     );
     if (target == null || target == _displaySelection) return;
     setState(() => _currentDragSelection = target);
-    _send(target);
+    _trackHeld = true;
+    _send(target, SWT.DRAG);
+  }
+
+  void _page({required bool forward}) {
+    final target = (_displaySelection + (forward ? _pageIncrement : -_pageIncrement))
+        .clamp(_minimum, _maximum - _thumb);
+    if (target == _displaySelection) return;
+    setState(() => _currentDragSelection = target);
+    _trackHeld = true;
+    _send(target, forward ? SWT.PAGE_DOWN : SWT.PAGE_UP);
+  }
+
+  /// The button let go of a thumb a track press moved, without dragging it.
+  void _onTrackRelease(PointerEvent event) {
+    if (!_trackHeld) return;
+    _trackHeld = false;
+    _send(_displaySelection, SWT.NONE);
   }
 
   void _onDragEnd(DragEndDetails details) {
@@ -718,7 +748,7 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
     _dragStartPointerOffset = null;
     _dragStartSelection = null;
     widget.onDragStateChanged?.call(false);
-    _send(finalSel);
+    _send(finalSel, SWT.NONE);
   }
 
   void _onDragCancel() {
@@ -769,6 +799,8 @@ class _CanvasScrollBarState extends State<_CanvasScrollBar> {
           onExit: (_) => setState(() => _hovered = false),
           child: Listener(
             onPointerDown: enabled ? (e) => _onTrackPress(e, trackSize) : null,
+            onPointerUp: _onTrackRelease,
+            onPointerCancel: _onTrackRelease,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
               onVerticalDragStart: (widget.vertical && enabled) ? _onDragStart : null,

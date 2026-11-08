@@ -587,6 +587,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setPageIncrement(int value) {
         int newValue = value;
         checkWidget();
+        if (this.pageIncrement != newValue) {
+            getValue().markDirty(VScrollBar.PAGE_INCREMENT);
+        }
         if (value < 1)
             return;
         this.pageIncrement = newValue;

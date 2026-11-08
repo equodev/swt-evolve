@@ -32,6 +32,7 @@ class VScrollBar extends VWidget {
   int? increment;
   int? maximum;
   int? minimum;
+  int? pageIncrement;
   int? selection;
   int? thumb;
   bool? visible;
@@ -44,6 +45,7 @@ class VScrollBar extends VWidget {
       increment = other.increment;
       maximum = other.maximum;
       minimum = other.minimum;
+      pageIncrement = other.pageIncrement;
       selection = other.selection;
       thumb = other.thumb;
       visible = other.visible;
@@ -65,13 +67,16 @@ class VScrollBar extends VWidget {
       case 439: // minimum
         minimum = r.int32();
         return true;
-      case 440: // selection
+      case 440: // pageIncrement
+        pageIncrement = r.int32();
+        return true;
+      case 441: // selection
         selection = r.int32();
         return true;
-      case 441: // thumb
+      case 442: // thumb
         thumb = r.int32();
         return true;
-      case 442: // visible
+      case 443: // visible
         visible = r.boolean();
         return true;
       default:
@@ -107,21 +112,27 @@ class VScrollBar extends VWidget {
       }
     }
     {
-      final v_ = selection;
+      final v_ = pageIncrement;
       if (v_ != null) {
         w.keyInt32(440, v_);
       }
     }
     {
-      final v_ = thumb;
+      final v_ = selection;
       if (v_ != null) {
         w.keyInt32(441, v_);
       }
     }
     {
+      final v_ = thumb;
+      if (v_ != null) {
+        w.keyInt32(442, v_);
+      }
+    }
+    {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(442, v_);
+        w.keyBoolean(443, v_);
       }
     }
   }
@@ -133,9 +144,10 @@ class VScrollBar extends VWidget {
     visit(437, increment);
     visit(438, maximum);
     visit(439, minimum);
-    visit(440, selection);
-    visit(441, thumb);
-    visit(442, visible);
+    visit(440, pageIncrement);
+    visit(441, selection);
+    visit(442, thumb);
+    visit(443, visible);
   }
 
   @override

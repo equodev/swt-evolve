@@ -62,46 +62,46 @@ class VTreeItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 645: // background
+      case 646: // background
         background = r.color();
         return true;
-      case 646: // backgrounds
+      case 647: // backgrounds
         backgrounds = r.list((r) => r.color());
         return true;
-      case 647: // checked
+      case 648: // checked
         checked = r.boolean();
         return true;
-      case 648: // expanded
+      case 649: // expanded
         expanded = r.boolean();
         return true;
-      case 649: // font
+      case 650: // font
         font = r.object(VFont.new);
         return true;
-      case 650: // fonts
+      case 651: // fonts
         fonts = r.list((r) => r.object(VFont.new));
         return true;
-      case 651: // foreground
+      case 652: // foreground
         foreground = r.color();
         return true;
-      case 652: // foregrounds
+      case 653: // foregrounds
         foregrounds = r.list((r) => r.color());
         return true;
-      case 653: // grayed
+      case 654: // grayed
         grayed = r.boolean();
         return true;
-      case 654: // images
+      case 655: // images
         images = r.list((r) => r.image());
         return true;
-      case 656: // items
+      case 657: // items
         items = r.refs<VTreeItem>();
         return true;
-      case 657: // paintedTexts
+      case 658: // paintedTexts
         paintedTexts = r.ints();
         return true;
-      case 658: // texts
+      case 659: // texts
         texts = r.strings();
         return true;
-      case 655: // itemCount
+      case 656: // itemCount
         itemCount = r.int32();
         return true;
       default:
@@ -115,95 +115,95 @@ class VTreeItem extends VItem {
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(645);
+        w.key(646);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgrounds;
       if (v_ != null) {
-        w.key(646);
+        w.key(647);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = checked;
       if (v_ != null) {
-        w.keyBoolean(647, v_);
+        w.keyBoolean(648, v_);
       }
     }
     {
       final v_ = expanded;
       if (v_ != null) {
-        w.keyBoolean(648, v_);
+        w.keyBoolean(649, v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(649);
+        w.key(650);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = fonts;
       if (v_ != null) {
-        w.key(650);
+        w.key(651);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(651);
+        w.key(652);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregrounds;
       if (v_ != null) {
-        w.key(652);
+        w.key(653);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = grayed;
       if (v_ != null) {
-        w.keyBoolean(653, v_);
+        w.keyBoolean(654, v_);
       }
     }
     {
       final v_ = images;
       if (v_ != null) {
-        w.key(654);
+        w.key(655);
         w.list(v_, (e) => w.ref(e?.id));
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(656);
+        w.key(657);
         w.refs(v_);
       }
     }
     {
       final v_ = paintedTexts;
       if (v_ != null) {
-        w.key(657);
+        w.key(658);
         w.ints(v_);
       }
     }
     {
       final v_ = texts;
       if (v_ != null) {
-        w.key(658);
+        w.key(659);
         w.strings(v_);
       }
     }
     {
       final v_ = itemCount;
       if (v_ != null) {
-        w.keyInt32(655, v_);
+        w.keyInt32(656, v_);
       }
     }
   }
@@ -211,20 +211,20 @@ class VTreeItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(645, background);
-    visit(646, backgrounds);
-    visit(647, checked);
-    visit(648, expanded);
-    visit(649, font);
-    visit(650, fonts);
-    visit(651, foreground);
-    visit(652, foregrounds);
-    visit(653, grayed);
-    visit(654, images);
-    visit(656, items);
-    visit(657, paintedTexts);
-    visit(658, texts);
-    visit(655, itemCount);
+    visit(646, background);
+    visit(647, backgrounds);
+    visit(648, checked);
+    visit(649, expanded);
+    visit(650, font);
+    visit(651, fonts);
+    visit(652, foreground);
+    visit(653, foregrounds);
+    visit(654, grayed);
+    visit(655, images);
+    visit(657, items);
+    visit(658, paintedTexts);
+    visit(659, texts);
+    visit(656, itemCount);
   }
 
   @override

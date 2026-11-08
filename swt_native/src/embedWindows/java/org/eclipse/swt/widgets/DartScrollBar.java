@@ -174,6 +174,7 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
         increment = 1;
         getValue().markDirty(VScrollBar.INCREMENT);
         pageIncrement = 10;
+        getValue().markDirty(VScrollBar.PAGE_INCREMENT);
         /*
 	* Do not set the initial values of the maximum
 	* or the thumb.  These values normally default
@@ -623,6 +624,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setPageIncrement(int value) {
         checkWidget();
+        if (this.pageIncrement != value) {
+            getValue().markDirty(VScrollBar.PAGE_INCREMENT);
+        }
         if (value < 1)
             return;
         pageIncrement = value;
@@ -699,6 +703,9 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
+        if (this.pageIncrement != pageIncrement) {
+            getValue().markDirty(VScrollBar.PAGE_INCREMENT);
+        }
         if (this.increment != increment) {
             getValue().markDirty(VScrollBar.INCREMENT);
         }

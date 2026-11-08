@@ -157,31 +157,31 @@ public class VTree extends VComposite {
         return ((DartTree) impl).wireOwnerDrawItemHeight();
     }
 
-    public static final int COLUMN_ORDER = 625;
+    public static final int COLUMN_ORDER = 626;
 
-    public static final int COLUMNS = 626;
+    public static final int COLUMNS = 627;
 
-    public static final int EDITORS = 627;
+    public static final int EDITORS = 628;
 
-    public static final int HEADER_BACKGROUND = 628;
+    public static final int HEADER_BACKGROUND = 629;
 
-    public static final int HEADER_FOREGROUND = 629;
+    public static final int HEADER_FOREGROUND = 630;
 
-    public static final int HEADER_VISIBLE = 630;
+    public static final int HEADER_VISIBLE = 631;
 
-    public static final int ITEMS = 631;
+    public static final int ITEMS = 632;
 
-    public static final int LINES_VISIBLE = 632;
+    public static final int LINES_VISIBLE = 633;
 
-    public static final int OWNER_DRAW_ITEM_HEIGHT = 633;
+    public static final int OWNER_DRAW_ITEM_HEIGHT = 634;
 
-    public static final int SELECTION = 634;
+    public static final int SELECTION = 635;
 
-    public static final int SORT_COLUMN = 635;
+    public static final int SORT_COLUMN = 636;
 
-    public static final int SORT_DIRECTION = 636;
+    public static final int SORT_DIRECTION = 637;
 
-    public static final int TOP_ITEM = 637;
+    public static final int TOP_ITEM = 638;
 
     @Override
     public String wireName(int key) {
@@ -219,43 +219,43 @@ public class VTree extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 625:
+            case 626:
                 w.write(getColumnOrder());
                 return true;
-            case 626:
+            case 627:
                 w.refs(getColumns());
                 return true;
-            case 627:
+            case 628:
                 w.refs(getEditors());
                 return true;
-            case 628:
+            case 629:
                 w.write(getHeaderBackground());
                 return true;
-            case 629:
+            case 630:
                 w.write(getHeaderForeground());
                 return true;
-            case 630:
+            case 631:
                 w.write(getHeaderVisible());
                 return true;
-            case 631:
+            case 632:
                 w.refs(getItems());
                 return true;
-            case 632:
+            case 633:
                 w.write(getLinesVisible());
                 return true;
-            case 634:
+            case 635:
                 w.refs(getSelection());
                 return true;
-            case 635:
+            case 636:
                 w.ref(getSortColumn());
                 return true;
-            case 636:
+            case 637:
                 w.write((int) getSortDirection());
                 return true;
-            case 637:
+            case 638:
                 w.ref(getTopItem());
                 return true;
-            case 633:
+            case 634:
                 w.write((int) getOwnerDrawItemHeight());
                 return true;
         }
@@ -265,31 +265,20 @@ public class VTree extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 625:
+            case 626:
                 {
                     int[] v_ = getColumnOrder();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(625);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 626:
-                {
-                    TreeColumn[] v_ = getColumns();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(626);
-                    w.refs(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 627:
                 {
-                    TreeEditor[] v_ = getEditors();
+                    TreeColumn[] v_ = getColumns();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
@@ -300,16 +289,18 @@ public class VTree extends VComposite {
                 }
             case 628:
                 {
-                    Color v_ = getHeaderBackground();
-                    if (v_ == null || v_.isDisposed())
+                    TreeEditor[] v_ = getEditors();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(628);
-                    w.write(v_);
+                    w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 629:
                 {
-                    Color v_ = getHeaderForeground();
+                    Color v_ = getHeaderBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(629);
@@ -318,8 +309,8 @@ public class VTree extends VComposite {
                 }
             case 630:
                 {
-                    boolean v_ = getHeaderVisible();
-                    if (!v_)
+                    Color v_ = getHeaderForeground();
+                    if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(630);
                     w.write(v_);
@@ -327,68 +318,77 @@ public class VTree extends VComposite {
                 }
             case 631:
                 {
+                    boolean v_ = getHeaderVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(631);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 632:
+                {
                     TreeItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(631);
+                    w.key(632);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 632:
+            case 633:
                 {
                     boolean v_ = getLinesVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(632);
+                    w.key(633);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 634:
+            case 635:
                 {
                     TreeItem[] v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(634);
-                    w.refs(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 635:
-                {
-                    TreeColumn v_ = getSortColumn();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(635);
-                    w.ref(v_);
+                    w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 636:
                 {
-                    int v_ = getSortDirection();
-                    if (v_ == 0)
+                    TreeColumn v_ = getSortColumn();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(636);
-                    w.write((int) v_);
+                    w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 637:
                 {
+                    int v_ = getSortDirection();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(637);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 638:
+                {
                     TreeItem v_ = getTopItem();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(637);
+                    w.key(638);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 633:
+            case 634:
                 {
                     int v_ = getOwnerDrawItemHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(633);
+                    w.key(634);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -396,7 +396,7 @@ public class VTree extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 625, 626, 627, 628, 629, 630, 631, 632, 634, 635, 636, 637, 633 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 626, 627, 628, 629, 630, 631, 632, 633, 635, 636, 637, 638, 634 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

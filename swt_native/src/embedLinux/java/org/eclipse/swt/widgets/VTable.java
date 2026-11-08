@@ -145,29 +145,29 @@ public class VTable extends VComposite {
         return ((DartTable) impl).wireOwnerDrawItemHeight();
     }
 
-    public static final int COLUMN_ORDER = 551;
+    public static final int COLUMN_ORDER = 552;
 
-    public static final int COLUMNS = 552;
+    public static final int COLUMNS = 553;
 
-    public static final int EDITORS = 553;
+    public static final int EDITORS = 554;
 
-    public static final int HEADER_BACKGROUND = 554;
+    public static final int HEADER_BACKGROUND = 555;
 
-    public static final int HEADER_FOREGROUND = 555;
+    public static final int HEADER_FOREGROUND = 556;
 
-    public static final int HEADER_VISIBLE = 556;
+    public static final int HEADER_VISIBLE = 557;
 
-    public static final int ITEM_COUNT = 557;
+    public static final int ITEM_COUNT = 558;
 
-    public static final int ITEMS = 558;
+    public static final int ITEMS = 559;
 
-    public static final int LINES_VISIBLE = 559;
+    public static final int LINES_VISIBLE = 560;
 
-    public static final int OWNER_DRAW_ITEM_HEIGHT = 560;
+    public static final int OWNER_DRAW_ITEM_HEIGHT = 561;
 
-    public static final int SELECTION = 561;
+    public static final int SELECTION = 562;
 
-    public static final int TOP_INDEX = 562;
+    public static final int TOP_INDEX = 563;
 
     @Override
     public String wireName(int key) {
@@ -203,40 +203,40 @@ public class VTable extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 551:
+            case 552:
                 w.write(getColumnOrder());
                 return true;
-            case 552:
+            case 553:
                 w.refs(getColumns());
                 return true;
-            case 553:
+            case 554:
                 w.refs(getEditors());
                 return true;
-            case 554:
+            case 555:
                 w.write(getHeaderBackground());
                 return true;
-            case 555:
+            case 556:
                 w.write(getHeaderForeground());
                 return true;
-            case 556:
+            case 557:
                 w.write(getHeaderVisible());
                 return true;
-            case 558:
+            case 559:
                 w.refs(getItems());
                 return true;
-            case 559:
+            case 560:
                 w.write(getLinesVisible());
                 return true;
-            case 561:
+            case 562:
                 w.write(getSelection());
                 return true;
-            case 562:
+            case 563:
                 w.write((int) getTopIndex());
                 return true;
-            case 557:
+            case 558:
                 w.write((int) getItemCount());
                 return true;
-            case 560:
+            case 561:
                 w.write((int) getOwnerDrawItemHeight());
                 return true;
         }
@@ -246,31 +246,20 @@ public class VTable extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 551:
+            case 552:
                 {
                     int[] v_ = getColumnOrder();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(551);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 552:
-                {
-                    TableColumn[] v_ = getColumns();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(552);
-                    w.refs(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 553:
                 {
-                    TableEditor[] v_ = getEditors();
+                    TableColumn[] v_ = getColumns();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
@@ -281,16 +270,18 @@ public class VTable extends VComposite {
                 }
             case 554:
                 {
-                    Color v_ = getHeaderBackground();
-                    if (v_ == null || v_.isDisposed())
+                    TableEditor[] v_ = getEditors();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(554);
-                    w.write(v_);
+                    w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 555:
                 {
-                    Color v_ = getHeaderForeground();
+                    Color v_ = getHeaderBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(555);
@@ -299,68 +290,77 @@ public class VTable extends VComposite {
                 }
             case 556:
                 {
-                    boolean v_ = getHeaderVisible();
-                    if (!v_)
+                    Color v_ = getHeaderForeground();
+                    if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(556);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 558:
+            case 557:
+                {
+                    boolean v_ = getHeaderVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(557);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 559:
                 {
                     TableItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(558);
+                    w.key(559);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 559:
+            case 560:
                 {
                     boolean v_ = getLinesVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(559);
+                    w.key(560);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 561:
+            case 562:
                 {
                     int[] v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(561);
+                    w.key(562);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 562:
+            case 563:
                 {
                     int v_ = getTopIndex();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(562);
+                    w.key(563);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 557:
+            case 558:
                 {
                     int v_ = getItemCount();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(557);
+                    w.key(558);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 560:
+            case 561:
                 {
                     int v_ = getOwnerDrawItemHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(560);
+                    w.key(561);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -368,7 +368,7 @@ public class VTable extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 551, 552, 553, 554, 555, 556, 558, 559, 561, 562, 557, 560 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 552, 553, 554, 555, 556, 557, 559, 560, 562, 563, 558, 561 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
