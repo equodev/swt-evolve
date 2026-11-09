@@ -149,6 +149,33 @@ void main() {
     field.dispose();
   });
 
+  testWidgets('Enter on a focused tool item is left to the shell; Space presses it', (tester) async {
+    final field = await _pumpFieldAndToolBar(tester);
+
+    await _tabUntil(tester, () => _focusedItemId() != null);
+    expect(_focusedItemId(), 2);
+    _sent.clear();
+
+    await _press(tester, LogicalKeyboardKey.enter);
+    await _press(tester, LogicalKeyboardKey.numpadEnter);
+    expect(_sent.where((e) => e.startsWith('2 Selection/')), isEmpty);
+
+    await _press(tester, LogicalKeyboardKey.space);
+    expect(_sent.where((e) => e.startsWith('2 Selection/')), ['2 Selection/Selection']);
+
+    // The DROP_DOWN item's body leaves Enter to the shell too.
+    for (var i = 0; i < 5 && _focusedItemId() != 3; i++) {
+      await _press(tester, LogicalKeyboardKey.arrowRight);
+    }
+    expect(_focusedItemId(), 3);
+    _sent.clear();
+    await _press(tester, LogicalKeyboardKey.enter);
+    await _press(tester, LogicalKeyboardKey.numpadEnter);
+    expect(_sent.where((e) => e.startsWith('3 Selection/')), isEmpty);
+
+    field.dispose();
+  });
+
   testWidgets('Down on a focused DROP_DOWN item opens its menu', (tester) async {
     final field = await _pumpFieldAndToolBar(tester);
 

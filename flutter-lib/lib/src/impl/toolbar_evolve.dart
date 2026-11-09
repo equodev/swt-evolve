@@ -19,6 +19,7 @@ import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_settings/toolitem_theme_settings.dart';
 import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/enter_to_the_shell.dart';
 import 'utils/focus_report.dart';
 import 'utils/tab_only_focus_node.dart';
 import 'utils/layered_layout_builder.dart';
@@ -1180,7 +1181,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
       ),
     );
 
-    return openMenuOnDown(
+    return leaveEnterToTheShell(openMenuOnDown(
       enabled: enabled,
       openMenu: _openMenu,
       child: IntrinsicWidth(
@@ -1192,7 +1193,7 @@ class _SpecialDropdownWidgetState extends State<_SpecialDropdownWidget> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

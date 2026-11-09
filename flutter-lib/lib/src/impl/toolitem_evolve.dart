@@ -21,6 +21,7 @@ import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'toolbar_evolve.dart';
 import 'menu_evolve.dart' show OpenPopupMenuTracker;
+import 'utils/enter_to_the_shell.dart';
 import 'utils/layered_layout_builder.dart';
 import 'dart:ui';
 
@@ -570,7 +571,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     final effectiveDefaultIconSize =
         constraints != null ? _calculateIconSize(constraints, iconSize) : iconSize;
 
-    return tagSemantics(Container(
+    return tagSemantics(leaveEnterToTheShell(Container(
       constraints: constraints,
       child: switch (state.style & bits) {
         SWT.CHECK => () {
@@ -795,7 +796,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           );
         }(),
       },
-    ));
+    )));
   }
 
   void onPressed() {

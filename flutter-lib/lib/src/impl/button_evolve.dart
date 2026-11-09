@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart' show LogicalKeyboardKey;
 import '../gen/button.dart';
 import '../gen/color.dart';
 import '../gen/swt.dart';
@@ -21,6 +20,7 @@ import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 import 'utils/quiet_animations.dart';
 import 'utils/cached_text.dart';
+import 'utils/enter_to_the_shell.dart';
 
 class ButtonImpl<T extends ButtonSwt, V extends VButton>
     extends ControlImpl<T, V> {
@@ -167,18 +167,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     } else {
       button = _buildPushButton(context, widgetTheme, enabled, text);
     }
-    return _selectOnReleaseInside(_leaveEnterToTheShell(button));
+    return _selectOnReleaseInside(leaveEnterToTheShell(button));
   }
-
-  /// Enter is the shell's: Java runs the traversal and presses the default button. Flutter's own
-  /// Enter activation would press this button as well. Space still presses it, as natively.
-  Widget _leaveEnterToTheShell(Widget button) => Shortcuts(
-        shortcuts: const <ShortcutActivator, Intent>{
-          SingleActivator(LogicalKeyboardKey.enter): DoNothingAndStopPropagationIntent(),
-          SingleActivator(LogicalKeyboardKey.numpadEnter): DoNothingAndStopPropagationIntent(),
-        },
-        child: button,
-      );
 
   bool _primaryPressed = false;
   /// Whether the button was selected during this press, by Flutter's tap or by the keyboard.
