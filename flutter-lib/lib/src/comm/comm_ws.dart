@@ -54,7 +54,9 @@ class EquoCommService {
 
   static EquoCommBase _create() {
     final p = _getPort();
-    return p != 0 ? _DesktopComm(host: "localhost", port: p) : NoComm();
+    // The address Java's comm server binds (AbstractBinaryCommService.LOOPBACK). A literal, not a name: a
+    // lookup is answered on a later turn of the main thread, which only comes once Java pumps it.
+    return p != 0 ? _DesktopComm(host: "127.0.0.1", port: p) : NoComm();
   }
 
   /// See [EquoCommBase.on].

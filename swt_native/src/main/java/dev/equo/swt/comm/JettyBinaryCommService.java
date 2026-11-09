@@ -40,7 +40,7 @@ public class JettyBinaryCommService extends AbstractBinaryCommService {
         pool.setDaemon(true);
         server = new Server(pool);
         connector = new ServerConnector(server);
-        connector.setHost("localhost");
+        connector.setHost(LOOPBACK);
         connector.setPort(0); // ephemeral
         connector.setAcceptedTcpNoDelay(true); // disable Nagle — see class javadoc
         server.addConnector(connector);

@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 
+#include "boot_trace.h"
 #include "flutter/generated_plugin_registrant.h"
 
 namespace {
@@ -48,15 +49,18 @@ bool FlutterWindow::OnCreate() {
 
   // The size here must match the window dimensions to avoid unnecessary surface
   // creation / destruction in the startup path.
-  flutter_controller_ = std::make_unique<flutter::FlutterViewController>(
-      frame.right - frame.left, frame.bottom - frame.top, project_);
+  flutter_controller_ = boot_trace::Step("FlutterViewController (engine start)", [&] {
+    return std::make_unique<flutter::FlutterViewController>(
+        frame.right - frame.left, frame.bottom - frame.top, project_);
+  });
   // Ensure that basic setup of the controller was successful.
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
   }
-  RegisterPlugins(flutter_controller_->engine());
+  boot_trace::Step("RegisterPlugins", [&] { RegisterPlugins(flutter_controller_->engine()); });
   SetupWindowChannel();
-  SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  boot_trace::Step("SetChildContent",
+                   [&] { SetChildContent(flutter_controller_->view()->GetNativeWindow()); });
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
@@ -65,7 +69,7 @@ bool FlutterWindow::OnCreate() {
   // Flutter can complete the first frame before the "show window" callback is
   // registered. The following call ensures a frame is pending to ensure the
   // window is shown. It is a no-op if the first frame hasn't completed yet.
-  flutter_controller_->ForceRedraw();
+  boot_trace::Step("ForceRedraw", [&] { flutter_controller_->ForceRedraw(); });
 
   return true;
 }
@@ -79,12 +83,16 @@ void FlutterWindow::SetupWindowChannel() {
       [this](const flutter::MethodCall<flutter::EncodableValue>& call,
              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
                  result) {
+        const std::string& method = call.method_name();
+        if (method == "bootTrace") {
+          result->Success(flutter::EncodableValue(boot_trace::Steps()));
+          return;
+        }
         HWND hwnd = GetHandle();
         if (!hwnd) {
           result->Success();
           return;
         }
-        const std::string& method = call.method_name();
         // Posted, not called: ShowWindow runs the resize synchronously, re-entering the window
         // procedure while this method-call handler is still on the engine's stack. The child
         // Flutter view then misses the new size and the window paints its old frame over an

@@ -10,7 +10,13 @@ import org.java_websocket.handshake.ClientHandshake;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -60,6 +66,11 @@ public class BinaryCommService extends AbstractBinaryCommService {
             throw new RuntimeException("Interrupted while waiting for WebSocket server to bind", e);
         }
         return server.getPort();
+    }
+
+    /** The host the server was asked to bind, as given: a literal address or a name. */
+    String boundHost() {
+        return server.getAddress().getHostString();
     }
 
     @Override
@@ -123,9 +134,28 @@ public class BinaryCommService extends AbstractBinaryCommService {
         }
     }
 
+    /**
+     * Does the JDK work of a server handshake once, on the selector thread before any client
+     * connects. The client's first handshake would otherwise pay for it while the window waits on
+     * it: {@code Draft_6455} dates its response with a new {@link SimpleDateFormat} (the locale,
+     * calendar and time-zone data load on first use) and computes the accept key with SHA-1 (the
+     * security providers load on first use). Mirrors {@code Draft_6455} of java-websocket 1.5.7:
+     * re-check it when that dependency moves.
+     */
+    static void warmUpHandshake() {
+        SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("GMT"));
+        format.format(Calendar.getInstance().getTime());
+        try {
+            MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException e) {
+            // The handshake will fail on its own, where it is reported.
+        }
+    }
+
     private class WsServer extends WebSocketServer {
         WsServer() {
-            super(new InetSocketAddress("localhost", 0));
+            super(new InetSocketAddress(LOOPBACK, 0));
             setTcpNoDelay(true);
             // The selector + WebSocketWorker decoder threads are non-daemon by default, so a worker
             // that stop() can't unwind (e.g. wedged mid-decode on an active session) keeps the whole
@@ -178,6 +208,7 @@ public class BinaryCommService extends AbstractBinaryCommService {
         public void onStart() {
             dev.equo.swt.BootTrace.markOnce("comm.bound");
             started.countDown();
+            warmUpHandshake();
         }
     }
 }

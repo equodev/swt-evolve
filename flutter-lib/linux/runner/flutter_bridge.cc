@@ -12,6 +12,7 @@
 #include <filesystem> // std::filesystem
 #include <stdlib.h>   // setenv
 #include <string>     // std::string
+#include <type_traits>
 
 // The webview_all Browser backend on Linux is WebKitGTK, which defaults to a
 // hardware GL renderer (accelerated compositing / DMABUF). Now that the FlView
@@ -28,6 +29,36 @@ __attribute__((constructor)) static void EquoConfigureWebKit() {
   if (software != nullptr && software[0] == '1') {
     setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", 1);
     setenv("WEBKIT_DISABLE_DMABUF_RENDERER", "1", 1);
+  }
+}
+
+// Steps of the native side's start, in microseconds since the epoch (the clock the Java and Dart
+// sides of the boot trace read), answered on the window channel's `bootTrace`. Only the first
+// window's start is the boot; windows opened later record nothing.
+static FlValue *g_boot_steps = nullptr;
+static bool g_boot_recording = true;
+
+static void boot_record(const char *name, gint64 start_us) {
+  if (!g_boot_recording) return;
+  if (g_boot_steps == nullptr) g_boot_steps = fl_value_new_list();
+  FlValue *step = fl_value_new_map();
+  fl_value_set_string_take(step, "name", fl_value_new_string(name));
+  fl_value_set_string_take(step, "depth", fl_value_new_int(1));
+  fl_value_set_string_take(step, "startUs", fl_value_new_int(start_us));
+  fl_value_set_string_take(step, "endUs", fl_value_new_int(g_get_real_time()));
+  fl_value_append_take(g_boot_steps, step);
+}
+
+template <typename F>
+static auto boot_step(const char *name, F &&body) -> decltype(body()) {
+  const gint64 start = g_get_real_time();
+  if constexpr (std::is_void_v<decltype(body())>) {
+    body();
+    boot_record(name, start);
+  } else {
+    auto value = body();
+    boot_record(name, start);
+    return value;
   }
 }
 
@@ -343,6 +374,13 @@ static void window_method_call_handler(FlMethodChannel * /*channel*/,
   const gchar *method = fl_method_call_get_name(method_call);
   g_autoptr(FlMethodResponse) response = nullptr;
 
+  if (strcmp(method, "bootTrace") == 0) {
+    g_autoptr(FlValue) steps = g_boot_steps != nullptr ? fl_value_ref(g_boot_steps) : fl_value_new_list();
+    response = FL_METHOD_RESPONSE(fl_method_success_response_new(steps));
+    fl_method_call_respond(method_call, response, nullptr);
+    return;
+  }
+
   GtkWindow *win = (ctx != nullptr && ctx->top_window != nullptr && GTK_IS_WINDOW(ctx->top_window))
                        ? GTK_WINDOW(ctx->top_window)
                        : nullptr;
@@ -434,6 +472,7 @@ static void DropCapturedCrossings(GdkEvent *event, gpointer) {
 FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widget_name,
                                    const char *theme, int backgroundColor, int width, int height,
                                    bool csdEnabled) {
+  const gint64 project_start = g_get_real_time();
   FlDartProject *project = fl_dart_project_new();
   std::string base_path = GetSharedLibraryPath();
   // See note above: skip the AOT library in --debug (JIT) builds so the engine runs the kernel
@@ -461,8 +500,9 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   args[5] = bg_c;
   args[6] = 0;
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
+  boot_record("FlDartProject", project_start);
 
-  if (!gtk_init_check(nullptr, nullptr)) {
+  if (!boot_step("gtk_init", [] { return gtk_init_check(nullptr, nullptr); })) {
     g_printerr("Failed to initialize GTK\n");
     return nullptr;
   }
@@ -483,7 +523,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   ctx->close_requested = false;
   ctx->window_channel = nullptr;
 
-  GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  GtkWidget *window = boot_step("gtk_window_new", [] { return gtk_window_new(GTK_WINDOW_TOPLEVEL); });
   gtk_window_set_title(GTK_WINDOW(window), widget_name);
   gtk_window_set_default_size(GTK_WINDOW(window), width, height);
   // Client-Side Decorations: when Flutter draws this window's title bar (csd_scaffold.dart) the
@@ -503,7 +543,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   // engine, and fl_engine_new on its own leaves the renderer with no GL context, so the first frame
   // fails GDK_IS_GL_CONTEXT and the process segfaults at startup. Tried; not possible with the
   // public API as it stands.
-  FlView *view = fl_view_new(project);
+  FlView *view = boot_step("fl_view_new", [&] { return fl_view_new(project); });
   GtkWidget *view_widget = GTK_WIDGET(view);
 
   // Pre-wrap the FlView in a GtkOverlay, exactly as the embedded path does: otherwise
@@ -515,12 +555,12 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   gtk_widget_set_vexpand(view_widget, TRUE);
   gtk_container_add(GTK_CONTAINER(overlay), view_widget);
   gtk_container_add(GTK_CONTAINER(window), overlay);
-  gtk_widget_show_all(window);
+  boot_step("gtk_widget_show_all", [&] { gtk_widget_show_all(window); });
 
   ctx->view = view_widget;
   ctx->top_window = window;
 
-  EquoRegisterPlugins(view);
+  boot_step("RegisterPlugins", [&] { EquoRegisterPlugins(view); });
 
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   ctx->window_channel = fl_method_channel_new(
@@ -528,6 +568,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
       FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(ctx->window_channel, window_method_call_handler,
                                             ctx, nullptr);
+  g_boot_recording = false;
   g_print("FlutterNative.createDisplayWindow port:%d id:%ld name:%s %dx%d\n",
           port, (long)displayId, widget_name, width, height);
   return ctx;

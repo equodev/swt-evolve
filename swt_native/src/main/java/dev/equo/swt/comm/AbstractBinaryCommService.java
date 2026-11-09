@@ -25,6 +25,12 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractBinaryCommService implements CommService {
 
+    /**
+     * The address the server binds, which the desktop client connects to as a literal: a name would
+     * cost it a lookup, answered on a turn of the window's main thread, before it could connect.
+     */
+    public static final String LOOPBACK = "127.0.0.1";
+
     protected final Serializer serializer = new Serializer();
     private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
 

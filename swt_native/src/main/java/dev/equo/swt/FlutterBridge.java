@@ -2383,7 +2383,9 @@ public abstract class FlutterBridge {
     }
 
     protected void sendSwtEvolveProperties() {
-        System.out.println("will send: " + getConfigFlags());
+        // Only under the debug switch: rendering the flags is slow on first use, and this runs on the
+        // comm thread before the first ClientReady is posted to the UI thread.
+        if (Config.debug) System.out.println("will send: " + getConfigFlags());
         broadcastSwtEvolveProperties();
     }
 

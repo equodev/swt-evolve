@@ -99,7 +99,33 @@ class DisplayConfigFlagsFlutterTest {
                 .anyMatch(f -> f.event.equals("swt.evolve.properties"));
     }
 
+    @Test
+    void firstClientReady_doesNotRenderTheFlagsAsText() {
+        // Rendering the flags is a 50-field string concatenation, bootstrapped on first use, on the
+        // comm thread that has to post ClientReady to the UI thread: the window waits on it.
+        CountingFlags flags = new CountingFlags();
+        flags.force_theme = "light";
+        Config.setConfigFlags(flags);
+        TestWebBridge web = install(TestWebBridge::new);
+        newMainShell();
+
+        clientReady(web.comm, 1024, 768, true);
+
+        assertThat(web.comm.sent).anyMatch(f -> f.event.equals("swt.evolve.properties"));
+        assertThat(flags.rendered).as("ConfigFlags.toString() calls on the first ClientReady").isZero();
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
+
+    private static final class CountingFlags extends ConfigFlags {
+        int rendered;
+
+        @Override
+        public String toString() {
+            rendered++;
+            return super.toString();
+        }
+    }
 
     private DartDisplay dartDisplay() {
         return (DartDisplay) display.getImpl();

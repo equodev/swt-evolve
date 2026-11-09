@@ -10,6 +10,7 @@
 #include <memory>
 #include <filesystem> // For std::filesystem
 
+#include "boot_trace.h"
 #include "flutter_window.h"
 #include "utils.h"
 #include "resource.h"
@@ -155,6 +156,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
     }
     window->SetQuitOnClose(true);
     pumpMessages(1);
+    boot_trace::Recording() = false;
     return window;
   }
 
@@ -162,6 +164,7 @@ void* initializeFlutterWindow(int port, void* parentWnd, int64_t widgetId, std::
   GetClientRect((HWND)parentWnd, &frame);
   Win32Window::Point origin(0, 0);
   Win32Window::Size size(frame.right - frame.left, frame.bottom - frame.top);
+  boot_trace::Recording() = false;
   if (!window->Create(L"swtflutter1", origin, size, (HWND)parentWnd), false) {
     return 0;
   }
@@ -180,9 +183,9 @@ FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std:
         CreateAndAttachConsole();
     }
     // COM is required by the Flutter Windows embedder/plugins. Harmless if already initialized.
-    ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    boot_trace::Step("CoInitializeEx", [] { ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED); });
 
-    flutter::DartProject project = EngineProject(impeller);
+    flutter::DartProject project = boot_trace::Step("DartProject", [&] { return EngineProject(impeller); });
 
     // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg]. Passing the real
     // widget background (not 0) avoids the Flutter theme rendering a pure-black Display background.
@@ -208,8 +211,10 @@ FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std:
     // (FlutterWindow::OnCreate -> Show()).
     if (!window->Create(Utf16FromUtf8(widgetName), origin, size, nullptr, false)) {
         std::cout << "createDisplayWindow - failed to create window" << std::endl;
+        boot_trace::Recording() = false;
         return nullptr;
     }
+    boot_trace::Recording() = false;
     // Closing the window is a request, not a fact: WM_CLOSE is vetoed so SWT.Close can run while the
     // window is still up (see Win32Window::MessageHandler). Every top-level window wants that.
     window->SetQuitOnClose(true);

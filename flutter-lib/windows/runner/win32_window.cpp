@@ -4,6 +4,7 @@
 #include <flutter_windows.h>
 #include <iostream>
 
+#include "boot_trace.h"
 #include "resource.h"
 
 namespace {
@@ -131,8 +132,8 @@ bool Win32Window::Create(const std::wstring& title,
                          const Size& size,
                          const HWND parentWnd,
                          bool headless) {
-  const wchar_t* window_class =
-      WindowClassRegistrar::GetInstance()->GetWindowClass();
+  const wchar_t* window_class = boot_trace::Step(
+      "window class", [] { return WindowClassRegistrar::GetInstance()->GetWindowClass(); });
 
   const POINT target_point = {static_cast<LONG>(origin.x),
                               static_cast<LONG>(origin.y)};
@@ -161,11 +162,13 @@ bool Win32Window::Create(const std::wstring& title,
     showCmd = SW_SHOW;
   }
 
-  HWND window = CreateWindow(
-      window_class, title.c_str(), style,
-      Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
-      Scale(size.width, scale_factor), Scale(size.height, scale_factor),
-      parentWnd ? parentWnd : owner_, nullptr, GetModuleHandle(nullptr), this);
+  HWND window = boot_trace::Step("CreateWindow", [&] {
+    return CreateWindow(
+        window_class, title.c_str(), style,
+        Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
+        Scale(size.width, scale_factor), Scale(size.height, scale_factor),
+        parentWnd ? parentWnd : owner_, nullptr, GetModuleHandle(nullptr), this);
+  });
 
   std::cout << "Win32Window::Create - Created window=" << window << " headless=" << (parentWnd ? "false" : "true") << std::endl;
 
@@ -187,7 +190,7 @@ bool Win32Window::Create(const std::wstring& title,
                        SWP_NOACTIVATE);
   }
 
-  UpdateTheme(window);
+  boot_trace::Step("UpdateTheme", [&] { UpdateTheme(window); });
 
   if (parentWnd)
       ShowWindow(window, showCmd);
