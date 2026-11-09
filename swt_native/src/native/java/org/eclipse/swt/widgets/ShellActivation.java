@@ -14,11 +14,22 @@ final class ShellActivation {
             deactivate((DartShell) previous.getImpl());
     }
 
-    /** Announces the shell's Deactivate; the client reports it afterwards, and that report is not announced again. */
+    /**
+     * Announces the shell's Deactivate, then its active control's, as Win32 and GTK do; the client
+     * reports it afterwards, and that report is not announced again.
+     */
     static void deactivate(DartShell shell) {
-        shell.setActiveControl(null);
-        shell.sendEvent(SWT.Deactivate);
-        shell._suppressNextFlutterDeactivate = true;
+        DisplayBridge bridge = shell.getBridge() instanceof DisplayBridge ? (DisplayBridge) shell.getBridge() : null;
+        Shell outer = bridge != null ? bridge.markDeactivating(shell.getApi()) : null;
+        try {
+            shell._suppressNextFlutterDeactivate = true;
+            shell.sendEvent(SWT.Deactivate);
+            if (!shell.isDisposed())
+                shell.setActiveControl(null);
+        } finally {
+            if (bridge != null)
+                bridge.markDeactivating(outer);
+        }
     }
 
     /**
@@ -30,6 +41,10 @@ final class ShellActivation {
         if (api.isDisposed() || (api.state & DartWidget.HIDDEN) == 0)
             return;
         DisplayBridge bridge = shell.getBridge() instanceof DisplayBridge ? (DisplayBridge) shell.getBridge() : null;
+        // Hidden by its own Deactivate listener, as a popup closes itself: the shell taking the
+        // activation from it is already being activated.
+        if (bridge != null && bridge.deactivating() == api)
+            return;
         Control focus = api.getDisplay().getFocusControl();
         boolean holdsFocus = focus != null && !focus.isDisposed() && focus.getShell() == api;
         if (!holdsFocus && (bridge == null || !bridge.isActiveShell(api)))
@@ -41,10 +56,17 @@ final class ShellActivation {
         deactivate(shell);
         if (api.isDisposed() || returnTo == null || returnTo.isDisposed() || !returnTo.isVisible())
             return;
-        DartShell to = (DartShell) returnTo.getImpl();
+        handBack((DartShell) returnTo.getImpl());
+    }
+
+    /**
+     * Gives the activation back to {@code to} once the active shell is gone: its Activate, then its
+     * focus, as Win32 and GTK announce them. The client reports the same activation afterwards.
+     */
+    static void handBack(DartShell to) {
         to._awaitClientActivate();
         to.sendEvent(SWT.Activate);
-        if (!returnTo.isDisposed())
+        if (!to.isDisposed())
             to._takeFocusHolder(true);
     }
 }

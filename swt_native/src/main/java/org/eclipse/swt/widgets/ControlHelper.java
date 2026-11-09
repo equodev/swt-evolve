@@ -172,6 +172,8 @@ public class ControlHelper {
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
         key.doit = true;
+        if (control.getBridge() != null)
+            control.getBridge().forgetKeyboardTraversal();
         MenuHelper.noteKeyDown(control.getApi(), key);
         if (AcceleratorHelper.translate(control.getApi(), key))
             return new RoutedKey(false, false, false);
@@ -193,11 +195,15 @@ public class ControlHelper {
             e.keyCode = key.keyCode;
             e.stateMask = key.stateMask;
             e.detail = detail;
-            e.doit = traversesByDefault(control, detail);
+            e.doit = detail == SWT.TRAVERSE_MNEMONIC ? MnemonicHelper.matchesOwn(control.getApi(), (char) key.keyCode)
+                    : traversesByDefault(control, detail);
             control.sendEvent(SWT.Traverse, e);
             if (control.isDisposed())
                 return new RoutedKey(false, false, false);
             traverseDoit = e.doit;
+            // Control.translateMnemonic: a mnemonic the focus control does not take is offered to the rest of its shell.
+            if (!e.doit && e.detail == SWT.TRAVERSE_MNEMONIC)
+                traversed = MnemonicHelper.offer(control.getApi(), key);
             if (e.doit) {
                 switch (e.detail) {
                     // A listener that consumed the key clears the detail; Control.traverse counts it as done.
@@ -208,9 +214,16 @@ public class ControlHelper {
                     case SWT.TRAVERSE_TAB_NEXT:
                     case SWT.TRAVERSE_TAB_PREVIOUS:
                         traversed = hasTabStop(control.getApi().getShell());
+                        // The client moves the focus itself once it has the verdict, and reports it as a FocusIn;
+                        // with no other tab stop it moves none, and reports none.
+                        if (traversed && control.getBridge() != null
+                                && hasTabStop(control.getApi().getShell(), control.getApi()))
+                            control.getBridge().noteKeyboardTraversal();
                         break;
                     case SWT.TRAVERSE_MNEMONIC:
-                        traversed = MnemonicHelper.dispatch(control.getApi(), (char) key.keyCode, key.stateMask);
+                        // One the focus control let through but does not hold still goes to the rest of the shell.
+                        traversed = MnemonicHelper.activate(control.getApi(), (char) key.keyCode, key.stateMask)
+                                || MnemonicHelper.offer(control.getApi(), key);
                         break;
                     case SWT.TRAVERSE_PAGE_NEXT:
                     case SWT.TRAVERSE_PAGE_PREVIOUS:
@@ -378,19 +391,28 @@ public class ControlHelper {
 
     /** Whether {@code control} or a control inside it takes the focus from Tab, as natively. */
     static boolean hasTabStop(Control control) {
+        return hasTabStop(control, null);
+    }
+
+    /**
+     * As {@link #hasTabStop(Control)}, not counting {@code except} itself as a stop: where a Tab from it
+     * can land. Its children still count, so a Tab from a shell that holds the focus lands on them.
+     */
+    static boolean hasTabStop(Control control, Control except) {
         if (control == null || control.isDisposed() || !control.getVisible() || !control.getEnabled())
             return false;
+        boolean self = control != except;
         // A ToolBar with no enabled item has nowhere for Tab to stop, on every native.
         if (control instanceof ToolBar)
-            return hasEnabledItem((ToolBar) control);
+            return self && hasEnabledItem((ToolBar) control);
         // An ExpandBar with no item has no header for Tab to stop on: GTK and Cocoa pass it, as Evolve does.
         if (control instanceof ExpandBar)
-            return ((ExpandBar) control).getItemCount() > 0;
-        if (isTabStop(control))
+            return self && ((ExpandBar) control).getItemCount() > 0;
+        if (self && isTabStop(control))
             return true;
         if (control instanceof Composite) {
             for (Control child : ((Composite) control).getChildren()) {
-                if (hasTabStop(child))
+                if (hasTabStop(child, except))
                     return true;
             }
         }
@@ -1022,6 +1044,13 @@ public class ControlHelper {
             return;
         MenuHelper.forgetLoneAlt(control.getDisplay());
         DragDetectHelper.forgetAnswer(control.getDisplay());
+        FlutterBridge bridge = control.getBridge();
+        if (bridge != null) {
+            bridge.forgetKeyboardTraversal();
+            bridge.activateShellOnPress(control);
+        }
+        if (control.isDisposed())
+            return;
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;
@@ -1103,6 +1132,30 @@ public class ControlHelper {
             return result;
         sendActivateToAncestors(control);
         return result;
+    }
+
+    /**
+     * The client moved its focus to {@code control}. A focus a press moves is activated first, as a
+     * native press activates the chain (Win32 WM_MOUSEACTIVATE) before the click moves the focus, so the
+     * clicked control wins over the default control an activated part focuses from its setFocus(). A
+     * focus a Tab moves announces its FocusOut and FocusIn first and the activation after them, as Win32
+     * and GTK announce a keyboard focus change (Control.sendFocusEvent, then Shell.setActiveControl).
+     */
+    public static void clientFocusIn(DartControl control) {
+        // Only a whole-tree control's client reports its focus, and its bridge is never null.
+        FlutterBridge bridge = control.getBridge();
+        if (bridge.staleFocusReport(control))
+            return;
+        boolean announce = !bridge.hasFocus(control);
+        boolean byKeyboard = bridge.takeKeyboardTraversal();
+        if (announce && !byKeyboard)
+            sendActivateToAncestors(control);
+        // An Activate listener may dispose the control it activates, which then takes no focus.
+        if (control.isDisposed())
+            return;
+        bridge.clientFocused(control);
+        if (announce && byKeyboard)
+            sendActivateToAncestors(control);
     }
 
     /**

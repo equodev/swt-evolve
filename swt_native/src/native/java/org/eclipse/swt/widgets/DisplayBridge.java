@@ -2038,6 +2038,49 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 && org.eclipse.swt.custom.CComboHelper.focusedThroughField(focused.getApi(), widget.getApi());
     }
 
+    /** The shell whose Deactivate is being announced while another one takes the activation from it. */
+    private Shell deactivating;
+
+    Shell deactivating() {
+        return deactivating;
+    }
+
+    /** Marks {@code shell} as being deactivated; answers the one marked before, to restore afterwards. */
+    Shell markDeactivating(Shell shell) {
+        Shell outer = deactivating;
+        deactivating = shell;
+        return outer;
+    }
+
+    /** A Tab Java let traverse, until the client reports the focus it moved, or the next key or press. */
+    private boolean keyboardTraversal;
+
+    @Override
+    public void noteKeyboardTraversal() {
+        keyboardTraversal = true;
+    }
+
+    @Override
+    public boolean takeKeyboardTraversal() {
+        boolean pending = keyboardTraversal;
+        keyboardTraversal = false;
+        return pending;
+    }
+
+    /**
+     * A press in an inactive shell activates it before its MouseDown, as the window manager does
+     * natively; the client's own report of that activation comes later and is absorbed. An ON_TOP
+     * shell is never activated by a press (see the client's shell), so neither is it here.
+     */
+    @Override
+    public void activateShellOnPress(DartControl control) {
+        Shell shell = shellOf(control);
+        if (shell == null || !(shell.getImpl() instanceof DartShell) || (shell.getStyle() & org.eclipse.swt.SWT.ON_TOP) != 0)
+            return;
+        if (shell.getDisplay().getActiveShell() != shell)
+            shell.setActive();
+    }
+
     /** The shell's setActiveControl, which the focus changes tracked here already go through. */
     @Override
     public boolean activate(DartControl control, int detail) {

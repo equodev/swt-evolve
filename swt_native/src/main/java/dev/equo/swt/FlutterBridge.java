@@ -2282,6 +2282,28 @@ public abstract class FlutterBridge {
         return false;
     }
 
+    /** Java let a Tab traverse: the client moves the focus itself, and the FocusIn it reports next is that move. */
+    public void noteKeyboardTraversal() {
+    }
+
+    /** Whether a Tab traversal is waiting for the client's FocusIn; clears it. False by default. */
+    public boolean takeKeyboardTraversal() {
+        return false;
+    }
+
+    /** Drops a Tab traversal still waiting: a later key or press is not its focus move. */
+    public final void forgetKeyboardTraversal() {
+        takeKeyboardTraversal();
+    }
+
+    /**
+     * Moves the activation to {@code control}'s shell ahead of a press in it, when that shell is not
+     * the active one and this bridge tracks the shells' activation itself. No-op by default: a native
+     * shell is activated by the OS before the press reaches it.
+     */
+    public void activateShellOnPress(DartControl control) {
+    }
+
     /**
      * Makes {@code control} its shell's active control, announcing SWT.Activate/Deactivate with
      * {@code detail}, when the shell tracks that itself. False when it does not -- a native shell --

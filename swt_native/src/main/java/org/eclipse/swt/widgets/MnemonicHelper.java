@@ -2,8 +2,6 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.CTabFolder;
-import org.eclipse.swt.custom.CTabItem;
 
 /**
  * Alt+letter mnemonic activation for the whole-tree (Flutter) model.
@@ -12,14 +10,15 @@ import org.eclipse.swt.custom.CTabItem;
  * Native SWT resolves them per-platform through {@code Decorations.traverseMnemonic}; that machinery
  * is stubbed for the Dart-backed widgets. Rather than override {@code traverseMnemonic} on every
  * generated {@code Dart*.java}, this helper walks the focused control's shell over the <em>public</em>
- * SWT widget tree, finds the control/item whose mnemonic matches, and activates it — Button clicks,
- * Label moves focus to the following control, Group focuses its first child, TabItem and CTabItem
- * select their tab. A mnemonic no control claims is delivered as a KeyDown, and then opens the menu
- * bar's menu whose title carries it ({@link #openMenuBarTitle}).
+ * SWT widget tree, offering the mnemonic to each control with a Traverse of its own, and activates
+ * the one that takes it — Button clicks, Label moves focus to the following control, Group focuses
+ * its first child, a TabItem selects its tab; a CTabFolder selects its own from its Traverse
+ * listener. A mnemonic no control claims is delivered as a KeyDown, and then opens the menu bar's
+ * menu whose title carries it ({@link #openMenuBarTitle}).
  *
- * <p>Invoked from {@link ControlHelper#routeKeyDown} after a {@code TRAVERSE_MNEMONIC} event
- * is fired and not vetoed. Uses only public API, so it is backend-agnostic and needs no generator
- * changes.
+ * <p>Invoked from {@link ControlHelper#routeKeyDown} once the focus control's own
+ * {@code TRAVERSE_MNEMONIC} has run. Uses only public API, so it is backend-agnostic and needs no
+ * generator changes.
  */
 public final class MnemonicHelper {
 
@@ -27,16 +26,85 @@ public final class MnemonicHelper {
     }
 
     /**
-     * Activates the widget whose mnemonic matches {@code key} within {@code focus}'s shell. A tab it
-     * selects is announced with {@code stateMask}, the modifiers of the key, as natively.
+     * Whether {@code key} is {@code control}'s own mnemonic: the doit a mnemonic Traverse is offered to
+     * it with (Control.mnemonicMatch).
      */
-    public static boolean dispatch(Control focus, char key, int stateMask) {
+    public static boolean matchesOwn(Control control, char key) {
+        return ownMnemonicMatches(control, Character.toLowerCase(key));
+    }
+
+    /**
+     * Acts on {@code control}'s own mnemonic, as its traverseMnemonic does once its Traverse went
+     * through: only when {@code key} is that mnemonic. A selection it makes is announced with
+     * {@code stateMask}, the modifiers of the key, as natively.
+     */
+    public static boolean activate(Control control, char key, int stateMask) {
+        return control != null && !control.isDisposed() && act(control, Character.toLowerCase(key), stateMask);
+    }
+
+    /**
+     * Offers a mnemonic the focus control did not take to the rest of its shell, as
+     * Composite.translateMnemonic does: the shell, then each control in turn, depth first, each with a
+     * Traverse of its own whose doit says whether the key is its mnemonic. The first one whose Traverse
+     * still has doit set acts on it; the focus control, already asked, is not asked again.
+     */
+    public static boolean offer(Control focus, Event key) {
         if (focus == null || focus.isDisposed())
             return false;
         Shell shell = focus.getShell();
         if (shell == null || shell.isDisposed())
             return false;
-        return walk(shell, Character.toLowerCase(key), stateMask);
+        return offerTo(shell, focus, key);
+    }
+
+    private static boolean offerTo(Control c, Control focus, Event key) {
+        // The shell is not asked whether it is shown: a key reaches only a shown shell.
+        if (c.isDisposed() || c != focus.getShell() && (!c.getVisible() || !c.getEnabled()))
+            return false;
+        if (c != focus && traverse(c, key))
+            return true;
+        if (c instanceof Composite) {
+            for (Control child : ((Composite) c).getChildren()) {
+                if (offerTo(child, focus, key))
+                    return true;
+                if (focus.isDisposed())
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /** Control.traverse(Event) for a mnemonic: the Traverse, then the control's own mnemonic action. */
+    private static boolean traverse(Control c, Event key) {
+        char target = Character.toLowerCase((char) key.keyCode);
+        Event e = new Event();
+        e.character = key.character;
+        e.keyCode = key.keyCode;
+        e.stateMask = key.stateMask;
+        e.detail = SWT.TRAVERSE_MNEMONIC;
+        e.doit = ownMnemonicMatches(c, target);
+        c.notifyListeners(SWT.Traverse, e);
+        if (c.isDisposed())
+            return true;
+        if (!e.doit)
+            return false;
+        // A listener that consumed the key clears the detail; Control.traverse counts it as done.
+        return e.detail == SWT.TRAVERSE_NONE || act(c, target, key.stateMask);
+    }
+
+    /** Whether {@code target} is the mnemonic of {@code c} itself or, for a TabFolder, of one of its tabs. */
+    private static boolean ownMnemonicMatches(Control c, char target) {
+        String text = mnemonicText(c);
+        if (text != null)
+            return matches(text, target);
+        if (c instanceof TabFolder) {
+            for (TabItem item : ((TabFolder) c).getItems())
+                if (item != null && !item.isDisposed() && matches(item.getText(), target))
+                    return true;
+        }
+        // A CTabFolder is offered the key with doit unset, as any custom Composite is: its own Traverse
+        // listener sets it from its tabs and selects the tab itself.
+        return false;
     }
 
     /**
@@ -59,43 +127,44 @@ public final class MnemonicHelper {
         }
     }
 
-    private static boolean walk(Composite parent, char target, int stateMask) {
-        for (Control c : parent.getChildren()) {
-            if (c == null || c.isDisposed() || !c.getVisible() || !c.isEnabled())
-                continue;
-            if (activate(c, target, stateMask))
-                return true;
-            // Recurse into composites that did not themselves match (a Group whose own mnemonic
-            // matched has already been handled and returned above).
-            if (c instanceof Composite && walk(((Composite) c), target, stateMask))
-                return true;
-        }
-        return false;
+    /** The text that carries the mnemonic of a control that holds one in its own text, or null. */
+    private static String mnemonicText(Control c) {
+        if (c instanceof Button)
+            return ((Button) c).getText();
+        if (c instanceof Label)
+            return ((Label) c).getText();
+        if (c instanceof Group)
+            return ((Group) c).getText();
+        if (c instanceof Link)
+            return ((Link) c).getText();
+        return null;
     }
 
-    private static boolean activate(Control c, char target, int stateMask) {
+    private static boolean act(Control c, char target, int stateMask) {
+        String text = mnemonicText(c);
+        if (text != null && !matches(text, target))
+            return false;
         if (c instanceof Button) { Button b = (Button) c;
-            if (!matches(b.getText(), target))
-                return false;
             b.setFocus();
             if ((b.getStyle() & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) != 0)
                 b.setSelection(!b.getSelection());
-            b.notifyListeners(SWT.Selection, new Event());
+            Event selection = new Event();
+            selection.stateMask = stateMask;
+            b.notifyListeners(SWT.Selection, selection);
             return true;
         }
         if (c instanceof Label) { Label l = (Label) c;
             // A label cannot take focus; its mnemonic moves focus to the control it labels — the
             // next control in tab order.
-            return matches(l.getText(), target) && focusAfter(l);
+            return focusAfter(l);
         }
-        if (c instanceof Group) { Group g = (Group) c;
-            return matches(g.getText(), target) && focusFirstChild(g);
-        }
+        if (c instanceof Group)
+            return focusFirstChild((Group) c);
         if (c instanceof Link) { Link link = (Link) c;
             // A Link carries its mnemonic in its text (before any <a> markup). It is focusable, so
             // its mnemonic gives it focus — matching native SWT, where the checkbox/Link coupling
             // (e.g. a preference "&Enable …" row) is app-side listener logic, not the widget model.
-            return matches(link.getText(), target) && link.setFocus();
+            return link.setFocus();
         }
         if (c instanceof TabFolder) { TabFolder tf = (TabFolder) c;
             for (TabItem item : tf.getItems()) {
@@ -106,19 +175,6 @@ public final class MnemonicHelper {
                 e.item = item;
                 e.stateMask = stateMask;
                 tf.notifyListeners(SWT.Selection, e);
-                return true;
-            }
-        }
-        if (c instanceof CTabFolder) { CTabFolder tf = (CTabFolder) c;
-            // CTabFolder.onMnemonic: select the tab, notify, and take the focus.
-            for (CTabItem item : tf.getItems()) {
-                if (item == null || item.isDisposed() || !matches(item.getText(), target))
-                    continue;
-                tf.setSelection(item);
-                Event e = new Event();
-                e.item = item;
-                tf.notifyListeners(SWT.Selection, e);
-                tf.forceFocus();
                 return true;
             }
         }

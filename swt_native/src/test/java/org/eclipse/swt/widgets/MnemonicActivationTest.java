@@ -36,6 +36,8 @@ class MnemonicActivationTest extends KeyRoutingTestBase {
         List<Widget> selected = new ArrayList<>();
         folder.addListener(SWT.Selection, e -> selected.add(e.item));
         when(shell.getChildren()).thenReturn(new Control[] {focus, folder});
+        // The folder takes its mnemonic in its own Traverse listener, which lays its tabs out on the display.
+        when(shell.getDisplay().getBounds()).thenReturn(new org.eclipse.swt.graphics.Rectangle(0, 0, 1920, 1080));
 
         pressAlt(focus, 'a');
 
