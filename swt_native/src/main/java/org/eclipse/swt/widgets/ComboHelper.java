@@ -110,14 +110,58 @@ public class ComboHelper {
      * in, or null when they refuse it or dispose the combo.
      */
     private static String verify(DartCombo combo, String text, int start, int end) {
+        return verify(combo, text, start, end, null);
+    }
+
+    /** As {@link #verify(DartCombo, String, int, int)}, carrying the KeyDown that typed the edit when there is one. */
+    private static String verify(DartCombo combo, String text, int start, int end, Event key) {
         Event event = new Event();
         event.text = text;
         event.start = start;
         event.end = end;
+        if (key != null) {
+            event.character = key.character;
+            event.keyCode = key.keyCode;
+            event.stateMask = key.stateMask;
+        }
         combo.sendEvent(SWT.Verify, event);
         if (!event.doit || combo.isDisposed())
             return null;
         return event.text;
+    }
+
+    /**
+     * An item the user picked from the list, or stepped to with a key, which the client sends as the Selection's
+     * text. An editable combo first asks the Verify listeners about it replacing the whole text, as every native
+     * does, and a veto changes nothing. Then Modify, then a Selection that carries no text, as on every native.
+     */
+    public static void pickedByUser(DartCombo combo, Event e) {
+        String item = e.text;
+        e.text = null;
+        if (item != null) {
+            if (!readOnly(combo)) {
+                String verified = verify(combo, item, 0, getCharCount(combo));
+                if (combo.isDisposed())
+                    return;
+                if (verified == null) {
+                    refused(combo);
+                    return;
+                }
+                if (!verified.equals(item))
+                    combo.getValue().markDirty(VCombo.TEXT);
+                item = verified;
+            }
+            combo.text = item;
+            int index = combo.indexOf(item);
+            if (index != combo.selectedIndex) {
+                combo.selectedIndex = index;
+                combo.getValue().markDirty(VCombo.TEXT);
+            }
+        }
+        combo.sendEvent(SWT.Modify);
+        if (combo.isDisposed())
+            return;
+        combo.sendEvent(SWT.Selection, e);
     }
 
     /**
@@ -127,8 +171,45 @@ public class ComboHelper {
     public static void handleModify(DartCombo combo, Event e) {
         if (e.text == null)
             combo.error(SWT.ERROR_NULL_ARGUMENT);
-        setText(combo, e.text, true, true);
+        String proposed = readOnly(combo) ? e.text : verifyTypedEdit(combo, e.text);
+        if (proposed == null)
+            return;
+        setText(combo, proposed, true, true);
         sendSegments(combo);
+    }
+
+    /**
+     * Asks the Verify listeners about a typed edit of an editable combo, naming only the replaced range and what
+     * was typed into it, with the KeyDown that typed it, as Win32 and GTK do. Answers the text they let in, or
+     * null when they refuse it or dispose the combo; the client is then told the text it already shows is not
+     * the combo's.
+     */
+    private static String verifyTypedEdit(DartCombo combo, String proposed) {
+        if (!combo.hooks(SWT.Verify) && !combo.filters(SWT.Verify))
+            return proposed;
+        String old = combo.getText();
+        Point range = TextHelper.editedRange(old, proposed, combo.selection, -1);
+        String inserted = proposed.substring(range.x, proposed.length() - (old.length() - range.y));
+        String verified = verify(combo, inserted, range.x, range.y, ControlHelper.takeTypingKey(combo, inserted));
+        if (combo.isDisposed())
+            return null;
+        if (verified == null) {
+            refused(combo);
+            return null;
+        }
+        if (!verified.equals(inserted))
+            combo.getValue().markDirty(VCombo.TEXT);
+        return old.substring(0, range.x) + verified + old.substring(range.y);
+    }
+
+    /**
+     * The client shows an edit the Verify listeners refused: the text the combo kept goes back to it, and the
+     * verdict tells it that this push is no echo of its own edit.
+     */
+    private static void refused(DartCombo combo) {
+        combo.getValue().markDirty(VCombo.TEXT);
+        dev.equo.swt.FlutterBridge.send(combo, dev.equo.swt.WireTable.CHANNEL_MODIFY_VERDICT,
+                dev.equo.swt.Java8.map("doit", false));
     }
 
     /** Empties the list; the caller has already asked the Verify listeners about an editable combo's text. */

@@ -95,4 +95,24 @@ void main() {
       expect(events.where((e) => e.$1 == 'Selection/Selection').map((e) => e.$2?.text), ['TVD']);
     });
   }
+
+  for (final (name, style) in const [('editable', SWT.DROP_DOWN), ('READ_ONLY', SWT.READ_ONLY)]) {
+    testWidgets('$name: a click that arrives with the hover onto an item still picks it', (tester) async {
+      final events = await _pump(tester, style);
+      await _openWithArrow(tester);
+      events.clear();
+
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: tester.getCenter(find.text('MD')) + const Offset(0, -200));
+      await tester.pump();
+      await mouse.moveTo(tester.getCenter(find.text('TWT')));
+      await mouse.down(tester.getCenter(find.text('TWT')));
+      await tester.pump();
+      await mouse.up();
+      await tester.pumpAndSettle();
+
+      expect(events.where((e) => e.$1 == 'Selection/Selection').map((e) => e.$2?.text), ['TWT']);
+      await mouse.removePointer();
+    });
+  }
 }

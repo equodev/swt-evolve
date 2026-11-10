@@ -25,6 +25,7 @@ import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
 import 'utils/pointer.dart';
 import 'utils/quiet_animations.dart';
+import 'utils/veto_gate.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes, ClientCaretReport {
@@ -45,6 +46,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   bool _highlightSelected = false;
   final GlobalKey _highlightedKey = GlobalKey();
 
+  /// A typed edit or a pick shows at once and Java asks its Verify listeners after. On a veto Java
+  /// pushes the text it kept, which the echo guard would take for an echo of the field's own, then
+  /// answers doit:false here, which puts that text back.
+  final VetoGate _verifyVerdict = VetoGate.optimistic(WireChannel.modifyVerdict);
+
   /// The field is the only node a Combo mounts, and the one its keys are handled on.
   @override
   FocusNode? get swtFocusNode => _focusNode;
@@ -58,6 +64,17 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     _focusNode.onKeyEvent = _handleKey;
     addOpenListKeyClaim(_listClaimsKey);
     _lastJavaListVisible = state.listVisible;
+    _verifyVerdict.attach(state.wireType, state.id);
+    _verifyVerdict.onUnmatched = _restoreRefusedText;
+  }
+
+  void _restoreRefusedText(bool doit) {
+    if (doit) return;
+    clearSentTextEchoes();
+    if (!mounted) return;
+    final kept = state.text ?? "";
+    if (_controller.text == kept) return;
+    _controller.value = TextEditingValue(text: kept, selection: TextSelection.collapsed(offset: kept.length));
   }
 
   /// The largest of the value's and the items' single-line sizes, kept until any of them or the
@@ -264,8 +281,8 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
   /// The rows a Page key moves, as a Windows list showing SWT's default five items does.
   static const int _pageStep = 4;
 
-  /// A focused Combo with its list closed, as on Windows: the arrows step through the items, a
-  /// READ_ONLY one also takes Home, End, the Page keys and a typed letter, and Enter is the default
+  /// A focused Combo with its list closed, as on Windows: the arrows and the Page keys step through
+  /// the items, a READ_ONLY one also takes Home, End and a typed letter, and Enter is the default
   /// selection. An editable Combo leaves the rest to its text.
   KeyEventResult _handleClosedListKey(KeyEvent event, List<String> items) {
     final LogicalKeyboardKey key = event.logicalKey;
@@ -289,9 +306,9 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
       target = 0;
     } else if (readOnly && key == LogicalKeyboardKey.end) {
       target = last;
-    } else if (readOnly && key == LogicalKeyboardKey.pageDown) {
+    } else if (key == LogicalKeyboardKey.pageDown) {
       target = current + _pageStep;
-    } else if (readOnly && key == LogicalKeyboardKey.pageUp) {
+    } else if (key == LogicalKeyboardKey.pageUp) {
       target = current < 0 ? 0 : current - _pageStep;
     } else if (readOnly && _isTypedCharacter(event.character)) {
       if (!_selectsByLetterWithListClosed) return KeyEventResult.ignored;
@@ -555,6 +572,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
   @override
   void dispose() {
+    _verifyVerdict.detach();
     removeOpenListKeyClaim(_listClaimsKey);
     _controller.removeListener(_reportCaret);
     _controller.dispose();
@@ -720,7 +738,8 @@ class _DropdownComboLayout extends StatelessWidget {
                   children: [
                     for (final (i, item) in (state.items ?? const <String>[]).indexed)
                       _ComboItem(
-                        key: i == highlighted ? highlightedKey : null,
+                        key: ValueKey<int>(i),
+                        scrollKey: i == highlighted ? highlightedKey : null,
                         text: item,
                         isSelected: i == highlighted,
                         theme: theme,
@@ -898,6 +917,9 @@ class _ComboItem extends StatefulWidget {
   final VoidCallback onTap;
   // The drop-down list has one highlighted item: hover moves it, instead of painting a second one.
   final VoidCallback? onHover;
+  // Marks the highlighted item for scrolling it into view. It keys what the item shows, not the
+  // item, which a hover that moves the highlight would otherwise rebuild under a click in progress.
+  final Key? scrollKey;
 
   const _ComboItem({
     super.key,
@@ -907,6 +929,7 @@ class _ComboItem extends StatefulWidget {
     required this.textStyle,
     required this.onTap,
     this.onHover,
+    this.scrollKey,
   });
 
   @override
@@ -935,6 +958,7 @@ class _ComboItemState extends State<_ComboItem> {
           // An SWT Combo item is a single line on every platform: it is the
           // list that widens, never the item that wraps.
           child: Text(
+            key: widget.scrollKey,
             widget.text,
             style: widget.textStyle,
             softWrap: false,

@@ -1936,18 +1936,7 @@ public class DartCombo extends DartComposite implements ICombo {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        if (e.text != null) {
-                            text = e.text;
-                            int idx = indexOf(e.text);
-                            if (idx >= 0 && idx != selectedIndex) {
-                                selectedIndex = idx;
-                                getValue().markDirty(VCombo.TEXT);
-                            }
-                        }
-                        sendEvent(SWT.Modify);
-                        if (isDisposed())
-                            return;
-                        sendEvent(SWT.Selection, e);
+                        ComboHelper.pickedByUser(this, e);
                     });
                     return;
                 }

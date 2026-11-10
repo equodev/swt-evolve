@@ -1,5 +1,5 @@
 // SWT parity (Windows): a focused drop-down Combo whose list is closed still answers the keyboard.
-// The arrows -- and on a READ_ONLY one Home, End, Page Up/Down and a typed letter -- move the
+// The arrows and Page Up/Down -- and on a READ_ONLY one Home, End and a typed letter -- move the
 // selection and notify it, F4 or Alt+Down opens the list, and Enter fires DefaultSelection. The
 // Combo is focused the way Java focuses it (Control.setFocus), which must land on its own field.
 
@@ -157,16 +157,18 @@ void main() {
     expect(_selections(events), ['Hotel', 'Alpha']);
   });
 
-  testWidgets('READ_ONLY: Page Down and Page Up move by a page and stop at the ends', (tester) async {
-    final events = await _pumpFocused(tester, SWT.READ_ONLY);
+  for (final (name, style) in const [('editable', SWT.DROP_DOWN), ('READ_ONLY', SWT.READ_ONLY)]) {
+    testWidgets('$name: Page Down and Page Up move by a page and stop at the ends', (tester) async {
+      final events = await _pumpFocused(tester, style);
 
-    await _press(tester, LogicalKeyboardKey.pageDown);
-    await _press(tester, LogicalKeyboardKey.pageDown);
-    await _press(tester, LogicalKeyboardKey.pageDown);
-    await _press(tester, LogicalKeyboardKey.pageUp);
+      await _press(tester, LogicalKeyboardKey.pageDown);
+      await _press(tester, LogicalKeyboardKey.pageDown);
+      await _press(tester, LogicalKeyboardKey.pageDown);
+      await _press(tester, LogicalKeyboardKey.pageUp);
 
-    expect(_selections(events), ['Echo', 'Hotel', 'Delta']);
-  });
+      expect(_selections(events), ['Echo', 'Hotel', 'Delta']);
+    });
+  }
 
   testWidgets('READ_ONLY: a typed letter selects the next item starting with it', (tester) async {
     final events = await _pumpFocused(tester, SWT.READ_ONLY);

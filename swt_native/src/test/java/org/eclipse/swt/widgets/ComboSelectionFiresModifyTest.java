@@ -57,6 +57,10 @@ class ComboSelectionFiresModifyTest {
 
     /** A file-size unit combo sitting on "MB", the shape the reported dialog uses. */
     private Combo sizeUnitCombo() {
+        return sizeUnitCombo(SWT.READ_ONLY);
+    }
+
+    private Combo sizeUnitCombo(int style) {
         Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         DartDisplay displayImpl = (DartDisplay) display.getImpl();
@@ -74,7 +78,7 @@ class ComboSelectionFiresModifyTest {
             return null;
         }).when(display).asyncExec(any(Runnable.class));
 
-        Combo combo = new Combo(shell, SWT.READ_ONLY);
+        Combo combo = new Combo(shell, style);
         combo.setItems(new String[] {"B", "KB", "MB", "GB"});
         combo.select(2);
         return combo;
@@ -122,5 +126,143 @@ class ComboSelectionFiresModifyTest {
                         "already be applied when it runs")
                 .containsExactly("GB");
         assertThat(combo.getText()).as("and the pick stays applied afterwards").isEqualTo("GB");
+    }
+
+    @Test
+    @DisplayName("an editable combo asks the Verify listeners about the picked item replacing its text, before Modify")
+    void editablePickVerifiesTheWholeTextFirst() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        List<String> seen = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> seen.add("Verify " + e.text + " " + e.start + ".." + e.end));
+        combo.addListener(SWT.Modify, e -> seen.add("Modify"));
+        combo.addListener(SWT.Selection, e -> seen.add("Selection"));
+
+        pickFromTheList("GB");
+
+        assertThat(seen)
+                .as("Win32, GTK and Cocoa put a pick into an editable combo's field through Verify, which " +
+                        "replaces the whole of the old text")
+                .containsExactly("Verify GB 0..2", "Modify", "Selection");
+    }
+
+    @Test
+    @DisplayName("a Verify listener's veto keeps the old text and fires no Modify")
+    void editablePickVetoed() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        combo.addListener(SWT.Verify, e -> e.doit = false);
+        List<Integer> seen = recordEvents(combo);
+
+        pickFromTheList("GB");
+
+        assertThat(seen).as("a refused text changes nothing").isEmpty();
+        assertThat(combo.getText()).isEqualTo("MB");
+        assertThat(verdicts()).as("the client, which shows the pick, is told it was refused").containsExactly(false);
+    }
+
+    @Test
+    @DisplayName("a pick a Verify listener rewrites to no item leaves no item selected")
+    void editablePickRewrittenToNoItem() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        combo.addListener(SWT.Verify, e -> e.text = "TB");
+
+        pickFromTheList("GB");
+
+        assertThat(combo.getText()).isEqualTo("TB");
+        assertThat(combo.getSelectionIndex()).isEqualTo(-1);
+    }
+
+    /** The {@code doit} of each modify verdict sent to the client, in order. */
+    private List<Object> verdicts() {
+        List<Object> verdicts = new ArrayList<>();
+        for (dev.equo.swt.harness.RecordingComm.Frame frame : bridge.comm.sent) {
+            if (frame.event.contains("modify/verdict")) verdicts.add(frame.state().get("doit"));
+        }
+        return verdicts;
+    }
+
+    @Test
+    @DisplayName("the Selection of a pick carries no text, as no native's does")
+    void selectionCarriesNoText() {
+        Combo combo = sizeUnitCombo();
+        List<String> texts = new ArrayList<>();
+        combo.addListener(SWT.Selection, e -> texts.add(String.valueOf(e.text)));
+
+        pickFromTheList("GB");
+
+        assertThat(texts).containsExactly("null");
+    }
+
+    private void typeIntoTheField(String newText) {
+        Event e = new Event();
+        e.text = newText;
+        bridge.comm.fireContaining("/Modify/Modify", e);
+    }
+
+    @Test
+    @DisplayName("a typed edit of an editable combo goes through Verify, naming only what was typed, before Modify")
+    void typedEditVerifiesFirst() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        List<String> seen = new ArrayList<>();
+        combo.addListener(SWT.Verify, e -> seen.add("Verify " + e.text + " " + e.start + ".." + e.end));
+        combo.addListener(SWT.Modify, e -> seen.add("Modify " + combo.getText()));
+
+        typeIntoTheField("MBx");
+
+        assertThat(seen).containsExactly("Verify x 2..2", "Modify MBx");
+    }
+
+    @Test
+    @DisplayName("a Verify listener that refuses a typed edit keeps the old text")
+    void typedEditVetoed() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        combo.addListener(SWT.Verify, e -> e.doit = false);
+        List<Integer> seen = recordEvents(combo);
+
+        typeIntoTheField("MBx");
+
+        assertThat(seen).isEmpty();
+        assertThat(combo.getText()).isEqualTo("MB");
+        assertThat(verdicts()).containsExactly(false);
+    }
+
+    @Test
+    @DisplayName("a Verify listener that disposes the combo on a pick ends it there: no Modify, no Selection")
+    void pickDisposedByVerify() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        combo.addListener(SWT.Verify, e -> combo.dispose());
+        List<Integer> seen = recordEvents(combo);
+
+        pickFromTheList("GB");
+
+        assertThat(combo.isDisposed()).isTrue();
+        assertThat(seen).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Verify listener that disposes the combo on a typed edit ends it there: no Modify")
+    void typedEditDisposedByVerify() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        combo.addListener(SWT.Verify, e -> combo.dispose());
+        List<Integer> seen = recordEvents(combo);
+
+        typeIntoTheField("MBx");
+
+        assertThat(combo.isDisposed()).isTrue();
+        assertThat(seen).isEmpty();
+        assertThat(verdicts()).as("a disposed combo has no client to answer").isEmpty();
+    }
+
+    @Test
+    @DisplayName("a Verify listener that rewrites a typed edit makes the edit what it wrote, and the client is sent it")
+    void typedEditRewrittenByVerify() {
+        Combo combo = sizeUnitCombo(SWT.DROP_DOWN);
+        combo.addListener(SWT.Verify, e -> e.text = e.text.toUpperCase());
+        VCombo value = (VCombo) ((DartWidget) combo.getImpl()).getValue();
+        value.clearDirty();
+
+        typeIntoTheField("MBx");
+
+        assertThat(combo.getText()).isEqualTo("MBX");
+        assertThat(value.changedKeys()).as("the client shows the x it typed, so the X goes back to it").contains(VCombo.TEXT);
     }
 }

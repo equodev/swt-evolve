@@ -35,8 +35,8 @@ class ComboEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
     }
 
     @Test
-    @DisplayName("a Modify from Flutter sets the text and tells the Modify listeners, without asking Verify again")
-    void modifySetsTheTextWithoutAskingVerifyAgain() {
+    @DisplayName("a Modify from Flutter asks Verify about the typed text once, sets the text and tells the Modify listeners")
+    void modifyVerifiesOnceAndSetsTheText() {
         Combo combo = combo(SWT.NONE);
         List<Event> modified = record(combo, SWT.Modify);
         List<Event> verified = record(combo, SWT.Verify);
@@ -46,7 +46,7 @@ class ComboEventsFromFlutterNativeTest extends EventsFromFlutterNativeTestBase {
 
         assertThat(combo.getText()).isEqualTo("typed");
         assertThat(modified).hasSize(1);
-        assertThat(verified).isEmpty();
+        assertThat(verified).singleElement().extracting(e -> e.text).isEqualTo("typed");
     }
 
     @Test
