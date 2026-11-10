@@ -33,6 +33,17 @@ final class DisplayBridgePlatform {
             SWT.error(SWT.ERROR_NO_HANDLES, null, " [gtk_init_check() failed]");
     }
 
+    /** Loads the native library the system browser is opened through ({@code Program.launch}, GIO). */
+    static void beforeBrowserLaunch() {
+        if (nativeLibraryOff())
+            return;
+        try {
+            Class.forName("org.eclipse.swt.internal.gtk.OS", true, DisplayBridgePlatform.class.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     /** Nothing {@link #init()} set up outlives the Display on this platform. */
     static void release() {
     }

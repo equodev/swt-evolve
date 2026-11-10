@@ -51,6 +51,17 @@
     // The per-build and per-state-change marks, separately: they fire thousands of times a second
     // and were measured costing 12.5% of busy CPU, which a profile must not pay by default.
     window.evolve.perfDetail = "{{EQUO_PERF_DETAIL}}" === "true";
+    // Served before the Display's comm was listening: the port is asked for at once, and the app is
+    // only run once it has it (flutter_bootstrap.js), so the page loads while the Display is created.
+    if ("{{EQUO_COMM_PORT_PENDING}}" === "true") {
+      window.evolve.commPortReady = fetch("equo-comm-port", { cache: "no-store" })
+        .then(function (r) { return r.ok ? r.text() : ""; })
+        .catch(function () { return ""; })
+        .then(function (port) {
+          window.equoCommPort = parseInt(port, 10) || 0;
+          if (!window.equoCommPort) console.error("Evolve: the server gave no comm port; the app cannot connect");
+        });
+    }
   </script>
   <script>
     // Counts the frames the engine has put on screen: it hands each rasterised frame to its display

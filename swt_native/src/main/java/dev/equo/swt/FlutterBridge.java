@@ -100,7 +100,6 @@ public abstract class FlutterBridge {
     private static boolean nothingQueued() {
         return queuedWidgets == 0 && dirty.isEmpty();
     }
-    private static FlutterBridge bridge;
     private static boolean keepClient = false;
 
     /**
@@ -290,7 +289,7 @@ public abstract class FlutterBridge {
      */
     public static CommService commFor(Object w) {
         CommService c = commOf(getBridge(w));
-        if (c == null) c = commOf(bridge);
+        if (c == null) c = commOf(InjectedBridge.bridge);
         return c != null ? c : desktopComm();
     }
 
@@ -1170,7 +1169,7 @@ public abstract class FlutterBridge {
     }
 
     public static void set(FlutterBridge staticBridge) {
-        bridge = staticBridge;
+        InjectedBridge.bridge = staticBridge;
     }
 
     /**
@@ -1179,7 +1178,7 @@ public abstract class FlutterBridge {
      * every widget routes through it (see {@link #of}), so per-Display bridges must not be created.
      */
     public static FlutterBridge injected() {
-        return bridge;
+        return InjectedBridge.bridge;
     }
 
     /** Registered only from {@code DisplayBridge}; stays unset in embed builds, whose events carry the OS's times. */

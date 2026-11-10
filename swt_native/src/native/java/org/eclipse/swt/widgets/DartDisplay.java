@@ -1925,6 +1925,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public void init() {
+        webPageServer = dev.equo.swt.WebPageLaunch.start(this.getApi(), DisplayBridgePlatform::beforeBrowserLaunch);
         super.init();
         if ("true".equalsIgnoreCase(System.getProperty(USE_SYSTEM_THEME))) {
         }
@@ -4068,6 +4069,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 Default = null;
             deregister(this.getApi());
         }
+        webPageServer = dev.equo.swt.WebPageLaunch.abandon(webPageServer);
+        if (displayBridge != null)
+            displayBridge.destroyDisplay();
     }
 
     Rectangle bounds = new Rectangle(0, 0, 1920, 1080);
@@ -4112,6 +4116,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     DisplayBridge displayBridge;
+
+    dev.equo.swt.WebFlutterServer webPageServer;
 
     public FlutterBridge getDisplayBridge() {
         return displayBridge;

@@ -2,6 +2,7 @@ package dev.equo.swt.spi;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.ToIntFunction;
 
 /**
@@ -23,6 +24,7 @@ public final class FlutterBridgeSpi {
     private static volatile Consumer<Object> displayCreatedListener = d -> {};
     private static volatile Function<Object, String> webServerUrlLookup = d -> null;
     private static volatile ToIntFunction<Object> commPortLookup = d -> -1;
+    private static volatile Predicate<String> pageOpener = url -> false;
 
     public static void registerDisplayCreatedListener(Consumer<Object> listener) {
         if (listener != null) displayCreatedListener = listener;
@@ -46,5 +48,19 @@ public final class FlutterBridgeSpi {
 
     public static int getCommPort(Object display) {
         return display != null ? commPortLookup.applyAsInt(display) : -1;
+    }
+
+    /**
+     * A host that opens the application's page itself, in place of the system browser. Called on the
+     * Display's thread while the Display is being created, so it must hand the opening off and return;
+     * {@code true} when it took the page. An opener that takes the page wins over
+     * {@code equo.swt.browser=none}.
+     */
+    public static void registerPageOpener(Predicate<String> opener) {
+        if (opener != null) pageOpener = opener;
+    }
+
+    public static boolean openPage(String url) {
+        return pageOpener.test(url);
     }
 }

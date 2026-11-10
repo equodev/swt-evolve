@@ -16,7 +16,11 @@ import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -94,7 +98,8 @@ public class WebFlutterServer {
 
     private final File webDirectory;
     private final int httpPort;
-    private final int commPort;
+    /** Pending while the server was started ahead of the comm: see {@link Builder#commPortLater}. */
+    private final CompletableFuture<Integer> commPort = new CompletableFuture<>();
     private final long widgetId;
     private final String widgetName;
     private final String theme;
@@ -125,7 +130,7 @@ public class WebFlutterServer {
         this.webDirectory = builder.webDirectory;
         this.httpPort = builder.httpPort;
         this.relaunchPort = builder.relaunchPort;
-        this.commPort = builder.commPort;
+        if (!builder.commPortLater) commPort.complete(builder.commPort);
         this.widgetId = builder.widgetId;
         this.widgetName = builder.widgetName;
         this.theme = builder.theme;
@@ -158,6 +163,7 @@ public class WebFlutterServer {
         ProxyHandler proxy = new ProxyHandler(proxyCookies);
         httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance, requestsServed, proxy));
         httpServer.createContext(INSTANCE_PATH, this::answerInstance);
+        httpServer.createContext(COMM_PORT_PATH, this::answerCommPort);
         httpServer.createContext("/proxy", proxy);
         httpServer.createContext("/equo-browser-function", new BrowserFunctionHandler());
         httpServer.createContext("/local-file", new LocalFileHandler());
@@ -196,6 +202,47 @@ public class WebFlutterServer {
         return HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
     }
 
+    /** Where a page served before the comm was listening asks for its port. */
+    static final String COMM_PORT_PATH = "/equo-comm-port";
+    /** How long a page waits for the comm port before it is told there is none. */
+    private static final long COMM_PORT_WAIT_MS = 60_000;
+
+    /** The comm port the page connects to, once the Display has published it ({@link #publishCommPort}). */
+    public void publishCommPort(int port) {
+        commPort.complete(port);
+    }
+
+    /** Answers the comm port as soon as it is published: the page asks for it while it is still loading. */
+    private void answerCommPort(HttpExchange exchange) throws IOException {
+        try {
+            Integer port = awaitCommPort(commPort);
+            byte[] body = (port == null ? "" : String.valueOf(port)).getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+            exchange.getResponseHeaders().set("Cache-Control", "no-store");
+            exchange.sendResponseHeaders(port == null ? 503 : 200, body.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(body);
+            }
+        } finally {
+            exchange.close();
+        }
+    }
+
+    /**
+     * The published comm port, or null when none is within {@link #COMM_PORT_WAIT_MS}. Blocks: only an
+     * HTTP worker thread calls it, never the Display thread, which is the one that publishes the port.
+     */
+    static Integer awaitCommPort(CompletableFuture<Integer> commPort) {
+        try {
+            return commPort.get(COMM_PORT_WAIT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException | TimeoutException e) {
+            return null;
+        }
+    }
+
     private void answerInstance(HttpExchange exchange) throws IOException {
         try {
             pageAsked.countDown();
@@ -221,7 +268,7 @@ public class WebFlutterServer {
 
     /** Waits for a page served by another server on this port to ask whether it is still current. */
     public boolean awaitReturningPage(long timeoutMs) throws InterruptedException {
-        return pageAsked.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+        return pageAsked.await(timeoutMs, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -308,6 +355,10 @@ public class WebFlutterServer {
     public void launchBrowser() throws IOException {
         String url = getApplicationUrl();
 
+        if (dev.equo.swt.spi.FlutterBridgeSpi.openPage(url)) {
+            LOG.info("The host opened " + url);
+            return;
+        }
         // Server-side auto-launch is gated by the equo.swt.browser system property:
         // "none" disables it. A host that serves a remote browser (where the
         // browser is on the user's machine, not the server) sets
@@ -410,7 +461,7 @@ public class WebFlutterServer {
     static class StaticFileHandler implements HttpHandler {
 
         private final Path rootDir;
-        private final int commPort;
+        private final CompletableFuture<Integer> commPort;
         private final long widgetId;
         private final String widgetName;
         private final boolean serveServiceWorker;
@@ -419,8 +470,9 @@ public class WebFlutterServer {
         private final AtomicLong requestsServed;
         private final ProxyHandler proxy;
 
-        StaticFileHandler(File rootDir, int commPort, long widgetId, String widgetName, boolean serveServiceWorker,
-                boolean enableTestSemantics, String instance, AtomicLong requestsServed, ProxyHandler proxy) {
+        StaticFileHandler(File rootDir, CompletableFuture<Integer> commPort, long widgetId, String widgetName,
+                boolean serveServiceWorker, boolean enableTestSemantics, String instance, AtomicLong requestsServed,
+                ProxyHandler proxy) {
             this.proxy = proxy;
             this.rootDir = rootDir.toPath().toAbsolutePath().normalize();
             this.commPort = commPort;
@@ -536,8 +588,13 @@ public class WebFlutterServer {
 
                 if (file.getName().equals("index.html")) {
                     String content = new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+                    Integer port = commPort.getNow(null);
+                    // A page built before the port could be asked for (an external web bundle's own
+                    // index.html) is held until there is one to give it.
+                    if (port == null && !content.contains("{{EQUO_COMM_PORT_PENDING}}")) port = awaitCommPort(commPort);
                     content = content
-                            .replace("{{EQUO_COMM_PORT}}", String.valueOf(commPort))
+                            .replace("{{EQUO_COMM_PORT}}", String.valueOf(port != null ? port : 0))
+                            .replace("{{EQUO_COMM_PORT_PENDING}}", String.valueOf(port == null))
                             .replace("{{EQUO_COMM_URL}}", "")
                             .replace("{{EQUO_WIDGETID}}", String.valueOf(widgetId))
                             .replace("{{EQUO_WIDGETNAME}}", widgetName != null ? widgetName : "")
@@ -967,6 +1024,7 @@ public class WebFlutterServer {
         private int httpPort = 0; // 0 = ephemeral
         private int relaunchPort;
         private int commPort;
+        private boolean commPortLater;
         private long widgetId;
         private String widgetName = "";
         private String theme = "light";
@@ -1006,6 +1064,16 @@ public class WebFlutterServer {
          */
         public Builder commPort(int port) {
             this.commPort = port;
+            return this;
+        }
+
+        /**
+         * The server starts before the comm listens, so the page can load meanwhile. The page asks for
+         * the port at {@link WebFlutterServer#COMM_PORT_PATH} and only runs the app once {@link WebFlutterServer#publishCommPort} has
+         * given it.
+         */
+        public Builder commPortLater() {
+            this.commPortLater = true;
             return this;
         }
 

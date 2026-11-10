@@ -6,6 +6,7 @@ import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.Java8;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WebFlutterServer;
+import dev.equo.swt.WebPageLaunch;
 import dev.equo.swt.comm.CommService;
 import dev.equo.swt.spi.FlutterBridgeSpi;
 import org.eclipse.swt.graphics.Rectangle;
@@ -186,7 +187,7 @@ public class WebDisplayBridge extends DisplayBridge {
         // of static WebFlutterServer, so the Dart VM Service is available for DTD/MCP + flutter_driver.
         // The app connects back to this comm port via --dart-define. Static serving + the Browser-widget
         // endpoints (/proxy, /equo-browser-function) are skipped in this mode.
-        if (isDartDebug()) {
+        if (WebPageLaunch.isDartDebug()) {
             launchFlutterRunDev(port, displayId, "Display");
             FlutterBridgeSpi.registerWebServerUrlLookup(WebDisplayBridge::lookupWebServerUrl);
             FlutterBridgeSpi.registerCommPortLookup(WebDisplayBridge::lookupCommPort);
@@ -194,55 +195,31 @@ public class WebDisplayBridge extends DisplayBridge {
             return;
         }
 
-        WebFlutterServer.Builder serverBuilder = new WebFlutterServer.Builder()
-                .commPort(port)
-                .widgetId(displayId)
-                .widgetName("Display");
-        // Optional override of the served web build directory, so a combined/host app can serve its
-        // own Flutter web build (with any extension hooks installed) instead of the one extracted from
-        // Evolve's jar. Set via -Ddev.equo.swt.web.dir=<absolute dir>; otherwise, in a packaged product,
-        // discover the external web bundle owner (EWT) via the ExternalWebBundleProvider SPI (mirrors
-        // the desktop ExternalBundleProvider path). Standalone Evolve finds no provider.
-        String webDirOverride = System.getProperty("dev.equo.swt.web.dir");
-        if (webDirOverride == null || webDirOverride.trim().isEmpty()) {
-            try (BootTrace.Span span = BootTrace.span("externalWebBundle")) {
-                webDirOverride = dev.equo.swt.FlutterLibraryLoader.firstExternalWebDir(
-                        java.util.ServiceLoader.load(dev.equo.swt.ExternalWebBundleProvider.class));
+        // The page was opened as the Display started (WebPageLaunch); it runs the app once given the
+        // port, and every channel it sends on is wired by now.
+        WebFlutterServer servingPage = display.webPageServer;
+        display.webPageServer = null;
+        if (servingPage != null) {
+            webServer = servingPage;
+            webServer.publishCommPort(port);
+        } else {
+            // Only a Chromium window gets here: WebPageLaunch opened every other page.
+            webServer = WebPageLaunch.build(display.getApi(), new WebFlutterServer.Builder().commPort(port));
+            WebPageLaunch.serve(webServer);
+            try {
+                openChromiumWindow();
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Failed to open a browser for Display", e);
             }
         }
-        if (webDirOverride != null && !webDirOverride.trim().isEmpty()) {
-            serverBuilder.webDirectory(new java.io.File(webDirOverride));
-        }
-        try (BootTrace.Span span = BootTrace.span("webServer.build")) {
-            webServer = serverBuilder.build();
-        }
-        try {
-            try (BootTrace.Span span = BootTrace.span("webServer.start")) {
-                webServer.start();
+        // The headless browser is this Display's own: the Display is ready once it has connected.
+        if (webServer.launchedHeadlessBrowser()) {
+            try {
+                awaitHeadlessClient(comm);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Failed to start web server for Display", e);
             }
-            WebFlutterServer.carryPortAcrossRelaunch(webServer.getPort());
-            if (isChromium) {
-                try {
-                    chromiumLauncher = new ChromiumStandaloneLauncher();
-                    chromiumLauncher.setOnWindowClosed(this::onClientWindowClosed);
-                    chromiumLauncher.open(webServer.getApplicationUrl());
-                } catch (LinkageError e) {
-                    // Chromium bundle not wired to this classloader (OSGi optional import not
-                    // satisfied, or API version mismatch). Fall back to the system browser.
-                    System.err.println("[WebDisplayBridge] Chromium unavailable (" + e.getMessage() + "), falling back to system browser: ");
-                    e.printStackTrace();
-                    webServer.launchBrowser();
-                }
-            } else if (webServer.servesRelaunchedPage()) {
-                launchBrowserUnlessThePageReturns(webServer);
-            } else {
-                try (BootTrace.Span span = BootTrace.span("webServer.launchBrowser")) {
-                    webServer.launchBrowser();
-                }
-                if (webServer.launchedHeadlessBrowser()) awaitHeadlessClient(comm);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to start web server for Display", e);
         }
 
         FlutterBridgeSpi.registerWebServerUrlLookup(WebDisplayBridge::lookupWebServerUrl);
@@ -269,25 +246,19 @@ public class WebDisplayBridge extends DisplayBridge {
         }
     }
 
-    /** Long enough for the page of the JVM this one was relaunched from to poll its server once. */
-    private static final long RETURNING_PAGE_WAIT_MS = 5_000;
-
-    /**
-     * The page the previous JVM served reloads into this one when it is still open, so a browser is
-     * only opened when no page asks within the wait: the user had closed it.
-     */
-    private static void launchBrowserUnlessThePageReturns(WebFlutterServer server) {
-        Thread waiter = new Thread(() -> {
-            try {
-                if (!server.awaitReturningPage(RETURNING_PAGE_WAIT_MS)) server.launchBrowser();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (java.io.IOException e) {
-                System.err.println("[WebDisplayBridge] Could not open a browser on " + server.getApplicationUrl() + ": " + e);
-            }
-        }, "relaunch-browser");
-        waiter.setDaemon(true);
-        waiter.start();
+    /** The page's window when it is an Equo Chromium one, which needs the platform initialized first. */
+    private void openChromiumWindow() throws java.io.IOException {
+        try {
+            chromiumLauncher = new ChromiumStandaloneLauncher();
+            chromiumLauncher.setOnWindowClosed(this::onClientWindowClosed);
+            chromiumLauncher.open(webServer.getApplicationUrl());
+        } catch (LinkageError e) {
+            // Chromium bundle not wired to this classloader (OSGi optional import not
+            // satisfied, or API version mismatch). Fall back to the system browser.
+            System.err.println("[WebDisplayBridge] Chromium unavailable (" + e.getMessage() + "), falling back to system browser: ");
+            e.printStackTrace();
+            webServer.launchBrowser();
+        }
     }
 
     /**
@@ -469,11 +440,6 @@ public class WebDisplayBridge extends DisplayBridge {
             comm().remove(dev.equo.swt.WireTable.TYPE_SHELL, shell.hashCode(), dev.equo.swt.WireTable.CHANNEL_WIN_UNLOAD);
             command(dev.equo.swt.WireTable.CHANNEL_CLOSE_WINDOW, Java8.map("shellId", (long) shell.hashCode()));
         }
-    }
-
-    /** Whether the Phase 2 dev/introspection path is active (serve via `flutter run`, VM Service on). */
-    private static boolean isDartDebug() {
-        return Boolean.getBoolean("dev.equo.swt.dartDebug");
     }
 
     /**

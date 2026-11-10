@@ -72,6 +72,17 @@ final class DisplayBridgePlatform {
         applicationClass = 0;
     }
 
+    /** Loads the native library the system browser is opened through ({@code Program.launch}, NSWorkspace). */
+    static void beforeBrowserLaunch() {
+        if (nativeLibraryOff())
+            return;
+        try {
+            Class.forName("org.eclipse.swt.internal.cocoa.OS", true, DisplayBridgePlatform.class.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     /** The application menu as SWT widgets, for the menu bar Evolve draws inside the window. */
     static Menu systemMenu(Display display) {
         if (nativeLibraryOff())

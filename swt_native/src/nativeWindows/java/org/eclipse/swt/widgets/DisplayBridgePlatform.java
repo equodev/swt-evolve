@@ -24,6 +24,16 @@ final class DisplayBridgePlatform {
         org.eclipse.swt.internal.win32.OS.OleInitialize(0);
     }
 
+    /**
+     * The system browser is opened through {@code ShellExecuteEx} ({@code Program.launch}), which wants
+     * COM initialized on the calling thread. {@link #init} initializing it again is harmless.
+     */
+    static void beforeBrowserLaunch() {
+        if (nativeLibraryOff())
+            return;
+        org.eclipse.swt.internal.win32.OS.OleInitialize(0);
+    }
+
     /** Nothing {@link #init()} set up outlives the Display on this platform. */
     static void release() {
     }

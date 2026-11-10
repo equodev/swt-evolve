@@ -12,6 +12,7 @@ _flutter.loader.load({
     performance.mark('evolve.entrypointLoaded');
     const appRunner = await engineInitializer.initializeEngine();
     performance.mark('evolve.engineInitialized');
+    if (window.evolve && window.evolve.commPortReady) await window.evolve.commPortReady;
     await appRunner.runApp();
   },
 });

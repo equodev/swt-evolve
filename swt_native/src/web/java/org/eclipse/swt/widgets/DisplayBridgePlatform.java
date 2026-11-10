@@ -16,6 +16,10 @@ final class DisplayBridgePlatform {
         // Pure web: no Java-side native init.
     }
 
+    /** Pure web: a browser is opened with nothing native. */
+    static void beforeBrowserLaunch() {
+    }
+
     /** Nothing {@link #init()} set up outlives the Display on this platform. */
     static void release() {
     }
