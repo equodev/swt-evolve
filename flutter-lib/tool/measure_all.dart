@@ -5,6 +5,7 @@ import './measure.dart';
 import './measure_button.dart' as button;
 import './measure_canvas.dart' as canvas;
 import './measure_ccombo.dart' as ccombo;
+import './measure_ccombo_list.dart' as ccombo_list;
 import './measure_clabel.dart' as clabel;
 import './measure_combo.dart' as combo;
 import './measure_label.dart' as label;
@@ -35,6 +36,10 @@ void main() {
   // A List's item height is a theme declaration, not a measurement: it reads ListThemeExtension and
   // writes ListSizes and ListTheme immediately.
   list.writeListSizesFiles();
+
+  // So is the height of a row of a CCombo's list: it reads CComboThemeExtension and writes
+  // CComboListSizes immediately.
+  ccombo_list.writeCComboListSizesFile();
 
   final measurer = WidgetMeasurer();
 

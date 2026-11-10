@@ -21,6 +21,7 @@ import 'utils/text_utils.dart';
 import 'utils/at_rest.dart';
 import 'utils/widget_utils.dart';
 import 'utils/pending_text_echoes.dart';
+import 'utils/key_edit_order.dart';
 import 'key_forwarding.dart';
 import 'utils/quiet_animations.dart';
 
@@ -42,7 +43,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
       key == LogicalKeyboardKey.numpadEnter ||
       key == LogicalKeyboardKey.space;
 
-  final MenuController _menuController = MenuController();
+  final _ListController _listController = _ListController();
   bool _isFocused = false;
   /// The last `listVisible` Java sent or was told. Only a change from it is a command to open or close.
   bool? _lastJavaListVisible;
@@ -56,9 +57,38 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     super.initState();
     _controller = TextEditingController(text: state.text);
     _focusNode = FocusNode();
+    KeyEditOrder.instance.registerEditor(_focusNode!, _takesTyping);
     HardwareKeyboard.instance.addHandler(_handleListKey);
     _lastJavaListVisible = state.listVisible;
   }
+
+  late final _FieldEdits _fieldEdits = _FieldEdits(_onFieldEdited);
+
+  /// The user edited the field: what is typed passes through an input formatter, which no write of
+  /// the controller does. The DropdownMenu answers every edit by opening the list, which a native
+  /// CCombo's Text does not, so that open is refused while the edit is handled. Java owns the text
+  /// and fires the Verify and Modify, so the edit is reported to it once the field holds it.
+  void _onFieldEdited() {
+    _listController.refuseOpen = true;
+    scheduleMicrotask(() {
+      _listController.refuseOpen = false;
+      if (!mounted) return;
+      final text = _controller.text;
+      state.text = text;
+      recordSentText(text);
+      widget.sendModifyModify(
+        state,
+        VEvent()
+          ..text = text
+          ..start = _controller.selection.baseOffset,
+      );
+      KeyEditOrder.instance.editApplied();
+    });
+  }
+
+  /// Whether a typed character edits the field: an editable one with its list closed, where the
+  /// letters go to the list's type-ahead instead.
+  bool _takesTyping() => !_isReadOnly && (state.enabled ?? true) && !_listController.isOpen;
 
   /// Its field keeps the wheel on every native, so the parent reports none.
   @override
@@ -77,7 +107,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// not. It is mounted while anything could interact with it -- the pointer over it, focus in it, its
   /// list open or about to open -- so input always reaches the real one.
   bool get _live =>
-      _isFocused || hovered || _menuController.isOpen || _javaListTarget == true || handingOver || forcedLive;
+      _isFocused || hovered || _listController.isOpen || _javaListTarget == true || handingOver || forcedLive;
 
   /// The field's place in focus traversal while at rest, and the parent of the menu's own nodes once
   /// it is mounted, so focus never leaves the control while one replaces the other.
@@ -135,7 +165,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     if (mounted &&
         change != null &&
         change.isOnly(unbuilt) &&
-        !_menuController.isOpen &&
+        !_listController.isOpen &&
         _keepsLayout(state.text ?? '')) {
       extraSetState();
       return;
@@ -165,7 +195,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// the arrow's area opens the list as well; a read-only field opens the list wherever it is tapped.
   void _tapAtRest(bool opensList) => handOver(() {
         _focusInside();
-        if (opensList && !_menuController.isOpen) _menuController.open();
+        if (opensList && !_listController.isOpen) _listController.open();
         handedOver();
         setState(() {});
       });
@@ -204,15 +234,15 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     _lastJavaListVisible = visible;
     _javaListTarget = visible == true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _menuController.isOpen == (visible == true)) return;
-      visible == true ? _menuController.open() : _menuController.close();
+      if (!mounted || _listController.isOpen == (visible == true)) return;
+      visible == true ? _listController.open() : _listController.close();
     });
   }
 
   /// Tells Java whether the list is open: Flutter draws it, so Java has no other way to know.
   void _reportListVisible() {
     if (!mounted) return;
-    final bool open = _menuController.isOpen;
+    final bool open = _listController.isOpen;
     if (open != _listShown) {
       _listShown = open;
       // A list that closed may leave nothing keeping the menu mounted.
@@ -281,7 +311,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
           controller: _controller,
           focusNode: _focusNode,
           arrowFocusNode: _arrowFocusNode,
-          menuController: _menuController,
+          menuController: _listController,
           items: state.items ?? [],
           enabled: isEnabled,
           isReadOnly: isReadOnly,
@@ -295,6 +325,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
           live: _live,
           restFocus: _restFocus,
           onTapAtRest: isEnabled ? _tapAtRest : null,
+          fieldEdits: _fieldEdits,
         ),
       ),
     );
@@ -366,7 +397,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
       _enterHeld = event is! KeyUpEvent && _isFocused;
     }
-    if (event is KeyUpEvent || !_menuController.isOpen) return false;
+    if (event is KeyUpEvent || !_listController.isOpen) return false;
     if (_isTypedLetter(event)) {
       _typeAhead(event.character!, event.timeStamp);
       // The letter is the list's, where native focus is: it never edits the field.
@@ -474,6 +505,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleListKey);
+    if (_focusNode != null) KeyEditOrder.instance.unregisterEditor(_focusNode!);
     _controller.dispose();
     _focusNode?.dispose();
     _restFocus.dispose();
@@ -511,6 +543,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
   final bool live;
   final FocusNode restFocus;
   final void Function(bool opensList)? onTapAtRest;
+  final TextInputFormatter fieldEdits;
 
   const _StyledDropdownCCombo({
     required this.state,
@@ -532,6 +565,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
     required this.live,
     required this.restFocus,
     this.onTapAtRest,
+    required this.fieldEdits,
   });
 
   /// The width of the value on display, with a pixel of slack either side.
@@ -622,6 +656,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
       initialSelection: state.text,
       requestFocusOnTap: !isReadOnly,
       enableSearch: !isReadOnly,
+      inputFormatters: [fieldEdits],
       textStyle: textStyle,
       textAlign: _getTextAlign(),
       inputDecorationTheme: InputDecorationTheme(
@@ -650,8 +685,9 @@ class _StyledDropdownCCombo extends StatelessWidget {
       ),
       onSelected: onSelected,
       dropdownMenuEntries: entries.of(
-          items, state.itemTooltips, textStyle, state.alignment, widgetTheme, width, () =>
-          items.asMap().entries.map<DropdownMenuEntry<String>>((entry) {
+          items, state.itemTooltips, textStyle, state.alignment, widgetTheme, width, () {
+        final extent = ccomboItemExtent(widgetTheme, textStyle);
+        return items.asMap().entries.map<DropdownMenuEntry<String>>((entry) {
         final int index = entry.key;
         final String item = entry.value;
         // Per-item tooltip fed via setData; the string may carry HTML that HtmlTooltip renders.
@@ -670,9 +706,10 @@ class _StyledDropdownCCombo extends StatelessWidget {
             html: tooltip,
             child: labelWidget,
           ),
-          style: getCComboEntryStyle(widgetTheme, textStyle, width, () => isHighlighted(index)),
+          style: getCComboEntryStyle(widgetTheme, textStyle, width, extent, () => isHighlighted(index)),
         );
-      }).toList()),
+      }).toList();
+      }),
     );
 
     return underRestFocus(Stack(
@@ -804,6 +841,29 @@ class _StyledDropdownCCombo extends StatelessWidget {
       return AlignmentDirectional.topEnd;
     }
     return null;
+  }
+}
+
+/// Hears every edit the user makes to the field, and changes none.
+class _FieldEdits extends TextInputFormatter {
+  _FieldEdits(this.onEdit);
+
+  final VoidCallback onEdit;
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (oldValue.text != newValue.text) onEdit();
+    return newValue;
+  }
+}
+
+/// The list's controller, which can refuse a request to open: see [CComboImpl._onFieldEdited].
+class _ListController extends MenuController {
+  bool refuseOpen = false;
+
+  @override
+  void open({Offset? position}) {
+    if (!refuseOpen) super.open(position: position);
   }
 }
 

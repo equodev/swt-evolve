@@ -2041,7 +2041,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        setText(e.text);
+                        CComboHelper.fieldEdited(this, e);
                     });
                     return;
                 }

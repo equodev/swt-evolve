@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../impl/utils/font_utils.dart';
 import '../../impl/widget_config.dart';
 import '../theme_extensions/ccombo_theme_extension.dart';
 import '../theme_extensions/color_scheme_extension.dart';
@@ -117,17 +118,30 @@ Color getCComboItemBackgroundColor(CComboThemeExtension widgetTheme, bool isSele
   return isSelected ? widgetTheme.selectedItemBackgroundColor : Colors.transparent;
 }
 
+/// The height a CCombo's list lays each item out in: the theme's item height, or one line of [style]
+/// plus the item's vertical padding when that is taller, rounded up to a whole pixel.
+/// CComboListSizes.java mirrors this rule for `getItemHeight()`.
+double ccomboItemExtent(CComboThemeExtension theme, TextStyle style) {
+  final line = FontUtils.measureTextWidget('Ag', style).height + theme.textFieldPadding.vertical;
+  return (line > theme.itemHeight ? line : theme.itemHeight).ceilToDouble();
+}
+
 /// A list entry's style. The open list has a single highlighted item, which hover moves, so hover and
-/// focus paint nothing of their own.
+/// focus paint nothing of their own. Every entry is [extent] high, the list's [ccomboItemExtent],
+/// whatever the platform's tap target and density, so Java can answer where each one is.
 ButtonStyle getCComboEntryStyle(
   CComboThemeExtension widgetTheme,
   TextStyle textStyle,
   double width,
+  double extent,
   bool Function() isHighlighted,
 ) {
   return MenuItemButton.styleFrom(
     foregroundColor: textStyle.color,
-    minimumSize: Size(width, widgetTheme.itemHeight),
+    minimumSize: Size(width, extent),
+    maximumSize: Size(double.infinity, extent),
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    visualDensity: VisualDensity.standard,
     padding: widgetTheme.textFieldPadding,
     overlayColor: Colors.transparent,
   ).copyWith(

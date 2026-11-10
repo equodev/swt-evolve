@@ -373,7 +373,7 @@ public class TextHelper {
      * reports a keystroke, rather than replacing the whole text from 0 the way setText does.
      * {@code caret} is where the client put the caret after the edit, or negative when unknown.
      */
-    static void applyClientEdit(DartText text, String proposed, int caret) {
+    public static void applyClientEdit(DartText text, String proposed, int caret) {
         String old = text.getText();
         Point range = editedRange(old, proposed, text.getSelection(), caret);
         String inserted = proposed.substring(range.x, proposed.length() - (old.length() - range.y));

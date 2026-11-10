@@ -1,10 +1,11 @@
 package org.eclipse.swt.custom;
 
+import dev.equo.swt.size.CComboListSizes;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DartText;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.TextHelper;
 
 /**
  * Glue for {@code DartCCombo}, whose drop-down list is drawn by Flutter: Java learns that it is open
@@ -133,14 +134,19 @@ public class CComboHelper {
         return true;
     }
 
-    /** The height of a row of the list Flutter draws: the font's height plus the row's margin, as a List's. */
+    /**
+     * The field's whole new text after the user edited it in Flutter, applied to the CCombo's Text as
+     * the keystroke that made it: its Verify and Modify, which the CCombo forwards as its own, name
+     * the edit as a native CCombo's Text does. {@code e.start} is the client's caret.
+     */
+    public static void fieldEdited(DartCCombo combo, Event e) {
+        if (e.text == null)
+            return;
+        TextHelper.applyClientEdit((DartText) combo._text().getImpl(), e.text, e.start);
+    }
+
+    /** The height of a row of the list Flutter draws. */
     static int itemHeight(DartCCombo combo) {
-        Font font = combo.getFont();
-        if (font == null || font.isDisposed())
-            return 0;
-        FontData[] fontData = font.getFontData();
-        if (fontData == null || fontData.length == 0 || fontData[0] == null)
-            return 0;
-        return fontData[0].getHeight() + 4;
+        return CComboListSizes.getItemHeight(combo);
     }
 }
