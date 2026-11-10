@@ -690,8 +690,14 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             constraints: constraints,
             selected: isSelected,
             onTap: () {
+              // In a radio group Java's sendSelection ends with the item selected, and the wire
+              // never resends a value Java already sent, so a local flip to false would stay.
+              // Under NO_RADIO_GROUP Java leaves the selection as it is.
+              final toolBar = context.findAncestorStateOfType<ToolBarImpl>();
+              final grouped =
+                  toolBar == null || !hasStyle(toolBar.state.style, SWT.NO_RADIO_GROUP);
               setState(() {
-                state.selection = !isSelected;
+                if (grouped) state.selection = true;
                 _isHovered = false;
               });
               onPressed();

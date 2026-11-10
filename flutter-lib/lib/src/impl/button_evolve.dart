@@ -866,36 +866,48 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     _selectedThisPress = true;
     if (!(state.enabled ?? false)) return;
     final isRadio = hasStyle(state.style, SWT.RADIO);
-    if (isRadio ||
+    final groupScope = isRadio ? _radioGroupScope() : null;
+    final grouped = isRadio && !_hasNoRadioGroup(groupScope);
+    if (grouped) {
+      // A grouped radio only ever turns on: Java's selectRadio ends with it selected, and the
+      // wire never resends a value Java already sent, so a local flip to false would stay.
+      if (!(state.selection ?? false)) setState(() => state.selection = true);
+      // Deselects the rest of the group at once, so the UI never shows two selected before
+      // Java's selectRadio round-trip lands with the same result.
+      _deselectSiblingRadios(groupScope);
+    } else if (isRadio ||
         hasStyle(state.style, SWT.CHECK) ||
         hasStyle(state.style, SWT.TOGGLE)) {
       setState(() {
         state.selection = !(state.selection ?? false);
       });
     }
-    // A radio selecting itself must immediately deselect the other radios in its
-    // group, so the UI never shows more than one selected even before Java's
-    // selectRadio round-trip lands. Java remains the source of
-    // truth and confirms the same result.
-    if (isRadio && (state.selection ?? false)) {
-      _deselectSiblingRadios();
-    }
     widget.sendSelectionSelection(state, null);
   }
 
-  /// Deselect the other RADIO buttons in the same group. The group is the
-  /// nearest enclosing Composite subtree (SWT groups radios by parent); nested
-  /// composites are independent groups. Falls back to the whole tree if no
-  /// composite ancestor is found.
-  void _deselectSiblingRadios() {
+  /// The radio's group: the nearest enclosing Composite (SWT groups radios by parent). Null when
+  /// there is none.
+  Element? _radioGroupScope() {
     Element? scope;
     context.visitAncestorElements((el) {
       if (el is StatefulElement && el.state is CompositeImpl) {
         scope = el;
-        return false; // stop at the nearest enclosing composite
+        return false;
       }
       return true;
     });
+    return scope;
+  }
+
+  /// SWT.NO_RADIO_GROUP on the parent makes each radio toggle on its own, as a check box does.
+  bool _hasNoRadioGroup(Element? scope) {
+    final st = scope is StatefulElement ? scope.state : null;
+    return st is CompositeImpl && hasStyle(st.state.style, SWT.NO_RADIO_GROUP);
+  }
+
+  /// Deselect the other RADIO buttons in the group [scope]; nested composites are independent
+  /// groups. Falls back to the whole tree if no composite ancestor is found.
+  void _deselectSiblingRadios(Element? scope) {
     final Element? root = scope ?? WidgetsBinding.instance.rootElement;
     if (root == null) return;
 
