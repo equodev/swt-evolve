@@ -126,6 +126,8 @@ public class DragDetectHelper {
 
     /** Delivers a MouseMove or MouseUp the client reports, or holds it while a drag detection is under way. */
     static void mouse(DartControl control, int type, Event event) {
+        if (type == SWT.MouseUp && control instanceof DartSash)
+            SashHelper.placeRelease((DartSash) control, event);
         Object data = control.display.getData(TRACKING);
         boolean tracked = data instanceof Tracking && (type == SWT.MouseMove || event.button == 1);
         if (!tracked) {

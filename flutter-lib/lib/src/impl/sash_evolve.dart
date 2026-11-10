@@ -50,6 +50,29 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     }
   }
 
+  /// The positions the drag's moves reported: an answer that brings back one of them, other than
+  /// where the drag was released, is Java catching up with an earlier move.
+  final Set<int> _movedTo = {};
+
+  /// Whether the release has been reported and Java's answer to it has not arrived yet.
+  bool _awaitingAnswer = false;
+
+  static int _position(int x, int y) => x * 65536 + y;
+
+  /// Draws the sash where the drag left it until Java answers the release (SashHelper always does),
+  /// so the pointer that let go of it is still on it when the hover settles.
+  @override
+  void extraSetState() {
+    super.extraSetState();
+    final bounds = state.bounds, released = _releasedAt;
+    if (!_awaitingAnswer || bounds == null || released == null) return;
+    final atRelease = bounds.x == released.dx.round() && bounds.y == released.dy.round();
+    if (!atRelease && _movedTo.contains(_position(bounds.x!, bounds.y!))) return;
+    _awaitingAnswer = false;
+    _localX = null;
+    _localY = null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -129,41 +152,41 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         },
         // A press and a release each report the sash's position, ahead of their MouseDown and
         // MouseUp, as a native Sash does; this Listener sits inside the control's own, so it is
-        // reached first. The drag in between reports its moves from the pan below. The second
-        // press of a double click reports neither, as on Win32 and Cocoa.
+        // reached first. Each move of the drag in between reports its own here too, ahead of its
+        // MouseMove: a gesture recognizer would hear the move only after the control's Listener.
+        // The second press of a double click reports neither, as on Win32 and Cocoa.
         child: Listener(
           onPointerDown: enabled
               ? (e) {
                   _primaryPress = e.buttons == kPrimaryButton;
-                  if (_primaryPress && !continuesClickChain(e)) {
-                    _sendPositionSelection(pressed: true);
+                  if (!_primaryPress) return;
+                  _releasedAt = null;
+                  _dragPointer = e.pointer;
+                  final at = state.bounds;
+                  if (at != null) {
+                    _parentOrigin = logicalToSwt(e.position) - e.localPosition - Offset(at.x!.toDouble(), at.y!.toDouble());
                   }
+                  if (!continuesClickChain(e)) _sendPositionSelection(pressed: true);
+                  _isDragging = true;
+                  handleSelectionStart(e.position);
+                }
+              : null,
+          onPointerMove: enabled
+              ? (e) {
+                  if (_isDragging && e.buttons & kPrimaryButton != 0) handleSelectionDrag(e.position);
                 }
               : null,
           onPointerUp: enabled
               ? (_) {
                   if (_primaryPress && swtClickCount == 1) _sendPositionSelection(pressed: false);
                   _primaryPress = false;
+                  _endDrag();
                 }
               : null,
-          child: GestureDetector(
-          onPanStart: enabled
-              ? (details) {
-                  _isDragging = true;
-                  handleSelectionStart(details);
-                }
-              : null,
-          onPanUpdate: enabled
-              ? (details) {
-                  if (_isDragging) {
-                    handleSelectionDrag(details);
-                  }
-                }
-              : null,
-          onPanEnd: enabled
-              ? (details) {
-                  _isDragging = false;
-                  handleSelectionEnd(details);
+          onPointerCancel: enabled
+              ? (_) {
+                  _primaryPress = false;
+                  _endDrag();
                 }
               : null,
           child: Container(
@@ -173,7 +196,6 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
             color: sashColor,
           ),
         ),
-        ),
       ),
     );
 
@@ -182,29 +204,60 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       lastAppliedY = _localY;
     }
 
-    return tagSemantics(trackPointer(sashContent));
+    // The parent places the sash at the bounds Java last sent; a drag draws it where the pointer
+    // took it until Java's bounds catch up, so it stays under the pointer as a native one does.
+    // Always mounted: a wrapper added mid-drag would remount the gesture that is moving it.
+    var drift = Offset.zero;
+    if (bounds != null && _localX != null && _localY != null) {
+      drift = Offset((_localX! - bounds.x!).toDouble(), (_localY! - bounds.y!).toDouble());
+    }
+
+    return tagSemantics(Transform.translate(offset: drift, child: trackPointer(sashContent)));
+  }
+
+  /// The parent's origin on the view, in SWT units, taken at the press.
+  Offset? _parentOrigin;
+
+  /// Where the drag last reported the sash when the pointer let go, which its MouseUp lies on.
+  Offset? _releasedAt;
+
+  /// The pointer of the primary press the two above were taken for.
+  int? _dragPointer;
+
+  /// Relative to where the drag last reported the sash, read off the pointer rather than the
+  /// layout, which lags it. Java moves a MouseUp onto where its listeners kept the sash
+  /// (SashHelper.placeRelease). Any other pointer is the control's as usual.
+  @override
+  Offset heldLocal(PointerEvent e) {
+    final origin = _parentOrigin, bounds = state.bounds;
+    if (origin == null || bounds == null || e.pointer != _dragPointer) return super.heldLocal(e);
+    final at = _localX != null && _localY != null
+        ? Offset(_localX!.toDouble(), _localY!.toDouble())
+        : _releasedAt ?? Offset(bounds.x!.toDouble(), bounds.y!.toDouble());
+    return logicalToSwt(e.position) - origin - at;
   }
 
   void _enterLocalEditMode() {
     final bounds = state.bounds;
     if (bounds != null) {
       _isInLocalEditMode = true;
+      _awaitingAnswer = false;
+      _movedTo.clear();
       _localX = bounds.x;
       _localY = bounds.y;
     }
   }
 
-  void _exitLocalEditMode() {
-    // The release already reported where the drag ended (_sendPositionSelection); the local
-    // position stays until Java's bounds catch up.
-    if (_isInLocalEditMode && _localX != null && _localY != null && state.bounds != null) {
-      _isInLocalEditMode = false;
-      return;
-    }
-
+  /// Once the pointer lets go, where the sash ends is Java's to say: its listeners may have kept it
+  /// elsewhere than the drag took it.
+  void _endDrag() {
+    _isDragging = false;
     _isInLocalEditMode = false;
-    _localX = null;
-    _localY = null;
+    if (_localX == null || _localY == null) return;
+    _releasedAt = Offset(_localX!.toDouble(), _localY!.toDouble());
+    lastAppliedX = _localX;
+    lastAppliedY = _localY;
+    _awaitingAnswer = true;
   }
 
   /// Whether the press in flight is the primary button's: only that one moves a sash.
@@ -223,11 +276,13 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         ..width = bounds.width
         ..height = bounds.height
         ..detail = 0
-        ..stateMask = pressed ? SWT.BUTTON1 : 0,
+        ..stateMask = pressed ? SWT.BUTTON1 : 0
+        // The release says it is one: Java reports it where its listeners kept the sash (SashHelper).
+        ..button = pressed ? 0 : 1,
     );
   }
 
-  void handleSelectionStart(DragStartDetails details) {
+  void handleSelectionStart(Offset globalPosition) {
     final bounds = state.bounds;
     if (bounds != null) {
       _enterLocalEditMode();
@@ -236,13 +291,13 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       _lastY = _localY ?? bounds.y;
 
       // The pointer is read against the view and the bounds are SWT units.
-      final pointer = logicalToSwt(details.globalPosition);
+      final pointer = logicalToSwt(globalPosition);
       _startX = pointer.dx.round() - _lastX;
       _startY = pointer.dy.round() - _lastY;
     }
   }
 
-  void handleSelectionDrag(DragUpdateDetails details) {
+  void handleSelectionDrag(Offset globalPosition) {
     final isHorizontal = hasStyle(SWT.HORIZONTAL);
 
     final bounds = state.bounds;
@@ -253,7 +308,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
     int newX = _lastX;
     int newY = _lastY;
-    final pointer = logicalToSwt(details.globalPosition);
+    final pointer = logicalToSwt(globalPosition);
 
     if (isHorizontal) {
       newY = pointer.dy.round() - _startY;
@@ -298,6 +353,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
     _lastX = newX;
     _lastY = newY;
+    _movedTo.add(_position(newX, newY));
 
     // Native SWT fires Selection continuously while the sash is dragged
     // (SwtSash.mouseDragged) so apps can resize the surrounding composites
@@ -310,15 +366,6 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       ..detail = 0
       ..stateMask = 0;
     widget.sendSelectionSelection(state, event);
-  }
-
-  void handleSelectionEnd(DragEndDetails details) {
-    if (_isInLocalEditMode && _localX != null && _localY != null) {
-      lastAppliedX = _localX;
-      lastAppliedY = _localY;
-
-      _exitLocalEditMode();
-    }
   }
 
   void handleFocusIn() {

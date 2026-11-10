@@ -80,7 +80,23 @@ class SashSelectionMovesSashTest {
     }
 
     private void fireSelectionFromFlutter(int x, int y, int width, int height) {
+        fireSelectionFromFlutter(x, y, width, height, 0);
+    }
+
+    /** The release's Selection, as the client marks it: button 1, nothing held. */
+    private void fireRelease(int x, int y, int width, int height) {
         Event e = new Event();
+        e.button = 1;
+        e.x = x;
+        e.y = y;
+        e.width = width;
+        e.height = height;
+        bridge.comm.fireContaining("/Selection/Selection", e);
+    }
+
+    private void fireSelectionFromFlutter(int x, int y, int width, int height, int stateMask) {
+        Event e = new Event();
+        e.stateMask = stateMask;
         e.x = x;
         e.y = y;
         e.width = width;
@@ -147,6 +163,96 @@ class SashSelectionMovesSashTest {
         assertThatCode(() -> SashHelper.selected((DartSash) sash.getImpl(), press)).doesNotThrowAnyException();
         assertThat(sash.isDisposed()).as("the press activated the sash's parent, whose listener disposed it").isTrue();
         assertThat(selections).isEmpty();
+    }
+
+    @Test
+    @DisplayName("the release reports where the listeners last put the sash, not where the pointer let go")
+    void theReleaseReportsTheLastAcceptedPosition() {
+        Sash sash = sash();
+        List<Integer> reported = new ArrayList<>();
+        sash.addListener(SWT.Selection, e -> {
+            reported.add(e.x);
+            e.x = Math.min(e.x, 240);
+        });
+
+        fireSelectionFromFlutter(195, 0, 10, 260, SWT.BUTTON1);
+        fireSelectionFromFlutter(230, 0, 10, 260, 0);
+        fireSelectionFromFlutter(270, 0, 10, 260, 0);
+        fireRelease(270, 0, 10, 260);
+
+        assertThat(reported).containsExactly(195, 230, 270, 240);
+        assertThat(sash.getBounds().x).isEqualTo(240);
+    }
+
+    @Test
+    @DisplayName("the MouseUp of another button is left where the client put it")
+    void anotherButtonsMouseUpIsLeftAlone() {
+        Sash sash = sash();
+        sash.addListener(SWT.Selection, e -> e.x = Math.min(e.x, 240));
+        List<Integer> ups = new ArrayList<>();
+        sash.addListener(SWT.MouseUp, e -> ups.add(e.x));
+
+        fireSelectionFromFlutter(195, 0, 10, 260, SWT.BUTTON1);
+        fireSelectionFromFlutter(270, 0, 10, 260, 0);
+        Event up = new Event();
+        up.button = 3;
+        up.x = 5;
+        DragDetectHelper.mouse((DartSash) sash.getImpl(), SWT.MouseUp, up);
+
+        assertThat(ups).containsExactly(5);
+    }
+
+    @Test
+    @DisplayName("a click whose press a listener vetoes leaves the sash where it is")
+    void aVetoedPressLeavesTheSash() {
+        Sash sash = sash();
+        sash.addListener(SWT.Selection, e -> {
+            if ((e.stateMask & SWT.BUTTON1) != 0)
+                e.doit = false;
+        });
+
+        fireSelectionFromFlutter(195, 0, 10, 260, SWT.BUTTON1);
+        fireRelease(195, 0, 10, 260);
+
+        assertThat(sash.getBounds().x).isEqualTo(195);
+    }
+
+    @Test
+    @DisplayName("a drag move that repeats the last position is a move, not a release")
+    void aRepeatedMoveIsNoRelease() {
+        Sash sash = sash();
+        List<Integer> reported = new ArrayList<>();
+        sash.addListener(SWT.Selection, e -> {
+            reported.add(e.x);
+            e.x = Math.min(e.x, 240);
+        });
+
+        fireSelectionFromFlutter(195, 0, 10, 260, SWT.BUTTON1);
+        fireSelectionFromFlutter(270, 0, 10, 260, 0);
+        fireSelectionFromFlutter(270, 0, 10, 260, 0);
+
+        assertThat(reported).containsExactly(195, 270, 270);
+    }
+
+    @Test
+    @DisplayName("the release's MouseUp lies on the sash where the listeners kept it, not where the drag took it")
+    void theMouseUpIsPlacedOnTheKeptSash() {
+        Sash sash = sash();
+        sash.addListener(SWT.Selection, e -> e.x = Math.min(e.x, 240));
+        List<Integer> ups = new ArrayList<>();
+        sash.addListener(SWT.MouseUp, e -> ups.add(e.x));
+
+        fireSelectionFromFlutter(195, 0, 10, 260, SWT.BUTTON1);
+        fireSelectionFromFlutter(270, 0, 10, 260, 0);
+        fireRelease(270, 0, 10, 260);
+        Event up = new Event();
+        up.button = 1;
+        up.x = 5;
+        up.y = 100;
+        DragDetectHelper.mouse((DartSash) sash.getImpl(), SWT.MouseUp, up);
+
+        // Pressed 5 into the sash, the pointer let go 30 past where the listener kept it.
+        assertThat(ups).containsExactly(35);
     }
 
     @Test

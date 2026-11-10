@@ -277,6 +277,8 @@ public class ControlHelper {
             ScaleHelper.stepByKey((DartScale) control, key);
         else if (control instanceof DartTabFolder)
             TabFolderHelper.moveSelectionByKey((DartTabFolder) control, key);
+        else if (control instanceof DartSash)
+            SashHelper.moveByKey((DartSash) control, key);
     }
 
     /** Shift+F10, which Win32 and GTK turn into a context-menu request (Cocoa has no such key). */

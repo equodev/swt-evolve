@@ -204,6 +204,12 @@ public class DartSash extends DartControl implements ISash {
         return defaultCursor;
     }
 
+    int reportedX, reportedY;
+
+    static int keyStep(boolean ctrl) {
+        return ctrl ? INCREMENT : PAGE_INCREMENT;
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }
