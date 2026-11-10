@@ -1,6 +1,5 @@
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.zip.ZipFile
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
@@ -142,17 +141,6 @@ val swtVersionFull = (project.parent?.parent?.findProperty("swtVersionFull")
 
 val swtVersion = swtVersionFull.substringBefore(".v")
 
-// An including build with an :eclipse_run project records there (build/swtVersion) the SWT version of
-// the app it swaps these jars into; the jars take that version while it is there, swtVersionFull
-// otherwise. Read as a file: resolving it as a dependency on that build while these tasks run waits
-// for the build to configure, which it never does again once it is running tasks.
-val parentSwtVersionFile: File? = gradle.parent?.rootProject?.findProject(":eclipse_run")
-    ?.let { File(it.projectDir, "build/swtVersion") }
-
-val swtVersionProvider = provider {
-    parentSwtVersionFile?.takeIf { it.exists() }?.readText()?.trim() ?: swtVersionFull
-}
-
 dependencies {
     implementation(libs.java.websocket)
     compileOnly(libs.equo.chromium)
@@ -215,26 +203,6 @@ dependencies {
 
 val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
 
-// Classes that need a JDK newer than Java 8 and have no Java 8 equivalent to fall back on:
-// dev/equo/swt/awt opens its JDK internals through java.lang.Module (added in 9) and dev/equo/swt/jdk9
-// is built on StackWalker.
-// Everything reaches them through dev.equo.swt.Jdk9, which resolves them reflectively, so a fragment
-// built for an older SWT release can leave them out and still work -- SWT_AWT.new_Frame fails with
-// ERROR_NOT_IMPLEMENTED for a Dart-backed composite, and Config reads the stack through a Throwable.
-// Excluding them is what lets the rest of the
-// tree compile at --release 8, where those packages are not visible at all.
-//
-// javafx/embed/swt (FXCanvas) is the same case: it opens the host's javafx.graphics module to this
-// bundle through java.lang.Module, which does not exist before 9, and the whole feature embeds modern
-// JavaFX (21 needs Java 17+), so it can never run on a pre-9 SWT release. It is left out of those
-// fragments entirely -- there is nothing to fall back to, and nothing that could use it there.
-val jdk9OnlySources = listOf("**/dev/equo/swt/awt/**", "**/dev/equo/swt/jdk9/**", "**/javafx/embed/swt/**")
-
-// The oldest JDK the SWT release being built for supports, from gradle/versions/{ver}.properties.
-val minJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()
-val targetJavaRelease = minJavaRelease?.takeIf { it < 21 }
-val dropJdk9Sources = targetJavaRelease != null && targetJavaRelease < 9
-
 // The desktop surface paints text with the host's own font stack, which is what the embedded
 // backend's table for the same OS was measured on. Each native<OS> tree gets that table as
 // GenDesktopFontMetrics, beside the shared GenFontMetrics the web surface measures with (see
@@ -267,7 +235,6 @@ extra["registerFlutterBackend"] = { name: String, dirs: List<Any> ->
         java {
             setSrcDirs(listOf("src/main/java", "src/native/java") + dirs)
             exclude(nativeFlutterExcludes)
-            if (dropJdk9Sources) exclude(jdk9OnlySources)
         }
         backendSetup(this)
     }
@@ -283,7 +250,6 @@ sourceSets {
             ))
             srcDir(desktopFontMetrics.getValue("native${currentOs.replaceFirstChar { it.titlecase() }}"))
             exclude(nativeFlutterExcludes)
-            if (dropJdk9Sources) exclude(jdk9OnlySources)
         }
     }
 
@@ -299,7 +265,6 @@ sourceSets {
                     exclude(nativeFlutterExcludes)
                 }
                 desktopFontMetrics[os]?.let { srcDir(it) }
-                if (dropJdk9Sources) exclude(jdk9OnlySources)
             }
             backendSetup(this)
 
@@ -329,119 +294,11 @@ sourceSets {
             if (currentOs != "macos" && System.getenv("CI") != null) exclude("org/eclipse/swt/opengl/GLCanvas*Test.java")
             // Win32*NativeTest: the classes they cover only exist in the win32 backend.
             if (currentOs != "windows") exclude("**/Win32*NativeTest.java")
-            // ImageDataAtSizeProvider and the at-size machinery it drives only exist from 3.132
-            // (absent in 3.131), so the test covering that path cannot compile against older SWT.
-            // Older releases do not read SVG either.
-            val swtMinorNative = swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE
-            if (swtMinorNative < 132) {
-                exclude("org/eclipse/swt/graphics/ImageAtSizeProviderNativeTest.java")
-                exclude("org/eclipse/swt/graphics/ImageAtSizeDrawNativeTest.java")
-                exclude("org/eclipse/swt/graphics/ImageSvgNativeTest.java")
-            }
-            // Control.setAutoscalingMode was added in 3.133 and Scrollable.setScrollbarsMode in 3.126.
-            if (swtMinorNative < 133) exclude("org/eclipse/swt/widgets/AutoscalingModeImplementationNativeTest.java")
-            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/ScrollbarsModeImplementationNativeTest.java")
-            // The widget tracker is told of each widget from 3.130.
-            if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
-            // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
-            if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
-            // StyledTextRenderer keeps the average line height its reset test checks from 3.114.
-            if (swtMinorNative < 114) exclude("org/eclipse/swt/custom/StyledTextRendererResetTest.java")
-            // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
-            if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
-            // Clipboard.getContentsAsync is new in 3.132; DropTarget's label handlers came after 3.120.
-            if (swtMinorNative < 132) {
-                exclude("org/eclipse/swt/dnd/DartClipboardAsyncTest.java")
-                exclude("org/eclipse/swt/dnd/DropTargetLabelHandlersTest.java")
-            }
-            // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
-            // tests covering that constructor cannot compile against older SWT.
-            if (swtMinorNative < 129) {
-                exclude("org/eclipse/swt/graphics/ImageGcDrawerFailureTest.java")
-                exclude("org/eclipse/swt/graphics/ImageGcDrawerTrafficTest.java")
-                exclude("org/eclipse/swt/graphics/ImageGcDrawerEqualityNativeTest.java")
-            }
-            // MessageBox.setButtonLabels was added in 3.121.
-            if (swtMinorNative < 121) exclude("org/eclipse/swt/widgets/MessageBoxButtonLabelsNativeTest.java")
-            // org.eclipse.swt.internal.DPIUtil is absent from 3.103. IntegerOn150 and AutoScalePolicy
-            // import it, so the tests built on them go with it.
-            if (swtMinorNative < 104) {
-                exclude("dev/equo/swt/AutoScalePolicy.java")
-                exclude("dev/equo/swt/IntegerOn150.java")
-                exclude("dev/equo/swt/ConfigUiZoomTest.java")
-                exclude("dev/equo/swt/size/ThemeTextZoomSizeTest.java")
-                exclude("org/eclipse/swt/graphics/DeviceDpiAutoScaleTest.java")
-                exclude("org/eclipse/swt/graphics/HostScreenDpiNativeTest.java")
-                exclude("javafx/embed/swt/FXCanvasPixelDensityNativeTest.java")
-                exclude("org/eclipse/swt/widgets/DeskWindowUnitsTest.java")
-                exclude("org/eclipse/swt/widgets/ShellMenuBarClientAreaNativeTest.java")
-                // Also absent from 3.103: ImageDataProvider and ImageFileNameProvider,
-                // SWT.AUTO_TEXT_DIRECTION, SWT.Pre/PostExternalEventDispatch, SWT.COLOR_TRANSPARENT
-                // with Color.getAlpha, Control.requestLayout and Link.setLinkForeground.
-                exclude("org/eclipse/swt/graphics/ImageDataProviderConstructorTest.java")
-                exclude("org/eclipse/swt/graphics/ImageDataProviderZoomTest.java")
-                exclude("org/eclipse/swt/graphics/ImageImplementationNativeTest.java")
-                exclude("org/eclipse/swt/graphics/TextLayoutRulesNativeTest.java")
-                exclude("org/eclipse/swt/widgets/LinkImplementationNativeTest.java")
-                exclude("org/eclipse/swt/widgets/AutoTextDirectionTest.java")
-            }
-            // Image.getImageData(int zoom) was added in 3.106.
-            if (swtMinorNative < 106) {
-                exclude("org/eclipse/swt/graphics/ImageProviderZoomNativeTest.java")
-                exclude("org/eclipse/swt/graphics/ImageDisposeAndBackgroundNativeTest.java")
-                exclude("org/eclipse/swt/graphics/GCRasterScaleNativeTest.java")
-            }
-            // These assert what SWT 3.134's BusyIndicator does when the display goes away; earlier releases differ.
-            if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
-            // BusyIndicator.compute and execute were added in 3.123.
-            if (swtMinorNative < 123) exclude("org/eclipse/swt/custom/BusyIndicatorCallerContextNativeTest.java")
-            // TextLayout.setFixedLineMetrics was added in 3.125.
-            if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
-            // FileDialog.openDialog() and DirectoryDialog.openDialog() were added in 3.126; open(),
-            // which the rest of the dialog tests go through, is in every release.
-            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/DialogOpenDialogNativeTest.java")
-            // org.eclipse.swt.layout.BorderLayout was added in 3.119; the test that subclasses it
-            // cannot compile against older baselines. Layout subclassing itself stays covered by
-            // LayoutSubclassTest, which does not touch BorderLayout.
-            if (swtMinorNative < 119) exclude("org/eclipse/swt/widgets/BorderLayoutSubclassTest.java")
-            // CCombo.setAlignment was added in 3.113.
-            if (swtMinorNative < 113) exclude("org/eclipse/swt/custom/CComboSetAlignmentTest.java")
-            // Tree.setHeaderForeground was added in 3.106.
-            if (swtMinorNative < 106) exclude("org/eclipse/swt/widgets/TreeHeaderForegroundNativeTest.java")
-            // Cocoa's Tree gained keyDown, one of the fields the accessors answer, in 3.126.
-            if (swtMinorNative < 126) exclude("org/eclipse/swt/widgets/TreeAccessorsNativeTest.java")
-            // Shell.setMaximumSize/getMaximumSize were added in 3.116.
-            if (swtMinorNative < 116) exclude("org/eclipse/swt/widgets/ShellMaximumSizeNativeTest.java")
-            // StyledText.setLineSpacingProvider was added in 3.107 and setLineVerticalIndent in 3.109.
-            if (swtMinorNative < 109) exclude("org/eclipse/swt/custom/StyledTextLineProvidersWireNativeTest.java")
-            // TextLayout.setVerticalIndent was added in 3.109.
-            if (swtMinorNative < 109) exclude("org/eclipse/swt/graphics/TextLayoutVerticalIndentNativeTest.java")
-            // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
-            // CompositeImageDescriptor API ships with the JFace paired with it, and CTabFolder only
-            // highlights the active stack (onActivate/onDeactivate) from that release on.
-            if (swtMinorNative < 106) {
-                exclude("org/eclipse/swt/graphics/ImageProcessingNativeTest.java")
-                // Image.getImageData(int zoom) is package-private in 3.105 and public from 3.106 on,
-                // so the API class the generator writes only carries it from there; this test reads
-                // one image back at three zooms.
-                exclude("org/eclipse/swt/graphics/ImageReadBackAtOtherZoomTest.java")
-                // Table/Tree.setHeaderBackground and setHeaderForeground were added in 3.106.
-                exclude("org/eclipse/swt/widgets/WidgetCheckedFirstTest.java")
-            }
         }
         // src/test/resources is this source set's own by convention; the per-OS blocks above add the
         // .css/.png/SWTMessages that sit beside the generated Java.
         compileClasspath += nativeBackend.output + nativeBackend.compileClasspath
         runtimeClasspath += output + nativeBackend.output + nativeBackend.runtimeClasspath
-    }
-
-    // AutoScalePolicy and IntegerOn150 import org.eclipse.swt.internal.DPIUtil, absent from 3.103.
-    named("testFixtures") {
-        java {
-            if ((swtVersion.split(".").getOrNull(1)?.toIntOrNull() ?: Int.MAX_VALUE) < 104) {
-                exclude("dev/equo/swt/AutoScalePolicy.java", "dev/equo/swt/IntegerOn150.java")
-            }
-        }
     }
 
     // What is left of the embedded suite: the tests whose subject is Dart and Swt widgets coexisting
@@ -518,27 +375,6 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
     options.compilerArgs.add("-parameters")
-    // Compile AT the level this jar has to run on rather than compiling at 21 and rewriting the
-    // bytecode afterwards. The generator copies each SWT release's sources at that release's own
-    // level and src/main is written to the lowest one, so there is nothing left to downgrade.
-    //
-    // Two ways of saying it, because javac refuses --add-exports on a system module together with
-    // --release, at ANY level. Below 9 the Swing bridge that needs those exports is excluded anyway
-    // (java.lang.Module does not exist there), so --release applies and brings its API check with
-    // it. From 9 up the bridge ships, so the level is set with -source/-target and the API check is
-    // left to checkJavaApiLevel, which excludes the bridge and can therefore use --release.
-    when {
-        targetJavaRelease == null -> {}
-        dropJdk9Sources -> options.release.set(targetJavaRelease)
-        else -> {
-            sourceCompatibility = targetJavaRelease.toString()
-            targetCompatibility = targetJavaRelease.toString()
-        }
-    }
-    // JDK 21's javac warns about both ways: release 8 is obsolete, and -source/-target compiles
-    // against THIS JDK's API, so it cannot verify the result runs on the older one.
-    // checkJavaApiLevel is what actually verifies it.
-    if (targetJavaRelease != null) options.compilerArgs.add("-Xlint:-options")
     // The Evolve SWT_AWT bridge (dev.equo.swt.awt.*) hosts Swing off-screen through
     // sun.swing.JLightweightFrame / LightweightContent — the same internal contract
     // JavaFX's SwingNode uses. These packages are not exported by default.
@@ -548,200 +384,10 @@ tasks.withType<JavaCompile> {
     // never pumps, so posted tasks never run). At runtime the bridge exports both packages to
     // itself (EvolveSwingHost.openSwingInternals), or takes the matching --add-exports from the
     // deployment's own -vmargs.
-    // Only meaningful from 9 on: below that there are no modules to export from, javac rejects the
-    // flag outright, and the Swing bridge that needs them is excluded from the build anyway.
-    if (!dropJdk9Sources) options.compilerArgs.addAll(listOf(
+    options.compilerArgs.addAll(listOf(
         "--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
         "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED"
     ))
-}
-
-// Guards the Java level of everything we hand to an older SWT release. The generator copies each
-// release's sources at that release's own level, and src/main is shared across all of them, so the
-// only way a Java 9+ construct reaches a fragment built for SWT 3.114 (minJavaVersion=8) is from our
-// own code. Compiling at --release 8 is what proves it: unlike -source/-target it checks the API
-// surface too, so Map.ofEntries or String.isBlank fail here instead of at a customer's runtime.
-//
-// dev/equo/swt/awt (and the SWT_AWT that calls into it) is excluded: the Swing bridge is built on
-// sun.swing / sun.awt, which --release hides because they are not documented API. That
-// pair is the one thing still standing between this check and dropping the bytecode downgrader --
-// either the bridge leaves the fragments built for pre-9 releases, or it keeps them on -source 8
-// with no API check.
-// Only has something to say on a build targeting an older release; on the default (21) it skips.
-val checkJavaApiLevel by tasks.registering(JavaCompile::class) {
-    group = "verification"
-    description = "Compiles the embedded backend at the target release's minJavaVersion, to catch newer-Java API leaking into an older SWT release"
-    onlyIf {
-        if (targetJavaRelease == null) logger.lifecycle("No minJavaVersion below 21 - nothing to check.")
-        targetJavaRelease != null
-    }
-    val backend = sourceSets.getByName("embed${currentOs.replaceFirstChar { it.titlecase() }}")
-    source = backend.java.asFileTree.matching { exclude(jdk9OnlySources) }
-    classpath = backend.compileClasspath
-    destinationDirectory.set(layout.buildDirectory.dir("java-api-check"))
-    options.encoding = "UTF-8"
-    options.release.set(targetJavaRelease ?: 21)
-    // -Xlint:-options silences the "source value 8 is obsolete" pair; -proc:none: nothing here has
-    // annotations to process.
-    options.compilerArgs.addAll(listOf("-Xlint:-options", "-proc:none"))
-    // The withType<JavaCompile> block below adds --add-exports for the Swing bridge; javac refuses
-    // it together with target 8, and this task excludes the bridge anyway.
-    doFirst {
-        options.compilerArgs.removeAll { it == "--add-exports" || it.endsWith("=ALL-UNNAMED") }
-    }
-}
-
-// The files the generator does not own: src/main is entirely hand-written, and these names are
-// hand-written islands inside the generated trees. Mirrors the exclusion list in swtgenerator's
-// generatedJavaTree - HandWrittenSourcesInSyncTest fails the build if the two ever drift.
-val handWrittenInGeneratedTrees = listOf(
-    "**/dev/equo/**",
-    "**/*Bridge*.java",
-    "**/VDisplay.java",
-    "**/VShellPopups.java",
-    "**/WidgetSpy.java",
-    "**/MacApplicationMenu.java",
-    "**/MacMenuBar.java",
-    "**/AppKitValues.java",
-    "**/TextLayoutMeasurement.java",
-    "**/StyledTextMeasurements.java",
-    "**/ImeHelper.java",
-    "**/TrackerHelper.java",
-    "**/TextPasteHelper.java",
-    "**/PointerCrossingHelper.java",
-    "**/ShellActivation.java",
-    "**/TextApiEdits.java",
-)
-
-// The oldest JDK any enabled release runs on. Hand-written code is shared by every one of them, so
-// this is the level it has to fit inside, whatever version the build happens to be targeting.
-val javaFloor = 8
-
-// checkJavaApiLevel needs the generated tree to BE the old release's, so it can only run in the
-// release pipeline, after that version was generated. This one needs nothing generated: it compiles
-// the hand-written files alone, with the already-built backend on the classpath. javac reads those
-// Java 21 class files happily while holding the sources it is given to release 8, so the check runs
-// on any branch, against whatever version is checked out, in seconds.
-//
-// That is the point. The shared sources reach every fragment, including the Java 8 ones, and
-// nothing on an MR compiled them at that level: the normal pipeline builds at 21 and the
-// old-version ladder is a child pipeline gated on release. Newer-Java syntax kept reaching main and
-// surfacing days later, in a release job.
-fun registerJava8Check(name: String, backendName: String, extraDirs: List<Any>, flutterBackend: Boolean) =
-    tasks.register<JavaCompile>(name) {
-        group = "verification"
-        description = "Compiles the hand-written sources of $backendName at Java $javaFloor"
-        val backend = sourceSets.getByName(backendName)
-        dependsOn(backend.classesTaskName)
-        source = files(
-            fileTree("src/main/java") { include("**/*.java") },
-            *extraDirs.map { d ->
-                fileTree(d) { include(handWrittenInGeneratedTrees) }
-            }.toTypedArray()
-        ).asFileTree.matching {
-            exclude(jdk9OnlySources)
-            // ConfigDyn and GraphicsUtilsSwt reach for Dyn*/Swt* classes that only the embedded
-            // backend generates, which is why its source sets drop them; mirror that here.
-            if (flutterBackend) exclude(nativeFlutterExcludes)
-        }
-        // The generated classes this code calls into come from the classpath, already compiled.
-        classpath = backend.output + backend.compileClasspath
-        destinationDirectory.set(layout.buildDirectory.dir("java8-check/$name"))
-        options.encoding = "UTF-8"
-        options.release.set(javaFloor)
-        options.compilerArgs.addAll(listOf("-Xlint:-options", "-proc:none"))
-        // javac rejects --add-exports together with --release at any level; the sources that need
-        // those exports are the jdk9-only ones this task excludes.
-        doFirst { options.compilerArgs.removeAll { it == "--add-exports" || it.endsWith("=ALL-UNNAMED") } }
-    }
-
-private val osSuffix = currentOs.replaceFirstChar { it.titlecase() }
-
-// One per backend: the same file name appears in several trees (DisplayBridgePlatform in each
-// native<OS>, SwtEmbeddedBridge and WidgetSpy in each embed<OS>), so one merged compile would
-// collide on duplicate classes.
-val checkJava8Native = registerJava8Check(
-    "checkJava8Native", "native$osSuffix", listOf("src/native/java", "src/native$osSuffix/java"), flutterBackend = true)
-val checkJava8Embed = registerJava8Check(
-    "checkJava8Embed", "embed$osSuffix", listOf("src/embed$osSuffix/java"), flutterBackend = false)
-
-val checkJava8Sources by tasks.registering {
-    group = "verification"
-    description = "Checks every hand-written source that ships to a Java $javaFloor release"
-    dependsOn(checkJava8Native, checkJava8Embed)
-}
-
-// A build that includes this one checks the backends it adds: (name, backend, dirs).
-extra["registerJava8Check"] = { name: String, backendName: String, dirs: List<Any> ->
-    registerJava8Check(name, backendName, dirs, flutterBackend = true).also { check ->
-        checkJava8Sources.configure { dependsOn(check) }
-    }
-}
-
-// checkJavaApiLevel proves the SOURCE stays inside the release's API. This proves the ARTIFACT:
-// --release / -target are supposed to stamp the class-file version, but until something reads the
-// jar back nobody has confirmed they did, and a shaded dependency can carry a newer class in behind
-// them. Runs in swt_build, per version, once the jars exist.
-val ourPackages = listOf("org/eclipse/swt/", "dev/equo/swt/")
-
-val verifyJarJavaLevel by tasks.registering {
-    group = "verification"
-    description = "Reads the built jars back and checks every class against the target release's class-file version"
-    // The jars are the subject, so this can never be considered up to date on their behalf.
-    outputs.upToDateWhen { false }
-    val libsDir = layout.buildDirectory.dir("libs")
-    val release = targetJavaRelease ?: 21
-    val expected = release + 44 // Java 8 -> 52, 11 -> 55, 17 -> 61, 21 -> 65
-    doLast {
-        val jars = libsDir.get().asFile
-            .listFiles { f: File -> f.name.startsWith("swt_evolve-") && f.name.endsWith(".jar") }
-            ?.sortedBy { it.name }.orEmpty()
-        if (jars.isEmpty())
-            throw GradleException("No swt_evolve-*.jar under ${libsDir.get().asFile} - the jars must be built first, " +
-                    "or this check passes while verifying nothing.")
-
-        val problems = mutableListOf<String>()
-        jars.forEach { jar ->
-            var checked = 0
-            ZipFile(jar).use { zip ->
-                for (entry in zip.entries()) {
-                    // A multi-release overlay is invisible to the older JVM by design, so its
-                    // class-file version says nothing about what that JVM will load.
-                    if (!entry.name.endsWith(".class") || entry.name.startsWith("META-INF/versions/")) continue
-                    val major = zip.getInputStream(entry).use { ins ->
-                        val head = ByteArray(8)
-                        var read = 0
-                        while (read < head.size) {
-                            val n = ins.read(head, read, head.size - read)
-                            if (n < 0) break
-                            read += n
-                        }
-                        if (read < head.size) -1
-                        else ((head[6].toInt() and 0xFF) shl 8) or (head[7].toInt() and 0xFF)
-                    }
-                    if (major < 0) {
-                        problems += "${jar.name}: ${entry.name} is truncated"
-                        continue
-                    }
-                    // Anything above the target simply will not load there - bundled dependencies included.
-                    if (major > expected) problems += "${jar.name}: ${entry.name} is major $major, above $expected"
-                    // Our own classes must sit exactly on it: a lower one would mean the compile
-                    // targeted something other than what this version declares.
-                    if (ourPackages.any { entry.name.startsWith(it) }) {
-                        checked++
-                        if (major != expected) problems += "${jar.name}: ${entry.name} is major $major, expected $expected"
-                    }
-                }
-            }
-            if (checked == 0) problems += "${jar.name}: holds no ${ourPackages.joinToString(" or ")} classes"
-            else logger.lifecycle("${jar.name}: $checked classes at major $expected (Java $release)")
-        }
-        if (problems.isNotEmpty()) {
-            val shown = problems.take(20).joinToString("\n  ")
-            val rest = if (problems.size > 20) "\n  ... and ${problems.size - 20} more" else ""
-            throw GradleException("Class-file version check failed for Java $release:\n  $shown$rest")
-        }
-    }
 }
 
 // Coverage is only consumed from the native suite (merged into swt_eclipse_tests' combined report).
@@ -1135,11 +781,14 @@ val fxImportPackges = "javafx.application;resolution:=optional," +
         "com.sun.javafx.cursor;resolution:=optional," +
         "com.sun.javafx.embed;resolution:=optional," +
         "com.sun.javafx.stage;resolution:=optional"
-fun fragmentHostHeader() =
-    provider { "org.eclipse.swt;bundle-version=\"[${swtVersionProvider.get().substringBefore(".v")},4.0.0)\"" }
+// The fragments attach to the one SWT minor release their generated sources were written from.
+fun fragmentHostHeader(): String {
+    val (major, minor) = swtVersion.split(".").map { it.toInt() }
+    return "org.eclipse.swt;bundle-version=\"[$major.$minor,$major.${minor + 1})\""
+}
 fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.version
-fun hostVersion(suffix: String) = swtVersionProvider.map {
-    "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
+fun hostVersion(suffix: String) = provider {
+    "$swtVersion.v${evolveVersion().toString().replace('.', '_')}-$suffix"
 }
 
 // AppCDS for an installed macOS product: p2.inf adds these lines to its .ini. Relative because the
@@ -1151,6 +800,8 @@ val macosCdsJvmArgs = listOf(
     // The dump's per-class "Skipping" warnings (signed jars, hidden classes) go to stdout otherwise.
     "-Xlog:cds*=error",
 )
+// The oldest JDK the SWT release being built for supports, which a build for another release passes.
+val minJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()
 val shipsMacosCdsArchive = (minJavaRelease ?: 21) >= 19
 fun isMacosHybrid(info: PlatformMeta) = info.isHybrid && info.os == "macos"
 // One p2.inf per macOS hybrid fragment: the framework links writeMacAppLinks lists, then these lines.
@@ -1317,9 +968,7 @@ platforms.forEach { platform ->
                 "Bundle-Name" to "SWT Evolve for ${info.swtOs} on ${info.arch}",
                 "Bundle-Vendor" to bundleVendor,
                 "Bundle-SymbolicName" to "$bsn; singleton:=true",
-                // Published (p2/mvn) version: distinct host version per variant (`-embed`/`-hyb`). The
-                // eclipse_run in-place swap re-stamps this to the target app's SWT version at swap time
-                // (reading the jar it replaces), so the build no longer needs the app's version here.
+                // Published (p2/mvn) version: distinct host version per variant (`-embed`/`-hyb`).
                 "Bundle-Version" to hostVersion(if (info.isHybrid) "hyb" else "embed"),
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to swtExportPackage(info.swtWs),
