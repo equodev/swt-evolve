@@ -53,6 +53,7 @@ import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/image_utils.dart';
+import 'src/impl/utils/key_delivery_order.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
@@ -106,6 +107,7 @@ void main(List<String> args) async {
   final bindingStart = BootTrace.nowMicros();
   WidgetsFlutterBinding.ensureInitialized();
   BootTrace.step('binding.ensureInitialized', bindingStart);
+  unawaited(KeyDeliveryOrder.install());
   FramePresentation.ensureTracking();
   BootTrace.recordFirstFrames(4);
   final fontsStart = BootTrace.nowMicros();
