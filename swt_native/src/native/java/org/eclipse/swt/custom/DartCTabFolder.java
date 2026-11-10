@@ -4198,7 +4198,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         if (control instanceof Composite)
                             ((Composite) control).setBackgroundMode(SWT.INHERIT_NONE);
                         control.setBackgroundImage(null);
-                        control.setBackground(getBackground());
+                        control.setBackground(getExplicitBackground());
                     } else {
                         if (control instanceof Composite)
                             ((Composite) control).setBackgroundMode(SWT.INHERIT_DEFAULT);
@@ -4209,7 +4209,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         if (wrapped || gradientColors == null) {
                             bkImageBounds[i] = null;
                             control.setBackgroundImage(null);
-                            control.setBackground(getBackground());
+                            control.setBackground(getExplicitBackground());
                         } else {
                             bounds.width = 10;
                             if (!onBottom) {
