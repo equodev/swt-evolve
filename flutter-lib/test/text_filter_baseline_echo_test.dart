@@ -12,6 +12,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
+import 'support/java_push.dart';
+
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
   ..y = 0
@@ -58,8 +60,7 @@ void main() {
     // A Shell-level re-serialization lands carrying the pre-edit baseline "" — a value the client
     // never sent as a Modify (so it is not in the recorded in-flight set) while Java's async queue
     // was still behind the burst.
-    await tester.pumpWidget(appWith(value('')));
-    await tester.pump();
+    await javaPushesText(tester, find.byKey(key), '');
 
     expect(find.text('acces'), findsOneWidget,
         reason: 'a stale unrecorded baseline push must NOT wipe the fast-typed text');

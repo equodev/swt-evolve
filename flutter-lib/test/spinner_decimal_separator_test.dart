@@ -16,6 +16,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'support/java_push.dart';
+
 /// The generated SpinnerSwt, except sendEvent captures outgoing events instead of handing them to
 /// EquoCommService, which needs a live transport.
 class _CapturingSpinnerSwt extends SpinnerSwt<VSpinner> {
@@ -116,12 +118,7 @@ void main() {
 
     // What an update from Java does: the state takes the new digits and the widget rebuilds.
     // ignore: avoid_dynamic_calls
-    final dynamic widgetState = tester.state(find.byType(_CapturingSpinnerSwt));
-    // ignore: avoid_dynamic_calls
-    widgetState.state.digits = 2;
-    // ignore: avoid_dynamic_calls
-    widgetState.setValue(widgetState.state);
-    await tester.pump();
+    await javaPushes(tester, find.byType(_CapturingSpinnerSwt), (state) => state.digits = 2);
 
     expect(_shown(tester), '1,23');
   });
@@ -130,22 +127,17 @@ void main() {
       (WidgetTester tester) async {
     await _pump(tester, _spinner(digits: 0, selection: 20));
 
-    // ignore: avoid_dynamic_calls
-    final dynamic widgetState = tester.state(find.byType(_CapturingSpinnerSwt));
-    // ignore: avoid_dynamic_calls
-    widgetState.state.selection = 21;
-    // ignore: avoid_dynamic_calls
-    widgetState.state.keptText = '20';
-    // ignore: avoid_dynamic_calls
-    widgetState.setValue(widgetState.state);
-    await tester.pump();
+    final spinner = find.byType(_CapturingSpinnerSwt);
+    await javaPushes(tester, spinner, (state) {
+      // ignore: avoid_dynamic_calls
+      state.selection = 21;
+      // ignore: avoid_dynamic_calls
+      state.keptText = '20';
+    });
     expect(_shown(tester), '20');
 
     // ignore: avoid_dynamic_calls
-    widgetState.state.keptText = null;
-    // ignore: avoid_dynamic_calls
-    widgetState.setValue(widgetState.state);
-    await tester.pump();
+    await javaPushes(tester, spinner, (state) => state.keptText = null);
     expect(_shown(tester), '21');
   });
 }

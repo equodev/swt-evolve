@@ -45,9 +45,20 @@ mixin PendingTextEchoes {
   /// undo landing exactly on the last acknowledged value while a newer keystroke is still in
   /// flight is indistinguishable from that keystroke's own echo, and is ignored — the safe
   /// direction, since the alternative discards input the user typed.
+  ///
+  /// A value we never sent becomes the new baseline: Java has moved past every value queued
+  /// before it, so a later push carrying one of them (an application setting the field back to
+  /// an earlier value) is a genuine change, not an echo.
+  ///
+  /// Known transient: that rebase drops the keystrokes queued before the new value, so a late
+  /// echo of one of them is applied as an external change, briefly over anything typed since.
+  /// Java's next push, which carries the current text, corrects it.
   bool isStaleTextEcho(String incoming, String currentLocal) {
     final index = _pendingEchoes.indexOf(incoming);
-    if (index < 0) return false;
+    if (index < 0) {
+      if (_pendingEchoes.isNotEmpty) seedTextEchoBaseline(incoming);
+      return false;
+    }
     _pendingEchoes.removeRange(0, index);
     return incoming != currentLocal;
   }

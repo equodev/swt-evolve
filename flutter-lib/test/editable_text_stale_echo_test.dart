@@ -24,6 +24,8 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/ccombo_evolve.dart';
 import 'package:swtflutter/src/impl/utils/force_live.dart';
 
+import 'support/java_push.dart';
+
 VRectangle _bounds(int w, int h) => VRectangle()
   ..x = 0
   ..y = 0
@@ -65,8 +67,7 @@ void main() {
     expect(find.text('AB'), findsOneWidget, reason: 'sanity: field holds typed text');
 
     // Stale echo of the first Modify ("A") arrives after "AB" was typed.
-    await tester.pumpWidget(appWith(value('A')));
-    await tester.pump();
+    await javaPushesText(tester, find.byKey(key), 'A');
 
     expect(find.text('AB'), findsOneWidget,
         reason: 'a stale echo of "A" must NOT clobber the newer local "AB"');
