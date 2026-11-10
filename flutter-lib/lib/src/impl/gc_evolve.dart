@@ -35,7 +35,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       onShapesUpdated: _onShapesUpdated,
       onGCDispose: _onGCDispose,
       onFullRepaintNeeded: _requestFullRepaintFromParent,
-    );
+    )..rowGround = () => mounted ? _ownerDrawnRow()?.textGround : null;
     // The op channels are registered now; tell the owner it may ask Java to paint.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _notifyParentGCSubscribed();

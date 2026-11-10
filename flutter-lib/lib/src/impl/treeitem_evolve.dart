@@ -393,7 +393,14 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               borderRadius: hasMultiColumn
                   ? null
                   : BorderRadius.circular(widgetTheme.borderRadius),
-            )),
+            ),
+            // Without the hover tint, so passing the pointer over a row doesn't repaint it.
+            ground: _isHovered && !selected
+                ? Color.alphaBlend(
+                    getTreeItemBackgroundColor(state, widgetTheme, selected, false, enabled),
+                    enabled ? widgetTheme.backgroundColor : widgetTheme.disabledBackgroundColor)
+                : rowGround,
+            minContrast: widgetTheme.minTextContrast),
           ),
           if (expanded && hasChildren && (_context?.renderChildItems ?? true))
             ...buildChildItems(),
@@ -410,7 +417,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   /// text on top of it. Laid over the row, that background hid every cell whose text the row itself
   /// paints. The row's own [background] (hover, selection) goes under the overlay, not with the row,
   /// or it covers the overlay's drawing.
-  Widget _withOwnerDrawOverlay(Widget row, {required BoxDecoration background}) {
+  Widget _withOwnerDrawOverlay(Widget row,
+      {required BoxDecoration background, required Color ground, required double minContrast}) {
     // Always a Stack, so the row is not remounted when the overlay arrives.
     return Stack(
       children: [
@@ -419,7 +427,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             key: ValueKey(state.id),
             child: DecoratedBox(
               decoration: background,
-              child: OwnerDrawnRowOverlay(itemId: state.id),
+              child: OwnerDrawnRowOverlay(
+                  itemId: state.id, ground: ground, minContrast: minContrast),
             ),
           ),
         row,

@@ -762,7 +762,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
             height: rowHeight,
             child: ColoredBox(
               color: rowBackgroundColor(i, items[i], theme),
-              child: OwnerDrawnRowOverlay(itemId: items[i].id),
+              child: OwnerDrawnRowOverlay(
+                itemId: items[i].id,
+                ground: Color.alphaBlend(
+                    rowBackgroundColor(i, items[i], theme), getTableBackgroundColor(state, theme)),
+                minContrast: theme.minTextContrast,
+              ),
             ),
           ),
     ];

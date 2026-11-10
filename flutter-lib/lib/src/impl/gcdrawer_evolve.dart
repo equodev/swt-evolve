@@ -109,6 +109,16 @@ class GCDrawer extends GCDrawerBase {
   /// The control this GC draws on, set by GCImpl; null for an Image's GC.
   BuildContext? widgetContext;
 
+  /// For the GC of an owner-drawn Table or Tree row: the ground Evolve paints the row on and the
+  /// widget theme's minimum text contrast; null for any other GC, or when the application's colours
+  /// are painted as given. Text is kept legible ([legibleOn]) on what is under it: the row's own
+  /// fills this paint, else this ground.
+  ({Color ground, double minContrast})? Function()? rowGround;
+
+  // The opaque fills this paint has laid on an owner-drawn row, in row coordinates, the last on top.
+  final List<(Rect, Color)> _rowFills = [];
+  static const int _maxRowFills = 256;
+
   /// The control's pixels as they are on screen, read from the nearest repaint boundary that holds
   /// it, with the control's offset inside that capture. [ui.Picture.toImageSync]-backed: it reads
   /// the frame already rasterised, so it is safe while the SWT thread waits for the answer.
@@ -231,6 +241,7 @@ class GCDrawer extends GCDrawerBase {
       final cycleStaging = _staging;
       _staging = _spareStaging ?? [];
       _spareStaging = null;
+      _rowFills.clear();
       _settleNormalFill();
       final cycleTheme = _canvasTheme;
       // Nothing to wait for: committed now, with nothing made for the wait.
@@ -1086,6 +1097,7 @@ class GCDrawer extends GCDrawerBase {
       return;
     }
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    if (isFilled) _recordRowFill(rect, color);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
         _addDashedStroke(
@@ -1125,6 +1137,7 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(x, y, width, height);
     if (isFilled && _patterned && _addPatternFill(Path()..addRect(rect))) return;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    if (isFilled) _recordRowFill(rect, color);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
         _addDashedPolyline(
@@ -1180,8 +1193,23 @@ class GCDrawer extends GCDrawerBase {
     // One fill op, so the strings take the geometry's color rather than resolving it again.
     final color = built != null ? _addPathGeometry(built, isFilled: isFilled) : null;
     for (final text in _pathTexts(path, isFilled: isFilled, color: color)) {
-      _addShape(text);
+      _addShape(_legiblePathText(text));
     }
+  }
+
+  TextShape _legiblePathText(TextShape text) {
+    final paint = text.style.foreground;
+    if (paint == null || rowGround == null) return text;
+    final tp = text.painter;
+    final legible =
+        _legibleOnRow(paint.color, Rect.fromLTWH(text.off.dx, text.off.dy, tp.width, tp.height));
+    if (legible == paint.color) return text;
+    final adjusted = Paint()
+      ..color = legible
+      ..isAntiAlias = paint.isAntiAlias
+      ..style = paint.style
+      ..strokeWidth = paint.strokeWidth;
+    return TextShape(text.text, text.off, text.style.copyWith(foreground: adjusted), text.clipRect);
   }
 
   /// The color the geometry was drawn with, or null when a pattern filled it.
@@ -1353,18 +1381,53 @@ class GCDrawer extends GCDrawerBase {
     final processedText = _processTextFlags(text, flags);
     final transparent = isTransparent ?? (flags & SWT.DRAW_TRANSPARENT) != 0;
 
-    final textStyle = _textStyle(state.font, applyAlpha(textColor));
-
+    final color = applyAlpha(textColor);
     final childClip = _childClip;
-    final textShape = TextShape(processedText, Offset(x, y), textStyle, childClip);
+    var textShape = TextShape(processedText, Offset(x, y), _textStyle(state.font, color), childClip);
+    final tp = textShape.painter;
+    final box = Rect.fromLTWH(x, y, tp.width, tp.height);
 
     if (!transparent) {
-      final tp = textShape.painter;
-      _addShape(RectShape(Rect.fromLTWH(x, y, tp.width, tp.height),
-          applyAlpha(textBackgroundColor), 0, lineCap, lineJoin,
+      final ground = applyAlpha(textBackgroundColor);
+      _recordRowFill(box, ground);
+      _addShape(RectShape(box, ground, 0, lineCap, lineJoin,
           isFilled: true, clipRect: childClip));
     }
+    final legible = _legibleOnRow(color, box);
+    if (legible != color) {
+      textShape = TextShape(processedText, Offset(x, y), _textStyle(state.font, legible), childClip);
+    }
     _addShape(textShape);
+  }
+
+  // The application chose its text colour against the ground it set, which Evolve may not paint:
+  // on an owner-drawn row the text is kept legible on what is actually under it.
+  Color _legibleOnRow(Color color, Rect box) {
+    final row = rowGround?.call();
+    if (row == null) return color;
+    final ground = _groundAt(_onRow(box).center, row.ground);
+    return legibleOn(color, ground, minRatio: row.minContrast);
+  }
+
+  void _recordRowFill(Rect rect, Color color) {
+    final row = rowGround?.call();
+    if (row == null || _rowFills.length >= _maxRowFills) return;
+    final onRow = _onRow(rect);
+    _rowFills.add((onRow, Color.alphaBlend(color, _groundAt(onRow.center, row.ground))));
+  }
+
+  Color _groundAt(Offset point, Color row) {
+    for (final (rect, color) in _rowFills.reversed) {
+      if (rect.contains(point)) return color;
+    }
+    return row;
+  }
+
+  Rect _onRow(Rect rect) {
+    final transform = currentTransform;
+    return transform == null
+        ? rect
+        : MatrixUtils.transformRect(Matrix4.fromFloat64List(transform), rect);
   }
 
   // Tabs and mnemonics as GCHelper.textExtent measures them, so text is drawn as wide as it measures.
@@ -1895,9 +1958,10 @@ class GCDrawer extends GCDrawerBase {
   void onFillGradientRectangleintintintintboolean(
       VGCFillGradientRectangleintintintintboolean o) {
     final rect = _getRectFromArgs(o.x, o.y, o.width, o.height);
-    _addShape(GradientRectShape(
-        rect, applyAlpha(gradientStartColor), applyAlpha(gradientEndColor),
-        o.vertical, _childClip));
+    final start = applyAlpha(gradientStartColor), end = applyAlpha(gradientEndColor);
+    // Text over a gradient is read against its middle.
+    _recordRowFill(rect, Color.lerp(start, end, 0.5)!);
+    _addShape(GradientRectShape(rect, start, end, o.vertical, _childClip));
   }
 
   @override

@@ -6,6 +6,7 @@ import '../gen/event.dart';
 import '../gen/gc.dart';
 import '../gen/widget.dart';
 import 'control_evolve.dart';
+import 'utils/widget_utils.dart' show appPaintsColors;
 import '../gen/widgets.dart' show WireChannel;
 
 /// What an owner-drawing Table or Tree paints into one row: its SWT.EraseItem and SWT.PaintItem
@@ -16,7 +17,15 @@ import '../gen/widgets.dart' show WireChannel;
 class OwnerDrawnRowOverlay extends StatefulWidget {
   final int itemId;
 
-  const OwnerDrawnRowOverlay({super.key, required this.itemId});
+  /// The opaque colour Evolve paints the row on (theme row, band or selection), which the
+  /// listeners' text has to read on wherever they lay no fill of their own.
+  final Color ground;
+
+  /// The Table or Tree theme's minimum text contrast.
+  final double minContrast;
+
+  const OwnerDrawnRowOverlay(
+      {super.key, required this.itemId, required this.ground, required this.minContrast});
 
   @override
   State<OwnerDrawnRowOverlay> createState() => OwnerDrawnRowOverlayState();
@@ -25,11 +34,33 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
 class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   final GlobalKey gcKey = GlobalKey();
   bool _ready = false;
+  bool _subscribed = false;
+
+  /// What the row's GC keeps its text legible on, or null when the application's colours are
+  /// painted as given (use_swt_colors).
+  ({Color ground, double minContrast})? get textGround => appPaintsColors(context)
+      ? null
+      : (ground: widget.ground, minContrast: widget.minContrast);
 
   /// Called by the row's GC once its channels are registered.
   void onGCSubscribed() {
+    _subscribed = true;
+    _requestPaint();
+  }
+
+  void _requestPaint() {
     final parent = context.findAncestorStateOfType<ControlImpl>();
     if (parent != null) _OwnerDrawRequests.add(parent, widget.itemId);
+  }
+
+  @override
+  void didUpdateWidget(OwnerDrawnRowOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The text was made legible on the old ground (a row just selected or deselected).
+    if (_subscribed &&
+        (oldWidget.ground != widget.ground || oldWidget.minContrast != widget.minContrast)) {
+      _requestPaint();
+    }
   }
 
   /// Called by the row's GC once it has something to show.
