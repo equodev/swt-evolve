@@ -219,6 +219,8 @@ public class ConfigFlags implements WireObject {
 
     /** Measures every {@code ToolItem} image as an icon of the theme's size, whatever the size of the
      *  image, so every ToolBar draws its icons at that one size and none is shrunk to fit its bar.
+     *  A ToolBar in a {@code CTabFolder}'s tab row (the folder's own buttons, and its top-right
+     *  control and the bars inside it) keeps its image size, so it fits that row.
      *  On whenever icons are replaced (Evolve's set, or an {@code assets_path} pack); off otherwise,
      *  and then an item is measured from its image, as the platform does.
      *  Turn it off with {@code -Dswt.evolve.bigger_icon_size=false}. */

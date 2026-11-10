@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * {@code bigger_icon_size} enlarges application icons only: a folder's minimize, maximize and
- * chevron buttons keep their image size, so the ToolBar holding them fits the tab row.
+ * {@code bigger_icon_size} leaves a folder's tab row alone: its minimize, maximize and chevron
+ * buttons and its top-right bar keep their image size, so they fit that row.
  */
 @Tag("native-unit")
 class CTabFolderOwnToolBarSizeTest {
@@ -63,11 +63,13 @@ class CTabFolderOwnToolBarSizeTest {
         ToolBar appBar = new ToolBar(folder, SWT.FLAT);
         new ToolItem(appBar, SWT.PUSH).setImage(new Image(DartMocks.dartDisplay(), 16, 16));
         folder.setTopRight(appBar);
+        ToolBar bodyBar = new ToolBar(folder, SWT.FLAT);
+        new ToolItem(bodyBar, SWT.PUSH).setImage(new Image(DartMocks.dartDisplay(), 16, 16));
         ((DartCTabFolder) folder.getImpl()).updateButtons();
 
         int ownItems = 0;
         for (Control child : folder.getChildren()) {
-            if (!(child instanceof ToolBar) || child == appBar) continue;
+            if (!(child instanceof ToolBar) || child == appBar || child == bodyBar) continue;
             assertThat(CTabFolderHelper.ownsToolBar((ToolBar) child)).isTrue();
             for (ToolItem item : ((ToolBar) child).getItems()) {
                 assertThat(height(item)).isEqualTo(item.getImage().getBounds().height + PAD_H);
@@ -75,7 +77,9 @@ class CTabFolderOwnToolBarSizeTest {
             }
         }
         assumeTrue(ownItems > 0, "this SWT release draws the folder's buttons without a ToolBar");
-        assertThat(height(appBar.getItem(0))).as("an application bar on the folder is still enlarged")
+        assertThat(height(appBar.getItem(0))).as("the top-right bar keeps its image size")
+                .isEqualTo(16 + PAD_H);
+        assertThat(height(bodyBar.getItem(0))).as("a bar on the folder outside its tab row is still enlarged")
                 .isEqualTo((int) Math.round(ToolItemSizes.ICON_SIZE) + PAD_H);
     }
 

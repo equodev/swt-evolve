@@ -12,6 +12,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.size.CTabFolderSizes;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.Display;
@@ -70,6 +71,25 @@ public class CTabFolderHelper {
         if (!(bar.getParent() instanceof CTabFolder)) return false;
         DartCTabFolder folder = (DartCTabFolder) bar.getParent().getImpl();
         return bar == folder.minMaxTb || bar == folder.chevronTb;
+    }
+
+    /**
+     * Whether {@code bar}'s icons keep their image size under {@code bigger_icon_size}: the bars in
+     * a folder's tab row (its own buttons and its top-right control) must fit that row, or a
+     * {@code SWT.WRAP} top-right moves to a row of its own.
+     */
+    public static boolean keepsImageSize(ToolBar bar) {
+        return ownsToolBar(bar) || inTopRight(bar);
+    }
+
+    private static boolean inTopRight(ToolBar bar) {
+        Control child = bar;
+        for (Composite parent = bar.getParent(); parent != null; child = parent, parent = parent.getParent()) {
+            if (parent instanceof CTabFolder) {
+                return child == ((DartCTabFolder) parent.getImpl()).topRight;
+            }
+        }
+        return false;
     }
 
     private static int imageGrowth(Image image) {
