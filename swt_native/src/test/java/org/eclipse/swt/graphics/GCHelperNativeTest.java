@@ -312,4 +312,11 @@ class GCHelperNativeTest {
         assertThat(GCHelper.computeLineExtent("Wg", disposed)).isEqualTo(GCHelper.computeLineExtent("Wg", display.getSystemFont()));
         font.dispose();
     }
+
+    @Test
+    @DisplayName("a control with no font of its own has its text measured in the system font")
+    void textExtentWithoutAFontUsesTheSystemFont() {
+        assertThat(GCHelper.textExtent("a&b", SWT.DRAW_MNEMONIC, null))
+                .isEqualTo(GCHelper.textExtent("a&b", SWT.DRAW_MNEMONIC, display.getSystemFont()));
+    }
 }

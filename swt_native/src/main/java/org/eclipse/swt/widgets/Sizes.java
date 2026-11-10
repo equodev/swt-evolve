@@ -515,48 +515,33 @@ public class Sizes {
             if (w.control != null) {
                 height = Math.max(height, 0);
             }
+        } else if (hasText && !hasImage) {
+            // Measured the way the render side draws it, so the bar holds the text at the theme's size.
+            return ToolItemSizes.computeSize(w, SWT.DEFAULT, SWT.DEFAULT, true);
         } else {
-            if (hasText || hasImage) {
-                // Calculate size based on image and/or text
-                int imageWidth = 0, imageHeight = 0;
-                int textWidth = 0, textHeight = 0;
-
-                if (hasImage) {
-                    // A folder's own buttons are not application icons, and must fit its tab row.
-                    if (Config.getConfigFlags().bigger_icon_size && !CTabFolderHelper.ownsToolBar(w.parent)) {
-                        imageWidth = imageHeight = (int) Math.round(ToolItemSizes.ICON_SIZE);
-                    } else {
-                        Rectangle imageBounds = w.image.getBounds();
-                        imageWidth = imageBounds.width;
-                        imageHeight = imageBounds.height;
-                    }
+            if (hasImage) {
+                int imageWidth, imageHeight;
+                // A folder's own buttons are not application icons, and must fit its tab row.
+                if (Config.getConfigFlags().bigger_icon_size && !CTabFolderHelper.ownsToolBar(w.parent)) {
+                    imageWidth = imageHeight = (int) Math.round(ToolItemSizes.ICON_SIZE);
+                } else {
+                    Rectangle imageBounds = w.image.getBounds();
+                    imageWidth = imageBounds.width;
+                    imageHeight = imageBounds.height;
                 }
 
                 if (hasText) {
-                    Point textSize = GCHelper.textExtent(w.text, SWT.DRAW_MNEMONIC, w.parent.getFont());
-                    textWidth = textSize.x;
-                    textHeight = textSize.y;
-                }
-
-                // Check if toolbar has RIGHT style (text beside image) or default (text below image)
-                boolean rightStyle = (w.parent.style & SWT.RIGHT) != 0;
-
-                if (hasImage && hasText) {
-                    if (rightStyle) {
-                        // Text beside image: width = image + spacing + text, height = max
-                        width = imageWidth + DartToolItem.INSET + textWidth;
-                        height = Math.max(imageHeight, textHeight);
+                    Point textSize = toolItemTextSize(w);
+                    if ((w.parent.style & SWT.RIGHT) != 0) {
+                        width = imageWidth + DartToolItem.INSET + textSize.x;
+                        height = Math.max(imageHeight, textSize.y);
                     } else {
-                        // Text below image: width = max, height = image + spacing + text
-                        width = Math.max(imageWidth, textWidth);
-                        height = imageHeight + DartToolItem.INSET + textHeight;
+                        width = Math.max(imageWidth, textSize.x);
+                        height = imageHeight + DartToolItem.INSET + textSize.y;
                     }
-                } else if (hasImage) {
+                } else {
                     width = imageWidth;
                     height = imageHeight;
-                } else if (hasText) {
-                    width = textWidth;
-                    height = textHeight;
                 }
 
                 // No minimum is applied here: an item that has content is measured from it, and a
@@ -573,6 +558,16 @@ public class Sizes {
             }
         }
         return new Point(width, height);
+    }
+
+    /** The item's text in the font {@link ToolItemSizes} measures a text-only item with. */
+    private static Point toolItemTextSize(DartToolItem w) {
+        DartControl bar = (DartControl) w.parent.getImpl();
+        TextStyle style = Config.getConfigFlags().use_swt_fonts && bar.getExplicitFont() != null
+                ? TextStyle.from(bar.getFont())
+                : ToolItemTheme.get().textStyle().withStyleFrom(bar.getFont());
+        PointD size = FontMetricsUtil.getFontSize(w.text, style);
+        return new Point((int) Math.ceil(size.x()), (int) Math.ceil(size.y()));
     }
 
     public static Point computeSize(DartTree t, int wHint, int hHint, boolean changed) {
