@@ -215,7 +215,8 @@ val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUt
 val jdk9OnlySources = listOf("**/dev/equo/swt/awt/**", "**/dev/equo/swt/jdk9/**", "**/javafx/embed/swt/**")
 
 // The oldest JDK the SWT release being built for supports, from gradle/versions/{ver}.properties.
-val targetJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()?.takeIf { it < 21 }
+val minJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()
+val targetJavaRelease = minJavaRelease?.takeIf { it < 21 }
 val dropJdk9Sources = targetJavaRelease != null && targetJavaRelease < 9
 
 // The desktop surface paints text with the host's own font stack, which is what the embedded
@@ -1219,6 +1220,41 @@ fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.versio
 fun hostVersion(suffix: String) = swtVersionProvider.map {
     "${it.substringBefore(".v")}.v${evolveVersion().toString().replace('.', '_')}-$suffix"
 }
+
+// AppCDS for an installed macOS product: p2.inf adds these lines to its .ini. Relative because the
+// launcher starts the JVM in Contents/MacOS; the directory must be writable, or the JVM exits with 1.
+// AutoCreateSharedArchive needs Java 19; the file is per Evolve version (the launcher jar it checks stays).
+val macosCdsJvmArgs = listOf(
+    "-XX:+AutoCreateSharedArchive",
+    "-XX:SharedArchiveFile=../Eclipse/configuration/org.eclipse.swt.evolve-${evolveVersion()}.jsa",
+    // The dump's per-class "Skipping" warnings (signed jars, hidden classes) go to stdout otherwise.
+    "-Xlog:cds*=error",
+)
+val shipsMacosCdsArchive = (minJavaRelease ?: 21) >= 19
+fun isMacosHybrid(info: WebPlatformMeta) = info.isHybrid && !info.isWeb && info.os == "macos"
+// One p2.inf per macOS hybrid fragment: the framework links writeMacAppLinks lists, then these lines.
+fun registerMacosFragmentP2Inf(platform: String) = tasks.register("${platform}FragmentP2Inf") {
+    val linksP2Inf = layout.buildDirectory.file("natives/$platform/META-INF/p2.inf")
+    val out = layout.buildDirectory.dir("fragment-p2inf/$platform")
+    dependsOn("${platform}ExtractNatives", "${platform}CopyFlutterBinaries")
+    inputs.files(linksP2Inf).optional()
+    inputs.property("jvmArgs", if (shipsMacosCdsArchive) macosCdsJvmArgs else emptyList())
+    outputs.dir(out)
+    doLast {
+        val links = linksP2Inf.get().asFile
+        if (!links.isFile && links.resolveSibling("../swtflutter.app").normalize().exists())
+            throw GradleException("$links missing: the fragment would install without its framework links")
+        val lines = links.takeIf { it.isFile }?.readLines()?.filter { it.isNotBlank() }.orEmpty() +
+            if (!shipsMacosCdsArchive) emptyList() else listOf(
+                "instructions.configure=" + macosCdsJvmArgs.joinToString(";") { "addJvmArg(jvmArg:$it)" },
+                "instructions.unconfigure=" + macosCdsJvmArgs.joinToString(";") { "removeJvmArg(jvmArg:$it)" })
+        val file = out.get().file("META-INF/p2.inf").asFile
+        delete(file)
+        if (lines.isNotEmpty()) file.apply { parentFile.mkdirs() }.writeText(lines.joinToString("\n", postfix = "\n"))
+    }
+}
+platforms.map { parsePlatform(it) }.filter { isMacosHybrid(it) }
+    .forEach { registerMacosFragmentP2Inf(it.desktopPlatform) }
 // -PexcludeFxCanvas: build the fragment WITHOUT our javafx.embed.swt.FXCanvas — neither the
 // classes nor the package export — so a host that already provides one keeps using its own.
 //
@@ -1336,7 +1372,10 @@ platforms.forEach { platform ->
         // and keep the first occurrence.
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(sourceSets[info.sourceSet].output)
-        if (!info.isWeb)
+        if (isMacosHybrid(info)) {
+            from(layout.buildDirectory.dir("natives/${info.desktopPlatform}")) { exclude("META-INF/p2.inf") }
+            from(tasks.named("${info.desktopPlatform}FragmentP2Inf"))
+        } else if (!info.isWeb)
             from(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
         if (info.isHybrid) {
             dependsOn(copyWebBinaries)
