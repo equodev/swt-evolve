@@ -18,6 +18,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/table.dart';
+import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/impl/widget_config.dart' show resetConfigFlags;
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -196,5 +197,31 @@ void main() {
     );
     expect(sent.map((s) => s.split('/').take(2).join('/')), ['CCombo/5'],
         reason: 'its field keeps the wheel on every native, so the parent sees none');
+  });
+
+  testWidgets('a wheel over a control placed in a table is reported by it, then the table', (tester) async {
+    final table = _table(3, _rect(10, 10, 150, 80))..children = [_button(2, _rect(0, 0, 100, 30))];
+    final sent = await _wheel(
+      tester,
+      SizedBox(width: 200, height: 120, child: CompositeSwt<VComposite>(value: _composite(table))),
+      () => tester.getTopLeft(find.byType(ButtonSwt<VButton>)) + const Offset(50, 15),
+    );
+    expect(sent.map((s) => s.split('/').take(2).join('/')), ['Button/2', 'Table/3'],
+        reason: 'a TableCursor is such a control: Win32 and Cocoa report its wheel to the Table, which keeps it');
+  });
+
+  testWidgets('a wheel over a control placed in a tree is reported by it, then the tree', (tester) async {
+    final tree = VTree()
+      ..id = 3
+      ..style = SWT.SINGLE
+      ..enabled = true
+      ..bounds = _rect(10, 10, 150, 80)
+      ..children = [_button(2, _rect(0, 0, 100, 30))];
+    final sent = await _wheel(
+      tester,
+      SizedBox(width: 200, height: 120, child: CompositeSwt<VComposite>(value: _composite(tree))),
+      () => tester.getTopLeft(find.byType(ButtonSwt<VButton>)) + const Offset(50, 15),
+    );
+    expect(sent.map((s) => s.split('/').take(2).join('/')), ['Button/2', 'Tree/3']);
   });
 }

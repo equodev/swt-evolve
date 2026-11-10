@@ -321,17 +321,22 @@ class TableImpl<T extends TableSwt, V extends VTable>
       totalRows,
     );
 
-    final wrappedTable = super.wrap(tableContent);
-
+    // Inside the wrap, so the Table reports what its children pass on (a TableCursor's wheel), as
+    // natively.
     final childControls = buildChildControlLayer(
       state,
       (state.editors ?? const <VTableEditor>[]).map((e) => e.editor),
     );
+    // Tab stops on the Table (VControl.tabStop), and Tab from a control placed in it (a TableCursor)
+    // reaches it, as natively.
+    final focusable = wrapSurfaceFocus(tableContent, tabStop: state.tabStop ?? false);
+    final wrappedTable = super.wrap(childControls == null
+        ? focusable
+        : Stack(children: [focusable, childControls]));
 
     return Stack(
       children: [
         wrappedTable,
-        if (childControls != null) childControls,
         ...editorOverlays,
       ],
     );

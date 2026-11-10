@@ -120,6 +120,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
   // it on pointer-down and forward keystrokes to SWT below.
   final FocusNode _keyboardFocus = FocusNode(debugLabel: 'CanvasKeyboard');
 
+  /// The node this Canvas takes the keyboard focus in, for a subclass a Java focus request must reach.
+  @protected
+  FocusNode get keyboardFocusNode => _keyboardFocus;
+
   @override
   bool get surfaceTakesTab => false;
 

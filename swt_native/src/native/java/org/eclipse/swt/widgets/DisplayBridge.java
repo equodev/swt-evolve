@@ -1736,6 +1736,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         focusRequested = widget;
         setFocus(widget);
+        // A FocusIn listener focused another control (a TreeCursor taking it back from its Tree): the
+        // client's focus follows, as the native one does, or the next Tab starts from the wrong control.
+        if (focused != widget)
+            requestClientFocus(focused, true);
         // The shell gives its focus back to its saved focus when the client clears it, so a focus
         // the user moved there must be the one saved, or the clear hands the keys to an older one.
         if (api != null && !api.isDisposed())
@@ -1859,8 +1863,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         else
             requestClientFocus(widget, leavesCCombo);
         publishFocusHolder(widget);
-        if (forDisplay != null)
+        if (forDisplay != null) {
+            // A FocusIn listener focusing another control (a TreeCursor taking it back from its Tree)
+            // moves it there and then, as Win32 and GTK do; getFocusControl() still names the control
+            // whose FocusIn is being sent, which would hide the move.
+            if (forDisplay.focusEvent == org.eclipse.swt.SWT.FocusIn && forDisplay.focusControl != null
+                    && forDisplay.focusControl != api)
+                forDisplay.focusControl = null;
             forDisplay.checkFocus();
+        }
         return true;
     }
 
@@ -2118,11 +2129,23 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      */
     public void releaseFocusOf(DartShell shell) {
         if (focused != null && !focused.getApi().isDisposed() && focused.getApi().getShell() == shell.getApi())
-            clearFocus(focused);
+            clear(focused);
     }
 
-    /** Clear the tracked focus if it points at the given control (used on focus loss/dispose). */
+    /** The client reports {@code widget} losing the focus. */
     public void clearFocus(DartControl widget) {
+        // Sent before the FocusIn the client reported since (a TableCursor left for its Table): a FocusIn
+        // listener that focused the control again (the cursor taking it back) outranks it.
+        if (focused == widget && clientReportedFocus != null && clientReportedFocus != widget) {
+            if (focusRequested == widget)
+                focusRequested = null;
+            return;
+        }
+        clear(widget);
+    }
+
+    /** Clear the tracked focus if it points at the given control. */
+    private void clear(DartControl widget) {
         // A shown popup menu takes the keyboard without moving the focus control, as natively.
         if (focused == widget && !popupMenuShown()) {
             focused = null;

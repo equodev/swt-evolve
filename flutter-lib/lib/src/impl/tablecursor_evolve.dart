@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import '../gen/tablecursor.dart';
 import '../impl/canvas_evolve.dart';
 
@@ -5,4 +7,8 @@ import '../impl/canvas_evolve.dart';
 /// the focus rectangle when it has focus -- so on this side it is a Canvas and nothing more. The Table
 /// places it over the cell at the bounds Java gives it.
 class TableCursorImpl<T extends TableCursorSwt, V extends VTableCursor>
-    extends CanvasImpl<T, V> {}
+    extends CanvasImpl<T, V> {
+  /// Java focuses the cursor again from its parent's FocusIn, and the client's focus follows it there.
+  @override
+  FocusNode? get swtFocusNode => keyboardFocusNode;
+}

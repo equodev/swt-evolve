@@ -1106,16 +1106,19 @@ public class ControlHelper {
 
     /**
      * Whether the control is an empty Canvas or plain Composite, natively a bare surface rather than
-     * one of the native controls, and not a shell. Decided by the implementation, which an
-     * application subclass of the API class does not change. SashForm, ScrolledComposite, ViewForm
-     * and CBanner are plain Composites natively too, but stay out: declining the client's focus
-     * leaves it on the surface, and for them that strands the keyboard.
+     * one of the native controls, and not a shell; a TableCursor and a TreeCursor are such a Canvas
+     * natively. Decided by the implementation, which an application subclass of the API class does
+     * not change. SashForm, ScrolledComposite, ViewForm and CBanner are plain Composites natively
+     * too, but stay out: declining the client's focus leaves it on the surface, and for them that
+     * strands the keyboard.
      */
     static boolean isBareSurface(Control api) {
         if (!(api instanceof Composite) || api instanceof Decorations)
             return false;
         Class<?> impl = ((Composite) api).getImpl().getClass();
-        if (impl != DartCanvas.class && impl != DartComposite.class)
+        boolean cursor = api instanceof org.eclipse.swt.custom.TableCursor
+                || api instanceof org.eclipse.swt.custom.TreeCursor;
+        if (!cursor && impl != DartCanvas.class && impl != DartComposite.class)
             return false;
         return ((Composite) api).getChildren().length == 0 && (api.getStyle() & SWT.EMBEDDED) == 0;
     }

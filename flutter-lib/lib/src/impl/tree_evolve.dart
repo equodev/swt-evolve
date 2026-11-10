@@ -364,9 +364,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           (state.editors ?? const <VTreeEditor>[]).map((e) => e.editor),
         );
 
-        return ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: Focus(
+        final focusable = Focus(
             focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
             // Taking focus on the Flutter side is not enough: SWT tracks its own focus
@@ -381,6 +379,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
               // reporting the tree's as well would hand the focus back to the tree and close the
               // editor. Only the tree gaining and losing the focus is reported.
               if (hasFocus == _reportedHasFocus) return;
+              // The focus going straight to a control inside the tree (a cell editor's field) is that
+              // control's alone: SWT does not give it to the tree.
+              if (hasFocus && !_focusNode.hasPrimaryFocus) return;
               _reportedHasFocus = hasFocus;
               if (hasFocus) {
                 if (!_focusedByPress) widget.sendFocusFocusIn(state, null);
@@ -429,11 +430,14 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                     ),
                   ),
                 ),
-                if (childControls != null) childControls,
                 ...editorOverlays,
               ],
             ),
-          ),
+          );
+        // Outside the tree's Focus: a control placed in the tree (a TreeCursor) takes the focus from it.
+        return ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: childControls == null ? focusable : Stack(children: [focusable, childControls]),
         );
       },
     );

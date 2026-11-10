@@ -80,7 +80,7 @@ class FocusOnPressTest extends KeyRoutingTestBase {
     }
 
     @Test
-    @DisplayName("button 1 focuses an empty Canvas or Composite that hooks key events; no other button does")
+    @DisplayName("button 1 focuses an empty Canvas or Composite that hooks key events, a cursor included; no other button does")
     void keyListeningSurfacePress() {
         Shell shell = shell();
         Control[] listening = {new Canvas(shell, SWT.NONE), new Composite(shell, SWT.NONE)};
@@ -92,16 +92,22 @@ class FocusOnPressTest extends KeyRoutingTestBase {
         Canvas keyUpOnly = new Canvas(shell, SWT.NONE);
         keyUpOnly.addListener(SWT.KeyUp, e -> { });
         assertThat(focuses(keyUpOnly, 1)).isTrue();
+        Control[] cursors = {new org.eclipse.swt.custom.TableCursor(new Table(shell, SWT.NONE), SWT.NONE),
+                new org.eclipse.swt.custom.TreeCursor(new Tree(shell, SWT.NONE), SWT.NONE)};
+        for (Control c : cursors)
+            assertThat(new boolean[] {focuses(c, 1), focuses(c, 2), focuses(c, 3)}).as(c.toString())
+                    .containsExactly(true, false, false);
     }
 
     @Test
-    @DisplayName("a key-listening Canvas with children or with NO_FOCUS is not focused by the press")
+    @DisplayName("a key-listening Canvas with children or with NO_FOCUS, or a Shell, is not focused by the press")
     void keyListeningSurfaceExceptions() {
         Shell shell = shell();
         Canvas parent = new Canvas(shell, SWT.NONE);
         new Button(parent, SWT.PUSH);
         Canvas noFocus = new Canvas(shell, SWT.NO_FOCUS);
-        for (Control c : new Control[] {parent, noFocus}) {
+        Shell dialog = new Shell(shell, SWT.NONE);
+        for (Control c : new Control[] {parent, noFocus, dialog}) {
             c.addListener(SWT.KeyDown, e -> { });
             assertThat(focuses(c, 1)).as(c.toString()).isFalse();
         }
