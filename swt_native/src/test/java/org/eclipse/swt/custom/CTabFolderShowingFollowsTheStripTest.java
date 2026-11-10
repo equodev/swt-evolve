@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.eclipse.swt.custom.CTabFolderStripReports.reportsStrip;
 import static org.mockito.Mockito.when;
 
 /**
@@ -232,12 +233,6 @@ class CTabFolderShowingFollowsTheStripTest {
         }
         folder.getItem(new Point(0, 0));
         return folder;
-    }
-
-    private void reportsStrip(CTabFolder folder, String report) {
-        Event e = new Event();
-        e.text = report;
-        CTabFolderHelper.handleStripLaidOut((DartCTabFolder) folder.getImpl(), e);
     }
 
     /** What the render side reports: where it draws each tab, as x,width pairs. */

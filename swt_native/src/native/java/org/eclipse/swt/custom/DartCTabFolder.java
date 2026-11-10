@@ -4142,7 +4142,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean updateItems(int showIndex) {
-        return CTabFolderHelper.updateItems(this, showIndex);
+        CTabFolderHelper.ItemsLayout layout = CTabFolderHelper.layoutItems(this, showIndex);
+        if (layout.chevronFlipped)
+            getValue().markDirty(VCTabFolder.SHOW_CHEVRON);
+        for (int i : layout.showingFlipped) ((DartCTabItem) items[i].getImpl()).getValue().markDirty(VCTabItem.SHOWING);
+        return layout.changed;
     }
 
     boolean updateTabHeight(boolean force) {

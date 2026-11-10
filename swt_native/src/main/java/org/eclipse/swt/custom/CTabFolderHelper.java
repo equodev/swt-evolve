@@ -9,9 +9,11 @@ import org.eclipse.swt.graphics.GraphicsUtils;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.size.CTabFolderSizes;
+import dev.equo.swt.size.Mnemonics;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
@@ -19,6 +21,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Sizes;
 import org.eclipse.swt.widgets.ToolBar;
+
+import java.util.Arrays;
 
 public class CTabFolderHelper {
     // Constants from CTabFolderRenderer
@@ -509,6 +513,42 @@ public class CTabFolderHelper {
         return GraphicsUtils.copyImage(display, image);
     }
 
+    /** What laying the tabs out changed, for the {@code updateItems} recipe to mark dirty. */
+    public static final class ItemsLayout {
+        public final boolean changed;
+        public final boolean chevronFlipped;
+        /** Indices of the tabs whose {@code showing} flipped. */
+        public final int[] showingFlipped;
+
+        ItemsLayout(boolean changed, boolean chevronFlipped, int[] showingFlipped) {
+            this.changed = changed;
+            this.chevronFlipped = chevronFlipped;
+            this.showingFlipped = showingFlipped;
+        }
+    }
+
+    /**
+     * Lays the tabs out, as {@link #updateItems}. With {@code ctabfolder_tab_scroll} off the render
+     * side draws the chevron and hides tabs from Java's {@code showChevron} and {@code showing}, so
+     * their flips are reported to be sent; a scrolling strip works them out itself and reports none.
+     */
+    public static ItemsLayout layoutItems(DartCTabFolder obj, int showIndex) {
+        if (Config.getConfigFlags().ctabfolder_tab_scroll) {
+            return new ItemsLayout(updateItems(obj, showIndex), false, new int[0]);
+        }
+        boolean oldChevron = obj.showChevron;
+        boolean[] oldShowing = new boolean[obj.items.length];
+        for (int i = 0; i < oldShowing.length; i++)
+            oldShowing[i] = ((DartCTabItem) obj.items[i].getImpl()).showing;
+        boolean changed = updateItems(obj, showIndex);
+        int[] flipped = new int[oldShowing.length];
+        int count = 0;
+        for (int i = 0; i < Math.min(oldShowing.length, obj.items.length); i++) {
+            if (((DartCTabItem) obj.items[i].getImpl()).showing != oldShowing[i]) flipped[count++] = i;
+        }
+        return new ItemsLayout(changed, obj.showChevron != oldChevron, Arrays.copyOf(flipped, count));
+    }
+
     public static boolean updateItems(DartCTabFolder obj, int showIndex) {
         GC gc = new GC(obj.getApi());
         // Measurement only: disposing it must not announce a paint cycle to Flutter (as in TreeHelper).
@@ -621,6 +661,18 @@ public class CTabFolderHelper {
         return FontMetricsUtil.labelSize(text, FLAGS, CTabFolderSizes.tabLabelStyle(), item.getFont());
     }
 
+    /**
+     * The label CTabFolderRenderer measures for a tab at MINIMUM_SIZE, or null when it has no text
+     * at that size. The render side's ctabMinimumLabel is the same rule.
+     */
+    static String minimumLabel(String text, int minChars) {
+        final String ellipsis = "...";
+        if (minChars == 0) return null;
+        if (text.length() <= minChars) return text;
+        int end = minChars < ellipsis.length() + 1 ? minChars : minChars - ellipsis.length();
+        return text.substring(0, end) + (minChars > ellipsis.length() + 1 ? ellipsis : "");
+    }
+
     private static int getLargeTextPadding(CTabItem item) {
         final int TABS_WITHOUT_ICONS_PADDING = 14;
         CTabFolder parent = item.getParent();
@@ -652,8 +704,10 @@ public class CTabFolderHelper {
      * theme, so an application's renderer has no say in a tab's width, and asking it would need a
      * live GC on a path that answers a hit test.
      *
-     * <p>{@code MINIMUM_SIZE} is ignored: it asks how narrow a tab could be drawn if the strip ran
-     * short of room, and the render side draws the whole label and hides what no longer fits.
+     * <p>{@code MINIMUM_SIZE} asks how narrow a tab can be drawn when the strip runs short of room.
+     * A scrolling strip draws every label whole, so it is ignored there; with
+     * {@code ctabfolder_tab_scroll} off the render side shrinks a label down to
+     * {@code minimumCharacters}, and the tab is measured around that label.
      */
     static Point drawnSize(DartCTabFolder parent, int index, int state) {
         CTabItem item = parent.items[index];
@@ -670,8 +724,14 @@ public class CTabFolderHelper {
             height = CTabFolderSizes.TAB_IMAGE_HEIGHT + growth;
         }
         String text = item.getText();
+        int flags = FLAGS;
+        if ((state & MINIMUM_SIZE) != 0 && !Config.getConfigFlags().ctabfolder_tab_scroll) {
+            // The render side shortens the drawn text, so the mnemonic goes before the cut.
+            text = minimumLabel(Mnemonics.display(text), item.getParent().getMinimumCharacters());
+            flags &= ~SWT.DRAW_MNEMONIC;
+        }
         if (text != null) {
-            Point size = computeTextSize(null, item, text, FLAGS);
+            Point size = computeTextSize(null, item, text, flags);
             width += size.x;
             height = Math.max(height, size.y);
         }
