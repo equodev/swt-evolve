@@ -13,14 +13,17 @@ import 'package:flutter/services.dart';
 /// it behind the pointer packets the engine had already posted.
 ///
 /// The web needs none of it: the browser dispatches keys and pointers in order, and a key's answer
-/// must be given while its DOM event is being dispatched.
+/// must be given while its DOM event is being dispatched. Nor does a UI isolate on a thread of its
+/// own: the engine posts its keys to the same queue as its pointer packets, in the platform's order,
+/// and a turn's delay would put a key behind the pointer events that followed it.
 class KeyDeliveryOrder {
   KeyDeliveryOrder._();
 
-  /// Installs the ordering on a desktop client, once the framework has installed its own key
-  /// handlers (after its first keyboard-state sync).
-  static Future<void> install() async {
-    if (kIsWeb) return;
+  /// Installs the ordering on a desktop client whose UI isolate shares the platform thread
+  /// ([uiThreadOwn] false), once the framework has installed its own key handlers (after its first
+  /// keyboard-state sync).
+  static Future<void> install({required bool uiThreadOwn}) async {
+    if (kIsWeb || uiThreadOwn) return;
     await HardwareKeyboard.instance.syncKeyboardState();
     _replaceHandlers();
   }

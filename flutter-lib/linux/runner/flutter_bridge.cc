@@ -122,9 +122,22 @@ static void EquoRegisterPlugins(FlView *view) {
   register_with_registrar(registrar);
 }
 
+// The UI isolate gets a thread of its own. On the platform thread every task the engine posts it (a
+// frame from Java, a frame request) waits a GLib timeout of at least one millisecond
+// (FlTaskRunner), and runs only while Java pumps the loop.
+static FlDartProject *NewDartProject() {
+  FlDartProject *project = fl_dart_project_new();
+  fl_dart_project_set_ui_thread_policy(project, FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
+  return project;
+}
+
+// The entrypoint argument that tells Dart its isolate has a thread of its own (getUiThreadOwn): the
+// engine then queues keys and pointer events in the order GTK delivered them.
+static char kUiThreadOwnArg[] = "ui-thread=own";
+
 uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
                                   const char *widget_name, const char *theme, jint background_color, jint parent_background_color) {
-  FlDartProject *project = fl_dart_project_new();
+  FlDartProject *project = NewDartProject();
   std::string base_path = GetSharedLibraryPath();
   // AOT (release) ships libapp.so; a --debug (JIT) build has no libapp.so and runs the kernel from
   // flutter_assets instead — which also brings up the Dart VM Service for DTD/MCP introspection.
@@ -147,14 +160,15 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   char parent_background_color_c[256];
   sprintf(parent_background_color_c, "%d", parent_background_color);
 
-  char *args[7];
+  char *args[8];
   args[0] = port_c;
   args[1] = widget_id_c;
   args[2] = (char *)widget_name;
   args[3] = (char *)theme;
   args[4] = background_color_c;
   args[5] = parent_background_color_c;
-  args[6] = 0;
+  args[6] = kUiThreadOwnArg;
+  args[7] = 0;
 
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
 
@@ -473,7 +487,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
                                    const char *theme, int backgroundColor, int width, int height,
                                    bool csdEnabled) {
   const gint64 project_start = g_get_real_time();
-  FlDartProject *project = fl_dart_project_new();
+  FlDartProject *project = NewDartProject();
   std::string base_path = GetSharedLibraryPath();
   // See note above: skip the AOT library in --debug (JIT) builds so the engine runs the kernel
   // from flutter_assets and exposes the Dart VM Service.
@@ -490,15 +504,16 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   char bg_c[256];
   sprintf(bg_c, "%d", backgroundColor);
 
-  // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg].
-  char *args[7];
+  // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg, uiThread].
+  char *args[8];
   args[0] = port_c;
   args[1] = id_c;
   args[2] = (char *)widget_name;
   args[3] = (char *)theme;
   args[4] = bg_c;
   args[5] = bg_c;
-  args[6] = 0;
+  args[6] = kUiThreadOwnArg;
+  args[7] = 0;
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
   boot_record("FlDartProject", project_start);
 
@@ -685,10 +700,16 @@ Java_dev_equo_swt_FlutterNative_SetBounds(JNIEnv *env, jclass cls, jlong context
   }
 }
 
-// Headless measurement pump (kept as a no-op, matching prior behaviour).
+// Dispatches up to |maxMessages| pending GTK events (all of them when it is not positive), as the
+// macOS and Windows bridges pump their OS loop: the engine's vsync and window events arrive there.
 JNIEXPORT jint JNICALL
 Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv *env, jclass cls, jint maxMessages) {
-  return 0;
+  int count = 0;
+  while ((maxMessages <= 0 || count < maxMessages) && gtk_events_pending()) {
+    gtk_main_iteration_do(FALSE);
+    count++;
+  }
+  return count;
 }
 
 // Pumps a window surface's event loop. Returns -2 once per user close gesture (the window is still

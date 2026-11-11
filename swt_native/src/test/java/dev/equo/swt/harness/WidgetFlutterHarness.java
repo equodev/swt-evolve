@@ -134,11 +134,16 @@ public class WidgetFlutterHarness extends FlutterHarness {
      * contains {@code found} plus the serialized fields under {@code state} (e.g. {@code selection}).
      */
     public Map<String, Object> queryState(Widget w) {
+        return awaitFuture(requestState(w), QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
+    }
+
+    /** Asks for {@link #queryState}'s answer without waiting for it, or pumping anything. */
+    public CompletableFuture<Map<String, Object>> requestState(Widget w) {
         int qid = queryGen.incrementAndGet();
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pendingQueries.put(qid, f);
         dev.equo.swt.harness.Channels.send(comm(), Q_REQUEST, dev.equo.swt.comm.TaggedValues.encode(Map.of("queryId", qid, "targetId", w.hashCode()), null));
-        return awaitFuture(f, QUERY_TIMEOUT_MS, "query for id " + w.hashCode());
+        return f;
     }
 
     /**

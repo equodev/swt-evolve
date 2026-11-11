@@ -58,6 +58,9 @@ int? getParentBackgroundColor(List<String> args) {
   return null;
 }
 
+/// Whether the runner gave the UI isolate a thread of its own (the Linux runner does).
+bool getUiThreadOwn(List<String> args) => args.length >= 7 && args[6] == 'ui-thread=own';
+
 String? getDeferredFontManifest() => null;
 
 /// Native builds are never embedded in a web iframe. Present to satisfy the

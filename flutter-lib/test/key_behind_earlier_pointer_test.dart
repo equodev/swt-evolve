@@ -85,7 +85,7 @@ void main() {
     addTearDown(() => EquoCommBase.recordSentFrames = false);
     await tester.pumpWidget(_wrap());
     await tester.pumpAndSettle();
-    await KeyDeliveryOrder.install();
+    await KeyDeliveryOrder.install(uiThreadOwn: false);
     addTearDown(KeyDeliveryOrder.uninstall);
     final at = tester.getCenter(find.text('target'));
     EquoCommService.commForTesting.clearSentFrames();
@@ -111,10 +111,39 @@ void main() {
     ], reason: 'a native Display reports the click with Shift held and the Shift release after it');
   });
 
+  testWidgets('on a UI thread of its own, a Shift pressed before a click is held by the click',
+      (tester) async {
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() => EquoCommBase.recordSentFrames = false);
+    await tester.pumpWidget(_wrap());
+    await tester.pumpAndSettle();
+    await KeyDeliveryOrder.install(uiThreadOwn: true);
+    addTearDown(KeyDeliveryOrder.uninstall);
+    final at = tester.getCenter(find.text('target'));
+    EquoCommService.commForTesting.clearSentFrames();
+
+    // The engine runs the queue in the platform's order within one turn: Shift down, the click.
+    _deliverShift(tester, down: true, ms: 1000);
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.down(at, timeStamp: const Duration(milliseconds: 1040));
+    await gesture.up(timeStamp: const Duration(milliseconds: 1080));
+    _deliverShift(tester, down: false, ms: 1100);
+    await tester.pump(Duration.zero);
+
+    final shift = SWT.SHIFT.toRadixString(16);
+    final shiftButton1 = (SWT.SHIFT | SWT.BUTTON1).toRadixString(16);
+    expect(_sent(), [
+      'KeyDown:0x0',
+      'MouseDown:0x$shift',
+      'MouseUp:0x$shiftButton1',
+      'KeyUp:0x$shift',
+    ], reason: 'a key delivered ahead of a click reaches Java ahead of it');
+  });
+
   testWidgets('the engine still gets the answer of a key handled a turn later', (tester) async {
     await tester.pumpWidget(_wrap());
     await tester.pumpAndSettle();
-    await KeyDeliveryOrder.install();
+    await KeyDeliveryOrder.install(uiThreadOwn: false);
     addTearDown(KeyDeliveryOrder.uninstall);
     bool claim(KeyEvent event) => true;
     HardwareKeyboard.instance.addHandler(claim);

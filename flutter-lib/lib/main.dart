@@ -98,7 +98,7 @@ void main(List<String> args) async {
   final bindingStart = BootTrace.nowMicros();
   WidgetsFlutterBinding.ensureInitialized();
   BootTrace.step('binding.ensureInitialized', bindingStart);
-  unawaited(KeyDeliveryOrder.install());
+  unawaited(KeyDeliveryOrder.install(uiThreadOwn: getUiThreadOwn(args)));
   FramePresentation.ensureTracking();
   BootTrace.recordFirstFrames(4);
   DeferredFonts.configure(getDeferredFontManifest());

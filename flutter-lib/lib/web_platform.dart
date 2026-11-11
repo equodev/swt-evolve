@@ -128,6 +128,8 @@ int? getParentBackgroundColor(List<String> args) {
   return null;
 }
 
+bool getUiThreadOwn(List<String> args) => false;
+
 /// The font families flutter_bootstrap.js kept from the engine's start, for DeferredFonts.
 String? getDeferredFontManifest() => _deferredFontManifest?.toDart;
 
