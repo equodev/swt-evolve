@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:swtflutter/src/custom/toolbar_composite.dart';
 import 'package:swtflutter/src/gen/menu.dart';
+import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/decorations_evolve.dart';
-import 'package:swtflutter/src/theme/theme.dart';
+import 'package:swtflutter/src/theme/named_theme.dart';
 import 'measure.dart' show ENABLE_INTERACTIVITY;
 
 void main() => runApp(const _MeasureApp());
@@ -70,17 +71,22 @@ class _MeasureAppState extends State<_MeasureApp> {
 
   @override
   Widget build(BuildContext context) {
-    final dummyMenuBar = VMenu()..style = SWT.BAR..visible = true;
+    // An empty menu bar is not drawn at all, so each one carries an item.
+    VMenu menuBar(int id) => VMenu()
+      ..id = id
+      ..style = SWT.BAR
+      ..visible = true
+      ..items = [VMenuItem()..id = id + 1..style = SWT.CASCADE..text = 'File'];
 
     return MaterialApp(
-      theme: createLightNonDefaultTheme(null),
+      theme: namedThemeFor(kDefaultThemeName).build(null, dark: false),
       home: Scaffold(
         appBar: AppBar(title: const Text('measure_menu')),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DecorationsMenuData(
-              menuBar: VMenu(),
+              menuBar: menuBar(1),
               isAtStart: true,
               isHorizontal: false,
               child: IntrinsicHeight(
@@ -95,7 +101,7 @@ class _MeasureAppState extends State<_MeasureApp> {
             ),
             const SizedBox(height: 8),
             DecorationsMenuData(
-              menuBar: dummyMenuBar,
+              menuBar: menuBar(3),
               isAtStart: false,
               isHorizontal: true,
               child: HorizontalMenuBar(key: _menuBarKey),
