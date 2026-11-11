@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -116,9 +118,11 @@ class WebFlutterServerStableOriginNativeTest {
 
     @Test
     void byDefaultAServerIsOnTheApplicationsFirstStablePort() throws Exception {
+        // Every Gradle test JVM of this user is the same application, so other forks and other builds
+        // on the host hold its ports: an identity of its own gives this test ports no one else uses.
+        System.setProperty("eclipse.product", "stable-origin-test-" + UUID.randomUUID());
         int[] ports = StableWebPort.candidates();
         assertThat(ports).isNotEmpty();
-        // Another server of this test JVM may hold one already: the first free one is taken.
         int expected = Arrays.stream(ports).filter(WebFlutterServerStableOriginNativeTest::isFree).findFirst().orElseThrow();
 
         WebFlutterServer server = new WebFlutterServer.Builder().webDirectory(appDir).commPort(0).build();
@@ -316,19 +320,17 @@ class WebFlutterServerStableOriginNativeTest {
         return server;
     }
 
-    /** Ports free right now, all different, as an application's stable ones would be: take every port a test needs in one call. */
-    private static int[] freePorts(int count) throws Exception {
-        List<ServerSocket> sockets = new ArrayList<>();
-        try {
-            for (int i = 0; i < count; i++) {
-                ServerSocket s = new ServerSocket();
-                s.bind(new InetSocketAddress("localhost", 0));
-                sockets.add(s);
-            }
-            return sockets.stream().mapToInt(ServerSocket::getLocalPort).toArray();
-        } finally {
-            for (ServerSocket s : sockets) s.close();
-        }
+    /**
+     * Ports free right now, all different, picked where an application's stable ones are. That range is
+     * below the OS's ephemeral one, so between this check and the server binding them no other process
+     * is handed one of them for its own ephemeral bind or outgoing connection.
+     */
+    private static int[] freePorts(int count) {
+        return ThreadLocalRandom.current().ints(StableWebPort.FIRST, StableWebPort.FIRST + StableWebPort.COUNT)
+                .distinct()
+                .filter(WebFlutterServerStableOriginNativeTest::isFree)
+                .limit(count)
+                .toArray();
     }
 
     private void hold(int port) throws Exception {
