@@ -39,7 +39,8 @@ class ActiveDragTracker {
   static void _onPointerEvent(PointerEvent event) {
     if (event is PointerDownEvent) {
       _pointerDown = true;
-    } else if (event is PointerUpEvent || event is PointerCancelEvent) {
+    } else if (event is PointerUpEvent || event is PointerCancelEvent || event is PointerRemovedEvent) {
+      // A pointer removed while pressed (a device unplugged mid-drag) never sends its up.
       _pointerDown = false;
       HoverExclusivityArbiter.instance.settleAfterFrame();
     }
