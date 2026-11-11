@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = 533449161;
+const int wireFingerprint = -1911255749;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -1399,22 +1399,21 @@ const Map<int, String> wireChannelNames = {
   230: 'swt.evolve.focus.seen',
   231: 'swt.evolve.focusHolder',
   232: 'swt.evolve.properties',
-  233: 'swt.evolve.property.set',
-  234: 'swt.evolve.test.runUi',
-  235: 'swt.evolve.test.runUiResponse',
-  236: 'swt.evolve.timing.bare',
-  237: 'swt.evolve.timing.ping',
-  238: 'swt.evolve.timing.pong',
-  239: 'swt.evolve.url.open',
-  240: 'swt.evolve.widget.refresh',
-  241: 'swt.evolve.wire',
-  242: 'transport',
-  243: 'transport/request',
-  244: 'traverse/verdict',
-  245: 'traverse/vetoable',
-  246: 'v',
-  247: 'widgetSizeRequest',
-  248: 'widgetSizeResponse',
+  233: 'swt.evolve.test.runUi',
+  234: 'swt.evolve.test.runUiResponse',
+  235: 'swt.evolve.timing.bare',
+  236: 'swt.evolve.timing.ping',
+  237: 'swt.evolve.timing.pong',
+  238: 'swt.evolve.url.open',
+  239: 'swt.evolve.widget.refresh',
+  240: 'swt.evolve.wire',
+  241: 'transport',
+  242: 'transport/request',
+  243: 'traverse/verdict',
+  244: 'traverse/vetoable',
+  245: 'v',
+  246: 'widgetSizeRequest',
+  247: 'widgetSizeResponse',
 };
 
 /// Every channel's number, for what sends or answers a channel by the number a frame names.
@@ -1667,23 +1666,22 @@ abstract final class WireChannel {
   static const int swtEvolveFocusSeen = 230; // swt.evolve.focus.seen
   static const int swtEvolveFocusHolder = 231; // swt.evolve.focusHolder
   static const int swtEvolveProperties = 232; // swt.evolve.properties
-  static const int swtEvolvePropertySet = 233; // swt.evolve.property.set
-  static const int swtEvolveTestRunUi = 234; // swt.evolve.test.runUi
+  static const int swtEvolveTestRunUi = 233; // swt.evolve.test.runUi
   static const int swtEvolveTestRunUiResponse =
-      235; // swt.evolve.test.runUiResponse
-  static const int swtEvolveTimingBare = 236; // swt.evolve.timing.bare
-  static const int swtEvolveTimingPing = 237; // swt.evolve.timing.ping
-  static const int swtEvolveTimingPong = 238; // swt.evolve.timing.pong
-  static const int swtEvolveUrlOpen = 239; // swt.evolve.url.open
-  static const int swtEvolveWidgetRefresh = 240; // swt.evolve.widget.refresh
-  static const int swtEvolveWire = 241; // swt.evolve.wire
-  static const int transport = 242; // transport
-  static const int transportRequest = 243; // transport/request
-  static const int traverseVerdict = 244; // traverse/verdict
-  static const int traverseVetoable = 245; // traverse/vetoable
-  static const int v = 246; // v
-  static const int widgetSizeRequest = 247; // widgetSizeRequest
-  static const int widgetSizeResponse = 248; // widgetSizeResponse
+      234; // swt.evolve.test.runUiResponse
+  static const int swtEvolveTimingBare = 235; // swt.evolve.timing.bare
+  static const int swtEvolveTimingPing = 236; // swt.evolve.timing.ping
+  static const int swtEvolveTimingPong = 237; // swt.evolve.timing.pong
+  static const int swtEvolveUrlOpen = 238; // swt.evolve.url.open
+  static const int swtEvolveWidgetRefresh = 239; // swt.evolve.widget.refresh
+  static const int swtEvolveWire = 240; // swt.evolve.wire
+  static const int transport = 241; // transport
+  static const int transportRequest = 242; // transport/request
+  static const int traverseVerdict = 243; // traverse/verdict
+  static const int traverseVetoable = 244; // traverse/vetoable
+  static const int v = 245; // v
+  static const int widgetSizeRequest = 246; // widgetSizeRequest
+  static const int widgetSizeResponse = 247; // widgetSizeResponse
 }
 
 /// Map keys by the number a map sent as tagged values names them with.

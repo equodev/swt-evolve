@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 533449161;
+    public static final int FINGERPRINT = -1911255749;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -247,7 +247,6 @@ public final class WireTable {
             "swt.evolve.focus.seen",
             "swt.evolve.focusHolder",
             "swt.evolve.properties",
-            "swt.evolve.property.set",
             "swt.evolve.test.runUi",
             "swt.evolve.test.runUiResponse",
             "swt.evolve.timing.bare",
@@ -2946,53 +2945,50 @@ public final class WireTable {
     /** The channel `swt.evolve.properties`. */
     public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 232;
 
-    /** The channel `swt.evolve.property.set`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 233;
-
     /** The channel `swt.evolve.test.runUi`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 234;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 233;
 
     /** The channel `swt.evolve.test.runUiResponse`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 235;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 234;
 
     /** The channel `swt.evolve.timing.bare`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 236;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 235;
 
     /** The channel `swt.evolve.timing.ping`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 237;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 236;
 
     /** The channel `swt.evolve.timing.pong`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 238;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 237;
 
     /** The channel `swt.evolve.url.open`. */
-    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 239;
+    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 238;
 
     /** The channel `swt.evolve.widget.refresh`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 240;
+    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 239;
 
     /** The channel `swt.evolve.wire`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIRE = 241;
+    public static final int CHANNEL_SWT_EVOLVE_WIRE = 240;
 
     /** The channel `transport`. */
-    public static final int CHANNEL_TRANSPORT = 242;
+    public static final int CHANNEL_TRANSPORT = 241;
 
     /** The channel `transport/request`. */
-    public static final int CHANNEL_TRANSPORT_REQUEST = 243;
+    public static final int CHANNEL_TRANSPORT_REQUEST = 242;
 
     /** The channel `traverse/verdict`. */
-    public static final int CHANNEL_TRAVERSE_VERDICT = 244;
+    public static final int CHANNEL_TRAVERSE_VERDICT = 243;
 
     /** The channel `traverse/vetoable`. */
-    public static final int CHANNEL_TRAVERSE_VETOABLE = 245;
+    public static final int CHANNEL_TRAVERSE_VETOABLE = 244;
 
     /** The channel `v`. */
-    public static final int CHANNEL_V = 246;
+    public static final int CHANNEL_V = 245;
 
     /** The channel `widgetSizeRequest`. */
-    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 247;
+    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 246;
 
     /** The channel `widgetSizeResponse`. */
-    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 248;
+    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 247;
 
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;
