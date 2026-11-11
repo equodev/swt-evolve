@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'dart:typed_data';
 
 import 'package:web/web.dart' as web;
 
 import '../gen/widget.dart';
 import 'comm_api.dart';
+import 'comm_browser.dart';
 import 'comm_frame.dart';
-import '../testing/boot_trace.dart';
 import 'server_replacement.dart';
 import 'widget_wire.dart' show WidgetWireWriter;
 
@@ -28,59 +29,89 @@ String? _hostInjectedCommUrl() {
 @JS('window.evolve.instance')
 external JSString? get _servedBy;
 
-/// Web comm: a direct browser WebSocket speaking the binary frame protocol. All
-/// protocol logic lives in [EquoCommBase]; this class only owns the socket.
-///
-/// The socket is opened through [EquoCommBase.openSocket], so its whole lifecycle —
-/// retrying a connect that never opened, and reopening one that dropped — is the base's
-/// capped-backoff loop, and sends buffer instead of reaching a dead wire in between.
-///
-/// Both ends of that matter here. The very first connect attempt can fail transiently (the
-/// Java WS server may not have finished binding when the page loads, or a cold headless-Chrome
-/// network stack can refuse the upgrade once), which without a retry strands the queued
-/// `ClientReady` frame forever. And a socket that dropped long after boot — an idle timeout,
-/// sleep/resume, a network blip — must come back, or every later interaction is silently lost
-/// on a closed socket and the app is frozen for good.
-class _BrowserComm extends EquoCommBase {
-  final String _url;
-  web.WebSocket? _ws;
-  bool _wasOpen = false;
+/// A browser WebSocket as a [CommSocket].
+class _WebSocket implements CommSocket {
+  _WebSocket(this._ws);
+
+  _WebSocket.connect(String url) : _ws = web.WebSocket(url) {
+    _ws.binaryType = 'arraybuffer';
+  }
+
+  final web.WebSocket _ws;
+
+  @override
+  bool get isConnecting => _ws.readyState == web.WebSocket.CONNECTING;
+
+  @override
+  bool get isOpen => _ws.readyState == web.WebSocket.OPEN;
+
+  @override
+  void send(Uint8List frame) => _ws.send(frame.toJS);
+
+  @override
+  void close() => _ws.close();
+
+  @override
+  void listen({
+    required void Function() onOpen,
+    required void Function(Uint8List frame) onMessage,
+    required void Function() onDead,
+  }) {
+    _ws.onopen = ((web.Event _) => onOpen()).toJS;
+    _ws.onmessage = ((web.MessageEvent e) {
+      final data = e.data;
+      if (data.isA<JSArrayBuffer>()) onMessage((data as JSArrayBuffer).toDart.asUint8List());
+    }).toJS;
+    _ws.onerror = ((web.Event _) => onDead()).toJS;
+    _ws.onclose = ((web.CloseEvent _) => onDead()).toJS;
+  }
+}
+
+/// What `web/index.html` opened at navigation: `{url, socket, frames, opened}`.
+extension type _PageCommJs(JSObject _) implements JSObject {
+  external String get url;
+  external web.WebSocket get socket;
+  external JSArray<JSArrayBuffer> get frames;
+  external bool get opened;
+}
+
+@JS('window.evolve')
+external JSObject? get _evolve;
+
+/// The socket the page opened, taken over once: a later client opens its own.
+PageSocket? _takePageSocket() {
+  final evolve = _evolve;
+  if (evolve == null) return null;
+  final comm = evolve.getProperty<JSAny?>('comm'.toJS);
+  evolve.setProperty('comm'.toJS, null);
+  if (comm == null || !comm.isA<JSObject>()) return null;
+  final page = _PageCommJs(comm as JSObject);
+  return PageSocket(
+    page.url,
+    _WebSocket(page.socket),
+    [for (final frame in page.frames.toDart) frame.toDart.asUint8List()],
+    everOpened: page.opened,
+  );
+}
+
+/// [BrowserComm] on the browser's WebSocket, which also notices when the JVM it talked to was
+/// replaced by another one.
+class _BrowserComm extends BrowserComm {
   Timer? _replacementWatch;
 
-  _BrowserComm(String url) : _url = url {
-    BootTrace.markOnce('comm.connect');
-    openSocket();
+  _BrowserComm(String url) : super(url, _WebSocket.connect, page: _takePageSocket());
+
+  @override
+  void onTakenOver() => web.window.performance.mark('evolve.commTakenOver');
+
+  @override
+  void onOpened() {
+    _replacementWatch?.cancel();
+    _replacementWatch = null;
   }
 
   @override
-  void openSocket() {
-    final ws = web.WebSocket(_url);
-    _ws = ws;
-    ws.binaryType = 'arraybuffer';
-    ws.onopen = ((web.Event _) {
-      if (!identical(_ws, ws)) return;
-      _wasOpen = true;
-      _replacementWatch?.cancel();
-      _replacementWatch = null;
-      markOpen();
-    }).toJS;
-    ws.onmessage = ((web.MessageEvent e) {
-      final data = e.data;
-      if (data.isA<JSArrayBuffer>()) {
-        receiveBinary((data as JSArrayBuffer).toDart.asUint8List());
-      }
-    }).toJS;
-    // onerror and onclose both signal a dead socket. A superseded socket's late close must
-    // not tear down the one that replaced it, hence the identity check.
-    ws.onerror = ((web.Event _) => _onDead(ws)).toJS;
-    ws.onclose = ((web.CloseEvent _) => _onDead(ws)).toJS;
-  }
-
-  void _onDead(web.WebSocket ws) {
-    if (!identical(_ws, ws)) return;
-    markClosed();
-    if (_wasOpen) _watchForReplacement();
-  }
+  void onLost() => _watchForReplacement();
 
   /// The JVM this page talked to is gone. An application that relaunches itself comes back as
   /// another JVM on the same origin, with another comm port and other widget ids, so reconnecting
@@ -113,30 +144,6 @@ class _BrowserComm extends EquoCommBase {
       return false; // Nothing is serving the origin.
     }
   }
-
-  @override
-  void rawSend(Uint8List frame) {
-    final ws = _ws;
-    // A socket can be CLOSING/CLOSED before its close event has been delivered; sending then
-    // throws away the frame and logs an error per attempt. Treat it as the drop it is.
-    if (ws == null || ws.readyState != web.WebSocket.OPEN) {
-      bufferUnsent(frame);
-      markClosed();
-      return;
-    }
-    ws.send(frame.toJS);
-  }
-
-  /// A browser socket copies what it is given before send returns, so a view of the buffer will do.
-  @override
-  void rawSendRange(Uint8List buffer, int length) {
-    final ws = _ws;
-    if (ws == null || ws.readyState != web.WebSocket.OPEN) {
-      super.rawSendRange(buffer, length);
-      return;
-    }
-    ws.send(Uint8List.sublistView(buffer, 0, length).toJS);
-  }
 }
 
 /// Static facade over the web transport. Construction is the only part that differs
@@ -159,7 +166,8 @@ class EquoCommService {
   /// resolved against the current page, so the host and TLS scheme follow it
   /// (`https` → `wss`). With nothing injected — local desktop-web, where the
   /// browser and runtime share a machine — it falls back to
-  /// `ws://localhost:<port>` using the configured port.
+  /// `ws://localhost:<port>` using the configured port. `web/index.html` resolves the same URL for
+  /// the socket it opens at navigation.
   static String? _resolveUrl() {
     final injected = _hostInjectedCommUrl();
     if (injected != null) {

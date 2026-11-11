@@ -196,7 +196,8 @@ void main(List<String> args) async {
 
   // The handshake is already under way. Java sends what it queued before the comm connected as soon
   // as it opens: the first frame, run after that, paints it instead of an empty window that a second
-  // frame then has to replace.
+  // frame then has to replace. On the web the page opened the socket at navigation, so it is
+  // normally open by now, with Java's first frames already in.
   final openStart = BootTrace.nowMicros();
   await EquoCommService.firstOpen;
   BootTrace.step('comm.firstOpen', openStart);

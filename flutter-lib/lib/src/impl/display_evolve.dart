@@ -33,6 +33,7 @@ import '../comm/v_registry.dart';
 import '../comm/widget_key.dart';
 import '../comm/widget_wire.dart' show WidgetWireWriter;
 import 'utils/layered_layout_builder.dart';
+import '../testing/boot_trace.dart';
 
 class DisplaySwt extends StatefulWidget {
   final VDisplay value;
@@ -418,6 +419,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
         .where((s) => (s.visible ?? true) && !windowed.contains(s.id))
         .toList();
     if (shells.isEmpty) return const SizedBox.shrink();
+    BootTrace.markOnce('display.firstShellBuild');
     _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));
 
     return TraversalVetoScope(

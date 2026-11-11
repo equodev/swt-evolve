@@ -38,6 +38,10 @@ class BootTrace {
   /// own, so they are placed by their distance from the newest frame's raster end, taken as the
   /// moment the engine reports it: a few milliseconds early at most.
   static void recordFirstFrames(int count) {
+    if (kIsWeb) {
+      _recordFirstPageFrames(count);
+      return;
+    }
     var recorded = 0;
     late final TimingsCallback callback;
     callback = (List<FrameTiming> timings) {
@@ -57,6 +61,18 @@ class BootTrace {
       if (recorded >= count) SchedulerBinding.instance.removeTimingsCallback(callback);
     };
     SchedulerBinding.instance.addTimingsCallback(callback);
+  }
+
+  /// The web engine reports frame timings in batches 100 ms apart, which a page that paints a
+  /// few frames and goes idle never reaches. Each frame is marked when its draw ends instead (the
+  /// raster may finish after that). Its start is not known: the first frame is a warm-up frame,
+  /// with no animation frame of its own.
+  static void _recordFirstPageFrames(int count) {
+    var recorded = 0;
+    SchedulerBinding.instance.addPersistentFrameCallback((_) {
+      if (recorded >= count) return;
+      mark('frame ${++recorded} drawn');
+    });
   }
 
   /// Every step so far: on the web what the page loaded before `main()` ran, on the desktop what

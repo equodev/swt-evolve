@@ -96,6 +96,48 @@
     })();
   </script>
   <script>
+    // Opens the comm socket at navigation, while main.dart.js and the engine load. A socket the
+    // client opens itself only reports open after the engine's first frames, and Java's first
+    // frames wait behind that. The client takes this one over with what it buffered
+    // (comm_chromium.dart), and opens its own when there is none. The URL is the one
+    // EquoCommService resolves; one that differs is closed by the client.
+    (function () {
+      function commUrl() {
+        var injected = window.equoCommUrl || "";
+        if (injected.indexOf("ws://") === 0 || injected.indexOf("wss://") === 0) return injected;
+        if (injected) {
+          var scheme = window.location.protocol === "https:" ? "wss" : "ws";
+          return scheme + "://" + window.location.host + (injected.charAt(0) === "/" ? "" : "/") + injected;
+        }
+        return window.equoCommPort > 0 ? "ws://localhost:" + window.equoCommPort : "";
+      }
+      function open() {
+        var url = commUrl();
+        if (!url) return;
+        var comm = { url: url, socket: null, frames: [], opened: false };
+        try {
+          comm.socket = new WebSocket(url);
+        } catch (e) {
+          return;
+        }
+        comm.socket.binaryType = "arraybuffer";
+        comm.socket.onopen = function () {
+          comm.opened = true;
+          performance.mark("evolve.commOpen");
+        };
+        comm.socket.onmessage = function (e) {
+          if (!(e.data instanceof ArrayBuffer)) return;
+          if (comm.frames.length === 0) performance.mark("evolve.commFirstMessage");
+          comm.frames.push(e.data);
+        };
+        window.evolve.comm = comm;
+        performance.mark("evolve.commConnect");
+      }
+      if (window.evolve.commPortReady) window.evolve.commPortReady.then(open);
+      else open();
+    })();
+  </script>
+  <script>
     // Chromium reports navigator.language from the host's locale, so a glibc locale carrying a
     // modifier (ca_ES@valencia, sr_RS@latin, en_US@posix) arrives verbatim as "ca-ES@valencia" --
     // not a valid BCP-47 tag. The engine hands that to `new Intl.Locale(...)` while it boots, which
