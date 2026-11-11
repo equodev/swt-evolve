@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 import 'package:swtflutter/src/impl/focus_requests.dart';
 
 import 'delivery/support/deliver.dart';
@@ -156,6 +157,25 @@ void main() {
     await tester.pumpAndSettle();
     await _type(tester, 'a');
     expect(modified, ['edait']);
+  }, variant: _desktop);
+
+  // Java leaves out of its pushes a selection the client moved itself, so the range it pushed last
+  // is no longer the field's: typing over a selection Java set, as a cell editor opens with, keeps
+  // every key.
+  testWidgets('a push that names no selection keeps the caret typing left', (tester) async {
+    VPoint first() => VPoint()
+      ..x = 0
+      ..y = 1;
+    final modified = await _mount(tester, selection: first());
+    FocusRequests.instance.request(7);
+    await tester.pumpAndSettle();
+    await _type(tester, 'a');
+    await deliverChange(_value(selection: first())
+      ..seq = 11
+      ..text = 'adit', keys: [WireKey.k_Text_text], base: 10);
+    await tester.pump();
+    await _type(tester, 'b');
+    expect(modified, ['adit', 'abdit']);
   }, variant: _desktop);
 
   testWidgets('a focus request from Java keeps the selection Java holds', (tester) async {

@@ -403,8 +403,39 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _tooltipEntry = null;
   }
 
+  /// Whether this control held the keyboard focus when it left the tree.
+  bool _focusedWhenDeactivated = false;
+
+  @override
+  void deactivate() {
+    _focusedWhenDeactivated = swtFocusNode?.hasFocus ?? false;
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _focusedWhenDeactivated = false;
+  }
+
+  /// A control moved to another place in the tree -- a Table's child becoming its editor's control --
+  /// is built anew there. The focus it held goes to that new element, ahead of the fallback its
+  /// unmounted node leaves, which would hand it to the previously focused control. Not to one that
+  /// shows nothing that takes the focus, as while it is hidden: the request would wait and take the
+  /// focus whenever the control is shown again.
+  void _handFocusToSuccessor() {
+    for (final other in _mounted) {
+      if (!identical(other, this) && other.mounted && other.state.id == state.id) {
+        final node = other.swtFocusNode;
+        if (node != null && node.parent != null) node.requestFocus();
+        return;
+      }
+    }
+  }
+
   @override
   void dispose() {
+    if (_focusedWhenDeactivated) _handFocusToSuccessor();
     _hoverTimer?.cancel();
     PendingMove.drop(this);
     _heldState = null;

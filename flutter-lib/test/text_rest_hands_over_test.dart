@@ -154,6 +154,37 @@ void main() {
     expect(events, ['in']);
   });
 
+  // An application shows the field and focuses it in one pass: a cell editor placed under the press
+  // that opens it. The pointer resting where the field appears hovers it in the frame that applies
+  // the request, which mounts its TextField before the focus lands at rest.
+  testWidgets('a focus request from Java focuses a field shown under the pointer', (tester) async {
+    freshClient();
+    final events = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 160,
+          height: 24,
+          child: _RecordingTextSwt(value: _value(seq: 10)..visible = false, events: events),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(80, 12));
+    addTearDown(mouse.removePointer);
+    await tester.pump();
+
+    await deliverWhole(_value(seq: 11));
+    FocusRequests.instance.request(7);
+    await tester.pumpAndSettle();
+
+    expect(_textFieldFocused(tester), isTrue);
+    expect(events, ['in']);
+  });
+
   testWidgets('a tap on a field at rest focuses it', (tester) async {
     final events = await _mount(tester);
     await tester.tap(find.byType(_RecordingTextSwt));

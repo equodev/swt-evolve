@@ -479,13 +479,17 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
 
     final sel = state.selection;
-    if (sel != null && sel.x != sel.y && sel.y <= _controller.text.length) {
+    if (_selectionPushed && sel != null && sel.x != sel.y && sel.y <= _controller.text.length) {
       final desired = TextSelection(baseOffset: sel.x, extentOffset: sel.y);
       if (_controller.selection != desired) {
         _controller.selection = desired;
       }
     }
   }
+
+  /// Whether this push carries the selection. Java leaves out one the client moved itself, typing
+  /// included, so the range it pushed before is no longer the field's and is not put back.
+  bool get _selectionPushed => lastChange?.touches(WireKey.k_Text_selection) ?? true;
 
   void _trackEmptiness() => _isEmpty.value = _controller.text.isEmpty;
 
@@ -501,7 +505,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       lines.value = lines.value.editedTo(newText, selection);
     }
     final sel = state.selection;
-    if (sel != null && sel.x != sel.y && sel.y <= lines.text.length) {
+    if (_selectionPushed && sel != null && sel.x != sel.y && sel.y <= lines.text.length) {
       final desired = TextSelection(baseOffset: sel.x, extentOffset: sel.y);
       if (lines.selection != desired) lines.selection = desired;
     }
@@ -615,8 +619,11 @@ class TextImpl<T extends TextSwt, V extends VText>
     );
   }
 
+  /// Hands the focus over even when the field is already live: a hover in the frame that requested
+  /// the node at rest mounts the TextField before the focus lands there, and the node at rest then
+  /// unmounts with the focus, which goes back to whatever held it before.
   void _handleRestFocus() {
-    if (_restFocus.hasPrimaryFocus && !_live) _handOver();
+    if (_restFocus.hasPrimaryFocus) _handOver();
   }
 
   /// Mounts the TextField and gives it the focus the field at rest received, with the caret at
