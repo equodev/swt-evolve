@@ -126,7 +126,6 @@ class WebFlutterServerRelaunchNativeTest {
         WebFlutterServer before = start();
         int port = before.getPort();
         String servedBy = instanceInPage(port);
-        assertThat(get(port, WebFlutterServer.INSTANCE_PATH)).isEqualTo(servedBy);
         before.stop();
 
         System.setProperty(WebFlutterServer.RELAUNCH_PORT, String.valueOf(port));
@@ -140,7 +139,12 @@ class WebFlutterServerRelaunchNativeTest {
 
     @Test
     void theRelaunchedJvmKnowsWhenThePageBeforeAsks() throws Exception {
+        try (ServerSocket free = new ServerSocket()) {
+            free.bind(new InetSocketAddress("localhost", 0));
+            System.setProperty(WebFlutterServer.RELAUNCH_PORT, String.valueOf(free.getLocalPort()));
+        }
         WebFlutterServer server = start();
+        assertThat(server.servesRelaunchedPage()).isTrue();
 
         assertThat(server.awaitReturningPage(50)).as("no page has asked yet").isFalse();
         get(server.getPort(), WebFlutterServer.INSTANCE_PATH);

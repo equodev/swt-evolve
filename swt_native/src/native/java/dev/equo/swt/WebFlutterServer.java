@@ -124,12 +124,14 @@ public class WebFlutterServer {
     static final String INSTANCE_PATH = "/equo-instance";
     private final java.util.concurrent.CountDownLatch pageAsked = new java.util.concurrent.CountDownLatch(1);
     private final int relaunchPort;
+    private final int[] stablePorts;
     private boolean onRelaunchPort;
 
     private WebFlutterServer(Builder builder) {
         this.webDirectory = builder.webDirectory;
         this.httpPort = builder.httpPort;
         this.relaunchPort = builder.relaunchPort;
+        this.stablePorts = builder.stablePorts;
         if (!builder.commPortLater) commPort.complete(builder.commPort);
         this.widgetId = builder.widgetId;
         this.widgetName = builder.widgetName;
@@ -142,8 +144,8 @@ public class WebFlutterServer {
     }
 
     /**
-     * Starts the HTTP server. The server binds to {@code localhost} on the configured port
-     * (or an ephemeral port if 0 was specified).
+     * Starts the HTTP server. The server binds to {@code localhost} on the configured port, or when
+     * that is 0 on the first free one of the relaunch and stable ports, else on an ephemeral one.
      *
      * @return the actual port the server is listening on.
      * @throws IOException          if the server cannot be started.
@@ -188,18 +190,34 @@ public class WebFlutterServer {
         return actualPort;
     }
 
-    /** The configured port, else the one an application relaunched from; a taken relaunch port falls back to any. */
+    /**
+     * The configured port, else the one an application relaunched from, else the first of the
+     * application's own ({@link StableWebPort}) that is free, else any.
+     */
     private HttpServer bind() throws IOException {
         if (httpPort == 0 && relaunchPort > 0) {
-            try {
-                HttpServer server = HttpServer.create(new InetSocketAddress("localhost", relaunchPort), 0);
+            HttpServer server = bindIfFree(relaunchPort);
+            if (server != null) {
                 onRelaunchPort = true;
                 return server;
-            } catch (java.net.BindException taken) {
-                LOG.info("Relaunch port " + relaunchPort + " is taken, serving on another one");
+            }
+            LOG.info("Relaunch port " + relaunchPort + " is taken, serving on another one");
+        }
+        if (httpPort == 0) {
+            for (int port : stablePorts) {
+                HttpServer server = bindIfFree(port);
+                if (server != null) return server;
             }
         }
         return HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
+    }
+
+    private static HttpServer bindIfFree(int port) throws IOException {
+        try {
+            return HttpServer.create(new InetSocketAddress("localhost", port), 0);
+        } catch (java.net.BindException taken) {
+            return null;
+        }
     }
 
     /** Where a page served before the comm was listening asks for its port. */
@@ -243,8 +261,18 @@ public class WebFlutterServer {
         }
     }
 
+    /**
+     * A page whose JVM is gone asks this to tell whether to reload. Only a relaunched JVM calls it
+     * back: on the application's stable port, a tab left open by an earlier run would otherwise reload
+     * into a later, unrelated launch next to the page that launch opens.
+     */
     private void answerInstance(HttpExchange exchange) throws IOException {
         try {
+            if (!onRelaunchPort) {
+                exchange.getResponseHeaders().set("Cache-Control", "no-store");
+                exchange.sendResponseHeaders(404, -1);
+                return;
+            }
             pageAsked.countDown();
             byte[] body = instance.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
@@ -469,6 +497,7 @@ public class WebFlutterServer {
         private final String instance;
         private final AtomicLong requestsServed;
         private final ProxyHandler proxy;
+        private final java.util.concurrent.ConcurrentHashMap<Path, EntityTag> entityTags = new java.util.concurrent.ConcurrentHashMap<>();
 
         StaticFileHandler(File rootDir, CompletableFuture<Integer> commPort, long widgetId, String widgetName,
                 boolean serveServiceWorker, boolean enableTestSemantics, String instance, AtomicLong requestsServed,
@@ -579,7 +608,19 @@ public class WebFlutterServer {
                 exchange.getResponseHeaders().set("Content-Type", mimeType);
                 setCrossOriginHeaders(exchange);
                 setCorsHeaders(exchange);
-                setCacheHeaders(exchange, file.getName());
+                boolean page = file.getName().endsWith(".html") || file.getName().endsWith(".htm");
+                if (page) {
+                    exchange.getResponseHeaders().set("Cache-Control", "no-cache, no-store, must-revalidate");
+                    exchange.getResponseHeaders().set("Pragma", "no-cache");
+                } else {
+                    String tag = entityTag(file);
+                    exchange.getResponseHeaders().set("Cache-Control", "no-cache");
+                    exchange.getResponseHeaders().set("ETag", tag);
+                    if (matches(exchange.getRequestHeaders().getFirst("If-None-Match"), tag)) {
+                        exchange.sendResponseHeaders(304, -1);
+                        return;
+                    }
+                }
 
                 if ("HEAD".equalsIgnoreCase(method)) {
                     exchange.sendResponseHeaders(200, -1);
@@ -715,17 +756,46 @@ public class WebFlutterServer {
         }
 
         /**
-         * Sets cache headers. Immutable hashed assets get long cache, HTML is never cached.
+         * The bundle's file names are the same in every build, and the page is served on the same origin
+         * launch after launch ({@link StableWebPort}), so the browser revalidates each file
+         * ({@code no-cache}) against a tag of its content. An unchanged file costs a 304, and the browser
+         * keeps the code it compiled from it; a file of another build is sent again.
          */
-        private void setCacheHeaders(HttpExchange exchange, String fileName) {
-            if (fileName.endsWith(".html") || fileName.endsWith(".htm")) {
-                exchange.getResponseHeaders().set("Cache-Control", "no-cache, no-store, must-revalidate");
-                exchange.getResponseHeaders().set("Pragma", "no-cache");
-            } else if (fileName.endsWith(".wasm") || fileName.endsWith(".js") || fileName.endsWith(".mjs")) {
-                // Moderate cache for compiled assets; they may change between builds
-                exchange.getResponseHeaders().set("Cache-Control", "public, max-age=3600");
-            } else {
-                exchange.getResponseHeaders().set("Cache-Control", "public, max-age=86400");
+        private String entityTag(File file) throws IOException {
+            Path path = file.toPath();
+            long length = file.length();
+            long modified = file.lastModified();
+            EntityTag known = entityTags.get(path);
+            if (known != null && known.length == length && known.modified == modified) return known.value;
+            java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+            byte[] buffer = new byte[64 * 1024];
+            try (InputStream is = Files.newInputStream(path)) {
+                for (int n; (n = is.read(buffer)) > 0; ) crc.update(buffer, 0, n);
+            }
+            String value = "\"" + Long.toHexString(length) + "-" + Long.toHexString(crc.getValue()) + "\"";
+            entityTags.put(path, new EntityTag(length, modified, value));
+            return value;
+        }
+
+        static boolean matches(String ifNoneMatch, String tag) {
+            if (ifNoneMatch == null) return false;
+            for (String candidate : ifNoneMatch.split(",")) {
+                String c = candidate.trim();
+                if (c.startsWith("W/")) c = c.substring(2);
+                if (c.equals(tag) || c.equals("*")) return true;
+            }
+            return false;
+        }
+
+        private static final class EntityTag {
+            final long length;
+            final long modified;
+            final String value;
+
+            EntityTag(long length, long modified, String value) {
+                this.length = length;
+                this.modified = modified;
+                this.value = value;
             }
         }
 
@@ -1021,8 +1091,9 @@ public class WebFlutterServer {
     public static class Builder {
 
         private File webDirectory;
-        private int httpPort = 0; // 0 = ephemeral
+        private int httpPort = 0; // 0 = the relaunch or stable ports, else ephemeral
         private int relaunchPort;
+        private int[] stablePorts;
         private int commPort;
         private boolean commPortLater;
         private long widgetId;
@@ -1047,7 +1118,8 @@ public class WebFlutterServer {
         }
 
         /**
-         * Sets the HTTP port. Use 0 (default) to let the OS pick an available port.
+         * Sets the HTTP port. Use 0 (default) to serve on the application's stable port
+         * ({@link #stablePorts}), or on one the OS picks when those are taken.
          * <p>
          * If never called explicitly, defaults to the system property
          * {@code dev.equo.swt.web.httpPort} — lets an external driver (Playwright, etc.) target a
@@ -1056,6 +1128,15 @@ public class WebFlutterServer {
          */
         public Builder httpPort(int port) {
             this.httpPort = port;
+            return this;
+        }
+
+        /**
+         * The ports tried, in order, before an ephemeral one when no port is set. Defaults to the
+         * application's own ({@link StableWebPort}), so its page keeps one origin across launches.
+         */
+        public Builder stablePorts(int... ports) {
+            this.stablePorts = ports.clone();
             return this;
         }
 
@@ -1176,6 +1257,9 @@ public class WebFlutterServer {
                 } else {
                     relaunchPort = Integer.getInteger(RELAUNCH_PORT, 0);
                 }
+            }
+            if (stablePorts == null) {
+                stablePorts = StableWebPort.candidates();
             }
             if (browserCommand == null) {
                 browserCommand = System.getProperty("equo.swt.browser");
