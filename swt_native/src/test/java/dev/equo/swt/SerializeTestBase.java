@@ -198,6 +198,10 @@ public class SerializeTestBase {
         // A generated renderer is built bare, with nothing to measure or dispose tabs with.
         if (w instanceof org.eclipse.swt.custom.CTabFolder)
             inst.ignore(Select.setter(org.eclipse.swt.custom.CTabFolder.class, "setRenderer"));
+        // A direct write to the public field bypasses the setter's dirty mark; when the setter then
+        // receives the same random value it returns early and the change is never named.
+        if (w instanceof org.eclipse.swt.custom.SashForm)
+            inst.ignore(Select.field(org.eclipse.swt.custom.SashForm.class, "SASH_WIDTH"));
         inst.fill();
     }
 
