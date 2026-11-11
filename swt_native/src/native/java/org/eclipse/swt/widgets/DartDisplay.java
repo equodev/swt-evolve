@@ -1925,9 +1925,11 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     @Override
     public void init() {
+        systemAppearance = dev.equo.swt.SystemAppearance.readAhead();
         DisplayBridgePlatform.preload();
         webPageServer = dev.equo.swt.WebPageLaunch.start(this.getApi(), DisplayBridgePlatform::beforeBrowserLaunch);
         super.init();
+        DisplayBridge.startEarly(this);
         if ("true".equalsIgnoreCase(System.getProperty(USE_SYSTEM_THEME))) {
         }
         initClasses();
@@ -4203,7 +4205,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     volatile String clientPlatform;
 
-    final dev.equo.swt.SystemAppearance systemAppearance = new dev.equo.swt.SystemAppearance();
+    dev.equo.swt.SystemAppearance systemAppearance;
 
     public boolean darkTheme() {
         return Config.darkTheme(systemAppearance);

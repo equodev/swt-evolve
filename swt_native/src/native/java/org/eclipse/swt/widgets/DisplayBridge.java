@@ -144,7 +144,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * Creates and starts the Display-level bridge. Called once during {@code Display.init()}. Picks
+     * Starts a desktop Display's bridge as soon as the Display can paint its window background, before
+     * the rest of {@code Display.init()}: the native window and its engine are created on this thread,
+     * and the engine then starts Dart on its own threads while the Display is finished here. The web
+     * surface starts its page in {@code WebPageLaunch} instead.
+     */
+    public static void startEarly(DartDisplay display) {
+        if (isDesktopMode()) initForDisplay(display);
+    }
+
+    /**
+     * Creates and starts the Display-level bridge. Called once during {@code Display.init()}; a bridge
+     * {@link #startEarly} already started is returned as it is. Picks
      * the native-window surface under {@code -Ddev.equo.swt.mode=desktop}, otherwise the web surface.
      * Both concrete classes are resolved per-OS from the compiled source set.
      */
@@ -154,6 +165,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // Creating a per-Display bridge here would double-boot a second server. Skip it; leaving
         // displayBridge null is safe — all its uses are null-guarded.
         if (FlutterBridge.injected() != null) return null;
+        if (display.displayBridge != null) return display.displayBridge;
         try (BootTrace.Span span = BootTrace.span("display.bridge")) {
             DisplayBridge bridge;
             try (BootTrace.Span ctor = BootTrace.span("bridge.new")) {
