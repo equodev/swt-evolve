@@ -5,6 +5,11 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.*
 import java.io.File
 import net.ltgt.gradle.errorprone.errorprone
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
+import org.gradle.workers.WorkAction
+import org.gradle.workers.WorkParameters
+import org.gradle.workers.WorkerExecutor
 
 plugins {
     java
@@ -1012,26 +1017,60 @@ fun Task.dartSourcesAsInputs() {
     outputs.file(layout.buildDirectory.file("stamps/$name.stamp"))
 }
 
-fun Task.stampOnSuccess() = doLast {
-    val stamp = layout.buildDirectory.file("stamps/$name.stamp").get().asFile
-    stamp.parentFile.mkdirs()
-    stamp.writeText(System.currentTimeMillis().toString())
+/** Runs one command and, once it succeeds, writes the stamp its task declares as output. */
+abstract class StampedCommand : WorkAction<StampedCommand.Params> {
+    interface Params : WorkParameters {
+        val command: ListProperty<String>
+        val workingDir: DirectoryProperty
+        val stamp: RegularFileProperty
+    }
+
+    @get:Inject abstract val execOperations: ExecOperations
+
+    override fun execute() {
+        execOperations.exec {
+            commandLine(parameters.command.get())
+            workingDir(parameters.workingDir.get().asFile)
+        }
+        val stamp = parameters.stamp.get().asFile
+        stamp.parentFile.mkdirs()
+        stamp.writeText(System.currentTimeMillis().toString())
+    }
 }
 
-tasks.register<Exec>("analyze") {
+/**
+ * A command run as Worker API work rather than as an Exec action. Gradle runs one task of a project
+ * at a time, but while a task's submitted work is in flight it may start the project's other tasks:
+ * `flutter test` then runs beside the Java suite instead of ahead of it.
+ */
+abstract class BackgroundCommand @Inject constructor(private val workers: WorkerExecutor) : DefaultTask() {
+    @get:Input abstract val command: ListProperty<String>
+    @get:Internal abstract val workingDir: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        val stamp = outputs.files.singleFile
+        workers.noIsolation().submit(StampedCommand::class.java) {
+            command.set(this@BackgroundCommand.command)
+            workingDir.set(this@BackgroundCommand.workingDir)
+            this.stamp.set(stamp)
+        }
+    }
+}
+
+tasks.register<BackgroundCommand>("analyze") {
     group = "build"
     description = "Flutter analyze"
-    workingDir = file("../flutter-lib")
-    commandLine = flutterCmd() + listOf("analyze")
+    workingDir.set(file("../flutter-lib"))
+    command.set(flutterCmd() + listOf("analyze"))
     dartSourcesAsInputs()
-    stampOnSuccess()
 }
 
-tasks.register<Exec>("flutterTest") {
+tasks.register<BackgroundCommand>("flutterTest") {
     group = "verification"
     description = "Runs the Dart unit tests in flutter-lib (analyze answers whether the Dart side " +
             "is sound; this answers whether it behaves)."
-    workingDir = file("../flutter-lib")
+    workingDir.set(file("../flutter-lib"))
     dependsOn(pub)
     // `flutter test` sizes its pool at cores/2 and, on Linux, reads the node's cores rather than
     // the container's quota, which oversubscribes a shared runner badly. availableProcessors() is
@@ -1043,9 +1082,8 @@ tasks.register<Exec>("flutterTest") {
     // rather than assert. -DrunDartBench=true runs them.
     val benchTags = if (System.getProperty("runDartBench") == "true") emptyList()
                     else listOf("--exclude-tags=bench")
-    commandLine = flutterCmd() + listOf("test", "--concurrency=$jobs") + benchTags
+    command.set(flutterCmd() + listOf("test", "--concurrency=$jobs") + benchTags)
     dartSourcesAsInputs()
-    stampOnSuccess()
 }
 
 val dart = tasks.register<Exec>("dartRunner") {

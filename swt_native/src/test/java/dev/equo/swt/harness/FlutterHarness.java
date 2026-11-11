@@ -282,8 +282,11 @@ public abstract class FlutterHarness extends EmbeddedBridge {
                     + bootFailuresToInject + " more to inject");
         }
         if (boot != null) boot.launched();
-        // The harness inherits Chrome's stdio so -Dharness.web.console output is visible.
-        harnessChrome = HeadlessChrome.launch(chrome, openUrl, headless, console, HeadlessChrome.Io.INHERIT);
+        // Chrome's stdio is inherited only when -Dharness.web.console asks to see it. An inherited pipe
+        // is the test JVM's own stdout to Gradle, and Chrome's updater on macOS outlives the browser
+        // still holding it: Gradle then waits minutes for that pipe to close before the task can end.
+        harnessChrome = HeadlessChrome.launch(chrome, openUrl, headless, console,
+                console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD);
         System.out.println("[FlutterHarness] launched Chrome (headless=" + headless + ") at " + openUrl);
     }
 
