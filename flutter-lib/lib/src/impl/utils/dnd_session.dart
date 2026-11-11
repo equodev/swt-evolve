@@ -41,11 +41,7 @@ class ActiveDragTracker {
       _pointerDown = true;
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
       _pointerDown = false;
-      // Settled once the frame the release is in has been laid out and hit-tested again: a drag's
-      // last step (a sash, a scroll) moves what is under the pointer only in that frame.
-      final scheduler = SchedulerBinding.instance;
-      scheduler.addPostFrameCallback((_) => HoverExclusivityArbiter.instance.settle());
-      scheduler.scheduleFrame();
+      HoverExclusivityArbiter.instance.settleAfterFrame();
     }
   }
 }

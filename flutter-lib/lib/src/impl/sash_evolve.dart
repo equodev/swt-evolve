@@ -6,6 +6,7 @@ import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../impl/control_evolve.dart';
 import '../impl/composite_evolve.dart';
+import '../impl/utils/hover_arbiter.dart';
 import '../impl/utils/swt_zoom_scale.dart';
 import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
@@ -71,6 +72,21 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
     _awaitingAnswer = false;
     _localX = null;
     _localY = null;
+    _answered();
+  }
+
+  /// Releases the hover the release holds, once Java has answered it.
+  void Function()? _releaseHover;
+
+  void _answered() {
+    _releaseHover?.call();
+    _releaseHover = null;
+  }
+
+  @override
+  void dispose() {
+    _answered();
+    super.dispose();
   }
 
   @override
@@ -178,7 +194,13 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
               : null,
           onPointerUp: enabled
               ? (_) {
-                  if (_primaryPress && swtClickCount == 1) _sendPositionSelection(pressed: false);
+                  if (_primaryPress && swtClickCount == 1) {
+                    // Java's answer lays out the sash and the controls beside it where the drag
+                    // left them; until then a sibling may still cover the pointer.
+                    _answered();
+                    if (state.bounds != null) _releaseHover = HoverExclusivityArbiter.instance.holdSettle();
+                    _sendPositionSelection(pressed: false);
+                  }
                   _primaryPress = false;
                   _endDrag();
                 }

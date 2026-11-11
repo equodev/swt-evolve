@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui' show Offset;
 
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
+
 import 'dnd_session.dart' show ActiveDragTracker;
 
 typedef HoverChanged = void Function(bool hovering);
@@ -64,6 +66,39 @@ class HoverExclusivityArbiter {
     if (_resolveScheduled) _resolve();
   }
 
+  /// Settles what the pointer is over once the frame in progress has been laid out and hit-tested
+  /// again: the last step of a drag (a sash, a scroll) moves what is under the pointer only there.
+  void settleAfterFrame() {
+    final scheduler = SchedulerBinding.instance;
+    scheduler.addPostFrameCallback((_) => settle());
+    scheduler.scheduleFrame();
+  }
+
+  /// The releases whose answer from Java the hover waits for.
+  int _settleHolds = 0;
+
+  /// How long a release is waited for: past it, the hover settles on what the client shows.
+  static const settleHoldLimit = Duration(seconds: 2);
+
+  /// Keeps the pointer where it is, as while a button is held, until the returned function runs:
+  /// a release whose answer from Java moves the controls around the pointer (a sash, and the
+  /// siblings its listeners lay out) is settled once that answer is shown, not on what the client
+  /// drew before it.
+  void Function() holdSettle() {
+    _settleHolds++;
+    var released = false;
+    late final Timer limit;
+    void release() {
+      if (released) return;
+      released = true;
+      limit.cancel();
+      if (--_settleHolds == 0) settleAfterFrame();
+    }
+
+    limit = Timer(settleHoldLimit, release);
+    return release;
+  }
+
   /// Settles what the pointer is over now that nothing holds it.
   void settle() {
     if (!_resolveScheduled) {
@@ -77,7 +112,7 @@ class HoverExclusivityArbiter {
     // A held button is SWT's implicit capture: nothing is entered or left until release, when
     // [settle] resolves what the pointer ended up over.
     final newWinner = _deepestActive();
-    if (ActiveDragTracker.isSuppressingHover) {
+    if (ActiveDragTracker.isSuppressingHover || _settleHolds > 0) {
       final winner = _winner;
       if (winner != null && newWinner != winner) _leftWhileHeld[winner]?.call();
       return;
