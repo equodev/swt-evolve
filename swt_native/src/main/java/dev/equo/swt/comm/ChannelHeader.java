@@ -45,6 +45,12 @@ public final class ChannelHeader {
         return number >= 0 && number < channelNames.length ? channelNames[number] : null;
     }
 
+    /** The number of the type {@code name}, or 0 when it has none. */
+    public static int type(String name) {
+        Integer number = TYPES.get(name);
+        return number == null ? 0 : number;
+    }
+
     /**
      * The number of the type {@code name}.
      *

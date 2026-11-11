@@ -2207,10 +2207,15 @@ public abstract class FlutterBridge {
         }
     };
 
-    /** What a class's instances are named on the wire: a Dart or Swt implementation by its widget's name. */
+    /**
+     * What a class's instances are named on the wire: a Dart or Swt implementation by its widget's
+     * name, an anonymous class (the implementation {@code Item(Widget, int)} installs) by its
+     * superclass's.
+     */
     private static final ClassValue<String> CLASS_NAMES = new ClassValue<String>() {
         @Override
         protected String computeValue(Class<?> type) {
+            if (type.isAnonymousClass()) return get(type.getSuperclass());
             String simple = type.getSimpleName();
             boolean impl = DartWidget.class.isAssignableFrom(type) || DartResource.class.isAssignableFrom(type);
             return (impl ? simple.substring(4) : simple).intern();
@@ -2237,9 +2242,18 @@ public abstract class FlutterBridge {
     public void destroy(DartWidget control) {
         CommService comm = comm();
         if (comm == null) return;
-        String name = widgetName(control);
-        long id = id(control);
-        comm.removeOwner(ChannelHeader.requireType(name), id);
+        removeOwners(comm, control);
+    }
+
+    /**
+     * Drops the handlers {@code widget} registered under either of its names. A name without a wire
+     * number (an application's own Item subclass) can have none: registering would have thrown.
+     */
+    private static void removeOwners(CommService comm, DartWidget widget) {
+        String name = widgetName(widget);
+        long id = id(widget);
+        int type = ChannelHeader.type(name);
+        if (type != 0) comm.removeOwner(type, id);
         String alternate = alternateTypeName(name);
         if (alternate != null) comm.removeOwner(ChannelHeader.requireType(alternate), id);
     }
@@ -2261,11 +2275,7 @@ public abstract class FlutterBridge {
         }
         CommService comm = commFor(widget);
         if (comm == null) return;
-        String name = widgetName(widget);
-        long id = id(widget);
-        comm.removeOwner(ChannelHeader.requireType(name), id);
-        String alternate = alternateTypeName(name);
-        if (alternate != null) comm.removeOwner(ChannelHeader.requireType(alternate), id);
+        removeOwners(comm, widget);
     }
 
     public void setBounds(DartControl control, Rectangle bounds) {
@@ -2319,6 +2329,13 @@ public abstract class FlutterBridge {
     /** The client moved its focus to {@code control}: tracked like {@link #setFocus}, without echoing it back. */
     public void clientFocused(DartControl control) {
         setFocus(control);
+    }
+
+    /**
+     * The client moved its focus to {@code control}, which is hidden and so cannot hold it: the
+     * client's focus goes back to the focus control.
+     */
+    public void clientFocusedHidden(DartControl control) {
     }
 
     /**

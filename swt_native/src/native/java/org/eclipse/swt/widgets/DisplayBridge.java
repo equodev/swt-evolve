@@ -1747,6 +1747,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     @Override
+    public void clientFocusedHidden(DartControl widget) {
+        // The client left the focus control, so the request back to it is a real move to send.
+        focusRequested = null;
+        // Natively the keys go to the focus control, not to a control nobody sees.
+        requestClientFocus(focused, true);
+    }
+
+    @Override
     public boolean setActiveControl(DartControl control, int detail) {
         Shell shell = control.getApi().getShell();
         if (!(shell.getImpl() instanceof DartShell))

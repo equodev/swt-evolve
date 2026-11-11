@@ -64,4 +64,19 @@ public class ItemSubclassTest {
         item.setText("sample.Common");
         assertThat(item.getText()).isEqualTo("sample.Common");
     }
+
+    @Test
+    public void subclassedItem_isNamedItemOnTheWire() {
+        SubclassedItem item = new SubclassedItem(new Composite(shell(), SWT.NONE));
+
+        assertThat(FlutterBridge.widgetName(item.getImpl())).isEqualTo("Item");
+    }
+
+    @Test
+    public void subclassedItem_disposes() {
+        SubclassedItem item = new SubclassedItem(new Composite(shell(), SWT.NONE));
+
+        assertThatCode(item::dispose).doesNotThrowAnyException();
+        assertThat(item.isDisposed()).isTrue();
+    }
 }

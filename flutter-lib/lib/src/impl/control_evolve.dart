@@ -183,6 +183,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     afterNextFrame(() {
       if (!mounted || !_focusClaimed) return;
       _focusClaimed = false;
+      // A hidden control's node is detached: it would keep the request and take the focus whenever
+      // the control is shown again, with no request from Java behind it.
+      if (state.visible == false) return;
       swtFocusNode?.requestFocus();
     });
   }
@@ -217,6 +220,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     if (state.visible == false) {
       _hoverTimer?.cancel();
       _removeTooltip();
+      // Hiding a control supersedes a focus request it has not applied yet.
+      _focusClaimed = false;
     }
   }
 

@@ -1176,6 +1176,13 @@ public class ControlHelper {
         FlutterBridge bridge = control.getBridge();
         if (bridge.staleFocusReport(control))
             return;
+        // A report sent before the client applied a hide names a control Java hid (the content of a
+        // part whose tab was deselected). A hidden control never holds the focus in SWT, so it activates nothing.
+        // The caller dropped the report of a disposed control.
+        if (!control.getApi().isVisible()) {
+            bridge.clientFocusedHidden(control);
+            return;
+        }
         boolean announce = !bridge.hasFocus(control);
         boolean byKeyboard = bridge.takeKeyboardTraversal();
         if (announce && !byKeyboard)

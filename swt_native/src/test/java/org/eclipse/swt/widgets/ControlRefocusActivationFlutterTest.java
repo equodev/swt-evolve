@@ -45,8 +45,12 @@ class ControlRefocusActivationFlutterTest {
     @DisplayName("re-reporting focus already held does not re-announce activation up the chain")
     void refocusWhileAlreadyFocusedDoesNotReactivateAncestors() {
         Shell shell = new Shell(display);
+        // Where opening the shell puts the focus, so the tree's report below is a change.
+        new Tree(shell, SWT.NONE);
         Composite parent = new Composite(shell, SWT.NONE);
         Tree tree = new Tree(parent, SWT.NONE);
+        // The client shows, and so can focus, only the controls of an open shell.
+        shell.open();
 
         int[] parentActivations = {0};
         parent.addListener(SWT.Activate, e -> parentActivations[0]++);
