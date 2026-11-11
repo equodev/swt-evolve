@@ -1066,23 +1066,42 @@ tasks.register<BackgroundCommand>("analyze") {
     dartSourcesAsInputs()
 }
 
+// `flutter test` sizes its pool at cores/2 and, on Linux, reads the node's cores rather than the
+// container's quota, which oversubscribes a shared runner badly. availableProcessors() is the number
+// that respects a cgroup quota, so it is both the safe one in a container and the whole machine on a
+// workstation.
+val flutterTestJobs = (System.getProperty("flutterTestJobs") ?: System.getenv("FLUTTER_TEST_JOBS"))?.toIntOrNull()
+    ?: Runtime.getRuntime().availableProcessors()
+// Twice the pool, so a bundle that runs long does not leave the rest of the pool idle at the end.
+val flutterTestBundleCount = flutterTestJobs * 2
+
+// `flutter test` compiles its files one at a time, so a run of one file per test isolate is as long
+// as that queue. The bundles (tool/test_bundles.dart, as CI runs them) put the files into a few
+// isolates instead; files with @Tags or @TestOn run on their own.
+val flutterTestBundles = tasks.register<Exec>("flutterTestBundles") {
+    group = "verification"
+    description = "Writes flutter-lib/test/bundle_*_test.dart, the files flutterTest runs"
+    workingDir = file("../flutter-lib")
+    dependsOn(pub)
+    commandLine = dartCmd() + listOf("tool/test_bundles.dart", flutterTestBundleCount.toString())
+}
+
 tasks.register<BackgroundCommand>("flutterTest") {
     group = "verification"
     description = "Runs the Dart unit tests in flutter-lib (analyze answers whether the Dart side " +
             "is sound; this answers whether it behaves)."
     workingDir.set(file("../flutter-lib"))
-    dependsOn(pub)
-    // `flutter test` sizes its pool at cores/2 and, on Linux, reads the node's cores rather than
-    // the container's quota, which oversubscribes a shared runner badly. availableProcessors() is
-    // the number that respects a cgroup quota, so it is both the safe one in a container and the
-    // whole machine on a workstation.
-    val jobs = System.getProperty("flutterTestJobs") ?: System.getenv("FLUTTER_TEST_JOBS")
-        ?: Runtime.getRuntime().availableProcessors().toString()
+    dependsOn(pub, flutterTestBundles)
     // 'bench' is the Dart side of the tag the Java suite already excludes: measurements that print
     // rather than assert. -DrunDartBench=true runs them.
     val benchTags = if (System.getProperty("runDartBench") == "true") emptyList()
                     else listOf("--exclude-tags=bench")
-    command.set(flutterCmd() + listOf("test", "--concurrency=$jobs") + benchTags)
+    val standalone = file("../flutter-lib/build/standalone_tests.txt")
+    val bundles = (0 until flutterTestBundleCount).map { "test/bundle_${it}_of_${flutterTestBundleCount}_test.dart" }
+    command.set(provider {
+        flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + benchTags + bundles +
+            standalone.readLines().filter { it.isNotBlank() }
+    })
     dartSourcesAsInputs()
 }
 
