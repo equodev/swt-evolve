@@ -87,8 +87,15 @@ class GCScopedPaintClipNativeTest {
             org.eclipse.swt.graphics.Image image = new org.eclipse.swt.graphics.Image(display, 2, 2);
             java.util.concurrent.CompletableFuture<Void> render = new java.util.concurrent.CompletableFuture<>();
             ((org.eclipse.swt.graphics.DartImage) image.getImpl())._pendingRenderFuture(render);
-            display.asyncExec(() -> render.complete(null));
-            assertThat(image.getImageData().width).as("a read waits for a render the event loop completes").isEqualTo(2);
+            // The render's answer arrives on the comm thread; the read runs no application code
+            // while it waits, so an asyncExec would only complete it at the wait's deadline.
+            java.util.concurrent.CompletableFuture.runAsync(() -> render.complete(null),
+                    java.util.concurrent.CompletableFuture.delayedExecutor(50, java.util.concurrent.TimeUnit.MILLISECONDS));
+            long start = System.nanoTime();
+            assertThat(image.getImageData().width).as("a read waits for the render").isEqualTo(2);
+            assertThat(render).as("the read returned once the render completed").isDone();
+            assertThat(System.nanoTime() - start).as("and not at its deadline")
+                    .isLessThan(java.util.concurrent.TimeUnit.SECONDS.toNanos(10));
             image.dispose();
         } finally {
             if (mode == null)
