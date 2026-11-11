@@ -127,6 +127,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final bounds = state.bounds;
 
     _parentDimensions = _getParentDimensions();

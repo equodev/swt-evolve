@@ -423,7 +423,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       backgroundImage: state.backgroundImage,
       child: NoLayout(children: children, composite: state),
     );
-    if (state.visible != null && !state.visible!) {
+    if (hidden) {
       // Dropped, not kept alive out of sight: what a hidden control holds lives in the registry and
       // goes on being updated with nothing rendering it, so there is nothing to preserve here and
       // no reason to go on building and laying out a subtree nobody can see.

@@ -107,6 +107,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final widgetTheme = Theme.of(context).extension<TabFolderThemeExtension>()!;
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();

@@ -1067,6 +1067,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return KeyEventResult.ignored;
   }
 
+  /// `setVisible(false)`: the control renders nothing. [wrap] answers it; a build that does not go
+  /// through [wrap] returns [SizedBox.shrink] first when this holds.
+  bool get hidden => state.visible == false;
+
   /// The control's own chrome around [widget]. [opacity] is the impl's own fade, folded into the
   /// one layer the control already has. [ownLayer] false for a control whose own build puts this in
   /// [inOwnLayer] further out.
@@ -1077,7 +1081,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     if (wrapsWholeWidgetForDnd) {
       widget = wrapDnd(widget);
     }
-    if (state.visible == false) {
+    if (hidden) {
       _wrapped = null;
       _inner = null;
       return const SizedBox.shrink();

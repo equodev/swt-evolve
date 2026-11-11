@@ -46,7 +46,13 @@ class ListImpl<T extends ListSwt, V extends VList>
   @override
   void setValue(V value) {
     super.setValue(value);
-    if (lastChange?.touches(WireKey.k_List_topIndex) ?? true) _scrollToTopIndexAfterLayout();
+    final change = lastChange;
+    // A hidden List drops its ListView, so the one built when it is shown again starts at item 0.
+    if (change == null ||
+        change.touches(WireKey.k_List_topIndex) ||
+        (change.touches(WireKey.k_Control_visible) && !hidden)) {
+      _scrollToTopIndexAfterLayout();
+    }
   }
 
   /// Java keeps how far the items are scrolled: getTopIndex and API scrolling are computed from it.
@@ -79,6 +85,7 @@ class ListImpl<T extends ListSwt, V extends VList>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final widgetTheme = Theme.of(context).extension<ListThemeExtension>()!;
     // The item color does not change the line height, so any color measures the extent.
     final itemTextStyle = getTextStyle(

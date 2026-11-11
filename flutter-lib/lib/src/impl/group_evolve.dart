@@ -33,6 +33,7 @@ class GroupImpl<T extends GroupSwt, V extends VGroup>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final widgetTheme = Theme.of(context).extension<GroupThemeExtension>()!;
     final children = state.children;
 

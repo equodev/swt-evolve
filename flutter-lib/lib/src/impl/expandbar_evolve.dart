@@ -37,6 +37,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final widgetTheme = Theme.of(context).extension<ExpandBarThemeExtension>()!;
     final itemTheme = Theme.of(context).extension<ExpandItemThemeExtension>()!;
     final style = StyleBits(state.style);

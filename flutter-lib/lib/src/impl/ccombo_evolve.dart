@@ -261,6 +261,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final widgetTheme = Theme.of(context).extension<CComboThemeExtension>()!;
     final styleBits = StyleBits(state.style);
     final bool isReadOnly = styleBits.has(SWT.READ_ONLY);

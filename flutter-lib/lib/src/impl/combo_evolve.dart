@@ -458,6 +458,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final theme = Theme.of(context).extension<ComboThemeExtension>()!;
     final bool isEnabled = state.enabled ?? false;
     final styleBits = StyleBits(state.style);

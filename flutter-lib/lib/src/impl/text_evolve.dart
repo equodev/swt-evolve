@@ -719,9 +719,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     if (widgetTheme == null) {
       return const SizedBox.shrink();
     }
-    // Text builds its own tree and never routes through ControlImpl.wrap(), which is
-    // otherwise the only place that honors state.visible == false.
-    if (state.visible != null && !state.visible!) {
+    // Text builds its own tree and never routes through ControlImpl.wrap().
+    if (hidden) {
       return const SizedBox.shrink();
     }
 

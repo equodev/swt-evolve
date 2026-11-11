@@ -188,6 +188,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   @override
   Widget build(BuildContext context) {
+    if (hidden) return const SizedBox.shrink();
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 

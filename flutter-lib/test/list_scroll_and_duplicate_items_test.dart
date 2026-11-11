@@ -106,6 +106,30 @@ void main() {
     expect(_isAtTheTop(tester, 30), isTrue);
   });
 
+  testWidgets('a list hidden and shown again keeps its top index at the top', (
+    tester,
+  ) async {
+    await _pump(tester, _list(topIndex: 20));
+    expect(_isAtTheTop(tester, 20), isTrue);
+
+    await deliverChange(
+      _list(topIndex: 20, seq: 10)..visible = false,
+      keys: [WireKey.k_Control_visible],
+      base: 1,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('item 20'), findsNothing);
+
+    await deliverChange(
+      _list(topIndex: 20, seq: 11)..visible = true,
+      keys: [WireKey.k_Control_visible],
+      base: 10,
+    );
+    await tester.pumpAndSettle();
+
+    expect(_isAtTheTop(tester, 20), isTrue);
+  });
+
   testWidgets(
     'a scroll by the user is reported as the distance the items moved and their height',
     (tester) async {
