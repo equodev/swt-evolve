@@ -6,7 +6,7 @@
 
 [//]: # ([![GitHub stars]&#40;https://img.shields.io/github/stars/your-username/swt-evolve?style=social&#41;]&#40;https://github.com/equodev/swt-evolve/stargazers&#41;)
 
-> **Modernize your SWT or Eclipse RCP application without changing a line of code. A new, cross-platform SWT library for desktop and web.**
+> **Modernize your SWT or Eclipse RCP application without changing a line of code. A new, cross-platform SWT library for the desktop.**
 
 SWT Evolve is a cross-platform drop-in replacement for the standard SWT library. It allows you to instantly upgrade your application's user interface to a modern, fluid, and beautiful standard, without rewriting your UI code.
 
@@ -30,7 +30,7 @@ a quick way to explore available widgets and see how they look in practice.
 
 ## 🚀 Getting Started: 2-Minute Modernization
 
-You can try our examples or modernize your existing application in just a few minutes. Requirements: JDK 17+. Unless it runs with `-Ddev.equo.swt.mode=desktop` (`equo modernize --desktop`), SWT Evolve also needs the `jdk.httpserver` module, which trimmed runtimes such as JustJ's minimal and base JREs leave out.
+You can try our examples or modernize your existing application in just a few minutes. Requirements: JDK 21+.
 
 ### Run the Examples
 
@@ -60,8 +60,9 @@ See the **Equo CLI** section below for installation instructions, supported plat
 
 If you prefer not to use the CLI, you can manually replace the SWT JAR:
 
-1.  **Get SWT Evolve:** Clone this repository and build it (see [CONTRIBUTING.md](./CONTRIBUTING.md)), or get the `swt-evolve.jar` file from:
+1.  **Get SWT Evolve:** Clone this repository and build it (see [CONTRIBUTING.md](./CONTRIBUTING.md)), or get the jar for your platform from:
     - [Download latest release](https://github.com/equodev/swt-evolve/releases/latest)
+    - Maven Central: `dev.equo:swt-evolve`, classifier `linux-x86_64`, `windows-x86_64`, `macos-x86_64` or `macos-aarch64`
 2.  **Locate Your Old SWT Jar:** Find the original `swt.jar` in your SWT application.
 3.  **Replace and Run:** Rename the swt-evolve JAR to match the exact filename of the original SWT JAR you located. Then, use your renamed file to replace the original. That's it—run your application to see the modernized UI.
 ---
@@ -171,12 +172,18 @@ You can pass a folder, a ZIP file, or a DMG. Run `equo modernize --help` to see 
 | macOS (Intel) | [nattable.example.e4-macos-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-macos-x86_64.zip) |
 | Windows (x86_64) | [nattable.example.e4-win-x86_64.zip](https://dl.equo.dev/swt/nattable.example/nattable.example.e4-win-x86_64.zip) |
 
+### 🌐 Try It in a Browser
+
+SWT Evolve Enterprise runs the same application in a web browser. Its latest build is free to try:
+`equo modernize` produces a web build by default (see the **Equo CLI** section), and the Enterprise
+jars are listed at [dl.equo.dev/evolve](https://dl.equo.dev/evolve/versions.json).
+
 ---
 
 ## Key Features
 
 * **✨ Instant Modernization:** No need for costly rewrites or code changes. If it runs on SWT, it runs on SWT Evolve.
-* **💻 Truly Cross-Platform:** Develop once and deploy your application on Windows, macOS, Linux, and **in a web browser** from the same codebase.
+* **💻 Truly Cross-Platform:** Develop once and deploy your application on Windows, macOS and Linux from the same codebase.
 * **🚀 GPU-Accelerated Performance:** Powered by a modern rendering engine, UIs are fluid, responsive, and efficient.
 * **✒️ Pixel-Perfect Rendering:** Clean fonts, sharp icons, and beautiful widgets bring your application into the modern era.
 * **🤝 100% API Compatible:** We are committed to implementing the complete SWT API for a seamless transition.
@@ -236,6 +243,7 @@ SWT Evolve is a free and open-source project, and we are committed to its growth
 
 For organizations building mission-critical applications, **Equo** offers **Equo Enterprise**—a suite of commercial products and professional services designed to accelerate your modernization journey and ensure project success. Our offerings include:
 
+- **Web**: Run your SWT application in a web browser, locally or served to many users, with no code changes.
 - **End-to-End Application Modernization**: Let our team handle the comprehensive migration of your legacy SWT/Eclipse RCP applications.
 - **Theming & Custom Branding**: ****Full visual customization, including custom themes and branding, to align the application with your company's style guidelines.
 - **Custom Widget Development**: Bespoke UI components tailored to your specific business needs.
