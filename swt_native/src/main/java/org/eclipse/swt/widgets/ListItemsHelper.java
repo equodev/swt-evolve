@@ -31,6 +31,53 @@ public final class ListItemsHelper {
     }
 
     /**
+     * Removes the items at {@code ascending}, distinct indices from lowest to highest, from the first {@code count}
+     * slots of {@code items} in place: the ones that stay close up in their order and the freed slots are cleared.
+     * Returns the count left.
+     */
+    public static <T> int removeAll(T[] items, int count, int[] ascending) {
+        int kept = ascending[0];
+        int next = 0;
+        for (int i = ascending[0]; i < count; i++) {
+            if (next < ascending.length && ascending[next] == i)
+                next++;
+            else
+                items[kept++] = items[i];
+        }
+        Arrays.fill(items, kept, count, null);
+        return kept;
+    }
+
+    /** {@code indices} without repeats, from lowest to highest, whatever their order. */
+    public static int[] distinctAscending(int[] indices) {
+        int[] sorted = indices.clone();
+        Arrays.sort(sorted);
+        int count = 0;
+        for (int i = 0; i < sorted.length; i++) {
+            if (i == 0 || sorted[i] != sorted[i - 1])
+                sorted[count++] = sorted[i];
+        }
+        return Arrays.copyOf(sorted, count);
+    }
+
+    /** How many of the last items of a list of {@code count} are in {@code ascending}, from the last one back. */
+    public static int trailingRun(int[] ascending, int count) {
+        int run = 0;
+        while (run < ascending.length && ascending[ascending.length - 1 - run] == count - 1 - run)
+            run++;
+        return run;
+    }
+
+    /** Whether one of {@code indices} is between {@code start} and {@code end}, both included. */
+    public static boolean anyIn(int[] indices, int start, int end) {
+        for (int index : indices) {
+            if (start <= index && index <= end)
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * {@code items} with {@code item} at {@code index}, where only the first {@code count} slots hold items: the
      * array grows by four slots when it is full, and is shifted in place otherwise. Returns the array that holds the
      * items, which is {@code items} itself unless it grew.
@@ -73,6 +120,21 @@ public final class ListItemsHelper {
             int moved = indexAfterRemove(index, start, end);
             if (moved != -1)
                 result[count++] = moved;
+        }
+        return Arrays.copyOf(result, count);
+    }
+
+    /**
+     * The selected indices once the items at {@code ascending}, distinct indices from lowest to highest, went, in
+     * the order they had.
+     */
+    public static int[] indicesAfterRemove(int[] selected, int[] ascending) {
+        int[] result = new int[selected.length];
+        int count = 0;
+        for (int index : selected) {
+            int at = Arrays.binarySearch(ascending, index);
+            if (at < 0)
+                result[count++] = index + at + 1;
         }
         return Arrays.copyOf(result, count);
     }

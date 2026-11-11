@@ -220,6 +220,27 @@ public class ListHelper {
         }
     }
 
+    /**
+     * Removes the items at {@code indices} as one change: the items and the selection end as removing them one at a
+     * time leaves them, while each item that stays moves once. Returns the count left of the {@code count} items.
+     */
+    public static int removeIndices(DartList list, int count, int[] indices) {
+        int[] ascending = ListItemsHelper.distinctAscending(indices);
+        int trailing = ListItemsHelper.trailingRun(ascending, count);
+        int[] selection = list._selection();
+        int[] newSelection = ListItemsHelper.indicesAfterRemove(selection, ascending);
+        // One at a time, an item that is not last at its turn re-sorts the selection when that removal moves or
+        // drops a selected index; the last item's removal only drops it.
+        if (ListItemsHelper.anyIn(selection, ascending[0], count - trailing - 1))
+            Arrays.sort(newSelection);
+        int left = ListItemsHelper.removeAll(list.items, count, ascending);
+        if (!Arrays.equals(newSelection, selection)) {
+            list.selection = newSelection;
+            list.getValue().markDirty(VList.SELECTION);
+        }
+        return left;
+    }
+
     /** An item went in at {@code index} ({@code add}) or the one there went: the selection follows its items. */
     public static void fixSelection(DartList list, int index, boolean add) {
         int[] selection = list.getSelectionIndices();

@@ -720,14 +720,9 @@ public class DartList extends DartScrollable implements IList {
         if (!(0 <= start && start <= end && end < count)) {
             error(SWT.ERROR_INVALID_RANGE);
         }
-        int last = -1;
-        for (int i = 0; i < newIndices.length; i++) {
-            int index = newIndices[i];
-            if (index != last) {
-                remove(index, false);
-                last = index;
-            }
-        }
+        itemCount = ListHelper.removeIndices(this, itemCount, newIndices);
+        getValue().markDirty(VList.ITEMS);
+        updateRowCount();
         setScrollWidth();
     }
 

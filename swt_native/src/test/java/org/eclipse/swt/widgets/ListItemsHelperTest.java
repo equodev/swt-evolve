@@ -56,6 +56,43 @@ class ListItemsHelperTest {
     }
 
     @Test
+    @DisplayName("removing scattered items deselects them and moves each later selected index up by those before it")
+    void indicesAfterRemoveScattered() {
+        assertThat(ListItemsHelper.indicesAfterRemove(new int[] {6, 0, 2, 3, 5}, new int[] {1, 3, 4})).containsExactly(3, 0, 1, 2);
+        assertThat(ListItemsHelper.indicesAfterRemove(new int[0], new int[] {0})).isEmpty();
+    }
+
+    @Test
+    @DisplayName("removing scattered items closes them up in place and clears the freed slots")
+    void removeAll() {
+        String[] items = {"a", "b", "c", "d", "e", "f", null, null};
+        assertThat(ListItemsHelper.removeAll(items, 6, new int[] {1, 2, 4})).isEqualTo(3);
+        assertThat(items).containsExactly("a", "d", "f", null, null, null, null, null);
+    }
+
+    @Test
+    @DisplayName("indices to remove come out once each, lowest first")
+    void distinctAscending() {
+        assertThat(ListItemsHelper.distinctAscending(new int[] {4, 4, 1, 3, 1})).containsExactly(1, 3, 4);
+    }
+
+    @Test
+    @DisplayName("the trailing run counts the removed indices that end the list, from its last item back")
+    void trailingRun() {
+        assertThat(ListItemsHelper.trailingRun(new int[] {1, 3, 4}, 5)).isEqualTo(2);
+        assertThat(ListItemsHelper.trailingRun(new int[] {1, 3}, 5)).isZero();
+        assertThat(ListItemsHelper.trailingRun(new int[] {0, 1, 2}, 3)).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("anyIn finds an index inside the range, ends included, and nothing in an empty range")
+    void anyIn() {
+        assertThat(ListItemsHelper.anyIn(new int[] {7, 2}, 2, 4)).isTrue();
+        assertThat(ListItemsHelper.anyIn(new int[] {7, 1}, 2, 4)).isFalse();
+        assertThat(ListItemsHelper.anyIn(new int[] {3}, 3, 2)).isFalse();
+    }
+
+    @Test
     @DisplayName("deselecting a range leaves the other indices where they are")
     void deselect() {
         assertThat(ListItemsHelper.deselect(new int[] {5, 0, 2, 3}, 1, 2)).containsExactly(5, 0, 3);

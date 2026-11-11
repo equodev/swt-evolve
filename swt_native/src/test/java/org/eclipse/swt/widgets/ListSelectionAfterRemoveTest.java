@@ -155,4 +155,37 @@ class ListSelectionAfterRemoveTest {
         assertThat(list.getSelection()).containsExactly("item 1");
         assertThat(value(list).changedKeys()).contains(VList.SELECTION);
     }
+
+    @Test
+    @DisplayName("remove(int[]) leaves the items and the selection, in its order, as removing each index from the highest down does")
+    void removeIndicesMatchesOneAtATime() {
+        java.util.Random random = new java.util.Random(2587);
+        for (int round = 0; round < 500; round++) {
+            int count = 1 + random.nextInt(12);
+            int[] selected = random.ints(random.nextInt(count + 1), 0, count).distinct().toArray();
+            int[] indices = random.ints(1 + random.nextInt(count + 2), 0, count).toArray();
+            List batched = list(SWT.MULTI, count);
+            List single = list(SWT.MULTI, count);
+            for (int index : selected) {
+                batched.select(index);
+                single.select(index);
+            }
+            value(batched).clearDirty();
+            value(single).clearDirty();
+
+            batched.remove(indices);
+            int[] descending = java.util.stream.IntStream.of(indices).boxed().distinct()
+                    .sorted(java.util.Comparator.reverseOrder()).mapToInt(Integer::intValue).toArray();
+            for (int index : descending)
+                single.remove(index);
+
+            String what = "items " + count + ", selected " + java.util.Arrays.toString(selected) + ", removed "
+                    + java.util.Arrays.toString(indices);
+            assertThat(batched.getItems()).as(what).containsExactly(single.getItems());
+            assertThat(((DartList) batched.getImpl())._selection()).as(what)
+                    .containsExactly(((DartList) single.getImpl())._selection());
+            assertThat(value(batched).changedKeys().contains(VList.SELECTION)).as(what)
+                    .isEqualTo(value(single).changedKeys().contains(VList.SELECTION));
+        }
+    }
 }
