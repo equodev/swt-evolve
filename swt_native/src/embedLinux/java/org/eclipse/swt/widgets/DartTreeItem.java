@@ -1605,6 +1605,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         return font;
     }
 
+    int itemsStart;
+
     public Image[] getImages() {
         return TreeHelper.getImages(this);
     }

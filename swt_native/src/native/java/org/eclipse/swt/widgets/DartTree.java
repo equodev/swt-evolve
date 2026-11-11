@@ -181,11 +181,11 @@ public class DartTree extends DartComposite implements ITree {
         }
         if (index < 0 || index >= count)
             return null;
-        TreeItem item = items[index];
+        TreeItem item = items[TreeHelper.slot(this, parentItem, index)];
         if (item != null || (getApi().style & SWT.VIRTUAL) == 0 || !create)
             return item;
         item = new TreeItem(this.getApi(), parentItem, SWT.NONE, index, false);
-        items[index] = item;
+        items[TreeHelper.slot(this, parentItem, index)] = item;
         if (parentItem != null)
             ((DartTreeItem) parentItem.getImpl()).getValue().markDirty(VTreeItem.ITEMS);
         getValue().markDirty(VTree.ITEMS);
@@ -317,6 +317,7 @@ public class DartTree extends DartComposite implements ITree {
         TreeItem[] selectedItems = getSelection();
         selectItems(selectedItems, true);
         ignoreExpand = true;
+        TreeHelper.compactItems(this, null);
         for (int i = 0; i < itemCount; i++) {
             if (items[i] != null)
                 ((DartTreeItem) items[i].getImpl()).updateExpanded();
@@ -340,6 +341,7 @@ public class DartTree extends DartComposite implements ITree {
         if (count == 0)
             return;
         TreeItem[] children = parentItem == null ? items : ((DartTreeItem) parentItem.getImpl()).items;
+        TreeHelper.compactItems(this, parentItem);
         for (int i = 0; i < count; i++) {
             TreeItem item = children[i];
             if (item != null) {
@@ -500,6 +502,7 @@ public class DartTree extends DartComposite implements ITree {
         System.arraycopy(columns, index, columns, index + 1, columnCount++ - index);
         columns[index] = column;
         TreeHelper.insertColumnOrder(this, index);
+        TreeHelper.compactItems(this, null);
         for (int i = 0; i < itemCount; i++) {
             TreeItem item = items[i];
             if (item != null) {
@@ -529,18 +532,7 @@ public class DartTree extends DartComposite implements ITree {
             index = count;
         if (!(0 <= index && index <= count))
             error(SWT.ERROR_INVALID_RANGE);
-        if (count == items.length) {
-            TreeItem[] newItems = new TreeItem[items.length + 4];
-            System.arraycopy(items, 0, newItems, 0, items.length);
-            items = newItems;
-            if (parentItem != null) {
-                ((DartTreeItem) parentItem.getImpl()).items = items;
-            } else {
-                this.items = items;
-            }
-        }
-        System.arraycopy(items, index, items, index + 1, count++ - index);
-        items[index] = item;
+        count = TreeHelper.insertItem(this, parentItem, item, index, count);
         ((DartTreeItem) item.getImpl()).items = new TreeItem[4];
         ((DartWidget) item.getImpl()).createJNIRef();
         ((DartTreeItem) item.getImpl()).register();
@@ -746,14 +738,7 @@ public class DartTree extends DartComposite implements ITree {
             count = this.itemCount;
             items = this.items;
         }
-        int index = 0;
-        while (index < count) {
-            if (items[index] == item)
-                break;
-            index++;
-        }
-        System.arraycopy(items, index + 1, items, index, --count - index);
-        items[count] = null;
+        count = TreeHelper.removeItem(this, parentItem, item, count);
         if (parentItem != null) {
             ((DartTreeItem) parentItem.getImpl()).itemCount = count;
         } else {
@@ -1368,11 +1353,7 @@ public class DartTree extends DartComposite implements ITree {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (((DartTreeItem) item.getImpl()).parentItem != null)
             return -1;
-        for (int i = 0; i < itemCount; i++) {
-            if (item == items[i])
-                return i;
-        }
-        return -1;
+        return TreeHelper.indexOf(items, itemsStart, itemCount, item);
     }
 
     @Override
@@ -1442,6 +1423,7 @@ public class DartTree extends DartComposite implements ITree {
         }
         items = new TreeItem[4];
         itemCount = 0;
+        itemsStart = 0;
         imageBounds = null;
         insertItem = null;
         TreeHelper.resetScroll(this);
@@ -1826,6 +1808,7 @@ public class DartTree extends DartComposite implements ITree {
         int length = Math.max(4, (count + 3) / 4 * 4);
         TreeItem[] children = parentItem == null ? items : ((DartTreeItem) parentItem.getImpl()).items;
         boolean expanded = parentItem == null || parentItem.getExpanded();
+        TreeHelper.compactItems(this, parentItem);
         if (count < itemCount) {
             /*
 		* Note that the item count has to be updated before the call to reloadItem(), but
@@ -2374,6 +2357,8 @@ public class DartTree extends DartComposite implements ITree {
     int wireOwnerDrawItemHeight() {
         return ownerDrawItemHeight;
     }
+
+    int itemsStart;
 
     void loadVirtualPage(TreeItem parentItem) {
         if ((getApi().style & SWT.VIRTUAL) == 0)

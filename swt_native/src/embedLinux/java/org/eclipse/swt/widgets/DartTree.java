@@ -2602,6 +2602,8 @@ public class DartTree extends DartComposite implements ITree {
         return ownerDrawItemHeight;
     }
 
+    int itemsStart;
+
     public void updateChildItems() {
         if (items == null)
             return;

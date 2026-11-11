@@ -842,11 +842,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (((DartTreeItem) item.getImpl()).parentItem != this.getApi())
             return -1;
-        for (int i = 0; i < itemCount; i++) {
-            if (item == items[i])
-                return i;
-        }
-        return -1;
+        return TreeHelper.indexOf(items, itemsStart, itemCount, item);
     }
 
     @Override
@@ -945,6 +941,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             expanded = expand;
             getValue().markDirty(VTreeItem.EXPANDED);
         }
+        TreeHelper.compactItems(this);
         if (recurse) {
             for (int i = 0; i < itemCount; i++) {
                 if (items[i] != null)
@@ -1471,6 +1468,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     void updateExpanded() {
         if (itemCount == 0)
             return;
+        TreeHelper.compactItems(this);
         for (int i = 0; i < itemCount; i++) {
             if (items[i] != null)
                 ((DartTreeItem) items[i].getImpl()).updateExpanded();
@@ -1548,6 +1546,8 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     public Font getExplicitFont() {
         return font;
     }
+
+    int itemsStart;
 
     public Image[] getImages() {
         return TreeHelper.getImages(this);

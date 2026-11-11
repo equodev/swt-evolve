@@ -289,6 +289,111 @@ public class TreeHelper {
         return false;
     }
 
+    // The items of a Tree, or of a TreeItem, sit at items[itemsStart, itemsStart + itemCount) and every
+    // other slot is null. An item goes in or out by moving the shorter side of the list, so removing the
+    // first item clears its slot and advances itemsStart instead of shifting all the others.
+
+    /** Where the item at {@code index} under {@code parentItem}, or at the root when it is null, sits in its items. */
+    static int slot(DartTree tree, TreeItem parentItem, int index) {
+        return startOf(tree, parentItem) + index;
+    }
+
+    /** {@code item}'s index among the {@code count} items that start at {@code items[start]}, or -1. */
+    static int indexOf(TreeItem[] items, int start, int count, TreeItem item) {
+        for (int i = 0; i < count; i++) {
+            if (items[start + i] == item)
+                return i;
+        }
+        return -1;
+    }
+
+    /** Puts {@code item} at {@code index} among the {@code count} items under {@code parentItem}; returns the new count. */
+    static int insertItem(DartTree tree, TreeItem parentItem, TreeItem item, int index, int count) {
+        TreeItem[] items = itemsOf(tree, parentItem);
+        int start = startOf(tree, parentItem);
+        if (start > 0 && index < count - index) {
+            System.arraycopy(items, start, items, start - 1, index);
+            start--;
+        } else {
+            if (start + count == items.length) {
+                if (start > 0) {
+                    moveToFront(items, start, count);
+                    start = 0;
+                } else {
+                    items = java.util.Arrays.copyOf(items, items.length + 4);
+                }
+            }
+            System.arraycopy(items, start + index, items, start + index + 1, count - index);
+        }
+        items[start + index] = item;
+        setItems(tree, parentItem, items, start);
+        return count + 1;
+    }
+
+    /** Takes {@code item} out of the {@code count} items under {@code parentItem}; returns the new count. */
+    static int removeItem(DartTree tree, TreeItem parentItem, TreeItem item, int count) {
+        TreeItem[] items = itemsOf(tree, parentItem);
+        int start = startOf(tree, parentItem);
+        int index = 0;
+        while (index < count && items[start + index] != item)
+            index++;
+        if (index < count - 1 - index) {
+            System.arraycopy(items, start, items, start + 1, index);
+            items[start++] = null;
+        } else {
+            System.arraycopy(items, start + index + 1, items, start + index, count - 1 - index);
+            items[start + count - 1] = null;
+        }
+        count--;
+        setItems(tree, parentItem, items, count == 0 ? 0 : start);
+        return count;
+    }
+
+    /**
+     * Moves the items under {@code parentItem} to the front of their array, for code that indexes them from 0.
+     * Whatever the item count is at the time: the slots past the last item are empty.
+     */
+    static void compactItems(DartTree tree, TreeItem parentItem) {
+        if (parentItem != null) {
+            compactItems((DartTreeItem) parentItem.getImpl());
+        } else if (tree.itemsStart > 0) {
+            moveToFront(tree.items, tree.itemsStart, tree.items.length - tree.itemsStart);
+            tree.itemsStart = 0;
+        }
+    }
+
+    /** Moves the children of {@code item} to the front of their array, for code that indexes them from 0. */
+    static void compactItems(DartTreeItem item) {
+        if (item.itemsStart > 0) {
+            moveToFront(item.items, item.itemsStart, item.items.length - item.itemsStart);
+            item.itemsStart = 0;
+        }
+    }
+
+    private static void moveToFront(TreeItem[] items, int start, int count) {
+        System.arraycopy(items, start, items, 0, count);
+        java.util.Arrays.fill(items, count, start + count, null);
+    }
+
+    private static TreeItem[] itemsOf(DartTree tree, TreeItem parentItem) {
+        return parentItem == null ? tree.items : ((DartTreeItem) parentItem.getImpl()).items;
+    }
+
+    private static int startOf(DartTree tree, TreeItem parentItem) {
+        return parentItem == null ? tree.itemsStart : ((DartTreeItem) parentItem.getImpl()).itemsStart;
+    }
+
+    private static void setItems(DartTree tree, TreeItem parentItem, TreeItem[] items, int start) {
+        if (parentItem == null) {
+            tree.items = items;
+            tree.itemsStart = start;
+        } else {
+            DartTreeItem owner = (DartTreeItem) parentItem.getImpl();
+            owner.items = items;
+            owner.itemsStart = start;
+        }
+    }
+
     public static void createItem(TreeItem item, long hParent, long hInsertAfter, long hItem) {
         if (item == null) {
             return;
