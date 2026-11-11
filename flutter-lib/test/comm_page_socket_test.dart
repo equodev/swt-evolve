@@ -82,9 +82,18 @@ class _Connector {
   }
 }
 
+/// Runs [body] in fake time, then applies what it left received: a frame not yet applied keeps the
+/// client's count of applying connections up, and with it the widget registry's release, for every
+/// test run after this one in the same isolate.
+void _settled(void Function(FakeAsync async) body) => fakeAsync((async) {
+      body(async);
+      async.elapse(Duration.zero);
+      async.flushMicrotasks();
+    });
+
 void main() {
   test('what the page socket buffered is delivered in arrival order, ahead of later frames', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.open);
       final connect = _Connector();
       final comm = BrowserComm(_url, connect.call,
@@ -102,7 +111,7 @@ void main() {
   });
 
   test('what the page socket buffered arrives after the listeners registered right after the comm', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.open);
       final comm = BrowserComm(_url, _Connector().call,
           page: PageSocket(_url, page, [frame(wireChannelNames[WireChannel.gcCreate]!, Uint8List.fromList([9]))],
@@ -117,7 +126,7 @@ void main() {
   });
 
   test('an open page socket counts as open at once, and sends go out on it', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.open);
       final comm = BrowserComm(_url, _Connector().call, page: PageSocket(_url, page, [], everOpened: true));
       var firstOpen = false;
@@ -131,7 +140,7 @@ void main() {
   });
 
   test('a page socket still connecting is waited for, not replaced', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket();
       final connect = _Connector();
       final comm = BrowserComm(_url, connect.call, page: PageSocket(_url, page, [], everOpened: false));
@@ -146,7 +155,7 @@ void main() {
   });
 
   test('a page socket that drops is reopened, and the client resyncs', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.open);
       final connect = _Connector()..next = _State.open;
       final comm = BrowserComm(_url, connect.call, page: PageSocket(_url, page, [], everOpened: true));
@@ -167,7 +176,7 @@ void main() {
   });
 
   test('a page socket that opened and dropped before the client ran still hands over its frames', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.dead);
       final connect = _Connector();
       final comm = BrowserComm(_url, connect.call,
@@ -183,7 +192,7 @@ void main() {
   });
 
   test('without a page socket the client connects on its own', () {
-    fakeAsync((async) {
+    _settled((async) {
       final connect = _Connector();
       final comm = BrowserComm(_url, connect.call);
       expect(connect.opened, hasLength(1));
@@ -195,7 +204,7 @@ void main() {
   });
 
   test('a page socket refused before it opened is dropped for one of the client\'s own, at once', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.dead);
       final connect = _Connector();
       BrowserComm(_url, connect.call, page: PageSocket(_url, page, [], everOpened: false));
@@ -204,7 +213,7 @@ void main() {
   });
 
   test('a page socket for another URL is closed and the client connects to its own', () {
-    fakeAsync((async) {
+    _settled((async) {
       final page = _FakeSocket(state: _State.open);
       final connect = _Connector();
       BrowserComm(_url, connect.call,
