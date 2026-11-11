@@ -261,6 +261,7 @@ public class DartCanvas extends DartComposite implements ICanvas {
                 }
             }
         }
+        CanvasHelper.scrolled(this, destX, destY, x, y, width, height);
         if (all) {
             Control[] children = _getChildren();
             for (int i = 0; i < children.length; i++) {

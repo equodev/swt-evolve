@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import com.google.gson.JsonObject;
 import dev.equo.swt.harness.WebDisplayHarness;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -10,11 +9,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,43 +49,7 @@ class HiddenCanvasRepaintFlutterTest {
      * two to come back while the wire is quiet.
      */
     private double redShare(Control w) throws Exception {
-        double share = 0;
-        for (int attempt = 0; attempt < 20; attempt++) {
-            flutter.settle();
-            try {
-                share = redShareNow(w);
-            } catch (IllegalStateException notRenderedYet) {
-                share = 0;
-            }
-            if (share > 0.9) return share;
-            Thread.sleep(100);
-        }
-        return share;
-    }
-
-    private double redShareNow(Control w) throws Exception {
-        double[] r = flutter.renderedRect(w);
-        JsonObject clip = new JsonObject();
-        clip.addProperty("x", r[0] + r[2] / 4);
-        clip.addProperty("y", r[1] + r[3] / 4);
-        clip.addProperty("width", r[2] / 2);
-        clip.addProperty("height", r[3] / 2);
-        clip.addProperty("scale", 1);
-        JsonObject params = new JsonObject();
-        params.addProperty("format", "png");
-        params.add("clip", clip);
-        String data = flutter.devTools().send("Page.captureScreenshot", params).get("data").getAsString();
-        BufferedImage img = ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(data)));
-        int red = 0, all = 0;
-        for (int y = 0; y < img.getHeight(); y += 2) {
-            for (int x = 0; x < img.getWidth(); x += 2) {
-                int rgb = img.getRGB(x, y);
-                int rr = (rgb >> 16) & 0xff, gg = (rgb >> 8) & 0xff, bb = rgb & 0xff;
-                if (rr > 200 && gg < 60 && bb < 60) red++;
-                all++;
-            }
-        }
-        return all == 0 ? 0 : (double) red / all;
+        return flutter.colourShare(w, WebDisplayHarness.RED);
     }
 
     private Canvas redCanvas(Composite parent) {

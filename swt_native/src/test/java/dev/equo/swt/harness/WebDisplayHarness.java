@@ -1,5 +1,6 @@
 package dev.equo.swt.harness;
 
+import com.google.gson.JsonObject;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.HeadlessChrome;
 import dev.equo.swt.comm.CommService;
@@ -7,15 +8,20 @@ import dev.equo.swt.spi.FlutterBridgeSpi;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Widget;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntPredicate;
 
 /**
  * A web Display on the production path, rendered by headless Chrome: unlike
@@ -285,6 +291,65 @@ public final class WebDisplayHarness {
             if (!deadline.hasTimeLeft()) throw new IllegalStateException(w + " is not rendered" + deadline.stallSuffix());
             if (!drain()) sleep();
         }
+    }
+
+    /** Pure colours for {@link #colourShare}. */
+    public static final IntPredicate RED = rgb -> red(rgb) > 200 && green(rgb) < 60 && blue(rgb) < 60;
+    public static final IntPredicate GREEN = rgb -> green(rgb) > 200 && red(rgb) < 60 && blue(rgb) < 60;
+    public static final IntPredicate BLUE = rgb -> blue(rgb) > 200 && red(rgb) < 60 && green(rgb) < 60;
+
+    private static int red(int rgb) { return (rgb >> 16) & 0xff; }
+    private static int green(int rgb) { return (rgb >> 8) & 0xff; }
+    private static int blue(int rgb) { return rgb & 0xff; }
+
+    /** {@link #colourShare} of the middle half of {@code w}. */
+    public double colourShare(Widget w, IntPredicate colour) throws Exception {
+        return colourShare(w, colour, 0.25, 0.25, 0.5, 0.5);
+    }
+
+    /**
+     * Share of the area of {@code w} given in fractions of its rendered rect that is painted in
+     * {@code colour}, read from a page screenshot. Polled until it is over 0.9 or 20 tries pass,
+     * since the client draws what Java sent a frame or more later.
+     */
+    public double colourShare(Widget w, IntPredicate colour, double x, double y, double width, double height)
+            throws Exception {
+        double share = 0;
+        for (int attempt = 0; attempt < 20; attempt++) {
+            settle();
+            try {
+                share = colourShareNow(w, colour, x, y, width, height);
+            } catch (IllegalStateException notRenderedYet) {
+                share = 0;
+            }
+            if (share > 0.9) return share;
+            Thread.sleep(100);
+        }
+        return share;
+    }
+
+    private double colourShareNow(Widget w, IntPredicate colour, double x, double y, double width, double height)
+            throws IOException {
+        double[] r = renderedRect(w);
+        JsonObject clip = new JsonObject();
+        clip.addProperty("x", r[0] + r[2] * x);
+        clip.addProperty("y", r[1] + r[3] * y);
+        clip.addProperty("width", r[2] * width);
+        clip.addProperty("height", r[3] * height);
+        clip.addProperty("scale", 1);
+        JsonObject params = new JsonObject();
+        params.addProperty("format", "png");
+        params.add("clip", clip);
+        String data = devTools.send("Page.captureScreenshot", params).get("data").getAsString();
+        BufferedImage img = ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(data)));
+        int matched = 0, all = 0;
+        for (int py = 0; py < img.getHeight(); py += 2) {
+            for (int px = 0; px < img.getWidth(); px += 2) {
+                if (colour.test(img.getRGB(px, py))) matched++;
+                all++;
+            }
+        }
+        return all == 0 ? 0 : (double) matched / all;
     }
 
     private Map<String, Object> await(CompletableFuture<Map<String, Object>> f, long timeoutMs) {
