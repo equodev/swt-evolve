@@ -2150,7 +2150,8 @@ class _PlaceholderShape extends Shape {
 // ─────────────────────────────────────────────
 
 class ScenePainter extends CustomPainter {
-  ScenePainter(this.bg, this.shapes, {this.originY = 0});
+  // Repaints on a font change too: the text shapes lay out again in a font that loaded after them.
+  ScenePainter(this.bg, this.shapes, {this.originY = 0}) : super(repaint: FontUtils.systemFonts);
   final Color bg;
   final List<Shape> shapes;
 

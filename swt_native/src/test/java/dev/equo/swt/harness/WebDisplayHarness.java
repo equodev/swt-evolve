@@ -86,7 +86,7 @@ public final class WebDisplayHarness {
         BootPolicy boot = BootPolicy.polling(BOOT_ATTEMPTS, BOOT_ATTEMPT_MS, SYNC_POLL_MS,
                 () -> org.eclipse.swt.widgets.WebDisplayBridge.requestsServed(booting));
         launch(boot, binary, url, headless, console);
-        while (!syncFrame(SYNC_POLL_MS)) {
+        while (!syncFrame(SYNC_POLL_MS, false)) {
             switch (boot.check()) {
                 case WAIT:
                     break;
@@ -152,7 +152,7 @@ public final class WebDisplayHarness {
     /** Pushes Java's pending state and waits until the client has painted a frame with it. */
     public void flush() {
         FlutterBridge.update();
-        if (!syncFrame(TIMEOUT_MS))
+        if (!syncFrame(TIMEOUT_MS, true))
             throw new IllegalStateException("the client painted no frame within " + TIMEOUT_MS + "ms" + lastStall
                     + " (" + input.pageState() + ")");
     }
@@ -213,12 +213,13 @@ public final class WebDisplayHarness {
 
     private volatile int lastSyncId;
 
-    private boolean syncFrame(long timeoutMs) {
+    /** With {@code fonts}, the frame is one with every deferred font face registered. */
+    private boolean syncFrame(long timeoutMs, boolean fonts) {
         int id = ids.incrementAndGet();
         lastSyncId = id;
         CompletableFuture<Map<String, Object>> f = new CompletableFuture<>();
         pending.put(id, f);
-        dev.equo.swt.harness.Channels.send(comm, FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", id), null));
+        dev.equo.swt.harness.Channels.send(comm, FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", id, "fonts", fonts), null));
         return await(f, timeoutMs) != null;
     }
 

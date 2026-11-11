@@ -17,14 +17,20 @@
 // on web to let this script terminate itself.
 import 'package:flutter/widgets.dart';
 
+import 'package:swtflutter/src/impl/utils/deferred_fonts.dart';
+import 'package:swtflutter/web_platform.dart' show getDeferredFontManifest;
+
 import 'font_metrics_core.dart';
 import 'all_fonts_web.dart';
 
 const String beginMarker = '===EQUO_FONT_METRICS_BEGIN===';
 const String endMarker = '===EQUO_FONT_METRICS_END===';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The bundled faces the page keeps from the engine's start (web/flutter_bootstrap.js).
+  DeferredFonts.configure(getDeferredFontManifest());
+  await DeferredFonts.all();
 
   final fonts = <String, List<(String, FontStyle, FontWeight)>>{};
   addFontsWebMain(fonts);

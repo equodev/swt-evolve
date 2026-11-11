@@ -19,6 +19,9 @@ external JSString? get _theme;
 @JS('window.evolve.enableTestSemantics')
 external JSBoolean? get _enableTestSemantics;
 
+@JS('window.evolve.deferredFontManifest')
+external JSString? get _deferredFontManifest;
+
 @JS('window.name')
 external JSString? get _windowName;
 
@@ -121,6 +124,9 @@ bool getEnableTestSemantics(List<String> args) {
 int? getParentBackgroundColor(List<String> args) {
   return null;
 }
+
+/// The font families flutter_bootstrap.js kept from the engine's start, for DeferredFonts.
+String? getDeferredFontManifest() => _deferredFontManifest?.toDart;
 
 /// Whether this document is running inside an SWT Browser widget's own
 /// `<iframe>`. The Browser widget stamps its iframe's browsing-context name as

@@ -4,6 +4,7 @@ import '../../gen/font.dart';
 import '../../gen/fontdata.dart';
 import '../../gen/color.dart';
 import '../widget_config.dart';
+import 'deferred_fonts.dart';
 
 /// Utility class to convert SWT Font/FontData to Flutter TextStyle
 class FontUtils {
@@ -31,6 +32,16 @@ class FontUtils {
       return true;
     } on FlutterError {
       return false;
+    }
+  }
+
+  /// Notifies when the system fonts change, for a painter whose text has to be drawn again in the
+  /// font that arrived; null when there is no binding yet.
+  static Listenable? get systemFonts {
+    try {
+      return PaintingBinding.instance.systemFonts;
+    } on FlutterError {
+      return null;
     }
   }
 
@@ -160,6 +171,7 @@ class FontUtils {
     final swtStyle = fontData.style;
 
     final (fontWeight, fontStyle) = convertSwtFontStyle(swtStyle);
+    DeferredFonts.request(fontName);
     return TextStyle(
       inherit: inherit,
       fontFamily: fontName,

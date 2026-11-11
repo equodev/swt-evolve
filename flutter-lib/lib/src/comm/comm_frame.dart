@@ -171,8 +171,14 @@ abstract class EquoCommBase {
   /// Subclasses call this once the socket is open; flushes any queued frames.
   bool _everReceived = false;
 
+  final Completer<void> _firstOpen = Completer<void>();
+
+  /// Completes when the socket first opens.
+  Future<void> get firstOpen => _firstOpen.future;
+
   void markOpen() {
     BootTrace.markOnce('comm.open');
+    if (!_firstOpen.isCompleted) _firstOpen.complete();
     final bool reconnected = _everOpened;
     _open = true;
     _everOpened = true;

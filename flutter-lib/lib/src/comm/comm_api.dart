@@ -27,6 +27,7 @@ class EquoCommService {
   static void sendOn(int channel, [Object? payload]) =>
       throw UnsupportedError("EquoComm.sendOn");
   static void sendFrame(Uint8List frame) => throw UnsupportedError("EquoComm.sendFrame");
+  static Future<void> get firstOpen => throw UnsupportedError("EquoComm.firstOpen");
   static void sendWritten(WidgetWireWriter w) => throw UnsupportedError("EquoComm.sendWritten");
   static void onBytesAt(int channel, BytesAtHandler handler) =>
       throw UnsupportedError("EquoComm.onBytesAt");

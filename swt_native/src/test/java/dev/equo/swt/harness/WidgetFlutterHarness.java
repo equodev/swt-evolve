@@ -124,7 +124,7 @@ public class WidgetFlutterHarness extends FlutterHarness {
         int sid = syncGen.incrementAndGet();
         CompletableFuture<Void> f = new CompletableFuture<>();
         pendingSyncs.put(sid, f);
-        dev.equo.swt.harness.Channels.send(comm(), FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", sid), null));
+        dev.equo.swt.harness.Channels.send(comm(), FRAME_SYNC, dev.equo.swt.comm.TaggedValues.encode(Map.of("syncId", sid, "fonts", true), null));
         awaitQuiet(f, QUERY_TIMEOUT_MS);
         pendingSyncs.remove(sid);
     }

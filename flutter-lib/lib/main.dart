@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'src/impl/widget_ops.dart';
-import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/widget.dart';
@@ -51,6 +49,7 @@ import 'semantics_ghost_guard_stub.dart'
 import 'src/gen/gc.dart';
 import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
+import 'src/impl/utils/deferred_fonts.dart';
 import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/utils/key_delivery_order.dart';
@@ -59,15 +58,6 @@ import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
 import 'src/impl/system_appearance.dart' show systemThemeMode;
 import 'src/testing/boot_trace.dart';
-
-/// Web only: CanvasKit's fallback family (Roboto 2.137, as the engine downloads), for a real bold.
-Future<void> _loadWebFallbackFonts() async {
-  if (!kIsWeb) return;
-  await (FontLoader('Roboto')
-        ..addFont(rootBundle.load('assets/fonts/Roboto-Regular.ttf'))
-        ..addFont(rootBundle.load('assets/fonts/Roboto-Bold.ttf')))
-      .load();
-}
 
 Completer<void>? _swtEvolvePropertiesCompleter;
 bool _swtEvolvePropertiesListenerRegistered = false;
@@ -110,8 +100,7 @@ void main(List<String> args) async {
   unawaited(KeyDeliveryOrder.install());
   FramePresentation.ensureTracking();
   BootTrace.recordFirstFrames(4);
-  final fontsStart = BootTrace.nowMicros();
-  final fallbackFonts = _loadWebFallbackFonts();
+  DeferredFonts.configure(getDeferredFontManifest());
   // Registered before the first await: Java hands a client what it sent before the comm connected
   // (setPort) as soon as it connects, possibly while the fonts load, and a frame nothing listens to is
   // replayed in order on its own channel only, so an Image GC's drawer has to exist first.
@@ -121,9 +110,19 @@ void main(List<String> args) async {
   registerImagePixelsListener();
   // Display-scoped: GC/create is one channel for the whole session, so a detached window listening
   // too would draw every GC a second time.
-  if (widgetName == "Display") _registerGcCreateListener(fallbackFonts);
-  await fallbackFonts;
-  BootTrace.step('fallbackFonts', fontsStart);
+  if (widgetName == "Display") _registerGcCreateListener();
+  // This client is a window in its own right: the Display's window, or a shell Java put in a
+  // window of its own (see WindowPolicy). Both get the window chrome, the window-state listeners
+  // and the viewport handshake. Every other client — the size bridges, a child browser view — is
+  // a view inside someone else's window and gets none of it.
+  final bool isWindowRoot = widgetName == "Display" || widgetName == "Shell";
+  // The window registers a deferred font when its text first asks for it. Every other client
+  // measures or draws text once, so it has them all in first.
+  if (!isWindowRoot) {
+    final fontsStart = BootTrace.nowMicros();
+    await DeferredFonts.all();
+    BootTrace.step('deferredFonts', fontsStart);
+  }
   // Keep browser-reserved shortcuts (Cmd/Ctrl+S/P/O) from triggering the browser's own action (e.g.
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
@@ -178,12 +177,6 @@ void main(List<String> args) async {
   unawaited(initSwtEvolveProperties());
   FocusRequests.listen();
 
-  // This client is a window in its own right: the Display's window, or a shell Java put in a
-  // window of its own (see WindowPolicy). Both get the window chrome, the window-state listeners
-  // and the viewport handshake. Every other client — the size bridges, a child browser view — is
-  // a view inside someone else's window and gets none of it.
-  final bool isWindowRoot = widgetName == "Display" || widgetName == "Shell";
-
   if (isWindowRoot) {
     csdMainWindowId = widgetId;
     // Track window focus so the macOS controls grey out when the window is inactive.
@@ -200,6 +193,13 @@ void main(List<String> args) async {
   }
 
   Widget contentWidget = createContentWidget(widgetName!, widgetId!);
+
+  // The handshake is already under way. Java sends what it queued before the comm connected as soon
+  // as it opens: the first frame, run after that, paints it instead of an empty window that a second
+  // frame then has to replace.
+  final openStart = BootTrace.nowMicros();
+  await EquoCommService.firstOpen;
+  BootTrace.step('comm.firstOpen', openStart);
 
   final runAppStart = BootTrace.nowMicros();
   WidgetsBinding.instance.waitUntilFirstFrameRasterized
@@ -239,12 +239,13 @@ int _int64At(Uint8List d, int at) {
   return hi * 0x100000000 + lo;
 }
 
-/// Listens for the drawers of Images' GCs. One that arrives before [fallbackFonts] are in waits for
-/// them, as it did when it could not arrive any earlier: what it draws is laid out in those fonts.
+/// Listens for the drawers of Images' GCs. The first one has every deferred font registered and
+/// waits for them, as do those after it until they are in: what a GC draws into an Image is laid
+/// out once.
 /// Waiting here holds the frames behind it too, so its state and ops still apply in order after it.
-void _registerGcCreateListener(Future<void> fallbackFonts) {
+void _registerGcCreateListener() {
   var fontsIn = false;
-  fallbackFonts.then((_) => fontsIn = true, onError: (Object _) => fontsIn = true);
+  Future<void>? fonts;
   // Raw-bytes path: Java sends the gcId as 8 big-endian bytes.
   EquoCommService.onBytesAt(gen.WireChannel.gcCreate, (data, start, end) {
     final gcId = _int64At(data, start);
@@ -262,7 +263,8 @@ void _registerGcCreateListener(Future<void> fallbackFonts) {
       create();
       return null;
     }
-    return fallbackFonts.then((_) => create(), onError: (Object _) => create());
+    fonts ??= DeferredFonts.all().whenComplete(() => fontsIn = true);
+    return fonts!.then((_) => create(), onError: (Object _) => create());
   });
 }
 

@@ -17,6 +17,7 @@ import 'src/comm/comm_frame.dart' show EquoCommBase;
 import 'src/comm/widget_wire.dart' show WireVisitable;
 import 'src/custom/theme_color_palette_control.dart' show syncThemeName;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
+import 'src/impl/utils/deferred_fonts.dart';
 import 'src/gen/widget.dart';
 import 'src/testing/boot_trace.dart';
 import 'src/testing/frame_stats.dart';
@@ -104,10 +105,13 @@ void registerTestQueryChannel() {
   // pushed state to actually render instead of pumping an arbitrary number of times. Checked once the
   // work already queued has run: with a frame to come, the ack is sent from its post-frame callback,
   // which runs after build/layout/paint; with none, nothing pushed changed what is painted, and the
-  // ack goes at once rather than after a frame that would only draw the same picture again.
+  // ack goes at once rather than after a frame that would only draw the same picture again. With
+  // `fonts`, the ack waits for every deferred font and the frame that lays text out again in them
+  // (a test reading laid-out text); without, it is a paint barrier.
   EquoCommService.on(0, 0, WireChannel.evolveTestFrameSync, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int syncId = (map['syncId'] as num).toInt();
+    final bool afterFonts = map['fonts'] == true;
     // Where the wait went, on one clock: queued behind the frames that came before this request,
     // then until the frame began, then building and painting it.
     final clock = EquoCommBase.clock;
@@ -124,6 +128,13 @@ void registerTestQueryChannel() {
       });
     }
 
+    if (afterFonts) {
+      DeferredFonts.all().then((_) {
+        SchedulerBinding.instance.scheduleFrameCallback((_) => began = clock.elapsedMicroseconds);
+        scheduleFrameSync(ack);
+      });
+      return;
+    }
     Timer.run(() {
       final scheduler = SchedulerBinding.instance;
       if (!scheduler.hasScheduledFrame && scheduler.schedulerPhase == SchedulerPhase.idle) {
@@ -212,7 +223,8 @@ void registerTestQueryChannel() {
     queryPrimaryFocus: queryPrimaryFocus,
     pickTheme: (String themeName, String? forceTheme) =>
         syncThemeName(themeName, forceTheme: forceTheme),
-    scheduleFrameSync: scheduleFrameSync,
+    // What a page test reads is laid out text, so its frame is one with every font in.
+    scheduleFrameSync: (onSynced) => DeferredFonts.all().then((_) => scheduleFrameSync(onSynced)),
   );
 }
 

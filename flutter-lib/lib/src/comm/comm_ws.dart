@@ -73,6 +73,9 @@ class EquoCommService {
   /// See [EquoCommBase.forgetWidgetOps].
   static void forgetWidgetOps(int id) => _comm.forgetWidgetOps(id);
 
+  /// Completes when the socket first opens.
+  static Future<void> get firstOpen => _comm.firstOpen;
+
   /// See [EquoCommBase.ensureWidgetOps].
   static void ensureWidgetOps(void Function() register) => _comm.ensureWidgetOps(register);
 

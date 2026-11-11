@@ -54,6 +54,8 @@ int? getParentBackgroundColor(List<String> args) {
   return null;
 }
 
+String? getDeferredFontManifest() => null;
+
 /// Native builds are never embedded in a web iframe. Present to satisfy the
 /// shared platform interface with web_platform.dart.
 bool isSelfEmbeddedBrowserWidget() => false;
