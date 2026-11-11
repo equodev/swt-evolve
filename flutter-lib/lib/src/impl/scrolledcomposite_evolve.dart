@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter/rendering.dart' show RenderProxyBox, ScrollDirection;
 import '../gen/point.dart';
 import '../gen/scrollbar.dart';
 import '../gen/scrolledcomposite.dart';
@@ -51,9 +51,13 @@ class ScrolledCompositeImpl<
     });
   }
 
+  /// Where the view stops for [offset]: at its end when the offset lies past it.
+  double _stop(ScrollController controller, int offset) =>
+      offset.toDouble().clamp(0.0, controller.position.maxScrollExtent);
+
   void _jumpTo(ScrollController? controller, int offset) {
     if (controller == null || !controller.hasClients) return;
-    final target = offset.toDouble().clamp(0.0, controller.position.maxScrollExtent);
+    final target = _stop(controller, offset);
     if (controller.offset != target) controller.jumpTo(target);
   }
 
@@ -97,13 +101,17 @@ class ScrolledCompositeImpl<
       ..y = y;
   }
 
+  /// The view stops at its end, which can come before the origin asked for: Java's client area leaves
+  /// room for the bars the client draws over the content. Where it stops is not a scroll by the user.
   void _moveTo(ScrollController? controller, int offset, {required bool vertical}) {
     if (controller == null || !controller.hasClients) return;
     _userScrolled = true;
+    // Recorded before the jump, whose scroll notification is dispatched while it runs.
+    final shown = _stop(controller, offset).round();
     if (vertical) {
-      _reportedV = offset;
+      _reportedV = shown;
     } else {
-      _reportedH = offset;
+      _reportedH = shown;
     }
     _jumpTo(controller, offset);
   }
@@ -152,8 +160,8 @@ class ScrolledCompositeImpl<
   @override
   void initState() {
     super.initState();
-    _horizontalController = ScrollController();
-    _verticalController = ScrollController();
+    _horizontalController = _NoRevealScrollController();
+    _verticalController = _NoRevealScrollController();
     _takenRequest = state.originRequest ?? 0;
     _requestedOrigin = state.origin;
   }
@@ -194,6 +202,8 @@ class ScrolledCompositeImpl<
     }
 
     Widget contentWidget = mapWidgetFromValue(state.content!);
+
+    contentWidget = _NoReveal(child: contentWidget);
 
     contentWidget = _applyContentConstraints(
       contentWidget,
@@ -254,6 +264,65 @@ class ScrolledCompositeImpl<
     }
     return content;
   }
+}
+
+/// The application decides when the focused control is shown (`setShowFocusedControl`) and moves the
+/// view with a request. Flutter reveals a widget in two ways, and neither scrolls the view: the focus
+/// traversal through these positions, and a widget asking to be shown on screen (a focused field's
+/// caret) through [_NoReveal].
+class _NoRevealScrollController extends ScrollController {
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) => _NoRevealScrollPosition(
+    physics: physics,
+    context: context,
+    initialPixels: initialScrollOffset,
+    keepScrollOffset: keepScrollOffset,
+    oldPosition: oldPosition,
+    debugLabel: debugLabel,
+  );
+}
+
+class _NoRevealScrollPosition extends ScrollPositionWithSingleContext {
+  _NoRevealScrollPosition({
+    required super.physics,
+    required super.context,
+    super.initialPixels,
+    super.keepScrollOffset,
+    super.oldPosition,
+    super.debugLabel,
+  });
+
+  @override
+  Future<void> ensureVisible(
+    RenderObject object, {
+    double alignment = 0.0,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
+    ScrollPositionAlignmentPolicy alignmentPolicy = ScrollPositionAlignmentPolicy.explicit,
+    RenderObject? targetRenderObject,
+  }) => Future<void>.value();
+}
+
+class _NoReveal extends SingleChildRenderObjectWidget {
+  const _NoReveal({required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderNoReveal();
+}
+
+/// Keeps a descendant's request to be shown on screen from reaching the views above it.
+class _RenderNoReveal extends RenderProxyBox {
+  @override
+  void showOnScreen({
+    RenderObject? descendant,
+    Rect? rect,
+    Duration duration = Duration.zero,
+    Curve curve = Curves.ease,
+  }) {}
 }
 
 class _ThemedScrolledComposite extends StatelessWidget {

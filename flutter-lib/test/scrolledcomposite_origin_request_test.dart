@@ -11,6 +11,7 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/list.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/scrollbar.dart';
@@ -171,6 +172,97 @@ void main() {
     expect(h.vertical, 300);
     expect(_reported(_vBar), isEmpty);
     expect(_reported(_hBar), isEmpty);
+  });
+
+  // Java's client area leaves room for the bars, which the client draws over the content: the view
+  // ends before the origin Java can ask for, and stops at its end.
+  testWidgets('an origin past the end of the view is not reported back as a scroll',
+      (tester) async {
+    final h = await _pump(tester);
+    EquoCommService.commForTesting.clearSentFrames();
+
+    await _setOrigin(2, 1, 400, 400);
+    await h.settled();
+
+    expect(h.vertical, 350, reason: 'sanity: the view stops at the end of the content');
+    expect(_reported(_vBar), isEmpty);
+    expect(_reported(_hBar), isEmpty);
+  });
+
+  // The application decides whether the focused control is shown (setShowFocusedControl); the reveal
+  // Flutter's focus traversal asks for is not the application's.
+  testWidgets("Flutter's reveal of a widget in the content leaves the view where it is",
+      (tester) async {
+    final h = await _pump(tester);
+    await h.userDrags(-120);
+    final scrolled = h.vertical;
+    expect(scrolled, greaterThan(0), reason: 'sanity: the user scrolled the child out of view');
+    EquoCommService.commForTesting.clearSentFrames();
+
+    final child = tester.element(find.byWidgetPredicate((w) => w is CompositeSwt && w.value.id == 3));
+    await Scrollable.ensureVisible(child);
+    await h.settled();
+
+    expect(h.vertical, scrolled);
+    expect(_reported(_vBar), isEmpty);
+  });
+
+  // A focused text field asks to have its caret shown, as Flutter does on every focus change.
+  testWidgets('a widget in the content asking to be shown leaves the view where it is',
+      (tester) async {
+    final h = await _pump(tester);
+    await h.userDrags(-120);
+    final scrolled = h.vertical;
+    expect(scrolled, greaterThan(0), reason: 'sanity: the user scrolled the child out of view');
+    EquoCommService.commForTesting.clearSentFrames();
+
+    tester.renderObject(find.byWidgetPredicate((w) => w is CompositeSwt && w.value.id == 3)).showOnScreen();
+    await h.settled();
+
+    expect(h.vertical, scrolled);
+    expect(_reported(_vBar), isEmpty);
+  });
+
+  testWidgets('a scrollable in the content still shows its own row when it asks to be shown',
+      (tester) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    freshClient();
+    final value = _sc();
+    (value.content! as VComposite).children = [
+      VList()
+        ..id = 4
+        ..style = SWT.V_SCROLL
+        ..enabled = true
+        ..bounds = _rect(0, 0, 100, 60)
+        ..items = [for (var i = 0; i < 20; i++) 'row $i'],
+    ];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 150,
+        height: 150,
+        child: ScrolledCompositeSwt<VScrolledComposite>(value: value),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final list = tester
+        .state<ScrollableState>(find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)))
+        .position;
+    final outer = tester
+        .stateList<ScrollableState>(find.byType(Scrollable))
+        .map((s) => s.position)
+        .firstWhere((p) => p.axis == Axis.vertical && p != list);
+    EquoCommService.commForTesting.clearSentFrames();
+
+    tester
+        .renderObject(find.byWidgetPredicate(
+            (w) => w.runtimeType.toString() == '_ListItem' && (w as dynamic).index == 2))
+        .showOnScreen();
+    await tester.pumpAndSettle();
+
+    expect(list.pixels, greaterThan(0), reason: 'the list scrolled its half-shown row into view');
+    expect(outer.pixels, 0);
+    expect(_reported(_vBar), isEmpty);
   });
 
   testWidgets('a scroll by the user after the application moved the view is reported',
