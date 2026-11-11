@@ -1083,6 +1083,14 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         return lines;
     }
 
+    void _setShownToolTip(String string) {
+        super.setToolTipText(string);
+    }
+
+    static int _drawFlags() {
+        return DRAW_FLAGS;
+    }
+
     protected void _hookEvents() {
         super._hookEvents();
     }

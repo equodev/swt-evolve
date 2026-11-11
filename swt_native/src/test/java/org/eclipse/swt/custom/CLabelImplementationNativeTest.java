@@ -15,6 +15,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Mocks;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -69,6 +70,109 @@ public class CLabelImplementationNativeTest extends SerializeTestBase {
 
         assertThat(label.computeSize(SWT.DEFAULT, SWT.DEFAULT)).isEqualTo(new Point(measured.x + 10 + 20 - 6, measured.y + 1 + 5 - 6));
         assertThat(label.computeSize(50, 40)).isEqualTo(new Point(50, 40));
+    }
+
+    private static final String LONG_TEXT = "&Name of a label wider than this";
+
+    private Mocks.Delivery delivery;
+
+    /** A CLabel on a shell whose display delivers events, as the label's resize needs. */
+    private CLabel deliveredLabel() {
+        org.eclipse.swt.widgets.Shell shell = Mocks.shell();
+        delivery = Mocks.deliverEvents(shell.getDisplay());
+        return new CLabel(shell, SWT.NONE);
+    }
+
+    @AfterEach
+    void stopDelivering() {
+        if (delivery != null) delivery.close();
+        delivery = null;
+    }
+
+    private static String shownToolTip(CLabel label) {
+        return ((DartCLabel) label.getImpl())._toolTipText();
+    }
+
+    /** A text too wide for the label is shown shortened, and in full as the tooltip the label shows. */
+    @Test
+    void aShortenedTextShowsInFullAsTheTooltip() {
+        CLabel label = deliveredLabel();
+        label.setText(LONG_TEXT);
+        label.setBounds(0, 0, 40, 20);
+
+        assertThat(shownToolTip(label)).isEqualTo(LONG_TEXT);
+        assertThat(label.getToolTipText()).isNull();
+    }
+
+    /** A label not laid out yet has no width to shorten its text to, so it decides nothing. */
+    @Test
+    void aLabelWithNoSizeDecidesNoTooltip() {
+        CLabel label = deliveredLabel();
+
+        label.setText(LONG_TEXT);
+
+        assertThat(shownToolTip(label)).isNull();
+    }
+
+    /** A label with a width but no height shows no text either, so it decides nothing. */
+    @Test
+    void aLabelWithNoHeightDecidesNoTooltip() {
+        CLabel label = deliveredLabel();
+        label.setText(LONG_TEXT);
+
+        label.setBounds(0, 0, 40, 0);
+
+        assertThat(shownToolTip(label)).isNull();
+    }
+
+    /** Once the label is wide enough for its text, the full-text tooltip goes. */
+    @Test
+    void aTextThatFitsAgainShowsNoTooltip() {
+        CLabel label = deliveredLabel();
+        label.setText(LONG_TEXT);
+        label.setBounds(0, 0, 40, 20);
+
+        label.setBounds(0, 0, 2000, 20);
+
+        assertThat(shownToolTip(label)).isNull();
+    }
+
+    /** A text set on a label already too narrow for it is shortened too. */
+    @Test
+    void aLongerTextOnANarrowLabelShowsInFullAsTheTooltip() {
+        CLabel label = deliveredLabel();
+        label.setBounds(0, 0, 40, 20);
+        label.setText("ab");
+
+        label.setText(LONG_TEXT);
+
+        assertThat(shownToolTip(label)).isEqualTo(LONG_TEXT);
+    }
+
+    /** Once the application clears its tooltip, a shortened text shows in full again. */
+    @Test
+    void clearingTheApplicationsTooltipShowsTheFullTextAgain() {
+        CLabel label = deliveredLabel();
+        label.setToolTipText("app");
+        label.setText(LONG_TEXT);
+        label.setBounds(0, 0, 40, 20);
+
+        label.setToolTipText(null);
+
+        assertThat(shownToolTip(label)).isEqualTo(LONG_TEXT);
+        assertThat(label.getToolTipText()).isNull();
+    }
+
+    /** The application's own tooltip is the one shown, shortened text or not. */
+    @Test
+    void theApplicationsTooltipStaysWhenTheTextIsShortened() {
+        CLabel label = deliveredLabel();
+        label.setToolTipText("app");
+        label.setText(LONG_TEXT);
+        label.setBounds(0, 0, 40, 20);
+
+        assertThat(shownToolTip(label)).isEqualTo("app");
+        assertThat(label.getToolTipText()).isEqualTo("app");
     }
 
     /** A host that calls from a thread other than the display's still gets its CLabel. */

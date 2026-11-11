@@ -160,6 +160,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             }
         });
         addListener(SWT.Dispose, this::onDispose);
+        CLabelHelper.install(this);
         initAccessible();
     }
 
@@ -820,6 +821,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
     public void setToolTipText(String string) {
         super.setToolTipText(string);
         appToolTipText = super.getToolTipText();
+        CLabelHelper.updateShownToolTip(this);
     }
 
     /**
@@ -896,6 +898,20 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         if (nextOffset != offset)
             return layout.getPreviousOffset(nextOffset, SWT.MOVEMENT_CLUSTER);
         return offset;
+    }
+
+    @Override
+    public void redraw() {
+        super.redraw();
+        CLabelHelper.updateShownToolTip(this);
+    }
+
+    void _setShownToolTip(String string) {
+        super.setToolTipText(string);
+    }
+
+    static int _drawFlags() {
+        return DRAW_FLAGS;
     }
 
     protected void _hookEvents() {
