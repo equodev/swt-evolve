@@ -17,27 +17,14 @@ import 'package:swtflutter/src/gen/label.dart';
 import 'package:swtflutter/src/gen/menu.dart';
 import 'package:swtflutter/src/gen/widgets.dart';
 
+import 'support/deliver.dart' show encodeFrame, encodeRecord;
+
 const int _labelType = WireType.label;
 const int _labelId = 900;
 
-/// A record: its kind, its length, then what [write] writes, header and properties.
-Uint8List _record(int kind, void Function(WidgetWireWriter w) write) {
-  final rest = Uint8List.fromList(WidgetWireWriter.encodeWith(write));
-  final head = Uint8List.fromList(WidgetWireWriter.encodeWith((w) => w
-    ..u8(kind)
-    ..varint(rest.length)));
-  return Uint8List.fromList([...head, ...rest]);
-}
-
-/// A frame of [records]: their count as a little-endian word, then each one.
-Uint8List _frame(List<Uint8List> records) {
-  final count = ByteData(4)..setUint32(0, records.length, Endian.little);
-  return Uint8List.fromList([...count.buffer.asUint8List(), for (final r in records) ...r]);
-}
-
 /// A widget described whole: its type by number, id, and write stamp as a delta on the frame's last.
 Uint8List _whole(int stampDelta, void Function(WidgetWireWriter w) properties, {int id = _labelId}) =>
-    _record(wireWhole, (w) {
+    encodeRecord(wireWhole, (w) {
       w
         ..varint(_labelType * 2 + 1)
         ..int32(id)
@@ -47,7 +34,7 @@ Uint8List _whole(int stampDelta, void Function(WidgetWireWriter w) properties, {
 
 /// A change to a widget: as a whole record, plus how far back its base stamp is.
 Uint8List _change(int stampDelta, int baseBack, void Function(WidgetWireWriter w) properties) =>
-    _record(wireChange, (w) {
+    encodeRecord(wireChange, (w) {
       w
         ..varint(_labelType * 2 + 1)
         ..int32(_labelId)
@@ -86,7 +73,7 @@ void main() {
   VLabel? held() => registry.valueOn('Label/$_labelId') as VLabel?;
 
   test('a whole record makes the widget it describes', () {
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(WireKey.k_Label_text)
         ..string('first')),
@@ -97,7 +84,7 @@ void main() {
   });
 
   test('a change on the held stamp applies its properties and tells the widget', () {
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(WireKey.k_Label_text)
         ..string('first')),
@@ -105,7 +92,7 @@ void main() {
     final changes = <VChange>[];
     registry.watch('Label/$_labelId', changes.add);
 
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _change(11, 1, (w) => w
         ..key(WireKey.k_Label_text)
         ..string('second')),
@@ -116,14 +103,14 @@ void main() {
   });
 
   test('a whole record for a widget already held is copied into the one object', () {
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(WireKey.k_Label_text)
         ..string('first')),
     ]));
     final first = held();
 
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(12, (w) => w
         ..key(WireKey.k_Label_text)
         ..string('again')),
@@ -134,11 +121,11 @@ void main() {
   });
 
   test('an image record further down fills the image a widget named before it', () {
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(WireKey.k_Label_image)
         ..ref(4242)),
-      _record(wireImage, (w) => w
+      encodeRecord(wireImage, (w) => w
         ..int32(4242)
         ..key(WireKey.k_Image_width)
         ..int32(16)
@@ -156,8 +143,8 @@ void main() {
     final told = <int?>[];
     final stop = registry.onHolder<VDisplay>('Display', VDisplay.new, (id, d) => told.add(d.activeShellId));
     addTearDown(stop);
-    Uint8List display(int stamp, int active) => _frame([
-          _record(wireHolder, (w) => w
+    Uint8List display(int stamp, int active) => encodeFrame([
+          encodeRecord(wireHolder, (w) => w
             ..varint(WireType.display * 2 + 1)
             ..int32(1)
             ..varint(stamp)
@@ -172,7 +159,7 @@ void main() {
   });
 
   test('a record that cannot be read costs only its widget, which is asked for whole', () {
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(9999)
         ..int32(1)),
@@ -190,7 +177,7 @@ void main() {
       ..swt = 'Menu'
       ..id = _labelId) as VMenu;
 
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(WireKey.k_Label_text)
         ..string('shares the id')),
@@ -204,7 +191,7 @@ void main() {
   });
 
   test('a widget named but neither held nor described is asked for, then what named it', () {
-    registry.applyWire(_frame([
+    registry.applyWire(encodeFrame([
       _whole(10, (w) => w
         ..key(WireKey.k_Control_menu)
         ..ref(31337)),

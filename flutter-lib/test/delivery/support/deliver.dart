@@ -178,7 +178,7 @@ Uint8List _frameBody(List<_Record> records, {bool describeImages = true}) {
   out.add(count.buffer.asUint8List());
   for (final image in images) {
     final id = image.id ??= _nextImageId++;
-    out.add(_record(wireImage, (w) {
+    out.add(encodeRecord(wireImage, (w) {
       w.int64(id);
       image.writeWire(w);
     }));
@@ -187,7 +187,7 @@ Uint8List _frameBody(List<_Record> records, {bool describeImages = true}) {
   for (final r in records) {
     final delta = r.stamp - last;
     last = r.stamp;
-    out.add(_record(r.kind, (w) {
+    out.add(encodeRecord(r.kind, (w) {
       final number = _typeNumbers[r.value.swt];
       if (number != null) {
         w.varint(number * 2 + 1);
@@ -206,12 +206,18 @@ Uint8List _frameBody(List<_Record> records, {bool describeImages = true}) {
 }
 
 /// A record: its kind, its length, then what [write] writes and [fields].
-Uint8List _record(int kind, void Function(WidgetWireWriter w) write, {Uint8List? fields}) {
+Uint8List encodeRecord(int kind, void Function(WidgetWireWriter w) write, {Uint8List? fields}) {
   final rest = Uint8List.fromList([...WidgetWireWriter.encodeWith(write), ...?fields]);
   final head = Uint8List.fromList(WidgetWireWriter.encodeWith((w) => w
     ..u8(kind)
     ..varint(rest.length)));
   return Uint8List.fromList([...head, ...rest]);
+}
+
+/// A frame of [records]: their count as a little-endian word, then each one.
+Uint8List encodeFrame(List<Uint8List> records) {
+  final count = ByteData(4)..setUint32(0, records.length, Endian.little);
+  return Uint8List.fromList([...count.buffer.asUint8List(), for (final r in records) ...r]);
 }
 
 /// The images [value] shows that carry something to draw, into [images].

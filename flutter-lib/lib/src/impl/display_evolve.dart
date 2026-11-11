@@ -65,6 +65,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     _publishHoldings();
     applySystemMenu(_heldSystemMenu());
     _stopRecords = VRegistry.instance.onHolder<VDisplay>('Display', VDisplay.new, _onRecord);
+    VRegistry.instance.watchAt(_holderKey, _onHeldChanged);
     // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
     // how Eclipse command shortcuts dispatch). This replaces the per-control forwarders while a
@@ -120,9 +121,13 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   void Function()? _stopRecords;
 
+  /// The registry key the display holds its shells under.
+  late final int _holderKey = WidgetKey.of(gen.WireType.display, widget.value.id ?? 0);
+
   @override
   void dispose() {
     _stopRecords?.call();
+    VRegistry.instance.unwatchAt(_holderKey, _onHeldChanged);
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
     if (OpenMenus.forwardHeld == _forwardUnheldKey) OpenMenus.forwardHeld = null;
     OpenMenus.dropKeyboardTrigger();
@@ -305,7 +310,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     for (final value in held) {
       VRegistry.instance.register(value);
     }
-    VRegistry.instance.holdsAt(WidgetKey.of(gen.WireType.display, widget.value.id ?? 0), held);
+    VRegistry.instance.holdsAt(_holderKey, held);
   }
 
   /// The registry's application menu: the object whose items are the widgets themselves rather
@@ -406,6 +411,27 @@ class _DisplaySwtState extends State<DisplaySwt> {
         (style & SWT.PRIMARY_MODAL) != 0;
   }
 
+  List<VShell> _drawnShells() {
+    final windowed = _windowedShellIds();
+    return (_display.shells ?? [])
+        .where((s) => (s.visible ?? true) && !windowed.contains(s.id))
+        .toList();
+  }
+
+  /// The shells the last build drew, by id.
+  Set<int?> _builtShellIds = const {};
+
+  /// A hidden shell is not built, so nothing listens to it: a change on its own record reaches the
+  /// display as a change to what the display holds, and Java need not send the display again after
+  /// it. A shell shown that way is drawn only if the display rebuilds for it.
+  void _onHeldChanged(VChange change) {
+    if (!mounted) return;
+    final drawn = {for (final s in _drawnShells()) s.id};
+    if (drawn.length != _builtShellIds.length || !drawn.containsAll(_builtShellIds)) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Held is not drawn. The display carries every shell Java owns, so that a frame on a shell's
@@ -414,10 +440,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
     //
     // A windowed shell is held for the same reason and drawn for none: another client, rooted at
     // that shell in a window of its own, is drawing it. See VDisplay.windowedShellIds.
-    final windowed = _windowedShellIds();
-    final shells = (_display.shells ?? [])
-        .where((s) => (s.visible ?? true) && !windowed.contains(s.id))
-        .toList();
+    final shells = _drawnShells();
+    _builtShellIds = {for (final s in shells) s.id};
     if (shells.isEmpty) return const SizedBox.shrink();
     BootTrace.markOnce('display.firstShellBuild');
     _shellIsMainCache.removeWhere((id, _) => !shells.any((s) => s.id == id));
