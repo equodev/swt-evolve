@@ -370,6 +370,15 @@ public class GCImageDrawer extends EmbeddedBridge {
      */
     public void requestRenderSnapshot(Consumer<ByteBuffer> onSnapshot) {
         start();
+        // A drawer with no render side never answers; the caller would wait out its deadline.
+        boolean noRenderSide;
+        synchronized (this) {
+            noRenderSide = gaveUp;
+        }
+        if (noRenderSide) {
+            onSnapshot.accept(ByteBuffer.allocate(0));
+            return;
+        }
         FlutterBridge.flushBufferedOps(this);
         CommService c = resolvedComm != null ? resolvedComm : super.comm();
         c.on(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_SNAPSHOT_RESULT, ByteBuffer.class, bytes -> {

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -67,6 +68,18 @@ class GCImageDrawerNativeTest {
         drawer.abandon();
 
         assertThat(comm.sent).extracting(f -> f.event).containsExactly("GC/71/gcDispose");
+    }
+
+    @Test
+    @DisplayName("a drawer with no render side answers a snapshot at once, with no pixels")
+    void aDrawerWithNoRenderSideAnswersASnapshotAtOnce() {
+        FlutterBridge.setDisplayGcCommResolver(d -> null);
+        GCImageDrawer drawer = drawer(74);
+        List<ByteBuffer> answers = new ArrayList<>();
+
+        drawer.requestRenderSnapshot(answers::add);
+
+        assertThat(answers).singleElement().satisfies(b -> assertThat(b.hasRemaining()).isFalse());
     }
 
     /** The drawers holding queued ops, a static set other tests' unfinished GCs may still be in. */
