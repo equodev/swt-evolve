@@ -1518,97 +1518,103 @@ class _CTabBarState extends State<_CTabBar> {
                   ),
             image: isSelected && enabled ? _buildSelectionBgImage() : null,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _shrinkable(compressTo, tab.customContent != null
-                  ? TabItemContextProvider(
-                      isSelected: isSelected,
-                      isEnabled: enabled,
-                      isActive: isSelected && enabled && active,
-                      isDimmed: isSelected && enabled && showHighlight && !active,
-                      compressMinimumCharacters: compressTo,
-                      child: tab.customContent!,
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (tab.image != null && shouldShowImage)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: widgetTheme.tabIconBottomPadding,
-                              right: widgetTheme.tabIconTextSpacing,
-                            ),
-                            child: FutureBuilder<Widget?>(
-                              future: ImageUtils.buildVImageAsync(
-                                VImage()..filename = tab.image,
-                                size: widgetTheme.tabIconSize,
-                                color: textColor,
+          // Centred on the whole tab, which a border on one edge only would push off, and on the
+          // part of it left on screen once the row is cut to the strip's height.
+          child: Transform.translate(
+            offset: _clippedEdgeShift(isTabBottom) +
+                Offset(0, (border.bottom.width - border.top.width) / 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _shrinkable(compressTo, tab.customContent != null
+                    ? TabItemContextProvider(
+                        isSelected: isSelected,
+                        isEnabled: enabled,
+                        isActive: isSelected && enabled && active,
+                        isDimmed: isSelected && enabled && showHighlight && !active,
+                        compressMinimumCharacters: compressTo,
+                        child: tab.customContent!,
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (tab.image != null && shouldShowImage)
+                            Padding(
+                              padding: EdgeInsets.only(
+                                bottom: widgetTheme.tabIconBottomPadding,
+                                right: widgetTheme.tabIconTextSpacing,
                               ),
-                              builder: (context, snapshot) {
-                                final resolved = snapshot.data;
-                                if (resolved != null) return resolved;
-                                if (snapshot.connectionState !=
-                                    ConnectionState.done) {
-                                  return SizedBox(
+                              child: FutureBuilder<Widget?>(
+                                future: ImageUtils.buildVImageAsync(
+                                  VImage()..filename = tab.image,
+                                  size: widgetTheme.tabIconSize,
+                                  color: textColor,
+                                ),
+                                builder: (context, snapshot) {
+                                  final resolved = snapshot.data;
+                                  if (resolved != null) return resolved;
+                                  if (snapshot.connectionState !=
+                                      ConnectionState.done) {
+                                    return SizedBox(
+                                      width: widgetTheme.tabIconSize,
+                                      height: widgetTheme.tabIconSize,
+                                    );
+                                  }
+                                  return Image.file(
+                                    File(tab.image!),
                                     width: widgetTheme.tabIconSize,
                                     height: widgetTheme.tabIconSize,
+                                    fit: BoxFit.contain,
                                   );
-                                }
-                                return Image.file(
-                                  File(tab.image!),
-                                  width: widgetTheme.tabIconSize,
-                                  height: widgetTheme.tabIconSize,
-                                  fit: BoxFit.contain,
-                                );
-                              },
+                                },
+                              ),
                             ),
-                          ),
-                        _shrinkable(compressTo, Padding(
+                          _shrinkable(compressTo, Padding(
+                            padding: EdgeInsets.only(
+                              bottom: widgetTheme.tabTextBottomPadding,
+                            ),
+                            child: compressTo == null
+                                ? Text(
+                                    _getTabText(tab.label),
+                                    style: textStyle?.copyWith(color: textColor) ??
+                                        TextStyle(color: textColor),
+                                  )
+                                : ShrinkableTabLabel(
+                                    tab.label,
+                                    style: textStyle?.copyWith(color: textColor) ??
+                                        TextStyle(color: textColor),
+                                    minimumCharacters: compressTo,
+                                  ),
+                          )),
+                        ],
+                      )),
+                if (shouldShowClose) ...[
+                  SizedBox(width: widgetTheme.tabCloseButtonSpacing),
+                  MouseRegion(
+                    cursor: enabled
+                        ? SystemMouseCursors.click
+                        : SystemMouseCursors.basic,
+                    child: MetaData(
+                      metaData: _tabCloseButton,
+                      behavior: HitTestBehavior.opaque,
+                      child: GestureDetector(
+                        onTap: onClose,
+                        child: Padding(
                           padding: EdgeInsets.only(
-                            bottom: widgetTheme.tabTextBottomPadding,
+                            bottom: widgetTheme.tabCloseIconBottomPadding,
                           ),
-                          child: compressTo == null
-                              ? Text(
-                                  _getTabText(tab.label),
-                                  style: textStyle?.copyWith(color: textColor) ??
-                                      TextStyle(color: textColor),
-                                )
-                              : ShrinkableTabLabel(
-                                  tab.label,
-                                  style: textStyle?.copyWith(color: textColor) ??
-                                      TextStyle(color: textColor),
-                                  minimumCharacters: compressTo,
-                                ),
-                        )),
-                      ],
-                    )),
-              if (shouldShowClose) ...[
-                SizedBox(width: widgetTheme.tabCloseButtonSpacing),
-                MouseRegion(
-                  cursor: enabled
-                      ? SystemMouseCursors.click
-                      : SystemMouseCursors.basic,
-                  child: MetaData(
-                    metaData: _tabCloseButton,
-                    behavior: HitTestBehavior.opaque,
-                    child: GestureDetector(
-                      onTap: onClose,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          bottom: widgetTheme.tabCloseIconBottomPadding,
-                        ),
-                        child: Icon(
-                          Icons.close,
-                          size: widgetTheme.tabCloseIconSize,
-                          color: getCTabCloseButtonColor(widgetTheme, isSelected),
+                          child: Icon(
+                            Icons.close,
+                            size: widgetTheme.tabCloseIconSize,
+                            color: getCTabCloseButtonColor(widgetTheme, isSelected),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
           ),
         ),
@@ -1859,6 +1865,10 @@ class _CTabBarState extends State<_CTabBar> {
   EdgeInsets _clippedEdge(bool isTabBottom) => isTabBottom
       ? EdgeInsets.only(top: widget.stripClip)
       : EdgeInsets.only(bottom: widget.stripClip);
+
+  /// How far a tab's content moves to sit in the middle of what stays of the row after the cut.
+  Offset _clippedEdgeShift(bool isTabBottom) =>
+      Offset(0, (isTabBottom ? 1 : -1) * widget.stripClip / 2);
 
   Widget _buildTabBarContainer({
     required CTabFolderThemeExtension widgetTheme,

@@ -57,7 +57,7 @@ CTabItemThemeExtension _getCTabItemTheme({
     
     // Tab item padding
     tabItemHorizontalPadding: 2.0,
-    tabItemVerticalPadding: 2.0,
+    tabItemVerticalPadding: 0.0,
     
     // Tab item image spacing
     tabItemImageTextSpacing: 3.0,

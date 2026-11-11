@@ -111,7 +111,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Tab icon/text padding
     tabIconBottomPadding: 1.0,
-    tabTextBottomPadding: 2.0,
+    tabTextBottomPadding: 0.0,
     tabCloseIconBottomPadding: 1.0,
     
     // Control buttons
