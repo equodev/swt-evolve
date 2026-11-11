@@ -54,6 +54,9 @@ class ProxyHandlerLocationBrowserNativeTest {
         chrome = HeadlessChrome.launch(binary, self + "/blank", true, false,
                 HeadlessChrome.Io.DISCARD, "--remote-debugging-port=0");
         devTools = DevTools.connect(chrome.profileDir(), self + "/blank");
+        // The target lists /blank's URL before /blank commits, and that commit cancels a navigation
+        // started from the document before it.
+        awaitDocument("document.readyState === 'complete' && location.pathname === '/blank'");
         devTools.evaluate("location.href = '" + requested + "'");
         awaitProxiedPage();
     }
