@@ -10,11 +10,7 @@ import org.eclipse.swt.graphics.Rectangle;
 
 import java.lang.reflect.Field;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -170,32 +166,47 @@ public class DartMocks {
         Display d = mock(Display.class);
         DartDisplay dartDisplay = mock(DartDisplay.class);
         dartDisplay.thread = Thread.currentThread();
-        // Widget.dispose() and every checkWidget() ask the display whether this is its thread; a
-        // mock answers false and they raise ERROR_THREAD_INVALID_ACCESS instead of doing the work.
-        when(dartDisplay.isValidThread()).thenReturn(true);
         makeCurrent(d);
-        when(d.getThread()).thenCallRealMethod();
-        when(d.getImpl()).thenReturn(dartDisplay);
-        when(d.getDPI()).thenReturn(dev.equo.swt.FontMetricsUtil.screenDPI());
-        Color systemColor = new Color(d, red(), green(), blue());
-        when(d.getSystemColor(anyInt())).thenReturn(systemColor);
-        // A control with no colour of its own resolves one through defaultForeground(), which asks
-        // the impl rather than the API. Unstubbed it answers null, and the control hands that to
-        // whatever reads its handle.
-        when(dartDisplay.getWidgetColor(anyInt())).thenReturn(systemColor);
-        when(d.getSystemCursor(anyInt())).thenReturn(mock(Cursor.class));
-        when(dartDisplay.getThread()).thenCallRealMethod();
-        Monitor monitor = mock(Monitor.class);
+        stubBase(d, dartDisplay);
+        systemColor = new Color(d, red(), green(), blue());
+        cursor = mock(Cursor.class);
+        monitor = mock(Monitor.class);
         when(monitor.getClientArea()).thenReturn(new Rectangle(0, 0, 1280, 720));
-        when(d.getMonitors()).thenReturn(new Monitor[] {monitor});
-
-        Font defaultFont = new DartFont(d, "System", 14, org.eclipse.swt.SWT.NORMAL, null).getApi();
-        when(d.getSystemFont()).thenReturn(defaultFont);
+        defaultFont = new DartFont(d, "System", 14, org.eclipse.swt.SWT.NORMAL, null).getApi();
+        stubShared(d, dartDisplay);
         setDeviceField(dartDisplay, "systemFont", defaultFont);
         setDeviceField(dartDisplay, "dpi", mock(Point.class));
 
         display = d;
         return d;
+    }
+
+    private static Color systemColor;
+    private static Cursor cursor;
+    private static Monitor monitor;
+    private static Font defaultFont;
+
+    /** What the display answers before anything it hands out exists. */
+    private static void stubBase(Display d, DartDisplay dartDisplay) {
+        // Widget.dispose() and every checkWidget() ask the display whether this is its thread; a
+        // mock answers false and they raise ERROR_THREAD_INVALID_ACCESS instead of doing the work.
+        when(dartDisplay.isValidThread()).thenReturn(true);
+        when(d.getThread()).thenCallRealMethod();
+        when(d.getImpl()).thenReturn(dartDisplay);
+        when(d.getDPI()).thenReturn(dev.equo.swt.FontMetricsUtil.screenDPI());
+        when(dartDisplay.getThread()).thenCallRealMethod();
+    }
+
+    /** The colour, cursor, monitor and font the display hands out, built once. */
+    private static void stubShared(Display d, DartDisplay dartDisplay) {
+        when(d.getSystemColor(anyInt())).thenReturn(systemColor);
+        // A control with no colour of its own resolves one through defaultForeground(), which asks
+        // the impl rather than the API. Unstubbed it answers null, and the control hands that to
+        // whatever reads its handle.
+        when(dartDisplay.getWidgetColor(anyInt())).thenReturn(systemColor);
+        when(d.getSystemCursor(anyInt())).thenReturn(cursor);
+        when(d.getMonitors()).thenReturn(new Monitor[] {monitor});
+        when(d.getSystemFont()).thenReturn(defaultFont);
     }
 
     /**
@@ -226,21 +237,18 @@ public class DartMocks {
      */
     static void resetDisplayState() {
         if (display == null) return;
-        org.mockito.Mockito.clearInvocations(display);
-        when(display.isDisposed()).thenReturn(false);
+        // Reset rather than stub over: Mockito keeps every stubbing and every call a mock receives,
+        // and walks the stubbings on each call. Stubbed over before each test, the shared display
+        // made every later call slower, and a Table or Tree, which sends an event per cell, minutes
+        // slower by the end of a fork.
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        org.mockito.Mockito.reset(display);
+        org.mockito.Mockito.reset(impl);
+        stubBase(display, impl);
+        stubShared(display, impl);
         // What a display with no shells answers; a test that stubbed it otherwise must not leave a
         // later one disposing a shell against null.
         when(display.getShells()).thenReturn(new Shell[0]);
-        // Tests stub these to deliver events, run or drop runnables, keep data, or place the screen
-        // and the pointer; left in place, the next test inherits them (real listeners against a
-        // display with no exception handler, another test's screen size).
-        DartDisplay impl = (DartDisplay) display.getImpl();
-        doNothing().when(impl).sendEvent(any(EventTable.class), any(Event.class));
-        doNothing().when(display).asyncExec(any(Runnable.class));
-        doNothing().when(display).setData(anyString(), any());
-        doReturn(null).when(display).getData(anyString());
-        doReturn(null).when(display).getBounds();
-        doReturn(null).when(display).getCursorLocation();
     }
 
     /** {@code Font systemFont}/{@code Point dpi} live on {@code DartDevice} (package
