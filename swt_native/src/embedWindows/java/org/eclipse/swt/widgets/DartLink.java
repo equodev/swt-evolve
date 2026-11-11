@@ -530,6 +530,8 @@ public class DartLink extends DartControl implements ILink {
         return _linkForeground;
     }
 
+    int focusIndex;
+
     protected void _hookEvents() {
         super._hookEvents();
     }
@@ -558,7 +560,7 @@ public class DartLink extends DartControl implements ILink {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        sendEvent(SWT.Selection, e);
+                        LinkHelper.clicked(this, e);
                     });
                     return;
                 }

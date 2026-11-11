@@ -407,46 +407,6 @@ public class DartLink extends DartControl implements ILink {
     }
 
     @Override
-    boolean sendKeyEvent(int type, Event event) {
-        boolean result = super.sendKeyEvent(type, event);
-        if (!result)
-            return result;
-        if (focusIndex == -1)
-            return result;
-        if (type != SWT.KeyDown)
-            return result;
-        int keyCode = event.keyCode;
-        switch(keyCode) {
-            case SWT.CR:
-            case SWT.KEYPAD_CR:
-            case 32:
-                /* Space */
-                Event event1 = new Event();
-                event1.text = ids[focusIndex];
-                sendEvent(SWT.Selection, event1);
-                break;
-            case SWT.TAB:
-                int modifierFlags = event.stateMask;
-                boolean next = (modifierFlags & SWT.SHIFT) == 0;
-                if (next) {
-                    if (focusIndex < offsets.length - 1) {
-                        focusIndex++;
-                        redraw();
-                        return false;
-                    }
-                } else {
-                    if (focusIndex > 0) {
-                        focusIndex--;
-                        redraw();
-                        return false;
-                    }
-                }
-                break;
-        }
-        return result;
-    }
-
-    @Override
     void setForeground(double[] color) {
         if (!getApi().getEnabled())
             return;
@@ -658,7 +618,7 @@ public class DartLink extends DartControl implements ILink {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        sendEvent(SWT.Selection, e);
+                        LinkHelper.clicked(this, e);
                     });
                     return;
                 }

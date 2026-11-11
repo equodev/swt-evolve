@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import '../gen/color.dart';
 import '../gen/event.dart';
 import '../gen/font.dart';
@@ -12,6 +13,18 @@ import './utils/mnemonic_text.dart';
 import '../theme/theme_extensions/link_theme_extension.dart';
 
 class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
+  /// The node a click on a Link that holds an anchor focuses, as Java asks for it.
+  final FocusNode _focusNode = FocusNode(debugLabel: 'Link');
+
+  @override
+  FocusNode? get swtFocusNode => _focusNode;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<LinkThemeExtension>()!;
@@ -44,9 +57,12 @@ class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
       backgroundColor: null,
       vFont: state.font,
       widgetTheme: widgetTheme,
-      onTap: (url) {
+      focusNode: _focusNode,
+      onTap: (url, anchor) {
         if (enabled) {
-          var e = VEvent()..text = url;
+          var e = VEvent()
+            ..text = url
+            ..index = anchor;
           widget.sendSelectionSelection(state, e);
         }
       },
@@ -81,7 +97,10 @@ class StyledLink extends StatefulWidget {
   final VColor? backgroundColor;
   final VFont? vFont;
   final LinkThemeExtension widgetTheme;
-  final Function(String) onTap;
+
+  /// Called with an anchor's href and its index among the anchors.
+  final void Function(String href, int anchor) onTap;
+  final FocusNode? focusNode;
   final VoidCallback? onFocusIn;
   final VoidCallback? onFocusOut;
 
@@ -98,6 +117,7 @@ class StyledLink extends StatefulWidget {
     this.vFont,
     required this.widgetTheme,
     required this.onTap,
+    this.focusNode,
     this.onFocusIn,
     this.onFocusOut,
     this.tabStop,
@@ -138,6 +158,7 @@ class _StyledLinkState extends State<StyledLink> {
         setState(() => _isHovered = false);
       },
       child: Focus(
+        focusNode: widget.focusNode,
         // A tab stop only while it holds a link, as natively.
         skipTraversal: !(widget.tabStop ?? false),
         onFocusChange: (hasFocus) {
@@ -177,13 +198,51 @@ class _StyledLinkState extends State<StyledLink> {
     }
 
     Widget build(bool underline) => RichText(
+          key: _textKey,
           text: TextSpan(children: _spans(_parts, underline), style: baseTextStyle),
         );
-    if (!widget.text.contains('&')) return build(false);
-    return ValueListenableBuilder<bool>(
-      valueListenable: MnemonicCue.shown,
-      builder: (context, shown, _) => build(shown),
+    final text = !widget.text.contains('&')
+        ? build(false)
+        : ValueListenableBuilder<bool>(
+            valueListenable: MnemonicCue.shown,
+            builder: (context, shown, _) => build(shown),
+          );
+    // Inside the control's own pointer handling, so the anchor's Selection reaches Java ahead of the
+    // release's MouseUp, as every native reports it.
+    return Listener(
+      onPointerDown: (e) => _pressedAnchor = e.buttons == kPrimaryButton ? _anchorAt(e.position) : null,
+      onPointerCancel: (_) => _pressedAnchor = null,
+      onPointerUp: (e) {
+        final anchor = _pressedAnchor;
+        _pressedAnchor = null;
+        if (anchor == null || !widget.enabled || _anchorAt(e.position) != anchor) return;
+        widget.onTap(_parts.where((part) => part.href != null).elementAt(anchor).href!, anchor);
+      },
+      child: text,
     );
+  }
+
+  final GlobalKey _textKey = GlobalKey();
+
+  /// The anchor a press landed on, which the release has to land on too to select it.
+  int? _pressedAnchor;
+
+  /// The index among the anchors of the one drawn under [global], or null over plain text or none.
+  int? _anchorAt(Offset global) {
+    final paragraph = _textKey.currentContext?.findRenderObject();
+    if (paragraph is! RenderParagraph) return null;
+    final local = paragraph.globalToLocal(global);
+    var start = 0, anchor = 0;
+    for (final part in _parts) {
+      final end = start + part.text.length;
+      if (part.href != null) {
+        final boxes = paragraph.getBoxesForSelection(TextSelection(baseOffset: start, extentOffset: end));
+        if (boxes.any((box) => box.toRect().contains(local))) return anchor;
+        anchor++;
+      }
+      start = end;
+    }
+    return null;
   }
 
   /// The parts as spans; the first one carrying a mnemonic underlines it when [underline] is set,
@@ -215,9 +274,7 @@ class _StyledLinkState extends State<StyledLink> {
         underline: underline,
         style:
             url == null ? null : TextStyle(color: linkColor, decoration: linkDecoration),
-        recognizer: url != null && widget.enabled
-            ? (TapGestureRecognizer()..onTap = () => widget.onTap(url))
-            : null,
+        mouseCursor: url != null && widget.enabled ? SystemMouseCursors.click : null,
       );
     }
 

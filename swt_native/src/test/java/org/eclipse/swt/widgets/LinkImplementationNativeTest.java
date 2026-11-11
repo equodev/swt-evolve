@@ -70,38 +70,6 @@ class LinkImplementationNativeTest {
     }
 
     @Test
-    @DisplayName("Enter or Space picks the focused anchor, and Tab or Shift+Tab moves the focus between anchors")
-    void keysPickAndMoveBetweenAnchors() {
-        deliverEvents();
-        Link link = new Link(shell, SWT.NONE);
-        link.setText("<a href=\"one\">first</a> and <a href=\"two\">second</a>");
-        DartLink impl = (DartLink) link.getImpl();
-        List<String> picked = new ArrayList<>();
-        link.addListener(SWT.Selection, e -> picked.add(e.text));
-        impl.focusIndex = 0;
-
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.CR, 0))).isTrue();
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.KEYPAD_CR, 0))).isTrue();
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(' ', 0))).isTrue();
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key('x', 0))).isTrue();
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.TAB, 0))).isFalse();
-        assertThat(impl.focusIndex).isEqualTo(1);
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.TAB, 0))).as("Tab on the last anchor leaves the link").isTrue();
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.TAB, SWT.SHIFT))).isFalse();
-        assertThat(impl.focusIndex).isZero();
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.TAB, SWT.SHIFT))).as("Shift+Tab on the first anchor leaves the link").isTrue();
-        assertThat(impl.sendKeyEvent(SWT.KeyUp, key(SWT.CR, 0))).isTrue();
-        assertThat(picked).containsExactly("one", "one", "one");
-
-        impl.focusIndex = -1;
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.CR, 0))).isTrue();
-        impl.focusIndex = 0;
-        link.addListener(SWT.KeyDown, e -> e.doit = false);
-        assertThat(impl.sendKeyEvent(SWT.KeyDown, key(SWT.CR, 0))).isFalse();
-        assertThat(picked).containsExactly("one", "one", "one");
-    }
-
-    @Test
     @DisplayName("a pick from Flutter reaches the link; a DefaultSelection only an active one, and nothing a disposed one")
     void picksFromFlutter() {
         deliverEvents();
@@ -174,12 +142,5 @@ class LinkImplementationNativeTest {
         List<Runnable> now = new ArrayList<>(queued);
         queued.clear();
         now.forEach(Runnable::run);
-    }
-
-    private static Event key(int keyCode, int stateMask) {
-        Event event = new Event();
-        event.keyCode = keyCode;
-        event.stateMask = stateMask;
-        return event;
     }
 }

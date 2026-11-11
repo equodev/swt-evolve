@@ -1,10 +1,14 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.size.Mnemonics;
+import org.eclipse.swt.SWT;
 
 /**
  * Logic of {@code DartLink} kept out of the generated implementation: the text a Link shows for its markup,
- * and the relayout that follows a change of it.
+ * the relayout that follows a change of it, and the anchor that holds the Link's focus.
+ * <p>
+ * A focused Link gives the keyboard to one of its anchors, as every native does: Enter or Space selects
+ * it, and Tab or Shift+Tab moves to the next or previous one before it leaves the Link.
  */
 public class LinkHelper {
 
@@ -133,5 +137,62 @@ public class LinkHelper {
             if (!control.isDisposed())
                 control.getShell().layout(new Control[] { control });
         });
+    }
+
+    /** The anchor holding the Link's focus, or -1 when it has none. */
+    static int focusedAnchor(DartLink link) {
+        int count = link.ids.length;
+        return count == 0 ? -1 : Math.max(0, Math.min(link.focusIndex, count - 1));
+    }
+
+    /**
+     * Whether a Tab traversal leaves the Link: not while an anchor is left in its direction, which the
+     * Tab moves the focus to instead.
+     */
+    public static boolean tabLeaves(DartLink link, int detail) {
+        int anchor = focusedAnchor(link);
+        if (anchor < 0)
+            return true;
+        if (detail == SWT.TRAVERSE_TAB_NEXT)
+            return anchor == link.ids.length - 1;
+        if (detail == SWT.TRAVERSE_TAB_PREVIOUS)
+            return anchor == 0;
+        return true;
+    }
+
+    /**
+     * What the Link does with a key its listeners let through: Enter or Space selects the focused
+     * anchor, and a Tab that did not leave the Link moves the focus to the next or previous anchor.
+     */
+    public static void actOnKey(DartLink link, Event key) {
+        int anchor = focusedAnchor(link);
+        if (anchor < 0)
+            return;
+        switch (key.keyCode) {
+            case SWT.CR:
+            case SWT.KEYPAD_CR:
+            case ' ':
+                Event selection = new Event();
+                selection.text = link.ids[anchor];
+                link.sendEvent(SWT.Selection, selection);
+                break;
+            case SWT.TAB:
+                int step = (key.stateMask & SWT.SHIFT) == 0 ? 1 : -1;
+                link.focusIndex = Math.max(0, Math.min(anchor + step, link.ids.length - 1));
+                break;
+            default:
+                break;
+        }
+    }
+
+    /**
+     * A click on the anchor the client reports by its index: that anchor takes the Link's focus, then
+     * is selected. {@link #focusedAnchor} keeps an index past the anchors in range.
+     */
+    public static void clicked(DartLink link, Event e) {
+        link.focusIndex = e.index;
+        // The index only travels from the client; a native Link's Selection carries none.
+        e.index = 0;
+        link.sendEvent(SWT.Selection, e);
     }
 }

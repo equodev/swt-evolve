@@ -774,7 +774,7 @@ public class DartLink extends DartControl implements ILink {
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        sendEvent(SWT.Selection, e);
+                        LinkHelper.clicked(this, e);
                     });
                     return;
                 }

@@ -280,6 +280,8 @@ public class ControlHelper {
             TabFolderHelper.moveSelectionByKey((DartTabFolder) control, key);
         else if (control instanceof DartSash)
             SashHelper.moveByKey((DartSash) control, key);
+        else if (control instanceof DartLink)
+            LinkHelper.actOnKey((DartLink) control, key);
     }
 
     /** Shift+F10, which Win32 and GTK turn into a context-menu request (Cocoa has no such key). */
@@ -374,6 +376,8 @@ public class ControlHelper {
             if ((style & SWT.MULTI) != 0 && (style & SWT.READ_ONLY) == 0)
                 return false;
         }
+        if (control instanceof DartLink)
+            return LinkHelper.tabLeaves((DartLink) control, detail);
         // Composite.traversalCode on GTK and Cocoa: a canvas that is NO_FOCUS or hooks a key keeps it.
         if (isCanvasComposite(control.getApi()) && ((control.getApi().getStyle() & SWT.NO_FOCUS) != 0
                 || control.hooks(SWT.KeyDown) || control.hooks(SWT.KeyUp)))
@@ -1076,9 +1080,9 @@ public class ControlHelper {
      * position decides it only for a TabFolder, through the overload that takes the press.
      * <p>
      * Button 1 focuses the controls Win32 and GTK agree on, StyledText included, and an empty Canvas
-     * or Composite while it hooks key events. Any other Canvas is left to its own press handling. A
-     * TabFolder takes it only from a press on one of its tabs, not on its strip, as on GTK:
-     * see {@link TabFolderHelper#pressFocuses}.
+     * or Composite while it hooks key events, and a Link that holds an anchor. Any other Canvas is
+     * left to its own press handling. A TabFolder takes it only from a press on one of its tabs, not
+     * on its strip, as on GTK: see {@link TabFolderHelper#pressFocuses}.
      * <p>
      * Button 3 focuses the item views, which Win32 and GTK both focus ahead of the press, and the
      * fields, which both focus too, though their natives report it after the MouseDown (Win32) or the
@@ -1102,6 +1106,7 @@ public class ControlHelper {
         return button == 1 && (fieldOrItemView || api instanceof Button || api instanceof DateTime
                 || api instanceof org.eclipse.swt.widgets.List || api instanceof Scale
                 || api instanceof org.eclipse.swt.custom.StyledText
+                || control instanceof DartLink && LinkHelper.focusedAnchor((DartLink) control) >= 0
                 || isBareSurface(api) && ((DartComposite) control).hooksKeys());
     }
 

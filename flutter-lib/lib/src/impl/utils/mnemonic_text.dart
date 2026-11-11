@@ -114,20 +114,20 @@ class MnemonicText extends StatelessWidget {
       );
 }
 
-/// [text] as spans, with the character at [index] underlined when [underline] is set; [recognizer]
-/// goes on every span, since a span's recognizer does not reach its children.
+/// [text] as spans, with the character at [index] underlined when [underline] is set; [mouseCursor]
+/// goes on every span, since a span's cursor does not reach its children.
 List<TextSpan> mnemonicSpans(String text, int index,
-    {required bool underline, TextStyle? style, GestureRecognizer? recognizer}) {
-  if (!underline || index < 0) return [TextSpan(text: text, style: style, recognizer: recognizer)];
+    {required bool underline, TextStyle? style, MouseCursor? mouseCursor}) {
+  if (!underline || index < 0) return [TextSpan(text: text, style: style, mouseCursor: mouseCursor)];
   final end = index + 1 < text.length && _isHighSurrogate(text.codeUnitAt(index)) ? index + 2 : index + 1;
   return [
-    TextSpan(text: text.substring(0, index), style: style, recognizer: recognizer),
+    TextSpan(text: text.substring(0, index), style: style, mouseCursor: mouseCursor),
     TextSpan(
       text: text.substring(index, end),
       style: (style ?? const TextStyle()).copyWith(decoration: TextDecoration.underline),
-      recognizer: recognizer,
+      mouseCursor: mouseCursor,
     ),
-    TextSpan(text: text.substring(end), style: style, recognizer: recognizer),
+    TextSpan(text: text.substring(end), style: style, mouseCursor: mouseCursor),
   ];
 }
 
