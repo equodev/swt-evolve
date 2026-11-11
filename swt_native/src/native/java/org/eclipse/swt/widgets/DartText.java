@@ -1612,6 +1612,7 @@ public class DartText extends DartScrollable implements IText {
         if (text == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         TextHelper.setText(this, new String(text));
+        apiEdits.record(this, TextApiEdits.SET_TEXT, "");
     }
 
     /**

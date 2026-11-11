@@ -1545,14 +1545,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
     }
 
     void reset(int startLine, int lineCount) {
-        int endLine = startLine + lineCount;
-        if (startLine < 0 || endLine > lineSizes.length)
-            return;
-        SortedSet<Integer> lines = new TreeSet<>();
-        for (int i = startLine; i < endLine; i++) {
-            lines.add(Integer.valueOf(i));
-        }
-        reset(lines);
+        reset(StyledTextHelper.lineRange(startLine, lineCount, lineSizes.length));
     }
 
     void reset(Set<Integer> lines) {
@@ -1560,7 +1553,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
             return;
         int resetLineCount = 0;
         for (Integer line : lines) {
-            if (line >= 0 || line < lineCount) {
+            if (line >= 0 && line < lineCount) {
                 resetLineCount++;
                 getLineSize(line.intValue()).resetSize();
             }

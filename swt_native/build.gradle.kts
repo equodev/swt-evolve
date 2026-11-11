@@ -330,6 +330,8 @@ sourceSets {
             if (swtMinorNative < 130) exclude("org/eclipse/swt/widgets/WidgetCreationTrackerTest.java")
             // Cocoa's Control.inCacheDisplayInRect, which the generated Control carries, exists from 3.108.
             if (swtMinorNative < 108) exclude("org/eclipse/swt/widgets/ControlImplementationNativeTest.java")
+            // StyledTextRenderer keeps the average line height its reset test checks from 3.114.
+            if (swtMinorNative < 114) exclude("org/eclipse/swt/custom/StyledTextRendererResetTest.java")
             // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
             if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the

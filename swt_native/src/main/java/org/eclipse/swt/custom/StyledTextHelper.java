@@ -17,9 +17,15 @@ import org.eclipse.swt.widgets.ControlHelper;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 
+import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 /**
  * Helper class for DartStyledText: the render side's scroll reports and text geometry, and font metrics.
@@ -1955,5 +1961,41 @@ public class StyledTextHelper {
         int y = topMargin + (lineIndex * lineHeight) - verticalScrollOffset;
 
         return new org.eclipse.swt.graphics.Point(x, y);
+    }
+
+    /**
+     * The lines {@code [startLine, startLine + lineCount)} as a set, or none when the range falls outside
+     * {@code [0, capacity)}: what {@code StyledTextRenderer.reset(int, int)} passes to {@code reset(Set)}
+     * without boxing every line into a TreeSet (eclipse-platform/eclipse.platform.swt#3654).
+     */
+    public static Set<Integer> lineRange(int startLine, int lineCount, int capacity) {
+        int endLine = startLine + lineCount;
+        if (startLine < 0 || endLine > capacity || lineCount <= 0) return Collections.emptySet();
+        return new AbstractSet<Integer>() {
+            @Override
+            public int size() {
+                return lineCount;
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return o instanceof Integer && (Integer) o >= startLine && (Integer) o < endLine;
+            }
+
+            @Override
+            public Iterator<Integer> iterator() {
+                return IntStream.range(startLine, endLine).iterator();
+            }
+        };
+    }
+
+    /**
+     * {@code Bullet.indexOf}: the position of {@code lineIndex} among the first {@code count} entries of
+     * {@code linesIndices}, which Bullet keeps sorted and unique, or -1; a binary search where upstream
+     * scanned every line (eclipse-platform/eclipse.platform.swt#3650).
+     */
+    public static int bulletIndexOf(int[] linesIndices, int count, int lineIndex) {
+        int index = Arrays.binarySearch(linesIndices, 0, count, lineIndex);
+        return index < 0 ? -1 : index;
     }
 }

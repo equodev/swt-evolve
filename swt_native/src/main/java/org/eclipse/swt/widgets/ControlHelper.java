@@ -6,6 +6,7 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1280,4 +1281,17 @@ public class ControlHelper {
         return false;
     }
 
+    /**
+     * Sorts {@code items} in descending order, as {@code Control.sort} must for
+     * {@code List.remove(int[])} and {@code Table.remove(int[])}: Arrays.sort and an in-place reverse,
+     * O(n log n) where upstream's shell sort was O(n^2) (eclipse-platform/eclipse.platform.swt#3640).
+     */
+    public static void sortDescending(int[] items) {
+        Arrays.sort(items);
+        for (int i = 0, j = items.length - 1; i < j; i++, j--) {
+            int swap = items[i];
+            items[i] = items[j];
+            items[j] = swap;
+        }
+    }
 }

@@ -165,7 +165,7 @@ public final class DartGridLayout extends DartLayout implements IGridLayout {
         }
         /* Build the grid */
         int row = 0, column = 0, rowCount = 0, columnCount = getApi().numColumns;
-        Control[][] grid = new Control[4][columnCount];
+        Control[][] grid = new Control[4][];
         for (int i = 0; i < count; i++) {
             Control child = children[i];
             GridData data = (GridData) child.getLayoutData();
@@ -174,7 +174,7 @@ public final class DartGridLayout extends DartLayout implements IGridLayout {
             while (true) {
                 int lastRow = row + vSpan;
                 if (lastRow >= grid.length) {
-                    Control[][] newGrid = new Control[lastRow + 4][columnCount];
+                    Control[][] newGrid = GridLayoutHelper.grownGrid(grid, lastRow);
                     System.arraycopy(grid, 0, newGrid, 0, grid.length);
                     grid = newGrid;
                 }

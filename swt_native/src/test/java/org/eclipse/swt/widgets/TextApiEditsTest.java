@@ -81,6 +81,16 @@ class TextApiEditsTest {
     }
 
     @Test
+    @DisplayName("setTextChars is logged as a set text")
+    void setTextCharsIsLogged() {
+        Shell shell = Mocks.shell();
+        Text text = new Text(shell, SWT.SINGLE);
+        read(text);
+        text.setTextChars("abc".toCharArray());
+        assertThat(read(text)).containsExactly(List.of("1", "0", "", ""));
+    }
+
+    @Test
     @DisplayName("what the client has read is dropped at the next edit, and only then")
     void readEditsAreDroppedAtTheNext() {
         Shell shell = Mocks.shell();

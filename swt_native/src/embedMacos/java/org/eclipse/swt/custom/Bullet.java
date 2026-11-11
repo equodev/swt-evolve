@@ -130,11 +130,7 @@ public class Bullet {
     }
 
     int indexOf(int lineIndex) {
-        for (int i = 0; i < count; i++) {
-            if (linesIndices[i] == lineIndex)
-                return i;
-        }
-        return -1;
+        return StyledTextHelper.bulletIndexOf(linesIndices, count, lineIndex);
     }
 
     @Override
