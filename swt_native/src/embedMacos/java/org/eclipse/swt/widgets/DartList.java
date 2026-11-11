@@ -1194,6 +1194,10 @@ public class DartList extends DartScrollable implements IList {
 
     Event heldSelection;
 
+    int pressModifiers;
+
+    final TypeAhead typeAhead = new TypeAhead();
+
     protected void _hookEvents() {
         super._hookEvents();
         FlutterBridge.on(this, dev.equo.swt.WireTable.CHANNEL_SCROLL_SCROLL, e -> {

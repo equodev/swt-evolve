@@ -107,10 +107,20 @@ public class ListHelper {
      * Up, Down, Page Up, Page Down, Home and End move the selection to the row they reach, as Win32's and
      * GTK's list do for a key no listener vetoed, and report it as a Selection; the last four also bring
      * that row into view. A page is the rows in view less one, and at least one. A MULTI list moves from
-     * its first selected row and ends with that one row selected; Shift and Ctrl are not handled.
+     * its first selected row and ends with that one row selected; Shift and Ctrl are not handled. Enter
+     * is the default selection and a letter selects the item it starts ({@link #selectByTyping}).
      */
     public static void moveSelectionByKey(DartList list, Event key) {
-        if ((key.stateMask & SWT.MODIFIER_MASK) != 0)
+        int modifiers = key.stateMask & SWT.MODIFIER_MASK;
+        if (modifiers == 0 && (key.keyCode == SWT.CR || key.keyCode == SWT.KEYPAD_CR)) {
+            // Win32 and Cocoa name neither the item nor its text; GTK names both.
+            if (list.getSelectionIndex() >= 0)
+                list.sendSelectionEvent(SWT.DefaultSelection, new Event(), true);
+            return;
+        }
+        if ((modifiers & ~SWT.SHIFT) == 0 && selectByTyping(list, key))
+            return;
+        if (modifiers != 0)
             return;
         int count = list.getItemCount();
         if (count == 0)
@@ -154,6 +164,25 @@ public class ListHelper {
         list.sendSelectionEvent(SWT.Selection, selection, true);
     }
 
+    /** Selects the item a typed letter names ({@link TypeAhead}); GTK has no search in a NO_SEARCH list. */
+    static boolean selectByTyping(DartList list, Event key) {
+        if ((list.getApi().style & TableHelper.NO_SEARCH) != 0)
+            return false;
+        String[] items = list.getItems();
+        int current = list.getSelectionIndex();
+        int index = list.typeAhead.find(key, current, items.length, i -> items[i]);
+        if (index == TypeAhead.NOT_TYPED)
+            return false;
+        if (index != TypeAhead.NO_MATCH && index != current) {
+            Event selection = new Event();
+            selection.segments = new int[] { index };
+            list.setSelection(selection.segments);
+            showIndex(list, index);
+            list.sendSelectionEvent(SWT.Selection, selection, true);
+        }
+        return true;
+    }
+
     private static int visibleRows(DartList list) {
         return Math.max(1, viewportHeight(list) / pitch(list));
     }
@@ -165,23 +194,27 @@ public class ListHelper {
     /**
      * A pick from Flutter. The items are selected at once, so a MouseUp listener reads the new selection;
      * a Selection made while button 1 is down is told after the MouseUp, as Win32 and Cocoa do (GTK tells
-     * it at the press).
+     * it at the press). The picks a drag makes while the button is down are one Selection, as on Win32.
      */
     public static void sendSelection(DartList list, Event event, int selectionType) {
         list.setSelection(event.segments);
-        sendHeldSelection(list);
-        if (list.isDisposed())
-            return;
-        if (selectionType == SWT.Selection && list.pressInFlight)
+        if (selectionType == SWT.Selection && list.pressInFlight) {
             list.heldSelection = event;
-        else
+            return;
+        }
+        sendHeldSelection(list);
+        if (!list.isDisposed())
             list.sendSelectionEvent(selectionType, event, true);
     }
 
-    /** A press starts; a Selection still held from a press whose release never came is told first. */
+    /**
+     * A press starts; a Selection still held from a press whose release never came is told first. The
+     * modifiers held at the press go with its Selection, as Win32 reports them.
+     */
     public static void pressed(DartList list, Event event) {
         sendHeldSelection(list);
         list.pressInFlight = event.button == 1;
+        list.pressModifiers = event.stateMask & SWT.MODIFIER_MASK;
     }
 
     /** The MouseUp listeners have run: the click's Selection is told. */
@@ -193,8 +226,10 @@ public class ListHelper {
     private static void sendHeldSelection(DartList list) {
         Event held = list.heldSelection;
         list.heldSelection = null;
-        if (held != null)
+        if (held != null) {
+            held.stateMask |= list.pressModifiers;
             list.sendSelectionEvent(SWT.Selection, held, true);
+        }
     }
 
     public static void deselectIndex(DartList list, int index) {

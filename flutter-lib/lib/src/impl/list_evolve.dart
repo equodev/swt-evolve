@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' show max, min;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -182,6 +184,9 @@ class _StyledListState extends State<_StyledList> {
 
   int? _lastPressedIndex;
 
+  /// The item a primary press landed on while its button is held: a drag selects from it.
+  int? _dragOrigin;
+
   final DoubleTapDetector _tapsWithoutPress = DoubleTapDetector();
 
   @override
@@ -240,6 +245,8 @@ class _StyledListState extends State<_StyledList> {
                       isSelected: widget.selection.contains(index),
                       enabled: widget.enabled,
                       onPress: () => _handleItemPress(index),
+                      onRelease: () => _dragOrigin = null,
+                      onDragOver: () => _handleDragOver(index),
                       onTap: () => _handleItemTapWithoutPress(index),
                     );
                   },
@@ -254,6 +261,7 @@ class _StyledListState extends State<_StyledList> {
   void _handleItemPress(int pressedIndex) {
     final doubleClick = widget.pressIsDoubleClick() && _lastPressedIndex == pressedIndex;
     _lastPressedIndex = pressedIndex;
+    _dragOrigin = pressedIndex;
     if (doubleClick) {
       widget.onItemDoubleClick(true);
     } else {
@@ -271,6 +279,19 @@ class _StyledListState extends State<_StyledList> {
     }
   }
 
+  /// The pointer reached [index] with the press's button held: the selection follows it, as a
+  /// Win32 list box and Cocoa's table view track it. A MULTI list selects the range from the pressed item.
+  void _handleDragOver(int index) {
+    final origin = _dragOrigin;
+    if (origin == null || !widget.enabled) return;
+    final next = widget.isMultiSelect ? _range(origin, index) : [index];
+    if (listEquals(next, widget.selection)) return;
+    widget.onSelectionChanged(next);
+  }
+
+  /// The indices from [a] to [b], both included, in ascending order.
+  static List<int> _range(int a, int b) => [for (var i = min(a, b); i <= max(a, b); i++) i];
+
   void _handleItemTap(int tappedIndex) {
     if (!widget.enabled) return;
 
@@ -286,9 +307,7 @@ class _StyledListState extends State<_StyledList> {
 
     List<int> newIndices;
     if (extendRange && _anchorIndex != null) {
-      final lo = _anchorIndex! < tappedIndex ? _anchorIndex! : tappedIndex;
-      final hi = _anchorIndex! < tappedIndex ? tappedIndex : _anchorIndex!;
-      newIndices = [for (var i = lo; i <= hi; i++) i];
+      newIndices = _range(_anchorIndex!, tappedIndex);
       // Shift+click keeps the existing anchor so a further shift re-extends from it.
     } else if (toggle) {
       newIndices = widget.selection
@@ -317,6 +336,10 @@ class _ListItem extends StatefulWidget {
   final bool enabled;
   /// A primary press on the item.
   final VoidCallback onPress;
+  /// The release or cancellation of a press on the item.
+  final VoidCallback onRelease;
+  /// The pointer came onto the item with the primary button held.
+  final VoidCallback onDragOver;
   /// A tap with no press before it.
   final VoidCallback onTap;
 
@@ -329,6 +352,8 @@ class _ListItem extends StatefulWidget {
     required this.isSelected,
     required this.enabled,
     required this.onPress,
+    required this.onRelease,
+    required this.onDragOver,
     required this.onTap,
   });
 
@@ -370,7 +395,10 @@ class _ListItemState extends State<_ListItem> {
     );
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
+      onEnter: (e) {
+        setState(() => _isHovered = true);
+        if ((e.buttons & kPrimaryButton) != 0) widget.onDragOver();
+      },
       onExit: (_) => setState(() => _isHovered = false),
       // Answered on the press, as natively, so the selection is in place for the MouseUp; on a
       // microtask, as the control's own MouseDown listener runs after this one.
@@ -382,8 +410,14 @@ class _ListItemState extends State<_ListItem> {
         },
         // A press that never became a tap (dragged off the item, cancelled) reaches no tap
         // callback; once the arena has settled on the release, the press is over either way.
-        onPointerUp: (_) => scheduleMicrotask(() => _handledByPress = false),
-        onPointerCancel: (_) => scheduleMicrotask(() => _handledByPress = false),
+        onPointerUp: (_) {
+          widget.onRelease();
+          scheduleMicrotask(() => _handledByPress = false);
+        },
+        onPointerCancel: (_) {
+          widget.onRelease();
+          scheduleMicrotask(() => _handledByPress = false);
+        },
         // A tap with no press before it -- an accessibility or test tap through the semantics
         // tree -- still selects.
         child: GestureDetector(

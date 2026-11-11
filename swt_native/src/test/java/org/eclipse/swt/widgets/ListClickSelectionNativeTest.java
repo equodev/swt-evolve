@@ -99,6 +99,60 @@ class ListClickSelectionNativeTest {
     }
 
     @Test
+    @DisplayName("a drag's picks are one Selection after the MouseUp, naming the item the release ends on")
+    void aDragReportsOneSelectionAfterTheMouseUp() {
+        List list = list();
+
+        fromFlutter(list, "Mouse/MouseDown", mouse(1));
+        fromFlutter(list, "Selection/Selection", pick(0));
+        fromFlutter(list, "Selection/Selection", pick(1));
+        fromFlutter(list, "Selection/Selection", pick(2));
+        fromFlutter(list, "Mouse/MouseUp", mouse(1));
+        runQueued();
+
+        assertThat(heard).containsExactly("MouseDown", "MouseUp selection=2", "Selection stateMask=0");
+    }
+
+    @Test
+    @DisplayName("a drag over a MULTI list is one Selection after the MouseUp, for the whole range")
+    void aMultiDragReportsOneSelectionForTheRange() {
+        List list = new List(DartMocks.dartShell(display), SWT.MULTI | SWT.V_SCROLL);
+        list.setBounds(0, 0, 200, 120);
+        list.setItems(new String[] {"item 0", "item 1", "item 2", "item 3"});
+        list.addListener(SWT.Selection, e -> heard.add("Selection " + java.util.Arrays.toString(list.getSelectionIndices())));
+
+        fromFlutter(list, "Mouse/MouseDown", mouse(1));
+        fromFlutter(list, "Selection/Selection", picks(1));
+        fromFlutter(list, "Selection/Selection", picks(1, 2));
+        fromFlutter(list, "Selection/Selection", picks(1, 2, 3));
+        fromFlutter(list, "Mouse/MouseUp", mouse(1));
+        runQueued();
+
+        assertThat(heard).containsExactly("Selection [1, 2, 3]");
+    }
+
+    private static Event picks(int... indices) {
+        Event event = new Event();
+        event.segments = indices;
+        return event;
+    }
+
+    @Test
+    @DisplayName("a click's Selection carries the modifiers held at the press, as Win32 reports it")
+    void aClickSelectionCarriesTheHeldModifiers() {
+        List list = list();
+        Event press = mouse(1);
+        press.stateMask = SWT.CTRL;
+
+        fromFlutter(list, "Mouse/MouseDown", press);
+        fromFlutter(list, "Selection/Selection", pick(1));
+        fromFlutter(list, "Mouse/MouseUp", mouse(1));
+        runQueued();
+
+        assertThat(heard).containsExactly("MouseDown", "MouseUp selection=1", "Selection stateMask=" + SWT.CTRL);
+    }
+
+    @Test
     @DisplayName("a Selection held for a MouseUp that never came is reported before the next press")
     void aHeldSelectionIsReportedBeforeTheNextPress() {
         List list = list();

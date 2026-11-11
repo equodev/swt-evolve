@@ -394,45 +394,19 @@ public class TableHelper {
     /** SWT.NO_SEARCH, which the oldest SWT versions this builds against do not declare. */
     static final int NO_SEARCH = 1 << 10;
 
-    /** How long a pause ends the text typed so far, so the next key starts a search of its own. */
-    static final int TYPING_TIMEOUT_MS = 1000;
-
-    /**
-     * Selects the row whose text starts with what was typed, as Win32's list view does. A first
-     * letter searches from the row after the selected one, so typing it again steps through the rows
-     * it starts; more letters typed without a pause extend the text, searched from the selected row
-     * on. The search wraps past the last row.
-     */
+    /** Selects the row a typed letter names ({@link TypeAhead}). */
     static boolean selectByTyping(DartTable table, Event key) {
         // GTK has no search in a NO_SEARCH or VIRTUAL tree view, and a VIRTUAL table would ask for every row's data.
         if ((table.getApi().style & (NO_SEARCH | SWT.VIRTUAL)) != 0)
             return false;
-        char c = key.character != 0 ? key.character : (key.keyCode & SWT.KEYCODE_BIT) == 0 ? (char) key.keyCode : 0;
-        if (!Character.isLetterOrDigit(c))
-            return false;
-        long now = key.time & 0xFFFFFFFFL;
-        // A key's time is a wrapping 32-bit count: a pause either way of the last key ends the text.
-        if (Math.abs(now - table.typedAt) > TYPING_TIMEOUT_MS)
-            table.typedText = "";
-        table.typedAt = now;
-        String typed = table.typedText + Character.toLowerCase(c);
-        table.typedText = typed;
-        boolean repeated = typed.chars().allMatch(ch -> ch == typed.charAt(0));
-        String prefix = repeated ? typed.substring(0, 1) : typed;
-        int count = table.getItemCount();
         int current = table.getSelectionIndex();
-        int start = repeated ? current + 1 : Math.max(0, current);
-        for (int n = 0; n < count; n++) {
-            int index = Math.floorMod(start + n, count);
-            String text = table.getApi().getItem(index).getText();
-            if (text.toLowerCase(java.util.Locale.ROOT).startsWith(prefix)) {
-                if (index != current) {
-                    Event selection = new Event();
-                    selection.segments = new int[] { index };
-                    sendSelection(table, selection, SWT.Selection);
-                }
-                return true;
-            }
+        int index = table.typeAhead.find(key, current, table.getItemCount(), i -> table.getApi().getItem(i).getText());
+        if (index == TypeAhead.NOT_TYPED)
+            return false;
+        if (index != TypeAhead.NO_MATCH && index != current) {
+            Event selection = new Event();
+            selection.segments = new int[] { index };
+            sendSelection(table, selection, SWT.Selection);
         }
         return true;
     }

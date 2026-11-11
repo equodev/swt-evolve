@@ -128,7 +128,8 @@ class ListArrowKeyTest extends KeyRoutingTestBase {
         list.addListener(SWT.Selection, e -> events.add("Selection"));
 
         press(list, SWT.ARROW_LEFT);
-        press(list, 'a');
+        press(list, SWT.F1);
+        press(list, '/');
 
         assertThat(list.getSelectionIndex()).isEqualTo(1);
         assertThat(events).isEmpty();
