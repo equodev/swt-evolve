@@ -22,6 +22,7 @@ import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/quiet_animations.dart';
 import 'widget_config.dart';
+import 'menu_key_trace.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     extends ItemImpl<T, V> {
@@ -599,6 +600,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
     }
     // Flutter's own Escape on a submenu button closes every menu up to the root.
     if (event is KeyDownEvent && key == LogicalKeyboardKey.escape) {
+      MenuKeyTrace.log(() => 'escape on a cascade item, its submenu ${_menuController.isOpen ? 'open' : 'closed'}');
       if (_menuController.isOpen) {
         _menuController.close();
       } else {

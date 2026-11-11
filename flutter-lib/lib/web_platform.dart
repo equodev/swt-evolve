@@ -121,6 +121,9 @@ bool getEnableTestSemantics(List<String> args) {
       (_enableTestSemantics?.toDart ?? false);
 }
 
+/// Whether to trace how keys are routed while a pop-up menu is up (`MenuKeyTrace`).
+bool getTraceMenuKeys(List<String> args) => Uri.base.queryParameters['traceMenuKeys'] == 'true';
+
 int? getParentBackgroundColor(List<String> args) {
   return null;
 }

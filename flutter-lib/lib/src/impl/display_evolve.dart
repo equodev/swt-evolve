@@ -20,6 +20,7 @@ import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
 import 'key_forwarding.dart';
 import 'menu_evolve.dart';
+import 'menu_key_trace.dart';
 import 'key_mapping.dart';
 import 'shell_evolve.dart';
 import 'utils/key_edit_order.dart';
@@ -149,6 +150,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     // Keys typed while a pop-up opens wait for it, behind the ones already waiting: the menu can
     // be open a frame before it has the focus.
     if (OpenMenus.holding) {
+      MenuKeyTrace.log(() => '${MenuKeyTrace.key(event)} held for the opening menu');
       OpenMenus.hold(event);
       return false;
     }
@@ -159,12 +161,16 @@ class _DisplaySwtState extends State<DisplaySwt> {
   bool _forwardUnheldKey(KeyEvent event) {
     if (keyboardClaimed) return false;
     // An open menu owns the keyboard, as the platform's menu loop does: the focused control gets nothing.
-    if (event is! KeyUpEvent && OpenMenus.any) return false;
+    if (event is! KeyUpEvent && OpenMenus.any) {
+      MenuKeyTrace.log(() => '${MenuKeyTrace.key(event)} left to the open menu');
+      return false;
+    }
     // Every handler reads each key of one key message before the menu reads any, so a release can
     // find open the menu its own press is about to close. It is the menu's only if the menu is
     // still open once it has read the keys before it; keys read meanwhile wait behind it.
     final menuMayTakeIt = event is KeyUpEvent && OpenMenus.any;
     if (menuMayTakeIt || _keysAfterMenus.isNotEmpty) {
+      MenuKeyTrace.log(() => '${MenuKeyTrace.key(event)} waits a frame for the menus');
       _keysAfterMenus.add((event: event, menuMayTakeIt: menuMayTakeIt));
       if (_keysAfterMenus.length == 1) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _forwardKeysAfterMenus());
@@ -217,7 +223,11 @@ class _DisplaySwtState extends State<DisplaySwt> {
     _keysAfterMenus.clear();
     if (!mounted) return;
     for (final key in keys) {
-      if (keyboardClaimed || (key.menuMayTakeIt && OpenMenus.any)) continue;
+      if (keyboardClaimed || (key.menuMayTakeIt && OpenMenus.any)) {
+        MenuKeyTrace.log(() => '${MenuKeyTrace.key(key.event)} dropped: a menu is still open');
+        continue;
+      }
+      MenuKeyTrace.log(() => '${MenuKeyTrace.key(key.event)} sent to Java after the menus');
       _forwardBehindTraversals(key.event);
     }
   }

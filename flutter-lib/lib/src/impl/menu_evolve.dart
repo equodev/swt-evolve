@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'menu_key_trace.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
 import '../comm/comm.dart';
 import '../comm/channel_header.dart';
@@ -182,6 +183,7 @@ class OpenMenus {
     if (_held.isEmpty || opening) return;
     final held = _held.removeAt(0);
     final event = held.event;
+    MenuKeyTrace.log(() => '${MenuKeyTrace.key(event)} played ${any ? 'to the open menu' : 'to Java'}');
     if (!any) {
       _playedModifiers = held.modifiers;
       try {
@@ -380,6 +382,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void _onMenuShown() {
     final position = _pendingContextMenuPosition;
     if (position == null || _menuController.isOpen || !mounted) {
+      MenuKeyTrace.log(() => 'menu ${state.id} shown by Java but not opened (position=$position isOpen=${_menuController.isOpen})');
       OpenMenus.endOpening(this);
       return;
     }
@@ -392,6 +395,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _openedFromVisibleFlag = _pendingOpenFromVisibleFlag;
       _pendingOpenFromVisibleFlag = false;
       _menuController.open(position: position);
+      MenuKeyTrace.log(() => 'menu ${state.id} opened');
       _focusMenuNextFrame();
     });
     // The ack arrives in a microtask, so nothing has scheduled the frame this callback needs.
@@ -403,6 +407,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
   void _focusMenuNextFrame() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _menuController.isOpen) _focusMenu();
+      MenuKeyTrace.log(() => 'menu ${state.id} asked for the focus, ending its opening');
       OpenMenus.endOpening(this);
     });
   }
@@ -737,6 +742,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
         // Sent whichever path opened it. A right-click leaves state.visible false, so gating this
         // on it left Java believing the popup was still up — and the Display skips re-showing a
         // popup it still counts as shown, which killed every later opening of that menu.
+        MenuKeyTrace.log(() => 'menu ${state.id} closed');
         widget.sendMenuHide(state, menuHideEvent(picked: _pickPending));
         // A chosen item is selected after its menus are hidden, as natively.
         _sendPendingChanges();

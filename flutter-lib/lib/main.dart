@@ -37,6 +37,7 @@ import 'src/comm/v_registry.dart';
 import 'src/gen/display.dart';
 import 'src/gen/widgets.dart' as gen;
 import 'src/impl/client_ready.dart';
+import 'src/impl/menu_key_trace.dart';
 import 'src/impl/display_evolve.dart';
 import 'src/impl/focus_requests.dart';
 import 'fontSize.dart' as font_size;
@@ -139,6 +140,7 @@ void main(List<String> args) async {
     SemanticsBinding.instance.ensureSemantics();
   }
   startSemanticsGhostNodeGuard();
+  if (getTraceMenuKeys(args)) MenuKeyTrace.enable();
 
   if (widgetName == "FontMeasureBridge") {
     font_size.measureRequest(widgetName, widgetId);

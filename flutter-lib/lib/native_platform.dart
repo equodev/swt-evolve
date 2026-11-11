@@ -1,5 +1,6 @@
 // import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:ui' show Size;
 
 import 'package:flutter/foundation.dart'
@@ -46,6 +47,9 @@ int? getBackgroundColor(List<String> args) {
 
 // Desktop renders real native widgets, not a canvas — there's no DOM bridge to switch on.
 bool getEnableTestSemantics(List<String> args) => false;
+
+/// Whether to trace how keys are routed while a pop-up menu is up (`MenuKeyTrace`).
+bool getTraceMenuKeys(List<String> args) => Platform.environment['EVOLVE_TRACE_MENU_KEYS'] == 'true';
 
 int? getParentBackgroundColor(List<String> args) {
   if (args.length >= 6) {
