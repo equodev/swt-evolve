@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
@@ -102,8 +105,12 @@ class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
         textColor: textColor,
         borderColor: borderColor,
         textStyle: textStyle,
-        onArrow: (direction) =>
-            widget.sendSelectionSelection(state, VEvent()..detail = direction),
+        onArrow: (direction, press) => widget.sendSelectionSelection(
+          state,
+          VEvent()
+            ..detail = direction
+            ..button = press ? 1 : 0,
+        ),
         onEdited: (edit) => widget.sendModifyModify(state, edit),
         onSubmitted: (value) {
           state.selection = value;
@@ -148,8 +155,9 @@ class _ThemedSpinner extends StatefulWidget {
   final Color textColor;
   final Color borderColor;
   final TextStyle textStyle;
-  // An arrow click, as SWT.ARROW_UP or SWT.ARROW_DOWN: Java steps the value and sends it back.
-  final ValueChanged<int> onArrow;
+  // A button's step, as SWT.ARROW_UP or SWT.ARROW_DOWN, and whether its press made it rather than a repeat while
+  // it is held: Java steps the value and sends it back.
+  final void Function(int direction, bool press) onArrow;
   final ValueChanged<VEvent> onEdited;
   final ValueChanged<int> onSubmitted;
   final ValueChanged<bool> onFocusChanged;
@@ -189,6 +197,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   int? _localValue;
   // The text the field showed before the edit that is being reported: what the range of that edit is relative to.
   String _editedFrom = '';
+  // An edit that leaves no number, offered to Java and held off the field until Java lets it through.
+  TextEditingValue? _offered;
   bool _isUpHovered = false;
   bool _isDownHovered = false;
   bool _isUpPressed = false;
@@ -206,6 +216,11 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   @override
   void didUpdateWidget(_ThemedSpinner oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // A disabled button lets go of its press without telling us (see _SpinnerButtonState).
+    if (!widget.enabled) {
+      _isUpPressed = false;
+      _isDownPressed = false;
+    }
     final shown = oldWidget.value != widget.value ||
         oldWidget.digits != widget.digits ||
         oldWidget.decimalSeparator != widget.decimalSeparator ||
@@ -235,9 +250,42 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     return oldValue;
   }
 
+  // A native spinner refuses an edit that leaves no number, keeping its text, unless a Verify listener lets it
+  // through. Java makes that call: such an edit goes up as typed and is held off the field until Java answers yes.
+  // The pattern only decides which edits are worth showing before Java answers.
+  TextEditingValue _holdNonNumeric(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text == oldValue.text || _numeric.hasMatch(newValue.text)) {
+      _offered = null;
+      return newValue;
+    }
+    _offered = newValue;
+    _reportEdit(oldValue.text, newValue.text);
+    return oldValue;
+  }
+
+  RegExp? _numericPattern;
+  String? _numericFor;
+
+  RegExp get _numeric {
+    final key = widget.digits > 0 ? widget.decimalSeparator : '';
+    if (_numericPattern == null || _numericFor != key) {
+      _numericFor = key;
+      _numericPattern = key.isEmpty
+          ? RegExp(r'^-?\d*$')
+          : RegExp('^-?\\d*${RegExp.escape(key)}?\\d*\$');
+    }
+    return _numericPattern!;
+  }
+
   // Java vetoed the edit, or changed what was typed: the field shows the value Java holds.
   void _revertVetoedEdit(bool doit) {
-    if (doit || !mounted) return;
+    final offered = _offered;
+    _offered = null;
+    if (!mounted) return;
+    if (doit) {
+      if (offered != null) _controller.value = offered;
+      return;
+    }
     _localValue = null;
     final held = _heldText;
     _controller.value = TextEditingValue(
@@ -248,7 +296,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   @override
   Widget build(BuildContext context) {
-    final isInteractive = widget.enabled && !widget.readOnly;
+    // A READ_ONLY spinner takes no typing, but its buttons still step it, as Win32's and Cocoa's do.
+    final isInteractive = widget.enabled;
 
     return QuietAnimatedContainer(
       duration: widget.widgetTheme.animationDuration,
@@ -282,7 +331,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     return TextField(
       controller: _controller,
       focusNode: _focusNode,
-      enabled: widget.enabled && !widget.readOnly,
+      enabled: widget.enabled,
       readOnly: widget.readOnly,
       textAlign: TextAlign.right,
       style: widget.textStyle,
@@ -296,11 +345,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
         signed: widget.min < 0,
       ),
       inputFormatters: [
-        FilteringTextInputFormatter.allow(
-          widget.digits > 0
-              ? RegExp('^-?\\d*${RegExp.escape(widget.decimalSeparator)}?\\d*\$')
-              : RegExp(r'^-?\d*$'),
-        ),
+        TextInputFormatter.withFunction(_holdNonNumeric),
         TextInputFormatter.withFunction(_gateEdit),
       ],
       onChanged: (text) => _handleTextChanged(text, _editedFrom),
@@ -353,7 +398,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       animationDuration: widget.widgetTheme.animationDuration,
       enabled: isInteractive,
       showBottomBorder: true,
-      onTap: isInteractive ? () => widget.onArrow(SWT.ARROW_UP) : null,
+      onStep: isInteractive ? (press) => widget.onArrow(SWT.ARROW_UP, press) : null,
       onHoverChanged: (isHovered) => setState(() => _isUpHovered = isHovered),
       onPressedChanged: (isPressed) => setState(() => _isUpPressed = isPressed),
     );
@@ -380,7 +425,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       animationDuration: widget.widgetTheme.animationDuration,
       enabled: isInteractive,
       showBottomBorder: false,
-      onTap: isInteractive ? () => widget.onArrow(SWT.ARROW_DOWN) : null,
+      onStep: isInteractive ? (press) => widget.onArrow(SWT.ARROW_DOWN, press) : null,
       onHoverChanged: (isHovered) => setState(() => _isDownHovered = isHovered),
       onPressedChanged: (isPressed) =>
           setState(() => _isDownPressed = isPressed),
@@ -470,7 +515,12 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   }
 }
 
-class _SpinnerButton extends StatelessWidget {
+// Steps once as the primary button goes down, as a native spinner's button does, then again after a delay and
+// at a steady rate while it is held, until it comes up.
+class _SpinnerButton extends StatefulWidget {
+  static const repeatDelay = Duration(milliseconds: 500);
+  static const repeatInterval = Duration(milliseconds: 50);
+
   final IconData icon;
   final double iconSize;
   final Color iconColor;
@@ -480,7 +530,8 @@ class _SpinnerButton extends StatelessWidget {
   final Duration animationDuration;
   final bool enabled;
   final bool showBottomBorder;
-  final VoidCallback? onTap;
+  // A step, with whether the press made it rather than a repeat while the button is held.
+  final ValueChanged<bool>? onStep;
   final ValueChanged<bool> onHoverChanged;
   final ValueChanged<bool> onPressedChanged;
 
@@ -494,36 +545,115 @@ class _SpinnerButton extends StatelessWidget {
     required this.animationDuration,
     required this.enabled,
     required this.showBottomBorder,
-    this.onTap,
+    this.onStep,
     required this.onHoverChanged,
     required this.onPressedChanged,
   });
 
   @override
+  State<_SpinnerButton> createState() => _SpinnerButtonState();
+}
+
+class _SpinnerButtonState extends State<_SpinnerButton> {
+  Timer? _repeat;
+  int? _pointer;
+  // Whether the held pointer is over the button: the repeat steps only then, as Win32's and GTK's do.
+  bool _inside = false;
+  // Whether a pointer press stepped since the last press by role, which the same click may also send.
+  bool _steppedByPointer = false;
+
+  @override
+  void didUpdateWidget(_SpinnerButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Disabled while held: the repeat stops. The parent is mid-update, so it shows the button released
+    // itself rather than hearing it from here.
+    if (!widget.enabled || widget.onStep == null) {
+      _repeat?.cancel();
+      _repeat = null;
+      _pointer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _repeat?.cancel();
+    super.dispose();
+  }
+
+  void _press(PointerDownEvent event) {
+    if (!widget.enabled || widget.onStep == null || _pointer != null) return;
+    if (event.buttons != kPrimaryButton) return;
+    _pointer = event.pointer;
+    _inside = true;
+    _steppedByPointer = true;
+    widget.onPressedChanged(true);
+    widget.onStep!(true);
+    _repeat = Timer(_SpinnerButton.repeatDelay, () {
+      _repeat = Timer.periodic(_SpinnerButton.repeatInterval, (_) {
+        if (_inside) widget.onStep?.call(false);
+      });
+    });
+  }
+
+  void _move(PointerMoveEvent event) {
+    if (event.pointer != _pointer) return;
+    final size = context.size;
+    _inside = size != null && (Offset.zero & size).contains(event.localPosition);
+  }
+
+  void _up(PointerEvent event) {
+    if (event.pointer == _pointer) _release();
+  }
+
+  void _release() {
+    _repeat?.cancel();
+    _repeat = null;
+    if (_pointer == null) return;
+    _pointer = null;
+    widget.onPressedChanged(false);
+  }
+
+  // A press by role (an accessibility tool, the E2E suite) steps once. No MouseDown follows it, so it is no
+  // press of the pointer's. A click the pointer already stepped for is not stepped again.
+  void _semanticTap() {
+    if (_steppedByPointer) {
+      _steppedByPointer = false;
+      return;
+    }
+    widget.onStep?.call(false);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final steps = widget.enabled && widget.onStep != null;
     return MouseRegion(
-      onEnter: (_) => onHoverChanged(true),
-      onExit: (_) => onHoverChanged(false),
-      child: GestureDetector(
-        onTapDown: enabled ? (_) => onPressedChanged(true) : null,
-        onTapUp: enabled ? (_) => onPressedChanged(false) : null,
-        onTapCancel: enabled ? () => onPressedChanged(false) : null,
-        onTap: onTap,
-        child: QuietAnimatedContainer(
-          duration: animationDuration,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: showBottomBorder
-                ? Border(
-                    bottom: BorderSide(
-                      color: borderColor,
-                      width: borderWidth * 0.5,
-                    ),
-                  )
-                : null,
-          ),
-          child: Center(
-            child: Icon(icon, size: iconSize, color: iconColor),
+      onEnter: (_) => widget.onHoverChanged(true),
+      onExit: (_) => widget.onHoverChanged(false),
+      child: Semantics(
+        button: true,
+        enabled: steps,
+        onTap: steps ? _semanticTap : null,
+        child: Listener(
+          onPointerDown: _press,
+          onPointerMove: _move,
+          onPointerUp: _up,
+          onPointerCancel: _up,
+          child: QuietAnimatedContainer(
+            duration: widget.animationDuration,
+            decoration: BoxDecoration(
+              color: widget.backgroundColor,
+              border: widget.showBottomBorder
+                  ? Border(
+                      bottom: BorderSide(
+                        color: widget.borderColor,
+                        width: widget.borderWidth * 0.5,
+                      ),
+                    )
+                  : null,
+            ),
+            child: Center(
+              child: Icon(widget.icon, size: widget.iconSize, color: widget.iconColor),
+            ),
           ),
         ),
       ),

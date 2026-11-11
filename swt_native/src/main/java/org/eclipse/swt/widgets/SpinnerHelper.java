@@ -208,18 +208,52 @@ public class SpinnerHelper {
     }
 
     /**
-     * A click on the client's up or down arrow, {@code e.detail} {@link SWT#ARROW_UP} or {@link SWT#ARROW_DOWN}: it
+     * A step of the client's up or down button, {@code e.detail} {@link SWT#ARROW_UP} or {@link SWT#ARROW_DOWN}: it
      * steps by the increment as the arrow keys do, and a step that doesn't move the value notifies nothing. The text
      * follows the value: listeners hear Verify, then Modify and Selection unless the Verify refused the text. Any
      * other detail is not a step.
+     * <p>
+     * The step a press makes ({@code e.button} 1) comes before that press's MouseDown, as on Win32 and GTK: the
+     * press activates and focuses the spinner first, and its Selection waits for the MouseDown to be delivered
+     * ({@link #pressDelivered}). The steps a held button repeats ({@code e.button} 0) notify at once. Every
+     * Selection has button 1 held.
      */
     static void selectedInFlutter(DartSpinner c, Event e) {
+        pressDelivered(c);
+        // A modal shell or dialog takes the press, as it takes the MouseDown that would follow.
+        if (c.isDisposed() || !c.isActive()) {
+            return;
+        }
+        boolean press = e.button == 1;
+        if (press) {
+            Event down = new Event();
+            down.button = 1;
+            ControlHelper.pressed(c, down);
+            if (c.isDisposed()) {
+                return;
+            }
+        }
         int delta = e.detail == SWT.ARROW_UP ? c.increment : e.detail == SWT.ARROW_DOWN ? -c.increment : 0;
         int value = stepped(c, delta);
         if (value == c.selection || !setSelection(c, value, true, true, false) || c.isDisposed()) {
             return;
         }
-        c.sendSelectionEvent(SWT.Selection, null, true);
+        Event selection = new Event();
+        selection.stateMask = SWT.BUTTON1;
+        if (press) {
+            c.pressSelection = selection;
+        } else {
+            c.sendSelectionEvent(SWT.Selection, selection, true);
+        }
+    }
+
+    /** The MouseDown of a button press was delivered: the Selection its step holds is told now. */
+    static void pressDelivered(DartSpinner c) {
+        Event held = c.pressSelection;
+        c.pressSelection = null;
+        if (held != null) {
+            c.sendSelectionEvent(SWT.Selection, held, true);
+        }
     }
 
     /**
@@ -242,7 +276,8 @@ public class SpinnerHelper {
                 }
             }
         }
-        c.sendEvent(SWT.DefaultSelection, e);
+        // The client's index carried the value; a native DefaultSelection carries none.
+        c.sendEvent(SWT.DefaultSelection, new Event());
     }
 
     /**
@@ -303,10 +338,12 @@ public class SpinnerHelper {
             return;
         }
         String text = e.text;
-        if (c.hooks(SWT.Verify) || c.filters(SWT.Verify)) {
-            int count = Math.max(0, Math.min(e.count, text.length() - e.start));
-            String typed = text.substring(e.start, e.start + count);
-            String verified = verifyText(c, typed, e.start, e.end);
+        int count = Math.max(0, Math.min(e.count, text.length() - e.start));
+        String typed = text.substring(e.start, e.start + count);
+        Event key = ControlHelper.takeTypingKey(c, typed);
+        // The native refuses characters it does not take whether or not anyone listens, and keeps its text.
+        if (c.hooks(SWT.Verify) || c.filters(SWT.Verify) || !acceptedByDefault(c, typed)) {
+            String verified = verifyText(c, typed, e.start, e.end, key);
             if (c.isDisposed()) {
                 return;
             }
@@ -333,14 +370,30 @@ public class SpinnerHelper {
 
     /**
      * What a Verify listener answers to characters the user is putting into the field; null vetoes them. By default
-     * it lets through digits, the separator of the host's locale in a spinner with digits, and a leading minus in one
-     * that can go below zero, as Win32 and GTK do (Cocoa takes neither the minus nor another separator than a point).
+     * ({@link #acceptedByDefault}) it lets through digits, the separator of the host's locale in a spinner with
+     * digits, and a leading minus in one that can go below zero, as Win32 and GTK do (Cocoa takes neither the minus
+     * nor another separator than a point). It carries the {@code key} that typed the edit, where one did.
      */
-    private static String verifyText(DartSpinner c, String string, int start, int end) {
+    private static String verifyText(DartSpinner c, String string, int start, int end, Event key) {
         Event event = new Event();
         event.text = string;
         event.start = start;
         event.end = end;
+        if (key != null) {
+            event.character = key.character;
+            event.keyCode = key.keyCode;
+            event.stateMask = key.stateMask;
+        }
+        event.doit = acceptedByDefault(c, string);
+        c.sendEvent(SWT.Verify, event);
+        if (!event.doit || c.isDisposed()) {
+            return null;
+        }
+        return event.text;
+    }
+
+    /** Whether the native lets {@code string} into the field when no listener says otherwise. */
+    private static boolean acceptedByDefault(DartSpinner c, String string) {
         String digitsOnly = string;
         int index = 0;
         if (c.digits > 0) {
@@ -359,12 +412,7 @@ public class SpinnerHelper {
             }
             index++;
         }
-        event.doit = index == digitsOnly.length();
-        c.sendEvent(SWT.Verify, event);
-        if (!event.doit || c.isDisposed()) {
-            return null;
-        }
-        return event.text;
+        return index == digitsOnly.length();
     }
 
 }

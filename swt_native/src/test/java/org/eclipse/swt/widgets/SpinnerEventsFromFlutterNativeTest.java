@@ -348,6 +348,7 @@ class SpinnerEventsFromFlutterNativeTest {
         assertThat(spinner.getSelection()).isEqualTo(60);
         assertThat(events).hasSize(1);
         assertThat(events.get(0).widget).isSameAs(spinner);
+        assertThat(events.get(0).index).as("the value the client sent is not a field a native DefaultSelection has").isZero();
     }
 
     @Test

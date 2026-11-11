@@ -787,6 +787,8 @@ public class DartSpinner extends DartComposite implements ISpinner {
         return keptText;
     }
 
+    Event pressSelection;
+
     java.util.Locale textLocale() {
         return ((DartDisplay) display.getImpl()).textLocale();
     }

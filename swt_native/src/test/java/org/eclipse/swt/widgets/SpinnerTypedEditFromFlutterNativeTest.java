@@ -164,7 +164,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("an empty, partial or non-numeric text keeps the selection and still notifies Modify")
+    @DisplayName("an empty or partial text keeps the selection and still notifies Modify; a non-digit is refused")
     void partialTextKeepsTheSelection() {
         Spinner spinner = spinner(25);
         spinner.setMinimum(-100);
@@ -174,11 +174,12 @@ class SpinnerTypedEditFromFlutterNativeTest {
         deliverPosted(spinner);
         fromFlutter(spinner, edit("-", 0, 0, 1));
         deliverPosted(spinner);
-        fromFlutter(spinner, edit("2x", 1, 1, 1));
+        fromFlutter(spinner, edit("-x", 1, 1, 1));
         deliverPosted(spinner);
 
         assertThat(spinner.getSelection()).isEqualTo(25);
-        assertThat(heard).containsExactly("Modify@25", "Modify@25", "Modify@25");
+        assertThat(heard).containsExactly("Modify@25", "Modify@25");
+        assertThat(verdicts()).containsExactly(false);
     }
 
     @Test
@@ -338,6 +339,44 @@ class SpinnerTypedEditFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("nobody listening for Verify, a letter is still refused: the text stays, and the client is told")
+    void letterRefusedWithoutVerifyListener() {
+        Spinner spinner = spinner(25);
+        List<String> heard = hear(spinner);
+
+        fromFlutter(spinner, typedOver(2, "a"));
+        deliverPosted(spinner);
+
+        assertThat(spinner.getSelection()).isEqualTo(25);
+        assertThat(spinner.getText()).isEqualTo("25");
+        assertThat(heard).isEmpty();
+        assertThat(verdicts()).containsExactly(false);
+    }
+
+    @Test
+    @DisplayName("the Verify of a typed edit carries the key that typed it: the character, or Backspace for a removal")
+    void verifyCarriesTheTypingKey() {
+        Spinner spinner = spinner(25);
+        List<String> keys = new ArrayList<>();
+        spinner.addListener(SWT.Verify, e -> keys.add("'" + e.text + "' keyCode=" + e.keyCode + " character=" + (int) e.character));
+        DartSpinner impl = (DartSpinner) spinner.getImpl();
+
+        impl.typingKey = key('4');
+        fromFlutter(spinner, edit("254", 2, 2, 1));
+        impl.typingKey = key(SWT.BS);
+        fromFlutter(spinner, edit("25", 2, 3, 0));
+
+        assertThat(keys).containsExactly("'4' keyCode=52 character=52", "'' keyCode=8 character=8");
+    }
+
+    private static Event key(char character) {
+        Event key = new Event();
+        key.character = character;
+        key.keyCode = character;
+        return key;
+    }
+
+    @Test
     @DisplayName("a Modify without an edit in it is only announced")
     void modifyWithoutAnEditIsAnnounced() {
         Spinner spinner = spinner(25);
@@ -384,7 +423,7 @@ class SpinnerTypedEditFromFlutterNativeTest {
     }
 
     @Test
-    @DisplayName("a sign and a leading separator are read as they are written")
+    @DisplayName("a minus and a leading separator are read as they are written, a plus is refused")
     void signsAndLeadingSeparator() {
         Spinner spinner = spinner(0);
         spinner.setDigits(1);
@@ -393,9 +432,9 @@ class SpinnerTypedEditFromFlutterNativeTest {
         String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
 
         fromFlutter(spinner, typedOver(3, "+1" + separator + "5"));
-        assertThat(spinner.getSelection()).isEqualTo(15);
+        assertThat(spinner.getSelection()).as("a plus is no digit: Win32 and GTK refuse it").isZero();
 
-        fromFlutter(spinner, typedOver(4, "-2" + separator + "5"));
+        fromFlutter(spinner, typedOver(3, "-2" + separator + "5"));
         assertThat(spinner.getSelection()).isEqualTo(-25);
 
         fromFlutter(spinner, typedOver(4, separator + "5"));
@@ -406,9 +445,24 @@ class SpinnerTypedEditFromFlutterNativeTest {
     }
 
     @Test
+    @DisplayName("a plus a Verify listener lets through is read as the sign it writes")
+    void aPlusLetThroughIsRead() {
+        Spinner spinner = spinner(0);
+        spinner.setDigits(1);
+        spinner.setMaximum(1000);
+        String separator = SpinnerHelper.decimalSeparator((DartSpinner) spinner.getImpl());
+        spinner.addListener(SWT.Verify, e -> e.doit = true);
+
+        fromFlutter(spinner, typedOver(3, "+1" + separator + "5"));
+
+        assertThat(spinner.getSelection()).isEqualTo(15);
+    }
+
+    @Test
     @DisplayName("a value below the minimum is no value either")
     void belowTheMinimumKeepsTheSelection() {
         Spinner spinner = spinner(25);
+        spinner.setMinimum(-1);
 
         fromFlutter(spinner, typedOver(2, "-5"));
 

@@ -1069,6 +1069,25 @@ public class ControlHelper {
             control.getBridge().focusClient(control);
     }
 
+    /** A press from the client: what the native does before its MouseDown, the MouseDown, and what it completes after. */
+    public static void mouseDown(DartControl control, Event e) {
+        pressed(control, e);
+        if (control.isDisposed())
+            return;
+        control.sendEvent(SWT.MouseDown, e);
+        if (!control.isDisposed())
+            pressDelivered(control);
+    }
+
+    /**
+     * What a native press does after SWT.MouseDown reaches listeners: a Spinner reports the Selection of the step
+     * its button made as it went down.
+     */
+    public static void pressDelivered(DartControl control) {
+        if (control instanceof DartSpinner)
+            SpinnerHelper.pressDelivered((DartSpinner) control);
+    }
+
     /** What a native release does after SWT.MouseUp reaches listeners: a List reports the click's Selection. */
     public static void released(DartControl control) {
         if (control instanceof DartList)

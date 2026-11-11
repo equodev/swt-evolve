@@ -215,4 +215,37 @@ void main() {
 
     expect(_shown(tester), '60');
   });
+
+  // A native spinner refuses a letter and keeps its text, unless a Verify listener lets it through. Java makes that
+  // call, so the client offers the letter up as typed and shows it only once Java answers yes.
+  testWidgets('a letter is offered to Java but not shown', (WidgetTester tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pump(tester, sent);
+
+    await tester.enterText(find.byType(EditableText), 'a');
+    await tester.pump();
+
+    final edits = _edits(sent);
+    expect(edits, hasLength(1));
+    expect(edits.single.text, 'a');
+    expect(edits.single.start, 0);
+    expect(edits.single.end, 3);
+    expect(_shown(tester), '123');
+
+    _verdict(false);
+    await tester.pump();
+    expect(_shown(tester), '123');
+  });
+
+  testWidgets('a letter Java let through is shown', (WidgetTester tester) async {
+    final sent = <(String, VEvent?)>[];
+    await _pump(tester, sent);
+
+    await tester.enterText(find.byType(EditableText), 'a');
+    await tester.pump();
+    _verdict(true);
+    await tester.pump();
+
+    expect(_shown(tester), 'a');
+  });
 }
