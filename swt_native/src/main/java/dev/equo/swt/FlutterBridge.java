@@ -26,6 +26,10 @@ import java.util.function.Consumer;
 import static dev.equo.swt.Config.getConfigFlags;
 
 public abstract class FlutterBridge {
+    /** The boot trace's step that times this class's initialization. */
+    static final String CLASS_INIT_STEP = "FlutterBridge class init";
+    // Must stay the first static initializer, so the step starts before any other one runs.
+    private static final long CLASS_INIT_STARTED = BootTrace.nowMicros();
     private static final String DEV_EQU_SWT_NEW = "dev.equo.swt.new";
     protected static final Serializer serializer = new Serializer();
     /**
@@ -2427,5 +2431,8 @@ public abstract class FlutterBridge {
         broadcastSwtEvolveProperties();
     }
 
+    // Must stay the last static initializer, so the step ends once every one above has run.
+    static {
+        BootTrace.endOnce(CLASS_INIT_STEP, CLASS_INIT_STARTED);
+    }
 }
-

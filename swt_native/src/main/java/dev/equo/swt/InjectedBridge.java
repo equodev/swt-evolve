@@ -2,7 +2,7 @@ package dev.equo.swt;
 
 /**
  * Holds the bridge a harness injects ({@link FlutterBridge#set}) apart from {@link FlutterBridge}, so
- * asking whether there is one does not initialize that class, which registers every widget codec.
+ * asking whether there is one does not initialize that class, whose initialization the page load overlaps.
  */
 public final class InjectedBridge {
 

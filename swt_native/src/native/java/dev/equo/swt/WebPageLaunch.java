@@ -8,8 +8,8 @@ import org.eclipse.swt.widgets.Display;
  * comm is listening and {@code WebDisplayBridge.start} has published its port, by which time every
  * channel the client sends on is wired.
  *
- * <p>Nothing here may initialize {@link FlutterBridge}: that registers every widget codec,
- * which is part of what the page load overlaps.
+ * <p>Nothing here may initialize {@link FlutterBridge}: its class initialization (the boot trace's
+ * {@code FlutterBridge class init} step) is part of what the page load overlaps.
  */
 public final class WebPageLaunch {
 
