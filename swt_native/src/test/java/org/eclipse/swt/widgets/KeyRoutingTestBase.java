@@ -49,9 +49,23 @@ abstract class KeyRoutingTestBase {
         doAnswer(inv -> data.get(inv.getArgument(0))).when(display).getData(anyString());
     }
 
+    private Thread displayThread;
+
+    /**
+     * The shared display mock belongs to whichever thread built it, which can be a timeout thread of
+     * another test. Off that thread the client's platform goes through asyncExec, which the shell drops.
+     */
+    @BeforeEach
+    void runOnDisplayThread() {
+        DartDisplay impl = (DartDisplay) Mocks.display().getImpl();
+        displayThread = impl.thread;
+        impl.thread = Thread.currentThread();
+    }
+
     @AfterEach
     void tearDownBridge() {
         FlutterBridge.set(null);
+        ((DartDisplay) Mocks.display().getImpl()).thread = displayThread;
     }
 
     /** A shell whose display really sends the events its controls fire. */
