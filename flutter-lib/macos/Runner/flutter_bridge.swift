@@ -164,8 +164,9 @@ class FlutterBridgeController: FlutterSurface {
         let frameworkPath = bundleBase()! + "/Frameworks/App.framework"
         let project = FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath))
         project.dartEntrypointArguments = arguments
-        flutterViewController = FlutterViewController.init(project: project)
-        RegisterGeneratedPlugins(registry: flutterViewController!)
+        let fvc = LifecycleFlutterViewController(project: project)
+        flutterViewController = fvc
+        RegisterGeneratedPlugins(registry: fvc)
 
         // If parent view is provided, add Flutter view as a subview
         if let parent = parentView {
@@ -181,6 +182,7 @@ class FlutterBridgeController: FlutterSurface {
                 flutterView.frame = parent.bounds
                 flutterView.autoresizingMask = [.width, .height]
                 container.addSubview(flutterView)
+                fvc.completeLifecycle()
                 return flutterView
             }
         } else {
@@ -196,6 +198,7 @@ class FlutterBridgeController: FlutterSurface {
 
             // Try to trigger the engine by ordering the window offscreen
             window.orderBack(nil)
+            fvc.completeLifecycle()
 
             if let flutterView = flutterViewController?.view {
                 let explicitFrame = NSRect(x: 0, y: 0, width: 1280, height: 720)
@@ -298,7 +301,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         let frameworkPath = bundleBase()! + "/Frameworks/App.framework"
         let project = bootStep("FlutterDartProject") { FlutterDartProject(precompiledDartBundle: Bundle(path: frameworkPath)) }
         project.dartEntrypointArguments = arguments
-        let fvc = bootStep("FlutterViewController (engine start)") { FlutterViewController(project: project) }
+        let fvc = bootStep("FlutterViewController (engine start)") { LifecycleFlutterViewController(project: project) }
         self.flutterViewController = fvc
         let windowStart = bootNowMicros()
 
@@ -309,7 +312,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         if csdEnabled {
             styleMask.insert(.fullSizeContentView)
         }
-        let win = NSWindow(
+        let win = FlutterDisplayWindow(
             contentRect: NSRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height)),
             styleMask: styleMask,
             backing: .buffered,
@@ -368,6 +371,7 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
             win.makeKeyAndOrderFront(nil)
         }
         bootRecording = false
+        fvc.completeLifecycle()
         attachToOwner()
     }
 
@@ -898,6 +902,128 @@ private var gBundleOverride: String? = nil
 // Bundle base for the App.framework: the external override when set, else the dylib's own dir.
 func bundleBase() -> String? {
     return gBundleOverride ?? getDylibDirectory()
+}
+
+/// A FlutterViewController whose viewDidLoad and viewWillAppear run under any host. AppKit sends
+/// them only to apps linked against the macOS 10.10 SDK or later, and FlutterViewController sets up
+/// its vsync source in the first and starts its engine in the second: under a host built against an
+/// older SDK (Java 8's launcher is) the window would stay black, or never repaint after its first
+/// frame, and every message to the Dart side would be dropped.
+final class LifecycleFlutterViewController: FlutterViewController {
+
+    private var didLoad = false
+    private var willAppear = false
+
+    /// Whether the host never sent viewDidLoad: it was linked against an SDK older than 10.10.
+    private(set) var hostSkipsLifecycle = false
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        didLoad = true
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        willAppear = true
+    }
+
+    /// Runs what AppKit did not, once the view is in its window; FlutterViewController's
+    /// viewWillAppear starts an engine that is not running. Such a host does not put a view
+    /// controller in its view's responder chain either, and FlutterViewController takes the view's
+    /// key events as its next responder, so it is put there.
+    func completeLifecycle() {
+        if !isViewLoaded { _ = view }
+        if !didLoad { hostSkipsLifecycle = true }
+        if view.nextResponder !== self {
+            nextResponder = view.nextResponder
+            view.nextResponder = self
+        }
+        if !didLoad { viewDidLoad() }
+        if !willAppear { viewWillAppear() }
+    }
+}
+
+/// The window of a desktop-mode Flutter view. A Command key-down nothing handled comes back up the
+/// responder chain to the window's keyDown:, which offers it as a key equivalent to the content
+/// view again. An engine that answers at once instead of asynchronously (one that is not running)
+/// sends it straight back up, and that cycle overflows the stack. Offering an event once is enough,
+/// so a keyDown: re-entered with the event it is already handling returns.
+final class FlutterDisplayWindow: NSWindow {
+
+    private var keyDownInFlight: NSEvent?
+
+    override func keyDown(with event: NSEvent) {
+        if let inFlight = keyDownInFlight, inFlight === event || (inFlight.timestamp == event.timestamp
+            && inFlight.keyCode == event.keyCode && inFlight.type == event.type) {
+            return
+        }
+        let outer = keyDownInFlight
+        keyDownInFlight = event
+        defer { keyDownInFlight = outer }
+        super.keyDown(with: event)
+    }
+
+    /// Under a host linked against an old enough SDK, a view's default rightMouseDown: takes the
+    /// press as a contextual-menu request when the window carries a menu (an application can give
+    /// it one through the native window it reaches), so the press and its release never reach the
+    /// Flutter view controller and the engine sees a right drag as plain moves. Context menus are
+    /// SWT's own (MenuDetect), so right and other-button presses on the engine's views go to the
+    /// controller directly, and so do the drags and the release of a press sent there, wherever
+    /// the pointer is by then.
+    override func sendEvent(_ event: NSEvent) {
+        guard let controller = contentViewController as? LifecycleFlutterViewController,
+              controller.hostSkipsLifecycle else {
+            super.sendEvent(event)
+            return
+        }
+        switch event.type {
+        case .rightMouseDown, .otherMouseDown:
+            guard let content = contentView else { break }
+            let point = content.superview?.convert(event.locationInWindow, from: nil) ?? event.locationInWindow
+            guard isEngineView(content.hitTest(point), under: controller.view) else { break }
+            routedButtons.insert(event.buttonNumber)
+            if event.type == .rightMouseDown {
+                controller.rightMouseDown(with: event)
+            } else {
+                controller.otherMouseDown(with: event)
+            }
+            return
+        case .rightMouseDragged, .otherMouseDragged:
+            guard routedButtons.contains(event.buttonNumber) else { break }
+            if event.type == .rightMouseDragged {
+                controller.rightMouseDragged(with: event)
+            } else {
+                controller.otherMouseDragged(with: event)
+            }
+            return
+        case .rightMouseUp, .otherMouseUp:
+            guard routedButtons.remove(event.buttonNumber) != nil else { break }
+            if event.type == .rightMouseUp {
+                controller.rightMouseUp(with: event)
+            } else {
+                controller.otherMouseUp(with: event)
+            }
+            return
+        default:
+            break
+        }
+        super.sendEvent(event)
+    }
+
+    /// The buttons whose press `sendEvent` sent to the controller and that are still down.
+    private var routedButtons = Set<Int>()
+
+    /// Whether `view` is the controller's view or one of the engine's own views inside it, rather
+    /// than a native view placed over the Flutter content.
+    private func isEngineView(_ view: NSView?, under root: NSView) -> Bool {
+        var current = view
+        while let v = current {
+            if v === root { return true }
+            if !NSStringFromClass(type(of: v)).hasPrefix("Flutter") { return false }
+            current = v.superview
+        }
+        return false
+    }
 }
 
 func getDylibDirectory() -> String? {
