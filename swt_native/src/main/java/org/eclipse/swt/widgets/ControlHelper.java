@@ -1244,7 +1244,7 @@ public class ControlHelper {
             return;
         bridge.clientFocused(control);
         if (announce && byKeyboard)
-            sendActivateToAncestors(control);
+            sendActivateToAncestors(org.eclipse.swt.custom.CComboHelper.focusTarget(control));
     }
 
     /**

@@ -3,6 +3,7 @@ package org.eclipse.swt.custom;
 import dev.equo.swt.size.CComboListSizes;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartText;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.TextHelper;
@@ -35,24 +36,22 @@ public class CComboHelper {
     }
 
     /**
-     * Gives the field's Escape and Enter the meaning they have on the open list, where a native
-     * CCombo's focus is: the Traverse stops at the CCombo with doit=false, and the key closes the
-     * list, in Flutter too; Enter also fires DefaultSelection.
+     * Gives the field's Escape, Enter and Tab the meaning they have on the open list, where a native
+     * CCombo's focus is. The Traverse of Escape and Enter stops at the CCombo with doit=false, and the
+     * key closes the list, in Flutter too; Enter also fires DefaultSelection. Tab is the field's
+     * traverse(detail), which carries no key, and the list closes once it goes through.
      */
     public static boolean routeToOpenList(DartCCombo combo, Event event) {
         if (!combo.isDropped())
             return false;
         if (event.type == SWT.Traverse && (event.detail == SWT.TRAVERSE_ESCAPE || event.detail == SWT.TRAVERSE_RETURN)) {
-            Event e = new Event();
-            e.time = event.time;
-            e.detail = event.detail;
-            e.doit = false;
-            e.character = event.character;
-            e.keyCode = event.keyCode;
-            e.keyLocation = event.keyLocation;
-            combo.notifyListeners(SWT.Traverse, e);
-            event.doit = e.doit;
-            event.detail = e.detail;
+            forwardTraverse(combo, event, false, true);
+            return true;
+        }
+        if (event.type == SWT.Traverse && (event.detail == SWT.TRAVERSE_TAB_NEXT || event.detail == SWT.TRAVERSE_TAB_PREVIOUS)) {
+            forwardTraverse(combo, event, event.doit, false);
+            if (event.doit && !combo.isDisposed())
+                combo.dropDown(false);
             return true;
         }
         if (event.type == SWT.KeyDown && (event.character == SWT.ESC || event.character == SWT.CR)) {
@@ -78,6 +77,22 @@ public class CComboHelper {
         return false;
     }
 
+    /** Fires the field's Traverse as the CCombo's own, and takes back its verdict. */
+    private static void forwardTraverse(DartCCombo combo, Event event, boolean doit, boolean withKey) {
+        Event e = new Event();
+        e.time = event.time;
+        e.detail = event.detail;
+        e.doit = doit;
+        if (withKey) {
+            e.character = event.character;
+            e.keyCode = event.keyCode;
+            e.keyLocation = event.keyLocation;
+        }
+        combo.notifyListeners(SWT.Traverse, e);
+        event.doit = e.doit;
+        event.detail = e.detail;
+    }
+
     /**
      * Whether {@code control} hands its focus to a field of its own: a CCombo, whose field is a
      * Java-only Text that never reaches Flutter, kept because SWT's own tests observe it as the
@@ -86,6 +101,14 @@ public class CComboHelper {
      */
     public static boolean ownsFieldFocus(Control control) {
         return control instanceof CCombo;
+    }
+
+    /**
+     * The control that takes a focus the client gave {@code control}: a CCombo's field, which SWT's
+     * CCombo focuses without ever holding the focus itself; any other control is its own.
+     */
+    public static DartControl focusTarget(DartControl control) {
+        return control instanceof DartCCombo ? (DartControl) ((DartCCombo) control)._text().getImpl() : control;
     }
 
     /** Whether {@code focused} is the field of {@code control}, which then holds the focus through it. */

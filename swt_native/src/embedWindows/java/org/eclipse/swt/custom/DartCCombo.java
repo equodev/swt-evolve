@@ -145,11 +145,7 @@ public class DartCCombo extends DartComposite implements ICCombo {
             if (event.widget instanceof Control) {
                 Shell shell = ((Control) event.widget).getShell();
                 if (shell == DartCCombo.this.getApi().getShell()) {
-                    if (hasFocus) {
-                        hasFocus = false;
-                        getShell().removeListener(SWT.Deactivate, listener);
-                        getDisplay().removeFilter(SWT.FocusIn, filter);
-                    }
+                    handleFocus(SWT.FocusOut);
                 }
             }
         };

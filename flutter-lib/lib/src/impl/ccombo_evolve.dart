@@ -594,6 +594,8 @@ class _StyledDropdownCCombo extends StatelessWidget {
     if (isReadOnly && focusNode != null) {
       focusNode!.canRequestFocus = false;
     }
+    // SWT's CCombo has one Tab stop: its field, or the arrow of a READ_ONLY one, whose field takes none.
+    arrowFocusNode.skipTraversal = !isReadOnly;
 
     // The border is painted by the container wrapping this widget, so a pinned outer
     // size reaches the menu already reduced by it.

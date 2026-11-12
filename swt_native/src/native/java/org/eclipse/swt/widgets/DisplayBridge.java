@@ -1852,10 +1852,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (heldByItsField(widget))
             return;
         focusRequested = widget;
-        setFocus(widget);
+        DartControl target = org.eclipse.swt.custom.CComboHelper.focusTarget(widget);
+        setFocus(target);
         // A FocusIn listener focused another control (a TreeCursor taking it back from its Tree): the
         // client's focus follows, as the native one does, or the next Tab starts from the wrong control.
-        if (focused != widget)
+        if (focused != target)
             requestClientFocus(focused, true);
         // The shell gives its focus back to its saved focus when the client clears it, so a focus
         // the user moved there must be the one saved, or the clear hands the keys to an older one.
