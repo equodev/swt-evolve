@@ -30,6 +30,7 @@ class ConfigUiZoomTest {
         // separately at the end.
         ConfigFlags.setMode(ConfigFlags.MODE_DESKTOP);
         Config.setConfigFlags(null);
+        Config.resetClientDeviceZoom();
     }
 
     @AfterEach
@@ -49,8 +50,22 @@ class ConfigUiZoomTest {
     @Test
     void the_flags_carry_the_zoom_swt_draws_at() {
         DPIUtil.setDeviceZoom(100);
+        Config.setClientDeviceZoom(100);
 
         assertThat(Config.getConfigFlags().ui_zoom).isEqualTo(DPIUtil.getDeviceZoom());
+    }
+
+    @Test
+    void the_flags_carry_no_ui_zoom_until_the_client_has_reported_its_monitor() {
+        // Until then the UI zoom rests on an assumed 100% monitor: a HiDPI client told 100 draws
+        // at half size and measures its monitor at twice its size until the report is answered.
+        DPIUtil.setDeviceZoom(100);
+        assertThat(Config.getConfigFlags().ui_zoom).isZero();
+
+        DPIUtil.setDeviceZoom(200);
+        Config.setClientDeviceZoom(200);
+
+        assertThat(Config.getConfigFlags().ui_zoom).isEqualTo(Config.uiZoom()).isPositive();
     }
 
     @Test
@@ -92,9 +107,10 @@ class ConfigUiZoomTest {
         // before the client has said what monitor it is on -- so a cached zoom would be the boot
         // default forever, and the render layer would never be told to follow autoScale.
         DPIUtil.setDeviceZoom(100);
-        assertThat(Config.getConfigFlags().ui_zoom).isEqualTo(100);
+        assertThat(Config.getConfigFlags().ui_zoom).isZero();
 
         DPIUtil.setDeviceZoom(150);
+        Config.setClientDeviceZoom(150);
 
         assertThat(Config.getConfigFlags().ui_zoom).isEqualTo(DPIUtil.getDeviceZoom());
     }
@@ -151,6 +167,17 @@ class ConfigUiZoomTest {
 
             assertThat(Config.uiZoom()).isEqualTo(100);
         });
+    }
+
+    @Test
+    void the_monitor_zoom_is_the_one_the_client_reported() {
+        assertThat(Config.clientDeviceZoom()).isEqualTo(100);
+
+        Config.setClientDeviceZoom(200);
+        assertThat(Config.clientDeviceZoom()).isEqualTo(200);
+
+        Config.setClientDeviceZoom(0);
+        assertThat(Config.clientDeviceZoom()).isEqualTo(200);
     }
 
     private static void browserTab() {

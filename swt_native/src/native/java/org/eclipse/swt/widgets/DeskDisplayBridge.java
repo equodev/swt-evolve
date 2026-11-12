@@ -59,6 +59,9 @@ public class DeskDisplayBridge extends DisplayBridge {
      */
     private boolean closingOnRequest;
 
+    /** The client reports that had arrived when {@link #placeWindow} last placed the window. */
+    private long reportsWhenPlaced;
+
     /**
      * Screen origin of the window's content, as last pushed by {@link #forwardWindowBounds}. The main
      * shell is slaved to (0, 0, viewport) once the client reports in, so this is the only place Java
@@ -174,9 +177,13 @@ public class DeskDisplayBridge extends DisplayBridge {
         super.onUpdate();
         if (boundShell == null || boundShell.isDisposed())
             bindWindowView();
-        Shell main = mainShell(forDisplay);
-        fitShellTakingOverWindow(main);
-        applyWindowOrigin(main, mainWindowOrigin());
+        // Until the window shows a shell, its geometry is no shell's to adopt: the first one shown
+        // gives the window its own (placeWindowForFirstShownShell).
+        if (shownAShell) {
+            Shell main = mainShell(forDisplay);
+            fitShellTakingOverWindow(main);
+            applyWindowOrigin(main, mainWindowOrigin());
+        }
         pumpWindows(true);
     }
 
@@ -765,7 +772,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         // A shell placed before the strip's height was known has a window that much too short.
         Shell main = forDisplay == null ? null : mainShell(forDisplay);
         if (main != null && !main.getMaximized() && !main.getFullScreen())
-            forwardWindowBounds(windowBoundsFor(main.getBounds()));
+            placeWindow(windowBoundsFor(main.getBounds()));
     }
 
     /**
@@ -852,6 +859,11 @@ public class DeskDisplayBridge extends DisplayBridge {
             }
         }
 
+        // Only reports received after the last placeWindow describe the current window size; the
+        // window sends a new report once the placed size takes effect.
+        if (reportBeingApplied <= reportsWhenPlaced) {
+            return changed;
+        }
         Shell main = mainShell(display);
         boolean realViewport = viewport.width > 1 && viewport.height > 1;
         if (realViewport) {
@@ -864,7 +876,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             // real viewport the shell is the source of truth, so push its geometry out.
             if (!realViewport) {
                 if (current != null && current.width > 1 && current.height > 1) {
-                    forwardWindowBounds(windowBoundsFor(current));
+                    placeWindow(windowBoundsFor(current));
                     changed = true;
                 }
                 return changed;
@@ -877,7 +889,7 @@ public class DeskDisplayBridge extends DisplayBridge {
                 windowSizedToUnsizedShell = true;
                 Rectangle own = main.getBounds();
                 if (own.width != viewport.width || own.height != viewport.height) {
-                    forwardWindowBounds(windowBoundsFor(own));
+                    placeWindow(windowBoundsFor(own));
                     return true;
                 }
             }
@@ -942,6 +954,8 @@ public class DeskDisplayBridge extends DisplayBridge {
             if (shownAShell) {
                 setMainWindowTitle(main.getText());
                 if (leftOwnWindow.contains(main)) takeOverWindowGeometry(main);
+            } else {
+                placeWindowForFirstShownShell(main);
             }
             shownShell = main;
             shownAShell = true;
@@ -974,6 +988,17 @@ public class DeskDisplayBridge extends DisplayBridge {
         return ownWindow ? ShownShells.ONLY_WRAPPED_WINDOWS : ShownShells.NONE;
     }
 
+    /**
+     * The first shell shown in the window gets the window's geometry. Until then the window followed
+     * whichever shell held it, and a holder that is never shown (a workbench parks one off screen)
+     * would otherwise leave the window there, with the shell then pulled to where it lies.
+     */
+    private void placeWindowForFirstShownShell(Shell shell) {
+        if (shell == windowShell || isUnsized(shell) || shell.getMaximized() || shell.getFullScreen()) return;
+        windowShell = shell;
+        placeWindow(windowBoundsFor(shell.getBounds()));
+    }
+
     /** Moves and sizes the window to where {@code shell}'s own window was. */
     private void takeOverWindowGeometry(Shell shell) {
         int state = windowStateOf(shell);
@@ -988,7 +1013,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
             // The shell measures the client area of the window it leaves, so the window grows by the
             // strip the client draws above it (applyClientInsetTop) instead of the shell shrinking.
-            forwardWindowBounds(windowBoundsFor(shell.getBounds()));
+            placeWindow(windowBoundsFor(shell.getBounds()));
         }
         bindWindowView();
     }
@@ -1011,6 +1036,12 @@ public class DeskDisplayBridge extends DisplayBridge {
     /** Whether a native window surface was created at all. Seam: tests stand one in without JNI. */
     protected boolean hasWindowSurface() {
         return windowContext != 0;
+    }
+
+    /** {@link #forwardWindowBounds}, noting that the client reports already in predate the placing. */
+    private void placeWindow(Rectangle bounds) {
+        if (bounds.width > 1 && bounds.height > 1) reportsWhenPlaced = clientReportsReceived();
+        forwardWindowBounds(bounds);
     }
 
     /** Pushes a genuine, user-/app-driven geometry to the native window. Seam for tests to observe. */
@@ -1125,7 +1156,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             return;
         }
         windowShell = shell;
-        forwardWindowBounds(windowBoundsFor(bounds));
+        placeWindow(windowBoundsFor(bounds));
     }
 
     @Override

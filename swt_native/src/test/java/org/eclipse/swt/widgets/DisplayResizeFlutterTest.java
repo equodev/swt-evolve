@@ -488,6 +488,59 @@ class DisplayResizeFlutterTest {
     }
 
     @Test
+    void desk_theFirstShellShownGivesTheWindowItsPlace_evenWhenANeverShownShellHeldIt() {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        // A pre-e4 workbench parks a shell it never shows off screen before its real window exists.
+        Shell parked = new Shell(display, org.eclipse.swt.SWT.SHELL_TRIM);
+        parked.setBounds(0, 10000, 1200, 675);
+        desk.windowAt = new org.eclipse.swt.graphics.Point(0, 1301); // the OS keeps a sliver on screen
+        clientReady(desk.comm, 1200, 675, true);
+
+        Shell workbench = new Shell(display, org.eclipse.swt.SWT.SHELL_TRIM);
+        workbench.setBounds(100, 100, 1500, 1000); // its persisted place, set before it is the main shell
+        workbench.setLayout(new org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout());
+        drainEventLoop(); // the workbench keeps the loop turning while it builds its window
+        workbench.open();
+        drainEventLoop();
+
+        assertThat(desk.forwarded)
+                .as("the window shows the first shell drawn in it where that shell asked to be")
+                .last().isEqualTo(new Rectangle(100, 100, 1500, 1000));
+        assertThat(workbench.getBounds())
+                .as("a window that has shown no shell yet has no size worth keeping")
+                .isEqualTo(new Rectangle(100, 100, 1500, 1000));
+    }
+
+    @Test
+    void desk_aViewportReportedBeforeTheWindowWasPlaced_doesNotUndoThePlacing() throws Exception {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell parked = new Shell(display, org.eclipse.swt.SWT.SHELL_TRIM);
+        parked.setBounds(0, 10000, 1200, 675);
+        clientReady(desk.comm, 1200, 675, true);
+        Shell workbench = new Shell(display, org.eclipse.swt.SWT.SHELL_TRIM);
+        workbench.setBounds(100, 100, 1500, 1000);
+        workbench.setLayout(new org.eclipse.e4.ui.workbench.renderers.swt.TrimmedPartLayout());
+
+        // The window reports the size it still has while the Display thread is busy building the
+        // workbench; the report is applied only after the workbench has placed the window.
+        Thread comm = new Thread(() -> clientReady(desk.comm, 1200, 675, false));
+        comm.start();
+        comm.join();
+        workbench.open();
+        drainEventLoop();
+
+        assertThat(workbench.getBounds())
+                .as("a size the window had before it was placed is not the shell's")
+                .isEqualTo(new Rectangle(100, 100, 1500, 1000));
+        assertThat(desk.forwarded).last().isEqualTo(new Rectangle(100, 100, 1500, 1000));
+
+        clientReady(desk.comm, 1400, 900, false);
+        assertThat(workbench.getBounds())
+                .as("a size reported after the placing, a user's resize, still sizes the shell")
+                .isEqualTo(new Rectangle(100, 100, 1400, 900));
+    }
+
+    @Test
     void desk_hiddenE4WorkbenchShell_outranksAShownSplash() {
         TestDeskBridge desk = install(TestDeskBridge::new);
         Shell splash = new Shell(display, org.eclipse.swt.SWT.NO_TRIM | org.eclipse.swt.SWT.ON_TOP);
@@ -502,6 +555,36 @@ class DisplayResizeFlutterTest {
                 .as("the splash keeps its own size while the e4 workbench shell is still hidden")
                 .isEqualTo(new Rectangle(400, 300, 450, 300));
         assertThat(desk.isMainShell(dartDisplay(), workbench)).isTrue();
+    }
+
+    @Test
+    void desk_aHiDpiClientIsNeverToldTheUiZoomOfTheAssumedMonitor() {
+        System.clearProperty("dev.equo.swt.mode");
+        int zoomBefore = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
+        dev.equo.swt.Config.resetClientDeviceZoom();
+        try {
+            TestDeskBridge desk = install(TestDeskBridge::new);
+            newMainShell().open();
+
+            clientReady(desk.comm, 1280, 800, 200, true);
+
+            List<Integer> told = new java.util.ArrayList<>();
+            for (RecordingComm.Frame frame : desk.comm.sent) {
+                if (!"swt.evolve.properties".equals(frame.event)) continue;
+                for (java.util.Map<String, Object> flags : WireValues.find(frame.value, m -> m.containsKey("ui_zoom")))
+                    told.add(((Number) WireValues.plain(flags.get("ui_zoom"))).intValue());
+            }
+            // A 100 here has the client draw at half size, and report a monitor twice its size, until
+            // the next one arrives; 0 is drawn at 1.0.
+            assertThat(told)
+                    .as("the UI zoom each properties push carried")
+                    .isNotEmpty()
+                    .containsOnly(0, 200)
+                    .last().isEqualTo(200);
+        } finally {
+            org.eclipse.swt.internal.DPIUtil.setDeviceZoom(zoomBefore);
+            dev.equo.swt.Config.setClientDeviceZoom(100);
+        }
     }
 
     // ---- browser zoom -----------------------------------------------------------------------------
@@ -687,9 +770,12 @@ class DisplayResizeFlutterTest {
             return comm;
         }
 
+        /** Where the stood-in window is on screen, once a test places it; it then follows what is forwarded. */
+        org.eclipse.swt.graphics.Point windowAt;
+
         @Override
         protected org.eclipse.swt.graphics.Point shellWindowOrigin(long context) {
-            return null; // a stood-in window sits nowhere; only a real one has a screen position
+            return windowAt; // null: a stood-in window sits nowhere unless a test says where
         }
 
         @Override
@@ -736,6 +822,7 @@ class DisplayResizeFlutterTest {
         @Override
         protected void forwardWindowBounds(Rectangle bounds) {
             forwarded.add(bounds);
+            if (windowAt != null) windowAt = new org.eclipse.swt.graphics.Point(bounds.x, bounds.y);
         }
 
         @Override

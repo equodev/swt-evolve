@@ -432,6 +432,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         });
     }
 
+    /** The client reports received so far, counted on arrival; applying one waits for the Display thread. */
+    private final java.util.concurrent.atomic.AtomicLong clientReportsReceived = new java.util.concurrent.atomic.AtomicLong();
+
+    /** The arrival number of the client report being applied, or of the last one applied. */
+    protected long reportBeingApplied;
+
+    /** How many client reports had arrived by now: a later {@link #reportBeingApplied} arrived after this. */
+    protected long clientReportsReceived() {
+        return clientReportsReceived.get();
+    }
+
     private void registerClientReadyHandler(DartDisplay display, long displayId) {
         // Completing clientReady + pushing swt.evolve.properties on the first ClientReady is handled
         // by the shared FlutterBridge.onClientReady template; here we only do the Display-specific
@@ -468,14 +479,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // ClientReady) cancels any pending tab-close — see WebDisplayBridge.onDisplayClientReady.
             onDisplayClientReady(first);
 
+            long received = clientReportsReceived.incrementAndGet();
             Display api = display.getApi();
             Runnable apply = () -> {
                 BootTrace.Span span = first ? BootTrace.span("clientReady applied on the UI thread") : null;
                 try {
+                    reportBeingApplied = received;
                     // A refreshed page draws every shell from the bounds held here, so no report it sends is stale.
                     if (!first && p.isFirst) repositionedShells.clear();
                     display.applyClientTouchEnabled(p.touchEnabled);
-                    int uiZoomBefore = dev.equo.swt.Config.uiZoom();
+                    int uiZoomBefore = dev.equo.swt.Config.publishedUiZoom();
                     display.applyClientDeviceZoom(p.zoom);
                     // After applyClientDeviceZoom, not before: the scale it publishes is the UI zoom over
                     // this one, and the UI zoom is what that call just derived.
@@ -483,7 +496,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                     // The client reports the monitor's zoom; swt.autoScale turns that into the zoom the UI
                     // is drawn at, and only this side knows the result. Hand it back whenever it moves, or
                     // the render layer keeps drawing at the monitor's zoom while SWT measures at this one.
-                    if (dev.equo.swt.Config.uiZoom() != uiZoomBefore) {
+                    if (dev.equo.swt.Config.publishedUiZoom() != uiZoomBefore) {
                         broadcastSwtEvolveProperties();
                     }
                     display.applyClientLocale(p.locale);

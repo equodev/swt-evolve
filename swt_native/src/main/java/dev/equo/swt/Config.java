@@ -985,7 +985,7 @@ public class Config {
         configFlags.font_point_scale = FontMetricsUtil.rawDpiScale();
         // Also derived, and for the same reason: the client reports the monitor's zoom only once it
         // is up, and swt.autoScale is applied to it after these flags were first read.
-        configFlags.ui_zoom = uiZoom();
+        configFlags.ui_zoom = publishedUiZoom();
         // Read again only for a new format locale: the symbols are built anew on every look-up, and the
         // flags are read for every row a tree paints. A Locale keeps its language tag once built.
         java.util.Locale format = formatLocale();
@@ -1012,8 +1012,11 @@ public class Config {
      * {@code TextSegment.computeTextFragments}, which measures every word once and never again —
      * and then lays those stale widths out inside a box that has since been divided by the zoom, so
      * the text wraps at about two thirds of the width it should.
+     *
+     * <p>Held as 0 until the report, so the field also says whether one arrived; read it through
+     * {@link #clientDeviceZoom()}.
      */
-    private static volatile int clientDeviceZoom = 100;
+    private static volatile int clientDeviceZoom;
 
     /**
      * Listeners for {@link #uiScale()} settling on a new value. The client reports the monitor it is
@@ -1026,6 +1029,29 @@ public class Config {
 
     public static void addUiScaleListener(Runnable listener) {
         if (listener != null) uiScaleListeners.add(listener);
+    }
+
+    /** The monitor's zoom the client reported, in percent; 100 until it does. */
+    public static int clientDeviceZoom() {
+        int zoom = clientDeviceZoom;
+        return zoom > 0 ? zoom : 100;
+    }
+
+    /**
+     * The UI zoom the render side is told, in percent: {@link #uiZoom()} once the client has
+     * reported its monitor's zoom, 0 ("not known yet", drawn at 1.0) before that.
+     *
+     * <p>Before the report, {@link #uiZoom()} rests on the assumed 100 % monitor. Sent as is, it has
+     * a HiDPI client draw at half size and measure its monitor at twice its size until the answer to
+     * its report arrives, and a shell placed on that monitor meanwhile opens off screen.
+     */
+    public static int publishedUiZoom() {
+        return clientDeviceZoom > 0 ? uiZoom() : 0;
+    }
+
+    /** Forgets the client's report, as before its first ClientReady. For tests. */
+    public static void resetClientDeviceZoom() {
+        clientDeviceZoom = 0;
     }
 
     /** Call once the client's zoom AND the UI zoom derived from it are both in place. */
@@ -1052,7 +1078,7 @@ public class Config {
      * {@code DPIUtil.getNativeDeviceZoom()}, which the older supported SWT versions do not have.
      */
     public static double uiScale() {
-        return uiScaleFor(uiZoom(), clientDeviceZoom);
+        return uiScaleFor(uiZoom(), clientDeviceZoom());
     }
 
     /**
@@ -1065,7 +1091,7 @@ public class Config {
      */
     public static int uiZoom() {
         boolean browserTab = !ConfigFlags.isDesktopMode() && !ConfigFlags.isChromiumMode();
-        if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom;
+        if (browserTab && System.getProperty("swt.autoScale") == null) return clientDeviceZoom();
         return DartWidget.swtDeviceZoom();
     }
 
