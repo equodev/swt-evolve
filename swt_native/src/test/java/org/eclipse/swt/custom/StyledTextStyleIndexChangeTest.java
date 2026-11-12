@@ -125,7 +125,7 @@ class StyledTextStyleIndexChangeTest {
         // Palette 7; runs (name, start, length). The second run's length and the third's name differ.
         int[] base = { 7, 0, 0, 4, 1, 4, 2, 2, 6, 3, 0, 9, 5 };
         int[] target = { 7, 0, 0, 4, 1, 4, 3, 3, 7, 2, 0, 10, 4 };
-        int[] change = StyledTextHelper.styleIndexChange(base, target);
+        int[] change = StyledTextHelper.styleIndexChange(base, target, 1);
 
         assertThat((change[4] - 1) % 3).as("it starts at a run").isZero();
         assertThat((change.length - 6) % 3).as("it inserts whole runs").isZero();
@@ -164,6 +164,24 @@ class StyledTextStyleIndexChangeTest {
                 .as("moving every run is what the client already did, so nothing of it travels")
                 .isLessThan(held.length / 4);
         assertThat(apply(carried, sent)).containsExactly(StyledTextHelper.wireStyleIndex(impl(text)));
+    }
+
+    @Test
+    void the_index_a_client_holds_for_one_editor_is_not_held_for_another() throws Exception {
+        Color green = new Color(Mocks.device(), 0, 128, 0);
+        StyledText text = highlighted(), other = highlighted();
+        text.setStyleRange(new StyleRange(10 * 6, 5, green, null));
+        sendWhole(text);
+        int[] held = StyledTextHelper.wireStyleIndex(impl(text));
+        // The client now holds the other editor's index last, which differs from this one's.
+        sendWhole(other);
+
+        text.setStyleRange(new StyleRange(30 * 6, 5, green, null));
+        int[] sent = sentIndex(text);
+
+        assertThat(sent[0]).isEqualTo(StyledTextHelper.STYLE_INDEX_EDIT);
+        assertThat(apply(held, sent)).as("a change to the index the client holds for this editor")
+                .containsExactly(StyledTextHelper.wireStyleIndex(impl(text)));
     }
 
     @Test

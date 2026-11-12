@@ -12296,6 +12296,12 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         return topPixel;
     }
 
+    volatile StyledTextHelper.TextGeometry textGeometry;
+
+    volatile java.util.Map<Integer, StyledTextHelper.HeldIndex> heldIndexes;
+
+    int styleEditSerial;
+
     StyleRange[] wireStyles() {
         return StyledTextHelper.wireStyles(this);
     }

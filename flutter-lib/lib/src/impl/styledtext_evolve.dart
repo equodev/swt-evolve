@@ -69,6 +69,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextShape? _shape;
   bool _shapeStale = true;
   _Delimiters _delimiters = _Delimiters.none;
+
+  /// The text [_delimiters] and [_shownText] were worked out from. Both scan the whole document,
+  /// so a rebuild that keeps the text (a tab or font change) keeps them.
+  String? _delimitersSource;
+  String _shownText = '';
+
   /// The mounted StyledTexts by id, where the handlers below find the editor a frame addresses.
   static final Map<int, StyledTextImpl> _live = {};
 
@@ -427,8 +433,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final rebuildWatch = Stopwatch()..start();
     _shapeStale = false;
     final original = state.text ?? '';
-    _delimiters = _Delimiters.of(original);
-    final text = _Delimiters.normalize(original);
+    if (!identical(original, _delimitersSource) && original != _delimitersSource) {
+      debugDelimiterScans++;
+      _delimiters = _Delimiters.of(original);
+      _delimitersSource = original;
+      _shownText = _Delimiters.normalize(original);
+    }
+    final text = _shownText;
 
     final caretOffset = _delimiters.toShown(_splicedCaretOffset ?? state.caretOffset ?? 0);
     if (caretOffset != _lastCaretOffset) {
@@ -1155,6 +1166,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   _LineTopsCache? _geometrySentForLayout;
   /// Which table the other side holds: it names this version when it applies the next splice.
   int _geometryVersion = 0;
+
+  /// A geometry push's kind, its first byte: as Java's `StyledTextHelper.PUSH_*` reads it.
+  static const int _pushWhole = 0, _pushSplice = 1, _pushBand = 2;
   bool _geometryFullNeeded = true;
   double? _geometrySentBandTop;
   double? _geometrySentBandBottom;
@@ -1196,6 +1210,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @visibleForTesting
   static int debugRebuildCalls = 0;
 
+  /// How many times a shape rebuild scanned the text for its line delimiters.
+  @visibleForTesting
+  static int debugDelimiterScans = 0;
+
   /// Test seam: the transport is a no-op in a widget test, so a push is otherwise
   /// unobservable. Counts every payload pushed and keeps the last one.
   @visibleForTesting
@@ -1224,8 +1242,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       return;
     }
     final geometryWatch = Stopwatch()..start();
-    final geometry = perfMarkValue('StyledText.geometryTable',
-        () => shape.computeGeometryTable(visibleTop: top, visibleBottom: bottom));
+    final geometry = perfMarkValue(
+        'StyledText.geometryTable',
+        () => shape.bandsGeometry
+            ? shape.computeBandTable(top, bottom)
+            : shape.computeGeometryTable(visibleTop: top, visibleBottom: bottom));
     debugGeometryMicros += geometryWatch.elapsedMicroseconds;
     debugGeometryCalls++;
     _geometrySentForLayout = shape._lineTopsCache;
@@ -1234,7 +1255,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     _delimiters.geometryToDocument(geometry);
     final previous = _geometrySent;
     // One pass answers both whether anything changed and what to send.
-    final splice = (previous == null || _geometryFullNeeded)
+    // A splice replaces rows of the table Java holds, so both have to hold the same rows.
+    final splice = (previous == null || _geometryFullNeeded || !previous.holdsTheRowsOf(geometry))
         ? null
         : _spliceOf(previous.rows, geometry.rows);
     if (splice != null &&
@@ -1279,21 +1301,29 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
   /// What to send for [table]: the splice from the table the other side holds, or the whole thing.
   ///
-  /// `u8 splice, version, [base], charCount, contentWidth, contentHeight, [rowStart, rowsReplaced,
-  /// lineDelta, offsetDelta, yDelta], rows`, as Java's `StyledTextHelper.readPush` reads it.
+  /// `u8 kind (_pushWhole, _pushSplice, _pushBand), version, [base], charCount, contentWidth, contentHeight,
+  /// [rowHeight, bandFirstLine], [rowStart, rowsReplaced, lineDelta, offsetDelta, yDelta], rows`, as
+  /// Java's `StyledTextHelper.readPush` reads it. A splice of a band keeps the band's row height and
+  /// first line.
   void _writeGeometry(WidgetWireWriter w, GeometryTable table, _GeometrySplice? splice) {
     final version = ++_geometryVersion;
     // A splice that rewrites most of the table (a resize, a wrap toggle) is the table.
     final whole = splice == null || splice.rows.length * 2 > table.rows.length;
     if (splice == null) _geometryFullNeeded = false;
+    final band = table.bandFirstLine;
     w
-      ..u8(whole ? 0 : 1)
+      ..u8(!whole ? _pushSplice : band != null ? _pushBand : _pushWhole)
       ..int32(version);
     if (!whole) w.int32(version - 1);
     w
       ..int32(table.charCount)
       ..float64(table.contentWidth)
       ..float64(table.contentHeight);
+    if (whole && band != null) {
+      w
+        ..float64(table.rowHeight!)
+        ..int32(band);
+    }
     final rows = whole ? table.rows : splice!.rows;
     if (!whole) {
       w
@@ -1708,6 +1738,26 @@ class _LineTopsCache {
   List<double>? tops;
 }
 
+/// The x of one line's character boundaries for the geometry table: its layout's caret x when it
+/// has them, else a painter laid out on first use, which [dispose] releases.
+class _LineCharX {
+  _LineCharX(this._caretX, this._newPainter);
+
+  final List<double>? _caretX;
+  final TextPainter Function() _newPainter;
+  TextPainter? _painter;
+
+  /// The boundaries [from]..[to] of the line, each offset by [base].
+  List<double> call(int from, int to, double base) {
+    final caretX = _caretX;
+    if (caretX != null) return [for (int k = from; k <= to; k++) base + caretX[k]];
+    final tp = _painter ??= _newPainter();
+    return [for (int k = from; k <= to; k++) base + TextShape._caretXOf(tp, k)];
+  }
+
+  void dispose() => _painter?.dispose();
+}
+
 /// What the geometry table and the line-tops prefix sum need from one logical line's
 /// layout. Every field is a pure function of the [_LineLayoutKey] it is stored under,
 /// so a cached entry cannot go stale: a line whose text, styles, alignment, wrap width
@@ -2088,6 +2138,14 @@ List<String> _linesOf(String text) => _fillLineCache(text).lines;
 
 List<int> _lineStartsOf(String text) => _fillLineCache(text).starts;
 
+/// [memo], or a new one, long enough to hold [index]. It grows with the lines asked about, by
+/// doubling, rather than starting at the document's length on every new shape.
+List<int?> _memoHolding(List<int?>? memo, int index) {
+  memo ??= <int?>[];
+  if (index >= memo.length) memo.length = math.max(index + 1, memo.length * 2);
+  return memo;
+}
+
 /// Perf counters for every StyledText, reset on read; exposed as `window.evolveTest.styledTextPerf()`.
 Map<String, dynamic> styledTextPerfSnapshot() {
   final snapshot = <String, dynamic>{
@@ -2248,6 +2306,12 @@ class TextShape extends Shape {
   /// view are left unmeasured, as native SWT leaves them.
   bool get _uniformRows =>
       fixedLineHeight && wordWrap != true && lineHeight > 0 && lineSpacing == 0 && lineSpacings == null;
+
+  /// Whether every line is one row of [_rowHeight] with no vertical indent above it, so line `i`
+  /// starts at `i * _rowHeight`: the line tops and the rows Java derives from a band both rely on
+  /// it. A line with properties of its own, such as the current line's background, has no indent.
+  bool get _rowsOfRowHeight =>
+      _uniformRows && !(editingState?.lineProperties.values.any((p) => (p.verticalIndent ?? 0) != 0) ?? false);
 
   /// The tallest line measured by this shape and the shapes it replaced. Native SWT makes every
   /// line as tall as the tallest one it has laid out (a fallback glyph's font can be taller than the
@@ -2411,8 +2475,8 @@ class TextShape extends Shape {
     // The runs are the donor's, so their token is too.
     final tokens = donor._rangesTokenCache;
     if (tokens != null && theirs < tokens.length && tokens[theirs] != null) {
-      final mine = _rangesTokenCache ??= List<int?>.filled(_lineStarts.length + 1, null);
-      if (lineIndex < mine.length) mine[lineIndex] = tokens[theirs];
+      final mine = _rangesTokenCache = _memoHolding(_rangesTokenCache, lineIndex);
+      mine[lineIndex] = tokens[theirs];
     }
     return layout;
   }
@@ -2420,8 +2484,8 @@ class TextShape extends Shape {
   /// Whether the line carries the same style objects at the same offsets as [donor]'s line
   /// [theirs]; palette entries are shared objects, so no hashing is needed.
   bool _sameRunsAs(TextShape donor, int theirs, int lineIndex, int lineLength) {
-    final a = theirs < donor._rangesByLine.length ? donor._rangesByLine[theirs] : const <StyleRange>[];
-    final b = lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
+    final a = donor._runsOnLine(theirs);
+    final b = _runsOnLine(lineIndex);
     if (a.length != b.length) return false;
     if (a.isEmpty) return true;
     final aStart = _donorStarts[theirs];
@@ -2624,9 +2688,8 @@ class TextShape extends Shape {
     final tops = List<double>.filled(lines.length + 1, 0);
     final memo = _measuredLineCache;
     double y = 0;
-    if (_uniformRows && !(editingState?.lineProperties.values.any((p) => (p.verticalIndent ?? 0) != 0) ?? false)) {
-      // Every line one row with no indent above it: the same sum, without asking each line. A line
-      // with properties of its own, such as the current line's background, has none either.
+    if (_rowsOfRowHeight) {
+      // The same sum, without asking each line.
       final row = _rowHeight;
       for (int i = 0; i < lines.length; i++) {
         tops[i] = y;
@@ -2674,7 +2737,7 @@ class TextShape extends Shape {
       final c = lineText.codeUnitAt(k);
       if ((c < 0x20 || c > 0x7E) && c != 0x09) return null;
     }
-    final ranges = lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
+    final ranges = _runsOnLine(lineIndex);
     if (ranges.isEmpty) return base.height;
     final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
     final lineEnd = lineStart + lineText.length;
@@ -3437,13 +3500,7 @@ class TextShape extends Shape {
           props.indent, props.align, layout.width, canvasSize == null ? double.infinity : maxW);
 
       final caretX = layout.caretX;
-      TextPainter? rowCarets;
-      // Rounded to a hundredth of a pixel: far below what changes Java's answers, and shorter to send.
-      List<double> charX(int from, int to, double base) {
-        if (caretX != null) return [for (int k = from; k <= to; k++) base + caretX[k]];
-        final tp = rowCarets ??= _measuringPainter(line, i, align: props.align, maxWidth: maxW);
-        return [for (int k = from; k <= to; k++) base + _caretXOf(tp, k)];
-      }
+      final charX = _LineCharX(caretX, () => _measuringPainter(line, i, align: props.align, maxWidth: maxW));
 
       // The visual line's box: `y`/`h` include the line's vertical indent so bands
       // stay contiguous; `vi` (first visual row only) is the indent within the box,
@@ -3500,7 +3557,7 @@ class TextShape extends Shape {
           top = bottom;
         }
       }
-      rowCarets?.dispose();
+      charX.dispose();
 
       currentY += vIndent + _advance(layout.height, i);
       docOffset += line.length + 1;
@@ -3508,6 +3565,42 @@ class TextShape extends Shape {
 
     if (!wholeDocument) _geometryMemo = memo;
     return GeometryTable(text.length, _roundPx(maxWidth), _roundPx(currentY), visual);
+  }
+
+  /// Whether the geometry table is the band around the viewport ([computeBandTable]) rather than
+  /// every row: each line is one row of [_rowHeight] with nothing above it, so the rows outside the
+  /// band follow from the row height and the line starts, which Java holds.
+  bool get bandsGeometry => _rowsOfRowHeight && text.length > _charXPayloadLimit;
+
+  /// The rows of the lines between [visibleTop] and [visibleBottom], with their per-character x, for
+  /// an editor that [bandsGeometry]: what Java cannot work out for itself. Costs the band, not the
+  /// document, so a change that moves every row (tabs, a font) does too.
+  GeometryTable computeBandTable(double visibleTop, double visibleBottom) {
+    _forgetStaleMeasurements();
+    final lines = _lines;
+    final starts = _lineStarts;
+    final rowHeight = _rowHeight;
+    final first = math.max(0, (visibleTop / rowHeight).floor() - 1);
+    final last = math.min(lines.length - 1, (visibleBottom / rowHeight).ceil());
+    final rows = <GeometryRow>[];
+    double maxWidth = 0;
+    for (int i = first; i <= last; i++) {
+      final line = lines[i];
+      final props = _linePropsFor(i);
+      final maxW = _lineMaxWidth(props.layoutIndent);
+      final layout = _measuredLine(i, line, wantCaretX: true);
+      final x = _lineOriginX(
+          props.indent, props.align, layout.width, canvasSize == null ? double.infinity : maxW);
+      final charX = _LineCharX(layout.caretX, () => _measuringPainter(line, i, align: props.align, maxWidth: maxW));
+      maxWidth = math.max(maxWidth, x + layout.width);
+      rows.add(GeometryRow(i, starts[i], starts[i] + line.length, _roundPx(x), _roundPx(i * rowHeight),
+          _roundPx(layout.width), _roundPx(rowHeight), null, charXEntry(charX(0, line.length, x))));
+      charX.dispose();
+    }
+    // Out-of-view lines were not visited, so there is nothing a later full pass could take.
+    _geometryMemo = null;
+    return GeometryTable(text.length, _roundPx(maxWidth), _roundPx(lines.length * rowHeight), rows,
+        bandFirstLine: first, rowHeight: rowHeight);
   }
 
   /// The layout this shape already holds for [lineIndex], or the one the shape before it measured
@@ -3555,21 +3648,29 @@ class TextShape extends Shape {
 
   @visibleForTesting
   static int debugLineTopsMicros = 0;
+
+  /// How many lines had their style runs sorted into per-line lists.
+  @visibleForTesting
+  static int debugLinesBucketed = 0;
+
+  /// The style runs on [lineIndex].
+  @visibleForTesting
+  List<StyleRange> debugRunsOnLine(int lineIndex) => _runsOnLine(lineIndex);
   @visibleForTesting
   static int debugDrawMicros = 0;
 
   /// What the style ranges on [lineIndex] amount to, as a number: nothing when the line carries
   /// none, which is the ordinary case and costs a list lookup.
   int _rangesTokenFor(int lineIndex, int lineLength) {
-    if (editingState == null) return 0;
-    final memo = _rangesTokenCache ??= List<int?>.filled(_lineStarts.length + 1, null);
-    if (lineIndex < memo.length && memo[lineIndex] != null) return memo[lineIndex]!;
+    if (editingState == null || lineIndex < 0) return 0;
+    final memo = _rangesTokenCache = _memoHolding(_rangesTokenCache, lineIndex);
+    if (memo[lineIndex] != null) return memo[lineIndex]!;
     final donated = _donatedRangesToken(lineIndex, lineLength);
     if (donated != null) {
-      if (lineIndex < memo.length) memo[lineIndex] = donated;
+      memo[lineIndex] = donated;
       return donated;
     }
-    final ranges = lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
+    final ranges = _runsOnLine(lineIndex);
     int token = 0;
     if (ranges.isNotEmpty) {
       final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
@@ -3593,10 +3694,11 @@ class TextShape extends Shape {
             range.rise, range.borderStyle);
       }
     }
-    if (lineIndex < memo.length) memo[lineIndex] = token;
+    memo[lineIndex] = token;
     return token;
   }
 
+  /// Per line, as [_memoHolding] grows it.
   List<int?>? _rangesTokenCache;
 
   /// [lineIndex]'s token as the pre-edit shape worked it out, when the edit did not reach the line
@@ -3626,11 +3728,10 @@ class TextShape extends Shape {
   /// What the line is drawn in, as a number; unlike [_rangesTokenFor] it covers colours, which a
   /// paragraph bakes in. Palette entries are named by identity.
   int _paintTokenFor(int lineIndex, int lineLength) {
-    if (editingState == null) return 0;
-    final memo = _paintTokenCache ??= List<int?>.filled(_lineStarts.length + 1, null);
-    if (lineIndex < memo.length && memo[lineIndex] != null) return memo[lineIndex]!;
-    final ranges =
-        lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
+    if (editingState == null || lineIndex < 0) return 0;
+    final memo = _paintTokenCache = _memoHolding(_paintTokenCache, lineIndex);
+    if (memo[lineIndex] != null) return memo[lineIndex]!;
+    final ranges = _runsOnLine(lineIndex);
     int token = 0;
     if (ranges.isNotEmpty) {
       final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
@@ -3641,10 +3742,11 @@ class TextShape extends Shape {
         token = Object.hash(token == 0 ? 17 : token, from, to, identityHashCode(range.style));
       }
     }
-    if (lineIndex < memo.length) memo[lineIndex] = token;
+    memo[lineIndex] = token;
     return token;
   }
 
+  /// Per line, as [_memoHolding] grows it.
   List<int?>? _paintTokenCache;
 
   /// Count of live TextPainters built — the paint and hit-test path, which keeps none.
@@ -3912,10 +4014,15 @@ class TextShape extends Shape {
   List<String>? _linesCache;
   List<int>? _lineStartsCache;
 
-  /// Style ranges bucketed by the lines they cover. Both the paint loop and the geometry
-  /// table ask line by line, so scanning the whole range list per line costs the document
-  /// its line count times its range count on every frame.
+  /// Style ranges bucketed by the lines they cover, for runs that do not ascend
+  /// ([TextEditingState.runsAscend]).
   List<List<StyleRange>>? _rangesByLineCache;
+
+  /// The last slice [_runsOnLine] answered, which the next line usually shares: a run over
+  /// many lines is on each of them.
+  List<StyleRange> _lastRuns = const [];
+  int _lastRunsFrom = 0;
+  int _lastRunsTo = 0;
 
   /// Which extra passes over a line's glyphs any run asks for; most documents ask for none.
   ({bool rise, bool border, bool strikeout, bool background}) get _decorations =>
@@ -3933,13 +4040,51 @@ class TextShape extends Shape {
     return (rise: rise, border: border, strikeout: strikeout, background: background);
   }
 
-  List<StyleRange> _runsOnLine(int lineIndex) =>
-      lineIndex >= 0 && lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const [];
+  /// The runs sharing a character with [lineIndex] (its delimiter included). The paint loop and
+  /// the geometry table ask line by line; a tab or font change makes a new shape, so working out
+  /// every line's runs up front cost the whole document on each change.
+  List<StyleRange> _runsOnLine(int lineIndex) {
+    final state = editingState;
+    final starts = _lineStarts;
+    if (state == null || state.characterRanges.isEmpty || lineIndex < 0 || lineIndex >= starts.length) {
+      return const [];
+    }
+    if (!state.runsAscend) return _rangesByLine[lineIndex];
+    final runs = state.characterRanges;
+    // Ends ascend, so the first run ending past the line's start is found by bisection.
+    final lineStart = starts[lineIndex];
+    int from = 0, to = runs.length;
+    while (from < to) {
+      final mid = (from + to) >> 1;
+      if (runs[mid].end <= lineStart) {
+        from = mid + 1;
+      } else {
+        to = mid;
+      }
+    }
+    to = from;
+    if (lineIndex + 1 < starts.length) {
+      final next = starts[lineIndex + 1];
+      while (to < runs.length && runs[to].start < next) {
+        to++;
+      }
+    } else {
+      to = runs.length;
+    }
+    if (to == from) return const [];
+    if (from != _lastRunsFrom || to != _lastRunsTo) {
+      _lastRuns = runs.sublist(from, to);
+      _lastRunsFrom = from;
+      _lastRunsTo = to;
+    }
+    return _lastRuns;
+  }
 
   List<List<StyleRange>> get _rangesByLine {
     final cached = _rangesByLineCache;
     if (cached != null) return cached;
     final starts = _lineStarts;
+    debugLinesBucketed += starts.length;
     final buckets = List.generate(starts.length, (_) => <StyleRange>[]);
     // Runs arrive in order, so one sweep finds each run's line.
     int line = 0;
@@ -3982,12 +4127,9 @@ class TextShape extends Shape {
 
     final lineEndOffset = lineStartOffset + lineText.length;
 
-    final lineRanges = lineIndex < _rangesByLine.length
-        ? _rangesByLine[lineIndex]
-            .where((range) =>
-                range.start < lineEndOffset && range.end > lineStartOffset)
-            .toList()
-        : const <StyleRange>[];
+    final lineRanges = _runsOnLine(lineIndex)
+        .where((range) => range.start < lineEndOffset && range.end > lineStartOffset)
+        .toList();
 
     if (lineRanges.isEmpty) {
       return TextSpan(text: lineText, style: style);
@@ -4577,6 +4719,21 @@ class TextEditingState {
     this.lineProperties = const {},
   });
 
+  /// Whether no run is empty and the runs ascend by start and by end, as the widget's own are
+  /// (sorted, none inside another): a line's runs are then one slice of the list.
+  bool get runsAscend => _runsAscend ??= _checkRunsAscend();
+  bool? _runsAscend;
+
+  bool _checkRunsAscend() {
+    StyleRange? previous;
+    for (final run in characterRanges) {
+      if (run.end <= run.start) return false;
+      if (previous != null && (run.start < previous.start || run.end <= previous.end)) return false;
+      previous = run;
+    }
+    return true;
+  }
+
   /// Whether [other] would paint the same runs, in the same styles, on the same lines.
   bool paintsSameAs(TextEditingState other) {
     if (identical(this, other)) return true;
@@ -4662,22 +4819,38 @@ class LineProperties {
 /// row; kept as objects so only the rows that changed are sent.
 @visibleForTesting
 class GeometryTable {
-  GeometryTable(this.charCount, this.contentWidth, this.contentHeight, this.rows);
+  GeometryTable(this.charCount, this.contentWidth, this.contentHeight, this.rows,
+      {this.bandFirstLine, this.rowHeight});
 
   int charCount;
   final double contentWidth;
   final double contentHeight;
   final List<GeometryRow> rows;
 
+  /// For a band ([TextShape.computeBandTable]), the line of its first row; null when [rows] are
+  /// every row of the document.
+  final int? bandFirstLine;
+
+  /// For a band, the height every line has: line `i` is the row at `i * rowHeight`, both rounded to
+  /// a hundredth as the rows are.
+  final double? rowHeight;
+
+  /// Whether [rows] and [other]'s rows are the same lines, so one table is a splice of the other.
+  bool holdsTheRowsOf(GeometryTable other) =>
+      bandFirstLine == other.bandFirstLine && rowHeight == other.rowHeight;
+
   bool sameExtentsAs(GeometryTable other) =>
       charCount == other.charCount &&
       contentWidth == other.contentWidth &&
-      contentHeight == other.contentHeight;
+      contentHeight == other.contentHeight &&
+      holdsTheRowsOf(other);
 
   Map<String, dynamic> toMap() => {
         'charCount': charCount,
         'contentWidth': contentWidth,
         'contentHeight': contentHeight,
+        if (bandFirstLine != null) 'bandFirstLine': bandFirstLine,
+        if (rowHeight != null) 'rowHeight': rowHeight,
         'lines': [for (final row in rows) row.toMap()],
       };
 }

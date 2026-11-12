@@ -663,7 +663,7 @@ public abstract class FlutterBridge {
                 if (!state.isStale()) state.flush();
                 continue;
             }
-            if (isDisposed(widget)) continue;
+            if (isDisposed(widget) || isReleasing(widget)) continue;
             // No bridge (Display already gone) -> nothing to send; skip to avoid NPE below.
             if (getBridge(widget) == null) continue;
             CompletableFuture<Boolean> ready = getBridge(widget).clientReady;
@@ -729,7 +729,7 @@ public abstract class FlutterBridge {
     /** Sends {@code widget}'s record, for a flush: on the widget's display thread. */
     private static void sendWidget(Object widget) {
             try {
-                if (isDisposed(widget)) return; // widget may have been disposed while waiting for clientReady
+                if (isDisposed(widget) || isReleasing(widget)) return; // widget may have been disposed while waiting for clientReady
                 boolean isHidden = (widget instanceof org.eclipse.swt.widgets.DartControl)
                         && !((org.eclipse.swt.widgets.DartControl) widget).getVisible();
                 if (!isNew(widget) || widget instanceof DartToolTip || widget instanceof DartMenu || isHidden) { // send with the parent
@@ -796,6 +796,16 @@ public abstract class FlutterBridge {
     private static int connectionOf(Object widget) {
         CommService comm = commFor(widget);
         return comm == null ? 0 : comm.connectionId();
+    }
+
+    /**
+     * A widget whose release has started is about to be destroyed on the client: describing it would
+     * read state it has already let go of (a flush runs inside the release, from the focus handover).
+     */
+    private static boolean isReleasing(Object w) {
+        if (!(w instanceof DartWidget)) return false;
+        org.eclipse.swt.widgets.Widget api = ((DartWidget) w).getApi();
+        return api != null && org.eclipse.swt.widgets.WidgetHelper.isReleased(api);
     }
 
     private static boolean isDisposed(Object w) {

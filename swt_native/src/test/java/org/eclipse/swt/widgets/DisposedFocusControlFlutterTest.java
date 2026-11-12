@@ -6,6 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.StyledText;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -111,6 +112,28 @@ class DisposedFocusControlFlutterTest {
         assertThat(folder.isDisposed()).as("the Selection listener disposed the folder").isTrue();
         assertThat(events).as("the shell takes the focus back once the folder is gone")
                 .containsExactly("Shell.FocusOut", "CTabFolder.Dispose", "Shell.FocusIn");
+        assertThat(display.getFocusControl()).as("the focus control afterwards").isSameAs(shell);
+    }
+
+    @Test
+    void disposingAFocusedStyledTextSendsNothingForIt() {
+        install();
+        Shell shell = openShell();
+        StyledText text = new StyledText(shell, SWT.MULTI);
+        text.setText("one\ntwo");
+        assertThat(text.setFocus()).as("the StyledText takes the focus").isTrue();
+        FlutterBridge.update();
+        java.io.ByteArrayOutputStream err = new java.io.ByteArrayOutputStream();
+        java.io.PrintStream stderr = System.err;
+        System.setErr(new java.io.PrintStream(err, true));
+        try {
+            text.dispose();
+            FlutterBridge.update();
+        } finally {
+            System.setErr(stderr);
+        }
+
+        assertThat(err.toString()).as("what the handover to the shell logged").doesNotContain("Exception");
         assertThat(display.getFocusControl()).as("the focus control afterwards").isSameAs(shell);
     }
 

@@ -10,4 +10,12 @@ public final class WidgetHelper {
     public static int styleOf(Widget widget) {
         return widget.style;
     }
+
+    /**
+     * Whether the widget's release has started: it is not disposed yet, but its own state (a StyledText's
+     * renderer) may already be gone, so it has nothing left to describe.
+     */
+    public static boolean isReleased(Widget widget) {
+        return (widget.state & DartWidget.RELEASED) != 0;
+    }
 }

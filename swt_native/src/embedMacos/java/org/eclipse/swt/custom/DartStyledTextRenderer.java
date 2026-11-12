@@ -360,6 +360,7 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         if (startLine < 0 || endLine > lineSizes.length) {
             return;
         }
+        StyledTextHelper.calculating(this, startLine, lineCount);
         int hTrim = ((DartStyledText) styledText.getImpl()).leftMargin + ((DartStyledText) styledText.getImpl()).rightMargin + ((DartStyledText) styledText.getImpl()).getCaretWidth();
         for (int i = startLine; i < endLine; i++) {
             LineSizeInfo line = getLineSize(i);
@@ -2381,6 +2382,12 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
         return fixedPitch;
     }
 
+    StyledTextHelper.CalculatedLines calculatedLines;
+
+    volatile int[] heldBand;
+
+    volatile StyledTextHelper.BandedMemo bandedMemo;
+
     StyleRange[] wireStyles() {
         return StyledTextHelper.wireStyles(this);
     }
@@ -2431,6 +2438,10 @@ class DartStyledTextRenderer implements IStyledTextRenderer {
 
     public boolean _isWidthCalculated(int line) {
         return lineSizes != null && line >= 0 && line < lineSizes.length && lineSizes[line] != null && !lineSizes[line].needsRecalculateWidth();
+    }
+
+    public int _lineWidth(int line) {
+        return lineSizes[line].width;
     }
 
     public StyledTextRenderer getApi() {

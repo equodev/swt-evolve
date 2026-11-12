@@ -55,17 +55,57 @@ class StyledTextGeometryRowReaderTest {
         assertThat(row.charX).containsExactly(0.0, 7.777, 16.0);
     }
 
+    @Test
+    @DisplayName("a band push reads its row height and first line, then only the band's rows")
+    void bandPushReadsItsHeaderThenItsRows() {
+        Push push = Push.band(2, 15.5, 40);
+        // Rows of lines 40 and 41, offsets [400, 404] and [405, 409].
+        push.row(40, 400, 4).hundredths(0).hundredths(62000).hundredths(4000).hundredths(1550).noCharX();
+        push.row(1, 1, 4).hundredths(0).hundredths(0).hundredths(4000).hundredths(0).noCharX();
+
+        StyledTextHelper.GeometryPush read = StyledTextHelper.readPush(push.bytes());
+
+        assertThat(read.rowHeight).isEqualTo(15.5);
+        assertThat(read.bandFirst).isEqualTo(40);
+        assertThat(read.contentHeight).isEqualTo(600.0);
+        assertThat(read.lines).hasSize(2);
+        assertThat(read.lines[0].logicalLine).isEqualTo(40);
+        assertThat(read.lines[0].y).isEqualTo(620.0);
+        assertThat(read.lines[1].logicalLine).isEqualTo(41);
+        assertThat(read.lines[1].start).isEqualTo(405);
+        assertThat(read.lines[1].y).isEqualTo(635.5);
+        assertThat(read.lines[1].h).isEqualTo(15.5);
+    }
+
+    @Test
+    @DisplayName("a whole push is not a band")
+    void wholePushHasNoBand() {
+        Push push = new Push(1);
+        push.row(0, 0, 4).hundredths(0).hundredths(0).hundredths(4000).hundredths(1500).noCharX();
+
+        assertThat(StyledTextHelper.readPush(push.bytes()).bandFirst).isEqualTo(-1);
+    }
+
     /** A whole push of {@code rows} rows, written as the client writes one. */
     private static final class Push {
         private final ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         Push(int rows) {
-            out.write(0);          // a whole table, not a splice
-            zigzag(1);             // version
-            zigzag(100);           // charCount
-            float64(400);          // contentWidth
-            float64(600);          // contentHeight
+            header(StyledTextHelper.PUSH_WHOLE);
             varlong(rows);
+        }
+
+        private Push() {
+        }
+
+        /** A band of {@code rows} rows of one {@code rowHeight}, the first on {@code firstLine}. */
+        static Push band(int rows, double rowHeight, int firstLine) {
+            Push push = new Push();
+            push.header(StyledTextHelper.PUSH_BAND);
+            push.float64(rowHeight);
+            push.zigzag(firstLine);
+            push.varlong(rows);
+            return push;
         }
 
         /** Starts a row: the line it is on, the offset it starts at and its length, as steps. */
@@ -103,6 +143,14 @@ class StyledTextGeometryRowReaderTest {
             out.write(1);
             varlong(3);
             return this;
+        }
+
+        private void header(int kind) {
+            out.write(kind);
+            zigzag(1);             // version
+            zigzag(100);           // charCount
+            float64(400);          // contentWidth
+            float64(600);          // contentHeight
         }
 
         byte[] bytes() {

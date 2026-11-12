@@ -20,7 +20,8 @@ public final class StyledTextMeasurements {
 
     static TextLayoutMeasurement measurement(DartStyledText styledText, int lineIndex) {
         StyledTextHelper.VisualLine[] rows = StyledTextHelper.rowsOfLine(styledText, lineIndex);
-        if (rows == null)
+        // A row outside the band has no width the client measured: the layout works out its own.
+        if (rows == null || rows[0].derived)
             return null;
         int lineStart = rows[0].start;
         int length = rows[rows.length - 1].end - lineStart;
