@@ -512,6 +512,10 @@ public class DeskDisplayBridge extends DisplayBridge {
         private boolean gone;
         /** A window is created showing, and is only told when that changes. */
         private boolean shown = true;
+        /** Height of the chrome this window's client draws above the shell, as it last reported it. */
+        private int insetTop;
+        /** The bounds the application last gave the shell, which no client report has touched. */
+        private Rectangle requested;
 
         NativeShellWindow(Shell shell, long context) {
             this.shell = shell;
@@ -546,7 +550,8 @@ public class DeskDisplayBridge extends DisplayBridge {
 
         @Override
         public void setBounds(Rectangle bounds) {
-            if (isAlive()) setShellWindowBounds(context, bounds);
+            requested = bounds;
+            if (isAlive()) setShellWindowBounds(context, windowBoundsFor(bounds, insetTop));
         }
 
         @Override
@@ -556,7 +561,10 @@ public class DeskDisplayBridge extends DisplayBridge {
 
         @Override
         public org.eclipse.swt.graphics.Point origin() {
-            return isAlive() ? shellWindowOrigin(context) : null;
+            org.eclipse.swt.graphics.Point origin = isAlive() ? shellWindowOrigin(context) : null;
+            // shellWindowOrigin moves past the Display window's strip; this window has its own.
+            return origin == null ? null
+                    : new org.eclipse.swt.graphics.Point(origin.x, origin.y - clientTopInset + insetTop);
         }
 
         @Override
@@ -772,11 +780,36 @@ public class DeskDisplayBridge extends DisplayBridge {
      * left there. The native window places a framed window's caption by the same rule.
      */
     Rectangle windowBoundsFor(Rectangle shell) {
-        if (shell == null || clientTopInset == 0) return shell;
-        int y = shell.y - clientTopInset;
-        int top = workAreaTop(new Rectangle(shell.x, y, shell.width, shell.height + clientTopInset));
-        if (y < top && shell.y > top - clientTopInset) y = top;
-        return new Rectangle(shell.x, y, shell.width, shell.height + clientTopInset);
+        return windowBoundsFor(shell, clientTopInset);
+    }
+
+    /** {@link #windowBoundsFor(Rectangle)} for a window whose client draws {@code inset} above the shell. */
+    Rectangle windowBoundsFor(Rectangle shell, int inset) {
+        if (shell == null || inset == 0) return shell;
+        int y = shell.y - inset;
+        int top = workAreaTop(new Rectangle(shell.x, y, shell.width, shell.height + inset));
+        if (y < top && shell.y > top - inset) y = top;
+        return new Rectangle(shell.x, y, shell.width, shell.height + inset);
+    }
+
+    @Override
+    protected boolean makeRoomForShellWindowInset(Shell shell, int insetTop) {
+        if (!(shell.getImpl() instanceof DartShell)) return false;
+        ShellWindow window = shellWindowFor((DartShell) shell.getImpl());
+        if (!(window instanceof NativeShellWindow) || !window.isAlive()) return false;
+        NativeShellWindow nativeWindow = (NativeShellWindow) window;
+        if (nativeWindow.insetTop == insetTop) return false;
+        nativeWindow.insetTop = insetTop;
+        // A maximized or full-screen window keeps its size, and the shell takes what is left of it.
+        if (shell.getMaximized() || shell.getFullScreen()) return false;
+        // A window's first report comes before it has this side's scale, so the shell may already
+        // have been resized to a size measured in the wrong units: size from what the app asked for.
+        Rectangle current = shell.getBounds();
+        Rectangle size = nativeWindow.requested != null ? nativeWindow.requested : current;
+        nativeWindow.setBounds(new Rectangle(current.x, current.y, size.width, size.height));
+        if (current.width != size.width || current.height != size.height)
+            applyClientBounds(() -> shell.setBounds(current.x, current.y, size.width, size.height));
+        return true;
     }
 
     /** Whether the native library answers {@link FlutterNative#getWorkAreaTop}; only Windows' does. */
@@ -942,12 +975,15 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     /** Moves and sizes the window to where {@code shell}'s own window was. */
     private void takeOverWindowGeometry(Shell shell) {
-        windowShell = shell;
         int state = windowStateOf(shell);
         // A minimized shell taking the window over is shown restored: it is the one left to see.
         if (state == ShellWindow.STATE_FULLSCREEN || state == ShellWindow.STATE_MAXIMIZED) {
             setShellWindowState(windowContext, state);
+            // A window already in that state reports no new size, and the shell still has the one
+            // its own window gave it.
+            fitShellTakingOverWindow(shell);
         } else {
+            windowShell = shell;
             setShellWindowState(windowContext, ShellWindow.STATE_NORMAL);
             // The shell measures the client area of the window it leaves, so the window grows by the
             // strip the client draws above it (applyClientInsetTop) instead of the shell shrinking.

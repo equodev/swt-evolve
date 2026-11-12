@@ -720,6 +720,61 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
+    @DisplayName("a maximized shell taking over an already maximized window is fitted to it")
+    void maximizedTakeoverFillsAMaximizedWindow() {
+        everyShellButModalsInItsOwnWindow();
+        TestDeskBridge desk = install();
+        Shell welcome = openShell("Welcome");
+        welcome.setMaximized(true);
+        clientReportsViewport(desk, 2880, 1702, 2880, 1800);
+        Shell workbench = new Shell(display, SWT.SHELL_TRIM);
+        workbench.setText("Workbench");
+        workbench.setBounds(62, 71, 1600, 900);
+        workbench.setMaximized(true);
+        workbench.setVisible(true);
+        shellWindowReports(desk, workbench, 1920, 1134);
+
+        welcome.setVisible(false);
+        desk.onUpdate();
+        drainEventLoop();
+
+        assertThat(desk.hostsAsMainShell(workbench)).isTrue();
+        assertThat(workbench.getSize())
+                .as("the window stays maximized through the hand-over, so it reports no new size: the "
+                        + "shell has to be fitted to the one it has, not keep its own window's")
+                .isEqualTo(new Point(2880, 1702));
+    }
+
+    @Test
+    @DisplayName("the strip a shell's own window draws above it grows that window, not shrinks the shell")
+    void stripOfAShellsOwnWindowGrowsTheWindow() {
+        TestDeskBridge desk = install();
+        openShell("Main");
+        Shell dialog = openShell("Opening Session");
+        dialog.setBounds(340, 298, 870, 283);
+        long handle = handleOf(desk, dialog);
+        // Its first report comes before it has this side's scale and chrome: measured at scale 1,
+        // with no strip yet.
+        shellWindowReports(desk, dialog, 580, 189, 0);
+
+        shellWindowReports(desk, dialog, 870, 283 - 30, 30);
+
+        assertThat(desk.bounds.get(handle))
+                .as("the window makes room for the strip above the shell, starting that much higher")
+                .isEqualTo(new Rectangle(340, 268, 870, 313));
+        assertThat(dialog.getSize())
+                .as("the dialog keeps the size its layout asked for; shrunk by the strip, its bottom "
+                        + "row is cut off")
+                .isEqualTo(new Point(870, 283));
+
+        shellWindowReports(desk, dialog, 870, 283, 30);
+        dialog.setBounds(400, 300, 870, 283);
+
+        assertThat(dialog.getSize()).isEqualTo(new Point(870, 283));
+        assertThat(desk.bounds.get(handle)).isEqualTo(new Rectangle(400, 270, 870, 313));
+    }
+
+    @Test
     @DisplayName("the strip the client draws above the shell grows its window upwards by its height")
     void reportedInsetGrowsTheWindowAboveTheShell() {
         TestDeskBridge desk = install();
@@ -1201,13 +1256,37 @@ class DeskMultiWindowFlutterTest {
 
     /** The Display's window reports its viewport, as its client does once it has drawn. */
     private void clientReportsViewport(TestDeskBridge desk, int width, int height) {
+        clientReportsViewport(desk, width, height, 0, 0);
+    }
+
+    private void clientReportsViewport(TestDeskBridge desk, int width, int height, int monitorWidth, int monitorHeight) {
         ClientReadyPayload report = new ClientReadyPayload();
         report.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
         report.width = width;
         report.height = height;
+        report.displayWidth = monitorWidth;
+        report.displayHeight = monitorHeight;
         @SuppressWarnings("unchecked")
         Consumer<ClientReadyPayload> handler = (Consumer<ClientReadyPayload>)
                 desk.comm.handlers.get("Display/" + display.hashCode() + "/ClientReady");
+        handler.accept(report);
+    }
+
+    /** The client of {@code shell}'s own window reports its viewport. */
+    private void shellWindowReports(TestDeskBridge desk, Shell shell, int width, int height) {
+        shellWindowReports(desk, shell, width, height, 0);
+    }
+
+    /** The client of {@code shell}'s own window reports its viewport and the strip it draws above it. */
+    private void shellWindowReports(TestDeskBridge desk, Shell shell, int width, int height, int insetTop) {
+        ClientReadyPayload report = new ClientReadyPayload();
+        report.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
+        report.width = width;
+        report.height = height;
+        report.insetTop = insetTop;
+        @SuppressWarnings("unchecked")
+        Consumer<ClientReadyPayload> handler = (Consumer<ClientReadyPayload>)
+                desk.comm.handlers.get("Shell/" + shell.hashCode() + "/ClientReady");
         handler.accept(report);
     }
 

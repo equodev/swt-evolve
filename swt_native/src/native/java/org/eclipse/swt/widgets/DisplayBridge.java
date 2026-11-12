@@ -1401,6 +1401,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 if (p.isFirst && focused != null && focused == focusRequested && shellOf(focused) == shell)
                     sendFocusRequest(focused);
                 if (p.width <= 0 || p.height <= 0) return;
+                if (makeRoomForShellWindowInset(shell, p.insetTop)) return;
                 Rectangle current = shell.getBounds();
                 if (current.width == p.width && current.height == p.height) return;
                 applyClientBounds(() -> shell.setBounds(current.x, current.y, p.width, p.height));
@@ -1409,6 +1410,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (api.getThread() == Thread.currentThread()) apply.run();
             else api.asyncExec(apply);
         });
+    }
+
+    /**
+     * The client of {@code shell}'s own window draws {@code insetTop} of chrome above the shell.
+     * Returns whether the window was resized to make room for it, in which case the size that
+     * client just reported is stale and the shell keeps its own. No window chrome here.
+     */
+    protected boolean makeRoomForShellWindowInset(Shell shell, int insetTop) {
+        return false;
     }
 
     /**
