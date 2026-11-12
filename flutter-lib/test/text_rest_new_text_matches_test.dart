@@ -1,7 +1,8 @@
 // A Text at rest lays out a new text by itself, without laying out the field around it: its size
 // and baseline come from its strut, not its text. Whatever the new text is, the field has to look
 // exactly as one mounted with that text from the start; a new font changes the strut, so the field
-// is laid out around it again.
+// is laid out around it again. A field draws its text in a layer of its own once the text has
+// changed, so the first new text puts it there and the field is laid out around it that once.
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -76,8 +77,26 @@ void main() {
     });
   }
 
+  testWidgets('a field draws its text in a layer of its own only once the text has changed', (tester) async {
+    await _mount(tester, _text('Value'));
+    int layers() => find
+        .ancestor(
+            of: find.byWidgetPredicate((w) => w.runtimeType.toString() == '_TextAtRest'),
+            matching: find.byType(RepaintBoundary))
+        .evaluate()
+        .length;
+    final before = layers();
+
+    await deliverChange(_text('Other', seq: 11), keys: [WireKey.k_Text_text], base: 10);
+    await tester.pumpAndSettle();
+    expect(layers(), before + 1);
+  });
+
   testWidgets('a new text at rest lays out nothing around it', (tester) async {
     await _mount(tester, _text('Value'));
+    // The first change puts the text in a layer of its own; the ones after it are what is measured.
+    await deliverChange(_text('First', seq: 11), keys: [WireKey.k_Text_text], base: 10);
+    await tester.pumpAndSettle();
     final marked = <String>[];
     final print = debugPrint;
     debugPrint = (String? message, {int? wrapWidth}) {
@@ -89,7 +108,7 @@ void main() {
       debugPrintMarkNeedsLayoutStacks = false;
       debugPrint = print;
     });
-    await deliverChange(_text('Other', seq: 11), keys: [WireKey.k_Text_text], base: 10);
+    await deliverChange(_text('Other', seq: 12), keys: [WireKey.k_Text_text], base: 11);
     await tester.pump();
     debugPrintMarkNeedsLayoutStacks = false;
     debugPrint = print;

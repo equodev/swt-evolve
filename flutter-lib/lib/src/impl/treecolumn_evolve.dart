@@ -7,6 +7,7 @@ import '../impl/item_evolve.dart';
 import '../impl/widget_config.dart';
 import '../theme/theme_extensions/tree_theme_extension.dart';
 import 'tree_evolve.dart';
+import 'utils/column_tooltip.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
 import 'utils/text_utils.dart';
@@ -118,7 +119,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     );
     effectiveStyle = effectiveStyle.copyWith(color: headerColor);
     final int sortDirection = cell?.sortDirection ?? SWT.NONE;
-    return Container(
+    return withColumnToolTip(state.toolTipText, Container(
       padding: adjustedPadding,
       decoration: BoxDecoration(color: bgColor),
       child: Row(
@@ -142,7 +143,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
             ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildColumnBorder({required TreeThemeExtension theme}) {

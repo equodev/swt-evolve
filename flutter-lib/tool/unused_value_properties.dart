@@ -14,6 +14,11 @@
 //
 // Without `--include-tests` a property read only by a test still counts as unused, which is the
 // question the generator wants answered; the summary reports those separately either way.
+//
+// A property the client (`lib`) uses only through some of the classes that inherit it is reported for
+// each other one as `Subclass.property` (a class it is not declared on): `--subclasses-of <V...>` limits
+// that part to the classes given and their subclasses. A use through the declaring class, a class in
+// between, a class beneath, or a receiver of no known value class counts for every subclass it could be.
 
 import 'dart:convert';
 import 'dart:io';
@@ -23,11 +28,13 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/type.dart';
 
 Future<void> main(List<String> args) async {
   final outPath = _option(args, '--out');
   final asJson = args.contains('--json');
   final includeTests = args.contains('--include-tests');
+  final subclassesOf = _option(args, '--subclasses-of')?.split(',').toSet();
 
   final root = Directory.current.absolute.path;
   final genPrefix = _join(root, 'lib/src/gen');
@@ -39,8 +46,10 @@ Future<void> main(List<String> args) async {
   final collection = AnalysisContextCollection(includedPaths: roots);
 
   final declared = <String, Set<String>>{};
+  final supers = <String, String>{};
   final usedInLib = <String, Set<String>>{};
   final usedInTest = <String, Set<String>>{};
+  final libReceivers = <String, Set<String>>{};
 
   var scanned = 0;
   for (final context in collection.contexts) {
@@ -53,11 +62,12 @@ Future<void> main(List<String> args) async {
       scanned++;
 
       if (path.startsWith(genPrefix)) {
-        unit.unit.accept(_DeclarationCollector(declared));
+        unit.unit.accept(_DeclarationCollector(declared, supers));
         continue;
       }
-      final into = path.startsWith(_join(root, 'test')) ? usedInTest : usedInLib;
-      unit.unit.accept(_UsageCollector(into));
+      final test = path.startsWith(_join(root, 'test'));
+      final client = path.startsWith(_join(root, 'lib'));
+      unit.unit.accept(_UsageCollector(test ? usedInTest : usedInLib, client ? libReceivers : null));
     }
   }
 
@@ -93,6 +103,8 @@ Future<void> main(List<String> args) async {
     }
   }
 
+  final bySubclass = _unreadBySubclass(declared, supers, usedInLib, libReceivers, subclassesOf);
+
   if (asJson) {
     _emit(outPath, const JsonEncoder.withIndent('  ').convert(report));
   } else {
@@ -106,6 +118,7 @@ Future<void> main(List<String> args) async {
         lines.add('$owner.$property');
       }
     }
+    lines.addAll(bySubclass);
     _emit(outPath, lines.join('\n'));
   }
 
@@ -113,6 +126,34 @@ Future<void> main(List<String> args) async {
       '${declared.length} value classes, $totalDeclared properties');
   stderr.writeln('unused: $totalUnused'
       '${includeTests ? '' : ' (of which read only by tests: $totalTestOnly)'}');
+  stderr.writeln('unread by a subclass: ${bySubclass.length}');
+}
+
+/// `Subclass.property` for each inherited property no use in the client can be making of that subclass.
+List<String> _unreadBySubclass(Map<String, Set<String>> declared, Map<String, String> supers,
+    Map<String, Set<String>> used, Map<String, Set<String>> receivers, Set<String>? only) {
+  bool inherits(String sub, String ancestor) {
+    for (String? c = supers[sub]; c != null; c = supers[c]) {
+      if (c == ancestor) return true;
+    }
+    return false;
+  }
+
+  bool wanted(String c) => only == null || only.any((o) => c == o || inherits(c, o));
+  final lines = <String>[];
+  for (final owner in declared.keys.toList()..sort()) {
+    for (final property in declared[owner]!.toList()..sort()) {
+      if (!(used[owner]?.contains(property) ?? false)) continue;
+      final via = receivers['$owner.$property'] ?? const <String>{};
+      if (via.contains('*')) continue;
+      for (final sub in declared.keys.toList()..sort()) {
+        if (!inherits(sub, owner) || !wanted(sub)) continue;
+        final read = via.any((r) => r == sub || inherits(sub, r) || inherits(r, sub));
+        if (!read) lines.add('$sub.$property');
+      }
+    }
+  }
+  return lines;
 }
 
 void _emit(String? outPath, String content) {
@@ -135,14 +176,20 @@ String _join(String root, String rest) =>
 /// The instance properties each `V*` class declares itself, inherited ones excluded: a property is
 /// dropped where it is declared, so that is where it has to be counted.
 class _DeclarationCollector extends RecursiveAstVisitor<void> {
-  _DeclarationCollector(this.into);
+  _DeclarationCollector(this.into, this.supers);
 
   final Map<String, Set<String>> into;
+
+  /// Each value class's superclass, by name.
+  final Map<String, String> supers;
 
   @override
   void visitClassDeclaration(ClassDeclaration node) {
     final owner = node.namePart.typeName.lexeme;
     if (owner.startsWith('V')) {
+      into.putIfAbsent(owner, () => <String>{});
+      final superclass = node.extendsClause?.superclass.name.lexeme;
+      if (superclass != null) supers[owner] = superclass;
       for (final member in node.body.members.whereType<FieldDeclaration>()) {
         if (member.isStatic) continue;
         for (final variable in member.fields.variables) {
@@ -158,11 +205,15 @@ class _DeclarationCollector extends RecursiveAstVisitor<void> {
 /// it - so reading `enabled` off a `VLabel` counts as a use of `VControl.enabled`, which is where
 /// it is declared and where dropping it would bite.
 class _UsageCollector extends RecursiveAstVisitor<void> {
-  _UsageCollector(this.into);
+  _UsageCollector(this.into, this.receivers);
 
   final Map<String, Set<String>> into;
 
-  void _record(Element? element) {
+  /// The value class each `Owner.property` is used through, `*` for a receiver of none; null when
+  /// not asked for.
+  final Map<String, Set<String>>? receivers;
+
+  void _record(Element? element, [AstNode? at]) {
     if (element == null) return;
     if (element is! PropertyAccessorElement && element is! FieldElement) return;
 
@@ -173,11 +224,35 @@ class _UsageCollector extends RecursiveAstVisitor<void> {
     final owner = element.enclosingElement?.name;
     if (owner == null || !owner.startsWith('V')) return;
     into.putIfAbsent(owner, () => <String>{}).add(name);
+    receivers?.putIfAbsent('$owner.$name', () => <String>{}).add(at == null ? '*' : _receiverOf(at));
+  }
+
+  /// The value class the property named at [node] is read off, or `*`.
+  static String _receiverOf(AstNode node) {
+    final parent = node.parent;
+    DartType? type;
+    if (node is PrefixedIdentifier) {
+      type = node.prefix.staticType;
+    } else if (node is PropertyAccess) {
+      type = node.realTarget.staticType;
+    } else if (parent is PrefixedIdentifier && identical(parent.identifier, node)) {
+      type = parent.prefix.staticType;
+    } else if (parent is PropertyAccess && identical(parent.propertyName, node)) {
+      type = parent.realTarget.staticType;
+    } else {
+      final extension = node.thisOrAncestorOfType<ExtensionDeclaration>();
+      type = extension != null
+          ? extension.declaredFragment?.element.extendedType
+          : node.thisOrAncestorOfType<ClassDeclaration>()?.declaredFragment?.element.thisType;
+    }
+    if (type is TypeParameterType) type = type.bound;
+    final name = type is InterfaceType ? type.element.name : null;
+    return name != null && name.startsWith('V') ? name : '*';
   }
 
   @override
   void visitSimpleIdentifier(SimpleIdentifier node) {
-    _record(node.element);
+    _record(node.element, node);
     super.visitSimpleIdentifier(node);
   }
 
@@ -186,22 +261,22 @@ class _UsageCollector extends RecursiveAstVisitor<void> {
   // only ever written as unread, which is most of what an event value is for.
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
-    _record(node.writeElement);
-    _record(node.readElement);
+    _record(node.writeElement, node.leftHandSide);
+    _record(node.readElement, node.leftHandSide);
     super.visitAssignmentExpression(node);
   }
 
   @override
   void visitPostfixExpression(PostfixExpression node) {
-    _record(node.writeElement);
-    _record(node.readElement);
+    _record(node.writeElement, node.operand);
+    _record(node.readElement, node.operand);
     super.visitPostfixExpression(node);
   }
 
   @override
   void visitPrefixExpression(PrefixExpression node) {
-    _record(node.writeElement);
-    _record(node.readElement);
+    _record(node.writeElement, node.operand);
+    _record(node.readElement, node.operand);
     super.visitPrefixExpression(node);
   }
 }

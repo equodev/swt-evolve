@@ -47,7 +47,7 @@ class LabelSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable("tabStop", "ControlHelper.isTabStop never makes this widget a Tab stop"), SWT.NONE, SWT.SEPARATOR, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SHADOW_IN, SWT.SHADOW_OUT, SWT.SHADOW_NONE, SWT.CENTER, SWT.LEFT, SWT.RIGHT, SWT.WRAP, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("tabStop", "the client never reads it off a Label", "inheritsBackground", "the client never reads it off a Label"), SWT.NONE, SWT.SEPARATOR, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SHADOW_IN, SWT.SHADOW_OUT, SWT.SHADOW_NONE, SWT.CENTER, SWT.LEFT, SWT.RIGHT, SWT.WRAP, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

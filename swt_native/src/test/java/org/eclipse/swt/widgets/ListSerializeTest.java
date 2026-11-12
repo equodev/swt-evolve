@@ -48,7 +48,7 @@ class ListSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE, SWT.SINGLE, SWT.MULTI, SWT.NO_SEARCH, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("hasOwnBackground", "the client never reads it off a List", "inheritsBackground", "the client never reads it off a List", "tabStop", "the client never reads it off a List"), SWT.NONE, SWT.SINGLE, SWT.MULTI, SWT.NO_SEARCH, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

@@ -25,8 +25,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * A GC's state goes whole the first time and as what changed afterwards, as long as the channel it
- * shares with every other GC of the control still holds what this GC last sent.
+ * A GC's state goes whole the first time the client's channel for the control is given one, and as
+ * what changed afterwards: from what this GC last sent, or from what the GC before it left there.
  */
 @Tag("native-unit")
 class GCStateDiffNativeTest {
@@ -152,31 +152,51 @@ class GCStateDiffNativeTest {
     }
 
     @Test
-    @DisplayName("a new GC on the same control starts whole")
-    void newGcStartsWhole() {
+    @DisplayName("a new GC on the same control sends what differs from the state the channel holds")
+    void newGcSendsWhatDiffersFromTheChannel() {
         GC first = new GC(canvas);
         first.fillRectangle(0, 0, 10, 10);
         first.dispose();
         bridge.comm.sent.clear();
 
-        // A description the client already holds is not sent again, so this one has to differ. Not a
-        // system colour: the mocked display answers every one with the canvas's own foreground.
+        // Not a system colour: the mocked display answers every one with the canvas's own foreground.
         GC second = new GC(canvas);
         second.setForeground(new Color(canvas.getDisplay(), 255, 0, 0));
         second.fillRectangle(0, 0, 10, 10);
         second.dispose();
 
         assertThat(stateFrames()).hasSize(1);
-        omits(stateFrames().get(0), "_d");
-        mentions(stateFrames().get(0), "background");
+        isAChange(stateFrames().get(0));
+        assertThat(stateFrames().get(0)).containsEntry("foreground", "#ffff0000");
+        omits(stateFrames().get(0), "background", "font");
     }
 
     @Test
-    @DisplayName("a GC whose channel another GC wrote to since sends its state whole")
-    void interleavedGcsSendWhole() {
+    @DisplayName("a new GC starts whole once the client's view of the control is forgotten")
+    void newGcStartsWholeOnceForgotten() {
+        GC first = new GC(canvas);
+        first.fillRectangle(0, 0, 10, 10);
+        first.dispose();
+        bridge.comm.sent.clear();
+        FlutterBridge.forgetWhatIsShown(canvas);
+
+        GC second = new GC(canvas);
+        second.setForeground(new Color(canvas.getDisplay(), 255, 0, 0));
+        second.fillRectangle(0, 0, 10, 10);
+        second.dispose();
+
+        assertThat(stateFrames()).hasSize(1);
+        assertThat(stateFrames().get(0)).containsEntry("_whole", true);
+        mentions(stateFrames().get(0), "background", "foreground");
+    }
+
+    @Test
+    @DisplayName("a GC whose channel another GC wrote to since sends what differs from that GC's state")
+    void interleavedGcsSendWhatDiffers() {
         GC outer = new GC(canvas);
         outer.fillRectangle(0, 0, 10, 10);
         GC inner = new GC(canvas);
+        inner.setForeground(new Color(canvas.getDisplay(), 255, 0, 0));
         inner.fillRectangle(0, 0, 10, 10);
         inner.dispose();
         bridge.comm.sent.clear();
@@ -186,8 +206,10 @@ class GCStateDiffNativeTest {
         outer.dispose();
 
         List<Map<String, Object>> frames = stateFrames();
-        omits(frames.get(frames.size() - 1), "_d");
-        mentions(frames.get(frames.size() - 1), "clipping", "background");
+        Map<String, Object> last = frames.get(frames.size() - 1);
+        isAChange(last);
+        mentions(last, "clipping", "foreground");
+        omits(last, "background");
     }
 
     @Test

@@ -104,6 +104,42 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
                 .containsEntry("height", 16);
     }
 
+    /**
+     * A styled-label tree (the IDE's outline) has no columns and keeps the label as the item's text
+     * and icon: a single column that only repeats them is left out, the client reading column 0
+     * from text and image.
+     */
+    @Test
+    void singleColumn_repeatingTextAndImage_sendsNeitherList() {
+        Tree tree = tree();
+        DartTree treeImpl = ownerDrawnTree(tree, 0);
+        doAnswer(invocation -> null).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+        item.setText("MONEY_SCALE : int");
+        item.setImage(solidImage(16, 16));
+
+        java.util.Map<String, Object> state = serialize(item);
+
+        assertThat(state).containsEntry("text", "MONEY_SCALE : int").containsKey("image");
+        assertThat(state).doesNotContainKeys("texts", "images");
+    }
+
+    @Test
+    void singleColumn_drawnTextOtherThanTheItems_isSent() {
+        Tree tree = tree();
+        DartTree treeImpl = ownerDrawnTree(tree, 0);
+        doAnswer(invocation -> {
+            Event event = invocation.getArgument(1);
+            event.gc.drawText("drawn", 2, 2, true);
+            return null;
+        }).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
+
+        TreeItem item = new TreeItem(tree, SWT.NONE);
+
+        assertThatWire(serialize(item)).node("texts[0]").isEqualTo("drawn");
+    }
+
     @Test
     void modelText_survives_whenListenerDrawsNothingForThatCell() {
         Tree tree = tree();

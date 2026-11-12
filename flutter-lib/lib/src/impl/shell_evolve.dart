@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../comm/comm.dart';
+import '../comm/tagged_values.dart';
 import '../comm/v_registry.dart';
 import '../comm/widget_key.dart';
 import '../comm/widget_wire.dart';
@@ -108,31 +110,54 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   /// to the shell's bounds.
   final RemoteDragReceiver _remoteDrag = RemoteDragReceiver();
   int? _remoteDragId;
-  Object? _remoteDragToken;
+
+  /// The shell drawing each id, for the drag steps and images Java sends it.
+  static final Map<int, ShellImpl> _remoteDragTargets = {};
+
+  /// Registers what every Shell answers (see `registerWidgetOps`).
+  static void registerOps() {
+    EquoCommService.onWidgetOp(gen.WireType.shell, gen.WireChannel.dnDRemoteDrag, _remoteDragOp);
+    EquoCommService.onWidgetOp(gen.WireType.shell, gen.WireChannel.dragDetectDragImage, _remoteDragImageOp);
+  }
+
+  /// A drag step: an event's fields. One for a shell nothing draws is not kept for a later one.
+  static FutureOr<bool> _remoteDragOp(int id, Uint8List frame, int start, int end) {
+    _remoteDragTargets[id]?._receiveRemoteDrag((WidgetWireReader(frame)..pos = start).fields(VEvent()));
+    return true;
+  }
+
+  /// The drag image, as PNG bytes, ahead of the first step into this window.
+  static FutureOr<bool> _remoteDragImageOp(int id, Uint8List frame, int start, int end) {
+    final shell = _remoteDragTargets[id];
+    final payload = TaggedValues.decodeAt(frame, start);
+    if (shell == null || payload is! Map) return true;
+    final png = payload['segments'];
+    if (png is List<int> && png.isNotEmpty) {
+      shell._remoteDrag.image(Uint8List.fromList(png), Size(_num(payload['width']), _num(payload['height'])));
+    }
+    return true;
+  }
 
   void _listenRemoteDrag(int id) {
     _unlistenRemoteDrag();
     _remoteDragId = id;
-    _remoteDragToken = EquoCommService.on(gen.WireType.shell, id, gen.WireChannel.dnDRemoteDrag, _receiveRemoteDrag);
+    _remoteDragTargets[id] = this;
   }
 
   void _unlistenRemoteDrag() {
     final id = _remoteDragId;
-    if (id != null) EquoCommService.remove(gen.WireType.shell, id, gen.WireChannel.dnDRemoteDrag, _remoteDragToken);
+    if (id != null && identical(_remoteDragTargets[id], this)) _remoteDragTargets.remove(id);
     _remoteDragId = null;
   }
 
-  void _receiveRemoteDrag(dynamic payload) {
-    if (!mounted || payload is! Map) return;
+  void _receiveRemoteDrag(VEvent step) {
+    if (!mounted) return;
+    final x = step.x, y = step.y;
     final box = context.findRenderObject() as RenderBox?;
-    final global = box != null && box.hasSize
-        ? box.localToGlobal(Offset(_num(payload['x']), _num(payload['y'])))
+    final global = x != null && y != null && box != null && box.hasSize
+        ? box.localToGlobal(Offset(x.toDouble(), y.toDouble()))
         : null;
-    final png = payload['segments'];
-    final hasImage = png is List<int> && png.isNotEmpty;
-    if (!_remoteDrag.handle(context, payload['text'] as String? ?? '', global,
-        png: hasImage ? Uint8List.fromList(png) : null,
-        imageSize: hasImage ? Size(_num(payload['width']), _num(payload['height'])) : null)) {
+    if (!_remoteDrag.handle(context, step.detail ?? 0, global)) {
       widget.sendEvent(state, gen.WireChannel.dnDRemoteDropNone, VEvent());
     }
   }

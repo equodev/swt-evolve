@@ -37,6 +37,11 @@ public class Serializer {
         final java.util.ArrayList<Object> writtenResources = new java.util.ArrayList<>();
         /** The {@link #oncePerPayload} cache of the record being written; null outside one. */
         java.util.Map<Object, Object> payloadScope;
+        /** The serial of the tape whose records are being written; 0 outside one. */
+        long tapeSerial;
+        /** The {@link #oncePerTape} cache, and the tape it belongs to. */
+        java.util.Map<Object, Object> tapeScope;
+        long tapeScopeSerial;
     }
 
     private static final ThreadLocal<Local> locals = ThreadLocal.withInitial(Local::new);
@@ -227,6 +232,27 @@ public class Serializer {
     private static final java.util.Map<Object, Object> EMPTY_SCOPE = java.util.Collections.emptyMap();
 
     /**
+     * Derives {@code key}'s value once for every record one tape writes, or on every call outside a
+     * tape: for what many records of one flush read alike, such as a tree's rows, which each of its
+     * items reads for its bounds.
+     */
+    public static <T> T oncePerTape(Object key, java.util.function.Supplier<T> derive) {
+        Local l = local();
+        if (l.tapeSerial == 0) return derive.get();
+        if (l.tapeScopeSerial != l.tapeSerial || l.tapeScope == null) {
+            l.tapeScope = new java.util.IdentityHashMap<>();
+            l.tapeScopeSerial = l.tapeSerial;
+        }
+        @SuppressWarnings("unchecked")
+        T cached = (T) l.tapeScope.get(key);
+        if (cached != null) return cached;
+        T derived = derive.get();
+        // derive() can pump the event loop and write another tape on this thread meanwhile.
+        if (derived != null && l.tapeScopeSerial == l.tapeSerial && l.tapeScope != null) l.tapeScope.put(key, derived);
+        return derived;
+    }
+
+    /**
      * Derives {@code key}'s value once for the payload being written, or on every call when none is.
      * A generated converter reads each field twice (null check, then write), and one derived value
      * can back several fields, so an uncached getter runs many times per payload.
@@ -322,7 +348,9 @@ public class Serializer {
      * asker did not have, and it asked again for each.
      */
     public static void forgetDelivery(VWidget value) {
-        if (value != null) value.sent(0, 0L);
+        if (value == null) return;
+        value.sent(0, 0L);
+        sentHashes(value).wholeLists(0);
     }
 
     /** Whether {@code impl} can be described to {@code connection} by what changed rather than in full. */
@@ -354,7 +382,8 @@ public class Serializer {
      * client holds, or, when the client holds nothing for it, all of them. A value names the widgets
      * and images it holds by id; any of those the client has not been given is owed, and is described
      * by a record of its own further down the same frame. So a new subtree goes out as one record per
-     * widget, parents first, and nothing is ever written inside anything else.
+     * widget, parents first; only an item a list of items names is described inside that list
+     * ({@link WidgetWire#items}).
      */
     public static final class Tape implements WidgetWire.Names {
 
@@ -384,6 +413,13 @@ public class Serializer {
         private final java.util.Map<Long, Long> canonicalImageId = new java.util.HashMap<>();
         /** This tape, as the widgets it describes are marked with: {@link SentHashes#describedOn}. */
         private long serial;
+        /**
+         * The items described in place whose property may still be taken back: credited once the
+         * property of the record itself that holds them is kept.
+         */
+        private final java.util.ArrayList<InPlace> inPlace = new java.util.ArrayList<>();
+        /** How many items described in place the property being written sits inside. */
+        private int inPlaceDepth;
 
         public Tape(int connection) {
             start(connection);
@@ -413,11 +449,17 @@ public class Serializer {
 
         /** Hands the tape back for the next {@link #borrow}; it is not used after this. */
         public void release() {
+            Local l = local();
+            if (l.tapeScopeSerial == serial) l.tapeScope = null;
             owed.clear();
             described.clear();
             canonicalImageId.clear();
             underUnheld.clear();
             insideUnheld = 0;
+            inPlace.clear();
+            inPlaceDepth = 0;
+            writing = null;
+            changing = false;
             frame.names(null);
             java.util.ArrayDeque<Tape> spare = SPARE.get();
             // A flush that described a whole window grew its buffer large; that one is not kept.
@@ -456,6 +498,122 @@ public class Serializer {
         }
 
         @Override
+        public boolean describeInPlace(Object api, int type) {
+            if (!(api instanceof org.eclipse.swt.widgets.Widget)) return false;
+            org.eclipse.swt.widgets.Widget widget = (org.eclipse.swt.widgets.Widget) api;
+            if (!(widget.getImpl() instanceof DartWidget) || widget.isDisposed()) return false;
+            DartWidget impl = (DartWidget) widget.getImpl();
+            VWidget value = impl.getValue();
+            if (value == null || (named && insideUnheld == 0 && value.sentSeq(connection) != 0)) return false;
+            SentHashes seen = sentHashes(value);
+            if (seen.describedOn == serial || typeNumberOf(impl, api, seen) != type) return false;
+            seen.describedOn = serial;
+            long seq = writeSeq.incrementAndGet();
+            inPlace.add(new InPlace(api, impl, value, seq, frame.inPlaceStamp(seq), inPlaceDepth));
+            Local l = local();
+            java.util.Map<Object, Object> outerScope = l.payloadScope;
+            l.payloadScope = EMPTY_SCOPE;
+            // Whatever it names the client lacks too, as for any widget it does not hold.
+            insideUnheld++;
+            inPlaceDepth++;
+            VWidget outerWriting = writing;
+            boolean outerChanging = changing;
+            writing = value;
+            changing = false;
+            seen.wholeLists(connection);
+            try {
+                writeWholeKeys(value, value.wireKeys(), seen);
+            } finally {
+                writing = outerWriting;
+                changing = outerChanging;
+                inPlaceDepth--;
+                insideUnheld--;
+                l.payloadScope = outerScope;
+            }
+            return true;
+        }
+
+        /** An item described in place, and the step its stamp was written from. */
+        private static final class InPlace {
+            final Object api;
+            final DartWidget impl;
+            final VWidget value;
+            final long seq;
+            final long steppedFrom;
+            final int depth;
+
+            InPlace(Object api, DartWidget impl, VWidget value, long seq, long steppedFrom, int depth) {
+                this.api = api;
+                this.impl = impl;
+                this.value = value;
+                this.seq = seq;
+                this.steppedFrom = steppedFrom;
+                this.depth = depth;
+            }
+        }
+
+        /**
+         * The property written since {@code mark} items were described in place is kept: what it
+         * described is credited, once that property belongs to the record itself.
+         */
+        private void keptInPlace(int mark) {
+            if (inPlaceDepth > 0 || inPlace.size() == mark) return;
+            Local l = local();
+            for (int i = mark; i < inPlace.size(); i++) {
+                InPlace item = inPlace.get(i);
+                if (l.target != 0) {
+                    item.value.sent(l.target, item.seq);
+                    sentHashes(item.value).wholeAt = item.seq;
+                    FlutterBridge.registerDelivered(item.impl);
+                }
+            }
+            inPlace.subList(mark, inPlace.size()).clear();
+        }
+
+        /**
+         * The property written since {@code mark} items were described in place was taken back: those
+         * it held directly are owed a record of their own instead, which describes what they hold.
+         */
+        private void droppedInPlace(int mark) {
+            if (inPlace.size() == mark) return;
+            frame.restoreInPlaceStamp(inPlace.get(mark).steppedFrom);
+            for (int i = mark; i < inPlace.size(); i++) sentHashes(inPlace.get(i).value).describedOn = 0;
+            for (int i = mark; i < inPlace.size(); i++) {
+                InPlace item = inPlace.get(i);
+                if (item.depth == inPlaceDepth) widget(item.api);
+            }
+            inPlace.subList(mark, inPlace.size()).clear();
+        }
+
+        /** The widget whose own properties are being written, and whether as a change; null outside one. */
+        private VWidget writing;
+        private boolean changing;
+
+        @Override
+        public boolean tracksLists() {
+            return writing != null && connection != 0;
+        }
+
+        @Override
+        public int[] heldList(int key) {
+            return changing && named && writing != null ? sentHashes(writing).heldList(key, connection) : null;
+        }
+
+        @Override
+        public void listWritten(int key, int[] ids) {
+            if (writing != null) sentHashes(writing).holdsList(key, connection, ids);
+        }
+
+        @Override
+        public boolean holds(Object api) {
+            if (!(api instanceof org.eclipse.swt.widgets.Widget)) return false;
+            org.eclipse.swt.widgets.Widget widget = (org.eclipse.swt.widgets.Widget) api;
+            if (!(widget.getImpl() instanceof DartWidget) || widget.isDisposed()) return false;
+            VWidget value = ((DartWidget) widget.getImpl()).getValue();
+            return value != null && value.sentSeq(connection) != 0 && !underUnheld.contains(api);
+        }
+
+        @Override
         public void image(org.eclipse.swt.graphics.Image image) {
             if (described.contains(image)) return;
             if (!(image.getImpl() instanceof DartImage)) return;
@@ -483,14 +641,28 @@ public class Serializer {
 
         /** A dirty widget's record, and whatever it names that the client lacks. */
         public void describe(DartWidget impl) {
+            describe(impl, false);
+        }
+
+        /**
+         * {@link #describe} for a widget the flush took from its queue: one another record of this
+         * flush already described whole, with nothing changed since, is left out.
+         */
+        public void describeQueued(DartWidget impl) {
+            describe(impl, true);
+        }
+
+        private void describe(DartWidget impl, boolean queued) {
             Local l = local();
             int outerTarget = l.target;
+            long outerTape = l.tapeSerial;
             l.target = connection;
+            l.tapeSerial = serial;
             l.writing++;
             try {
                 VWidget value = impl.getValue();
                 SentHashes seen = sentHashes(value);
-                if (seen.describedOn != serial) {
+                if (seen.describedOn != serial && !(queued && named && heldWhole(value, seen))) {
                     seen.describedOn = serial;
                     java.util.Map<Object, Object> outerScope = l.payloadScope;
                     l.payloadScope = EMPTY_SCOPE;
@@ -506,7 +678,17 @@ public class Serializer {
             } finally {
                 l.writing--;
                 l.target = outerTarget;
+                l.tapeSerial = outerTape;
             }
+        }
+
+        /**
+         * Whether the client holds {@code value} as described whole since it was last dirtied, with
+         * nothing changed since: a widget queued before another record described it whole.
+         */
+        private boolean heldWhole(VWidget value, SentHashes seen) {
+            return !value.anyDirty() && seen.wholeAt != 0 && seen.wholeAt > seen.dirtiedAt
+                    && value.sentSeq(connection) == seen.wholeAt;
         }
 
         /**
@@ -515,20 +697,53 @@ public class Serializer {
          * keyed writer does.
          */
         public void describeHolder(String type, long id, int[] keys, KeyedWriter properties) {
+            describeHolder(type, id, keys, properties, null);
+        }
+
+        /**
+         * {@link #describeHolder(String, long, int[], KeyedWriter)}, left out when it says what
+         * {@code sent} records this client was last told by it. Each record replaces the whole
+         * holder and is stamped, so skipping one equal to the last leaves the client where it is.
+         */
+        public void describeHolder(String type, long id, int[] keys, KeyedWriter properties, HolderSent sent) {
             targeting(connection, () -> {
+                frame.mark();
                 int start = frame.beginRecord(WidgetWire.HOLDER, type, id);
                 // Stamped like a widget's record: a description that reaches the client after a
                 // newer one must not replace it.
-                frame.stamps(writeSeq.incrementAndGet(), 0, false);
+                long stamp = writeSeq.incrementAndGet();
+                frame.stamps(stamp, 0, false);
+                int body = frame.size();
                 // The record replaces what the client holds, whose defaults are zero, false and null.
                 for (int key : keys) {
                     int at = frame.size();
                     int previous = frame.lastKey();
+                    int mark = inPlace.size();
                     frame.key(key);
                     int from = frame.size();
-                    if (!properties.write(frame, key) || frame.isZero(from, frame.size())) frame.rewind(at, previous);
+                    if (!properties.write(frame, key) || frame.isZero(from, frame.size())) {
+                        frame.rewind(at, previous);
+                        droppedInPlace(mark);
+                    } else {
+                        keptInPlace(mark);
+                    }
                 }
-                frame.endRecord(start);
+                if (sent != null) {
+                    long hash = frame.hash(body, frame.size());
+                    // An item described in place steps the stamp, and is credited as delivered.
+                    boolean describedNone = writeSeq.get() == stamp;
+                    synchronized (sent) {
+                        if (named && describedNone && sent.connection == connection && sent.hash == hash) {
+                            frame.rollback();
+                        } else {
+                            frame.endRecord(start);
+                            sent.connection = named ? connection : 0;
+                            sent.hash = hash;
+                        }
+                    }
+                } else {
+                    frame.endRecord(start);
+                }
                 Local l = local();
                 l.writing++;
                 try {
@@ -586,6 +801,10 @@ public class Serializer {
             l.onDelivery.clear();
             Object outer = l.updating;
             l.updating = value;
+            VWidget outerWriting = writing;
+            boolean outerChanging = changing;
+            writing = value;
+            changing = true;
             try {
                 SentHashes seen = sentHashes(value);
                 long seq = writeSeq.incrementAndGet();
@@ -599,18 +818,22 @@ public class Serializer {
                     int key = changed.get(i);
                     int at = frame.size();
                     int previous = frame.lastKey();
+                    int mark = inPlace.size();
                     frame.key(key);
                     int from = frame.size();
                     if (!value.writeWire(frame, key)) {
                         frame.rewind(at, previous);
+                        droppedInPlace(mark);
                         continue;
                     }
-                    long hash = frame.hash(from, frame.size());
+                    long hash = frame.valueHash(from, frame.size());
                     if (seen.same(key, connection, hash)) {
                         frame.rewind(at, previous);
+                        droppedInPlace(mark);
                         continue;
                     }
                     seen.put(key, connection, hash);
+                    keptInPlace(mark);
                     any = true;
                 }
                 if (!any) {
@@ -623,6 +846,8 @@ public class Serializer {
                 delivered(l, impl, value, seq);
             } finally {
                 l.updating = outer;
+                writing = outerWriting;
+                changing = outerChanging;
             }
         }
 
@@ -636,13 +861,21 @@ public class Serializer {
             int[] keys = value.wireKeys();
             boolean unheld = value.sentSeq(connection) == 0 || underUnheld.contains(api);
             if (unheld) insideUnheld++;
+            VWidget outerWriting = writing;
+            boolean outerChanging = changing;
+            writing = value;
+            changing = false;
+            seen.wholeLists(connection);
             try {
                 writeWholeKeys(value, keys, seen);
             } finally {
+                writing = outerWriting;
+                changing = outerChanging;
                 if (unheld) insideUnheld--;
             }
             frame.endRecord(start);
             delivered(l, impl, value, seq);
+            if (l.target != 0) seen.wholeAt = seq;
         }
 
         private void writeWholeKeys(VWidget value, int[] keys, SentHashes seen) {
@@ -650,6 +883,7 @@ public class Serializer {
                 int key = keys[i];
                 int at = frame.size();
                 int previous = frame.lastKey();
+                int mark = inPlace.size();
                 // What the client starts from is the value class's defaults: zero, false and null,
                 // which an empty string or array also stands for. One the value is recognised at is
                 // not written, and is recorded as sent with the hash its bytes would have had.
@@ -658,6 +892,7 @@ public class Serializer {
                     frame.key(key);
                     if (!value.writeWire(frame, key)) {
                         frame.rewind(at, previous);
+                        droppedInPlace(mark);
                         continue;
                     }
                     written = WidgetWire.WRITTEN;
@@ -672,9 +907,13 @@ public class Serializer {
                 }
                 int from = frame.valueStart();
                 int to = frame.size();
-                seen.put(i, key, connection, frame.hash(from, to));
-                if (isDefault(value, key, frame, from, to))
+                seen.put(i, key, connection, frame.valueHash(from, to));
+                if (isDefault(value, key, frame, from, to)) {
                     frame.rewind(at, previous);
+                    droppedInPlace(mark);
+                } else {
+                    keptInPlace(mark);
+                }
             }
         }
 
@@ -683,6 +922,12 @@ public class Serializer {
          * for a composite, which can come to be presented under another name as its children arrive.
          */
         private int beginRecord(int kind, DartWidget impl, Object api, SentHashes seen) {
+            typeNumberOf(impl, api, seen);
+            return frame.beginRecord(kind, seen.type, seen.typeNumber, FlutterBridge.id(api));
+        }
+
+        /** The number of the type a widget's records name, kept in its value's memo; -1 for none. */
+        private int typeNumberOf(DartWidget impl, Object api, SentHashes seen) {
             if (impl instanceof DartComposite) {
                 seen.type = swtWidgetName(impl, (org.eclipse.swt.widgets.Widget) api);
                 seen.typeNumber = WidgetWire.typeNumber(seen.type);
@@ -691,7 +936,7 @@ public class Serializer {
                 seen.type = type.name;
                 seen.typeNumber = type.number;
             }
-            return frame.beginRecord(kind, seen.type, seen.typeNumber, FlutterBridge.id(api));
+            return seen.typeNumber == null ? -1 : seen.typeNumber;
         }
 
         private void writeEditor(org.eclipse.swt.custom.ControlEditor api) {
@@ -754,6 +999,17 @@ public class Serializer {
         boolean write(WidgetWire w, int key);
     }
 
+    /** What one holder's last record told a client, for {@link Tape#describeHolder} to leave a repeat out. */
+    public static final class HolderSent {
+        private int connection;
+        private long hash;
+
+        /** The next record is written whatever it says: for a client that holds nothing yet. */
+        public synchronized void forget() {
+            connection = 0;
+        }
+    }
+
     private static final java.util.concurrent.atomic.AtomicLong tapeSerial = new java.util.concurrent.atomic.AtomicLong();
 
     /**
@@ -771,6 +1027,17 @@ public class Serializer {
      */
     public static void clientChanged(VWidget value, int key) {
         resend(value, key);
+    }
+
+    /** {@code value}'s widget was scheduled for a flush: a whole record written before this does not answer it. */
+    public static void dirtied(VWidget value) {
+        if (value != null) sentHashes(value).dirtiedAt = writeSeq.get();
+    }
+
+    /** Whether {@code value}'s widget waits in the bridge's dirty queue for the next flush. */
+    public static boolean waitsForFlush(VWidget value) {
+        SentHashes seen = (SentHashes) value.wireMemo;
+        return seen != null && seen.queued;
     }
 
     /** What the binary wire last sent of {@code value}'s properties, kept on the value itself. */
@@ -813,6 +1080,54 @@ public class Serializer {
         boolean queued;
         /** Whether a flush has already considered the widget, so it is no longer new to the client. */
         boolean notNew;
+        /**
+         * The lists of widgets the client {@link #listsFor} holds for this value, by property number;
+         * a list not among them is empty there, since the last whole description.
+         */
+        private int listsFor;
+        private int[] listKeys;
+        private int[][] lists;
+
+        /** A whole description for {@code connection} starts: what it does not write, the client holds empty. */
+        void wholeLists(int connection) {
+            listsFor = connection;
+            listKeys = null;
+            lists = null;
+        }
+
+        /** The ids of the list {@code connection} holds for {@code key}, or null when that is not known. */
+        int[] heldList(int key, int connection) {
+            if (connection == 0 || listsFor != connection) return null;
+            if (listKeys != null) {
+                for (int i = 0; i < listKeys.length; i++) if (listKeys[i] == key) return lists[i];
+            }
+            return EMPTY_LIST;
+        }
+
+        void holdsList(int key, int connection, int[] ids) {
+            if (connection == 0 || listsFor != connection) return;
+            if (listKeys == null) {
+                listKeys = new int[] { key };
+                lists = new int[][] { ids };
+                return;
+            }
+            for (int i = 0; i < listKeys.length; i++) {
+                if (listKeys[i] == key) {
+                    lists[i] = ids;
+                    return;
+                }
+            }
+            listKeys = java.util.Arrays.copyOf(listKeys, listKeys.length + 1);
+            lists = java.util.Arrays.copyOf(lists, lists.length + 1);
+            listKeys[listKeys.length - 1] = key;
+            lists[lists.length - 1] = ids;
+        }
+
+        private static final int[] EMPTY_LIST = new int[0];
+
+        /** The stamp of the widget's last whole record, and the last stamp written before it was last dirtied. */
+        long wholeAt;
+        long dirtiedAt;
         /** The type the widget's records name, and the client's number for it: {@link Tape#beginRecord}. */
         String type;
         Integer typeNumber;
@@ -846,6 +1161,18 @@ public class Serializer {
                 return;
             }
             put(key, connection, hash);
+        }
+
+        /** Makes this the same record as {@code other}. */
+        void copyFrom(SentHashes other) {
+            if (sent.length < other.size) {
+                sent = new long[other.sent.length];
+                hashes = new long[other.sent.length];
+            }
+            System.arraycopy(other.sent, 0, sent, 0, other.size);
+            System.arraycopy(other.hashes, 0, hashes, 0, other.size);
+            size = other.size;
+            inOrder = other.inOrder;
         }
 
         /** Drops what was last sent for {@code key}, so its next write goes out whatever it hashes to. */
@@ -916,6 +1243,41 @@ public class Serializer {
             if (isDefault(value, key, props, from, to)) props.rewind(at, previous);
         }
         return props;
+    }
+
+    /**
+     * The properties of {@code impl} that differ from {@code held}, the state another GC left on the
+     * channel, as a {@link GcWire#STATE} record of {@code w}; {@code seen} is given the whole state.
+     *
+     * @return whether any property differs.
+     */
+    public boolean changeFrom(DartResource impl, SentHashes held, GcWire w, SentHashes seen) {
+        VResource value = impl.getValue();
+        WidgetWire props = w.scratch();
+        int connection = local().target;
+        seen.clear();
+        int[] keys = value.wireKeys();
+        boolean any = false;
+        for (int i = 0; i < keys.length; i++) {
+            int key = keys[i];
+            int at = props.size();
+            int previous = props.lastKey();
+            props.key(key);
+            int from = props.size();
+            if (!value.writeWire(props, key)) {
+                props.rewind(at, previous);
+                continue;
+            }
+            long hash = props.hash(from, props.size());
+            seen.put(i, key, connection, hash);
+            if (held.same(key, connection, hash)) {
+                props.rewind(at, previous);
+                continue;
+            }
+            any = true;
+        }
+        if (any) w.state(GcWire.STATE, props);
+        return any;
     }
 
     /**

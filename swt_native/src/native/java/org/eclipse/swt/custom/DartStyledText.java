@@ -6198,7 +6198,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 // insert a character in the text in this instance). Don't
                 // ignore CTRL+ALT combinations since that is the Alt Gr
                 // key on some keyboards.  See bug 20953.
-                ignore = event.stateMask == SWT.ALT || event.stateMask == SWT.CTRL || event.stateMask == (SWT.ALT | SWT.SHIFT) || event.stateMask == (SWT.CTRL | SWT.SHIFT);
+                ignore = (event.stateMask & SWT.COMMAND) != 0 && "cocoa".equals(org.eclipse.swt.widgets.DisplayHelper.keyboardPlatform(getDisplay())) || event.stateMask == SWT.ALT || event.stateMask == SWT.CTRL || event.stateMask == (SWT.ALT | SWT.SHIFT) || event.stateMask == (SWT.CTRL | SWT.SHIFT);
             }
             // -ignore anything below SPACE except for line delimiter keys and tab.
             // -ignore DEL
@@ -11192,9 +11192,9 @@ public class DartStyledText extends DartCanvas implements IStyledText {
                 if (lastOffset > rangeStart)
                     SWT.error(SWT.ERROR_INVALID_ARGUMENT);
                 hasStyleWithVariableHeight |= styles[i].isVariableHeight();
-                getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
                 lastOffset = rangeStart + rangeLength;
             }
+            getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
         }
         int rangeStart = start, rangeEnd = end;
         if (styles != null && styles.length > 0) {
@@ -11244,10 +11244,10 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
         for (StyleRange style : getStyleRanges(false)) {
             hasStyleWithVariableHeight = style.isVariableHeight();
-            getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
             if (hasStyleWithVariableHeight)
                 break;
         }
+        getValue().markDirty(VStyledText.FIXED_LINE_HEIGHT);
         SortedSet<Integer> modifiedLines = computeModifiedLines(formerRanges, formerStyles, ranges, styles);
         resetCache(modifiedLines);
         if (reset) {
@@ -12353,6 +12353,8 @@ public class DartStyledText extends DartCanvas implements IStyledText {
     StyleRange[] wireStyles() {
         return StyledTextHelper.wireStyles(this);
     }
+
+    final TextEdit textEdit = new TextEdit(194, 199, 213, 215, 35);
 
     int[] wireStyleIndex() {
         return StyledTextHelper.styleIndexForWire(this);

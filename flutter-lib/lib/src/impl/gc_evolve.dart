@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import '../gen/canvas.dart';
 import '../gen/gc.dart';
+import '../gen/gcdrawer.dart';
 import '../gen/widget.dart';
 import 'utils/widget_utils.dart';
 import '../theme/theme_extensions/canvas_theme_extension.dart';
@@ -27,11 +29,18 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   // about Java having drawn through this GC.
   bool _stateDelivered = false;
 
+  /// The state each GC drawer held when it was let go of, by id. Java sends a GC's state as a change
+  /// from what its channel holds, so the frames held for the id meanwhile apply to it.
+  static final Map<int, VGC> _statesLeft = {};
+  static const int _maxStatesLeft = 1024;
+
   @override
   void initState() {
     super.initState();
+    final id = state.id;
+    final held = GCDrawerBase.live[id]?.state ?? _statesLeft.remove(id);
     _drawer = GCDrawer.embedded(
-      state,
+      held ?? state,
       onShapesUpdated: _onShapesUpdated,
       onGCDispose: _onGCDispose,
       onFullRepaintNeeded: _requestFullRepaintFromParent,
@@ -47,6 +56,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void _onShapesUpdated(List<Shape> _) {
     if (!mounted) return;
     (context as Element).markNeedsBuild();
+    // An owner-drawn row told between frames shows the paint in the frame this rebuild schedules;
+    // told after it, in the one after that.
+    if (_inOwnerDrawnRow && _betweenFrames) {
+      _notifyParentGCReady();
+      return;
+    }
     // Promote the overlay onstage once it has painted content (a constructor-only paint
     // sends no VGC state push that would otherwise do it).
     if (_readyNoticeDue) return;
@@ -56,6 +71,15 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   bool _readyNoticeDue = false;
   late final void Function(Duration) _readyNotice = _noticeReady;
+
+  /// A GC stays under the row it was mounted in, so this is looked up once.
+  late final bool _inOwnerDrawnRow = _ownerDrawnRow() != null;
+
+  /// Outside a build, where a parent's setState is allowed.
+  static bool get _betweenFrames {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    return phase == SchedulerPhase.idle || phase == SchedulerPhase.postFrameCallbacks;
+  }
 
   void _noticeReady(Duration _) {
     _readyNoticeDue = false;
@@ -89,6 +113,12 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   @override
   void dispose() {
+    final id = _drawer.state.id;
+    if (identical(GCDrawerBase.live[id], _drawer)) {
+      _statesLeft.remove(id);
+      if (_statesLeft.length >= _maxStatesLeft) _statesLeft.remove(_statesLeft.keys.first);
+      _statesLeft[id] = _drawer.state;
+    }
     _drawer.dispose();
     super.dispose();
   }
@@ -170,19 +200,20 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   CanvasThemeExtension get _canvasTheme =>
       Theme.of(context).extension<CanvasThemeExtension>()!;
 
-  Size get bounds {
-    final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
-    if (canvas != null && canvas.value.id == state.id) {
-      final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      return canvasState?.getBounds() ??
-          Size(_canvasTheme.defaultWidth, _canvasTheme.defaultHeight);
-    }
-    return Size(_canvasTheme.defaultWidth, _canvasTheme.defaultHeight);
+  /// The plain Canvas this GC is the GC of; a Canvas subclass's GC takes the defaults.
+  CanvasImpl? _ownCanvas() {
+    final canvas = context.getInheritedWidgetOfExactType<CanvasGcScope>()?.canvas;
+    if (canvas == null || canvas.widget.runtimeType != CanvasSwt) return null;
+    return canvas.widget.value.id == state.id ? canvas : null;
   }
 
+  Size get bounds =>
+      _ownCanvas()?.getBounds() ?? Size(_canvasTheme.defaultWidth, _canvasTheme.defaultHeight);
+
   Color get canvasBg {
-    final canvas = context.findAncestorWidgetOfExactType<CanvasSwt>();
-    if (canvas != null && canvas.value.id == state.id) {
+    final canvasState = _ownCanvas();
+    if (canvasState != null) {
+      final canvas = canvasState.widget;
       // The backdrop stands in for SWT's erase-to-background. A Canvas with no background of
       // its own under an ancestor's backgroundImage erases to that image, which the ancestor
       // already painted underneath -- an opaque erase here would hide it.
@@ -201,9 +232,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       // A Canvas with no ground of its own erases to nothing rather than to the theme's drawing
       // surface: that surface is not what the surrounding Composite paints, so erasing to it is
       // what turns a Canvas the size of its own label into a block hugging the text.
-      final canvasState = context.findAncestorStateOfType<CanvasImpl>();
-      if (canvasState != null) return canvasState.ownGround ?? Colors.transparent;
-      return Theme.of(context).extension<CompositeThemeExtension>()!.backgroundColor;
+      return canvasState.ownGround ?? Colors.transparent;
     }
     return Colors.transparent;
   }

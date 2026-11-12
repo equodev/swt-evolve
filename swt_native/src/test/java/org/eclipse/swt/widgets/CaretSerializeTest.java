@@ -24,8 +24,7 @@ class CaretSerializeTest extends SerializeTestBase {
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Caret")
-               .containsEntry("visible", w.getVisible())
-               .containsEntry("style", w.getStyle());
+               .containsEntry("visible", w.getVisible());
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
@@ -36,7 +35,7 @@ class CaretSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE);
+        }, unwritable("style", "the client never reads it off a Caret"), SWT.NONE);
     }
 
     @Test

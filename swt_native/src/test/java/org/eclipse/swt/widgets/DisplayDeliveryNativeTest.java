@@ -136,7 +136,7 @@ class DisplayDeliveryNativeTest {
     }
 
     @Test
-    @DisplayName("an open popup menu is in the Display state, and gone once closed")
+    @DisplayName("an open popup menu is in the Display's popups, and gone once closed")
     void popupsAreTracked() {
         TestWebBridge web = install();
         Shell shell = new Shell(display);
@@ -144,14 +144,17 @@ class DisplayDeliveryNativeTest {
         Menu popup = new Menu(shell, SWT.POP_UP);
 
         ((DartDisplay) display.getImpl()).addPopup(popup);
-        assertThat(names(latestDisplayState(web), popup.hashCode()))
+        assertThat(names(latestState(web, displayChannel() + "/Popups"), popup.hashCode()))
                 .as("a popup renders as an overlay owned by the Display, not by a shell")
                 .isTrue();
 
         ((DartDisplay) display.getImpl()).removePopup(popup);
-        assertThat(names(latestDisplayState(web), popup.hashCode()))
+        assertThat(names(latestState(web, displayChannel() + "/Popups"), popup.hashCode()))
                 .as("a popup left in the list stays on screen after it was dismissed")
                 .isFalse();
+        assertThat(names(latestDisplayState(web), shell.hashCode()))
+                .as("the Display's own record still describes its shells")
+                .isTrue();
     }
 
     @Test
@@ -228,8 +231,13 @@ class DisplayDeliveryNativeTest {
 
     /** The most recent Display payload — what the client would hold after everything so far. */
     private Map<String, Object> latestDisplayState(TestWebBridge web) {
-        List<RecordingComm.Frame> frames = displayFrames(web);
-        assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
+        return latestState(web, displayChannel());
+    }
+
+    /** The most recent record on {@code channel}: each replaces what the client held. */
+    private static Map<String, Object> latestState(TestWebBridge web, String channel) {
+        List<RecordingComm.Frame> frames = web.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
+        assertThat(frames).as("no %s frame was ever produced", channel).isNotEmpty();
         return frames.get(frames.size() - 1).state();
     }
 

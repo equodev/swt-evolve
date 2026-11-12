@@ -116,8 +116,8 @@ void main() {
   testWidgets('Escape in the frame between the menu opening and its focus closes the menu', (tester) async {
     await _rightClickWithoutAnswer(tester);
     deliverMenuShown(_menuId);
+    // The ack opens the menu as it arrives; the focus goes to it after the frame that draws it.
     await tester.idle();
-    await tester.pump();
     expect(OpenMenus.any && OpenMenus.opening, isTrue, reason: 'the menu is open and does not have the focus yet');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
@@ -197,6 +197,26 @@ void main() {
     expect(find.text('First'), findsOneWidget, reason: 'the menu is still open');
     expect(_sent().where((c) => c.startsWith('Display/$_displayId/Key/')), isEmpty,
         reason: 'neither the press nor the release reaches the Shell');
+  });
+
+  // A loaded page can take the next key before it draws a frame. The release of a Down the menu
+  // read and stayed open for is still the menu's, though the Enter after it closes the menu before
+  // the frame.
+  testWidgets("a release the menu stayed open for is the menu's though the next key closes it before a frame",
+      (tester) async {
+    await _rightClickWithoutAnswer(tester);
+    await ackMenuShown(tester, _menuId);
+    await tester.pumpAndSettle();
+    _from = EquoCommService.commForTesting.sentFrames.length;
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    final sent = _sent();
+    expect(sent.where((c) => c.endsWith('/Selection')), ['MenuItem/$_firstId/Selection/Selection']);
+    expect(sent.where((c) => c == 'Display/$_displayId/Key/KeyUp'), hasLength(1),
+        reason: "only Enter's release reaches the Shell, after the menu is down; Down's was the menu's");
   });
 
   testWidgets('Down and Enter before Java answers the Show pick the second item', (tester) async {

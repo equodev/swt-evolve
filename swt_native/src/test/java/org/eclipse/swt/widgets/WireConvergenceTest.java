@@ -5,6 +5,7 @@ import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.WireOracle;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
+import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -307,7 +308,10 @@ class WireConvergenceTest {
         return "nothing";
     }
 
-    /** What a record does to the client's copy of its widget: a whole one replaces it, a change sets what it names. */
+    /**
+     * What a record does to the client's copy of its widget: a whole one replaces it, a change sets
+     * what it names, a list as the change to the list held.
+     */
     @SuppressWarnings("unchecked")
     private static void apply(Map<String, Map<String, Object>> client, RecordingComm.Frame frame) {
         if (frame.wire == 0 || !(frame.value instanceof Map)) return;
@@ -319,7 +323,7 @@ class WireConvergenceTest {
         }
         Map<String, Object> held = client.get(frame.event);
         assertThat(held).as("a change to %s, which the client was never described", frame.event).isNotNull();
-        for (Object key : named) held.put((String) key, record.get(key));
+        for (Object key : named) held.put((String) key, WireValues.held(held.get(key), record.get(key)));
     }
 
     /** Every property of {@code w}'s state, written out as the client reads them, defaults included. */

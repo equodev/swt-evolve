@@ -102,6 +102,7 @@ class ShellStateNativeTest {
     @DisplayName("setting the alpha a shell already has schedules no send")
     void sameAlphaIsNotSentAgain() {
         shell.setAlpha(128);
+        dev.equo.swt.FlutterBridge.update().join();
         bridge.dirtied.clear();
         shell.setAlpha(128);
         assertThat(bridge.dirtied).isEmpty();

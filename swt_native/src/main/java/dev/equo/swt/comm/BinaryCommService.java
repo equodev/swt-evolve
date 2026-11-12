@@ -5,6 +5,8 @@ import dev.equo.swt.Serializer;
 import org.java_websocket.server.WebSocketServer;
 import org.java_websocket.WebSocket;
 import org.java_websocket.WebSocketImpl;
+import org.java_websocket.drafts.Draft_6455;
+import org.java_websocket.extensions.permessage_deflate.PerMessageDeflateExtension;
 import org.java_websocket.handshake.ClientHandshake;
 
 import java.net.InetSocketAddress;
@@ -13,6 +15,7 @@ import java.nio.channels.SelectionKey;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.Set;
@@ -31,14 +34,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class BinaryCommService extends AbstractBinaryCommService {
 
+    /**
+     * Offers permessage-deflate to the client. Off by default: on localhost it only costs CPU, and a
+     * remote client's hop is compressed by the gateway in front of it.
+     */
+    public static final String DEFLATE = "dev.equo.swt.web.deflate";
+
+    private final boolean deflate;
     private final WsServer server;
     private final Set<WebSocket> sessions = ConcurrentHashMap.newKeySet();
     /** Counted down from {@link WsServer#onStart()} once the ephemeral port is actually bound. */
     private final CountDownLatch started = new CountDownLatch(1);
 
     public BinaryCommService() {
+        this(Boolean.getBoolean(DEFLATE));
+    }
+
+    public BinaryCommService(boolean deflate) {
+        this.deflate = deflate;
         try (dev.equo.swt.BootTrace.Span span = dev.equo.swt.BootTrace.span("WsServer.new")) {
-            server = new WsServer();
+            server = new WsServer(deflate);
         }
         try (dev.equo.swt.BootTrace.Span span = dev.equo.swt.BootTrace.span("WsServer.start")) {
             server.start();
@@ -75,17 +90,33 @@ public class BinaryCommService extends AbstractBinaryCommService {
 
     @Override
     protected void broadcast(byte[] frame, int offset, int length) {
+        if (deflate && (offset != 0 || length != frame.length)) {
+            // The deflate extension compresses the whole array behind a frame's buffer, not only the frame.
+            frame = Arrays.copyOfRange(frame, offset, offset + length);
+            offset = 0;
+        }
         for (WebSocket s : sessions) {
             if (!s.isOpen()) continue;
             try {
                 // Java-WebSocket copies the bytes into its own frame before send returns.
-                s.send(ByteBuffer.wrap(frame, offset, length));
+                send(s, ByteBuffer.wrap(frame, offset, length));
             } catch (RuntimeException e) {
                 // Closed between the check and the send: that client is gone, and the others still get the frame.
                 System.err.println(logTag() + " A frame could not reach a client: " + e);
             }
         }
         checkWritesSoon();
+    }
+
+    private void send(WebSocket s, ByteBuffer frame) {
+        if (!deflate) {
+            s.send(frame);
+            return;
+        }
+        // A connection compresses with one Deflater, which is not safe to share between sending threads.
+        synchronized (s) {
+            s.send(frame);
+        }
     }
 
     /**
@@ -154,8 +185,9 @@ public class BinaryCommService extends AbstractBinaryCommService {
     }
 
     private class WsServer extends WebSocketServer {
-        WsServer() {
-            super(new InetSocketAddress(LOOPBACK, 0));
+        WsServer(boolean deflate) {
+            super(new InetSocketAddress(LOOPBACK, 0),
+                    deflate ? java.util.Collections.<org.java_websocket.drafts.Draft>singletonList(new Draft_6455(new PerMessageDeflateExtension())) : null);
             setTcpNoDelay(true);
             // The selector + WebSocketWorker decoder threads are non-daemon by default, so a worker
             // that stop() can't unwind (e.g. wedged mid-decode on an active session) keeps the whole
@@ -171,7 +203,7 @@ public class BinaryCommService extends AbstractBinaryCommService {
             // Several clients share this comm's connection id, so what may travel as a name rather
             // than a description depends on how many there are -- see Serializer.clientsConnected.
             Serializer.clientsConnected(BinaryCommService.this, sessions.size());
-            onClientConnected(conn::send);
+            onClientConnected(frame -> send(conn, ByteBuffer.wrap(frame)));
             checkWritesSoon();
         }
 

@@ -105,9 +105,10 @@ class TreeVirtualChildDeliveryTest {
         // The real count arriving after the item was opened, as a lazy viewer's does: only the
         // first page is loaded, as SWT's budget of SetData for the rows on screen allows.
         group.setItemCount(40);
-        FlutterBridge.update();
 
+        // Watched from the first page on: what follows is sent as a change to the list it delivered.
         try (DeliveryAudit audit = DeliveryAudit.install()) {
+            FlutterBridge.update();
             ((DartTree) group.getParent().getImpl()).loadVirtualChildren((int) FlutterBridge.id(group), 30);
             FlutterBridge.update();
 
@@ -238,14 +239,14 @@ class TreeVirtualChildDeliveryTest {
     }
 
     /**
-     * The texts of the children listed in the last item list sent for {@code parent}. A child sent
-     * as a name is one the client already holds, so it reads as the text Java has for it.
+     * The texts of the children the item lists sent for {@code parent} leave it with. A child sent as
+     * a name is one the client already holds, so it reads as the text Java has for it.
      */
     @SuppressWarnings("unchecked")
     private static List<String> childTextsSentFor(DeliveryAudit audit, TreeItem parent) {
         List<Object> items = null;
         for (Map<String, Object> frame : sentFor(audit, parent)) {
-            if (frame.containsKey("items")) items = (List<Object>) frame.get("items");
+            if (frame.containsKey("items")) items = (List<Object>) WireValues.held(items, frame.get("items"));
         }
         List<String> texts = new ArrayList<>();
         if (items == null) return texts;

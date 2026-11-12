@@ -102,9 +102,12 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         assertThat(value.changedKeys()).contains(VTableItem.FONTS);
     }
 
-    /** Without {@code images}, a row draws {@code image}: a cleared row that had one names it, or keeps the old icon. */
+    /**
+     * Without {@code images}, a row draws {@code image}: a cleared row that had one names it, or keeps
+     * the old icon. Its text is its cells', which the client reads instead of the one it inherits.
+     */
     @Test
-    void clearing_a_tableItem_names_the_image_and_text_it_inherits() {
+    void clearing_a_tableItem_names_the_image_it_inherits_and_its_texts() {
         Table table = table();
         TableItem item = new TableItem(table, SWT.NONE);
         item.setText("old");
@@ -115,7 +118,7 @@ class ItemCellStyleSerializeTest extends SerializeTestBase {
         ((DartTableItem) item.getImpl()).clear();
         item.setFont(0, null);
 
-        assertThat(value.changedKeys()).contains(VTableItem.IMAGE, VTableItem.TEXT);
+        assertThat(value.changedKeys()).contains(VTableItem.IMAGE, VTableItem.TEXTS);
     }
 
     @Test

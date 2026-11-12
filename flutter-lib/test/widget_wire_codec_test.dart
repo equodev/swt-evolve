@@ -108,15 +108,18 @@ void main() {
     expect(r.boolean(), isTrue);
   });
 
-  test('a string is Latin-1 when it fits and UTF-16 otherwise, and null is a 0', () {
+  test('a string is ASCII when it fits and UTF-16 otherwise, and null is a 0', () {
+    final long = 'line of plain text\n' * 40;
     final r = _readBack((w) => w
       ..string('')
+      ..string(long)
       ..string('plain ñ')
       ..string('€ 日本')
       ..u8(0)
       ..strings(['a', null, 'ü€']));
 
     expect(r.string(), '');
+    expect(r.string(), long);
     expect(r.string(), 'plain ñ');
     expect(r.string(), '€ 日本');
     expect(r.string(), isNull);
@@ -274,8 +277,8 @@ void main() {
     expect(WidgetWireReader(Uint8List.sublistView(sent[0], wireStart)).fields(_Probe()).count, 5);
     final (textChannel, textStart) = ChannelHeader.read(sent[1])!;
     expect(textChannel, 'swt.evolve.url.open');
-    expect(sent[1].sublist(textStart), [5, 0x61, 0xF1],
-        reason: 'a string as the widget wire writes one: two Latin-1 chars, copied, not encoded');
+    expect(sent[1].sublist(textStart), [6, 0x61, 0, 0xF1, 0],
+        reason: 'a string as the widget wire writes one: past ASCII, two UTF-16 code units, copied, not encoded');
   });
 
   test('a type or channel without a wire number is refused where it is named, never sent spelled out', () {

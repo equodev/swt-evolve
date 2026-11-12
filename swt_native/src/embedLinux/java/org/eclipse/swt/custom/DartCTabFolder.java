@@ -3955,6 +3955,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setDirtyIndicatorStyle(boolean enabled) {
         checkWidget();
+        if (this.dirtyIndicatorStyle != enabled) {
+            getValue().markDirty(VCTabFolder.DIRTY_INDICATOR_STYLE);
+        }
         if (dirtyIndicatorStyle == enabled)
             return;
         dirtyIndicatorStyle = enabled;

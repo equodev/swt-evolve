@@ -3608,7 +3608,7 @@ public final class DartGC extends DartResource implements IGC {
         DartPath source = path == null ? null : (DartPath) path.getImpl();
         if (source != null && source.hasText()) {
             clippingText = new Path(path.getDevice(), path, 0);
-            getValue().markDirty(279);
+            getValue().markDirty(283);
             Rectangle bounds = source.textBounds();
             if (data != null && data.types.length > 0)
                 bounds = bounds.union(pathBounds(data));
@@ -3657,7 +3657,7 @@ public final class DartGC extends DartResource implements IGC {
         if (clippingRects != null)
             getValue().markDirty(VGC.CLIPPING_RECTS);
         if (clippingText != null) {
-            getValue().markDirty(279);
+            getValue().markDirty(283);
             clippingText.dispose();
         }
         clippingPath = null;

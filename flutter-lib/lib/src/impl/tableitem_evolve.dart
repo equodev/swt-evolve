@@ -28,6 +28,7 @@ import 'utils/cached_text.dart';
 import 'utils/text_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
 import '../gen/widgets.dart' show WireChannel;
+import 'owner_draw_overlay.dart';
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
@@ -116,8 +117,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       );
       // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
       // painted twice.
-      final paintedByOverlay =
-          state.paintedTexts?.contains(columnIndex) ?? false;
+      final paintedByOverlay = _overlayDraws(state.paintedTexts, columnIndex);
       final font = cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.tableFont;
       final textColor = paintedByOverlay ? Colors.transparent : cellTextColor;
       final columnAlignment = columnIndex < columns.length
@@ -198,7 +198,13 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     );
   }
 
+  /// Whether the row's owner-draw overlay draws [column] of what [painted] names: it does once it
+  /// shows, and until then the row draws it itself.
+  bool _overlayDraws(List<int>? painted, int column) =>
+      (painted?.contains(column) ?? false) && OwnerDrawnRowOverlay.isShown(state.id!);
+
   VImage? _cellImageForColumn(int columnIndex) {
+    if (_overlayDraws(state.paintedImages, columnIndex)) return null;
     final imgs = state.images;
     if (imgs != null && columnIndex < imgs.length) {
       return imgs[columnIndex];
@@ -672,7 +678,9 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
       height: cell.size.height,
       // The follower re-resolves the cell's transform every frame, so the copy rides the table's
       // scroll instead of staying where the pointer entered, and stops painting once the cell goes.
-      child: CompositedTransformFollower(
+      // In a layer of its own, so its growing redraws the copy and not the overlay it sits in.
+      child: RepaintBoundary(
+          child: CompositedTransformFollower(
         link: _link,
         showWhenUnlinked: false,
         // The real cell underneath still owns every gesture and its semantics; this is paint only.
@@ -684,7 +692,7 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
             child: Material(type: MaterialType.transparency, child: copy),
           ),
         ),
-      ),
+      )),
     );
   }
 

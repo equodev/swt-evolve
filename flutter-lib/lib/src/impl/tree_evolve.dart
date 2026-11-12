@@ -35,6 +35,7 @@ import '../gen/widgets.dart' show WireKey, WireChannel;
 import '../testing/tree_test_registry.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
+import 'utils/steady_scrollbar.dart';
 
 class _FlatTreeItem {
   final VTreeItem item;
@@ -163,6 +164,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       _selectionAsked = true;
     } else {
       _beyondSelection = true;
+      if (!_deliveringHeld) _treeChanged = true;
     }
     super.setState(fn);
   }
@@ -170,7 +172,50 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   @override
   void didUpdateWidget(covariant T oldWidget) {
     _beyondSelection = true;
+    _treeChanged = true;
     super.didUpdateWidget(oldWidget);
+  }
+
+  /// The rows on screen, by item id.
+  final Map<Object, Element> _rows = {};
+
+  void rowShown(Object id, Element row) => _rows[id] = row;
+
+  void rowGone(Object id, Element row) {
+    if (identical(_rows[id], row)) _rows.remove(id);
+  }
+
+  /// Takes a new selection by rebuilding only the rows it changes the look of: a row selected or no
+  /// longer selected, and the row above each, which draws the selection's top edge. False when no
+  /// rows were built yet.
+  bool _reselectRows() {
+    final flat = _lastFlatItems;
+    if (flat == null) return false;
+    final next = {for (final item in state.selection ?? const <VTreeItem>[]) item.id};
+    final previous = _selectedIds;
+    _selectedIds = next;
+    for (var i = 0; i < flat.length; i++) {
+      final id = flat[i].item.id;
+      if (next.contains(id) == previous.contains(id)) continue;
+      _rows[id]?.markNeedsBuild();
+      if (i > 0) _rows[flat[i - 1].item.id]?.markNeedsBuild();
+    }
+    return true;
+  }
+
+  /// Whether the delivery under way is one of an item's, which redraws its own row.
+  bool _deliveringHeld = false;
+
+  /// Whether something other than an item's own change reached this Tree since its rows were built:
+  /// a row reads the Tree too, so the kept rows are built again.
+  bool _treeChanged = true;
+
+  static bool _sameRows(List<_FlatTreeItem> a, List<_FlatTreeItem>? b) {
+    if (b == null || a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i].item, b[i].item) || a[i].level != b[i].level) return false;
+    }
+    return true;
   }
 
   @override
@@ -180,6 +225,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   List<_FlatTreeItem>? _lastFlatItems;
+
+  /// The row of each item in [_lastFlatItems], made when first asked for after they change.
+  Map<Object, int>? _flatRowOf;
+
+  /// The row [itemId] was last laid out on, or null when it is not on one.
+  int? _lastFlatRow(Object itemId) {
+    final flat = _lastFlatItems;
+    if (flat == null) return null;
+    return (_flatRowOf ??= {for (var i = 0; i < flat.length; i++) flat[i].item.id: i})[itemId];
+  }
   List<VTreeItem>? _lastAllItems;
 
   /// The row last built for each item, with what it was built from; see [_buildFlatTreeItemWidget].
@@ -189,7 +244,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void setValue(V value) {
-    final selectionOnly = lastChange?.isOnly(const {WireKey.k_Tree_selection}) ?? false;
+    // Where the Tree scrolls to does not change what its rows are: showing the selection is part of
+    // selecting.
+    final selectionOnly = lastChange?.isOnly(const {WireKey.k_Tree_selection, WireKey.k_Tree_topItem}) ?? false;
     final pending = _pendingSelection;
     if (pending != null && pending.isNotEmpty) {
       final pendingIds = Set.from(pending.map((item) => item.id));
@@ -207,11 +264,23 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         value.selection = List<VTreeItem>.from(pending);
       }
     }
+    // An item that changed what it shows is measured again by the Tree's next build.
+    if (selectionOnly && _pendingSelection == null && !_beyondSelection && _reselectRows()) {
+      if (lastChange?.touches(WireKey.k_Tree_topItem) ?? false) {
+        // At the start of the next frame, ahead of its layout, wherever in the frame this arrived.
+        SchedulerBinding.instance.scheduleFrameCallback((_) {
+          if (mounted) _scrollToTopItem();
+        });
+      }
+      return;
+    }
     _deliveringSelection = selectionOnly;
+    _deliveringHeld = lastChange?.ofHeld ?? false;
     try {
       super.setValue(value);
     } finally {
       _deliveringSelection = false;
+      _deliveringHeld = false;
     }
     if (lastChange?.touches(WireKey.k_Tree_topItem) ?? true) _scrollToTopItemAfterLayout();
   }
@@ -220,22 +289,27 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   /// clamps the distance at the end of the list, as a native tree does; a tree already showing
   /// that row at the top does not move.
   void _scrollToTopItemAfterLayout() {
-    final target = state.topItem;
-    if (target == null) return;
+    if (state.topItem == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final controller = _verticalController;
-      final rowHeight = _cachedItemHeight;
-      if (controller == null || !controller.hasClients) return;
-      if (rowHeight == null || rowHeight <= 0) return;
-      final row = findItemIndex(target.id);
-      if (row < 0) return;
-      final position = controller.position;
-      if ((position.pixels / rowHeight).floor() == row) return;
-      controller.jumpTo(
-        (row * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
-      );
+      if (mounted) _scrollToTopItem();
     });
+  }
+
+  /// Brings the item Java asked for to the top now: for a change that leaves the rows as they were,
+  /// whose layout is the one already done.
+  void _scrollToTopItem() {
+    final target = state.topItem;
+    final controller = _verticalController;
+    final rowHeight = _cachedItemHeight;
+    if (target == null || controller == null || !controller.hasClients) return;
+    if (rowHeight == null || rowHeight <= 0) return;
+    final row = _lastFlatRow(target.id) ?? findItemIndex(target.id);
+    if (row < 0) return;
+    final position = controller.position;
+    if ((position.pixels / rowHeight).floor() == row) return;
+    controller.jumpTo(
+      (row * rowHeight).clamp(position.minScrollExtent, position.maxScrollExtent),
+    );
   }
 
   /// The one height every row is laid out, hit-tested and reported at, as `TreeSizes.getItemHeight`
@@ -271,7 +345,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
           flatItems = _lastFlatItems!;
           allItems = _lastAllItems!;
         } else {
+          final previous = _lastFlatItems;
           flatItems = _lastFlatItems = _flattenVisibleItems(state.items, 0);
+          _flatRowOf = null;
+          // Rows built for the same items under the same Tree are kept: an item that changed redraws
+          // its own row.
+          if (_treeChanged || !_sameRows(flatItems, previous)) {
+            _rowsEpoch++;
+            _keptRows.clear();
+          }
+          _treeChanged = false;
           _moreRows = isVirtual() ? _rowsWithMoreAfter(flatItems) : const [];
           if (_moreRows.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -279,8 +362,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             });
           }
           allItems = _lastAllItems = _collectAllTreeItems(state.items);
-          _rowsEpoch++;
-          _keptRows.clear();
         }
         _selectedIds = {for (final item in state.selection ?? const <VTreeItem>[]) item.id};
         final hasMultiColumn = columns.length > 1;
@@ -443,7 +524,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
   }
 
+  (List<VTreeColumn>?, List<VWidget>?, List<VTreeColumn>)? _columnsOf;
+
+  /// Every row asks for the columns, several times, so they are found once for each value of the
+  /// Tree's columns and items.
   List<VTreeColumn> getTreeColumns() {
+    final kept = _columnsOf;
+    if (kept != null && identical(kept.$1, state.columns) && identical(kept.$2, state.items)) return kept.$3;
+    final found = List<VTreeColumn>.unmodifiable(_findTreeColumns());
+    _columnsOf = (state.columns, state.items, found);
+    return found;
+  }
+
+  List<VTreeColumn> _findTreeColumns() {
     List<VTreeColumn> columns = [];
 
     if (state.columns != null && state.columns!.isNotEmpty) {
@@ -808,7 +901,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final scrollsHorizontally = hasHScroll && totalWidth != null;
     Widget scrollableContent;
     if (scrollsHorizontally) {
-      scrollableContent = Scrollbar(
+      scrollableContent = SteadyScrollbar(
         controller: _horizontalController,
         thumbVisibility: true,
         child: ScrollConfiguration(
@@ -844,7 +937,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
         Container(width: leftGap, color: backgroundColor),
         Expanded(
           child: hasVScroll
-              ? Scrollbar(
+              ? SteadyScrollbar(
                   controller: _verticalController,
                   thumbVisibility: true,
                   // The horizontal viewport, when there is one, sits between this bar and the list.
@@ -912,6 +1005,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     Widget listView = ListView.builder(
       key: _rowsKey,
       controller: _verticalController,
+      // Every row is the Tree's one item height: a jump far down the list lays out only the rows it
+      // shows, rather than every row before them to find where they are.
+      itemExtent: _cachedItemHeight,
       itemCount: flatItems.length,
       itemBuilder: (context, index) => _buildFlatTreeItemWidget(flatItems, index),
     );
@@ -1445,6 +1541,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   bool isNextItemSelected(Object itemId) {
+    final flat = _lastFlatItems;
+    final row = _lastFlatRow(itemId);
+    if (row != null) return row + 1 < flat!.length && isItemSelected(flat[row + 1].item.id);
     final currentIndex = findItemIndex(itemId);
     if (currentIndex < 0) return false;
 

@@ -54,6 +54,7 @@ class VCombo extends VComposite {
   List<String>? items;
   bool? listVisible;
   String? text;
+  int? textLimit;
 
   @override
   void copyFrom(VWidget other) {
@@ -63,23 +64,27 @@ class VCombo extends VComposite {
       items = other.items;
       listVisible = other.listVisible;
       text = other.text;
+      textLimit = other.textLimit;
     }
   }
 
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 82: // caretPosition
+      case 85: // caretPosition
         caretPosition = r.int32();
         return true;
-      case 83: // items
+      case 86: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 84: // listVisible
+      case 87: // listVisible
         listVisible = r.boolean();
         return true;
-      case 85: // text
+      case 88: // text
         text = r.string();
+        return true;
+      case 89: // textLimit
+        textLimit = r.int32();
         return true;
       default:
         return super.readWire(key, r);
@@ -92,27 +97,33 @@ class VCombo extends VComposite {
     {
       final v_ = caretPosition;
       if (v_ != null) {
-        w.keyInt32(82, v_);
+        w.keyInt32(85, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(83);
+        w.key(86);
         w.strings(v_);
       }
     }
     {
       final v_ = listVisible;
       if (v_ != null) {
-        w.keyBoolean(84, v_);
+        w.keyBoolean(87, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(85);
+        w.key(88);
         w.string(v_);
+      }
+    }
+    {
+      final v_ = textLimit;
+      if (v_ != null) {
+        w.keyInt32(89, v_);
       }
     }
   }
@@ -120,10 +131,11 @@ class VCombo extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(82, caretPosition);
-    visit(83, items);
-    visit(84, listVisible);
-    visit(85, text);
+    visit(85, caretPosition);
+    visit(86, items);
+    visit(87, listVisible);
+    visit(88, text);
+    visit(89, textLimit);
   }
 
   @override

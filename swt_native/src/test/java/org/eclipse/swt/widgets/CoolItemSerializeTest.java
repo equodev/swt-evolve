@@ -23,8 +23,7 @@ class CoolItemSerializeTest extends SerializeTestBase {
         setAll(w);
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
-               .containsEntry("swt", "CoolItem")
-               .containsEntry("style", w.getStyle());
+               .containsEntry("swt", "CoolItem");
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
         assertJ.satisfies(node("preferredSize").equalsTo(value(w).getPreferredSize(), orAbsentIfNull));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
@@ -37,7 +36,7 @@ class CoolItemSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE, SWT.DROP_DOWN);
+        }, unwritable("style", "the client never reads it off a CoolItem"), SWT.NONE, SWT.DROP_DOWN);
     }
 
     @Test

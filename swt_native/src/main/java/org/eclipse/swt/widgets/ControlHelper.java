@@ -1081,8 +1081,14 @@ public class ControlHelper {
         sendActivateToAncestors(control, SWT.MouseDown);
         if (control.isDisposed() || event == null)
             return;
-        if (!takesFocusOnPress(control, event) || control.isFocusControl())
+        if (!takesFocusOnPress(control, event))
             return;
+        if (control.isFocusControl()) {
+            // Java can hold it already -- clicking into an editor activates its part first -- while the
+            // client's keys are elsewhere: the press still puts them on it.
+            control.getBridge().focusClient(control);
+            return;
+        }
         boolean focused = org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control.getApi())
                 ? control.getApi().setFocus() : control.forceFocus();
         if (focused && !control.isDisposed())

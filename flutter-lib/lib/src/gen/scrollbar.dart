@@ -55,28 +55,28 @@ class VScrollBar extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 436: // enabled
+      case 440: // enabled
         enabled = r.boolean();
         return true;
-      case 437: // increment
+      case 441: // increment
         increment = r.int32();
         return true;
-      case 438: // maximum
+      case 442: // maximum
         maximum = r.int32();
         return true;
-      case 439: // minimum
+      case 443: // minimum
         minimum = r.int32();
         return true;
-      case 440: // pageIncrement
+      case 444: // pageIncrement
         pageIncrement = r.int32();
         return true;
-      case 441: // selection
+      case 445: // selection
         selection = r.int32();
         return true;
-      case 442: // thumb
+      case 446: // thumb
         thumb = r.int32();
         return true;
-      case 443: // visible
+      case 447: // visible
         visible = r.boolean();
         return true;
       default:
@@ -90,49 +90,49 @@ class VScrollBar extends VWidget {
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.keyBoolean(436, v_);
+        w.keyBoolean(440, v_);
       }
     }
     {
       final v_ = increment;
       if (v_ != null) {
-        w.keyInt32(437, v_);
+        w.keyInt32(441, v_);
       }
     }
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(438, v_);
+        w.keyInt32(442, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(439, v_);
+        w.keyInt32(443, v_);
       }
     }
     {
       final v_ = pageIncrement;
       if (v_ != null) {
-        w.keyInt32(440, v_);
+        w.keyInt32(444, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(441, v_);
+        w.keyInt32(445, v_);
       }
     }
     {
       final v_ = thumb;
       if (v_ != null) {
-        w.keyInt32(442, v_);
+        w.keyInt32(446, v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(443, v_);
+        w.keyBoolean(447, v_);
       }
     }
   }
@@ -140,14 +140,14 @@ class VScrollBar extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(436, enabled);
-    visit(437, increment);
-    visit(438, maximum);
-    visit(439, minimum);
-    visit(440, pageIncrement);
-    visit(441, selection);
-    visit(442, thumb);
-    visit(443, visible);
+    visit(440, enabled);
+    visit(441, increment);
+    visit(442, maximum);
+    visit(443, minimum);
+    visit(444, pageIncrement);
+    visit(445, selection);
+    visit(446, thumb);
+    visit(447, visible);
   }
 
   @override

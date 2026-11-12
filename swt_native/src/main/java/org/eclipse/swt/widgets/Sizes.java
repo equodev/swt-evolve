@@ -793,7 +793,7 @@ public class Sizes {
         DartTree dartTree = (DartTree) item._parent().getImpl();
         int itemHeight = dartTree.getItemHeight();
         if (itemHeight <= 0) itemHeight = 20;
-        int rowIndex = flattenVisibleTreeItems(dartTree).indexOf(item.getApi());
+        int rowIndex = TreeHelper.visibleRow(dartTree, item.getApi());
         if (rowIndex == -1) return null;
         // The row index counts from the top of the model; take off however far Flutter has scrolled.
         int y = dartTree.getHeaderHeight() + rowIndex * itemHeight - TreeHelper.scrollOffsetY(dartTree);

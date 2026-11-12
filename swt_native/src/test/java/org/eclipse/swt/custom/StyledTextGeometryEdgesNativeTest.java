@@ -134,6 +134,19 @@ public class StyledTextGeometryEdgesNativeTest {
     }
 
     @Test
+    public void text_bounds_end_where_the_next_character_starts_at_a_fractional_advance() {
+        DartStyledText st = widget(5);
+        Map<String, Object> uniform = row(0, 0, 5, 0.0, 15.0, null);
+        uniform.put("cxu", List.of(0.0, 8.2));
+
+        StyledTextHelper.applyTextGeometry(st, table(5, 15.0, List.of(uniform)));
+        Rectangle one = StyledTextHelper.geometryTextBounds(st, 2, 2);
+
+        assertThat(one.x).isEqualTo(StyledTextHelper.geometryPointAtOffset(st, 2).x);
+        assertThat(one.x + one.width).isEqualTo(StyledTextHelper.geometryPointAtOffset(st, 3).x);
+    }
+
+    @Test
     public void a_change_without_a_table_to_change_asks_for_the_whole_table() {
         DartStyledText st = widget(5);
         Map<String, Object> change = new HashMap<>();

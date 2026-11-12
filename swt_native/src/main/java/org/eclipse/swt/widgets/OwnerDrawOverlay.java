@@ -1,6 +1,11 @@
 package org.eclipse.swt.widgets;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.FontMetricsUtil;
+import dev.equo.swt.size.TableItemTheme;
+import dev.equo.swt.size.TextStyle;
+import dev.equo.swt.size.TreeItemTheme;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.DartGC;
@@ -14,14 +19,58 @@ import org.eclipse.swt.graphics.Transform;
  * application's {@code SWT.EraseItem}/{@code SWT.PaintItem} listeners draw is shown as drawn: icons,
  * fonts, colors, shapes and positions, not only the text a capture can name.
  *
- * <p>A row's ops are sent only once Flutter has said its overlay is listening. Ops that reach a
- * channel before its listener exists are held per channel and replayed out of order across the
- * state and op channels, which is not a display list. Until then the row shows the text and image
- * the capture derived.
+ * <p>A row on screen is painted as soon as it is captured: its overlay mounts in the frame the row
+ * arrives in, and what reaches the overlay's channels before then is held and applied in the order
+ * it arrived. Any other row is painted once Flutter reports its overlay listening. The row shows the
+ * text and images the capture derived until its overlay shows; {@code paintedTexts} and
+ * {@code paintedImages} name what it then stops drawing.
  */
 public final class OwnerDrawOverlay {
 
     private OwnerDrawOverlay() {
+    }
+
+    /** Display data: the {@link State} of the display's owner-drawn rows. */
+    private static final String STATE = "org.eclipse.swt.internal.ownerDrawOverlay";
+
+    private static final class State {
+        /** Rows painted before their overlay reported listening; see {@link OwnerDrawOverlay#paintAhead}. */
+        final java.util.Set<Item> paintedAhead = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
+        /** Per Table or Tree, the key its rows on screen are cached under for one flush. */
+        final java.util.Map<Control, Object> shownKeys = new java.util.WeakHashMap<>();
+        /** The fonts the cells draw in under the theme, given to the listeners' GC; see {@link OwnerDrawOverlay#font}. */
+        final java.util.Map<TextStyle, Font> themeFonts = new java.util.HashMap<>();
+    }
+
+    private static State state(Widget widget) {
+        Display display = widget.getDisplay();
+        Object state = display.getData(STATE);
+        if (!(state instanceof State)) {
+            State created = new State();
+            display.setData(STATE, created);
+            display.disposeExec(() -> created.themeFonts.values().forEach(Font::dispose));
+            state = created;
+        }
+        return (State) state;
+    }
+
+    /**
+     * Whether to paint {@code row} now, before its overlay reports listening: it is among
+     * {@code shownRows}, the rows on screen, worked out once per flush. Each row once until it reports.
+     */
+    static boolean paintAhead(Control parent, Item row, java.util.function.Supplier<java.util.Set<Item>> shownRows) {
+        State state = state(row);
+        if (state.paintedAhead.contains(row)) return false;
+        Object key = state.shownKeys.computeIfAbsent(parent, p -> new Object());
+        java.util.Set<Item> shown = dev.equo.swt.Serializer.oncePerTape(key, shownRows);
+        if (shown == null || !shown.contains(row)) return false;
+        state.paintedAhead.add(row);
+        return true;
+    }
+
+    /** Whether the row's overlay draws its painted cells: it listens, or was painted ahead of listening. */
+    static boolean owns(Item row) {
+        return isListening(row) || state(row).paintedAhead.contains(row);
     }
 
     /** Flutter mounted an overlay for each of these rows: paint them into it. */
@@ -35,12 +84,16 @@ public final class OwnerDrawOverlay {
                 DartTableItem item = (DartTableItem) found;
                 if (item.parent.getImpl() != parent) continue;
                 item.ownerDrawOverlay = true;
+                // Painted again even when painted ahead: the overlay that reports may not be the one
+                // the earlier paint was held for.
+                state(item.getApi()).paintedAhead.remove(item.getApi());
                 forgetWhatIsShown(item.getApi());
                 TableHelper.nameOwnerDrawnCells(item);
             } else if (found instanceof DartTreeItem) {
                 DartTreeItem item = (DartTreeItem) found;
                 if (item.parent.getImpl() != parent) continue;
                 item.ownerDrawOverlay = true;
+                state(item.getApi()).paintedAhead.remove(item.getApi());
                 forgetWhatIsShown(item.getApi());
                 TreeHelper.nameOwnerDrawnCells(item);
             }
@@ -145,8 +198,24 @@ public final class OwnerDrawOverlay {
         return ((TreeItem) row).getBackground(index);
     }
 
+    /**
+     * The font the cell's own text is drawn in, which native SWT sets the listeners' GC to: the
+     * item's font under {@code use_swt_fonts}, otherwise the theme's row style with the item font's
+     * weight and slant. Text a listener draws then lands on the cell's text and measures as it does.
+     */
     private static Font font(Item row, int index) {
-        if (row instanceof TableItem) return ((TableItem) row).getFont(index);
-        return ((TreeItem) row).getFont(index);
+        Font font = row instanceof TableItem ? ((TableItem) row).getFont(index) : ((TreeItem) row).getFont(index);
+        if (Config.getConfigFlags().use_swt_fonts) return font;
+        TextStyle style = (row instanceof TableItem
+                ? TableItemTheme.get().textStyle()
+                : TreeItemTheme.get().textStyle()).withStyleFrom(font);
+        return state(row).themeFonts.computeIfAbsent(style, s -> themeFont(row.getDisplay(), s));
+    }
+
+    /** {@code style}, whose size is in logical pixels, as a font in points; SWT has no weight between normal and bold. */
+    private static Font themeFont(Display display, TextStyle style) {
+        int points = (int) Math.round(style.size() / FontMetricsUtil.rawDpiScale());
+        int swtStyle = (style.weight() >= 700 ? SWT.BOLD : SWT.NORMAL) | (style.italic() ? SWT.ITALIC : SWT.NORMAL);
+        return new Font(display, style.name(), points, swtStyle);
     }
 }

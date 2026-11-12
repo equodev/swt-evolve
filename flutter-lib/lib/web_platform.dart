@@ -3,6 +3,7 @@ import 'dart:js_interop';
 import 'dart:ui' show Size;
 
 import 'src/impl/key_forwarding.dart';
+import 'src/impl/utils/resize_reports.dart';
 
 @JS('window.equoCommPort')
 external JSNumber? get _equoCommPort;
@@ -162,15 +163,9 @@ Size? getViewportSize() {
 }
 
 void observeViewportChanges(void Function() onChange) {
-  Timer? debounce;
+  final reports = ResizeReports.pacedByFrames(onChange);
 
-  _addWindowEventListener(
-    'resize'.toJS,
-    (() {
-      debounce?.cancel();
-      debounce = Timer(const Duration(milliseconds: 200), onChange);
-    }).toJS,
-  );
+  _addWindowEventListener('resize'.toJS, reports.changed.toJS);
 
   _requestAnimationFrame(
     (JSNumber _) {

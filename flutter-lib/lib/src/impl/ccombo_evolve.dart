@@ -113,7 +113,9 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// it is mounted, so focus never leaves the control while one replaces the other.
   final FocusNode _restFocus = FocusNode(debugLabel: 'CCombo');
 
-  bool get _isReadOnly => StyleBits(state.style).has(SWT.READ_ONLY);
+  /// READ_ONLY, or made uneditable after creation (setEditable(false)); either way SWT's CCombo
+  /// drops its list on a press anywhere in the field.
+  bool get _isReadOnly => StyleBits(state.style).has(SWT.READ_ONLY) || state.editable == false;
 
   TextStyle _fieldTextStyle(BuildContext context, CComboThemeExtension widgetTheme) => getTextStyle(
         context: context,
@@ -263,8 +265,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   Widget build(BuildContext context) {
     if (hidden) return const SizedBox.shrink();
     final widgetTheme = Theme.of(context).extension<CComboThemeExtension>()!;
-    final styleBits = StyleBits(state.style);
-    final bool isReadOnly = styleBits.has(SWT.READ_ONLY);
+    final bool isReadOnly = _isReadOnly;
     final bool isEnabled = state.enabled ?? true;
 
     final bool isActive = _isFocused || hovered;
@@ -368,7 +369,7 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
   /// field takes no focus, so there the surface does.
   @override
   void takeFocusOnPress() {
-    if ((state.style & SWT.READ_ONLY) != 0) {
+    if (_isReadOnly) {
       super.takeFocusOnPress();
     } else {
       _focusNode?.requestFocus();

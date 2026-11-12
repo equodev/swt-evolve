@@ -656,7 +656,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         super.sendEvent(eventType, event);
     }
 
-    private final DropAnswer answer = new DropAnswer(192, 196, 191, 34);
+    private final DropAnswer answer = new DropAnswer(196, 200, 195, 35);
 
     final DropTargetHelper dropHelper = new DropTargetHelper(this, answer);
 

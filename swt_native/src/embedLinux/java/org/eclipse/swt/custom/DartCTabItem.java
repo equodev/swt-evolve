@@ -591,6 +591,9 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setShowDirty(boolean dirty) {
         checkWidget();
+        if (this.showDirty != dirty) {
+            getValue().markDirty(VCTabItem.SHOW_DIRTY);
+        }
         if (showDirty == dirty)
             return;
         showDirty = dirty;

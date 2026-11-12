@@ -41,10 +41,10 @@ class VLabel extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 350: // image
+      case 354: // image
         image = r.image();
         return true;
-      case 351: // text
+      case 355: // text
         text = r.string();
         return true;
       default:
@@ -58,13 +58,13 @@ class VLabel extends VControl {
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(350, v_.id);
+        w.keyRef(354, v_.id);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(351);
+        w.key(355);
         w.string(v_);
       }
     }
@@ -73,8 +73,8 @@ class VLabel extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(350, image);
-    visit(351, text);
+    visit(354, image);
+    visit(355, text);
   }
 
   @override

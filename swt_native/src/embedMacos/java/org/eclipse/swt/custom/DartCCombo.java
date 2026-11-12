@@ -1366,6 +1366,9 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
+        if (this.editable != newValue) {
+            getValue().markDirty(VCCombo.EDITABLE);
+        }
         this.editable = newValue;
         text.setEditable(editable);
     }

@@ -225,6 +225,33 @@ class ContextMenuKeyboardFlutterTest {
         assertThat(menu.getVisible()).isFalse();
     }
 
+    @Test
+    @DisplayName("The release of the key that opened the menu reaches no control while the menu is open")
+    void releaseWhileTheMenuIsOpen() {
+        List<Integer> keyUps = new ArrayList<>();
+        tree.addListener(SWT.KeyUp, e -> keyUps.add(e.keyCode));
+
+        press(SWT.F10, SWT.SHIFT);
+        release(SWT.F10, SWT.SHIFT);
+
+        assertThat(menu.getVisible()).isTrue();
+        assertThat(keyUps).as("a pop-up's keyboard grab takes the release natively").isEmpty();
+    }
+
+    @Test
+    @DisplayName("A release once the menu is hidden reaches the focused control")
+    void releaseAfterTheMenuIsHidden() {
+        List<Integer> keyUps = new ArrayList<>();
+        tree.addListener(SWT.KeyUp, e -> keyUps.add(e.keyCode));
+
+        press(SWT.F10, SWT.SHIFT);
+        menu.setVisible(false);
+        drain();
+        release(SWT.ESC, 0);
+
+        assertThat(keyUps).containsExactly((int) SWT.ESC);
+    }
+
     private Menu focusWithMenu(Control control) {
         control.addListener(SWT.MenuDetect, e -> menuDetects.add(copy(e)));
         Menu controlMenu = menuOf(control);
@@ -265,6 +292,14 @@ class ContextMenuKeyboardFlutterTest {
         key.keyCode = keyCode;
         key.stateMask = stateMask;
         web.comm.fireContaining("Display/" + display.hashCode() + "/Key/KeyDown", key);
+        drain();
+    }
+
+    private void release(int keyCode, int stateMask) {
+        Event key = new Event();
+        key.keyCode = keyCode;
+        key.stateMask = stateMask;
+        web.comm.fireContaining("Display/" + display.hashCode() + "/Key/KeyUp", key);
         drain();
     }
 

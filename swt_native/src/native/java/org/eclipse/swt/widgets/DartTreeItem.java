@@ -276,6 +276,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         getValue().markDirty(VTreeItem.BACKGROUNDS);
         getValue().markDirty(VTreeItem.FONT);
         getValue().markDirty(VTreeItem.FONTS);
+        getValue().markDirty(VTreeItem.PAINTED_IMAGES);
         getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
     }
@@ -1559,6 +1560,10 @@ public class DartTreeItem extends DartItem implements ITreeItem {
 
     public int[] getPaintedTexts() {
         return TreeHelper.getPaintedTexts(this);
+    }
+
+    public int[] getPaintedImages() {
+        return TreeHelper.getPaintedImages(this);
     }
 
     boolean ownerDrawOverlay;

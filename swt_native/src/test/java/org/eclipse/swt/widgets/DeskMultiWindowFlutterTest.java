@@ -1119,12 +1119,50 @@ class DeskMultiWindowFlutterTest {
         dragMove(desk, source, 850, 50);
 
         assertThat(remoteAnswers(desk, source))
-                .as("none until the DropTarget answers, then its answer, then none again over no window")
-                .containsExactly(DND.DROP_NONE, DND.DROP_COPY, DND.DROP_NONE);
+                .as("the DropTarget's answer, then none again over no window: none before it is what the client starts from")
+                .containsExactly(DND.DROP_COPY, DND.DROP_NONE);
     }
 
     @Test
-    @DisplayName("the drag image goes with the first move over each other window, which draws it")
+    @DisplayName("a drag step over another window is a few numbered fields, and an unchanged answer is not sent again")
+    void aRemoteDragStepIsCompact() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        DropTarget target = new DropTarget(new Composite(main, SWT.NONE), DND.DROP_MOVE | DND.DROP_COPY);
+        target.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        target.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                event.detail = DND.DROP_COPY;
+            }
+
+            @Override
+            public void dragOver(DropTargetEvent event) {
+                event.detail = DND.DROP_COPY;
+            }
+        });
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        targetClientSends(desk, target, "dragEnter");
+        for (int i = 1; i <= 5; i++) {
+            dragMove(desk, source, 130 + 40 * i, 250 + 30 * i);
+            targetClientSends(desk, target, "dragOver");
+        }
+
+        String channel = FlutterBridge.eventName(main.getImpl(), "DnD/remoteDrag");
+        List<Integer> steps = desk.comm.sent.stream().filter(f -> f.event.equals(channel)).map(f -> f.size).toList();
+        assertThat(steps).hasSize(6).allSatisfy(bytes -> assertThat(bytes).isLessThanOrEqualTo(11));
+        assertThat(remoteAnswers(desk, source)).as("the answer, once").containsExactly(DND.DROP_COPY);
+    }
+
+    @Test
+    @DisplayName("the drag image goes ahead of the first move over each other window, which draws it")
     void dragImageGoesToTheWindowUnderThePointer() {
         TestDeskBridge desk = install();
         Shell main = openShell("Main");
@@ -1145,18 +1183,23 @@ class DeskMultiWindowFlutterTest {
         dragMove(desk, source, 850, 50);
         dragMove(desk, source, 150, 270);
 
-        String channel = FlutterBridge.eventName(main.getImpl(), "DnD/remoteDrag");
-        List<Boolean> carriesImage = new ArrayList<>();
+        String step = FlutterBridge.eventName(main.getImpl(), "DnD/remoteDrag");
+        String imageChannel = FlutterBridge.eventName(main.getImpl(), "DragDetect/dragImage");
+        List<String> sent = new ArrayList<>();
         for (RecordingComm.Frame frame : desk.comm.sent) {
-            if (!frame.event.equals(channel) || !"over".equals(frame.state().get("text"))) continue;
-            // Read back from the bytes sent: the PNG travels as bytes, not as a list of numbers.
-            Object png = ((Map<?, ?>) dev.equo.swt.comm.TaggedValues.decode(frame.bytes, 0, frame.bytes.length))
-                    .get("segments");
-            carriesImage.add(png instanceof byte[]
-                    && java.util.Arrays.equals((byte[]) png, new byte[]{(byte) 137, 80, 78, 71})
-                    && Long.valueOf(40).equals(((Number) frame.state().get("width")).longValue()));
+            if (frame.event.equals(step)) {
+                sent.add(phaseOf(frame));
+            } else if (frame.event.equals(imageChannel)) {
+                // Read back from the bytes sent: the PNG travels as bytes, not as a list of numbers.
+                Object png = ((Map<?, ?>) dev.equo.swt.comm.TaggedValues.decode(frame.bytes, 0, frame.bytes.length))
+                        .get("segments");
+                boolean whole = png instanceof byte[]
+                        && java.util.Arrays.equals((byte[]) png, new byte[]{(byte) 137, 80, 78, 71})
+                        && Long.valueOf(40).equals(((Number) frame.state().get("width")).longValue());
+                sent.add(whole ? "image" : "a broken image");
+            }
         }
-        assertThat(carriesImage).containsExactly(true, false, true);
+        assertThat(sent).containsExactly("image", "over", "over", "leave", "image", "over");
     }
 
     private List<Integer> remoteAnswers(TestDeskBridge desk, Control source) {
@@ -1235,10 +1278,20 @@ class DeskMultiWindowFlutterTest {
         List<String> phases = new ArrayList<>();
         for (RecordingComm.Frame frame : desk.comm.sent) {
             if (!frame.event.equals(channel)) continue;
-            Map<String, Object> values = frame.state();
-            phases.add(values.get("text") + "@" + values.getOrDefault("x", 0) + "," + values.getOrDefault("y", 0));
+            Event step = stepOf(frame);
+            phases.add(phaseOf(frame) + "@" + step.x + "," + step.y);
         }
         return phases;
+    }
+
+    /** A relayed drag step as sent: an Event's fields. */
+    private static Event stepOf(RecordingComm.Frame frame) {
+        return dev.equo.swt.WireReader.over(frame.bytes, 0, frame.bytes.length).fields(new Event());
+    }
+
+    private static String phaseOf(RecordingComm.Frame frame) {
+        int phase = stepOf(frame).detail;
+        return phase == 1 ? "over" : phase == 2 ? "leave" : phase == 3 ? "drop" : "phase " + phase;
     }
 
     // ---- harness ---------------------------------------------------------------------------------------

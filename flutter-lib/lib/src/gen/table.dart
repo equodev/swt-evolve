@@ -59,6 +59,8 @@ class VTable extends VComposite {
   List<VTableItem>? items;
   bool? linesVisible;
   List<int>? selection;
+  VTableColumn? sortColumn;
+  int? sortDirection;
   int? topIndex;
 
   int? ownerDrawItemHeight;
@@ -76,6 +78,8 @@ class VTable extends VComposite {
       items = other.items;
       linesVisible = other.linesVisible;
       selection = other.selection;
+      sortColumn = other.sortColumn;
+      sortDirection = other.sortDirection;
       topIndex = other.topIndex;
       itemCount = other.itemCount;
       ownerDrawItemHeight = other.ownerDrawItemHeight;
@@ -85,40 +89,46 @@ class VTable extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 552: // columnOrder
+      case 556: // columnOrder
         columnOrder = r.ints();
         return true;
-      case 553: // columns
-        columns = r.refs<VTableColumn>();
+      case 557: // columns
+        columns = r.refs<VTableColumn>(columns);
         return true;
-      case 554: // editors
-        editors = r.refs<VTableEditor>();
+      case 558: // editors
+        editors = r.refs<VTableEditor>(editors);
         return true;
-      case 555: // headerBackground
+      case 559: // headerBackground
         headerBackground = r.color();
         return true;
-      case 556: // headerForeground
+      case 560: // headerForeground
         headerForeground = r.color();
         return true;
-      case 557: // headerVisible
+      case 561: // headerVisible
         headerVisible = r.boolean();
         return true;
-      case 559: // items
-        items = r.refs<VTableItem>();
+      case 563: // items
+        items = r.items<VTableItem>(WireType.tableItem, items);
         return true;
-      case 560: // linesVisible
+      case 564: // linesVisible
         linesVisible = r.boolean();
         return true;
-      case 562: // selection
+      case 566: // selection
         selection = r.ints();
         return true;
-      case 563: // topIndex
+      case 567: // sortColumn
+        sortColumn = r.ref<VTableColumn>();
+        return true;
+      case 568: // sortDirection
+        sortDirection = r.int32();
+        return true;
+      case 569: // topIndex
         topIndex = r.int32();
         return true;
-      case 558: // itemCount
+      case 562: // itemCount
         itemCount = r.int32();
         return true;
-      case 561: // ownerDrawItemHeight
+      case 565: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
         return true;
       default:
@@ -132,80 +142,92 @@ class VTable extends VComposite {
     {
       final v_ = columnOrder;
       if (v_ != null) {
-        w.key(552);
+        w.key(556);
         w.ints(v_);
       }
     }
     {
       final v_ = columns;
       if (v_ != null) {
-        w.key(553);
+        w.key(557);
         w.refs(v_);
       }
     }
     {
       final v_ = editors;
       if (v_ != null) {
-        w.key(554);
+        w.key(558);
         w.refs(v_);
       }
     }
     {
       final v_ = headerBackground;
       if (v_ != null) {
-        w.key(555);
+        w.key(559);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerForeground;
       if (v_ != null) {
-        w.key(556);
+        w.key(560);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerVisible;
       if (v_ != null) {
-        w.keyBoolean(557, v_);
+        w.keyBoolean(561, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(559);
-        w.refs(v_);
+        w.key(563);
+        w.items(v_);
       }
     }
     {
       final v_ = linesVisible;
       if (v_ != null) {
-        w.keyBoolean(560, v_);
+        w.keyBoolean(564, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(562);
+        w.key(566);
         w.ints(v_);
+      }
+    }
+    {
+      final v_ = sortColumn;
+      if (v_ != null) {
+        w.keyRef(567, v_.id);
+      }
+    }
+    {
+      final v_ = sortDirection;
+      if (v_ != null) {
+        w.keyInt32(568, v_);
       }
     }
     {
       final v_ = topIndex;
       if (v_ != null) {
-        w.keyInt32(563, v_);
+        w.keyInt32(569, v_);
       }
     }
     {
       final v_ = itemCount;
       if (v_ != null) {
-        w.keyInt32(558, v_);
+        w.keyInt32(562, v_);
       }
     }
     {
       final v_ = ownerDrawItemHeight;
       if (v_ != null) {
-        w.keyInt32(561, v_);
+        w.keyInt32(565, v_);
       }
     }
   }
@@ -213,18 +235,20 @@ class VTable extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(552, columnOrder);
-    visit(553, columns);
-    visit(554, editors);
-    visit(555, headerBackground);
-    visit(556, headerForeground);
-    visit(557, headerVisible);
-    visit(559, items);
-    visit(560, linesVisible);
-    visit(562, selection);
-    visit(563, topIndex);
-    visit(558, itemCount);
-    visit(561, ownerDrawItemHeight);
+    visit(556, columnOrder);
+    visit(557, columns);
+    visit(558, editors);
+    visit(559, headerBackground);
+    visit(560, headerForeground);
+    visit(561, headerVisible);
+    visit(563, items);
+    visit(564, linesVisible);
+    visit(566, selection);
+    visit(567, sortColumn);
+    visit(568, sortDirection);
+    visit(569, topIndex);
+    visit(562, itemCount);
+    visit(565, ownerDrawItemHeight);
   }
 
   @override
@@ -233,5 +257,6 @@ class VTable extends VComposite {
     VWidget.adoptEach(columns, adopt);
     VWidget.adoptEach(editors, adopt);
     VWidget.adoptEach(items, adopt);
+    sortColumn = VWidget.adoptOne(sortColumn, adopt);
   }
 }

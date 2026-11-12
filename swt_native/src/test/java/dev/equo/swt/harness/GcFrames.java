@@ -30,7 +30,10 @@ public final class GcFrames {
         if (MessageBatch.EVENT.equals(event)) {
             return new Decoded(event, batch(payload));
         }
-        if ("swt.evolve.properties".equals(event) || (event.startsWith("GC/") && event.endsWith("/imageInit"))) {
+        // Sent as an object's fields (FlutterBridge.sendFields), not as a tagged value.
+        if ("swt.evolve.properties".equals(event) || (event.startsWith("GC/") && event.endsWith("/imageInit"))
+                || event.endsWith("/DnD/remoteDrag") || event.endsWith("/Drop/negotiationResult")
+                || event.endsWith("/TextChange")) {
             return new Decoded(event, WireValues.plain(dev.equo.swt.WireDump.fields(payload, 0, payload.length)));
         }
         if (dev.equo.swt.WidgetWire.CHANNEL.equals(event)) {

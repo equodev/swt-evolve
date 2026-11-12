@@ -1,4 +1,7 @@
+import 'dart:convert' show utf8;
 import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../gen/color.dart';
 import '../gen/image.dart';
@@ -25,6 +28,20 @@ const int wireWhole = 1;
 const int wireChange = 2;
 const int wireImage = 3;
 const int wireHolder = 4;
+
+/// What a list's length is written as when the list is a change to the one held (Java's
+/// `WidgetWire.LIST_CHANGE`): one past what any Java array's length plus one can be.
+const int wireListChange = 2147483649;
+
+/// The checksum Java sends with a list change, over the ids of the list it makes. Kept below 2^30 at
+/// every step, so the arithmetic is exact in a JavaScript double as well.
+int wireListChecksum(List<VWidget> list) {
+  var hash = list.length;
+  for (final value in list) {
+    hash = (hash * 31 + value.id) & 0x3FFFFFFF;
+  }
+  return hash;
+}
 
 /// A value read from a binary frame property by property, each by its number (the generated WireKey).
 abstract interface class WireReadable {
@@ -378,6 +395,19 @@ class WidgetWireWriter {
     }
   }
 
+  /// A list of items as [WidgetWireReader.items] reads one, each item only named.
+  void items(List<VWidget?>? v) {
+    if (v == null) {
+      _varint(0);
+      return;
+    }
+    _varint(v.length + 1);
+    for (final e in v) {
+      final id = e?.id;
+      _varint(id == null ? 0 : _zz(id) * 2 + 1);
+    }
+  }
+
   void floats(List<double>? v) {
     if (v == null) {
       _varint(0);
@@ -499,15 +529,15 @@ class WidgetWireWriter {
     float64(v);
   }
 
-  /// A string as both ends hold one: `varint(n << 1 | wide) + 1`, then Latin-1 bytes or UTF-16 code
+  /// A string as both ends hold one: `varint(n << 1 | wide) + 1`, then ASCII bytes or UTF-16 code
   /// units little endian.
   void string(String v) {
     final n = v.length;
-    var latin1 = 0;
-    while (latin1 < n && v.codeUnitAt(latin1) <= 0xFF) {
-      latin1++;
+    var ascii = 0;
+    while (ascii < n && v.codeUnitAt(ascii) < 0x80) {
+      ascii++;
     }
-    if (latin1 == n) {
+    if (ascii == n) {
       _varint(n * 2 + 1);
       _ensure(n);
       for (var i = 0; i < n; i++) {
@@ -529,6 +559,47 @@ class WidgetWireWriter {
     for (final e in v) {
       _zigzag(e);
     }
+  }
+
+  /// A style index, as Java's `WidgetWire.runs` writes it: runs of `name, start, length` after a
+  /// palette name, each start as the step from the end of the run before. A run's name and length go
+  /// as one number, `length * names + name`, after the count of names; that number says whether the
+  /// step follows, left out when it is 0. With a count of 0, name and length go on their own. A change
+  /// to an index writes its header the same way before the runs it inserts; anything not made of
+  /// whole runs, as [ints] writes it.
+  void runs(List<int> v) {
+    _varint(v.length + 1);
+    if (v.isEmpty) return;
+    final from = styleRunsFrom(v[0], v.length);
+    final header = from == 0 ? v.length : from;
+    for (var i = 0; i < header; i++) {
+      _zigzag(v[i]);
+    }
+    if (from == 0) return;
+    final names = _runNames(v, from);
+    _varint(names);
+    var end = 0;
+    for (var i = from; i < v.length; i += 3) {
+      final step = v[i + 1] - end;
+      final stepped = step != 0 ? 1 : 0;
+      _varint((names > 0 ? v[i + 2] * names + v[i] : _zz(v[i])) * 2 + stepped);
+      if (step != 0) _zigzag(step);
+      if (names == 0) _zigzag(v[i + 2]);
+      end = v[i + 1] + v[i + 2];
+    }
+  }
+
+  /// As Java's `WidgetWire.MAX_RUN_NAMES`.
+  static const int _maxRunNames = 1 << 16;
+
+  /// One more than the largest name of the runs [v] holds from [from], or 0 if they cannot be packed.
+  static int _runNames(List<int> v, int from) {
+    var names = 0;
+    for (var i = from; i < v.length; i += 3) {
+      if (v[i] < 0 || v[i + 2] < 0 || v[i] >= _maxRunNames) return 0;
+      if (v[i] >= names) names = v[i] + 1;
+    }
+    return names;
   }
 
   void longs(List<int> v) => ints(v);
@@ -581,6 +652,10 @@ class WireKeys {
 /// [accepts] says whether a value is what the reference is read as: two values can share an id.
 typedef WireRefResolver = VWidget? Function(int id, bool Function(VWidget value) accepts);
 
+/// The value an item a list describes in place is read into, given its record [type], [id] and write
+/// [stamp]; null when there is nothing to read it as. [r] is the reader the list is read by.
+typedef WireItemEnter = VWidget? Function(WidgetWireReader r, int type, int id, int stamp);
+
 /// Reads Java's `WidgetWire` frame. Values carry no types: each read knows from the property what it
 /// is reading.
 class WidgetWireReader {
@@ -593,6 +668,17 @@ class WidgetWireReader {
 
   /// Resolves widget references.
   WireRefResolver resolve = (_, __) => null;
+
+  /// Makes what an item described in place is read into ([items]).
+  WireItemEnter enterItem = (_, __, ___, ____) => null;
+
+  /// The stamp the next item described in place steps from: the record's own, at its start.
+  int inPlaceStamp = 0;
+
+  /// The items the record being read described in place and the registry took, by key, with their
+  /// stamps: they are applied once the record is.
+  final List<int> inPlaceKeys = [];
+  final List<int> inPlaceStamps = [];
 
   /// Widget ids a value named that nothing here holds.
   final List<int> unresolved = [];
@@ -623,6 +709,8 @@ class WidgetWireReader {
     unresolved.clear();
     images.clear();
     imagesNamedUnheld.clear();
+    inPlaceKeys.clear();
+    inPlaceStamps.clear();
   }
 
   bool get hasMore => pos < _end;
@@ -720,14 +808,21 @@ class WidgetWireReader {
 
   double? doubleBoxed() => _present() ? float64() : null;
 
-  /// A string in Java's `WidgetWire` form: Latin-1 bytes or UTF-16 code units, copied, not decoded.
+  /// On the web a string is the browser's, made a code unit at a time by [String.fromCharCodes]; the
+  /// browser's own decoder makes a long one in one go, and the one-byte form is ASCII, which it reads
+  /// as it is.
+  static const _nativeDecodeFrom = 256;
+
+  /// A string in Java's `WidgetWire` form: ASCII bytes or UTF-16 code units, copied, not decoded.
   String? string() {
     final header = varint();
     if (header == 0) return null;
     final n = (header - 1) >> 1;
     if ((header - 1).isEven) {
       final end = pos + n;
-      final s = String.fromCharCodes(_bytes, pos, end);
+      final s = kIsWeb && n >= _nativeDecodeFrom
+          ? utf8.decode(Uint8List.sublistView(_bytes, pos, end))
+          : String.fromCharCodes(_bytes, pos, end);
       pos = end;
       return s;
     }
@@ -745,6 +840,37 @@ class WidgetWireReader {
     final list = List<int>.filled(count - 1, 0);
     for (var i = 0; i < list.length; i++) {
       list[i] = zigzag();
+    }
+    return list;
+  }
+
+  /// What [WidgetWireWriter.runs] wrote.
+  List<int>? runs() {
+    final count = varint();
+    if (count == 0) return null;
+    final list = List<int>.filled(count - 1, 0);
+    if (list.isEmpty) return list;
+    list[0] = zigzag();
+    final from = styleRunsFrom(list[0], list.length);
+    for (var i = 1; i < (from == 0 ? list.length : from); i++) {
+      list[i] = zigzag();
+    }
+    if (from == 0) return list;
+    final names = varint();
+    var end = 0;
+    for (var i = from; i < list.length; i += 3) {
+      final run = varint();
+      final packed = run ~/ 2;
+      if (names > 0) {
+        list[i] = packed % names;
+      } else {
+        list[i] = packed.isEven ? packed ~/ 2 : -(packed ~/ 2) - 1;
+      }
+      final start = run.isEven ? end : end + zigzag();
+      final length = names > 0 ? packed ~/ names : zigzag();
+      list[i + 1] = start;
+      list[i + 2] = length;
+      end = start + length;
     }
     return list;
   }
@@ -843,10 +969,12 @@ class WidgetWireReader {
     return held is T ? held : null;
   }
 
-  /// Widgets named by id. One nothing here holds is left out, and asked for by the caller.
-  List<T>? refs<T extends VWidget>() {
+  /// Widgets named by id. One nothing here holds is left out, and asked for by the caller. [held] is
+  /// the list the value holds, which a change to it ([wireListChange]) is applied to.
+  List<T>? refs<T extends VWidget>([List<T>? held]) {
     final count = varint();
     if (count == 0) return null;
+    if (count == wireListChange) return _changedList<T>(held, () => ref<T>());
     // Resolved into a list kept for it, then copied once at the size it came to: a list grown one
     // child at a time is reallocated as it doubles. One type test for the whole list.
     final accepts = _acceptsOf<T>();
@@ -862,6 +990,63 @@ class WidgetWireReader {
     }
     final list = List<T>.generate(n, (i) => resolved[i] as T, growable: true);
     resolved.fillRange(0, n, null);
+    return list;
+  }
+
+  /// The items a widget owns, as Java's `WidgetWire.items` writes them: each by id, and one this client
+  /// lacks described in place, as a value of the record type [type], before it is resolved. [held] is
+  /// the list the value holds, which a change to it ([wireListChange]) is applied to.
+  List<T>? items<T extends VWidget>(int type, [List<T>? held]) {
+    final count = varint();
+    if (count == 0) return null;
+    final accepts = _acceptsOf<T>();
+    if (count == wireListChange) return _changedList<T>(held, () => _item<T>(type, accepts));
+    final list = <T>[];
+    for (var i = 0; i < count - 1; i++) {
+      final item = _item<T>(type, accepts);
+      if (item != null) list.add(item);
+    }
+    return list;
+  }
+
+  /// One entry of [items]: the item held under its id, once the description in place, if any, is read.
+  T? _item<T extends VWidget>(int type, bool Function(VWidget value) accepts) {
+    final v = varint();
+    if (v == 0) return null;
+    // Arithmetic, not shifts: on the web a bitwise result is 32 bits.
+    final z = (v - 1) ~/ 2;
+    final id = z.isEven ? z ~/ 2 : -(z ~/ 2) - 1;
+    if ((v - 1).isOdd) {
+      inPlaceStamp += varint();
+      final into = enterItem(this, type, id, inPlaceStamp);
+      if (into == null) throw FormatException('no ${WidgetKey.typeName(type)} to describe $id into at $pos');
+      _fields(into);
+    }
+    final held = resolve(id, accepts);
+    if (held == null) unresolved.add(id);
+    return held is T ? held : null;
+  }
+
+  /// [held] with a change Java wrote against it applied: from where, how many it removes there, and
+  /// the entries, each read by [entry], that take their place. A change that does not fit [held], or
+  /// whose result is not the list Java made it to, was made against a list this client does not hold:
+  /// the record cannot be read, and the widget is asked for whole.
+  List<T> _changedList<T extends VWidget>(List<T>? held, T? Function() entry) {
+    final checksum = varint();
+    final from = varint();
+    final removed = varint();
+    final count = varint();
+    final base = held ?? <T>[];
+    if (from + removed > base.length) {
+      throw FormatException('a list change past the end of the ${base.length} held, at $pos');
+    }
+    final list = base.sublist(0, from);
+    for (var i = 0; i < count; i++) {
+      final e = entry();
+      if (e != null) list.add(e);
+    }
+    list.addAll(base.skip(from + removed));
+    if (wireListChecksum(list) != checksum) throw FormatException('a list change made against another list, at $pos');
     return list;
   }
 
@@ -915,7 +1100,32 @@ class WidgetWireReader {
     }
   }
 
-  /// A list, each element read by [read].
+  /// Objects made by [create], length first, as Java's generated writers put them: a run of nulls
+  /// as [nullRun] and its length.
+  List<T?>? objects<T extends WireReadable>(T Function() create) {
+    final count = varint();
+    if (count == 0) return null;
+    final list = List<T?>.filled(count - 1, null);
+    var i = 0;
+    while (i < list.length) {
+      final marker = _bytes[pos++];
+      if (marker == nullRun) {
+        i += varint();
+        continue;
+      }
+      if (marker != 0) {
+        final value = create();
+        _fields(value);
+        list[i] = value;
+      }
+      i++;
+    }
+    return list;
+  }
+
+  /// As Java's `WidgetWire.NULL_RUN`.
+  static const int nullRun = 2;
+
   /// A list, each element read by [read] from this reader. [read] is handed the reader rather than
   /// closing over it: a closure over `readWire`'s own reader would make every call of it allocate,
   /// whichever property it reads.
@@ -967,3 +1177,14 @@ class WidgetWireReader {
     return map;
   }
 }
+
+/// As Java's `WidgetWire.runsFrom`: where the runs of a list of [length] starting with [first] begin
+/// when it travels as style runs, after a whole index's palette name or a change's header (a change
+/// starts with the lowest int); 0 when it is not made of whole runs.
+int styleRunsFrom(int first, int length) {
+  final from = first == -2147483648 ? styleRunsChangeHeader : 1;
+  return length >= from && (length - from) % 3 == 0 ? from : 0;
+}
+
+/// As Java's `WidgetWire.RUNS_CHANGE_HEADER`.
+const int styleRunsChangeHeader = 6;

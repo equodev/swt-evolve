@@ -65,6 +65,20 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** Last control the client was asked to focus, so one focus move is not sent twice: a single
      *  {@code Control.forceFocus()} reaches {@link #setFocus} again through the shell's restoreFocus. */
     private DartControl focusRequested = null;
+
+    /**
+     * Above zero while a key the client forwarded is dispatched. A focus Java moves then -- a command
+     * bound to the key opening a field, as Find does -- comes from no gesture the client saw, so the
+     * client's keys follow it once the key is handled ({@link #focusAfterKey}).
+     */
+    private int keyDownsDispatching;
+
+    /**
+     * Where Java moved the focus while a key was dispatched. Only where it ends up is sent: Find focuses
+     * its field, loses it while it hides the overlay, then focuses it again, and the client sent each
+     * move answered the first while the others were on their way.
+     */
+    private DartControl focusAfterKey;
     /** Last control the client was told holds the focus, on its own channel or in the Display state. */
     private DartControl focusHolderSent = null;
 
@@ -478,7 +492,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                             new Rectangle(0, 0, p.width, p.height), monitorOf(p), p.isFirst);
                     // Only for a client that holds nothing (first ClientReady, or a page refresh): a
                     // viewport change resizes shells, which travel on their own; the Display has no bounds.
-                    if (first || p.isFirst) sendDisplayUpdate(display);
+                    if (first || p.isFirst) {
+                        displaySent.forget();
+                        displayPopupsSent.forget();
+                        sendDisplayUpdate(display);
+                    }
                 } finally {
                     if (span != null) {
                         span.close();
@@ -495,9 +513,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // promptly. When ALREADY on the Display thread (unit tests drive ClientReady inline), run it
             // synchronously so the resize is observable immediately.
             if (api.getThread() == Thread.currentThread()) apply.run();
-            else api.asyncExec(apply);
+            else if (first || p.isFirst) api.asyncExec(apply);
+            // A window dragged faster than it is laid out is laid out at the size it has reached.
+            else if (pendingViewport.getAndSet(apply) == null) api.asyncExec(() -> {
+                Runnable latest = pendingViewport.getAndSet(null);
+                if (latest != null) latest.run();
+            });
         });
     }
+
+    /** The newest resize report waiting for the Display thread; a report replaces the one it overtook. */
+    private final java.util.concurrent.atomic.AtomicReference<Runnable> pendingViewport =
+            new java.util.concurrent.atomic.AtomicReference<>();
 
     public void writeClipboardText(String text) {
         writeSystemClipboardText(text);
@@ -632,6 +659,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         api.asyncExec(() -> {
             if (api.isDisposed())
                 return;
+            // A release while a pop-up is open goes to no control, as natively, where the pop-up's keyboard
+            // grab takes it. The pop-up is open here from the setVisible that asked for it, so a release
+            // that overtakes the client's menu is not delivered either; the client reports the menu
+            // hidden before the release of the key that closed it, which then reaches the control.
+            if (type == org.eclipse.swt.SWT.KeyUp && popupOpen(display))
+                return;
             // A shown pop-up owns the keyboard, as natively: Escape takes it down and goes no further.
             // The key comes here when the client's menu has not taken the focus yet, the gesture that
             // opened it having been answered before the menu was built.
@@ -652,7 +685,17 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             DartControl dc = (DartControl) focus.getImpl();
             if (type == org.eclipse.swt.SWT.KeyDown) {
                 boolean vetoable = focus.isListening(org.eclipse.swt.SWT.KeyDown);
-                ControlHelper.RoutedKey routed = closedPopup ? null : ControlHelper.routeKeyDown(dc, ev);
+                ControlHelper.RoutedKey routed;
+                keyDownsDispatching++;
+                try {
+                    routed = closedPopup ? null : ControlHelper.routeKeyDown(dc, ev);
+                } finally {
+                    keyDownsDispatching--;
+                }
+                DartControl moved = focusAfterKey;
+                focusAfterKey = null;
+                if (moved != null && moved == focused)
+                    requestClientFocus(moved, true);
                 // A modifier press edits nothing, so the client holds no proposal for it to answer.
                 if (vetoable && !ControlHelper.isModifierKey(ev.keyCode)) {
                     dev.equo.swt.FlutterBridge.send(dc, dev.equo.swt.WireTable.CHANNEL_KEY_VERDICT,
@@ -666,6 +709,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 ControlHelper.routeKeyUp(dc, ev);
             }
         });
+    }
+
+    /** Whether a pop-up menu is open, or asked to open: from setVisible(true) until it is hidden. */
+    private static boolean popupOpen(DartDisplay display) {
+        Menu[] popups = display.popups;
+        if (popups == null)
+            return false;
+        for (Menu menu : popups) {
+            if (menu != null && !menu.isDisposed())
+                return true;
+        }
+        return false;
     }
 
     /** Takes down the pop-up shown last, as the client does when Escape reaches its menu; false if none is shown. */
@@ -886,8 +941,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             vd.windowedShellIds = windowedShellIds();
             forgetPopupsNoLongerShown(vd);
             vd.focusHolderId = liveId(focusHolderSent = focused);
-            FlutterBridge.writeTape(comm(), tape ->
-                    tape.describeHolder("Display", vd.id, VDisplay.WIRE_KEYS, vd::writeWire));
+            VShellPopups popups = new VShellPopups();
+            popups.shellId = vd.id;
+            popups.popups = vd.popups;
+            FlutterBridge.writeTape(comm(), tape -> {
+                tape.describeHolder("Display", vd.id, VDisplay.WIRE_KEYS, vd::writeWire, displaySent);
+                tape.describeHolder("DisplayPopups", vd.id, VShellPopups.WIRE_KEYS, popups::writeWire, displayPopupsSent);
+            });
             syncShellPopups();
             syncDisplayWindow(display, leftOwnWindow);
             FlutterBridge.displayBootstrapped = true;
@@ -896,41 +956,76 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
     }
 
+    /** What the client was last told by the Display's record and by its popups' record. */
+    private final dev.equo.swt.Serializer.HolderSent displaySent = new dev.equo.swt.Serializer.HolderSent();
+    private final dev.equo.swt.Serializer.HolderSent displayPopupsSent = new dev.equo.swt.Serializer.HolderSent();
+
     /** The popups and tooltips the last Display update listed: the ones on screen. */
     private final java.util.Set<Widget> publishedPopups =
             java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
     /**
      * The Display lists a popup or tooltip only while it is shown, and the client lets go of one the
-     * moment it is no longer listed, with everything under it. One that was only hidden is still
-     * alive here, so what it was sent is forgotten too, or showing it again would name it to a
-     * client that no longer holds it.
+     * moment it is no longer listed, with everything under it, unless a control it holds names it as
+     * its menu. One that was only hidden is still alive here, so what it was sent is forgotten too,
+     * or showing it again would name it to a client that no longer holds it.
      */
     private void forgetPopupsNoLongerShown(VDisplay vd) {
         java.util.Set<Widget> shown = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         if (vd.popups != null) java.util.Collections.addAll(shown, vd.popups);
         if (vd.tooltips != null) java.util.Collections.addAll(shown, vd.tooltips);
+        int connection = comm() == null ? 0 : comm().connectionId();
         synchronized (publishedPopups) {
             for (Widget gone : publishedPopups) {
-                if (!shown.contains(gone) && !gone.isDisposed()) forgetSubtree(gone);
+                if (!shown.contains(gone) && !gone.isDisposed() && !heldByItsControl(gone, connection)) {
+                    forgetSubtree(gone, heldByNothingElse(gone));
+                }
             }
             publishedPopups.clear();
             publishedPopups.addAll(shown);
         }
     }
 
-    /** Forgets what was sent of {@code widget} and of what hangs under it: a menu's items and their cascades. */
-    private static void forgetSubtree(Widget widget) {
+    /**
+     * Whether the client holds {@code popup} as the menu of a control it holds, which keeps it, and
+     * everything under it, when the Display stops listing it. A control whose menu changed since it
+     * was last sent may still name another one there.
+     */
+    private static boolean heldByItsControl(Widget popup, int connection) {
+        if (!(popup instanceof Menu) || !(popup.getImpl() instanceof DartMenu)) return false;
+        Control owner = ((DartMenu) popup.getImpl()).ownerControl;
+        if (owner == null || owner.isDisposed() || !(owner.getImpl() instanceof DartControl)) return false;
+        DartControl control = (DartControl) owner.getImpl();
+        VControl value = control.getValue();
+        return control.menu == popup && value != null && value.sentSeq(connection) != 0
+                && !value.changedKeys().contains(VControl.MENU);
+    }
+
+    /** Whether only the Display's list held {@code popup} on the client: a menu no control or item names. */
+    private static boolean heldByNothingElse(Widget popup) {
+        if (!(popup.getImpl() instanceof DartMenu)) return false;
+        DartMenu menu = (DartMenu) popup.getImpl();
+        return menu.ownerControl == null && menu.cascade == null;
+    }
+
+    /**
+     * Forgets what was sent of {@code widget} and of what hangs under it: a menu's items and their
+     * cascades. A subtree the client {@code letGo} of is not sent what changed in it either: it is
+     * described whole the next time it is named.
+     */
+    private static void forgetSubtree(Widget widget, boolean letGo) {
         if (widget.getImpl() instanceof DartWidget) {
-            dev.equo.swt.Serializer.forgetDelivery(((DartWidget) widget.getImpl()).getValue());
+            DartWidget impl = (DartWidget) widget.getImpl();
+            dev.equo.swt.Serializer.forgetDelivery(impl.getValue());
+            if (letGo) FlutterBridge.letGo(impl);
         }
         if (widget instanceof Menu) {
             for (MenuItem item : ((Menu) widget).getItems()) {
-                forgetSubtree(item);
+                forgetSubtree(item, letGo);
             }
         } else if (widget instanceof MenuItem) {
             Menu cascade = ((MenuItem) widget).getMenu();
-            if (cascade != null && !cascade.isDisposed()) forgetSubtree(cascade);
+            if (cascade != null && !cascade.isDisposed()) forgetSubtree(cascade, letGo);
         }
     }
 
@@ -1890,6 +1985,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (activeShellChanged && live && api instanceof Text && !leavesCCombo
                 && opensOver(api.getShell(), previousActiveShellId))
             requestActivatedShellFocus(widget);
+        else if (keyDownsDispatching > 0)
+            focusAfterKey = widget;
         else
             requestClientFocus(widget, leavesCCombo);
         publishFocusHolder(widget);
@@ -2003,7 +2100,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return;
         if (!always && !isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText))
             return;
-        if (widget == focusRequested)
+        // Asked already, and either still on its way or answered by the client holding it. A request
+        // the client answered elsewhere -- spent before the control could take it, or followed by the
+        // user clicking away -- is asked again.
+        if (widget == focusRequested
+                && (widget == clientReportedFocus || unansweredFocusRequests.contains(widget)))
             return;
         focusRequested = widget;
         if (unansweredFocusRequests.isEmpty())

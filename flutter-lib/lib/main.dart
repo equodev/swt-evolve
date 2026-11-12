@@ -53,6 +53,8 @@ import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/deferred_fonts.dart';
 import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/image_utils.dart';
+import 'src/impl/control_evolve.dart' show ControlImpl;
+import 'src/impl/utils/raw_pointer_moves.dart';
 import 'src/impl/utils/key_delivery_order.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
@@ -100,6 +102,7 @@ void main(List<String> args) async {
   BootTrace.step('binding.ensureInitialized', bindingStart);
   unawaited(KeyDeliveryOrder.install(uiThreadOwn: getUiThreadOwn(args)));
   FramePresentation.ensureTracking();
+  listenRawPointerMoves(ControlImpl.rawMove);
   BootTrace.recordFirstFrames(4);
   DeferredFonts.configure(getDeferredFontManifest());
   // Registered before the first await: Java hands a client what it sent before the comm connected

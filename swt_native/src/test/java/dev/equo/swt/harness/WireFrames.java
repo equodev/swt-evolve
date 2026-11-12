@@ -53,8 +53,9 @@ public final class WireFrames {
                 state.put("_b", r.base);
             }
             if (r.kind != WidgetWire.IMAGE) state.put("_s", r.stamp);
-            String channel = r.kind == WidgetWire.HOLDER && "ShellPopups".equals(r.type)
-                    ? "Shell/" + r.id + "/Popups" : r.channel();
+            String channel = r.kind != WidgetWire.HOLDER ? r.channel()
+                    : "ShellPopups".equals(r.type) ? "Shell/" + r.id + "/Popups"
+                    : "DisplayPopups".equals(r.type) ? "Display/" + r.id + "/Popups" : r.channel();
             out.add(new Record(channel, state, r.size));
         }
         return out;

@@ -31,13 +31,13 @@ public class VPath extends VResource {
         return ((DartPath) impl).wireTextFonts();
     }
 
-    public static final int PATH_DATA = 393;
+    public static final int PATH_DATA = 397;
 
-    public static final int TEXT_FONTS = 394;
+    public static final int TEXT_FONTS = 398;
 
-    public static final int TEXT_ORIGINS = 395;
+    public static final int TEXT_ORIGINS = 399;
 
-    public static final int TEXT_STRINGS = 396;
+    public static final int TEXT_STRINGS = 400;
 
     @Override
     public String wireName(int key) {
@@ -57,23 +57,30 @@ public class VPath extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 393:
+            case 397:
                 w.object(getPathData());
                 return true;
-            case 396:
+            case 400:
                 w.write(getTextStrings());
                 return true;
-            case 395:
+            case 399:
                 w.write(getTextOrigins());
                 return true;
-            case 394:
+            case 398:
                 {
                     Font[] a_ = getTextFonts();
                     if (a_ == null)
                         w.listSize(-1);
                     else {
                         w.listSize(a_.length);
-                        for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                        for (int i_ = 0; i_ < a_.length; i_++) {
+                            Font e_ = a_[i_];
+                            if (e_ == null) {
+                                i_ += w.nulls(a_, i_) - 1;
+                                continue;
+                            }
+                            w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                        }
                     }
                 }
                 return true;
@@ -84,53 +91,60 @@ public class VPath extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 393:
+            case 397:
                 {
                     PathData v_ = getPathData();
                     dev.equo.swt.WireObject o_ = v_;
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(393);
+                    w.key(397);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 396:
+            case 400:
                 {
                     String[] v_ = getTextStrings();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(396);
+                    w.key(400);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 395:
+            case 399:
                 {
                     float[] v_ = getTextOrigins();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(395);
+                    w.key(399);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 394:
+            case 398:
                 {
                     Font[] v_ = getTextFonts();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(394);
+                    w.key(398);
                     {
                         Font[] a_ = v_;
                         if (a_ == null)
                             w.listSize(-1);
                         else {
                             w.listSize(a_.length);
-                            for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                            for (int i_ = 0; i_ < a_.length; i_++) {
+                                Font e_ = a_[i_];
+                                if (e_ == null) {
+                                    i_ += w.nulls(a_, i_) - 1;
+                                    continue;
+                                }
+                                w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                            }
                         }
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
@@ -139,7 +153,7 @@ public class VPath extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 393, 396, 395, 394 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 397, 400, 399, 398 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -162,26 +176,33 @@ public class VPath extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 72;
+        return 73;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(393);
+        w.key(397);
         w.object(getPathData());
-        w.key(396);
+        w.key(400);
         w.write(getTextStrings());
-        w.key(395);
+        w.key(399);
         w.write(getTextOrigins());
-        w.key(394);
+        w.key(398);
         {
             Font[] a_ = getTextFonts();
             if (a_ == null)
                 w.listSize(-1);
             else {
                 w.listSize(a_.length);
-                for (Font e_ : a_) w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                for (int i_ = 0; i_ < a_.length; i_++) {
+                    Font e_ = a_[i_];
+                    if (e_ == null) {
+                        i_ += w.nulls(a_, i_) - 1;
+                        continue;
+                    }
+                    w.object((e_ == null || e_.isDisposed() ? null : ((DartFont) e_.getImpl()).getValue()));
+                }
             }
         }
     }

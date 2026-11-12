@@ -10,7 +10,6 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tree.dart';
 import 'package:swtflutter/src/gen/treeitem.dart';
-import 'package:swtflutter/src/impl/tree_evolve.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 
 import 'delivery/support/deliver.dart';
@@ -49,9 +48,6 @@ Future<void> _mount(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Widget _row(WidgetTester tester, int id) => tester.widget(find.byWidgetPredicate(
-    (w) => w is TreeItemSwtWrapper && w.treeItem.id == id));
-
 double? _horizontalScrollExtent(WidgetTester tester) {
   for (final scrollable in tester.widgetList<Scrollable>(find.byType(Scrollable))) {
     if (scrollable.axisDirection == AxisDirection.right) {
@@ -62,18 +58,20 @@ double? _horizontalScrollExtent(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('a new selection keeps the rows it does not change', (tester) async {
+  testWidgets('a new selection rebuilds only the rows it changes', (tester) async {
     await _mount(tester);
-    final before = {for (var id = 10; id < 15; id++) id: _row(tester, id)};
+    final rebuilt = <int>{};
+    debugOnRebuildDirtyWidget = (element, _) {
+      final widget = element.widget;
+      if (widget is TreeItemSwt) rebuilt.add(widget.value.id);
+    };
+    addTearDown(() => debugOnRebuildDirtyWidget = null);
 
     await deliverChange(_tree(seq: 2, selection: [_items[2]]), keys: [WireKey.k_Tree_selection], base: 1);
     await tester.pumpAndSettle();
+    debugOnRebuildDirtyWidget = null;
 
-    expect(_row(tester, 12), isNot(same(before[12])), reason: 'the selected row');
-    expect(_row(tester, 11), isNot(same(before[11])), reason: 'the row above draws its edge against it');
-    expect(_row(tester, 10), same(before[10]));
-    expect(_row(tester, 13), same(before[13]));
-    expect(_row(tester, 14), same(before[14]));
+    expect(rebuilt, {12, 11}, reason: 'the selected row, and the row above, which draws its edge against it');
   });
 
   testWidgets('a row whose text grew is measured again when only the selection follows',

@@ -81,7 +81,7 @@ class GefDragFeedbackCostNativeTest {
     }
 
     @Test
-    @DisplayName("a drag frame describes the GC whole once and sends every later state push as a change")
+    @DisplayName("a drag frame sends every state push as a change from what the canvas's channel holds")
     void gcStateTravelsAsWhatChanged() {
         Drag drag = new Drag(8);
         drag.step();
@@ -94,10 +94,8 @@ class GefDragFeedbackCostNativeTest {
         assertThat(states)
                 .as("a repaint of eight selected parts sets an attribute between primitives many times over")
                 .hasSizeGreaterThan(10);
-        assertThat(WireValues.mentions(states.get(0), "_d"))
-                .as("the client holds nothing yet, so the first push has to describe the GC")
-                .isFalse();
-        assertThat(states.subList(1, states.size()))
+        // The paint the diagram was built with gave the channel a state, which the drag's GC starts from.
+        assertThat(states)
                 .as("re-sending the whole GC per primitive is what made a multi-selection drag "
                         + "cost several times what it draws")
                 .allMatch(body -> WireValues.mentions(body, "_d"));

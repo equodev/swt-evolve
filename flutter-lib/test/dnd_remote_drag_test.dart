@@ -13,9 +13,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/canvas.dart';
 import 'package:swtflutter/src/gen/control.dart';
 import 'package:swtflutter/src/gen/display.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/gen/swt.dart';
@@ -24,6 +26,7 @@ import 'package:swtflutter/src/gen/treeitem.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/utils/dnd_utils.dart';
 
+import 'support/channels.dart' as channels;
 import 'support/sent_events.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
@@ -96,15 +99,20 @@ List<String> _drops(int dropTargetId) =>
 Offset _shellRelative(WidgetTester tester, Offset global) =>
     tester.renderObject<RenderBox>(find.byType(ShellSwt<VShell>)).globalToLocal(global);
 
-/// Java telling the shell [shellId] that a drag from another window is [phase] at [global].
+const _phases = {'over': RemoteDragReceiver.over, 'leave': RemoteDragReceiver.leave, 'drop': RemoteDragReceiver.drop};
+
+/// Java telling the shell [shellId] that a drag from another window is [phase] at [global]: an
+/// event's fields, as RemoteDrag sends a step.
 Future<void> _remote(WidgetTester tester, int shellId, String phase, [Offset? global]) async {
-  final body = <String, dynamic>{'text': phase};
+  final step = VEvent()..detail = _phases[phase];
   if (global != null) {
     final at = _shellRelative(tester, global);
-    body['x'] = at.dx.round();
-    body['y'] = at.dy.round();
+    step
+      ..x = at.dx.round()
+      ..y = at.dy.round();
   }
-  _deliver('Shell/$shellId/DnD/remoteDrag', body);
+  EquoCommService.commForTesting.receiveBinary(
+      channels.frame('Shell/$shellId/DnD/remoteDrag', Uint8List.fromList(WidgetWireWriter.encode(step))));
   // One frame for the message to be handled, one for what it changed to be drawn.
   await tester.pump();
   await tester.pump();
@@ -170,13 +178,10 @@ void main() {
       await _pump(tester, _shell(shellId, [_canvas(_nextId++, dropTargetId: 905)]));
       const at = Offset(600, 400);
 
-      final body = <String, dynamic>{'text': 'over', 'segments': Uint8List.fromList(_png), 'width': 40, 'height': 20};
-      final local = _shellRelative(tester, at);
-      body['x'] = local.dx.round();
-      body['y'] = local.dy.round();
-      _deliver('Shell/$shellId/DnD/remoteDrag', body);
+      _deliver('Shell/$shellId/DragDetect/dragImage', {'segments': Uint8List.fromList(_png), 'width': 40, 'height': 20});
       await tester.pump();
-      await tester.pump();
+      expect(_dragImage, findsNothing, reason: 'drawn by the step it comes ahead of');
+      await _remote(tester, shellId, 'over', at);
       expect(_dragImage, findsOneWidget, reason: 'the source window cannot draw over this one');
       expect(tester.getTopLeft(_dragImage), at);
       expect(tester.getSize(_dragImage), const Size(40, 20));

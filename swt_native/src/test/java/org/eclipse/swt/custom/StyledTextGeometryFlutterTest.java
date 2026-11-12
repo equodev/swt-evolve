@@ -241,6 +241,21 @@ class StyledTextGeometryFlutterTest {
     }
 
     @Test
+    @DisplayName("text bounds include the end character, so one character is as wide as it is drawn")
+    void textBoundsIncludeTheEndCharacter() {
+        stage.fresh(SWT.MULTI, "public void method0(int value) {\n}\n");
+        text = stage.subject;
+        stage.settle();
+
+        Rectangle one = text.getTextBounds(2, 2);
+        Rectangle word = text.getTextBounds(0, 5);
+
+        assertThat(one.width).isGreaterThan(0)
+                .isEqualTo(text.getLocationAtOffset(3).x - text.getLocationAtOffset(2).x);
+        assertThat(word.x + word.width).isEqualTo(text.getLocationAtOffset(6).x);
+    }
+
+    @Test
     @DisplayName("the top index is the first line the client shows whole, whatever the line heights")
     void topIndexIsTheFirstShownLine() {
         StringBuilder doc = new StringBuilder();

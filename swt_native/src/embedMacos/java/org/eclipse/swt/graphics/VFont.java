@@ -31,7 +31,7 @@ public class VFont extends VResource {
         ((DartFont) impl).fontData = value;
     }
 
-    public static final int FONT_DATA = 234;
+    public static final int FONT_DATA = 238;
 
     @Override
     public String wireName(int key) {
@@ -45,14 +45,21 @@ public class VFont extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 234:
+            case 238:
                 {
                     FontData[] a_ = getFontData();
                     if (a_ == null)
                         w.listSize(-1);
                     else {
                         w.listSize(a_.length);
-                        for (FontData e_ : a_) w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                        for (int i_ = 0; i_ < a_.length; i_++) {
+                            FontData e_ = a_[i_];
+                            if (e_ == null) {
+                                i_ += w.nulls(a_, i_) - 1;
+                                continue;
+                            }
+                            w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                        }
                     }
                 }
                 return true;
@@ -63,21 +70,28 @@ public class VFont extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 234:
+            case 238:
                 {
                     FontData[] v_ = getFontData();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(234);
+                    w.key(238);
                     {
                         FontData[] a_ = v_;
                         if (a_ == null)
                             w.listSize(-1);
                         else {
                             w.listSize(a_.length);
-                            for (FontData e_ : a_) w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                            for (int i_ = 0; i_ < a_.length; i_++) {
+                                FontData e_ = a_[i_];
+                                if (e_ == null) {
+                                    i_ += w.nulls(a_, i_) - 1;
+                                    continue;
+                                }
+                                w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                            }
                         }
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
@@ -86,7 +100,7 @@ public class VFont extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 234 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 238 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -109,20 +123,27 @@ public class VFont extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 40;
+        return 41;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(234);
+        w.key(238);
         {
             FontData[] a_ = getFontData();
             if (a_ == null)
                 w.listSize(-1);
             else {
                 w.listSize(a_.length);
-                for (FontData e_ : a_) w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                for (int i_ = 0; i_ < a_.length; i_++) {
+                    FontData e_ = a_[i_];
+                    if (e_ == null) {
+                        i_ += w.nulls(a_, i_) - 1;
+                        continue;
+                    }
+                    w.object((e_ == null ? null : e_.getImpl() instanceof DartFontData ? ((DartFontData) e_.getImpl()).getValue() : ((DartFontData) org.eclipse.swt.graphics.GraphicsUtils.copyFontData(e_).getImpl()).getValue()));
+                }
             }
         }
     }

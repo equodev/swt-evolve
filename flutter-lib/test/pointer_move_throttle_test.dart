@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/text.dart';
+import 'package:swtflutter/src/impl/control_evolve.dart' show ControlImpl;
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/utils/pending_move.dart';
 
@@ -30,8 +31,10 @@ VText _field() => VText()
     ..width = 260
     ..height = 30);
 
-/// Pumps the field and returns every pointer event it sends from then on, as (channel, event).
-Future<List<(String, VEvent?)>> _pumpField(WidgetTester tester) async {
+/// Pumps the field, [left] pixels from the view's left edge, and returns every pointer event it
+/// sends from then on, as (channel, event).
+Future<List<(String, VEvent?)>> _pumpField(WidgetTester tester, {ValueNotifier<double>? left}) async {
+  final offset = left ?? ValueNotifier<double>(0);
   final sent = <(String, VEvent?)>[];
   EquoCommBase.sendObserverForTesting = (action, payload) {
     if (action.contains('/Mouse')) sent.add((action.substring('Text/4/'.length), payload as VEvent?));
@@ -44,7 +47,11 @@ Future<List<(String, VEvent?)>> _pumpField(WidgetTester tester) async {
     theme: ThemeMode.light,
     contentWidget: Align(
       alignment: Alignment.topLeft,
-      child: SizedBox(width: 400, height: 200, child: TextSwt<VText>(value: _field())),
+      child: ValueListenableBuilder<double>(
+        valueListenable: offset,
+        builder: (_, dx, child) => Padding(padding: EdgeInsets.only(left: dx), child: child),
+        child: SizedBox(width: 400, height: 200, child: TextSwt<VText>(value: _field())),
+      ),
     ),
   ));
   await tester.pumpAndSettle();
@@ -147,5 +154,107 @@ void main() {
     expect(sent.indexOf('Display/5/Key/KeyDown'), greaterThan(sent.lastIndexOf('Text/4/MouseMove/MouseMove')),
         reason: 'the move happened before the key');
     await tester.sendEventToBinding(pointer.removePointer());
+  });
+
+  // A drag's last move is where the selection or the sash ends; one dropped leaves it short of the
+  // pointer, on the screen and in Java, until the next move.
+  testWidgets('a drag move inside the throttle window is sent when the window ends', (tester) async {
+    final sent = await _pumpField(tester);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(20, 12)));
+    await tester.sendEventToBinding(pointer.down(const Offset(20, 12)));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.move(const Offset(60, 12)));
+    await tester.sendEventToBinding(pointer.move(const Offset(90, 14)));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(_lastMove(sent), (90, 14));
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.removePointer());
+  });
+
+  testWidgets('a held drag move goes out before the release', (tester) async {
+    final sent = await _pumpField(tester);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(20, 12)));
+    await tester.sendEventToBinding(pointer.down(const Offset(20, 12)));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.move(const Offset(60, 12)));
+    await tester.sendEventToBinding(pointer.move(const Offset(90, 14)));
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final order = sent.map((s) => s.$1).toList();
+    expect(order.indexOf('Mouse/MouseUp'), greaterThan(order.lastIndexOf('MouseMove/MouseMove')),
+        reason: 'the move happened before the release');
+    expect(_lastMove(sent), (90, 14));
+    await tester.sendEventToBinding(pointer.removePointer());
+  });
+
+  // A move the browser reports ahead of its frame goes to Java at once, so Java's answer can be
+  // drawn in that frame; the same move delivered with the frame is not reported a second time.
+  testWidgets('a move reported ahead of its frame is sent, and not again with the frame', (tester) async {
+    final sent = await _pumpField(tester);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(20, 12)));
+    await tester.sendEventToBinding(pointer.down(const Offset(20, 12)));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.move(const Offset(40, 12)));
+    await tester.pump(const Duration(milliseconds: 20));
+    final before = sent.length;
+
+    ControlImpl.rawMove(70, 14, kPrimaryButton);
+    // Inside the throttle window of the move before it, so it goes when the window ends.
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(sent.length, before + 1);
+    expect(_lastMove(sent), (70, 14));
+    await tester.sendEventToBinding(pointer.move(const Offset(70, 14)));
+    await tester.pump(const Duration(milliseconds: 20));
+    expect(sent.length, before + 1, reason: 'the frame delivered the same move');
+
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump(const Duration(milliseconds: 20));
+    final released = sent.length;
+    ControlImpl.rawMove(90, 14, kPrimaryButton);
+    await tester.pump(const Duration(milliseconds: 20));
+    expect(sent.length, released, reason: 'nothing is held any more');
+    await tester.sendEventToBinding(pointer.removePointer());
+  });
+
+  // A pane resized from its own edge moves under the held pointer: the move ahead of the frame is
+  // where the pointer is on the control now, the same place the frame's move then reports.
+  testWidgets('a move reported ahead of its frame is relative to where the control moved', (tester) async {
+    final left = ValueNotifier<double>(0);
+    final sent = await _pumpField(tester, left: left);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(20, 12)));
+    await tester.sendEventToBinding(pointer.down(const Offset(20, 12)));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.move(const Offset(40, 12)));
+    await tester.pump(const Duration(milliseconds: 20));
+    left.value = 30;
+    await tester.pump(const Duration(milliseconds: 20));
+    final before = sent.length;
+
+    ControlImpl.rawMove(70, 14, kPrimaryButton);
+    await tester.pump(const Duration(milliseconds: 20));
+
+    expect(sent.length, before + 1);
+    expect(_lastMove(sent), (40, 14));
+    await tester.sendEventToBinding(pointer.move(const Offset(70, 14)));
+    await tester.pump(const Duration(milliseconds: 20));
+    expect(sent.length, before + 1, reason: 'the frame delivered the same move');
+
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.removePointer());
+  });
+
+  testWidgets('a move reported ahead of any drag is not sent', (tester) async {
+    final sent = await _pumpField(tester);
+    ControlImpl.rawMove(70, 14, kPrimaryButton);
+    expect(sent.where((s) => s.$1 == 'MouseMove/MouseMove'), isEmpty);
   });
 }

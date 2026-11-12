@@ -35,6 +35,9 @@ class _DesktopComm extends EquoCommBase {
   }
 
   @override
+  bool get batchesSends => true;
+
+  @override
   void rawSend(Uint8List frame) => _socket?.add(frame);
 }
 

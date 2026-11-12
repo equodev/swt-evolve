@@ -81,13 +81,15 @@ public class VCombo extends VComposite {
         ((DartCombo) impl).visibleCount = value;
     }
 
-    public static final int CARET_POSITION = 82;
+    public static final int CARET_POSITION = 85;
 
-    public static final int ITEMS = 83;
+    public static final int ITEMS = 86;
 
-    public static final int LIST_VISIBLE = 84;
+    public static final int LIST_VISIBLE = 87;
 
-    public static final int TEXT = 85;
+    public static final int TEXT = 88;
+
+    public static final int TEXT_LIMIT = 89;
 
     @Override
     public String wireName(int key) {
@@ -100,6 +102,8 @@ public class VCombo extends VComposite {
                 return "listVisible";
             case TEXT:
                 return "text";
+            case TEXT_LIMIT:
+                return "textLimit";
         }
         return super.wireName(key);
     }
@@ -107,17 +111,22 @@ public class VCombo extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 82:
+            case 146:
+                return false;
+            case 85:
                 w.write((int) getCaretPosition());
                 return true;
-            case 83:
+            case 86:
                 w.write(getItems());
                 return true;
-            case 84:
+            case 87:
                 w.write(getListVisible());
                 return true;
-            case 85:
+            case 88:
                 w.write(getText());
+                return true;
+            case 89:
+                w.write((int) getTextLimit());
                 return true;
         }
         return super.writeWire(w, key);
@@ -126,51 +135,62 @@ public class VCombo extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 82:
+            case 146:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 85:
                 {
                     int v_ = getCaretPosition();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(82);
+                    w.key(85);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 83:
+            case 86:
                 {
                     String[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(83);
+                    w.key(86);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 84:
+            case 87:
                 {
                     boolean v_ = getListVisible();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(84);
+                    w.key(87);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 85:
+            case 88:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(85);
+                    w.key(88);
                     w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 89:
+                {
+                    int v_ = getTextLimit();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(89);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
         }
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 82, 83, 84, 85 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 85, 86, 87, 88, 89 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

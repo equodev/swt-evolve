@@ -12,12 +12,15 @@
 // display config (flags, light/dark, color scheme), which drawing outside a build reads. And so do
 // the focus requests: one a test left pending, or gave back as its field went away, would be
 // claimed by the next test's widget of the same id. And so do the frames a test recorded as sent,
-// which a later test reading what it sent would read too.
+// which a later test reading what it sent would read too. And so does the count of frames being
+// applied: a test that ends with a drain scheduled in its fake-async zone would leave every later
+// wait for an apply hanging.
 
 import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
@@ -38,6 +41,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     resetConfigFlags();
     FocusRequests.instance.reset();
     EquoCommService.commForTesting.clearSentFrames();
+    EquoCommBase.resetForTesting();
   });
   await testMain();
 }

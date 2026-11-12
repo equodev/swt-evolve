@@ -1,15 +1,10 @@
 package org.eclipse.swt.dnd;
 
+import org.eclipse.swt.widgets.DartMocks;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -77,10 +72,6 @@ class ActiveDragTest {
 
     /** A display that keeps what is set on it, as a real one does. */
     private static Display displayWithData() {
-        Display display = mock(Display.class);
-        Map<String, Object> data = new HashMap<>();
-        doAnswer(inv -> data.put(inv.getArgument(0), inv.getArgument(1))).when(display).setData(anyString(), any());
-        when(display.getData(anyString())).thenAnswer(inv -> data.get(inv.<String>getArgument(0)));
-        return display;
+        return DartMocks.keepsData(mock(Display.class));
     }
 }

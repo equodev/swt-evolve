@@ -53,13 +53,15 @@ public class VTableColumn extends VItem {
         ((DartTableColumn) impl).width = value;
     }
 
-    public static final int ALIGNMENT = 564;
+    public static final int ALIGNMENT = 570;
 
-    public static final int MOVEABLE = 565;
+    public static final int MOVEABLE = 571;
 
-    public static final int RESIZABLE = 566;
+    public static final int RESIZABLE = 572;
 
-    public static final int WIDTH = 567;
+    public static final int TOOL_TIP_TEXT = 573;
+
+    public static final int WIDTH = 574;
 
     @Override
     public String wireName(int key) {
@@ -70,6 +72,8 @@ public class VTableColumn extends VItem {
                 return "moveable";
             case RESIZABLE:
                 return "resizable";
+            case TOOL_TIP_TEXT:
+                return "toolTipText";
             case WIDTH:
                 return "width";
         }
@@ -79,16 +83,21 @@ public class VTableColumn extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 564:
+            case 670:
+                return false;
+            case 570:
                 w.write((int) getAlignment());
                 return true;
-            case 565:
+            case 571:
                 w.write(getMoveable());
                 return true;
-            case 566:
+            case 572:
                 w.write(getResizable());
                 return true;
-            case 567:
+            case 573:
+                w.write(getToolTipText());
+                return true;
+            case 574:
                 w.write((int) getWidth());
                 return true;
         }
@@ -98,35 +107,48 @@ public class VTableColumn extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 564:
+            case 670:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 570:
                 {
                     int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(564);
+                    w.key(570);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 565:
+            case 571:
                 {
                     boolean v_ = getMoveable();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(565);
+                    w.key(571);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 566:
+            case 572:
                 {
                     boolean v_ = getResizable();
-                    w.key(566);
+                    w.key(572);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 567:
+            case 573:
+                {
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(573);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 574:
                 {
                     int v_ = getWidth();
-                    w.key(567);
+                    w.key(574);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -134,7 +156,7 @@ public class VTableColumn extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 564, 565, 566, 567 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 570, 571, 572, 573, 574 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -148,8 +170,8 @@ public class VTableColumn extends VItem {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 566:
-            case 567:
+            case 572:
+            case 574:
                 return true;
         }
         return super.wireAlways(key);

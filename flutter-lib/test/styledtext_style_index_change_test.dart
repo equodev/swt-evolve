@@ -5,11 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/delivery_gate.dart';
+import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show WireKey;
 import 'package:swtflutter/src/impl/styledtext_evolve.dart';
+import 'package:swtflutter/src/impl/utils/style_index_change.dart';
 
 import 'delivery/support/deliver.dart';
 
@@ -81,6 +85,25 @@ void main() {
     expect(key.currentState!.state.styleIndex, target);
   });
 
+  testWidgets('a change that arrives before anything shows the editor becomes the index it stands '
+      'for, and the editor is not asked for again', (tester) async {
+    freshClient();
+    final held = [7, 0, 0, 5, 1, 6, 4];
+    // An editor being opened: described, then restyled, before the frame that mounts it.
+    applyWhole(value(held)..seq = 2);
+    final target = [8, 0, 0, 5, 1, 6, 4, 0, 11, 5];
+    applyChange(value(change(target, 7, 0, [0, 11, 5]))..seq = 3,
+        keys: [WireKey.k_StyledText_styleIndex], base: 2);
+    final recoveries = deliveryGate.recoveries;
+
+    final key = GlobalKey<StyledTextImpl>();
+    await tester.pumpWidget(app(key, value(held)));
+    await tester.pump();
+
+    expect(key.currentState!.state.styleIndex, target);
+    expect(deliveryGate.recoveries, recoveries);
+  });
+
   testWidgets('a change after an edit applies to the index carried across it, whatever else '
       'told the widget something in between', (tester) async {
     final key = GlobalKey<StyledTextImpl>();
@@ -89,8 +112,11 @@ void main() {
     await deliverWhole(value(held)..seq = 2);
 
     // Two characters typed at the start: this side moves every run along itself.
-    await deliverFrame('StyledText/1/TextChange',
-        {'start': 0, 'replaced': 0, 'text': 'xy', 'charCount': 18});
+    await deliverEvent('StyledText/1/TextChange', VEvent()
+      ..start = 0
+      ..end = 0
+      ..text = 'xy'
+      ..count = 18);
     // The caret, which nothing else renders, tells its holder it changed - ahead of the frame
     // the edit belongs to, in the same batch.
     final state = key.currentState!;
@@ -112,8 +138,11 @@ void main() {
     await tester.pumpWidget(app(key, value(held)));
     await deliverWhole(value(held)..seq = 2);
 
-    await deliverFrame('StyledText/1/TextChange',
-        {'start': 0, 'replaced': 0, 'text': 'xy', 'charCount': 18});
+    await deliverEvent('StyledText/1/TextChange', VEvent()
+      ..start = 0
+      ..end = 0
+      ..text = 'xy'
+      ..count = 18);
     // The caret moving on its own, ahead of the restyling.
     await deliverChange(value(held, text: 'xyalpha beta gamma')..caretOffset = 2..seq = 3,
         keys: [WireKey.k_StyledText_caretOffset], base: 2);

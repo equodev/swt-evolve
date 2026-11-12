@@ -17,6 +17,7 @@ import '../gen/tableeditor.dart';
 import '../gen/droptarget.dart';
 import '../gen/font.dart';
 import 'utils/column_order.dart';
+import 'utils/column_tooltip.dart';
 import 'utils/menu_detect_gate.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
@@ -332,14 +333,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final focusable = wrapSurfaceFocus(tableContent, tabStop: state.tabStop ?? false);
     final wrappedTable = super.wrap(childControls == null
         ? focusable
-        : Stack(children: [focusable, childControls]));
+        : Stack(children: [focusable, childControls]), ownLayer: false);
 
-    return Stack(
+    return inOwnLayer(Stack(
       children: [
         wrappedTable,
         ...editorOverlays,
       ],
-    );
+    ));
   }
 
   @override
@@ -545,6 +546,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final headerHeight = calculateHeaderHeight(textStyle, theme);
 
     final headerText = stripAccelerators(column.text);
+    final bool sorted = state.sortColumn != null && state.sortColumn!.id == column.id;
+    final int sortDirection = sorted ? (state.sortDirection ?? SWT.NONE) : SWT.NONE;
     final double? columnWidth = _columnWidthAt(columnIndex);
     final EdgeInsets headerPadding = columnWidth == null
         ? theme.headerPadding
@@ -587,10 +590,17 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            if (sortDirection == SWT.UP || sortDirection == SWT.DOWN)
+              Icon(
+                sortDirection == SWT.UP ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                size: (textStyle.fontSize ?? 12) + 2,
+                color: textStyle.color,
+              ),
           ],
         ),
       ),
     );
+    cell = withColumnToolTip(column.toolTipText, cell);
     final moveable = column.moveable ?? false;
     return tagItemSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,

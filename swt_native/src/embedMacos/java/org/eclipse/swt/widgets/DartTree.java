@@ -2368,6 +2368,8 @@ public class DartTree extends DartComposite implements ITree {
         return ownerDrawItemHeight;
     }
 
+    Runnable ownerDrawRowsLeft;
+
     int itemsStart;
 
     void loadVirtualPage(TreeItem parentItem) {

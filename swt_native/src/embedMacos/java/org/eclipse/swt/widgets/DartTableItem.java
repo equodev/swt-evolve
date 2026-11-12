@@ -206,6 +206,7 @@ public class DartTableItem extends DartItem implements ITableItem {
         getValue().markDirty(VTableItem.BACKGROUNDS);
         getValue().markDirty(VTableItem.FONT);
         getValue().markDirty(VTableItem.FONTS);
+        getValue().markDirty(VTableItem.PAINTED_IMAGES);
         getValue().markDirty(VTableItem.PAINTED_TEXTS);
         dirty();
     }
@@ -1162,6 +1163,10 @@ public class DartTableItem extends DartItem implements ITableItem {
 
     public int[] getPaintedTexts() {
         return TableHelper.getPaintedTexts(this);
+    }
+
+    public int[] getPaintedImages() {
+        return TableHelper.getPaintedImages(this);
     }
 
     boolean ownerDrawOverlay;

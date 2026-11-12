@@ -371,7 +371,7 @@ class VWidget implements WireReadable, WireWritable, WireVisitable {
   /// property as something that type can be read into.
   @override
   bool readWire(int key, WidgetWireReader r) {
-    if (key != 660) return false; // style
+    if (key != 670) return false; // style
     style = r.int32();
     return true;
   }
@@ -379,12 +379,12 @@ class VWidget implements WireReadable, WireWritable, WireVisitable {
   /// Writes every property this value holds, as Java writes them.
   @override
   void writeWire(WidgetWireWriter w) {
-    w.keyInt32(660, style);
+    w.keyInt32(670, style);
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(660, style);
+    visit(670, style);
   }
 
   /// Copies the properties this class declares from [other].

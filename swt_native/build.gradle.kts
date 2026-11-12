@@ -432,6 +432,7 @@ sourceSets {
                 exclude("dev/equo/swt/test/BrowserFirstLoadFlutterTest.java")
                 exclude("dev/equo/swt/test/BrowserProgressPlaceholderFlutterTest.java")
                 exclude("org/eclipse/swt/custom/StyledTextGeometryFlutterTest.java")
+                exclude("org/eclipse/swt/custom/StyledTextEditingGeometryFlutterTest.java")
                 exclude("org/eclipse/swt/custom/StyledTextRenderingFlutterTest.java")
             }
             // DragSource/DropTarget.setTransfer became varargs in 3.106, the zoom-aware
@@ -897,7 +898,7 @@ tasks.test {
     // so a red run can be repeated with -Dfontsize.seed=<the printed value>. Read in the test JVM,
     // so it has to be forwarded rather than left on the Gradle one.
     forwardSystemProperties("harness.client", "harness.web.headless", "harness.web.console", "harness.readyTimeoutMs", "harness.queryTimeoutMs", "harness.holdMs", "equo.swt.browser", "dev.equo.swt.mode", "harness.bootAttempts", "harness.bootAttemptMs", "harness.web.failBoots", "equo.swt.diff", "equo.swt.binaryWire", "fontsize.seed",
-        "dev.equo.swt.debug", "stress.frames", "stress.seed", "stress.rounds", "stress.inFlight", "stress.heapLimitMb", "stress.unpacedFrames")
+        "dev.equo.swt.debug", "dev.equo.swt.web.deflate", "stress.frames", "stress.seed", "stress.rounds", "stress.inFlight", "stress.heapLimitMb", "stress.unpacedFrames")
 }
 
 // Config shared by both bench Test tasks (native `benchmark` + browser `webBenchmark`): the
@@ -1099,13 +1100,21 @@ tasks.register<BackgroundCommand>("flutterTest") {
     // rather than assert. -DrunDartBench=true runs them.
     val benchTags = if (System.getProperty("runDartBench") == "true") emptyList()
                     else listOf("--exclude-tags=bench")
+    // -DredrawRecord=true prints each redraw test's measured costs as a budget table instead of
+    // checking them (test/redraw/support/budget.dart).
+    val redrawRecord = if (System.getProperty("redrawRecord") == "true") listOf("--dart-define=REDRAW_RECORD=true")
+                       else emptyList()
+    // -DflutterTests=<path>[,<path>] runs only those test files or directories, outside the bundles.
+    val only = System.getProperty("flutterTests")?.split(',')?.filter { it.isNotBlank() } ?: emptyList()
     val standalone = file("../flutter-lib/build/standalone_tests.txt")
     val bundles = (0 until flutterTestBundleCount).map { "test/bundle_${it}_of_${flutterTestBundleCount}_test.dart" }
     command.set(provider {
-        flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + benchTags + bundles +
-            standalone.readLines().filter { it.isNotBlank() }
+        flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + benchTags + redrawRecord +
+            (only.ifEmpty { bundles + standalone.readLines().filter { it.isNotBlank() } })
     })
     dartSourcesAsInputs()
+    // Measurements and re-recordings print what they find, so they run every time.
+    if (benchTags.isEmpty() || redrawRecord.isNotEmpty()) outputs.upToDateWhen { false }
 }
 
 val dart = tasks.register<Exec>("dartRunner") {

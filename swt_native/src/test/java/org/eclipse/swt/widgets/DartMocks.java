@@ -9,8 +9,13 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -176,6 +181,7 @@ public class DartMocks {
         stubShared(d, dartDisplay);
         setDeviceField(dartDisplay, "systemFont", defaultFont);
         setDeviceField(dartDisplay, "dpi", mock(Point.class));
+        keepsData(d);
 
         display = d;
         return d;
@@ -233,7 +239,8 @@ public class DartMocks {
      * <p>It outlives every test — the registry needs it to, see {@code Mocks} — so a test that
      * stubs it (a disposed display, say) or verifies a call on it is otherwise handing the next
      * test its leftovers: one {@code isDisposed() -> true} makes every later display disposed, and
-     * accumulated invocations make any {@code verify} read another test's calls.
+     * accumulated invocations make any {@code verify} read another test's calls, and data set on it
+     * would reach every later test.
      */
     static void resetDisplayState() {
         if (display == null) return;
@@ -249,6 +256,16 @@ public class DartMocks {
         // What a display with no shells answers; a test that stubbed it otherwise must not leave a
         // later one disposing a shell against null.
         when(display.getShells()).thenReturn(new Shell[0]);
+        // Data set on it by one test must not reach the next: paint-ahead keeps its rows there.
+        keepsData(display);
+    }
+
+    /** Gives a mock display an empty data map of its own, which keeps what is set on it. */
+    public static Display keepsData(Display d) {
+        Map<String, Object> data = new HashMap<>();
+        doAnswer(inv -> data.put(inv.getArgument(0), inv.getArgument(1))).when(d).setData(anyString(), any());
+        doAnswer(inv -> data.get(inv.<String>getArgument(0))).when(d).getData(anyString());
+        return d;
     }
 
     /** {@code Font systemFont}/{@code Point dpi} live on {@code DartDevice} (package

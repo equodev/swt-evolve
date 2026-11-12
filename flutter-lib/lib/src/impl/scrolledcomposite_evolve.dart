@@ -13,6 +13,7 @@ import 'scrollbar_evolve.dart' show sendScrollBarSelectionEvent;
 import 'utils/widget_utils.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/quiet_animations.dart';
+import 'utils/steady_scrollbar.dart';
 
 class ScrolledCompositeImpl<
   T extends ScrolledCompositeSwt,
@@ -421,11 +422,11 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 
   Widget _buildBothScrollbars(BuildContext context, Widget content) {
-    return Scrollbar(
+    return SteadyScrollbar(
       controller: verticalController,
       thumbVisibility: alwaysShowScrollBars,
       notificationPredicate: (notification) => notification.depth == 0,
-      child: Scrollbar(
+      child: SteadyScrollbar(
         controller: horizontalController,
         thumbVisibility: alwaysShowScrollBars,
         notificationPredicate: (notification) => notification.depth == 1,
@@ -447,7 +448,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 
   Widget _buildVerticalScrollbar(BuildContext context, Widget content) {
-    return Scrollbar(
+    return SteadyScrollbar(
       controller: verticalController,
       thumbVisibility: alwaysShowScrollBars,
       child: ScrollConfiguration(
@@ -462,7 +463,7 @@ class _ThemedScrolledComposite extends StatelessWidget {
   }
 
   Widget _buildHorizontalScrollbar(BuildContext context, Widget content) {
-    return Scrollbar(
+    return SteadyScrollbar(
       controller: horizontalController,
       thumbVisibility: alwaysShowScrollBars,
       child: ScrollConfiguration(

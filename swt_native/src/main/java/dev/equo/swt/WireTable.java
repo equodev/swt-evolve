@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -730575274;
+    public static final int FINGERPRINT = -243880975;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -305,6 +305,7 @@ public final class WireTable {
             "Dialog",
             "DirectoryDialog",
             "Display",
+            "DisplayPopups",
             "DragSource",
             "DropTarget",
             "Event",
@@ -531,6 +532,7 @@ public final class WireTable {
             "dialogs",
             "digits",
             "direct",
+            "dirtyIndicatorStyle",
             "disable_control_gc_overlay",
             "disable_evolve_icons",
             "disable_hover_zoom",
@@ -723,6 +725,7 @@ public final class WireTable {
             "ownMenuStrip",
             "ownerDrawItemHeight",
             "pageIncrement",
+            "paintedImages",
             "paintedTexts",
             "pathData",
             "pixels",
@@ -783,6 +786,7 @@ public final class WireTable {
             "shells",
             "showChevron",
             "showClose",
+            "showDirty",
             "showListPopupSeq",
             "show_scaling_control",
             "show_theme_color_palette",
@@ -908,6 +912,7 @@ public final class WireTable {
             "Button.selection",
             "Button.text",
             "CCombo.alignment",
+            "CCombo.editable",
             "CCombo.itemTooltips",
             "CCombo.items",
             "CCombo.listVisible",
@@ -927,6 +932,7 @@ public final class WireTable {
             "CLabel.topMargin",
             "CTabFolder.borderVisible",
             "CTabFolder.chevronVisible",
+            "CTabFolder.dirtyIndicatorStyle",
             "CTabFolder.highlight",
             "CTabFolder.highlightEnabled",
             "CTabFolder.items",
@@ -956,6 +962,7 @@ public final class WireTable {
             "CTabItem.foreground",
             "CTabItem.selectionForeground",
             "CTabItem.showClose",
+            "CTabItem.showDirty",
             "CTabItem.showing",
             "CTabItem.toolTipText",
             "Canvas.caret",
@@ -975,6 +982,7 @@ public final class WireTable {
             "Combo.items",
             "Combo.listVisible",
             "Combo.text",
+            "Combo.textLimit",
             "Composite.backgroundMode",
             "Composite.children",
             "ConfigFlags.assets_path",
@@ -1452,10 +1460,13 @@ public final class WireTable {
             "Table.linesVisible",
             "Table.ownerDrawItemHeight",
             "Table.selection",
+            "Table.sortColumn",
+            "Table.sortDirection",
             "Table.topIndex",
             "TableColumn.alignment",
             "TableColumn.moveable",
             "TableColumn.resizable",
+            "TableColumn.toolTipText",
             "TableColumn.width",
             "TableEditor.column",
             "TableEditor.item",
@@ -1468,6 +1479,7 @@ public final class WireTable {
             "TableItem.foregrounds",
             "TableItem.grayed",
             "TableItem.images",
+            "TableItem.paintedImages",
             "TableItem.paintedTexts",
             "TableItem.texts",
             "Text.caretPosition",
@@ -1531,6 +1543,7 @@ public final class WireTable {
             "TreeColumn.alignment",
             "TreeColumn.moveable",
             "TreeColumn.resizable",
+            "TreeColumn.toolTipText",
             "TreeColumn.width",
             "TreeEditor.column",
             "TreeEditor.editor",
@@ -1547,6 +1560,7 @@ public final class WireTable {
             "TreeItem.images",
             "TreeItem.itemCount",
             "TreeItem.items",
+            "TreeItem.paintedImages",
             "TreeItem.paintedTexts",
             "TreeItem.texts",
             "Widget.style",
@@ -1573,6 +1587,7 @@ public final class WireTable {
             "bool",
             "string",
             "int",
+            "bool",
             "string[]",
             "string[]",
             "bool",
@@ -1590,6 +1605,7 @@ public final class WireTable {
             "int",
             "string",
             "int",
+            "bool",
             "bool",
             "bool",
             "bool",
@@ -1622,6 +1638,7 @@ public final class WireTable {
             "color",
             "bool",
             "bool",
+            "bool",
             "string",
             "ref",
             "int",
@@ -1640,6 +1657,7 @@ public final class WireTable {
             "string[]",
             "bool",
             "string",
+            "int",
             "int",
             "ref[]",
             "string",
@@ -2053,7 +2071,7 @@ public final class WireTable {
             "color",
             "color",
             "int[]",
-            "int[]",
+            "runs",
             "object:VStyleRange[]",
             "int[]",
             "int",
@@ -2113,14 +2131,17 @@ public final class WireTable {
             "color",
             "bool",
             "int",
-            "ref[]",
+            "refs:TableItem",
             "bool",
             "int",
             "int[]",
+            "ref",
+            "int",
             "int",
             "int",
             "bool",
             "bool",
+            "string",
             "int",
             "int",
             "ref",
@@ -2133,6 +2154,7 @@ public final class WireTable {
             "color[]",
             "bool",
             "image[]",
+            "int[]",
             "int[]",
             "string[]",
             "int",
@@ -2186,7 +2208,7 @@ public final class WireTable {
             "color",
             "color",
             "bool",
-            "ref[]",
+            "refs:TreeItem",
             "bool",
             "int",
             "ref[]",
@@ -2196,6 +2218,7 @@ public final class WireTable {
             "int",
             "bool",
             "bool",
+            "string",
             "int",
             "int",
             "ref",
@@ -2211,7 +2234,8 @@ public final class WireTable {
             "bool",
             "image[]",
             "int",
-            "ref[]",
+            "refs:TreeItem",
+            "int[]",
             "int[]",
             "string[]",
             "int",
@@ -3072,465 +3096,567 @@ public final class WireTable {
     /** The type `Display`. */
     public static final int TYPE_DISPLAY = 31;
 
+    /** The type `DisplayPopups`. */
+    public static final int TYPE_DISPLAY_POPUPS = 32;
+
     /** The type `DragSource`. */
-    public static final int TYPE_DRAG_SOURCE = 32;
+    public static final int TYPE_DRAG_SOURCE = 33;
 
     /** The type `DropTarget`. */
-    public static final int TYPE_DROP_TARGET = 33;
+    public static final int TYPE_DROP_TARGET = 34;
 
     /** The type `Event`. */
-    public static final int TYPE_EVENT = 34;
+    public static final int TYPE_EVENT = 35;
 
     /** The type `EwtWidget`. */
-    public static final int TYPE_EWT_WIDGET = 35;
+    public static final int TYPE_EWT_WIDGET = 36;
 
     /** The type `ExpandBar`. */
-    public static final int TYPE_EXPAND_BAR = 36;
+    public static final int TYPE_EXPAND_BAR = 37;
 
     /** The type `ExpandItem`. */
-    public static final int TYPE_EXPAND_ITEM = 37;
+    public static final int TYPE_EXPAND_ITEM = 38;
 
     /** The type `FileDialog`. */
-    public static final int TYPE_FILE_DIALOG = 38;
+    public static final int TYPE_FILE_DIALOG = 39;
 
     /** The type `FileTransfer`. */
-    public static final int TYPE_FILE_TRANSFER = 39;
+    public static final int TYPE_FILE_TRANSFER = 40;
 
     /** The type `Font`. */
-    public static final int TYPE_FONT = 40;
+    public static final int TYPE_FONT = 41;
 
     /** The type `FontData`. */
-    public static final int TYPE_FONT_DATA = 41;
+    public static final int TYPE_FONT_DATA = 42;
 
     /** The type `FontDialog`. */
-    public static final int TYPE_FONT_DIALOG = 42;
+    public static final int TYPE_FONT_DIALOG = 43;
 
     /** The type `FontMeasureBridge`. */
-    public static final int TYPE_FONT_MEASURE_BRIDGE = 43;
+    public static final int TYPE_FONT_MEASURE_BRIDGE = 44;
 
     /** The type `FontMetrics`. */
-    public static final int TYPE_FONT_METRICS = 44;
+    public static final int TYPE_FONT_METRICS = 45;
 
     /** The type `FormAttachment`. */
-    public static final int TYPE_FORM_ATTACHMENT = 45;
+    public static final int TYPE_FORM_ATTACHMENT = 46;
 
     /** The type `FormData`. */
-    public static final int TYPE_FORM_DATA = 46;
+    public static final int TYPE_FORM_DATA = 47;
 
     /** The type `GC`. */
-    public static final int TYPE_GC = 47;
+    public static final int TYPE_GC = 48;
 
     /** The type `GCData`. */
-    public static final int TYPE_GCDATA = 48;
+    public static final int TYPE_GCDATA = 49;
 
     /** The type `GLCanvas`. */
-    public static final int TYPE_GLCANVAS = 49;
+    public static final int TYPE_GLCANVAS = 50;
 
     /** The type `GLData`. */
-    public static final int TYPE_GLDATA = 50;
+    public static final int TYPE_GLDATA = 51;
 
     /** The type `GlyphMetrics`. */
-    public static final int TYPE_GLYPH_METRICS = 51;
+    public static final int TYPE_GLYPH_METRICS = 52;
 
     /** The type `GridData`. */
-    public static final int TYPE_GRID_DATA = 52;
+    public static final int TYPE_GRID_DATA = 53;
 
     /** The type `Group`. */
-    public static final int TYPE_GROUP = 53;
+    public static final int TYPE_GROUP = 54;
 
     /** The type `HTMLTransfer`. */
-    public static final int TYPE_HTMLTRANSFER = 54;
+    public static final int TYPE_HTMLTRANSFER = 55;
 
     /** The type `IME`. */
-    public static final int TYPE_IME = 55;
+    public static final int TYPE_IME = 56;
 
     /** The type `Image`. */
-    public static final int TYPE_IMAGE = 56;
+    public static final int TYPE_IMAGE = 57;
 
     /** The type `ImageData`. */
-    public static final int TYPE_IMAGE_DATA = 57;
+    public static final int TYPE_IMAGE_DATA = 58;
 
     /** The type `ImageSizeBridge`. */
-    public static final int TYPE_IMAGE_SIZE_BRIDGE = 58;
+    public static final int TYPE_IMAGE_SIZE_BRIDGE = 59;
 
     /** The type `ImageTransfer`. */
-    public static final int TYPE_IMAGE_TRANSFER = 59;
+    public static final int TYPE_IMAGE_TRANSFER = 60;
 
     /** The type `Label`. */
-    public static final int TYPE_LABEL = 60;
+    public static final int TYPE_LABEL = 61;
 
     /** The type `LineInfo`. */
-    public static final int TYPE_LINE_INFO = 61;
+    public static final int TYPE_LINE_INFO = 62;
 
     /** The type `LineSizeInfo`. */
-    public static final int TYPE_LINE_SIZE_INFO = 62;
+    public static final int TYPE_LINE_SIZE_INFO = 63;
 
     /** The type `Link`. */
-    public static final int TYPE_LINK = 63;
+    public static final int TYPE_LINK = 64;
 
     /** The type `List`. */
-    public static final int TYPE_LIST = 64;
+    public static final int TYPE_LIST = 65;
 
     /** The type `MainComposite`. */
-    public static final int TYPE_MAIN_COMPOSITE = 65;
+    public static final int TYPE_MAIN_COMPOSITE = 66;
 
     /** The type `MainToolbar`. */
-    public static final int TYPE_MAIN_TOOLBAR = 66;
+    public static final int TYPE_MAIN_TOOLBAR = 67;
 
     /** The type `Menu`. */
-    public static final int TYPE_MENU = 67;
+    public static final int TYPE_MENU = 68;
 
     /** The type `MenuItem`. */
-    public static final int TYPE_MENU_ITEM = 68;
+    public static final int TYPE_MENU_ITEM = 69;
 
     /** The type `MessageBox`. */
-    public static final int TYPE_MESSAGE_BOX = 69;
+    public static final int TYPE_MESSAGE_BOX = 70;
 
     /** The type `Monitor`. */
-    public static final int TYPE_MONITOR = 70;
+    public static final int TYPE_MONITOR = 71;
 
     /** The type `PDFDocument`. */
-    public static final int TYPE_PDFDOCUMENT = 71;
+    public static final int TYPE_PDFDOCUMENT = 72;
 
     /** The type `Path`. */
-    public static final int TYPE_PATH = 72;
+    public static final int TYPE_PATH = 73;
 
     /** The type `PathData`. */
-    public static final int TYPE_PATH_DATA = 73;
+    public static final int TYPE_PATH_DATA = 74;
 
     /** The type `Pattern`. */
-    public static final int TYPE_PATTERN = 74;
+    public static final int TYPE_PATTERN = 75;
 
     /** The type `Point`. */
-    public static final int TYPE_POINT = 75;
+    public static final int TYPE_POINT = 76;
 
     /** The type `PopupList`. */
-    public static final int TYPE_POPUP_LIST = 76;
+    public static final int TYPE_POPUP_LIST = 77;
 
     /** The type `PrintDialog`. */
-    public static final int TYPE_PRINT_DIALOG = 77;
+    public static final int TYPE_PRINT_DIALOG = 78;
 
     /** The type `Printer`. */
-    public static final int TYPE_PRINTER = 78;
+    public static final int TYPE_PRINTER = 79;
 
     /** The type `Program`. */
-    public static final int TYPE_PROGRAM = 79;
+    public static final int TYPE_PROGRAM = 80;
 
     /** The type `ProgressBar`. */
-    public static final int TYPE_PROGRESS_BAR = 80;
+    public static final int TYPE_PROGRESS_BAR = 81;
 
     /** The type `RGB`. */
-    public static final int TYPE_RGB = 81;
+    public static final int TYPE_RGB = 82;
 
     /** The type `RTFTransfer`. */
-    public static final int TYPE_RTFTRANSFER = 82;
+    public static final int TYPE_RTFTRANSFER = 83;
 
     /** The type `Rectangle`. */
-    public static final int TYPE_RECTANGLE = 83;
+    public static final int TYPE_RECTANGLE = 84;
 
     /** The type `Region`. */
-    public static final int TYPE_REGION = 84;
+    public static final int TYPE_REGION = 85;
 
     /** The type `Resource`. */
-    public static final int TYPE_RESOURCE = 85;
+    public static final int TYPE_RESOURCE = 86;
 
     /** The type `RowData`. */
-    public static final int TYPE_ROW_DATA = 86;
+    public static final int TYPE_ROW_DATA = 87;
 
     /** The type `Sash`. */
-    public static final int TYPE_SASH = 87;
+    public static final int TYPE_SASH = 88;
 
     /** The type `SashForm`. */
-    public static final int TYPE_SASH_FORM = 88;
+    public static final int TYPE_SASH_FORM = 89;
 
     /** The type `Scale`. */
-    public static final int TYPE_SCALE = 89;
+    public static final int TYPE_SCALE = 90;
 
     /** The type `ScrollBar`. */
-    public static final int TYPE_SCROLL_BAR = 90;
+    public static final int TYPE_SCROLL_BAR = 91;
 
     /** The type `ScrolledComposite`. */
-    public static final int TYPE_SCROLLED_COMPOSITE = 91;
+    public static final int TYPE_SCROLLED_COMPOSITE = 92;
 
     /** The type `Shell`. */
-    public static final int TYPE_SHELL = 92;
+    public static final int TYPE_SHELL = 93;
 
     /** The type `ShellPopups`. */
-    public static final int TYPE_SHELL_POPUPS = 93;
+    public static final int TYPE_SHELL_POPUPS = 94;
 
     /** The type `SideBar`. */
-    public static final int TYPE_SIDE_BAR = 94;
+    public static final int TYPE_SIDE_BAR = 95;
 
     /** The type `Slider`. */
-    public static final int TYPE_SLIDER = 95;
+    public static final int TYPE_SLIDER = 96;
 
     /** The type `Spinner`. */
-    public static final int TYPE_SPINNER = 96;
+    public static final int TYPE_SPINNER = 97;
 
     /** The type `StatusBar`. */
-    public static final int TYPE_STATUS_BAR = 97;
+    public static final int TYPE_STATUS_BAR = 98;
 
     /** The type `StyleRange`. */
-    public static final int TYPE_STYLE_RANGE = 98;
+    public static final int TYPE_STYLE_RANGE = 99;
 
     /** The type `StyledText`. */
-    public static final int TYPE_STYLED_TEXT = 99;
+    public static final int TYPE_STYLED_TEXT = 100;
 
     /** The type `StyledTextPrintOptions`. */
-    public static final int TYPE_STYLED_TEXT_PRINT_OPTIONS = 100;
+    public static final int TYPE_STYLED_TEXT_PRINT_OPTIONS = 101;
 
     /** The type `StyledTextRenderer`. */
-    public static final int TYPE_STYLED_TEXT_RENDERER = 101;
+    public static final int TYPE_STYLED_TEXT_RENDERER = 102;
 
     /** The type `SwingIsland`. */
-    public static final int TYPE_SWING_ISLAND = 102;
+    public static final int TYPE_SWING_ISLAND = 103;
 
     /** The type `TabFolder`. */
-    public static final int TYPE_TAB_FOLDER = 103;
+    public static final int TYPE_TAB_FOLDER = 104;
 
     /** The type `TabItem`. */
-    public static final int TYPE_TAB_ITEM = 104;
+    public static final int TYPE_TAB_ITEM = 105;
 
     /** The type `Table`. */
-    public static final int TYPE_TABLE = 105;
+    public static final int TYPE_TABLE = 106;
 
     /** The type `TableColumn`. */
-    public static final int TYPE_TABLE_COLUMN = 106;
+    public static final int TYPE_TABLE_COLUMN = 107;
 
     /** The type `TableCursor`. */
-    public static final int TYPE_TABLE_CURSOR = 107;
+    public static final int TYPE_TABLE_CURSOR = 108;
 
     /** The type `TableEditor`. */
-    public static final int TYPE_TABLE_EDITOR = 108;
+    public static final int TYPE_TABLE_EDITOR = 109;
 
     /** The type `TableItem`. */
-    public static final int TYPE_TABLE_ITEM = 109;
+    public static final int TYPE_TABLE_ITEM = 110;
 
     /** The type `TaskBar`. */
-    public static final int TYPE_TASK_BAR = 110;
+    public static final int TYPE_TASK_BAR = 111;
 
     /** The type `TaskItem`. */
-    public static final int TYPE_TASK_ITEM = 111;
+    public static final int TYPE_TASK_ITEM = 112;
 
     /** The type `Text`. */
-    public static final int TYPE_TEXT = 112;
+    public static final int TYPE_TEXT = 113;
 
     /** The type `TextStyle`. */
-    public static final int TYPE_TEXT_STYLE = 113;
+    public static final int TYPE_TEXT_STYLE = 114;
 
     /** The type `TextTransfer`. */
-    public static final int TYPE_TEXT_TRANSFER = 114;
+    public static final int TYPE_TEXT_TRANSFER = 115;
 
     /** The type `ToolBar`. */
-    public static final int TYPE_TOOL_BAR = 115;
+    public static final int TYPE_TOOL_BAR = 116;
 
     /** The type `ToolItem`. */
-    public static final int TYPE_TOOL_ITEM = 116;
+    public static final int TYPE_TOOL_ITEM = 117;
 
     /** The type `ToolTip`. */
-    public static final int TYPE_TOOL_TIP = 117;
+    public static final int TYPE_TOOL_TIP = 118;
 
     /** The type `Touch`. */
-    public static final int TYPE_TOUCH = 118;
+    public static final int TYPE_TOUCH = 119;
 
     /** The type `TouchSource`. */
-    public static final int TYPE_TOUCH_SOURCE = 119;
+    public static final int TYPE_TOUCH_SOURCE = 120;
 
     /** The type `Tracker`. */
-    public static final int TYPE_TRACKER = 120;
+    public static final int TYPE_TRACKER = 121;
 
     /** The type `Transfer`. */
-    public static final int TYPE_TRANSFER = 121;
+    public static final int TYPE_TRANSFER = 122;
 
     /** The type `TransferData`. */
-    public static final int TYPE_TRANSFER_DATA = 122;
+    public static final int TYPE_TRANSFER_DATA = 123;
 
     /** The type `Transform`. */
-    public static final int TYPE_TRANSFORM = 123;
+    public static final int TYPE_TRANSFORM = 124;
 
     /** The type `Tray`. */
-    public static final int TYPE_TRAY = 124;
+    public static final int TYPE_TRAY = 125;
 
     /** The type `TrayItem`. */
-    public static final int TYPE_TRAY_ITEM = 125;
+    public static final int TYPE_TRAY_ITEM = 126;
 
     /** The type `Tree`. */
-    public static final int TYPE_TREE = 126;
+    public static final int TYPE_TREE = 127;
 
     /** The type `TreeColumn`. */
-    public static final int TYPE_TREE_COLUMN = 127;
+    public static final int TYPE_TREE_COLUMN = 128;
 
     /** The type `TreeCursor`. */
-    public static final int TYPE_TREE_CURSOR = 128;
+    public static final int TYPE_TREE_CURSOR = 129;
 
     /** The type `TreeEditor`. */
-    public static final int TYPE_TREE_EDITOR = 129;
+    public static final int TYPE_TREE_EDITOR = 130;
 
     /** The type `TreeItem`. */
-    public static final int TYPE_TREE_ITEM = 130;
+    public static final int TYPE_TREE_ITEM = 131;
 
     /** The type `URLTransfer`. */
-    public static final int TYPE_URLTRANSFER = 131;
+    public static final int TYPE_URLTRANSFER = 132;
 
     /** The type `ViewForm`. */
-    public static final int TYPE_VIEW_FORM = 132;
+    public static final int TYPE_VIEW_FORM = 133;
 
     /** The type `WidgetSizeBridge`. */
-    public static final int TYPE_WIDGET_SIZE_BRIDGE = 133;
+    public static final int TYPE_WIDGET_SIZE_BRIDGE = 134;
 
     /** The display's `activeShellId`. */
-    public static final int DISPLAY_ACTIVE_SHELL_ID = 179;
+    public static final int DISPLAY_ACTIVE_SHELL_ID = 183;
 
     /** The display's `config`. */
-    public static final int DISPLAY_CONFIG = 180;
+    public static final int DISPLAY_CONFIG = 184;
 
     /** The display's `focusHolderId`. */
-    public static final int DISPLAY_FOCUS_HOLDER_ID = 181;
+    public static final int DISPLAY_FOCUS_HOLDER_ID = 185;
 
     /** The display's `mainShellId`. */
-    public static final int DISPLAY_MAIN_SHELL_ID = 182;
+    public static final int DISPLAY_MAIN_SHELL_ID = 186;
 
     /** The display's `popups`. */
-    public static final int DISPLAY_POPUPS = 183;
+    public static final int DISPLAY_POPUPS = 187;
 
     /** The display's `shells`. */
-    public static final int DISPLAY_SHELLS = 184;
+    public static final int DISPLAY_SHELLS = 188;
 
     /** The display's `systemMenu`. */
-    public static final int DISPLAY_SYSTEM_MENU = 185;
+    public static final int DISPLAY_SYSTEM_MENU = 189;
 
     /** The display's `tooltips`. */
-    public static final int DISPLAY_TOOLTIPS = 186;
+    public static final int DISPLAY_TOOLTIPS = 190;
 
     /** The display's `windowedShellIds`. */
-    public static final int DISPLAY_WINDOWED_SHELL_IDS = 187;
+    public static final int DISPLAY_WINDOWED_SHELL_IDS = 191;
 
     /** The flag `assets_path`. */
-    public static final int CONFIG_FLAGS_ASSETS_PATH = 88;
+    public static final int CONFIG_FLAGS_ASSETS_PATH = 92;
 
     /** The flag `bigger_icon_size`. */
-    public static final int CONFIG_FLAGS_BIGGER_ICON_SIZE = 89;
+    public static final int CONFIG_FLAGS_BIGGER_ICON_SIZE = 93;
 
     /** The flag `csd_maximize`. */
-    public static final int CONFIG_FLAGS_CSD_MAXIMIZE = 90;
+    public static final int CONFIG_FLAGS_CSD_MAXIMIZE = 94;
 
     /** The flag `csd_os`. */
-    public static final int CONFIG_FLAGS_CSD_OS = 91;
+    public static final int CONFIG_FLAGS_CSD_OS = 95;
 
     /** The flag `csd_placement`. */
-    public static final int CONFIG_FLAGS_CSD_PLACEMENT = 92;
+    public static final int CONFIG_FLAGS_CSD_PLACEMENT = 96;
 
     /** The flag `csd_titlebar_color`. */
-    public static final int CONFIG_FLAGS_CSD_TITLEBAR_COLOR = 93;
+    public static final int CONFIG_FLAGS_CSD_TITLEBAR_COLOR = 97;
 
     /** The flag `ctabfolder_tab_scroll`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL = 94;
+    public static final int CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL = 98;
 
     /** The flag `ctabfolder_topright_auto_hide`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE = 95;
+    public static final int CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE = 99;
 
     /** The flag `ctabfolder_visible_controls`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS = 96;
+    public static final int CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS = 100;
 
     /** The flag `custom_tooltip`. */
-    public static final int CONFIG_FLAGS_CUSTOM_TOOLTIP = 97;
+    public static final int CONFIG_FLAGS_CUSTOM_TOOLTIP = 101;
 
     /** The flag `decimal_separator`. */
-    public static final int CONFIG_FLAGS_DECIMAL_SEPARATOR = 98;
+    public static final int CONFIG_FLAGS_DECIMAL_SEPARATOR = 102;
 
     /** The flag `decorations_align`. */
-    public static final int CONFIG_FLAGS_DECORATIONS_ALIGN = 99;
+    public static final int CONFIG_FLAGS_DECORATIONS_ALIGN = 103;
 
     /** The flag `disable_control_gc_overlay`. */
-    public static final int CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY = 100;
+    public static final int CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY = 104;
 
     /** The flag `disable_evolve_icons`. */
-    public static final int CONFIG_FLAGS_DISABLE_EVOLVE_ICONS = 101;
+    public static final int CONFIG_FLAGS_DISABLE_EVOLVE_ICONS = 105;
 
     /** The flag `disable_hover_zoom`. */
-    public static final int CONFIG_FLAGS_DISABLE_HOVER_ZOOM = 102;
+    public static final int CONFIG_FLAGS_DISABLE_HOVER_ZOOM = 106;
 
     /** The flag `disable_swt_canvas_colors`. */
-    public static final int CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS = 103;
+    public static final int CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS = 107;
 
     /** The flag `double_click_timeout_ms`. */
-    public static final int CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS = 104;
+    public static final int CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS = 108;
 
     /** The flag `focus_indicators`. */
-    public static final int CONFIG_FLAGS_FOCUS_INDICATORS = 105;
+    public static final int CONFIG_FLAGS_FOCUS_INDICATORS = 109;
 
     /** The flag `font_point_scale`. */
-    public static final int CONFIG_FLAGS_FONT_POINT_SCALE = 106;
+    public static final int CONFIG_FLAGS_FONT_POINT_SCALE = 110;
 
     /** The flag `force_theme`. */
-    public static final int CONFIG_FLAGS_FORCE_THEME = 107;
+    public static final int CONFIG_FLAGS_FORCE_THEME = 111;
 
     /** The flag `gc_icons_replacement`. */
-    public static final int CONFIG_FLAGS_GC_ICONS_REPLACEMENT = 108;
+    public static final int CONFIG_FLAGS_GC_ICONS_REPLACEMENT = 112;
 
     /** The flag `hover_delay_ms`. */
-    public static final int CONFIG_FLAGS_HOVER_DELAY_MS = 109;
+    public static final int CONFIG_FLAGS_HOVER_DELAY_MS = 113;
 
     /** The flag `image_disable_icons_replacement`. */
-    public static final int CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT = 110;
+    public static final int CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT = 114;
 
     /** The flag `locale`. */
-    public static final int CONFIG_FLAGS_LOCALE = 111;
+    public static final int CONFIG_FLAGS_LOCALE = 115;
 
     /** The flag `notification_popup`. */
-    public static final int CONFIG_FLAGS_NOTIFICATION_POPUP = 112;
+    public static final int CONFIG_FLAGS_NOTIFICATION_POPUP = 116;
 
     /** The flag `preserve_icon_colors`. */
-    public static final int CONFIG_FLAGS_PRESERVE_ICON_COLORS = 113;
+    public static final int CONFIG_FLAGS_PRESERVE_ICON_COLORS = 117;
 
     /** The flag `print_move`. */
-    public static final int CONFIG_FLAGS_PRINT_MOVE = 114;
+    public static final int CONFIG_FLAGS_PRINT_MOVE = 118;
 
     /** The flag `push_button_margin`. */
-    public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 115;
+    public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 119;
 
     /** The flag `scale_vertical_minimum_at_top`. */
-    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 116;
+    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 120;
 
     /** The flag `show_scaling_control`. */
-    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 117;
+    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 121;
 
     /** The flag `show_theme_color_palette`. */
-    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 118;
+    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 122;
 
     /** The flag `system_menu_bar`. */
-    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 119;
+    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 123;
 
     /** The flag `theme_color`. */
-    public static final int CONFIG_FLAGS_THEME_COLOR = 120;
+    public static final int CONFIG_FLAGS_THEME_COLOR = 124;
 
     /** The flag `theme_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 121;
+    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 125;
 
     /** The flag `theme_name`. */
-    public static final int CONFIG_FLAGS_THEME_NAME = 122;
+    public static final int CONFIG_FLAGS_THEME_NAME = 126;
 
     /** The flag `transparent_menu_check_box`. */
-    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 123;
+    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 127;
 
     /** The flag `ui_zoom`. */
-    public static final int CONFIG_FLAGS_UI_ZOOM = 124;
+    public static final int CONFIG_FLAGS_UI_ZOOM = 128;
 
     /** The flag `use_special_dropdown_button`. */
-    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 125;
+    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 129;
 
     /** The flag `use_swt_border`. */
-    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 126;
+    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 130;
 
     /** The flag `use_swt_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 127;
+    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 131;
 
     /** The flag `use_swt_font_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 128;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 132;
 
     /** The flag `use_swt_font_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 129;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 133;
 
     /** The flag `use_swt_fonts`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 130;
+    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 134;
+
+    /** The event's `button`. */
+    public static final int EVENT_BUTTON = 192;
+
+    /** The event's `character`. */
+    public static final int EVENT_CHARACTER = 193;
+
+    /** The event's `count`. */
+    public static final int EVENT_COUNT = 194;
+
+    /** The event's `currentDataTypeId`. */
+    public static final int EVENT_CURRENT_DATA_TYPE_ID = 195;
+
+    /** The event's `detail`. */
+    public static final int EVENT_DETAIL = 196;
+
+    /** The event's `doit`. */
+    public static final int EVENT_DOIT = 197;
+
+    /** The event's `dragImage`. */
+    public static final int EVENT_DRAG_IMAGE = 198;
+
+    /** The event's `end`. */
+    public static final int EVENT_END = 199;
+
+    /** The event's `feedback`. */
+    public static final int EVENT_FEEDBACK = 200;
+
+    /** The event's `gc`. */
+    public static final int EVENT_GC = 201;
+
+    /** The event's `height`. */
+    public static final int EVENT_HEIGHT = 202;
+
+    /** The event's `index`. */
+    public static final int EVENT_INDEX = 203;
+
+    /** The event's `item`. */
+    public static final int EVENT_ITEM = 204;
+
+    /** The event's `itemId`. */
+    public static final int EVENT_ITEM_ID = 205;
+
+    /** The event's `keyCode`. */
+    public static final int EVENT_KEY_CODE = 206;
+
+    /** The event's `keyLocation`. */
+    public static final int EVENT_KEY_LOCATION = 207;
+
+    /** The event's `magnification`. */
+    public static final int EVENT_MAGNIFICATION = 208;
+
+    /** The event's `operations`. */
+    public static final int EVENT_OPERATIONS = 209;
+
+    /** The event's `rotation`. */
+    public static final int EVENT_ROTATION = 210;
+
+    /** The event's `segments`. */
+    public static final int EVENT_SEGMENTS = 211;
+
+    /** The event's `segmentsChars`. */
+    public static final int EVENT_SEGMENTS_CHARS = 212;
+
+    /** The event's `start`. */
+    public static final int EVENT_START = 213;
+
+    /** The event's `stateMask`. */
+    public static final int EVENT_STATE_MASK = 214;
+
+    /** The event's `text`. */
+    public static final int EVENT_TEXT = 215;
+
+    /** The event's `time`. */
+    public static final int EVENT_TIME = 216;
+
+    /** The event's `touches`. */
+    public static final int EVENT_TOUCHES = 217;
+
+    /** The event's `type`. */
+    public static final int EVENT_TYPE = 218;
+
+    /** The event's `widget`. */
+    public static final int EVENT_WIDGET = 219;
+
+    /** The event's `width`. */
+    public static final int EVENT_WIDTH = 220;
+
+    /** The event's `x`. */
+    public static final int EVENT_X = 221;
+
+    /** The event's `xDirection`. */
+    public static final int EVENT_X_DIRECTION = 222;
+
+    /** The event's `y`. */
+    public static final int EVENT_Y = 223;
+
+    /** The event's `yDirection`. */
+    public static final int EVENT_Y_DIRECTION = 224;
 }

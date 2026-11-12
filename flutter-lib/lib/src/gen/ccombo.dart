@@ -48,6 +48,7 @@ class VCCombo extends VComposite {
   }
 
   int? alignment;
+  bool? editable;
   List<String>? itemTooltips;
   List<String>? items;
   bool? listVisible;
@@ -60,6 +61,7 @@ class VCCombo extends VComposite {
     super.copyFrom(other);
     if (other is VCCombo) {
       alignment = other.alignment;
+      editable = other.editable;
       itemTooltips = other.itemTooltips;
       items = other.items;
       listVisible = other.listVisible;
@@ -75,22 +77,25 @@ class VCCombo extends VComposite {
       case 18: // alignment
         alignment = r.int32();
         return true;
-      case 19: // itemTooltips
+      case 19: // editable
+        editable = r.boolean();
+        return true;
+      case 20: // itemTooltips
         itemTooltips = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 20: // items
+      case 21: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 21: // listVisible
+      case 22: // listVisible
         listVisible = r.boolean();
         return true;
-      case 22: // selection
+      case 23: // selection
         selection = r.point();
         return true;
-      case 23: // text
+      case 24: // text
         text = r.string();
         return true;
-      case 24: // textLimit
+      case 25: // textLimit
         textLimit = r.int32();
         return true;
       default:
@@ -108,43 +113,49 @@ class VCCombo extends VComposite {
       }
     }
     {
-      final v_ = itemTooltips;
+      final v_ = editable;
       if (v_ != null) {
-        w.key(19);
-        w.strings(v_);
+        w.keyBoolean(19, v_);
       }
     }
     {
-      final v_ = items;
+      final v_ = itemTooltips;
       if (v_ != null) {
         w.key(20);
         w.strings(v_);
       }
     }
     {
+      final v_ = items;
+      if (v_ != null) {
+        w.key(21);
+        w.strings(v_);
+      }
+    }
+    {
       final v_ = listVisible;
       if (v_ != null) {
-        w.keyBoolean(21, v_);
+        w.keyBoolean(22, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(22);
+        w.key(23);
         w.pointValue(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(23);
+        w.key(24);
         w.string(v_);
       }
     }
     {
       final v_ = textLimit;
       if (v_ != null) {
-        w.keyInt32(24, v_);
+        w.keyInt32(25, v_);
       }
     }
   }
@@ -153,12 +164,13 @@ class VCCombo extends VComposite {
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
     visit(18, alignment);
-    visit(19, itemTooltips);
-    visit(20, items);
-    visit(21, listVisible);
-    visit(22, selection);
-    visit(23, text);
-    visit(24, textLimit);
+    visit(19, editable);
+    visit(20, itemTooltips);
+    visit(21, items);
+    visit(22, listVisible);
+    visit(23, selection);
+    visit(24, text);
+    visit(25, textLimit);
   }
 
   @override

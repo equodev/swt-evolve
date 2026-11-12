@@ -26,6 +26,7 @@ class ControlFocusRequestFlutterTest {
 
     private static final String FOCUS_CHANNEL = "swt.evolve.focus";
     private static final String FOCUS_HOLDER_CHANNEL = "swt.evolve.focusHolder";
+    private static final String FOCUS_SEEN_CHANNEL = "swt.evolve.focus.seen";
 
     private Display display;
 
@@ -106,6 +107,37 @@ class ControlFocusRequestFlutterTest {
     }
 
     @Test
+    void aFieldAKeyCommandFocusesAsksTheClientToMoveKeyboardFocus() {
+        TestWebBridge web = install(KeyedBridge::new);
+        Shell shell = openShell();
+        Text editor = new Text(shell, SWT.MULTI);
+        Text find = new Text(shell, SWT.SINGLE);
+        // The shape of Find opening on its key: the command bound to it focuses a field nothing pressed.
+        editor.addListener(SWT.KeyDown, e -> {
+            if (e.character != 'f') return;
+            // As Find opens its overlay: the field, back to the editor while the overlay hides, the field.
+            find.setFocus();
+            editor.setFocus();
+            find.setFocus();
+        });
+        editor.setFocus();
+        while (display.readAndDispatch()) {
+        }
+        web.comm.sent.clear();
+
+        Event key = new Event();
+        key.keyCode = 'f';
+        key.character = 'f';
+        web.comm.fireContaining("Display/" + display.hashCode() + "/Key/KeyDown", key);
+        while (display.readAndDispatch()) {
+        }
+
+        assertThat(focusRequests(web))
+                .as("the client's keys follow a focus a keystroke moved, which no gesture showed it")
+                .containsExactly(String.valueOf(find.hashCode()));
+    }
+
+    @Test
     void anOrdinaryFieldIsNamedAsTheFocusHolder() {
         TestWebBridge web = install(TestWebBridge::new);
         Shell shell = openShell();
@@ -156,6 +188,33 @@ class ControlFocusRequestFlutterTest {
         assertThat(focusRequests(web))
                 .as("only the newly focused editor is requested")
                 .containsExactly(String.valueOf(second.hashCode()));
+    }
+
+    @Test
+    void aPressOnAnEditorJavaAlreadyFocusesMovesTheClientsKeysOntoIt() {
+        TestWebBridge web = install(TestWebBridge::new);
+        Shell shell = openShell();
+        org.eclipse.swt.custom.StyledText editor = new org.eclipse.swt.custom.StyledText(shell, SWT.MULTI);
+        new Tree(shell, SWT.NONE);
+        // Java focuses the editor on its own, as a part activation does; the client answers the request
+        // without the editor taking its keys -- it was not built yet, or the user's click went elsewhere.
+        editor.forceFocus();
+        Object seq = dev.equo.swt.harness.WireValues.at(web.comm.sent.stream()
+                .filter(f -> f.event.equals(FOCUS_CHANNEL)).reduce((a, b) -> b).orElseThrow().value, "seq");
+        web.comm.fireContaining(FOCUS_SEEN_CHANNEL, java.util.Map.of("seq", seq));
+        while (display.readAndDispatch()) {
+        }
+        web.comm.sent.clear();
+
+        Event press = new Event();
+        press.button = 1;
+        web.comm.fireContaining(FlutterBridge.event((DartWidget) editor.getImpl(), "Mouse", "MouseDown"), press);
+        while (display.readAndDispatch()) {
+        }
+
+        assertThat(focusRequests(web))
+                .as("a press on the editor puts the client's keys on it, so it can compose input")
+                .containsExactly(String.valueOf(editor.hashCode()));
     }
 
     @Test
@@ -318,6 +377,19 @@ class ControlFocusRequestFlutterTest {
     }
 
     // ---- harness ----------------------------------------------------------------------------------
+
+    /** The test bridge, listening for the keys the client forwards to the Display. */
+    private static final class KeyedBridge extends TestWebBridge {
+        KeyedBridge(DartDisplay display) {
+            super(display);
+        }
+
+        @Override
+        protected void start(DartDisplay display) {
+            super.start(display);
+            registerDisplayKeyEvents(display);
+        }
+    }
 
     /** The control ids named by every {@code swt.evolve.focus} frame sent so far, in order. */
     private static java.util.List<String> focusRequests(TestWebBridge web) {

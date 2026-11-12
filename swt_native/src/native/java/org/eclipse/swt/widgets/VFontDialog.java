@@ -62,26 +62,33 @@ public class VFontDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 42;
+        return 43;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(238);
+        w.key(242);
         w.write(getRGB());
-        w.key(239);
+        w.key(243);
         w.write(getEffectsVisible());
-        w.key(240);
+        w.key(244);
         w.object((getFontData() == null ? null : ((DartFontData) getFontData().getImpl()).getValue()));
-        w.key(241);
+        w.key(245);
         {
             FontData[] a_ = getFontList();
             if (a_ == null)
                 w.listSize(-1);
             else {
                 w.listSize(a_.length);
-                for (FontData e_ : a_) w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
+                for (int i_ = 0; i_ < a_.length; i_++) {
+                    FontData e_ = a_[i_];
+                    if (e_ == null) {
+                        i_ += w.nulls(a_, i_) - 1;
+                        continue;
+                    }
+                    w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
+                }
             }
         }
     }

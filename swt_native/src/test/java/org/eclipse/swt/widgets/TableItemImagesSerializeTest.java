@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static dev.equo.swt.harness.WireAssert.assertThatWire;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.eclipse.swt.widgets.Mocks.*;
 import static org.mockito.Mockito.*;
 
@@ -23,8 +24,9 @@ import static org.mockito.Mockito.*;
  */
 class TableItemImagesSerializeTest extends SerializeTestBase {
 
+    /** A row with no image anywhere leaves images out: the client draws absent images as none. */
     @Test
-    void should_serialize_nullImages_whenTableHasNoPaintItemListener() {
+    void should_leaveOutImages_whenTableHasNoPaintItemListener() {
         Table table = table();
         when(table.getColumnCount()).thenReturn(2);
         DartTable tableImpl = (DartTable) table.getImpl();
@@ -34,9 +36,7 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
 
         Map<String, Object> wire = serialize(item);
 
-        assertThatWire(wire).node("images").hasSize(2);
-        assertThatWire(wire).node("images[0]").isNull();
-        assertThatWire(wire).node("images[1]").isNull();
+        assertThatWire(wire).doesNotContainKey("images").doesNotContainKey("image");
         verify(tableImpl, never()).sendEvent(eq(SWT.PaintItem), any(Event.class));
     }
 
@@ -179,7 +179,7 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
     }
 
     @Test
-    void should_keepNull_whenPaintItemDrawsNoImage() {
+    void should_sendNoImage_whenPaintItemDrawsNoImage() {
         Table table = table();
         when(table.getColumnCount()).thenReturn(1);
         DartTable tableImpl = (DartTable) table.getImpl();
@@ -193,7 +193,7 @@ class TableItemImagesSerializeTest extends SerializeTestBase {
 
         Map<String, Object> wire = serialize(item);
 
-        assertThatWire(wire).node("images[0]").isEqualTo(null);
+        assertThatWire(wire).doesNotContainKey("images").doesNotContainKey("image");
     }
 
     private Image solidImage(int width, int height) {

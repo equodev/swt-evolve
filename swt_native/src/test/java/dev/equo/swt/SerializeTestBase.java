@@ -507,6 +507,8 @@ public class SerializeTestBase {
             new TableColumn(t, SWT.NONE).setWidth(50);
             new TableColumn(t, SWT.NONE).setWidth(50);
             t.setColumnOrder(reversedOrder(t.getColumnCount()));
+            // The fill sets the direction to a number SWT refuses.
+            t.setSortDirection(SWT.UP);
             measureTallRow(t, new TableItem(t, SWT.NONE));
         } else if (w instanceof Tree t) {
             // A column of width 0 is hidden and gets no owner-draw events: size them as an app does.

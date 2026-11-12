@@ -445,6 +445,17 @@ public class ListHelper {
             return -1;
         }
 
+        // The items are read once, for where each string is, instead of once per string.
+        java.util.Map<String, java.util.List<Integer>> places = new java.util.HashMap<>();
+        for (String string : selectionItems) {
+            if (string != null) places.putIfAbsent(string, new java.util.ArrayList<>());
+        }
+        String[] items = list.items;
+        for (int i = 0; i < itemCount; i++) {
+            java.util.List<Integer> at = places.get(items[i]);
+            if (at != null) at.add(i);
+        }
+
         java.util.List<Integer> newSelection = new java.util.ArrayList<>();
         Set<Integer> seen = new HashSet<>();
         int firstIndex = -1;
@@ -455,17 +466,13 @@ public class ListHelper {
             String string = selectionItems[i];
             if (string == null)
                 continue;
-            int index = 0;
-            int firstMatch = -1;
-            while ((index = list.indexOf(string, index)) != -1) {
+            java.util.List<Integer> at = places.get(string);
+            for (int index : at) {
                 if (seen.add(index))
                     newSelection.add(index);
-                if (firstMatch == -1)
-                    firstMatch = index;
-                index++;
             }
-            if (firstMatch != -1)
-                firstIndex = firstMatch;
+            if (!at.isEmpty())
+                firstIndex = at.get(0);
         }
 
         if (!newSelection.isEmpty()) {

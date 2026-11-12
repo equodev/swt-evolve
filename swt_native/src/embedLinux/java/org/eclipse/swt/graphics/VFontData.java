@@ -47,16 +47,16 @@ public class VFontData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 41;
+        return 42;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(235);
+        w.key(239);
         w.write((int) getHeight());
-        w.key(236);
+        w.key(240);
         w.write(getName());
-        w.key(237);
+        w.key(241);
         w.write((int) getStyle());
     }
 }

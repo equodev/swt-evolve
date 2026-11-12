@@ -613,6 +613,29 @@ class DisplayResizeFlutterTest {
         return last;
     }
 
+    @Test
+    void desk_aDragsReportsQueuedBehindALayout_areLaidOutOnce_atTheSizeReached() throws InterruptedException {
+        TestDeskBridge desk = install(TestDeskBridge::new);
+        Shell shell = newMainShell();
+        clientReady(desk.comm, 1280, 800, true);
+        int[] resizes = { 0 };
+        shell.addListener(org.eclipse.swt.SWT.Resize, e -> resizes[0]++);
+
+        // The socket's thread delivers a drag's reports while the Display thread is busy elsewhere.
+        Thread socket = new Thread(() -> {
+            for (int width = 1290; width <= 1340; width += 10) clientReady(desk.comm, width, 800, false);
+        });
+        socket.start();
+        socket.join();
+        while (display.readAndDispatch()) {
+        }
+
+        assertThat(shell.getBounds()).isEqualTo(new Rectangle(0, 0, 1340, 800));
+        assertThat(resizes[0])
+                .as("laid out at the size the window reached, not once for every size it passed")
+                .isEqualTo(1);
+    }
+
     private static void clientReady(RecordingComm comm, int width, int height, int zoom, boolean isFirst) {
         ClientReadyPayload p = new ClientReadyPayload();
         p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;

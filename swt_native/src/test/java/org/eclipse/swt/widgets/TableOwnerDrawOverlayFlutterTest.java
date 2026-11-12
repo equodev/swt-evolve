@@ -2,10 +2,12 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.FontMetricsUtil;
 import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.WireValues;
+import dev.equo.swt.size.TableItemTheme;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.withinPercentage;
 
 /**
  * An owner-drawn row is shown as its listeners drew it, not as the one string a capture can name.
@@ -92,11 +95,11 @@ class TableOwnerDrawOverlayFlutterTest {
         assertThat(rowY).as("the second row sits below the first").isPositive();
 
         reportOverlayListening(table, second);
-        bridge.comm.sent.clear();
+        int listened = bridge.comm.sent.size();
         String[] texts = ((DartTableItem) second.getImpl()).getTexts();
 
         String row = "GC/" + second.hashCode();
-        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent.subList(listened, bridge.comm.sent.size()));
         List<String> rowChannels = entries.stream()
                 .map(GcFrames.Entry::channel)
                 .filter(c -> c.startsWith(row))
@@ -111,8 +114,9 @@ class TableOwnerDrawOverlayFlutterTest {
         assertThat(WireValues.find(body(entries, row + "/gcDispose"), m -> Boolean.TRUE.equals(m.get("fullRepaint"))))
                 .as("each paint of the row replaces the last")
                 .isNotEmpty();
-        List<Object> state = entries.stream().filter(e -> e.channel().equals(row)).map(GcFrames.Entry::value)
-                .collect(Collectors.toList());
+        // A paint sends only what differs from the state the row's channel holds: read all of it.
+        List<Object> state = BatchEntries.of(bridge.comm.sent).stream().filter(e -> e.channel().equals(row))
+                .map(GcFrames.Entry::value).collect(Collectors.toList());
         assertThat(WireValues.mentions(state, "transform")).as("the row is drawn in its own coordinates").isTrue();
         assertThat(WireValues.find(state, m -> m.containsKey("transform")).stream()
                 .anyMatch(m -> holdsNumber(m.get("transform"), -rowY)))
@@ -174,6 +178,62 @@ class TableOwnerDrawOverlayFlutterTest {
                 .anyMatch(m -> holdsNumber(m.get("transform"), scrolled)))
                 .as("the row's GC is moved right by the scrolled distance, back to the overlay's origin")
                 .isTrue();
+    }
+
+    /**
+     * Native SWT hands the listener a GC set to the font the cell's own text is drawn in, so the
+     * item text an application draws again lands on it and {@code textExtent} measures it. Without
+     * {@code use_swt_fonts} the cell draws in the theme's row style, not in the Table's font.
+     */
+    @Test
+    void paintItemGc_measuresTextAsTheCellDrawsIt() {
+        String text = "Profile value 0";
+        int[] measured = new int[1];
+        Font[] gcFont = new Font[1];
+        TableItem row = paintedRow(text, event -> {
+            measured[0] = event.gc.textExtent(text).x;
+            gcFont[0] = event.gc.getFont();
+        });
+        Font itemFont = new Font(display, new FontData("system", 11, SWT.BOLD));
+        row.setFont(itemFont);
+
+        reportOverlayListening(row.getParent(), row);
+        ((DartTableItem) row.getImpl()).getTexts();
+
+        double cell = FontMetricsUtil.getFontSize(text, TableItemTheme.get().textStyle()).x();
+        assertThat((double) measured[0]).as("the PaintItem GC measures the text as wide as the cell draws it")
+                .isCloseTo(cell, withinPercentage(10));
+        assertThat(gcFont[0].getFontData()[0].getStyle() & SWT.BOLD).as("the item font's weight").isEqualTo(SWT.BOLD);
+        itemFont.dispose();
+    }
+
+    /** With {@code use_swt_fonts} the cell draws in the item's font, which the GC then gets as it is. */
+    @Test
+    void paintItemGc_getsTheItemsFont_underSwtFonts() {
+        boolean before = Config.getConfigFlags().use_swt_fonts;
+        Config.getConfigFlags().use_swt_fonts = true;
+        try {
+            Font[] seen = new Font[1];
+            TableItem row = paintedRow("x", event -> seen[0] = event.gc.getFont());
+
+            reportOverlayListening(row.getParent(), row);
+            ((DartTableItem) row.getImpl()).getTexts();
+
+            assertThat(seen[0]).isEqualTo(row.getFont(0));
+        } finally {
+            Config.getConfigFlags().use_swt_fonts = before;
+        }
+    }
+
+    private TableItem paintedRow(String text, Listener paint) {
+        Shell shell = new Shell(display);
+        Table table = new Table(shell, SWT.NONE);
+        table.setBounds(0, 0, 300, 200);
+        new TableColumn(table, SWT.NONE).setWidth(280);
+        table.addListener(SWT.PaintItem, paint);
+        TableItem row = new TableItem(table, SWT.NONE);
+        row.setText(text);
+        return row;
     }
 
     private void reportOverlayListening(Table table, TableItem row) {

@@ -12,13 +12,13 @@ class VGlyphMetrics implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 311: // ascent
+      case 315: // ascent
         ascent = r.int32();
         return true;
-      case 312: // descent
+      case 316: // descent
         descent = r.int32();
         return true;
-      case 313: // width
+      case 317: // width
         width = r.int32();
         return true;
       default:
@@ -28,24 +28,24 @@ class VGlyphMetrics implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(311, ascent);
-    visit(312, descent);
-    visit(313, width);
+    visit(315, ascent);
+    visit(316, descent);
+    visit(317, width);
   }
 
   @override
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = ascent;
-      w.keyInt32(311, v_);
+      w.keyInt32(315, v_);
     }
     {
       final v_ = descent;
-      w.keyInt32(312, v_);
+      w.keyInt32(316, v_);
     }
     {
       final v_ = width;
-      w.keyInt32(313, v_);
+      w.keyInt32(317, v_);
     }
   }
 }

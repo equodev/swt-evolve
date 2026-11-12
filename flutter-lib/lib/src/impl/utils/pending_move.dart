@@ -20,12 +20,13 @@ class PendingMove {
   static HeldMove? _owner;
   static Timer? _timer;
 
-  /// Holds [owner]'s move, to be sent once [afterMs] milliseconds have passed. It replaces a move
-  /// [owner] held before; a move another control held is that control's last one, so it is sent first.
-  static void hold(HeldMove owner, int afterMs) {
+  /// Holds [owner]'s move, to be sent once [afterMicros] microseconds have passed. It replaces a
+  /// move [owner] held before; a move another control held is that control's last one, so it is sent
+  /// first.
+  static void hold(HeldMove owner, int afterMicros) {
     if (_owner != null && !identical(_owner, owner)) flush();
     _owner = owner;
-    _timer ??= Timer(Duration(milliseconds: afterMs), flush);
+    _timer ??= Timer(Duration(microseconds: afterMicros), flush);
   }
 
   /// Sends the held move now, if there is one.

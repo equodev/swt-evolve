@@ -145,17 +145,22 @@ public class StyledTextHelper {
 
     /**
      * Sent before the edit's state frame, so its caret and selection refer to the spliced text. A
-     * client whose replica does not end at {@code charCount} asks for {@code ResendText}.
+     * client whose replica does not end at the edit's count asks for {@code ResendText}.
      */
     public static void sendTextChange(DartStyledText styledText, TextChangingEvent event) {
         String text = event.newText == null ? "" : event.newText;
-        java.util.Map<String, Object> change = new java.util.HashMap<>();
-        change.put("start", event.start);
-        change.put("replaced", event.replaceCharCount);
-        change.put("text", text);
-        change.put("charCount", styledText.content.getCharCount() - event.replaceCharCount + text.length());
+        TextEdit edit = styledText.textEdit;
+        edit.start = event.start;
+        edit.end = event.start + event.replaceCharCount;
+        edit.text = text;
+        edit.count = styledText.content.getCharCount() - event.replaceCharCount + text.length();
         carriedAcross(styledText, event.start, event.replaceCharCount, text.length());
-        FlutterBridge.sendNow(styledText, dev.equo.swt.WireTable.CHANNEL_TEXT_CHANGE, change);
+        bandCarriedAcross(styledText, styledText.content.getLineAtOffset(event.start), event.replaceLineCount,
+                event.newLineCount);
+        // The client splices its text, so the hash of the text last sent no longer says what it holds.
+        Serializer.resend(styledText.getValue(), VStyledText.TEXT);
+        FlutterBridge.sendFields(styledText, dev.equo.swt.WireTable.CHANNEL_TEXT_CHANGE, edit);
+        edit.text = null;
     }
 
     /** Answers a client whose text replica drifted: the whole document, once. */
@@ -200,42 +205,84 @@ public class StyledTextHelper {
             p.yDelta = r.float64();
         }
         VisualLine[] rows = new VisualLine[r.varint()];
-        for (int i = 0; i < rows.length; i++) rows[i] = readRow(r);
+        RowReader reader = new RowReader(r);
+        for (int i = 0; i < rows.length; i++) rows[i] = reader.read();
         if (splice) p.rows = rows;
         else p.lines = rows;
         return p;
     }
 
-    private static VisualLine readRow(dev.equo.swt.WireReader r) {
-        VisualLine v = new VisualLine();
-        v.logicalLine = r.int32();
-        v.start = r.int32();
-        v.end = r.int32();
-        v.x = r.float64();
-        v.y = r.float64();
-        v.w = r.float64();
-        v.h = r.float64();
-        v.vi = r.int32();
-        int charX = r.u8();
-        int count = v.end - v.start + 1;
-        boolean valid = v.logicalLine >= 0 && v.start >= 0 && count > 0;
-        if (charX == 1) {
-            int n = r.varint();
-            double[] cx = new double[n];
-            for (int i = 0; i < n; i++) cx[i] = r.float64();
-            valid &= n == count;
-            v.charX = cx;
-        } else if (charX == 2) {
-            // A uniform-advance row (monospace) travels as origin and step; multiplying out keeps
-            // positions exact, where summing rounded advances would accumulate error.
-            double origin = r.float64();
-            double advance = r.float64();
-            if (valid) {
-                v.charX = new double[count];
-                for (int i = 0; i < count; i++) v.charX[i] = origin + i * advance;
-            }
+    /**
+     * Reads rows each against the one read before it, as the client's {@code GeometryRowWriter} writes
+     * them: lines and offsets as steps, pixels as hundredths stepped from the row before (a top from
+     * its bottom, a height from its height), or as a double where one is not a whole hundredth.
+     */
+    private static final class RowReader {
+        private final dev.equo.swt.WireReader r;
+        private int line, end;
+        /** The previous row's x, bottom and height in hundredths; NONE when it was not a whole one. */
+        private long x, bottom, height;
+        private static final long NONE = Long.MIN_VALUE;
+        /** The hundredths of the last pixel value read, or NONE for a double. */
+        private long last;
+
+        RowReader(dev.equo.swt.WireReader r) {
+            this.r = r;
         }
-        return valid ? v : null;
+
+        VisualLine read() {
+            VisualLine v = new VisualLine();
+            v.logicalLine = line += (int) r.int64();
+            v.start = (int) (end + r.int64());
+            v.end = end = (int) (v.start + r.int64());
+            v.x = px(x);
+            long xn = last;
+            v.y = px(bottom);
+            long yn = last;
+            v.w = px(NONE);
+            v.h = px(height);
+            long hn = last;
+            x = xn;
+            height = hn;
+            bottom = yn == NONE || hn == NONE ? NONE : yn + hn;
+            v.vi = r.int32();
+            int charX = r.u8();
+            int count = v.end - v.start + 1;
+            boolean valid = v.logicalLine >= 0 && v.start >= 0 && count > 0;
+            if (charX == 1) {
+                int n = r.varint();
+                double[] cx = new double[n];
+                long previous = xn;
+                for (int i = 0; i < n; i++) {
+                    cx[i] = px(previous);
+                    previous = last;
+                }
+                valid &= n == count;
+                v.charX = cx;
+            } else if (charX == 2) {
+                // A uniform-advance row (monospace) travels as origin and step; multiplying out keeps
+                // positions exact, where summing rounded advances would accumulate error.
+                double origin = r.float64();
+                double advance = r.float64();
+                if (valid) {
+                    v.charX = new double[count];
+                    for (int i = 0; i < count; i++) v.charX[i] = origin + i * advance;
+                }
+            }
+            return valid ? v : null;
+        }
+
+        /** A pixel value stepped from {@code from} hundredths (from 0 when NONE), or a double. */
+        private double px(long from) {
+            long t = r.varlong();
+            if ((t & 1) != 0) {
+                last = NONE;
+                return r.float64();
+            }
+            long z = t >>> 1;
+            last = (from == NONE ? 0 : from) + ((z >>> 1) ^ -(z & 1));
+            return last / 100.0;
+        }
     }
 
     /** A push given as a map of the properties the client's table holds. */
@@ -388,6 +435,7 @@ public class StyledTextHelper {
             if (spliced == null) return;
             g.lines = spliced;
         }
+        ViewAnchor anchor = ViewAnchor.of(styledText, textGeometries.get(styledText));
         TextGeometry previous = textGeometries.put(styledText, g);
         if (describesADifferentLayout(previous, g)) {
             // A change naming its rows invalidates only those lines; a whole table, the document.
@@ -412,7 +460,54 @@ public class StyledTextHelper {
             // case — the text rewraps while the gutter keeps the numbering it computed from the
             // unwrapped table. They draw at the rows' heights, so a line that only got wider, as
             // the one being typed into does, leaves them as they are.
-            if (movesTheRows(previous, g)) repaintRulerSiblings(styledText);
+            if (movesTheRows(previous, g)) {
+                if (anchor != null) anchor.restore(styledText, g);
+                repaintRulerSiblings(styledText);
+            }
+        }
+    }
+
+    /**
+     * The line at the top of the view, and whether the caret was in view, as the table the rows just
+     * replaced placed them. The rows move after Java scrolled by them: a line laid out taller (a
+     * fallback font's glyphs) makes every row taller, and the same scroll offset is then a line far
+     * from the one shown. Native SWT lays the line out before it scrolls, so the view stays on it.
+     */
+    private static final class ViewAnchor {
+        final int topLine;
+        final double withinLine;
+        final boolean caretShown;
+
+        private ViewAnchor(int topLine, double withinLine, boolean caretShown) {
+            this.topLine = topLine;
+            this.withinLine = withinLine;
+            this.caretShown = caretShown;
+        }
+
+        static ViewAnchor of(DartStyledText styledText, TextGeometry g) {
+            if (g == null || g.lines.length == 0 || styledText.isDisposed()) return null;
+            int top = styledText.getVerticalScrollOffset();
+            VisualLine row = g.lines[Math.min(rowEndingBelow(g, top), g.lines.length - 1)];
+            int lineTopRow = g.firstRow(row.logicalLine);
+            if (lineTopRow < 0) return null;
+            double lineTop = g.lines[lineTopRow].y;
+            boolean caretShown = false;
+            int caretRow = visualLineOf(g, styledText.getCaretOffset());
+            if (caretRow >= 0) {
+                VisualLine c = g.lines[caretRow];
+                double viewHeight = styledText.clientAreaHeight - styledText.topMargin - styledText.bottomMargin;
+                caretShown = c.y >= top && c.y + c.h <= top + viewHeight;
+            }
+            return new ViewAnchor(row.logicalLine, top - lineTop, caretShown);
+        }
+
+        void restore(DartStyledText styledText, TextGeometry g) {
+            if (styledText.isDisposed()) return;
+            int row = g.firstRow(topLine);
+            if (row < 0) return;
+            int top = (int) Math.round(g.lines[row].y + Math.min(withinLine, g.lines[row].h));
+            if (top != styledText.getVerticalScrollOffset()) styledText.setTopPixel(top);
+            if (caretShown) styledText.showCaret();
         }
     }
 
@@ -501,17 +596,30 @@ public class StyledTextHelper {
 
     /** Index into g.lines of the visual line holding the offset, preferring the line it starts. */
     private static int visualLineOf(TextGeometry g, int offset) {
-        int found = -1;
-        for (int i = 0; i < g.lines.length; i++) {
-            VisualLine v = g.lines[i];
-            if (offset < v.start) break;
-            if (offset <= v.end) {
-                found = i;
-                if (offset < v.end) break;
-                // offset == v.end: prefer the next visual line if the offset starts it.
+        // The rows are in document order and do not overlap: the last one starting by the offset is
+        // the one holding it, and also the one it starts when it ends the row before.
+        int lo = 0, hi = g.lines.length - 1, found = -1;
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            if (g.lines[mid].start <= offset) {
+                found = mid;
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
             }
         }
-        return found;
+        return found >= 0 && offset <= g.lines[found].end ? found : -1;
+    }
+
+    /** The first row whose bottom is below {@code contentY}, or the row count: the rows go down the page. */
+    private static int rowEndingBelow(TextGeometry g, double contentY) {
+        int lo = 0, hi = g.lines.length;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (contentY < g.lines[mid].y + g.lines[mid].h) hi = mid;
+            else lo = mid + 1;
+        }
+        return lo;
     }
 
     /** Widget-space location of the offset, or null when the table can't answer exactly. */
@@ -532,16 +640,14 @@ public class StyledTextHelper {
     public static Integer geometryLinePixel(DartStyledText styledText, int lineIndex) {
         TextGeometry g = freshGeometry(styledText);
         if (g == null) return null;
-        double y = -1;
+        double y;
         if (lineIndex > g.lines[g.lines.length - 1].logicalLine) {
             y = g.contentHeight;
         } else {
-            for (VisualLine v : g.lines) {
-                if (v.logicalLine == lineIndex) { y = v.y; break; }
-                if (v.logicalLine > lineIndex) break;
-            }
+            int row = g.firstRow(lineIndex);
+            if (row < 0) return null;
+            y = g.lines[row].y;
         }
-        if (y < 0) return null;
         return (int) Math.round(y) - styledText.getVerticalScrollOffset() + styledText.topMargin;
     }
 
@@ -555,7 +661,14 @@ public class StyledTextHelper {
         if (g == null) return null;
         double top = styledText.getVerticalScrollOffset();
         double viewHeight = styledText.clientAreaHeight - styledText.topMargin - styledText.bottomMargin;
-        for (int i = 0; i < g.lines.length; i++) {
+        // Rows above the offset are skipped by halving: the rows go down the page.
+        int lo = 0, hi = g.lines.length;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (Math.round(g.lines[mid].y) < top) lo = mid + 1;
+            else hi = mid;
+        }
+        for (int i = lo; i < g.lines.length; i++) {
             VisualLine v = g.lines[i];
             boolean firstRow = i == 0 || g.lines[i - 1].logicalLine != v.logicalLine;
             if (!firstRow || Math.round(v.y) < top) continue;
@@ -578,10 +691,8 @@ public class StyledTextHelper {
         if (g == null) return null;
         double contentY = y - styledText.topMargin + styledText.getVerticalScrollOffset();
         if (contentY < 0) return 0;
-        for (VisualLine v : g.lines) {
-            if (contentY < v.y + v.h) return v.logicalLine;
-        }
-        return g.lines[g.lines.length - 1].logicalLine;
+        int row = rowEndingBelow(g, contentY);
+        return g.lines[Math.min(row, g.lines.length - 1)].logicalLine;
     }
 
     /**
@@ -596,12 +707,10 @@ public class StyledTextHelper {
         if (contentY < 0 || contentY >= g.contentHeight) return null;
         VisualLine line = null;
         boolean lastRowOfLine = true;
-        for (int i = 0; i < g.lines.length; i++) {
-            if (contentY < g.lines[i].y + g.lines[i].h) {
-                line = g.lines[i];
-                lastRowOfLine = i + 1 >= g.lines.length || g.lines[i + 1].logicalLine != line.logicalLine;
-                break;
-            }
+        int row = rowEndingBelow(g, contentY);
+        if (row < g.lines.length) {
+            line = g.lines[row];
+            lastRowOfLine = row + 1 >= g.lines.length || g.lines[row + 1].logicalLine != line.logicalLine;
         }
         if (line == null || line.charX == null) return null;
         // Beside the text there is no offset (-1), except past a wrapped row, which continues below.
@@ -615,7 +724,10 @@ public class StyledTextHelper {
         return line.start + best;
     }
 
-    /** Widget-space bounds of [start, end], or null when the table can't answer exactly. */
+    /**
+     * Widget-space bounds of the characters from {@code start} to {@code end}, both included as in
+     * SWT, or null when the table can't answer exactly.
+     */
     public static org.eclipse.swt.graphics.Rectangle geometryTextBounds(DartStyledText styledText, int start, int end) {
         TextGeometry g = freshGeometry(styledText);
         if (g == null) return null;
@@ -627,17 +739,21 @@ public class StyledTextHelper {
             VisualLine v = g.lines[i];
             if (v.charX == null) return null;
             int from = Math.max(start, v.start) - v.start;
-            int to = Math.min(end, v.end) - v.start;
+            // The end character's trailing edge, within the row.
+            int to = Math.min(end + 1, v.end) - v.start;
             left = Math.min(left, Math.min(v.charX[from], v.charX[to]));
             right = Math.max(right, Math.max(v.charX[from], v.charX[to]));
         }
         double top = g.lines[first].y + g.lines[first].vi;
         double bottom = g.lines[last].y + g.lines[last].h;
+        // Each edge rounded on its own, as a location is, so the bounds end where the next character's
+        // location starts.
+        int x = (int) Math.round(left), y = (int) Math.round(top);
         return new org.eclipse.swt.graphics.Rectangle(
-                (int) Math.round(left) + styledText.leftMargin - styledText.horizontalScrollOffset,
-                (int) Math.round(top) - styledText.getVerticalScrollOffset() + styledText.topMargin,
-                (int) Math.round(right - left),
-                (int) Math.round(bottom - top));
+                x + styledText.leftMargin - styledText.horizontalScrollOffset,
+                y - styledText.getVerticalScrollOffset() + styledText.topMargin,
+                (int) Math.round(right) - x,
+                (int) Math.round(bottom) - y);
     }
 
     // ---- What the renderer will actually paint ----
@@ -685,30 +801,42 @@ public class StyledTextHelper {
 
         /** A band's runs as a palette of distinct styles and a run of names into it. */
         static Banded of(List<StyleRange> runs, int[] ranges) {
-            java.util.List<StyleRange> entries = new ArrayList<>();
-            java.util.Map<StyleRange, Integer> palette = new java.util.HashMap<>();
+            return of(runs, ranges, new StylePalette());
+        }
+
+        /**
+         * A band's runs named by places in {@code palette}, which keeps the styles earlier bands used;
+         * it starts over with this band's when it can no longer keep them ({@link StylePalette#stale}).
+         */
+        static Banded of(List<StyleRange> runs, int[] ranges, StylePalette palette) {
+            Banded banded = named(runs, ranges, palette);
+            if (!palette.stale()) return banded;
+            palette.restart();
+            return named(runs, ranges, palette);
+        }
+
+        private static Banded named(List<StyleRange> runs, int[] ranges, StylePalette palette) {
+            java.util.List<StyleRange> unshared = SHARE_STYLES ? null : new ArrayList<>();
             // Name, start and length per run, the palette's own name first: one array, so names and
             // positions cannot be delivered apart.
             int[] index = new int[1 + 3 * runs.size()];
             for (int i = 0; i < runs.size(); i++) {
                 StyleRange run = runs.get(i);
-                // -Ddev.equo.swt.styles.palette=false gives every run its own entry, to bisect sharing.
                 StyleRange entry = placeless(run);
-                Integer shared = SHARE_STYLES ? palette.get(entry) : null;
-                if (shared == null) {
-                    shared = entries.size();
-                    entries.add(entry);
-                    if (SHARE_STYLES) palette.put(entry, shared);
+                // -Ddev.equo.swt.styles.palette=false gives every run its own entry, to bisect sharing.
+                int place;
+                if (unshared != null) {
+                    place = unshared.size();
+                    unshared.add(entry);
+                } else {
+                    place = palette.placeOf(entry);
                 }
-                index[1 + 3 * i] = shared;
-                index[2 + 3 * i] = ranges != null && (i << 1) + 1 < ranges.length
-                        ? ranges[i << 1]
-                        : run.start;
-                index[3 + 3 * i] = ranges != null && (i << 1) + 1 < ranges.length
-                        ? ranges[(i << 1) + 1]
-                        : run.length;
+                index[1 + 3 * i] = place;
+                // Given, the ranges hold a start and a length for every run.
+                index[2 + 3 * i] = ranges != null ? ranges[i << 1] : run.start;
+                index[3 + 3 * i] = ranges != null ? ranges[(i << 1) + 1] : run.length;
             }
-            StyleRange[] styles = entries.toArray(new StyleRange[0]);
+            StyleRange[] styles = unshared != null ? unshared.toArray(new StyleRange[0]) : palette.toArray();
             // Naming the palette in the index makes the index change whenever the palette does, so
             // a changed palette is never delivered without its names.
             int name = paletteName(styles);
@@ -792,6 +920,12 @@ public class StyledTextHelper {
         if (lineCount <= BAND_MIN_LINES) return null;
         int lineHeight = Math.max(1, styledText.getLineHeight());
         int height = styledText.getClientArea().height;
+        // Not laid out yet, as when an editor opens and is described in the turn that filled it:
+        // its shell's height is all it can show, so a band that size covers it until it is laid out.
+        if (height <= 0) {
+            org.eclipse.swt.graphics.Rectangle shellArea = styledText.getApi().getShell().getClientArea();
+            if (shellArea != null) height = shellArea.height;
+        }
         if (height <= 0) return null;
         // Quantised, so a sash drag does not rebuild the band per pixel; rounded up to cover it.
         int exactVisible = Math.max(1, height / lineHeight);
@@ -800,13 +934,14 @@ public class StyledTextHelper {
         int margin = visible * BAND_MARGIN_SCREENS;
         int quantum = Math.max(BAND_QUANTUM_LINES, visible);
         int top = Math.max(0, styledText.getTopIndex());
-        // Keep the band while the viewport is at least half a margin inside it. A line-count change
-        // keeps it too: only its end is clamped to the document, or follows it if it reached it.
+        // Keep the band while the viewport is at least half a margin inside it, or the band starts
+        // at the first line. An edit moves it with its lines (bandCarriedAcross); its end is clamped
+        // to the document, or follows it if it reached it.
         int[] held = heldBands.get(renderer);
         if (held != null && held[HELD_VISIBLE] == visible) {
             boolean reachedEnd = held[1] >= held[HELD_LINES] - 1;
             int heldTo = reachedEnd ? lineCount - 1 : Math.min(held[1], lineCount - 1);
-            if (held[0] <= heldTo && top >= held[0] + margin / 2
+            if (held[0] <= heldTo && (held[0] == 0 || top >= held[0] + margin / 2)
                     && (top + visible <= heldTo - margin / 2 || heldTo >= lineCount - 1)) {
                 if (held[0] == 0 && heldTo >= lineCount - 1) {
                     heldBands.remove(renderer);
@@ -826,6 +961,22 @@ public class StyledTextHelper {
         }
         heldBands.put(renderer, new int[] { from, to, lineCount, visible });
         return new int[] { from, to };
+    }
+
+    /**
+     * Moves the band held for {@code text} with an edit of its lines, so that it keeps covering the
+     * same text and the index sent next differs from the one the client carried across the edit only
+     * where the edit restyled it.
+     */
+    private static void bandCarriedAcross(DartStyledText text, int line, int replacedLines, int newLines) {
+        int delta = newLines - replacedLines;
+        if (delta == 0 || text.renderer == null || !(text.renderer.getImpl() instanceof DartStyledTextRenderer)) return;
+        DartStyledTextRenderer renderer = (DartStyledTextRenderer) text.renderer.getImpl();
+        int[] held = heldBands.get(renderer);
+        if (held == null || line > held[1]) return;
+        int from = line + replacedLines < held[0] ? held[0] + delta : Math.min(held[0], line);
+        int to = Math.max(Math.max(from, line), held[1] + delta);
+        heldBands.put(renderer, new int[] { from, to, held[HELD_LINES] + delta, held[HELD_VISIBLE] });
     }
 
     /** Per renderer: the band being sent, and the line count and viewport height it was built for. */
@@ -946,6 +1097,9 @@ public class StyledTextHelper {
                 && base[base.length - 1 - suffix] == target[target.length - 1 - suffix]) {
             suffix++;
         }
+        // Whole runs, so what is inserted travels as runs (WidgetWire#runs).
+        prefix = 1 + (prefix - 1) / 3 * 3;
+        suffix = suffix / 3 * 3;
         int removed = base.length - prefix - suffix;
         int inserted = target.length - prefix - suffix;
         int[] change = new int[6 + inserted];
@@ -1019,69 +1173,122 @@ public class StyledTextHelper {
         return wireStyles((DartStyledTextRenderer) renderer.getImpl());
     }
 
+    /** Worked out once for every record a flush writes: the styles, their names and their count all ask. */
     private static Banded banded(DartStyledTextRenderer renderer) {
+        return dev.equo.swt.Serializer.oncePerTape(renderer, () -> bandedNow(renderer));
+    }
+
+    private static Banded bandedNow(DartStyledTextRenderer renderer) {
         int[] band = styleBand(renderer);
         List<StyleRange> listener = listenerStyles(renderer, band);
-        if (listener != null) return Banded.of(listener, null);
-        BandedMemo memo = bandedMemos.get(renderer);
+        if (listener != null) return Banded.of(listener, null, renderer.stylePalette);
         Color foreground = widgetForeground(renderer);
-        if (memo != null && memo.describes(renderer, band, foreground)) return memo.banded;
-        Banded banded = ownStylesBanded(renderer, band);
-        bandedMemos.put(renderer, new BandedMemo(renderer, band, foreground, banded));
+        int[] slice = bandSlice(renderer, bandOffsets(renderer, band));
+        BandedMemo memo = bandedMemos.get(renderer);
+        if (renderer.stylePalette.stale()) renderer.stylePalette.restart();
+        if (memo != null && memo.describes(renderer, slice, foreground)
+                && memo.paletteVersion == renderer.stylePalette.version()) {
+            return memo.banded;
+        }
+        Banded banded = ownStylesBanded(renderer, slice, foreground);
+        bandedMemos.put(renderer, new BandedMemo(renderer, slice, foreground, banded, renderer.stylePalette.version()));
         return banded;
+    }
+
+    /** How many of the renderer's styles are in use. */
+    private static int stylesInUse(DartStyledTextRenderer renderer) {
+        StyleRange[] styles = renderer.styles;
+        if (styles == null) return 0;
+        return Math.min(styles.length, renderer.ranges != null ? renderer.styleCount : styles.length);
+    }
+
+    /** Where style {@code i} starts: its range when the renderer keeps ranges, else the style's own. */
+    private static int runStart(DartStyledTextRenderer renderer, int i) {
+        int[] ranges = renderer.ranges;
+        return ranges != null && (i << 1) + 1 < ranges.length ? ranges[i << 1] : renderer.styles[i].start;
+    }
+
+    private static int runLength(DartStyledTextRenderer renderer, int i) {
+        int[] ranges = renderer.ranges;
+        return ranges != null && (i << 1) + 1 < ranges.length ? ranges[(i << 1) + 1] : renderer.styles[i].length;
+    }
+
+    /**
+     * The styles a band covers, as {@code from, to, spanStart, spanEnd}: the indices of the runs that
+     * can reach the character span, and the span (-1 for the whole document). Runs are in order and
+     * do not overlap, so they are found by halving rather than by reading the document's.
+     */
+    private static int[] bandSlice(DartStyledTextRenderer renderer, int[] span) {
+        int count = stylesInUse(renderer);
+        if (span == null) return new int[] { 0, count, -1, -1 };
+        StyleRange[] styles = renderer.styles;
+        // A style a run's position is read from must be there.
+        if (renderer.ranges == null) {
+            for (int i = 0; i < count; i++) {
+                if (styles[i] == null) return new int[] { 0, count, span[0], span[1] };
+            }
+        }
+        int lo = 0, hi = count;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (runStart(renderer, mid) + runLength(renderer, mid) <= span[0]) lo = mid + 1;
+            else hi = mid;
+        }
+        int from = lo;
+        hi = count;
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (runStart(renderer, mid) < span[1]) lo = mid + 1;
+            else hi = mid;
+        }
+        return new int[] { from, lo, span[0], span[1] };
     }
 
     /**
      * The band last built for a renderer and its exact inputs, compared rather than hashed: a stale
-     * band draws the wrong styles.
+     * band draws the wrong styles. The inputs are the runs the band covers, which are all it is made of.
      */
     private static final class BandedMemo {
+        final int[] slice;
         final StyleRange[] styles;
-        final int[] ints;
+        final int[] positions;
         final Color foreground;
         final Banded banded;
+        /** The palette's version once {@link #banded} was named in it. */
+        final int paletteVersion;
 
-        BandedMemo(DartStyledTextRenderer renderer, int[] band, Color foreground, Banded banded) {
-            this.styles = renderer.styles == null ? null : renderer.styles.clone();
-            this.ints = inputsOf(renderer, band);
+        BandedMemo(DartStyledTextRenderer renderer, int[] slice, Color foreground, Banded banded, int paletteVersion) {
+            this.paletteVersion = paletteVersion;
+            this.slice = slice;
+            int n = slice[1] - slice[0];
+            this.styles = new StyleRange[n];
+            this.positions = new int[2 * n];
+            for (int i = 0; i < n; i++) {
+                StyleRange style = renderer.styles[slice[0] + i];
+                styles[i] = style;
+                if (style == null) continue;
+                positions[2 * i] = runStart(renderer, slice[0] + i);
+                positions[2 * i + 1] = runLength(renderer, slice[0] + i);
+            }
             this.foreground = foreground;
             this.banded = banded;
         }
 
-        boolean describes(DartStyledTextRenderer renderer, int[] band, Color foreground) {
+        boolean describes(DartStyledTextRenderer renderer, int[] slice, Color foreground) {
+            if (!java.util.Arrays.equals(slice, this.slice) || !java.util.Objects.equals(foreground, this.foreground)) {
+                return false;
+            }
             StyleRange[] current = renderer.styles;
-            if ((current == null) != (styles == null)) return false;
-            if (current != null) {
-                if (current.length != styles.length) return false;
-                for (int i = 0; i < current.length; i++) {
-                    if (current[i] != styles[i]) return false;
+            for (int i = 0; i < styles.length; i++) {
+                StyleRange style = current[slice[0] + i];
+                if (style != styles[i]) return false;
+                if (style == null) continue;
+                if (runStart(renderer, slice[0] + i) != positions[2 * i]
+                        || runLength(renderer, slice[0] + i) != positions[2 * i + 1]) {
+                    return false;
                 }
             }
-            return java.util.Objects.equals(foreground, this.foreground)
-                    && java.util.Arrays.equals(inputsOf(renderer, band), ints);
-        }
-
-        /** The band, the count in use, every range and every style's own position. */
-        private static int[] inputsOf(DartStyledTextRenderer renderer, int[] band) {
-            StyleRange[] styles = renderer.styles;
-            int[] ranges = renderer.ranges;
-            int count = styles == null ? 0 : ranges != null ? renderer.styleCount : styles.length;
-            int rangeInts = ranges == null ? 0 : Math.min(ranges.length, 2 * count);
-            int[] out = new int[5 + rangeInts + 2 * (styles == null ? 0 : styles.length)];
-            int k = 0;
-            out[k++] = band == null ? -1 : band[0];
-            out[k++] = band == null ? -1 : band[1];
-            out[k++] = count;
-            out[k++] = ranges == null ? -1 : ranges.length;
-            out[k++] = rangeInts;
-            for (int i = 0; i < rangeInts; i++) out[k++] = ranges[i];
-            if (styles != null) {
-                for (StyleRange style : styles) {
-                    out[k++] = style == null ? -1 : style.start;
-                    out[k++] = style == null ? -1 : style.length;
-                }
-            }
-            return out;
+            return true;
         }
     }
 
@@ -1089,38 +1296,26 @@ public class StyledTextHelper {
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
     /** The renderer's own styles and positions, keeping only what the band covers. */
-    private static Banded ownStylesBanded(DartStyledTextRenderer renderer, int[] band) {
+    private static Banded ownStylesBanded(DartStyledTextRenderer renderer, int[] slice, Color foreground) {
         StyleRange[] styles = renderer.styles;
         if (styles == null) return new Banded(null, null, null);
-        int[] ranges = renderer.ranges;
-        int count = ranges != null ? renderer.styleCount : styles.length;
-        int[] span = bandOffsets(renderer, band);
-        Color foreground = widgetForeground(renderer);
-        List<StyleRange> keptStyles = new ArrayList<>(Math.min(styles.length, count));
-        List<Integer> keptRanges = ranges != null ? new ArrayList<>() : null;
-        for (int i = 0; i < styles.length && i < count; i++) {
+        boolean keepRanges = renderer.ranges != null;
+        List<StyleRange> keptStyles = new ArrayList<>(slice[1] - slice[0]);
+        int[] keptRanges = keepRanges ? new int[2 * (slice[1] - slice[0])] : null;
+        int kept = 0;
+        for (int i = slice[0]; i < slice[1]; i++) {
             if (styles[i] == null) continue;
-            int start, length;
-            if (ranges != null && (i << 1) + 1 < ranges.length) {
-                start = ranges[i << 1];
-                length = ranges[(i << 1) + 1];
-            } else {
-                start = styles[i].start;
-                length = styles[i].length;
-            }
-            if (span != null && (start + length <= span[0] || start >= span[1])) continue;
+            int start = runStart(renderer, i);
+            int length = runLength(renderer, i);
+            if (slice[2] >= 0 && (start + length <= slice[2] || start >= slice[3])) continue;
             keptStyles.add(withoutRedundantForeground(styles[i], foreground));
-            if (keptRanges != null) {
-                keptRanges.add(start);
-                keptRanges.add(length);
+            if (keepRanges) {
+                keptRanges[kept++] = start;
+                keptRanges[kept++] = length;
             }
         }
-        int[] outRanges = null;
-        if (keptRanges != null) {
-            outRanges = new int[keptRanges.size()];
-            for (int i = 0; i < outRanges.length; i++) outRanges[i] = keptRanges.get(i);
-        }
-        return Banded.of(keptStyles, outRanges);
+        return Banded.of(keptStyles, keepRanges ? java.util.Arrays.copyOf(keptRanges, kept) : null,
+                renderer.stylePalette);
     }
 
     /** The character span [start, end) the band covers, or null when it covers everything. */
@@ -1219,16 +1414,19 @@ public class StyledTextHelper {
             askTo = Math.min(count - 1, styledText.getPartialBottomIndex() + visible);
         }
         for (int i = 0; i < count; i++) {
-            DartStyledTextRenderer.LineInfo info = lines != null && i < lines.length && lines[i] != null
-                    ? lines[i]
-                    : new DartStyledTextRenderer.LineInfo();
+            DartStyledTextRenderer.LineInfo own = lines != null && i < lines.length ? lines[i] : null;
             StyledTextEvent event = (i >= askFrom && i <= askTo) ? styledText.getLineBackgroundData(
                     renderer.content.getOffsetAtLine(i), renderer.content.getLine(i)) : null;
             Color background = event != null && event.lineBackground != null
                     ? event.lineBackground
-                    : info.background;
+                    : own == null ? null : own.background;
             Object[] bullet = bulletOf(renderer, i);
             int bulletIndent = bullet == null ? 0 : bulletWidth((Bullet) bullet[0]);
+            // A line with no attributes of its own and none resolved here travels as none, as it does
+            // without a listener: an editor's current-line listener otherwise sends every line.
+            if (own == null && background == null && bulletIndent == 0)
+                continue;
+            DartStyledTextRenderer.LineInfo info = own != null ? own : new DartStyledTextRenderer.LineInfo();
             if (background != info.background || bulletIndent != 0) {
                 DartStyledTextRenderer.LineInfo resolved = new DartStyledTextRenderer.LineInfo(info);
                 resolved.background = background;

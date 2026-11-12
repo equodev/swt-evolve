@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' show LineMetrics;
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,8 @@ import '../comm/comm.dart';
 import '../comm/channel_header.dart';
 import '../comm/comm_frame.dart' show EquoCommBase;
 import '../comm/delivery_gate.dart' show deliveryGate;
+import '../comm/v_registry.dart' show VRegistry;
+import 'utils/style_index_change.dart';
 import 'utils/perf_marks_stub.dart'
     if (dart.library.js_interop) 'utils/perf_marks_web.dart';
 import '../gen/event.dart';
@@ -30,6 +33,7 @@ import 'widget_config.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import 'utils/composed_text_input.dart';
+import 'utils/resize_reports.dart';
 import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
 import 'color_utils.dart';
@@ -37,8 +41,7 @@ import '../theme/theme_extensions/scrolledcomposite_theme_extension.dart';
 import '../theme/theme_extensions/styledtext_theme_extension.dart';
 import '../testing/render_facts.dart';
 import 'utils/wheel_input.dart';
-import '../comm/widget_wire.dart' show WidgetWireWriter, WireVisitable;
-import '../comm/tagged_values.dart';
+import '../comm/widget_wire.dart' show WidgetWireReader, WidgetWireWriter, WireVisitable;
 
 /// Paints a StyledText as Java describes it and reports raw input back; the document, carets,
 /// selection and scroll offset are Java's and nothing here edits them.
@@ -83,9 +86,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   static FutureOr<bool> _textChangeOp(int id, Uint8List frame, int start, int end) {
     final editor = _live[id];
     if (editor == null) return false;
-    editor._onTextChange(TaggedValues.decodeAt(frame, start));
+    editor._onTextChange((WidgetWireReader(frame)..pos = start).fields(_edit));
     return true;
   }
+
+  /// Reused for every edit: each one writes all the fields read.
+  static final VEvent _edit = VEvent();
 
   static FutureOr<bool> _resendGeometryOp(int id, Uint8List frame, int start, int end) {
     final editor = _live[id];
@@ -153,25 +159,54 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     );
   }
 
+  /// The width a word-wrapped editor keeps while its window is dragged, or null. Rewrapping every line
+  /// at each width of a drag costs more than a frame; the editor rewraps once the drag ends, at the
+  /// size it ends at, as it does when nothing is laid out until then.
+  double? _heldWrapWidth;
+
+  Size _canvasSize(TextShape? previous) {
+    final bounds = getBounds();
+    if (state.wordWrap != true || !ResizeReports.windowDragged.value) {
+      _heldWrapWidth = null;
+      return bounds;
+    }
+    final held = _heldWrapWidth ??= previous?.canvasSize?.width ?? bounds.width;
+    return Size(held, bounds.height);
+  }
+
+  void _onWindowDragged() {
+    if (!ResizeReports.windowDragged.value && _heldWrapWidth != null && mounted) setState(() => _shapeStale = true);
+  }
+
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(_onFocusChange);
+    ResizeReports.windowDragged.addListener(_onWindowDragged);
     // Updates that arrived while nothing showed this editor were merged with no one to resolve
     // them; a change among them is relative to an index this state never held.
     _takeStyleIndex(state);
+    // Java still holds the table sent before this editor was last hidden: the next one is a change
+    // to it, and none at all when the layout is the same.
+    final sent = _geometryHeldByJava[state];
+    if (sent != null) {
+      _geometrySent = sent.table;
+      _geometryVersion = sent.version;
+      _geometryFullNeeded = false;
+    }
   }
 
-  /// Applies one edit Java made. A resulting length that differs from Java's means an edit was
+  /// Applies one edit Java made: [VEvent.text] put in place of [VEvent.start] to [VEvent.end],
+  /// leaving [VEvent.count] characters. A resulting length that differs from Java's means an edit was
   /// missed, so the whole document is requested instead.
-  void _onTextChange(Object? message) {
-    final change = message is Map ? message : null;
-    if (change == null || !mounted) return;
-    final start = (change['start'] as num?)?.toInt();
-    final replaced = (change['replaced'] as num?)?.toInt();
-    final inserted = change['text'] as String?;
-    final charCount = (change['charCount'] as num?)?.toInt();
-    if (start == null || replaced == null || inserted == null) return;
+  void _onTextChange(VEvent change) {
+    if (!mounted) return;
+    final start = change.start;
+    final end = change.end;
+    final inserted = change.text;
+    final charCount = change.count;
+    if (start == null || end == null || inserted == null) return;
+    final replaced = end - start;
     final current = state.text ?? '';
     if (start < 0 || replaced < 0 || start + replaced > current.length) {
       _requestText();
@@ -182,6 +217,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _requestText();
       return;
     }
+    noteTextEdit(current, updated, start, replaced, inserted);
     state.text = updated;
     // Carry the styling across the edit now: until Java's next frame, painting the new text against
     // the old offsets shifts every run past the edit.
@@ -245,6 +281,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       _splicedCaretOffsets = null;
       _splicedSelectionRanges = null;
     }
+    _shapeStale = true;
     super.setValue(value);
   }
 
@@ -265,18 +302,24 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   @override
   void dispose() {
     _geometryTimer?.cancel();
+    final sent = _geometrySent;
+    _geometryHeldByJava[state] =
+        sent == null || _geometryFullNeeded ? null : (table: sent, version: _geometryVersion);
     _composedInput.detach();
     setCanvasEditorFocus(this, false);
     _focusNode.removeListener(_onFocusChange);
+    ResizeReports.windowDragged.removeListener(_onWindowDragged);
     _focusNode.dispose();
     _caretBlinkTimer?.cancel();
     super.dispose();
   }
 
+  /// A parent's rebuild hands this widget down again unchanged: the shape still holds unless the
+  /// widget now shows another StyledText. What Java sends arrives through [setValue].
   @override
-  void extraSetState() {
-    super.extraSetState();
-    _shapeStale = true;
+  void didUpdateWidget(covariant T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (VRegistry.keyOf(widget.value) != VRegistry.keyOf(oldWidget.value)) _shapeStale = true;
   }
 
   bool get _focused => _focusNode.hasFocus;
@@ -441,6 +484,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ((state.renderer?.ascent ?? 0) + (state.renderer?.descent ?? 0)).toDouble();
 
     final previousShape = _shape;
+    final canvas = _canvasSize(previousShape);
     final shape = TextShape(
       text,
       Offset((state.leftMargin ?? 0).toDouble(), (state.topMargin ?? 0).toDouble()),
@@ -448,7 +492,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       null,
       caretInfo,
       state.wordWrap ?? false,
-      getBounds(),
+      canvas,
       state.editable ?? false,
       state.id,
       null,
@@ -541,10 +585,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// What a decoded entry also depends on besides its own fields.
   Object? _paletteBasis;
 
-  void _checkPaletteBasis() {
+  /// Forgets the decoded entries when what they depend on changed, and says whether it did.
+  bool _checkPaletteBasis() {
     final basis = (_getDefaultTextStyle(), _textColor, _linkForeground);
-    if (basis != _paletteBasis || _paletteByContent.length > 512) _paletteByContent.clear();
+    final changed = basis != _paletteBasis;
+    if (changed || _paletteByContent.length > 512) _paletteByContent.clear();
     _paletteBasis = basis;
+    return changed;
   }
 
   /// Rebuilt only when an input changed; every input arrives as a new object when it changes, so
@@ -552,7 +599,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   TextEditingState _editingStateFor(String shownText) {
     final styles = state.styles;
     final styleIndex = _splicedStyleIndex ?? state.styleIndex;
-    final defaultStyle = styles == null || styles.isEmpty ? _stableDefaultStyle() : null;
+    // Styled runs inherit the default style too: a font change re-derives them even when the
+    // palette is the same object, as it stays in a large document.
+    final defaultStyle = _stableDefaultStyle();
     final held = _heldEditingState;
     if (held != null &&
         identical(held.renderer, state.renderer) &&
@@ -593,6 +642,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     final styleIndex = _splicedStyleIndex ?? state.styleIndex;
     final banded = styleIndex != null && styleIndex.length > 1;
     List<StyleRange> characterRanges = [];
+    final previous = _heldEditingState?.editingState.characterRanges;
+    var reused = 0;
+    var inOrder = true;
+    var lastStart = -1;
 
     if (styles != null && styles.isNotEmpty) {
       final count =
@@ -600,12 +653,13 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
 
       // Decoded once per palette entry and kept while the palette is: the paint cache recognises a
       // rasterised run by the identity of its TextStyle.
-      final samePalette = identical(_paletteSource, styles) && _paletteDecoded != null;
+      final basisChanged = _checkPaletteBasis();
+      final samePalette =
+          identical(_paletteSource, styles) && _paletteDecoded != null && !basisChanged;
       final decoded = samePalette
           ? _paletteDecoded!
           : (_paletteDecoded = List<_PaletteStyle?>.filled(styles.length, null));
       _paletteSource = styles;
-      if (!samePalette) _checkPaletteBasis();
 
       for (int i = 0; i < count; i++) {
         final named = banded ? styleIndex![1 + 3 * i] : i;
@@ -637,9 +691,33 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
           start = vRange.start;
           length = vRange.length;
         }
+        final shownStart = _delimiters.toShown(start);
+        final shownEnd = _delimiters.toShown(start + length);
+        if (shownStart < lastStart) inOrder = false;
+        lastStart = shownStart;
+        // The run the last build made here, while it still matches: an edit moves only the runs
+        // after it, so typing allocates for those alone.
+        final reuse = previous != null && reused < previous.length ? previous[reused] : null;
+        if (reuse != null &&
+            reuse.start == shownStart &&
+            reuse.end == shownEnd &&
+            identical(reuse.style, entry.style) &&
+            identical(reuse.borderColor, entry.borderColor) &&
+            identical(reuse.underlineColor, entry.underlineColor) &&
+            identical(reuse.strikeoutColor, entry.strikeoutColor) &&
+            reuse.underlineStyle == entry.underlineStyle &&
+            reuse.borderStyle == entry.borderStyle &&
+            reuse.glyphWidth == entry.glyphWidth &&
+            reuse.paintsStrikeout == entry.paintsStrikeout &&
+            reuse.rise == entry.rise) {
+          characterRanges.add(reuse);
+          reused++;
+          continue;
+        }
+        reused = previous?.length ?? 0;
         characterRanges.add(StyleRange(
-          start: _delimiters.toShown(start),
-          end: _delimiters.toShown(start + length),
+          start: shownStart,
+          end: shownEnd,
           style: entry.style,
           underlineStyle: entry.underlineStyle,
           borderStyle: entry.borderStyle,
@@ -657,7 +735,8 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       );
     }
 
-    characterRanges.sort((a, b) => a.start.compareTo(b.start));
+    // Java sends the runs in order; only an index out of order needs sorting.
+    if (!inOrder) characterRanges.sort((a, b) => a.start.compareTo(b.start));
 
     characterRanges = dedupeSortedRanges(characterRanges);
 
@@ -1081,6 +1160,10 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   double? _geometrySentBandBottom;
   GeometryTable? _geometrySent;
 
+  /// The table Java holds for an editor no state shows, kept on the editor's value, which outlives
+  /// the states that show it.
+  static final Expando<({GeometryTable table, int version})> _geometryHeldByJava = Expando();
+
   /// Comparing the widget's text style is expensive, so layout keys carry a token for it instead. The
   /// layout cache is shared by every StyledText, so the token stands for the style's value: equal
   /// styles share a token, and with it the lines another editor already laid out; any other style,
@@ -1221,8 +1304,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         ..float64(splice.yDelta);
     }
     w.varint(rows.length);
+    final writer = GeometryRowWriter(w);
     for (final row in rows) {
-      row.writeWire(w);
+      writer.write(row);
     }
   }
 
@@ -1530,11 +1614,19 @@ class _VerticalMetrics {
   static Expando<Object> _ofStyle = Expando();
   static final Object _none = Object();
 
+  /// The same by the style's value: a font change makes every style anew, and zooming back makes
+  /// styles equal to ones measured before.
+  static final Map<TextStyle, Object> _ofEqualStyle = {};
+
   static _VerticalMetrics? of(TextStyle style) {
-    final known = _ofStyle[style];
-    if (known != null) return known is _VerticalMetrics ? known : null;
+    final known = _ofStyle[style] ?? _ofEqualStyle[style];
+    if (known != null) {
+      _ofStyle[style] = known;
+      return known is _VerticalMetrics ? known : null;
+    }
     final metrics = _measure(style);
-    _ofStyle[style] = metrics ?? _none;
+    if (_ofEqualStyle.length >= 512) _ofEqualStyle.clear();
+    _ofStyle[style] = _ofEqualStyle[style] = metrics ?? _none;
     return metrics;
   }
 
@@ -1552,6 +1644,7 @@ class _VerticalMetrics {
   }
 
   static _VerticalMetrics? _measure(TextStyle style) {
+    TextShape.debugStylesMeasured++;
     // As a run inside a line, and as a line's own style: both have to agree.
     final asRoot = _laidOut(TextSpan(text: 'x', style: style));
     final reference = _laidOut(TextSpan(children: [TextSpan(text: 'x', style: style)]));
@@ -1699,6 +1792,60 @@ final Map<_LineLayoutKey, _LineLayout> _lineLayoutCache = {};
 int _lineLayoutCacheChars = 0;
 const int _lineLayoutCacheCharBudget = 200000;
 
+/// Every change to [_lineLayoutCache], as the text whose entry came or went, numbered from
+/// [_layoutCacheLogStart]. A lookup answers as it did while no entry of its text has come or gone
+/// since, since an entry that matches has the same text.
+final List<String> _layoutCacheLog = [];
+int _layoutCacheLogStart = 0;
+const int _layoutCacheLogLimit = 4096;
+
+/// The number the next change to [_lineLayoutCache] is logged under.
+int get _layoutCacheSeq => _layoutCacheLogStart + _layoutCacheLog.length;
+
+/// A line's length and a few of its characters: the same text always gives the same number, and
+/// lines of one length, which code is full of, mostly do not; cheaper than hashing the line.
+int _textFingerprint(String text) {
+  final n = text.length;
+  if (n == 0) return 0;
+  var h = (n * 31 + text.codeUnitAt(n >> 2)) & 0x3FFFFFFF;
+  h = (h * 31 + text.codeUnitAt(n >> 1)) & 0x3FFFFFFF;
+  h = (h * 31 + text.codeUnitAt((n * 3) >> 2)) & 0x3FFFFFFF;
+  return (h * 31 + text.codeUnitAt(n - 1)) & 0x3FFFFFFF;
+}
+
+void _noteLayoutCacheChange(String text) {
+  _layoutCacheLog.add(text);
+  if (_layoutCacheLog.length > _layoutCacheLogLimit) {
+    final dropped = _layoutCacheLog.length - _layoutCacheLogLimit ~/ 2;
+    _layoutCacheLog.removeRange(0, dropped);
+    _layoutCacheLogStart += dropped;
+  }
+}
+
+/// The texts whose entries came or went since change [seq], or null when that is further back than
+/// the log reaches.
+_ChangedTexts? _layoutTextsChangedSince(int seq) {
+  if (seq < _layoutCacheLogStart) return null;
+  final changed = _ChangedTexts();
+  for (var k = seq - _layoutCacheLogStart; k < _layoutCacheLog.length; k++) {
+    changed.add(_layoutCacheLog[k]);
+  }
+  return changed;
+}
+
+/// Texts, with their [_textFingerprint]s, so that most lines are told apart from them without
+/// hashing the whole line.
+class _ChangedTexts {
+  final Set<int> _fingerprints = {};
+  final Set<String> _texts = {};
+
+  void add(String text) {
+    if (_texts.add(text)) _fingerprints.add(_textFingerprint(text));
+  }
+
+  bool contains(String text) => _fingerprints.contains(_textFingerprint(text)) && _texts.contains(text);
+}
+
 void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
   _watchSystemFonts();
   // The replaced entry stops counting, so a re-inserted line is charged to the budget once.
@@ -1709,13 +1856,17 @@ void _cacheLineLayout(_LineLayoutKey key, _LineLayout layout) {
     layout.caretX ??= replaced.caretX;
   }
   _lineLayoutCache[key] = layout;
+  // A hit put back at the young end answers as it did; only a new or different layout is a change.
+  if (!identical(replaced, layout)) _noteLayoutCacheChange(key.lineText);
   // The key's text stays in memory too, at about a quarter of a caret position per character.
   layout.charged = layout.cost + key.lineText.length ~/ 4;
   _lineLayoutCacheChars += layout.charged;
   while (_lineLayoutCacheChars > _lineLayoutCacheCharBudget &&
       _lineLayoutCache.length > 1) {
-    final evicted = _lineLayoutCache.remove(_lineLayoutCache.keys.first);
+    final eldest = _lineLayoutCache.keys.first;
+    final evicted = _lineLayoutCache.remove(eldest);
     if (evicted != null) _lineLayoutCacheChars -= evicted.charged;
+    _noteLayoutCacheChange(eldest.lineText);
   }
 }
 
@@ -1795,30 +1946,56 @@ void _cachePaintedLine(_PaintedLineKey key, TextPainter painter) {
   }
 }
 
-/// The document's lines and line starts, memoised by the text's identity. Two slots, because an
-/// edit is laid out against the text before it (TextShape._lineDonor).
-String? _lineCacheText;
-List<String>? _lineCacheLines;
-List<int>? _lineCacheStarts;
-String? _lineCachePrevText;
-List<String>? _lineCachePrevLines;
-List<int>? _lineCachePrevStarts;
+/// The document's lines and line starts, memoised by the text's identity, for the texts used last:
+/// an edit is laid out against the text before it (TextShape._lineDonor), and each view of a document
+/// split in two holds a text of its own, before the edit and after it.
+final List<_LineCacheEntry> _lineCache = [];
+const _lineCacheEntries = 4;
 
-void _fillLineCache(String text) {
-  if (identical(_lineCacheText, text) && _lineCacheLines != null) return;
-  if (identical(_lineCachePrevText, text) && _lineCachePrevLines != null) {
-    final t = _lineCacheText, l = _lineCacheLines, st = _lineCacheStarts;
-    _lineCacheText = _lineCachePrevText;
-    _lineCacheLines = _lineCachePrevLines;
-    _lineCacheStarts = _lineCachePrevStarts;
-    _lineCachePrevText = t;
-    _lineCachePrevLines = l;
-    _lineCachePrevStarts = st;
-    return;
+/// How many times a whole text was split into lines, for tests asserting what an edit costs.
+@visibleForTesting
+int debugWholeTextSplits = 0;
+
+class _LineCacheEntry {
+  _LineCacheEntry(this.text, this.lines, this.starts);
+
+  final String text;
+  final List<String> lines;
+  final List<int> starts;
+}
+
+/// The entry held for [text], made the most recently used; null when none is.
+_LineCacheEntry? _heldLines(String text) {
+  for (var i = 0; i < _lineCache.length; i++) {
+    final entry = _lineCache[i];
+    if (!identical(entry.text, text)) continue;
+    if (i != 0) {
+      _lineCache
+        ..removeAt(i)
+        ..insert(0, entry);
+    }
+    return entry;
   }
-  _lineCachePrevText = _lineCacheText;
-  _lineCachePrevLines = _lineCacheLines;
-  _lineCachePrevStarts = _lineCacheStarts;
+  return null;
+}
+
+void _holdLines(_LineCacheEntry entry) {
+  _lineCache.insert(0, entry);
+  if (_lineCache.length > _lineCacheEntries) _lineCache.removeLast();
+}
+
+_LineCacheEntry _fillLineCache(String text) {
+  final held = _heldLines(text);
+  if (held != null) return held;
+  // Another view of the same document holds the same text in a string of its own.
+  for (final entry in _lineCache) {
+    if (entry.text.length == text.length && entry.text == text) {
+      final same = _LineCacheEntry(text, entry.lines, entry.starts);
+      _holdLines(same);
+      return same;
+    }
+  }
+  debugWholeTextSplits++;
   final lines = text.split('\n');
   final starts = List<int>.filled(lines.length, 0);
   int at = 0;
@@ -1826,20 +2003,90 @@ void _fillLineCache(String text) {
     starts[i] = at;
     at += lines[i].length + 1;
   }
-  _lineCacheText = text;
-  _lineCacheLines = lines;
-  _lineCacheStarts = starts;
+  final entry = _LineCacheEntry(text, lines, starts);
+  _holdLines(entry);
+  return entry;
 }
 
-List<String> _linesOf(String text) {
-  _fillLineCache(text);
-  return _lineCacheLines!;
+/// The columns [line] takes, each tab reaching the next stop of [tabColumns]. Tab to tab rather
+/// than character by character: on the web each character read is a call out to the string, and
+/// this runs for every line out of view on every keystroke.
+@visibleForTesting
+int columnsOf(String line, int tabColumns) {
+  int columns = 0;
+  int from = 0;
+  while (true) {
+    final tab = line.indexOf('\t', from);
+    if (tab < 0) return columns + line.length - from;
+    columns = ((columns + tab - from) ~/ tabColumns + 1) * tabColumns;
+    from = tab + 1;
+  }
 }
 
-List<int> _lineStartsOf(String text) {
-  _fillLineCache(text);
-  return _lineCacheStarts!;
+/// Takes [after], which is [before] with [replaced] characters at [start] replaced by [inserted],
+/// into the line cache from [before]'s lines when the cache holds them: the lines the edit did not
+/// reach are reused and only the ones it did are split again, where splitting [after] would read
+/// the whole document on every keystroke.
+void noteTextEdit(String before, String after, int start, int replaced, String inserted) {
+  final held = _heldLines(before);
+  if (held == null) return;
+  final lines = held.lines;
+  final starts = held.starts;
+  final end = start + replaced;
+  if (start < 0 || end > before.length) return;
+  final first = _lineAt(starts, start);
+  final last = _lineAt(starts, end);
+  final firstStart = starts[first];
+  final lastEnd = starts[last] + lines[last].length;
+  final middle = (before.substring(firstStart, start) + inserted + before.substring(end, lastEnd)).split('\n');
+  final delta = inserted.length - replaced;
+  final newLines = List<String>.filled(lines.length - (last - first + 1) + middle.length, '');
+  final newStarts = List<int>.filled(newLines.length, 0);
+  newLines.setRange(0, first, lines);
+  newStarts.setRange(0, first, starts);
+  var at = firstStart;
+  for (int k = 0; k < middle.length; k++) {
+    newLines[first + k] = middle[k];
+    newStarts[first + k] = at;
+    at += middle[k].length + 1;
+  }
+  final tail = first + middle.length;
+  newLines.setRange(tail, newLines.length, lines, last + 1);
+  for (int k = last + 1, j = tail; k < lines.length; k++, j++) {
+    newStarts[j] = starts[k] + delta;
+  }
+  _holdLines(_LineCacheEntry(after, newLines, newStarts));
 }
+
+/// The line [offset] falls on, by its start among [starts].
+int _lineAt(List<int> starts, int offset) {
+  int lo = 0, hi = starts.length - 1;
+  while (lo < hi) {
+    final mid = (lo + hi + 1) >> 1;
+    if (starts[mid] <= offset) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return lo;
+}
+
+/// The lines the line cache holds for [text], or null when it holds none: a test seam.
+@visibleForTesting
+List<String>? cachedLinesFor(String text) => _heldLines(text)?.lines;
+
+/// Fills the line cache for [text] the way a shape does: a test seam.
+@visibleForTesting
+List<String> fillLineCacheFor(String text) => _linesOf(text);
+
+/// [cachedLinesFor]'s line starts.
+@visibleForTesting
+List<int>? cachedLineStartsFor(String text) => _heldLines(text)?.starts;
+
+List<String> _linesOf(String text) => _fillLineCache(text).lines;
+
+List<int> _lineStartsOf(String text) => _fillLineCache(text).starts;
 
 /// Perf counters for every StyledText, reset on read; exposed as `window.evolveTest.styledTextPerf()`.
 Map<String, dynamic> styledTextPerfSnapshot() {
@@ -1856,12 +2103,22 @@ Map<String, dynamic> styledTextPerfSnapshot() {
     'linesInLastPaint': TextShape.debugPaintedLines.length < 2
         ? 0
         : TextShape.debugPaintedLines[1] - TextShape.debugPaintedLines[0] + 1,
+    'geometryMs': StyledTextImpl.debugGeometryMicros / 1000.0,
+    'geometryCalls': StyledTextImpl.debugGeometryCalls,
+    'geometryRowsReused': TextShape.debugGeometryRowsReused,
+    'rebuildMs': StyledTextImpl.debugRebuildMicros / 1000.0,
+    'rebuildCalls': StyledTextImpl.debugRebuildCalls,
     'marksEnabled': perfMarksEnabled,
   };
+  StyledTextImpl.debugGeometryMicros = 0;
+  StyledTextImpl.debugGeometryCalls = 0;
+  StyledTextImpl.debugRebuildMicros = 0;
+  StyledTextImpl.debugRebuildCalls = 0;
   TextShape.debugDrawCalls = 0;
   TextShape.debugDrawMicros = 0;
   TextShape.debugLineTopsMicros = 0;
   TextShape.debugLayoutLineCalls = 0;
+  TextShape.debugGeometryRowsReused = 0;
   debugLineLayoutHits = 0;
   debugLineKeyMisses = 0;
   debugLineCaretMisses = 0;
@@ -1890,9 +2147,13 @@ void debugResetLineLayoutCache() {
 void _dropLineCaches() {
   _fontEpoch++;
   _lineLayoutCache.clear();
+  // Every entry went: no lookup made before answers as it did.
+  _layoutCacheLogStart += _layoutCacheLog.length + 1;
+  _layoutCacheLog.clear();
   _lineLayoutCacheChars = 0;
   _paintedLineCache.clear();
   _VerticalMetrics._ofStyle = Expando();
+  _VerticalMetrics._ofEqualStyle.clear();
 }
 
 /// Moves on whenever the line caches are dropped because the fonts changed: what a shape measured
@@ -2040,9 +2301,10 @@ class TextShape extends Shape {
     _rowHeightValue = other._rowHeightValue;
   }
 
-  /// Everything a line's measured height depends on; shapes that agree on it share measurements.
+  /// Everything a line's measured height depends on but the text; shapes that agree on it and on
+  /// the text share measurements. The text is compared rather than hashed: a web string's hash reads
+  /// every character, and a document's text is a new string on every keystroke.
   late final int layoutSignature = Object.hash(
-      identityHashCode(text),
       _frameSignature,
       editingState?.layoutSignatureFor(style) ?? 0);
 
@@ -2067,8 +2329,12 @@ class TextShape extends Shape {
     if (other._measuredEpoch != _fontEpoch) return;
     if (other._frameSignature == _frameSignature) {
       _tallestLine = math.max(_tallestLine, other._tallestLine);
+      // The last shape that described the document: one that was replaced before it did hands on
+      // its own donor. As for [_lineDonor], one generation back is all that is held.
+      _geometryDonor = other._geometryMemo != null ? other : other._geometryDonor;
+      other._geometryDonor = null;
     }
-    if (other.layoutSignature == layoutSignature) {
+    if (other.layoutSignature == layoutSignature && other.text == text) {
       // Rows that a measured line outgrew are placed again, at the height that fits it.
       if (!other.rowsOutgrown) {
         _lineTopsCache = other._lineTopsCache;
@@ -2239,13 +2505,22 @@ class TextShape extends Shape {
   _LineLayout? _peekLine(int lineIndex, String lineText) {
     final memo = _measuredLineCache;
     if (memo != null && lineIndex >= 0 && lineIndex < memo.length && memo[lineIndex] != null) {
+      _peekedFrom = _GeometryMemo.ownLayout;
       return memo[lineIndex];
     }
     final donated = _donatedLine(lineIndex, lineText, false);
-    if (donated != null) return donated;
+    if (donated != null) {
+      _peekedFrom = _GeometryMemo.donatedLayout;
+      return donated;
+    }
     final props = _linePropsFor(lineIndex);
-    return _lineLayoutCache[_layoutKeyFor(lineIndex, lineText, props.align, _lineMaxWidth(props.layoutIndent))];
+    final cached = _lineLayoutCache[_layoutKeyFor(lineIndex, lineText, props.align, _lineMaxWidth(props.layoutIndent))];
+    _peekedFrom = cached != null ? _GeometryMemo.cachedLayout : _GeometryMemo.estimated;
+    return cached;
   }
+
+  /// Where the last [_peekLine] found its answer, as a [_GeometryMemo] kind.
+  int _peekedFrom = _GeometryMemo.notOutOfView;
 
   /// What [lineIndex]'s layout is cached under.
   _LineLayoutKey _layoutKeyFor(int lineIndex, String lineText, TextAlign align, double maxWidth) => _LineLayoutKey(
@@ -2264,17 +2539,22 @@ class TextShape extends Shape {
   /// font without pixel tab stops, an estimate otherwise, until the line is laid out.
   double _estimatedWidth(String lineText) {
     final advance = _columnAdvance ??= _measureRun('0' * 10, style) / 10;
-    final tabColumns = tabs > 0 ? tabs : 4;
-    int columns = 0;
-    for (int k = 0; k < lineText.length; k++) {
-      columns = lineText.codeUnitAt(k) == 0x09 ? (columns ~/ tabColumns + 1) * tabColumns : columns + 1;
-    }
-    return columns * advance;
+    return columnsOf(lineText, tabs > 0 ? tabs : 4) * advance;
   }
+
+  /// What a line without properties of its own is laid out with: the same for every such line.
+  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})?
+      _widgetLineProps;
 
   ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
       _buildLinePropsFor(int lineIndex) {
     final props = editingState?.lineProperties[lineIndex];
+    if (props == null) return _widgetLineProps ??= _linePropsOf(null);
+    return _linePropsOf(props);
+  }
+
+  ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
+      _linePropsOf(LineProperties? props) {
     final indent = props?.indent ?? widgetLine.indent ?? 0;
     final wrapIndent = props?.wrapIndent ?? widgetLine.wrapIndent ?? 0;
     final align = _mapSwtAlignmentToTextAlign(props?.alignment ?? widgetLine.alignment ?? 16384);
@@ -2344,6 +2624,18 @@ class TextShape extends Shape {
     final tops = List<double>.filled(lines.length + 1, 0);
     final memo = _measuredLineCache;
     double y = 0;
+    if (_uniformRows && !(editingState?.lineProperties.values.any((p) => (p.verticalIndent ?? 0) != 0) ?? false)) {
+      // Every line one row with no indent above it: the same sum, without asking each line. A line
+      // with properties of its own, such as the current line's background, has none either.
+      final row = _rowHeight;
+      for (int i = 0; i < lines.length; i++) {
+        tops[i] = y;
+        y += row;
+      }
+      tops[lines.length] = y;
+      debugLineTopsMicros += watch.elapsedMicroseconds;
+      return tops;
+    }
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
       final props = _linePropsFor(i);
@@ -2851,6 +3143,173 @@ class TextShape extends Shape {
   Map<String, dynamic>? computeGeometry({double? visibleTop, double? visibleBottom}) =>
       computeGeometryTable(visibleTop: visibleTop, visibleBottom: visibleBottom).toMap();
 
+  /// What the last geometry pass worked out for the lines it described out of view.
+  _GeometryMemo? _geometryMemo;
+
+  /// The shape this one replaced, whose [_geometryMemo] its first pass can take lines from.
+  TextShape? _geometryDonor;
+
+  /// How this shape's next geometry pass can take lines from the last pass, its own or the shape's
+  /// it replaced; null when it can take none.
+  _GeometryReuse? _geometryReuse() {
+    if (!_uniformRows) return null;
+    final own = _geometryMemo;
+    final donor = own != null ? this : _geometryDonor;
+    _geometryDonor = null;
+    final memo = own ?? donor?._geometryMemo;
+    if (donor == null || memo == null) return null;
+    if (memo.epoch != _fontEpoch || memo.canvasWidth != canvasSize?.width || !identical(memo.style, style)) {
+      return null;
+    }
+    final changed = _layoutTextsChangedSince(memo.seq);
+    if (changed == null) return null;
+    final count = _lineStarts.length;
+    if (identical(donor, this)) return _GeometryReuse(donor, memo, count, 0, 0, Uint8List(count), changed);
+    if (donor._frameSignature != _frameSignature || !donor._uniformRows) return null;
+    final (prefix, suffix) = _sameLinesAs(donor);
+    final dirty = Uint8List(count);
+    for (var l = prefix; l < count - suffix; l++) {
+      dirty[l] = 1;
+    }
+    final reuse = _GeometryReuse(donor, memo, prefix, suffix, count - donor._lineStarts.length, dirty, changed);
+    _markRunChanges(reuse);
+    _markLinePropertyChanges(reuse);
+    return reuse;
+  }
+
+  /// How many lines from the start, and from the end, are the same text in [donor] and here.
+  (int, int) _sameLinesAs(TextShape donor) {
+    if (identical(_lineDonor, donor)) {
+      if (_donorPrefix < 0) _matchDonorLines(donor);
+      return (_donorPrefix, _donorSuffix);
+    }
+    if (donor.text == text) return (_lineStarts.length, 0);
+    final theirs = _linesOf(donor.text);
+    final mine = _linesOf(text);
+    final limit = math.min(mine.length, theirs.length);
+    var prefix = 0;
+    while (prefix < limit && mine[prefix] == theirs[prefix]) {
+      prefix++;
+    }
+    var suffix = 0;
+    while (suffix < limit - prefix && mine[mine.length - 1 - suffix] == theirs[theirs.length - 1 - suffix]) {
+      suffix++;
+    }
+    return (prefix, suffix);
+  }
+
+  /// Marks the lines whose runs differ from the donor's, in one pass over both: runs before the edit
+  /// keep their offsets, runs after it move by what the edit added.
+  void _markRunChanges(_GeometryReuse reuse) {
+    final donor = reuse.donor;
+    final oldRuns = donor.editingState?.characterRanges ?? const <StyleRange>[];
+    final newRuns = editingState?.characterRanges ?? const <StyleRange>[];
+    if (identical(oldRuns, newRuns) && donor.text == text) return;
+    final oldStarts = donor._lineStarts;
+    final newStarts = _lineStarts;
+    final oldCount = oldStarts.length;
+    final newCount = newStarts.length;
+    // Old offsets below [head] are on lines before the edit; from [tail] on, on lines after it.
+    final head = reuse.prefix < oldCount ? oldStarts[reuse.prefix] : donor.text.length + 1;
+    final tail = reuse.suffix > 0 ? oldStarts[oldCount - reuse.suffix] : donor.text.length + 1;
+    final shift = reuse.suffix > 0 ? newStarts[newCount - reuse.suffix] - tail : 0;
+    void markOld(StyleRange run) {
+      final from = _lineAt(oldStarts, run.start);
+      final to = _lineAt(oldStarts, math.max(run.start, run.end - 1));
+      for (var l = from; l <= to; l++) {
+        final mine = reuse.ownLineOf(l, oldCount);
+        if (mine >= 0) reuse.dirty[mine] = 1;
+      }
+    }
+
+    void markNew(StyleRange run) {
+      final to = _lineAt(newStarts, math.max(run.start, run.end - 1));
+      for (var l = _lineAt(newStarts, run.start); l <= to; l++) {
+        reuse.dirty[l] = 1;
+      }
+    }
+
+    var i = 0, j = 0;
+    while (i < oldRuns.length || j < newRuns.length) {
+      final o = i < oldRuns.length ? oldRuns[i] : null;
+      final n = j < newRuns.length ? newRuns[j] : null;
+      if (o != null && o.end <= o.start) {
+        i++;
+        continue;
+      }
+      if (n != null && n.end <= n.start) {
+        j++;
+        continue;
+      }
+      if (o == null) {
+        markNew(n!);
+        j++;
+        continue;
+      }
+      // Where the old run is now: one across the edit keeps its start and ends where the text after
+      // the edit has moved its end; one ending or starting inside the edit is nowhere.
+      final int start, end;
+      if (o.end <= head) {
+        start = o.start;
+        end = o.end;
+      } else if (o.start >= tail) {
+        start = o.start + shift;
+        end = o.end + shift;
+      } else if (o.start < head && o.end > tail) {
+        start = o.start;
+        end = o.end + shift;
+      } else {
+        markOld(o);
+        i++;
+        continue;
+      }
+      if (n == null) {
+        markOld(o);
+        i++;
+        continue;
+      }
+      if (start == n.start &&
+          end == n.end &&
+          identical(o.style, n.style) &&
+          o.glyphWidth == n.glyphWidth &&
+          o.rise == n.rise &&
+          o.borderStyle == n.borderStyle) {
+        i++;
+        j++;
+        continue;
+      }
+      final oldFirst = start <= n.start, newFirst = n.start <= start;
+      if (oldFirst) {
+        markOld(o);
+        i++;
+      }
+      if (newFirst) {
+        markNew(n);
+        j++;
+      }
+    }
+  }
+
+  /// Marks the lines whose own properties differ from the donor's in what lays a line out.
+  void _markLinePropertyChanges(_GeometryReuse reuse) {
+    final donor = reuse.donor;
+    final oldProps = donor.editingState?.lineProperties ?? const <int, LineProperties>{};
+    final newProps = editingState?.lineProperties ?? const <int, LineProperties>{};
+    final oldCount = donor._lineStarts.length;
+    bool same(int theirs, int mine) =>
+        donor._linePropsFor(theirs) == _linePropsFor(mine) &&
+        const ListEquality<int>().equals(donor._tabStopsFor(theirs), _tabStopsFor(mine));
+    for (final theirs in oldProps.keys) {
+      final mine = reuse.ownLineOf(theirs, oldCount);
+      if (mine >= 0 && mine < reuse.dirty.length && !same(theirs, mine)) reuse.dirty[mine] = 1;
+    }
+    for (final mine in newProps.keys) {
+      if (mine < 0 || mine >= reuse.dirty.length) continue;
+      final theirs = reuse.donorLineOf(mine);
+      if (theirs < 0 || !same(theirs, mine)) reuse.dirty[mine] = 1;
+    }
+  }
+
   GeometryTable computeGeometryTable({double? visibleTop, double? visibleBottom}) {
     _forgetStaleMeasurements();
     final lines = _lines;
@@ -2862,8 +3321,48 @@ class TextShape extends Shape {
     double currentY = 0;
     double maxWidth = 0;
     int docOffset = 0;
+    final reuse = wholeDocument ? null : _geometryReuse();
+    final memo = _GeometryMemo(lines.length, _layoutCacheSeq, _fontEpoch, canvasSize?.width, style);
+    final starts = _lineStarts;
+    final textLength = text.length;
+    final ownLayouts = _measuredLineCache;
 
     for (int i = 0; i < lines.length; i++) {
+      // A line out of view that nothing it is made of has changed for since the last pass is
+      // described as that pass described it, without asking anything of the line.
+      final theirs = reuse?.donorLineOf(i) ?? -1;
+      if (theirs >= 0) {
+        final last = reuse!.memo;
+        final kind = last.kind[theirs];
+        final vIndent = last.vIndent[theirs];
+        final length = (i + 1 < starts.length ? starts[i + 1] - 1 : textLength) - starts[i];
+        if (kind != _GeometryMemo.notOutOfView &&
+            !rowIsVisible(currentY, vIndent + _rowHeight) &&
+            reuse.answersAsBefore(this, i, theirs, kind, last.source[theirs], ownLayouts) &&
+            !reuse.textChanged(lines[i])) {
+          final width = last.width[theirs];
+          final x = last.x[theirs];
+          maxWidth = math.max(maxWidth, x + width);
+          visual.add(GeometryRow(
+            i,
+            docOffset,
+            docOffset + length,
+            _roundPx(x),
+            _roundPx(currentY),
+            _roundPx(width),
+            _roundPx(vIndent + _rowHeight),
+            vIndent != 0 ? vIndent : null,
+            null,
+          ));
+          memo.remember(i, identical(reuse.donor, this) || kind != _GeometryMemo.ownLayout ? kind : _GeometryMemo.donatedLayout,
+              last.source[theirs], width, x, vIndent);
+          debugGeometryRowsReused++;
+          currentY += vIndent + _rowHeight;
+          docOffset += length + 1;
+          continue;
+        }
+      }
+
       final line = lines[i];
 
       final props = _linePropsFor(i);
@@ -2872,7 +3371,8 @@ class TextShape extends Shape {
 
       if (!wholeDocument && _uniformRows && !rowIsVisible(currentY, vIndent + _rowHeight)) {
         // Out of view: its width as far as known, without laying the line out for it.
-        final width = _peekLine(i, line)?.width ?? _estimatedWidth(line);
+        final peeked = _peekLine(i, line);
+        final width = peeked?.width ?? _estimatedWidth(line);
         final x = _lineOriginX(
             props.indent, props.align, width, canvasSize == null ? double.infinity : maxW);
         maxWidth = math.max(maxWidth, x + width);
@@ -2887,6 +3387,7 @@ class TextShape extends Shape {
           vIndent != 0 ? vIndent : null,
           null,
         ));
+        memo.remember(i, _peekedFrom, peeked, width, x, vIndent);
         currentY += vIndent + _rowHeight;
         docOffset += line.length + 1;
         continue;
@@ -3005,6 +3506,7 @@ class TextShape extends Shape {
       docOffset += line.length + 1;
     }
 
+    if (!wholeDocument) _geometryMemo = memo;
     return GeometryTable(text.length, _roundPx(maxWidth), _roundPx(currentY), visual);
   }
 
@@ -3043,6 +3545,14 @@ class TextShape extends Shape {
   @visibleForTesting
   static int debugLayoutLineCalls = 0;
 
+  /// Rows a geometry pass took from the pass before without asking anything of their line.
+  @visibleForTesting
+  static int debugGeometryRowsReused = 0;
+
+  /// Styles whose vertical metrics were measured, a hundred or so layouts each.
+  @visibleForTesting
+  static int debugStylesMeasured = 0;
+
   @visibleForTesting
   static int debugLineTopsMicros = 0;
   @visibleForTesting
@@ -3054,6 +3564,11 @@ class TextShape extends Shape {
     if (editingState == null) return 0;
     final memo = _rangesTokenCache ??= List<int?>.filled(_lineStarts.length + 1, null);
     if (lineIndex < memo.length && memo[lineIndex] != null) return memo[lineIndex]!;
+    final donated = _donatedRangesToken(lineIndex, lineLength);
+    if (donated != null) {
+      if (lineIndex < memo.length) memo[lineIndex] = donated;
+      return donated;
+    }
     final ranges = lineIndex < _rangesByLine.length ? _rangesByLine[lineIndex] : const <StyleRange>[];
     int token = 0;
     if (ranges.isNotEmpty) {
@@ -3083,6 +3598,30 @@ class TextShape extends Shape {
   }
 
   List<int?>? _rangesTokenCache;
+
+  /// [lineIndex]'s token as the pre-edit shape worked it out, when the edit did not reach the line
+  /// and it carries the same runs: the token is made of nothing else. Every line out of view asks
+  /// for its token on each keystroke, so working them all out again was most of describing a
+  /// large document.
+  int? _donatedRangesToken(int lineIndex, int lineLength) {
+    final donor = _lineDonor;
+    if (donor == null || !identical(donor.style, style) || donor.editingState == null) return null;
+    final tokens = donor._rangesTokenCache;
+    if (tokens == null) return null;
+    if (_donorPrefix < 0) _matchDonorLines(donor);
+    final int theirs;
+    if (lineIndex < _donorPrefix) {
+      theirs = lineIndex;
+    } else if (lineIndex >= _ownLineCount - _donorSuffix) {
+      theirs = lineIndex - (_ownLineCount - _donorLineCount);
+    } else {
+      return null;
+    }
+    if (theirs < 0 || theirs >= tokens.length) return null;
+    final token = tokens[theirs];
+    if (token == null || !_sameRunsAs(donor, theirs, lineIndex, lineLength)) return null;
+    return token;
+  }
 
   /// What the line is drawn in, as a number; unlike [_rangesTokenFor] it covers colours, which a
   /// paragraph bakes in. Palette entries are named by identity.
@@ -4199,27 +4738,51 @@ class GeometryRow {
         if (vi != null) 'vi': vi,
         ...?charX,
       };
+}
+
+/// Writes rows each against the one written before it, as Java's `StyledTextHelper.readRow` reads
+/// them: lines and offsets as steps between rows, and pixels as exact hundredths, the precision the
+/// table is rounded to. A row's top is a step from the bottom of the row before and its height one
+/// from that row's height, so in an editor whose lines are one height both are zero. A pixel value
+/// that is not a whole hundredth goes as the double it is.
+class GeometryRowWriter {
+  GeometryRowWriter(this._out);
+
+  final WidgetWireWriter _out;
+  int _line = 0;
+  int _end = 0;
+  int? _x;
+  int? _bottom;
+  int? _height;
 
   /// `l s e x y w h vi`, then the character positions: `u8 0` none, `1` each one, `2` origin and
   /// advance.
-  void writeWire(WidgetWireWriter out) {
+  void write(GeometryRow row) {
+    final out = _out;
     out
-      ..int32(l)
-      ..int32(s)
-      ..int32(e)
-      ..float64(x)
-      ..float64(y)
-      ..float64(w)
-      ..float64(h)
-      ..int32(vi ?? 0);
+      ..int64(row.l - _line)
+      ..int64(row.s - _end)
+      ..int64(row.e - row.s);
+    _line = row.l;
+    _end = row.e;
+    final x = _px(row.x, _x);
+    final y = _px(row.y, _bottom);
+    _px(row.w, null);
+    final h = _px(row.h, _height);
+    _x = x;
+    _height = h;
+    _bottom = y == null || h == null ? null : y + h;
+    out.int32(row.vi ?? 0);
+    final charX = row.charX;
     final cx = charX?['cx'];
     final cxu = charX?['cxu'];
     if (cx is List) {
       out
         ..u8(1)
         ..varint(cx.length);
+      var previous = x;
       for (final v in cx) {
-        out.float64((v as num).toDouble());
+        previous = _px((v as num).toDouble(), previous);
       }
     } else if (cxu is List && cxu.length == 2) {
       out
@@ -4229,6 +4792,28 @@ class GeometryRow {
     } else {
       out.u8(0);
     }
+  }
+
+  /// Writes [v] as a step from [from] hundredths (from 0 when null), or as a double when it is not a
+  /// whole hundredth; returns its hundredths, or null for a double.
+  int? _px(double v, int? from) {
+    final n = _hundredths(v);
+    if (n == null) {
+      _out
+        ..varint(1)
+        ..float64(v);
+      return null;
+    }
+    final step = n - (from ?? 0);
+    // Even: a zigzagged step. Arithmetic, as a bitwise result is unsigned on the web.
+    _out.varint((step >= 0 ? step * 2 : -step * 2 - 1) * 2);
+    return n;
+  }
+
+  static int? _hundredths(double v) {
+    if (!v.isFinite || v.abs() > 1e12) return null;
+    final n = (v * 100).round();
+    return n / 100 == v ? n : null;
   }
 }
 
@@ -4250,8 +4835,19 @@ class _GeometrySplice {
 /// the furthest end so far enough to decide.
 @visibleForTesting
 List<StyleRange> dedupeSortedRanges(List<StyleRange> sorted) {
+  // Most documents have no run inside another: the list is kept as it is.
+  var reach = -1;
+  var nested = false;
+  for (final range in sorted) {
+    if (reach >= range.end) {
+      nested = true;
+      break;
+    }
+    if (range.end > reach) reach = range.end;
+  }
+  if (!nested) return sorted;
   final kept = <StyleRange>[];
-  int reach = -1;
+  reach = -1;
   for (final range in sorted) {
     if (reach >= range.end) continue;
     kept.add(range);
@@ -4308,42 +4904,6 @@ int _spliceEnd(int end, int start, int replaced, int inserted) {
   return end;
 }
 
-/// First element of a style index that is a change from the one held rather than a whole index.
-const int styleIndexChangeMark = -2147483648;
-
-/// [base] with a change `[mark, checksum, serial, paletteName, from, removed, inserted...]`
-/// applied, or null when it does not fit or fails its checksum.
-@visibleForTesting
-List<int>? applyStyleIndexChange(List<int> base, List<int> change) {
-  if (change.length < 6 || base.isEmpty) return null;
-  final from = change[4];
-  final removed = change[5];
-  if (from < 1 || removed < 0 || from + removed > base.length) return null;
-  // Nothing changed: the same list, so nothing that compares by identity sees a new index.
-  if (removed == 0 && change.length == 6 && change[3] == base[0]) {
-    return styleIndexChecksum(base) == change[1] ? base : null;
-  }
-  final inserted = change.length - 6;
-  final tail = base.length - from - removed;
-  final out = List<int>.filled(from + inserted + tail, 0);
-  out[0] = change[3];
-  out.setRange(1, from, base, 1);
-  out.setRange(from, from + inserted, change, 6);
-  out.setRange(from + inserted, out.length, base, from + removed);
-  return styleIndexChecksum(out) == change[1] ? out : null;
-}
-
-/// The checksum Java sends with a change. Kept below 2^30 at every step, so the arithmetic is
-/// exact in a JavaScript double as well.
-@visibleForTesting
-int styleIndexChecksum(List<int> index) {
-  var hash = index.length;
-  for (final value in index) {
-    hash = (hash * 31 + value) & 0x3FFFFFFF;
-  }
-  return hash;
-}
-
 /// [spliceOffset] for a palette index — its name, then name, start and length per run. A run the
 /// edit removed entirely is dropped.
 @visibleForTesting
@@ -4370,4 +4930,110 @@ List<int> spliceRangePairs(List<int> pairs, int start, int replaced, int inserte
     out..add(from)..add(to > from ? to - from : 0);
   }
   return out;
+}
+
+/// What a geometry pass worked out for each line it described out of view, and where the width
+/// came from, for the next pass to take over where nothing it was worked out from has changed.
+class _GeometryMemo {
+  _GeometryMemo(int lines, this.seq, this.epoch, this.canvasWidth, this.style)
+      : width = Float64List(lines),
+        x = Float64List(lines),
+        vIndent = Int32List(lines),
+        kind = Uint8List(lines),
+        source = List<Object?>.filled(lines, null);
+
+  /// Kinds of width: the line was not described out of view; this shape's own layout of it; the
+  /// replaced shape's; a layout cached for its text; its length, nothing being cached for it.
+  static const int notOutOfView = 0, ownLayout = 1, donatedLayout = 2, cachedLayout = 3, estimated = 4;
+
+  /// [_layoutCacheSeq] when the pass began, [_fontEpoch], and what every line's width depends on
+  /// for the whole document.
+  final int seq;
+  final int epoch;
+  final double? canvasWidth;
+  final TextStyle style;
+
+  final Float64List width;
+  final Float64List x;
+  final Int32List vIndent;
+  final Uint8List kind;
+  final List<Object?> source;
+
+  void remember(int line, int kind, Object? source, double width, double x, int vIndent) {
+    if (line >= this.kind.length) return;
+    this.kind[line] = kind;
+    this.source[line] = source;
+    this.width[line] = width;
+    this.x[line] = x;
+    this.vIndent[line] = vIndent;
+  }
+}
+
+/// How a geometry pass lines up with the last one: the lines both have, and those since changed.
+class _GeometryReuse {
+  _GeometryReuse(this.donor, this.memo, this.prefix, this.suffix, this.lineShift, this.dirty, this.changedTexts);
+
+  final TextShape donor;
+  final _GeometryMemo memo;
+
+  /// Lines the same text at the start and the end of both, and how many lines the edit added.
+  final int prefix, suffix, lineShift;
+
+  /// Per line here, 1 where its text, runs or properties differ from the donor's line.
+  final Uint8List dirty;
+
+  /// The texts whose cached layouts came or went since the last pass, up to change [_seenUntil].
+  final _ChangedTexts changedTexts;
+  int _seenUntil = _layoutCacheSeq;
+  bool _lost = false;
+
+  /// Whether a cached layout for a text like [line]'s came or went since the last pass, this one
+  /// included: laying out a line in view caches what a line further down may look up.
+  bool textChanged(String line) {
+    final now = _layoutCacheSeq;
+    if (now != _seenUntil) {
+      // The log dropped changes this pass has not seen: any text may have changed.
+      if (_seenUntil < _layoutCacheLogStart) _lost = true;
+      for (var k = math.max(0, _seenUntil - _layoutCacheLogStart); k < _layoutCacheLog.length; k++) {
+        changedTexts.add(_layoutCacheLog[k]);
+      }
+      _seenUntil = now;
+    }
+    return _lost || changedTexts.contains(line);
+  }
+
+  /// The donor's line [mine] is, unchanged; -1 when there is none.
+  int donorLineOf(int mine) {
+    if (mine >= dirty.length || dirty[mine] != 0) return -1;
+    if (mine < prefix) return mine;
+    if (mine >= dirty.length - suffix) return mine - lineShift;
+    return -1;
+  }
+
+  /// The line here the donor's line [theirs] is, of [donorCount]; -1 when the edit reached it.
+  int ownLineOf(int theirs, int donorCount) {
+    if (theirs < prefix) return theirs;
+    if (theirs >= donorCount - suffix) return theirs + lineShift;
+    return -1;
+  }
+
+  /// Whether [shape]'s look-up of [mine] finds what the donor's found for [theirs], given as [kind]
+  /// and [source]: the donor's own layout, still there, which [shape] takes over; or the cache's
+  /// answer, when neither shape has laid the line out since.
+  bool answersAsBefore(TextShape shape, int mine, int theirs, int kind, Object? source, List<_LineLayout?>? ownLayouts) {
+    final theirLayouts = donor._measuredLineCache;
+    final theirLayout = theirLayouts != null && theirs < theirLayouts.length ? theirLayouts[theirs] : null;
+    final myLayout = ownLayouts != null && mine < ownLayouts.length ? ownLayouts[mine] : null;
+    switch (kind) {
+      case _GeometryMemo.ownLayout:
+        if (!identical(theirLayout, source)) return false;
+        // Shared measurements, or this shape's own still empty and the donor answering for it.
+        return identical(ownLayouts, theirLayouts) || (myLayout == null && identical(shape._lineDonor, donor));
+      case _GeometryMemo.cachedLayout:
+      case _GeometryMemo.estimated:
+        return myLayout == null && theirLayout == null;
+      default:
+        return false;
+    }
+  }
 }

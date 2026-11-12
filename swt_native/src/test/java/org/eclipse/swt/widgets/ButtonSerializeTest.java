@@ -50,7 +50,7 @@ class ButtonSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE, SWT.ARROW, SWT.CHECK, SWT.PUSH, SWT.RADIO, SWT.TOGGLE, SWT.FLAT, SWT.WRAP, SWT.UP, SWT.DOWN, SWT.LEFT, SWT.RIGHT, SWT.CENTER, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("hasOwnBackground", "the client never reads it off a Button", "inheritsBackground", "the client never reads it off a Button", "tabStop", "the client never reads it off a Button"), SWT.NONE, SWT.ARROW, SWT.CHECK, SWT.PUSH, SWT.RADIO, SWT.TOGGLE, SWT.FLAT, SWT.WRAP, SWT.UP, SWT.DOWN, SWT.LEFT, SWT.RIGHT, SWT.CENTER, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

@@ -120,9 +120,12 @@ public class VDisplay {
     static final int CONFIG = dev.equo.swt.WireTable.DISPLAY_CONFIG;
     static final int FOCUS_HOLDER_ID = dev.equo.swt.WireTable.DISPLAY_FOCUS_HOLDER_ID;
 
-    /** The properties a record of the binary widget wire describes the display by. */
+    /**
+     * The properties a record of the binary widget wire describes the display by. Not its popups,
+     * which come and go far more often than the rest: they travel in a record of their own.
+     */
     public static final int[] WIRE_KEYS = {
-            SHELLS, POPUPS, SYSTEM_MENU, TOOLTIPS, ACTIVE_SHELL_ID, MAIN_SHELL_ID, WINDOWED_SHELL_IDS, CONFIG, FOCUS_HOLDER_ID,
+            SHELLS, SYSTEM_MENU, TOOLTIPS, ACTIVE_SHELL_ID, MAIN_SHELL_ID, WINDOWED_SHELL_IDS, CONFIG, FOCUS_HOLDER_ID,
     };
 
     /** Writes one of {@link #WIRE_KEYS}, as a widget's keyed writer does. */

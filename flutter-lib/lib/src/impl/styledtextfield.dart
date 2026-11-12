@@ -39,6 +39,7 @@ class StyledTextField extends StatelessWidget {
     return Container(
       height: 32,
       child: TextField(
+        autofillHints: null,
         controller: controller,
         focusNode: focusNode,
         enabled: enabled,

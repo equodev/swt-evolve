@@ -70,7 +70,7 @@ public class VClipboard implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(75);
+        w.key(78);
         w.write(getAvailableTypeNames());
     }
 }

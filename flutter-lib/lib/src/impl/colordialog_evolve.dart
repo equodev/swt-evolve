@@ -221,6 +221,7 @@ class _ColorDialogState extends State<ColorDialogContent> {
         SizedBox(
           width: theme.hexFieldWidth,
           child: TextField(
+            autofillHints: null,
             controller: _hexController,
             maxLength: 6,
             style: labelStyle,

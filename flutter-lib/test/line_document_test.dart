@@ -78,4 +78,20 @@ void main() {
     expect(lines.text, text.replaceRange(at, at, 'X'));
     expect(lines.selection, TextSelection.collapsed(offset: at + 1));
   });
+
+  test('the ends two texts share are the same matched a block at a time, as the web matches them', () {
+    final random = Random(11);
+    const alphabet = 'ab\n';
+    String randomText(int n) => String.fromCharCodes([for (var i = 0; i < n; i++) alphabet.codeUnitAt(random.nextInt(alphabet.length))]);
+    for (var step = 0; step < 300; step++) {
+      final before = randomText(random.nextInt(5000));
+      final at = random.nextInt(before.length + 1);
+      final cut = random.nextInt(before.length - at + 1);
+      final after = before.replaceRange(at, at + cut, randomText(random.nextInt(3000)));
+      expect(commonEnds(before, after, byBlocks: true), commonEnds(before, after, byBlocks: false), reason: 'step $step');
+    }
+    final long = 'x' * 10000;
+    expect(commonEnds(long, long.substring(1), byBlocks: true), (prefix: 9999, suffix: 0));
+    expect(commonEnds(long, 'y$long', byBlocks: true), (prefix: 0, suffix: 10000));
+  });
 }

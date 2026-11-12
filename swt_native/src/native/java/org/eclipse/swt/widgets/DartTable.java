@@ -2154,6 +2154,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setSortColumn(TableColumn column) {
         checkWidget();
+        if (!java.util.Objects.equals(this.sortColumn, column)) {
+            getValue().markDirty(VTable.SORT_COLUMN);
+        }
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (column == sortColumn)
@@ -2176,6 +2179,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setSortDirection(int direction) {
         checkWidget();
+        if (this.sortDirection != direction) {
+            getValue().markDirty(VTable.SORT_DIRECTION);
+        }
         if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE)
             return;
         if (direction == sortDirection)
@@ -2189,7 +2195,9 @@ public class DartTable extends DartComposite implements ITable {
         if (sortColumn != null && sortColumn != column) {
         }
         sortDirection = direction;
+        getValue().markDirty(VTable.SORT_DIRECTION);
         sortColumn = column;
+        getValue().markDirty(VTable.SORT_COLUMN);
     }
 
     void setTableEmpty() {
@@ -2504,6 +2512,8 @@ public class DartTable extends DartComposite implements ITable {
     int wireOwnerDrawItemHeight() {
         return ownerDrawItemHeight;
     }
+
+    Runnable ownerDrawRowsLeft;
 
     public void _dirty() {
         // The list names the editors and is unchanged by their own changes; written again,

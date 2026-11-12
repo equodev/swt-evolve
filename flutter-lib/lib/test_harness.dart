@@ -81,12 +81,19 @@ void registerTestQueryChannel() {
   });
   // A drag the client makes as a user's pointer would: `evolve.test.drag` {dragId, from, to, steps,
   // intervalMs} answers on `evolve.test.dragDone` {dragId, moves, elapsedMicros} once released.
-  EquoCommService.on(0, 0, WireChannel.evolveTestDrag, (dynamic req) async {
+  // With an `op` it is one step of a pointer instead, see [pointerOp]. The gesture runs apart from
+  // the queue frames are applied in, which waits on a handler that awaits: what Java answers while
+  // it lasts is applied as it arrives, as it is during a user's.
+  EquoCommService.on(0, 0, WireChannel.evolveTestDrag, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final dragId = map['dragId'];
-    final result = await dragByIds(map['from'] as String, map['to'] as String,
-        (map['steps'] as num).toInt(), (map['intervalMs'] as num).toInt());
-    _reply(WireChannel.evolveTestDragDone, {'dragId': dragId, ...result});
+    unawaited(() async {
+      final result = map['op'] != null
+          ? await pointerOp(map)
+          : await dragByIds(map['from'] as String, map['to'] as String, (map['steps'] as num).toInt(),
+              (map['intervalMs'] as num).toInt());
+      _reply(WireChannel.evolveTestDragDone, {'dragId': dragId, ...result});
+    }());
   });
   EquoCommService.on(0, 0, WireChannel.evolveTestQuery, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
@@ -127,6 +134,8 @@ void registerTestQueryChannel() {
         'queuedMicros': arrived - received,
         'toVsyncMicros': began - arrived,
         'vsyncToPaintedMicros': painted - began,
+        // On the clock [pointerOp] stamps its input with, so input to painted needs no other clock.
+        'lastFrameAtMicros': lastFrameAtMicros(),
       });
     }
 
@@ -151,7 +160,7 @@ void registerTestQueryChannel() {
 
   // Frame statistics from the engine's own pipeline, the only rendering measurement comparable to a
   // native toolkit's: a Java-side timer sees serialization, not the frame reaching the screen.
-  EquoCommService.on(0, 0, WireChannel.evolveTestFrameStats, (dynamic req) {
+  EquoCommService.on(0, 0, WireChannel.evolveTestFrameStats, (dynamic req) async {
     final map = (req as Map).cast<String, dynamic>();
     final int statsId = (map['statsId'] as num).toInt();
     final String action = (map['action'] as String?) ?? 'snapshot';
@@ -160,7 +169,7 @@ void registerTestQueryChannel() {
       if (action == 'start') {
         FrameStats.start();
       } else if (action == 'stop') {
-        FrameStats.stop();
+        await FrameStats.stop();
       }
       // A ping times the transport: answering it must not cost anything of its own.
       stats = action == 'ping' ? const <String, dynamic>{} : FrameStats.snapshot();
@@ -176,16 +185,18 @@ void registerTestQueryChannel() {
   });
 
   // Receive-side cost of widget state: `evolve.test.wireStats` {statsId, action: start|stop} answers on
-  // `evolve.test.wireStatsResponse` {statsId, stats}; see [WireStats].
+  // `evolve.test.wireStatsResponse` {statsId, stats}; see [WireStats]. `stats.styledText` holds the
+  // StyledText counters over the same span.
   EquoCommService.on(0, 0, WireChannel.evolveTestWireStats, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int statsId = (map['statsId'] as num).toInt();
     final Map<String, dynamic> stats;
     if (map['action'] == 'start') {
       WireStats.start();
+      styledTextPerfSnapshot();
       stats = const <String, dynamic>{};
     } else {
-      stats = WireStats.stop();
+      stats = {...WireStats.stop(), 'styledText': styledTextPerfSnapshot()};
     }
     _reply(WireChannel.evolveTestWireStatsResponse, {'statsId': statsId, 'stats': stats});
   });

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'menu_key_trace.dart';
 import '../theme/theme_settings/menu_theme_settings.dart';
@@ -53,6 +54,20 @@ class MenuState {
 /// a [SemanticsAction] and never reaches [TapRegion] at all, so the popup never sees that tap as
 /// "outside" and never closes on its own; the arrow's own handler asks Java to show it again,
 /// which is a no-op because it is already visible.
+/// Opens a menu on Java's `shown`. The ack arrives between frames, where the menu can open at once and
+/// show in the next frame; put off until after a frame, it showed in the one after that. Arriving
+/// during one, it opens after it.
+void _openWhenShown(VoidCallback open) {
+  final phase = SchedulerBinding.instance.schedulerPhase;
+  if (phase == SchedulerPhase.idle || phase == SchedulerPhase.postFrameCallbacks) {
+    open();
+    return;
+  }
+  WidgetsBinding.instance.addPostFrameCallback((_) => open());
+  // Nothing else may have scheduled the frame this callback needs.
+  WidgetsBinding.instance.ensureVisualUpdate();
+}
+
 class OpenPopupMenuTracker {
   static MenuImpl? _current;
 
@@ -387,7 +402,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       return;
     }
     _pendingContextMenuPosition = null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    void open() {
       if (!mounted || _menuController.isOpen) {
         OpenMenus.endOpening(this);
         return;
@@ -397,10 +412,8 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       _menuController.open(position: position);
       MenuKeyTrace.log(() => 'menu ${state.id} opened');
       _focusMenuNextFrame();
-    });
-    // The ack arrives in a microtask, so nothing has scheduled the frame this callback needs.
-    // Without this the menu silently never opens.
-    WidgetsBinding.instance.ensureVisualUpdate();
+    }
+    _openWhenShown(open);
   }
 
   // Runs after the overlay's first frame (build + layout + paint), once the menu's content is mounted.
@@ -974,14 +987,12 @@ class _MenuBarItemState extends State<_MenuBarItem> {
     _stopShowing();
     if (!mounted) return;
     _shown = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _openWhenShown(() {
       if (!mounted || _subMenuController.isOpen) return;
       _subMenuController.open();
       widget.onOpened();
       _focusFirstItemNextFrame();
     });
-    // The ack arrives in a microtask, so nothing has scheduled the frame this callback needs.
-    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   void _onClose() {

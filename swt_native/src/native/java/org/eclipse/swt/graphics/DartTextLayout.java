@@ -287,11 +287,12 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                     continue;
                 }
                 TextStyle style = _styleFor(runStart);
+                int styleEnd = _styleRunEnd(runStart, le);
                 boolean selected = selectionForegrounds && runStart >= selectionStart && runStart <= selectionEnd;
                 int runEnd = runStart + 1;
                 while (runEnd < le) {
                     char c = text.charAt(runEnd);
-                    if (c == '\t' || (justified && c == ' ') || _styleFor(runEnd) != style)
+                    if (c == '\t' || (justified && c == ' ') || runEnd >= styleEnd)
                         break;
                     if (selectionForegrounds && (runEnd >= selectionStart && runEnd <= selectionEnd) != selected)
                         break;
@@ -2066,8 +2067,7 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 }
                 for (int i = ls; i < glyphsEnd; ) {
                     TextStyle style = _styleFor(i);
-                    int j = i + 1;
-                    while (j < glyphsEnd && _styleFor(j) == style) j++;
+                    int j = _styleRunEnd(i, glyphsEnd);
                     org.eclipse.swt.custom.StyledTextHelper.RendererFontMetrics m = style != null && style.font != null && !style.font.isDisposed() ? org.eclipse.swt.custom.StyledTextHelper.calculateFontMetrics(style.font, 1) : base;
                     int rise = style != null ? style.rise : 0;
                     ascent = Math.max(ascent, m.ascent + rise);
@@ -2256,6 +2256,15 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
         return styles[i - 1].style;
     }
 
+    int _styleRunEnd(int offset, int limit) {
+        int i = 1;
+        while (i < stylesCount - 1 && styles[i].start <= offset) i++;
+        TextStyle style = styles[i - 1].style;
+        while (i < stylesCount - 1 && styles[i].start < limit && styles[i].style == style) i++;
+        int end = i < stylesCount - 1 ? styles[i].start : limit;
+        return Math.max(offset + 1, Math.min(end, limit));
+    }
+
     org.eclipse.swt.graphics.Font _fontFor(int offset) {
         TextStyle style = _styleFor(offset);
         if (style != null && style.font != null && !style.font.isDisposed())
@@ -2295,8 +2304,10 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
                 continue;
             }
             org.eclipse.swt.graphics.Font f = _fontFor(i);
-            int j = i + 1;
-            while (j < end && text.charAt(j) != '\t' && _styleFor(j) == st) j++;
+            int j = _styleRunEnd(i, end);
+            int tab = text.indexOf('\t', i + 1);
+            if (tab >= 0 && tab < j)
+                j = tab;
             if (f != null) {
                 x += dev.equo.swt.FontMetricsUtil.getFontSize(text.substring(i, j), f).x() * px;
             }

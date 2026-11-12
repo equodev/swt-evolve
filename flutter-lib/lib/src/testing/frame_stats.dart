@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/scheduler.dart';
@@ -11,15 +12,21 @@ import 'package:flutter/scheduler.dart';
 /// The timings callback is registered on the first [start] rather than at boot, so a session that
 /// never asks for stats pays nothing.
 ///
-/// The engine reports timings in batches (about once a second in a release build), so a batch that
-/// arrives after [start] can hold frames rendered before it. The window opens at the first frame
-/// after [start], on the clock the engine stamps frames with (which is not the same on every
-/// platform as any Dart clock), and ends at the last frame reported.
+/// The engine reports timings in batches (on the web, at the first frame more than 100 ms after the
+/// last batch), so a batch can hold frames from before [start] or arrive well after [stop]. The
+/// window opens after the first frame after [start] and closes at the first frame after [stop], on the
+/// clock the engine stamps frames with (which is not the same on every platform as any Dart clock);
+/// [stop] completes once a batch has brought a frame from past the window, so every frame inside it
+/// is counted.
 class FrameStats {
   static bool _registered = false;
   static bool _collecting = false;
   /// The engine's timestamp of the first frame after [start]; null until that frame begins.
   static int? _startedAt;
+  /// The engine's timestamp of the first frame after [stop]; null until that frame begins.
+  static int? _endedAt;
+  static Completer<void>? _stopped;
+  static const _stopTimeout = Duration(seconds: 2);
 
   /// The vsync of the last frame counted.
   static int _lastFrameAt = 0;
@@ -31,9 +38,13 @@ class FrameStats {
       SchedulerBinding.instance.addTimingsCallback(_onTimings);
       _registered = true;
     }
+    final pending = _stopped;
+    if (pending != null && !pending.isCompleted) pending.complete();
     _buildMicros.clear();
     _rasterMicros.clear();
     _startedAt = null;
+    _endedAt = null;
+    _stopped = null;
     _lastFrameAt = 0;
     final scheduler = SchedulerBinding.instance;
     scheduler.scheduleFrameCallback((_) {
@@ -44,14 +55,46 @@ class FrameStats {
     _collecting = true;
   }
 
-  static void stop() => _collecting = false;
+  /// Closes the window at the next frame; completes once every frame inside it has been reported, or
+  /// after [_stopTimeout] with what was.
+  static Future<void> stop() {
+    if (!_collecting) return Future<void>.value();
+    final stopped = _stopped ??= Completer<void>();
+    final scheduler = SchedulerBinding.instance;
+    void frame(Duration _) {
+      if (stopped.isCompleted) return;
+      _endedAt ??= scheduler.currentSystemFrameTimeStamp.inMicroseconds;
+      // Frames until the engine hands over the batch holding one from past the window.
+      scheduler.scheduleFrameCallback(frame);
+      scheduler.scheduleFrame();
+    }
+
+    scheduler.scheduleFrameCallback(frame);
+    scheduler.scheduleFrame();
+    Timer(_stopTimeout, () {
+      if (identical(_stopped, stopped)) _finish();
+    });
+    return stopped.future;
+  }
+
+  static void _finish() {
+    _collecting = false;
+    final stopped = _stopped;
+    if (stopped != null && !stopped.isCompleted) stopped.complete();
+  }
 
   static void _onTimings(List<FrameTiming> timings) {
     if (!_collecting) return;
     for (final timing in timings) {
       final startedAt = _startedAt;
       final vsync = timing.timestampInMicroseconds(FramePhase.vsyncStart);
-      if (startedAt == null || vsync < startedAt) continue;
+      // The frame [start] forces only marks where the window opens.
+      if (startedAt == null || vsync <= startedAt) continue;
+      final endedAt = _endedAt;
+      if (endedAt != null && vsync >= endedAt) {
+        _finish();
+        return;
+      }
       if (vsync > _lastFrameAt) _lastFrameAt = vsync;
       _buildMicros.add(timing.buildDuration.inMicroseconds);
       _rasterMicros.add(timing.rasterDuration.inMicroseconds);

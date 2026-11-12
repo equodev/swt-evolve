@@ -158,6 +158,94 @@ abstract class EquoCommBase {
   /// transport that copies a frame before returning takes them as they are; this one gets a copy.
   void rawSendRange(Uint8List buffer, int length) => rawSend(Uint8List(length)..setRange(0, length, buffer));
 
+  /// Whether the frames sent in one turn of the event loop leave as one message, as Java's
+  /// `MessageBatch` sends them: a message costs a socket write (and on a client socket a mask)
+  /// whatever its size, and one input or frame often sends several. A turn that sends one frame
+  /// sends it as it is. The far side must read [WireChannel.swtEvolveBatch]. Not for a browser,
+  /// where a turn that draws a frame ends after the frame is rendered, so what it sent would wait
+  /// for the render.
+  bool get batchesSends => false;
+
+  /// The frames of this turn, as the entries of a batch after room for its header: per frame, its
+  /// header, its payload's length and its payload. Reused from turn to turn.
+  Uint8List _turn = Uint8List(4096);
+  int _turnSize = _batchHeaderRoom;
+  int _turnFrames = 0;
+
+  /// Where the one frame of a turn that sent only one starts in [_turn], and where its header ends.
+  int _soleHeaderEnd = 0;
+  int _solePayloadAt = 0;
+
+  /// Room left before the first entry for the batch's header (a global channel's, a varint).
+  static const int _batchHeaderRoom = 4;
+  static final Uint8List _batchHeader = () {
+    final w = BytesBuilder();
+    var v = WireChannel.swtEvolveBatch << 1;
+    while (v >= 0x80) {
+      w.addByte((v & 0x7F) | 0x80);
+      v >>= 7;
+    }
+    w.addByte(v);
+    return w.toBytes();
+  }();
+
+  late final void Function() _sendTurn = _sendTurnNow;
+
+  /// Puts the first [length] bytes of [frame] on the wire, with the rest of this turn's when the
+  /// transport [batchesSends].
+  void _send(Uint8List frame, int length) {
+    if (!batchesSends) {
+      rawSendRange(frame, length);
+      return;
+    }
+    final headerEnd = ChannelHeader.skip(frame, 0);
+    final payload = length - headerEnd;
+    _reserve(headerEnd + 5 + payload);
+    if (_turnFrames++ == 0) scheduleMicrotask(_sendTurn);
+    final at = _turnSize;
+    _turn.setRange(at, at + headerEnd, frame);
+    var size = at + headerEnd;
+    if (_turnFrames == 1) _soleHeaderEnd = size;
+    var v = payload;
+    while (v >= 0x80) {
+      _turn[size++] = (v & 0x7F) | 0x80;
+      v >>= 7;
+    }
+    _turn[size++] = v;
+    if (_turnFrames == 1) _solePayloadAt = size;
+    _turn.setRange(size, size + payload, frame, headerEnd);
+    _turnSize = size + payload;
+  }
+
+  void _reserve(int more) {
+    if (_turnSize + more <= _turn.length) return;
+    var capacity = _turn.length * 2;
+    while (capacity < _turnSize + more) {
+      capacity *= 2;
+    }
+    _turn = Uint8List(capacity)..setRange(0, _turnSize, _turn);
+  }
+
+  void _sendTurnNow() {
+    final frames = _turnFrames;
+    final size = _turnSize;
+    _turnFrames = 0;
+    _turnSize = _batchHeaderRoom;
+    if (frames == 0) return;
+    if (frames == 1) {
+      // The frame as it was sent: its header moved up against its payload, over its length.
+      final headerStart = _batchHeaderRoom;
+      final headerLength = _soleHeaderEnd - headerStart;
+      final start = _solePayloadAt - headerLength;
+      _turn.setRange(start, _solePayloadAt, _turn, headerStart);
+      rawSendRange(Uint8List.sublistView(_turn, start, size), size - start);
+      return;
+    }
+    final start = _batchHeaderRoom - _batchHeader.length;
+    _turn.setRange(start, _batchHeaderRoom, _batchHeader);
+    rawSendRange(Uint8List.sublistView(_turn, start, size), size - start);
+  }
+
   /// Opens a fresh socket, which must call [markOpen] once open and [markClosed] when it
   /// closes or fails. Implemented only by transports that can be reopened; one that never
   /// calls [markClosed] never needs it.
@@ -245,7 +333,7 @@ abstract class EquoCommBase {
     payOwed();
     if (recordSentFrames) _sent.add(frame);
     if (_open) {
-      rawSend(frame);
+      _send(frame, frame.length);
     } else {
       _buffer(frame);
     }
@@ -635,6 +723,17 @@ abstract class EquoCommBase {
   static int _applyingCount = 0;
   static final List<void Function()> _whenApplied = [];
 
+  /// As a new client starts: no frame is being applied, nothing waits for one, and no push is owed. A
+  /// test that ends with a drain still scheduled in its fake-async zone would otherwise leave every
+  /// later test in the isolate waiting for that drain.
+  @visibleForTesting
+  static void resetForTesting() {
+    _applyingCount = 0;
+    _whenApplied.clear();
+    _owed.clear();
+    _paying = false;
+  }
+
   /// Runs [callback] once every frame received so far has been applied: when the apply queue runs
   /// dry, or in a microtask when nothing is waiting to be applied.
   ///
@@ -902,7 +1001,7 @@ abstract class EquoCommBase {
   /// allocated for it; copied when it has to wait.
   void _sendWritten(WidgetWireWriter w) {
     if (_open && !recordSentFrames) {
-      rawSendRange(w.buffer, w.size);
+      _send(w.buffer, w.size);
     } else {
       _enqueue(w.finish());
     }

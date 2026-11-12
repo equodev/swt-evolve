@@ -107,6 +107,12 @@ public class VButton extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 146:
+                return false;
+            case 147:
+                return false;
+            case 150:
+                return false;
             case 12:
                 w.write((int) getAlignment());
                 return true;
@@ -132,6 +138,12 @@ public class VButton extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 146:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 147:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 150:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
             case 12:
                 {
                     int v_ = getAlignment();

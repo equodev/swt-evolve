@@ -64,19 +64,26 @@ public class VDevice implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(170);
+        w.key(174);
         {
             FontData[] a_ = getFontList();
             if (a_ == null)
                 w.listSize(-1);
             else {
                 w.listSize(a_.length);
-                for (FontData e_ : a_) w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
+                for (int i_ = 0; i_ < a_.length; i_++) {
+                    FontData e_ = a_[i_];
+                    if (e_ == null) {
+                        i_ += w.nulls(a_, i_) - 1;
+                        continue;
+                    }
+                    w.object((e_ == null ? null : ((DartFontData) e_.getImpl()).getValue()));
+                }
             }
         }
-        w.key(171);
+        w.key(175);
         w.write(getTracking());
-        w.key(172);
+        w.key(176);
         w.write(getWarnings());
     }
 }

@@ -49,6 +49,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   bool _selectOnRelease = false;
 
   @override
+  void dispose() {
+    _context?.treeImpl?.rowGone(state.id, context as Element);
+    super.dispose();
+  }
+
+  @override
   void setValue(V value) {
     super.setValue(value);
     _context?.treeImpl?.itemContentChanged();
@@ -234,7 +240,11 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
   @override
   Widget build(BuildContext context) {
+    final shownIn = _context?.treeImpl;
     _context = TreeItemContext.of(context);
+    final tree = _context?.treeImpl;
+    if (!identical(shownIn, tree)) shownIn?.rowGone(state.id, context as Element);
+    tree?.rowShown(state.id, context as Element);
 
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>();
     if (widgetTheme == null) {
@@ -275,11 +285,17 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return tagSemantics(buildTreeItemContent(context));
   }
 
+  /// Whether the row's owner-draw overlay draws [column] of what [painted] names: it does once it
+  /// shows, and until then the row draws it itself.
+  bool _overlayDraws(List<int>? painted, int column) =>
+      (painted?.contains(column) ?? false) && OwnerDrawnRowOverlay.isShown(state.id!);
+
   /// The icon for the tree column, which is the only column a tree row draws one in.
   ///
   /// A null entry in [VTreeItem.images] is an answer, not a gap: it is how Java says the row's
   /// owner-draw overlay paints that icon, so falling back to [VTreeItem.image] would draw it twice.
   VImage? _treeColumnImage() {
+    if (_overlayDraws(state.paintedImages, 0)) return null;
     final images = state.images;
     if (images == null || images.isEmpty) return state.image;
     return images[0];
@@ -1258,7 +1274,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }) {
     // Text the row's owner-draw overlay paints keeps its place and semantics, but is not painted
     // twice.
-    final cellTextColor = (state.paintedTexts?.contains(columnIndex) ?? false)
+    final cellTextColor = _overlayDraws(state.paintedTexts, columnIndex)
         ? Colors.transparent
         : getForegroundColor(
             context: context,
@@ -1294,7 +1310,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             _context?.treeImpl?.isItemSelected(state.id) ?? false,
             /* hasChildren */ false,
             /* expanded */ false,
-            cellValue(state.images, columnIndex),
+            _overlayDraws(state.paintedImages, columnIndex) ? null : cellValue(state.images, columnIndex),
           )
         : null;
     if (icon != null) {

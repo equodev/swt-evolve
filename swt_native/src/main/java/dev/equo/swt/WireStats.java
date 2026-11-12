@@ -71,5 +71,14 @@ public final class WireStats {
             frames++;
             bytes += length;
         }
+
+        // A GC's paint travels on its own, not through the widget frames above.
+        @Override
+        void gcFrame(GcWire frame) {
+            if (!on) return;
+            frames++;
+            bytes += frame.byteSize();
+            binaryFrames++;
+        }
     };
 }

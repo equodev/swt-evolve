@@ -16,8 +16,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,8 +25,8 @@ import static org.mockito.Mockito.doAnswer;
 
 /**
  * Every GC on a Canvas shares one channel, so Flutter keeps the last state it was sent. A new GC
- * starts from its own defaults, and has to say so before its first op, or that op is drawn with
- * whatever the previous paint left behind.
+ * starts from its own defaults, and has to say what of them differs from that state before its
+ * first op, or that op is drawn with whatever the previous paint left behind.
  */
 @Tag("native-unit")
 class GCFreshStateNativeTest {
@@ -54,6 +54,9 @@ class GCFreshStateNativeTest {
         FlutterBridge.set(null);
     }
 
+    /** Where the paint after {@link #paintWithEverythingChanged} starts in what was sent. */
+    private int nextPaint;
+
     /** A paint that leaves every piece of GC state away from its default. */
     private void paintWithEverythingChanged() {
         GC gc = new GC(canvas);
@@ -66,26 +69,42 @@ class GCFreshStateNativeTest {
         transform.dispose();
         gc.fillRectangle(0, 0, 200, 100);
         gc.dispose();
-        bridge.comm.sent.clear();
+        nextPaint = bridge.comm.sent.size();
     }
 
-    /** What the next paint sends ahead of its first op, or null when it sends no state. */
-    private List<Object> stateBeforeFirstOp() {
-        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
-        String fill = "GC/" + canvas.hashCode() + "/fillRectangleintintintint";
-        int op = -1;
-        for (int i = 0; i < entries.size() && op < 0; i++) if (entries.get(i).channel().contains(fill)) op = i;
-        assertThat(op).as("sanity: the paint's fill reached the wire").isNotNegative();
-        List<Object> before = new ArrayList<>();
-        for (GcFrames.Entry entry : entries.subList(0, op)) before.add(entry.value());
-        boolean state = !WireValues.find(before, m -> Boolean.TRUE.equals(m.get("_whole"))
-                || (m.get("_d") instanceof Number && ((Number) m.get("_d")).intValue() == 0)).isEmpty();
-        return state ? before : null;
+    /**
+     * The state the client's channel holds when the next paint's first op is drawn: a whole record
+     * replaces it, a change merges into it. Null when that paint sends no state ahead of the op.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> stateAtFirstOp() {
+        String channel = "GC/" + canvas.hashCode();
+        String fill = channel + "/fillRectangleintintintint";
+        Map<String, Object> held = new HashMap<>();
+        for (GcFrames.Entry entry : BatchEntries.of(bridge.comm.sent.subList(0, nextPaint))) {
+            if (channel.equals(entry.channel())) apply(held, (Map<String, Object>) entry.value());
+        }
+        boolean stated = false;
+        boolean drawn = false;
+        for (GcFrames.Entry entry : BatchEntries.of(bridge.comm.sent.subList(nextPaint, bridge.comm.sent.size()))) {
+            if (entry.channel().contains(fill)) {
+                drawn = true;
+                break;
+            }
+            if (channel.equals(entry.channel())) {
+                apply(held, (Map<String, Object>) entry.value());
+                stated = true;
+            }
+        }
+        assertThat(drawn).as("sanity: the paint's fill reached the wire").isTrue();
+        return stated ? held : null;
     }
 
-    /** Whether some record in {@code state} has {@code key} equal to {@code value}. */
-    private static boolean carries(List<Object> state, String key, Object value) {
-        return !WireValues.find(state, m -> m.containsKey(key) && WireValues.same(m.get(key), value)).isEmpty();
+    private static void apply(Map<String, Object> held, Map<String, Object> record) {
+        if (Boolean.TRUE.equals(record.get("_whole"))) held.clear();
+        held.putAll(record);
+        held.remove("_whole");
+        held.remove("_d");
     }
 
     @Test
@@ -97,18 +116,17 @@ class GCFreshStateNativeTest {
         gc.fillRectangle(0, 0, 200, 100);
         gc.dispose();
 
-        List<Object> state = stateBeforeFirstOp();
+        Map<String, Object> state = stateAtFirstOp();
         assertThat(state).as("the fill must not be drawn with the previous paint's state").isNotNull();
         // A control GC starts from the control's background, and from the foreground the
         // application set on it -- none here, so black, whatever the colour scheme's text is.
         Color canvasBg = canvas.getBackground();
-        assertThat(carries(state, "background", String.format("#ff%02x%02x%02x",
-                canvasBg.getRed(), canvasBg.getGreen(), canvasBg.getBlue()))).isTrue();
-        assertThat(carries(state, "foreground", "#ff000000")).isTrue();
-        // A whole description replaces what the client holds, so an alpha left out is the default.
-        assertThat(carries(state, "alpha", 40)).isFalse();
-        assertThat(WireValues.mentions(state, "clipping")).isFalse();
-        assertThat(WireValues.mentions(state, "transform")).isFalse();
+        assertThat(state).containsEntry("background", String.format("#ff%02x%02x%02x",
+                canvasBg.getRed(), canvasBg.getGreen(), canvasBg.getBlue()));
+        assertThat(state).containsEntry("foreground", "#ff000000");
+        assertThat(WireValues.same(state.get("alpha"), 40)).isFalse();
+        assertThat(state.get("clipping")).isNull();
+        assertThat(state.get("transform")).isNull();
     }
 
     @Test
@@ -130,8 +148,8 @@ class GCFreshStateNativeTest {
         gc.fillRectangle(0, 0, 200, 100);
         gc.dispose();
 
-        List<Object> state = stateBeforeFirstOp();
+        Map<String, Object> state = stateAtFirstOp();
         assertThat(state).as("a clear in the default colour must not reuse the previous background").isNotNull();
-        assertThat(carries(state, "background", "#ffffffff")).isTrue();
+        assertThat(state).containsEntry("background", "#ffffffff");
     }
 }

@@ -33,6 +33,16 @@ import 'utils/layered_layout_builder.dart';
 
 const double _kBarSize = 17.0;
 
+/// Around the GC a Canvas paints with, so the GC finds its Canvas without walking its ancestors.
+class CanvasGcScope extends InheritedWidget {
+  const CanvasGcScope({super.key, required this.canvas, required super.child});
+
+  final CanvasImpl canvas;
+
+  @override
+  bool updateShouldNotify(CanvasGcScope oldWidget) => false;
+}
+
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
   // Its layer is on the Focus around wrap(), which is further out.
@@ -373,7 +383,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // a block the surrounding Composite is not painted in.
         if ((state.hasOwnBackground ?? false) && ownGround != null)
           Positioned.fill(child: ColoredBox(color: ownGround!)),
-        Positioned.fill(child: IgnorePointer(child: gcWidget)),
+        Positioned.fill(child: IgnorePointer(child: CanvasGcScope(canvas: this, child: gcWidget))),
         child,
       ],
     );

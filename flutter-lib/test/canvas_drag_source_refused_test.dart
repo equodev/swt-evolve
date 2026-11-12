@@ -123,6 +123,48 @@ void main() {
         reason: 'a refused drag reports nothing to other windows: $calls');
   });
 
+  // The moves held until the answer go out with it, and the next move goes at once: a held
+  // pointer's every move is sent.
+  testWidgets('the moves a refused drag held go out at the answer, and the next at once', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 400,
+        height: 400,
+        child: _RecordingCanvasSwt(value: _canvas(), calls: calls),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse, buttons: kPrimaryButton);
+    await gesture.addPointer(location: const Offset(100, 20));
+    await gesture.down(const Offset(100, 20));
+    await tester.pump(const Duration(milliseconds: 10));
+    var y = 20.0;
+    for (var i = 0; i < 4 || !calls.contains('DragDetect/DragDetect'); i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      y += 20;
+      await gesture.moveTo(Offset(100, y));
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    y += 20;
+    await gesture.moveTo(Offset(100, y));
+    final heldUntilTheAnswer = 'MouseMove/MouseMove@${y.round()}';
+    expect(calls, isNot(contains(heldUntilTheAnswer)), reason: 'held until Java answers: $calls');
+
+    _dragStartResult(false);
+    await tester.pump();
+    expect(calls, contains(heldUntilTheAnswer), reason: '$calls');
+    await gesture.moveTo(Offset(100, y + 20));
+    final next = 'MouseMove/MouseMove@${(y + 20).round()}';
+    expect(calls, contains(next), reason: 'sent as it comes: $calls');
+
+    await gesture.up();
+    await tester.pump(const Duration(seconds: 1));
+    await gesture.removePointer();
+  });
+
   testWidgets('a refused drag shows no cursor, badge or dimming, before or after the answer',
       (tester) async {
     final (_, shownBefore, shownAfter) = await _drag(tester, doit: false);

@@ -231,6 +231,12 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     extends ScrollableImpl<T, V> implements GCGround {
   final DoubleTapDetector dblTap = DoubleTapDetector();
 
+  /// A plain Composite's build reads no part of its size: [NoLayout] reads its bounds when it lays
+  /// the children out. Its subclasses and a Composite with scroll bars draw from the size.
+  @override
+  bool sizeIsLayoutOnly(Size built, int width, int height) =>
+      state.swt == 'Composite' && !hasStyle(state.style, SWT.H_SCROLL | SWT.V_SCROLL);
+
   @override
   bool get drawsInOwnLayer => true;
 
@@ -436,6 +442,8 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
     // wrapCompositeInteractionChrome(), unlike wrap() above, never applies wrapDnd() —
     // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
+    // Only a plain Composite: a Shell places itself from where its bounds stand.
+    if (state.swt == 'Composite') builtAtBounds();
     final gcWrapped = stackGCUnderChildren(paintBackground, inner);
     final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
     // A Composite that is a Tab stop is reached before its children.

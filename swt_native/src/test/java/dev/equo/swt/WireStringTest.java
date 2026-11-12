@@ -27,9 +27,17 @@ class WireStringTest {
     }
 
     @Test
-    void latin1TakesOneBytePerChar() {
+    void asciiTakesOneBytePerChar() {
+        WidgetWire w = new WidgetWire();
+        w.writeString("hello");
+        assertThat(w.size()).isEqualTo(1 + 5);
+    }
+
+    /** The one-byte form is ASCII alone, so a browser client can decode it natively as it is. */
+    @Test
+    void aCharPastAsciiTakesTheTwoByteForm() {
         WidgetWire w = new WidgetWire();
         w.writeString("héllo");
-        assertThat(w.size()).isEqualTo(1 + 5);
+        assertThat(w.size()).isEqualTo(1 + 2 * 5);
     }
 }

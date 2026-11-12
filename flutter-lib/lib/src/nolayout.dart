@@ -7,6 +7,7 @@ import 'comm/v_registry.dart';
 import 'gen/widget.dart';
 import 'gen/widgets.dart';
 import 'gen/widgets.dart' as gen;
+import 'impl/utils/live_layer.dart';
 import 'impl/utils/widget_utils.dart';
 import 'theme/theme_extensions/composite_theme_extension.dart';
 
@@ -45,9 +46,11 @@ class NoLayout extends StatelessWidget {
               // and remounted, briefly producing an empty subtree and a visible flash.
               key: ValueKey(child.id),
               id: child.id,
+              // A panel's child is sized by its own build and then fitted, so only a plain slot
+              // lays its child out by the bounds.
               child: isPanelLayout
                   ? _wrapAsPanel(_buildChild(child), theme!)
-                  : ClipRect(child: _buildChild(child)),
+                  : BoundsSlot(id: child.id, child: LiveLayer(child: ClipRect(child: _buildChild(child)))),
             )
         ],
       ),
@@ -170,6 +173,21 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
 
     return false;
   }
+}
+
+/// Marks where [NoLayout] lays out the control numbered [id]: at exactly its bounds, read at layout
+/// time, so a change of its size alone needs a new layout of the control and not a new build.
+class BoundsSlot extends InheritedWidget {
+  const BoundsSlot({super.key, required this.id, required super.child});
+
+  final int id;
+
+  /// Whether the control numbered [id], built in [context], is laid out by its bounds.
+  static bool places(BuildContext context, int id) =>
+      context.getInheritedWidgetOfExactType<BoundsSlot>()?.id == id;
+
+  @override
+  bool updateShouldNotify(BoundsSlot oldWidget) => false;
 }
 
 class SashPanelMarker extends InheritedWidget {

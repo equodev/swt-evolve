@@ -13,6 +13,7 @@ import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
 import '../theme/theme_settings/spinner_theme_settings.dart';
 import 'utils/client_locale.dart';
+import 'utils/key_edit_order.dart';
 import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
@@ -210,6 +211,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     _controller = TextEditingController(text: _heldText);
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
+    KeyEditOrder.instance.registerEditor(_focusNode, () => widget.enabled && !widget.readOnly);
     widget.modifyGate.onUnmatched = _revertVetoedEdit;
   }
 
@@ -234,6 +236,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
   void dispose() {
     _controller.dispose();
     _focusNode.removeListener(_handleFocusChange);
+    KeyEditOrder.instance.unregisterEditor(_focusNode);
     _focusNode.dispose();
     super.dispose();
   }
@@ -329,6 +332,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
 
   Widget _buildTextField(bool isInteractive) {
     return TextField(
+      autofillHints: null,
       controller: _controller,
       focusNode: _focusNode,
       enabled: widget.enabled,
@@ -480,6 +484,7 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
         ..end = from.length - tail
         ..count = to.length - tail - start,
     );
+    KeyEditOrder.instance.editApplied();
   }
 
   void _handleTextChanged(String text, String from) {

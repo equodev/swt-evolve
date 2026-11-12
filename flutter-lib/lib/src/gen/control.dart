@@ -153,58 +153,58 @@ class VControl extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 131: // background
+      case 135: // background
         background = r.color();
         return true;
-      case 132: // backgroundImage
+      case 136: // backgroundImage
         backgroundImage = r.image();
         return true;
-      case 133: // bounds
+      case 137: // bounds
         bounds = r.rect();
         return true;
-      case 134: // cursor
+      case 138: // cursor
         cursor = r.object(VCursor.new);
         return true;
-      case 135: // dragDetect
+      case 139: // dragDetect
         dragDetect = r.boolean();
         return true;
-      case 136: // dragSource
+      case 140: // dragSource
         dragSource = r.boolean();
         return true;
-      case 137: // dragSourceId
+      case 141: // dragSourceId
         dragSourceId = r.longBoxed();
         return true;
-      case 138: // dropTargetId
+      case 142: // dropTargetId
         dropTargetId = r.longBoxed();
         return true;
-      case 139: // enabled
+      case 143: // enabled
         enabled = r.boolBoxed();
         return true;
-      case 140: // font
+      case 144: // font
         font = r.object(VFont.new);
         return true;
-      case 141: // foreground
+      case 145: // foreground
         foreground = r.color();
         return true;
-      case 142: // hasOwnBackground
+      case 146: // hasOwnBackground
         hasOwnBackground = r.boolean();
         return true;
-      case 143: // inheritsBackground
+      case 147: // inheritsBackground
         inheritsBackground = r.boolean();
         return true;
-      case 144: // menu
+      case 148: // menu
         menu = r.ref<VMenu>();
         return true;
-      case 145: // region
+      case 149: // region
         region = r.object(VRegion.new);
         return true;
-      case 146: // tabStop
+      case 150: // tabStop
         tabStop = r.boolean();
         return true;
-      case 147: // toolTipText
+      case 151: // toolTipText
         toolTipText = r.string();
         return true;
-      case 148: // visible
+      case 152: // visible
         visible = r.boolBoxed();
         return true;
       default:
@@ -218,119 +218,119 @@ class VControl extends VWidget {
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(131);
+        w.key(135);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgroundImage;
       if (v_ != null) {
-        w.keyRef(132, v_.id);
+        w.keyRef(136, v_.id);
       }
     }
     {
       final v_ = bounds;
       if (v_ != null) {
-        w.key(133);
+        w.key(137);
         w.rectValue(v_);
       }
     }
     {
       final v_ = cursor;
       if (v_ != null) {
-        w.key(134);
+        w.key(138);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = dragDetect;
       if (v_ != null) {
-        w.keyBoolean(135, v_);
+        w.keyBoolean(139, v_);
       }
     }
     {
       final v_ = dragSource;
       if (v_ != null) {
-        w.keyBoolean(136, v_);
+        w.keyBoolean(140, v_);
       }
     }
     {
       final v_ = dragSourceId;
       if (v_ != null) {
-        w.key(137);
+        w.key(141);
         w.longBoxed(v_);
       }
     }
     {
       final v_ = dropTargetId;
       if (v_ != null) {
-        w.key(138);
+        w.key(142);
         w.longBoxed(v_);
       }
     }
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.key(139);
+        w.key(143);
         w.boolBoxed(v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(140);
+        w.key(144);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(141);
+        w.key(145);
         w.colorValue(v_);
       }
     }
     {
       final v_ = hasOwnBackground;
       if (v_ != null) {
-        w.keyBoolean(142, v_);
+        w.keyBoolean(146, v_);
       }
     }
     {
       final v_ = inheritsBackground;
       if (v_ != null) {
-        w.keyBoolean(143, v_);
+        w.keyBoolean(147, v_);
       }
     }
     {
       final v_ = menu;
       if (v_ != null) {
-        w.keyRef(144, v_.id);
+        w.keyRef(148, v_.id);
       }
     }
     {
       final v_ = region;
       if (v_ != null) {
-        w.key(145);
+        w.key(149);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = tabStop;
       if (v_ != null) {
-        w.keyBoolean(146, v_);
+        w.keyBoolean(150, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(147);
+        w.key(151);
         w.string(v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.key(148);
+        w.key(152);
         w.boolBoxed(v_);
       }
     }
@@ -339,24 +339,24 @@ class VControl extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(131, background);
-    visit(132, backgroundImage);
-    visit(133, bounds);
-    visit(134, cursor);
-    visit(135, dragDetect);
-    visit(136, dragSource);
-    visit(137, dragSourceId);
-    visit(138, dropTargetId);
-    visit(139, enabled);
-    visit(140, font);
-    visit(141, foreground);
-    visit(142, hasOwnBackground);
-    visit(143, inheritsBackground);
-    visit(144, menu);
-    visit(145, region);
-    visit(146, tabStop);
-    visit(147, toolTipText);
-    visit(148, visible);
+    visit(135, background);
+    visit(136, backgroundImage);
+    visit(137, bounds);
+    visit(138, cursor);
+    visit(139, dragDetect);
+    visit(140, dragSource);
+    visit(141, dragSourceId);
+    visit(142, dropTargetId);
+    visit(143, enabled);
+    visit(144, font);
+    visit(145, foreground);
+    visit(146, hasOwnBackground);
+    visit(147, inheritsBackground);
+    visit(148, menu);
+    visit(149, region);
+    visit(150, tabStop);
+    visit(151, toolTipText);
+    visit(152, visible);
   }
 
   @override

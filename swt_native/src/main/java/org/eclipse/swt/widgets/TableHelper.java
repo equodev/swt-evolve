@@ -53,7 +53,9 @@ public class TableHelper {
     public static void recordScrollOffset(DartTable table, Event event) {
         table.scrollOffsetX = Math.max(0, event.x);
         int before = table.scrollOffset;
+        int[] band = namesRowsScrolledIn(table) ? shownBand(table) : null;
         table.scrollOffset = Math.max(0, event.y);
+        nameRowsScrolledIn(table, band);
         if (table.scrollOffset == before) return;
         DartScrollBar bar = followTopIndex(table);
         if (bar == null || event.detail == SWT.NONE) return;
@@ -146,7 +148,9 @@ public class TableHelper {
      */
     private static void scrollToRow(DartTable table, int row) {
         int itemHeight = Math.max(1, table.getItemHeight());
+        int[] band = namesRowsScrolledIn(table) ? shownBand(table) : null;
         table.scrollOffset = Math.min(row * itemHeight, maxScrollOffset(table, itemHeight));
+        nameRowsScrolledIn(table, band);
         followTopIndex(table);
         table.getValue().markDirty(VTable.TOP_INDEX);
     }
@@ -683,34 +687,59 @@ public class TableHelper {
         }
     }
 
+    /**
+     * What the row shows in each cell until its owner-draw overlay does: the image the listener drew
+     * where it suppressed the item's own or the item has none. {@link #getPaintedImages} names the
+     * cells the row leaves to the overlay once it shows. Null for a row with no image anywhere, which
+     * the client draws as it draws absent images: the first cell's from {@code image}, also none.
+     */
     public static Image[] getImages(DartTableItem item) {
         int count = Math.max(1, item.parent.getColumnCount());
         Image[] result = ownImages(item, count);
         OwnerDraw drawn = ownerDraw(item);
-        if (drawn != null) {
-            // The row's overlay already shows what the listener drew, images included.
-            boolean overlay = OwnerDrawOverlay.isListening(item.getApi());
-            for (int i = 0; i < count; i++) {
-                if (overlay) {
-                    if (drawn.suppressed[i]) result[i] = null;
-                } else if (drawn.suppressed[i] || result[i] == null) {
-                    result[i] = dartImageOrNull(drawn.images[i]);
-                }
+        boolean any = false;
+        for (int i = 0; i < count; i++) {
+            if (drawn != null && (drawn.suppressed[i] || result[i] == null)) {
+                result[i] = dartImageOrNull(drawn.images[i]);
+            }
+            any |= result[i] != null;
+        }
+        return any || dartImageOrNull(item.image) != null ? result : null;
+    }
+
+    /**
+     * The columns whose image the row's overlay paints: null for a row that is not owner-drawn, empty
+     * while no overlay draws it.
+     */
+    public static int[] getPaintedImages(DartTableItem item) {
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn == null) {
+            return null;
+        }
+        if (!OwnerDrawOverlay.owns(item.getApi())) {
+            return new int[0];
+        }
+        Image[] own = ownImages(item, drawn.suppressed.length);
+        int[] painted = new int[drawn.suppressed.length];
+        int count = 0;
+        for (int i = 0; i < drawn.suppressed.length; i++) {
+            if (drawn.suppressed[i] || own[i] == null) {
+                painted[count++] = i;
             }
         }
-        return result;
+        return Arrays.copyOf(painted, count);
     }
 
     /**
      * The columns whose text the row's overlay paints: null for a row that is not owner-drawn, and
-     * empty for one whose overlay Flutter has not reported listening yet, which is what asks for it.
+     * empty for one no overlay draws yet, which is what makes the client mount one.
      */
     public static int[] getPaintedTexts(DartTableItem item) {
         OwnerDraw drawn = ownerDraw(item);
         if (drawn == null) {
             return null;
         }
-        if (!OwnerDrawOverlay.isListening(item.getApi())) {
+        if (!OwnerDrawOverlay.owns(item.getApi())) {
             return new int[0];
         }
         int[] painted = new int[drawn.suppressed.length];
@@ -804,23 +833,97 @@ public class TableHelper {
      * <p>Only rows already materialised: reading {@code getItems()} on a virtual table would create
      * every one of them, which is the cost that style exists to avoid.
      */
+    /** How long after the last repaint the rows it left out are captured. */
+    static final int OWNER_DRAW_SETTLE_MS = TreeHelper.OWNER_DRAW_SETTLE_MS;
+
+    /**
+     * A repaint captures the rows on screen and a screenful above and below them, as native SWT
+     * paints only the rows it exposes; the rest are captured once the repaints have stopped for
+     * {@link #OWNER_DRAW_SETTLE_MS}, and as a scroll brings them on screen.
+     */
     static void nameOwnerDrawnCells(DartTable table) {
         TableItem[] rows = table.items;
         if (rows == null) {
             return;
         }
-        for (TableItem row : rows) {
-            if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTableItem)) {
-                continue;
-            }
-            nameOwnerDrawnCells((DartTableItem) row.getImpl());
+        int[] band = shownBand(table);
+        for (int i = band[0]; i < band[1]; i++) {
+            nameOwnerDrawnRow(rows[i]);
+        }
+        if (band[0] > 0 || band[1] < Math.min(rows.length, table.getItemCount())) {
+            nameRowsLeftLater(table);
         }
     }
 
+    private static boolean namesRowsScrolledIn(DartTable table) {
+        return table.ownerDrawRowsLeft != null && table.items != null && table.hooks(SWT.PaintItem);
+    }
+
+    /**
+     * While rows are left to name, a scroll names the rows it brings into the band {@code before}
+     * did not hold. A row it only moves keeps its overlay, drawn in the row's own coordinates.
+     */
+    private static void nameRowsScrolledIn(DartTable table, int[] before) {
+        if (before == null || !namesRowsScrolledIn(table)) return;
+        int[] band = shownBand(table);
+        for (int i = band[0]; i < band[1]; i++) {
+            if (i < before[0] || i >= before[1]) nameOwnerDrawnRow(table.items[i]);
+        }
+        nameRowsLeftLater(table);
+    }
+
+    /** The rows a repaint names at once, by index from the first to below the second. */
+    private static int[] shownBand(DartTable table) {
+        int itemHeight = Math.max(1, table.getItemHeight());
+        int page = viewportHeight(table) / itemHeight + 1;
+        int top = scrollOffsetY(table) / itemHeight;
+        int count = Math.min(table.items.length, table.getItemCount());
+        return new int[] { Math.min(count, Math.max(0, top - page)), Math.min(count, top + 2 * page) };
+    }
+
+    /** The rows on screen. */
+    private static java.util.Set<Item> shownRows(DartTable table) {
+        java.util.Set<Item> shown = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        TableItem[] rows = table.items;
+        if (rows == null) return shown;
+        int itemHeight = Math.max(1, table.getItemHeight());
+        int top = scrollOffsetY(table) / itemHeight;
+        int end = Math.min(Math.min(rows.length, table.getItemCount()), top + viewportHeight(table) / itemHeight + 1);
+        for (int i = Math.max(0, top); i < end; i++) {
+            shown.add(rows[i]);
+        }
+        return shown;
+    }
+
+    private static void nameOwnerDrawnRow(TableItem row) {
+        if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTableItem)) {
+            return;
+        }
+        nameOwnerDrawnCells((DartTableItem) row.getImpl());
+    }
+
+    private static void nameRowsLeftLater(DartTable table) {
+        if (table.ownerDrawRowsLeft == null) {
+            table.ownerDrawRowsLeft = new OwnerDrawRowsLeft(table.getDisplay(),
+                    () -> table.getApi().isDisposed() || table.items == null ? null : rowsLeftOut(table),
+                    row -> nameOwnerDrawnRow((TableItem) row),
+                    () -> table.ownerDrawRowsLeft = null);
+        }
+        ((OwnerDrawRowsLeft) table.ownerDrawRowsLeft).arm();
+    }
+
+    /** Every row but those in the band shown now, which the repaint that left the rest out named, or a scroll since. */
+    private static java.util.List<TableItem> rowsLeftOut(DartTable table) {
+        int[] band = shownBand(table);
+        java.util.List<TableItem> rows = new java.util.ArrayList<>(table.items.length);
+        for (int i = 0; i < table.items.length; i++) {
+            if ((i < band[0] || i >= band[1]) && table.items[i] != null) rows.add(table.items[i]);
+        }
+        return rows;
+    }
+
     static void nameOwnerDrawnCells(DartTableItem item) {
-        item.getValue().markDirty(VTableItem.IMAGES);
-        item.getValue().markDirty(VTableItem.TEXTS);
-        item.getValue().markDirty(VTableItem.PAINTED_TEXTS);
+        item.getValue().markOwnerDrawnCellsDirty();
     }
 
     private static OwnerDraw ownerDraw(DartTableItem item) {
@@ -888,7 +991,8 @@ public class TableHelper {
             dartGc.imageCapture = null;
             gc.dispose();
         }
-        if (OwnerDrawOverlay.isListening(item.getApi())) {
+        if (OwnerDrawOverlay.isListening(item.getApi())
+                || OwnerDrawOverlay.paintAhead(item.parent, item.getApi(), () -> shownRows(table))) {
             OwnerDrawOverlay.paint(item.parent, item.getApi(), count);
         }
         return new OwnerDraw(texts, textDrawn, images, suppressed);

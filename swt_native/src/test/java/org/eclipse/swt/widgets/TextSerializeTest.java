@@ -51,7 +51,7 @@ class TextSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE, SWT.CENTER, SWT.ICON_CANCEL, SWT.ICON_SEARCH, SWT.LEFT, SWT.MULTI, SWT.PASSWORD, SWT.SEARCH, SWT.SINGLE, SWT.RIGHT, SWT.READ_ONLY, SWT.WRAP, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("inheritsBackground", "the client never reads it off a Text", "tabStop", "the client never reads it off a Text"), SWT.NONE, SWT.CENTER, SWT.ICON_CANCEL, SWT.ICON_SEARCH, SWT.LEFT, SWT.MULTI, SWT.PASSWORD, SWT.SEARCH, SWT.SINGLE, SWT.RIGHT, SWT.READ_ONLY, SWT.WRAP, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

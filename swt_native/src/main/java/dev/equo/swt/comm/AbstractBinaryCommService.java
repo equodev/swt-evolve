@@ -256,33 +256,90 @@ public abstract class AbstractBinaryCommService implements CommService {
 
     private void dispatch(byte[] data, int offset, int length) {
         bytesReceived.add(length);
-        int end = offset + length;
+        dispatch(data, offset, offset + length, null);
+    }
+
+    /**
+     * Dispatches the message at {@code data[offset, end)}: its header, then its payload, to the end of
+     * the message or, for an entry of a batch, after the payload's length. A batch is what the client
+     * sent in one turn, its frames in the order sent, laid out as {@link MessageBatch} lays one out.
+     *
+     * @param failures null for a message on its own; for an entry of a batch, where what its handler
+     *                 throws goes, so that the entries after it still reach theirs
+     * @return where what was dispatched ends
+     */
+    private int dispatch(byte[] data, int offset, int end, List<RuntimeException> failures) {
+        boolean entry = failures != null;
         long first = varint(data, offset, end);
         if (first <= 0xFF) {
-            System.err.println(logTag + " dropped a message with no channel number");
-            return;
+            dropped("a message with no channel number");
+            return end;
         }
         int at = offset + (int) (first & 0xFF);
         long head = first >>> 8;
         int channel = (int) (head >>> 1);
         if (ChannelHeader.name(channel) == null) throw unknown("channel", channel);
-        if ((head & 1) == 0) {
-            if (!dispatchGlobal(channel, data, at, end - at)) unhandled(0, 0, channel);
-            return;
+        boolean global = (head & 1) == 0;
+        int type = 0;
+        long id = 0;
+        int payload = at;
+        if (!global) {
+            long typed = varint(data, at, end);
+            int idAt = at + (int) (typed & 0xFF);
+            long zigzag = typed < 0 ? -1 : varint(data, idAt, end);
+            if (zigzag < 0) {
+                dropped("a message with a malformed header");
+                return end;
+            }
+            type = (int) (typed >>> 8);
+            if (ChannelHeader.typeName(type) == null) throw unknown("type", type);
+            payload = idAt + (int) (zigzag & 0xFF);
+            long z = zigzag >>> 8;
+            id = (z >>> 1) ^ -(z & 1);
         }
-        long type = varint(data, at, end);
-        int idAt = at + (int) (type & 0xFF);
-        long zigzag = type < 0 ? -1 : varint(data, idAt, end);
-        if (zigzag < 0) {
-            System.err.println(logTag + " dropped a message with a malformed header");
-            return;
+        int payloadEnd = end;
+        if (entry) {
+            long length = varint(data, payload, end);
+            if (length < 0 || payload + (int) (length & 0xFF) + (length >>> 8) > end) {
+                dropped("a batch whose entry overruns it");
+                return end;
+            }
+            payload += (int) (length & 0xFF);
+            payloadEnd = payload + (int) (length >>> 8);
         }
-        if (ChannelHeader.typeName((int) (type >>> 8)) == null) throw unknown("type", (int) (type >>> 8));
-        int payload = idAt + (int) (zigzag & 0xFF);
-        long z = zigzag >>> 8;
-        long id = (z >>> 1) ^ -(z & 1);
-        if (!dispatchNumbered((int) (type >>> 8), id, channel, data, payload, end - payload))
-            unhandled((int) (type >>> 8), id, channel);
+        if (global && !entry && channel == dev.equo.swt.WireTable.CHANNEL_SWT_EVOLVE_BATCH) {
+            dispatchBatch(data, payload, payloadEnd);
+            return payloadEnd;
+        }
+        try {
+            if (global) {
+                if (!dispatchGlobal(channel, data, payload, payloadEnd - payload)) unhandled(0, 0, channel);
+            } else if (!dispatchNumbered(type, id, channel, data, payload, payloadEnd - payload)) {
+                unhandled(type, id, channel);
+            }
+        } catch (RuntimeException e) {
+            if (!entry) throw e;
+            failures.add(e);
+        }
+        return payloadEnd;
+    }
+
+    /**
+     * Dispatches each entry of a batch as if it had come on its own: one whose handler throws does not
+     * keep the rest from theirs, and what it threw is thrown once they have run.
+     */
+    private void dispatchBatch(byte[] data, int from, int to) {
+        List<RuntimeException> failures = new ArrayList<>(0);
+        for (int next = from; next < to; ) next = dispatch(data, next, to, failures);
+        if (failures.isEmpty()) return;
+        RuntimeException first = failures.get(0);
+        for (int i = 1; i < failures.size(); i++) first.addSuppressed(failures.get(i));
+        throw first;
+    }
+
+    /** Reports a message from the client that cannot be read, which is dropped. */
+    private void dropped(String what) {
+        System.err.println(logTag + " dropped " + what);
     }
 
     /**

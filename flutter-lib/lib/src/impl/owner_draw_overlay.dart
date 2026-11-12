@@ -12,8 +12,9 @@ import '../gen/widgets.dart' show WireChannel;
 /// What an owner-drawing Table or Tree paints into one row: its SWT.EraseItem and SWT.PaintItem
 /// drawing, addressed to the row's item id and laid over the row.
 ///
-/// Java paints a row only once the overlay reports listening: ops that reach a channel before its
-/// listener exists are replayed out of order across the GC's state and op channels.
+/// Java paints a row on screen as soon as it sends it, and any other once the overlay reports
+/// listening. Until the overlay shows what Java painted, the row draws its own text and images; then
+/// it leaves the cells its `paintedTexts` and `paintedImages` name to the overlay ([isShown]).
 class OwnerDrawnRowOverlay extends StatefulWidget {
   final int itemId;
 
@@ -26,6 +27,13 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
 
   const OwnerDrawnRowOverlay(
       {super.key, required this.itemId, required this.ground, required this.minContrast});
+
+  /// How many overlays of each row (by item id) show what Java painted: an overlay remounted under a
+  /// new parent can show before the one it replaces is gone.
+  static final Map<int, int> _shown = {};
+
+  /// Whether row [itemId]'s overlay shows its painting, so the row leaves those cells to it.
+  static bool isShown(int itemId) => _shown.containsKey(itemId);
 
   @override
   State<OwnerDrawnRowOverlay> createState() => OwnerDrawnRowOverlayState();
@@ -63,9 +71,27 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
     }
   }
 
-  /// Called by the row's GC once it has something to show.
+  /// Called by the row's GC once it has something to show. The row is rebuilt with it, so it stops
+  /// drawing what the overlay draws in the same frame the overlay starts.
   void onGCReady() {
-    if (!_ready && mounted) setState(() => _ready = true);
+    if (_ready || !mounted) return;
+    setState(() => _ready = true);
+    OwnerDrawnRowOverlay._shown.update(widget.itemId, (n) => n + 1, ifAbsent: () => 1);
+    final owner = context.findAncestorStateOfType<WidgetSwtState>();
+    if (owner != null && owner.mounted) (owner.context as Element).markNeedsBuild();
+  }
+
+  @override
+  void dispose() {
+    if (_ready) {
+      final left = (OwnerDrawnRowOverlay._shown[widget.itemId] ?? 1) - 1;
+      if (left > 0) {
+        OwnerDrawnRowOverlay._shown[widget.itemId] = left;
+      } else {
+        OwnerDrawnRowOverlay._shown.remove(widget.itemId);
+      }
+    }
+    super.dispose();
   }
 
   @override

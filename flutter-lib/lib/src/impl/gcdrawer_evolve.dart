@@ -3125,9 +3125,13 @@ class GradientRectShape extends Shape {
       end: end,
       colors: [fromColor, toColor],
     );
-    c.drawRect(rect, _paint()
-      ..shader = gradient.createShader(rect)
-      ..style = PaintingStyle.fill);
+    // Impeller draws a rect filled by a shader as an SDF blended with the shader in two offscreen
+    // passes; the same pixels drawn as a clipped paint take none. The clip is the rect sorted, as a
+    // rect is filled: a negative width or height swaps the gradient's colours, it does not empty it.
+    c.save();
+    c.clipRect(Rect.fromPoints(rect.topLeft, rect.bottomRight));
+    c.drawPaint(_paint()..shader = gradient.createShader(rect));
+    c.restore();
   }
 
   @override

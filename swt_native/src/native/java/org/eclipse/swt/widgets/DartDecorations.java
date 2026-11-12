@@ -516,7 +516,9 @@ public class DartDecorations extends DartCanvas implements IDecorations {
         saveDefault = button;
         if (button == defaultButton)
             return;
+        markPrimaryChanged(defaultButton);
         defaultButton = button;
+        markPrimaryChanged(defaultButton);
         ((DartDisplay) display.getImpl()).updateDefaultButton();
     }
 
@@ -792,6 +794,11 @@ public class DartDecorations extends DartCanvas implements IDecorations {
 
     boolean wireOwnMenuStrip() {
         return Sizes.ownMenuStripHeight(getApi()) > 0;
+    }
+
+    private static void markPrimaryChanged(Button button) {
+        if (button != null && !button.isDisposed() && button.getImpl() instanceof DartButton)
+            ((DartButton) button.getImpl()).getValue().markDirty(VButton.PRIMARY);
     }
 
     protected void _hookEvents() {

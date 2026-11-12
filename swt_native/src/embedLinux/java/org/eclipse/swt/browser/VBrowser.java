@@ -69,6 +69,10 @@ public class VBrowser extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 144:
+                return false;
+            case 146:
+                return false;
             case 7:
                 w.write(getJavascriptEnabled());
                 return true;
@@ -88,6 +92,10 @@ public class VBrowser extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 144:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 146:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
             case 7:
                 {
                     boolean v_ = getJavascriptEnabled();

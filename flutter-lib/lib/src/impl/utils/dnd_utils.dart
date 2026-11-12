@@ -998,30 +998,43 @@ class _DropTargetNegotiator<T extends Object> extends StatefulWidget {
 /// A drag from another window, which Java carries to the shell under the pointer: it enters the
 /// drop targets drawn here as a drag in this window would, the innermost one under the pointer.
 class RemoteDragReceiver {
+  /// A step's phase, as Java's RemoteDrag numbers it in the event's `detail`.
+  static const over = 1;
+  static const leave = 2;
+  static const drop = 3;
+
   _DropTargetNegotiatorState? _current;
   OverlayEntry? _image;
   final ValueNotifier<Offset> _imageAt = ValueNotifier(Offset.zero);
 
-  /// Handles `over`, `leave` and `drop` at [global], a position in [context]'s view. The first
-  /// `over` in this window carries the drag image, as [png] of [imageSize]. Answers false for a drop
-  /// no drop target here takes.
-  bool handle(BuildContext context, String phase, Offset? global, {Uint8List? png, Size? imageSize}) {
-    if (phase == 'over' && global != null) {
-      _showImage(context, global, png, imageSize);
+  /// The drag image Java sent ahead of the first step into this window, until that step shows it.
+  (Uint8List, Size)? _pendingImage;
+
+  /// The drag image, [png] of [size], for the next [over] to draw.
+  void image(Uint8List png, Size size) => _pendingImage = (png, size);
+
+  /// Handles [over], [leave] and [drop] at [global], a position in [context]'s view. Answers false
+  /// for a drop no drop target here takes.
+  bool handle(BuildContext context, int phase, Offset? global) {
+    if (phase == over && global != null) {
+      final image = _pendingImage;
+      _pendingImage = null;
+      _showImage(context, global, image?.$1, image?.$2);
     } else {
+      _pendingImage = null;
       _hideImage();
     }
-    if (phase == 'leave' || global == null) {
+    if (phase == leave || global == null) {
       _enter(null, null);
-      return phase != 'drop';
+      return phase != drop;
     }
     final target = _targetAt(context, global);
-    if (phase == 'over') {
+    if (phase == over) {
       if (!identical(target, _current)) _enter(target, global);
       target?.remoteOver(global);
       return true;
     }
-    if (phase != 'drop') return true;
+    if (phase != drop) return true;
     if (!identical(target, _current)) {
       _enter(target, global);
       target?.remoteOver(global);

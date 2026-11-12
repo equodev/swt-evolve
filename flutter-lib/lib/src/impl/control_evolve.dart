@@ -19,12 +19,14 @@ import '../gen/menu.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart' show WireKey;
+import '../nolayout.dart' show BoundsSlot;
 import '../styles.dart';
 import '../impl/focus_requests.dart';
 import '../impl/image_mouse_cursor.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
+import 'utils/frame_interval.dart';
 import 'utils/pending_move.dart';
 import 'utils/perf_marks.dart';
 import 'utils/round_trip_timing.dart';
@@ -56,8 +58,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   int _clickCount = 0;
   Duration? _lastClickStamp;
   Offset? _lastClickPosition;
-  /// On [_clock]; far enough back that the first move is never held.
-  int _lastMouseMoveMs = -(1 << 30);
+  /// On [nowMicros]; far enough back that the first move is never held.
+  int _lastMouseMoveMicros = -(1 << 40);
 
   Offset? _lastPointerCrossing;
 
@@ -71,7 +73,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   // Shared by every ControlImpl: the pointer whose MenuDetect walk up the parent chain has
   // already been stopped by a control owning a menu (see [handleMenuDetect]).
   static int? _menuDetectHandledPointer;
-  static const int _mouseMoveThrottleMs = 15;
+  /// The shortest time between two moves sent to Java: just under the display's frame interval, so
+  /// a display drawing more often than 60 Hz draws Java's answer to a move in every frame, and no
+  /// more than 15 ms, nor less than 4.
+  static int get _moveWindowMicros => math.max(4000, math.min(15000, FrameInterval.micros * 9 ~/ 10));
   // Win32's SM_CXDRAG/SM_CYDRAG default, which is what SWT's own drag detection uses.
   static const double _dragThresholdPx = 4.0;
   /// How long the pointer rests before a control reports MouseHover and shows its tooltip:
@@ -203,7 +208,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void setValue(V value) {
     _resolveSentinelBounds(value);
     if (!drawsHeldWidgets && (lastChange?.ofHeld ?? false)) return;
-    if (_onlyMoved()) return;
+    if (_onlyPlaced()) return;
     if (lastChange?.isOnly(unrenderedProperties) ?? false) {
       // A tooltip on screen shows the new text, as the platform's does.
       if (_tooltipEntry != null) _showTooltipAtPointer();
@@ -322,7 +327,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
     HoverExclusivityArbiter.instance.flushPending();
     event.stateMask = moveStateMask(buttons);
-    final wait = _lastMouseMoveMs + _mouseMoveThrottleMs - _clock.elapsedMilliseconds;
+    final wait = _lastMouseMoveMicros + _moveWindowMicros - nowMicros();
     if (wait > 0) {
       // The pointer may stop here: the move is sent when the window ends unless another replaces it.
       _heldState = state;
@@ -352,11 +357,15 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     ..y = y;
   VEvent? _moveEvent;
 
-  /// What the throttle measures moves by: monotonic, and read without making a date.
   static final Stopwatch _clock = Stopwatch()..start();
 
+  /// What the throttle measures moves by: monotonic, and read without making a date. A test sets it
+  /// to its own clock, so the window does not depend on how fast the machine runs the test.
+  @visibleForTesting
+  static int Function() nowMicros = () => _clock.elapsedMicroseconds;
+
   void _sendMouseMove(V state, VEvent event) {
-    _lastMouseMoveMs = _clock.elapsedMilliseconds;
+    _lastMouseMoveMicros = nowMicros();
     widget.sendMouseMoveMouseMove(state, event);
     // After the send, not around it: this times the round trip the move starts.
     RoundTripTiming.trace();
@@ -426,6 +435,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// unmounted node leaves, which would hand it to the previously focused control. Not to one that
   /// shows nothing that takes the focus, as while it is hidden: the request would wait and take the
   /// focus whenever the control is shown again.
+  ///
+  /// With no element showing it yet, as when a part restored or moved builds the control again later,
+  /// the element that shows it next takes the keys: Java, which still has it focused, hears nothing
+  /// of this.
   void _handFocusToSuccessor() {
     for (final other in _mounted) {
       if (!identical(other, this) && other.mounted && other.state.id == state.id) {
@@ -434,6 +447,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         return;
       }
     }
+    FocusRequests.instance.request(state.id);
   }
 
   @override
@@ -450,6 +464,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       FocusRequests.instance.giveBack(state.id);
     }
     DragStartVeto.forget(state.id);
+    if (identical(_rawMoveTarget, this)) _rawMoveTarget = null;
     FocusRequests.instance.unregister(state.id, context);
     HoverExclusivityArbiter.instance.unregister(this);
     _mounted.remove(this);
@@ -479,7 +494,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     _movesBeforeDragStart.clear();
     if (doit || !mounted) return;
     for (final move in held) {
-      widget.sendMouseMoveMouseMove(state, move);
+      _sendMouseMove(state, move);
     }
   }
 
@@ -487,19 +502,46 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// MouseMove, and a drag-select fires a Selection for each, even when a busy frame delivers
   /// several back to back.
   void sendDragMove(V state, VEvent event, PointerMoveEvent e) {
+    _rawMoveTarget = this;
+    _rawMovePointer = e.pointer;
+    _sendDragMove(state, event, e.position, e.buttons);
+  }
+
+  /// The control the held pointer's moves go to, and that pointer: where a move the browser reports
+  /// ahead of its frame is sent ([rawMove]).
+  static ControlImpl? _rawMoveTarget;
+  static int? _rawMovePointer;
+
+  /// A move of the held pointer as the browser reports it, ahead of the frame that delivers it (at
+  /// [x], [y] in the view): sent to Java now, so that Java's answer can be drawn in that frame. The
+  /// move the frame then delivers is at the same place, and is not reported again.
+  static void rawMove(double x, double y, int buttons) {
+    final target = _rawMoveTarget;
+    if (target == null || buttons == 0 || !target.mounted) return;
+    final box = target._ownBox();
+    if (box == null || !box.attached || !box.hasSize) return;
+    final global = Offset(x, y);
+    // Relative to where the control is now, unlike a held pointer's localPosition (see [heldLocal]).
+    final local = box.globalToLocal(global);
+    final event = VEvent()
+      ..x = local.dx.round()
+      ..y = local.dy.round();
+    target._sendDragMove(target.state, event, global, buttons);
+  }
+
+  void _sendDragMove(V state, VEvent event, Offset position, int buttons) {
     if (_dndDragging && _dndDragAllowed == true) return;
     // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
     // with the press.
-    final held = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
+    final held = Offset(position.dx.roundToDouble(), position.dy.roundToDouble());
     if (_lastHeld == held) return;
     _lastHeld = held;
-    event.stateMask = moveStateMask(e.buttons);
+    event.stateMask = moveStateMask(buttons);
     if (_dndDragging && _dndDragAllowed == null) {
       _movesBeforeDragStart.add(event);
       return;
     }
-    widget.sendMouseMoveMouseMove(state, event);
-    RoundTripTiming.trace();
+    _sendMouseMove(state, event);
   }
 
   /// Delivers SWT.MenuDetect for a context-menu request at [localPosition].
@@ -649,7 +691,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   /// Forgets the press of [e]'s pointer once it is released or cancelled.
-  void releasePointer(PointerEvent e) => _pressOrigins.remove(e.pointer);
+  void releasePointer(PointerEvent e) {
+    _pressOrigins.remove(e.pointer);
+    if (identical(_rawMoveTarget, this) && e.pointer == _rawMovePointer) _rawMoveTarget = null;
+  }
 
   /// Whether a drag over this control is announced from its own pointer handling. False for a
   /// control that runs its own Draggable and raises DragDetect from there, or the gesture would be
@@ -1088,8 +1133,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       _inner = null;
       return const SizedBox.shrink();
     }
-    final bounds = state.bounds;
-    _builtSize = bounds == null ? null : Size(bounds.width.toDouble(), bounds.height.toDouble());
+    builtAtBounds();
 
     // The chain below is the same for most rebuilds, which change only what the control shows: the
     // previous chain is returned as it is and only its innermost slot rebuilds, with [widget].
@@ -1274,18 +1318,36 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// stands is otherwise its parent's layout, which follows the move on its own.
   bool get buildsFromPosition => false;
 
-  /// The size the last build that went through [wrap] was made for.
+  /// Whether a build made for a [built] size draws this control as a new build would at a
+  /// [width] x [height] its parent's layout gives it: true where the build reads the size only as
+  /// constraints that layout imposes anyway.
+  bool sizeIsLayoutOnly(Size built, int width, int height) => false;
+
+  /// The size the last build was made for, recorded by [builtAtBounds].
   Size? _builtSize;
 
-  bool _onlyMoved() {
+  /// Records that the build under way draws the control at its current bounds. [wrap] does it; a
+  /// control that builds its own tree calls it from its build.
+  @protected
+  void builtAtBounds() {
+    final bounds = state.bounds;
+    _builtSize = bounds == null ? null : Size(bounds.width.toDouble(), bounds.height.toDouble());
+  }
+
+  /// Whether the change is to the bounds alone, and the last build still draws them: a move, or
+  /// a new size that the parent's layout applies by itself.
+  bool _onlyPlaced() {
     final built = _builtSize;
     final b = state.bounds;
-    return built != null &&
-        b != null &&
-        !buildsFromPosition &&
-        (lastChange?.isOnly(const {WireKey.k_Control_bounds}) ?? false) &&
-        built.width == b.width &&
-        built.height == b.height;
+    if (built == null || b == null || buildsFromPosition) return false;
+    if (!(lastChange?.isOnly(const {WireKey.k_Control_bounds}) ?? false)) return false;
+    if (built.width == b.width && built.height == b.height) return true;
+    return built.width > 0 &&
+        built.height > 0 &&
+        b.width > 0 &&
+        b.height > 0 &&
+        BoundsSlot.places(context, state.id) &&
+        sizeIsLayoutOnly(built, b.width, b.height);
   }
 
   /// The chain [wrap] last built, what it was built from, and the content its slot shows.

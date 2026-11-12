@@ -11,6 +11,9 @@ package org.eclipse.swt.widgets;
  * one. This carries them to the client that owns the control they were opened for; {@code VDisplay}
  * leaves out the ones sent here, so exactly one client draws each.
  *
+ * <p>The popups the Display's own client draws are sent the same way, as a {@code DisplayPopups}
+ * record under the Display's id.
+ *
  * <p>Write-only, like every value object on this side: the client renders it and never sends one
  * back, so the reader is a stub.
  */

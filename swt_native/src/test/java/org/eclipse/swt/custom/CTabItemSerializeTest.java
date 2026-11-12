@@ -25,13 +25,13 @@ class CTabItemSerializeTest extends SerializeTestBase {
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabItem")
-               .containsEntry("toolTipText", w.getToolTipText())
-               .containsEntry("style", w.getStyle());
+               .containsEntry("toolTipText", w.getToolTipText());
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("selectionForeground").equalsTo(w.getSelectionForeground(), orAbsentIfNull));
         assertJ.satisfies(node("showClose").equalsTo(w.getShowClose(), orAbsentIfFalse));
+        assertJ.satisfies(node("showDirty").equalsTo(w.getShowDirty(), orAbsentIfFalse));
         assertJ.satisfies(node("image").equalsTo(w.getImage(), orAbsentIfNull));
     }
 
@@ -42,7 +42,7 @@ class CTabItemSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE);
+        }, unwritable("style", "the client never reads it off a CTabItem"), SWT.NONE);
     }
 
     @Test

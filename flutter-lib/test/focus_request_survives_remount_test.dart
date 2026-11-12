@@ -60,4 +60,34 @@ void main() {
     final field = tester.widget<EditableText>(find.byType(EditableText));
     expect(field.focusNode.hasPrimaryFocus, isTrue, reason: 'the replacing element holds the focus');
   });
+
+  testWidgets('a control holding the focus keeps it when its element is replaced', (tester) async {
+    final generation = ValueNotifier(0);
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 400,
+        height: 300,
+        child: ValueListenableBuilder<int>(
+          valueListenable: generation,
+          builder: (_, n, __) => Stack(children: [
+            KeyedSubtree(key: ValueKey(n), child: TextSwt<VText>(value: _editor())),
+          ]),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    FocusRequests.instance.request(editorId);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasPrimaryFocus, isTrue);
+
+    // Rebuilt elsewhere, as a part restored from a maximized stack is: Java hears nothing of it.
+    generation.value++;
+    await tester.pump();
+    await tester.pump();
+
+    final field = tester.widget<EditableText>(find.byType(EditableText));
+    expect(field.focusNode.hasPrimaryFocus, isTrue, reason: 'the element showing the control now holds the keys');
+  });
 }

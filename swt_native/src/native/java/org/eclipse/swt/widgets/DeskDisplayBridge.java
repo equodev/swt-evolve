@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.BootTrace;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
+import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.FlutterNative;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.comm.CommService;

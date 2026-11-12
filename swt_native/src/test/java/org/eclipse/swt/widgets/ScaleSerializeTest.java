@@ -36,7 +36,6 @@ class ScaleSerializeTest extends SerializeTestBase {
         assertJ.satisfies(node("bounds").equalsTo(value(w).getBounds(), orAbsentIfNull));
         assertJ.satisfies(node("cursor").equalsTo(w.getCursor(), orAbsentIfNull));
         assertJ.satisfies(node("dragDetect").equalsTo(w.getDragDetect(), orAbsentIfFalse));
-        assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
         assertJ.satisfies(node("foreground").equalsTo(w.getForeground(), orAbsentIfNull));
         assertJ.satisfies(node("menu").equalsTo(w.getMenu(), orAbsentIfNull));
     }
@@ -48,7 +47,7 @@ class ScaleSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("font", "the client never reads it off a Scale", "hasOwnBackground", "the client never reads it off a Scale", "inheritsBackground", "the client never reads it off a Scale", "tabStop", "the client never reads it off a Scale"), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

@@ -183,6 +183,8 @@ class TableColumnWidthFlutterTest {
         Composite neverSelectedTabPage = new Composite(shell, SWT.NONE);
         neverSelectedTabPage.setLayout(new FillLayout());
         neverSelectedTabPage.setBounds(0, 0, 0, 0);
+        // As CTabFolder leaves a page it has not selected.
+        neverSelectedTabPage.setVisible(false);
 
         Table table = buildWeightedColumnTable(neverSelectedTabPage);
         shell.open();
@@ -191,6 +193,7 @@ class TableColumnWidthFlutterTest {
 
         // The tab is selected now: the page finally gets a real size.
         neverSelectedTabPage.setBounds(0, 0, 700, 450);
+        neverSelectedTabPage.setVisible(true);
         FlutterBridge.update().join();
 
         assertThat(table.getColumn(2).getWidth())

@@ -76,6 +76,8 @@ class ControlVisibilityDirtyFlutterTest {
     }
 
     private static void assertVisibilityFlipIsPushed(RecordingBridge bridge, Control control, boolean visible) {
+        // The flip before this one has been sent: a change still waiting for its flush is sent by it.
+        dev.equo.swt.FlutterBridge.update().join();
         bridge.dirtied.clear();
         control.setVisible(visible);
 

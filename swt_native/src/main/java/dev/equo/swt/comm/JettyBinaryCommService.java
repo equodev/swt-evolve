@@ -35,6 +35,10 @@ public class JettyBinaryCommService extends AbstractBinaryCommService {
     private final Set<Session> sessions = ConcurrentHashMap.newKeySet();
 
     public JettyBinaryCommService() {
+        this(Boolean.getBoolean(BinaryCommService.DEFLATE));
+    }
+
+    public JettyBinaryCommService(boolean deflate) {
         // Daemon thread pool so the comm never pins the JVM after the app closes (see BinaryCommService).
         QueuedThreadPool pool = new QueuedThreadPool();
         pool.setDaemon(true);
@@ -53,7 +57,11 @@ public class JettyBinaryCommService extends AbstractBinaryCommService {
             container.setMaxBinaryMessageSize(MAX_MSG);
             container.setMaxFrameSize(MAX_MSG);
             container.setIdleTimeout(Duration.ZERO);
-            container.addMapping("/", (req, resp, cb) -> new BridgeSocket());
+            container.addMapping("/", (req, resp, cb) -> {
+                // Jetty accepts an offered permessage-deflate unless the response declines every extension.
+                if (!deflate) resp.setExtensions(java.util.Collections.emptyList());
+                return new BridgeSocket();
+            });
         });
         context.setHandler(wsHandler);
         server.setHandler(context);

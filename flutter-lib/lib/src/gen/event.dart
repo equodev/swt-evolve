@@ -31,70 +31,70 @@ class VEvent implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 188: // button
+      case 192: // button
         button = r.int32();
         return true;
-      case 189: // character
+      case 193: // character
         character = r.char16();
         return true;
-      case 190: // count
+      case 194: // count
         count = r.int32();
         return true;
-      case 191: // currentDataTypeId
+      case 195: // currentDataTypeId
         currentDataTypeId = r.int32();
         return true;
-      case 192: // detail
+      case 196: // detail
         detail = r.int32();
         return true;
-      case 193: // doit
+      case 197: // doit
         doit = r.boolean();
         return true;
-      case 195: // end
+      case 199: // end
         end = r.int32();
         return true;
-      case 196: // feedback
+      case 200: // feedback
         feedback = r.int32();
         return true;
-      case 198: // height
+      case 202: // height
         height = r.int32();
         return true;
-      case 199: // index
+      case 203: // index
         index = r.int32();
         return true;
-      case 201: // itemId
+      case 205: // itemId
         itemId = r.int64();
         return true;
-      case 202: // keyCode
+      case 206: // keyCode
         keyCode = r.int32();
         return true;
-      case 203: // keyLocation
+      case 207: // keyLocation
         keyLocation = r.int32();
         return true;
-      case 207: // segments
+      case 211: // segments
         segments = r.ints();
         return true;
-      case 209: // start
+      case 213: // start
         start = r.int32();
         return true;
-      case 210: // stateMask
+      case 214: // stateMask
         stateMask = r.int32();
         return true;
-      case 211: // text
+      case 215: // text
         text = r.string();
         return true;
-      case 212: // time
+      case 216: // time
         time = r.int32();
         return true;
-      case 214: // type
+      case 218: // type
         type = r.int32();
         return true;
-      case 216: // width
+      case 220: // width
         width = r.int32();
         return true;
-      case 217: // x
+      case 221: // x
         x = r.int32();
         return true;
-      case 219: // y
+      case 223: // y
         y = r.int32();
         return true;
       default:
@@ -104,28 +104,28 @@ class VEvent implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(188, button);
-    visit(189, character);
-    visit(190, count);
-    visit(191, currentDataTypeId);
-    visit(192, detail);
-    visit(193, doit);
-    visit(195, end);
-    visit(196, feedback);
-    visit(198, height);
-    visit(199, index);
-    visit(201, itemId);
-    visit(202, keyCode);
-    visit(203, keyLocation);
-    visit(207, segments);
-    visit(209, start);
-    visit(210, stateMask);
-    visit(211, text);
-    visit(212, time);
-    visit(214, type);
-    visit(216, width);
-    visit(217, x);
-    visit(219, y);
+    visit(192, button);
+    visit(193, character);
+    visit(194, count);
+    visit(195, currentDataTypeId);
+    visit(196, detail);
+    visit(197, doit);
+    visit(199, end);
+    visit(200, feedback);
+    visit(202, height);
+    visit(203, index);
+    visit(205, itemId);
+    visit(206, keyCode);
+    visit(207, keyLocation);
+    visit(211, segments);
+    visit(213, start);
+    visit(214, stateMask);
+    visit(215, text);
+    visit(216, time);
+    visit(218, type);
+    visit(220, width);
+    visit(221, x);
+    visit(223, y);
   }
 
   @override
@@ -133,135 +133,135 @@ class VEvent implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = button;
       if (v_ != null) {
-        w.keyInt32(188, v_);
+        w.keyInt32(192, v_);
       }
     }
     {
       final v_ = character;
       if (v_ != null) {
-        w.keyChar16(189, v_);
+        w.keyChar16(193, v_);
       }
     }
     {
       final v_ = count;
       if (v_ != null) {
-        w.keyInt32(190, v_);
+        w.keyInt32(194, v_);
       }
     }
     {
       final v_ = currentDataTypeId;
       if (v_ != null) {
-        w.keyInt32(191, v_);
+        w.keyInt32(195, v_);
       }
     }
     {
       final v_ = detail;
       if (v_ != null) {
-        w.keyInt32(192, v_);
+        w.keyInt32(196, v_);
       }
     }
     {
       final v_ = doit;
       if (v_ != null) {
-        w.keyBoolean(193, v_);
+        w.keyBoolean(197, v_);
       }
     }
     {
       final v_ = end;
       if (v_ != null) {
-        w.keyInt32(195, v_);
+        w.keyInt32(199, v_);
       }
     }
     {
       final v_ = feedback;
       if (v_ != null) {
-        w.keyInt32(196, v_);
+        w.keyInt32(200, v_);
       }
     }
     {
       final v_ = height;
       if (v_ != null) {
-        w.keyInt32(198, v_);
+        w.keyInt32(202, v_);
       }
     }
     {
       final v_ = index;
       if (v_ != null) {
-        w.keyInt32(199, v_);
+        w.keyInt32(203, v_);
       }
     }
     {
       final v_ = itemId;
       if (v_ != null) {
-        w.keyInt64(201, v_);
+        w.keyInt64(205, v_);
       }
     }
     {
       final v_ = keyCode;
       if (v_ != null) {
-        w.keyInt32(202, v_);
+        w.keyInt32(206, v_);
       }
     }
     {
       final v_ = keyLocation;
       if (v_ != null) {
-        w.keyInt32(203, v_);
+        w.keyInt32(207, v_);
       }
     }
     {
       final v_ = segments;
       if (v_ != null) {
-        w.key(207);
+        w.key(211);
         w.ints(v_);
       }
     }
     {
       final v_ = start;
       if (v_ != null) {
-        w.keyInt32(209, v_);
+        w.keyInt32(213, v_);
       }
     }
     {
       final v_ = stateMask;
       if (v_ != null) {
-        w.keyInt32(210, v_);
+        w.keyInt32(214, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(211);
+        w.key(215);
         w.string(v_);
       }
     }
     {
       final v_ = time;
       if (v_ != null) {
-        w.keyInt32(212, v_);
+        w.keyInt32(216, v_);
       }
     }
     {
       final v_ = type;
       if (v_ != null) {
-        w.keyInt32(214, v_);
+        w.keyInt32(218, v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(216, v_);
+        w.keyInt32(220, v_);
       }
     }
     {
       final v_ = x;
       if (v_ != null) {
-        w.keyInt32(217, v_);
+        w.keyInt32(221, v_);
       }
     }
     {
       final v_ = y;
       if (v_ != null) {
-        w.keyInt32(219, v_);
+        w.keyInt32(223, v_);
       }
     }
   }

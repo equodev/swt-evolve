@@ -49,6 +49,11 @@ class StyledTextVerifyKeyDispatchTest {
     }
 
     private StyledText styledText() {
+        return styledText(null);
+    }
+
+    /** An editor whose client reported {@code clientPlatform}, Flutter's TargetPlatform name, or none. */
+    private StyledText styledText(String clientPlatform) {
         Shell shell = Mocks.shell();
         Display display = shell.getDisplay();
         DartDisplay displayImpl = (DartDisplay) display.getImpl();
@@ -65,6 +70,10 @@ class StyledTextVerifyKeyDispatchTest {
             asyncQueue.add(inv.getArgument(0));
             return null;
         }).when(display).asyncExec(any(Runnable.class));
+        if (clientPlatform != null) {
+            DisplayHelper.clientReady(display, clientPlatform);
+            pumpAsync();
+        }
         StyledText st = new StyledText(shell, SWT.MULTI);
         st.setText("");
         st.setBounds(0, 0, 400, 300);
@@ -80,10 +89,14 @@ class StyledTextVerifyKeyDispatchTest {
 
     /** A key typed on the client, which forwards it and leaves the edit to the widget. */
     private void typeFromFlutter(StyledText st, char character) {
+        typeFromFlutter(st, character, 0);
+    }
+
+    private void typeFromFlutter(StyledText st, char character, int stateMask) {
         Event key = new Event();
         key.keyCode = character;
         key.character = character;
-        key.stateMask = 0;
+        key.stateMask = stateMask;
         bridge.comm.fireContaining("/" + st.hashCode() + "/Key/KeyDown", key);
         pumpAsync();
     }
@@ -138,5 +151,28 @@ class StyledTextVerifyKeyDispatchTest {
         assertThat(st.getText())
                 .as("typing '(' in an editor with auto-close brackets yields '()' natively")
                 .isEqualTo("()");
+    }
+
+    @Test
+    @DisplayName("on a Mac client, a character typed with Command held is not text")
+    void commandKeyIsNotTypedOnAMac() {
+        StyledText st = styledText("macOS");
+
+        typeFromFlutter(st, 's', SWT.COMMAND);
+        typeFromFlutter(st, 'S', SWT.COMMAND | SWT.SHIFT);
+
+        assertThat(st.getText())
+                .as("Cmd+S with nothing to save is an accelerator nobody took, as on Cocoa")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("on a Linux client, a character typed with Command held is text, as on GTK")
+    void commandKeyIsTypedOnLinux() {
+        StyledText st = styledText("linux");
+
+        typeFromFlutter(st, 's', SWT.COMMAND);
+
+        assertThat(st.getText()).isEqualTo("s");
     }
 }

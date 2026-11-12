@@ -533,6 +533,9 @@ public class DartTreeColumn extends DartItem implements ITreeColumn {
      */
     public void setToolTipText(String string) {
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            getValue().markDirty(VTreeColumn.TOOL_TIP_TEXT);
+        }
         toolTipText = string;
         ((DartControl) parent.getImpl()).checkToolTip(this.getApi());
     }

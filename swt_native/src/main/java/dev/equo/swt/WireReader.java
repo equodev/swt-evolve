@@ -184,7 +184,8 @@ public final class WireReader {
         return (v >>> 1) ^ -(v & 1);
     }
 
-    private long varlong() {
+    /** An unsigned varint too long for an int. */
+    public long varlong() {
         long v = 0;
         for (int shift = 0; ; shift += 7) {
             int b = buf[pos++];

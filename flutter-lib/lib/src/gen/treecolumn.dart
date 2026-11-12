@@ -42,6 +42,7 @@ class VTreeColumn extends VItem {
   int? alignment;
   bool? moveable;
   bool? resizable;
+  String? toolTipText;
   int? width;
 
   @override
@@ -51,6 +52,7 @@ class VTreeColumn extends VItem {
       alignment = other.alignment;
       moveable = other.moveable;
       resizable = other.resizable;
+      toolTipText = other.toolTipText;
       width = other.width;
     }
   }
@@ -58,16 +60,19 @@ class VTreeColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 639: // alignment
+      case 647: // alignment
         alignment = r.int32();
         return true;
-      case 640: // moveable
+      case 648: // moveable
         moveable = r.boolean();
         return true;
-      case 641: // resizable
+      case 649: // resizable
         resizable = r.boolean();
         return true;
-      case 642: // width
+      case 650: // toolTipText
+        toolTipText = r.string();
+        return true;
+      case 651: // width
         width = r.int32();
         return true;
       default:
@@ -81,25 +86,32 @@ class VTreeColumn extends VItem {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(639, v_);
+        w.keyInt32(647, v_);
       }
     }
     {
       final v_ = moveable;
       if (v_ != null) {
-        w.keyBoolean(640, v_);
+        w.keyBoolean(648, v_);
       }
     }
     {
       final v_ = resizable;
       if (v_ != null) {
-        w.keyBoolean(641, v_);
+        w.keyBoolean(649, v_);
+      }
+    }
+    {
+      final v_ = toolTipText;
+      if (v_ != null) {
+        w.key(650);
+        w.string(v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(642, v_);
+        w.keyInt32(651, v_);
       }
     }
   }
@@ -107,9 +119,13 @@ class VTreeColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(639, alignment);
-    visit(640, moveable);
-    visit(641, resizable);
-    visit(642, width);
+    visit(647, alignment);
+    visit(648, moveable);
+    visit(649, resizable);
+    visit(650, toolTipText);
+    visit(651, width);
   }
+
+  @override
+  String? get semanticsTooltip => toolTipText;
 }

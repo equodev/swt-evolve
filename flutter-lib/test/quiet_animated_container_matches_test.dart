@@ -1,5 +1,6 @@
 // QuietAnimatedContainer follows a change of what it paints by repainting instead of rebuilding;
-// every step of it has to draw what Flutter's AnimatedContainer draws, whatever changes.
+// every step of it has to draw what Flutter's AnimatedContainer draws, whatever changes, except that
+// its padding takes a new value at once.
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -37,14 +38,14 @@ Widget _box(_Look look, {required bool flutters, Widget? child}) {
   final foreground = look.foreground == null ? null : BoxDecoration(color: look.foreground);
   const constraints = BoxConstraints(minWidth: 60, minHeight: 24);
   return flutters
+      // The padding outside the animation, so it changes at once; centred, as the padding is even.
       ? AnimatedContainer(
           duration: _duration,
           decoration: decoration,
           foregroundDecoration: foreground,
-          padding: look.padding,
           constraints: constraints,
           alignment: Alignment.center,
-          child: child,
+          child: Padding(padding: look.padding, child: child),
         )
       : QuietAnimatedContainer(
           duration: _duration,

@@ -20,9 +20,7 @@ import org.mockito.AdditionalAnswers;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
@@ -184,7 +181,7 @@ class PaintPacingTest {
     @Test
     @DisplayName("another Display's state leaves its held paints held")
     void anotherDisplaysStateLeavesAHeldPaint() {
-        Display other = mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display()));
+        Display other = DartMocks.keepsData(mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display())));
         AtomicInteger otherPaints = new AtomicInteger();
         Canvas canvas = inFlightFull(Mocks.shell(), paints);
         Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
@@ -245,7 +242,7 @@ class PaintPacingTest {
     @Test
     @DisplayName("Displays on one connection each get their client's answers")
     void displaysSharingAConnectionEachGetTheirAnswers() {
-        Display other = mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display()));
+        Display other = DartMocks.keepsData(mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display())));
         AtomicInteger otherPaints = new AtomicInteger();
         Canvas canvas = inFlightFull(Mocks.shell(), paints);
         Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
@@ -266,7 +263,7 @@ class PaintPacingTest {
     @Test
     @DisplayName("a disposed Display stops getting answers on a connection that outlives it")
     void aDisposedDisplayLeavesTheConnection() {
-        Display other = mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display()));
+        Display other = DartMocks.keepsData(mock(Display.class, AdditionalAnswers.delegatesTo(Mocks.display())));
         AtomicInteger otherPaints = new AtomicInteger();
         Canvas canvas = inFlightFull(Mocks.shell(), paints);
         Canvas otherCanvas = inFlightFull(Mocks.shell(other), otherPaints);
@@ -310,9 +307,6 @@ class PaintPacingTest {
     /** {@link #inFlightFull()} on [shell], counting its paints in [paints]. */
     private Canvas inFlightFull(Shell shell, AtomicInteger paints) {
         Display display = shell.getDisplay();
-        Map<String, Object> data = new HashMap<>();
-        doAnswer(inv -> data.get(inv.<String>getArgument(0))).when(display).getData(anyString());
-        doAnswer(inv -> data.put(inv.getArgument(0), inv.getArgument(1))).when(display).setData(anyString(), any());
         DartDisplay displayImpl = (DartDisplay) display.getImpl();
         doAnswer(inv -> {
             Event ev = inv.getArgument(1);

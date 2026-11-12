@@ -62,37 +62,37 @@ class VCLabel extends VCanvas {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 25: // alignment
+      case 26: // alignment
         alignment = r.int32();
         return true;
-      case 26: // backgroundImage
+      case 27: // backgroundImage
         backgroundImage = r.image();
         return true;
-      case 27: // bottomMargin
+      case 28: // bottomMargin
         bottomMargin = r.int32();
         return true;
-      case 28: // gradientColors
+      case 29: // gradientColors
         gradientColors = r.list((r) => r.color())?.whereType<VColor>().toList();
         return true;
-      case 29: // gradientPercents
+      case 30: // gradientPercents
         gradientPercents = r.ints();
         return true;
-      case 30: // gradientVertical
+      case 31: // gradientVertical
         gradientVertical = r.boolean();
         return true;
-      case 31: // image
+      case 32: // image
         image = r.image();
         return true;
-      case 32: // leftMargin
+      case 33: // leftMargin
         leftMargin = r.int32();
         return true;
-      case 33: // rightMargin
+      case 34: // rightMargin
         rightMargin = r.int32();
         return true;
-      case 34: // text
+      case 35: // text
         text = r.string();
         return true;
-      case 35: // topMargin
+      case 36: // topMargin
         topMargin = r.int32();
         return true;
       default:
@@ -106,70 +106,70 @@ class VCLabel extends VCanvas {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(25, v_);
+        w.keyInt32(26, v_);
       }
     }
     {
       final v_ = backgroundImage;
       if (v_ != null) {
-        w.keyRef(26, v_.id);
+        w.keyRef(27, v_.id);
       }
     }
     {
       final v_ = bottomMargin;
       if (v_ != null) {
-        w.keyInt32(27, v_);
+        w.keyInt32(28, v_);
       }
     }
     {
       final v_ = gradientColors;
       if (v_ != null) {
-        w.key(28);
+        w.key(29);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = gradientPercents;
       if (v_ != null) {
-        w.key(29);
+        w.key(30);
         w.ints(v_);
       }
     }
     {
       final v_ = gradientVertical;
       if (v_ != null) {
-        w.keyBoolean(30, v_);
+        w.keyBoolean(31, v_);
       }
     }
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(31, v_.id);
+        w.keyRef(32, v_.id);
       }
     }
     {
       final v_ = leftMargin;
       if (v_ != null) {
-        w.keyInt32(32, v_);
+        w.keyInt32(33, v_);
       }
     }
     {
       final v_ = rightMargin;
       if (v_ != null) {
-        w.keyInt32(33, v_);
+        w.keyInt32(34, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(34);
+        w.key(35);
         w.string(v_);
       }
     }
     {
       final v_ = topMargin;
       if (v_ != null) {
-        w.keyInt32(35, v_);
+        w.keyInt32(36, v_);
       }
     }
   }
@@ -177,17 +177,17 @@ class VCLabel extends VCanvas {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(25, alignment);
-    visit(26, backgroundImage);
-    visit(27, bottomMargin);
-    visit(28, gradientColors);
-    visit(29, gradientPercents);
-    visit(30, gradientVertical);
-    visit(31, image);
-    visit(32, leftMargin);
-    visit(33, rightMargin);
-    visit(34, text);
-    visit(35, topMargin);
+    visit(26, alignment);
+    visit(27, backgroundImage);
+    visit(28, bottomMargin);
+    visit(29, gradientColors);
+    visit(30, gradientPercents);
+    visit(31, gradientVertical);
+    visit(32, image);
+    visit(33, leftMargin);
+    visit(34, rightMargin);
+    visit(35, text);
+    visit(36, topMargin);
   }
 
   @override

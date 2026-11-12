@@ -23,8 +23,7 @@ class TableItemSerializeTest extends SerializeTestBase {
         setAll(w);
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
-               .containsEntry("swt", "TableItem")
-               .containsEntry("style", w.getStyle());
+               .containsEntry("swt", "TableItem");
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
         assertJ.satisfies(node("checked").equalsTo(w.getChecked(), orAbsentIfFalse));
         assertJ.satisfies(node("font").equalsTo(w.getFont(), orAbsentIfNull));
@@ -41,7 +40,7 @@ class TableItemSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE);
+        }, unwritable("style", "the client never reads it off a TableItem"), SWT.NONE);
     }
 
     @Test

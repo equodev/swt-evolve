@@ -48,7 +48,7 @@ public class MenuHelper {
                     menu.sendEvent(SWT.Show, e);
                 } catch (RuntimeException ex) {
                 }
-                menu.dirty();
+                // What the Show listeners changed is already marked; the menu itself is not sent again.
                 FlutterBridge.update().whenComplete((r, ex) -> FlutterBridge.sendEvent(menu, dev.equo.swt.WireTable.CHANNEL_SHOWN));
             });
         });

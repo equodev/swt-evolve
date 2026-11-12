@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+
 /// A text as the lines it breaks into at `\n`, each found by where it starts.
 ///
 /// Immutable. An edit makes a new document that remembers which lines it replaced in the one it was
@@ -73,12 +75,20 @@ class LineDocument {
   }
 
   /// This text with [start, end) replaced by [insert].
-  LineDocument replaced(int start, int end, String insert) {
+  LineDocument replaced(int start, int end, String insert) =>
+      _replacedBy(text.replaceRange(start, end, insert), start, end, start + insert.length);
+
+  /// This document edited into [result], which is it with `[start, end)` replaced by
+  /// `result[start, insertEnd)`: the text is taken as it is, not built again from the edit.
+  LineDocument editedInto(String result, int start, int end, int insertEnd) =>
+      _replacedBy(result, start, end, insertEnd);
+
+  LineDocument _replacedBy(String newText, int start, int end, int insertEnd) {
     final first = lineAt(start);
     final last = lineAt(end);
-    final newText = text.replaceRange(start, end, insert);
-    final delta = insert.length - (end - start);
-    final inserted = _startsOf(insert, 0, insert.length, start);
+    final insertLength = insertEnd - start;
+    final delta = insertLength - (end - start);
+    final inserted = _startsOf(newText, start, insertEnd, start);
     // Lines before [first] keep their starts, [first] keeps its own, the inserted text adds one
     // line per `\n`, and every line after [last] moves by [delta].
     final keptAfter = starts.length - last - 1;
@@ -89,7 +99,7 @@ class LineDocument {
     for (var i = 0; i < keptAfter; i++) {
       out[first + inserted.length + i] = starts[last + 1 + i] + delta;
     }
-    return LineDocument._edited(newText, out, _identity, first, last - first + 1, inserted.length, start, end, insert.length);
+    return LineDocument._edited(newText, out, _identity, first, last - first + 1, inserted.length, start, end, insertLength);
   }
 
   /// The starts of the lines of `text[from, to)`, offset by [base], its own start first.
@@ -110,15 +120,37 @@ class LineDocument {
 
 /// How many code units [a] and [b] have in common at their start, and then, of what is left, at
 /// their end: what lies between is the one range an edit of [a] into [b] replaced.
-({int prefix, int suffix}) commonEnds(String a, String b) {
+({int prefix, int suffix}) commonEnds(String a, String b, {@visibleForTesting bool byBlocks = kIsWeb}) {
   final max = a.length < b.length ? a.length : b.length;
-  var prefix = 0;
+  var prefix = byBlocks ? _sameBlocksAtStart(a, b, max) : 0;
   while (prefix < max && a.codeUnitAt(prefix) == b.codeUnitAt(prefix)) {
     prefix++;
   }
-  var suffix = 0;
+  var suffix = byBlocks ? _sameBlocksAtEnd(a, b, max - prefix) : 0;
   while (suffix < max - prefix && a.codeUnitAt(a.length - 1 - suffix) == b.codeUnitAt(b.length - 1 - suffix)) {
     suffix++;
   }
   return (prefix: prefix, suffix: suffix);
+}
+
+/// On the web a string is the browser's: a slice of one costs next to nothing and two compare
+/// natively, where reading one a code unit at a time is a call per unit. So the ends are matched a
+/// block at a time first, and only the block that differs is read unit by unit.
+const _block = 1024;
+
+int _sameBlocksAtStart(String a, String b, int max) {
+  var at = 0;
+  while (at + _block <= max && a.substring(at, at + _block) == b.substring(at, at + _block)) {
+    at += _block;
+  }
+  return at;
+}
+
+int _sameBlocksAtEnd(String a, String b, int max) {
+  var n = 0;
+  while (n + _block <= max &&
+      a.substring(a.length - n - _block, a.length - n) == b.substring(b.length - n - _block, b.length - n)) {
+    n += _block;
+  }
+  return n;
 }

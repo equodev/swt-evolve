@@ -123,29 +123,29 @@ public final class GlyphMetrics implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 51;
+        return 52;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(311);
+        w.key(315);
         w.write((int) ascent);
-        w.key(312);
+        w.key(316);
         w.write((int) descent);
-        w.key(313);
+        w.key(317);
         w.write((int) width);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 311:
+            case 315:
                 ascent = r.int32();
                 return true;
-            case 312:
+            case 316:
                 descent = r.int32();
                 return true;
-            case 313:
+            case 317:
                 width = r.int32();
                 return true;
         }

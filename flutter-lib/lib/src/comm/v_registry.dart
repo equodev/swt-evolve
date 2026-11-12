@@ -25,7 +25,9 @@ import '../gen/display.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/menu.dart';
+import '../gen/styledtext.dart';
 import '../gen/widgets.dart';
+import '../impl/utils/style_index_change.dart';
 import 'comm.dart';
 import 'comm_frame.dart';
 import 'delivery_gate.dart';
@@ -341,6 +343,7 @@ class VRegistry {
   /// What each holder's record is read into, before anything has asked to hear about it.
   static final Map<int, WireReadable Function()> _holderTypes = {
     WireType.display: VDisplay.new,
+    WireType.displayPopups: VShellPopups.new,
     WireType.shellPopups: VShellPopups.new,
   };
 
@@ -363,7 +366,9 @@ class VRegistry {
     try {
       final reader = outer
           ? (_wireReader..reset(body, start, end ?? body.length))
-          : (WidgetWireReader(body, start, end)..resolve = _heldById);
+          : (WidgetWireReader(body, start, end)
+            ..resolve = _heldById
+            ..enterItem = _enterInPlace);
       _applyWire(reader, outer ? _wireScratch : _WireScratch());
     } finally {
       _wireDepth--;
@@ -371,7 +376,9 @@ class VRegistry {
   }
 
   int _wireDepth = 0;
-  late final WidgetWireReader _wireReader = WidgetWireReader(Uint8List(0))..resolve = _heldById;
+  late final WidgetWireReader _wireReader = WidgetWireReader(Uint8List(0))
+    ..resolve = _heldById
+    ..enterItem = _enterInPlace;
   final _WireScratch _wireScratch = _WireScratch();
   /// The list [_heldChangedInFrame] is when the frame is the registry's own, kept between frames.
   final _NodeBuffer _heldChangedScratch = _NodeBuffer();
@@ -428,6 +435,7 @@ class VRegistry {
       r.pos = starts[i];
       final end = ends[i];
       r.namingRecord = kinds[i] == wireWhole || kinds[i] == wireChange ? ids[i] : 0;
+      r.inPlaceStamp = stamps[i];
       try {
         switch (kinds[i]) {
           case wireWhole:
@@ -443,7 +451,10 @@ class VRegistry {
           case wireHolder:
             _applyHolder(r, types[i], ids[i], stamps[i], end);
         }
+        _applyInPlace(r);
       } catch (e) {
+        r.inPlaceKeys.clear();
+        r.inPlaceStamps.clear();
         // A record says how long it is, so one that cannot be read costs only its widget.
         if (kDebugMode) {
           print('[wire] ${WidgetKey.typeName(types[i])}/${ids[i]} could not be read ($e): '
@@ -532,6 +543,43 @@ class VRegistry {
     return true;
   }
 
+  /// What an item a list describes in place is read into: as a whole record's, the entry held for it,
+  /// made if there is none; a throwaway when the description is older than the state held.
+  VWidget? _enterInPlace(WidgetWireReader r, int type, int id, int stamp) {
+    final fresh = _enter(type, id);
+    final key = WidgetKey.of(type, id);
+    final node = _nodes[key];
+    if (node == null) return null;
+    if (!fresh) {
+      if (deliveryGate.decideWholeAt(key, stamp) != FrameAction.replace) {
+        return newWidgetValue(WidgetKey.typeName(type));
+      }
+      final empty = _emptyOf(type);
+      if (empty == null) return null;
+      node.value.copyFrom(empty);
+    }
+    r.inPlaceKeys.add(key);
+    r.inPlaceStamps.add(stamp);
+    return node.value;
+  }
+
+  /// Applies what the record just read described in place, in the order it was read: after the
+  /// record, as the records Java would otherwise have written for them follow it.
+  void _applyInPlace(WidgetWireReader r) {
+    if (r.inPlaceKeys.isEmpty) return;
+    for (var i = 0; i < r.inPlaceKeys.length; i++) {
+      final node = _nodes[r.inPlaceKeys[i]];
+      if (node == null) continue;
+      final stamp = r.inPlaceStamps[i];
+      node.value.seq = stamp;
+      deliveryGate.appliedAt(node.key, stamp);
+      _reconcile(node, stamp);
+      _notify(node, const VChange());
+    }
+    r.inPlaceKeys.clear();
+    r.inPlaceStamps.clear();
+  }
+
   void _applyWhole(WidgetWireReader r, int type, int id, int stamp, int end, bool fresh) {
     final node = _nodes[WidgetKey.of(type, id)];
     if (node == null) return;
@@ -565,9 +613,14 @@ class VRegistry {
   void _applyChange(WidgetWireReader r, VNode node, int stamp, int base, int end) {
     switch (deliveryGate.decideChangeAt(node.key, stamp, base)) {
       case FrameAction.merge:
+        // A state showing the editor resolves its style index, which it carries across edits; with
+        // none, the index held is what the change was made from.
+        final value = node.value;
+        final unshownIndex = value is VStyledText && node.listeners.isEmpty ? value.styleIndex : null;
         // Read into a list kept for it: the change copies what it names.
         final changed = _changedScratch..clear();
-        r.readProperties(node.value, end, changed);
+        r.readProperties(value, end, changed);
+        if (unshownIndex != null) resolveUnshownStyleIndexChange(value as VStyledText, unshownIndex);
         node.value.seq = stamp;
         deliveryGate.appliedAt(node.key, stamp);
         // Made only for someone to read: a row nobody listens to tells its holder, which needs
@@ -1103,7 +1156,8 @@ class _Indexed {
   final VNode node;
 }
 
-/// A shell's popups as a binary frame describes them: the menus, already resolved to held values.
+/// A shell's popups, or the display's own, as a binary frame describes them: the menus, already
+/// resolved to held values.
 class VShellPopups implements WireReadable {
   List<VMenu>? popups;
 

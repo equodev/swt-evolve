@@ -66,7 +66,7 @@ public class DisplayHelper {
      * web client is the browser's, not the server's; before the client reports it, the one this jar is built for.
      * Any other OS follows Windows.
      */
-    static String keyboardPlatform(Display display) {
+    public static String keyboardPlatform(Display display) {
         Object platform = display.getData(CLIENT_PLATFORM);
         switch (platform instanceof String ? (String) platform : SWT.getPlatform()) {
             case "macOS":

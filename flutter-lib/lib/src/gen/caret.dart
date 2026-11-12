@@ -42,19 +42,19 @@ class VCaret extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 73: // image
+      case 76: // image
         image = r.image();
         return true;
-      case 74: // visible
+      case 77: // visible
         visible = r.boolean();
         return true;
-      case 71: // bounds
+      case 74: // bounds
         bounds = r.rect();
         return true;
-      case 72: // focused
+      case 75: // focused
         focused = r.boolean();
         return true;
-      case 70: // blinkRate
+      case 73: // blinkRate
         blinkRate = r.int32();
         return true;
       default:
@@ -68,32 +68,32 @@ class VCaret extends VWidget {
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(73, v_.id);
+        w.keyRef(76, v_.id);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(74, v_);
+        w.keyBoolean(77, v_);
       }
     }
     {
       final v_ = bounds;
       if (v_ != null) {
-        w.key(71);
+        w.key(74);
         w.rectValue(v_);
       }
     }
     {
       final v_ = focused;
       if (v_ != null) {
-        w.keyBoolean(72, v_);
+        w.keyBoolean(75, v_);
       }
     }
     {
       final v_ = blinkRate;
       if (v_ != null) {
-        w.keyInt32(70, v_);
+        w.keyInt32(73, v_);
       }
     }
   }
@@ -101,10 +101,10 @@ class VCaret extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(73, image);
-    visit(74, visible);
-    visit(71, bounds);
-    visit(72, focused);
-    visit(70, blinkRate);
+    visit(76, image);
+    visit(77, visible);
+    visit(74, bounds);
+    visit(75, focused);
+    visit(73, blinkRate);
   }
 }

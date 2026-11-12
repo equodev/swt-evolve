@@ -11,11 +11,8 @@ class VFont implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 234: // fontData
-        fontData = r
-            .list((r) => r.object(VFontData.new))
-            ?.whereType<VFontData>()
-            .toList();
+      case 238: // fontData
+        fontData = r.objects(VFontData.new)?.whereType<VFontData>().toList();
         return true;
       default:
         return false;
@@ -27,7 +24,7 @@ class VFont implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = fontData;
       if (v_ != null) {
-        w.key(234);
+        w.key(238);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
@@ -35,6 +32,6 @@ class VFont implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(234, fontData);
+    visit(238, fontData);
   }
 }

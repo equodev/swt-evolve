@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 
 /** A Dart control on a mocked shell that delivers its events, and a key pressed into it as the client would. */
 @ExtendWith(Mocks.class)
@@ -76,6 +77,7 @@ abstract class KeyRoutingTestBase {
         doAnswer(inv -> inv.callRealMethod()).when(displayImpl).sendEvent(any(EventTable.class), any(Event.class));
         // The display mock is shared by the JVM and other tests leave asyncExec running at once; this drops the runnables again.
         doNothing().when(display).asyncExec(any(Runnable.class));
+        doReturn(Thread.currentThread()).when(display).getThread();
         return shell;
     }
 

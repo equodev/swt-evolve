@@ -22,6 +22,7 @@ import 'widget_config.dart';
 import 'browser_frame_params_stub.dart'
     if (dart.library.js_interop) 'browser_frame_params_web.dart';
 import 'key_mapping.dart';
+import 'utils/held_size.dart';
 import 'utils/layered_layout_builder.dart';
 
 /// Browser implementation backed by the `webview_all` plugin (the federated
@@ -816,10 +817,13 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// factor from the inside (see [_applyContentZoom]), so it ends up the size the rest of the tree
   /// is drawn at — and sharp, which is the point of the detour.
   ///
-  /// Web is left alone: there the webview is an `<iframe>`, a live document the browser re-renders
-  /// under the transform rather than a texture.
+  /// Web is not zoomed: there the webview is an `<iframe>`, a live document the browser re-renders
+  /// under the transform rather than a texture. It keeps its size while a drag keeps resizing it
+  /// instead ([HeldSize]): the browser shows no frame of the window until a page from another
+  /// process has drawn itself at its new size.
   Widget _unzoomed(Widget webview, double zoom) {
-    if (kIsWeb || zoom <= 0 || zoom == 1.0) return webview;
+    if (kIsWeb) return HeldSize(child: webview);
+    if (zoom <= 0 || zoom == 1.0) return webview;
     return LayeredLayoutBuilder(builder: (context, constraints) {
       if (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight) return webview;
       // OverflowBox, not a plain SizedBox: a Transform does not change layout, so a child sized

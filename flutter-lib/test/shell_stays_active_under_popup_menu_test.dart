@@ -81,10 +81,10 @@ void main() {
       contentWidget: DisplaySwt(
         value: VDisplay()
           ..id = 7
-          ..shells = [_shell()]
-          ..popups = [_popup()],
+          ..shells = [_shell()],
       ),
     ));
+    VRegistry.instance.deliverHolderForTesting('DisplayPopups', 7, VShellPopups()..popups = [_popup()]);
     await tester.pumpAndSettle();
     final shellScope = FocusManager.instance.rootScope.descendants
         .firstWhere((node) => node.debugLabel == 'ShellFocusScope');

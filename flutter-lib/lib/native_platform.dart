@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/widgets.dart';
 
+import 'src/impl/utils/resize_reports.dart';
+
 //late final ShellListener? listener;
 
 int? getPort(List<String> args) {
@@ -105,25 +107,13 @@ void observeViewportChanges(void Function() onChange) {
   final binding = WidgetsBinding.instance;
   final dispatcher = binding.platformDispatcher;
 
-  // A live window drag fires onMetricsChanged every frame. Reporting each one floods Java with a
-  // full-tree relayout + Display update over the comm (each via a blocking syncExec), which on a
-  // non-trivial UI backs up for seconds before the new layout appears. Coalesce the burst into a
-  // single report after the resize settles — the same debounce the web build applies to the browser
-  // 'resize' event. The very first metrics delivery (the ClientReady handshake / initial size) is
-  // reported immediately so it never waits on the debounce; only subsequent resizes are coalesced.
-  // (Maximize/restore is a single metrics change, so it already stays instant.)
-  Timer? debounce;
-  var reportedOnce = false;
+  // A live window drag fires onMetricsChanged every frame; Java hears of it as [ResizeReports]
+  // paces it.
+  final reports = ResizeReports.pacedByFrames(onChange);
   final previous = dispatcher.onMetricsChanged;
   dispatcher.onMetricsChanged = () {
     previous?.call();
-    if (!reportedOnce) {
-      reportedOnce = true;
-      onChange();
-      return;
-    }
-    debounce?.cancel();
-    debounce = Timer(const Duration(milliseconds: 120), onChange);
+    reports.changed();
   };
 
   // The window may already have a valid size by the time the Display reporter is

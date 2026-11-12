@@ -15,7 +15,7 @@ public class VGCData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 48;
+        return 49;
     }
 
     @Override

@@ -13,7 +13,7 @@ public class VFontMetrics implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 44;
+        return 45;
     }
 
     @Override

@@ -78,6 +78,16 @@ public abstract class FlutterBridge {
         return !dirty.isEmpty() && dirty.remove(widget);
     }
 
+    /** Takes {@code widget} off the next flush with what it had to say: for a client that let go of it. */
+    public static void letGo(DartWidget widget) {
+        synchronized (dirty) {
+            unqueue(widget);
+            lastQueued = null;
+        }
+        VWidget value = widget.getValue();
+        if (value != null) value.clearDirty();
+    }
+
     /**
      * Whether {@code widget} may be queued, read without the lock: false only when it is not, as far as
      * this thread has seen, for a caller that then takes the lock to be sure.
@@ -103,6 +113,13 @@ public abstract class FlutterBridge {
     /** Whether nothing is queued; the caller holds {@link #dirty}. */
     private static boolean nothingQueued() {
         return queuedWidgets == 0 && dirty.isEmpty();
+    }
+
+    /** Whether a change waits for a flush. */
+    public static boolean hasQueued() {
+        synchronized (dirty) {
+            return !nothingQueued();
+        }
     }
     private static boolean keepClient = false;
 
@@ -591,42 +608,16 @@ public abstract class FlutterBridge {
         }
     }
 
-    /** Smallest gap between two pushes of the same widget: a frame, as a repaint would coalesce to. */
-    private static final long PUSH_INTERVAL_NANOS = 16_000_000L;
-
-    private static final Map<Object, Long> lastPushNanos =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
-
-    /**
-     * Table only: a held-back push arrives a turn later, which breaks code that changes a widget,
-     * pumps the loop and reads the result at once. Table's payload carries every row, so it is the
-     * one widget where the saving is worth that.
-     */
-    private static boolean coalescible(Object widget) {
-        return widget instanceof DartControl
-                && ((DartControl) widget).getApi() instanceof org.eclipse.swt.widgets.Table;
-    }
-
-    private static boolean pushDue(Object widget, long now) {
-        if (!coalescible(widget)) return true;
-        Long last = lastPushNanos.get(widget);
-        return last == null || now - last >= PUSH_INTERVAL_NANOS;
-    }
-
-    /** The event loop's flush: coalescible widgets are held to one push per frame. */
+    /** The event loop's flush. */
     public static CompletableFuture<Void> updateFrame() {
-        return update(true);
-    }
-
-    /** Flushes everything now: callers that block on the result need the state out on this call. */
-    public static CompletableFuture<Void> update() {
-        return update(false);
+        return update();
     }
 
     /** What a flush returns once everything it had is on its way: shared, as nothing completes it. */
     private static final CompletableFuture<Void> SENT = CompletableFuture.completedFuture(null);
 
-    private static CompletableFuture<Void> update(boolean coalesce) {
+    /** Flushes everything now: callers that block on the result need the state out on this call. */
+    public static CompletableFuture<Void> update() {
         flushOpBatches();
         if (nothingQueued()) {
             return SENT;
@@ -650,7 +641,6 @@ public abstract class FlutterBridge {
         // A Paint the flush released has drawn by now: its ops go out ahead of this flush's records.
         if (org.eclipse.swt.widgets.PaintPacing.flushing(flush)) flushOpBatches();
 
-        long now = System.nanoTime();
         // Everything this flush sends belongs to one moment, so it travels as one message. Only the
         // sends made inline are caught: a widget still waiting on clientReady sends when it can.
         // A flush started inside another, while one of its records is written, hands the outer one
@@ -676,14 +666,6 @@ public abstract class FlutterBridge {
             if (isDisposed(widget)) continue;
             // No bridge (Display already gone) -> nothing to send; skip to avoid NPE below.
             if (getBridge(widget) == null) continue;
-            if (coalesce && !pushDue(widget, now)) {
-                synchronized (dirty) {
-                    if (widget instanceof DartWidget) queue((DartWidget) widget);
-                    else dirty.add(widget);
-                }
-                continue;
-            }
-            if (coalescible(widget)) lastPushNanos.put(widget, now);
             CompletableFuture<Boolean> ready = getBridge(widget).clientReady;
             if (ready.isDone() && !ready.isCompletedExceptionally()) {
                 // What thenRun would do on a completed future, without one per widget to wait on.
@@ -1038,7 +1020,7 @@ public abstract class FlutterBridge {
     private static void describe(CommService comm, DartWidget widget) {
         Serializer.Tape tape = openTape(comm);
         if (tape == null) return;
-        tape.describe(widget);
+        tape.describeQueued(widget);
         closeTape(comm, tape);
     }
 
@@ -1532,11 +1514,21 @@ public abstract class FlutterBridge {
          * other GC of that control has written since.
          */
         long stateSeq;
+        /**
+         * Per property, the state the channel was last given, while {@link #holds}: a new GC on the
+         * channel sends only what differs from it.
+         */
+        final Serializer.SentHashes held = new Serializer.SentHashes(32);
+        /** Whether the client numbered {@link #holdsConnection} holds {@link #held}. */
+        boolean holds;
+        int holdsConnection;
 
+        /** The client's channel holds what is not known: the next GC on it describes itself whole. */
         void clear() {
             painted = false;
             stated = false;
             stateSeq = 0;
+            holds = false;
         }
     }
 
@@ -1693,19 +1685,31 @@ public abstract class FlutterBridge {
         synchronized (shownByDrawable) {
             long held = drawable == null ? 0 : drawable.stateSeq;
             long base = value.sentSeq(connection);
+            boolean staged;
+            long seq;
             if (Serializer.mayDiffResources() && base != 0 && held == base && value.anyDirty()) {
-                long seq = serializer.toDiffBinary(gc, base, batch, paint.sent);
-                value.sent(connection, seq);
-                drawable.stateSeq = seq;
+                seq = serializer.toDiffBinary(gc, base, batch, paint.sent);
+                staged = seq != base;
                 // The channel holds a state no whole description was hashed from.
                 paint.stateShown().stated = false;
-                return seq != base;
+            } else if (Serializer.mayDiffResources() && paint.shown != null && paint.shown.holds
+                    && paint.shown.holdsConnection == connection) {
+                // Another GC described itself on this channel last: this one sends what differs from it.
+                staged = serializer.changeFrom(gc, paint.shown.held, batch, paint.sent);
+                seq = Serializer.nextWriteStamp();
+                paint.shown.stated = false;
+            } else {
+                staged = addGcStateIfChanged(paint, batch, connection);
+                // Staged or already held, the channel now holds this GC's state.
+                seq = Serializer.nextWriteStamp();
             }
-            boolean staged = addGcStateIfChanged(paint, batch, connection);
-            // Staged or already held, the channel now holds this GC's state.
-            long seq = Serializer.nextWriteStamp();
             value.sent(connection, seq);
             if (drawable != null) drawable.stateSeq = seq;
+            if (paint.shown != null) {
+                paint.shown.held.copyFrom(paint.sent);
+                paint.shown.holds = true;
+                paint.shown.holdsConnection = connection;
+            }
             return staged;
         }
     }
@@ -1737,10 +1741,7 @@ public abstract class FlutterBridge {
         if (drawable == null) return;
         synchronized (shownByDrawable) {
             Shown shown = shownByDrawable.get(drawable);
-            if (shown != null) {
-                shown.painted = false;
-                shown.stated = false;
-            }
+            if (shown != null) shown.clear();
         }
     }
 
@@ -2096,6 +2097,7 @@ public abstract class FlutterBridge {
         if (widget == null || drawnByParent(widget))
             return;
         registerForRefresh(widget);
+        Serializer.dirtied(widget.getValue());
         synchronized (dirty) {
             queue(widget);
         }
@@ -2169,22 +2171,10 @@ public abstract class FlutterBridge {
         }
     }
     
-    /**
-     * Whether anything is awaiting a flush <em>now</em> — a pending-work condition for sleep(). A
-     * held-back widget must not count, or the loop spins instead of parking for the rest of the
-     * frame, and it is the parking that coalesces the pushes.
-     */
+    /** Whether anything is awaiting a flush: a pending-work condition for sleep(). */
     public boolean hasDirty() {
-        long now = System.nanoTime();
         synchronized (dirty) {
-            for (Object widget : dirty) {
-                if (pushDue(widget, now)) return true;
-            }
-            for (int i = 0, n = dirtyWidgets.size(); i < n; i++) {
-                DartWidget widget = dirtyWidgets.get(i);
-                if (((Serializer.SentHashes) widget.getValue().wireMemo).queued && pushDue(widget, now)) return true;
-            }
-            return false;
+            return !nothingQueued();
         }
     }
 

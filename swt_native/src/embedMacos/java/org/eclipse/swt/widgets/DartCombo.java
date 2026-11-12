@@ -1367,6 +1367,9 @@ public class DartCombo extends DartComposite implements ICombo {
      */
     public void setTextLimit(int limit) {
         checkWidget();
+        if (this.textLimit != limit) {
+            getValue().markDirty(VCombo.TEXT_LIMIT);
+        }
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         textLimit = limit;

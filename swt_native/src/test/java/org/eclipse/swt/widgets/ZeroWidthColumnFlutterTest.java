@@ -155,7 +155,10 @@ class ZeroWidthColumnFlutterTest {
         TableItem item = new TableItem(table, SWT.NONE);
         item.setText(new String[] { "host", "example" });
         WireFrames.describe(item);
-        assertThat(painted).as("a column of width 0 is not painted").containsExactly(0);
+        // The row is on screen: captured, then painted ahead into its overlay, so column 0 runs twice.
+        assertThat(painted).as("a column of width 0 is not painted").containsOnly(0);
+        // Sent, as a row is by the time a layout sizes its columns: a row still queued is not queued again.
+        FlutterBridge.update().join();
         bridge.dirtied.clear();
 
         late.setWidth(80);
@@ -179,7 +182,10 @@ class ZeroWidthColumnFlutterTest {
         TreeItem item = new TreeItem(tree, SWT.NONE);
         item.setText(new String[] { "host", "example" });
         WireFrames.describe(item);
-        assertThat(painted).as("a column of width 0 is not painted").containsExactly(0);
+        // The row is on screen: captured, then painted ahead into its overlay, so column 0 runs twice.
+        assertThat(painted).as("a column of width 0 is not painted").containsOnly(0);
+        // Sent, as a row is by the time a layout sizes its columns: a row still queued is not queued again.
+        FlutterBridge.update().join();
         bridge.dirtied.clear();
 
         late.setWidth(80);

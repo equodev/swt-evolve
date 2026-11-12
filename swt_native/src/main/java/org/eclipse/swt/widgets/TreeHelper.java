@@ -33,16 +33,20 @@ public class TreeHelper {
         java.util.List<TreeItem> rows = visibleItems(tree);
         int itemHeight = Math.max(1, tree.getItemHeight());
         int offset = Math.min(Math.max(0, event.y), maxScrollOffset(tree, rows.size(), itemHeight));
+        int[] before = namesRowsScrolledIn(tree) ? shownBand(tree) : null;
         SCROLL_OFFSETS.put(tree, new org.eclipse.swt.graphics.Point(Math.max(0, event.x), offset));
         int row = offset / itemHeight;
         tree.topItem = row < rows.size() ? rows.get(row) : null;
+        nameRowsScrolledIn(tree, before);
     }
 
     public static int scrollOffsetY(DartTree tree) {
         org.eclipse.swt.graphics.Point offset = SCROLL_OFFSETS.get(tree);
         if (offset == null) return 0;
         // A scroll asked for before the tree had its size, or before rows went away, is clamped by Flutter.
-        return Math.min(offset.y, maxScrollOffset(tree, visibleItems(tree).size(), Math.max(1, tree.getItemHeight())));
+        // Owner draw asks it for every row it writes, so the rows are counted once a flush.
+        int rows = Serializer.oncePerTape(tree, () -> visibleRows(tree)).size();
+        return Math.min(offset.y, maxScrollOffset(tree, rows, Math.max(1, tree.getItemHeight())));
     }
 
     /** Cell bounds are in the tree's client area, as natively, so they move left by this much. */
@@ -97,7 +101,9 @@ public class TreeHelper {
      */
     private static void scrollToRow(DartTree tree, java.util.List<TreeItem> rows, int row) {
         int itemHeight = Math.max(1, tree.getItemHeight());
+        int[] before = namesRowsScrolledIn(tree) ? shownBand(tree) : null;
         setScrollOffsetY(tree, Math.min(row * itemHeight, maxScrollOffset(tree, rows.size(), itemHeight)));
+        nameRowsScrolledIn(tree, before);
         tree.topItem = rows.get(row);
         tree.getValue().markDirty(VTree.TOP_ITEM);
     }
@@ -568,6 +574,25 @@ public class TreeHelper {
     }
 
     /** The items the tree shows as rows, in row order: the roots and the children of every expanded item. */
+    /**
+     * The row {@code item} is shown in, counting visible items from the top of the model; -1 when a
+     * collapsed ancestor hides it. A flush counts a tree's rows once: owner draw asks every item it
+     * writes for its bounds, and counting all rows for each item made painting a tree quadratic in
+     * its rows.
+     */
+    static int visibleRow(DartTree tree, TreeItem item) {
+        java.util.Map<TreeItem, Integer> rows = Serializer.oncePerTape(tree, () -> visibleRows(tree));
+        Integer row = rows.get(item);
+        return row == null ? -1 : row;
+    }
+
+    private static java.util.Map<TreeItem, Integer> visibleRows(DartTree tree) {
+        java.util.List<TreeItem> items = visibleItems(tree);
+        java.util.Map<TreeItem, Integer> rows = new java.util.IdentityHashMap<>(items.size() * 2);
+        for (int i = 0; i < items.size(); i++) rows.put(items.get(i), i);
+        return rows;
+    }
+
     static java.util.List<TreeItem> visibleItems(DartTree tree) {
         java.util.List<TreeItem> visibleItems = new java.util.ArrayList<>();
         for (TreeItem rootItem : tree.getApi().getItems()) {
@@ -732,29 +757,52 @@ public class TreeHelper {
         int count = Math.max(1, item.parent.getColumnCount());
         Image[] result = ownImages(item, count);
         if (drawn != null) {
-            // The row's overlay already shows what the listener drew, images included.
-            boolean overlay = OwnerDrawOverlay.isListening(item.getApi());
+            // What the row shows until its overlay does; getPaintedImages names what it then leaves.
             for (int i = 0; i < count; i++) {
-                if (overlay) {
-                    if (drawn.suppressed[i]) result[i] = null;
-                } else if (drawn.suppressed[i] || result[i] == null) {
+                if (drawn.suppressed[i] || result[i] == null) {
                     result[i] = dartImageOrNull(drawn.images[i]);
                 }
             }
         }
+        // A single column showing the item's own image says nothing image does not: the client
+        // reads the tree column's icon from image when images is absent.
+        if (count == 1 && result[0] == item.image) return null;
         return result;
     }
 
     /**
+     * The columns whose image the row's overlay paints: null for a row that is not owner-drawn, empty
+     * while no overlay draws it.
+     */
+    public static int[] getPaintedImages(DartTreeItem item) {
+        OwnerDraw drawn = ownerDraw(item);
+        if (drawn == null) {
+            return null;
+        }
+        if (!OwnerDrawOverlay.owns(item.getApi())) {
+            return new int[0];
+        }
+        Image[] own = ownImages(item, drawn.suppressed.length);
+        int[] painted = new int[drawn.suppressed.length];
+        int count = 0;
+        for (int i = 0; i < drawn.suppressed.length; i++) {
+            if (drawn.suppressed[i] || own[i] == null) {
+                painted[count++] = i;
+            }
+        }
+        return java.util.Arrays.copyOf(painted, count);
+    }
+
+    /**
      * The columns whose text the row's overlay paints: null for a row that is not owner-drawn, and
-     * empty for one whose overlay Flutter has not reported listening yet, which is what asks for it.
+     * empty for one no overlay draws yet, which is what makes the client mount one.
      */
     public static int[] getPaintedTexts(DartTreeItem item) {
         OwnerDraw drawn = ownerDraw(item);
         if (drawn == null) {
             return null;
         }
-        if (!OwnerDrawOverlay.isListening(item.getApi())) {
+        if (!OwnerDrawOverlay.owns(item.getApi())) {
             return new int[0];
         }
         int[] painted = new int[drawn.suppressed.length];
@@ -771,32 +819,158 @@ public class TreeHelper {
      * Names every row's owner-drawn content, which only a repaint announces. Only rows already
      * materialised: walking a virtual tree's items would create them.
      */
+    /** How long after the last repaint the rows it left out are captured. */
+    static final int OWNER_DRAW_SETTLE_MS = OwnerDrawRowsLeft.SETTLE_MS;
+
+    /**
+     * A repaint captures the rows on screen and a screenful above and below them, as native SWT
+     * paints only the rows it exposes; the rest are captured once the repaints have stopped for
+     * {@link #OWNER_DRAW_SETTLE_MS}, and as a scroll brings them on screen. A tree resized on every
+     * step of a drag then runs the PaintItem listener for the rows shown, not for all of them.
+     */
     static void nameOwnerDrawnCells(DartTree tree) {
         if (tree.items == null) {
             return;
         }
-        for (TreeItem row : tree.items) {
-            nameOwnerDrawnRows(row);
+        int[] band = shownBand(tree);
+        int rows = nameShownRows(tree.items, 0, band[0], band[1], 0, 0);
+        if (band[0] > 0 || rows > band[1] || hasHiddenRows(tree.items)) {
+            nameRowsLeftLater(tree);
         }
     }
 
-    private static void nameOwnerDrawnRows(TreeItem row) {
-        if (row == null || row.isDisposed() || !(row.getImpl() instanceof DartTreeItem)) {
-            return;
-        }
-        DartTreeItem item = (DartTreeItem) row.getImpl();
-        nameOwnerDrawnCells(item);
-        if (item.items != null) {
-            for (TreeItem child : item.items) {
-                nameOwnerDrawnRows(child);
+    private static boolean namesRowsScrolledIn(DartTree tree) {
+        return tree.ownerDrawRowsLeft != null && tree.items != null && tree.hooks(SWT.PaintItem);
+    }
+
+    /**
+     * While rows are left to name, a scroll names the rows it brings into the band {@code before}
+     * did not hold. A row it only moves keeps its overlay, drawn in the row's own coordinates.
+     */
+    private static void nameRowsScrolledIn(DartTree tree, int[] before) {
+        if (before == null || !namesRowsScrolledIn(tree)) return;
+        int[] band = shownBand(tree);
+        nameShownRows(tree.items, 0, band[0], band[1], before[0], before[1]);
+        nameRowsLeftLater(tree);
+    }
+
+    /** The rows a repaint names at once, as visible row numbers from the first to below the second. */
+    private static int[] shownBand(DartTree tree) {
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int page = viewportHeight(tree) / itemHeight + 1;
+        int top = scrollOffsetY(tree) / itemHeight;
+        return new int[] { Math.max(0, top - page), top + 2 * page };
+    }
+
+    /**
+     * Names the rows numbered from {@code first} to below {@code end} but those from {@code skipFrom}
+     * to below {@code skipTo}, counting down from {@code row}; returns the row after the last.
+     */
+    private static int nameShownRows(TreeItem[] items, int row, int first, int end, int skipFrom, int skipTo) {
+        for (TreeItem item : items) {
+            if (item == null || item.isDisposed() || !(item.getImpl() instanceof DartTreeItem)) {
+                continue;
+            }
+            DartTreeItem impl = (DartTreeItem) item.getImpl();
+            if (row >= first && row < end && (row < skipFrom || row >= skipTo)) {
+                nameOwnerDrawnCells(impl);
+            }
+            row++;
+            if (impl.items != null && item.getExpanded()) {
+                row = nameShownRows(impl.items, row, first, end, skipFrom, skipTo);
             }
         }
+        return row;
+    }
+
+    private static boolean hasHiddenRows(TreeItem[] items) {
+        for (TreeItem item : items) {
+            if (item == null || item.isDisposed() || !(item.getImpl() instanceof DartTreeItem)) {
+                continue;
+            }
+            TreeItem[] children = ((DartTreeItem) item.getImpl()).items;
+            if (children == null) {
+                continue;
+            }
+            if (!item.getExpanded()) {
+                for (TreeItem child : children) {
+                    if (child != null) return true;
+                }
+            } else if (hasHiddenRows(children)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void nameRowsLeftLater(DartTree tree) {
+        if (tree.ownerDrawRowsLeft == null) {
+            tree.ownerDrawRowsLeft = new OwnerDrawRowsLeft(tree.getDisplay(),
+                    () -> tree.getApi().isDisposed() ? null : rowsLeftOut(tree),
+                    row -> nameOwnerDrawnCells((DartTreeItem) row.getImpl()),
+                    () -> tree.ownerDrawRowsLeft = null);
+        }
+        ((OwnerDrawRowsLeft) tree.ownerDrawRowsLeft).arm();
+    }
+
+    /**
+     * Every row but those in the band shown now, the children of collapsed rows included. The band was
+     * named by the repaint that left the rest out, or by a scroll since.
+     */
+    private static java.util.List<TreeItem> rowsLeftOut(DartTree tree) {
+        java.util.List<TreeItem> rows = new java.util.ArrayList<>();
+        if (tree.items != null) {
+            int[] band = shownBand(tree);
+            collectRowsLeftOut(tree.items, 0, band[0], band[1], rows);
+        }
+        return rows;
+    }
+
+    /**
+     * Adds the rows outside the visible row numbers {@code first} to below {@code end}, numbering
+     * from {@code row}, or every row when {@code row} is negative (under a collapsed row); returns
+     * the visible row number after the last.
+     */
+    private static int collectRowsLeftOut(TreeItem[] items, int row, int first, int end, java.util.List<TreeItem> rows) {
+        for (TreeItem item : items) {
+            if (item == null || item.isDisposed() || !(item.getImpl() instanceof DartTreeItem)) continue;
+            if (row < first || row >= end) rows.add(item);
+            TreeItem[] children = ((DartTreeItem) item.getImpl()).items;
+            int next = row < 0 ? row : row + 1;
+            if (children != null) {
+                int under = collectRowsLeftOut(children, next >= 0 && item.getExpanded() ? next : -1, first, end, rows);
+                if (next >= 0 && item.getExpanded()) next = under;
+            }
+            row = next;
+        }
+        return row;
     }
 
     static void nameOwnerDrawnCells(DartTreeItem item) {
-        item.getValue().markDirty(VTreeItem.IMAGES);
-        item.getValue().markDirty(VTreeItem.TEXTS);
-        item.getValue().markDirty(VTreeItem.PAINTED_TEXTS);
+        item.getValue().markOwnerDrawnCellsDirty();
+    }
+
+    /** The rows on screen: the expanded rows from the one at the top, as many as the view holds. */
+    private static java.util.Set<Item> shownRows(DartTree tree) {
+        java.util.Set<Item> shown = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        if (tree.items == null) return shown;
+        int itemHeight = Math.max(1, tree.getItemHeight());
+        int top = scrollOffsetY(tree) / itemHeight;
+        collectShown(tree.items, 0, top, top + viewportHeight(tree) / itemHeight + 1, shown);
+        return shown;
+    }
+
+    /** Adds the rows numbered from {@code first} to below {@code end}, counting from {@code row}; returns the row after the last. */
+    private static int collectShown(TreeItem[] items, int row, int first, int end, java.util.Set<Item> shown) {
+        for (TreeItem item : items) {
+            if (row >= end) return row;
+            if (item == null || item.isDisposed() || !(item.getImpl() instanceof DartTreeItem)) continue;
+            if (row >= first) shown.add(item);
+            row++;
+            DartTreeItem impl = (DartTreeItem) item.getImpl();
+            if (impl.items != null && item.getExpanded()) row = collectShown(impl.items, row, first, end, shown);
+        }
+        return row;
     }
 
     /**
@@ -823,6 +997,7 @@ public class TreeHelper {
         for (int i = 0; i < result.length; i++) {
             result[i] = overlayOwnsText(item, drawn, i) ? drawn.texts[i] : ownText(item, i);
         }
+        if (result.length == 1 && java.util.Objects.equals(result[0], item.text)) return null;
         return result;
     }
 
@@ -967,7 +1142,8 @@ public class TreeHelper {
             dartGc.imageCapture = null;
             gc.dispose();
         }
-        if (OwnerDrawOverlay.isListening(item.getApi())) {
+        if (OwnerDrawOverlay.isListening(item.getApi())
+                || OwnerDrawOverlay.paintAhead(item.parent, item.getApi(), () -> shownRows(tree))) {
             OwnerDrawOverlay.paint(item.parent, item.getApi(), count);
         }
         return new OwnerDraw(texts, textDrawn, images, suppressed);

@@ -14,6 +14,9 @@ import 'cached_text.dart';
 /// An [AnimatedContainer] whose update does not mark it dirty, and which, while only what it paints
 /// moves, follows each step of the animation by repainting rather than rebuilding.
 ///
+/// Its constraints, padding and margin take a new value at once: they follow the bounds Java lays a
+/// control out at, and a native control's edges do not move over time.
+///
 /// What it paints alone moves when its decorations change but keep the same border widths and
 /// nothing else changes; any other change rebuilds it on each step, as [AnimatedContainer] does.
 class QuietAnimatedContainer extends AnimatedContainer {
@@ -43,11 +46,8 @@ class QuietAnimatedContainer extends AnimatedContainer {
 
 class _QuietAnimatedContainerState extends AnimatedWidgetBaseState<AnimatedContainer> {
   AlignmentGeometryTween? _alignment;
-  EdgeInsetsGeometryTween? _padding;
   DecorationTween? _decoration;
   DecorationTween? _foregroundDecoration;
-  BoxConstraintsTween? _constraints;
-  EdgeInsetsGeometryTween? _margin;
   Matrix4Tween? _transform;
   AlignmentGeometryTween? _transformAlignment;
 
@@ -105,16 +105,10 @@ class _QuietAnimatedContainerState extends AnimatedWidgetBaseState<AnimatedConta
   void forEachTween(TweenVisitor<dynamic> visitor) {
     _alignment = visitor(_alignment, widget.alignment,
         (dynamic value) => AlignmentGeometryTween(begin: value as AlignmentGeometry)) as AlignmentGeometryTween?;
-    _padding = visitor(_padding, widget.padding,
-        (dynamic value) => EdgeInsetsGeometryTween(begin: value as EdgeInsetsGeometry)) as EdgeInsetsGeometryTween?;
     _decoration = visitor(_decoration, widget.decoration,
         (dynamic value) => DecorationTween(begin: value as Decoration)) as DecorationTween?;
     _foregroundDecoration = visitor(_foregroundDecoration, widget.foregroundDecoration,
         (dynamic value) => DecorationTween(begin: value as Decoration)) as DecorationTween?;
-    _constraints = visitor(_constraints, widget.constraints,
-        (dynamic value) => BoxConstraintsTween(begin: value as BoxConstraints)) as BoxConstraintsTween?;
-    _margin = visitor(_margin, widget.margin,
-        (dynamic value) => EdgeInsetsGeometryTween(begin: value as EdgeInsetsGeometry)) as EdgeInsetsGeometryTween?;
     _transform = visitor(_transform, widget.transform,
         (dynamic value) => Matrix4Tween(begin: value as Matrix4)) as Matrix4Tween?;
     _transformAlignment = visitor(_transformAlignment, widget.transformAlignment,
@@ -140,9 +134,6 @@ class _QuietAnimatedContainerState extends AnimatedWidgetBaseState<AnimatedConta
       _transform == null &&
       widget.clipBehavior == Clip.none &&
       _still(_alignment) &&
-      _still(_padding) &&
-      _still(_constraints) &&
-      _still(_margin) &&
       _still(_transformAlignment) &&
       _keepsPadding(_decoration);
 
@@ -169,9 +160,9 @@ class _QuietAnimatedContainerState extends AnimatedWidgetBaseState<AnimatedConta
           _foregroundDecoration == null ? null : _foregroundSteps ??= _foregroundDecoration!.animate(animation);
     }
     final alignment = _alignment?.evaluate(animation);
-    final padding = _padding?.evaluate(animation);
-    final constraints = _constraints?.evaluate(animation);
-    final margin = _margin?.evaluate(animation);
+    final padding = widget.padding;
+    final constraints = widget.constraints;
+    final margin = widget.margin;
     final transform = _transform?.evaluate(animation);
     final transformAlignment = _transformAlignment?.evaluate(animation);
     final child = widget.child;

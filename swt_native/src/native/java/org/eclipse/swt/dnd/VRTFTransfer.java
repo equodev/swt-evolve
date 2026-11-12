@@ -11,7 +11,7 @@ public class VRTFTransfer extends VByteArrayTransfer {
 
     @Override
     public int wireTypeId() {
-        return 82;
+        return 83;
     }
 
     @Override

@@ -114,23 +114,27 @@ public class VCCombo extends VComposite {
 
     public static final int ALIGNMENT = 18;
 
-    public static final int ITEM_TOOLTIPS = 19;
+    public static final int EDITABLE = 19;
 
-    public static final int ITEMS = 20;
+    public static final int ITEM_TOOLTIPS = 20;
 
-    public static final int LIST_VISIBLE = 21;
+    public static final int ITEMS = 21;
 
-    public static final int SELECTION = 22;
+    public static final int LIST_VISIBLE = 22;
 
-    public static final int TEXT = 23;
+    public static final int SELECTION = 23;
 
-    public static final int TEXT_LIMIT = 24;
+    public static final int TEXT = 24;
+
+    public static final int TEXT_LIMIT = 25;
 
     @Override
     public String wireName(int key) {
         switch(key) {
             case ALIGNMENT:
                 return "alignment";
+            case EDITABLE:
+                return "editable";
             case ITEM_TOOLTIPS:
                 return "itemTooltips";
             case ITEMS:
@@ -150,25 +154,30 @@ public class VCCombo extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 146:
+                return false;
             case 18:
                 w.write((int) getAlignment());
                 return true;
             case 19:
-                w.write(getItemTooltips());
+                w.write(getEditable());
                 return true;
             case 20:
-                w.write(getItems());
+                w.write(getItemTooltips());
                 return true;
             case 21:
-                w.write(getListVisible());
+                w.write(getItems());
                 return true;
             case 22:
-                w.write(getSelection());
+                w.write(getListVisible());
                 return true;
             case 23:
-                w.write(getText());
+                w.write(getSelection());
                 return true;
             case 24:
+                w.write(getText());
+                return true;
+            case 25:
                 w.write((int) getTextLimit());
                 return true;
         }
@@ -178,6 +187,8 @@ public class VCCombo extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 146:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
             case 18:
                 {
                     int v_ = getAlignment();
@@ -189,18 +200,16 @@ public class VCCombo extends VComposite {
                 }
             case 19:
                 {
-                    String[] v_ = getItemTooltips();
-                    if (v_ == null)
+                    boolean v_ = getEditable();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(19);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 20:
                 {
-                    String[] v_ = getItems();
+                    String[] v_ = getItemTooltips();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
@@ -211,17 +220,19 @@ public class VCCombo extends VComposite {
                 }
             case 21:
                 {
-                    boolean v_ = getListVisible();
-                    if (!v_)
+                    String[] v_ = getItems();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(21);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 22:
                 {
-                    Point v_ = getSelection();
-                    if (v_ == null)
+                    boolean v_ = getListVisible();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(22);
                     w.write(v_);
@@ -229,21 +240,30 @@ public class VCCombo extends VComposite {
                 }
             case 23:
                 {
-                    String v_ = getText();
+                    Point v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.isEmpty())
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(23);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 24:
                 {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(24);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 25:
+                {
                     int v_ = getTextLimit();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(24);
+                    w.key(25);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -251,7 +271,7 @@ public class VCCombo extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 18, 19, 20, 21, 22, 23, 24 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 18, 19, 20, 21, 22, 23, 24, 25 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -44,9 +44,8 @@ class LineEditValue {
   /// replaced, so the lines it does not reach keep what was laid out for them.
   LineEditValue editedTo(String text, TextSelection selection) {
     final (:prefix, :suffix) = commonEnds(this.text, text);
-    return replaced(
-      TextRange(start: prefix, end: this.text.length - suffix),
-      text.substring(prefix, text.length - suffix),
+    return LineEditValue(
+      document: document.editedInto(text, prefix, this.text.length - suffix, text.length - suffix),
       selection: selection.copyWith(
         baseOffset: selection.baseOffset.clamp(0, text.length),
         extentOffset: selection.extentOffset.clamp(0, text.length),

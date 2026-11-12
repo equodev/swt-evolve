@@ -665,9 +665,11 @@ class _DropdownComboLayout extends StatelessWidget {
                       : Semantics(
                           enabled: isEnabled,
                           child: EditableText(
+                            autofillHints: null,
                             controller: controller,
                             focusNode: focusNode,
                             onChanged: onTextChanged,
+                            inputFormatters: _limitTo(state.textLimit),
                             // A press outside the text (the arrow, the Shell) keeps the focus, as
                             // natively; a mouse press would otherwise unfocus it.
                             onTapOutside: (_) {},
@@ -867,10 +869,12 @@ class _SimpleComboLayout extends StatelessWidget {
             child: Semantics(
               enabled: isEnabled,
               child: EditableText(
+                autofillHints: null,
                 controller: controller,
                 focusNode: focusNode,
                 readOnly: isReadOnly,
                 onChanged: onTextChanged,
+                inputFormatters: _limitTo(state.textLimit),
                 style: textStyle,
                 cursorColor: textStyle.color ?? theme.textColor,
                 backgroundCursorColor: bgColor,
@@ -974,6 +978,13 @@ class _ComboItemState extends State<_ComboItem> {
 /// The value of a READ_ONLY Combo, laid out and drawn as a read-only [EditableText] of one line
 /// draws it: on a strut the style forces, unwrapped, in the style as given, and clipped as it clips. Nothing in
 /// it can be edited or selected, so it carries none of an editable text's machinery.
+/// Keeps typing and pasting within setTextLimit, as the native field does. Combo.LIMIT, the largest
+/// limit there is, stands for none.
+List<TextInputFormatter>? _limitTo(int? textLimit) =>
+    textLimit == null || textLimit >= 0x7FFFFFFF
+        ? null
+        : [LengthLimitingTextInputFormatter(textLimit, maxLengthEnforcement: MaxLengthEnforcement.enforced)];
+
 class ComboValueText extends StatelessWidget {
   const ComboValueText({super.key, required this.controller, required this.style});
 

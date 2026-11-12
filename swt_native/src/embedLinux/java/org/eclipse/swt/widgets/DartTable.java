@@ -2335,6 +2335,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setSortColumn(TableColumn column) {
         checkWidget();
+        if (!java.util.Objects.equals(this.sortColumn, column)) {
+            getValue().markDirty(VTable.SORT_COLUMN);
+        }
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (sortColumn != null && !sortColumn.isDisposed()) {
@@ -2359,6 +2362,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setSortDirection(int direction) {
         checkWidget();
+        if (this.sortDirection != direction) {
+            getValue().markDirty(VTable.SORT_DIRECTION);
+        }
         if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE)
             return;
         sortDirection = direction;
@@ -2881,6 +2887,8 @@ public class DartTable extends DartComposite implements ITable {
     int wireOwnerDrawItemHeight() {
         return ownerDrawItemHeight;
     }
+
+    Runnable ownerDrawRowsLeft;
 
     int scrollOffset;
 

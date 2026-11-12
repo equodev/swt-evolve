@@ -37,6 +37,12 @@ class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover implements UndoableTextField {
   late TextEditingController _controller;
 
+  /// A single-line field's build reads its height (the decoration is that tall) and no other part
+  /// of its size.
+  @override
+  bool sizeIsLayoutOnly(Size built, int width, int height) =>
+      built.height == height && !hasStyle(state.style, SWT.MULTI);
+
   /// The text of a multi-line field, which a [LineEditor] edits: laid out a line at a time and only
   /// where it shows, so a long text costs what its visible lines cost.
   LineEditorController? _lines;
@@ -713,6 +719,12 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// The text of the field at rest, which maps a press to the offset the caret goes to.
   final GlobalKey _atRestText = GlobalKey();
 
+  /// The text the field was first drawn with at rest, and whether it has shown another since. A
+  /// field whose text changes draws it in a layer of its own, so a new value repaints the text
+  /// alone; one that never changes adds no layer, which every frame of a form pays for.
+  String? _firstRestText;
+  bool _restTextChanged = false;
+
   @override
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<TextThemeExtension>();
@@ -723,6 +735,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     if (hidden) {
       return const SizedBox.shrink();
     }
+    builtAtBounds();
 
     final textAlign = getTextAlignFromStyle(state.style, TextAlign.left);
     final isMultiLine = hasStyle(state.style, SWT.MULTI);
@@ -868,6 +881,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     );
 
     final textField = TextField(
+      // SWT text has no autofill; on the web an autofill field leaves its form in the page.
+      autofillHints: null,
       controller: _controller,
       focusNode: _focusNode,
       // The focus a field at rest hands over keeps the selection it hands over with, as a native
@@ -969,15 +984,17 @@ class TextImpl<T extends TextSwt, V extends VText>
               isEmpty: isEmpty,
               child: text,
             ),
-            child: RepaintBoundary(
-              child: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _controller,
-                builder: (context, value, _) => Semantics(
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _controller,
+              builder: (context, value, _) {
+                if (!_restTextChanged) _restTextChanged = value.text != (_firstRestText ??= value.text);
+                final shown = Semantics(
                   value: value.text,
                   currentValueLength: value.text.length,
                   child: _TextAtRest(key: _atRestText, text: value.text, style: style, textAlign: textAlign),
-                ),
-              ),
+                );
+                return _restTextChanged ? RepaintBoundary(child: shown) : shown;
+              },
             ),
           ),
         ),

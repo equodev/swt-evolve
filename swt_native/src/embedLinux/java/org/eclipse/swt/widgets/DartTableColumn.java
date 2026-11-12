@@ -608,6 +608,9 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      */
     public void setToolTipText(String string) {
         checkWidget();
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            getValue().markDirty(VTableColumn.TOOL_TIP_TEXT);
+        }
         toolTipText = string;
         setToolTipText(buttonHandle, string);
     }

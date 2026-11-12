@@ -20,7 +20,7 @@ public class VGroup extends VComposite {
         ((DartGroup) impl).text = value;
     }
 
-    public static final int TEXT = 337;
+    public static final int TEXT = 341;
 
     @Override
     public String wireName(int key) {
@@ -34,7 +34,9 @@ public class VGroup extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 337:
+            case 146:
+                return false;
+            case 341:
                 w.write(getText());
                 return true;
         }
@@ -44,14 +46,16 @@ public class VGroup extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 337:
+            case 146:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 341:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(337);
+                    w.key(341);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -59,7 +63,7 @@ public class VGroup extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 337 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 341 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

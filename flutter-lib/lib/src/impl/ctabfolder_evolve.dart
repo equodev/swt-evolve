@@ -374,7 +374,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   /// [detail] is `SWT.DRAG` when a drag selects the tab, which natively never moves the focus.
   void _handleTabSelection(int index, {int detail = 0}) {
     if (state.enabled != true) return;
-    _pendingTabIndex = index;
+    // The selected tab pressed again changes nothing in Java, which sends no selection back to
+    // wait for: one held here would turn away whatever Java selects next as stale.
+    if (index != _selectedIndex) _pendingTabIndex = index;
     setState(() {
       _selectedIndex = index;
       state.selection = index;
@@ -429,6 +431,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     return CTabItem(
       label: tabItem.text ?? "",
       showCloseButton: (tabItem.showClose ?? false) || folderCloses,
+      showDirty: (state.dirtyIndicatorStyle ?? false) && (tabItem.showDirty ?? false),
       customContent: tabItemWidget,
       toolTipText: tabItem.toolTipText,
       vItem: tabItem,
@@ -1290,15 +1293,16 @@ class _CTabBarState extends State<_CTabBar> {
                         textStyle?.copyWith(color: textColor) ??
                         TextStyle(color: textColor),
                   ),
-              if (onClose != null) ...[
+              if (onClose != null || tab.showDirty) ...[
                 SizedBox(width: widgetTheme.tabCloseButtonSpacing),
-                GestureDetector(
-                  onTap: onClose,
-                  child: Icon(
-                    Icons.close,
-                    size: widgetTheme.tabCloseIconSize,
-                    color: widgetTheme.tabCloseButtonColor,
-                  ),
+                _CloseOrDirty(
+                  dirty: tab.showDirty,
+                  onClose: onClose,
+                  enabled: true,
+                  iconSize: widgetTheme.tabCloseIconSize,
+                  closeColor: widgetTheme.tabCloseButtonColor,
+                  dotColor: textColor.withAlpha(isSelected ? 190 : 140),
+                  bottomPadding: 0,
                 ),
               ],
             ],
@@ -1588,29 +1592,16 @@ class _CTabBarState extends State<_CTabBar> {
                           )),
                         ],
                       )),
-                if (shouldShowClose) ...[
+                if (shouldShowClose || tab.showDirty) ...[
                   SizedBox(width: widgetTheme.tabCloseButtonSpacing),
-                  MouseRegion(
-                    cursor: enabled
-                        ? SystemMouseCursors.click
-                        : SystemMouseCursors.basic,
-                    child: MetaData(
-                      metaData: _tabCloseButton,
-                      behavior: HitTestBehavior.opaque,
-                      child: GestureDetector(
-                        onTap: onClose,
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom: widgetTheme.tabCloseIconBottomPadding,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            size: widgetTheme.tabCloseIconSize,
-                            color: getCTabCloseButtonColor(widgetTheme, isSelected),
-                          ),
-                        ),
-                      ),
-                    ),
+                  _CloseOrDirty(
+                    dirty: tab.showDirty,
+                    onClose: shouldShowClose ? onClose : null,
+                    enabled: enabled,
+                    iconSize: widgetTheme.tabCloseIconSize,
+                    closeColor: getCTabCloseButtonColor(widgetTheme, isSelected),
+                    dotColor: textColor.withAlpha(isSelected ? 190 : 140),
+                    bottomPadding: widgetTheme.tabCloseIconBottomPadding,
                   ),
                 ],
               ],
@@ -2757,16 +2748,84 @@ class CTabItem {
   final String? toolTipText;
   final VCTabItem vItem;
 
+  /// CTabItem.setShowDirty under CTabFolder.setDirtyIndicatorStyle: a dot where the close button is.
+  final bool showDirty;
+
   CTabItem({
     required this.label,
     this.image,
     this.showCloseButton = false,
+    this.showDirty = false,
     this.onClose,
     this.alignRight = false,
     this.customContent,
     this.toolTipText,
     required this.vItem,
   });
+}
+
+/// A tab's close button, or for a dirty tab (CTabItem.setShowDirty) the dot SWT draws in its place:
+/// the dot gives way to the close button while the pointer is on it, as in SWT's CTabFolderRenderer.
+class _CloseOrDirty extends StatefulWidget {
+  const _CloseOrDirty({
+    required this.dirty,
+    required this.onClose,
+    required this.enabled,
+    required this.iconSize,
+    required this.closeColor,
+    required this.dotColor,
+    required this.bottomPadding,
+  });
+
+  final bool dirty;
+  /// Null for a tab that shows no close button, whose dot never gives way.
+  final VoidCallback? onClose;
+  final bool enabled;
+  final double iconSize;
+  final Color closeColor;
+  final Color dotColor;
+  final double bottomPadding;
+
+  @override
+  State<_CloseOrDirty> createState() => _CloseOrDirtyState();
+}
+
+class _CloseOrDirtyState extends State<_CloseOrDirty> {
+  bool _hovered = false;
+
+  /// SWT's dirty dot: 8 px across.
+  static const double _dot = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final closes = widget.onClose != null;
+    final showDot = widget.dirty && !(closes && _hovered);
+    final mark = Padding(
+      padding: EdgeInsets.only(bottom: widget.bottomPadding),
+      child: showDot
+          ? SizedBox.square(
+              dimension: widget.iconSize,
+              child: Center(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: widget.dotColor, shape: BoxShape.circle),
+                  child: const SizedBox.square(dimension: _dot),
+                ),
+              ),
+            )
+          : Icon(Icons.close, size: widget.iconSize, color: widget.closeColor),
+    );
+    if (!closes) return mark;
+    return MouseRegion(
+      cursor: widget.enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: widget.dirty ? (_) => setState(() => _hovered = true) : null,
+      onExit: widget.dirty ? (_) => setState(() => _hovered = false) : null,
+      child: MetaData(
+        metaData: _tabCloseButton,
+        behavior: HitTestBehavior.opaque,
+        child: GestureDetector(onTap: widget.onClose, child: mark),
+      ),
+    );
+  }
 }
 
 class _HoverReveal extends StatelessWidget {

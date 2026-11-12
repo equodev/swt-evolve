@@ -13,8 +13,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.ArrayList;
@@ -26,9 +24,6 @@ import java.util.Map;
  * With fixed line heights a StyledText only knows the widths of the lines it has calculated, so a
  * long line further down does not widen the horizontal range until it has been scrolled to.
  */
-// setText routes renderer font metrics into GTK/GDI on the Linux/Windows embed backends, which
-// cannot run under the mocked display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextHorizontalRangeTest {
 

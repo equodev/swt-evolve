@@ -39,6 +39,12 @@ public final class WireDump {
             this.size = size;
         }
 
+        /** {@code read} as the {@code size} bytes it took. */
+        Record(Record read, int size) {
+            this(read.kind, read.type, read.id, read.stamp, read.base, size);
+            properties.putAll(read.properties);
+        }
+
         /** The channel the record's widget was addressed by before the wire: {@code Type/id}. */
         public String channel() {
             return (type == null ? "Image" : type) + "/" + id;
@@ -74,9 +80,14 @@ public final class WireDump {
     private WireDump() {
     }
 
-    /** The records of a frame body ({@code body[offset, offset + length)}, after the channel). */
+    /**
+     * The records of a frame body ({@code body[offset, offset + length)}, after the channel). An item
+     * described in place inside a list of items ({@link WidgetWire#items}) is given as a whole record
+     * of its own, after the record whose list holds it.
+     */
     public static List<Record> records(byte[] body, int offset, int length) {
         In in = new In(body, offset, offset + length);
+        in.inPlace = new ArrayList<>();
         int count = in.le32();
         List<Record> records = new ArrayList<>(count);
         List<String> types = new ArrayList<>();
@@ -106,6 +117,8 @@ public final class WireDump {
             }
             Record r = new Record(kind, type, id, kind == WidgetWire.IMAGE ? 0 : stamp, base, end - start);
             if (type != null) typesById.put(id, type);
+            in.inPlaceStamp = stamp;
+            in.inPlace.clear();
             int key = 0;
             try {
                 while (in.pos < end) {
@@ -118,6 +131,7 @@ public final class WireDump {
             }
             in.pos = end;
             records.add(r);
+            records.addAll(in.inPlace);
         }
         return records;
     }
@@ -165,12 +179,55 @@ public final class WireDump {
             in.pos += count - 1;
             return bytes;
         }
+        if (kind.equals("runs")) {
+            int count = in.varint();
+            if (count == 0) return null;
+            List<Object> list = new ArrayList<>(count - 1);
+            if (count == 1) return list;
+            int first = in.zigzag();
+            list.add(first);
+            int from = WidgetWire.runsFrom(first, count - 1);
+            for (int i = 1; i < (from == 0 ? count - 1 : from); i++) list.add(in.zigzag());
+            if (from == 0) return list;
+            int names = in.varint();
+            int end = 0;
+            for (int i = from; i < count - 1; i += 3) {
+                long run = in.varlong();
+                long packed = run >>> 1;
+                int name;
+                if (names > 0) {
+                    name = (int) (packed % names);
+                } else {
+                    int zigzag = (int) packed;
+                    name = (zigzag >>> 1) ^ -(zigzag & 1);
+                }
+                int start = (run & 1) == 0 ? end : end + in.zigzag();
+                int length = names > 0 ? (int) (packed / names) : in.zigzag();
+                list.add(name);
+                list.add(start);
+                list.add(length);
+                end = start + length;
+            }
+            return list;
+        }
+        if (kind.startsWith("refs:")) return items(in, kind.substring("refs:".length()));
+        if (kind.equals("ref[]") && in.buf[in.pos] < 0 && peekVarlong(in) == WidgetWire.LIST_CHANGE) {
+            return listChange(in, () -> value(in, "ref"));
+        }
         if (kind.endsWith("[]")) {
             String element = kind.substring(0, kind.length() - 2);
             int count = in.varint();
             if (count == 0) return null;
             List<Object> list = new ArrayList<>(count - 1);
-            for (int i = 0; i < count - 1; i++) list.add(value(in, element));
+            boolean objects = element.startsWith("object:");
+            while (list.size() < count - 1) {
+                if (objects && in.buf[in.pos] == WidgetWire.NULL_RUN) {
+                    in.pos++;
+                    for (int run = in.varint(); run > 0; run--) list.add(null);
+                } else {
+                    list.add(value(in, element));
+                }
+            }
             return list;
         }
         if (kind.startsWith("object:")) return object(in, false);
@@ -234,6 +291,72 @@ public final class WireDump {
         }
     }
 
+    /** The varint at {@code in}'s position, without moving past it. */
+    private static long peekVarlong(In in) {
+        int at = in.pos;
+        long v = in.varlong();
+        in.pos = at;
+        return v;
+    }
+
+    /**
+     * A list written as a change to the one the client holds ({@link WidgetWire#LIST_CHANGE}): where
+     * it starts, how many it removes there, what it inserts, and the checksum of the list it makes.
+     */
+    private static Map<String, Object> listChange(In in, java.util.function.Supplier<Object> element) {
+        in.varlong();
+        Map<String, Object> change = new LinkedHashMap<>();
+        change.put("checksum", in.varint());
+        change.put("from", in.varint());
+        change.put("removed", in.varint());
+        int count = in.varint();
+        List<Object> inserted = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) inserted.add(element.get());
+        change.put("inserted", inserted);
+        return change;
+    }
+
+    /** What {@link WidgetWire#items} wrote: each item by id, one described in place also as a record. */
+    private static Object items(In in, String type) {
+        if (in.buf[in.pos] < 0 && peekVarlong(in) == WidgetWire.LIST_CHANGE) return listChange(in, () -> item(in, type));
+        int count = in.varint();
+        if (count == 0) return null;
+        List<Object> list = new ArrayList<>(count - 1);
+        for (int i = 0; i < count - 1; i++) list.add(item(in, type));
+        return list;
+    }
+
+    /** One entry of a list of items: the item by id, and the record it is described by in place, if it is. */
+    private static Object item(In in, String type) {
+        int start = in.pos;
+        long v = in.varlong();
+        if (v == 0) return null;
+        long z = (v - 1) >>> 1;
+        long id = (z >>> 1) ^ -(z & 1);
+        Ref ref = new Ref(id, type);
+        typesById.put(id, type);
+        if (((v - 1) & 1) == 0) return ref;
+        in.inPlaceStamp += in.varlong();
+        Record r = new Record(WidgetWire.WHOLE, type, id, in.inPlaceStamp, 0, 0);
+        List<Record> outer = in.inPlace;
+        in.inPlace = new ArrayList<>();
+        int key = 0;
+        while (true) {
+            int delta = in.zigzag();
+            if (delta == 0) break;
+            key += delta;
+            String[] k = kindOf(key, type);
+            r.properties.put(k[1], value(in, k[0]));
+        }
+        List<Record> inner = in.inPlace;
+        in.inPlace = outer;
+        if (outer != null) {
+            outer.add(new Record(r, in.pos - start));
+            outer.addAll(inner);
+        }
+        return ref;
+    }
+
     private static Map<String, Object> named(String[] names, Object... values) {
         Map<String, Object> map = new LinkedHashMap<>();
         for (int i = 0; i < names.length; i++) map.put(names[i], values[i]);
@@ -268,6 +391,10 @@ public final class WireDump {
         final byte[] buf;
         int pos;
         final int end;
+        /** The stamp the next item described in place steps from. */
+        long inPlaceStamp;
+        /** Where the items described in place in the record being read go, or null to drop them. */
+        List<Record> inPlace;
 
         In(byte[] buf, int pos, int end) {
             this.buf = buf;

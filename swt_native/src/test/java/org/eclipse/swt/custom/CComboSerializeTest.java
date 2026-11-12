@@ -31,6 +31,7 @@ class CComboSerializeTest extends SerializeTestBase {
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
+        assertJ.satisfies(node("editable").equalsTo(w.getEditable(), orAbsentIfFalse));
         assertJ.satisfies(node("items").sameSizeAs(w.getItems()));
         assertJ.satisfies(node("listVisible").equalsTo(w.getListVisible(), orAbsentIfFalse));
         assertJ.satisfies(node("selection").equalsTo(value(w).getSelection(), orAbsentIfNull));
@@ -53,7 +54,7 @@ class CComboSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable("horizontalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "verticalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "menu", "setMenu hands the menu to the inner Text and never stores it on the CCombo", "children", "getChildren answers none, as upstream: the field, list and arrow are its own"), SWT.NONE, SWT.BORDER, SWT.READ_ONLY, SWT.FLAT, SWT.LEAD, SWT.LEFT, SWT.CENTER, SWT.TRAIL, SWT.RIGHT, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
+        }, unwritable("horizontalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "verticalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "menu", "setMenu hands the menu to the inner Text and never stores it on the CCombo", "children", "getChildren answers none, as upstream: the field, list and arrow are its own", "hasOwnBackground", "the client never reads it off a CCombo"), SWT.NONE, SWT.BORDER, SWT.READ_ONLY, SWT.FLAT, SWT.LEAD, SWT.LEFT, SWT.CENTER, SWT.TRAIL, SWT.RIGHT, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     @Test

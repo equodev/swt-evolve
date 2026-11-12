@@ -33,13 +33,23 @@ import java.util.Map;
  * property := key, value
  * key      := zigzag varint, the property's number less the previous number in the same record or
  *             object (the first counts from 0); a class's numbers are consecutive, so most are 1 byte
+ * items    := varint count + 1 (0 for null), entry{count}    a list of the items a widget owns
+ *           | change
+ * entry    := varint 0                                        none
+ *           | varint 2 zigzag(id) + 1                         an item the client holds, by id
+ *           | varint 2 zigzag(id) + 2, step, property*, 0      one it lacks, described in place
+ * change   := varint LIST_CHANGE, varint checksum, varint from, varint removed, varint count,
+ *             element{count}                                  in a change record, the list the client
+ *             holds with removed elements at from replaced by these: a list of widgets or of items
+ * step     := varint, the item's write stamp less the one before it in the record: the record's own
+ *             stamp, or the item described in place before it
  * </pre>
  *
  * A property is named by its number, the one the generator gave its name ({@link WireTable}), and both
  * sides know from the property what its value is, so the frame carries no types and no names. A
  * widget or an image is named by its id: anything named that the client does not hold is described
  * by its own record in the same frame, so a new subtree arrives as consecutive records, parents
- * before children. Strings and arrays are a varint length plus one (0 for null) and their contents;
+ * before children; an item a list of items names is described in that list instead ({@link #items}). Strings and arrays are a varint length plus one (0 for null) and their contents;
  * ints and longs zigzag varints; floats and doubles little endian; an object or other nullable value
  * a presence byte first, then an object's fields as key and value, closed by a 0 (no key is 0:
  * numbers in one object are distinct).
@@ -70,6 +80,37 @@ public final class WidgetWire {
         default long imageRef(Image image) {
             image(image);
             return image.hashCode();
+        }
+
+        /** Whether a list of widgets written now is told to {@link #listWritten}. */
+        default boolean tracksLists() {
+            return false;
+        }
+
+        /**
+         * The ids of the list the client holds for the property {@code key} being written, when the
+         * list may travel as a change to it; null otherwise.
+         */
+        default int[] heldList(int key) {
+            return null;
+        }
+
+        /** The client holds {@code ids} for the property {@code key} once what is being written reaches it. */
+        default void listWritten(int key, int[] ids) {
+        }
+
+        /** Whether the client holds {@code widget} as it was last described, so a list may keep it unnamed. */
+        default boolean holds(Object widget) {
+            return false;
+        }
+
+        /**
+         * Describes {@code item} where the frame stands, when the client lacks it and nothing else in
+         * the frame describes it: its {@link #inPlaceStamp step} and its properties, keyed from 0. False,
+         * with nothing written, otherwise, or when its record type is not the one numbered {@code type}.
+         */
+        default boolean describeInPlace(Object item, int type) {
+            return false;
         }
     }
 
@@ -115,6 +156,8 @@ public final class WidgetWire {
         lastStamp = 0;
         lastKey = 0;
         emptyAt = -1;
+        listFrom = -1;
+        objectDepth = 0;
     }
 
     /** Where the widgets and images that values name are reported. */
@@ -189,7 +232,24 @@ public final class WidgetWire {
     public void stamps(long stamp, long base, boolean change) {
         varlong(stamp - lastStamp);
         lastStamp = stamp;
+        inPlaceStamp = stamp;
         if (change) varlong(stamp - base);
+    }
+
+    /** The stamp the next item described in place is written as a step from. */
+    private long inPlaceStamp;
+
+    /** Writes the step to {@code stamp}, an item's described in place; returns the stamp it stepped from. */
+    public long inPlaceStamp(long stamp) {
+        long previous = inPlaceStamp;
+        varlong(stamp - previous);
+        inPlaceStamp = stamp;
+        return previous;
+    }
+
+    /** Steps the next item described in place from {@code stamp} again: the ones after it were taken back. */
+    public void restoreInPlaceStamp(long stamp) {
+        inPlaceStamp = stamp;
     }
 
     /** Closes the record opened at {@code start}, writing its length. */
@@ -268,6 +328,7 @@ public final class WidgetWire {
         size = 0;
         lastKey = 0;
         emptyAt = -1;
+        listFrom = -1;
     }
 
     public int size() {
@@ -287,6 +348,7 @@ public final class WidgetWire {
     public void truncate(int size) {
         this.size = size;
         if (emptyAt >= size) emptyAt = -1;
+        if (listFrom >= size) listFrom = -1;
     }
 
     /** The number of the property last written in the open record or object. */
@@ -351,7 +413,7 @@ public final class WidgetWire {
     }
 
     /** A string's, an array's or a map's length, plus one: 0 is null. */
-    private void lengthPrefix(int length) {
+    void lengthPrefix(int length) {
         if (length == 0) emptyAt = size;
         varint(length + 1);
     }
@@ -452,6 +514,70 @@ public final class WidgetWire {
         }
         lengthPrefix(v.length);
         for (int e : v) varint((e << 1) ^ (e >> 31));
+    }
+
+    /**
+     * A style index: a palette name, then runs of {@code name, start, length}, each start written as
+     * the step from the end of the run before. A run's name and length go as one number, {@code
+     * length * names + name}, after the count of names it is made with; that number carries whether
+     * the step follows, which is left out when the run touches the one before. With a negative name or
+     * length, or too many names, the count is 0 and each run's name and length go on their own. A
+     * change to an index (first element {@code Integer.MIN_VALUE}) writes its header the same way
+     * before the runs it inserts. Anything not made of whole runs is written as {@link #write(int[])}
+     * writes it.
+     */
+    public void runs(int[] v) {
+        if (v == null) {
+            varint(0);
+            return;
+        }
+        lengthPrefix(v.length);
+        if (v.length == 0) return;
+        int from = runsFrom(v[0], v.length);
+        int header = from == 0 ? v.length : from;
+        for (int i = 0; i < header; i++) varint((v[i] << 1) ^ (v[i] >> 31));
+        if (from == 0) return;
+        int names = runNames(v, from);
+        varint(names);
+        int end = 0;
+        for (int i = from; i < v.length; i += 3) {
+            int step = v[i + 1] - end;
+            int stepped = step != 0 ? 1 : 0;
+            if (names > 0) {
+                varlong(((long) v[i + 2] * names + v[i]) << 1 | stepped);
+            } else {
+                varlong((((v[i] << 1) ^ (v[i] >> 31)) & 0xFFFFFFFFL) << 1 | stepped);
+            }
+            if (step != 0) varint((step << 1) ^ (step >> 31));
+            if (names == 0) varint((v[i + 2] << 1) ^ (v[i + 2] >> 31));
+            end = v[i + 1] + v[i + 2];
+        }
+    }
+
+    /** The most names {@link #runs} packs with a length: keeps the packed number exact as a JavaScript double. */
+    static final int MAX_RUN_NAMES = 1 << 16;
+
+    /** One more than the largest name of the runs {@code v} holds from {@code from}, or 0 if they cannot be packed. */
+    private static int runNames(int[] v, int from) {
+        int names = 0;
+        for (int i = from; i < v.length; i += 3) {
+            if (v[i] < 0 || v[i + 2] < 0 || v[i] >= MAX_RUN_NAMES) return 0;
+            names = Math.max(names, v[i] + 1);
+        }
+        return names;
+    }
+
+    /** The header a change to a style index carries before the runs it inserts. */
+    public static final int RUNS_CHANGE_HEADER = 6;
+
+    /**
+     * Where the runs of a list of {@code length} starting with {@code first} begin as {@link #runs}
+     * writes it: after a whole index's palette name, or after a change's header; 0 when it is not
+     * made of whole runs.
+     */
+    public static int runsFrom(int first, int length) {
+        int from = first == Integer.MIN_VALUE ? RUNS_CHANGE_HEADER : 1;
+        return length >= from && (length - from) % 3 == 0 ? from : 0;
     }
 
     public void write(long[] v) {
@@ -555,12 +681,186 @@ public final class WidgetWire {
     }
 
     public void refs(Object[] v) {
+        listFrom = -1;
+        int key = lastKey;
+        int[] ids = listIds(v);
+        int from = size;
         if (v == null) {
             varint(0);
-            return;
+        } else if (ids != null && listChange(v, ids, key, NOT_ITEMS)) {
+            listWrittenAs(from, namesHash(v, NOT_ITEMS));
+        } else {
+            lengthPrefix(v.length);
+            for (Object e : v) ref(e);
         }
-        lengthPrefix(v.length);
-        for (Object e : v) ref(e);
+        if (ids != null) names.listWritten(key, ids);
+    }
+
+    /**
+     * The items a widget owns ({@code items} in the class comment): each one the client lacks is
+     * described in place, as an item of the record type numbered {@code type}, rather than named here
+     * and described by a record of its own.
+     */
+    public void items(Object[] v, int type) {
+        listFrom = -1;
+        int key = lastKey;
+        int[] ids = listIds(v);
+        int from = size;
+        if (v == null) {
+            varint(0);
+        } else if (ids != null && listChange(v, ids, key, type)) {
+            listWrittenAs(from, namesHash(v, type));
+        } else {
+            lengthPrefix(v.length);
+            boolean described = false;
+            for (Object e : v) described |= item(e, type);
+            if (described) listWrittenAs(from, namesHash(v, type));
+        }
+        if (ids != null) names.listWritten(key, ids);
+    }
+
+    /** One entry of {@link #items}; true when it described the item in place. */
+    private boolean item(Object e, int type) {
+        if (e == null) {
+            varint(0);
+            return false;
+        }
+        long id = Serializer.wireId(e);
+        long z = (id << 1) ^ (id >> 63);
+        int at = size;
+        varlong((z << 1 | 1) + 1);
+        int outerKey = lastKey;
+        int outerValue = valueStart;
+        lastKey = 0;
+        boolean inPlace = names.describeInPlace(e, type);
+        lastKey = outerKey;
+        valueStart = outerValue;
+        if (inPlace) {
+            varint(0);
+            return true;
+        }
+        truncate(at);
+        names.widget(e);
+        varlong((z << 1) + 1);
+        return false;
+    }
+
+    /** The header of a list that is a change to the one the client holds: no array's length plus one is this. */
+    public static final long LIST_CHANGE = (1L << 31) + 1;
+
+    /** {@link #items}' type for a list of widgets only named, {@link #refs}. */
+    private static final int NOT_ITEMS = -1;
+
+    private static final int[] NO_IDS = new int[0];
+
+    /** The ids of {@code v} in order, when the list is to be told to {@link Names#listWritten}; else null. */
+    private int[] listIds(Object[] v) {
+        if (objectDepth > 0 || !names.tracksLists()) return null;
+        if (v == null || v.length == 0) return NO_IDS;
+        int[] ids = new int[v.length];
+        int n = 0;
+        for (Object e : v) if (e != null) ids[n++] = (int) Serializer.wireId(e);
+        return n == ids.length ? ids : Arrays.copyOf(ids, n);
+    }
+
+    /**
+     * Writes {@code v} as the change to the list the client holds for {@code key}, when it has one and
+     * the change is the shorter: the common head and tail stay, what lies between is replaced.
+     */
+    private boolean listChange(Object[] v, int[] ids, int key, int type) {
+        // A list with holes is held without them, so its positions are not the client's.
+        if (ids.length != v.length) return false;
+        int[] held = names.heldList(key);
+        if (held == null) return false;
+        int limit = Math.min(held.length, ids.length);
+        int head = 0;
+        while (head < limit && held[head] == ids[head]) head++;
+        int tail = 0;
+        while (tail < limit - head && held[held.length - 1 - tail] == ids[ids.length - 1 - tail]) tail++;
+        int removed = held.length - head - tail;
+        int inserted = ids.length - head - tail;
+        int checksum = listChecksum(ids);
+        int header = varlongSize(LIST_CHANGE) + varintSize(checksum) + varintSize(head) + varintSize(removed)
+                + varintSize(inserted);
+        // What the change leaves out: the length and the names of the elements it keeps.
+        int kept = varintSize(v.length + 1);
+        for (int i = 0; i < head; i++) kept += nameSize(ids[i], type);
+        for (int i = ids.length - tail; i < ids.length; i++) kept += nameSize(ids[i], type);
+        if (header >= kept) return false;
+        // What the list keeps is not named, so nothing it keeps can be one the client is owed.
+        for (int i = 0; i < head; i++) if (!names.holds(v[i])) return false;
+        for (int i = ids.length - tail; i < ids.length; i++) if (!names.holds(v[i])) return false;
+        varlong(LIST_CHANGE);
+        varint(checksum);
+        varint(head);
+        varint(removed);
+        varint(inserted);
+        for (int i = head; i < head + inserted; i++) {
+            if (type == NOT_ITEMS) ref(v[i]);
+            else item(v[i], type);
+        }
+        return true;
+    }
+
+    /**
+     * A number both sides compute alike over a list's ids, kept below 2^30 so every intermediate is
+     * an exact integer in a JavaScript double as well.
+     */
+    public static int listChecksum(int[] ids) {
+        long hash = ids.length;
+        for (int id : ids) hash = (hash * 31 + id) & 0x3FFFFFFF;
+        return (int) hash;
+    }
+
+    private static int nameSize(int id, int type) {
+        long z = ((long) id << 1) ^ ((long) id >> 63);
+        return varlongSize(type == NOT_ITEMS ? z + 1 : (z << 1) + 1);
+    }
+
+    /** The list written from {@code from} to here hashes as {@code hash}: see {@link #valueHash}. */
+    private void listWrittenAs(int from, long hash) {
+        listFrom = from;
+        listTo = size;
+        listHash = hash;
+    }
+
+    /** Where the last list that is not written as itself was written, or -1; and what it hashes as. */
+    private int listFrom = -1;
+    private int listTo;
+    private long listHash;
+
+    /** The hash of {@code v} written whole, its elements only named. */
+    private static long namesHash(Object[] v, int type) {
+        WidgetWire w = borrow();
+        try {
+            w.reset();
+            w.lengthPrefix(v.length);
+            for (Object e : v) {
+                if (e == null) {
+                    w.varint(0);
+                    continue;
+                }
+                long id = Serializer.wireId(e);
+                long z = (id << 1) ^ (id >> 63);
+                w.varlong(type == NOT_ITEMS ? z + 1 : (z << 1) + 1);
+            }
+            return w.hash(0, w.size);
+        } finally {
+            giveBack(w);
+        }
+    }
+
+    /**
+     * {@link #hash} of the value written at {@code [from, to)}, except for a list written as a change or
+     * describing items in place: that one hashes as the whole list will be written once the client
+     * holds it, so a list that has not changed since is not sent again, however it travelled.
+     */
+    public long valueHash(int from, int to) {
+        if (from == listFrom && to == listTo) {
+            listFrom = -1;
+            return listHash;
+        }
+        return hash(from, to);
     }
 
     /** An image, by id; 0 for none. */
@@ -591,10 +891,18 @@ public final class WidgetWire {
     private void fields(WireObject v) {
         int outer = lastKey;
         lastKey = 0;
-        v.writeWireFields(this);
+        objectDepth++;
+        try {
+            v.writeWireFields(this);
+        } finally {
+            objectDepth--;
+        }
         varint(0);
         lastKey = outer;
     }
+
+    /** How many objects the value being written sits inside: a list in one is never a change. */
+    private int objectDepth;
 
     /**
      * Opens a frame in this buffer: the header of the channel numbered {@code channel} of the widget
@@ -671,6 +979,29 @@ public final class WidgetWire {
         else lengthPrefix(count);
     }
 
+    /**
+     * In a list of objects, where a presence byte would be: the run of nulls that follows, its length
+     * after it. A lone null keeps its single 0.
+     */
+    public static final int NULL_RUN = 2;
+
+    /**
+     * Writes the run of nulls in a list of objects that starts at {@code a[from]}, which is null, and
+     * returns its length.
+     */
+    public int nulls(Object[] a, int from) {
+        int run = 1;
+        while (from + run < a.length && a[from + run] == null) run++;
+        ensure(1);
+        if (run == 1) {
+            buf[size++] = 0;
+        } else {
+            buf[size++] = NULL_RUN;
+            varint(run);
+        }
+        return run;
+    }
+
     /** Writes the presence byte and returns {@code present}, so a writer can go on to the value. */
     public boolean present(boolean present) {
         ensure(1);
@@ -682,8 +1013,9 @@ public final class WidgetWire {
 
     /**
      * A string as both ends hold one, so neither encodes nor decodes: {@code varint(n << 1 | wide) + 1}
-     * (0 for null), then {@code n} Latin-1 bytes, or, when a char is past 0xFF, {@code n} UTF-16 code
-     * units little endian.
+     * (0 for null), then {@code n} ASCII bytes, or, when a char is past 0x7F, {@code n} UTF-16 code
+     * units little endian. ASCII rather than all of Latin-1, so a browser client can hand the bytes to
+     * its own decoder as they are.
      */
     @SuppressWarnings("deprecation")
     void writeString(String s) {
@@ -692,13 +1024,13 @@ public final class WidgetWire {
             return;
         }
         int n = s.length();
-        int latin1 = 0;
-        while (latin1 < n && s.charAt(latin1) <= 0xFF) latin1++;
-        if (latin1 == n) {
+        int ascii = 0;
+        while (ascii < n && s.charAt(ascii) < 0x80) ascii++;
+        if (ascii == n) {
             if (n == 0) emptyAt = size;
             ensure(5 + n);
             varint((n << 1) + 1);
-            // The low byte of each char: a plain copy of a Latin-1 string's bytes.
+            // The low byte of each char: a plain copy of an ASCII string's bytes.
             s.getBytes(0, n, buf, size);
             size += n;
             return;
@@ -721,13 +1053,22 @@ public final class WidgetWire {
         buf[size++] = (byte) v;
     }
 
-    private void varlong(long v) {
+    void varlong(long v) {
         ensure(10);
         while ((v & ~0x7FL) != 0) {
             buf[size++] = (byte) ((v & 0x7F) | 0x80);
             v >>>= 7;
         }
         buf[size++] = (byte) v;
+    }
+
+    private static int varlongSize(long v) {
+        int n = 1;
+        while ((v & ~0x7FL) != 0) {
+            n++;
+            v >>>= 7;
+        }
+        return n;
     }
 
     private static int varintSize(int v) {

@@ -985,9 +985,15 @@ public class Config {
         // Also derived, and for the same reason: the client reports the monitor's zoom only once it
         // is up, and swt.autoScale is applied to it after these flags were first read.
         configFlags.ui_zoom = uiZoom();
-        configFlags.decimal_separator =
-                String.valueOf(java.text.DecimalFormatSymbols.getInstance(formatLocale()).getDecimalSeparator());
-        configFlags.locale = formatLocale().toLanguageTag();
+        // Read again only for a new format locale: the symbols are built anew on every look-up, and the
+        // flags are read for every row a tree paints. A Locale keeps its language tag once built.
+        java.util.Locale format = formatLocale();
+        String tag = format.toLanguageTag();
+        if (configFlags.decimal_separator == null || !tag.equals(configFlags.locale)) {
+            configFlags.decimal_separator =
+                    String.valueOf(java.text.DecimalFormatSymbols.getInstance(format).getDecimalSeparator());
+            configFlags.locale = tag;
+        }
         return configFlags;
     }
 

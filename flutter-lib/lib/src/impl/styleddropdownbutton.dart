@@ -139,6 +139,7 @@ class StyledSimpleCombo extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
+                  autofillHints: null,
                   controller: controller,
                   focusNode: focusNode,
                   style: TextStyle(color: textColor, fontSize: 12),
@@ -240,6 +241,7 @@ class StyledEditableCombo extends StatelessWidget {
             children: [
               Expanded(
                 child: TextField(
+                  autofillHints: null,
                   controller: controller,
                   focusNode: focusNode,
                   style: TextStyle(color: textColor, fontSize: 12),

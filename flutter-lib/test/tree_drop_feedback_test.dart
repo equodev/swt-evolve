@@ -3,6 +3,8 @@
 // rests over it keeps sending DragOver while the listener asks to scroll or expand. A drag from
 // another window gets the same feedback.
 
+import 'dart:typed_data';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
+import 'package:swtflutter/src/comm/widget_wire.dart';
 import 'package:swtflutter/src/gen/display.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
@@ -22,6 +25,7 @@ import 'package:swtflutter/src/impl/utils/dnd_utils.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'delivery/support/deliver.dart';
+import 'support/channels.dart' as channels;
 import 'support/sent_events.dart';
 
 const int _mousePointer = 1;
@@ -122,15 +126,20 @@ Future<void> _finish(WidgetTester tester, TestGesture gesture) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-/// Java telling the shell that a drag from another window is [phase] at [global].
+const _phases = {'over': RemoteDragReceiver.over, 'leave': RemoteDragReceiver.leave, 'drop': RemoteDragReceiver.drop};
+
+/// Java telling the shell that a drag from another window is [phase] at [global]: an event's
+/// fields, as RemoteDrag sends a step.
 Future<void> _remote(WidgetTester tester, String phase, [Offset? global]) async {
-  final body = <String, dynamic>{'text': phase};
+  final step = VEvent()..detail = _phases[phase];
   if (global != null) {
     final at = tester.renderObject<RenderBox>(find.byType(ShellSwt<VShell>)).globalToLocal(global);
-    body['x'] = at.dx.round();
-    body['y'] = at.dy.round();
+    step
+      ..x = at.dx.round()
+      ..y = at.dy.round();
   }
-  deliverTagged('Shell/$_shellId/DnD/remoteDrag', body);
+  EquoCommService.commForTesting.receiveBinary(
+      channels.frame('Shell/$_shellId/DnD/remoteDrag', Uint8List.fromList(WidgetWireWriter.encode(step))));
   await tester.pump();
   await tester.pump();
 }

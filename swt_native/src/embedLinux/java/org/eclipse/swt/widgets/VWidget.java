@@ -40,7 +40,8 @@ public class VWidget {
      */
     public void markDirty(int key) {
         assert dev.equo.swt.ChangedKeys.among(wireKeys(), key) : "key " + key + " is not a property of " + getClass().getSimpleName();
-        changed.add(key);
+        if (!changed.add(key) && dev.equo.swt.Serializer.waitsForFlush(this))
+            return;
         if (impl instanceof DartWidget)
             ((DartWidget) impl).dirty();
     }
@@ -107,7 +108,7 @@ public class VWidget {
         changed.removeAll(written);
     }
 
-    public static final int STYLE = 660;
+    public static final int STYLE = 670;
 
     /**
      * A property's name, by its number: for logs and tests.
@@ -125,7 +126,7 @@ public class VWidget {
      */
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 660:
+            case 670:
                 w.write((int) getStyle());
                 return true;
         }
@@ -137,10 +138,10 @@ public class VWidget {
      */
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 660:
+            case 670:
                 {
                     int v_ = getStyle();
-                    w.key(660);
+                    w.key(670);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -148,7 +149,7 @@ public class VWidget {
         return dev.equo.swt.WidgetWire.UNHANDLED;
     }
 
-    private static final int[] wireKeys_ = new int[] { 660 };
+    private static final int[] wireKeys_ = new int[] { 670 };
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -166,7 +167,7 @@ public class VWidget {
      */
     public boolean wireAlways(int key) {
         switch(key) {
-            case 660:
+            case 670:
                 return true;
         }
         return false;

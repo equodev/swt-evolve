@@ -66,6 +66,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     _publishHoldings();
     applySystemMenu(_heldSystemMenu());
     _stopRecords = VRegistry.instance.onHolder<VDisplay>('Display', VDisplay.new, _onRecord);
+    _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('DisplayPopups', VShellPopups.new, _onPopups);
     VRegistry.instance.watchAt(_holderKey, _onHeldChanged);
     // Single top-level keyboard capture for the whole-tree model: every physical key is forwarded
     // once, here, and Java routes it to the focused control (running Display.filterEvent, which is
@@ -121,6 +122,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   static Map<String, dynamic>? _decode(dynamic args) => args is Map<String, dynamic> ? args : null;
 
   void Function()? _stopRecords;
+  void Function()? _stopPopupRecords;
 
   /// The registry key the display holds its shells under.
   late final int _holderKey = WidgetKey.of(gen.WireType.display, widget.value.id ?? 0);
@@ -128,6 +130,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   @override
   void dispose() {
     _stopRecords?.call();
+    _stopPopupRecords?.call();
     VRegistry.instance.unwatchAt(_holderKey, _onHeldChanged);
     HardwareKeyboard.instance.removeHandler(_forwardKeyToSwt);
     if (OpenMenus.forwardHeld == _forwardUnheldKey) OpenMenus.forwardHeld = null;
@@ -160,6 +163,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
   /// [event] past the keys a pop-up holds: a held key is played here once no menu took it.
   bool _forwardUnheldKey(KeyEvent event) {
     if (keyboardClaimed) return false;
+    // A later key message: the menu has read every key waiting here, so they are decided now and not
+    // at the frame, which a loaded page can draw after this key has closed the menu.
+    if (_keysAfterMenusRead) _forwardKeysAfterMenus();
     // An open menu owns the keyboard, as the platform's menu loop does: the focused control gets nothing.
     if (event is! KeyUpEvent && OpenMenus.any) {
       MenuKeyTrace.log(() => '${MenuKeyTrace.key(event)} left to the open menu');
@@ -173,6 +179,9 @@ class _DisplaySwtState extends State<DisplaySwt> {
       MenuKeyTrace.log(() => '${MenuKeyTrace.key(event)} waits a frame for the menus');
       _keysAfterMenus.add((event: event, menuMayTakeIt: menuMayTakeIt));
       if (_keysAfterMenus.length == 1) {
+        _keysAfterMenusRead = false;
+        // Run once the message is dispatched, the menu's handlers included.
+        scheduleMicrotask(() => _keysAfterMenusRead = _keysAfterMenus.isNotEmpty);
         WidgetsBinding.instance.addPostFrameCallback((_) => _forwardKeysAfterMenus());
         WidgetsBinding.instance.ensureVisualUpdate();
       }
@@ -218,9 +227,13 @@ class _DisplaySwtState extends State<DisplaySwt> {
   /// Keys waiting for the menus to read the keys before them, in the order they came.
   final List<({KeyEvent event, bool menuMayTakeIt})> _keysAfterMenus = [];
 
+  /// Whether the menus have read the key message [_keysAfterMenus] came in, so a later key may decide them.
+  bool _keysAfterMenusRead = false;
+
   void _forwardKeysAfterMenus() {
     final keys = List.of(_keysAfterMenus);
     _keysAfterMenus.clear();
+    _keysAfterMenusRead = false;
     if (!mounted) return;
     for (final key in keys) {
       if (keyboardClaimed || (key.menuMayTakeIt && OpenMenus.any)) {
@@ -282,6 +295,16 @@ class _DisplaySwtState extends State<DisplaySwt> {
       ..swt = 'Display');
   }
 
+  /// The popups this display draws: a record of their own, sent far more often than the display's.
+  List<VMenu>? _popups;
+
+  void _onPopups(int id, VShellPopups record) {
+    if (id != widget.value.id) return;
+    _popups = record.popups;
+    _publishHoldings();
+    if (mounted) setState(() {});
+  }
+
   void _apply(VDisplay updated) {
     try {
       applyConfigFlags(updated.config);
@@ -310,7 +333,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final systemMenu = _display.systemMenu;
     final held = <VWidget>[
       ...?_display.shells,
-      ...?_display.popups,
+      ...?_popups,
       ...?_display.tooltips,
       // The application menu is described here and named everywhere else, so leaving it out left
       // nothing under it held: a name then resolves to a stub with no style, and the item that is
@@ -521,7 +544,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
             key: ValueKey(s.id),
             child: Positioned.fill(child: RepaintBoundary(child: gen.mapWidgetFromValue(s))),
           ),
-        for (final popup in (_display.popups ?? []))
+        for (final popup in (_popups ?? const <VMenu>[]))
           KeyedSubtree(
             key: ValueKey(popup.id),
             child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),

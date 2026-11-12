@@ -61,6 +61,10 @@ public class VTrayItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 670:
+                return false;
+            case 353:
+                return false;
         }
         return super.writeWire(w, key);
     }
@@ -68,6 +72,10 @@ public class VTrayItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
+            case 670:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 353:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
         }
         return super.writeWireWhole(w, key);
     }

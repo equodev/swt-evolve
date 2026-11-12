@@ -1,6 +1,6 @@
 // What an owner-drawing Table paints into a row (its SWT.EraseItem/PaintItem drawing) is shown by an
-// overlay laid under that row. Java paints a row into it only once the row reports its overlay
-// listening, and from then on the row does not paint the text the overlay already draws.
+// overlay laid under that row. Once the overlay shows that painting, the row no longer paints the text
+// the overlay draws; until then it does, so the cell is never blank.
 //
 // Under, not over: the overlay carries the EraseItem background, and an app that leaves
 // SWT.FOREGROUND set still expects the item's own text on top of it.
@@ -16,6 +16,10 @@ import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/owner_draw_overlay.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'package:swtflutter/src/gen/gc.dart';
+
+import 'delivery/support/deliver.dart';
+import 'support/gc_frames.dart';
 
 class _CapturingTableSwt extends TableSwt<VTable> {
   const _CapturingTableSwt({required super.value, required this.onEvent});
@@ -88,9 +92,20 @@ void main() {
     expect(overlay.bottom, greaterThanOrEqualTo(row.bottom));
   });
 
-  testWidgets('text the overlay paints keeps its place but is not painted by the row',
+  testWidgets('the row draws text its overlay will paint until the overlay shows it', (tester) async {
+    await _pump(tester, _table([0]));
+
+    final painted = tester.widget<Text>(find.text('check_0710'));
+    expect(painted.style?.color, isNot(Colors.transparent),
+        reason: 'an overlay that has not shown its painting yet would leave the cell blank');
+  });
+
+  testWidgets('text the overlay paints keeps its place but is not painted by the row once it shows',
       (tester) async {
     await _pump(tester, _table([0]));
+    receive('GC/11/b', GcFrame().whole(VGC.empty()).opNamed('fillRectangleintintintint', [0, 0, 20, 10]).bytes);
+    await deliverFrame('GC/11/gcDispose', {'fullRepaint': true});
+    await tester.pump();
 
     final painted = tester.widget<Text>(find.text('check_0710'));
     expect(painted.style?.color, Colors.transparent);
@@ -125,5 +140,17 @@ void main() {
     expect(rowsIndex, isNonNegative);
     expect(overlayIndex, lessThan(rowsIndex),
         reason: 'the overlay must paint before the row, or its background covers the cell text');
+  });
+
+  testWidgets('a row shows what Java painted into it in the frame after the paint arrives', (tester) async {
+    await _pump(tester, _table([]));
+    final shown = find.descendant(of: find.byType(OwnerDrawnRowOverlay), matching: find.byType(IgnorePointer));
+    expect(shown, findsNothing, reason: 'nothing painted yet, so the overlay is held offstage');
+
+    receive('GC/11/b', GcFrame().whole(VGC.empty()).opNamed('fillRectangleintintintint', [0, 0, 20, 10]).bytes);
+    await deliverFrame('GC/11/gcDispose', {'fullRepaint': true});
+    await tester.pump();
+
+    expect(shown, findsOneWidget);
   });
 }

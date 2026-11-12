@@ -72,17 +72,17 @@ public class VImage extends VResource {
     public void setWidth(int value) {
     }
 
-    public static final int FILENAME = 338;
+    public static final int FILENAME = 342;
 
-    public static final int HEIGHT = 339;
+    public static final int HEIGHT = 343;
 
-    public static final int IMAGE_DATA = 340;
+    public static final int IMAGE_DATA = 344;
 
-    public static final int REMOTE_REF = 341;
+    public static final int REMOTE_REF = 345;
 
-    public static final int SVG_CONTENT = 342;
+    public static final int SVG_CONTENT = 346;
 
-    public static final int WIDTH = 343;
+    public static final int WIDTH = 347;
 
     @Override
     public String wireName(int key) {
@@ -106,22 +106,22 @@ public class VImage extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 338:
+            case 342:
                 w.write(getFilename());
                 return true;
-            case 339:
+            case 343:
                 w.write((int) getHeight());
                 return true;
-            case 340:
+            case 344:
                 w.object(getImageData());
                 return true;
-            case 341:
+            case 345:
                 w.write(getRemoteRef());
                 return true;
-            case 342:
+            case 346:
                 w.write(getSvgContent());
                 return true;
-            case 343:
+            case 347:
                 w.write((int) getWidth());
                 return true;
         }
@@ -131,48 +131,9 @@ public class VImage extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 338:
-                {
-                    String v_ = getFilename();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.isEmpty())
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(338);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 339:
-                {
-                    int v_ = getHeight();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(339);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 340:
-                {
-                    ImageData v_ = getImageData();
-                    dev.equo.swt.WireObject o_ = v_;
-                    if (o_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(340);
-                    w.object(o_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 341:
-                {
-                    Long v_ = getRemoteRef();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(341);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 342:
                 {
-                    String v_ = getSvgContent();
+                    String v_ = getFilename();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
@@ -183,10 +144,49 @@ public class VImage extends VResource {
                 }
             case 343:
                 {
-                    int v_ = getWidth();
+                    int v_ = getHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(343);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 344:
+                {
+                    ImageData v_ = getImageData();
+                    dev.equo.swt.WireObject o_ = v_;
+                    if (o_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(344);
+                    w.object(o_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 345:
+                {
+                    Long v_ = getRemoteRef();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(345);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 346:
+                {
+                    String v_ = getSvgContent();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(346);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 347:
+                {
+                    int v_ = getWidth();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(347);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -194,7 +194,7 @@ public class VImage extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 338, 339, 340, 341, 342, 343 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 342, 343, 344, 345, 346, 347 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -217,23 +217,23 @@ public class VImage extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 56;
+        return 57;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(338);
-        w.write(getFilename());
-        w.key(339);
-        w.write((int) getHeight());
-        w.key(340);
-        w.object(getImageData());
-        w.key(341);
-        w.write(getRemoteRef());
         w.key(342);
-        w.write(getSvgContent());
+        w.write(getFilename());
         w.key(343);
+        w.write((int) getHeight());
+        w.key(344);
+        w.object(getImageData());
+        w.key(345);
+        w.write(getRemoteRef());
+        w.key(346);
+        w.write(getSvgContent());
+        w.key(347);
         w.write((int) getWidth());
     }
 }

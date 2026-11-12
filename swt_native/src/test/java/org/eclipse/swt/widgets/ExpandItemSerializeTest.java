@@ -23,8 +23,7 @@ class ExpandItemSerializeTest extends SerializeTestBase {
         setAll(w);
         WireAssert assertJ = assertThatWire(serialize(w));
         assertJ.containsEntry("id", w.hashCode())
-               .containsEntry("swt", "ExpandItem")
-               .containsEntry("style", w.getStyle());
+               .containsEntry("swt", "ExpandItem");
         assertJ.satisfies(node("control").equalsTo(w.getControl(), orAbsentIfNull));
         assertJ.satisfies(node("expanded").equalsTo(w.getExpanded(), orAbsentIfFalse));
         assertJ.satisfies(node("height").equalsTo(w.getHeight(), orAbsentIf0));
@@ -38,7 +37,7 @@ class ExpandItemSerializeTest extends SerializeTestBase {
             setAll(w);
             fillUnsettable(w);
             return w;
-        }, unwritable(), SWT.NONE);
+        }, unwritable("style", "the client never reads it off a ExpandItem"), SWT.NONE);
     }
 
     @Test

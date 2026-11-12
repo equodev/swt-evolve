@@ -56,6 +56,32 @@ public final class WireValues {
         }
     }
 
+    /**
+     * What a client holds for a list of widgets once a record sends {@code sent}: the list sent, or,
+     * for a change to the list held ({@code WidgetWire.LIST_CHANGE}), {@code held} with the change
+     * applied. Fails when the result is not the list the change says it makes, which is Java and the
+     * client disagreeing about what the client holds.
+     */
+    @SuppressWarnings("unchecked")
+    public static Object held(Object held, Object sent) {
+        if (!(sent instanceof Map<?, ?> change) || !change.keySet().equals(java.util.Set.of("checksum", "from", "removed", "inserted"))) {
+            return sent;
+        }
+        List<Object> base = held instanceof List<?> list ? (List<Object>) list : List.of();
+        int from = ((Number) change.get("from")).intValue();
+        int removed = ((Number) change.get("removed")).intValue();
+        if (from + removed > base.size()) throw new AssertionError("a list change past the end of " + base + ": " + change);
+        List<Object> out = new ArrayList<>(base.subList(0, from));
+        out.addAll((List<Object>) change.get("inserted"));
+        out.addAll(base.subList(from + removed, base.size()));
+        int[] ids = new int[out.size()];
+        for (int i = 0; i < ids.length; i++) ids[i] = ((Number) ((Map<String, Object>) out.get(i)).get("id")).intValue();
+        if (dev.equo.swt.WidgetWire.listChecksum(ids) != ((Number) change.get("checksum")).intValue()) {
+            throw new AssertionError("a list change made against another list than " + base + ": " + change);
+        }
+        return out;
+    }
+
     public static Object plain(Object v) {
         if (v instanceof WireDump.Ref) {
             WireDump.Ref ref = (WireDump.Ref) v;

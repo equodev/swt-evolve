@@ -238,6 +238,167 @@ Future<Map<String, Object?>> dragByIds(String from, String to, int steps, int in
   return {'moves': steps, 'elapsedMicros': clock.elapsedMicroseconds, 'dispatchMicros': dispatched};
 }
 
+// ---- a mouse of its own ------------------------------------------------------
+
+/// The injected mouse: a device apart from the real one, added on its first event, so it hovers,
+/// enters and leaves as a mouse does.
+const int _injectedDevice = 0x5157;
+bool _injectedAdded = false;
+Offset _injectedAt = Offset.zero;
+int? _injectedPressed;
+int _lastFrameAt = -1;
+int _framesDrawn = 0;
+bool _framesWatched = false;
+
+/// When the last frame finished building and painting, on [EquoCommBase.clock]; -1 before any.
+int lastFrameAtMicros() {
+  _watchFrames();
+  return _lastFrameAt;
+}
+
+void _watchFrames() {
+  if (_framesWatched) return;
+  _framesWatched = true;
+  // Added after the binding's own: it runs once the frame is built, laid out and painted.
+  SchedulerBinding.instance
+      .addPersistentFrameCallback((_) {
+    _lastFrameAt = EquoCommBase.clock.elapsedMicroseconds;
+    _framesDrawn++;
+  });
+}
+
+/// Where [map] points: `x`,`y` in the widget `target` (`{swt}/{id}`) when it names one, else `dx`,`dy`
+/// from where the mouse is.
+Offset? _aim(Map<String, dynamic> map) {
+  final target = map['target'] as String?;
+  if (target == null) {
+    return _injectedAt + Offset(((map['dx'] ?? 0) as num).toDouble(), ((map['dy'] ?? 0) as num).toDouble());
+  }
+  final box = _renderBoxByIdentifier(target);
+  if (box == null || !box.attached || !box.hasSize) return null;
+  return box.localToGlobal(Offset((map['x'] as num).toDouble(), (map['y'] as num).toDouble()));
+}
+
+/// Moves the injected mouse to [to]: a drag while pressed, a hover otherwise.
+void _moveTo(Offset to) {
+  final binding = GestureBinding.instance;
+  if (!_injectedAdded) {
+    _injectedAdded = true;
+    binding.handlePointerEvent(
+        PointerAddedEvent(device: _injectedDevice, position: to, kind: PointerDeviceKind.mouse));
+    _injectedAt = to;
+  }
+  final delta = to - _injectedAt;
+  _injectedAt = to;
+  final pressed = _injectedPressed;
+  binding.handlePointerEvent(pressed != null
+      ? PointerMoveEvent(
+          pointer: pressed,
+          device: _injectedDevice,
+          position: to,
+          delta: delta,
+          kind: PointerDeviceKind.mouse,
+          buttons: kPrimaryButton)
+      : PointerHoverEvent(device: _injectedDevice, position: to, delta: delta, kind: PointerDeviceKind.mouse));
+}
+
+void _press() {
+  final pointer = _pointerSeq++;
+  _injectedPressed = pointer;
+  GestureBinding.instance.handlePointerEvent(PointerDownEvent(
+      pointer: pointer,
+      device: _injectedDevice,
+      position: _injectedAt,
+      kind: PointerDeviceKind.mouse,
+      buttons: kPrimaryButton));
+}
+
+void _release() {
+  final pointer = _injectedPressed;
+  if (pointer == null) return;
+  _injectedPressed = null;
+  GestureBinding.instance.handlePointerEvent(PointerUpEvent(
+      pointer: pointer, device: _injectedDevice, position: _injectedAt, kind: PointerDeviceKind.mouse));
+}
+
+/// One step of the injected mouse, stamped on [EquoCommBase.clock] (`atMicros`) the moment it is
+/// dispatched, which is also the clock of the frame barrier's `lastFrameAtMicros`:
+///   `hover`/`move` {target, x, y} or {dx, dy} — moves there, dragging while pressed;
+///   `down` {target, x, y}? — moves there when aimed, then presses the primary button;
+///   `up` — releases it; `leave` — the mouse leaves the window;
+///   `path` {target, points: [x0, y0, x1, y1, ...], press, intervalMs} — the whole gesture at a
+///   user's pace: to the first point, pressed when `press`, through the rest [intervalMs] apart, and
+///   released at the last. Answers `firstAtMicros`, `lastAtMicros`, `moves` and `frames`, the frames
+///   drawn from the first input to the last.
+Future<Map<String, Object?>> pointerOp(Map<String, dynamic> map) async {
+  _watchFrames();
+  final clock = EquoCommBase.clock;
+  final op = map['op'] as String;
+  try {
+    switch (op) {
+      case 'hover':
+      case 'move':
+      case 'down':
+        final aimed = map['target'] != null || map['dx'] != null || map['dy'] != null;
+        final to = aimed ? _aim(map) : _injectedAt;
+        if (to == null) return {'error': 'not laid out: ${map['target']}'};
+        final at = clock.elapsedMicroseconds;
+        if (aimed) _moveTo(to);
+        if (op == 'down') _press();
+        return {'atMicros': at, 'x': to.dx, 'y': to.dy};
+      case 'up':
+        final at = clock.elapsedMicroseconds;
+        _release();
+        return {'atMicros': at};
+      case 'leave':
+        final at = clock.elapsedMicroseconds;
+        _release();
+        if (_injectedAdded) {
+          _injectedAdded = false;
+          GestureBinding.instance.handlePointerEvent(
+              PointerRemovedEvent(device: _injectedDevice, position: _injectedAt, kind: PointerDeviceKind.mouse));
+        }
+        return {'atMicros': at};
+      case 'path':
+        final target = map['target'] as String;
+        final box = _renderBoxByIdentifier(target);
+        if (box == null || !box.attached || !box.hasSize) return {'error': 'not laid out: $target'};
+        final coords = (map['points'] as List).cast<num>();
+        // Placed once, against where the target is now: a pointer does not follow what it moves.
+        final points = [
+          for (var i = 0; i + 1 < coords.length; i += 2)
+            box.localToGlobal(Offset(coords[i].toDouble(), coords[i + 1].toDouble())),
+        ];
+        final interval = Duration(milliseconds: (map['intervalMs'] as num).toInt());
+        final press = map['press'] == true;
+        final first = clock.elapsedMicroseconds;
+        final frames0 = _framesDrawn;
+        _moveTo(points.first);
+        if (press) _press();
+        var last = first;
+        for (var i = 1; i < points.length; i++) {
+          await Future<void>.delayed(interval);
+          last = clock.elapsedMicroseconds;
+          _moveTo(points[i]);
+        }
+        if (press) {
+          await Future<void>.delayed(interval);
+          last = clock.elapsedMicroseconds;
+          _release();
+        }
+        return {
+          'firstAtMicros': first,
+          'lastAtMicros': last,
+          'moves': points.length - 1,
+          'frames': _framesDrawn - frames0,
+        };
+    }
+    return {'error': 'unknown op $op'};
+  } catch (e) {
+    return {'error': '$e'};
+  }
+}
+
 // ---- public actions --------------------------------------------------------
 
 String _tid(String swt, int id) => '$swt/$id';

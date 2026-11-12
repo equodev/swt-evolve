@@ -19,17 +19,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  * An update sends the style index as a change from what the client holds, carried across edits
  * exactly as the client carries it and checked against the checksum sent with it.
  */
-// setText routes renderer font metrics into GTK/GDI on the Linux/Windows embed backends, which
-// cannot run under the mocked display.
-@DisabledOnOs({ OS.LINUX, OS.WINDOWS })
 @ExtendWith(Mocks.class)
 class StyledTextStyleIndexChangeTest {
 
@@ -123,6 +118,19 @@ class StyledTextStyleIndexChangeTest {
                 .as("the checksum names the index the change produces")
                 .isEqualTo(change[1]);
         return out;
+    }
+
+    @Test
+    void a_change_replaces_whole_runs_so_it_travels_as_runs() {
+        // Palette 7; runs (name, start, length). The second run's length and the third's name differ.
+        int[] base = { 7, 0, 0, 4, 1, 4, 2, 2, 6, 3, 0, 9, 5 };
+        int[] target = { 7, 0, 0, 4, 1, 4, 3, 3, 7, 2, 0, 10, 4 };
+        int[] change = StyledTextHelper.styleIndexChange(base, target);
+
+        assertThat((change[4] - 1) % 3).as("it starts at a run").isZero();
+        assertThat((change.length - 6) % 3).as("it inserts whole runs").isZero();
+        assertThat(dev.equo.swt.WidgetWire.runsFrom(change[0], change.length)).isEqualTo(6);
+        assertThat(apply(base, change)).containsExactly(target);
     }
 
     @Test
