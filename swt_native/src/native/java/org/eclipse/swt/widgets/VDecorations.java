@@ -97,13 +97,13 @@ public class VDecorations extends VCanvas {
         return ((DartDecorations) impl).wireOwnMenuStrip();
     }
 
-    public static final int MENU_BAR = 170;
+    public static final int MENU_BAR = 171;
 
-    public static final int MENU_STRIP_HEIGHT = 171;
+    public static final int MENU_STRIP_HEIGHT = 172;
 
-    public static final int OWN_MENU_STRIP = 172;
+    public static final int OWN_MENU_STRIP = 173;
 
-    public static final int TEXT = 173;
+    public static final int TEXT = 174;
 
     @Override
     public String wireName(int key) {
@@ -123,18 +123,18 @@ public class VDecorations extends VCanvas {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 144:
+            case 145:
                 return false;
-            case 170:
+            case 171:
                 w.ref(getMenuBar());
                 return true;
-            case 173:
+            case 174:
                 w.write(getText());
                 return true;
-            case 171:
+            case 172:
                 w.write((int) getMenuStripHeight());
                 return true;
-            case 172:
+            case 173:
                 w.write(getOwnMenuStrip());
                 return true;
         }
@@ -144,43 +144,43 @@ public class VDecorations extends VCanvas {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 144:
+            case 145:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 170:
+            case 171:
                 {
                     Menu v_ = getMenuBar();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(170);
+                    w.key(171);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 173:
+            case 174:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(173);
+                    w.key(174);
                     w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 171:
-                {
-                    int v_ = getMenuStripHeight();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(171);
-                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 172:
                 {
+                    int v_ = getMenuStripHeight();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(172);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 173:
+                {
                     boolean v_ = getOwnMenuStrip();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(172);
+                    w.key(173);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -188,7 +188,7 @@ public class VDecorations extends VCanvas {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 170, 173, 171, 172 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 171, 174, 172, 173 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

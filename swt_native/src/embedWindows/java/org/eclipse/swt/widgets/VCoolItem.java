@@ -40,9 +40,9 @@ public class VCoolItem extends VItem {
         ((DartCoolItem) impl).preferredSize = value;
     }
 
-    public static final int CONTROL = 158;
+    public static final int CONTROL = 159;
 
-    public static final int PREFERRED_SIZE = 159;
+    public static final int PREFERRED_SIZE = 160;
 
     @Override
     public String wireName(int key) {
@@ -58,12 +58,12 @@ public class VCoolItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 670:
+            case 671:
                 return false;
-            case 158:
+            case 159:
                 w.ref(getControl());
                 return true;
-            case 159:
+            case 160:
                 w.write(getPreferredSize());
                 return true;
         }
@@ -73,23 +73,23 @@ public class VCoolItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 670:
+            case 671:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 158:
+            case 159:
                 {
                     Control v_ = getControl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(158);
+                    w.key(159);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 159:
+            case 160:
                 {
                     Point v_ = getPreferredSize();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(159);
+                    w.key(160);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -97,7 +97,7 @@ public class VCoolItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 158, 159 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 159, 160 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

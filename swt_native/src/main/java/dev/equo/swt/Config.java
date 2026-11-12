@@ -957,6 +957,7 @@ public class Config {
                     && Boolean.parseBoolean(System.getProperty("swt.evolve.bigger_icon_size", "true"));
             configFlags.transparent_menu_check_box = Boolean.getBoolean("swt.evolve.transparent_menu_check_box");
             configFlags.scale_vertical_minimum_at_top = Boolean.getBoolean("swt.evolve.scale_vertical_minimum_at_top");
+            configFlags.ctabfolder_chevron_after_tabs = Boolean.getBoolean("swt.evolve.ctabfolder_chevron_after_tabs");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.

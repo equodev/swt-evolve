@@ -516,48 +516,48 @@ public class TextStyle implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(601);
-        w.object((font == null || font.isDisposed() ? null : ((DartFont) font.getImpl()).getValue()));
         w.key(602);
-        w.write(foreground);
-        w.key(598);
-        w.write(background);
-        w.key(607);
-        w.write(underline);
-        w.key(608);
-        w.write(underlineColor);
-        w.key(609);
-        w.write((int) underlineStyle);
-        w.key(605);
-        w.write(strikeout);
-        w.key(606);
-        w.write(strikeoutColor);
-        w.key(600);
-        w.write((int) borderStyle);
-        w.key(599);
-        w.write(borderColor);
+        w.object((font == null || font.isDisposed() ? null : ((DartFont) font.getImpl()).getValue()));
         w.key(603);
-        w.object(metrics);
+        w.write(foreground);
+        w.key(599);
+        w.write(background);
+        w.key(608);
+        w.write(underline);
+        w.key(609);
+        w.write(underlineColor);
+        w.key(610);
+        w.write((int) underlineStyle);
+        w.key(606);
+        w.write(strikeout);
+        w.key(607);
+        w.write(strikeoutColor);
+        w.key(601);
+        w.write((int) borderStyle);
+        w.key(600);
+        w.write(borderColor);
         w.key(604);
+        w.object(metrics);
+        w.key(605);
         w.write((int) rise);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 607:
+            case 608:
                 underline = r.bool();
                 return true;
-            case 609:
+            case 610:
                 underlineStyle = r.int32();
                 return true;
-            case 605:
+            case 606:
                 strikeout = r.bool();
                 return true;
-            case 600:
+            case 601:
                 borderStyle = r.int32();
                 return true;
-            case 604:
+            case 605:
                 rise = r.int32();
                 return true;
         }

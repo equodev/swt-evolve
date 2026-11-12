@@ -55,6 +55,12 @@ public class ConfigFlags implements WireObject {
      *  not fit go behind the chevron. */
     public boolean ctabfolder_tab_scroll;
 
+    /** With the tab scroll off, a CTabFolder draws its chevron right after the last showing tab and
+     *  lays its tabs out where they are drawn, so the chevron's list opens at the chevron, as in SWT.
+     *  Off by default: the chevron stays at the strip's end. Set with
+     *  {@code -Dswt.evolve.ctabfolder_chevron_after_tabs=true}. */
+    public boolean ctabfolder_chevron_after_tabs;
+
     public boolean image_disable_icons_replacement;
 
     public String assets_path;
@@ -259,7 +265,7 @@ public class ConfigFlags implements WireObject {
             "csd_maximize", "system_menu_bar", "double_click_timeout_ms", "csd_titlebar_color",
             "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
-            "scale_vertical_minimum_at_top",
+            "scale_vertical_minimum_at_top", "ctabfolder_chevron_after_tabs",
             "bigger_icon_size",
     };
 
@@ -361,6 +367,8 @@ public class ConfigFlags implements WireObject {
         w.write(use_swt_border);
         w.key(WireTable.CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP);
         w.write(scale_vertical_minimum_at_top);
+        w.key(WireTable.CONFIG_FLAGS_CTABFOLDER_CHEVRON_AFTER_TABS);
+        w.write(ctabfolder_chevron_after_tabs);
         w.key(WireTable.CONFIG_FLAGS_BIGGER_ICON_SIZE);
         w.write(bigger_icon_size);
     }
@@ -414,6 +422,7 @@ public class ConfigFlags implements WireObject {
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", use_swt_border=" + use_swt_border +
                 ", scale_vertical_minimum_at_top=" + scale_vertical_minimum_at_top +
+                ", ctabfolder_chevron_after_tabs=" + ctabfolder_chevron_after_tabs +
                 ", system_menu_bar=" + system_menu_bar +
                 ", decimal_separator='" + decimal_separator + '\'' +
                 ", locale='" + locale + '\'' +

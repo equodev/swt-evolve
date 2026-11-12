@@ -42,9 +42,9 @@ public class VScrollable extends VControl {
         ((DartScrollable) impl).verticalBar = value;
     }
 
-    public static final int HORIZONTAL_BAR = 448;
+    public static final int HORIZONTAL_BAR = 449;
 
-    public static final int VERTICAL_BAR = 449;
+    public static final int VERTICAL_BAR = 450;
 
     @Override
     public String wireName(int key) {
@@ -60,10 +60,10 @@ public class VScrollable extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 448:
+            case 449:
                 w.ref(getHorizontalBar());
                 return true;
-            case 449:
+            case 450:
                 w.ref(getVerticalBar());
                 return true;
         }
@@ -73,21 +73,21 @@ public class VScrollable extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 448:
+            case 449:
                 {
                     ScrollBar v_ = getHorizontalBar();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(448);
+                    w.key(449);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 449:
+            case 450:
                 {
                     ScrollBar v_ = getVerticalBar();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(449);
+                    w.key(450);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -95,7 +95,7 @@ public class VScrollable extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 448, 449 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 449, 450 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

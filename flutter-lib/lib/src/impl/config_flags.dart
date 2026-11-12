@@ -96,6 +96,10 @@ class ConfigFlags implements WireReadable {
   /// (`swt.evolve.scale_vertical_minimum_at_top`). Off by default: at the bottom, as on Cocoa.
   bool? scale_vertical_minimum_at_top;
 
+  /// With the tab scroll off, a CTabFolder draws its chevron right after the last showing tab
+  /// (`swt.evolve.ctabfolder_chevron_after_tabs`). Off by default: at the strip's end.
+  bool? ctabfolder_chevron_after_tabs;
+
   /// The flags as an object of a binary frame, read field by field.
   @override
   bool readWire(int key, WidgetWireReader r) {
@@ -185,6 +189,8 @@ class ConfigFlags implements WireReadable {
         use_swt_border = r.boolean();
       case WireKey.k_ConfigFlags_scale_vertical_minimum_at_top:
         scale_vertical_minimum_at_top = r.boolean();
+      case WireKey.k_ConfigFlags_ctabfolder_chevron_after_tabs:
+        ctabfolder_chevron_after_tabs = r.boolean();
       case WireKey.k_ConfigFlags_bigger_icon_size:
         bigger_icon_size = r.boolean();
       default:

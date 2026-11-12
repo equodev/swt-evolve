@@ -44,13 +44,13 @@ class VProgressBar extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 420: // maximum
+      case 421: // maximum
         maximum = r.int32();
         return true;
-      case 421: // minimum
+      case 422: // minimum
         minimum = r.int32();
         return true;
-      case 422: // selection
+      case 423: // selection
         selection = r.int32();
         return true;
       default:
@@ -64,19 +64,19 @@ class VProgressBar extends VControl {
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(420, v_);
+        w.keyInt32(421, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(421, v_);
+        w.keyInt32(422, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(422, v_);
+        w.keyInt32(423, v_);
       }
     }
   }
@@ -84,8 +84,8 @@ class VProgressBar extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(420, maximum);
-    visit(421, minimum);
-    visit(422, selection);
+    visit(421, maximum);
+    visit(422, minimum);
+    visit(423, selection);
   }
 }

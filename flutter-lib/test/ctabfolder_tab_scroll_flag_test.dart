@@ -72,7 +72,9 @@ Future<void> _loadInter() async {
   await loader.load();
 }
 
-void _useTabScroll(bool? value) => setConfigFlags(ConfigFlags()..ctabfolder_tab_scroll = value);
+void _useTabScroll(bool? value, {bool? chevronAfterTabs}) => setConfigFlags(ConfigFlags()
+  ..ctabfolder_tab_scroll = value
+  ..ctabfolder_chevron_after_tabs = chevronAfterTabs);
 
 Future<void> _pump(WidgetTester tester, double width, {bool minMax = false}) async {
   tester.view
@@ -155,6 +157,48 @@ void main() {
     final parked = _reportedTabs().where((tab) => tab.$1 >= 70);
     expect(parked, isNotEmpty, reason: 'Java finds no tab under a point past the folder');
   });
+
+  for (final width in [60.0, 90.0]) {
+    testWidgets('ctabfolder_chevron_after_tabs: the chevron sits right after the last drawn tab at $width px',
+        (tester) async {
+      _useTabScroll(false, chevronAfterTabs: true);
+      await _pump(tester, width);
+
+      final shown = _strips.last.split(';')[2].split(',').map(int.parse).toList();
+      final lastRight = shown[0] + shown[1];
+      final folderLeft = tester.getTopLeft(find.byWidgetPredicate((w) => w is CTabFolderSwt)).dx;
+      final chevron = find.byIcon(Icons.expand_more);
+      final button = find.descendant(of: find.byType(ChevronAfterTabs), matching: find.byType(MouseRegion)).first;
+      expect(tester.getTopLeft(button).dx - folderLeft, closeTo(lastRight + ctabChevronGap, 1),
+          reason: 'upstream places the chevron SPACING past the last showing tab');
+      expect(chevron.hitTestable(), findsOneWidget, reason: 'the chevron is hit where it is drawn');
+    });
+  }
+
+  testWidgets('ctabfolder_tab_scroll=false without ctabfolder_chevron_after_tabs: the chevron stays at the strip end',
+      (tester) async {
+    _useTabScroll(false);
+    await _pump(tester, 60);
+
+    final shown = _strips.last.split(';')[2].split(',').map(int.parse).toList();
+    final lastRight = shown[0] + shown[1];
+    final folderLeft = tester.getTopLeft(find.byWidgetPredicate((w) => w is CTabFolderSwt)).dx;
+    final button = find.descendant(of: find.byType(ChevronAfterTabs), matching: find.byType(MouseRegion)).first;
+    expect(tester.getTopLeft(button).dx - folderLeft, greaterThan(lastRight + ctabChevronGap + 1));
+    expect(tester.getTopRight(button).dx - folderLeft, 60);
+  });
+
+  for (final (tabScroll, width) in [(false, 90.0), (true, 236.0)]) {
+    testWidgets('ctabfolder_tab_scroll=$tabScroll: the chevron is drawn 18 px wide, as Java lays it out',
+        (tester) async {
+      _useTabScroll(tabScroll);
+      await _pump(tester, width);
+
+      final button = find.descendant(of: find.byType(ChevronAfterTabs), matching: find.byType(MouseRegion)).first;
+      // CTabFolderSizes.CHEVRON_WIDTH on the Java side.
+      expect(tester.getSize(button).width, 18);
+    });
+  }
 
   testWidgets('ctabfolder_tab_scroll=false: the strip report shows only the tabs before the chevron',
       (tester) async {

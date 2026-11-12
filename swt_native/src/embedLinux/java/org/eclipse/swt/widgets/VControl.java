@@ -216,39 +216,39 @@ public class VControl extends VWidget {
         ((DartControl) impl).getApi().state = Boolean.TRUE.equals(value) ? (((DartControl) impl).getApi().state & ~DartWidget.HIDDEN) : (((DartControl) impl).getApi().state | DartWidget.HIDDEN);
     }
 
-    public static final int BACKGROUND = 135;
+    public static final int BACKGROUND = 136;
 
-    public static final int BACKGROUND_IMAGE = 136;
+    public static final int BACKGROUND_IMAGE = 137;
 
-    public static final int BOUNDS = 137;
+    public static final int BOUNDS = 138;
 
-    public static final int CURSOR = 138;
+    public static final int CURSOR = 139;
 
-    public static final int DRAG_DETECT = 139;
+    public static final int DRAG_DETECT = 140;
 
-    public static final int DRAG_SOURCE = 140;
+    public static final int DRAG_SOURCE = 141;
 
-    public static final int DRAG_SOURCE_ID = 141;
+    public static final int DRAG_SOURCE_ID = 142;
 
-    public static final int DROP_TARGET_ID = 142;
+    public static final int DROP_TARGET_ID = 143;
 
-    public static final int ENABLED = 143;
+    public static final int ENABLED = 144;
 
-    public static final int FONT = 144;
+    public static final int FONT = 145;
 
-    public static final int FOREGROUND = 145;
+    public static final int FOREGROUND = 146;
 
-    public static final int HAS_OWN_BACKGROUND = 146;
+    public static final int HAS_OWN_BACKGROUND = 147;
 
-    public static final int INHERITS_BACKGROUND = 147;
+    public static final int INHERITS_BACKGROUND = 148;
 
-    public static final int MENU = 148;
+    public static final int MENU = 149;
 
-    public static final int TAB_STOP = 150;
+    public static final int TAB_STOP = 151;
 
-    public static final int TOOL_TIP_TEXT = 151;
+    public static final int TOOL_TIP_TEXT = 152;
 
-    public static final int VISIBLE = 152;
+    public static final int VISIBLE = 153;
 
     @Override
     public String wireName(int key) {
@@ -294,55 +294,55 @@ public class VControl extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 135:
+            case 136:
                 w.write(getBackground());
                 return true;
-            case 136:
+            case 137:
                 w.image(getBackgroundImage());
                 return true;
-            case 137:
+            case 138:
                 w.write(getBounds());
                 return true;
-            case 138:
+            case 139:
                 w.object((getCursor() == null || getCursor().isDisposed() ? null : ((DartCursor) getCursor().getImpl()).getValue()));
                 return true;
-            case 139:
+            case 140:
                 w.write(getDragDetect());
                 return true;
-            case 140:
+            case 141:
                 w.write(getDragSource());
                 return true;
-            case 141:
+            case 142:
                 w.write(getDragSourceId());
                 return true;
-            case 142:
+            case 143:
                 w.write(getDropTargetId());
                 return true;
-            case 143:
+            case 144:
                 w.write(getEnabled());
                 return true;
-            case 144:
+            case 145:
                 w.object((getFont() == null || getFont().isDisposed() ? null : getFont().getImpl() instanceof DartFont ? ((DartFont) getFont().getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(getFont()).getImpl()).getValue()));
                 return true;
-            case 145:
+            case 146:
                 w.write(getForeground());
                 return true;
-            case 146:
+            case 147:
                 w.write(getHasOwnBackground());
                 return true;
-            case 147:
+            case 148:
                 w.write(getInheritsBackground());
                 return true;
-            case 148:
+            case 149:
                 w.ref(getMenu());
                 return true;
-            case 150:
+            case 151:
                 w.write(getTabStop());
                 return true;
-            case 151:
+            case 152:
                 w.write(getToolTipText());
                 return true;
-            case 152:
+            case 153:
                 w.write(getVisible());
                 return true;
         }
@@ -352,55 +352,46 @@ public class VControl extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 135:
+            case 136:
                 {
                     Color v_ = getBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(135);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 136:
-                {
-                    Image v_ = getBackgroundImage();
-                    if (v_ == null || v_.isDisposed())
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(136);
-                    w.image(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 137:
                 {
-                    Rectangle v_ = getBounds();
-                    if (v_ == null)
+                    Image v_ = getBackgroundImage();
+                    if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(137);
-                    w.write(v_);
+                    w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 138:
+                {
+                    Rectangle v_ = getBounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(138);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 139:
                 {
                     Cursor v_ = getCursor();
                     dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : ((DartCursor) v_.getImpl()).getValue());
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(138);
-                    w.object(o_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 139:
-                {
-                    boolean v_ = getDragDetect();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(139);
-                    w.write(v_);
+                    w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 140:
                 {
-                    boolean v_ = getDragSource();
+                    boolean v_ = getDragDetect();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(140);
@@ -409,8 +400,8 @@ public class VControl extends VWidget {
                 }
             case 141:
                 {
-                    Long v_ = getDragSourceId();
-                    if (v_ == null)
+                    boolean v_ = getDragSource();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(141);
                     w.write(v_);
@@ -418,7 +409,7 @@ public class VControl extends VWidget {
                 }
             case 142:
                 {
-                    Long v_ = getDropTargetId();
+                    Long v_ = getDragSourceId();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(142);
@@ -427,34 +418,34 @@ public class VControl extends VWidget {
                 }
             case 143:
                 {
-                    Boolean v_ = getEnabled();
+                    Long v_ = getDropTargetId();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(143);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 144:
                 {
-                    Font v_ = getFont();
-                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
-                    if (o_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    Boolean v_ = getEnabled();
                     w.key(144);
-                    w.object(o_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 145:
                 {
-                    Color v_ = getForeground();
-                    if (v_ == null || v_.isDisposed())
+                    Font v_ = getFont();
+                    dev.equo.swt.WireObject o_ = (v_ == null || v_.isDisposed() ? null : v_.getImpl() instanceof DartFont ? ((DartFont) v_.getImpl()).getValue() : ((DartFont) org.eclipse.swt.graphics.GraphicsUtils.copyFont(v_).getImpl()).getValue());
+                    if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(145);
-                    w.write(v_);
+                    w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 146:
                 {
-                    boolean v_ = getHasOwnBackground();
-                    if (!v_)
+                    Color v_ = getForeground();
+                    if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(146);
                     w.write(v_);
@@ -462,7 +453,7 @@ public class VControl extends VWidget {
                 }
             case 147:
                 {
-                    boolean v_ = getInheritsBackground();
+                    boolean v_ = getHasOwnBackground();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(147);
@@ -471,37 +462,46 @@ public class VControl extends VWidget {
                 }
             case 148:
                 {
+                    boolean v_ = getInheritsBackground();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(148);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 149:
+                {
                     Menu v_ = getMenu();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(148);
+                    w.key(149);
                     w.ref(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 150:
-                {
-                    boolean v_ = getTabStop();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(150);
-                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 151:
                 {
-                    String v_ = getToolTipText();
-                    if (v_ == null)
+                    boolean v_ = getTabStop();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.isEmpty())
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(151);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 152:
                 {
-                    Boolean v_ = getVisible();
+                    String v_ = getToolTipText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(152);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 153:
+                {
+                    Boolean v_ = getVisible();
+                    w.key(153);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -509,7 +509,7 @@ public class VControl extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 150, 151, 152 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 151, 152, 153 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -523,8 +523,8 @@ public class VControl extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 143:
-            case 152:
+            case 144:
+            case 153:
                 return true;
         }
         return super.wireAlways(key);

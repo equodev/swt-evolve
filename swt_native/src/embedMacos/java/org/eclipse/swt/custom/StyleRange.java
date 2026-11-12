@@ -243,24 +243,24 @@ public class StyleRange extends TextStyle implements Cloneable {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(480);
+        w.key(481);
         w.write((int) start);
-        w.key(479);
+        w.key(480);
         w.write((int) length);
-        w.key(478);
+        w.key(479);
         w.write((int) fontStyle);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 480:
+            case 481:
                 start = r.int32();
                 return true;
-            case 479:
+            case 480:
                 length = r.int32();
                 return true;
-            case 478:
+            case 479:
                 fontStyle = r.int32();
                 return true;
         }

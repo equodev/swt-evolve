@@ -97,85 +97,85 @@ class VGC extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 273: // XORMode
+      case 274: // XORMode
         XORMode = r.boolean();
         return true;
-      case 274: // alpha
+      case 275: // alpha
         alpha = r.intBoxed();
         return true;
-      case 275: // antialias
+      case 276: // antialias
         antialias = r.int32();
         return true;
-      case 276: // background
+      case 277: // background
         background = r.color();
         return true;
-      case 277: // backgroundPattern
+      case 278: // backgroundPattern
         backgroundPattern = r.object(VPattern.new);
         return true;
-      case 280: // clipping
+      case 281: // clipping
         clipping = r.rect();
         return true;
-      case 281: // clippingPath
+      case 282: // clippingPath
         clippingPath = r.object(VPathData.new);
         return true;
-      case 282: // clippingRects
+      case 283: // clippingRects
         clippingRects = r.ints();
         return true;
-      case 284: // fillRule
+      case 285: // fillRule
         fillRule = r.intBoxed();
         return true;
-      case 285: // font
+      case 286: // font
         font = r.object(VFont.new);
         return true;
-      case 286: // foreground
+      case 287: // foreground
         foreground = r.color();
         return true;
-      case 287: // foregroundPattern
+      case 288: // foregroundPattern
         foregroundPattern = r.object(VPattern.new);
         return true;
-      case 289: // interpolation
+      case 290: // interpolation
         interpolation = r.int32();
         return true;
-      case 290: // lineCap
+      case 291: // lineCap
         lineCap = r.intBoxed();
         return true;
-      case 291: // lineDash
+      case 292: // lineDash
         lineDash = r.ints();
         return true;
-      case 293: // lineJoin
+      case 294: // lineJoin
         lineJoin = r.intBoxed();
         return true;
-      case 294: // lineStyle
+      case 295: // lineStyle
         lineStyle = r.intBoxed();
         return true;
-      case 295: // lineWidth
+      case 296: // lineWidth
         lineWidth = r.int32();
         return true;
-      case 299: // transform
+      case 300: // transform
         transform = r.object(VTransform.new);
         return true;
-      case 283: // clippingText
+      case 284: // clippingText
         clippingText = r.object(VPath.new);
         return true;
-      case 292: // lineDashOffset
+      case 293: // lineDashOffset
         lineDashOffset = r.float32();
         return true;
-      case 278: // bufferScale
+      case 279: // bufferScale
         bufferScale = r.float32();
         return true;
-      case 279: // bufferScaleY
+      case 280: // bufferScaleY
         bufferScaleY = r.float32();
         return true;
-      case 298: // themedCanvas
+      case 299: // themedCanvas
         themedCanvas = r.boolBoxed();
         return true;
-      case 288: // hoverFills
+      case 289: // hoverFills
         hoverFills = r.list((r) => r.rgb());
         return true;
-      case 296: // selectionFills
+      case 297: // selectionFills
         selectionFills = r.list((r) => r.rgb());
         return true;
-      case 297: // style
+      case 298: // style
         style = r.int32();
         return true;
       default:
@@ -189,214 +189,214 @@ class VGC extends VWidget {
     {
       final v_ = XORMode;
       if (v_ != null) {
-        w.keyBoolean(273, v_);
+        w.keyBoolean(274, v_);
       }
     }
     {
       final v_ = alpha;
       if (v_ != null) {
-        w.key(274);
+        w.key(275);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = antialias;
       if (v_ != null) {
-        w.keyInt32(275, v_);
+        w.keyInt32(276, v_);
       }
     }
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(276);
+        w.key(277);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgroundPattern;
       if (v_ != null) {
-        w.key(277);
+        w.key(278);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clipping;
       if (v_ != null) {
-        w.key(280);
+        w.key(281);
         w.rectValue(v_);
       }
     }
     {
       final v_ = clippingPath;
       if (v_ != null) {
-        w.key(281);
+        w.key(282);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clippingRects;
       if (v_ != null) {
-        w.key(282);
+        w.key(283);
         w.ints(v_);
       }
     }
     {
       final v_ = fillRule;
       if (v_ != null) {
-        w.key(284);
+        w.key(285);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(285);
+        w.key(286);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(286);
+        w.key(287);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregroundPattern;
       if (v_ != null) {
-        w.key(287);
+        w.key(288);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = interpolation;
       if (v_ != null) {
-        w.keyInt32(289, v_);
+        w.keyInt32(290, v_);
       }
     }
     {
       final v_ = lineCap;
       if (v_ != null) {
-        w.key(290);
+        w.key(291);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineDash;
       if (v_ != null) {
-        w.key(291);
+        w.key(292);
         w.ints(v_);
       }
     }
     {
       final v_ = lineJoin;
       if (v_ != null) {
-        w.key(293);
+        w.key(294);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineStyle;
       if (v_ != null) {
-        w.key(294);
+        w.key(295);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = lineWidth;
       if (v_ != null) {
-        w.keyInt32(295, v_);
+        w.keyInt32(296, v_);
       }
     }
     {
       final v_ = transform;
       if (v_ != null) {
-        w.key(299);
+        w.key(300);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = clippingText;
       if (v_ != null) {
-        w.key(283);
+        w.key(284);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = lineDashOffset;
       if (v_ != null) {
-        w.key(292);
+        w.key(293);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = bufferScale;
       if (v_ != null) {
-        w.key(278);
+        w.key(279);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = bufferScaleY;
       if (v_ != null) {
-        w.key(279);
+        w.key(280);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = themedCanvas;
       if (v_ != null) {
-        w.key(298);
+        w.key(299);
         w.boolBoxed(v_);
       }
     }
     {
       final v_ = hoverFills;
       if (v_ != null) {
-        w.key(288);
+        w.key(289);
         w.list(v_, (e) => w.rgbValue(e));
       }
     }
     {
       final v_ = selectionFills;
       if (v_ != null) {
-        w.key(296);
+        w.key(297);
         w.list(v_, (e) => w.rgbValue(e));
       }
     }
-    w.keyInt32(297, style);
+    w.keyInt32(298, style);
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(273, XORMode);
-    visit(274, alpha);
-    visit(275, antialias);
-    visit(276, background);
-    visit(277, backgroundPattern);
-    visit(280, clipping);
-    visit(281, clippingPath);
-    visit(282, clippingRects);
-    visit(284, fillRule);
-    visit(285, font);
-    visit(286, foreground);
-    visit(287, foregroundPattern);
-    visit(289, interpolation);
-    visit(290, lineCap);
-    visit(291, lineDash);
-    visit(293, lineJoin);
-    visit(294, lineStyle);
-    visit(295, lineWidth);
-    visit(299, transform);
-    visit(283, clippingText);
-    visit(292, lineDashOffset);
-    visit(278, bufferScale);
-    visit(279, bufferScaleY);
-    visit(298, themedCanvas);
-    visit(288, hoverFills);
-    visit(296, selectionFills);
-    visit(297, style);
+    visit(274, XORMode);
+    visit(275, alpha);
+    visit(276, antialias);
+    visit(277, background);
+    visit(278, backgroundPattern);
+    visit(281, clipping);
+    visit(282, clippingPath);
+    visit(283, clippingRects);
+    visit(285, fillRule);
+    visit(286, font);
+    visit(287, foreground);
+    visit(288, foregroundPattern);
+    visit(290, interpolation);
+    visit(291, lineCap);
+    visit(292, lineDash);
+    visit(294, lineJoin);
+    visit(295, lineStyle);
+    visit(296, lineWidth);
+    visit(300, transform);
+    visit(284, clippingText);
+    visit(293, lineDashOffset);
+    visit(279, bufferScale);
+    visit(280, bufferScaleY);
+    visit(299, themedCanvas);
+    visit(289, hoverFills);
+    visit(297, selectionFills);
+    visit(298, style);
   }
 }
 

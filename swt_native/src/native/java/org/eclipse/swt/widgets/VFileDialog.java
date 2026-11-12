@@ -112,19 +112,19 @@ public class VFileDialog extends VDialog {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(231);
-        w.write(getFileName());
         w.key(232);
-        w.write(getFileNames());
+        w.write(getFileName());
         w.key(233);
-        w.write(getFilterExtensions());
+        w.write(getFileNames());
         w.key(234);
-        w.write((int) getFilterIndex());
+        w.write(getFilterExtensions());
         w.key(235);
-        w.write(getFilterNames());
+        w.write((int) getFilterIndex());
         w.key(236);
-        w.write(getFilterPath());
+        w.write(getFilterNames());
         w.key(237);
+        w.write(getFilterPath());
+        w.key(238);
         w.write(getOverwrite());
     }
 }

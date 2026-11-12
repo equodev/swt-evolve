@@ -111,7 +111,7 @@ public class VCombo extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 146:
+            case 147:
                 return false;
             case 85:
                 w.write((int) getCaretPosition());
@@ -135,7 +135,7 @@ public class VCombo extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 146:
+            case 147:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
             case 85:
                 {

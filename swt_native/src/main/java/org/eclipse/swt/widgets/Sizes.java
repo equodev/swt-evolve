@@ -413,6 +413,9 @@ public class Sizes {
         if (itemCount == 0) {
             return new Point(DartToolItem.DEFAULT_WIDTH, DartToolItem.DEFAULT_HEIGHT);
         }
+        if (Config.getConfigFlags().ctabfolder_chevron_after_tabs && CTabFolderHelper.isChevronBar(c.getApi())) {
+            return CTabFolderHelper.chevronBarSize(computeSize((DartToolItem) items[0].getImpl()).y);
+        }
 
         // A wrapping bar is measured in the runs its items wrap into at the hinted extent, as native does.
         boolean isVertical = (c.getApi().style & SWT.VERTICAL) != 0;

@@ -7374,6 +7374,686 @@
         }
       ]
     },
+    "org.eclipse.swt.custom.CTabFolder": {
+      "cases": [
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 32.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_TOP_",
+          "style": "TOP",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 32.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 83.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_TOP|CLOSE_",
+          "style": "TOP|CLOSE",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 32.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_TOP|FLAT_",
+          "style": "TOP|FLAT",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 365.0,
+              "left": 3.0,
+              "top": 32.0,
+              "width": 594.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_TOP|BORDER_",
+          "style": "TOP|BORDER",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 32.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_TOP|SINGLE_",
+          "style": "TOP|SINGLE",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 32.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_TOP|MULTI_",
+          "style": "TOP|MULTI",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 2.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 368.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_BOTTOM_",
+          "style": "BOTTOM",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 2.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 368.0,
+                "width": 83.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_BOTTOM|CLOSE_",
+          "style": "BOTTOM|CLOSE",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 2.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 368.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_BOTTOM|FLAT_",
+          "style": "BOTTOM|FLAT",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 365.0,
+              "left": 3.0,
+              "top": 3.0,
+              "width": 594.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 368.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_BOTTOM|BORDER_",
+          "style": "BOTTOM|BORDER",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 2.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 368.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_BOTTOM|SINGLE_",
+          "style": "BOTTOM|SINGLE",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "page": {
+              "height": 366.0,
+              "left": 2.0,
+              "top": 2.0,
+              "width": 596.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 368.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "pageOf": "IndexedStack",
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_BOTTOM|MULTI_",
+          "style": "BOTTOM|MULTI",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_tab:plain_",
+          "style": "tab:plain",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "image": {
+              "height": 16.0,
+              "width": 16.0
+            },
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 82.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "image": [
+              16,
+              16
+            ],
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_tab:image_",
+          "style": "tab:image",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 83.779296875
+              }
+            ],
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_tab:close_",
+          "style": "tab:close",
+          "useFontTheme": false,
+          "width": 600.0
+        },
+        {
+          "discoveredComponents": {
+            "tab": [
+              {
+                "height": 32.0,
+                "left": 0.0,
+                "paddingHorizontal": 12.0,
+                "paddingVertical": 0.0,
+                "top": 0.0,
+                "width": 63.779296875
+              }
+            ],
+            "tabChevron": {
+              "height": 32.0,
+              "left": 582.0,
+              "paddingHorizontal": 4.0,
+              "paddingVertical": 0.0,
+              "top": 0.0,
+              "width": 18.0
+            },
+            "text": {
+              "content": "Section",
+              "height": 20.0,
+              "softWrap": true,
+              "textStyle": {
+                "fontFamily": "Inter",
+                "fontSize": 14.0,
+                "fontStyle": null,
+                "fontWeight": 4,
+                "height": 1.4285714285714286
+              },
+              "width": 49.779296875
+            }
+          },
+          "expectedComponents": {
+            "tabsOf": "TabDragRow",
+            "text": "Section"
+          },
+          "height": 400.0,
+          "name": "CTabFolder_tab:chevron_",
+          "style": "tab:chevron",
+          "useFontTheme": false,
+          "width": 600.0
+        }
+      ]
+    },
     "org.eclipse.swt.widgets.Button": {
       "cases": [
         {

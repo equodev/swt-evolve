@@ -2590,13 +2590,13 @@ public final class ImageData implements Cloneable, dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(348);
-        w.write(getData());
         w.key(349);
-        w.write(depth);
+        w.write(getData());
         w.key(350);
-        w.write(height);
+        w.write(depth);
         w.key(351);
+        w.write(height);
+        w.key(352);
         w.write(width);
     }
 }

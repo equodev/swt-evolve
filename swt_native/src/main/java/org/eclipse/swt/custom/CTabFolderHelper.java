@@ -198,7 +198,8 @@ public class CTabFolderHelper {
      * another {@code ;} the part of the strip that is shown, as {@code x, width}, then after another
      * {@code ;} a {@code 1} for each tab whose label is drawn shortened and a {@code 0} for the others,
      * then after another {@code ;} the width of the folder the strip was drawn in, then after another
-     * {@code ;} the {@code stripLayoutSeq} it was drawn for.
+     * {@code ;} the {@code stripLayoutSeq} it was drawn for. A tab whose {@code showing} flips is
+     * marked dirty.
      */
     public static void handleStripLaidOut(DartCTabFolder obj, Event e) {
         if (obj.isDisposed()) return;
@@ -222,6 +223,80 @@ public class CTabFolderHelper {
         obj.shownStrip = viewport.length == 2 ? viewport : null;
         obj.drawnCloseButtons = close;
         obj.drawnShortened = shortened;
+        boolean[] oldShowing = showing(obj);
+        if (followDrawnStrip(obj)) obj.setButtonBounds();
+        for (int i : showingFlipped(obj, oldShowing)) {
+            ((DartCTabItem) obj.items[i].getImpl()).getValue().markDirty(VCTabItem.SHOWING);
+        }
+    }
+
+    private static boolean[] showing(DartCTabFolder folder) {
+        boolean[] showing = new boolean[folder.items.length];
+        for (int i = 0; i < showing.length; i++)
+            showing[i] = ((DartCTabItem) folder.items[i].getImpl()).showing;
+        return showing;
+    }
+
+    /** Indices of the tabs whose {@code showing} differs from {@code oldShowing}. */
+    private static int[] showingFlipped(DartCTabFolder folder, boolean[] oldShowing) {
+        int[] flipped = new int[oldShowing.length];
+        int count = 0;
+        for (int i = 0; i < Math.min(oldShowing.length, folder.items.length); i++) {
+            if (((DartCTabItem) folder.items[i].getImpl()).showing != oldShowing[i]) flipped[count++] = i;
+        }
+        return Arrays.copyOf(flipped, count);
+    }
+
+    /**
+     * With the tab scroll off, lays each tab where the render side drew it: a showing tab at its drawn
+     * x and width, the others off the folder as upstream parks them. The render side picks which tabs
+     * fit by its own priority, and the workbench opens the chevron's list at the last showing tab's
+     * bounds, which upstream then places the chevron right after. The priority order is left as it is:
+     * with MRU on, a close selects from it. Returns whether a tab moved.
+     */
+    static boolean followDrawnStrip(DartCTabFolder folder) {
+        if (!chevronAfterTabs()) return false;
+        int[] drawn = drawnTabs(folder);
+        if (drawn == null) return false;
+        int parkedX = folder.getDisplay().getBounds().width + 10;
+        boolean changed = false;
+        CTabItem[] items = folder.items;
+        for (int i = 0; i < items.length && 2 * i + 1 < drawn.length; i++) {
+            DartCTabItem item = (DartCTabItem) items[i].getImpl();
+            boolean showing = isShowing(item);
+            int x = showing ? drawn[2 * i] : parkedX;
+            int width = showing ? drawn[2 * i + 1] : item.width;
+            if (item.x == x && item.width == width && item.showing == showing) continue;
+            item.x = x;
+            item.width = width;
+            item.showing = showing;
+            changed = true;
+        }
+        return changed;
+    }
+
+    /** {@code ctabfolder_chevron_after_tabs} with the tab scroll off. */
+    static boolean chevronAfterTabs() {
+        return Config.getConfigFlags().ctabfolder_chevron_after_tabs && !Config.getConfigFlags().ctabfolder_tab_scroll;
+    }
+
+    /**
+     * The highest index of a showing tab, or -1: the tab the chevron follows. Upstream walks the
+     * head of the priority order, where its showing tabs are; the render side's need not be there,
+     * so that walk is kept only without {@link #chevronAfterTabs}.
+     */
+    static int lastShowingIndex(DartCTabFolder folder) {
+        if (!chevronAfterTabs()) {
+            int i = 0, lastIndex = -1;
+            while (i < folder.priority.length && ((DartCTabItem) folder.items[folder.priority[i]].getImpl()).showing) {
+                lastIndex = Math.max(lastIndex, folder.priority[i++]);
+            }
+            return lastIndex;
+        }
+        for (int i = folder.items.length - 1; i >= 0; i--) {
+            if (((DartCTabItem) folder.items[i].getImpl()).showing) return i;
+        }
+        return -1;
     }
 
     /**
@@ -537,16 +612,9 @@ public class CTabFolderHelper {
             return new ItemsLayout(updateItems(obj, showIndex), false, new int[0]);
         }
         boolean oldChevron = obj.showChevron;
-        boolean[] oldShowing = new boolean[obj.items.length];
-        for (int i = 0; i < oldShowing.length; i++)
-            oldShowing[i] = ((DartCTabItem) obj.items[i].getImpl()).showing;
+        boolean[] oldShowing = showing(obj);
         boolean changed = updateItems(obj, showIndex);
-        int[] flipped = new int[oldShowing.length];
-        int count = 0;
-        for (int i = 0; i < Math.min(oldShowing.length, obj.items.length); i++) {
-            if (((DartCTabItem) obj.items[i].getImpl()).showing != oldShowing[i]) flipped[count++] = i;
-        }
-        return new ItemsLayout(changed, obj.showChevron != oldChevron, Arrays.copyOf(flipped, count));
+        return new ItemsLayout(changed, obj.showChevron != oldChevron, showingFlipped(obj, oldShowing));
     }
 
     public static boolean updateItems(DartCTabFolder obj, int showIndex) {
@@ -620,6 +688,7 @@ public class CTabFolderHelper {
             }
         }
         boolean oldShowChevron = obj.showChevron;
+        int[] oldLayout = tabLayout(obj);
         boolean changed = obj.setItemSize(gc);
         obj.updateButtons();
         boolean chevronChanged = obj.showChevron != oldShowChevron;
@@ -629,6 +698,12 @@ public class CTabFolderHelper {
             }
         }
         changed |= obj.setItemLocation(gc);
+        // A strip still drawn as this layout was keeps its tabs where they are drawn; only what then
+        // differs from before is a change the render side has to lay out again.
+        if (chevronAfterTabs() && drawnTabs(obj) != null) {
+            followDrawnStrip(obj);
+            changed = !Arrays.equals(oldLayout, tabLayout(obj));
+        }
         obj.setButtonBounds();
         changed |= chevronChanged;
         if (changed) {
@@ -642,6 +717,31 @@ public class CTabFolderHelper {
         }
         gc.dispose();
         return changed;
+    }
+
+    /** Each tab's x, y, width, height and showing, in order. */
+    private static int[] tabLayout(DartCTabFolder folder) {
+        int[] layout = new int[5 * folder.items.length];
+        for (int i = 0; i < folder.items.length; i++) {
+            DartCTabItem item = (DartCTabItem) folder.items[i].getImpl();
+            layout[5 * i] = item.x;
+            layout[5 * i + 1] = item.y;
+            layout[5 * i + 2] = item.width;
+            layout[5 * i + 3] = item.height;
+            layout[5 * i + 4] = item.showing ? 1 : 0;
+        }
+        return layout;
+    }
+
+    /** The chevron's ToolBar is as wide as the render side draws the chevron. */
+    public static boolean isChevronBar(ToolBar bar) {
+        Object folder = bar.getParent().getImpl();
+        return folder instanceof DartCTabFolder && bar == ((DartCTabFolder) folder).chevronTb;
+    }
+
+    /** The chevron bar's size: the width Flutter draws the chevron at, an item's height. */
+    public static Point chevronBarSize(int itemHeight) {
+        return new Point(CTabFolderSizes.CHEVRON_WIDTH, itemHeight);
     }
 
     public static int computeChevronWidth(GC gc, CTabFolder parent) {

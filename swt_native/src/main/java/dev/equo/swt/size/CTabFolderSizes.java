@@ -29,6 +29,9 @@ public class CTabFolderSizes {
     /** How tall an image on a tab is drawn, which is what sets the tab's height. */
     public static final int TAB_IMAGE_HEIGHT = 16;
 
+    /** How wide the chevron is drawn, which is what its ToolBar is laid out as. */
+    public static final int CHEVRON_WIDTH = 18;
+
     /** The style a tab's label is drawn in, which is the font to measure it in. */
     public static TextStyle tabLabelStyle() {
         return new TextStyle("Inter", 14, false, 500);

@@ -37,10 +37,10 @@ class VScrollable extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 448: // horizontalBar
+      case 449: // horizontalBar
         horizontalBar = r.ref<VScrollBar>();
         return true;
-      case 449: // verticalBar
+      case 450: // verticalBar
         verticalBar = r.ref<VScrollBar>();
         return true;
       default:
@@ -54,13 +54,13 @@ class VScrollable extends VControl {
     {
       final v_ = horizontalBar;
       if (v_ != null) {
-        w.keyRef(448, v_.id);
+        w.keyRef(449, v_.id);
       }
     }
     {
       final v_ = verticalBar;
       if (v_ != null) {
-        w.keyRef(449, v_.id);
+        w.keyRef(450, v_.id);
       }
     }
   }
@@ -68,8 +68,8 @@ class VScrollable extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(448, horizontalBar);
-    visit(449, verticalBar);
+    visit(449, horizontalBar);
+    visit(450, verticalBar);
   }
 
   @override

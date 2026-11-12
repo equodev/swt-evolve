@@ -17,6 +17,10 @@ const int ctabDefaultMinimumCharacters = 20;
 /// still do not fit go behind the chevron.
 bool ctabTabScroll() => getConfigFlags().ctabfolder_tab_scroll != false;
 
+/// ctabfolder_chevron_after_tabs (default false), with the tab scroll off, draws the chevron right
+/// after the last showing tab instead of at the strip's end.
+bool ctabChevronAfterTabs() => !ctabTabScroll() && getConfigFlags().ctabfolder_chevron_after_tabs == true;
+
 /// The label SWT measures for a tab at its minimum size (CTabFolderRenderer.computeSize with
 /// MINIMUM_SIZE), or null when the tab has no text at that size.
 String? ctabMinimumLabel(String text, int minChars) {
@@ -174,6 +178,7 @@ class CompressedTabRow extends MultiChildRenderObjectWidget {
     required this.onOverflowChanged,
     required this.onTabsMoved,
     this.overflowReserve = 0,
+    this.trailingGap,
     super.children,
   });
 
@@ -191,9 +196,13 @@ class CompressedTabRow extends MultiChildRenderObjectWidget {
   /// rebuild can do (an icon that loads late). It must not mark anything dirty.
   final VoidCallback onTabsMoved;
 
+  /// Set during layout to the width the row leaves free past its last showing tab.
+  final ValueNotifier<double>? trailingGap;
+
   @override
   RenderCompressedTabRow createRenderObject(BuildContext context) =>
-      RenderCompressedTabRow(selectedIndex, onOverflowChanged, onTabsMoved, overflowReserve);
+      RenderCompressedTabRow(selectedIndex, onOverflowChanged, onTabsMoved, overflowReserve)
+        ..trailingGap = trailingGap;
 
   @override
   void updateRenderObject(BuildContext context, RenderCompressedTabRow renderObject) {
@@ -201,7 +210,8 @@ class CompressedTabRow extends MultiChildRenderObjectWidget {
       ..selectedIndex = selectedIndex
       ..overflowReserve = overflowReserve
       ..onOverflowChanged = onOverflowChanged
-      ..onTabsMoved = onTabsMoved;
+      ..onTabsMoved = onTabsMoved
+      ..trailingGap = trailingGap;
   }
 }
 
@@ -234,6 +244,7 @@ class RenderCompressedTabRow extends RenderBox
   bool? _reportedOverflow;
   VoidCallback onTabsMoved;
   List<Rect> _reportedTabs = const [];
+  ValueNotifier<double>? trailingGap;
 
   @override
   void setupParentData(RenderBox child) {
@@ -359,6 +370,9 @@ class RenderCompressedTabRow extends RenderBox
     }
     size = constraints.constrain(Size(x, height));
     _overrunsSize = x > size.width;
+    // Measured against the width offered: under loose constraints the row ends at its last tab.
+    final offered = constraints.hasBoundedWidth ? constraints.maxWidth : size.width;
+    trailingGap?.value = math.max(0, offered - x);
 
     final placed = [for (final tab in tabs) (tab.parentData! as _TabSlot).offset & tab.size];
     if (!listEquals(placed, _reportedTabs)) {
@@ -420,5 +434,68 @@ class RenderCompressedTabRow extends RenderBox
       child = slot.previousSibling;
     }
     return false;
+  }
+}
+
+/// SWT's CTabFolder.SPACING: upstream places the chevron this far past the last showing tab.
+const double ctabChevronGap = 3;
+
+/// The chevron, drawn and hit where upstream's computeControlBounds places it: [ctabChevronGap]
+/// past the last showing tab, or in its own slot when the tabs reach it. [trailingGap] is the
+/// width the tab row ends before that slot, which stays laid out at the row's end.
+class ChevronAfterTabs extends SingleChildRenderObjectWidget {
+  const ChevronAfterTabs({super.key, required this.trailingGap, super.child});
+
+  final ValueListenable<double> trailingGap;
+
+  @override
+  RenderChevronAfterTabs createRenderObject(BuildContext context) => RenderChevronAfterTabs(trailingGap);
+
+  @override
+  void updateRenderObject(BuildContext context, RenderChevronAfterTabs renderObject) {
+    renderObject.trailingGap = trailingGap;
+  }
+}
+
+class RenderChevronAfterTabs extends RenderProxyBox {
+  RenderChevronAfterTabs(this._trailingGap);
+
+  ValueListenable<double> _trailingGap;
+  set trailingGap(ValueListenable<double> value) {
+    if (value == _trailingGap) return;
+    if (attached) {
+      _trailingGap.removeListener(markNeedsPaint);
+      value.addListener(markNeedsPaint);
+    }
+    _trailingGap = value;
+    markNeedsPaint();
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _trailingGap.addListener(markNeedsPaint);
+  }
+
+  @override
+  void detach() {
+    _trailingGap.removeListener(markNeedsPaint);
+    super.detach();
+  }
+
+  double get shift => math.max(0, _trailingGap.value - ctabChevronGap);
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    super.paint(context, offset.translate(-shift, 0));
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) =>
+      super.hitTest(result, position: position.translate(shift, 0));
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    transform.translate(-shift, 0.0);
   }
 }

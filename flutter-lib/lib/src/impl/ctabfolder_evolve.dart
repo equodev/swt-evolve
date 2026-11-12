@@ -64,6 +64,9 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   /// The widget holding the tabs, one keyed subtree per tab: where measure_ctabfolder reads a tab.
   static const tabRow = 'TabDragRow';
 
+  /// The widget the chevron is drawn in: where measure_ctabfolder reads its width.
+  static const chevronProbe = 'ChevronAfterTabs';
+
   /// A click on a tab or on the folder focuses no CTabFolder, on any native.
   @override
   void takeFocusOnPress() {}
@@ -731,6 +734,8 @@ class _CTabBarState extends State<_CTabBar> {
   late final ScrollController _horizontalScrollController;
   final ValueNotifier<bool> _minimizeHovered = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _maximizeHovered = ValueNotifier<bool>(false);
+  // How far the tab row ends before the chevron's slot, set as the row lays out.
+  final ValueNotifier<double> _trailingGap = ValueNotifier<double>(0);
   bool _isChevronHovered = false;
   int? _hoveredTabIndex;
 
@@ -824,6 +829,7 @@ class _CTabBarState extends State<_CTabBar> {
     _hoveringTopBar.dispose();
     _minimizeHovered.dispose();
     _maximizeHovered.dispose();
+    _trailingGap.dispose();
     _horizontalScrollController.dispose();
     super.dispose();
   }
@@ -988,6 +994,7 @@ class _CTabBarState extends State<_CTabBar> {
                 onOverflowChanged: _setOverflow,
                 onTabsMoved: () => _rowState.currentState?.scheduleStripReport(),
                 overflowReserve: _overflowChevronWidth(widgetTheme),
+                trailingGap: ctabChevronAfterTabs() ? _trailingGap : null,
                 children: children,
               ),
       onReorder: (from, to) {
@@ -1002,7 +1009,17 @@ class _CTabBarState extends State<_CTabBar> {
       onDragStart: () => setState(() => _hoveredTabIndex = null),
     );
 
-    final scrollableTabs = Expanded(child: tabRowWithDrag);
+    // Upstream places the chevron right after the last showing tab; its slot at the row's end stays
+    // reserved, so the tabs are laid out as wide as they are without it.
+    final chevronAfterTabs = ctabChevronAfterTabs() && _showsChevron;
+    final scrollableTabs = Expanded(
+      child: chevronAfterTabs
+          ? Stack(fit: StackFit.passthrough, children: [
+              Padding(padding: EdgeInsets.only(right: _chevronWidth(widgetTheme)), child: tabRowWithDrag),
+              Positioned(top: 0, right: 0, bottom: 0, child: _buildChevron(widgetTheme)),
+            ])
+          : tabRowWithDrag,
+    );
 
     // The height the tab row keeps on screen once cut to a fixed tabHeight.
     final double? shownHeight = height == null ? null : height - widget.stripClip;
@@ -1613,6 +1630,11 @@ class _CTabBarState extends State<_CTabBar> {
     )));
   }
 
+  Widget _buildChevron(CTabFolderThemeExtension widgetTheme) => ChevronAfterTabs(
+        trailingGap: _trailingGap,
+        child: _ownToolbarPointer(_buildChevronButton(widgetTheme)),
+      );
+
   Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {
     return Semantics(identifier: 'chevron:${widget.state.swt}/${widget.state.id}', button: true, child: MouseRegion(
       onEnter: (_) => setState(() => _isChevronHovered = true),
@@ -1970,7 +1992,7 @@ class _CTabBarState extends State<_CTabBar> {
     required bool isMaximized,
     required int alignment,
   }) {
-    final showChevron = _showsChevron;
+    final showChevron = _showsChevron && !ctabChevronAfterTabs();
     final hasControls =
         topRightComposite != null || showMinimizeButton || showMaximizeButton ||
         showChevron;
@@ -1984,7 +2006,7 @@ class _CTabBarState extends State<_CTabBar> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (showChevron)
-              _ownToolbarPointer(_buildChevronButton(widgetTheme)),
+              _buildChevron(widgetTheme),
             if (topRightComposite != null)
               _buildTopRightComposite(
                 topRightComposite,

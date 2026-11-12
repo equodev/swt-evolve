@@ -53,13 +53,13 @@ class VScale extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 437: // maximum
+      case 438: // maximum
         maximum = r.int32();
         return true;
-      case 438: // minimum
+      case 439: // minimum
         minimum = r.int32();
         return true;
-      case 439: // selection
+      case 440: // selection
         selection = r.int32();
         return true;
       default:
@@ -73,19 +73,19 @@ class VScale extends VControl {
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(437, v_);
+        w.keyInt32(438, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(438, v_);
+        w.keyInt32(439, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(439, v_);
+        w.keyInt32(440, v_);
       }
     }
   }
@@ -93,8 +93,8 @@ class VScale extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(437, maximum);
-    visit(438, minimum);
-    visit(439, selection);
+    visit(438, maximum);
+    visit(439, minimum);
+    visit(440, selection);
   }
 }

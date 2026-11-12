@@ -711,9 +711,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         if (showChevron) {
             int i = 0, lastIndex = -1;
-            while (i < priority.length && ((DartCTabItem) items[priority[i]].getImpl()).showing) {
-                lastIndex = Math.max(lastIndex, priority[i++]);
-            }
+            lastIndex = CTabFolderHelper.lastShowingIndex(this);
             if (lastIndex == -1)
                 lastIndex = selectedIndex;
             if (lastIndex != -1) {

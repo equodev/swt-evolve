@@ -49,16 +49,16 @@ class VCoolBar extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 154: // itemOrder
+      case 155: // itemOrder
         itemOrder = r.ints();
         return true;
-      case 155: // itemSizes
+      case 156: // itemSizes
         itemSizes = r.list((r) => r.point())?.whereType<VPoint>().toList();
         return true;
-      case 156: // items
+      case 157: // items
         items = r.refs<VCoolItem>(items);
         return true;
-      case 157: // wrapIndices
+      case 158: // wrapIndices
         wrapIndices = r.ints();
         return true;
       default:
@@ -72,28 +72,28 @@ class VCoolBar extends VComposite {
     {
       final v_ = itemOrder;
       if (v_ != null) {
-        w.key(154);
+        w.key(155);
         w.ints(v_);
       }
     }
     {
       final v_ = itemSizes;
       if (v_ != null) {
-        w.key(155);
+        w.key(156);
         w.list(v_, (e) => w.pointValue(e));
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(156);
+        w.key(157);
         w.refs(v_);
       }
     }
     {
       final v_ = wrapIndices;
       if (v_ != null) {
-        w.key(157);
+        w.key(158);
         w.ints(v_);
       }
     }
@@ -102,10 +102,10 @@ class VCoolBar extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(154, itemOrder);
-    visit(155, itemSizes);
-    visit(156, items);
-    visit(157, wrapIndices);
+    visit(155, itemOrder);
+    visit(156, itemSizes);
+    visit(157, items);
+    visit(158, wrapIndices);
   }
 
   @override

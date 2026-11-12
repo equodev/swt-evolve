@@ -18,8 +18,8 @@ const String _label = 'Section';
 
 /// What a tab can hold besides its label. What each one adds to a tab's width is the
 /// difference between its case and the plain one, which is what Java adds to a label it has
-/// measured itself.
-const List<String> _tabShapes = ['plain', 'image', 'close'];
+/// measured itself. The chevron shape shows the folder's chevron, which Java sizes its own as.
+const List<String> _tabShapes = ['plain', 'image', 'close', 'chevron'];
 
 /// The image the image shape carries, with its bytes: the render side builds one from
 /// `imageData.data` and draws nothing at all without it, which would make the difference a
@@ -112,6 +112,7 @@ VCTabFolder createTabVCTabFolder(String shape) {
     ..style = SWT.TOP
     ..bounds = _folderBounds()
     ..tabPosition = SWT.TOP
+    ..showChevron = shape == 'chevron'
     ..selection = 0
     ..items = [
       VCTabItem()

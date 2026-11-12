@@ -11,7 +11,9 @@ import 'package:swtflutter/screenshot.dart';
 import 'package:swtflutter/src/theme/theme_extensions/table_theme_extension.dart';
 import 'package:swtflutter/src/theme/theme_extensions/tree_theme_extension.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/ctabfolder_evolve.dart' show CTabFolderImpl;
 import 'package:swtflutter/src/impl/treecolumn_evolve.dart' show TreeColumnImpl;
+import 'package:swtflutter/src/impl/utils/cached_text.dart' show RenderCachedText;
 
 import 'java_value_class.dart';
 import 'measure_all.dart' show getThemes;
@@ -1196,6 +1198,10 @@ class WidgetMeasurer {
         textStyle = inlineSpan.style;
         softWrap = renderBox.softWrap;
       }
+    } else if (renderBox is RenderCachedText) {
+      textContent = renderBox.text;
+      textStyle = renderBox.style;
+      softWrap = renderBox.softWrap;
     } else if (renderBox is RenderEditable) {
       // Handle TextField/TextFormField which use RenderEditable
       final inlineSpan = renderBox.text;
@@ -1361,6 +1367,9 @@ class WidgetMeasurer {
         _collectOutermostCreatedBy(row, 'KeyedSubtree', tabs);
         if (tabs.isNotEmpty) discovered['tab'] = tabs.map(_probeJson).toList();
       }
+      // The chevron the folder draws, which Java lays its chevron's ToolBar out as wide as.
+      final chevron = _findBoxCreatedBy(root, CTabFolderImpl.chevronProbe);
+      if (chevron != null) discovered['tabChevron'] = _probeJson(chevron);
     }
 
     // The headers of a bar sized from them, found through the widget that lays one out. The chevron
@@ -3259,6 +3268,15 @@ public class ${widgetType}Sizes {
 
     final tab = _tabGeometry(widgetType, analyses);
     if (tab == null) return;
+    final chevronWidth = _agreedMeasurement(
+      {
+        for (final m in analyses.expand((a) => a.measurements))
+          if (_tabProbe(m.discoveredComponents)['chevronWidth'] case final width?) m.style: width,
+      },
+      widgetType,
+      'the chevron width',
+    );
+    if (chevronWidth == null) return;
     if (tab.closeExtra == null) {
       print(
         'SKIPPED ${widgetType}Sizes.java: no tab with a close button measured.',
@@ -3318,6 +3336,11 @@ public class ${widgetType}Sizes {
       ..writeln('    /** How tall an image on a tab is drawn, which is what sets the tab\'s height. */')
       ..writeln(
         '    public static final int TAB_IMAGE_HEIGHT = ${tab.imageHeight.round()};',
+      )
+      ..writeln()
+      ..writeln('    /** How wide the chevron is drawn, which is what its ToolBar is laid out as. */')
+      ..writeln(
+        '    public static final int CHEVRON_WIDTH = ${chevronWidth.round()};',
       )
       ..writeln()
       ..writeln(
@@ -3573,7 +3596,8 @@ public class CoolBarSizes {
       final width = entry.value['tabWidth'];
       if (width == null) continue;
       widths[entry.key] = width;
-      if (!entry.key.startsWith('tab:')) {
+      // A CLOSE style draws a close button on every tab, which tab:close measures on its own.
+      if (!entry.key.startsWith('tab:') && !entry.key.contains('CLOSE')) {
         surround[entry.key] = width - entry.value['labelWidth']!;
       }
       imageHeight = entry.value['imageHeight'] ?? imageHeight;
@@ -3630,6 +3654,8 @@ public class CoolBarSizes {
       'tabHeight': (tab['height'] as num).toDouble(),
       'labelWidth': (text['width'] as num).toDouble(),
       if (image is Map) 'imageHeight': (image['height'] as num).toDouble(),
+      if (discovered['tabChevron'] case final Map chevron)
+        'chevronWidth': (chevron['width'] as num).toDouble(),
     };
   }
 

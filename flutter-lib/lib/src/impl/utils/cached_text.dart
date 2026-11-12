@@ -310,8 +310,8 @@ class _SharedPainter {
 }
 
 /// Lays out and paints like a [RenderParagraph] of one [TextSpan], keeping a laid-out painter per
-/// style for the last two styles.
-@visibleForTesting
+/// style for the last two styles. Public for the tests and for tool/measure.dart, which reads the
+/// labels it draws.
 class RenderCachedText extends RenderBox {
   RenderCachedText(this._setup, this._style);
 
@@ -328,6 +328,12 @@ class RenderCachedText extends RenderBox {
   }
 
   TextStyle _style;
+
+  /// The text painted, as given.
+  String get text => _setup.text;
+
+  /// Whether the text wraps at the width it is given.
+  bool get softWrap => _setup.softWrap;
 
   /// The style the text is painted in.
   TextStyle get style => _style;
