@@ -386,6 +386,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   /// edge: it sits outside the horizontal viewport, so it listens one scrollable deep.
   Widget _scrollableAcross(BuildContext context, Widget rows, double across) => Scrollbar(
         controller: _verticalScrollController,
+        thumbVisibility: true,
         notificationPredicate: (notification) =>
             notification.metrics.axis == Axis.vertical && notification.depth == 1,
         child: Scrollbar(

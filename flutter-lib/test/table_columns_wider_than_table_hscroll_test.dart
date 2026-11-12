@@ -230,4 +230,32 @@ void main() {
 
     expect(_verticalPosition(tester).pixels, scrolledDown);
   });
+
+  testWidgets('a press that follows the pointer onto the vertical thumb at once drags the bar',
+      (tester) async {
+    await tester.pumpWidget(
+        _wrap(_CapturingTableSwt(value: _table(rows: 40), onEvent: (_, __) {})));
+    // Long past any fade a bar shown on open would make.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(seconds: 3));
+
+    final tableRect = tester.getRect(find.byType(_CapturingTableSwt));
+    final rest = tableRect.center;
+    final thumb = Offset(tableRect.right - 5, tableRect.top + 40);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.addPointer(location: rest));
+    await tester.sendEventToBinding(pointer.hover(rest));
+    await tester.pump(const Duration(milliseconds: 500));
+    // No frame between the arrival on the thumb and the press: a robot's move and press, on a busy client.
+    await tester.sendEventToBinding(pointer.hover(thumb));
+    await tester.sendEventToBinding(pointer.down(thumb));
+    for (var i = 1; i <= 4; i++) {
+      await tester.sendEventToBinding(pointer.move(thumb + Offset(0, 15.0 * i)));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump();
+
+    expect(_verticalPosition(tester).pixels, greaterThan(0), reason: 'the drag moved the rows');
+  }, variant: TargetPlatformVariant.desktop());
 }
