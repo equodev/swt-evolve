@@ -47,7 +47,9 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
   ) {
     if (hasValidBounds) {
       final placed = _getPlacedItems();
-      if (placed.isNotEmpty) return _PlacedCoolBarContent(bar: state, items: placed);
+      if (placed.isNotEmpty) {
+        return _PlacedCoolBarContent(bar: state, children: _getPlacedChildren(), items: placed);
+      }
     }
 
     final coolItems = _getCoolItems(theme);
@@ -79,6 +81,13 @@ class CoolBarImpl<T extends CoolBarSwt, V extends VCoolBar>
     }
     return placed;
   }
+
+  /// Every child Java has placed: the items' controls, and the chevrons the bar builds for the
+  /// items narrower than their preferred size, which are no item's control.
+  List<VControl> _getPlacedChildren() => [
+        for (final child in state.children ?? const <VControl>[])
+          if (hasBounds(child.bounds)) child,
+      ];
 
   List<Widget> _getCoolItems(CoolBarThemeExtension theme) {
     if (state.items == null) return [];
@@ -175,22 +184,27 @@ class _CoolBarContainer extends StatelessWidget {
   }
 }
 
-/// Each item's control at the bounds Java gave it. Those bounds start at the bar's client area,
-/// which is inside the frame [_CoolBarContainer] draws, so this sits within that frame's padding.
+/// Each child at the bounds Java gave it, an item's control through its item. Those bounds start at
+/// the bar's client area, which is inside the frame [_CoolBarContainer] draws, so this sits within
+/// that frame's padding.
 class _PlacedCoolBarContent extends StatelessWidget {
   final VCoolBar bar;
+  final List<VControl> children;
   final Map<VControl, VCoolItem> items;
 
-  const _PlacedCoolBarContent({required this.bar, required this.items});
+  const _PlacedCoolBarContent({required this.bar, required this.children, required this.items});
 
   @override
   Widget build(BuildContext context) {
     return SashPanelMarker(
       active: false,
       child: NoLayout(
-        children: items.keys.toList(),
+        children: children,
         composite: bar,
-        childBuilder: (control) => CoolItemSwt(value: items[control]!),
+        childBuilder: (control) {
+          final item = items[control];
+          return item == null ? null : CoolItemSwt(value: item);
+        },
       ),
     );
   }

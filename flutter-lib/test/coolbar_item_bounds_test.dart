@@ -110,4 +110,27 @@ void main() {
     expect(_rectOf(tester, 'first'), Rect.fromLTWH(origin.dx, origin.dy + 10, 24, 200));
     expect(_rectOf(tester, 'second'), Rect.fromLTWH(origin.dx + 24, origin.dy + 10, 31, 180));
   });
+
+  testWidgets('a CoolBar draws a child that is no item\'s control, as the chevron is, at its Java bounds',
+      (tester) async {
+    final control = _label(11, 'band', _rect(10, 0, 40, 24));
+    final chevron = _label(13, 'chevron', _rect(56, 0, 14, 24));
+    final bar = VCoolBar()
+      ..id = 1
+      ..style = SWT.NONE
+      ..enabled = true
+      ..visible = true
+      ..bounds = _rect(0, 0, 300, 30)
+      ..children = [control, chevron]
+      ..items = [
+        VCoolItem()
+          ..id = 21
+          ..control = control,
+      ];
+    await _pump(tester, bar, const Size(300, 30));
+
+    final origin = tester.getTopLeft(find.byType(CoolBarSwt<VCoolBar>)) + _frameOrigin(tester);
+    expect(_rectOf(tester, 'band'), Rect.fromLTWH(origin.dx + 10, origin.dy, 40, 24));
+    expect(_rectOf(tester, 'chevron'), Rect.fromLTWH(origin.dx + 56, origin.dy, 14, 24));
+  });
 }

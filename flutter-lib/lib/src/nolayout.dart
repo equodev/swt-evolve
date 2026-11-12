@@ -15,7 +15,8 @@ import 'theme/theme_extensions/composite_theme_extension.dart';
 class NoLayout extends StatelessWidget {
   final VComposite? composite;
   final List<VControl> children;
-  final Widget Function(VControl child)? childBuilder;
+  /// Builds [child]; null leaves it to the widget its value maps to.
+  final Widget? Function(VControl child)? childBuilder;
 
   const NoLayout({
     super.key,
