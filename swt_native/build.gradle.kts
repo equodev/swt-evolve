@@ -625,6 +625,7 @@ val handWrittenInGeneratedTrees = listOf(
     "**/ImeHelper.java",
     "**/TrackerHelper.java",
     "**/TextPasteHelper.java",
+    "**/PointerCrossingHelper.java",
     "**/ShellActivation.java",
     "**/TextApiEdits.java",
 )

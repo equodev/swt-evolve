@@ -2644,6 +2644,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         ((DartDisplay) display.getImpl()).ignoreFocusControl = oldIgnoreFocusControl;
         ;
+        if ((positionChanged || sizeChanged) && !isDisposed())
+            PointerCrossingHelper.boundsChanged(this);
     }
 
     /**
@@ -4324,7 +4326,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        ((DartDisplay) display.getImpl()).cursorLocation = toDisplay(e.x, e.y);
+                        PointerCrossingHelper.moved(this, e);
                         DragDetectHelper.mouse(this, SWT.MouseMove, e);
                     });
                     return;
@@ -4334,7 +4336,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        sendEvent(SWT.MouseEnter, e);
+                        PointerCrossingHelper.entered(this, e);
                     });
                     return;
                 }
@@ -4343,7 +4345,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                     getDisplay().asyncExec(() -> {
                         if (isDisposed())
                             return;
-                        sendEvent(SWT.MouseExit, e);
+                        PointerCrossingHelper.exited(this, e);
                     });
                     return;
                 }
