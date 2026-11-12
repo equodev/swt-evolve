@@ -1859,7 +1859,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void onMouse(Event event) {
-        CTabFolderHelper.notePress(this, event);
+        CTabFolderHelper.beforeMouse(this, event);
         if (isDisposed()) {
             return;
         }

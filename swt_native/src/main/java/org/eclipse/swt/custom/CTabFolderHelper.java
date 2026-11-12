@@ -117,8 +117,15 @@ public class CTabFolderHelper {
             FlutterBridge.send(folder, dev.equo.swt.WireTable.CHANNEL_ACTIVATION, dev.equo.swt.Java8.map("active", folder._highlight()));
     }
 
-    /** Called first in {@code onMouse}: the selection the press found, before upstream acts on it. */
-    static void notePress(DartCTabFolder folder, Event event) {
+    /**
+     * Called first in {@code onMouse}, before upstream acts on the event. Runs the strip layout an
+     * earlier input deferred ({@code updateFolder}): natively it runs between two inputs, but here the
+     * next input can be dispatched ahead of it, and upstream's press ignores a tab that layout has not
+     * marked showing again, so the second press of a double click on a tab neither selects nor
+     * focuses it. Then keeps the selection a primary press found, for the tab click that ends it.
+     */
+    static void beforeMouse(DartCTabFolder folder, Event event) {
+        folder.runUpdate();
         if (event.type == SWT.MouseDown && event.button == 1) folder.selectionAtPress = folder.selectedIndex;
     }
 

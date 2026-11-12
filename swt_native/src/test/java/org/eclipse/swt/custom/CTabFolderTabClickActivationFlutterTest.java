@@ -130,6 +130,35 @@ class CTabFolderTabClickActivationFlutterTest {
                 .isSameAs(folder);
     }
 
+    @Test
+    @DisplayName("the second press of a double click on a tab focuses the folder before the first one's relayout has run")
+    void secondPressFocusesTheFolderAheadOfTheDeferredRelayout() {
+        withToolBarsLaidOut();
+        while (display.readAndDispatch()) {
+            // the initial layout
+        }
+
+        Rectangle tab = folder.getItem(1).getBounds();
+        press(tab);
+        press(tab);
+
+        assertThat(focusedInFolder())
+                .as("natively the strip relayout the first press deferred runs before the second press, which then focuses the folder")
+                .isSameAs(folder);
+    }
+
+    /**
+     * A primary press at the centre of {@code tab}, without running anything the press defers. The
+     * bounds are read beforehand: reading them runs the pending layout.
+     */
+    private void press(Rectangle tab) {
+        Event down = new Event();
+        down.button = 1;
+        down.x = tab.x + tab.width / 2;
+        down.y = tab.y + tab.height / 2;
+        folder.notifyListeners(SWT.MouseDown, down);
+    }
+
     /**
      * The min/max ToolBar a setFocus could fall to, and the folder laid out, so upstream's own press
      * handling finds the tab under the press as it does on screen.
