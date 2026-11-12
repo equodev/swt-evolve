@@ -25,8 +25,6 @@ import java.util.logging.Logger;
  */
 class InlineDocumentHandler implements HttpHandler {
 
-    private static final Logger LOG = Logger.getLogger(InlineDocumentHandler.class.getName());
-
     static final String PATH = "/inline-document";
 
     /** Bounds what a page that never deletes its documents can leave behind. */
@@ -80,7 +78,7 @@ class InlineDocumentHandler implements HttpHandler {
                 sendText(exchange, 405, "Method Not Allowed");
             }
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "inline-document error for " + exchange.getRequestURI(), e);
+            Logger.getLogger(InlineDocumentHandler.class.getName()).log(Level.WARNING, "inline-document error for " + exchange.getRequestURI(), e);
             try {
                 sendText(exchange, 500, "error");
             } catch (IOException ignored) {

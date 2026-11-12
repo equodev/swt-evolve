@@ -43,8 +43,6 @@ import java.util.regex.Pattern;
  */
 class ProxyHandler implements HttpHandler {
 
-    private static final Logger LOG = Logger.getLogger(ProxyHandler.class.getName());
-
     private static final int MAX_REDIRECTS = 5;
 
     // HttpURLConnection waits forever by default, so an upstream that accepts the connection and
@@ -245,7 +243,7 @@ class ProxyHandler implements HttpHandler {
                 try (OutputStream os = exchange.getResponseBody()) { os.write(body); }
             }
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "proxy error for " + exchange.getRequestURI(), e);
+            Logger.getLogger(ProxyHandler.class.getName()).log(Level.WARNING, "proxy error for " + exchange.getRequestURI(), e);
             try { sendPlain(exchange, 502, "proxy error"); } catch (IOException ignored) { }
         } finally {
             exchange.close();

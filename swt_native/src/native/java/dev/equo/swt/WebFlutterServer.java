@@ -58,7 +58,13 @@ public class WebFlutterServer {
         WebFontSubstitutions.ensureRegistered();
     }
 
-    private static final Logger LOG = Logger.getLogger(WebFlutterServer.class.getName());
+    /** Held apart so that building the server does not start java.util.logging: see {@link #readyFirstUse}. */
+    private static final class Log {
+        static final Logger LOG = Logger.getLogger(WebFlutterServer.class.getName());
+
+        static void ready() {
+        }
+    }
 
     // Default MIME types for Flutter web files
     private static final Map<String, String> MIME_TYPES;
@@ -110,6 +116,8 @@ public class WebFlutterServer {
     private final boolean enableTestSemantics;
 
     private HttpServer httpServer;
+    /** Where the server logs, see {@link #info}. */
+    private final java.util.concurrent.ThreadPoolExecutor logThread = newLogThread();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicLong requestsServed = new AtomicLong();
     /** One per server, so per Display: two sessions never share a proxied site's cookies. */
@@ -120,7 +128,7 @@ public class WebFlutterServer {
     /** Carries this server's port to the JVM an application relaunches itself into. */
     static final String RELAUNCH_PORT = "dev.equo.swt.web.relaunchPort";
     /** Identifies this server; a page compares it with what {@link #INSTANCE_PATH} answers to tell it was served by a previous one. */
-    private final String instance = java.util.UUID.randomUUID().toString();
+    private final String instance = newInstanceId();
     static final String INSTANCE_PATH = "/equo-instance";
     private final java.util.concurrent.CountDownLatch pageAsked = new java.util.concurrent.CountDownLatch(1);
     private final int relaunchPort;
@@ -141,6 +149,7 @@ public class WebFlutterServer {
         this.browserCommand = builder.browserCommand;
         this.serveServiceWorker = builder.serveServiceWorker;
         this.enableTestSemantics = builder.enableTestSemantics;
+        logThread.execute(WebFlutterServer::readyFirstUse);
     }
 
     /**
@@ -161,7 +170,18 @@ public class WebFlutterServer {
             throw new IOException("Web directory does not exist: " + webDirectory.getAbsolutePath());
         }
 
-        httpServer = bind();
+        try (BootTrace.Span span = BootTrace.span("webServer.bind")) {
+            httpServer = bind();
+        }
+        try (BootTrace.Span span = BootTrace.span("webServer.serve")) {
+            serve();
+        }
+        int actualPort = httpServer.getAddress().getPort();
+        info("WebFlutterServer started on http://localhost:" + actualPort);
+        return actualPort;
+    }
+
+    private void serve() {
         ProxyHandler proxy = new ProxyHandler(proxyCookies);
         httpServer.createContext("/", new StaticFileHandler(webDirectory, commPort, widgetId, widgetName, serveServiceWorker, enableTestSemantics, instance, requestsServed, proxy));
         httpServer.createContext(INSTANCE_PATH, this::answerInstance);
@@ -183,11 +203,45 @@ public class WebFlutterServer {
             return t;
         }));
         httpServer.start();
+    }
 
-        int actualPort = httpServer.getAddress().getPort();
-        LOG.info("WebFlutterServer started on http://localhost:" + actualPort);
-//        System.out.println("WebFlutterServer started on http://localhost:" + actualPort);
-        return actualPort;
+    /** Logs on a thread of the server's own, which {@link #readyFirstUse} readied. */
+    private void info(String message) {
+        try {
+            logThread.execute(() -> Log.LOG.info(message));
+        } catch (java.util.concurrent.RejectedExecutionException stopped) {
+            Log.LOG.info(message);
+        }
+    }
+
+    /**
+     * What the page's first request and the server's first log record would otherwise load on the
+     * thread that serves or opens the page: java.util.logging, and the date formatting the JDK's
+     * HTTP server stamps every response's {@code Date} header with. Runs while the server is still
+     * being started, before the browser is opened.
+     */
+    private static void readyFirstUse() {
+        Log.ready();
+        // The pattern of the JDK HTTP server's Date header (RFC 1123, in GMT).
+        java.time.format.DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US)
+                .withZone(java.time.ZoneId.of("GMT")).formatTo(java.time.Instant.now(), new StringBuilder());
+    }
+
+    private static java.util.concurrent.ThreadPoolExecutor newLogThread() {
+        java.util.concurrent.ThreadPoolExecutor executor = new java.util.concurrent.ThreadPoolExecutor(1, 1,
+                1, TimeUnit.SECONDS, new java.util.concurrent.LinkedBlockingQueue<>(), r -> {
+                    Thread t = new Thread(r, "WebFlutterServer-log");
+                    t.setDaemon(true);
+                    return t;
+                });
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
+    }
+
+    /** Unique enough to tell two servers apart: it is no secret, so it costs no {@link java.security.SecureRandom}. */
+    static String newInstanceId() {
+        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+        return new java.util.UUID(random.nextLong(), random.nextLong()).toString();
     }
 
     /**
@@ -201,7 +255,7 @@ public class WebFlutterServer {
                 onRelaunchPort = true;
                 return server;
             }
-            LOG.info("Relaunch port " + relaunchPort + " is taken, serving on another one");
+            info("Relaunch port " + relaunchPort + " is taken, serving on another one");
         }
         if (httpPort == 0) {
             for (int port : stablePorts) {
@@ -209,12 +263,17 @@ public class WebFlutterServer {
                 if (server != null) return server;
             }
         }
-        return HttpServer.create(new InetSocketAddress("localhost", httpPort), 0);
+        return HttpServer.create(loopback(httpPort), 0);
+    }
+
+    /** What {@code localhost} resolves to, without resolving it: a name lookup costs tens of milliseconds on Windows. */
+    private static InetSocketAddress loopback(int port) {
+        return new InetSocketAddress(java.net.InetAddress.getLoopbackAddress(), port);
     }
 
     private static HttpServer bindIfFree(int port) throws IOException {
         try {
-            return HttpServer.create(new InetSocketAddress("localhost", port), 0);
+            return HttpServer.create(loopback(port), 0);
         } catch (java.net.BindException taken) {
             return null;
         }
@@ -326,9 +385,14 @@ public class WebFlutterServer {
         reapHeadlessBrowser();
         if (running.getAndSet(false) && httpServer != null) {
             httpServer.stop(2);
-            LOG.info("WebFlutterServer stopped");
-//            System.out.println("WebFlutterServer stopped");
+            info("WebFlutterServer stopped");
+            logThread.shutdown();
         }
+    }
+
+    /** The address the server listens on. */
+    InetSocketAddress boundAddress() {
+        return httpServer.getAddress();
     }
 
     /**
@@ -384,7 +448,7 @@ public class WebFlutterServer {
         String url = getApplicationUrl();
 
         if (dev.equo.swt.spi.FlutterBridgeSpi.openPage(url)) {
-            LOG.info("The host opened " + url);
+            info("The host opened " + url);
             return;
         }
         // Server-side auto-launch is gated by the equo.swt.browser system property:
@@ -417,7 +481,7 @@ public class WebFlutterServer {
         boolean console = Boolean.getBoolean("dev.equo.swt.web.console");
         headlessChrome = HeadlessChrome.launch(chrome, url, true, console,
                 console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD);
-        LOG.info("Launched headless Chrome: " + chrome + " -> " + url);
+        info("Launched headless Chrome: " + chrome + " -> " + url);
     }
 
     /** Whether {@link #launchBrowser()} started a headless browser, which then connects as this server's client. */
@@ -444,7 +508,7 @@ public class WebFlutterServer {
         }
         pb.inheritIO();
         Process proc = pb.start();
-        LOG.info("Launched browser: " + command + " " + url);
+        info("Launched browser: " + command + " " + url);
         System.out.println("Launched browser: " + command + " -> " + url);
     }
 
@@ -453,7 +517,7 @@ public class WebFlutterServer {
             System.out.println("Cannot detect browser. Open manually: " + url);
             return;
         }
-        LOG.info("Opened default browser: " + url);
+        info("Opened default browser: " + url);
     }
 
     /**
@@ -660,7 +724,7 @@ public class WebFlutterServer {
                     }
                 }
             } catch (IOException e) {
-                LOG.log(Level.WARNING, "Error serving request: " + exchange.getRequestURI(), e);
+                Log.LOG.log(Level.WARNING, "Error serving request: " + exchange.getRequestURI(), e);
                 throw e;
             } finally {
                 exchange.close();
@@ -993,7 +1057,7 @@ public class WebFlutterServer {
                 }
                 serveResolvedFile(exchange, file, method, relative);
             } catch (Exception e) {
-                LOG.log(Level.WARNING, "local-file error for " + exchange.getRequestURI(), e);
+                Log.LOG.log(Level.WARNING, "local-file error for " + exchange.getRequestURI(), e);
                 try {
                     sendPlain(exchange, 500, "error");
                 } catch (IOException ignored) {
@@ -1066,7 +1130,7 @@ public class WebFlutterServer {
                 }
                 return BrowserFunctionBootstrap.inject(out).getBytes(StandardCharsets.ISO_8859_1);
             } catch (IOException e) {
-                LOG.log(Level.FINE, "could not rewrite local resources in " + file, e);
+                Log.LOG.log(Level.FINE, "could not rewrite local resources in " + file, e);
                 return null;
             }
         }

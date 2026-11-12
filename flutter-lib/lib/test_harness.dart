@@ -117,9 +117,11 @@ void registerTestQueryChannel() {
     final clock = EquoCommBase.clock;
     final received = EquoCommBase.lastReceivedMicros;
     final arrived = clock.elapsedMicroseconds;
+    BootTrace.markOnce('frameSync.received');
     var began = arrived;
     void ack() {
       final painted = clock.elapsedMicroseconds;
+      BootTrace.markOnce('frameSync.answered');
       _reply(WireChannel.evolveTestFrameSynced, {
         'syncId': syncId,
         'queuedMicros': arrived - received,

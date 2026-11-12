@@ -444,6 +444,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   @override
   Widget build(BuildContext context) {
+    BootTrace.markOnce('display.firstBuild');
     // Held is not drawn. The display carries every shell Java owns, so that a frame on a shell's
     // own channel can always be placed and the widgets inside it are never named at a client that
     // was not given them; a shell that is not visible simply is not built.
