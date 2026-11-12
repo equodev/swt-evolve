@@ -219,6 +219,35 @@ class StyledTextWireCensusFlutterTest {
         });
     }
 
+    /** A highlighted 10,000-line source scrolled by setTopIndex, 30 lines a step. */
+    @Test
+    void scrollStepInKeywordStyledSource() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10_000; i++) {
+            switch (i % 5) {
+                case 0 -> sb.append("public void method").append(i).append("(int value) {\n");
+                case 1 -> sb.append("    int total = value * ").append(i).append(" + offset;\n");
+                case 2 -> sb.append("    if (total > limit) return; // keep the limit\n");
+                case 3 -> sb.append("    System.out.println(\"line ").append(i).append("\");\n");
+                default -> sb.append("}\n");
+            }
+        }
+        String content = sb.toString();
+        stage.fresh(SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL, content);
+        Color blue = stage.display.getSystemColor(SWT.COLOR_DARK_BLUE);
+        List<StyleRange> styles = new ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("public|void|int|if|return").matcher(content);
+        while (m.find()) styles.add(new StyleRange(m.start(), m.end() - m.start(), blue, null, SWT.BOLD));
+        stage.subject.setStyleRanges(styles.toArray(new StyleRange[0]));
+        stage.settle();
+        int[] top = { 0 };
+        measure("setTopIndex +30 lines, 10,000 keyword-styled lines", () -> {
+            top[0] += 30;
+            stage.subject.setTopIndex(top[0]);
+            stage.settle();
+        });
+    }
+
     private static String lines(int count) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) sb.append("line ").append(i).append(" of a document that is being edited\n");

@@ -2539,14 +2539,19 @@ class TextShape extends Shape {
   }
 
   /// The layout of [lineIndex] as this shape lays it out, measured once.
-  _LineLayout _measuredLine(int lineIndex, String lineText, {bool wantCaretX = false}) {
+  ///
+  /// [laidOut] is the line's paint paragraph when the caller holds it, and [paintParagraph] asks for
+  /// one to be laid out and kept for the paint: either way the line is laid out once.
+  _LineLayout _measuredLine(int lineIndex, String lineText,
+      {bool wantCaretX = false, TextPainter? laidOut, bool paintParagraph = false}) {
     _forgetStaleMeasurements();
-    final layout = _measuredLineNow(lineIndex, lineText, wantCaretX);
+    final layout = _measuredLineNow(lineIndex, lineText, wantCaretX, laidOut, paintParagraph);
     if (_uniformRows) _noteLineHeight(_tallestRowOf(layout));
     return layout;
   }
 
-  _LineLayout _measuredLineNow(int lineIndex, String lineText, bool wantCaretX) {
+  _LineLayout _measuredLineNow(
+      int lineIndex, String lineText, bool wantCaretX, TextPainter? laidOut, bool paintParagraph) {
     final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
     final inRange = lineIndex >= 0 && lineIndex < memo.length;
     if (inRange && !wantCaretX) {
@@ -2560,7 +2565,7 @@ class TextShape extends Shape {
     }
     final props = _linePropsFor(lineIndex);
     final layout = _lineLayout(lineText, lineIndex,
-        align: props.align, maxWidth: _lineMaxWidth(props.layoutIndent), wantCaretX: wantCaretX);
+        align: props.align, maxWidth: _lineMaxWidth(props.layoutIndent), wantCaretX: wantCaretX, laidOut: laidOut, paintParagraph: paintParagraph);
     if (inRange) memo[lineIndex] = layout;
     return layout;
   }
@@ -2835,18 +2840,16 @@ class TextShape extends Shape {
       final vIndent = props.vIndent;
       final maxW = _lineMaxWidth(props.layoutIndent);
 
-      // The height comes from the measured layout, which the cache answers for; only a line that
-      // is going to be painted is worth a live TextPainter.
-      final advance = vIndent + _advance(_measuredLine(i, line).height, i);
-      if (firstPainted < 0) firstPainted = i;
-      lastPainted = i;
-      paintedRows.add([i.toDouble(), currentY]);
       final tp = _layoutLine(
         line,
         i,
         align: props.align,
         maxWidth: maxW,
       );
+      final advance = vIndent + _advance(_measuredLine(i, line, laidOut: tp).height, i);
+      if (firstPainted < 0) firstPainted = i;
+      lastPainted = i;
+      paintedRows.add([i.toDouble(), currentY]);
 
       // StyledText#setLineBackground and the LineBackground listener: the line's own colour,
       // behind the whole line rather than behind its glyphs.
@@ -3584,11 +3587,15 @@ class TextShape extends Shape {
     final last = math.min(lines.length - 1, (visibleBottom / rowHeight).ceil());
     final rows = <GeometryRow>[];
     double maxWidth = 0;
+    // The band's lines are the next ones painted, so they are laid out as the paint keeps them -- while
+    // they fit the paint's cache with room to spare: evicting a paragraph the view was drawn with
+    // disposes it.
+    final paintParagraph = last - first + 1 <= _paintedLineCacheEntries * 3 ~/ 4;
     for (int i = first; i <= last; i++) {
       final line = lines[i];
       final props = _linePropsFor(i);
       final maxW = _lineMaxWidth(props.layoutIndent);
-      final layout = _measuredLine(i, line, wantCaretX: true);
+      final layout = _measuredLine(i, line, wantCaretX: true, paintParagraph: paintParagraph);
       final x = _lineOriginX(
           props.indent, props.align, layout.width, canvasSize == null ? double.infinity : maxW);
       final charX = _LineCharX(layout.caretX, () => _measuringPainter(line, i, align: props.align, maxWidth: maxW));
@@ -3616,6 +3623,44 @@ class TextShape extends Shape {
   /// Caret positions asked for to describe the document, for tests asserting their cost.
   @visibleForTesting
   static int debugCaretQueries = 0;
+
+  /// Test seam: every boundary through [_caretXOf], to compare the two ways of finding them.
+  @visibleForTesting
+  static bool debugCaretXByQuery = false;
+
+  /// x of every character boundary of [lineText] in [tp], relative to the line's own origin.
+  ///
+  /// Where each character is a grapheme of its own in a left-to-right script, the caret before it
+  /// is its box's leading edge: one query per character, where [_caretXOf] makes two.
+  List<double> _caretXsOf(TextPainter tp, String lineText, int lineIndex) {
+    final length = lineText.length;
+    if (debugCaretXByQuery || !_oneBoxPerCharacter(lineText) || _runsOnLine(lineIndex).any((r) => r.glyphWidth != null)) {
+      return [for (int k = 0; k <= length; k++) _caretXOf(tp, k)];
+    }
+    final width = tp.width;
+    return [
+      for (int k = 0; k < length; k++) _leadingEdgeOf(tp, k, width) ?? _caretXOf(tp, k),
+      _caretXOf(tp, length),
+    ];
+  }
+
+  /// The left edge of character [k]'s box, as [_caretXOf] clamps it; null when it has no box of
+  /// its own, as a placeholder of no width.
+  static double? _leadingEdgeOf(TextPainter tp, int k, double width) {
+    final boxes = tp.getBoxesForSelection(TextSelection(baseOffset: k, extentOffset: k + 1));
+    if (boxes.isEmpty || boxes.first.right <= boxes.first.left) return null;
+    return clampDouble(boxes.first.left, 0, width);
+  }
+
+  /// Whether every code unit of [text] is a tab or a character of a left-to-right script below
+  /// the combining marks, each a grapheme of its own.
+  static bool _oneBoxPerCharacter(String text) {
+    for (int k = 0; k < text.length; k++) {
+      final c = text.codeUnitAt(k);
+      if (c != 0x09 && (c < 0x20 || c >= 0x0300)) return false;
+    }
+    return true;
+  }
 
   /// x of the character boundary at [offset] in [tp], relative to the line's own origin.
   static double _caretXOf(TextPainter tp, int offset) {
@@ -3780,6 +3825,8 @@ class TextShape extends Shape {
     required TextAlign align,
     required double maxWidth,
     required bool wantCaretX,
+    TextPainter? laidOut,
+    bool paintParagraph = false,
   }) {
     final key = _layoutKeyFor(lineIndex, lineText, align, maxWidth);
 
@@ -3793,7 +3840,11 @@ class TextShape extends Shape {
       } else {
         debugLineCaretMisses++;
       }
-      final tp = _measuringPainter(lineText, lineIndex, align: align, maxWidth: maxWidth);
+      // A left-to-right paint paragraph is laid out exactly as the measuring one.
+      final shared = direction != TextDirection.ltr
+          ? null
+          : laidOut ?? (paintParagraph ? _layoutLine(lineText, lineIndex, align: align, maxWidth: maxWidth) : null);
+      final tp = shared ?? _measuringPainter(lineText, lineIndex, align: align, maxWidth: maxWidth);
 
       final metrics = tp.computeLineMetrics();
       final rowEnds = <int>[];
@@ -3818,9 +3869,9 @@ class TextShape extends Shape {
         rowEnds,
       );
       if (wantCaretX) {
-        layout.caretX = [for (int k = 0; k <= lineText.length; k++) _caretXOf(tp, k)];
+        layout.caretX = _caretXsOf(tp, lineText, lineIndex);
       }
-      tp.dispose();
+      if (shared == null) tp.dispose();
     }
     // Re-inserting on a hit puts the entry back at the young end of the eviction order.
     _cacheLineLayout(key, layout);

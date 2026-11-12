@@ -76,9 +76,10 @@ void main() {
   testWidgets('an editor in the same font as another reuses the lines that one laid out', (tester) async {
     debugResetLineLayoutCache();
     TextShape.debugLayoutLineCalls = 0;
+    TextShape.debugPainterLayouts = 0;
     final first = await _laidOut(tester, _value(1, 10));
-    final firstCalls = TextShape.debugLayoutLineCalls;
-    expect(firstCalls, greaterThan(0));
+    // A painted line is measured from its paint paragraph rather than laid out again.
+    expect(TextShape.debugLayoutLineCalls + TextShape.debugPainterLayouts, greaterThan(0));
 
     TextShape.debugLayoutLineCalls = 0;
     final second = await _laidOut(tester, _value(2, 10));
