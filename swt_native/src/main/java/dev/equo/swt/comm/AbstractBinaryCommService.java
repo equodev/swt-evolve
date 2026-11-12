@@ -34,6 +34,13 @@ public abstract class AbstractBinaryCommService implements CommService {
     protected final Serializer serializer = new Serializer();
     private final Map<Object, Object> attachments = new ConcurrentHashMap<>();
 
+    /**
+     * The context of the thread that built this comm, which the transport's threads do not have:
+     * what a client sends is handled under it. {@code null} when there is none to carry.
+     */
+    private final java.util.concurrent.Executor callerContext =
+            org.eclipse.swt.internal.cloudready.CallerContext.capture();
+
     /*
      * Handlers by the numbers a message's header carries: a widget's own and its owner handler by its
      * type and id (see ownerKey), a global channel's by its number, and one for every widget of a
@@ -203,6 +210,11 @@ public abstract class AbstractBinaryCommService implements CommService {
      * before a client was connected, delivering them to the just-connected session.
      */
     protected void onClientConnected(Consumer<byte[]> sendToSession) {
+        if (callerContext == null) clientConnected(sendToSession);
+        else callerContext.execute(() -> clientConnected(sendToSession));
+    }
+
+    private void clientConnected(Consumer<byte[]> sendToSession) {
         dev.equo.swt.BootTrace.markOnce("comm.clientConnected");
         if (firstClientConnected) {
             // A different client from the one everything so far was written for. It holds none of
@@ -238,6 +250,11 @@ public abstract class AbstractBinaryCommService implements CommService {
      * handed over: decoding may overwrite it, so it must not be read again or shared.
      */
     protected void onBinaryMessage(byte[] data, int offset, int length) {
+        if (callerContext == null) dispatch(data, offset, length);
+        else callerContext.execute(() -> dispatch(data, offset, length));
+    }
+
+    private void dispatch(byte[] data, int offset, int length) {
         bytesReceived.add(length);
         int end = offset + length;
         long first = varint(data, offset, end);

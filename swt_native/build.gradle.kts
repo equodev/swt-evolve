@@ -394,6 +394,8 @@ sourceSets {
             }
             // These assert what SWT 3.134's BusyIndicator does when the display goes away; earlier releases differ.
             if (swtMinorNative < 134) exclude("org/eclipse/swt/custom/BusyIndicatorCurrentReleaseNativeTest.java")
+            // BusyIndicator.compute and execute were added in 3.123.
+            if (swtMinorNative < 123) exclude("org/eclipse/swt/custom/BusyIndicatorCallerContextNativeTest.java")
             // TextLayout.setFixedLineMetrics was added in 3.125.
             if (swtMinorNative < 125) exclude("org/eclipse/swt/graphics/TextLayoutFixedLineMetricsNativeTest.java")
             // FileDialog.openDialog() and DirectoryDialog.openDialog() were added in 3.126; open(),

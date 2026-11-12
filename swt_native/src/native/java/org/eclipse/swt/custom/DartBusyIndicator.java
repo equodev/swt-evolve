@@ -253,6 +253,7 @@ public class DartBusyIndicator implements IBusyIndicator {
         }
         Integer busyId = setBusyCursor(display);
         CompletableFuture<V> future = new CompletableFuture<>();
+        executor = org.eclipse.swt.internal.cloudready.CallerContext.bind(executor);
         executor.execute(() -> {
             try {
                 if (future.isCancelled()) {

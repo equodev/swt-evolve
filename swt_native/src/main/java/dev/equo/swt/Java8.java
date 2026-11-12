@@ -74,8 +74,11 @@ public final class Java8 {
      */
     public static <T> java.util.concurrent.CompletableFuture<T> orTimeout(
             java.util.concurrent.CompletableFuture<T> future, long timeout, java.util.concurrent.TimeUnit unit) {
+        // What the caller chained on the future runs on the timer's thread when it times out.
         java.util.concurrent.ScheduledFuture<?> timer = TIMEOUTS.schedule(
-                () -> future.completeExceptionally(new java.util.concurrent.TimeoutException()), timeout, unit);
+                org.eclipse.swt.internal.cloudready.CallerContext.wrap(
+                        () -> future.completeExceptionally(new java.util.concurrent.TimeoutException())),
+                timeout, unit);
         future.whenComplete((ignored, error) -> timer.cancel(false));
         return future;
     }
