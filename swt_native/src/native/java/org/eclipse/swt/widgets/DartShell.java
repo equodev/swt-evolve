@@ -937,7 +937,7 @@ public class DartShell extends DartDecorations implements IShell {
         Shell previous = display.getActiveShell();
         boolean wasActive = previous == this.getApi();
         if (wasActive) {
-            _takeFocusHolder(true);
+            _takeFocusHolder(false);
             return;
         }
         ShellActivation.deactivatePrevious(display.getActiveShell(), this.getApi());

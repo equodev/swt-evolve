@@ -66,4 +66,17 @@ class ArrowTraversalDoitTest extends KeyRoutingTestBase {
                     .allMatch(e -> e.endsWith("doit=false"));
         }
     }
+
+    @Test
+    @DisplayName("under a RIGHT_TO_LEFT parent, left is the next arrow traversal and right the previous one, as on Win32 and GTK")
+    void aMirroredParentSwapsLeftAndRight() {
+        Composite mirrored = new Composite(shell(), SWT.RIGHT_TO_LEFT);
+        Canvas canvas = new Canvas(mirrored, SWT.NONE);
+
+        assertThat(traversalsOf(canvas)).filteredOn(e -> e.startsWith("Traverse")).containsExactly(
+                "Traverse " + SWT.TRAVERSE_ARROW_NEXT + " doit=false",
+                "Traverse " + SWT.TRAVERSE_ARROW_PREVIOUS + " doit=false",
+                "Traverse " + SWT.TRAVERSE_ARROW_PREVIOUS + " doit=false",
+                "Traverse " + SWT.TRAVERSE_ARROW_NEXT + " doit=false");
+    }
 }

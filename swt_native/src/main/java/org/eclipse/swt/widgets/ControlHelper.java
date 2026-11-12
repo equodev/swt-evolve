@@ -198,7 +198,7 @@ public class ControlHelper {
         MenuHelper.noteKeyDown(control.getApi(), key);
         if (AcceleratorHelper.translate(control.getApi(), key))
             return new RoutedKey(false, false, false);
-        int detail = traverseDetail(key.keyCode, key.stateMask);
+        int detail = traverseDetail(key.keyCode, key.stateMask, mirroredParent(control));
         boolean mnemonic = detail == SWT.TRAVERSE_NONE && isMnemonicTrigger(key);
         if (mnemonic)
             detail = SWT.TRAVERSE_MNEMONIC;
@@ -624,7 +624,20 @@ public class ControlHelper {
                 && Character.isLetterOrDigit((char) key);
     }
 
-    private static int traverseDetail(int keyCode, int stateMask) {
+    /**
+     * Whether the control's parent lays out right to left. Win32 and GTK then swap the traversal of
+     * the left and right arrows, reading the parent's MIRRORED, which this backend leaves unset.
+     */
+    private static boolean mirroredParent(DartControl control) {
+        Composite parent = control.getApi().getParent();
+        return parent != null && (parent.getStyle() & SWT.RIGHT_TO_LEFT) != 0;
+    }
+
+    private static int traverseDetail(int keyCode, int stateMask, boolean mirroredParent) {
+        if (mirroredParent && keyCode == SWT.ARROW_LEFT)
+            keyCode = SWT.ARROW_RIGHT;
+        else if (mirroredParent && keyCode == SWT.ARROW_RIGHT)
+            keyCode = SWT.ARROW_LEFT;
         switch (keyCode) {
             // Escape is not here: it runs the whole traversal straight away; see wholeTraversal.
             case SWT.CR:
@@ -1092,7 +1105,20 @@ public class ControlHelper {
         boolean focused = org.eclipse.swt.custom.CComboHelper.ownsFieldFocus(control.getApi())
                 ? control.getApi().setFocus() : control.forceFocus();
         if (focused && !control.isDisposed())
-            control.getBridge().focusClient(control);
+            control.getBridge().focusClient(focusAfterPress(control));
+    }
+
+    /**
+     * The control the press left focused: a FocusIn listener may have moved the focus on (a Table's
+     * TableCursor takes it), and the client follows that one, or it focuses the pressed control again.
+     * A CCombo holds the focus through its field, which the client draws as part of the CCombo.
+     */
+    private static DartControl focusAfterPress(DartControl pressed) {
+        Control now = pressed.getDisplay().getFocusControl();
+        if (now == null || now == pressed.getApi()
+                || org.eclipse.swt.custom.CComboHelper.focusedThroughField(now, pressed.getApi()))
+            return pressed;
+        return (DartControl) now.getImpl();
     }
 
     /** A press from the client: what the native does before its MouseDown, the MouseDown, and what it completes after. */
