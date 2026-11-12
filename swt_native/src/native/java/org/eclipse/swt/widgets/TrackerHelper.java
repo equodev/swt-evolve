@@ -52,6 +52,8 @@ final class TrackerHelper {
      */
     static void mouse(DartTracker tracker, Event e) {
         int newX = e.x, newY = e.y;
+        if (arrivedAtWarp(tracker, newX, newY))
+            return;
         if (!tracker.pointerSeen) {
             tracker.pointerSeen = true;
             tracker.oldX = newX;
@@ -66,6 +68,8 @@ final class TrackerHelper {
             if (!notifyBand(tracker, SWT.Resize, event))
                 return;
             Point cursorPos = moved ? tracker.adjustResizeCursor(orientationInit) : null;
+            if (cursorPos != null && orientationInit)
+                tracker.warps.add(cursorPos);
             if (cursorPos != null) {
                 newX = cursorPos.x;
                 newY = cursorPos.y;
@@ -77,6 +81,11 @@ final class TrackerHelper {
         }
         tracker.oldX = newX;
         tracker.oldY = newY;
+    }
+
+    /** What says, while the loop runs, that the pointer's release ends it rather than reaching a control. */
+    static java.util.function.BooleanSupplier ownsRelease(DartTracker tracker) {
+        return () -> tracker.tracking;
     }
 
     /**
@@ -137,9 +146,30 @@ final class TrackerHelper {
             cursorPos = tracker.adjustMoveCursor();
         }
         if (cursorPos != null) {
+            tracker.warps.add(cursorPos);
             tracker.oldX = cursorPos.x;
             tracker.oldY = cursorPos.y;
         }
+    }
+
+    /**
+     * Whether the client reports the pointer where the loop itself put it. The client reports the warp some time
+     * after it, possibly after a later key step warped it again, so it is the warp arriving, not the user moving
+     * the pointer: upstream sees no change of position there. The warps before it have arrived too; any other
+     * position is the user's and forgets them all. The loop has put the pointer at oldX and oldY, so the pointer
+     * counts as seen from there.
+     */
+    private static boolean arrivedAtWarp(DartTracker tracker, int x, int y) {
+        for (int i = tracker.warps.size() - 1; i >= 0; i--) {
+            Point warp = tracker.warps.get(i);
+            if (warp.x == x && warp.y == y) {
+                tracker.warps.subList(0, i).clear();
+                tracker.pointerSeen = true;
+                return true;
+            }
+        }
+        tracker.warps.clear();
+        return false;
     }
 
     private static boolean resizes(DartTracker tracker) {

@@ -87,6 +87,26 @@ public class ControlHelper {
         return false;
     }
 
+    private static final String RELEASE_OWNER = "dev.equo.swt.releaseOwner";
+
+    /**
+     * Makes {@code owner} say whether an event loop a widget runs of its own takes the pointer's release, as a
+     * Tracker's does until its loop ends, or stops with null; answers the one it replaces.
+     */
+    public static java.util.function.BooleanSupplier ownRelease(Display display, java.util.function.BooleanSupplier owner) {
+        if (display.isDisposed())
+            return null;
+        java.util.function.BooleanSupplier before = (java.util.function.BooleanSupplier) display.getData(RELEASE_OWNER);
+        display.setData(RELEASE_OWNER, owner);
+        return before;
+    }
+
+    /** Whether the release the client reports belongs to such a loop rather than to the control it was pressed on. */
+    static boolean releaseOwned(Display display) {
+        Object owner = display.getData(RELEASE_OWNER);
+        return owner instanceof java.util.function.BooleanSupplier && ((java.util.function.BooleanSupplier) owner).getAsBoolean();
+    }
+
     public static void sendFlutterKeyDown(DartWidget widget, Event event) {
         if (capturedKey(widget.display, SWT.KeyDown, event))
             return;

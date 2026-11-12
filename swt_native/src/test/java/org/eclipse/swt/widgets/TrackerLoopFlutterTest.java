@@ -439,6 +439,100 @@ class TrackerLoopFlutterTest {
         }
     }
 
+    /**
+     * A listener that closes the Tracker and then runs an event loop of its own, as one that asks for a
+     * confirmation does, dispatches the keys queued behind to the focus control: the closed Tracker steps nothing.
+     */
+    @Test
+    void theKeysAListenerDispatchesAfterClosingTheTrackerGoToTheFocus() {
+        Text focused = new Text(shell, SWT.SINGLE);
+        web.setFocus((DartControl) focused.getImpl());
+        List<Integer> focusedHeard = new ArrayList<>();
+        focused.addListener(SWT.KeyDown, e -> focusedHeard.add(e.keyCode));
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        tracker.addListener(SWT.Move, e -> {
+            tracker.close();
+            while (display.readAndDispatch()) {
+            }
+        });
+
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
+            display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
+        });
+
+        assertThat(tracker.getRectangles()).as("only the first arrow steps").containsExactly(new Rectangle(19, 10, 20, 20));
+        assertThat(focusedHeard).containsExactly(SWT.ARROW_RIGHT);
+    }
+
+    private void releaseOn(Control control) {
+        Event e = at(5, 5);
+        e.button = 1;
+        web.comm.fireContaining(control.getClass().getSimpleName() + "/" + control.hashCode() + "/Mouse/MouseUp", e);
+    }
+
+    /** On every native the release that ends the loop reaches the Tracker alone, not the control it was pressed on. */
+    @Test
+    void theReleaseThatEndsTheLoopIsNotTheControlsMouseUp() {
+        Canvas canvas = new Canvas(shell, SWT.NONE);
+        canvas.setBounds(0, 0, 100, 100);
+        List<String> canvasHeard = new ArrayList<>();
+        canvas.addListener(SWT.MouseUp, e -> canvasHeard.add("MouseUp"));
+        Tracker tracker = new Tracker(canvas, SWT.NONE);
+
+        open(tracker, () -> {
+            releaseOn(canvas);
+            display.asyncExec(() -> release(tracker));
+        });
+        while (display.readAndDispatch()) {
+        }
+
+        assertThat(canvasHeard).isEmpty();
+    }
+
+    /**
+     * A listener that closes the Tracker and then runs an event loop of its own dispatches the release queued
+     * behind as the control's MouseUp: a closed Tracker does not own it.
+     */
+    @Test
+    void aReleaseAListenerDispatchesAfterClosingTheTrackerIsTheControlsMouseUp() {
+        Canvas canvas = new Canvas(shell, SWT.NONE);
+        canvas.setBounds(0, 0, 100, 100);
+        List<String> canvasHeard = new ArrayList<>();
+        canvas.addListener(SWT.MouseUp, e -> canvasHeard.add("MouseUp"));
+        Tracker tracker = new Tracker(canvas, SWT.NONE);
+        tracker.addListener(SWT.Move, e -> {
+            tracker.close();
+            while (display.readAndDispatch()) {
+            }
+        });
+
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
+            display.asyncExec(() -> releaseOn(canvas));
+        });
+
+        assertThat(canvasHeard).containsExactly("MouseUp");
+    }
+
+    /** Once a key has ended the loop, the release is the control's MouseUp again. */
+    @Test
+    void aReleaseAfterAKeyEndedTheLoopIsTheControlsMouseUp() {
+        Canvas canvas = new Canvas(shell, SWT.NONE);
+        canvas.setBounds(0, 0, 100, 100);
+        List<String> canvasHeard = new ArrayList<>();
+        canvas.addListener(SWT.MouseUp, e -> canvasHeard.add("MouseUp"));
+        Tracker tracker = new Tracker(canvas, SWT.NONE);
+
+        open(tracker, () -> display.post(key(SWT.KeyDown, SWT.CR, 0)));
+        releaseOn(canvas);
+        while (display.readAndDispatch()) {
+        }
+
+        assertThat(canvasHeard).containsExactly("MouseUp");
+    }
+
     @Test
     void aShellDisposedDuringTheLoopEndsItWithNothingToTell() {
         Tracker tracker = new Tracker(shell, SWT.NONE);
@@ -636,6 +730,68 @@ class TrackerLoopFlutterTest {
 
         assertThat(heard.get(0)).isEqualTo("Move " + (anchor.x + 9) + "," + anchor.y + " " + rects(new Rectangle(19, 10, 20, 20)));
         assertThat(tracker.getRectangles()).as("the release steps nothing, as on Win32 and GTK").containsExactly(new Rectangle(19, 11, 20, 20));
+    }
+
+    @Test
+    void theReleaseOfTheKeyThatEndsTheLoopArrivesAfterOpenReturns() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        List<String> order = new ArrayList<>();
+        Listener keyUp = e -> order.add("KeyUp " + e.keyCode);
+        display.addFilter(SWT.KeyUp, keyUp);
+
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.CR, 0));
+            display.post(key(SWT.KeyUp, SWT.CR, 0));
+        });
+        order.add("open returned");
+        while (display.readAndDispatch()) {
+        }
+        display.removeFilter(SWT.KeyUp, keyUp);
+
+        assertThat(order).containsExactly("open returned", "KeyUp " + (int) SWT.CR);
+    }
+
+    @Test
+    void theClientReportingWhereAnArrowPutThePointerIsNoMove() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        listen(tracker);
+        Point pressed = shell.toDisplay(20, 20);
+        Point afterRight = shell.toDisplay(29, 10);
+
+        open(tracker, () -> {
+            pointer(tracker, pressed.x, pressed.y);
+            display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
+            display.post(key(SWT.KeyDown, SWT.ARROW_DOWN, 0));
+            display.asyncExec(() -> {
+                pointer(tracker, afterRight.x, afterRight.y);
+                pointer(tracker, afterRight.x, afterRight.y);
+                release(tracker);
+            });
+        });
+
+        assertThat(tracker.getRectangles()).as("the pointer reaching the first step's warp after the second step is not a move")
+                .containsExactly(new Rectangle(19, 19, 20, 20));
+        assertThat(heard).hasSize(3);
+    }
+
+    @Test
+    void aMoveAfterTheClientFirstReportsAWarpMovesFromThere() {
+        Tracker tracker = new Tracker(shell, SWT.NONE);
+        tracker.setRectangles(new Rectangle[] {new Rectangle(10, 10, 20, 20)});
+        Point afterRight = shell.toDisplay(29, 10);
+
+        open(tracker, () -> {
+            display.post(key(SWT.KeyDown, SWT.ARROW_RIGHT, 0));
+            display.asyncExec(() -> {
+                pointer(tracker, afterRight.x, afterRight.y);
+                pointer(tracker, afterRight.x + 5, afterRight.y);
+                release(tracker);
+            });
+        });
+
+        assertThat(tracker.getRectangles()).containsExactly(new Rectangle(24, 10, 20, 20));
     }
 
     @Test

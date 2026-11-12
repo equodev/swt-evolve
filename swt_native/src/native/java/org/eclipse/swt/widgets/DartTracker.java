@@ -467,6 +467,8 @@ public class DartTracker extends DartWidget implements ITracker {
                         ((DartDisplay) display.getImpl()).lockCursor = false;
                         ((DartDisplay) display.getImpl()).lockCursor = true;
                     }
+                    if (!tracking || cancelled)
+                        continue;
                     ((DartDisplay) display.getImpl()).runAsyncMessages(false);
                 } finally {
                     ((DartDisplay) display.getImpl()).removePool();
@@ -806,14 +808,20 @@ public class DartTracker extends DartWidget implements ITracker {
 
     boolean pointerSeen;
 
+    final java.util.List<Point> warps = new java.util.ArrayList<>();
+
     private Display keysDisplay;
 
     private ControlHelper.KeyCapture keysBefore;
 
+    private java.util.function.BooleanSupplier releaseBefore;
+
     void openOnFlutter() {
         pointerSeen = false;
+        warps.clear();
         keysDisplay = display;
         keysBefore = ControlHelper.captureKeys(display, this::key);
+        releaseBefore = ControlHelper.ownRelease(display, TrackerHelper.ownsRelease(this));
         DartWidget host = TrackerHelper.host(parent, display);
         announcedOn = host;
         if (host == null)
@@ -858,10 +866,13 @@ public class DartTracker extends DartWidget implements ITracker {
     }
 
     void closeOnFlutter() {
-        if (keysDisplay != null)
+        if (keysDisplay != null) {
             ControlHelper.captureKeys(keysDisplay, keysBefore);
+            ControlHelper.ownRelease(keysDisplay, releaseBefore);
+        }
         keysDisplay = null;
         keysBefore = null;
+        releaseBefore = null;
         DartWidget host = announcedOn;
         announcedOn = null;
         if (host == null || host.isDisposed())
