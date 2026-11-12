@@ -102,6 +102,20 @@ dependencies {
     implementation("org.openjfx:javafx-controls:$javafxVersion:$javafxClassifier")
     implementation("org.testfx:openjfx-monocle:${libs.versions.openjfx.monocle.get()}") { isTransitive = false }
 
+    // LWJGL (for the GLCanvas snippet): the GL bindings plus this host's natives.
+    val lwjglNatives = when {
+        currentOs == "macos" && currentArch == "aarch64" -> "natives-macos-arm64"
+        currentOs == "macos" -> "natives-macos"
+        currentOs == "windows" && currentArch == "aarch64" -> "natives-windows-arm64"
+        currentOs == "windows" -> "natives-windows"
+        currentArch == "aarch64" -> "natives-linux-arm64"
+        else -> "natives-linux"
+    }
+    implementation(libs.lwjgl)
+    implementation(libs.lwjgl.opengl)
+    runtimeOnly(variantOf(libs.lwjgl) { classifier(lwjglNatives) })
+    runtimeOnly(variantOf(libs.lwjgl.opengl) { classifier(lwjglNatives) })
+
     if (chromiumMode) {
         runtimeOnly(libs.equo.chromium)
         val cefArtifact = when (currentOs) {

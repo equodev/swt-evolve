@@ -9,6 +9,7 @@ import Foundation
 import Cocoa
 import FlutterMacOS
 import ObjectiveC
+import OpenGL.GL
 
 // =================================================================================================
 // Embedded-AWT coexistence (SWT_AWT / Swing embedding).
@@ -1083,5 +1084,197 @@ class FlippedView: NSView {
     deinit {
         FlippedView.activeViews.remove(self)
         FlippedView.teardownMonitorIfEmpty()
+    }
+}
+
+// =================================================================================================
+// OpenGL for GLCanvas (dev.equo.swt.GLNative). The client draws the canvas, so its context renders
+// into a view that is never shown, and every swap reads the frame back for the client to paint.
+// =================================================================================================
+
+private final class GLSurface {
+    let context: NSOpenGLContext
+    let window: NSWindow
+    let doubleBuffer: Bool
+
+    @MainActor
+    init(context: NSOpenGLContext, width: Int, height: Int, doubleBuffer: Bool) {
+        self.context = context
+        self.doubleBuffer = doubleBuffer
+        // A window that is never ordered in still gets a drawable, so the context has a default framebuffer.
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: max(1, width), height: max(1, height)),
+                          styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let view = NSView(frame: NSRect(x: 0, y: 0, width: max(1, width), height: max(1, height)))
+        view.wantsBestResolutionOpenGLSurface = false
+        window.contentView = view
+        context.view = view
+    }
+}
+
+private final class MainThreadHop<T>: @unchecked Sendable {
+    let lock = NSLock()
+    let done = DispatchSemaphore(value: 0)
+    var result: T?
+    var abandoned = false
+}
+
+/// AppKit creates, resizes and frees drawables only on the main thread; the GL calls stay on the caller's.
+/// Assumes the launcher's main thread runs its run loop; returns nil, with |body| never run, when it doesn't
+/// answer within a few seconds.
+private func onMainThread<T>(_ body: @escaping @MainActor () -> T) -> T? {
+    if Thread.isMainThread {
+        return assumingMainActor(body)
+    }
+    let hop = MainThreadHop<T>()
+    DispatchQueue.main.async {
+        hop.lock.lock()
+        defer { hop.lock.unlock() }
+        guard !hop.abandoned else { return }
+        hop.result = assumingMainActor(body)
+        hop.done.signal()
+    }
+    if hop.done.wait(timeout: .now() + 5) == .success {
+        return hop.result
+    }
+    hop.lock.lock()
+    defer { hop.lock.unlock() }
+    hop.abandoned = hop.result == nil
+    return hop.result
+}
+
+private func glSurfaceFrom(_ handle: jlong) -> GLSurface? {
+    return handle != 0 ? Unmanaged<GLSurface>.fromOpaque(UnsafeMutableRawPointer(bitPattern: UInt(handle))!).takeUnretainedValue() : nil
+}
+
+/// The GLData fields in dev.equo.swt.GLNative's order, mapped as SWT's Cocoa GLCanvas maps them.
+private func glPixelFormatAttributes(_ d: [jint]) -> [NSOpenGLPixelFormatAttribute] {
+    var a: [Int] = []
+    if d[0] != 0 { a.append(NSOpenGLPFADoubleBuffer) }
+    if d[1] != 0 { a.append(NSOpenGLPFAStereo) }
+    let color = Int(d[2] + d[3] + d[4])
+    if color > 0 { a += [NSOpenGLPFAColorSize, color] }
+    if d[5] > 0 { a += [NSOpenGLPFAAlphaSize, Int(d[5])] }
+    if d[6] > 0 { a += [NSOpenGLPFADepthSize, Int(d[6])] }
+    if d[7] > 0 { a += [NSOpenGLPFAStencilSize, Int(d[7])] }
+    if d[8] + d[9] + d[10] > 0 { a += [NSOpenGLPFAAccumSize, Int(d[8] + d[9] + d[10] + d[11])] }
+    if d[12] > 0 { a += [NSOpenGLPFASampleBuffers, Int(d[12])] }
+    if d[13] > 0 { a += [NSOpenGLPFASamples, Int(d[13])] }
+    return a.map { NSOpenGLPixelFormatAttribute($0) } + [0]
+}
+
+/// Returns 0 when no pixel format matches |glData|, -1 when the main thread didn't create the drawable in time.
+@_cdecl("Java_dev_equo_swt_GLNative_Create")
+public func GLNative_create(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, glData: jintArray, share: jlong, width: jint, height: jint) -> jlong {
+    let jni = env.pointee!.pointee
+    var data = [jint](repeating: 0, count: 14)
+    jni.GetIntArrayRegion(env, glData, 0, min(jsize(data.count), jni.GetArrayLength(env, glData)), &data)
+    guard let format = NSOpenGLPixelFormat(attributes: glPixelFormatAttributes(data)),
+          let context = NSOpenGLContext(format: format, share: glSurfaceFrom(share)?.context) else { return 0 }
+    guard let surface = onMainThread({
+        GLSurface(context: context, width: Int(width), height: Int(height), doubleBuffer: data[0] != 0)
+    }) else { return -1 }
+    return jlong(Int(bitPattern: Unmanaged.passRetained(surface).toOpaque()))
+}
+
+/// Returns false when the main thread didn't resize the drawable in time.
+@_cdecl("Java_dev_equo_swt_GLNative_SetSize")
+public func GLNative_setSize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, handle: jlong, width: jint, height: jint) -> jboolean {
+    guard let surface = glSurfaceFrom(handle) else { return 0 }
+    let resized: Bool? = onMainThread {
+        surface.window.setContentSize(NSSize(width: max(1, Int(width)), height: max(1, Int(height))))
+        surface.context.update()
+        return true
+    }
+    return resized != nil ? 1 : 0
+}
+
+/// Makes the surface's context current on the calling thread; 0 clears the thread's context.
+@_cdecl("Java_dev_equo_swt_GLNative_MakeCurrent")
+public func GLNative_makeCurrent(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, handle: jlong) {
+    if let surface = glSurfaceFrom(handle) {
+        surface.context.makeCurrentContext()
+    } else {
+        NSOpenGLContext.clearCurrentContext()
+    }
+}
+
+@_cdecl("Java_dev_equo_swt_GLNative_IsCurrent")
+public func GLNative_isCurrent(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, handle: jlong) -> jboolean {
+    guard let surface = glSurfaceFrom(handle) else { return 0 }
+    return NSOpenGLContext.current === surface.context ? 1 : 0
+}
+
+/// Reads the frame about to be swapped into |pixels| (width * height 0xAARRGGBB, top row first),
+/// then swaps. The application's read framebuffer, read buffer and pixel-pack state are left as they were.
+@_cdecl("Java_dev_equo_swt_GLNative_Swap")
+public func GLNative_swap(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, handle: jlong, pixels: jintArray?, width: jint, height: jint) -> jboolean {
+    guard let surface = glSurfaceFrom(handle) else { return 0 }
+    var read = false
+    let jni = env.pointee!.pointee
+    if let pixels = pixels, width > 0, height > 0, jni.GetArrayLength(env, pixels) >= width * height {
+        let previous = NSOpenGLContext.current
+        if previous !== surface.context { surface.context.makeCurrentContext() }
+        var readFramebuffer: GLint = 0, readBuffer: GLint = 0, packBuffer: GLint = 0, alignment: GLint = 0
+        var rowLength: GLint = 0, skipRows: GLint = 0, skipPixels: GLint = 0
+        glGetIntegerv(GLenum(GL_READ_FRAMEBUFFER_BINDING_EXT), &readFramebuffer)
+        glBindFramebufferEXT(GLenum(GL_READ_FRAMEBUFFER_EXT), 0)
+        glGetIntegerv(GLenum(GL_READ_BUFFER), &readBuffer)
+        glGetIntegerv(GLenum(GL_PIXEL_PACK_BUFFER_BINDING), &packBuffer)
+        glGetIntegerv(GLenum(GL_PACK_ALIGNMENT), &alignment)
+        glGetIntegerv(GLenum(GL_PACK_ROW_LENGTH), &rowLength)
+        glGetIntegerv(GLenum(GL_PACK_SKIP_ROWS), &skipRows)
+        glGetIntegerv(GLenum(GL_PACK_SKIP_PIXELS), &skipPixels)
+        glBindBuffer(GLenum(GL_PIXEL_PACK_BUFFER), 0)
+        glPixelStorei(GLenum(GL_PACK_ALIGNMENT), 4)
+        glPixelStorei(GLenum(GL_PACK_ROW_LENGTH), 0)
+        glPixelStorei(GLenum(GL_PACK_SKIP_ROWS), 0)
+        glPixelStorei(GLenum(GL_PACK_SKIP_PIXELS), 0)
+        glReadBuffer(GLenum(surface.doubleBuffer ? GL_BACK : GL_FRONT))
+        let w = Int(width), h = Int(height)
+        var frame = [jint](repeating: 0, count: w * h)
+        frame.withUnsafeMutableBytes { bytes in
+            glReadPixels(0, 0, width, height, GLenum(GL_BGRA), GLenum(GL_UNSIGNED_INT_8_8_8_8_REV), bytes.baseAddress)
+        }
+        glReadBuffer(GLenum(readBuffer))
+        glPixelStorei(GLenum(GL_PACK_ALIGNMENT), alignment)
+        glPixelStorei(GLenum(GL_PACK_ROW_LENGTH), rowLength)
+        glPixelStorei(GLenum(GL_PACK_SKIP_ROWS), skipRows)
+        glPixelStorei(GLenum(GL_PACK_SKIP_PIXELS), skipPixels)
+        glBindBuffer(GLenum(GL_PIXEL_PACK_BUFFER), GLuint(packBuffer))
+        glBindFramebufferEXT(GLenum(GL_READ_FRAMEBUFFER_EXT), GLuint(readFramebuffer))
+        // GL rows run bottom-up.
+        frame.withUnsafeBufferPointer { buffer in
+            for row in 0..<h {
+                jni.SetIntArrayRegion(env, pixels, jsize(row * w), width, buffer.baseAddress! + (h - 1 - row) * w)
+            }
+        }
+        if previous !== surface.context {
+            if let previous = previous { previous.makeCurrentContext() } else { NSOpenGLContext.clearCurrentContext() }
+        }
+        read = true
+    }
+    surface.context.flushBuffer()
+    return read ? 1 : 0
+}
+
+@_cdecl("Java_dev_equo_swt_GLNative_Destroy")
+public func GLNative_destroy(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, handle: jlong) {
+    guard handle != 0 else { return }
+    let unmanaged = Unmanaged<GLSurface>.fromOpaque(UnsafeMutableRawPointer(bitPattern: UInt(handle))!)
+    if unmanaged._withUnsafeGuaranteedRef({ NSOpenGLContext.current === $0.context }) {
+        NSOpenGLContext.clearCurrentContext()
+    }
+    // The last reference goes on the main thread, which frees the window and view; nothing waits for it.
+    let free: @MainActor () -> Void = {
+        let surface = unmanaged.takeUnretainedValue()
+        surface.context.clearDrawable()
+        surface.window.close()
+        unmanaged.release()
+    }
+    if Thread.isMainThread {
+        assumingMainActor(free)
+    } else {
+        DispatchQueue.main.async { assumingMainActor(free) }
     }
 }

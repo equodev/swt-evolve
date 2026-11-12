@@ -17,6 +17,7 @@ add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "flutter_bridge.cpp"
   "flutter_bridge.h"
   "gl_front_buffer.cpp"
+  "gl_context.cpp"
   "flutter_window.cpp"
   "utils.cpp"
   "win32_window.cpp"

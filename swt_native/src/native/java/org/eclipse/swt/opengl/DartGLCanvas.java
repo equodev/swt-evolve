@@ -86,6 +86,7 @@ public class DartGLCanvas extends DartCanvas implements IGLCanvas {
             attrib[pos++] = data.samples;
         }
         attrib[pos++] = 0;
+        glSurface = new dev.equo.swt.GLSurface(getApi(), data, glSurfaceOf(data.shareContext));
     }
 
     /**
@@ -133,7 +134,7 @@ public class DartGLCanvas extends DartCanvas implements IGLCanvas {
      */
     public boolean isCurrent() {
         checkWidget();
-        return false;
+        return glSurface.isCurrent();
     }
 
     /**
@@ -147,6 +148,7 @@ public class DartGLCanvas extends DartCanvas implements IGLCanvas {
      */
     public void setCurrent() {
         checkWidget();
+        glSurface.setCurrent();
     }
 
     /**
@@ -159,12 +161,21 @@ public class DartGLCanvas extends DartCanvas implements IGLCanvas {
      */
     public void swapBuffers() {
         checkWidget();
+        glSurface.swapBuffers();
     }
 
     GLData GLData;
 
     public GLData _GLData() {
         return GLData;
+    }
+
+    dev.equo.swt.GLSurface glSurface;
+
+    static dev.equo.swt.GLSurface glSurfaceOf(GLCanvas canvas) {
+        if (canvas == null || canvas.isDisposed() || !(canvas.getImpl() instanceof DartGLCanvas))
+            return null;
+        return ((DartGLCanvas) canvas.getImpl()).glSurface;
     }
 
     protected void _hookEvents() {

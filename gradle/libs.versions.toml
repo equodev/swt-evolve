@@ -8,6 +8,7 @@ equo-chromium = "[128.0.44,129.0.0)"
 equo-chromium-cef = "[128.0.39,129.0.0)"
 auto-value = "1.10.4"
 gson = "2.11.0"
+lwjgl = "3.3.4"
 mockito = "5.18.0"
 instancio = "5.4.0"
 jacoco = "0.8.12"
@@ -28,6 +29,8 @@ junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform
 # Testing
 assertj = { group = "org.assertj", name = "assertj-core", version.ref = "assertj" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+lwjgl = { group = "org.lwjgl", name = "lwjgl", version.ref = "lwjgl" }
+lwjgl-opengl = { group = "org.lwjgl", name = "lwjgl-opengl", version.ref = "lwjgl" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
 instancio-junit = { group = "org.instancio", name = "instancio-junit", version.ref = "instancio" }
 

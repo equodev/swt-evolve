@@ -1,13 +1,6 @@
-import 'package:flutter/widgets.dart';
 import '../gen/glcanvas.dart';
-import '../gen/widget.dart';
 import '../impl/canvas_evolve.dart';
 
+/// A GLCanvas's frames arrive as drawing on its GC, so it shows as a Canvas.
 class GLCanvasImpl<T extends GLCanvasSwt, V extends VGLCanvas>
-    extends CanvasImpl<T, V> {
-  @override
-  Widget build(BuildContext context) {
-    // TODO: implement the widget, remove this line to stop regenerating
-    return const Text("GLCanvas");
-  }
-}
+    extends CanvasImpl<T, V> {}

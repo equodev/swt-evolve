@@ -11,7 +11,10 @@ set(FLUTTER_LIBRARY_NAME "flutter_bridge")
 # bridge registers it lazily via dlopen instead (EquoRegisterPlugins in flutter_bridge.cc).
 add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "flutter_bridge.cc"
+  "gl_context.cc"
 )
+# gl_context.cc dlopens libGL and libX11, so the bridge loads where they are missing.
+target_link_libraries(${FLUTTER_LIBRARY_NAME} PRIVATE ${CMAKE_DL_LIBS})
 
 # Add JNI include directories
 target_include_directories(${FLUTTER_LIBRARY_NAME} PRIVATE 

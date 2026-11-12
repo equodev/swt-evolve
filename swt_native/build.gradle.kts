@@ -179,6 +179,16 @@ dependencies {
     // Test-only: the paint path used to exclude a FigureCanvas via an isInstance() check, so the
     // real type has to be resolvable for a test to tell that exclusion from its absence.
     testImplementation("org.eclipse:draw2d:$draw2dVersion")
+    // GL calls for the GLCanvas tests, which draw through the context the canvas makes current.
+    testImplementation(libs.lwjgl)
+    testImplementation(libs.lwjgl.opengl)
+    val lwjglNatives = "natives-" + when (currentOs) {
+        "macos" -> "macos"
+        "windows" -> "windows"
+        else -> "linux"
+    } + if (getSwtArch(arch) == "aarch64") "-arm64" else ""
+    testRuntimeOnly(variantOf(libs.lwjgl) { classifier(lwjglNatives) })
+    testRuntimeOnly(variantOf(libs.lwjgl.opengl) { classifier(lwjglNatives) })
 
     // JavaFX — required to COMPILE the FXCanvas embedded-scene bridge
     // (javafx.embed.swt + com.sun.javafx.embed internals). compileOnly so the FX
@@ -309,6 +319,9 @@ sourceSets {
             // compile where the per-OS backend carries org.eclipse.swt.internal.cocoa. An
             // @EnabledOnOs would skip the run but the source still has to compile on every runner.
             if (currentOs != "macos") exclude("**/Mac*NativeTest.java", "**/MacChildJvm.java")
+            // The GLCanvas tests need a working OpenGL driver, not yet provisioned on the Linux and
+            // Windows CI runners; locally (and through :cross) they run on every OS.
+            if (currentOs != "macos" && System.getenv("CI") != null) exclude("org/eclipse/swt/opengl/GLCanvas*Test.java")
             // Win32*NativeTest: the classes they cover only exist in the win32 backend.
             if (currentOs != "windows") exclude("**/Win32*NativeTest.java")
             // ImageDataAtSizeProvider and the at-size machinery it drives only exist from 3.132

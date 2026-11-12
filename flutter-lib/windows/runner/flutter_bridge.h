@@ -52,6 +52,19 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv* env, jcl
 
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state);
 
+// dev.equo.swt.GLNative, in gl_context.cpp.
+JNIEXPORT jlong JNICALL Java_dev_equo_swt_GLNative_Create(JNIEnv* env, jclass cls, jintArray glData, jlong share, jint width, jint height);
+
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_GLNative_SetSize(JNIEnv* env, jclass cls, jlong handle, jint width, jint height);
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_GLNative_MakeCurrent(JNIEnv* env, jclass cls, jlong handle);
+
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_GLNative_IsCurrent(JNIEnv* env, jclass cls, jlong handle);
+
+JNIEXPORT jboolean JNICALL Java_dev_equo_swt_GLNative_Swap(JNIEnv* env, jclass cls, jlong handle, jintArray pixels, jint width, jint height);
+
+JNIEXPORT void JNICALL Java_dev_equo_swt_GLNative_Destroy(JNIEnv* env, jclass cls, jlong handle);
+
 #ifdef __cplusplus
 }
 #endif
