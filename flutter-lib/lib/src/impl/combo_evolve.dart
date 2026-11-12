@@ -21,6 +21,7 @@ import 'utils/font_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/client_caret_report.dart';
+import 'utils/key_edit_order.dart';
 import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
 import 'utils/pointer.dart';
@@ -62,6 +63,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     _controller.addListener(_reportCaret);
     _focusNode.addListener(_handleFocusChange);
     _focusNode.onKeyEvent = _handleKey;
+    KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping);
     addOpenListKeyClaim(_listClaimsKey);
     _lastJavaListVisible = state.listVisible;
     _verifyVerdict.attach(state.wireType, state.id);
@@ -359,7 +361,11 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     recordSentText(value);
     widget.sendModifyModify(state, VEvent()..text = value);
     _reportCaret();
+    KeyEditOrder.instance.editApplied();
   }
+
+  /// Typing reaches the field of an editable Combo even with its list open: the list takes only its own keys.
+  bool _takesTyping() => !StyleBits(state.style).has(SWT.READ_ONLY) && (state.enabled ?? true);
 
   /// A closed drop-down shows the value through its controller and the items not at all: a change
   /// naming only these needs no rebuild while the field keeps its layout. A SIMPLE combo shows its
@@ -577,6 +583,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
     removeOpenListKeyClaim(_listClaimsKey);
     _controller.removeListener(_reportCaret);
     _controller.dispose();
+    KeyEditOrder.instance.unregisterEditor(_focusNode);
     _focusNode.dispose();
     super.dispose();
   }
