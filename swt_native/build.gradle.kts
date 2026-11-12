@@ -1047,6 +1047,11 @@ val dartDebug = project.hasProperty("dartDebug")
 val dartProfile = !dartDebug && project.hasProperty("dartProfile")
 val dartMode = if (dartDebug) "debug" else if (dartProfile) "profile" else "release"
 
+// The Flutter app the desktop jars carry: flutter-lib, unless an including build names another
+// (`evolveFlutterApp`) built on it as a package.
+val flutterApp: File = ((gradle.parent as ExtensionAware?)?.extra?.properties?.get("evolveFlutterApp") as File?)
+    ?: file("../flutter-lib")
+
 fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
     // Flutter emits build outputs under a mode-named directory: macOS/Windows capitalize
     // (Products/Debug, runner/Debug), Linux lower-cases (build/linux/<arch>/debug).
@@ -1054,7 +1059,7 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
     val modeLower = mode
     when (os) {
         "macos" -> {
-            val app = file("../flutter-lib/build/macos/Build/Products/$modeCap/swtflutter.app")
+            val app = flutterApp.resolve("build/macos/Build/Products/$modeCap/swtflutter.app")
             from(app) {
                 into("swtflutter.app")
                 exclude(libertyFontExclude)
@@ -1063,21 +1068,21 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
             }
         }
         "linux" -> {
-            from("../flutter-lib/build/linux/$flutterArch/$modeLower/runner") {
+            from(flutterApp.resolve("build/linux/$flutterArch/$modeLower/runner")) {
                 include("libflutter_bridge.so")
                 into("runner")
             }
-            from("../flutter-lib/build/linux/$flutterArch/$modeLower/bundle/lib") {
+            from(flutterApp.resolve("build/linux/$flutterArch/$modeLower/bundle/lib")) {
                 include("*.so")
                 into("bundle/lib")
             }
-            from("../flutter-lib/build/linux/$flutterArch/$modeLower/bundle/data") {
+            from(flutterApp.resolve("build/linux/$flutterArch/$modeLower/bundle/data")) {
                 include("icudtl.dat", "flutter_assets/**")
                 exclude(libertyFontExclude)
                 into("bundle/data")
             }
         }
-        "windows" -> from("../flutter-lib/build/windows/$flutterArch/runner/$modeCap/") {
+        "windows" -> from(flutterApp.resolve("build/windows/$flutterArch/runner/$modeCap/")) {
             include("*.dll", "data/")
             exclude(libertyFontExclude)
             into("runner")
@@ -1218,15 +1223,16 @@ platforms.forEach { platform ->
             group = "build"
             description = "Builds Flutter lib for ${info.desktopPlatform}"
             dependsOn(dart, pub)
-            workingDir = file("../flutter-lib")
+            workingDir = flutterApp
             inputs.dir("../flutter-lib/lib")
             inputs.dir("../flutter-lib/assets")
-            inputs.files(fileTree("../flutter-lib/${info.os}") {
+            if (flutterApp != file("../flutter-lib")) inputs.dir(flutterApp.resolve("lib"))
+            inputs.files(fileTree(flutterApp.resolve(info.os)) {
                 exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
             })
             // A plugin bump changes only the lock, and the plugin's native code is compiled into this build.
-            inputs.file("../flutter-lib/pubspec.lock")
-            outputs.dir("../flutter-lib/build/${info.os}")
+            inputs.file(flutterApp.resolve("pubspec.lock"))
+            outputs.dir(flutterApp.resolve("build/${info.os}"))
             // Toggling -PdartDebug/-PdartProfile must invalidate this task even though its output dir is unchanged
             // (Flutter writes debug/release into sibling subdirs of the same build/<os> tree).
             inputs.property("dartMode", dartMode)
@@ -1235,7 +1241,7 @@ platforms.forEach { platform ->
                 "macos" -> {
                     val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
                     val extra = if (dartMode == "release") "" else " --$dartMode"
-                    commandLine = listOf("bash", "-c", "./set-arch.sh $flutterArch && ${flutterCmd().joinToString(" ")} build macos$extra")
+                    commandLine = listOf("bash", "-c", "${file("../flutter-lib/set-arch.sh")} $flutterArch && ${flutterCmd().joinToString(" ")} build macos$extra")
                 }
                 else -> commandLine = flutterCmd() + listOf("build", info.os) + modeFlag
             }
@@ -1264,7 +1270,7 @@ platforms.forEach { platform ->
             val nativesDir = layout.buildDirectory.dir("natives/${info.desktopPlatform}")
             into(nativesDir)
             if (info.os == "macos") {
-                val app = file("../flutter-lib/build/macos/Build/Products/${dartMode.replaceFirstChar { it.uppercase() }}/swtflutter.app")
+                val app = flutterApp.resolve("build/macos/Build/Products/${dartMode.replaceFirstChar { it.uppercase() }}/swtflutter.app")
                 // A copy never deletes: an earlier build's app would keep the files this one leaves out.
                 doFirst { delete(nativesDir.get().dir("swtflutter.app")) }
                 doLast { writeMacAppLinks(app, nativesDir.get().asFile) }

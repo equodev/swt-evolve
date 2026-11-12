@@ -514,6 +514,11 @@ public class FlutterLibraryLoader {
     // in applyExternalBundleOverride() (called from extractAndLoadFlutterLibraries after the
     // natives load); Evolve's own natives load from its build/jar as in standalone.
     static File findFlutterBuildDirectory() {
+        // A build whose desktop jars carry another app built on flutter-lib names that app's build.
+        String named = System.getProperty("dev.equo.swt.flutterBuildDir");
+        if (named != null && new File(named).isDirectory()) {
+            return new File(named);
+        }
         String[] possiblePaths = {
                 "flutter-lib/build",
                 "../flutter-lib/build",
