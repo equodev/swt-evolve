@@ -97,6 +97,25 @@ void main() {
     await tester.sendEventToBinding(pointer.removePointer());
   });
 
+  testWidgets('every drag move is sent, however close together they arrive', (tester) async {
+    final sent = await _pumpField(tester);
+    final pointer = TestPointer(1, PointerDeviceKind.mouse);
+    await tester.sendEventToBinding(pointer.hover(const Offset(20, 15)));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.down(const Offset(20, 15)));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.move(const Offset(50, 15)));
+    await tester.sendEventToBinding(pointer.move(const Offset(80, 15)));
+    await tester.sendEventToBinding(pointer.move(const Offset(110, 15)));
+    await tester.pump(const Duration(milliseconds: 20));
+
+    final drags = sent.where((s) => s.$1 == 'MouseMove/MouseMove' && s.$2?.stateMask != 0).map((s) => s.$2?.x);
+    expect(drags, [50, 80, 110]);
+    await tester.sendEventToBinding(pointer.up());
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.sendEventToBinding(pointer.removePointer());
+  });
+
   // Keys reach Java on the Display's channel, not through the control, and must not overtake a move
   // made before them either.
   testWidgets('a held move goes out before a key typed after it', (tester) async {

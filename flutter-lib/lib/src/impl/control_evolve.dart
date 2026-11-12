@@ -60,7 +60,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   int _lastMouseMoveMs = -(1 << 30);
 
   Offset? _lastPointerCrossing;
-  int _lastDragMoveMs = 0;
 
   /// Where in the view the held pointer was last reported, by its press or a move, in whole
   /// pixels. In view coordinates because a control moved along with the pointer reports the same
@@ -73,7 +72,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   // already been stopped by a control owning a menu (see [handleMenuDetect]).
   static int? _menuDetectHandledPointer;
   static const int _mouseMoveThrottleMs = 15;
-  static const int _dragMoveThrottleMs = 15;
   // Win32's SM_CXDRAG/SM_CYDRAG default, which is what SWT's own drag detection uses.
   static const double _dragThresholdPx = 4.0;
   /// How long the pointer rests before a control reports MouseHover and shows its tooltip:
@@ -485,24 +483,23 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
-  void sendThrottledDragMove(V state, VEvent event, PointerMoveEvent e) {
+  /// Every position the held pointer reaches is sent, unthrottled: natively each one is a
+  /// MouseMove, and a drag-select fires a Selection for each, even when a busy frame delivers
+  /// several back to back.
+  void sendDragMove(V state, VEvent event, PointerMoveEvent e) {
     if (_dndDragging && _dndDragAllowed == true) return;
     // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
     // with the press.
     final held = Offset(e.position.dx.roundToDouble(), e.position.dy.roundToDouble());
     if (_lastHeld == held) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastDragMoveMs >= _dragMoveThrottleMs) {
-      _lastDragMoveMs = now;
-      _lastHeld = held;
-      event.stateMask = moveStateMask(e.buttons);
-      if (_dndDragging && _dndDragAllowed == null) {
-        _movesBeforeDragStart.add(event);
-        return;
-      }
-      widget.sendMouseMoveMouseMove(state, event);
-      RoundTripTiming.trace();
+    _lastHeld = held;
+    event.stateMask = moveStateMask(e.buttons);
+    if (_dndDragging && _dndDragAllowed == null) {
+      _movesBeforeDragStart.add(event);
+      return;
     }
+    widget.sendMouseMoveMouseMove(state, event);
+    RoundTripTiming.trace();
   }
 
   /// Delivers SWT.MenuDetect for a context-menu request at [localPosition].
@@ -1267,7 +1264,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         final event = VEvent()
           ..x = pos.dx.round()
           ..y = pos.dy.round();
-        sendThrottledDragMove(state, event, e);
+        sendDragMove(state, event, e);
       },
       child: child,
     );

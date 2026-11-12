@@ -181,7 +181,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         final event = VEvent()
           ..x = pos.dx.round()
           ..y = pos.dy.round();
-        impl.sendThrottledDragMove(state, event, e);
+        impl.sendDragMove(state, event, e);
       },
       onPointerPanZoomUpdate: (e) {
         if (!forwardsPointer || !impl.forwardsWheelFromWrap || ControlImpl.wheelKeptBelow(e)) return;
