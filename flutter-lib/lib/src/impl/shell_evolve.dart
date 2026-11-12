@@ -374,10 +374,13 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   Widget build(BuildContext context) {
     // Shell builds its own tree and never routes through ControlImpl.wrap(), so a hidden shell
     // would keep painting and swallowing pointer input over whatever it covers.
-    if (state.visible != null && !state.visible!) {
-      return const SizedBox.shrink();
-    }
     final scope = FloatingShellChromeScope.maybeOf(context);
+    if (state.visible != null && !state.visible!) {
+      // Positioned inside the Display's stack, as a shown one is: a child that is not would size
+      // the stack, and every shell filling it, to nothing. Its own record hides it ahead of the
+      // display's, so the display can still hold it.
+      return scope == null ? const SizedBox.shrink() : const Positioned(left: 0, top: 0, child: SizedBox.shrink());
+    }
     if (scope == null) {
       // No chrome scope above: this shell is the root of its own window, so it is also the only
       // thing that can host a popup opened over it. Inside the Display's window the Display draws
