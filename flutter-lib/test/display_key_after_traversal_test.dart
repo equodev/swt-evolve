@@ -59,9 +59,8 @@ void _deliver(String actionId, Object payload) {
   EquoCommService.commForTesting.receiveBinary(channels.frame(actionId, TaggedValues.encode(payload)));
 }
 
-Future<void> _pumpShell(WidgetTester tester, List<VControl> children) async {
-  await tester.pumpWidget(ForceLive(
-    child: EvolveApp(
+Future<void> _pumpShell(WidgetTester tester, List<VControl> children, {bool forceLive = true}) async {
+  final app = EvolveApp(
       theme: ThemeMode.light,
       contentWidget: DisplaySwt(
         value: VDisplay()
@@ -77,8 +76,8 @@ Future<void> _pumpShell(WidgetTester tester, List<VControl> children) async {
               ..children = children,
           ],
       ),
-    ),
-  ));
+  );
+  await tester.pumpWidget(forceLive ? ForceLive(child: app) : app);
   await tester.pumpAndSettle();
 }
 
@@ -282,5 +281,34 @@ void main() {
     expect(keyCodes(), ['down:${SWT.TAB}', 'down:${'a'.codeUnitAt(0)}', 'up:${'a'.codeUnitAt(0)}'],
         reason: 'the field the client has focused takes the letter, so Java must get the key now; '
             'the Tab\'s own KeyUp still waits for the focus it moves');
+  });
+
+  testWidgets('a Tab onto a field drawn at rest reports its focus before the field is mounted', (tester) async {
+    await _pumpShell(tester, [_button(_firstId, 'First', 0), _text(_secondId, 'second', 30)], forceLive: false);
+    receiveTagged('swt.evolve.focusHolder', {'id': _firstId});
+    await tester.tap(find.text('First'));
+    await tester.pumpAndSettle();
+    _deliver('Display/$_displayId/traverse/vetoable', {'value': true});
+    await tester.pump();
+    await recordFrom(tester);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.tab);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.tab);
+    _deliver('Display/$_displayId/traverse/verdict', {'doit': true});
+    await tester.idle();
+
+    final beforeAnyFrame = [
+      'Display/$_displayId/Key/KeyDown',
+      'Text/$_secondId/Focus/FocusIn',
+      'Display/$_displayId/Key/KeyUp',
+    ];
+    expect(_sent(), beforeAnyFrame,
+        reason: 'Java focuses the field when the client does, not a frame later: the KeyUp held '
+            'behind the Tab gives up waiting after 400 ms, and a slow frame took longer');
+
+    await tester.pumpAndSettle();
+    expect(_hasFocus(tester, _secondId), isTrue);
+    expect(_sent(), beforeAnyFrame,
+        reason: 'mounting the field moves the focus within it, which is no second FocusIn');
   });
 }

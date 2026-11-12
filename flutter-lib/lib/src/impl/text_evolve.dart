@@ -95,6 +95,10 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// from Java, mounts the TextField and is handed to it.
   final FocusNode _restFocus = FocusNode(debugLabel: 'Text at rest');
 
+  /// Whether Java was last told this field has the focus. The node at rest reports it, as the
+  /// TextField takes the focus only a frame later.
+  bool _focusReported = false;
+
   /// Whether the field shows no text, which decides whether the decoration shows the hint.
   final ValueNotifier<bool> _isEmpty = ValueNotifier(true);
 
@@ -629,7 +633,24 @@ class TextImpl<T extends TextSwt, V extends VText>
   /// the node at rest mounts the TextField before the focus lands there, and the node at rest then
   /// unmounts with the focus, which goes back to whatever held it before.
   void _handleRestFocus() {
-    if (_restFocus.hasPrimaryFocus) _handOver();
+    if (_restFocus.hasPrimaryFocus) {
+      _reportFocusIn();
+      _handOver();
+    } else if (!_focusNode.hasFocus) {
+      _reportFocusOut();
+    }
+  }
+
+  void _reportFocusIn() {
+    if (_focusReported) return;
+    _focusReported = true;
+    widget.sendFocusFocusIn(state, null);
+  }
+
+  void _reportFocusOut() {
+    if (!_focusReported) return;
+    _focusReported = false;
+    widget.sendFocusFocusOut(state, null);
   }
 
   /// Mounts the TextField and gives it the focus the field at rest received, with the caret at
@@ -1073,7 +1094,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       // in-progress typing (no keystroke records this value, so the echo guard can't recognise it).
       seedTextEchoBaseline(_currentText);
       _undo.focused(this);
-      widget.sendFocusFocusIn(state, null);
+      _reportFocusIn();
       // After the TextField has read selectAllOnFocus for this focus.
       if (_focusLentToMenu) WidgetsBinding.instance.addPostFrameCallback((_) => _endMenuLoan());
     } else {
@@ -1082,7 +1103,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       _inFlight = null;
       _held.clear();
       clearSentTextEchoes();
-      widget.sendFocusFocusOut(state, null);
+      _reportFocusOut();
       if (OpenMenus.any || OpenMenus.opening) _lendFocusToMenu();
     }
   }
