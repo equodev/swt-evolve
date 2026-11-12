@@ -208,9 +208,21 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) => _node.requestFocus(),
-        child: builder(
-          context,
-          SwingIslandWindow(windowId: windowId, port: port, focused: _focused, surface: _surface),
+        // The embedded window takes every click over it, so a control around the island must not
+        // open its menu on a tap here: AWT gets the press and release, and the application decides
+        // the menu. Winning the taps (secondary, and the primary one macOS reads as Ctrl+Click)
+        // keeps them from an ancestor's detector; the mirror forwards raw pointers, not gestures.
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          // A tap action in the semantics tree makes the web engine answer clicks with a semantic
+          // tap, and the mirror would never see the pointer.
+          excludeFromSemantics: true,
+          onTapUp: (_) {},
+          onSecondaryTapUp: (_) {},
+          child: builder(
+            context,
+            SwingIslandWindow(windowId: windowId, port: port, focused: _focused, surface: _surface),
+          ),
         ),
       ),
     );
