@@ -1,3 +1,5 @@
+import 'dart:async' show scheduleMicrotask;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_time_patterns.dart';
@@ -130,7 +132,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                     _calendarDropped = false;
                   });
                   _closeCalendarOverlay();
-                  widget.sendSelectionSelection(state, _makeSelectionEvent());
+                  // Picked on the press, with the button held.
+                  widget.sendSelectionSelection(state, _makeSelectionEvent()..stateMask = SWT.BUTTON1);
                 },
                 onMonthChanged: (_, __) {},
               ),
@@ -180,13 +183,18 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         enabled: enabled,
         colorScheme: colorScheme,
         onDaySelected: (y, m, d) {
+          // Selection reports a change of date, so the day already selected fires none.
+          if (y == year && m == month && d == day) return;
           setState(() {
             state.year = y;
             state.month = m;
             state.day = d;
           });
-          widget.sendSelectionSelection(state, _makeSelectionEvent());
+          // A day is selected on its press, with the button held.
+          widget.sendSelectionSelection(state, _makeSelectionEvent()..stateMask = SWT.BUTTON1);
         },
+        onDayDoubleClicked: () => widget.sendSelectionDefaultSelection(state, null),
+        isRepeatPress: () => isRepeatPress,
         onMonthChanged: (y, m) {
           setState(() {
             state.year = y;
@@ -311,18 +319,21 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
               enabled: enabled,
               isOpen: _calendarDropped,
               theme: theme,
-              onTap: () {
-                if (_calendarDropped) {
-                  setState(() => _calendarDropped = false);
-                  _closeCalendarOverlay();
-                } else {
-                  setState(() => _calendarDropped = true);
-                  _openCalendarOverlay(colorScheme: colorScheme);
-                }
-              },
+              onTap: () => _dropCalendar(!_calendarDropped, colorScheme),
             )
           : null,
+      dropCalendar: hasDropDown ? (drop) => _dropCalendar(drop, colorScheme) : null,
     ));
+  }
+
+  void _dropCalendar(bool drop, ColorScheme colorScheme) {
+    if (drop == _calendarDropped) return;
+    setState(() => _calendarDropped = drop);
+    if (drop) {
+      _openCalendarOverlay(colorScheme: colorScheme);
+    } else {
+      _closeCalendarOverlay();
+    }
   }
 
   // ── Shared spinner content ─────────────────────────────────────────────────
@@ -333,6 +344,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
     List<_FieldDef> fields,
     String separator, {
     Widget? calendarButton,
+    ValueChanged<bool>? dropCalendar,
   }) {
     final selIdx = _selectedField.clamp(0, fields.length - 1);
     final background = _ground(
@@ -421,6 +433,25 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
         final idx = _selectedField.clamp(0, fields.length - 1);
+        final key = event.logicalKey;
+        // As on Win32: F4 and Alt+Down open and close a drop-down's calendar, Escape closes it.
+        if (dropCalendar != null &&
+            (key == LogicalKeyboardKey.f4 ||
+                (key == LogicalKeyboardKey.arrowDown && HardwareKeyboard.instance.isAltPressed))) {
+          _digitBuffer = '';
+          dropCalendar(!_calendarDropped);
+          return KeyEventResult.handled;
+        }
+        if (dropCalendar != null && key == LogicalKeyboardKey.escape && _calendarDropped) {
+          dropCalendar(false);
+          return KeyEventResult.handled;
+        }
+        if (key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter) {
+          _digitBuffer = '';
+          dropCalendar?.call(false);
+          widget.sendSelectionDefaultSelection(state, null);
+          return KeyEventResult.handled;
+        }
         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
           _digitBuffer = '';
           _adjust(fields, idx, 1);
@@ -747,6 +778,8 @@ class _CalendarWidget extends StatefulWidget {
   final bool enabled;
   final ColorScheme colorScheme;
   final void Function(int year, int month, int day) onDaySelected;
+  final VoidCallback? onDayDoubleClicked;
+  final bool Function()? isRepeatPress;
   final void Function(int year, int month) onMonthChanged;
 
   const _CalendarWidget({
@@ -757,6 +790,8 @@ class _CalendarWidget extends StatefulWidget {
     required this.enabled,
     required this.colorScheme,
     required this.onDaySelected,
+    this.onDayDoubleClicked,
+    this.isRepeatPress,
     required this.onMonthChanged,
   });
 
@@ -767,6 +802,7 @@ class _CalendarWidget extends StatefulWidget {
 class _CalendarWidgetState extends State<_CalendarWidget> {
   late int _displayYear;
   late int _displayMonth;
+  bool _secondPress = false;
 
   static const _dayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   static const _monthNames = [
@@ -814,6 +850,21 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
       }
     });
     widget.onMonthChanged(_displayYear, _displayMonth);
+  }
+
+  // As on Win32 and GTK, a calendar selects the day on the press. On a CALENDAR a second press on that
+  // day within the double-click time selects nothing new, and its release is the DefaultSelection.
+  void _pressDay(int day) {
+    // The control counts the clicks of its own pointer, so its double click is the native one.
+    _secondPress = widget.onDayDoubleClicked != null && (widget.isRepeatPress?.call() ?? false);
+    // After the press has reached the control, whose MouseDown comes first.
+    if (!_secondPress) scheduleMicrotask(() => widget.onDaySelected(_displayYear, _displayMonth, day));
+  }
+
+  void _releaseDay() {
+    if (!_secondPress) return;
+    _secondPress = false;
+    widget.onDayDoubleClicked!();
   }
 
   int _isoWeekNumber(DateTime date) {
@@ -945,8 +996,9 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
                       enabled: widget.enabled && isValid,
                       cellSize: cellSize,
                       colorScheme: cs,
-                      onTap: isValid && widget.enabled
-                          ? () => widget.onDaySelected(_displayYear, _displayMonth, dayNum)
+                      onPress: isValid && widget.enabled ? () => _pressDay(dayNum) : null,
+                      onRelease: isValid && widget.enabled && widget.onDayDoubleClicked != null
+                          ? _releaseDay
                           : null,
                     );
                   }),
@@ -968,7 +1020,8 @@ class _DayCell extends StatefulWidget {
   final bool enabled;
   final double cellSize;
   final ColorScheme colorScheme;
-  final VoidCallback? onTap;
+  final VoidCallback? onPress;
+  final VoidCallback? onRelease;
 
   const _DayCell({
     required this.day,
@@ -977,7 +1030,8 @@ class _DayCell extends StatefulWidget {
     required this.enabled,
     required this.cellSize,
     required this.colorScheme,
-    this.onTap,
+    this.onPress,
+    this.onRelease,
   });
 
   @override
@@ -1016,7 +1070,8 @@ class _DayCellState extends State<_DayCell> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
-        onTap: widget.onTap,
+        onTapDown: widget.onPress == null ? null : (_) => widget.onPress!(),
+        onTapUp: widget.onRelease == null ? null : (_) => widget.onRelease!(),
         child: Container(
           width: widget.cellSize,
           height: widget.cellSize,
