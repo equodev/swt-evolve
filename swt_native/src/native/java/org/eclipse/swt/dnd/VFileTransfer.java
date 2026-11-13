@@ -11,7 +11,7 @@ public class VFileTransfer extends VByteArrayTransfer {
 
     @Override
     public int wireTypeId() {
-        return 40;
+        return 39;
     }
 
     @Override

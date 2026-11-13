@@ -65,7 +65,7 @@ public class VPopupList implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 77;
+        return 76;
     }
 
     @Override

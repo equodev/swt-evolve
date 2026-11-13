@@ -239,7 +239,7 @@ public sealed class Point implements Serializable, Cloneable, dev.equo.swt.WireO
 
     @Override
     public int wireTypeId() {
-        return 76;
+        return 75;
     }
 
     @Override

@@ -2585,7 +2585,7 @@ public final class ImageData implements Cloneable, dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 58;
+        return 57;
     }
 
     @Override

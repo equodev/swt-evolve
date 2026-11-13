@@ -106,7 +106,7 @@ public class VFileDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 39;
+        return 38;
     }
 
     @Override

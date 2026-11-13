@@ -62,7 +62,7 @@ public class VFontDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 43;
+        return 42;
     }
 
     @Override

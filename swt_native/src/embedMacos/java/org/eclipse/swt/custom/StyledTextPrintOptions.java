@@ -116,7 +116,7 @@ public class StyledTextPrintOptions implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 101;
+        return 100;
     }
 
     @Override

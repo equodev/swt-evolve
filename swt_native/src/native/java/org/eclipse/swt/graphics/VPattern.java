@@ -216,7 +216,7 @@ public class VPattern extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 75;
+        return 74;
     }
 
     @Override

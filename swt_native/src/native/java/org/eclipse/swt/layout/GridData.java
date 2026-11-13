@@ -621,7 +621,7 @@ public final class GridData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 53;
+        return 52;
     }
 
     @Override

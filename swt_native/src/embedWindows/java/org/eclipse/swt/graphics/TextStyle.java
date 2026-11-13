@@ -511,7 +511,7 @@ public class TextStyle implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 114;
+        return 113;
     }
 
     @Override

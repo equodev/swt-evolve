@@ -26,7 +26,7 @@ public class VMessageBox extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 70;
+        return 69;
     }
 
     @Override

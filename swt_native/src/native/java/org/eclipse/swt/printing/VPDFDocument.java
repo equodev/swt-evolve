@@ -30,7 +30,7 @@ public class VPDFDocument extends VDevice {
 
     @Override
     public int wireTypeId() {
-        return 72;
+        return 71;
     }
 
     @Override

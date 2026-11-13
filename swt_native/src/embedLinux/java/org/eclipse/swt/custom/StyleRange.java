@@ -237,7 +237,7 @@ public class StyleRange extends TextStyle implements Cloneable {
 
     @Override
     public int wireTypeId() {
-        return 99;
+        return 98;
     }
 
     @Override

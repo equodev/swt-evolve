@@ -578,7 +578,7 @@ public sealed class Rectangle implements Serializable, Cloneable, dev.equo.swt.W
 
     @Override
     public int wireTypeId() {
-        return 84;
+        return 83;
     }
 
     @Override

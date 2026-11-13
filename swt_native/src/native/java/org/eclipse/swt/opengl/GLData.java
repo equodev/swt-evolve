@@ -148,7 +148,7 @@ public class GLData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 51;
+        return 50;
     }
 
     @Override

@@ -124,7 +124,7 @@ public final class Monitor implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 71;
+        return 70;
     }
 
     @Override

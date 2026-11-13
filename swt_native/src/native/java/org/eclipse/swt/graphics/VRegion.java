@@ -77,7 +77,7 @@ public class VRegion extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 85;
+        return 84;
     }
 
     @Override

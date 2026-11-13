@@ -157,7 +157,7 @@ public class VResource implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 86;
+        return 85;
     }
 
     @Override

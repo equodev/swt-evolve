@@ -249,7 +249,7 @@ public final class RGB implements Serializable, dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 82;
+        return 81;
     }
 
     @Override

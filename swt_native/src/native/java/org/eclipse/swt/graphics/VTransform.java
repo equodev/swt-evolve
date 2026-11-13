@@ -83,7 +83,7 @@ public class VTransform extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 124;
+        return 123;
     }
 
     @Override

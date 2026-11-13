@@ -390,7 +390,7 @@ public final class FormData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 47;
+        return 46;
     }
 
     @Override

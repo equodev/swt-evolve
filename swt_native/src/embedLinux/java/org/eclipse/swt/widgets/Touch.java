@@ -99,7 +99,7 @@ public final class Touch implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 119;
+        return 118;
     }
 
     @Override

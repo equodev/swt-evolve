@@ -37,7 +37,7 @@ public final class PathData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 74;
+        return 73;
     }
 
     @Override

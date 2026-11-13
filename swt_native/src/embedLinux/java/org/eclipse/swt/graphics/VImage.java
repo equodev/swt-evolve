@@ -215,7 +215,7 @@ public class VImage extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 57;
+        return 56;
     }
 
     @Override

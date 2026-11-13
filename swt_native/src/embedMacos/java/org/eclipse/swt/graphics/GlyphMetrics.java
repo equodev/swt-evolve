@@ -123,7 +123,7 @@ public final class GlyphMetrics implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 52;
+        return 51;
     }
 
     @Override

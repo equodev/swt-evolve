@@ -137,7 +137,7 @@ public final class RowData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 87;
+        return 86;
     }
 
     @Override

@@ -377,7 +377,7 @@ public class Event implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 35;
+        return 34;
     }
 
     @Override

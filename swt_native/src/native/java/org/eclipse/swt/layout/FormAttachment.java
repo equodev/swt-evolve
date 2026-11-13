@@ -325,7 +325,7 @@ public final class FormAttachment implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 46;
+        return 45;
     }
 
     @Override

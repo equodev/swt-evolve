@@ -381,7 +381,7 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
         @Override
         public int wireTypeId() {
-            return 63;
+            return 62;
         }
 
         @Override
@@ -513,7 +513,7 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
         @Override
         public int wireTypeId() {
-            return 62;
+            return 61;
         }
 
         @Override
@@ -543,7 +543,7 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 102;
+        return 101;
     }
 
     @Override

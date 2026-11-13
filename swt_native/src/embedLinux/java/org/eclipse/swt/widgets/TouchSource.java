@@ -96,7 +96,7 @@ public final class TouchSource implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 120;
+        return 119;
     }
 
     @Override

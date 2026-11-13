@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 398874875;
+    public static final int FINGERPRINT = 533449161;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -153,12 +153,6 @@ public final class WireTable {
             "anim",
             "b",
             "back",
-            "bench/d2j/probe",
-            "bench/d2j/probeResponse",
-            "bench/d2j/result",
-            "bench/d2j/run",
-            "bench/j2d/echo",
-            "bench/j2d/echoResponse",
             "browserFunctionCall",
             "c",
             "callback",
@@ -276,7 +270,6 @@ public final class WireTable {
             null,
             "Accessible",
             "AnimatedProgress",
-            "BenchBridge",
             "BorderData",
             "Browser",
             "BrowserFunction",
@@ -2671,353 +2664,335 @@ public final class WireTable {
     /** The channel `back`. */
     public static final int CHANNEL_BACK = 138;
 
-    /** The channel `bench/d2j/probe`. */
-    public static final int CHANNEL_BENCH_D2J_PROBE = 139;
-
-    /** The channel `bench/d2j/probeResponse`. */
-    public static final int CHANNEL_BENCH_D2J_PROBE_RESPONSE = 140;
-
-    /** The channel `bench/d2j/result`. */
-    public static final int CHANNEL_BENCH_D2J_RESULT = 141;
-
-    /** The channel `bench/d2j/run`. */
-    public static final int CHANNEL_BENCH_D2J_RUN = 142;
-
-    /** The channel `bench/j2d/echo`. */
-    public static final int CHANNEL_BENCH_J2D_ECHO = 143;
-
-    /** The channel `bench/j2d/echoResponse`. */
-    public static final int CHANNEL_BENCH_J2D_ECHO_RESPONSE = 144;
-
     /** The channel `browserFunctionCall`. */
-    public static final int CHANNEL_BROWSER_FUNCTION_CALL = 145;
+    public static final int CHANNEL_BROWSER_FUNCTION_CALL = 139;
 
     /** The channel `c`. */
-    public static final int CHANNEL_C = 146;
+    public static final int CHANNEL_C = 140;
 
     /** The channel `callback`. */
-    public static final int CHANNEL_CALLBACK = 147;
+    public static final int CHANNEL_CALLBACK = 141;
 
     /** The channel `close`. */
-    public static final int CHANNEL_CLOSE = 148;
+    public static final int CHANNEL_CLOSE = 142;
 
     /** The channel `cookie`. */
-    public static final int CHANNEL_COOKIE = 149;
+    public static final int CHANNEL_COOKIE = 143;
 
     /** The channel `copyAreaImageintint`. */
-    public static final int CHANNEL_COPY_AREA_IMAGEINTINT = 150;
+    public static final int CHANNEL_COPY_AREA_IMAGEINTINT = 144;
 
     /** The channel `copyAreaImageintintResponse`. */
-    public static final int CHANNEL_COPY_AREA_IMAGEINTINT_RESPONSE = 151;
+    public static final int CHANNEL_COPY_AREA_IMAGEINTINT_RESPONSE = 145;
 
     /** The channel `copyAreaintintintintintintboolean`. */
-    public static final int CHANNEL_COPY_AREAINTINTINTINTINTINTBOOLEAN = 152;
+    public static final int CHANNEL_COPY_AREAINTINTINTINTINTINTBOOLEAN = 146;
 
     /** The channel `drawArcintintintintintint`. */
-    public static final int CHANNEL_DRAW_ARCINTINTINTINTINTINT = 153;
+    public static final int CHANNEL_DRAW_ARCINTINTINTINTINTINT = 147;
 
     /** The channel `drawFocusintintintint`. */
-    public static final int CHANNEL_DRAW_FOCUSINTINTINTINT = 154;
+    public static final int CHANNEL_DRAW_FOCUSINTINTINTINT = 148;
 
     /** The channel `drawImageImageintint`. */
-    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINT = 155;
+    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINT = 149;
 
     /** The channel `drawImageImageintintintint`. */
-    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINT = 156;
+    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINT = 150;
 
     /** The channel `drawImageImageintintintintintintintint`. */
-    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT = 157;
+    public static final int CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT = 151;
 
     /** The channel `drawLineintintintint`. */
-    public static final int CHANNEL_DRAW_LINEINTINTINTINT = 158;
+    public static final int CHANNEL_DRAW_LINEINTINTINTINT = 152;
 
     /** The channel `drawOvalintintintint`. */
-    public static final int CHANNEL_DRAW_OVALINTINTINTINT = 159;
+    public static final int CHANNEL_DRAW_OVALINTINTINTINT = 153;
 
     /** The channel `drawPathPath`. */
-    public static final int CHANNEL_DRAW_PATH_PATH = 160;
+    public static final int CHANNEL_DRAW_PATH_PATH = 154;
 
     /** The channel `drawPointintint`. */
-    public static final int CHANNEL_DRAW_POINTINTINT = 161;
+    public static final int CHANNEL_DRAW_POINTINTINT = 155;
 
     /** The channel `drawPolygonint`. */
-    public static final int CHANNEL_DRAW_POLYGONINT = 162;
+    public static final int CHANNEL_DRAW_POLYGONINT = 156;
 
     /** The channel `drawPolylineint`. */
-    public static final int CHANNEL_DRAW_POLYLINEINT = 163;
+    public static final int CHANNEL_DRAW_POLYLINEINT = 157;
 
     /** The channel `drawRectangleintintintint`. */
-    public static final int CHANNEL_DRAW_RECTANGLEINTINTINTINT = 164;
+    public static final int CHANNEL_DRAW_RECTANGLEINTINTINTINT = 158;
 
     /** The channel `drawRoundRectangleintintintintintint`. */
-    public static final int CHANNEL_DRAW_ROUND_RECTANGLEINTINTINTINTINTINT = 165;
+    public static final int CHANNEL_DRAW_ROUND_RECTANGLEINTINTINTINTINTINT = 159;
 
     /** The channel `drawTextStringintintint`. */
-    public static final int CHANNEL_DRAW_TEXT_STRINGINTINTINT = 166;
+    public static final int CHANNEL_DRAW_TEXT_STRINGINTINTINT = 160;
 
     /** The channel `evaluate`. */
-    public static final int CHANNEL_EVALUATE = 167;
+    public static final int CHANNEL_EVALUATE = 161;
 
     /** The channel `evaluate/result`. */
-    public static final int CHANNEL_EVALUATE_RESULT = 168;
+    public static final int CHANNEL_EVALUATE_RESULT = 162;
 
     /** The channel `evolve.test.bootTrace`. */
-    public static final int CHANNEL_EVOLVE_TEST_BOOT_TRACE = 169;
+    public static final int CHANNEL_EVOLVE_TEST_BOOT_TRACE = 163;
 
     /** The channel `evolve.test.bootTraceResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_BOOT_TRACE_RESPONSE = 170;
+    public static final int CHANNEL_EVOLVE_TEST_BOOT_TRACE_RESPONSE = 164;
 
     /** The channel `evolve.test.drag`. */
-    public static final int CHANNEL_EVOLVE_TEST_DRAG = 171;
+    public static final int CHANNEL_EVOLVE_TEST_DRAG = 165;
 
     /** The channel `evolve.test.dragDone`. */
-    public static final int CHANNEL_EVOLVE_TEST_DRAG_DONE = 172;
+    public static final int CHANNEL_EVOLVE_TEST_DRAG_DONE = 166;
 
     /** The channel `evolve.test.frameCost`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST = 173;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST = 167;
 
     /** The channel `evolve.test.frameCostResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST_RESPONSE = 174;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_COST_RESPONSE = 168;
 
     /** The channel `evolve.test.frameStats`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS = 175;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS = 169;
 
     /** The channel `evolve.test.frameStatsResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS_RESPONSE = 176;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_STATS_RESPONSE = 170;
 
     /** The channel `evolve.test.frameSync`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNC = 177;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNC = 171;
 
     /** The channel `evolve.test.frameSynced`. */
-    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNCED = 178;
+    public static final int CHANNEL_EVOLVE_TEST_FRAME_SYNCED = 172;
 
     /** The channel `evolve.test.iframeLoaded`. */
-    public static final int CHANNEL_EVOLVE_TEST_IFRAME_LOADED = 179;
+    public static final int CHANNEL_EVOLVE_TEST_IFRAME_LOADED = 173;
 
     /** The channel `evolve.test.query`. */
-    public static final int CHANNEL_EVOLVE_TEST_QUERY = 180;
+    public static final int CHANNEL_EVOLVE_TEST_QUERY = 174;
 
     /** The channel `evolve.test.queryResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_QUERY_RESPONSE = 181;
+    public static final int CHANNEL_EVOLVE_TEST_QUERY_RESPONSE = 175;
 
     /** The channel `evolve.test.styledTextPerf`. */
-    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF = 182;
+    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF = 176;
 
     /** The channel `evolve.test.styledTextPerfResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF_RESPONSE = 183;
+    public static final int CHANNEL_EVOLVE_TEST_STYLED_TEXT_PERF_RESPONSE = 177;
 
     /** The channel `evolve.test.wireStats`. */
-    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS = 184;
+    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS = 178;
 
     /** The channel `evolve.test.wireStatsResponse`. */
-    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS_RESPONSE = 185;
+    public static final int CHANNEL_EVOLVE_TEST_WIRE_STATS_RESPONSE = 179;
 
     /** The channel `execute`. */
-    public static final int CHANNEL_EXECUTE = 186;
+    public static final int CHANNEL_EXECUTE = 180;
 
     /** The channel `fillArcintintintintintint`. */
-    public static final int CHANNEL_FILL_ARCINTINTINTINTINTINT = 187;
+    public static final int CHANNEL_FILL_ARCINTINTINTINTINTINT = 181;
 
     /** The channel `fillGradientRectangleintintintintboolean`. */
-    public static final int CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN = 188;
+    public static final int CHANNEL_FILL_GRADIENT_RECTANGLEINTINTINTINTBOOLEAN = 182;
 
     /** The channel `fillOvalintintintint`. */
-    public static final int CHANNEL_FILL_OVALINTINTINTINT = 189;
+    public static final int CHANNEL_FILL_OVALINTINTINTINT = 183;
 
     /** The channel `fillPathPath`. */
-    public static final int CHANNEL_FILL_PATH_PATH = 190;
+    public static final int CHANNEL_FILL_PATH_PATH = 184;
 
     /** The channel `fillPolygonint`. */
-    public static final int CHANNEL_FILL_POLYGONINT = 191;
+    public static final int CHANNEL_FILL_POLYGONINT = 185;
 
     /** The channel `fillRectangleintintintint`. */
-    public static final int CHANNEL_FILL_RECTANGLEINTINTINTINT = 192;
+    public static final int CHANNEL_FILL_RECTANGLEINTINTINTINT = 186;
 
     /** The channel `fillRoundRectangleintintintintintint`. */
-    public static final int CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT = 193;
+    public static final int CHANNEL_FILL_ROUND_RECTANGLEINTINTINTINTINTINT = 187;
 
     /** The channel `fontSizeRequest`. */
-    public static final int CHANNEL_FONT_SIZE_REQUEST = 194;
+    public static final int CHANNEL_FONT_SIZE_REQUEST = 188;
 
     /** The channel `fontSizeResponse`. */
-    public static final int CHANNEL_FONT_SIZE_RESPONSE = 195;
+    public static final int CHANNEL_FONT_SIZE_RESPONSE = 189;
 
     /** The channel `forward`. */
-    public static final int CHANNEL_FORWARD = 196;
+    public static final int CHANNEL_FORWARD = 190;
 
     /** The channel `gcDispose`. */
-    public static final int CHANNEL_GC_DISPOSE = 197;
+    public static final int CHANNEL_GC_DISPOSE = 191;
 
     /** The channel `getCookie`. */
-    public static final int CHANNEL_GET_COOKIE = 198;
+    public static final int CHANNEL_GET_COOKIE = 192;
 
     /** The channel `imageInit`. */
-    public static final int CHANNEL_IMAGE_INIT = 199;
+    public static final int CHANNEL_IMAGE_INIT = 193;
 
     /** The channel `imageResult`. */
-    public static final int CHANNEL_IMAGE_RESULT = 200;
+    public static final int CHANNEL_IMAGE_RESULT = 194;
 
     /** The channel `imageSizeRequest`. */
-    public static final int CHANNEL_IMAGE_SIZE_REQUEST = 201;
+    public static final int CHANNEL_IMAGE_SIZE_REQUEST = 195;
 
     /** The channel `imageSizeResponse`. */
-    public static final int CHANNEL_IMAGE_SIZE_RESPONSE = 202;
+    public static final int CHANNEL_IMAGE_SIZE_RESPONSE = 196;
 
     /** The channel `imageSnapshotResult`. */
-    public static final int CHANNEL_IMAGE_SNAPSHOT_RESULT = 203;
+    public static final int CHANNEL_IMAGE_SNAPSHOT_RESULT = 197;
 
     /** The channel `key/verdict`. */
-    public static final int CHANNEL_KEY_VERDICT = 204;
+    public static final int CHANNEL_KEY_VERDICT = 198;
 
     /** The channel `key/vetoable`. */
-    public static final int CHANNEL_KEY_VETOABLE = 205;
+    public static final int CHANNEL_KEY_VETOABLE = 199;
 
     /** The channel `locationchanging/result`. */
-    public static final int CHANNEL_LOCATIONCHANGING_RESULT = 206;
+    public static final int CHANNEL_LOCATIONCHANGING_RESULT = 200;
 
     /** The channel `menu/verdict`. */
-    public static final int CHANNEL_MENU_VERDICT = 207;
+    public static final int CHANNEL_MENU_VERDICT = 201;
 
     /** The channel `modify/verdict`. */
-    public static final int CHANNEL_MODIFY_VERDICT = 208;
+    public static final int CHANNEL_MODIFY_VERDICT = 202;
 
     /** The channel `modify/vetoable`. */
-    public static final int CHANNEL_MODIFY_VETOABLE = 209;
+    public static final int CHANNEL_MODIFY_VETOABLE = 203;
 
     /** The channel `navigate`. */
-    public static final int CHANNEL_NAVIGATE = 210;
+    public static final int CHANNEL_NAVIGATE = 204;
 
     /** The channel `navigateRequest`. */
-    public static final int CHANNEL_NAVIGATE_REQUEST = 211;
+    public static final int CHANNEL_NAVIGATE_REQUEST = 205;
 
     /** The channel `navigationState`. */
-    public static final int CHANNEL_NAVIGATION_STATE = 212;
+    public static final int CHANNEL_NAVIGATION_STATE = 206;
 
     /** The channel `nextFrame`. */
-    public static final int CHANNEL_NEXT_FRAME = 213;
+    public static final int CHANNEL_NEXT_FRAME = 207;
 
     /** The channel `openMenu`. */
-    public static final int CHANNEL_OPEN_MENU = 214;
+    public static final int CHANNEL_OPEN_MENU = 208;
 
     /** The channel `pixelsResult`. */
-    public static final int CHANNEL_PIXELS_RESULT = 215;
+    public static final int CHANNEL_PIXELS_RESULT = 209;
 
     /** The channel `rebuild`. */
-    public static final int CHANNEL_REBUILD = 216;
+    public static final int CHANNEL_REBUILD = 210;
 
     /** The channel `reload`. */
-    public static final int CHANNEL_RELOAD = 217;
+    public static final int CHANNEL_RELOAD = 211;
 
     /** The channel `renderSnapshot`. */
-    public static final int CHANNEL_RENDER_SNAPSHOT = 218;
+    public static final int CHANNEL_RENDER_SNAPSHOT = 212;
 
     /** The channel `setCookie`. */
-    public static final int CHANNEL_SET_COOKIE = 219;
+    public static final int CHANNEL_SET_COOKIE = 213;
 
     /** The channel `shown`. */
-    public static final int CHANNEL_SHOWN = 220;
+    public static final int CHANNEL_SHOWN = 214;
 
     /** The channel `stop`. */
-    public static final int CHANNEL_STOP = 221;
+    public static final int CHANNEL_STOP = 215;
 
     /** The channel `subtree`. */
-    public static final int CHANNEL_SUBTREE = 222;
+    public static final int CHANNEL_SUBTREE = 216;
 
     /** The channel `subtree/request`. */
-    public static final int CHANNEL_SUBTREE_REQUEST = 223;
+    public static final int CHANNEL_SUBTREE_REQUEST = 217;
 
     /** The channel `swing`. */
-    public static final int CHANNEL_SWING = 224;
+    public static final int CHANNEL_SWING = 218;
 
     /** The channel `swing.open`. */
-    public static final int CHANNEL_SWING_OPEN = 225;
+    public static final int CHANNEL_SWING_OPEN = 219;
 
     /** The channel `swingIsland`. */
-    public static final int CHANNEL_SWING_ISLAND = 226;
+    public static final int CHANNEL_SWING_ISLAND = 220;
 
     /** The channel `swingIsland.close`. */
-    public static final int CHANNEL_SWING_ISLAND_CLOSE = 227;
+    public static final int CHANNEL_SWING_ISLAND_CLOSE = 221;
 
     /** The channel `swingIsland.dispose`. */
-    public static final int CHANNEL_SWING_ISLAND_DISPOSE = 228;
+    public static final int CHANNEL_SWING_ISLAND_DISPOSE = 222;
 
     /** The channel `swingIsland.island`. */
-    public static final int CHANNEL_SWING_ISLAND_ISLAND = 229;
+    public static final int CHANNEL_SWING_ISLAND_ISLAND = 223;
 
     /** The channel `swingIsland.opened`. */
-    public static final int CHANNEL_SWING_ISLAND_OPENED = 230;
+    public static final int CHANNEL_SWING_ISLAND_OPENED = 224;
 
     /** The channel `swingIsland.resize`. */
-    public static final int CHANNEL_SWING_ISLAND_RESIZE = 231;
+    public static final int CHANNEL_SWING_ISLAND_RESIZE = 225;
 
     /** The channel `swingIsland.surface`. */
-    public static final int CHANNEL_SWING_ISLAND_SURFACE = 232;
+    public static final int CHANNEL_SWING_ISLAND_SURFACE = 226;
 
     /** The channel `swingIsland.title`. */
-    public static final int CHANNEL_SWING_ISLAND_TITLE = 233;
+    public static final int CHANNEL_SWING_ISLAND_TITLE = 227;
 
     /** The channel `swt.evolve.batch`. */
-    public static final int CHANNEL_SWT_EVOLVE_BATCH = 234;
+    public static final int CHANNEL_SWT_EVOLVE_BATCH = 228;
 
     /** The channel `swt.evolve.focus`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS = 235;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS = 229;
 
     /** The channel `swt.evolve.focus.seen`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS_SEEN = 236;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS_SEEN = 230;
 
     /** The channel `swt.evolve.focusHolder`. */
-    public static final int CHANNEL_SWT_EVOLVE_FOCUS_HOLDER = 237;
+    public static final int CHANNEL_SWT_EVOLVE_FOCUS_HOLDER = 231;
 
     /** The channel `swt.evolve.properties`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 238;
+    public static final int CHANNEL_SWT_EVOLVE_PROPERTIES = 232;
 
     /** The channel `swt.evolve.property.set`. */
-    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 239;
+    public static final int CHANNEL_SWT_EVOLVE_PROPERTY_SET = 233;
 
     /** The channel `swt.evolve.test.runUi`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 240;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI = 234;
 
     /** The channel `swt.evolve.test.runUiResponse`. */
-    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 241;
+    public static final int CHANNEL_SWT_EVOLVE_TEST_RUN_UI_RESPONSE = 235;
 
     /** The channel `swt.evolve.timing.bare`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 242;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_BARE = 236;
 
     /** The channel `swt.evolve.timing.ping`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 243;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PING = 237;
 
     /** The channel `swt.evolve.timing.pong`. */
-    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 244;
+    public static final int CHANNEL_SWT_EVOLVE_TIMING_PONG = 238;
 
     /** The channel `swt.evolve.url.open`. */
-    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 245;
+    public static final int CHANNEL_SWT_EVOLVE_URL_OPEN = 239;
 
     /** The channel `swt.evolve.widget.refresh`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 246;
+    public static final int CHANNEL_SWT_EVOLVE_WIDGET_REFRESH = 240;
 
     /** The channel `swt.evolve.wire`. */
-    public static final int CHANNEL_SWT_EVOLVE_WIRE = 247;
+    public static final int CHANNEL_SWT_EVOLVE_WIRE = 241;
 
     /** The channel `transport`. */
-    public static final int CHANNEL_TRANSPORT = 248;
+    public static final int CHANNEL_TRANSPORT = 242;
 
     /** The channel `transport/request`. */
-    public static final int CHANNEL_TRANSPORT_REQUEST = 249;
+    public static final int CHANNEL_TRANSPORT_REQUEST = 243;
 
     /** The channel `traverse/verdict`. */
-    public static final int CHANNEL_TRAVERSE_VERDICT = 250;
+    public static final int CHANNEL_TRAVERSE_VERDICT = 244;
 
     /** The channel `traverse/vetoable`. */
-    public static final int CHANNEL_TRAVERSE_VETOABLE = 251;
+    public static final int CHANNEL_TRAVERSE_VETOABLE = 245;
 
     /** The channel `v`. */
-    public static final int CHANNEL_V = 252;
+    public static final int CHANNEL_V = 246;
 
     /** The channel `widgetSizeRequest`. */
-    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 253;
+    public static final int CHANNEL_WIDGET_SIZE_REQUEST = 247;
 
     /** The channel `widgetSizeResponse`. */
-    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 254;
+    public static final int CHANNEL_WIDGET_SIZE_RESPONSE = 248;
 
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;
@@ -3025,401 +3000,398 @@ public final class WireTable {
     /** The type `AnimatedProgress`. */
     public static final int TYPE_ANIMATED_PROGRESS = 2;
 
-    /** The type `BenchBridge`. */
-    public static final int TYPE_BENCH_BRIDGE = 3;
-
     /** The type `BorderData`. */
-    public static final int TYPE_BORDER_DATA = 4;
+    public static final int TYPE_BORDER_DATA = 3;
 
     /** The type `Browser`. */
-    public static final int TYPE_BROWSER = 5;
+    public static final int TYPE_BROWSER = 4;
 
     /** The type `BrowserFunction`. */
-    public static final int TYPE_BROWSER_FUNCTION = 6;
+    public static final int TYPE_BROWSER_FUNCTION = 5;
 
     /** The type `BusyIndicator`. */
-    public static final int TYPE_BUSY_INDICATOR = 7;
+    public static final int TYPE_BUSY_INDICATOR = 6;
 
     /** The type `Button`. */
-    public static final int TYPE_BUTTON = 8;
+    public static final int TYPE_BUTTON = 7;
 
     /** The type `ByteArrayTransfer`. */
-    public static final int TYPE_BYTE_ARRAY_TRANSFER = 9;
+    public static final int TYPE_BYTE_ARRAY_TRANSFER = 8;
 
     /** The type `CBanner`. */
-    public static final int TYPE_CBANNER = 10;
+    public static final int TYPE_CBANNER = 9;
 
     /** The type `CCombo`. */
-    public static final int TYPE_CCOMBO = 11;
+    public static final int TYPE_CCOMBO = 10;
 
     /** The type `CLabel`. */
-    public static final int TYPE_CLABEL = 12;
+    public static final int TYPE_CLABEL = 11;
 
     /** The type `CTabFolder`. */
-    public static final int TYPE_CTAB_FOLDER = 13;
+    public static final int TYPE_CTAB_FOLDER = 12;
 
     /** The type `CTabItem`. */
-    public static final int TYPE_CTAB_ITEM = 14;
+    public static final int TYPE_CTAB_ITEM = 13;
 
     /** The type `Canvas`. */
-    public static final int TYPE_CANVAS = 15;
+    public static final int TYPE_CANVAS = 14;
 
     /** The type `Caret`. */
-    public static final int TYPE_CARET = 16;
+    public static final int TYPE_CARET = 15;
 
     /** The type `Clipboard`. */
-    public static final int TYPE_CLIPBOARD = 17;
+    public static final int TYPE_CLIPBOARD = 16;
 
     /** The type `Color`. */
-    public static final int TYPE_COLOR = 18;
+    public static final int TYPE_COLOR = 17;
 
     /** The type `ColorDialog`. */
-    public static final int TYPE_COLOR_DIALOG = 19;
+    public static final int TYPE_COLOR_DIALOG = 18;
 
     /** The type `Combo`. */
-    public static final int TYPE_COMBO = 20;
+    public static final int TYPE_COMBO = 19;
 
     /** The type `Composite`. */
-    public static final int TYPE_COMPOSITE = 21;
+    public static final int TYPE_COMPOSITE = 20;
 
     /** The type `ControlEditor`. */
-    public static final int TYPE_CONTROL_EDITOR = 22;
+    public static final int TYPE_CONTROL_EDITOR = 21;
 
     /** The type `CoolBar`. */
-    public static final int TYPE_COOL_BAR = 23;
+    public static final int TYPE_COOL_BAR = 22;
 
     /** The type `CoolItem`. */
-    public static final int TYPE_COOL_ITEM = 24;
+    public static final int TYPE_COOL_ITEM = 23;
 
     /** The type `Cursor`. */
-    public static final int TYPE_CURSOR = 25;
+    public static final int TYPE_CURSOR = 24;
 
     /** The type `DateTime`. */
-    public static final int TYPE_DATE_TIME = 26;
+    public static final int TYPE_DATE_TIME = 25;
 
     /** The type `Decorations`. */
-    public static final int TYPE_DECORATIONS = 27;
+    public static final int TYPE_DECORATIONS = 26;
 
     /** The type `Device`. */
-    public static final int TYPE_DEVICE = 28;
+    public static final int TYPE_DEVICE = 27;
 
     /** The type `Dialog`. */
-    public static final int TYPE_DIALOG = 29;
+    public static final int TYPE_DIALOG = 28;
 
     /** The type `DirectoryDialog`. */
-    public static final int TYPE_DIRECTORY_DIALOG = 30;
+    public static final int TYPE_DIRECTORY_DIALOG = 29;
 
     /** The type `Display`. */
-    public static final int TYPE_DISPLAY = 31;
+    public static final int TYPE_DISPLAY = 30;
 
     /** The type `DisplayPopups`. */
-    public static final int TYPE_DISPLAY_POPUPS = 32;
+    public static final int TYPE_DISPLAY_POPUPS = 31;
 
     /** The type `DragSource`. */
-    public static final int TYPE_DRAG_SOURCE = 33;
+    public static final int TYPE_DRAG_SOURCE = 32;
 
     /** The type `DropTarget`. */
-    public static final int TYPE_DROP_TARGET = 34;
+    public static final int TYPE_DROP_TARGET = 33;
 
     /** The type `Event`. */
-    public static final int TYPE_EVENT = 35;
+    public static final int TYPE_EVENT = 34;
 
     /** The type `EwtWidget`. */
-    public static final int TYPE_EWT_WIDGET = 36;
+    public static final int TYPE_EWT_WIDGET = 35;
 
     /** The type `ExpandBar`. */
-    public static final int TYPE_EXPAND_BAR = 37;
+    public static final int TYPE_EXPAND_BAR = 36;
 
     /** The type `ExpandItem`. */
-    public static final int TYPE_EXPAND_ITEM = 38;
+    public static final int TYPE_EXPAND_ITEM = 37;
 
     /** The type `FileDialog`. */
-    public static final int TYPE_FILE_DIALOG = 39;
+    public static final int TYPE_FILE_DIALOG = 38;
 
     /** The type `FileTransfer`. */
-    public static final int TYPE_FILE_TRANSFER = 40;
+    public static final int TYPE_FILE_TRANSFER = 39;
 
     /** The type `Font`. */
-    public static final int TYPE_FONT = 41;
+    public static final int TYPE_FONT = 40;
 
     /** The type `FontData`. */
-    public static final int TYPE_FONT_DATA = 42;
+    public static final int TYPE_FONT_DATA = 41;
 
     /** The type `FontDialog`. */
-    public static final int TYPE_FONT_DIALOG = 43;
+    public static final int TYPE_FONT_DIALOG = 42;
 
     /** The type `FontMeasureBridge`. */
-    public static final int TYPE_FONT_MEASURE_BRIDGE = 44;
+    public static final int TYPE_FONT_MEASURE_BRIDGE = 43;
 
     /** The type `FontMetrics`. */
-    public static final int TYPE_FONT_METRICS = 45;
+    public static final int TYPE_FONT_METRICS = 44;
 
     /** The type `FormAttachment`. */
-    public static final int TYPE_FORM_ATTACHMENT = 46;
+    public static final int TYPE_FORM_ATTACHMENT = 45;
 
     /** The type `FormData`. */
-    public static final int TYPE_FORM_DATA = 47;
+    public static final int TYPE_FORM_DATA = 46;
 
     /** The type `GC`. */
-    public static final int TYPE_GC = 48;
+    public static final int TYPE_GC = 47;
 
     /** The type `GCData`. */
-    public static final int TYPE_GCDATA = 49;
+    public static final int TYPE_GCDATA = 48;
 
     /** The type `GLCanvas`. */
-    public static final int TYPE_GLCANVAS = 50;
+    public static final int TYPE_GLCANVAS = 49;
 
     /** The type `GLData`. */
-    public static final int TYPE_GLDATA = 51;
+    public static final int TYPE_GLDATA = 50;
 
     /** The type `GlyphMetrics`. */
-    public static final int TYPE_GLYPH_METRICS = 52;
+    public static final int TYPE_GLYPH_METRICS = 51;
 
     /** The type `GridData`. */
-    public static final int TYPE_GRID_DATA = 53;
+    public static final int TYPE_GRID_DATA = 52;
 
     /** The type `Group`. */
-    public static final int TYPE_GROUP = 54;
+    public static final int TYPE_GROUP = 53;
 
     /** The type `HTMLTransfer`. */
-    public static final int TYPE_HTMLTRANSFER = 55;
+    public static final int TYPE_HTMLTRANSFER = 54;
 
     /** The type `IME`. */
-    public static final int TYPE_IME = 56;
+    public static final int TYPE_IME = 55;
 
     /** The type `Image`. */
-    public static final int TYPE_IMAGE = 57;
+    public static final int TYPE_IMAGE = 56;
 
     /** The type `ImageData`. */
-    public static final int TYPE_IMAGE_DATA = 58;
+    public static final int TYPE_IMAGE_DATA = 57;
 
     /** The type `ImageSizeBridge`. */
-    public static final int TYPE_IMAGE_SIZE_BRIDGE = 59;
+    public static final int TYPE_IMAGE_SIZE_BRIDGE = 58;
 
     /** The type `ImageTransfer`. */
-    public static final int TYPE_IMAGE_TRANSFER = 60;
+    public static final int TYPE_IMAGE_TRANSFER = 59;
 
     /** The type `Label`. */
-    public static final int TYPE_LABEL = 61;
+    public static final int TYPE_LABEL = 60;
 
     /** The type `LineInfo`. */
-    public static final int TYPE_LINE_INFO = 62;
+    public static final int TYPE_LINE_INFO = 61;
 
     /** The type `LineSizeInfo`. */
-    public static final int TYPE_LINE_SIZE_INFO = 63;
+    public static final int TYPE_LINE_SIZE_INFO = 62;
 
     /** The type `Link`. */
-    public static final int TYPE_LINK = 64;
+    public static final int TYPE_LINK = 63;
 
     /** The type `List`. */
-    public static final int TYPE_LIST = 65;
+    public static final int TYPE_LIST = 64;
 
     /** The type `MainComposite`. */
-    public static final int TYPE_MAIN_COMPOSITE = 66;
+    public static final int TYPE_MAIN_COMPOSITE = 65;
 
     /** The type `MainToolbar`. */
-    public static final int TYPE_MAIN_TOOLBAR = 67;
+    public static final int TYPE_MAIN_TOOLBAR = 66;
 
     /** The type `Menu`. */
-    public static final int TYPE_MENU = 68;
+    public static final int TYPE_MENU = 67;
 
     /** The type `MenuItem`. */
-    public static final int TYPE_MENU_ITEM = 69;
+    public static final int TYPE_MENU_ITEM = 68;
 
     /** The type `MessageBox`. */
-    public static final int TYPE_MESSAGE_BOX = 70;
+    public static final int TYPE_MESSAGE_BOX = 69;
 
     /** The type `Monitor`. */
-    public static final int TYPE_MONITOR = 71;
+    public static final int TYPE_MONITOR = 70;
 
     /** The type `PDFDocument`. */
-    public static final int TYPE_PDFDOCUMENT = 72;
+    public static final int TYPE_PDFDOCUMENT = 71;
 
     /** The type `Path`. */
-    public static final int TYPE_PATH = 73;
+    public static final int TYPE_PATH = 72;
 
     /** The type `PathData`. */
-    public static final int TYPE_PATH_DATA = 74;
+    public static final int TYPE_PATH_DATA = 73;
 
     /** The type `Pattern`. */
-    public static final int TYPE_PATTERN = 75;
+    public static final int TYPE_PATTERN = 74;
 
     /** The type `Point`. */
-    public static final int TYPE_POINT = 76;
+    public static final int TYPE_POINT = 75;
 
     /** The type `PopupList`. */
-    public static final int TYPE_POPUP_LIST = 77;
+    public static final int TYPE_POPUP_LIST = 76;
 
     /** The type `PrintDialog`. */
-    public static final int TYPE_PRINT_DIALOG = 78;
+    public static final int TYPE_PRINT_DIALOG = 77;
 
     /** The type `Printer`. */
-    public static final int TYPE_PRINTER = 79;
+    public static final int TYPE_PRINTER = 78;
 
     /** The type `Program`. */
-    public static final int TYPE_PROGRAM = 80;
+    public static final int TYPE_PROGRAM = 79;
 
     /** The type `ProgressBar`. */
-    public static final int TYPE_PROGRESS_BAR = 81;
+    public static final int TYPE_PROGRESS_BAR = 80;
 
     /** The type `RGB`. */
-    public static final int TYPE_RGB = 82;
+    public static final int TYPE_RGB = 81;
 
     /** The type `RTFTransfer`. */
-    public static final int TYPE_RTFTRANSFER = 83;
+    public static final int TYPE_RTFTRANSFER = 82;
 
     /** The type `Rectangle`. */
-    public static final int TYPE_RECTANGLE = 84;
+    public static final int TYPE_RECTANGLE = 83;
 
     /** The type `Region`. */
-    public static final int TYPE_REGION = 85;
+    public static final int TYPE_REGION = 84;
 
     /** The type `Resource`. */
-    public static final int TYPE_RESOURCE = 86;
+    public static final int TYPE_RESOURCE = 85;
 
     /** The type `RowData`. */
-    public static final int TYPE_ROW_DATA = 87;
+    public static final int TYPE_ROW_DATA = 86;
 
     /** The type `Sash`. */
-    public static final int TYPE_SASH = 88;
+    public static final int TYPE_SASH = 87;
 
     /** The type `SashForm`. */
-    public static final int TYPE_SASH_FORM = 89;
+    public static final int TYPE_SASH_FORM = 88;
 
     /** The type `Scale`. */
-    public static final int TYPE_SCALE = 90;
+    public static final int TYPE_SCALE = 89;
 
     /** The type `ScrollBar`. */
-    public static final int TYPE_SCROLL_BAR = 91;
+    public static final int TYPE_SCROLL_BAR = 90;
 
     /** The type `ScrolledComposite`. */
-    public static final int TYPE_SCROLLED_COMPOSITE = 92;
+    public static final int TYPE_SCROLLED_COMPOSITE = 91;
 
     /** The type `Shell`. */
-    public static final int TYPE_SHELL = 93;
+    public static final int TYPE_SHELL = 92;
 
     /** The type `ShellPopups`. */
-    public static final int TYPE_SHELL_POPUPS = 94;
+    public static final int TYPE_SHELL_POPUPS = 93;
 
     /** The type `SideBar`. */
-    public static final int TYPE_SIDE_BAR = 95;
+    public static final int TYPE_SIDE_BAR = 94;
 
     /** The type `Slider`. */
-    public static final int TYPE_SLIDER = 96;
+    public static final int TYPE_SLIDER = 95;
 
     /** The type `Spinner`. */
-    public static final int TYPE_SPINNER = 97;
+    public static final int TYPE_SPINNER = 96;
 
     /** The type `StatusBar`. */
-    public static final int TYPE_STATUS_BAR = 98;
+    public static final int TYPE_STATUS_BAR = 97;
 
     /** The type `StyleRange`. */
-    public static final int TYPE_STYLE_RANGE = 99;
+    public static final int TYPE_STYLE_RANGE = 98;
 
     /** The type `StyledText`. */
-    public static final int TYPE_STYLED_TEXT = 100;
+    public static final int TYPE_STYLED_TEXT = 99;
 
     /** The type `StyledTextPrintOptions`. */
-    public static final int TYPE_STYLED_TEXT_PRINT_OPTIONS = 101;
+    public static final int TYPE_STYLED_TEXT_PRINT_OPTIONS = 100;
 
     /** The type `StyledTextRenderer`. */
-    public static final int TYPE_STYLED_TEXT_RENDERER = 102;
+    public static final int TYPE_STYLED_TEXT_RENDERER = 101;
 
     /** The type `SwingIsland`. */
-    public static final int TYPE_SWING_ISLAND = 103;
+    public static final int TYPE_SWING_ISLAND = 102;
 
     /** The type `TabFolder`. */
-    public static final int TYPE_TAB_FOLDER = 104;
+    public static final int TYPE_TAB_FOLDER = 103;
 
     /** The type `TabItem`. */
-    public static final int TYPE_TAB_ITEM = 105;
+    public static final int TYPE_TAB_ITEM = 104;
 
     /** The type `Table`. */
-    public static final int TYPE_TABLE = 106;
+    public static final int TYPE_TABLE = 105;
 
     /** The type `TableColumn`. */
-    public static final int TYPE_TABLE_COLUMN = 107;
+    public static final int TYPE_TABLE_COLUMN = 106;
 
     /** The type `TableCursor`. */
-    public static final int TYPE_TABLE_CURSOR = 108;
+    public static final int TYPE_TABLE_CURSOR = 107;
 
     /** The type `TableEditor`. */
-    public static final int TYPE_TABLE_EDITOR = 109;
+    public static final int TYPE_TABLE_EDITOR = 108;
 
     /** The type `TableItem`. */
-    public static final int TYPE_TABLE_ITEM = 110;
+    public static final int TYPE_TABLE_ITEM = 109;
 
     /** The type `TaskBar`. */
-    public static final int TYPE_TASK_BAR = 111;
+    public static final int TYPE_TASK_BAR = 110;
 
     /** The type `TaskItem`. */
-    public static final int TYPE_TASK_ITEM = 112;
+    public static final int TYPE_TASK_ITEM = 111;
 
     /** The type `Text`. */
-    public static final int TYPE_TEXT = 113;
+    public static final int TYPE_TEXT = 112;
 
     /** The type `TextStyle`. */
-    public static final int TYPE_TEXT_STYLE = 114;
+    public static final int TYPE_TEXT_STYLE = 113;
 
     /** The type `TextTransfer`. */
-    public static final int TYPE_TEXT_TRANSFER = 115;
+    public static final int TYPE_TEXT_TRANSFER = 114;
 
     /** The type `ToolBar`. */
-    public static final int TYPE_TOOL_BAR = 116;
+    public static final int TYPE_TOOL_BAR = 115;
 
     /** The type `ToolItem`. */
-    public static final int TYPE_TOOL_ITEM = 117;
+    public static final int TYPE_TOOL_ITEM = 116;
 
     /** The type `ToolTip`. */
-    public static final int TYPE_TOOL_TIP = 118;
+    public static final int TYPE_TOOL_TIP = 117;
 
     /** The type `Touch`. */
-    public static final int TYPE_TOUCH = 119;
+    public static final int TYPE_TOUCH = 118;
 
     /** The type `TouchSource`. */
-    public static final int TYPE_TOUCH_SOURCE = 120;
+    public static final int TYPE_TOUCH_SOURCE = 119;
 
     /** The type `Tracker`. */
-    public static final int TYPE_TRACKER = 121;
+    public static final int TYPE_TRACKER = 120;
 
     /** The type `Transfer`. */
-    public static final int TYPE_TRANSFER = 122;
+    public static final int TYPE_TRANSFER = 121;
 
     /** The type `TransferData`. */
-    public static final int TYPE_TRANSFER_DATA = 123;
+    public static final int TYPE_TRANSFER_DATA = 122;
 
     /** The type `Transform`. */
-    public static final int TYPE_TRANSFORM = 124;
+    public static final int TYPE_TRANSFORM = 123;
 
     /** The type `Tray`. */
-    public static final int TYPE_TRAY = 125;
+    public static final int TYPE_TRAY = 124;
 
     /** The type `TrayItem`. */
-    public static final int TYPE_TRAY_ITEM = 126;
+    public static final int TYPE_TRAY_ITEM = 125;
 
     /** The type `Tree`. */
-    public static final int TYPE_TREE = 127;
+    public static final int TYPE_TREE = 126;
 
     /** The type `TreeColumn`. */
-    public static final int TYPE_TREE_COLUMN = 128;
+    public static final int TYPE_TREE_COLUMN = 127;
 
     /** The type `TreeCursor`. */
-    public static final int TYPE_TREE_CURSOR = 129;
+    public static final int TYPE_TREE_CURSOR = 128;
 
     /** The type `TreeEditor`. */
-    public static final int TYPE_TREE_EDITOR = 130;
+    public static final int TYPE_TREE_EDITOR = 129;
 
     /** The type `TreeItem`. */
-    public static final int TYPE_TREE_ITEM = 131;
+    public static final int TYPE_TREE_ITEM = 130;
 
     /** The type `URLTransfer`. */
-    public static final int TYPE_URLTRANSFER = 132;
+    public static final int TYPE_URLTRANSFER = 131;
 
     /** The type `ViewForm`. */
-    public static final int TYPE_VIEW_FORM = 133;
+    public static final int TYPE_VIEW_FORM = 132;
 
     /** The type `WidgetSizeBridge`. */
-    public static final int TYPE_WIDGET_SIZE_BRIDGE = 134;
+    public static final int TYPE_WIDGET_SIZE_BRIDGE = 133;
 
     /** The display's `activeShellId`. */
     public static final int DISPLAY_ACTIVE_SHELL_ID = 186;

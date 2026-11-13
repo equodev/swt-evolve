@@ -47,7 +47,7 @@ public class VFontData implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 42;
+        return 41;
     }
 
     @Override

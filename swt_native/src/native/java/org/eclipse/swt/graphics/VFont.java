@@ -123,7 +123,7 @@ public class VFont extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 41;
+        return 40;
     }
 
     @Override

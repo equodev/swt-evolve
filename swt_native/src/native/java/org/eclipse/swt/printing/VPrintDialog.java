@@ -54,7 +54,7 @@ public class VPrintDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 78;
+        return 77;
     }
 
     @Override

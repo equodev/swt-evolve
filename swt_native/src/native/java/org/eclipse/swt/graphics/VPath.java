@@ -176,7 +176,7 @@ public class VPath extends VResource {
 
     @Override
     public int wireTypeId() {
-        return 73;
+        return 72;
     }
 
     @Override

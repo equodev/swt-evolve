@@ -13,7 +13,7 @@ public class VTransfer implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 122;
+        return 121;
     }
 
     @Override
