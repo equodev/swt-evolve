@@ -25,9 +25,10 @@ import '../theme/theme_extensions/composite_theme_extension.dart';
 import '../theme/theme_settings/composite_theme_settings.dart';
 
 
-/// Returns true if [pos] falls inside the bounds of any child control.
+/// Returns true if [pos] falls inside the bounds of any visible, enabled child control.
 /// Used to replicate SWT behaviour where mouse events on a child widget do
-/// not propagate to the parent composite.
+/// not propagate to the parent composite. A disabled control takes no pointer: what lands on it is
+/// its parent's on every native.
 ///
 /// [childInset] is how far inside its own bounds a child is actually painted. It is zero for an
 /// ordinary composite, but a composite that lays its children out as panels (NoLayout's
@@ -43,7 +44,7 @@ bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
   final children = state.children;
   if (children == null || children.isEmpty) return false;
   for (final child in children) {
-    if (child.visible == false) continue;
+    if (child.visible == false || child.enabled == false) continue;
     final b = child.bounds;
     if (b == null) continue;
     final rect = Rect.fromLTWH(

@@ -136,7 +136,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           ? null
           : (VEvent()
             ..x = at.dx.round()
-            ..y = at.dy.round());
+            ..y = at.dy.round()
+            ..stateMask = moveStateMask(0));
       if (hovering) {
         widget.sendMouseTrackMouseEnter(state, event);
         // A pointer that enters and comes to rest sends no hover event after the one that brought
