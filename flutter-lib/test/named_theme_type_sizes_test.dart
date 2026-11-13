@@ -15,7 +15,7 @@ void main() {
   group('NamedTheme.typeScale', () {
     test('a theme that declares none leaves the shared scale alone', () {
       final base = shared();
-      for (final name in ['nondefault', 'equo', 'green', 'hb']) {
+      for (final name in ['nondefault', 'equo', 'green', 'blackandred']) {
         final theme = kNamedThemes[name]!;
         expect(theme.typeScale, isNull, reason: name);
         expect(theme.applyTypeSizes(base).bodyLarge!.fontSize,

@@ -69,13 +69,13 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         TreeItem item = new TreeItem(tree, SWT.NONE);
         // Column 0 is owner-drawn, so it never goes through setText(0, …); the plain
         // ColumnLabelProvider columns do.
-        item.setText(1, "1.16.2+fsp.6.5.0");
+        item.setText(1, "1.16.2+build.6.5.0");
         item.setText(2, "Arm DSP Library Source");
 
         java.util.Map<String, Object> state = serialize(item);
 
         assertThatWire(state).node("texts[0]").isEqualTo("Arm DSP Library Source");
-        assertThatWire(state).node("texts[1]").isEqualTo("1.16.2+fsp.6.5.0");
+        assertThatWire(state).node("texts[1]").isEqualTo("1.16.2+build.6.5.0");
         assertThatWire(state).node("texts[2]").isEqualTo("Arm DSP Library Source");
     }
 
@@ -239,7 +239,7 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         doAnswer(invocation -> null).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
 
         TreeItem item = new TreeItem(tree, SWT.NONE);
-        item.setText(new String[] { "Renesas RA C/C++ Project", "An FSP solution for Renesas RA" });
+        item.setText(new String[] { "Embedded C/C++ Project", "A project for an embedded target" });
 
         serialize(item);
 
@@ -264,7 +264,7 @@ class TreeOwnerDrawSerializeTest extends SerializeTestBase {
         doAnswer(invocation -> null).when(treeImpl).sendEvent(eq(SWT.PaintItem), any(Event.class));
 
         TreeItem item = new TreeItem(tree, SWT.NONE);
-        item.setText(new String[] { "Renesas RA C/C++ Project", "An FSP solution for Renesas RA" });
+        item.setText(new String[] { "Embedded C/C++ Project", "A project for an embedded target" });
 
         serialize(item);
         assertThat(treeImpl.ownerDrawItemHeight).isEqualTo(58);

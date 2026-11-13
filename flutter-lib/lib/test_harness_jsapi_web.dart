@@ -12,7 +12,7 @@ import 'dart:js_interop_unsafe';
 ///   const all  = window.evolveTest.queryAllStates();        // String, JSON map {swt/id: V*}
 ///   const some = window.evolveTest.queryStates(['Label/9']); // String, the same map for those ids
 ///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
-///   window.evolveTest.pickTheme('hb', 'dark');              // as picking it on the toolbar palette
+///   window.evolveTest.pickTheme('blackandred', 'dark');     // as picking it on the toolbar palette
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
 void registerTestQueryJsApi({
   required String Function() styledTextPerfJson,

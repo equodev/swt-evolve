@@ -51,25 +51,25 @@ class ThemePickFromFlutterTest {
     @Test
     void a_pick_is_kept_and_echoed_back() throws Exception {
         pick(flags -> {
-            flags.theme_name = "hb";
+            flags.theme_name = "blackandred";
             flags.force_theme = "light";
         });
 
         List<Map<String, Object>> echoes = echoes();
         assertThat(echoes).hasSize(1);
-        assertThat(echoes.get(0).get("theme_name")).isEqualTo("hb");
+        assertThat(echoes.get(0).get("theme_name")).isEqualTo("blackandred");
         assertThat(echoes.get(0).get("force_theme")).isEqualTo("light");
-        assertThat(Config.getConfigFlags().theme_name).isEqualTo("hb");
+        assertThat(Config.getConfigFlags().theme_name).isEqualTo("blackandred");
     }
 
     @Test
     void picking_the_same_theme_again_is_not_echoed() throws Exception {
-        Consumer<ConfigFlags> cursorDark = flags -> {
-            flags.theme_name = "cursor";
+        Consumer<ConfigFlags> greyAndBlackDark = flags -> {
+            flags.theme_name = "greyandblack";
             flags.force_theme = "dark";
         };
-        pick(cursorDark);
-        pick(cursorDark);
+        pick(greyAndBlackDark);
+        pick(greyAndBlackDark);
 
         assertThat(echoes()).hasSize(1);
     }

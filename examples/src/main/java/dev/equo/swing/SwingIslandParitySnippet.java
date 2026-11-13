@@ -103,7 +103,7 @@ import org.eclipse.swt.widgets.TreeItem;
  *
  * <pre>
  * ./gradlew :swing-island:runIslandWebExample -PmainClass=dev.equo.swing.SwingIslandParitySnippet \
- *     -Dswt.evolve.theme_name=hb -Dswt.evolve.force_theme=light
+ *     -Dswt.evolve.theme_name=blackandred -Dswt.evolve.force_theme=light
  * </pre>
  *
  * <p>{@code -Dparity.tab=<n>} opens a tab other than the first. Without the island launch the

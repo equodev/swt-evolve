@@ -30,11 +30,11 @@ ThemeData _built(NamedTheme named, {required bool dark}) {
 }
 
 void main() {
-  group('hb: a drop-down list highlights like a menu', () {
+  group('blackandred: a drop-down list highlights like a menu', () {
     for (final dark in [false, true]) {
       test('${dark ? 'dark' : 'light'}: hovered and selected items share the menu item hover colour', () {
-        final hb = kNamedThemes['hb']!;
-        final theme = hb.applyWidgetOverrides(_built(hb, dark: dark), dark: dark);
+        final blackAndRed =kNamedThemes['blackandred']!;
+        final theme = blackAndRed.applyWidgetOverrides(_built(blackAndRed,dark: dark), dark: dark);
         final menuHover = theme.extension<MenuItemThemeExtension>()!.hoverBackgroundColor;
         final combo = theme.extension<ComboThemeExtension>()!;
         final ccombo = theme.extension<CComboThemeExtension>()!;
@@ -48,7 +48,7 @@ void main() {
   });
 
   group('a named theme without widget overrides', () {
-    for (final entry in kNamedThemes.entries.where((e) => e.key != 'hb')) {
+    for (final entry in kNamedThemes.entries.where((e) => e.key != 'blackandred')) {
       for (final dark in [false, true]) {
         test('${entry.key} ${dark ? 'dark' : 'light'} keeps the theme it was built with', () {
           final theme = _built(entry.value, dark: dark);
@@ -104,12 +104,12 @@ void main() {
     }
   });
 
-  test('hb dark carries the design colours into the widget themes', () {
+  test('blackandred dark carries the design colours into the widget themes', () {
     resetConfigFlags();
-    setConfigFlags(ConfigFlags()..theme_name = 'hb');
+    setConfigFlags(ConfigFlags()..theme_name = 'blackandred');
     addTearDown(resetConfigFlags);
-    final hb = kNamedThemes['hb']!;
-    final theme = hb.applyWidgetOverrides(_built(hb, dark: true), dark: true);
+    final blackAndRed =kNamedThemes['blackandred']!;
+    final theme = blackAndRed.applyWidgetOverrides(_built(blackAndRed,dark: true), dark: true);
     const focus = Color(0xFFFF52A8);
 
     final ctab = theme.extension<CTabFolderThemeExtension>()!;
@@ -132,12 +132,12 @@ void main() {
     expect(theme.extension<CComboThemeExtension>()!.selectedItemBackgroundColor, const Color(0xFF3A343E));
   });
 
-  test('hb light uses the darker focus pink', () {
+  test('blackandred light uses the darker focus pink', () {
     resetConfigFlags();
-    setConfigFlags(ConfigFlags()..theme_name = 'hb');
+    setConfigFlags(ConfigFlags()..theme_name = 'blackandred');
     addTearDown(resetConfigFlags);
-    final hb = kNamedThemes['hb']!;
-    final theme = hb.applyWidgetOverrides(_built(hb, dark: false), dark: false);
+    final blackAndRed =kNamedThemes['blackandred']!;
+    final theme = blackAndRed.applyWidgetOverrides(_built(blackAndRed,dark: false), dark: false);
     expect(theme.extension<ButtonThemeExtension>()!.focusRingColor, const Color(0xFFE0338A));
     expect(theme.extension<CTabFolderThemeExtension>()!.tabSelectedBackgroundColor, const Color(0xFFFFFFFF));
   });

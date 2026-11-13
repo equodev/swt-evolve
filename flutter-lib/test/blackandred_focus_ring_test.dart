@@ -10,7 +10,7 @@ import 'package:swtflutter/src/gen/treeitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
-const _hbDarkFocus = Color(0xFFFF52A8);
+const _blackAndRedDarkFocus = Color(0xFFFF52A8);
 const _equoDarkFocus = Color(0xFF6BA3FF);
 
 VRectangle _bounds(int w, int h) => VRectangle()
@@ -66,31 +66,31 @@ void _useTheme(String name, {bool? focusIndicators}) {
 void main() {
   tearDown(resetConfigFlags);
 
-  group('hb dark', () {
-    setUp(() => _useTheme('hb'));
+  group('blackandred dark', () {
+    setUp(() => _useTheme('blackandred'));
 
     testWidgets('a tree rings its selected row once it holds focus', (tester) async {
       await tester.pumpWidget(_app(TreeSwt<VTree>(value: _tree())));
       await tester.pump();
-      expect(_ringsIn(_hbDarkFocus), findsNothing);
+      expect(_ringsIn(_blackAndRedDarkFocus), findsNothing);
 
       await tester.tap(find.text('Node 0'));
       await tester.pump();
       await tester.pump();
 
-      expect(_ringsIn(_hbDarkFocus), findsOneWidget);
+      expect(_ringsIn(_blackAndRedDarkFocus), findsOneWidget);
     });
 
     testWidgets('a push button shows the ring while it holds focus', (tester) async {
       await tester.pumpWidget(_app(ButtonSwt<VButton>(value: _button())));
       await tester.pump();
-      expect(_ringsIn(_hbDarkFocus), findsNothing);
+      expect(_ringsIn(_blackAndRedDarkFocus), findsNothing);
 
       Focus.of(tester.element(find.text('OK'))).requestFocus();
       await tester.pump();
       await tester.pump();
 
-      expect(_ringsIn(_hbDarkFocus), findsOneWidget);
+      expect(_ringsIn(_blackAndRedDarkFocus), findsOneWidget);
     });
   });
 
@@ -112,7 +112,7 @@ void main() {
     _useTheme('equo');
     await focusTreeRowAndButton(tester);
     expect(_ringsIn(_equoDarkFocus), findsNothing);
-    expect(_ringsIn(_hbDarkFocus), findsNothing);
+    expect(_ringsIn(_blackAndRedDarkFocus), findsNothing);
   });
 
   testWidgets('the flag turns rings on for any theme, in its own focus colour', (tester) async {
@@ -121,9 +121,9 @@ void main() {
     expect(_ringsIn(_equoDarkFocus), findsWidgets);
   });
 
-  testWidgets('the flag turns rings off for hb', (tester) async {
-    _useTheme('hb', focusIndicators: false);
+  testWidgets('the flag turns rings off for blackandred', (tester) async {
+    _useTheme('blackandred', focusIndicators: false);
     await focusTreeRowAndButton(tester);
-    expect(_ringsIn(_hbDarkFocus), findsNothing);
+    expect(_ringsIn(_blackAndRedDarkFocus), findsNothing);
   });
 }

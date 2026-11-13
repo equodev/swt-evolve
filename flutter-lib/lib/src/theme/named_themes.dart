@@ -93,10 +93,10 @@ final Map<String, NamedTheme> kNamedThemes = {
         createColorSchemeExtension(createDarkColorScheme()),
     typeScale: kCompactTypeScale,
   ),
-  'hb': NamedTheme(
-    lightColorScheme: _hbLightScheme(),
-    darkColorScheme: _hbDarkScheme(),
-    lightColorSchemeExtension: createColorSchemeExtension(_hbLightScheme()).copyWith(
+  'blackandred': NamedTheme(
+    lightColorScheme: _blackAndRedLightScheme(),
+    darkColorScheme: _blackAndRedDarkScheme(),
+    lightColorSchemeExtension: createColorSchemeExtension(_blackAndRedLightScheme()).copyWith(
       primaryHovered: const Color(0xFF74647F),
       primaryVariantDisabled: const Color(0xFFEFECF3),
       secondaryPressed: const Color(0xFFCAC5D2),
@@ -116,7 +116,7 @@ final Map<String, NamedTheme> kNamedThemes = {
       compositePanelBorderColor: const Color(0xFFE3E0E8),
       neutral: const Color(0xFFEFECF3),
     ),
-    darkColorSchemeExtension: createColorSchemeExtension(_hbDarkScheme()).copyWith(
+    darkColorSchemeExtension: createColorSchemeExtension(_blackAndRedDarkScheme()).copyWith(
       primaryHovered: const Color(0xFF74647F),
       primaryVariantDisabled: const Color(0x66000000),
       secondaryPressed: const Color(0xFF5A4F62),
@@ -137,14 +137,14 @@ final Map<String, NamedTheme> kNamedThemes = {
       neutral: const Color(0xFF323134),
     ),
     darkTitleBarColor: const Color(0xFF000000),
-    lightWidgetOverrides: _hbLightWidgets,
-    darkWidgetOverrides: _hbDarkWidgets,
+    lightWidgetOverrides: _blackAndRedLightWidgets,
+    darkWidgetOverrides: _blackAndRedDarkWidgets,
     focusIndicators: true,
   ),
-  'cursor': NamedTheme(
-    lightColorScheme: _cursorLightScheme(),
-    darkColorScheme: _cursorDarkScheme(),
-    darkColorSchemeExtension: createColorSchemeExtension(_cursorDarkScheme()).copyWith(
+  'greyandblack': NamedTheme(
+    lightColorScheme: _greyAndBlackLightScheme(),
+    darkColorScheme: _greyAndBlackDarkScheme(),
+    darkColorSchemeExtension: createColorSchemeExtension(_greyAndBlackDarkScheme()).copyWith(
       onSurfaceVariantDisabled: const Color(0xFF4A4A4A),
     ),
   ),
@@ -245,7 +245,7 @@ final Map<String, NamedTheme> kNamedThemes = {
 };
 
 // Dark-first muted violet; light is derived, with the focus pink darkened for 3:1 on white.
-ColorScheme _hbLightScheme() => createLightColorScheme().copyWith(
+ColorScheme _blackAndRedLightScheme() => createLightColorScheme().copyWith(
   primary: const Color(0xFF5D4D68),
   onPrimary: const Color(0xFFFFFFFF),
   primaryContainer: const Color(0xFF4A3D53),
@@ -270,7 +270,7 @@ ColorScheme _hbLightScheme() => createLightColorScheme().copyWith(
   onErrorContainer: const Color(0xFF5A2220),
 );
 
-ColorScheme _hbDarkScheme() => createDarkColorScheme().copyWith(
+ColorScheme _blackAndRedDarkScheme() => createDarkColorScheme().copyWith(
   primary: const Color(0xFF5D4D68),
   onPrimary: const Color(0xFFE5E0EB),
   primaryContainer: const Color(0xFF80708B),
@@ -318,7 +318,7 @@ ColorScheme _pinkFdDarkScheme() => createDarkColorScheme().copyWith(
   onSecondaryContainer: const Color(0xFFF8D5E4),
 );
 
-ColorScheme _cursorLightScheme() => ColorScheme.fromSeed(
+ColorScheme _greyAndBlackLightScheme() => ColorScheme.fromSeed(
   seedColor: const Color(0xFF626262),
   brightness: Brightness.light,
 ).copyWith(
@@ -354,7 +354,7 @@ ColorScheme _cursorLightScheme() => ColorScheme.fromSeed(
   scrim: const Color(0xFF000000),
 );
 
-ColorScheme _cursorDarkScheme() => const ColorScheme(
+ColorScheme _greyAndBlackDarkScheme() => const ColorScheme(
   brightness: Brightness.dark,
   primary: Color(0xFF767676),
   onPrimary: Color(0xFFF0F0F0),
@@ -682,7 +682,7 @@ ThemeData _withExtensions(ThemeData theme, List<ThemeExtension<dynamic>?> replac
 
 const _transparent = Color(0x00000000);
 
-ThemeData _hbDarkWidgets(ThemeData t) {
+ThemeData _blackAndRedDarkWidgets(ThemeData t) {
   return _withExtensions(t, [
     t.extension<CTabFolderThemeExtension>()?.copyWith(
       tabBarBorderColor: _transparent,
@@ -763,7 +763,7 @@ ThemeData _hbDarkWidgets(ThemeData t) {
   ]);
 }
 
-ThemeData _hbLightWidgets(ThemeData t) {
+ThemeData _blackAndRedLightWidgets(ThemeData t) {
   return _withExtensions(t, [
     t.extension<CTabFolderThemeExtension>()?.copyWith(
       tabBarBorderColor: _transparent,
