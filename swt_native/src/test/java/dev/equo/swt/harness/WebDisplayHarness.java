@@ -67,6 +67,28 @@ public final class WebDisplayHarness {
         return this;
     }
 
+    /** The host the browser loads the Display's page from, when not the server's own name for itself. */
+    private String pageHost;
+    private boolean allowPopups;
+
+    /** Loads the Display's page from {@code host} (an address or another name for this machine). Call before {@link #boot()}. */
+    public WebDisplayHarness pageHost(String host) {
+        pageHost = host;
+        return this;
+    }
+
+    /** Lets the page open windows with no user gesture behind them, as Java's shell windows are. Call before {@link #boot()}. */
+    public WebDisplayHarness allowPopups() {
+        allowPopups = true;
+        return this;
+    }
+
+    /** Sets a JVM-wide property until {@link #teardown()}; for what the Display reads while it runs. */
+    public WebDisplayHarness property(String key, String value) {
+        override(key, value);
+        return this;
+    }
+
     public Display boot() {
         File webDir = WidgetFlutterHarness.resolveWebDir();
         // The browser the build configured (CI's runs Chrome without its sandbox), read before
@@ -84,6 +106,7 @@ public final class WebDisplayHarness {
         dev.equo.swt.harness.Channels.on(comm, FRAME_COST_RESPONSE, byte[].class, bytes -> complete(bytes, "costId"));
         dev.equo.swt.harness.Channels.on(comm, STYLEDTEXT_PERF_RESPONSE, byte[].class, bytes -> complete(bytes, "perfId"));
         String url = FlutterBridgeSpi.getWebServerUrl(display);
+        if (pageHost != null) url = url.replaceFirst("://localhost:", "://" + pageHost + ":");
         String binary = HeadlessChrome.resolveBinary(configured);
         if (binary == null) throw new IllegalStateException("Chrome/Chromium not found; set -Dequo.swt.browser=<path>");
         boolean headless = Boolean.parseBoolean(System.getProperty("harness.web.headless", "true"));
@@ -123,6 +146,7 @@ public final class WebDisplayHarness {
             List<String> args = new ArrayList<>(List.of("--remote-debugging-port=0",
                     "--disable-frame-rate-limit", "--disable-gpu-vsync"));
             if (deviceScaleFactor > 0) args.add("--force-device-scale-factor=" + deviceScaleFactor);
+            if (allowPopups) args.add("--disable-popup-blocking");
             chrome = HeadlessChrome.launch(binary, openUrl, headless, console,
                     console ? HeadlessChrome.Io.INHERIT : HeadlessChrome.Io.DISCARD, args.toArray(new String[0]));
         } catch (IOException e) {

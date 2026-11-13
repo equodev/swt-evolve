@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.nio.ByteBuffer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +35,7 @@ class WebWindowPayloadNativeTest {
     @Test
     @DisplayName("a detached window is opened at the shell, carrying the theme")
     void shellWindowUrlNamesTheShellAndTheTheme() {
-        String url = WebDisplayBridge.shellWindowUrl("http://localhost:8080", 4242L, "dark", false);
+        String url = WebDisplayBridge.shellWindowUrl(4242L, "dark", false);
 
         assertThat(url)
                 .as("rooted at the shell, or the window renders the whole Display a second time")
@@ -51,8 +52,23 @@ class WebWindowPayloadNativeTest {
     @Test
     @DisplayName("the semantics toggle reaches a detached window too, so E2E can find it")
     void shellWindowUrlCarriesTheSemanticsToggle() {
-        assertThat(WebDisplayBridge.shellWindowUrl("http://localhost:8080", 7L, "light", true))
+        assertThat(WebDisplayBridge.shellWindowUrl(7L, "light", true))
                 .contains("enableTestSemantics=true");
+    }
+
+    @Test
+    @DisplayName("a detached window opens on the origin of the page that opens it, whatever that is")
+    void shellWindowUrlKeepsThePageOrigin() {
+        String url = WebDisplayBridge.shellWindowUrl(7L, "light", false);
+
+        for (String page : new String[]{"http://127.0.0.1:8080/", "http://build-host.example:8080/"}) {
+            URI opened = URI.create(page).resolve(url);
+            assertThat(opened.getScheme() + "://" + opened.getAuthority() + "/")
+                    .as("the served pages isolate themselves from other origins: a window on another "
+                            + "origin is one the page loses its handle to, so it can neither see nor close it")
+                    .isEqualTo(page);
+            assertThat(opened.getQuery()).contains("widgetName=Shell").contains("widgetId=7");
+        }
     }
 
     /** {@code v} as the client writes an id: a zigzag varint. */

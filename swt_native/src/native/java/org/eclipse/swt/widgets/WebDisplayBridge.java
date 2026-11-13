@@ -324,7 +324,7 @@ public class WebDisplayBridge extends DisplayBridge {
     @Override
     protected ShellWindow createShellWindow(Shell shell) {
         Rectangle bounds = shell.getBounds();
-        String url = shellWindowUrl(webServer.getApplicationUrl(), shell.hashCode(),
+        String url = shellWindowUrl(shell.hashCode(),
                 dev.equo.swt.Config.windowTheme(forDisplay.systemAppearance), isTestSemanticsEnabled());
         WebShellWindow window = new WebShellWindow(shell);
         window.command(dev.equo.swt.WireTable.CHANNEL_OPEN_WINDOW, Java8.map(
@@ -349,9 +349,14 @@ public class WebDisplayBridge extends DisplayBridge {
      * paints its first frames before anything arrives on the socket. Without it the window opens
      * light and then corrects itself, which against a dark application reads as a broken window
      * rather than as a flash.
+     *
+     * <p>Relative, so the browser resolves it against the page that opens the window: the served
+     * pages isolate themselves from other origins, and a window on any origin but the page's own
+     * (the page loaded through {@code 127.0.0.1}, a host name or a proxy, the window at
+     * {@code localhost}) is one the page can neither see nor close.
      */
-    static String shellWindowUrl(String baseUrl, long shellId, String theme, boolean testSemantics) {
-        String url = baseUrl + "/?widgetName=Shell&widgetId=" + shellId + "&theme=" + theme;
+    static String shellWindowUrl(long shellId, String theme, boolean testSemantics) {
+        String url = "./?widgetName=Shell&widgetId=" + shellId + "&theme=" + theme;
         if (testSemantics) url += "&enableTestSemantics=true";
         return url;
     }
