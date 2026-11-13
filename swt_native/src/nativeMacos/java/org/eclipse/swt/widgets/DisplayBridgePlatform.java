@@ -306,4 +306,8 @@ final class DisplayBridgePlatform {
         static void start() {
         }
     }
+
+    /** Nothing to do: the fragment's p2.inf writes the archive lines, relative to Contents/MacOS. */
+    static void configureClassDataArchive() {
+    }
 }

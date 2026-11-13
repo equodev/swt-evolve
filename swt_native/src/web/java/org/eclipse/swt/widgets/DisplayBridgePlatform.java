@@ -73,4 +73,8 @@ final class DisplayBridgePlatform {
     static Point defaultShellSize(Rectangle screen, DartShell shell) {
         return new Point(screen.width * 5 / 8, screen.height * 5 / 8);
     }
+
+    /** Nothing to do: a web-only jar is not started by a product launcher. */
+    static void configureClassDataArchive() {
+    }
 }

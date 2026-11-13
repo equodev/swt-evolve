@@ -145,4 +145,9 @@ final class DisplayBridgePlatform {
     private static boolean nativeLibraryOff() {
         return "false".equals(System.getProperty(LOAD_LIBRARY));
     }
+
+    /** Keeps the launcher .ini's class-data-sharing archive lines in line with where the product is installed. */
+    static void configureClassDataArchive() {
+        dev.equo.swt.ClassDataArchive.configureOnce();
+    }
 }
