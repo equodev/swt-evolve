@@ -8,6 +8,7 @@ import dev.equo.swt.size.ToolItemSizes;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,6 +80,33 @@ class ToolItemUniformIconSizeTest {
         assertThat(barSize(SWT.PUSH, 48)).as("a larger image measures the same").isEqualTo(themed);
         assertThat(barSize(SWT.DROP_DOWN, 16)).as("a drop-down keeps its arrow's room")
                 .isEqualTo(new Point(THEME_ICON + PAD_W + ARROW, THEME_ICON + PAD_H));
+    }
+
+    @Test
+    void on_a_bigger_image_keeps_the_items_bounds() {
+        uniform(true);
+        ToolBar bar = new ToolBar(DartMocks.dartShell(), SWT.HORIZONTAL);
+        ToolItem item = new ToolItem(bar, SWT.PUSH);
+        item.setImage(new Image(DartMocks.dartDisplay(), 16, 16));
+        Rectangle small = item.getBounds();
+
+        item.setImage(new Image(DartMocks.dartDisplay(), 48, 48));
+
+        assertThat(item.getBounds()).isEqualTo(small);
+        assertThat(small.height).isEqualTo(THEME_ICON + PAD_H);
+    }
+
+    @Test
+    void off_a_bigger_image_makes_the_item_taller() {
+        uniform(false);
+        ToolBar bar = new ToolBar(DartMocks.dartShell(), SWT.HORIZONTAL);
+        ToolItem item = new ToolItem(bar, SWT.PUSH);
+        item.setImage(new Image(DartMocks.dartDisplay(), 16, 16));
+        int small = item.getBounds().height;
+
+        item.setImage(new Image(DartMocks.dartDisplay(), 48, 48));
+
+        assertThat(item.getBounds().height).isEqualTo(small + 48 - 16);
     }
 
     @Test
