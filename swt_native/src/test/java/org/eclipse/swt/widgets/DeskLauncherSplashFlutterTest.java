@@ -69,6 +69,68 @@ class DeskLauncherSplashFlutterTest {
         assertThat(desk.mainWindowVisibility).containsExactly(false, true);
     }
 
+    /** A login dialog parented to a shell the application never shows, before any workbench exists. */
+    @Test
+    void aDialogOverAHiddenShellTakesTheDisplaysWindow() {
+        TestDeskBridge desk = install();
+        Shell hidden = new Shell(display, SWT.ON_TOP);
+        Shell login = new Shell(hidden, SWT.RESIZE | SWT.TITLE | SWT.CLOSE | SWT.ON_TOP);
+        login.setBounds(535, 140, 850, 800);
+        login.setVisible(true);
+
+        assertThat(desk.hostsAsMainShell(login)).as("the login is the shell of the window it is drawn in").isTrue();
+        assertThat(desk.windowBounds)
+                .as("the window has the place and size the login's own window would have")
+                .last().isEqualTo(new Rectangle(535, 140, 850, 800));
+        assertThat(desk.mainWindowVisibility).as("the window is never taken off screen").doesNotContain(false);
+    }
+
+    @Test
+    void theShellOpenedAfterThatDialogKeepsItsOwnBounds() {
+        TestDeskBridge desk = install();
+        Shell hidden = new Shell(display, SWT.ON_TOP);
+        Shell login = new Shell(hidden, SWT.RESIZE | SWT.TITLE | SWT.CLOSE | SWT.ON_TOP);
+        login.setBounds(535, 140, 850, 800);
+        login.setVisible(true);
+        clientReady(desk.comm, 850, 800);
+        login.dispose();
+
+        Shell workbench = new Shell(display, SWT.SHELL_TRIM);
+        workbench.setBounds(100, 60, 1600, 900);
+        workbench.setVisible(true);
+        while (display.readAndDispatch()) {
+            // drain
+        }
+
+        assertThat(workbench.getBounds()).as("not fitted to the window the login had").isEqualTo(new Rectangle(100, 60, 1600, 900));
+        assertThat(desk.windowBounds).last().isEqualTo(new Rectangle(100, 60, 1600, 900));
+    }
+
+    @Test
+    void aDialogOverAMainShellHiddenAgainTakesTheDisplaysWindow() {
+        TestDeskBridge desk = install();
+        Shell main = new Shell(display, SWT.SHELL_TRIM);
+        main.setBounds(100, 60, 1600, 900);
+        main.setVisible(true);
+        main.setVisible(false);
+        Shell dialog = new Shell(main, SWT.DIALOG_TRIM);
+        dialog.setBounds(535, 140, 850, 800);
+        dialog.setVisible(true);
+
+        assertThat(desk.hostsAsMainShell(dialog)).as("drawn in a hidden window, it would be on no screen").isTrue();
+        assertThat(desk.mainWindowVisibility).last().isEqualTo(true);
+        assertThat(desk.windowBounds).last().isEqualTo(new Rectangle(535, 140, 850, 800));
+    }
+
+    private static void clientReady(RecordingComm comm, int width, int height) {
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
+        p.width = width;
+        p.height = height;
+        p.isFirst = true;
+        comm.fireContaining("ClientReady", p);
+    }
+
     @Test
     void theSplashIsLeftToItsOwnWindowAndIsNeverTheMainShell() {
         TestDeskBridge desk = install();
@@ -133,6 +195,7 @@ class DeskLauncherSplashFlutterTest {
     private static final class TestDeskBridge extends DeskDisplayBridge {
         final RecordingComm comm = new RecordingComm();
         final List<Boolean> mainWindowVisibility = new ArrayList<>();
+        final List<Rectangle> windowBounds = new ArrayList<>();
 
         TestDeskBridge(DartDisplay display) {
             super(display);
@@ -168,6 +231,7 @@ class DeskLauncherSplashFlutterTest {
 
         @Override
         protected void forwardWindowBounds(Rectangle bounds) {
+            windowBounds.add(bounds);
         }
 
         @Override

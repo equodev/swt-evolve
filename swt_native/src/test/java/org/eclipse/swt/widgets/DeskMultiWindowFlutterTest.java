@@ -267,6 +267,20 @@ class DeskMultiWindowFlutterTest {
     }
 
     @Test
+    @DisplayName("with every shell in its own window, a dialog over a hidden shell keeps a window of its own")
+    void aDialogOverAHiddenShellKeepsItsOwnWindowWhenEveryShellHasOne() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        TestDeskBridge desk = install();
+        Shell hidden = new Shell(display, SWT.ON_TOP);
+        Shell login = new Shell(hidden, SWT.RESIZE | SWT.TITLE | SWT.CLOSE | SWT.ON_TOP);
+        login.setBounds(535, 140, 850, 800);
+        login.setVisible(true);
+
+        assertThat(desk.hostsAsMainShell(login)).as("the policy, not the hidden holder, places it").isFalse();
+        assertThat(desk.opened).extracting(w -> w.widgetId).containsExactly((long) login.hashCode());
+    }
+
+    @Test
     @DisplayName("a detached child of an inline shell is owned by the window that inline shell is in")
     void childOfInlineShellIsOwnedByTheWindowItIsDrawnInto() {
         TestDeskBridge desk = install();

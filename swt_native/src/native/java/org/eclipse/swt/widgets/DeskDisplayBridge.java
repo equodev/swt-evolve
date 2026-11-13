@@ -941,24 +941,52 @@ public class DeskDisplayBridge extends DisplayBridge {
     /** Whether any shell has been shown in the Display's window yet. */
     private boolean shownAShell;
 
+    /** Whether the shell last shown in the Display's window was a dialog lent it (see {@link #mainShell}). */
+    private boolean shownALentWindow;
+
     private boolean windowHidden;
 
+    /**
+     * A hidden holder lends the Display's window to a titled dialog shown over it that the policy
+     * leaves in that window. Natively the dialog is a window of its own; drawn in a hidden window it
+     * would be on no screen at all. That covers a login over a shell the application never shows,
+     * opened before any workbench, and a dialog over a main shell hidden again.
+     */
+    @Override
+    protected Shell dialogLentTheWindow(DartDisplay display, Shell holder) {
+        for (Shell shell : display._shells()) {
+            if (shell != null && !shell.isDisposed() && shell.getVisible() && shell.getParent() == holder
+                    && (shell.getStyle() & SWT.TITLE) != 0 && !isShellWindowed(shell) && !windowEligible(shell)) {
+                return shell;
+            }
+        }
+        return null;
+    }
+
+    /** Only a dialog lent the window is a main shell with a parent. */
+    private static boolean isLentTheWindow(Shell main) {
+        return main.getParent() != null;
+    }
+
     /** The window follows its main shell's title, and a shell arriving from a window of its own
-     *  brings that window's geometry. A disposed holder never hides it. */
+     *  brings that window's geometry, as do a dialog lent the window and the shell after it: the
+     *  window was never sized for either. A disposed holder never hides it. */
     @Override
     protected void syncDisplayWindow(DartDisplay display, java.util.Set<Shell> leftOwnWindow) {
         if (shownShell != null && shownShell.isDisposed()) shownShell = null;
         if (!hasNativeWindow()) return;
         Shell main = mainShell(display);
         if (main != null && !main.isDisposed() && main.getVisible() && main != shownShell) {
-            if (shownAShell) {
+            boolean ownGeometry = isLentTheWindow(main) || shownALentWindow;
+            if (shownAShell || ownGeometry) {
                 setMainWindowTitle(main.getText());
-                if (leftOwnWindow.contains(main)) takeOverWindowGeometry(main);
+                if (ownGeometry || leftOwnWindow.contains(main)) takeOverWindowGeometry(main);
             } else {
                 placeWindowForFirstShownShell(main);
             }
             shownShell = main;
             shownAShell = true;
+            shownALentWindow = isLentTheWindow(main);
         }
         ShownShells shown = shownShells(display);
         boolean drawsAShell = shown == ShownShells.DRAWN_IN_WINDOW;

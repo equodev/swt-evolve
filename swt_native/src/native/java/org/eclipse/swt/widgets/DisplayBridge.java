@@ -322,10 +322,23 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Native SWT's default size on {@code monitor}: a top-level shell centered on it, a dialog where it is. */
     private static Rectangle defaultBounds(Rectangle monitor, DartShell shell) {
-        Point size = DisplayBridgePlatform.defaultShellSize(monitor, shell);
+        Point size = newShellSize(monitor, shell);
         if (shell.parent != null) return new Rectangle(shell.bounds.x, shell.bounds.y, size.x, size.y);
         return new Rectangle(monitor.x + (monitor.width - size.x) / 2, monitor.y + (monitor.height - size.y) / 2,
                 size.x, size.y);
+    }
+
+    /**
+     * A shell made around the launcher's window has that window's size, which the launcher made the
+     * size of its splash image: the image the workbench sets as the shell's background.
+     */
+    private static Point newShellSize(Rectangle monitor, DartShell shell) {
+        org.eclipse.swt.graphics.Image image = shell.backgroundImage;
+        if (image != null && !image.isDisposed() && NativeWindowShells.wraps(shell.getApi())) {
+            Rectangle size = image.getBounds();
+            return new Point(size.width, size.height);
+        }
+        return DisplayBridgePlatform.defaultShellSize(monitor, shell);
     }
 
     /** Whether {@code shell} still has the size it was created with, the application never having set one. */
@@ -341,12 +354,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** Re-applies the default size on the now real monitor ({@code display.bounds}) to the shells nobody has sized. */
     protected void resizeUnsizedShells(DartDisplay display) {
         applyClientBounds(() -> {
-            for (Shell shell : new java.util.ArrayList<>(unsizedShells)) {
-                if (shell.isDisposed()) continue;
-                Rectangle sized = defaultBounds(display.bounds, (DartShell) shell.getImpl());
-                if (!sized.equals(shell.getBounds())) shell.setBounds(sized);
-            }
+            for (Shell shell : new java.util.ArrayList<>(unsizedShells)) resizeUnsized(display, shell);
         });
+    }
+
+    private void resizeUnsized(DartDisplay display, Shell shell) {
+        if (shell.isDisposed()) return;
+        Rectangle sized = defaultBounds(display.bounds, (DartShell) shell.getImpl());
+        if (!sized.equals(shell.getBounds())) shell.setBounds(sized);
     }
 
     /**
@@ -1076,7 +1091,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      *  workbench creates a top-level shell it never shows ahead of its window.
      *
      *  <p>A hidden holder yields the window to a visible window-eligible top-level, which keeps it
-     *  until it is hidden itself. */
+     *  until it is hidden itself, or else to the dialog over it the surface lends the window to
+     *  ({@link #dialogLentTheWindow}). */
     protected Shell mainShell(DartDisplay display) {
         if (displayWindowTaker != null) {
             if (!displayWindowTaker.isDisposed() && displayWindowTaker.getVisible()) {
@@ -1094,7 +1110,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 return shell;
             }
         }
-        return holder;
+        Shell lent = holder != null ? dialogLentTheWindow(display, holder) : null;
+        return lent != null ? lent : holder;
+    }
+
+    /** The visible dialog over the hidden {@code holder} drawn in the Display's window in its place,
+     *  or null. None here: in the page the main shell is stretched to the viewport, a dialog is not. */
+    protected Shell dialogLentTheWindow(DartDisplay display, Shell holder) {
+        return null;
     }
 
     /** The shell that took the Display's window from a hidden holder, while it is still visible. */
@@ -2334,6 +2357,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (control instanceof DartShell) {
             Shell shell = (Shell) ((DartShell) control).getApi();
             if (visible && forDisplay != null) {
+                // Its size comes from the background image the workbench sets after making it.
+                if (NativeWindowShells.wraps(shell) && isUnsized(shell)) {
+                    applyClientBounds(() -> resizeUnsized(forDisplay, shell));
+                }
                 if (isMainShell(forDisplay, shell)) {
                     // Fill the viewport on show even if the shell opened at a stale, non-origin
                     // geometry persisted from a previous run (a maximized browser fires no resize).

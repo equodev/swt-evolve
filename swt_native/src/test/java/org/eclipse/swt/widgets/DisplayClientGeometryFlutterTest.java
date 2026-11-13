@@ -5,6 +5,7 @@ import dev.equo.swt.comm.CommService;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.RecordingComm;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.junit.jupiter.api.AfterEach;
@@ -166,6 +167,45 @@ class DisplayClientGeometryFlutterTest {
         clientReady(web.comm, 1280, 720);
 
         assertThat(login.getLocation()).isEqualTo(new Point(10, 10));
+    }
+
+    /**
+     * The launcher makes its splash window the size of the splash image and centers it on the
+     * screen; the workbench then sets that image as the background of the shell around it. In the
+     * page the splash keeps that size, so its image is drawn once rather than tiled.
+     */
+    @Test
+    void theLaunchersSplashKeepsItsImagesSizeCenteredOnTheViewport() {
+        TestWebBridge web = install();
+        Shell splash = Shell.internal_new(display, 0x5150L);
+        Image image = new Image(display, 499, 277);
+        try {
+            splash.setBackgroundImage(image);
+            splash.setVisible(true);
+
+            clientReady(web.comm, 1576, 864);
+
+            assertThat(splash.getBounds()).isEqualTo(new Rectangle(538, 293, 499, 277));
+        } finally {
+            image.dispose();
+        }
+    }
+
+    /** A relaunch: the browser has reported its viewport before the workbench makes the splash. */
+    @Test
+    void theLaunchersSplashMadeAfterTheClientReportedTakesItsImagesSizeWhenShown() {
+        TestWebBridge web = install();
+        clientReady(web.comm, 1576, 864);
+        Shell splash = Shell.internal_new(display, 0x5150L);
+        Image image = new Image(display, 499, 277);
+        try {
+            splash.setBackgroundImage(image);
+            splash.setVisible(true);
+
+            assertThat(splash.getBounds()).isEqualTo(new Rectangle(538, 293, 499, 277));
+        } finally {
+            image.dispose();
+        }
     }
 
     // ---- harness ----------------------------------------------------------------------------------
