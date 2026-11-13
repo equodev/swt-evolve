@@ -62,4 +62,7 @@ public interface WindowBridge {
     default Object windowOf(Object shell) {
         return null;
     }
+
+    /** The display's shells in the order the clients draw them, the topmost last. */
+    Object[] shellsInDrawOrder();
 }

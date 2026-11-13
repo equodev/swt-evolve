@@ -1377,6 +1377,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return null;
     }
 
+    @Override
+    public Object[] shellsInDrawOrder() {
+        return forDisplay.shellsInDrawOrder();
+    }
+
     /** Whether {@code shell} is drawn in a window of its own rather than inside the Display's. */
     boolean isShellWindowed(Shell shell) {
         return shellWindows.containsKey(shell);

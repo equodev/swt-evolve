@@ -327,11 +327,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     @Override
     public void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DartDragSource.class.getName();
-        if (!validName.equals(name)) {
+        if (!DragSource.class.getName().equals(getApi().getClass().getName()))
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
     }
 
     boolean canBeginDrag() {

@@ -4118,6 +4118,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     void setModalDialog(Dialog window, Object panel) {
     }
 
+    public Object clipboards;
+
     DisplayBridge displayBridge;
 
     dev.equo.swt.WebFlutterServer webPageServer;

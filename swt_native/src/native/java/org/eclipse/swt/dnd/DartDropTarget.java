@@ -193,11 +193,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     @Override
     public void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DartDropTarget.class.getName();
-        if (!validName.equals(name)) {
+        if (!DropTarget.class.getName().equals(getApi().getClass().getName()))
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
     }
 
     /**
@@ -418,19 +415,6 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
         if (transferAgents == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
         this.transferAgents = transferAgents;
-        // Register the types as valid drop types in Cocoa.
-        // Accumulate all of the transfer types into a list.
-        java.util.List<String> typeStrings = new ArrayList<>();
-        for (int i = 0; i < this.transferAgents.length; i++) {
-            String[] types = transferAgents[i].getTypeNames();
-            for (int j = 0; j < types.length; j++) {
-                typeStrings.add(types[j]);
-            }
-        }
-        // Convert to an NSArray of NSStrings so we can register with the Control.
-        int typeStringCount = typeStrings.size();
-        for (int i = 0; i < typeStringCount; i++) {
-        }
     }
 
     void setDropNotAllowed() {

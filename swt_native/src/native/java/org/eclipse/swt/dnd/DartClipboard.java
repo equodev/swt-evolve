@@ -93,11 +93,8 @@ public class DartClipboard implements IClipboard {
      * </ul>
      */
     public void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DartClipboard.class.getName();
-        if (!validName.equals(name)) {
+        if (!Clipboard.class.getName().equals(getApi().getClass().getName()))
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
     }
 
     /**
@@ -178,8 +175,7 @@ public class DartClipboard implements IClipboard {
      */
     public void clearContents(int clipboards) {
         checkWidget();
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return;
+        _writeSystemText(_clipboards().clearContents(this, clipboards));
     }
 
     /**
@@ -295,19 +291,9 @@ public class DartClipboard implements IClipboard {
         checkWidget();
         if (transfer == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
-        int type = (clipboards & DND.CLIPBOARD) != 0 ? DND.CLIPBOARD : DND.SELECTION_CLIPBOARD;
-        if (type == DND.CLIPBOARD && transfer instanceof TextTransfer) {
-            _syncTextFromSystemClipboard();
-        }
-        Object[] data = _webClipboardData.get(type);
-        Transfer[] transfers = _webClipboardTransfers.get(type);
-        if (data == null || transfers == null)
-            return null;
-        for (int i = 0; i < transfers.length; i++) {
-            if (_transferMatches(transfer, transfers[i]))
-                return data[i];
-        }
-        return null;
+        if ((clipboards & DND.CLIPBOARD) != 0 && transfer instanceof TextTransfer)
+            _importSystemText();
+        return _clipboards().getContents(transfer, clipboards);
     }
 
     /**
@@ -529,15 +515,7 @@ public class DartClipboard implements IClipboard {
             if (data[i] == null || dataTypes[i] == null || !dataTypes[i].validate(data[i]))
                 DND.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if ((clipboards & DND.CLIPBOARD) != 0) {
-            _webClipboardData.put(DND.CLIPBOARD, data);
-            _webClipboardTransfers.put(DND.CLIPBOARD, dataTypes);
-            _writeTextToSystemClipboard(data, dataTypes);
-        }
-        if ((clipboards & DND.SELECTION_CLIPBOARD) != 0) {
-            _webClipboardData.put(DND.SELECTION_CLIPBOARD, data);
-            _webClipboardTransfers.put(DND.SELECTION_CLIPBOARD, dataTypes);
-        }
+        _writeSystemText(_clipboards().setContents(this, data, dataTypes, clipboards));
     }
 
     /**
@@ -584,9 +562,7 @@ public class DartClipboard implements IClipboard {
      */
     public TransferData[] getAvailableTypes(int clipboards) {
         checkWidget();
-        if ((clipboards & DND.CLIPBOARD) == 0)
-            return new TransferData[0];
-        return new TransferData[0];
+        return _clipboards().getAvailableTypes(clipboards);
     }
 
     /**
@@ -607,7 +583,7 @@ public class DartClipboard implements IClipboard {
      */
     public String[] getAvailableTypeNames() {
         checkWidget();
-        return this.availableTypeNames;
+        return _clipboards().getAvailableTypeNames();
     }
 
     String[] availableTypeNames = new String[0];
@@ -632,52 +608,30 @@ public class DartClipboard implements IClipboard {
         return contents;
     }
 
-    static final java.util.Map<Integer, Object[]> _webClipboardData = new java.util.HashMap<>();
-
-    static final java.util.Map<Integer, org.eclipse.swt.dnd.Transfer[]> _webClipboardTransfers = new java.util.HashMap<>();
-
-    static boolean _transferMatches(org.eclipse.swt.dnd.Transfer a, org.eclipse.swt.dnd.Transfer b) {
-        if (a == b)
-            return true;
-        String[] an = a.getTypeNames(), bn = b.getTypeNames();
-        for (String x : an) for (String y : bn) if (x.equals(y))
-            return true;
-        return false;
-    }
-
-    private void _writeTextToSystemClipboard(Object[] data, Transfer[] dataTypes) {
-        org.eclipse.swt.widgets.DisplayBridge bridge = _displayBridge();
-        for (int i = 0; i < dataTypes.length; i++) {
-            if (dataTypes[i] instanceof TextTransfer && data[i] instanceof String) {
-                if (bridge != null)
-                    bridge.writeClipboardText((String) data[i]);
-                else
-                    org.eclipse.swt.widgets.DisplayBridge.writeSystemClipboardText((String) data[i]);
-                return;
-            }
-        }
-    }
-
-    private void _syncTextFromSystemClipboard() {
-        org.eclipse.swt.widgets.DisplayBridge bridge = _displayBridge();
-        String text = bridge == null ? null : bridge.readClipboardText();
+    private void _writeSystemText(String text) {
         if (text == null)
             return;
-        Object[] data = _webClipboardData.get(DND.CLIPBOARD);
-        Transfer[] transfers = _webClipboardTransfers.get(DND.CLIPBOARD);
-        if (data != null && transfers != null) {
-            for (int i = 0; i < transfers.length; i++) {
-                if (transfers[i] instanceof TextTransfer && text.equals(data[i]))
-                    return;
-            }
-        }
-        _webClipboardData.put(DND.CLIPBOARD, new Object[] { text });
-        _webClipboardTransfers.put(DND.CLIPBOARD, new Transfer[] { TextTransfer.getInstance() });
+        org.eclipse.swt.widgets.DisplayBridge bridge = _displayBridge();
+        if (bridge != null)
+            bridge.writeClipboardText(text);
+        else
+            org.eclipse.swt.widgets.DisplayBridge.writeSystemClipboardText(text);
+    }
+
+    private void _importSystemText() {
+        org.eclipse.swt.widgets.DisplayBridge bridge = _displayBridge();
+        if (bridge != null)
+            _clipboards().importSystemText(bridge.readClipboardText());
+    }
+
+    private ClipboardHelper _clipboards() {
+        org.eclipse.swt.widgets.DartDisplay impl = (org.eclipse.swt.widgets.DartDisplay) display.getImpl();
+        if (impl.clipboards == null)
+            impl.clipboards = new ClipboardHelper();
+        return (ClipboardHelper) impl.clipboards;
     }
 
     private org.eclipse.swt.widgets.DisplayBridge _displayBridge() {
-        if (display == null || !(display.getImpl() instanceof org.eclipse.swt.widgets.DartDisplay))
-            return null;
         Object bridge = ((org.eclipse.swt.widgets.DartDisplay) display.getImpl()).getDisplayBridge();
         return bridge instanceof org.eclipse.swt.widgets.DisplayBridge ? (org.eclipse.swt.widgets.DisplayBridge) bridge : null;
     }

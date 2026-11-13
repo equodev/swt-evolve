@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -345,8 +346,9 @@ final class AwtDropBridge {
     }
 
     /**
-     * Under Evolve a {@code ByteArrayTransfer} leaves its native bytes in {@code TransferData.data};
-     * the embedded backends' class has no such field, and this source set compiles against them too.
+     * Under Evolve {@code TransferData.data} holds a transfer's native form: bytes, or the string of a
+     * string transfer such as RTF's. The embedded backends' class has no such field, and this source set
+     * compiles against them too.
      */
     private static Object nativeData(TransferData type) {
         try {
@@ -426,6 +428,7 @@ final class AwtDropBridge {
             return null;
         }
         Object bytes = type == null ? null : nativeData(type);
+        if (bytes instanceof String) return ((String) bytes).getBytes(StandardCharsets.UTF_8);
         return bytes instanceof byte[] ? (byte[]) bytes : null;
     }
 

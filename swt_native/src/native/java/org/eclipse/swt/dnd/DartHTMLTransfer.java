@@ -67,7 +67,7 @@ public class DartHTMLTransfer extends DartByteArrayTransfer implements IHTMLTran
         if (!checkHTML(object) || !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
-        super.javaToNative(((String) object).getBytes(java.nio.charset.StandardCharsets.UTF_8), transferData);
+        transferData.data = object;
     }
 
     /**
@@ -82,8 +82,9 @@ public class DartHTMLTransfer extends DartByteArrayTransfer implements IHTMLTran
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        byte[] bytes = (byte[]) super.nativeToJava(transferData);
-        return bytes == null ? null : new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+        if (!isSupportedType(transferData) || !(transferData.data instanceof String))
+            return null;
+        return transferData.data;
     }
 
     @Override

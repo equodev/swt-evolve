@@ -221,11 +221,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     @Override
     public void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DartDropTarget.class.getName();
-        if (!validName.equals(name)) {
+        if (!DropTarget.class.getName().equals(getApi().getClass().getName()))
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
     }
 
     int DragEnter_64(long pDataObject, int grfKeyState, long pt, long pdwEffect) {

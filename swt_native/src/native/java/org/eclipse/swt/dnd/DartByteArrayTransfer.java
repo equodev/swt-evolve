@@ -161,10 +161,10 @@ public abstract class DartByteArrayTransfer extends DartTransfer implements IByt
      */
     @Override
     public void javaToNative(Object object, TransferData transferData) {
-        if (!checkByteArray(object) && !isSupportedType(transferData)) {
+        if (!checkByteArray(object) || !isSupportedType(java.util.Objects.requireNonNull(transferData))) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
-        transferData.data = object;
+        transferData.data = ((byte[]) object).clone();
     }
 
     /**
@@ -179,9 +179,10 @@ public abstract class DartByteArrayTransfer extends DartTransfer implements IByt
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        if (!isSupportedType(transferData))
+        if (!isSupportedType(transferData) || !(transferData.data instanceof byte[]))
             return null;
-        return transferData.data;
+        byte[] bytes = (byte[]) transferData.data;
+        return bytes.length == 0 ? null : bytes.clone();
     }
 
     boolean checkByteArray(Object object) {

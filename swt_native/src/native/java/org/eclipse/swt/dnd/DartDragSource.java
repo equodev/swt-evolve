@@ -249,11 +249,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
 
     @Override
     public void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DartDragSource.class.getName();
-        if (!validName.equals(name)) {
+        if (!DragSource.class.getName().equals(getApi().getClass().getName()))
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
     }
 
     static int checkStyle(int style) {
@@ -459,8 +456,8 @@ public class DartDragSource extends DartWidget implements IDragSource {
         event.doit = true;
         notifyListeners(DND.DragStart, event);
         sendDragStartResult(event.doit);
-        if (!event.doit || getTransfer().length == 0)
-            ActiveDrag.refuse(getApi());
+        if (!event.doit || getTransfer() == null || getTransfer().length == 0)
+            ActiveDrag.refuse(org.eclipse.swt.widgets.Display.getCurrent(), getApi());
         if (!event.doit || !canBeginDrag())
             return null;
         for (int i = 0; i < transferAgents.length; i++) {

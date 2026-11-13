@@ -73,9 +73,7 @@ public class DartImageTransfer extends DartByteArrayTransfer implements IImageTr
         if (!checkImage(object) || !isSupportedType(transferData)) {
             DND.error(DND.ERROR_INVALID_DATA);
         }
-        ImageData imgData = (ImageData) object;
-        Image image = new Image(DartDisplay.getCurrent(), imgData);
-        image.dispose();
+        transferData.data = ((ImageData) object).clone();
     }
 
     /**
@@ -90,7 +88,9 @@ public class DartImageTransfer extends DartByteArrayTransfer implements IImageTr
      */
     @Override
     public Object nativeToJava(TransferData transferData) {
-        return null;
+        if (!isSupportedType(transferData) || !(transferData.data instanceof ImageData))
+            return null;
+        return ((ImageData) transferData.data).clone();
     }
 
     @Override

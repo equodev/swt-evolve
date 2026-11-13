@@ -338,11 +338,8 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
 
     @Override
     public void checkSubclass() {
-        String name = getClass().getName();
-        String validName = DartDropTarget.class.getName();
-        if (!validName.equals(name)) {
+        if (!DropTarget.class.getName().equals(getApi().getClass().getName()))
             DND.error(SWT.ERROR_INVALID_SUBCLASS);
-        }
     }
 
     void drag_data_received(long widget, long context, int x, int y, long selection_data, int info, int time) {
@@ -606,6 +603,7 @@ public class DartDropTarget extends DartWidget implements IDropTarget {
     public void setTransfer(Transfer... transferAgents) {
         if (transferAgents == null)
             DND.error(SWT.ERROR_NULL_ARGUMENT);
+        this.transferAgents = transferAgents;
     }
 
     /**

@@ -1202,6 +1202,268 @@ class DeskMultiWindowFlutterTest {
         assertThat(sent).containsExactly("image", "over", "over", "leave", "image", "over");
     }
 
+    @Test
+    @DisplayName("a drag cancelled over another window leaves it and ends with nothing dropped; nothing it reports after counts")
+    void aCancelledDragLeavesTheOtherWindowAndEnds() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        dragCancel(desk, source);
+        dragCancel(desk, source);
+        inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragImage"), pngEvent());
+        dragMove(desk, source, 140, 260);
+        dragRelease(desk, source, 140, 260);
+
+        assertThat(remoteDrags(desk, main)).containsExactly("over@130,250", "leave@0,0");
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+        assertThat(imagesSent(desk, main)).isZero();
+    }
+
+    @Test
+    @DisplayName("a drag cancelled over its own window ends with nothing dropped")
+    void aDragCancelledAtHomeEnds() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragCancel(desk, source);
+
+        assertThat(remoteDrags(desk, main)).isEmpty();
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("a drag image the source sends without its bytes is not relayed")
+    void aDragImageWithoutBytesIsNotRelayed() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragImage"), new Event());
+        dragMove(desk, source, 130, 250);
+
+        assertThat(imagesSent(desk, main)).isZero();
+        assertThat(remoteDrags(desk, main)).containsExactly("over@130,250");
+    }
+
+    @Test
+    @DisplayName("a shell closed under a drag is not told the drag left it, nor asked for the drop's answer after")
+    void aShellClosedUnderTheDragHearsNothingMore() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell other = openShell("Other");
+        other.setBounds(0, 700, 400, 300);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        DragSource drag = dragSource(source, sourceEvents);
+        String toOther = FlutterBridge.eventName(other.getImpl(), "DnD/remoteDrag");
+
+        startDrag(source);
+        dragMove(desk, source, 100, 800);
+        other.dispose();
+        dragMove(desk, source, 130, 250);
+        long sentToOther = desk.comm.sent.stream().filter(f -> f.event.equals(toOther)).count();
+
+        assertThat(sentToOther).as("only the step over it").isEqualTo(1);
+        assertThat(remoteDrags(desk, main)).containsExactly("over@130,250");
+
+        Shell another = openShell("Another");
+        another.setBounds(0, 700, 400, 300);
+        dragRelease(desk, source, 100, 800);
+        another.dispose();
+        sourceClientEndsDrag(desk, drag);
+
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("a drag cancelled after the shell it was over closed ends without telling that shell")
+    void aDragCancelledOverAClosedShellEnds() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell other = openShell("Other");
+        other.setBounds(0, 700, 400, 300);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        dragSource(source, sourceEvents);
+        String toOther = FlutterBridge.eventName(other.getImpl(), "DnD/remoteDrag");
+
+        startDrag(source);
+        dragMove(desk, source, 100, 800);
+        other.dispose();
+        dragCancel(desk, source);
+
+        assertThat(desk.comm.sent.stream().filter(f -> f.event.equals(toOther)).count()).as("only the step over it").isEqualTo(1);
+        assertThat(sourceEvents).containsExactly("dragStart", "dragEnd:" + DND.DROP_NONE);
+    }
+
+    @Test
+    @DisplayName("what a DropTarget answers once the drag has ended reaches no source")
+    void anAnswerAfterTheDragEndedIsNotRelayed() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        DropTarget target = copyTarget(new Composite(main, SWT.NONE));
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 130, 250);
+        dragCancel(desk, source);
+        targetClientSends(desk, target, "dragEnter");
+
+        assertThat(remoteAnswers(desk, source)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("what a DropTarget answers counts only from the shell the drag is over in another window")
+    void onlyTheTargetUnderTheDragAnswersIt() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        DropTarget inMain = copyTarget(new Composite(main, SWT.NONE));
+        Shell other = openShell("Other");
+        other.setBounds(0, 700, 400, 300);
+        DropTarget elsewhere = copyTarget(new Composite(other, SWT.NONE));
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        targetClientSends(desk, inMain, "dragEnter");
+        dragMove(desk, source, 130, 250);
+        targetClientSends(desk, elsewhere, "dragEnter");
+
+        assertThat(remoteAnswers(desk, source))
+                .as("neither a target answering before the drag reached its shell nor one in a shell it is not over")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("the answer to a drop on another window reaches no source disposed meanwhile")
+    void aDropAnswerAfterTheSourceIsDisposedEndsNothing() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        List<String> sourceEvents = new ArrayList<>();
+        DragSource drag = dragSource(source, sourceEvents);
+
+        startDrag(source);
+        dragRelease(desk, source, 130, 250);
+        drag.dispose();
+        inbound(desk, FlutterBridge.event(main.getImpl(), "DnD", "remoteDropNone"), pointAt(0, 0));
+
+        assertThat(sourceEvents).containsExactly("dragStart");
+    }
+
+    @Test
+    @DisplayName("a drag skips a hidden shell under the pointer and goes to the shell drawn over another")
+    void theDragGoesToTheTopmostVisibleShellUnderThePointer() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell hidden = openShell("Hidden");
+        hidden.setBounds(0, 0, 300, 300);
+        hidden.setVisible(false);
+        Shell popup = new Shell(main, SWT.NO_TRIM);
+        popup.setBounds(400, 300, 200, 200);
+        popup.setVisible(true);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 100, 100);
+        dragMove(desk, source, 450, 350);
+
+        assertThat(remoteDrags(desk, main)).containsExactly("over@100,100", "leave@0,0");
+        assertThat(remoteDrags(desk, popup)).containsExactly("over@50,50");
+        assertThat(remoteDrags(desk, hidden)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("of two shells overlapping under the drag in another window, the one drawn on top gets it")
+    void theDragGoesToTheShellDrawnOnTop() {
+        TestDeskBridge desk = install();
+        Shell main = openShell("Main");
+        main.setBounds(0, 0, 800, 600);
+        Shell first = new Shell(main, SWT.NO_TRIM);
+        first.setBounds(100, 100, 300, 300);
+        first.setVisible(true);
+        Shell second = new Shell(main, SWT.NO_TRIM);
+        second.setBounds(200, 200, 300, 300);
+        second.setVisible(true);
+        Shell dialog = openShell("Add Data");
+        dialog.setBounds(900, 100, 400, 300);
+        Composite source = new Composite(dialog, SWT.NONE);
+        dragSource(source, new ArrayList<>());
+
+        startDrag(source);
+        dragMove(desk, source, 250, 250);
+        first.open();
+        dragMove(desk, source, 260, 260);
+
+        assertThat(remoteDrags(desk, second)).as("the later shell, until the first is raised").containsExactly("over@50,50", "leave@0,0");
+        assertThat(remoteDrags(desk, first)).containsExactly("over@160,160");
+    }
+
+    private DropTarget copyTarget(Control control) {
+        DropTarget target = new DropTarget(control, DND.DROP_MOVE | DND.DROP_COPY);
+        target.setTransfer(new Transfer[] {TextTransfer.getInstance()});
+        target.addDropListener(new DropTargetAdapter() {
+            @Override
+            public void dragEnter(DropTargetEvent event) {
+                event.detail = DND.DROP_COPY;
+            }
+        });
+        return target;
+    }
+
+    private static Event pngEvent() {
+        Event image = new Event();
+        image.segments = new int[]{137, 80, 78, 71};
+        image.width = 40;
+        image.height = 20;
+        return image;
+    }
+
+    private long imagesSent(TestDeskBridge desk, Shell shell) {
+        String channel = FlutterBridge.eventName(shell.getImpl(), "DragDetect/dragImage");
+        return desk.comm.sent.stream().filter(f -> f.event.equals(channel)).count();
+    }
+
     private List<Integer> remoteAnswers(TestDeskBridge desk, Control source) {
         String channel = FlutterBridge.eventName(source.getImpl(), "DragDetect/remoteAnswer");
         List<Integer> answers = new ArrayList<>();
@@ -1241,6 +1503,10 @@ class DeskMultiWindowFlutterTest {
 
     private void dragMove(TestDeskBridge desk, Control source, int x, int y) {
         inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragMove"), pointAt(x, y));
+    }
+
+    private void dragCancel(TestDeskBridge desk, Control source) {
+        inbound(desk, FlutterBridge.event(source.getImpl(), "DragDetect", "dragCancel"), new Event());
     }
 
     private void dragRelease(TestDeskBridge desk, Control source, int x, int y) {

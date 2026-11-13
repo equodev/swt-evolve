@@ -26,9 +26,12 @@ public final class ActiveDrag {
         source.getDisplay().setData(KEY, source);
     }
 
-    /** The gesture {@code source} refused in DragStart, until it ends or the next drag starts. */
-    public static void refuse(DragSource source) {
-        source.getDisplay().setData(KEY, new Refused(source));
+    /**
+     * The gesture {@code source} refused in DragStart, until it ends or the next drag starts. The display is the
+     * one the gesture runs on, since a DragStart listener may have disposed the source.
+     */
+    public static void refuse(Display display, DragSource source) {
+        display.setData(KEY, new Refused(source));
     }
 
     public static boolean is(DragSource source) {

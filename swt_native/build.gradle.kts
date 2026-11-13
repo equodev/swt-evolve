@@ -352,6 +352,11 @@ sourceSets {
             if (swtMinorNative < 114) exclude("org/eclipse/swt/custom/StyledTextRendererResetTest.java")
             // Win32DPIUtils is generated from 3.131, and the members its test covers exist from 3.133.
             if (swtMinorNative < 133) exclude("org/eclipse/swt/internal/Win32DPIUtilsNativeTest.java")
+            // Clipboard.getContentsAsync is new in 3.132; DropTarget's label handlers came after 3.120.
+            if (swtMinorNative < 132) {
+                exclude("org/eclipse/swt/dnd/DartClipboardAsyncTest.java")
+                exclude("org/eclipse/swt/dnd/DropTargetLabelHandlersTest.java")
+            }
             // ImageGcDrawer (and the Image constructor taking it) only exist from 3.129, so the
             // tests covering that constructor cannot compile against older SWT.
             if (swtMinorNative < 129) {

@@ -8,7 +8,6 @@ import dev.equo.swt.WireObject;
 import dev.equo.swt.WireTable;
 import java.util.Map;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Display;
@@ -171,21 +170,14 @@ final class RemoteDrag {
         WindowBridge windows = (WindowBridge) bridge;
         Object home = windows.windowOf(control.getShell());
         Shell found = null;
-        for (Shell shell : control.getDisplay().getShells()) {
-            if (shell.isDisposed() || !shell.isVisible() || !(shell.getImpl() instanceof DartWidget)) continue;
-            if (!shell.getBounds().contains(x, y)) continue;
+        // Bottom first: the last shell at the point is drawn over the others there.
+        for (Object drawn : windows.shellsInDrawOrder()) {
+            Shell shell = (Shell) drawn;
+            if (shell.isDisposed() || !shell.isVisible() || !shell.getBounds().contains(x, y)) continue;
             if (windows.windowOf(shell) == home) return null;
-            // A shell is drawn over the one it belongs to.
-            if (found == null || isAncestor(found, shell)) found = shell;
+            found = shell;
         }
         return found;
-    }
-
-    private static boolean isAncestor(Shell ancestor, Shell shell) {
-        for (Composite parent = shell.getParent(); parent != null; parent = parent.getParent()) {
-            if (parent == ancestor) return true;
-        }
-        return false;
     }
 
     /** Tells {@code shell} the drag is at {@code phase}, at the display point {@code x, y} unless it left. */
