@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/tooltip.dart';
 import '../gen/widget.dart';
@@ -6,6 +8,7 @@ import '../styles.dart';
 import '../theme/theme_extensions/tooltip_theme_extension.dart';
 import 'widget_config.dart';
 import 'utils/pointer.dart';
+import 'utils/window_origin.dart';
 
 class ToolTipImpl<T extends ToolTipSwt, V extends VToolTip>
     extends WidgetSwtState<T, V> {
@@ -47,18 +50,21 @@ class ToolTipImpl<T extends ToolTipSwt, V extends VToolTip>
     _prevEffectiveVisible = effectiveVisible;
   }
 
-  void _onTap() {
+  /// Every native selects a tooltip on the primary press, with the button in the stateMask.
+  void _onPress() {
     _dismissed = true;
     setState(() => _animVisible = false);
-    widget.sendSelectionSelection(state, null);
+    widget.sendSelectionSelection(state, VEvent()..stateMask = SWT.BUTTON1);
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_rendered) return const SizedBox.shrink();
     final theme = _theme;
-    final x = (state.location?.x ?? 0).toDouble();
-    final y = (state.location?.y ?? 0).toDouble();
+    // location is a screen point; this Stack starts at the window's own origin.
+    final windowOrigin = WindowOriginScope.of(context);
+    final x = (state.location?.x ?? 0).toDouble() - windowOrigin.dx;
+    final y = (state.location?.y ?? 0).toDouble() - windowOrigin.dy;
 
     return Stack(children: [
       Positioned(
@@ -83,7 +89,7 @@ class ToolTipImpl<T extends ToolTipSwt, V extends VToolTip>
                   message: state.message,
                   text: state.text,
                   style: state.style,
-                  onTap: _onTap,
+                  onPress: _onPress,
                 )),
               ),
             ),
@@ -98,13 +104,13 @@ class _TooltipContent extends StatelessWidget {
   final String? message;
   final String? text;
   final int style;
-  final VoidCallback onTap;
+  final VoidCallback onPress;
 
   const _TooltipContent({
     this.message,
     this.text,
     required this.style,
-    required this.onTap,
+    required this.onPress,
   });
 
   IconData? _getIcon() {
@@ -136,8 +142,10 @@ class _TooltipContent extends StatelessWidget {
     final displayTitle = text ?? '';
     final displayMessage = message ?? '';
 
-    return GestureDetector(
-      onTap: onTap,
+    return Listener(
+      onPointerDown: (e) {
+        if (e.buttons & kPrimaryMouseButton != 0) onPress();
+      },
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         child: Container(
