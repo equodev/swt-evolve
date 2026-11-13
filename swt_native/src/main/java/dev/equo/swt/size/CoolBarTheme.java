@@ -31,12 +31,4 @@ public final class CoolBarTheme {
         return new CoolBarTheme(3, 3, 3, 3);
     }
 
-    public static CoolBarTheme getDefaultTheme() {
-        return new CoolBarTheme(3, 3, 3, 3);
-    }
-
-    public static CoolBarTheme getCompactTheme() {
-        return new CoolBarTheme(3, 3, 3, 3);
-    }
-
 }

@@ -14,8 +14,8 @@ import org.eclipse.swt.widgets.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -887,7 +887,6 @@ public class Config {
     public static ConfigFlags getConfigFlags() {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
-            String eclipseThemeId = EclipseWorkspaceTheme.detectThemeId();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
             configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
             configFlags.ctabfolder_tab_scroll = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_tab_scroll", "true"));
@@ -920,7 +919,6 @@ public class Config {
             //   -Dswt.evolve.custom_tooltip=true   -Dswt.evolve.notification_popup=true
             configFlags.custom_tooltip = Boolean.getBoolean("swt.evolve.custom_tooltip");
             configFlags.notification_popup = Boolean.getBoolean("swt.evolve.notification_popup");
-            configFlags.show_theme_color_palette = Boolean.getBoolean("swt.evolve.show_theme_color_palette");
             String focusIndicators = System.getProperty("swt.evolve.focus_indicators");
             configFlags.focus_indicators = focusIndicators == null || focusIndicators.trim().isEmpty()
                     ? null
@@ -928,15 +926,11 @@ public class Config {
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
-            // The theme the application defines: the flag, else the variant its workspace theme names.
-            // Null leaves it to the system the client runs on (see darkTheme).
-            String forceTheme = System.getProperty("swt.evolve.force_theme");
-            if (forceTheme == null) {
-                forceTheme = EclipseWorkspaceTheme.classify(eclipseThemeId);
-            }
-            configFlags.force_theme = forceTheme;
-            configFlags.theme_name = System.getProperty("swt.evolve.theme_name", "equo");
-            configFlags.theme_color = System.getProperty("swt.evolve.theme_color");
+            // The variant the application defines, "dark" or "light". Null leaves it to the system the
+            // client runs on (see darkTheme).
+            configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
+            // Never null in a running app: some widgets draw differently without a theme name.
+            configFlags.theme_name = System.getProperty("swt.evolve.theme_name", ConfigFlags.DEFAULT_THEME_NAME);
             // Client-Side Decorations: a single property selects placement and on/off
             //   -Ddev.equo.swt.csd=toolbar|overlay|floating  or =false to disable.
             // Defaults on for the two modes that own a frameless top-level window: "toolbar"
@@ -974,8 +968,8 @@ public class Config {
             //   -Ddev.equo.swt.csd.titlebar_color=RRGGBB (or AARRGGBB)
             // Unset lets the theme decide (its own title-bar colour, else the scheme surface).
             configFlags.csd_titlebar_color = System.getProperty("dev.equo.swt.csd.titlebar_color");
-            applyThemeColorsByWidgetFromProperties(configFlags);
-            applyThemePresets(configFlags);
+            for (ConfigFlagsDefaults defaults : ServiceLoader.load(ConfigFlagsDefaults.class, ConfigFlagsDefaults.class.getClassLoader()))
+                defaults.apply(configFlags);
         }
         // Derived, not configured: it follows the rendering mode, which the desktop bridge sets
         // after the flags above are first read, so it is refreshed on every read.
@@ -1154,27 +1148,6 @@ public class Config {
         return "linux";
     }
 
-    private static void applyThemePresets(ConfigFlags flags) {
-        if (!"marketplace".equals(flags.theme_name)) return;
-        flags.theme_name = "equo";
-        flags.show_theme_color_palette = true;
-        // Same rule as force_theme below: the preset supplies a look, not a veto. An application
-        // that asked for its own colors said so explicitly, and that outranks the preset.
-        if (System.getProperty("swt.use_swt_colors") == null) {
-            flags.use_swt_colors = false;
-        }
-        if (System.getProperty("swt.use_swt_fonts") == null) {
-            flags.use_swt_fonts = false;
-        }
-        // Dark is the preset's own default, not a veto: an explicitly configured
-        // swt.evolve.force_theme is the product's own choice and outranks it.
-        String configuredTheme = System.getProperty("swt.evolve.force_theme");
-        if (configuredTheme == null || configuredTheme.trim().isEmpty()) {
-            flags.force_theme = "dark";
-        }
-        flags.decorations_align = DecorationsAlign.VLEFT;
-    }
-
     static final String USE_SWT_FONT_COLORS = "swt.use_swt_font_colors";
     static final String USE_SWT_FONT_COLORS_BY_WIDGET = "swt.evolve.use_swt_font_colors_";
 
@@ -1252,7 +1225,7 @@ public class Config {
 
     /**
      * {@code -Dswt.evolve.use_swt_font_colors_<widget>=true|false}, keyed by the lower-case widget
-     * name, like {@code swt.evolve.theme_color_<widget>}.
+     * name.
      */
     static Map<String, Boolean> fontColorsByWidgetFromProperties() {
         return byPrefix(USE_SWT_FONT_COLORS_BY_WIDGET, k -> k.toLowerCase(java.util.Locale.ROOT), Config::optionalBoolean);
@@ -1271,35 +1244,6 @@ public class Config {
             if (!key.isEmpty() && value != null) byKey.put(key, value);
         }
         return byKey.isEmpty() ? null : byKey;
-    }
-
-    private static void applyThemeColorsByWidgetFromProperties(ConfigFlags flags) {
-        final String prefix = "swt.evolve.theme_color_";
-
-        ArrayList<String> keys = new ArrayList<>();
-        System.getProperties().forEach((k, v) -> {
-            String key = k.toString();
-            if (key.startsWith(prefix)) {
-                keys.add(key);
-            }
-        });
-
-        keys.sort(String::compareTo);
-        LinkedHashMap<String, String> byWidget = new LinkedHashMap<>();
-        for (String key : keys) {
-            String value = System.getProperty(key);
-            if (value == null || value.trim().isEmpty()) {
-                continue;
-            }
-            String widgetKey = key.substring(prefix.length()).trim().toLowerCase(java.util.Locale.ROOT);
-            if (widgetKey.isEmpty()) {
-                continue;
-            }
-            byWidget.put(widgetKey, value.trim());
-        }
-        if (!byWidget.isEmpty()) {
-            flags.theme_colors_by_widget = byWidget;
-        }
     }
 
     static String getSwtBaseClassName(Class<?> clazz) {

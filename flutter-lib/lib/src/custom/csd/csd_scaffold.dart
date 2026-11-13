@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../impl/utils/widget_utils.dart' show contrastRatio;
 import '../../impl/widget_config.dart';
-import '../../theme/named_themes.dart';
+import '../../theme/named_theme.dart';
 import '../../theme/theme.dart' show parseThemeColorFromHex;
 import 'csd_drag_view.dart';
 import 'equo_window.dart';
@@ -159,7 +159,7 @@ class CsdOverlayStrip extends StatelessWidget {
     if (fromFlag != null) return fromFlag;
     final name = flags.theme_name?.trim();
     if (name == null || name.isEmpty) return null;
-    return kNamedThemes[name]?.titleBarColor(brightness == Brightness.dark);
+    return namedThemeFor(name).titleBarColor(brightness == Brightness.dark);
   }
 
   @override

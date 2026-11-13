@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -172,9 +171,10 @@ public abstract class FlutterBridge {
     }
 
     private static CommService wire(CommService comm) {
-        comm.on(0, 0, WireTable.CHANNEL_SWT_EVOLVE_PROPERTY_SET, ConfigFlags.class, parsed -> handlePropertySetFromFlutter(comm, parsed));
         comm.on(0, 0, WireTable.CHANNEL_SWT_EVOLVE_URL_OPEN, String.class, FlutterBridge::handleUrlOpenFromFlutter);
         comm.on(0, 0, WireTable.CHANNEL_SWT_EVOLVE_WIDGET_REFRESH, String.class, FlutterBridge::handleWidgetRefresh);
+        for (ClientChannels channels : ServiceLoader.load(ClientChannels.class, ClientChannels.class.getClassLoader()))
+            channels.wire(comm);
         TAP.wired(comm);
         if (ECHO_TIMING)
             comm.on(0, 0, WireTable.CHANNEL_SWT_EVOLVE_TIMING_PING, Object.class, m -> echoTiming(comm, m));
@@ -222,8 +222,6 @@ public abstract class FlutterBridge {
      */
     public static final String WIDGET_REFRESH_CHANNEL = "swt.evolve.widget.refresh";
 
-    /** Flutter sets properties the user changed (the theme picker); Java echoes them on {@link #PROPERTIES_CHANNEL}. */
-    static final String PROPERTY_SET_CHANNEL = "swt.evolve.property.set";
     /** Java pushes the properties on it whenever a client needs them: when it connects, and after a property set. */
     static final String PROPERTIES_CHANNEL = "swt.evolve.properties";
 
@@ -347,29 +345,6 @@ public abstract class FlutterBridge {
         String url = payload.trim();
         String lower = url.toLowerCase(java.util.Locale.ROOT);
         return lower.startsWith("http://") || lower.startsWith("https://") ? url : null;
-    }
-
-    static void handlePropertySetFromFlutter(CommService comm, ConfigFlags parsed) {
-        if (parsed == null) return;
-        boolean changed = false;
-        ConfigFlags current = getConfigFlags();
-        changed |= applyStringField("force_theme", current.force_theme, parsed.force_theme, v -> current.force_theme = v);
-        changed |= applyStringField("theme_name", current.theme_name, parsed.theme_name, v -> current.theme_name = v);
-        changed |= applyStringField("theme_color", current.theme_color, parsed.theme_color, v -> current.theme_color = v);
-        if (changed) {
-            // Echo the updated properties back on the comm they arrived on.
-            comm.send(0, 0, WireTable.CHANNEL_SWT_EVOLVE_PROPERTIES, WidgetWire.fieldsOf(getConfigFlags()));
-        }
-    }
-
-    private static boolean applyStringField(String name, String oldVal, String newRaw, Consumer<String> setter) {
-        if (newRaw == null) return false;
-        String trimmed = newRaw.trim();
-        String newVal = trimmed.isEmpty() ? null : trimmed;
-        if (Objects.equals(oldVal, newVal)) return false;
-        System.setProperty("swt.evolve." + name, trimmed);
-        setter.accept(newVal);
-        return true;
     }
 
     protected final CompletableFuture<Boolean> clientReady = new CompletableFuture<>();

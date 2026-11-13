@@ -17,12 +17,4 @@ public final class ComboTheme {
         return new ComboTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
-    public static ComboTheme getDefaultTheme() {
-        return new ComboTheme(new TextStyle("Inter", 14, false, 500));
-    }
-
-    public static ComboTheme getCompactTheme() {
-        return new ComboTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
-    }
-
 }

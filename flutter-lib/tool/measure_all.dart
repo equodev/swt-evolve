@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 import 'package:swtflutter/src/theme/theme.dart';
-import 'package:swtflutter/src/theme/type_scales.dart';
 import './measure.dart';
 import './measure_button.dart' as button;
 import './measure_canvas.dart' as canvas;
@@ -67,12 +66,4 @@ void main() {
 
 List<ThemeConfig> getThemes() => [
   ThemeConfig('NonDefault', () => createLightNonDefaultTheme(null)),
-  ThemeConfig('Default', () => createLightDefaultTheme(null)),
-  ThemeConfig(
-    'Compact',
-    () => createLightNonDefaultTheme(
-      null,
-      overrideTypeSizes: kTypeScales['Compact']!.apply,
-    ),
-  ),
 ];

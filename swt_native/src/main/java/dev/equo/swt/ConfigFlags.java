@@ -157,6 +157,9 @@ public class ConfigFlags implements WireObject {
      */
     public boolean notification_popup;
 
+    /** The theme the client draws when nothing selects another. */
+    public static final String DEFAULT_THEME_NAME = "standard";
+
     public String force_theme;
     public String theme_name;
     public String theme_color;

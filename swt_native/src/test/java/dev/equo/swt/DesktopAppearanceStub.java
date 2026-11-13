@@ -9,7 +9,7 @@ import java.util.function.Supplier;
  * every read. Restores the real command when closed.
  */
 public final class DesktopAppearanceStub implements AutoCloseable {
-    private final Supplier<String> saved = EclipseWorkspaceTheme.osAppearance;
+    private final Supplier<String> saved = SystemAppearance.osAppearance;
     public final List<Thread> readOn = new CopyOnWriteArrayList<>();
 
     public DesktopAppearanceStub(String appearance) {
@@ -17,7 +17,7 @@ public final class DesktopAppearanceStub implements AutoCloseable {
     }
 
     public DesktopAppearanceStub(Supplier<String> appearance) {
-        EclipseWorkspaceTheme.osAppearance = () -> {
+        SystemAppearance.osAppearance = () -> {
             readOn.add(Thread.currentThread());
             return appearance.get();
         };
@@ -31,6 +31,6 @@ public final class DesktopAppearanceStub implements AutoCloseable {
 
     @Override
     public void close() {
-        EclipseWorkspaceTheme.osAppearance = saved;
+        SystemAppearance.osAppearance = saved;
     }
 }

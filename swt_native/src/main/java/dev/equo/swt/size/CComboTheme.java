@@ -17,12 +17,4 @@ public final class CComboTheme {
         return new CComboTheme(new TextStyle("Inter", 12, false, 500, 1.1428571428571428));
     }
 
-    public static CComboTheme getDefaultTheme() {
-        return new CComboTheme(new TextStyle("Inter", 12, false, 500));
-    }
-
-    public static CComboTheme getCompactTheme() {
-        return new CComboTheme(new TextStyle("Inter", 12, false, 500, 1.1428571428571428));
-    }
-
 }

@@ -1,5 +1,5 @@
-// The optional controls row (theme palette / scaling control) renders at the trailing end of the
-// main toolbar on the Flutter side only. Java reserves room for it in
+// The optional controls row (the controls an app adds, the scaling control) renders at the trailing
+// end of the main toolbar on the Flutter side only. Java reserves room for it in
 // DartMainToolbar.widthReserve() so the trim layout never hands that strip to a contribution —
 // and a reserve is only correct while both sides agree on the number.
 //
@@ -36,14 +36,30 @@ void main() {
   tearDown(resetConfigFlags);
 
   testWidgets('the collapsed row is exactly the width Java reserves', (tester) async {
-    final width = await _rowWidth(tester, ConfigFlags()..show_theme_color_palette = true);
+    final width = await _rowWidth(tester, ConfigFlags()..show_scaling_control = true);
 
     expect(width, _collapsedWidth,
         reason: 'ToolbarControlsSizes.COLLAPSED_WIDTH must match what this actually renders');
   });
 
-  testWidgets('the scaling control alone reserves the same chevron', (tester) async {
-    // Both flags share one chevron, which is why a single Java constant covers either.
+  testWidgets('a control an app adds reserves the same chevron', (tester) async {
+    // Every control shares one chevron, which is why a single Java constant covers any of them.
+    toolbarControls.add(ToolbarControl(shown: (_) => true, builder: (_) => const SizedBox(width: 40)));
+    addTearDown(toolbarControls.clear);
+    final width = await _rowWidth(tester, ConfigFlags());
+
+    expect(width, _collapsedWidth);
+  });
+
+  testWidgets('a control an app adds shows only under the flags it names', (tester) async {
+    toolbarControls.add(ToolbarControl(shown: (_) => false, builder: (_) => const SizedBox(width: 40)));
+    addTearDown(toolbarControls.clear);
+    final width = await _rowWidth(tester, ConfigFlags());
+
+    expect(width, 0);
+  });
+
+  testWidgets('the scaling control alone reserves the chevron', (tester) async {
     final width = await _rowWidth(tester, ConfigFlags()..show_scaling_control = true);
 
     expect(width, _collapsedWidth);

@@ -17,12 +17,4 @@ public final class LinkTheme {
         return new LinkTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
-    public static LinkTheme getDefaultTheme() {
-        return new LinkTheme(new TextStyle("Inter", 14, false, 500));
-    }
-
-    public static LinkTheme getCompactTheme() {
-        return new LinkTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
-    }
-
 }

@@ -17,12 +17,4 @@ public final class TableItemTheme {
         return new TableItemTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
-    public static TableItemTheme getDefaultTheme() {
-        return new TableItemTheme(new TextStyle("Inter", 14, false, 500));
-    }
-
-    public static TableItemTheme getCompactTheme() {
-        return new TableItemTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
-    }
-
 }

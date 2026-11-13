@@ -3,6 +3,7 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.DecorationsAlign;
+import dev.equo.swt.MainToolbarControl;
 import dev.equo.swt.size.CsdSizes;
 import dev.equo.swt.size.MenuSizes;
 import dev.equo.swt.size.ToolbarControlsSizes;
@@ -94,13 +95,14 @@ public class DartMainToolbar extends DartComposite {
     }
 
     /**
-     * The theme palette / scaling controls render at the trailing end of the bar on the Flutter side
-     * only. Without a reserve the trim hands that strip to a contribution and both draw there.
+     * The optional controls (the scaling control, those a build adds) render at the trailing end of
+     * the bar on the Flutter side only. Without a reserve the trim hands that strip to a contribution
+     * and both draw there.
      */
     private static int optionalControlsWidth() {
         ConfigFlags flags = Config.getConfigFlags();
         if (flags == null) return 0;
-        return flags.show_theme_color_palette || flags.show_scaling_control
+        return flags.show_scaling_control || MainToolbarControl.anyShown(flags)
                 ? ToolbarControlsSizes.COLLAPSED_WIDTH : 0;
     }
 

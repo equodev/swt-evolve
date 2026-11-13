@@ -17,12 +17,4 @@ public final class LabelTheme {
         return new LabelTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
-    public static LabelTheme getDefaultTheme() {
-        return new LabelTheme(new TextStyle("Inter", 14, false, 500));
-    }
-
-    public static LabelTheme getCompactTheme() {
-        return new LabelTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
-    }
-
 }

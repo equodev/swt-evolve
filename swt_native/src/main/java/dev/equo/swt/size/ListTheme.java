@@ -18,12 +18,4 @@ public final class ListTheme {
         return new ListTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
     }
 
-    public static ListTheme getDefaultTheme() {
-        return new ListTheme(new TextStyle("Inter", 14, false, 500, 1.1428571428571428));
-    }
-
-    public static ListTheme getCompactTheme() {
-        return new ListTheme(new TextStyle("Inter", 10, false, 500, 1.1428571428571428));
-    }
-
 }

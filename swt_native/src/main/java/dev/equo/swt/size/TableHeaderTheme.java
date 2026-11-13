@@ -31,7 +31,4 @@ public final class TableHeaderTheme {
         return new TableHeaderTheme(new TextStyle("Inter", 14, false, 600, 20.0 / 14.0));
     }
 
-    public static TableHeaderTheme getDefaultTheme() {
-        return new TableHeaderTheme(new TextStyle("Inter", 14, false, 600, 20.0 / 14.0));
-    }
 }

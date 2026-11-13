@@ -23,14 +23,14 @@ class ConfigThemeRuleTest {
     @BeforeEach
     void captureState() {
         savedFlags = Config.getConfigFlags();
-        savedOsAppearance = EclipseWorkspaceTheme.osAppearance;
+        savedOsAppearance = SystemAppearance.osAppearance;
         savedMode = System.getProperty(ConfigFlags.MODE_PROPERTY);
         System.clearProperty(ConfigFlags.MODE_PROPERTY);
     }
 
     @AfterEach
     void restoreState() {
-        EclipseWorkspaceTheme.osAppearance = savedOsAppearance;
+        SystemAppearance.osAppearance = savedOsAppearance;
         if (savedMode == null) System.clearProperty(ConfigFlags.MODE_PROPERTY);
         else System.setProperty(ConfigFlags.MODE_PROPERTY, savedMode);
         Config.setConfigFlags(savedFlags);
@@ -141,7 +141,7 @@ class ConfigThemeRuleTest {
     }
 
     private void desktopIs(String appearance) {
-        EclipseWorkspaceTheme.osAppearance = () -> {
+        SystemAppearance.osAppearance = () -> {
             desktopReads++;
             return appearance;
         };

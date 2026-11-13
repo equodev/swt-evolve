@@ -17,12 +17,4 @@ public final class ProgressBarTheme {
         return new ProgressBarTheme(TextStyle.def());
     }
 
-    public static ProgressBarTheme getDefaultTheme() {
-        return new ProgressBarTheme(TextStyle.def());
-    }
-
-    public static ProgressBarTheme getCompactTheme() {
-        return new ProgressBarTheme(TextStyle.def());
-    }
-
 }

@@ -15,7 +15,6 @@ import 'src/comm/comm.dart';
 import 'src/impl/utils/dnd_session.dart' show DndNegotiationState, DndSession;
 import 'src/comm/comm_frame.dart' show EquoCommBase;
 import 'src/comm/widget_wire.dart' show WireVisitable;
-import 'src/custom/theme_color_palette_control.dart' show syncThemeName;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
 import 'src/impl/utils/deferred_fonts.dart';
 import 'src/gen/widget.dart';
@@ -234,8 +233,6 @@ void registerTestQueryChannel() {
     queryTreeItemsJson: queryTreeItemsJson,
     expandTreeItem: expandTreeItem,
     queryPrimaryFocus: queryPrimaryFocus,
-    pickTheme: (String themeName, String? forceTheme) =>
-        syncThemeName(themeName, forceTheme: forceTheme),
     // What a page test reads is laid out text, so its frame is one with every font in.
     scheduleFrameSync: (onSynced) => DeferredFonts.all().then((_) => scheduleFrameSync(onSynced)),
   );

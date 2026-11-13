@@ -42,12 +42,4 @@ public final class TabFolderTheme {
         return new TabFolderTheme(18, 17, 0, 19, 19, 18, new TextStyle("Inter", 12, false, 400, 1.1428571428571428));
     }
 
-    public static TabFolderTheme getDefaultTheme() {
-        return new TabFolderTheme(18, 17, 0, 19, 19, 18, new TextStyle("Inter", 12, false, 400));
-    }
-
-    public static TabFolderTheme getCompactTheme() {
-        return new TabFolderTheme(18, 17, 0, 19, 19, 18, new TextStyle("Inter", 12, false, 400, 1.1428571428571428));
-    }
-
 }

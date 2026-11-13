@@ -14,15 +14,7 @@ import 'package:swtflutter/src/custom/csd/equo_window.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/color_scheme_extension.dart';
 import 'src/styles.dart';
-import 'src/theme/theme.dart'
-    show
-        createLightDefaultTheme,
-        createLightNonDefaultTheme,
-        createDarkDefaultTheme,
-        createDarkNonDefaultTheme,
-        createColorSchemeExtension,
-        parseGlobalSeedColor;
-import 'src/theme/named_themes.dart';
+import 'src/theme/named_theme.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -565,45 +557,24 @@ class EvolveApp extends StatelessWidget {
         final effectiveThemeMode = forcedThemeMode ?? theme;
         setCurrentTheme(effectiveThemeMode == ThemeMode.dark);
         final themeName = flags.theme_name?.trim();
-        final namedTheme = (themeName != null && themeName.isNotEmpty)
-            ? kNamedThemes[themeName]
-            : null;
-        final seedColor = parseGlobalSeedColor(flags);
         final themeConfig = 'Theme config -> theme_name=$themeName, '
             'force_theme=${flags.force_theme}, '
-            'effective_theme_mode=${effectiveThemeMode.name}, '
-            'theme_color=${flags.theme_color}, theme_colors_by_widget=${flags.theme_colors_by_widget}, parsed_seed=${seedColor?.value.toRadixString(16)}';
+            'effective_theme_mode=${effectiveThemeMode.name}';
         if (themeConfig != loggedThemeConfig) {
           loggedThemeConfig = themeConfig;
           print(themeConfig);
         }
+        final unnamed = (themeName == null || themeName.isEmpty) ? unnamedThemeBuilder : null;
         final ThemeData lightTheme;
         final ThemeData darkTheme;
-        if (namedTheme != null) {
-          final darkScheme = namedTheme.darkColorScheme ?? namedTheme.lightColorScheme;
-          lightTheme = namedTheme.applyWidgetOverrides(
-            createLightNonDefaultTheme(
-              backgroundColor,
-              overrideColorScheme: namedTheme.lightColorScheme,
-              overrideColorSchemeExtension: namedTheme.lightColorSchemeExtension
-                  ?? createColorSchemeExtension(namedTheme.lightColorScheme),
-              overrideTypeSizes: namedTheme.typeScale?.apply,
-            ),
-            dark: false,
-          );
-          darkTheme = namedTheme.applyWidgetOverrides(
-            createDarkNonDefaultTheme(
-              backgroundColor,
-              overrideColorScheme: darkScheme,
-              overrideColorSchemeExtension: namedTheme.darkColorSchemeExtension
-                  ?? createColorSchemeExtension(darkScheme),
-              overrideTypeSizes: namedTheme.typeScale?.apply,
-            ),
-            dark: true,
-          );
+        if (unnamed != null) {
+          lightTheme = unnamed(backgroundColor, dark: false);
+          darkTheme = unnamed(backgroundColor, dark: true);
         } else {
-          lightTheme = createLightDefaultTheme(backgroundColor, seedColor: seedColor);
-          darkTheme = createDarkDefaultTheme(backgroundColor, seedColor: seedColor);
+          // A name nothing registered draws the default theme, as Java sizes it in the default scale.
+          final namedTheme = namedThemeFor(themeName);
+          lightTheme = namedTheme.build(backgroundColor, dark: false);
+          darkTheme = namedTheme.build(backgroundColor, dark: true);
         }
 
         // Publish the scheme the app is actually rendering with, so the static helpers that have

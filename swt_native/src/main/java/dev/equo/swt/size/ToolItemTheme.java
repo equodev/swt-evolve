@@ -17,12 +17,4 @@ public final class ToolItemTheme {
         return new ToolItemTheme(new TextStyle("Inter", 20, false, 500, 1.1428571428571428));
     }
 
-    public static ToolItemTheme getDefaultTheme() {
-        return new ToolItemTheme(new TextStyle("Inter", 20, false, 500));
-    }
-
-    public static ToolItemTheme getCompactTheme() {
-        return new ToolItemTheme(new TextStyle("Inter", 20, false, 500, 1.1428571428571428));
-    }
-
 }

@@ -46,7 +46,7 @@ void main() {
     final styles = [
       getTextStyle(context: context, font: null, textColor: Colors.black, baseTextStyle: theme.rowTextStyle),
       getTextStyle(context: context, font: null, textColor: Colors.transparent, baseTextStyle: theme.rowTextStyle),
-      const TextStyle(fontFamily: 'Inter', fontSize: 13, letterSpacing: 0.4, color: Colors.blue),
+      const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 0.4, color: Colors.blue),
     ];
     for (final style in styles) {
       for (final align in _aligns) {

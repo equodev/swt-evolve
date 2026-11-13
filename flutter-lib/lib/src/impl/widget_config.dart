@@ -1,7 +1,7 @@
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart';
-import 'package:swtflutter/src/theme/named_themes.dart';
+import 'package:swtflutter/src/theme/named_theme.dart';
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/material.dart';
 import 'package:swtflutter/src/gen/menu.dart';
@@ -178,10 +178,10 @@ bool get useSwtBorder => getConfigFlags().use_swt_border ?? false;
 /// bottom, as on Cocoa: `-Dswt.evolve.scale_vertical_minimum_at_top`.
 bool get scaleMinimumAtTop => getConfigFlags().scale_vertical_minimum_at_top ?? false;
 
-/// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the named theme's default.
+/// Focus rings and focus-coloured borders: `-Dswt.evolve.focus_indicators` when set, else the theme's default.
 bool get focusIndicators {
   final flags = getConfigFlags();
-  return flags.focus_indicators ?? kNamedThemes[flags.theme_name?.trim()]?.focusIndicators ?? false;
+  return flags.focus_indicators ?? namedThemeFor(flags.theme_name).focusIndicators;
 }
 
 /// True when a main-toolbar ToolItem draws its tooltip as a card instead of the one-line strip.

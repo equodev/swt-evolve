@@ -73,7 +73,7 @@ class _MeasureAppState extends State<_MeasureApp> {
     final dummyMenuBar = VMenu()..style = SWT.BAR..visible = true;
 
     return MaterialApp(
-      theme: createLightDefaultTheme(null),
+      theme: createLightNonDefaultTheme(null),
       home: Scaffold(
         appBar: AppBar(title: const Text('measure_menu')),
         body: Column(
