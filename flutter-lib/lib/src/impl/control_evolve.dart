@@ -869,7 +869,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   /// control tells its own parts' presses apart from the rest of its area.
   bool forwardsMouseDownOf(PointerDownEvent event) => forwardsControlMouseDown;
 
-  /// Whether [wrap] forwards KeyDown events to Java. Widgets that run their own keyboard
+  /// Whether [wrap] forwards KeyDown and KeyUp events to Java. Widgets that run their own keyboard
   /// pipeline and send Key events themselves (e.g. StyledText) override this to false —
   /// otherwise every keystroke reaches SWT KeyDown listeners twice.
   bool get forwardsKeysFromWrap => true;
@@ -1105,13 +1105,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return _blockScope = found;
   }
 
-  KeyEventResult _forwardKeyDown(FocusNode node, KeyEvent event) {
-    if (event is KeyDownEvent) {
-      final vEvent = mapNewKeyEventToSwt(event);
-      if (vEvent.keyCode != 0 || vEvent.character != 0) {
-        widget.sendKeyKeyDown(state, vEvent);
-      }
-    }
+  KeyEventResult _forwardKey(FocusNode node, KeyEvent event) {
+    forwardControlKey(event,
+        keyDown: (v) => widget.sendKeyKeyDown(state, v), keyUp: (v) => widget.sendKeyKeyUp(state, v));
     return KeyEventResult.ignored;
   }
 
@@ -1189,7 +1185,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
                         opacity: (disabled ? AppOpacities.disabled : 1) * opacity,
                         child: semantics ? _SemanticsGeneration(generation: effective, child: inner) : inner),
                     effective: effective,
-                    onKeyEvent: forwardKeys ? _forwardKeyDown : null)),
+                    onKeyEvent: forwardKeys ? _forwardKey : null)),
           ),
         ),
         ownLayer);

@@ -1,5 +1,9 @@
 import 'package:flutter/services.dart';
 
+import '../gen/event.dart';
+import 'key_mapping.dart';
+import 'utils/key_edit_order.dart';
+
 /// Whether a whole-tree [DisplaySwt] is mounted and forwarding keystrokes from a single
 /// top-level handler (see `display_evolve.dart`).
 ///
@@ -20,6 +24,36 @@ int _displayKeyForwarders = 0;
 void startDisplayKeyForwarding() => _displayKeyForwarders++;
 
 void stopDisplayKeyForwarding() => _displayKeyForwarders--;
+
+/// The keys a control forwarded the press of and whose release has not come yet. Shared by all
+/// controls: a press can open an editor that takes the focus, and the release then goes to that one.
+final Set<PhysicalKeyboardKey> _forwardedPresses = {};
+
+/// The events a control already forwarded, so the controls around it don't.
+final Expando<bool> _forwardedKeyEvents = Expando();
+
+/// A control's own key forwarding, the path while no whole-tree Display forwards keys: a press, and
+/// each repeat of a held key, goes to Java as KeyDown and its release as KeyUp, the release behind the
+/// edit its press typed, as on a native field. A key bubbling up from a control inside this one is that
+/// control's alone, as SWT sends a key to the focus control only. A release goes to the control focused
+/// when it comes; one whose press no control sent is not sent.
+void forwardControlKey(KeyEvent event,
+    {required void Function(VEvent) keyDown, required void Function(VEvent) keyUp}) {
+  if (_forwardedKeyEvents[event] ?? false) return;
+  _forwardedKeyEvents[event] = true;
+  if (event is KeyDownEvent || event is KeyRepeatEvent) {
+    final v = mapNewKeyEventToSwt(event);
+    if (v.keyCode == 0 && v.character == 0) return;
+    _forwardedPresses.add(event.physicalKey);
+    KeyEditOrder.instance.forward(
+      typed: KeyEditOrder.typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
+      send: () => keyDown(v),
+    );
+  } else if (event is KeyUpEvent && _forwardedPresses.remove(event.physicalKey)) {
+    final v = mapNewKeyEventToSwt(event);
+    KeyEditOrder.instance.forward(typed: false, send: () => keyUp(v));
+  }
+}
 
 /// The canvas editor (a StyledText) that holds keyboard focus, or `null`.
 Object? _focusedCanvasEditor;

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 /// Keeps the key events Java sees behind the edit a typed character makes.
@@ -29,6 +30,13 @@ class KeyEditOrder {
 
   /// Whether the focused widget is a field that reports its edits and takes typing.
   bool get editorFocused => _editors[FocusManager.instance.primaryFocus]?.call() ?? false;
+
+  /// A printable character with no Ctrl, Alt or Meta held: one a text field types.
+  static bool typesCharacter(int character) {
+    final keyboard = HardwareKeyboard.instance;
+    return character >= 0x20 && character != 0x7F
+        && !keyboard.isControlPressed && !keyboard.isAltPressed && !keyboard.isMetaPressed;
+  }
 
   /// Characters typed into a field that reports its edits, and the edits it reported.
   int _typed = 0;

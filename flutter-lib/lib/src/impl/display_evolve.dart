@@ -206,7 +206,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final begun = _traversalsBefore[event] ?? TraversalOrder.begun;
     if (event is KeyDownEvent &&
         KeyEditOrder.instance.editorFocused &&
-        _typesCharacter(mapNewKeyEventToSwt(event).character ?? 0)) {
+        KeyEditOrder.typesCharacter(mapNewKeyEventToSwt(event).character ?? 0)) {
       _typingKeys.add(event.physicalKey);
     }
     final typing = _typingKeys.contains(event.physicalKey);
@@ -261,7 +261,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       final v = mapped ?? mapNewKeyEventToSwt(event);
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
-          typed: _typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
+          typed: KeyEditOrder.typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
           send: () => EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.keyKeyDown, v),
         );
       }
@@ -278,13 +278,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
         );
       }
     }
-  }
-
-  /// A printable character with no Ctrl, Alt or Meta held: one a text field types.
-  static bool _typesCharacter(int character) {
-    final keyboard = HardwareKeyboard.instance;
-    return character >= 0x20 && character != 0x7F
-        && !keyboard.isControlPressed && !keyboard.isAltPressed && !keyboard.isMetaPressed;
   }
 
   /// The display's record in a binary frame: its shells and the rest, already resolved to held values.

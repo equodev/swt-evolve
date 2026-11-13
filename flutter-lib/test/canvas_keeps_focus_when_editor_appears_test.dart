@@ -111,5 +111,8 @@ void main() {
     final handled = await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
     expect(handled, isFalse, reason: 'the grid must leave its editor\'s keys alone');
     expect(gridEvents.where((ev) => ev.startsWith('Key/')), isEmpty);
+    // What the platform does with a key the editor left alone: the editor's release waits for it.
+    tester.testTextInput.enterText('a');
+    await tester.pump();
   });
 }

@@ -801,22 +801,16 @@ class TextImpl<T extends TextSwt, V extends VText>
     );
   }
 
-  /// Forwards shortcut keystrokes the text field itself does not consume (e.g. Ctrl/Cmd+S) to Java
-  /// as SWT.KeyDown, so an app's Display key filter or KeyListener — the mechanism Eclipse RCP
-  /// command bindings use — sees them even while a Text has focus. Ordinary typing and the field's own
-  /// editing shortcuts are consumed by the TextField first and never bubble up here, so this does
-  /// not double-process input. The wrapper never takes focus itself; it only observes keys bubbling
-  /// from the field. Only used in the embedded backend (see the [build] call site).
+  /// Forwards the keys that bubble up from the field to Java as KeyDown and KeyUp, so an app's
+  /// KeyListener and Display key filter see them while a Text has focus. The field's own editing
+  /// shortcuts are consumed by the TextField and never get here. The wrapper never takes focus
+  /// itself. Only used without a whole-tree Display (see the [build] call site).
   Widget _forwardShortcutKeys(Widget child) {
     return Focus(
       canRequestFocus: false,
       onKeyEvent: (node, event) {
-        if (event is KeyDownEvent) {
-          final vEvent = mapNewKeyEventToSwt(event);
-          if (vEvent.keyCode != 0 || vEvent.character != 0) {
-            widget.sendKeyKeyDown(state, vEvent);
-          }
-        }
+        forwardControlKey(event,
+            keyDown: (v) => widget.sendKeyKeyDown(state, v), keyUp: (v) => widget.sendKeyKeyUp(state, v));
         return KeyEventResult.ignored;
       },
       child: child,

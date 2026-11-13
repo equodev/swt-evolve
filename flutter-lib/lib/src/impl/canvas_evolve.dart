@@ -278,11 +278,8 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
           // already delivers this key to Java (routed to the focused Canvas); forwarding again here
           // would double-dispatch. Still consume it so the native window doesn't beep.
           if (!displayLevelKeyForwardingActive) {
-            if (event is KeyDownEvent || event is KeyRepeatEvent) {
-              widget.sendKeyKeyDown(state, vEvent);
-            } else if (event is KeyUpEvent) {
-              widget.sendKeyKeyUp(state, vEvent);
-            }
+            forwardControlKey(event,
+                keyDown: (v) => widget.sendKeyKeyDown(state, v), keyUp: (v) => widget.sendKeyKeyUp(state, v));
           }
           // Consume it: the key is handled by the (SWT/embedded) widget. Letting it
           // bubble to the native window makes macOS ring the unhandled-key beep on

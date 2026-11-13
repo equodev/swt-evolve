@@ -59,5 +59,8 @@ void main() {
     await tester.pump();
 
     expect(await tester.sendKeyEvent(LogicalKeyboardKey.space), isFalse);
+    // What the platform does with a key the field left alone: the field's release waits for it.
+    tester.testTextInput.enterText(' ');
+    await tester.pump();
   });
 }
