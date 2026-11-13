@@ -164,6 +164,8 @@ dependencies {
     testFixturesImplementation(libs.assertj)
     testFixturesImplementation(libs.mockito.core)
     testFixturesImplementation(libs.instancio.junit)
+    testFixturesImplementation(libs.lwjgl)
+    testFixturesImplementation(libs.lwjgl.opengl)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
