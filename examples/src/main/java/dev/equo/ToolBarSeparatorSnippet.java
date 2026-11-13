@@ -14,7 +14,7 @@ import org.eclipse.swt.widgets.ToolItem;
  * items.
  *
  * <pre>
- * ./gradlew :examples:runWebExample -PmainClass=dev.equo.ToolBarSeparatorSnippet -Dswt.evolve.bigger_icon_size=false
+ * ./gradlew :examples:runWebExample -PmainClass=dev.equo.ToolBarSeparatorSnippet
  * </pre>
  *
  * <p>What to look at: each separator draws a thin line between its neighbours, as native SWT does.

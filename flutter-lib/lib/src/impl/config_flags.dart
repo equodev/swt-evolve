@@ -81,7 +81,7 @@ class ConfigFlags implements WireReadable {
   int? push_button_margin;
 
   /// ToolItem icons are drawn at the theme's icon size rather than their image's
-  /// (`swt.evolve.bigger_icon_size`). Java turns it on whenever icons are replaced, unless that property is false.
+  /// (`swt.evolve.bigger_icon_size`). Off unless that property is true and icons are replaced.
   bool? bigger_icon_size;
 
   /// CHECK and RADIO menu items draw no box or ring, only the mark while selected

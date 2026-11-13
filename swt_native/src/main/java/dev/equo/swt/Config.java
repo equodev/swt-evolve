@@ -954,7 +954,7 @@ public class Config {
             configFlags.csd_os = normalizeOs(System.getProperty("dev.equo.swt.csd.os", os));
             configFlags.push_button_margin = Integer.getInteger("swt.evolve.push_button_margin", 0);
             configFlags.bigger_icon_size = replacesIcons(configFlags)
-                    && Boolean.parseBoolean(System.getProperty("swt.evolve.bigger_icon_size", "true"));
+                    && Boolean.getBoolean("swt.evolve.bigger_icon_size");
             configFlags.transparent_menu_check_box = Boolean.getBoolean("swt.evolve.transparent_menu_check_box");
             configFlags.scale_vertical_minimum_at_top = Boolean.getBoolean("swt.evolve.scale_vertical_minimum_at_top");
             configFlags.ctabfolder_chevron_after_tabs = Boolean.getBoolean("swt.evolve.ctabfolder_chevron_after_tabs");

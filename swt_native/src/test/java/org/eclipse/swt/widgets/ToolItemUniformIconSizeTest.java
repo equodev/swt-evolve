@@ -110,13 +110,14 @@ class ToolItemUniformIconSizeTest {
     }
 
     @Test
-    void it_follows_icon_replacement_unless_turned_off() {
-        assertThat(flagsFrom(null, null, null)).as("Evolve's set replaces icons by default").isTrue();
-        assertThat(flagsFrom(null, "true", "/client/icons")).as("a client pack replaces icons").isTrue();
+    void it_is_off_unless_the_application_asks_for_it_on_replaced_icons() {
+        assertThat(flagsFrom(null, null, null)).as("off when the application does not ask").isFalse();
+        assertThat(flagsFrom(null, "true", "/client/icons")).as("a client pack alone does not turn it on").isFalse();
         assertThat(flagsFrom("false", null, null)).as("turned off by the application").isFalse();
-        assertThat(flagsFrom(null, "true", null)).as("the application's own icons are kept").isFalse();
+        assertThat(flagsFrom("true", null, null)).as("asked for, on Evolve's set").isTrue();
+        assertThat(flagsFrom("true", "true", "/client/icons")).as("asked for, on a client pack").isTrue();
         assertThat(flagsFrom("true", "true", null)).as("no replaced icon to enlarge").isFalse();
-        assertThat(flagsFrom(null, "true", "  ")).as("a blank assets_path is no pack").isFalse();
+        assertThat(flagsFrom("true", "true", "  ")).as("a blank assets_path is no pack").isFalse();
     }
 
     /** {@code bigger_icon_size} as read from the given {@code bigger_icon_size}, {@code disable_evolve_icons} and {@code assets_path}. */
