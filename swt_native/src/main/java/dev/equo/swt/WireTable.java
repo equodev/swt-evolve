@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -634545929;
+    public static final int FINGERPRINT = 398874875;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -458,6 +458,7 @@ public final class WireTable {
             "borderStyle",
             "borderVisible",
             "bottom",
+            "bottomLine",
             "bottomMargin",
             "bounds",
             "browser",
@@ -515,6 +516,7 @@ public final class WireTable {
             "currentWidth",
             "cursor",
             "cursorStyle",
+            "curveLine",
             "custom_tooltip",
             "damage",
             "data",
@@ -782,6 +784,7 @@ public final class WireTable {
             "selectionFills",
             "selectionForeground",
             "selectionRanges",
+            "separator",
             "seq",
             "shareContext",
             "shells",
@@ -912,6 +915,8 @@ public final class WireTable {
             "Button.primary",
             "Button.selection",
             "Button.text",
+            "CBanner.bottomLine",
+            "CBanner.curveLine",
             "CCombo.alignment",
             "CCombo.editable",
             "CCombo.itemTooltips",
@@ -1565,6 +1570,9 @@ public final class WireTable {
             "TreeItem.paintedImages",
             "TreeItem.paintedTexts",
             "TreeItem.texts",
+            "ViewForm.borderVisible",
+            "ViewForm.highlight",
+            "ViewForm.separator",
             "Widget.style",
     };
 
@@ -1588,6 +1596,8 @@ public final class WireTable {
             "bool",
             "bool",
             "string",
+            "int",
+            "int[]",
             "int",
             "bool",
             "string[]",
@@ -2241,6 +2251,9 @@ public final class WireTable {
             "int[]",
             "int[]",
             "string[]",
+            "bool",
+            "int",
+            "int",
             "int",
     };
 
@@ -3409,260 +3422,260 @@ public final class WireTable {
     public static final int TYPE_WIDGET_SIZE_BRIDGE = 134;
 
     /** The display's `activeShellId`. */
-    public static final int DISPLAY_ACTIVE_SHELL_ID = 184;
+    public static final int DISPLAY_ACTIVE_SHELL_ID = 186;
 
     /** The display's `config`. */
-    public static final int DISPLAY_CONFIG = 185;
+    public static final int DISPLAY_CONFIG = 187;
 
     /** The display's `focusHolderId`. */
-    public static final int DISPLAY_FOCUS_HOLDER_ID = 186;
+    public static final int DISPLAY_FOCUS_HOLDER_ID = 188;
 
     /** The display's `mainShellId`. */
-    public static final int DISPLAY_MAIN_SHELL_ID = 187;
+    public static final int DISPLAY_MAIN_SHELL_ID = 189;
 
     /** The display's `popups`. */
-    public static final int DISPLAY_POPUPS = 188;
+    public static final int DISPLAY_POPUPS = 190;
 
     /** The display's `shells`. */
-    public static final int DISPLAY_SHELLS = 189;
+    public static final int DISPLAY_SHELLS = 191;
 
     /** The display's `systemMenu`. */
-    public static final int DISPLAY_SYSTEM_MENU = 190;
+    public static final int DISPLAY_SYSTEM_MENU = 192;
 
     /** The display's `tooltips`. */
-    public static final int DISPLAY_TOOLTIPS = 191;
+    public static final int DISPLAY_TOOLTIPS = 193;
 
     /** The display's `windowedShellIds`. */
-    public static final int DISPLAY_WINDOWED_SHELL_IDS = 192;
+    public static final int DISPLAY_WINDOWED_SHELL_IDS = 194;
 
     /** The flag `assets_path`. */
-    public static final int CONFIG_FLAGS_ASSETS_PATH = 92;
+    public static final int CONFIG_FLAGS_ASSETS_PATH = 94;
 
     /** The flag `bigger_icon_size`. */
-    public static final int CONFIG_FLAGS_BIGGER_ICON_SIZE = 93;
+    public static final int CONFIG_FLAGS_BIGGER_ICON_SIZE = 95;
 
     /** The flag `csd_maximize`. */
-    public static final int CONFIG_FLAGS_CSD_MAXIMIZE = 94;
+    public static final int CONFIG_FLAGS_CSD_MAXIMIZE = 96;
 
     /** The flag `csd_os`. */
-    public static final int CONFIG_FLAGS_CSD_OS = 95;
+    public static final int CONFIG_FLAGS_CSD_OS = 97;
 
     /** The flag `csd_placement`. */
-    public static final int CONFIG_FLAGS_CSD_PLACEMENT = 96;
+    public static final int CONFIG_FLAGS_CSD_PLACEMENT = 98;
 
     /** The flag `csd_titlebar_color`. */
-    public static final int CONFIG_FLAGS_CSD_TITLEBAR_COLOR = 97;
+    public static final int CONFIG_FLAGS_CSD_TITLEBAR_COLOR = 99;
 
     /** The flag `ctabfolder_chevron_after_tabs`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_CHEVRON_AFTER_TABS = 98;
+    public static final int CONFIG_FLAGS_CTABFOLDER_CHEVRON_AFTER_TABS = 100;
 
     /** The flag `ctabfolder_tab_scroll`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL = 99;
+    public static final int CONFIG_FLAGS_CTABFOLDER_TAB_SCROLL = 101;
 
     /** The flag `ctabfolder_topright_auto_hide`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE = 100;
+    public static final int CONFIG_FLAGS_CTABFOLDER_TOPRIGHT_AUTO_HIDE = 102;
 
     /** The flag `ctabfolder_visible_controls`. */
-    public static final int CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS = 101;
+    public static final int CONFIG_FLAGS_CTABFOLDER_VISIBLE_CONTROLS = 103;
 
     /** The flag `custom_tooltip`. */
-    public static final int CONFIG_FLAGS_CUSTOM_TOOLTIP = 102;
+    public static final int CONFIG_FLAGS_CUSTOM_TOOLTIP = 104;
 
     /** The flag `decimal_separator`. */
-    public static final int CONFIG_FLAGS_DECIMAL_SEPARATOR = 103;
+    public static final int CONFIG_FLAGS_DECIMAL_SEPARATOR = 105;
 
     /** The flag `decorations_align`. */
-    public static final int CONFIG_FLAGS_DECORATIONS_ALIGN = 104;
+    public static final int CONFIG_FLAGS_DECORATIONS_ALIGN = 106;
 
     /** The flag `disable_control_gc_overlay`. */
-    public static final int CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY = 105;
+    public static final int CONFIG_FLAGS_DISABLE_CONTROL_GC_OVERLAY = 107;
 
     /** The flag `disable_evolve_icons`. */
-    public static final int CONFIG_FLAGS_DISABLE_EVOLVE_ICONS = 106;
+    public static final int CONFIG_FLAGS_DISABLE_EVOLVE_ICONS = 108;
 
     /** The flag `disable_hover_zoom`. */
-    public static final int CONFIG_FLAGS_DISABLE_HOVER_ZOOM = 107;
+    public static final int CONFIG_FLAGS_DISABLE_HOVER_ZOOM = 109;
 
     /** The flag `disable_swt_canvas_colors`. */
-    public static final int CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS = 108;
+    public static final int CONFIG_FLAGS_DISABLE_SWT_CANVAS_COLORS = 110;
 
     /** The flag `double_click_timeout_ms`. */
-    public static final int CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS = 109;
+    public static final int CONFIG_FLAGS_DOUBLE_CLICK_TIMEOUT_MS = 111;
 
     /** The flag `focus_indicators`. */
-    public static final int CONFIG_FLAGS_FOCUS_INDICATORS = 110;
+    public static final int CONFIG_FLAGS_FOCUS_INDICATORS = 112;
 
     /** The flag `font_point_scale`. */
-    public static final int CONFIG_FLAGS_FONT_POINT_SCALE = 111;
+    public static final int CONFIG_FLAGS_FONT_POINT_SCALE = 113;
 
     /** The flag `force_theme`. */
-    public static final int CONFIG_FLAGS_FORCE_THEME = 112;
+    public static final int CONFIG_FLAGS_FORCE_THEME = 114;
 
     /** The flag `gc_icons_replacement`. */
-    public static final int CONFIG_FLAGS_GC_ICONS_REPLACEMENT = 113;
+    public static final int CONFIG_FLAGS_GC_ICONS_REPLACEMENT = 115;
 
     /** The flag `hover_delay_ms`. */
-    public static final int CONFIG_FLAGS_HOVER_DELAY_MS = 114;
+    public static final int CONFIG_FLAGS_HOVER_DELAY_MS = 116;
 
     /** The flag `image_disable_icons_replacement`. */
-    public static final int CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT = 115;
+    public static final int CONFIG_FLAGS_IMAGE_DISABLE_ICONS_REPLACEMENT = 117;
 
     /** The flag `locale`. */
-    public static final int CONFIG_FLAGS_LOCALE = 116;
+    public static final int CONFIG_FLAGS_LOCALE = 118;
 
     /** The flag `notification_popup`. */
-    public static final int CONFIG_FLAGS_NOTIFICATION_POPUP = 117;
+    public static final int CONFIG_FLAGS_NOTIFICATION_POPUP = 119;
 
     /** The flag `preserve_icon_colors`. */
-    public static final int CONFIG_FLAGS_PRESERVE_ICON_COLORS = 118;
+    public static final int CONFIG_FLAGS_PRESERVE_ICON_COLORS = 120;
 
     /** The flag `print_move`. */
-    public static final int CONFIG_FLAGS_PRINT_MOVE = 119;
+    public static final int CONFIG_FLAGS_PRINT_MOVE = 121;
 
     /** The flag `push_button_margin`. */
-    public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 120;
+    public static final int CONFIG_FLAGS_PUSH_BUTTON_MARGIN = 122;
 
     /** The flag `scale_vertical_minimum_at_top`. */
-    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 121;
+    public static final int CONFIG_FLAGS_SCALE_VERTICAL_MINIMUM_AT_TOP = 123;
 
     /** The flag `show_scaling_control`. */
-    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 122;
+    public static final int CONFIG_FLAGS_SHOW_SCALING_CONTROL = 124;
 
     /** The flag `show_theme_color_palette`. */
-    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 123;
+    public static final int CONFIG_FLAGS_SHOW_THEME_COLOR_PALETTE = 125;
 
     /** The flag `system_menu_bar`. */
-    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 124;
+    public static final int CONFIG_FLAGS_SYSTEM_MENU_BAR = 126;
 
     /** The flag `theme_color`. */
-    public static final int CONFIG_FLAGS_THEME_COLOR = 125;
+    public static final int CONFIG_FLAGS_THEME_COLOR = 127;
 
     /** The flag `theme_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 126;
+    public static final int CONFIG_FLAGS_THEME_COLORS_BY_WIDGET = 128;
 
     /** The flag `theme_name`. */
-    public static final int CONFIG_FLAGS_THEME_NAME = 127;
+    public static final int CONFIG_FLAGS_THEME_NAME = 129;
 
     /** The flag `transparent_menu_check_box`. */
-    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 128;
+    public static final int CONFIG_FLAGS_TRANSPARENT_MENU_CHECK_BOX = 130;
 
     /** The flag `ui_zoom`. */
-    public static final int CONFIG_FLAGS_UI_ZOOM = 129;
+    public static final int CONFIG_FLAGS_UI_ZOOM = 131;
 
     /** The flag `use_special_dropdown_button`. */
-    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 130;
+    public static final int CONFIG_FLAGS_USE_SPECIAL_DROPDOWN_BUTTON = 132;
 
     /** The flag `use_swt_border`. */
-    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 131;
+    public static final int CONFIG_FLAGS_USE_SWT_BORDER = 133;
 
     /** The flag `use_swt_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 132;
+    public static final int CONFIG_FLAGS_USE_SWT_COLORS = 134;
 
     /** The flag `use_swt_font_colors`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 133;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS = 135;
 
     /** The flag `use_swt_font_colors_by_widget`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 134;
+    public static final int CONFIG_FLAGS_USE_SWT_FONT_COLORS_BY_WIDGET = 136;
 
     /** The flag `use_swt_fonts`. */
-    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 135;
+    public static final int CONFIG_FLAGS_USE_SWT_FONTS = 137;
 
     /** The event's `button`. */
-    public static final int EVENT_BUTTON = 193;
+    public static final int EVENT_BUTTON = 195;
 
     /** The event's `character`. */
-    public static final int EVENT_CHARACTER = 194;
+    public static final int EVENT_CHARACTER = 196;
 
     /** The event's `count`. */
-    public static final int EVENT_COUNT = 195;
+    public static final int EVENT_COUNT = 197;
 
     /** The event's `currentDataTypeId`. */
-    public static final int EVENT_CURRENT_DATA_TYPE_ID = 196;
+    public static final int EVENT_CURRENT_DATA_TYPE_ID = 198;
 
     /** The event's `detail`. */
-    public static final int EVENT_DETAIL = 197;
+    public static final int EVENT_DETAIL = 199;
 
     /** The event's `doit`. */
-    public static final int EVENT_DOIT = 198;
+    public static final int EVENT_DOIT = 200;
 
     /** The event's `dragImage`. */
-    public static final int EVENT_DRAG_IMAGE = 199;
+    public static final int EVENT_DRAG_IMAGE = 201;
 
     /** The event's `end`. */
-    public static final int EVENT_END = 200;
+    public static final int EVENT_END = 202;
 
     /** The event's `feedback`. */
-    public static final int EVENT_FEEDBACK = 201;
+    public static final int EVENT_FEEDBACK = 203;
 
     /** The event's `gc`. */
-    public static final int EVENT_GC = 202;
+    public static final int EVENT_GC = 204;
 
     /** The event's `height`. */
-    public static final int EVENT_HEIGHT = 203;
+    public static final int EVENT_HEIGHT = 205;
 
     /** The event's `index`. */
-    public static final int EVENT_INDEX = 204;
+    public static final int EVENT_INDEX = 206;
 
     /** The event's `item`. */
-    public static final int EVENT_ITEM = 205;
+    public static final int EVENT_ITEM = 207;
 
     /** The event's `itemId`. */
-    public static final int EVENT_ITEM_ID = 206;
+    public static final int EVENT_ITEM_ID = 208;
 
     /** The event's `keyCode`. */
-    public static final int EVENT_KEY_CODE = 207;
+    public static final int EVENT_KEY_CODE = 209;
 
     /** The event's `keyLocation`. */
-    public static final int EVENT_KEY_LOCATION = 208;
+    public static final int EVENT_KEY_LOCATION = 210;
 
     /** The event's `magnification`. */
-    public static final int EVENT_MAGNIFICATION = 209;
+    public static final int EVENT_MAGNIFICATION = 211;
 
     /** The event's `operations`. */
-    public static final int EVENT_OPERATIONS = 210;
+    public static final int EVENT_OPERATIONS = 212;
 
     /** The event's `rotation`. */
-    public static final int EVENT_ROTATION = 211;
+    public static final int EVENT_ROTATION = 213;
 
     /** The event's `segments`. */
-    public static final int EVENT_SEGMENTS = 212;
+    public static final int EVENT_SEGMENTS = 214;
 
     /** The event's `segmentsChars`. */
-    public static final int EVENT_SEGMENTS_CHARS = 213;
+    public static final int EVENT_SEGMENTS_CHARS = 215;
 
     /** The event's `start`. */
-    public static final int EVENT_START = 214;
+    public static final int EVENT_START = 216;
 
     /** The event's `stateMask`. */
-    public static final int EVENT_STATE_MASK = 215;
+    public static final int EVENT_STATE_MASK = 217;
 
     /** The event's `text`. */
-    public static final int EVENT_TEXT = 216;
+    public static final int EVENT_TEXT = 218;
 
     /** The event's `time`. */
-    public static final int EVENT_TIME = 217;
+    public static final int EVENT_TIME = 219;
 
     /** The event's `touches`. */
-    public static final int EVENT_TOUCHES = 218;
+    public static final int EVENT_TOUCHES = 220;
 
     /** The event's `type`. */
-    public static final int EVENT_TYPE = 219;
+    public static final int EVENT_TYPE = 221;
 
     /** The event's `widget`. */
-    public static final int EVENT_WIDGET = 220;
+    public static final int EVENT_WIDGET = 222;
 
     /** The event's `width`. */
-    public static final int EVENT_WIDTH = 221;
+    public static final int EVENT_WIDTH = 223;
 
     /** The event's `x`. */
-    public static final int EVENT_X = 222;
+    public static final int EVENT_X = 224;
 
     /** The event's `xDirection`. */
-    public static final int EVENT_X_DIRECTION = 223;
+    public static final int EVENT_X_DIRECTION = 225;
 
     /** The event's `y`. */
-    public static final int EVENT_Y = 224;
+    public static final int EVENT_Y = 226;
 
     /** The event's `yDirection`. */
-    public static final int EVENT_Y_DIRECTION = 225;
+    public static final int EVENT_Y_DIRECTION = 227;
 }

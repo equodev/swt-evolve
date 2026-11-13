@@ -25,7 +25,7 @@ public class VTableCursor extends VCanvas {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 145:
+            case 147:
                 return false;
         }
         return super.writeWire(w, key);
@@ -34,7 +34,7 @@ public class VTableCursor extends VCanvas {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 145:
+            case 147:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
         }
         return super.writeWireWhole(w, key);

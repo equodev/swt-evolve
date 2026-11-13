@@ -18,6 +18,7 @@ package org.eclipse.swt.custom;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
+import java.util.Objects;
 import dev.equo.swt.*;
 
 /**
@@ -147,12 +148,22 @@ public class DartViewForm extends DartComposite implements IViewForm {
     @Override
     public Rectangle computeTrim(int x, int y, int width, int height) {
         checkWidget();
-        return Sizes.computeTrim(this, x, y, width, height);
+        int trimX = x - borderLeft - highlight;
+        int trimY = y - borderTop - highlight;
+        int trimWidth = width + borderLeft + borderRight + 2 * highlight;
+        int trimHeight = height + borderTop + borderBottom + 2 * highlight;
+        return new Rectangle(trimX, trimY, trimWidth, trimHeight);
     }
 
     @Override
     public Rectangle getClientArea() {
-        return Sizes.getClientArea(this);
+        checkWidget();
+        Rectangle clientArea = super.getClientArea();
+        clientArea.x += borderLeft;
+        clientArea.y += borderTop;
+        clientArea.width -= borderLeft + borderRight;
+        clientArea.height -= borderTop + borderBottom;
+        return clientArea;
     }
 
     /**
@@ -408,6 +419,9 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setBorderVisible(boolean show) {
         checkWidget();
+        if (this.showBorder != show) {
+            getValue().markDirty(VViewForm.BORDER_VISIBLE);
+        }
         if (showBorder == show)
             return;
         showBorder = show;

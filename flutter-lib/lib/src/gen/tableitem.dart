@@ -57,40 +57,40 @@ class VTableItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 578: // background
+      case 580: // background
         background = r.color();
         return true;
-      case 579: // backgrounds
+      case 581: // backgrounds
         backgrounds = r.list((r) => r.color());
         return true;
-      case 580: // checked
+      case 582: // checked
         checked = r.boolean();
         return true;
-      case 581: // font
+      case 583: // font
         font = r.object(VFont.new);
         return true;
-      case 582: // fonts
+      case 584: // fonts
         fonts = r.objects(VFont.new);
         return true;
-      case 583: // foreground
+      case 585: // foreground
         foreground = r.color();
         return true;
-      case 584: // foregrounds
+      case 586: // foregrounds
         foregrounds = r.list((r) => r.color());
         return true;
-      case 585: // grayed
+      case 587: // grayed
         grayed = r.boolean();
         return true;
-      case 586: // images
+      case 588: // images
         images = r.list((r) => r.image());
         return true;
-      case 587: // paintedImages
+      case 589: // paintedImages
         paintedImages = r.ints();
         return true;
-      case 588: // paintedTexts
+      case 590: // paintedTexts
         paintedTexts = r.ints();
         return true;
-      case 589: // texts
+      case 591: // texts
         texts = r.strings();
         return true;
       default:
@@ -104,82 +104,82 @@ class VTableItem extends VItem {
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(578);
+        w.key(580);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgrounds;
       if (v_ != null) {
-        w.key(579);
+        w.key(581);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = checked;
       if (v_ != null) {
-        w.keyBoolean(580, v_);
+        w.keyBoolean(582, v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(581);
+        w.key(583);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = fonts;
       if (v_ != null) {
-        w.key(582);
+        w.key(584);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(583);
+        w.key(585);
         w.colorValue(v_);
       }
     }
     {
       final v_ = foregrounds;
       if (v_ != null) {
-        w.key(584);
+        w.key(586);
         w.list(v_, (e) => w.colorValue(e));
       }
     }
     {
       final v_ = grayed;
       if (v_ != null) {
-        w.keyBoolean(585, v_);
+        w.keyBoolean(587, v_);
       }
     }
     {
       final v_ = images;
       if (v_ != null) {
-        w.key(586);
+        w.key(588);
         w.list(v_, (e) => w.ref(e?.id));
       }
     }
     {
       final v_ = paintedImages;
       if (v_ != null) {
-        w.key(587);
+        w.key(589);
         w.ints(v_);
       }
     }
     {
       final v_ = paintedTexts;
       if (v_ != null) {
-        w.key(588);
+        w.key(590);
         w.ints(v_);
       }
     }
     {
       final v_ = texts;
       if (v_ != null) {
-        w.key(589);
+        w.key(591);
         w.strings(v_);
       }
     }
@@ -188,17 +188,17 @@ class VTableItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(578, background);
-    visit(579, backgrounds);
-    visit(580, checked);
-    visit(581, font);
-    visit(582, fonts);
-    visit(583, foreground);
-    visit(584, foregrounds);
-    visit(585, grayed);
-    visit(586, images);
-    visit(587, paintedImages);
-    visit(588, paintedTexts);
-    visit(589, texts);
+    visit(580, background);
+    visit(581, backgrounds);
+    visit(582, checked);
+    visit(583, font);
+    visit(584, fonts);
+    visit(585, foreground);
+    visit(586, foregrounds);
+    visit(587, grayed);
+    visit(588, images);
+    visit(589, paintedImages);
+    visit(590, paintedTexts);
+    visit(591, texts);
   }
 }

@@ -61,17 +61,17 @@ public class VDateTime extends VComposite {
         ((DartDateTime) impl).year = value;
     }
 
-    public static final int DAY = 165;
+    public static final int DAY = 167;
 
-    public static final int HOURS = 166;
+    public static final int HOURS = 168;
 
-    public static final int MINUTES = 167;
+    public static final int MINUTES = 169;
 
-    public static final int MONTH = 168;
+    public static final int MONTH = 170;
 
-    public static final int SECONDS = 169;
+    public static final int SECONDS = 171;
 
-    public static final int YEAR = 170;
+    public static final int YEAR = 172;
 
     @Override
     public String wireName(int key) {
@@ -95,24 +95,24 @@ public class VDateTime extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 149:
                 return false;
-            case 165:
+            case 167:
                 w.write((int) getDay());
                 return true;
-            case 166:
+            case 168:
                 w.write((int) getHours());
                 return true;
-            case 167:
+            case 169:
                 w.write((int) getMinutes());
                 return true;
-            case 168:
+            case 170:
                 w.write((int) getMonth());
                 return true;
-            case 169:
+            case 171:
                 w.write((int) getSeconds());
                 return true;
-            case 170:
+            case 172:
                 w.write((int) getYear());
                 return true;
         }
@@ -122,51 +122,51 @@ public class VDateTime extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 149:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 165:
+            case 167:
                 {
                     int v_ = getDay();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(165);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 166:
-                {
-                    int v_ = getHours();
-                    w.key(166);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 167:
-                {
-                    int v_ = getMinutes();
                     w.key(167);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 168:
                 {
-                    int v_ = getMonth();
+                    int v_ = getHours();
                     w.key(168);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 169:
                 {
-                    int v_ = getSeconds();
+                    int v_ = getMinutes();
                     w.key(169);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 170:
                 {
+                    int v_ = getMonth();
+                    w.key(170);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 171:
+                {
+                    int v_ = getSeconds();
+                    w.key(171);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 172:
+                {
                     int v_ = getYear();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(170);
+                    w.key(172);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -174,7 +174,7 @@ public class VDateTime extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 165, 166, 167, 168, 169, 170 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 167, 168, 169, 170, 171, 172 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -188,10 +188,10 @@ public class VDateTime extends VComposite {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 166:
-            case 167:
             case 168:
             case 169:
+            case 170:
+            case 171:
                 return true;
         }
         return super.wireAlways(key);

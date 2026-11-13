@@ -226,6 +226,8 @@ class DartViewFormLayout extends DartLayout implements IViewFormLayout {
             }
             form.redraw(((DartViewForm) form.getImpl()).borderLeft, t, form.getSize().x - ((DartViewForm) form.getImpl()).borderLeft - ((DartViewForm) form.getImpl()).borderRight, b - t, false);
         }
+        ((DartViewForm) composite.getImpl()).getValue().markDirty(VViewForm.HIGHLIGHT);
+        ((DartViewForm) composite.getImpl()).getValue().markDirty(VViewForm.SEPARATOR);
     }
 
     public ViewFormLayout getApi() {

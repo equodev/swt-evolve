@@ -62,28 +62,28 @@ class VScrolledComposite extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 451: // alwaysShowScrollBars
+      case 453: // alwaysShowScrollBars
         alwaysShowScrollBars = r.boolean();
         return true;
-      case 452: // content
+      case 454: // content
         content = r.ref<VControl>();
         return true;
-      case 453: // expandHorizontal
+      case 455: // expandHorizontal
         expandHorizontal = r.boolean();
         return true;
-      case 454: // expandVertical
+      case 456: // expandVertical
         expandVertical = r.boolean();
         return true;
-      case 455: // minHeight
+      case 457: // minHeight
         minHeight = r.int32();
         return true;
-      case 456: // minWidth
+      case 458: // minWidth
         minWidth = r.int32();
         return true;
-      case 457: // origin
+      case 459: // origin
         origin = r.point();
         return true;
-      case 458: // originRequest
+      case 460: // originRequest
         originRequest = r.int32();
         return true;
       default:
@@ -97,50 +97,50 @@ class VScrolledComposite extends VComposite {
     {
       final v_ = alwaysShowScrollBars;
       if (v_ != null) {
-        w.keyBoolean(451, v_);
+        w.keyBoolean(453, v_);
       }
     }
     {
       final v_ = content;
       if (v_ != null) {
-        w.keyRef(452, v_.id);
+        w.keyRef(454, v_.id);
       }
     }
     {
       final v_ = expandHorizontal;
       if (v_ != null) {
-        w.keyBoolean(453, v_);
+        w.keyBoolean(455, v_);
       }
     }
     {
       final v_ = expandVertical;
       if (v_ != null) {
-        w.keyBoolean(454, v_);
+        w.keyBoolean(456, v_);
       }
     }
     {
       final v_ = minHeight;
       if (v_ != null) {
-        w.keyInt32(455, v_);
+        w.keyInt32(457, v_);
       }
     }
     {
       final v_ = minWidth;
       if (v_ != null) {
-        w.keyInt32(456, v_);
+        w.keyInt32(458, v_);
       }
     }
     {
       final v_ = origin;
       if (v_ != null) {
-        w.key(457);
+        w.key(459);
         w.pointValue(v_);
       }
     }
     {
       final v_ = originRequest;
       if (v_ != null) {
-        w.keyInt32(458, v_);
+        w.keyInt32(460, v_);
       }
     }
   }
@@ -148,14 +148,14 @@ class VScrolledComposite extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(451, alwaysShowScrollBars);
-    visit(452, content);
-    visit(453, expandHorizontal);
-    visit(454, expandVertical);
-    visit(455, minHeight);
-    visit(456, minWidth);
-    visit(457, origin);
-    visit(458, originRequest);
+    visit(453, alwaysShowScrollBars);
+    visit(454, content);
+    visit(455, expandHorizontal);
+    visit(456, expandVertical);
+    visit(457, minHeight);
+    visit(458, minWidth);
+    visit(459, origin);
+    visit(460, originRequest);
   }
 
   @override

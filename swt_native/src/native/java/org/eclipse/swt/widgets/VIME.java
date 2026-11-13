@@ -58,7 +58,7 @@ public class VIME extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return false;
         }
         return super.writeWire(w, key);
@@ -67,7 +67,7 @@ public class VIME extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
         }
         return super.writeWireWhole(w, key);

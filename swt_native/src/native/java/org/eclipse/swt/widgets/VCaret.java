@@ -47,15 +47,15 @@ public class VCaret extends VWidget {
         return ((DartCaret) impl).blinkRate;
     }
 
-    public static final int BLINK_RATE = 73;
+    public static final int BLINK_RATE = 75;
 
-    public static final int BOUNDS = 74;
+    public static final int BOUNDS = 76;
 
-    public static final int FOCUSED = 75;
+    public static final int FOCUSED = 77;
 
-    public static final int IMAGE = 76;
+    public static final int IMAGE = 78;
 
-    public static final int VISIBLE = 77;
+    public static final int VISIBLE = 79;
 
     @Override
     public String wireName(int key) {
@@ -77,21 +77,21 @@ public class VCaret extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return false;
-            case 77:
+            case 79:
                 w.write(getVisible());
                 return true;
-            case 74:
+            case 76:
                 w.write(getBounds());
                 return true;
-            case 76:
+            case 78:
                 w.image(getImage());
                 return true;
-            case 75:
+            case 77:
                 w.write(getFocused());
                 return true;
-            case 73:
+            case 75:
                 w.write((int) getBlinkRate());
                 return true;
         }
@@ -101,48 +101,48 @@ public class VCaret extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 77:
+            case 79:
                 {
                     boolean v_ = getVisible();
-                    w.key(77);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 74:
-                {
-                    Rectangle v_ = getBounds();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(74);
+                    w.key(79);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 76:
                 {
+                    Rectangle v_ = getBounds();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(76);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 78:
+                {
                     Image v_ = getImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(76);
+                    w.key(78);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 75:
+            case 77:
                 {
                     boolean v_ = getFocused();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(75);
+                    w.key(77);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 73:
+            case 75:
                 {
                     int v_ = getBlinkRate();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(73);
+                    w.key(75);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -150,7 +150,7 @@ public class VCaret extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 77, 74, 76, 75, 73 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 79, 76, 78, 77, 75 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -164,7 +164,7 @@ public class VCaret extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 77:
+            case 79:
                 return true;
         }
         return super.wireAlways(key);

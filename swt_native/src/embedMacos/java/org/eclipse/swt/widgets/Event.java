@@ -382,53 +382,53 @@ public class Event implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(220);
-        w.ref(widget);
-        w.key(219);
-        w.write((int) type);
-        w.key(197);
-        w.write((int) detail);
-        w.key(205);
-        w.ref(item);
-        w.key(204);
-        w.write((int) index);
-        w.key(202);
-        w.ref(gc);
         w.key(222);
-        w.write((int) x);
-        w.key(224);
-        w.write((int) y);
+        w.ref(widget);
         w.key(221);
-        w.write((int) width);
-        w.key(203);
-        w.write((int) height);
-        w.key(195);
-        w.write((int) count);
-        w.key(217);
-        w.write((int) time);
-        w.key(193);
-        w.write((int) button);
-        w.key(194);
-        w.write(character);
+        w.write((int) type);
+        w.key(199);
+        w.write((int) detail);
         w.key(207);
+        w.ref(item);
+        w.key(206);
+        w.write((int) index);
+        w.key(204);
+        w.ref(gc);
+        w.key(224);
+        w.write((int) x);
+        w.key(226);
+        w.write((int) y);
+        w.key(223);
+        w.write((int) width);
+        w.key(205);
+        w.write((int) height);
+        w.key(197);
+        w.write((int) count);
+        w.key(219);
+        w.write((int) time);
+        w.key(195);
+        w.write((int) button);
+        w.key(196);
+        w.write(character);
+        w.key(209);
         w.write((int) keyCode);
-        w.key(208);
+        w.key(210);
         w.write((int) keyLocation);
-        w.key(215);
+        w.key(217);
         w.write((int) stateMask);
-        w.key(214);
-        w.write((int) start);
-        w.key(200);
-        w.write((int) end);
         w.key(216);
-        w.write(text);
-        w.key(212);
-        w.write(segments);
-        w.key(213);
-        w.write(segmentsChars);
-        w.key(198);
-        w.write(doit);
+        w.write((int) start);
+        w.key(202);
+        w.write((int) end);
         w.key(218);
+        w.write(text);
+        w.key(214);
+        w.write(segments);
+        w.key(215);
+        w.write(segmentsChars);
+        w.key(200);
+        w.write(doit);
+        w.key(220);
         {
             Touch[] a_ = touches;
             if (a_ == null)
@@ -445,111 +445,111 @@ public class Event implements dev.equo.swt.WireObject {
                 }
             }
         }
-        w.key(223);
-        w.write((int) xDirection);
         w.key(225);
+        w.write((int) xDirection);
+        w.key(227);
         w.write((int) yDirection);
-        w.key(209);
-        w.write(magnification);
         w.key(211);
+        w.write(magnification);
+        w.key(213);
         w.write(rotation);
-        w.key(201);
+        w.key(203);
         w.write((int) feedback);
-        w.key(210);
+        w.key(212);
         w.write((int) operations);
-        w.key(196);
+        w.key(198);
         w.write((int) currentDataTypeId);
-        w.key(199);
+        w.key(201);
         w.image(dragImage);
-        w.key(206);
+        w.key(208);
         w.write(itemId);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 219:
+            case 221:
                 type = r.int32();
                 return true;
-            case 197:
+            case 199:
                 detail = r.int32();
                 return true;
-            case 204:
+            case 206:
                 index = r.int32();
                 return true;
-            case 222:
+            case 224:
                 x = r.int32();
                 return true;
-            case 224:
+            case 226:
                 y = r.int32();
                 return true;
-            case 221:
+            case 223:
                 width = r.int32();
                 return true;
-            case 203:
+            case 205:
                 height = r.int32();
                 return true;
-            case 195:
+            case 197:
                 count = r.int32();
                 return true;
-            case 217:
+            case 219:
                 time = r.int32();
                 return true;
-            case 193:
+            case 195:
                 button = r.int32();
                 return true;
-            case 194:
+            case 196:
                 character = r.char16();
                 return true;
-            case 207:
+            case 209:
                 keyCode = r.int32();
                 return true;
-            case 208:
+            case 210:
                 keyLocation = r.int32();
                 return true;
-            case 215:
+            case 217:
                 stateMask = r.int32();
                 return true;
-            case 214:
+            case 216:
                 start = r.int32();
                 return true;
-            case 200:
+            case 202:
                 end = r.int32();
                 return true;
-            case 216:
+            case 218:
                 text = r.string();
                 return true;
-            case 212:
+            case 214:
                 segments = r.ints();
                 return true;
-            case 213:
+            case 215:
                 segmentsChars = r.chars();
                 return true;
-            case 198:
+            case 200:
                 doit = r.bool();
                 return true;
-            case 223:
+            case 225:
                 xDirection = r.int32();
                 return true;
-            case 225:
+            case 227:
                 yDirection = r.int32();
                 return true;
-            case 209:
+            case 211:
                 magnification = r.float64();
                 return true;
-            case 211:
+            case 213:
                 rotation = r.float64();
                 return true;
-            case 201:
+            case 203:
                 feedback = r.int32();
                 return true;
-            case 210:
+            case 212:
                 operations = r.int32();
                 return true;
-            case 196:
+            case 198:
                 currentDataTypeId = r.int32();
                 return true;
-            case 206:
+            case 208:
                 itemId = r.int64();
                 return true;
         }

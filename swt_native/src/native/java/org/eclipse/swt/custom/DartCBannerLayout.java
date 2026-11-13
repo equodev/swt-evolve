@@ -198,6 +198,8 @@ class DartCBannerLayout extends DartLayout implements ICBannerLayout {
             right.setBounds(rightRect);
         if (leftRect != null)
             left.setBounds(leftRect);
+        ((DartCBanner) composite.getImpl()).getValue().markDirty(VCBanner.CURVE_LINE);
+        ((DartCBanner) composite.getImpl()).getValue().markDirty(VCBanner.BOTTOM_LINE);
     }
 
     public CBannerLayout getApi() {

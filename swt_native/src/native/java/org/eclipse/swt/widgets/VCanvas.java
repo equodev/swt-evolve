@@ -35,7 +35,7 @@ public class VCanvas extends VComposite {
         ((DartCanvas) impl).caret = value;
     }
 
-    public static final int CARET = 72;
+    public static final int CARET = 74;
 
     @Override
     public String wireName(int key) {
@@ -49,7 +49,7 @@ public class VCanvas extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 72:
+            case 74:
                 w.ref(getCaret());
                 return true;
         }
@@ -59,12 +59,12 @@ public class VCanvas extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 72:
+            case 74:
                 {
                     Caret v_ = getCaret();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(72);
+                    w.key(74);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -72,7 +72,7 @@ public class VCanvas extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 72 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 74 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

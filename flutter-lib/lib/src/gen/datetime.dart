@@ -61,22 +61,22 @@ class VDateTime extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 165: // day
+      case 167: // day
         day = r.int32();
         return true;
-      case 166: // hours
+      case 168: // hours
         hours = r.int32();
         return true;
-      case 167: // minutes
+      case 169: // minutes
         minutes = r.int32();
         return true;
-      case 168: // month
+      case 170: // month
         month = r.int32();
         return true;
-      case 169: // seconds
+      case 171: // seconds
         seconds = r.int32();
         return true;
-      case 170: // year
+      case 172: // year
         year = r.int32();
         return true;
       default:
@@ -90,37 +90,37 @@ class VDateTime extends VComposite {
     {
       final v_ = day;
       if (v_ != null) {
-        w.keyInt32(165, v_);
+        w.keyInt32(167, v_);
       }
     }
     {
       final v_ = hours;
       if (v_ != null) {
-        w.keyInt32(166, v_);
+        w.keyInt32(168, v_);
       }
     }
     {
       final v_ = minutes;
       if (v_ != null) {
-        w.keyInt32(167, v_);
+        w.keyInt32(169, v_);
       }
     }
     {
       final v_ = month;
       if (v_ != null) {
-        w.keyInt32(168, v_);
+        w.keyInt32(170, v_);
       }
     }
     {
       final v_ = seconds;
       if (v_ != null) {
-        w.keyInt32(169, v_);
+        w.keyInt32(171, v_);
       }
     }
     {
       final v_ = year;
       if (v_ != null) {
-        w.keyInt32(170, v_);
+        w.keyInt32(172, v_);
       }
     }
   }
@@ -128,11 +128,11 @@ class VDateTime extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(165, day);
-    visit(166, hours);
-    visit(167, minutes);
-    visit(168, month);
-    visit(169, seconds);
-    visit(170, year);
+    visit(167, day);
+    visit(168, hours);
+    visit(169, minutes);
+    visit(170, month);
+    visit(171, seconds);
+    visit(172, year);
   }
 }

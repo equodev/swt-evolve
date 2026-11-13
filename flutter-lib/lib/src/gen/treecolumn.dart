@@ -60,19 +60,19 @@ class VTreeColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 648: // alignment
+      case 650: // alignment
         alignment = r.int32();
         return true;
-      case 649: // moveable
+      case 651: // moveable
         moveable = r.boolean();
         return true;
-      case 650: // resizable
+      case 652: // resizable
         resizable = r.boolean();
         return true;
-      case 651: // toolTipText
+      case 653: // toolTipText
         toolTipText = r.string();
         return true;
-      case 652: // width
+      case 654: // width
         width = r.int32();
         return true;
       default:
@@ -86,32 +86,32 @@ class VTreeColumn extends VItem {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(648, v_);
+        w.keyInt32(650, v_);
       }
     }
     {
       final v_ = moveable;
       if (v_ != null) {
-        w.keyBoolean(649, v_);
+        w.keyBoolean(651, v_);
       }
     }
     {
       final v_ = resizable;
       if (v_ != null) {
-        w.keyBoolean(650, v_);
+        w.keyBoolean(652, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(651);
+        w.key(653);
         w.string(v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(652, v_);
+        w.keyInt32(654, v_);
       }
     }
   }
@@ -119,11 +119,11 @@ class VTreeColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(648, alignment);
-    visit(649, moveable);
-    visit(650, resizable);
-    visit(651, toolTipText);
-    visit(652, width);
+    visit(650, alignment);
+    visit(651, moveable);
+    visit(652, resizable);
+    visit(653, toolTipText);
+    visit(654, width);
   }
 
   @override

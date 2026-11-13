@@ -27,4 +27,55 @@ class VCBanner extends VComposite {
   VCBanner.empty() {
     swt = "CBanner";
   }
+
+  List<int>? curveLine;
+  int? bottomLine;
+
+  @override
+  void copyFrom(VWidget other) {
+    super.copyFrom(other);
+    if (other is VCBanner) {
+      curveLine = other.curveLine;
+      bottomLine = other.bottomLine;
+    }
+  }
+
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case 19: // curveLine
+        curveLine = r.ints();
+        return true;
+      case 18: // bottomLine
+        bottomLine = r.int32();
+        return true;
+      default:
+        return super.readWire(key, r);
+    }
+  }
+
+  @override
+  void writeWire(WidgetWireWriter w) {
+    super.writeWire(w);
+    {
+      final v_ = curveLine;
+      if (v_ != null) {
+        w.key(19);
+        w.ints(v_);
+      }
+    }
+    {
+      final v_ = bottomLine;
+      if (v_ != null) {
+        w.keyInt32(18, v_);
+      }
+    }
+  }
+
+  @override
+  void visitWire(void Function(int key, Object? value) visit) {
+    super.visitWire(visit);
+    visit(19, curveLine);
+    visit(18, bottomLine);
+  }
 }

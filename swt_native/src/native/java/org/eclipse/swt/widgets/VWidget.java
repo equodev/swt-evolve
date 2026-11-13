@@ -107,7 +107,7 @@ public class VWidget {
         changed.removeAll(written);
     }
 
-    public static final int STYLE = 671;
+    public static final int STYLE = 676;
 
     /**
      * A property's name, by its number: for logs and tests.
@@ -125,7 +125,7 @@ public class VWidget {
      */
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 w.write((int) getStyle());
                 return true;
         }
@@ -137,10 +137,10 @@ public class VWidget {
      */
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 {
                     int v_ = getStyle();
-                    w.key(671);
+                    w.key(676);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -148,7 +148,7 @@ public class VWidget {
         return dev.equo.swt.WidgetWire.UNHANDLED;
     }
 
-    private static final int[] wireKeys_ = new int[] { 671 };
+    private static final int[] wireKeys_ = new int[] { 676 };
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -166,7 +166,7 @@ public class VWidget {
      */
     public boolean wireAlways(int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return true;
         }
         return false;

@@ -42,7 +42,7 @@ class VCanvas extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 72: // caret
+      case 74: // caret
         caret = r.ref<VCaret>();
         return true;
       default:
@@ -56,7 +56,7 @@ class VCanvas extends VComposite {
     {
       final v_ = caret;
       if (v_ != null) {
-        w.keyRef(72, v_.id);
+        w.keyRef(74, v_.id);
       }
     }
   }
@@ -64,7 +64,7 @@ class VCanvas extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(72, caret);
+    visit(74, caret);
   }
 
   @override

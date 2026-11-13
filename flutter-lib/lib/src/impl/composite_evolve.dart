@@ -333,6 +333,10 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     return buildComposite();
   }
 
+  /// What this composite draws over its own [background] and under its children, as the Paint
+  /// listener of an SWT custom widget draws under its child controls.
+  Widget paintOverGround(Widget ground, Color background) => ground;
+
   @override
   Widget wrapWithGCOverlay(Widget child) {
     final gc = gcOverlay ?? (VGC()..id = state.id);
@@ -394,7 +398,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
         ParentBackgroundScope.backgroundImageOf(context) != null;
     _renderedGround = decorationImage == null && !showsInheritedImage ? backgroundColor : null;
 
-    Widget paintBackground(Widget child) {
+    Widget fillGround(Widget child) {
       if (showsInheritedImage) return child;
       if (decorationImage == null) return ColoredBox(color: backgroundColor, child: child);
       return DecoratedBox(
@@ -402,6 +406,8 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
         child: child,
       );
     }
+
+    Widget paintBackground(Widget child) => paintOverGround(fillGround(child), backgroundColor);
 
     // Java decides whether Tab stops here (VControl.tabStop): a Composite that hooks a key event,
     // children or not.

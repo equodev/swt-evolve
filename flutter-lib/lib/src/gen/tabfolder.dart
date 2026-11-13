@@ -54,10 +54,10 @@ class VTabFolder extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 553: // items
+      case 555: // items
         items = r.refs<VTabItem>(items);
         return true;
-      case 554: // selection
+      case 556: // selection
         selection = r.refs<VTabItem>(selection);
         return true;
       default:
@@ -71,14 +71,14 @@ class VTabFolder extends VComposite {
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(553);
+        w.key(555);
         w.refs(v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(554);
+        w.key(556);
         w.refs(v_);
       }
     }
@@ -87,8 +87,8 @@ class VTabFolder extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(553, items);
-    visit(554, selection);
+    visit(555, items);
+    visit(556, selection);
   }
 
   @override

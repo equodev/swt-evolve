@@ -395,95 +395,95 @@ public final class FormData implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(273);
+        w.key(275);
         w.write((int) width);
-        w.key(267);
-        w.write((int) height);
         w.key(269);
-        w.object(left);
+        w.write((int) height);
         w.key(271);
+        w.object(left);
+        w.key(273);
         w.object(right);
-        w.key(272);
+        w.key(274);
         w.object(top);
-        w.key(252);
-        w.object(bottom);
-        w.key(258);
-        w.write((int) cacheWidth);
         w.key(254);
-        w.write((int) cacheHeight);
-        w.key(265);
-        w.write((int) defaultWhint);
-        w.key(264);
-        w.write((int) defaultHhint);
-        w.key(266);
-        w.write((int) defaultWidth);
-        w.key(263);
-        w.write((int) defaultHeight);
-        w.key(261);
-        w.write((int) currentWhint);
+        w.object(bottom);
         w.key(260);
-        w.write((int) currentHhint);
-        w.key(262);
-        w.write((int) currentWidth);
-        w.key(259);
-        w.write((int) currentHeight);
-        w.key(255);
-        w.object(cacheLeft);
+        w.write((int) cacheWidth);
         w.key(256);
-        w.object(cacheRight);
-        w.key(257);
-        w.object(cacheTop);
-        w.key(253);
-        w.object(cacheBottom);
+        w.write((int) cacheHeight);
+        w.key(267);
+        w.write((int) defaultWhint);
+        w.key(266);
+        w.write((int) defaultHhint);
         w.key(268);
-        w.write(isVisited);
+        w.write((int) defaultWidth);
+        w.key(265);
+        w.write((int) defaultHeight);
+        w.key(263);
+        w.write((int) currentWhint);
+        w.key(262);
+        w.write((int) currentHhint);
+        w.key(264);
+        w.write((int) currentWidth);
+        w.key(261);
+        w.write((int) currentHeight);
+        w.key(257);
+        w.object(cacheLeft);
+        w.key(258);
+        w.object(cacheRight);
+        w.key(259);
+        w.object(cacheTop);
+        w.key(255);
+        w.object(cacheBottom);
         w.key(270);
+        w.write(isVisited);
+        w.key(272);
         w.write(needed);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 273:
+            case 275:
                 width = r.int32();
                 return true;
-            case 267:
+            case 269:
                 height = r.int32();
                 return true;
-            case 258:
+            case 260:
                 cacheWidth = r.int32();
                 return true;
-            case 254:
+            case 256:
                 cacheHeight = r.int32();
                 return true;
-            case 265:
+            case 267:
                 defaultWhint = r.int32();
                 return true;
-            case 264:
+            case 266:
                 defaultHhint = r.int32();
                 return true;
-            case 266:
+            case 268:
                 defaultWidth = r.int32();
                 return true;
-            case 263:
+            case 265:
                 defaultHeight = r.int32();
                 return true;
-            case 261:
+            case 263:
                 currentWhint = r.int32();
                 return true;
-            case 260:
+            case 262:
                 currentHhint = r.int32();
                 return true;
-            case 262:
+            case 264:
                 currentWidth = r.int32();
                 return true;
-            case 259:
+            case 261:
                 currentHeight = r.int32();
                 return true;
-            case 268:
+            case 270:
                 isVisited = r.bool();
                 return true;
-            case 270:
+            case 272:
                 needed = r.bool();
                 return true;
         }

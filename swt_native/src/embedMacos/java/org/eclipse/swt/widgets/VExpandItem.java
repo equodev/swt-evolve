@@ -43,13 +43,13 @@ public class VExpandItem extends VItem {
         return ((DartExpandItem) impl).wireHeaderHeight();
     }
 
-    public static final int CONTROL = 228;
+    public static final int CONTROL = 230;
 
-    public static final int EXPANDED = 229;
+    public static final int EXPANDED = 231;
 
-    public static final int HEADER_HEIGHT = 230;
+    public static final int HEADER_HEIGHT = 232;
 
-    public static final int HEIGHT = 231;
+    public static final int HEIGHT = 233;
 
     @Override
     public String wireName(int key) {
@@ -69,18 +69,18 @@ public class VExpandItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return false;
-            case 228:
+            case 230:
                 w.ref(getControl());
                 return true;
-            case 229:
+            case 231:
                 w.write(getExpanded());
                 return true;
-            case 231:
+            case 233:
                 w.write((int) getHeight());
                 return true;
-            case 230:
+            case 232:
                 w.write((int) getHeaderHeight());
                 return true;
         }
@@ -90,41 +90,41 @@ public class VExpandItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 671:
+            case 676:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 228:
+            case 230:
                 {
                     Control v_ = getControl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(228);
+                    w.key(230);
                     w.ref(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 229:
-                {
-                    boolean v_ = getExpanded();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(229);
-                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 231:
                 {
+                    boolean v_ = getExpanded();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(231);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 233:
+                {
                     int v_ = getHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(231);
+                    w.key(233);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 230:
+            case 232:
                 {
                     int v_ = getHeaderHeight();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(230);
+                    w.key(232);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -132,7 +132,7 @@ public class VExpandItem extends VItem {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 228, 229, 231, 230 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VItem.allWireKeys_(), new int[] { 230, 231, 233, 232 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

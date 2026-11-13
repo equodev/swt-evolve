@@ -73,9 +73,29 @@ public class VViewForm extends VComposite {
         ((DartViewForm) impl).topRight = value;
     }
 
+    public int getHighlight() {
+        return ((DartViewForm) impl).highlight;
+    }
+
+    public int getSeparator() {
+        return ((DartViewForm) impl).separator;
+    }
+
+    public static final int BORDER_VISIBLE = 673;
+
+    public static final int HIGHLIGHT = 674;
+
+    public static final int SEPARATOR = 675;
+
     @Override
     public String wireName(int key) {
         switch(key) {
+            case BORDER_VISIBLE:
+                return "borderVisible";
+            case HIGHLIGHT:
+                return "highlight";
+            case SEPARATOR:
+                return "separator";
         }
         return super.wireName(key);
     }
@@ -83,10 +103,19 @@ public class VViewForm extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 145:
-                return false;
             case 147:
                 return false;
+            case 149:
+                return false;
+            case 673:
+                w.write(getBorderVisible());
+                return true;
+            case 674:
+                w.write((int) getHighlight());
+                return true;
+            case 675:
+                w.write((int) getSeparator());
+                return true;
         }
         return super.writeWire(w, key);
     }
@@ -94,15 +123,42 @@ public class VViewForm extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 145:
-                return dev.equo.swt.WidgetWire.UNHANDLED;
             case 147:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 149:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 673:
+                {
+                    boolean v_ = getBorderVisible();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(673);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 674:
+                {
+                    int v_ = getHighlight();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(674);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 675:
+                {
+                    int v_ = getSeparator();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(675);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] {});
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 673, 674, 675 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -11,10 +11,10 @@ class VPoint implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 411: // x
+      case 413: // x
         x = r.int32();
         return true;
-      case 412: // y
+      case 414: // y
         y = r.int32();
         return true;
       default:
@@ -24,19 +24,19 @@ class VPoint implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(411, x);
-    visit(412, y);
+    visit(413, x);
+    visit(414, y);
   }
 
   @override
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = x;
-      w.keyInt32(411, v_);
+      w.keyInt32(413, v_);
     }
     {
       final v_ = y;
-      w.keyInt32(412, v_);
+      w.keyInt32(414, v_);
     }
   }
 }

@@ -121,27 +121,27 @@ public class VCLabel extends VCanvas {
         ((DartCLabel) impl).topMargin = value;
     }
 
-    public static final int ALIGNMENT = 26;
+    public static final int ALIGNMENT = 28;
 
-    public static final int BACKGROUND_IMAGE = 27;
+    public static final int BACKGROUND_IMAGE = 29;
 
-    public static final int BOTTOM_MARGIN = 28;
+    public static final int BOTTOM_MARGIN = 30;
 
-    public static final int GRADIENT_COLORS = 29;
+    public static final int GRADIENT_COLORS = 31;
 
-    public static final int GRADIENT_PERCENTS = 30;
+    public static final int GRADIENT_PERCENTS = 32;
 
-    public static final int GRADIENT_VERTICAL = 31;
+    public static final int GRADIENT_VERTICAL = 33;
 
-    public static final int IMAGE = 32;
+    public static final int IMAGE = 34;
 
-    public static final int LEFT_MARGIN = 33;
+    public static final int LEFT_MARGIN = 35;
 
-    public static final int RIGHT_MARGIN = 34;
+    public static final int RIGHT_MARGIN = 36;
 
-    public static final int TEXT = 35;
+    public static final int TEXT = 37;
 
-    public static final int TOP_MARGIN = 36;
+    public static final int TOP_MARGIN = 38;
 
     @Override
     public String wireName(int key) {
@@ -175,16 +175,16 @@ public class VCLabel extends VCanvas {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 26:
+            case 28:
                 w.write((int) getAlignment());
                 return true;
-            case 27:
+            case 29:
                 w.image(getBackgroundImage());
                 return true;
-            case 28:
+            case 30:
                 w.write((int) getBottomMargin());
                 return true;
-            case 29:
+            case 31:
                 {
                     Color[] a_ = getGradientColors();
                     if (a_ == null)
@@ -195,25 +195,25 @@ public class VCLabel extends VCanvas {
                     }
                 }
                 return true;
-            case 30:
+            case 32:
                 w.write(getGradientPercents());
                 return true;
-            case 31:
+            case 33:
                 w.write(getGradientVertical());
                 return true;
-            case 32:
+            case 34:
                 w.image(getImage());
                 return true;
-            case 33:
+            case 35:
                 w.write((int) getLeftMargin());
                 return true;
-            case 34:
+            case 36:
                 w.write((int) getRightMargin());
                 return true;
-            case 35:
+            case 37:
                 w.write(getText());
                 return true;
-            case 36:
+            case 38:
                 w.write((int) getTopMargin());
                 return true;
         }
@@ -223,27 +223,9 @@ public class VCLabel extends VCanvas {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 26:
-                {
-                    int v_ = getAlignment();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(26);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 27:
-                {
-                    Image v_ = getBackgroundImage();
-                    if (v_ == null || v_.isDisposed())
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(27);
-                    w.image(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 28:
                 {
-                    int v_ = getBottomMargin();
+                    int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(28);
@@ -252,12 +234,30 @@ public class VCLabel extends VCanvas {
                 }
             case 29:
                 {
+                    Image v_ = getBackgroundImage();
+                    if (v_ == null || v_.isDisposed())
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(29);
+                    w.image(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 30:
+                {
+                    int v_ = getBottomMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(30);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 31:
+                {
                     Color[] v_ = getGradientColors();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(29);
+                    w.key(31);
                     {
                         Color[] a_ = v_;
                         if (a_ == null)
@@ -269,70 +269,70 @@ public class VCLabel extends VCanvas {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 30:
+            case 32:
                 {
                     int[] v_ = getGradientPercents();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(30);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 31:
-                {
-                    boolean v_ = getGradientVertical();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(31);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 32:
-                {
-                    Image v_ = getImage();
-                    if (v_ == null || v_.isDisposed())
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(32);
-                    w.image(v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 33:
                 {
-                    int v_ = getLeftMargin();
-                    if (v_ == 0)
+                    boolean v_ = getGradientVertical();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(33);
-                    w.write((int) v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 34:
                 {
-                    int v_ = getRightMargin();
-                    if (v_ == 0)
+                    Image v_ = getImage();
+                    if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(34);
-                    w.write((int) v_);
+                    w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 35:
+                {
+                    int v_ = getLeftMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(35);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 36:
+                {
+                    int v_ = getRightMargin();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(36);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 37:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(35);
+                    w.key(37);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 36:
+            case 38:
                 {
                     int v_ = getTopMargin();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(36);
+                    w.key(38);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -340,7 +340,7 @@ public class VCLabel extends VCanvas {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -112,21 +112,21 @@ public class VCCombo extends VComposite {
         ((DartCCombo) impl).visibleItemCount = value;
     }
 
-    public static final int ALIGNMENT = 18;
+    public static final int ALIGNMENT = 20;
 
-    public static final int EDITABLE = 19;
+    public static final int EDITABLE = 21;
 
-    public static final int ITEM_TOOLTIPS = 20;
+    public static final int ITEM_TOOLTIPS = 22;
 
-    public static final int ITEMS = 21;
+    public static final int ITEMS = 23;
 
-    public static final int LIST_VISIBLE = 22;
+    public static final int LIST_VISIBLE = 24;
 
-    public static final int SELECTION = 23;
+    public static final int SELECTION = 25;
 
-    public static final int TEXT = 24;
+    public static final int TEXT = 26;
 
-    public static final int TEXT_LIMIT = 25;
+    public static final int TEXT_LIMIT = 27;
 
     @Override
     public String wireName(int key) {
@@ -154,30 +154,30 @@ public class VCCombo extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 149:
                 return false;
-            case 18:
+            case 20:
                 w.write((int) getAlignment());
                 return true;
-            case 19:
+            case 21:
                 w.write(getEditable());
                 return true;
-            case 20:
+            case 22:
                 w.write(getItemTooltips());
                 return true;
-            case 21:
+            case 23:
                 w.write(getItems());
                 return true;
-            case 22:
+            case 24:
                 w.write(getListVisible());
                 return true;
-            case 23:
+            case 25:
                 w.write(getSelection());
                 return true;
-            case 24:
+            case 26:
                 w.write(getText());
                 return true;
-            case 25:
+            case 27:
                 w.write((int) getTextLimit());
                 return true;
         }
@@ -187,83 +187,83 @@ public class VCCombo extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 149:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 18:
+            case 20:
                 {
                     int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(18);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 19:
-                {
-                    boolean v_ = getEditable();
-                    if (!v_)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(19);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
-            case 20:
-                {
-                    String[] v_ = getItemTooltips();
-                    if (v_ == null)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(20);
-                    w.write(v_);
+                    w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 21:
                 {
-                    String[] v_ = getItems();
-                    if (v_ == null)
+                    boolean v_ = getEditable();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.length == 0)
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(21);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 22:
                 {
-                    boolean v_ = getListVisible();
-                    if (!v_)
+                    String[] v_ = getItemTooltips();
+                    if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(22);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 23:
                 {
-                    Point v_ = getSelection();
+                    String[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.length == 0)
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(23);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 24:
                 {
-                    String v_ = getText();
-                    if (v_ == null)
+                    boolean v_ = getListVisible();
+                    if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    if (v_.isEmpty())
-                        return dev.equo.swt.WidgetWire.AT_EMPTY;
                     w.key(24);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 25:
                 {
+                    Point v_ = getSelection();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(25);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 26:
+                {
+                    String v_ = getText();
+                    if (v_ == null)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    if (v_.isEmpty())
+                        return dev.equo.swt.WidgetWire.AT_EMPTY;
+                    w.key(26);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 27:
+                {
                     int v_ = getTextLimit();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(25);
+                    w.key(27);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -271,7 +271,7 @@ public class VCCombo extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 18, 19, 20, 21, 22, 23, 24, 25 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 20, 21, 22, 23, 24, 25, 26, 27 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

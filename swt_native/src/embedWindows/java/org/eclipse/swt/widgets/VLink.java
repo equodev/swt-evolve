@@ -31,9 +31,9 @@ public class VLink extends VControl {
         ((DartLink) impl).text = value;
     }
 
-    public static final int LINK_FOREGROUND = 369;
+    public static final int LINK_FOREGROUND = 371;
 
-    public static final int TEXT = 370;
+    public static final int TEXT = 372;
 
     @Override
     public String wireName(int key) {
@@ -49,14 +49,14 @@ public class VLink extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 149:
                 return false;
-            case 148:
+            case 150:
                 return false;
-            case 369:
+            case 371:
                 w.write(getLinkForeground());
                 return true;
-            case 370:
+            case 372:
                 w.write(getText());
                 return true;
         }
@@ -66,27 +66,27 @@ public class VLink extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 149:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 148:
+            case 150:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 369:
+            case 371:
                 {
                     Color v_ = getLinkForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(369);
+                    w.key(371);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 370:
+            case 372:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(370);
+                    w.key(372);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -94,7 +94,7 @@ public class VLink extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 369, 370 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 371, 372 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

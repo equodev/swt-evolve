@@ -42,16 +42,16 @@ class VExpandItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 228: // control
+      case 230: // control
         control = r.ref<VControl>();
         return true;
-      case 229: // expanded
+      case 231: // expanded
         expanded = r.boolean();
         return true;
-      case 231: // height
+      case 233: // height
         height = r.int32();
         return true;
-      case 230: // headerHeight
+      case 232: // headerHeight
         headerHeight = r.int32();
         return true;
       default:
@@ -65,25 +65,25 @@ class VExpandItem extends VItem {
     {
       final v_ = control;
       if (v_ != null) {
-        w.keyRef(228, v_.id);
+        w.keyRef(230, v_.id);
       }
     }
     {
       final v_ = expanded;
       if (v_ != null) {
-        w.keyBoolean(229, v_);
+        w.keyBoolean(231, v_);
       }
     }
     {
       final v_ = height;
       if (v_ != null) {
-        w.keyInt32(231, v_);
+        w.keyInt32(233, v_);
       }
     }
     {
       final v_ = headerHeight;
       if (v_ != null) {
-        w.keyInt32(230, v_);
+        w.keyInt32(232, v_);
       }
     }
   }
@@ -91,10 +91,10 @@ class VExpandItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(228, control);
-    visit(229, expanded);
-    visit(231, height);
-    visit(230, headerHeight);
+    visit(230, control);
+    visit(231, expanded);
+    visit(233, height);
+    visit(232, headerHeight);
   }
 
   @override

@@ -386,9 +386,9 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
         @Override
         public void writeWireFields(dev.equo.swt.WidgetWire w) {
-            w.key(367);
+            w.key(369);
             w.write((int) getHeight());
-            w.key(368);
+            w.key(370);
             w.write((int) getWidth());
         }
     }
@@ -518,25 +518,25 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
         @Override
         public void writeWireFields(dev.equo.swt.WidgetWire w) {
-            w.key(359);
-            w.write((int) getFlags());
-            w.key(358);
-            w.write(getBackground());
-            w.key(357);
-            w.write((int) getAlignment());
-            w.key(360);
-            w.write((int) getIndent());
-            w.key(366);
-            w.write((int) getWrapIndent());
             w.key(361);
-            w.write(getJustify());
+            w.write((int) getFlags());
+            w.key(360);
+            w.write(getBackground());
+            w.key(359);
+            w.write((int) getAlignment());
             w.key(362);
-            w.write(getSegments());
+            w.write((int) getIndent());
+            w.key(368);
+            w.write((int) getWrapIndent());
             w.key(363);
-            w.write(getSegmentsChars());
+            w.write(getJustify());
             w.key(364);
-            w.write(getTabStops());
+            w.write(getSegments());
             w.key(365);
+            w.write(getSegmentsChars());
+            w.key(366);
+            w.write(getTabStops());
+            w.key(367);
             w.write((int) getVerticalIndent());
         }
     }
@@ -548,17 +548,17 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(522);
+        w.key(524);
         w.write((int) getAscent());
-        w.key(529);
+        w.key(531);
         w.write((int) getDescent());
-        w.key(544);
+        w.key(546);
         w.object((getRegularFont() == null || getRegularFont().isDisposed() ? null : ((DartFont) getRegularFont().getImpl()).getValue()));
-        w.key(542);
+        w.key(544);
         w.write(getRanges());
-        w.key(545);
+        w.key(547);
         w.write((int) getStyleCount());
-        w.key(538);
+        w.key(540);
         {
             VStyledTextRenderer.VLineInfo[] a_ = getLines();
             if (a_ == null)
@@ -575,9 +575,9 @@ public class VStyledTextRenderer implements dev.equo.swt.WireObject {
                 }
             }
         }
-        w.key(537);
+        w.key(539);
         w.write(getLineSpacings());
-        w.key(527);
+        w.key(529);
         w.write(getBulletTexts());
     }
 }

@@ -45,13 +45,13 @@ class VSashForm extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 435: // maximizedControl
+      case 437: // maximizedControl
         maximizedControl = r.ref<VControl>();
         return true;
-      case 436: // sashWidth
+      case 438: // sashWidth
         sashWidth = r.int32();
         return true;
-      case 437: // weights
+      case 439: // weights
         weights = r.ints();
         return true;
       default:
@@ -65,19 +65,19 @@ class VSashForm extends VComposite {
     {
       final v_ = maximizedControl;
       if (v_ != null) {
-        w.keyRef(435, v_.id);
+        w.keyRef(437, v_.id);
       }
     }
     {
       final v_ = sashWidth;
       if (v_ != null) {
-        w.keyInt32(436, v_);
+        w.keyInt32(438, v_);
       }
     }
     {
       final v_ = weights;
       if (v_ != null) {
-        w.key(437);
+        w.key(439);
         w.ints(v_);
       }
     }
@@ -86,9 +86,9 @@ class VSashForm extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(435, maximizedControl);
-    visit(436, sashWidth);
-    visit(437, weights);
+    visit(437, maximizedControl);
+    visit(438, sashWidth);
+    visit(439, weights);
   }
 
   @override

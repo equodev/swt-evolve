@@ -211,7 +211,7 @@ public class DartCBanner extends DartComposite implements ICBanner {
 
     @Override
     public Rectangle getClientArea() {
-        return Sizes.getClientArea(this);
+        return new Rectangle(0, 0, 0, 0);
     }
 
     /**
@@ -644,6 +644,19 @@ public class DartCBanner extends DartComposite implements ICBanner {
 
     public Point _rightMinimumSize() {
         return rightMinimumSize;
+    }
+
+    @Override
+    protected boolean hasLayoutableClientArea() {
+        return super.hasLayoutableClientArea() || CBannerHelper.hasRoomToLayOut(getSize());
+    }
+
+    int[] wireCurveLine() {
+        return CBannerHelper.curveLine(left, right, curveStart, curve, curve_width, getSize(), BORDER_STRIPE);
+    }
+
+    int wireBottomLine() {
+        return CBannerHelper.bottomLine(left, right, bottom, BORDER_STRIPE);
     }
 
     protected void _hookEvents() {
