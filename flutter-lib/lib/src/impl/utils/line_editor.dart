@@ -169,6 +169,7 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     if (oldWidget.readOnly != widget.readOnly || oldWidget.enabled != widget.enabled) {
       if (!_editable) _closeConnection();
       if (_editable && widget.focusNode.hasFocus) _openConnection();
+      if (oldWidget.readOnly != widget.readOnly && widget.focusNode.hasFocus) _restartBlink();
     }
   }
 
@@ -280,10 +281,11 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
 
   static const Duration _blinkHalfPeriod = Duration(milliseconds: 500);
 
+  /// A read-only editor shows no caret, as EditableText's `showCursor` defaults to `!readOnly`.
   void _restartBlink() {
     _blink?.cancel();
-    _cursorVisible.value = true;
-    if (!widget.focusNode.hasFocus || !_value.selection.isCollapsed) return;
+    _cursorVisible.value = !widget.readOnly;
+    if (widget.readOnly || !widget.focusNode.hasFocus || !_value.selection.isCollapsed) return;
     _blink = Timer.periodic(_blinkHalfPeriod, (_) => _cursorVisible.value = !_cursorVisible.value);
   }
 

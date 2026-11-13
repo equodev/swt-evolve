@@ -20,6 +20,7 @@ import 'package:swtflutter/src/gen/text.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/utils/line_editor.dart';
+import 'package:swtflutter/src/impl/utils/line_editor_render.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'delivery/support/deliver.dart';
@@ -160,6 +161,47 @@ void main() {
     await tester.pump();
 
     expect(_lines(tester).text, 'fixed');
+  });
+
+  // A read-only TextField shows no caret (EditableText's showCursor defaults to !readOnly).
+  for (final (style, caret) in [(SWT.READ_ONLY, false), (SWT.NONE, true)]) {
+    testWidgets('a focused ${caret ? 'editable' : 'read-only'} field ${caret ? 'shows' : 'shows no'} caret',
+        semanticsEnabled: false, (tester) async {
+      await _pump(tester, _value('fixed', style: style));
+      await _focus(tester);
+      bool shown() => tester.widget<LineEditorViewport>(find.byType(LineEditorViewport)).showCursor.value;
+
+      expect(shown(), caret);
+      _lines(tester).selection = const TextSelection.collapsed(offset: 2);
+      await tester.pump();
+      expect(shown(), caret, reason: 'after the caret moves');
+      await tester.pump(const Duration(milliseconds: 1000));
+      expect(shown(), caret, reason: 'after two blink half-periods');
+
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+
+  testWidgets('a focused field hides its caret when Java makes it read-only, and shows it again after',
+      semanticsEnabled: false, (tester) async {
+    await _pump(tester, _value('fixed'));
+    await _focus(tester);
+    bool shown() => tester.widget<LineEditorViewport>(find.byType(LineEditorViewport)).showCursor.value;
+    expect(shown(), isTrue);
+
+    await deliverWhole(_value('fixed')
+      ..seq = 2
+      ..editable = false);
+    await tester.pump();
+    expect(shown(), isFalse, reason: 'setEditable(false)');
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(shown(), isFalse, reason: 'after a blink half-period');
+
+    await deliverWhole(_value('fixed')..seq = 3);
+    await tester.pump();
+    expect(shown(), isTrue, reason: 'setEditable(true)');
+
+    await tester.pumpWidget(const SizedBox());
   });
 
   for (final (style, align) in [(SWT.LEFT, TextAlign.left), (SWT.CENTER, TextAlign.center), (SWT.RIGHT, TextAlign.right)]) {
