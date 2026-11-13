@@ -210,10 +210,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         }
     }
 
-    Point computeSize() {
-        return Sizes.computeSize(this);
-    }
-
     @Override
     void createHandle() {
     }
@@ -450,9 +446,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public int getWidth() {
         checkWidget();
-        if ((getApi().style & SWT.SEPARATOR) != 0)
-            return width;
-        return Sizes.computeSize(this).x;
+        return getBounds().width;
     }
 
     /**
@@ -553,9 +547,6 @@ public class DartToolItem extends DartItem implements IToolItem {
         if ((getApi().style & SWT.CHECK) != 0)
             setSelection(!getSelection());
         sendSelectionEvent(SWT.Selection);
-    }
-
-    void setBounds(int x, int y, int width, int height) {
     }
 
     /**

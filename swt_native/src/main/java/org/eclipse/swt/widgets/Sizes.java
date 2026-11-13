@@ -407,78 +407,62 @@ public class Sizes {
     }
 
     public static Point computeSize(DartToolBar c, int wHint, int hHint, boolean changed) {
-        ToolItem[] items = c.getItems();
-        int itemCount = items.length;
-
-        if (itemCount == 0) {
+        if (c.getItemCount() == 0) {
             return new Point(DartToolItem.DEFAULT_WIDTH, DartToolItem.DEFAULT_HEIGHT);
         }
         if (Config.getConfigFlags().ctabfolder_chevron_after_tabs && CTabFolderHelper.isChevronBar(c.getApi())) {
-            return CTabFolderHelper.chevronBarSize(computeSize((DartToolItem) items[0].getImpl()).y);
+            return CTabFolderHelper.chevronBarSize(computeSize((DartToolItem) c.getItems()[0].getImpl()).y);
         }
+        int[] extent = layout(c, wHint, null);
+        return new Point(wHint != SWT.DEFAULT ? wHint : extent[1], hHint != SWT.DEFAULT ? hHint : extent[2]);
+    }
 
-        // A wrapping bar is measured in the runs its items wrap into at the hinted extent, as native does.
-        boolean isVertical = (c.getApi().style & SWT.VERTICAL) != 0;
-        int wrapAt = isVertical ? hHint : wHint;
-        if ((c.getApi().style & SWT.WRAP) != 0 && wrapAt != SWT.DEFAULT) {
-            Point[] sizes = new Point[itemCount];
-            int across = 0;
-            for (int i = 0; i < itemCount; i++) {
-                sizes[i] = computeSize((DartToolItem) items[i].getImpl());
-                across = Math.max(across, isVertical ? sizes[i].x : sizes[i].y);
-            }
-            // As the layout wraps: any item but the first that would pass the limit starts a run 2px on.
-            int runs = 1, along = 0, maxAlong = 0;
-            for (int i = 0; i < itemCount; i++) {
-                int extent = isVertical ? sizes[i].y : sizes[i].x;
-                if (i != 0 && along + extent > wrapAt) {
-                    runs++;
-                    along = 0;
+    /**
+     * The space between the rows of a wrapping horizontal bar. It is SWT's own layout gap (ySpacing in Cocoa's
+     * ToolBar.layoutHorizontal), not a theme value; toolbar_evolve.dart lays its rows out with the same gap.
+     */
+    private static final int TOOLBAR_ROW_SPACING = 2;
+
+    /**
+     * Lays a bar's items out at a width, as the client renders them, and answers {rows, width, height} as
+     * upstream's layout does. A vertical bar stacks its items in one column as wide as the widest, WRAP or not,
+     * as on Win32 and GTK. A horizontal bar puts them in rows as tall as the tallest item; with WRAP, an item
+     * but the first that would pass the width (unless it is SWT.DEFAULT) starts a new row.
+     *
+     * @param bounds receives each item's rectangle, in item order, when not null
+     */
+    static int[] layout(DartToolBar bar, int width, Rectangle[] bounds) {
+        ToolItem[] items = bar.getItems();
+        int style = bar.getApi().style;
+        boolean vertical = (style & SWT.VERTICAL) != 0;
+        boolean wrap = !vertical && (style & SWT.WRAP) != 0 && width != SWT.DEFAULT;
+        Point[] sizes = new Point[items.length];
+        int itemWidth = 0, itemHeight = 0;
+        for (int i = 0; i < items.length; i++) {
+            sizes[i] = computeSize((DartToolItem) items[i].getImpl());
+            itemWidth = Math.max(itemWidth, sizes[i].x);
+            itemHeight = Math.max(itemHeight, sizes[i].y);
+        }
+        int x = 0, y = 0, maxX = 0, rows = 1;
+        for (int i = 0; i < items.length; i++) {
+            Rectangle item;
+            if (vertical) {
+                item = new Rectangle(0, y, itemWidth, sizes[i].y);
+                y += sizes[i].y;
+            } else {
+                if (wrap && i != 0 && x + sizes[i].x > width) {
+                    rows++;
+                    x = 0;
+                    y += TOOLBAR_ROW_SPACING + itemHeight;
                 }
-                along += extent;
-                maxAlong = Math.max(maxAlong, along);
+                item = new Rectangle(x, y, sizes[i].x, itemHeight);
+                x += sizes[i].x;
+                maxX = Math.max(maxX, x);
             }
-            int acrossTotal = runs * across + (runs - 1) * 2;
-            int width = isVertical ? acrossTotal : maxAlong;
-            int height = isVertical ? maxAlong : acrossTotal;
-            return new Point(wHint != SWT.DEFAULT ? wHint : width, hHint != SWT.DEFAULT ? hHint : height);
+            if (bounds != null)
+                bounds[i] = item;
         }
-
-        int totalWidth = 0;
-        int totalHeight = 0;
-        int maxWidth = 0;
-        int maxHeight = 0;
-
-        for (ToolItem item : items) {
-            DartToolItem dartItem = (DartToolItem) item.getImpl();
-            Point itemSize = computeSize(dartItem);
-
-            totalWidth += itemSize.x;
-            totalHeight += itemSize.y;
-            maxWidth = Math.max(maxWidth, itemSize.x);
-            maxHeight = Math.max(maxHeight, itemSize.y);
-        }
-
-        int width, height;
-        if (isVertical) {
-            // Vertical toolbar: width = max item width, height = sum of heights
-            width = maxWidth;
-            height = totalHeight;
-        } else {
-            // Horizontal toolbar: width = sum of widths, height = max item height
-            width = totalWidth;
-            height = maxHeight;
-        }
-
-        // Apply hints if provided
-        if (wHint != SWT.DEFAULT) {
-            width = wHint;
-        }
-        if (hHint != SWT.DEFAULT) {
-            height = hHint;
-        }
-
-        return new Point(width, height);
+        return vertical ? new int[] {1, itemWidth, y} : new int[] {rows, maxX, y + itemHeight};
     }
 
     /**
@@ -507,12 +491,12 @@ public class Sizes {
             // width at all: claiming a full item's width would widen the whole bar, which is as wide
             // as its widest item.
             if ((w.parent.style & SWT.HORIZONTAL) != 0) {
-                width = w.getWidth();
+                width = w.width;
                 if (width <= 0)
                     width = TOOL_ITEM_SEPARATOR;
                 height = DartToolItem.DEFAULT_HEIGHT;
             } else {
-                width = Math.max(0, w.getWidth());
+                width = Math.max(0, w.width);
                 height = TOOL_ITEM_SEPARATOR;
             }
             if (w.control != null) {
@@ -889,43 +873,55 @@ public class Sizes {
         return new Rectangle(cell.x + shift, cell.y, width, cell.height);
     }
 
-    public static Rectangle getBounds(DartToolItem item) {
-        Point size = computeSize(item);
-        ToolBar toolbar = item.parent;
-        int x = 0, y = 0;
-        if (toolbar != null) {
-            boolean isVertical = (toolbar.getStyle() & SWT.VERTICAL) != 0;
-            Composite container = toolbar.getParent();
-            if (container != null) {
-                Rectangle toolbarBounds = toolbar.getBounds();
-                if (isVertical) {
-                    size.x = Math.min(size.x, Math.max(1, container.getBounds().width - toolbarBounds.x));
-                } else {
-                    size.y = Math.min(size.y, Math.max(1, container.getBounds().height - toolbarBounds.y));
-                }
-            }
-            // An item sits at the running total of the items before it -- the same run
-            // computeSize(DartToolBar) sums the bar's own extent from.
-            for (ToolItem sibling : toolbar.getItems()) {
-                if (sibling == item.getApi())
-                    break;
-                if (!(sibling.getImpl() instanceof DartToolItem))
-                    continue;
-                Point siblingSize = computeSize((DartToolItem) sibling.getImpl());
-                if (isVertical) {
-                    y += siblingSize.y;
-                } else {
-                    x += siblingSize.x;
-                }
-            }
-            // The client centres a single run of items across a bar taller than they are.
-            if (!isVertical) {
-                int barHeight = toolbar.getBounds().height;
-                if (barHeight > size.y)
-                    y = (barHeight - size.y) / 2;
+    /**
+     * The bar's own layout: lays its items out at a width and, when resize, puts the control each item hosts on the
+     * item. Answers {rows, width, height}.
+     */
+    static int[] layOutItems(DartToolBar bar, int width, boolean resize) {
+        ToolItem[] items = bar.getItems();
+        Rectangle[] bounds = new Rectangle[items.length];
+        int[] extent = layout(bar, width, bounds);
+        if (resize) {
+            for (int i = 0; i < items.length; i++) {
+                Control control = ((DartToolItem) items[i].getImpl()).control;
+                if (control != null)
+                    control.setBounds(bounds[i]);
             }
         }
-        return new Rectangle(x, y, size.x, size.y);
+        return extent;
+    }
+
+    public static Rectangle getBounds(DartToolItem item) {
+        ToolBar toolbar = item.parent;
+        ToolItem[] siblings = toolbar != null ? toolbar.getItems() : new ToolItem[0];
+        for (int i = 0; i < siblings.length; i++) {
+            if (siblings[i] == item.getApi())
+                return getItemBounds((DartToolBar) toolbar.getImpl())[i];
+        }
+        Point size = computeSize(item);
+        return new Rectangle(0, 0, size.x, size.y);
+    }
+
+    /** Each item's rectangle in the bar, in item order, laid out at the bar's client width. */
+    static Rectangle[] getItemBounds(DartToolBar bar) {
+        ToolBar toolbar = bar.getApi();
+        boolean isVertical = (toolbar.getStyle() & SWT.VERTICAL) != 0;
+        Rectangle[] items = new Rectangle[toolbar.getItemCount()];
+        int rows = layout(bar, toolbar.getClientArea().width, items)[0];
+        Rectangle room = toolbar.getParent().getBounds();
+        Rectangle toolbarBounds = toolbar.getBounds();
+        for (Rectangle bounds : items) {
+            // An item is cut to the room the bar's parent leaves it across the bar.
+            if (isVertical) {
+                bounds.width = Math.min(bounds.width, Math.max(1, room.width - toolbarBounds.x));
+            } else {
+                bounds.height = Math.min(bounds.height, Math.max(1, room.height - toolbarBounds.y));
+            }
+            // The client centres a single row of items across a bar taller than they are.
+            if (!isVertical && rows == 1 && toolbarBounds.height > bounds.height)
+                bounds.y = (toolbarBounds.height - bounds.height) / 2;
+        }
+        return items;
     }
 
     public static Rectangle getClientArea(DartCoolBar widget) {

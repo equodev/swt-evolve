@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** A {@link SWT#WRAP} bar measured at a given extent answers with the runs its layout wraps it into. */
+/** A horizontal {@link SWT#WRAP} bar measured at a given width answers with the rows its layout wraps it into; a vertical one keeps one column. */
 @Tag("native-unit")
 @ExtendWith(ImageMeasuredToolItems.class)
 class ToolBarWrapComputeSizeNativeTest {
@@ -64,11 +64,10 @@ class ToolBarWrapComputeSizeNativeTest {
     }
 
     @Test
-    void aVerticalBarTooShortForItsItemsGrowsAColumn() {
+    void aVerticalBarTooShortForItsItemsKeepsOneColumn() {
         ToolBar bar = bar(SWT.VERTICAL | SWT.WRAP, 4);
 
-        assertThat(bar.computeSize(SWT.DEFAULT, 3 * ITEM_H))
-                .isEqualTo(new Point(2 * ITEM_W + RUN_SPACING, 3 * ITEM_H));
+        assertThat(bar.computeSize(SWT.DEFAULT, 3 * ITEM_H)).isEqualTo(new Point(ITEM_W, 3 * ITEM_H));
     }
 
     @Test

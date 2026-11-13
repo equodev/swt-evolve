@@ -140,6 +140,7 @@ public class Mocks implements BeforeEachCallback, AfterEachCallback {
         ((DartWidget) impl).display = display();
         when(w.getImpl()).thenReturn(impl);
         when(w.isEnabled()).thenReturn(true);
+        when(w.getItems()).thenReturn(new ToolItem[0]);
         when(impl.getBridge()).thenReturn(new MockFlutterBridge());
         when(impl._display()).thenReturn(display());
         return w;

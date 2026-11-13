@@ -429,9 +429,7 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public int getWidth() {
         checkWidget();
-        if ((getApi().style & SWT.SEPARATOR) != 0)
-            return width;
-        return Sizes.computeSize(this).x;
+        return getBounds().width;
     }
 
     int getWidthInPixels() {

@@ -121,30 +121,6 @@ public class DartToolBar extends DartComposite implements IToolBar {
 	* the SWT style.
 	*/
         int newStyle = style & ~(SWT.H_SCROLL | SWT.V_SCROLL);
-        /*
-	 * Only internal clients can create an NSToolbar-based ToolBar.
-	 */
-        if (!internal && (newStyle & SWT.SMOOTH) != 0) {
-            newStyle &= ~SWT.SMOOTH;
-        }
-        /*
-	 * A unified toolbar can only be parented to a Shell, and
-	 * there can only be one unified toolbar per shell. If neither of these
-	 * conditions hold, turn off the SMOOTH flag.
-	 */
-        if ((style & SWT.SMOOTH) != 0) {
-            if (parent instanceof Shell s) {
-            } else {
-                newStyle &= ~SWT.SMOOTH;
-            }
-        }
-        /*
-	 * Unified toolbar only supports a horizontal layout, and doesn't wrap.
-	 */
-        if ((newStyle & SWT.SMOOTH) != 0) {
-            newStyle &= ~(SWT.VERTICAL | SWT.WRAP);
-            newStyle |= SWT.HORIZONTAL;
-        }
         return newStyle;
     }
 
@@ -280,8 +256,9 @@ public class DartToolBar extends DartComposite implements IToolBar {
         checkWidget();
         if (point == null)
             error(SWT.ERROR_NULL_ARGUMENT);
+        Rectangle[] bounds = Sizes.getItemBounds(this);
         for (int i = 0; i < itemCount; i++) {
-            Rectangle rect = items[i].getBounds();
+            Rectangle rect = ((DartToolItem) items[i].getImpl()).flutterItemBounds != null ? items[i].getBounds() : bounds[i];
             if (rect.contains(point))
                 return items[i];
         }
@@ -381,106 +358,8 @@ public class DartToolBar extends DartComposite implements IToolBar {
         return -1;
     }
 
-    int[] layoutHorizontal(int width, int height, boolean resize) {
-        int xSpacing = 0, ySpacing = 2;
-        int marginWidth = 0, marginHeight = 0;
-        int x = marginWidth, y = marginHeight;
-        int maxX = 0, rows = 1;
-        boolean wrap = (getApi().style & SWT.WRAP) != 0;
-        int itemHeight = 0;
-        Point[] sizes = new Point[itemCount];
-        for (int i = 0; i < itemCount; i++) {
-            Point size = sizes[i] = ((DartToolItem) items[i].getImpl()).computeSize();
-            itemHeight = Math.max(itemHeight, size.y);
-        }
-        for (int i = 0; i < itemCount; i++) {
-            ToolItem item = items[i];
-            Point size = sizes[i];
-            if (wrap && i != 0 && x + size.x > width) {
-                rows++;
-                x = marginWidth;
-                y += ySpacing + itemHeight;
-            }
-            if (resize) {
-                ((DartToolItem) item.getImpl()).setBounds(x, y, size.x, itemHeight);
-                boolean visible = x + size.x <= width && y + itemHeight <= height;
-                ((DartToolItem) item.getImpl()).setVisible(visible);
-                Control control = ((DartToolItem) item.getImpl()).control;
-                if (control != null) {
-                    control.setBounds(x, y, size.x, itemHeight);
-                }
-            }
-            x += xSpacing + size.x;
-            maxX = Math.max(maxX, x);
-        }
-        return new int[] { rows, maxX, y + itemHeight };
-    }
-
-    int[] layoutUnified(int width, int height, boolean resize) {
-        int x = 0, y = 0;
-        int itemHeight = 0, maxX = 0;
-        Point[] sizes = new Point[itemCount];
-        // This next line relies on the observation that all of the toolbar item views are children of the first
-        for (int i = 0; i < itemCount; i++) {
-            Point size = sizes[i] = ((DartToolItem) items[i].getImpl()).computeSize();
-            itemHeight = Math.max(itemHeight, size.y);
-        }
-        for (int i = 0; i < itemCount; i++) {
-            ToolItem item = items[i];
-            Point size = sizes[i];
-            if (resize) {
-                ((DartToolItem) item.getImpl()).setBounds(0, 0, size.x, itemHeight);
-                Control control = ((DartToolItem) item.getImpl()).control;
-                if (control != null) {
-                    control.setBounds(x, y, size.x, itemHeight);
-                }
-            }
-            maxX = Math.max(maxX, x);
-        }
-        return new int[] { 1, maxX, itemHeight };
-    }
-
-    int[] layoutVertical(int width, int height, boolean resize) {
-        int xSpacing = 2, ySpacing = 0;
-        int marginWidth = 0, marginHeight = 0;
-        int x = marginWidth, y = marginHeight;
-        int maxY = 0, cols = 1;
-        boolean wrap = (getApi().style & SWT.WRAP) != 0;
-        int itemWidth = 0;
-        Point[] sizes = new Point[itemCount];
-        for (int i = 0; i < itemCount; i++) {
-            Point size = sizes[i] = ((DartToolItem) items[i].getImpl()).computeSize();
-            itemWidth = Math.max(itemWidth, size.x);
-        }
-        for (int i = 0; i < itemCount; i++) {
-            ToolItem item = items[i];
-            Point size = sizes[i];
-            if (wrap && i != 0 && y + size.y > height) {
-                cols++;
-                x += xSpacing + itemWidth;
-                y = marginHeight;
-            }
-            if (resize) {
-                ((DartToolItem) item.getImpl()).setBounds(x, y, itemWidth, size.y);
-                boolean visible = x + itemWidth <= width && y + size.y <= height;
-                ((DartToolItem) item.getImpl()).setVisible(visible);
-                Control control = ((DartToolItem) item.getImpl()).control;
-                if (control != null) {
-                    control.setBounds(x, y, itemWidth, size.y);
-                }
-            }
-            y += ySpacing + size.y;
-            maxY = Math.max(maxY, y);
-        }
-        return new int[] { cols, x + itemWidth, maxY };
-    }
-
     int[] layout(int nWidth, int nHeight, boolean resize) {
-        if ((getApi().style & SWT.VERTICAL) != 0) {
-            return layoutVertical(nWidth, nHeight, resize);
-        } else {
-            return layoutHorizontal(nWidth, nHeight, resize);
-        }
+        return Sizes.layOutItems(this, nWidth, resize);
     }
 
     @Override
