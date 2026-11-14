@@ -35,8 +35,11 @@ class BusyIndicatorCallerContextNativeTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws InterruptedException {
+        // The pool thread can still be calling the mocked Display (BusyIndicator wakes it once the
+        // action is done); stubbing while it does makes Mockito stub that call instead.
         pool.shutdownNow();
+        assertThat(pool.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
         CarriedContext.uninstall();
         doReturn(null).when(display).getShells();
     }
