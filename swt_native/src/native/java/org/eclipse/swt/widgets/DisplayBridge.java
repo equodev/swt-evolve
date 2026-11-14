@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.BootTrace;
+import dev.equo.swt.BrowserSurfaces;
 import dev.equo.swt.ClientPlatform;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
@@ -22,7 +23,7 @@ import org.eclipse.swt.graphics.Rectangle;
  * dispatch. The two concrete surfaces differ only in <em>where</em> the Flutter view lives and how its
  * event loop is driven:
  * <ul>
- *   <li>{@link WebDisplayBridge} — a browser (or Chromium standalone) over a {@code WebFlutterServer}.</li>
+ *   <li>a browser, through the {@link dev.equo.swt.BrowserSurface} the build includes;</li>
  *   <li>{@link DeskDisplayBridge} — one native top-level window.</li>
  * </ul>
  * Those differences are the {@code abstract}/overridable hooks below: {@link #start},
@@ -160,8 +161,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /**
      * Starts a desktop Display's bridge as soon as the Display can paint its window background, before
      * the rest of {@code Display.init()}: the native window and its engine are created on this thread,
-     * and the engine then starts Dart on its own threads while the Display is finished here. The web
-     * surface starts its page in {@code WebPageLaunch} instead.
+     * and the engine then starts Dart on its own threads while the Display is finished here. A browser
+     * surface starts its page when the Display opens it instead.
      */
     public static void startEarly(DartDisplay display) {
         if (isDesktopMode()) initForDisplay(display);
@@ -170,8 +171,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /**
      * Creates and starts the Display-level bridge. Called once during {@code Display.init()}; a bridge
      * {@link #startEarly} already started is returned as it is. Picks
-     * the native-window surface under {@code -Ddev.equo.swt.mode=desktop}, otherwise the web surface.
-     * Both concrete classes are resolved per-OS from the compiled source set.
+     * the native-window surface under {@code -Ddev.equo.swt.mode=desktop}, otherwise the browser
+     * surface, which a build without one reports as not available.
      */
     public static DisplayBridge initForDisplay(DartDisplay display) {
         // A test/bench harness may inject its own bridge (FlutterBridge.set) before the Display is
@@ -185,7 +186,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             try (BootTrace.Span ctor = BootTrace.span("bridge.new")) {
                 bridge = isDesktopMode()
                         ? new DeskDisplayBridge(display)
-                        : new WebDisplayBridge(display);
+                        : (DisplayBridge) BrowserSurfaces.require().newDisplayBridge(display.getApi());
             }
             display.setBridge(bridge);
             try (BootTrace.Span start = BootTrace.span("bridge.start")) {
@@ -491,7 +492,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             if (!first && p.isFirst) broadcastSwtEvolveProperties();
 
             // A reconnecting client (e.g. a browser refresh re-establishing the socket and re-sending
-            // ClientReady) cancels any pending tab-close — see WebDisplayBridge.onDisplayClientReady.
+            // ClientReady) cancels any pending tab-close — see the browser surface's onDisplayClientReady.
             onDisplayClientReady(first);
 
             long received = clientReportsReceived.incrementAndGet();
@@ -1633,7 +1634,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * Whether {@code DartDisplay.sleep()} must wait through {@link #sleep(int)} (capped, pump-driven)
      * rather than parking indefinitely on the wake permit. False by default (pure web is fully
      * event-driven); the surfaces that own a pull-driven event loop override it — the Chromium
-     * standalone window ({@link WebDisplayBridge}) and the desktop-native window
+     * standalone window and the desktop-native window
      * ({@link DeskDisplayBridge}, which blocks in the OS event loop).
      */
     public boolean needsPump() {

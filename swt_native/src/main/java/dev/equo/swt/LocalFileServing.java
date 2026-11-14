@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 /**
  * Lets a web-target Browser display a {@code file://} URL by re-serving it (and any
  * sibling resources it references, by a relative or a root-absolute path) same-origin
- * through {@link WebFlutterServer}'s {@code /local-file/<token>/...} endpoint.
+ * through {@code WebFlutterServer}'s {@code /local-file/<token>/...} endpoint.
  * <p>
  * Native SWT's Browser is a real OS webview and loads {@code file://} URLs
  * directly; the web-target Browser is an {@code <iframe>}, and browsers refuse

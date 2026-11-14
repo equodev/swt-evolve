@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.Event;
 import com.equo.chromium.events.BeforeBrowseEvent;
 
 import dev.equo.swt.BrowserScripting;
-import dev.equo.swt.ChromiumStandaloneLauncher;
+import dev.equo.swt.BrowserWindowEvents;
 import dev.equo.swt.FlutterBridge;
 
 public class EvolveBrowser extends WebBrowser {
@@ -84,27 +84,17 @@ public class EvolveBrowser extends WebBrowser {
         });
 
         String frameName = "equo-browser-" + FlutterBridge.id(getDartWidget());
-        // The window listeners (open/visibility/close) are driven by the launcher's window-level CEF
-        // events (onBeforePopup/onAfterCreated/onBeforeClose). These registries are static and the
-        // handlers are plain Runnables (no chromium event types), so we register UNCONDITIONALLY:
-        // this Browser is created before the launcher window opens, and the launcher reads the
-        // registry once it's up. The launcher being absent (plain web mode) just means nothing ever
-        // fires them — registration is inert.
+        // In a window that hosts the whole app, this Browser is a sub-frame: the window's own events
+        // drive its open/visibility/close listeners and the cancellable LocationListener.changing.
+        // The cast in the before-browse handler only resolves the Chromium event type once one fires.
         popupFrameName = frameName;
-        ChromiumStandaloneLauncher.registerBeforePopup(popupFrameName, this::onBeforePopup);
+        BrowserWindowEvents.registerBeforePopup(popupFrameName, this::onBeforePopup);
         visibilityKey = "vis-" + frameName;
-        ChromiumStandaloneLauncher.registerAfterCreated(visibilityKey, this::onPopupCreated);
+        BrowserWindowEvents.registerAfterCreated(visibilityKey, this::onPopupCreated);
         closeKey = "close-" + frameName;
-        ChromiumStandaloneLauncher.registerBeforeClose(closeKey, this::onPopupClosed);
-        // onBeforeBrowse (cancellable LocationListener.changing) is different: it needs the live
-        // launcher instance AND references a chromium event type (BeforeBrowseEvent), which is only
-        // on the classpath in Chromium mode. So it stays gated — touching it when launcher == null
-        // would throw NoClassDefFoundError in plain web mode.
-        ChromiumStandaloneLauncher launcher = ChromiumStandaloneLauncher.current();
-        if (launcher != null) {
-            beforeBrowseFrameName = frameName;
-            launcher.registerBeforeBrowse(beforeBrowseFrameName, this::onBeforeBrowse);
-        }
+        BrowserWindowEvents.registerBeforeClose(closeKey, this::onPopupClosed);
+        beforeBrowseFrameName = frameName;
+        BrowserWindowEvents.registerBeforeBrowse(beforeBrowseFrameName, e -> onBeforeBrowse((BeforeBrowseEvent) e));
     }
 
     /**
@@ -197,13 +187,10 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean close() {
-        if (popupFrameName != null) ChromiumStandaloneLauncher.unregisterBeforePopup(popupFrameName);
-        if (visibilityKey != null) ChromiumStandaloneLauncher.unregisterAfterCreated(visibilityKey);
-        if (closeKey != null) ChromiumStandaloneLauncher.unregisterBeforeClose(closeKey);
-        if (beforeBrowseFrameName != null) {
-            ChromiumStandaloneLauncher launcher = ChromiumStandaloneLauncher.current();
-            if (launcher != null) launcher.unregisterBeforeBrowse(beforeBrowseFrameName);
-        }
+        if (popupFrameName != null) BrowserWindowEvents.unregisterBeforePopup(popupFrameName);
+        if (visibilityKey != null) BrowserWindowEvents.unregisterAfterCreated(visibilityKey);
+        if (closeKey != null) BrowserWindowEvents.unregisterBeforeClose(closeKey);
+        if (beforeBrowseFrameName != null) BrowserWindowEvents.unregisterBeforeBrowse(beforeBrowseFrameName);
         beforeBrowseFrameName = null;
         popupFrameName = null;
         visibilityKey = null;

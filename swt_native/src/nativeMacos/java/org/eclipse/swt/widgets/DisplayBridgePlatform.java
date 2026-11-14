@@ -18,7 +18,7 @@ import org.eclipse.swt.internal.cocoa.NSWindow;
 import org.eclipse.swt.internal.cocoa.OS;
 
 /**
- * Per-OS native init shared by the two Display surfaces on macOS — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Creating the
+ * Per-OS native init shared by the two Display surfaces on macOS — the web one ({@code WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Creating the
  * window itself needs nothing from Java (the desktop-native window sets up {@code NSApp} natively
  * in {@code bridge.swift}, and the web surface drives a browser/Chromium), but the application menu
  * in the system menu bar is owned by the OS and has to be built here — see

@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Empties the font-name substitutions for each test, as on the desktop: a web test earlier in the
- * JVM registers them for good ({@link WebFontSubstitutions} is a static initializer).
+ * JVM registers them for good ({@code WebFontSubstitutions} is a static initializer).
  */
 public final class WithoutFontSubstitutions implements BeforeEachCallback, AfterEachCallback {
 

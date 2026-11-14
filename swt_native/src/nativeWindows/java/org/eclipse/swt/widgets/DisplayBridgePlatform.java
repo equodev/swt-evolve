@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.win32.OS;
 
 /**
- * Per-OS native init shared by the two Display surfaces on Windows — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
+ * Per-OS native init shared by the two Display surfaces on Windows — the web one ({@code WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
  * OLE/COM for the Display thread.
  */
 final class DisplayBridgePlatform {

@@ -38,7 +38,7 @@ repositories {
 
 val arch = System.getProperty("os.arch")
 
-val oss = listOf("embedWindows", "embedLinux", "embedMacos", "nativeWindows", "nativeLinux", "nativeMacos", "web")
+val oss = listOf("embedWindows", "embedLinux", "embedMacos", "nativeWindows", "nativeLinux", "nativeMacos")
 val platforms = listOf(
     "embed-windows-x86_64", "embed-windows-aarch64",
     "embed-linux-x86_64", "embed-linux-aarch64",
@@ -250,6 +250,29 @@ val desktopFontMetrics = oss.filter { it.startsWith("native") }.associateWith { 
     }
 }
 
+// What every backend source set shares besides its sources.
+fun backendSetup(set: SourceSet) = set.apply {
+    // The wire's channel, type and property tables: without them in the jar Java cannot read
+    // a numbered channel header, so nothing the client sends reaches it.
+    resources { srcDir("src/main/resources") }
+    annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
+    compileClasspath += sourceSets.main.get().compileClasspath
+    runtimeClasspath += sourceSets.main.get().runtimeClasspath
+}
+
+// A build that includes this one adds a whole-tree-Flutter backend of its own: src/main and
+// src/native, plus [dirs].
+extra["registerFlutterBackend"] = { name: String, dirs: List<Any> ->
+    sourceSets.create(name) {
+        java {
+            setSrcDirs(listOf("src/main/java", "src/native/java") + dirs)
+            exclude(nativeFlutterExcludes)
+            if (dropJdk9Sources) exclude(jdk9OnlySources)
+        }
+        backendSetup(this)
+    }
+}
+
 sourceSets {
     main {
         java {
@@ -264,37 +287,21 @@ sourceSets {
         }
     }
 
-    // WebFlutterServer, WebFontSubstitutions and HeadlessChrome from src/native, on embedTest's
-    // classpath without the whole web tree (thousands of files).
-    val webShared = create("webShared") {
-        java {
-            setSrcDirs(listOf("src/native/java"))
-            include("dev/equo/swt/WebFlutterServer.java", "dev/equo/swt/WebFontSubstitutions.java",
-                    "dev/equo/swt/HeadlessChrome.java")
-        }
-        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
-    }
-
     // Create source sets for all platform combinations
     oss.forEach { os ->
         create(os) {
             java {
                 when {
-                    os.startsWith("native") || os == "web" -> setSrcDirs(listOf("src/main/java", "src/native/java", "src/${os}/java"))
+                    os.startsWith("native") -> setSrcDirs(listOf("src/main/java", "src/native/java", "src/${os}/java"))
                     else -> setSrcDirs(listOf("src/main/java", "src/${os}/java"))
                 }
-                if (os.startsWith("native") || os == "web") {
+                if (os.startsWith("native")) {
                     exclude(nativeFlutterExcludes)
                 }
                 desktopFontMetrics[os]?.let { srcDir(it) }
                 if (dropJdk9Sources) exclude(jdk9OnlySources)
             }
-            // The wire's channel, type and property tables: without them in the jar Java cannot read
-            // a numbered channel header, so nothing the client sends reaches it.
-            resources { srcDir("src/main/resources") }
-            annotationProcessorPath += sourceSets.main.get().annotationProcessorPath
-            compileClasspath += sourceSets.main.get().compileClasspath
-            runtimeClasspath += sourceSets.main.get().runtimeClasspath
+            backendSetup(this)
 
             test {
                 resources {
@@ -444,8 +451,8 @@ sourceSets {
     create("embedTest") {
         java { setSrcDirs(listOf("src/embedTest/java")) }
         resources { srcDirs("src/test/resources") }
-        compileClasspath += embedBackend.output + webShared.output
-        runtimeClasspath += output + embedBackend.output + webShared.output
+        compileClasspath += embedBackend.output
+        runtimeClasspath += output + embedBackend.output
     }
 }
 
@@ -620,7 +627,7 @@ val javaFloor = 8
 // nothing on an MR compiled them at that level: the normal pipeline builds at 21 and the
 // old-version ladder is a child pipeline gated on release. Newer-Java syntax kept reaching main and
 // surfacing days later, in a release job.
-fun registerJava8Check(name: String, backendName: String, extraDirs: List<String>, flutterBackend: Boolean) =
+fun registerJava8Check(name: String, backendName: String, extraDirs: List<Any>, flutterBackend: Boolean) =
     tasks.register<JavaCompile>(name) {
         group = "verification"
         description = "Compiles the hand-written sources of $backendName at Java $javaFloor"
@@ -629,7 +636,7 @@ fun registerJava8Check(name: String, backendName: String, extraDirs: List<String
         source = files(
             fileTree("src/main/java") { include("**/*.java") },
             *extraDirs.map { d ->
-                fileTree("src/$d/java") { include(handWrittenInGeneratedTrees) }
+                fileTree(d) { include(handWrittenInGeneratedTrees) }
             }.toTypedArray()
         ).asFileTree.matching {
             exclude(jdk9OnlySources)
@@ -651,19 +658,24 @@ fun registerJava8Check(name: String, backendName: String, extraDirs: List<String
 private val osSuffix = currentOs.replaceFirstChar { it.titlecase() }
 
 // One per backend: the same file name appears in several trees (DisplayBridgePlatform in each
-// native<OS> and in web, SwtEmbeddedBridge and WidgetSpy in each embed<OS>), so one merged compile
-// would collide on duplicate classes.
+// native<OS>, SwtEmbeddedBridge and WidgetSpy in each embed<OS>), so one merged compile would
+// collide on duplicate classes.
 val checkJava8Native = registerJava8Check(
-    "checkJava8Native", "native$osSuffix", listOf("native", "native$osSuffix"), flutterBackend = true)
+    "checkJava8Native", "native$osSuffix", listOf("src/native/java", "src/native$osSuffix/java"), flutterBackend = true)
 val checkJava8Embed = registerJava8Check(
-    "checkJava8Embed", "embed$osSuffix", listOf("embed$osSuffix"), flutterBackend = false)
-val checkJava8Web = registerJava8Check(
-    "checkJava8Web", "web", listOf("native", "web"), flutterBackend = true)
+    "checkJava8Embed", "embed$osSuffix", listOf("src/embed$osSuffix/java"), flutterBackend = false)
 
 val checkJava8Sources by tasks.registering {
     group = "verification"
     description = "Checks every hand-written source that ships to a Java $javaFloor release"
-    dependsOn(checkJava8Native, checkJava8Embed, checkJava8Web)
+    dependsOn(checkJava8Native, checkJava8Embed)
+}
+
+// A build that includes this one checks the backends it adds: (name, backend, dirs).
+extra["registerJava8Check"] = { name: String, backendName: String, dirs: List<Any> ->
+    registerJava8Check(name, backendName, dirs, flutterBackend = true).also { check ->
+        checkJava8Sources.configure { dependsOn(check) }
+    }
 }
 
 // checkJavaApiLevel proves the SOURCE stays inside the release's API. This proves the ARTIFACT:

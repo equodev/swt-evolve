@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Event;
 
 import dev.equo.swt.BrowserCookies;
 import dev.equo.swt.BrowserScripting;
-import dev.equo.swt.ChromiumStandaloneLauncher;
+import dev.equo.swt.BrowserWindowEvents;
 import dev.equo.swt.FlutterBridge;
 
 public class EvolveBrowser extends WebBrowser {
@@ -108,20 +108,16 @@ public class EvolveBrowser extends WebBrowser {
             FlutterBridge.send(getDartWidget(), dev.equo.swt.WireTable.CHANNEL_NAVIGATE, lastNavArgs);
         });
 
-        // When hosted in an Equo Chromium standalone window, this Browser is a CEF sub-frame. The
-        // Flutter side cannot observe window.open/window.close from inside the (proxied) iframe, so
-        // the OpenWindow/VisibilityWindow/CloseWindow listeners are driven by the window-level CEF
-        // events the launcher exposes (onBeforePopup/onAfterCreated/onBeforeClose), broadcast to
-        // every Browser. The registries are static + Runnable-based, so we register UNCONDITIONALLY:
-        // this Browser is typically created before the launcher window opens, and the launcher reads
-        // the registry once it's up. Without a launcher (plain web mode) nothing ever fires them.
+        // In a window that hosts the whole app, this Browser is a sub-frame: Flutter cannot observe
+        // window.open/window.close from inside the (proxied) iframe, so the window's own events drive
+        // the OpenWindow/VisibilityWindow/CloseWindow listeners.
         long id = FlutterBridge.id(getDartWidget());
         popupKey = "open-" + id;
-        ChromiumStandaloneLauncher.registerBeforePopup(popupKey, this::onPopupOpened);
+        BrowserWindowEvents.registerBeforePopup(popupKey, this::onPopupOpened);
         visibilityKey = "vis-" + id;
-        ChromiumStandaloneLauncher.registerAfterCreated(visibilityKey, this::onPopupCreated);
+        BrowserWindowEvents.registerAfterCreated(visibilityKey, this::onPopupCreated);
         closeKey = "close-" + id;
-        ChromiumStandaloneLauncher.registerBeforeClose(closeKey, this::onPopupClosed);
+        BrowserWindowEvents.registerBeforeClose(closeKey, this::onPopupClosed);
     }
 
     /**
@@ -173,9 +169,9 @@ public class EvolveBrowser extends WebBrowser {
 
     @Override
     public boolean close() {
-        if (popupKey != null) ChromiumStandaloneLauncher.unregisterBeforePopup(popupKey);
-        if (visibilityKey != null) ChromiumStandaloneLauncher.unregisterAfterCreated(visibilityKey);
-        if (closeKey != null) ChromiumStandaloneLauncher.unregisterBeforeClose(closeKey);
+        if (popupKey != null) BrowserWindowEvents.unregisterBeforePopup(popupKey);
+        if (visibilityKey != null) BrowserWindowEvents.unregisterAfterCreated(visibilityKey);
+        if (closeKey != null) BrowserWindowEvents.unregisterBeforeClose(closeKey);
         popupKey = null;
         visibilityKey = null;
         closeKey = null;

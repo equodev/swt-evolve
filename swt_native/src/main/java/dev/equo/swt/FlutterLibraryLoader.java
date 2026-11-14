@@ -28,8 +28,8 @@ import java.util.stream.Stream;
  */
 public class FlutterLibraryLoader {
 
-    private static final String SEP = File.separator;
-    private static final String USER_HOME = System.getProperty("user.home");
+    static final String SEP = File.separator;
+    static final String USER_HOME = System.getProperty("user.home");
 
     // OS and Architecture Constants
     private static final String OS_LINUX = "linux";
@@ -40,9 +40,9 @@ public class FlutterLibraryLoader {
     private static final String ARCH_X86_64 = "x86_64";
 
     // Directory and File Name Constants
-    private static final String EQUO_BASE_DIR_NAME = ".equo";
-    private static final String LIB_SUB_DIR_NAME = "lib";
-    private static final String SWT_DIR_NAME = "swt";
+    static final String EQUO_BASE_DIR_NAME = ".equo";
+    static final String LIB_SUB_DIR_NAME = "lib";
+    static final String SWT_DIR_NAME = "swt";
     private static final String MACOS_LIB_NAME = "libflutter_bridge.dylib";
     public static final String CONTENTS = "Contents";
     public static final String SWTFLUTTER_APP = "swtflutter.app";
@@ -74,7 +74,6 @@ public class FlutterLibraryLoader {
     private static final String EQUO_LIB_PATH_SUFFIX =
             EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP + getOS() + SEP + getArch();
     private static boolean loaded;
-    private static File loadedWeb;
 
     /**
      * Initializes the Flutter library loader. This is the main public entry point.
@@ -90,14 +89,6 @@ public class FlutterLibraryLoader {
             try (BootTrace.Span span = BootTrace.span("natives")) {
                 extractAndLoadFlutterLibraries();
             }
-        } catch (Exception e) {
-            throw new LibraryLoaderException("Failed to initialize Flutter libraries", e);
-        }
-    }
-
-    public static File initializeWeb() {
-        try (BootTrace.Span span = BootTrace.span("natives.web")) {
-            return extractWebFlutterLibraries();
         } catch (Exception e) {
             throw new LibraryLoaderException("Failed to initialize Flutter libraries", e);
         }
@@ -131,14 +122,6 @@ public class FlutterLibraryLoader {
         }
     }
 
-    private static File extractWebFlutterLibraries() throws IOException {
-        File equoLibDir = new File(USER_HOME, EQUO_BASE_DIR_NAME + SEP + SWT_DIR_NAME + SEP + LIB_SUB_DIR_NAME);
-
-        boolean isDevelopmentMode = isDevelopmentMode();
-        System.out.println("Running in development: " + isDevelopmentMode);
-        return extractAndLoadWebLibraries(equoLibDir, isDevelopmentMode);
-    }
-
     private static void extractAndLoadMacOSLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
         if (!isDevelopmentMode) {
             String lib = SWTFLUTTER_APP + SEP + CONTENTS + SEP + MACOS_LIB_NAME;
@@ -152,27 +135,6 @@ public class FlutterLibraryLoader {
             loadLibrary(libFile.getAbsolutePath());
         } else {
             loadOSLibraries(SWTFLUTTER_APP_CONTENTS, MACOS_LIB_NAME);
-        }
-    }
-
-    private static File extractAndLoadWebLibraries(File targetDir, boolean isDevelopmentMode) throws IOException {
-        if (!isDevelopmentMode) {
-            if (loadedWeb == null) {
-                loadedWeb = bundledDirectory("web", targetDir, "web" + SEP + "index.html", "web" + SEP + "main.dart.js");
-            }
-            return new File(loadedWeb, "web");
-        } else {
-            System.out.println("Development mode: loading Flutter libraries directly from build directory");
-            File flutterBuildDir = findFlutterBuildDirectory();
-            if (flutterBuildDir == null) {
-                throw new IOException("Flutter build directory not found. Searched in common locations like 'flutter-lib/build'. Please build the Flutter app first.");
-            }
-
-            File releaseDir = new File(flutterBuildDir, "web");
-            if (!releaseDir.exists() || !releaseDir.isDirectory()) {
-                throw new IOException("Flutter Release build not found at: " + releaseDir.getAbsolutePath());
-            }
-            return releaseDir;
         }
     }
 
@@ -258,7 +220,7 @@ public class FlutterLibraryLoader {
      * directory from the jar into it. {@code requiredFiles}, relative to the returned directory, are
      * the files the caller loads.
      */
-    private static File bundledDirectory(String directoryPath, File extractionBase, String... requiredFiles) throws IOException {
+    static File bundledDirectory(String directoryPath, File extractionBase, String... requiredFiles) throws IOException {
         return bundledDirectory(codeSourceLocation(), directoryPath, extractionBase, requiredFiles);
     }
 
@@ -493,7 +455,7 @@ public class FlutterLibraryLoader {
         return osArch.equalsIgnoreCase(ARCH_AMD64) ? ARCH_X86_64 : osArch;
     }
 
-    private static boolean isDevelopmentMode() {
+    static boolean isDevelopmentMode() {
         try (BootTrace.Span span = BootTrace.span("findFlutterBuildDirectory")) {
             return findFlutterBuildDirectory() != null;
         }
@@ -551,7 +513,7 @@ public class FlutterLibraryLoader {
     // native bridge/engine from. The bundle path is handed to the bridge via setBundleDir
     // in applyExternalBundleOverride() (called from extractAndLoadFlutterLibraries after the
     // natives load); Evolve's own natives load from its build/jar as in standalone.
-    private static File findFlutterBuildDirectory() {
+    static File findFlutterBuildDirectory() {
         String[] possiblePaths = {
                 "flutter-lib/build",
                 "../flutter-lib/build",
@@ -583,20 +545,6 @@ public class FlutterLibraryLoader {
             String base = p.extractAndGetBundleBaseDir();
             if (base != null && !base.trim().isEmpty()) {
                 return base;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Web analogue of {@link #firstBundleBaseDir}: the first provider's non-blank web directory, or
-     * null. The real caller passes {@code ServiceLoader.load(ExternalWebBundleProvider.class)}.
-     */
-    public static String firstExternalWebDir(Iterable<ExternalWebBundleProvider> providers) {
-        for (ExternalWebBundleProvider p : providers) {
-            String dir = p.extractAndGetWebDir();
-            if (dir != null && !dir.trim().isEmpty()) {
-                return dir;
             }
         }
         return null;

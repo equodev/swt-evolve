@@ -1928,7 +1928,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
         systemAppearance = dev.equo.swt.SystemAppearance.readAhead();
         DisplayBridgePlatform.preload();
         DisplayBridgePlatform.configureClassDataArchive();
-        webPageServer = dev.equo.swt.WebPageLaunch.start(this.getApi(), DisplayBridgePlatform::beforeBrowserLaunch);
+        browserPage = dev.equo.swt.BrowserSurfaces.open(this.getApi(), DisplayBridgePlatform::beforeBrowserLaunch);
         super.init();
         DisplayBridge.startEarly(this);
         if ("true".equalsIgnoreCase(System.getProperty(USE_SYSTEM_THEME))) {
@@ -4073,7 +4073,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 Default = null;
             deregister(this.getApi());
         }
-        webPageServer = dev.equo.swt.WebPageLaunch.abandon(webPageServer);
+        browserPage = dev.equo.swt.BrowserSurfaces.abandon(browserPage);
         if (displayBridge != null)
             displayBridge.destroyDisplay();
     }
@@ -4123,7 +4123,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     DisplayBridge displayBridge;
 
-    dev.equo.swt.WebFlutterServer webPageServer;
+    AutoCloseable browserPage;
 
     public FlutterBridge getDisplayBridge() {
         return displayBridge;

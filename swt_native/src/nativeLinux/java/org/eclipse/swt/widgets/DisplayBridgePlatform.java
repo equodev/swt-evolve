@@ -5,7 +5,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
- * Per-OS native init shared by the two Display surfaces on Linux — the web one ({@link WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
+ * Per-OS native init shared by the two Display surfaces on Linux — the web one ({@code WebDisplayBridge}) and the desktop-native one ({@link DeskDisplayBridge}). Initializes
  * GTK (and its SWT lock functions) once for the Display thread.
  */
 final class DisplayBridgePlatform {
