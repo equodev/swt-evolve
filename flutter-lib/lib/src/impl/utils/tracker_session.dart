@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier;
 import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:meta/meta.dart';
 
 import '../../comm/comm.dart';
@@ -69,6 +71,20 @@ class TrackerSession {
   /// Whether a Tracker currently holds the pointer. Widgets that run their own drag gesture check
   /// this so two mechanisms don't both act on one drag.
   static bool get isTracking => _activeId != null;
+
+  /// [isTracking] for widgets that change what they draw while a Tracker is open.
+  static ValueListenable<bool> get tracking => _tracking;
+  static final ValueNotifier<bool> _tracking = ValueNotifier<bool>(false);
+
+  /// A Shell's dispose releases its Tracker while the tree is locked; listeners are told after it.
+  static void _notifyTracking() {
+    final binding = SchedulerBinding.instance;
+    if (binding.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      binding.addPostFrameCallback((_) => _tracking.value = isTracking);
+    } else {
+      _tracking.value = isTracking;
+    }
+  }
 
   /// The Shells a Tracker can be opened on, by id, each with what turns a pointer position into the
   /// coordinate space the rest of the tree is expressed in: only the Shell knows where its content
@@ -141,6 +157,7 @@ class TrackerSession {
   static void _begin(int? trackerId) {
     if (trackerId == null || trackerId == 0) return;
     _activeId = trackerId;
+    _notifyTracking();
 
     // The Tracker only exists once Java has answered DragDetect, which is a round trip: by now the
     // pointer has moved, and on a quick gesture it is already up. Replay what the route recorded in
@@ -168,6 +185,7 @@ class TrackerSession {
     _activeId = null;
     _settle?.cancel();
     _settle = null;
+    _notifyTracking();
   }
 
   static void _onPointer(PointerEvent event) {
