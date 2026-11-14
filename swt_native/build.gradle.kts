@@ -37,11 +37,8 @@ repositories {
 
 val arch = System.getProperty("os.arch")
 
-val oss = listOf("embedWindows", "embedLinux", "embedMacos", "nativeWindows", "nativeLinux", "nativeMacos")
+val oss = listOf("nativeWindows", "nativeLinux", "nativeMacos")
 val platforms = listOf(
-    "embed-windows-x86_64", "embed-windows-aarch64",
-    "embed-linux-x86_64", "embed-linux-aarch64",
-    "embed-macos-x86_64", "embed-macos-aarch64",
     "windows-x86_64", "windows-aarch64",
     "linux-x86_64", "linux-aarch64",
     "macos-x86_64", "macos-aarch64",
@@ -201,15 +198,13 @@ dependencies {
     }
 }
 
-val nativeFlutterExcludes = listOf("dev/equo/swt/ConfigDyn.java", "**/GraphicsUtilsSwt.java")
-
-// The desktop surface paints text with the host's own font stack, which is what the embedded
-// backend's table for the same OS was measured on. Each native<OS> tree gets that table as
+// The desktop surface paints text with the host's own font stack, which each OS's table in
+// src/desktopFontMetrics was measured on. Each native<OS> tree gets that table as
 // GenDesktopFontMetrics, beside the shared GenFontMetrics the web surface measures with (see
 // FontMetricsUtil.metrics).
 val desktopFontMetrics = oss.filter { it.startsWith("native") }.associateWith { os ->
     tasks.register<Copy>("${os}DesktopFontMetrics") {
-        from("src/embed${os.removePrefix("native")}/java/dev/equo/swt/GenFontMetrics.java") {
+        from("src/desktopFontMetrics/${os.removePrefix("native").lowercase()}/GenFontMetrics.java") {
             into("dev/equo/swt")
             rename { "GenDesktopFontMetrics.java" }
             filter { it.replace("GenFontMetrics", "GenDesktopFontMetrics") }
@@ -234,7 +229,6 @@ extra["registerFlutterBackend"] = { name: String, dirs: List<Any> ->
     sourceSets.create(name) {
         java {
             setSrcDirs(listOf("src/main/java", "src/native/java") + dirs)
-            exclude(nativeFlutterExcludes)
         }
         backendSetup(this)
     }
@@ -249,7 +243,6 @@ sourceSets {
                 "src/native${currentOs.replaceFirstChar { it.titlecase() }}/java"
             ))
             srcDir(desktopFontMetrics.getValue("native${currentOs.replaceFirstChar { it.titlecase() }}"))
-            exclude(nativeFlutterExcludes)
         }
     }
 
@@ -257,13 +250,7 @@ sourceSets {
     oss.forEach { os ->
         create(os) {
             java {
-                when {
-                    os.startsWith("native") -> setSrcDirs(listOf("src/main/java", "src/native/java", "src/${os}/java"))
-                    else -> setSrcDirs(listOf("src/main/java", "src/${os}/java"))
-                }
-                if (os.startsWith("native")) {
-                    exclude(nativeFlutterExcludes)
-                }
+                setSrcDirs(listOf("src/main/java", "src/native/java", "src/${os}/java"))
                 desktopFontMetrics[os]?.let { srcDir(it) }
             }
             backendSetup(this)
@@ -300,23 +287,7 @@ sourceSets {
         compileClasspath += nativeBackend.output + nativeBackend.compileClasspath
         runtimeClasspath += output + nativeBackend.output + nativeBackend.runtimeClasspath
     }
-
-    // What is left of the embedded suite: the tests whose subject is Dart and Swt widgets coexisting
-    // in one Display, which only the embed<OS> backend can host. Retired with that backend; kept
-    // runnable locally in the meantime.
-    val embedBackend = getByName("embed${currentOs.replaceFirstChar { it.titlecase() }}")
-    create("embedTest") {
-        java { setSrcDirs(listOf("src/embedTest/java")) }
-        resources { srcDirs("src/test/resources") }
-        compileClasspath += embedBackend.output
-        runtimeClasspath += output + embedBackend.output
-    }
 }
-
-// embedTest reuses the test dependencies (JUnit, AssertJ, Mockito, Gson, …) and annotation processor.
-configurations["embedTestImplementation"].extendsFrom(configurations["testImplementation"])
-configurations["embedTestRuntimeOnly"].extendsFrom(configurations["testRuntimeOnly"])
-configurations["embedTestAnnotationProcessor"].extendsFrom(configurations["testAnnotationProcessor"])
 
 run {
     val jfaceVersion: String by project
@@ -390,9 +361,8 @@ tasks.withType<JavaCompile> {
     ))
 }
 
-// Coverage is only consumed from the native suite (merged into swt_eclipse_tests' combined report).
-// Instrumenting the embedded one is unnecessary and perturbs its shared static state (Config
-// routing), causing order-dependent failures — keep JaCoCo off everywhere except `test`.
+// Coverage is only consumed from the native suite (merged into swt_eclipse_tests' combined report),
+// so JaCoCo stays off everywhere except `test`.
 tasks.withType<Test>().configureEach {
     extensions.configure(org.gradle.testing.jacoco.plugins.JacocoTaskExtension::class) {
         isEnabled = name == "test"
@@ -417,36 +387,6 @@ fun excludedTags(vararg brokenTags: String): Array<String> {
     val requested = System.getProperty("excludeTags")
         ?.split(",")?.map(String::trim)?.filter(String::isNotEmpty) ?: emptyList()
     return (broken + requested).toTypedArray()
-}
-
-tasks.register<Test>("embedTest") {
-    group = "verification"
-    description = "Runs what is left of the embedded suite: the tests whose subject is Dart and Swt " +
-            "widgets coexisting in one Display. Not run by CI; kept for local runs while that " +
-            "backend is still shipped."
-    testClassesDirs = sourceSets["embedTest"].output.classesDirs
-    classpath = sourceSets["embedTest"].runtimeClasspath
-    useJUnitPlatform {
-        // Flutter integration tests need a Flutter web build + Chrome; not run by default.
-        excludeTags("flutter-it")
-        excludeTags(*excludedTags())
-    }
-    configureTestLogging()
-    dependsOn("${currentPlatform}ExtractNatives", "${currentPlatform}CopyFlutterBinaries")
-    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX)
-        jvmArgs = listOf("-XstartOnFirstThread")
-    // Runtime counterpart of the compile-time exports above -- EvolveDispatcherWrapperTest loads
-    // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
-    jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
-            "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
-    systemProperty("harness.client", "native")
-    // Lets a run choose how state is delivered, so the two modes can be compared against each
-    // other on the same suite. Read once at class-load, so it has to reach the test JVM itself
-    // rather than only the Gradle one.
-    System.getProperty("equo.swt.diff")?.let { systemProperty("equo.swt.diff", it) }
-    systemProperty("swt.library.path", layout.buildDirectory.dir("natives/$currentPlatform").get().toString())
-    if (System.getProperty("test.debug") != null)
-        jvmArgs("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005")
 }
 
 tasks.test {
@@ -662,19 +602,16 @@ val dart = tasks.register<Exec>("dartRunner") {
 data class PlatformMeta(
     val os: String,
     val arch: String,
-    val isHybrid: Boolean,
 ) {
     val desktopPlatform: String get() = "$os-$arch"
-    val sourceSet: String get() = (if (isHybrid) "native" else "embed") + os.replaceFirstChar { it.titlecase() }
+    val sourceSet: String get() = "native" + os.replaceFirstChar { it.titlecase() }
     val swtWs: String get() = getSwtWs(os)
     val swtOs: String get() = getSwtOs(os)
 }
 
 fun parsePlatform(platform: String): PlatformMeta {
-    val isEmbed = platform.startsWith("embed-")
-    var parts = platform.split("-")
-    if (isEmbed) parts = parts.drop(1)
-    return PlatformMeta(parts[0], parts[1], isHybrid = !isEmbed)
+    val parts = platform.split("-")
+    return PlatformMeta(parts[0], parts[1])
 }
 
 // Liberation fonts substitute system fonts for CanvasKit's web renderer, which can't reach
@@ -803,7 +740,7 @@ val macosCdsJvmArgs = listOf(
 // The oldest JDK the SWT release being built for supports, which a build for another release passes.
 val minJavaRelease = (project.findProperty("minJavaVersion") as String?)?.toIntOrNull()
 val shipsMacosCdsArchive = (minJavaRelease ?: 21) >= 19
-fun isMacosHybrid(info: PlatformMeta) = info.isHybrid && info.os == "macos"
+fun isMacosHybrid(info: PlatformMeta) = info.os == "macos"
 // One p2.inf per macOS hybrid fragment: the framework links writeMacAppLinks lists, then these lines.
 fun registerMacosFragmentP2Inf(platform: String) = tasks.register("${platform}FragmentP2Inf") {
     val linksP2Inf = layout.buildDirectory.file("natives/$platform/META-INF/p2.inf")
@@ -861,81 +798,79 @@ val hostExportPackage = swtExportPackage(null) +
 platforms.forEach { platform ->
     val info = parsePlatform(platform)
 
-    if (!info.isHybrid) {
-        configurations.create("${info.desktopPlatform}SwtImpl") {
-            exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
-        }
+    configurations.create("${info.desktopPlatform}SwtImpl") {
+        exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+    }
 
-        dependencies {
-            configurations["${info.desktopPlatform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}:$swtVersion")
-        }
+    dependencies {
+        configurations["${info.desktopPlatform}SwtImpl"]("org.eclipse.platform:org.eclipse.swt.${info.swtWs}.${info.swtOs}.${info.arch}:$swtVersion")
+    }
 
-        tasks.register<Exec>("${info.desktopPlatform}FlutterLib") {
-            group = "build"
-            description = "Builds Flutter lib for ${info.desktopPlatform}"
-            dependsOn(dart, pub)
-            workingDir = flutterApp
-            inputs.dir("../flutter-lib/lib")
-            inputs.dir("../flutter-lib/assets")
-            if (flutterApp != file("../flutter-lib")) inputs.dir(flutterApp.resolve("lib"))
-            inputs.files(fileTree(flutterApp.resolve(info.os)) {
-                exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
-            })
-            // A plugin bump changes only the lock, and the plugin's native code is compiled into this build.
-            inputs.file(flutterApp.resolve("pubspec.lock"))
-            outputs.dir(flutterApp.resolve("build/${info.os}"))
-            // Toggling -PdartDebug/-PdartProfile must invalidate this task even though its output dir is unchanged
-            // (Flutter writes debug/release into sibling subdirs of the same build/<os> tree).
-            inputs.property("dartMode", dartMode)
-            val modeFlag = if (dartMode == "release") emptyList() else listOf("--$dartMode")
-            when (info.os) {
-                "macos" -> {
-                    val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
-                    val extra = if (dartMode == "release") "" else " --$dartMode"
-                    commandLine = listOf("bash", "-c", "${file("../flutter-lib/set-arch.sh")} $flutterArch && ${flutterCmd().joinToString(" ")} build macos$extra")
-                }
-                else -> commandLine = flutterCmd() + listOf("build", info.os) + modeFlag
+    tasks.register<Exec>("${info.desktopPlatform}FlutterLib") {
+        group = "build"
+        description = "Builds Flutter lib for ${info.desktopPlatform}"
+        dependsOn(dart, pub)
+        workingDir = flutterApp
+        inputs.dir("../flutter-lib/lib")
+        inputs.dir("../flutter-lib/assets")
+        if (flutterApp != file("../flutter-lib")) inputs.dir(flutterApp.resolve("lib"))
+        inputs.files(fileTree(flutterApp.resolve(info.os)) {
+            exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
+        })
+        // A plugin bump changes only the lock, and the plugin's native code is compiled into this build.
+        inputs.file(flutterApp.resolve("pubspec.lock"))
+        outputs.dir(flutterApp.resolve("build/${info.os}"))
+        // Toggling -PdartDebug/-PdartProfile must invalidate this task even though its output dir is unchanged
+        // (Flutter writes debug/release into sibling subdirs of the same build/<os> tree).
+        inputs.property("dartMode", dartMode)
+        val modeFlag = if (dartMode == "release") emptyList() else listOf("--$dartMode")
+        when (info.os) {
+            "macos" -> {
+                val flutterArch = if (info.arch == "aarch64") "arm64" else "x86_64"
+                val extra = if (dartMode == "release") "" else " --$dartMode"
+                commandLine = listOf("bash", "-c", "${file("../flutter-lib/set-arch.sh")} $flutterArch && ${flutterCmd().joinToString(" ")} build macos$extra")
             }
-            // macOS aarch64 + x86_64 both build into flutter's single build/macos dir (set-arch.sh
-            // switches the arch in place), so a second build overwrites the first arch's app. Serialize
-            // the two so each arch's app is copied out before the next arch's build clobbers build/macos:
-            // aarch64FlutterLib -> aarch64CopyFlutterBinaries -> x86_64FlutterLib -> x86_64CopyFlutterBinaries.
-            if (info.desktopPlatform == "macos-x86_64")
-                mustRunAfter("macos-aarch64CopyFlutterBinaries")
+            else -> commandLine = flutterCmd() + listOf("build", info.os) + modeFlag
         }
+        // macOS aarch64 + x86_64 both build into flutter's single build/macos dir (set-arch.sh
+        // switches the arch in place), so a second build overwrites the first arch's app. Serialize
+        // the two so each arch's app is copied out before the next arch's build clobbers build/macos:
+        // aarch64FlutterLib -> aarch64CopyFlutterBinaries -> x86_64FlutterLib -> x86_64CopyFlutterBinaries.
+        if (info.desktopPlatform == "macos-x86_64")
+            mustRunAfter("macos-aarch64CopyFlutterBinaries")
+    }
 
-        tasks.register<Copy>("${info.desktopPlatform}CopyFlutterBinaries") {
-            group = "build"
-            description = "Copies Flutter binaries for ${info.desktopPlatform}"
+    tasks.register<Copy>("${info.desktopPlatform}CopyFlutterBinaries") {
+        group = "build"
+        description = "Copies Flutter binaries for ${info.desktopPlatform}"
 
-            if ((currentPlatform == info.desktopPlatform || info.os == "macos") && System.getProperty("skipFlutterLib") == null)
-                dependsOn("${info.desktopPlatform}FlutterLib")
-            // NOTE: the copy runs right after ITS OWN FlutterLib (dependsOn above). It must NOT wait for
-            // the other arch's FlutterLib — that build overwrites the shared build/macos dir and would
-            // make this copy pick up the wrong arch. The x86_64 build is instead ordered to run after
-            // this (aarch64) copy completes; see macos-x86_64FlutterLib's mustRunAfter above.
+        if ((currentPlatform == info.desktopPlatform || info.os == "macos") && System.getProperty("skipFlutterLib") == null)
+            dependsOn("${info.desktopPlatform}FlutterLib")
+        // NOTE: the copy runs right after ITS OWN FlutterLib (dependsOn above). It must NOT wait for
+        // the other arch's FlutterLib — that build overwrites the shared build/macos dir and would
+        // make this copy pick up the wrong arch. The x86_64 build is instead ordered to run after
+        // this (aarch64) copy completes; see macos-x86_64FlutterLib's mustRunAfter above.
 
-            val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
-            copyFlutterNatives(info.os, flutterArch, dartMode)
+        val flutterArch = if (info.arch == "aarch64") "arm64" else "x64"
+        copyFlutterNatives(info.os, flutterArch, dartMode)
 
-            val nativesDir = layout.buildDirectory.dir("natives/${info.desktopPlatform}")
-            into(nativesDir)
-            if (info.os == "macos") {
-                val app = flutterApp.resolve("build/macos/Build/Products/${dartMode.replaceFirstChar { it.uppercase() }}/swtflutter.app")
-                // A copy never deletes: an earlier build's app would keep the files this one leaves out.
-                doFirst { delete(nativesDir.get().dir("swtflutter.app")) }
-                doLast { writeMacAppLinks(app, nativesDir.get().asFile) }
-            }
+        val nativesDir = layout.buildDirectory.dir("natives/${info.desktopPlatform}")
+        into(nativesDir)
+        if (info.os == "macos") {
+            val app = flutterApp.resolve("build/macos/Build/Products/${dartMode.replaceFirstChar { it.uppercase() }}/swtflutter.app")
+            // A copy never deletes: an earlier build's app would keep the files this one leaves out.
+            doFirst { delete(nativesDir.get().dir("swtflutter.app")) }
+            doLast { writeMacAppLinks(app, nativesDir.get().asFile) }
         }
+    }
 
-        tasks.register<Copy>("${info.desktopPlatform}ExtractNatives") {
-            // Resolved when the task runs: a task another build depends on is created without this
-            // build's lock, and resolving there is refused.
-            from(provider { configurations["${info.desktopPlatform}SwtImpl"].map { zipTree(it) } })
-            into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
-            include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css", "**/SWTMessages*.properties", "**/SWTMessages.properties")
-            includeEmptyDirs = false
-        }
+    tasks.register<Copy>("${info.desktopPlatform}ExtractNatives") {
+        // Resolved when the task runs: a task another build depends on is created without this
+        // build's lock, and resolving there is refused.
+        from(provider { configurations["${info.desktopPlatform}SwtImpl"].map { zipTree(it) } })
+        into(layout.buildDirectory.dir("natives/${info.desktopPlatform}"))
+        include("*.so", "*.dll", "*.dylib", "*.jnilib", "**/*.css", "**/SWTMessages*.properties", "**/SWTMessages.properties")
+        includeEmptyDirs = false
     }
 
     tasks.register<Jar>("${platform}Jar") {
@@ -968,8 +903,8 @@ platforms.forEach { platform ->
                 "Bundle-Name" to "SWT Evolve for ${info.swtOs} on ${info.arch}",
                 "Bundle-Vendor" to bundleVendor,
                 "Bundle-SymbolicName" to "$bsn; singleton:=true",
-                // Published (p2/mvn) version: distinct host version per variant (`-embed`/`-hyb`).
-                "Bundle-Version" to hostVersion(if (info.isHybrid) "hyb" else "embed"),
+                // Published (p2/mvn) version: the host version's `-hyb` suffix.
+                "Bundle-Version" to hostVersion("hyb"),
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to swtExportPackage(info.swtWs),
                 "SWT-WS" to info.swtWs,
@@ -981,10 +916,7 @@ platforms.forEach { platform ->
                 // Installed as a directory, so FlutterLibraryLoader loads the Flutter natives in place.
                 "Eclipse-BundleShape" to "dir",
             )
-            if (info.isHybrid)
-                attributes("Import-Package" to "$chromiumImportPackage,$fxImportPackges")
-            else
-                attributes("Import-Package" to fxImportPackges)
+            attributes("Import-Package" to "$chromiumImportPackage,$fxImportPackges")
         }
         dependsOn("${info.desktopPlatform}ExtractNatives")
         dependsOn("${info.desktopPlatform}CopyFlutterBinaries")
@@ -1012,11 +944,7 @@ fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: Strin
 
 val hybridHostP2Inf = layout.buildDirectory.file("host-hybrid/p2.inf")
 val genHybridHostP2Inf = genHostP2Inf("genHybridHostP2Inf", hybridHostP2Inf, "hyb") {
-    platforms.map { parsePlatform(it) }.filter { it.isHybrid }
-}
-val embedHostP2Inf = layout.buildDirectory.file("host-embed/p2.inf")
-val genEmbedHostP2Inf = genHostP2Inf("genEmbedHostP2Inf", embedHostP2Inf, "embed") {
-    platforms.map { parsePlatform(it) }.filter { !it.isHybrid }
+    platforms.map { parsePlatform(it) }
 }
 
 fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, version: Provider<String>) = tasks.register<Jar>(taskName) {
@@ -1041,7 +969,6 @@ fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, versi
     }
 }
 registerHostJar("swtHostHybridJar", "org.eclipse.swt-hybrid", files(hybridHostP2Inf).builtBy(genHybridHostP2Inf), hostVersion("hyb"))
-registerHostJar("swtHostEmbedJar", "org.eclipse.swt-embed", files(embedHostP2Inf).builtBy(genEmbedHostP2Inf), hostVersion("embed"))
 
 tasks.register("buildAllPlatforms") {
     group = "build"
@@ -1051,5 +978,5 @@ tasks.register("buildAllPlatforms") {
 
 // Configure the default build task to include all platform JARs
 tasks.build {
-    dependsOn("buildAllPlatforms", "swtHostHybridJar", "swtHostEmbedJar")
+    dependsOn("buildAllPlatforms", "swtHostHybridJar")
 }
