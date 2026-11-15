@@ -164,10 +164,17 @@ class _RichToolTipState extends State<RichToolTip> {
     if (oldWidget.data != widget.data) _entry?.markNeedsBuild();
   }
 
+  // A TooltipVisibility turned off closes the card and keeps it closed, as it does a plain Tooltip.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!TooltipVisibility.of(context)) _remove();
+  }
+
   void _scheduleShow(TooltipThemeExtension theme) {
     _hovering = true;
     Future.delayed(theme.waitDuration, () {
-      if (!mounted || !_hovering || _entry != null) return;
+      if (!mounted || !_hovering || _entry != null || !TooltipVisibility.of(context)) return;
       _show();
     });
   }
