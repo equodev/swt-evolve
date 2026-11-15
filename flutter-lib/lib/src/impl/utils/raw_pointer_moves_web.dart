@@ -8,7 +8,15 @@ import 'package:web/web.dart' as web;
 void listenRawPointerMoves(void Function(double x, double y, int buttons) onMove) {
   web.window.addEventListener(
     'pointerrawupdate',
-    ((web.PointerEvent e) => onMove(e.clientX.toDouble(), e.clientY.toDouble(), e.buttons)).toJS,
+    ((_PointerPosition e) => onMove(e.clientX, e.clientY, e.buttons)).toJS,
     web.AddEventListenerOptions(capture: true, passive: true),
   );
+}
+
+/// A pointer event's position is fractional, but package:web reads it as an int, which dart2wasm
+/// refuses for a fraction.
+extension type _PointerPosition(JSObject _) implements JSObject {
+  external double get clientX;
+  external double get clientY;
+  external int get buttons;
 }
