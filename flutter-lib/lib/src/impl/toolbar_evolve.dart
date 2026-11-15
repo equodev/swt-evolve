@@ -24,6 +24,7 @@ import 'utils/focus_report.dart';
 import 'utils/tab_only_focus_node.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
+import 'utils/tracker_session.dart';
 import 'utils/cached_text.dart';
 import 'utils/quiet_animations.dart';
 import 'package:flutter/foundation.dart' show listEquals;
@@ -363,7 +364,18 @@ class ToolBarImpl<T extends ToolBarSwt, V extends VToolBar>
                   child: ParentForegroundScope(
                     foreground: state.foreground,
                     font: state.font,
-                    child: Focus(focusNode: _barNode, onKeyEvent: _onItemKey, child: bar),
+                    child: Focus(
+                      focusNode: _barNode,
+                      onKeyEvent: _onItemKey,
+                      // No item opens a tooltip while a Tracker holds the pointer, as natively.
+                      // One listener per bar, so an item's own rebuilds pay nothing for it.
+                      child: ValueListenableBuilder<bool>(
+                        valueListenable: TrackerSession.tracking,
+                        builder: (_, tracking, items) =>
+                            TooltipVisibility(visible: !tracking, child: items!),
+                        child: bar,
+                      ),
+                    ),
                   ),
                 ),
               ),

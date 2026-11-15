@@ -23,7 +23,6 @@ import 'toolbar_evolve.dart';
 import 'menu_evolve.dart' show OpenPopupMenuTracker;
 import 'utils/enter_to_the_shell.dart';
 import 'utils/layered_layout_builder.dart';
-import 'utils/tracker_session.dart';
 import 'dart:ui';
 
 class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
@@ -293,21 +292,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     return button;
   }
 
-  /// The custom tooltip card when this item gets one, the plain one-line strip otherwise. Neither
-  /// opens while a Tracker holds the pointer, as natively.
+  /// The custom tooltip card when this item gets one, the plain one-line strip otherwise.
   Widget _withTooltip(
-    BuildContext context, {
-    required ToolItemThemeExtension widgetTheme,
-    required String message,
-    required Widget child,
-  }) =>
-      ValueListenableBuilder<bool>(
-        valueListenable: TrackerSession.tracking,
-        builder: (_, tracking, tooltip) => TooltipVisibility(visible: !tracking, child: tooltip!),
-        child: _tooltip(context, widgetTheme: widgetTheme, message: message, child: child),
-      );
-
-  Widget _tooltip(
     BuildContext context, {
     required ToolItemThemeExtension widgetTheme,
     required String message,
