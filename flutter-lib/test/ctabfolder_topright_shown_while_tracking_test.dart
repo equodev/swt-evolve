@@ -119,7 +119,7 @@ void main() {
 
     expect(TrackerSession.isTracking, isTrue);
     expect(_toolBarOpacity(tester), 1.0,
-        reason: 'Java refuses a drop over this tool bar, so it must be visible during the drag');
+        reason: 'the workbench refuses a drop over this tool bar, so it is drawn during the drag');
     expect(find.text('T').hitTestable(), findsOneWidget);
 
     await gesture.up();

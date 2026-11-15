@@ -765,8 +765,8 @@ class _CTabBarState extends State<_CTabBar> {
       // While overflowing, the chevron is the only way to reach the hidden tabs -- keep it visible.
       _hasOverflow;
 
-  // Java hit-tests a Tracker drop against this block whether it is drawn or not, and refuses one
-  // over a view tool bar, so it is drawn for as long as a Tracker is open.
+  // An application hit-tests a Tracker drop against this block whether it is drawn or not (the
+  // Eclipse workbench refuses one over a view tool bar), so it is drawn while a Tracker is open.
   bool get _controlsShown =>
       _controlsAlwaysVisible || _hoveringTopBar.value || TrackerSession.tracking.value;
 
