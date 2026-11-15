@@ -729,6 +729,9 @@ fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.versio
 fun hostVersion(suffix: String) = provider {
     "$swtVersion.v${evolveVersion().toString().replace('.', '_')}-$suffix"
 }
+// -Poss builds the open-source edition: its desktop bundles carry their own qualifier, so p2 never
+// takes them for the enterprise ones of the same release. It keeps the `-hyb` prefix tools match on.
+val hybridQualifier = if (project.hasProperty("oss")) "hyb-oss" else "hyb"
 
 // AppCDS for an installed macOS product: p2.inf adds these lines to its .ini. Relative because the
 // launcher starts the JVM in Contents/MacOS; the directory must be writable, or the JVM exits with 1.
@@ -906,7 +909,7 @@ platforms.forEach { platform ->
                 "Bundle-Vendor" to bundleVendor,
                 "Bundle-SymbolicName" to "$bsn; singleton:=true",
                 // Published (p2/mvn) version: the host version's `-hyb` suffix.
-                "Bundle-Version" to hostVersion("hyb"),
+                "Bundle-Version" to hostVersion(hybridQualifier),
                 "Bundle-ManifestVersion" to 2,
                 "Export-Package" to swtExportPackage(info.swtWs),
                 "SWT-WS" to info.swtWs,
@@ -945,7 +948,7 @@ fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: Strin
     }
 
 val hybridHostP2Inf = layout.buildDirectory.file("host-hybrid/p2.inf")
-val genHybridHostP2Inf = genHostP2Inf("genHybridHostP2Inf", hybridHostP2Inf, "hyb") {
+val genHybridHostP2Inf = genHostP2Inf("genHybridHostP2Inf", hybridHostP2Inf, hybridQualifier) {
     platforms.map { parsePlatform(it) }
 }
 
@@ -970,7 +973,7 @@ fun registerHostJar(taskName: String, archiveName: String, p2infFrom: Any, versi
         )
     }
 }
-registerHostJar("swtHostHybridJar", "org.eclipse.swt-hybrid", files(hybridHostP2Inf).builtBy(genHybridHostP2Inf), hostVersion("hyb"))
+registerHostJar("swtHostHybridJar", "org.eclipse.swt-hybrid", files(hybridHostP2Inf).builtBy(genHybridHostP2Inf), hostVersion(hybridQualifier))
 
 tasks.register("buildAllPlatforms") {
     group = "build"
