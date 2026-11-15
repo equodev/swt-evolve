@@ -616,8 +616,10 @@ fun parsePlatform(platform: String): PlatformMeta {
 
 // Liberation fonts substitute system fonts for CanvasKit's web renderer, which can't reach
 // OS-installed fonts. Desktop builds never trigger the substitution (WebFontSubstitutions is
-// only loaded by WebFlutterServer), so they'd carry the ~9MB of TTFs for nothing.
-val libertyFontExclude = "**/flutter_assets/assets/fonts/Liberation*.ttf"
+// only loaded by WebFlutterServer), so they'd carry the ~9MB of TTFs for nothing. The fonts sit
+// under flutter_assets/assets/ when this package is the app, and under
+// flutter_assets/packages/swtflutter/assets/ when another app depends on it.
+val libertyFontExclude = "**/flutter_assets/**/assets/fonts/Liberation*.ttf"
 
 // Dart debug/JIT build: `-PdartDebug` builds the desktop Flutter frameworks in --debug (JIT) mode
 // instead of the default --release (AOT), so the embedded engine exposes a Dart VM Service that
