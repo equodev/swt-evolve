@@ -274,11 +274,10 @@ fun registerExampleClasspath(name: String, jarTaskName: String, fileName: String
         val runtimeClasspathWithoutSwtNative = configurations["runtimeClasspath"].copyRecursive { dep ->
             !(dep is ProjectDependency && dep.path == ":swt_native")
         }
-        val mainOutput = sourceSets["main"].output
+        val entries = files(jar.map { it.archiveFile }, sourceSets["main"].output, runtimeClasspathWithoutSwtNative)
         val outputFile = layout.buildDirectory.file(fileName)
         outputs.file(outputFile)
         doLast {
-            val entries = files(jar.map { it.archiveFile }) + mainOutput + runtimeClasspathWithoutSwtNative
             val file = outputFile.get().asFile
             file.parentFile.mkdirs()
             file.writeText(entries.files.joinToString("\n") { it.absolutePath })
