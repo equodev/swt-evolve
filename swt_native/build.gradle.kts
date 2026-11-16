@@ -114,10 +114,12 @@ val checkFlutterVersion by tasks.registering {
     description = "Verifies installed Flutter version matches pubspec.yaml"
     inputs.file("../flutter-lib/pubspec.yaml")
     outputs.upToDateWhen { true }
+    val required = requiredFlutterVersion()
+    val flutterVersionCmd = flutterCmd() + "--version"
+    val flutterLibDir = file("../flutter-lib")
     doFirst {
-        val required = requiredFlutterVersion()
-        val process = ProcessBuilder(flutterCmd() + "--version")
-            .directory(file("../flutter-lib"))
+        val process = ProcessBuilder(flutterVersionCmd)
+            .directory(flutterLibDir)
             .redirectErrorStream(true).start()
         val output = process.inputStream.bufferedReader().readText()
         process.waitFor()
@@ -516,13 +518,16 @@ abstract class StampedCommand : WorkAction<StampedCommand.Params> {
  */
 abstract class BackgroundCommand @Inject constructor(private val workers: WorkerExecutor) : DefaultTask() {
     @get:Input abstract val command: ListProperty<String>
+    /** Arguments appended to [command], one per line, from a file an earlier task writes: it is read as the task runs. */
+    @get:org.gradle.api.tasks.Optional @get:InputFile abstract val argsFile: RegularFileProperty
     @get:Internal abstract val workingDir: DirectoryProperty
 
     @TaskAction
     fun run() {
         val stamp = outputs.files.singleFile
+        val extra = argsFile.orNull?.asFile?.takeIf { it.isFile }?.readLines()?.filter { it.isNotBlank() }.orEmpty()
         workers.noIsolation().submit(StampedCommand::class.java) {
-            command.set(this@BackgroundCommand.command)
+            command.set(this@BackgroundCommand.command.get() + extra)
             workingDir.set(this@BackgroundCommand.workingDir)
             this.stamp.set(stamp)
         }
@@ -569,12 +574,10 @@ tasks.register<BackgroundCommand>("flutterTest") {
                        else emptyList()
     // -DflutterTests=<path>[,<path>] runs only those test files or directories, outside the bundles.
     val only = System.getProperty("flutterTests")?.split(',')?.filter { it.isNotBlank() } ?: emptyList()
-    val standalone = file("../flutter-lib/build/standalone_tests.txt")
     val bundles = (0 until flutterTestBundleCount).map { "test/bundle_${it}_of_${flutterTestBundleCount}_test.dart" }
-    command.set(provider {
-        flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + redrawRecord +
-            (only.ifEmpty { bundles + standalone.readLines().filter { it.isNotBlank() } })
-    })
+    command.set(flutterCmd() + listOf("test", "--concurrency=$flutterTestJobs") + redrawRecord + only.ifEmpty { bundles })
+    // The files the bundles leave out (tool/test_bundles.dart lists them as it writes the bundles).
+    if (only.isEmpty()) argsFile.set(file("../flutter-lib/build/standalone_tests.txt"))
     dartSourcesAsInputs()
     // Re-recordings print what they find, so they run every time.
     if (redrawRecord.isNotEmpty()) outputs.upToDateWhen { false }
@@ -649,7 +652,7 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
                 into("swtflutter.app")
                 exclude(libertyFontExclude)
                 // Each file once, under its real path; writeMacAppLinks lists the links to recreate.
-                exclude { underSymlink(app, it.file) }
+                exclude { MacAppLinks.underSymlink(app, it.file) }
             }
         }
         "linux" -> {
@@ -675,37 +678,41 @@ fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
     }
 }
 
-fun underSymlink(root: File, file: File): Boolean {
-    val rootPath = root.toPath()
-    var path: Path? = file.toPath()
-    while (path != null && path != rootPath && path.startsWith(rootPath)) {
-        if (Files.isSymbolicLink(path)) return true
-        path = path.parent
+// Held in an object so the copy actions reach it without capturing this script, which the
+// configuration cache cannot store.
+object MacAppLinks {
+    fun underSymlink(root: File, file: File): Boolean {
+        val rootPath = root.toPath()
+        var path: Path? = file.toPath()
+        while (path != null && path != rootPath && path.startsWith(rootPath)) {
+            if (Files.isSymbolicLink(path)) return true
+            path = path.parent
+        }
+        return false
     }
-    return false
-}
 
-// Flutter's macOS frameworks link X.framework/X, X.framework/Resources and Versions/Current into
-// Versions/A. A jar cannot hold a symlink (a JarFile reads one as a file holding its target), so the
-// fragment ships each file once and lists the links: swtflutter.app.links for FlutterLibraryLoader,
-// which creates them after extracting, and META-INF/p2.inf for p2, which creates them when it
-// installs the fragment as a directory.
-fun writeMacAppLinks(app: File, nativesDir: File) {
-    val root = app.toPath()
-    val linkPaths: List<Path> = Files.walk(root).use { paths ->
-        paths.filter { Files.isSymbolicLink(it) }.sorted().iterator().asSequence().toList()
+    // Flutter's macOS frameworks link X.framework/X, X.framework/Resources and Versions/Current into
+    // Versions/A. A jar cannot hold a symlink (a JarFile reads one as a file holding its target), so the
+    // fragment ships each file once and lists the links: swtflutter.app.links for FlutterLibraryLoader,
+    // which creates them after extracting, and META-INF/p2.inf for p2, which creates them when it
+    // installs the fragment as a directory.
+    fun writeMacAppLinks(app: File, nativesDir: File) {
+        val root = app.toPath()
+        val linkPaths: List<Path> = Files.walk(root).use { paths ->
+            paths.filter { Files.isSymbolicLink(it) }.sorted().iterator().asSequence().toList()
+        }
+        val links: List<Pair<String, String>> = linkPaths.map { link ->
+            "swtflutter.app/" + root.relativize(link).joinToString("/") to
+                Files.readSymbolicLink(link).joinToString("/")
+        }
+        if (links.isEmpty()) throw GradleException("No framework symlinks found in $app")
+        File(nativesDir, "swtflutter.app.links").writeText(links.joinToString("") { (link, target) -> "$link\t$target\n" })
+        // Not force: `ln -sf` onto an existing link to a directory would create the link inside it.
+        File(nativesDir, "META-INF/p2.inf").apply { parentFile.mkdirs() }.writeText(
+            "instructions.install = " + links.joinToString("") { (link, target) ->
+                "ln(targetDir:@artifact,linkTarget:$target,linkName:$link);"
+            } + "\n")
     }
-    val links: List<Pair<String, String>> = linkPaths.map { link ->
-        "swtflutter.app/" + root.relativize(link).joinToString("/") to
-            Files.readSymbolicLink(link).joinToString("/")
-    }
-    if (links.isEmpty()) throw GradleException("No framework symlinks found in $app")
-    File(nativesDir, "swtflutter.app.links").writeText(links.joinToString("") { (link, target) -> "$link\t$target\n" })
-    // Not force: `ln -sf` onto an existing link to a directory would create the link inside it.
-    File(nativesDir, "META-INF/p2.inf").apply { parentFile.mkdirs() }.writeText(
-        "instructions.install = " + links.joinToString("") { (link, target) ->
-            "ln(targetDir:@artifact,linkTarget:$target,linkName:$link);"
-        } + "\n")
 }
 
 val bundleVendor = "Equo Tech, Inc."
@@ -752,18 +759,19 @@ fun registerMacosFragmentP2Inf(platform: String) = tasks.register("${platform}Fr
     val out = layout.buildDirectory.dir("fragment-p2inf/$platform")
     dependsOn("${platform}ExtractNatives", "${platform}CopyFlutterBinaries")
     inputs.files(linksP2Inf).optional()
-    inputs.property("jvmArgs", if (shipsMacosCdsArchive) macosCdsJvmArgs else emptyList())
+    val cdsJvmArgs = if (shipsMacosCdsArchive) macosCdsJvmArgs else emptyList()
+    inputs.property("jvmArgs", cdsJvmArgs)
     outputs.dir(out)
     doLast {
         val links = linksP2Inf.get().asFile
         if (!links.isFile && links.resolveSibling("../swtflutter.app").normalize().exists())
             throw GradleException("$links missing: the fragment would install without its framework links")
         val lines = links.takeIf { it.isFile }?.readLines()?.filter { it.isNotBlank() }.orEmpty() +
-            if (!shipsMacosCdsArchive) emptyList() else listOf(
-                "instructions.configure=" + macosCdsJvmArgs.joinToString(";") { "addJvmArg(jvmArg:$it)" },
-                "instructions.unconfigure=" + macosCdsJvmArgs.joinToString(";") { "removeJvmArg(jvmArg:$it)" })
+            if (cdsJvmArgs.isEmpty()) emptyList() else listOf(
+                "instructions.configure=" + cdsJvmArgs.joinToString(";") { "addJvmArg(jvmArg:$it)" },
+                "instructions.unconfigure=" + cdsJvmArgs.joinToString(";") { "removeJvmArg(jvmArg:$it)" })
         val file = out.get().file("META-INF/p2.inf").asFile
-        delete(file)
+        file.delete()
         if (lines.isNotEmpty()) file.apply { parentFile.mkdirs() }.writeText(lines.joinToString("\n", postfix = "\n"))
     }
 }
@@ -864,8 +872,9 @@ platforms.forEach { platform ->
         if (info.os == "macos") {
             val app = flutterApp.resolve("build/macos/Build/Products/${dartMode.replaceFirstChar { it.uppercase() }}/swtflutter.app")
             // A copy never deletes: an earlier build's app would keep the files this one leaves out.
-            doFirst { delete(nativesDir.get().dir("swtflutter.app")) }
-            doLast { writeMacAppLinks(app, nativesDir.get().asFile) }
+            val staleApp = nativesDir.get().dir("swtflutter.app").asFile
+            doFirst { staleApp.deleteRecursively() }
+            doLast { MacAppLinks.writeMacAppLinks(app, nativesDir.get().asFile) }
         }
     }
 
@@ -930,6 +939,7 @@ platforms.forEach { platform ->
 
 fun genHostP2Inf(taskName: String, outFile: Provider<RegularFile>, suffix: String, frags: () -> List<PlatformMeta>) =
     tasks.register(taskName) {
+        notCompatibleWithConfigurationCache("its action runs this build script's functions, which the configuration cache cannot store")
         val verProvider = hostVersion(suffix)
         inputs.property("${suffix}HostVersion", verProvider)
         outputs.file(outFile)

@@ -802,10 +802,15 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   @override
   Widget build(BuildContext context) {
-    return inOwnLayer(tagSemantics(ValueListenableBuilder<double>(
-      valueListenable: appScaleNotifier,
-      builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
-    )));
+    // Offstage rather than wrap's SizedBox.shrink: an unmounted web view is recreated, and its page
+    // reloaded, when the Browser is shown again.
+    return Offstage(
+      offstage: hidden,
+      child: inOwnLayer(tagSemantics(ValueListenableBuilder<double>(
+        valueListenable: appScaleNotifier,
+        builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
+      ))),
+    );
   }
 
   /// Renders the page at the pixel count it is displayed with, instead of stretching it.
