@@ -883,9 +883,12 @@ public class Sizes {
         int[] extent = layout(bar, width, bounds);
         if (resize) {
             for (int i = 0; i < items.length; i++) {
-                Control control = ((DartToolItem) items[i].getImpl()).control;
-                if (control != null)
-                    control.setBounds(bounds[i]);
+                DartToolItem item = (DartToolItem) items[i].getImpl();
+                if (item.control != null)
+                    item.control.setBounds(bounds[i]);
+                // The client fits each item into the width it was sent, and a text or image change
+                // moves that width without setting it; the flush drops it when it has not moved.
+                item.getValue().markDirty(VToolItem.WIDTH);
             }
         }
         return extent;

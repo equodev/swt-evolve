@@ -936,35 +936,35 @@
       "ToolItem:CHECK": {
         "fontFamily": "Inter",
         "fontItalic": false,
-        "fontSize": 20,
+        "fontSize": 14,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
       "ToolItem:DROP_DOWN": {
         "fontFamily": "Inter",
         "fontItalic": false,
-        "fontSize": 20,
+        "fontSize": 14,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
       "ToolItem:PUSH": {
         "fontFamily": "Inter",
         "fontItalic": false,
-        "fontSize": 20,
+        "fontSize": 14,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
       "ToolItem:RADIO": {
         "fontFamily": "Inter",
         "fontItalic": false,
-        "fontSize": 20,
+        "fontSize": 14,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
       "ToolItem:SEPARATOR": {
         "fontFamily": "Inter",
         "fontItalic": false,
-        "fontSize": 20,
+        "fontSize": 14,
         "fontWeight": 500,
         "height": 1.1428571428571428
       },
@@ -31784,27 +31784,27 @@
           "discoveredComponents": {
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "Yes"
           },
-          "height": 23.0,
+          "height": 20.0,
           "name": "ToolItem_CHECK_small_noimg",
           "style": "CHECK",
           "useFontTheme": false,
-          "width": 62.033203125
+          "width": 51.8232421875
         },
         {
           "discoveredComponents": {
@@ -31814,16 +31814,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -31837,7 +31837,7 @@
           "name": "ToolItem_CHECK_small_16x16",
           "style": "CHECK",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
@@ -31847,16 +31847,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -31870,33 +31870,33 @@
           "name": "ToolItem_CHECK_small_48x48",
           "style": "CHECK",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 23.0,
+          "height": 20.0,
           "name": "ToolItem_CHECK_large_noimg",
           "style": "CHECK",
           "useFontTheme": false,
-          "width": 261.3203125
+          "width": 191.32421875
         },
         {
           "discoveredComponents": {
@@ -31906,16 +31906,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -31929,7 +31929,7 @@
           "name": "ToolItem_CHECK_large_16x16",
           "style": "CHECK",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {
@@ -31939,16 +31939,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -31962,7 +31962,7 @@
           "name": "ToolItem_CHECK_large_48x48",
           "style": "CHECK",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {},
@@ -32020,27 +32020,27 @@
           "discoveredComponents": {
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "Yes"
           },
-          "height": 23.0,
+          "height": 16.0,
           "name": "ToolItem_PUSH_small_noimg",
           "style": "PUSH",
           "useFontTheme": false,
-          "width": 46.033203125
+          "width": 35.8232421875
         },
         {
           "discoveredComponents": {
@@ -32050,16 +32050,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32073,7 +32073,7 @@
           "name": "ToolItem_PUSH_small_16x16",
           "style": "PUSH",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
@@ -32083,16 +32083,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32106,33 +32106,33 @@
           "name": "ToolItem_PUSH_small_48x48",
           "style": "PUSH",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 23.0,
+          "height": 16.0,
           "name": "ToolItem_PUSH_large_noimg",
           "style": "PUSH",
           "useFontTheme": false,
-          "width": 245.3203125
+          "width": 175.32421875
         },
         {
           "discoveredComponents": {
@@ -32142,16 +32142,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32165,7 +32165,7 @@
           "name": "ToolItem_PUSH_large_16x16",
           "style": "PUSH",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {
@@ -32175,16 +32175,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32198,7 +32198,7 @@
           "name": "ToolItem_PUSH_large_48x48",
           "style": "PUSH",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {},
@@ -32256,27 +32256,27 @@
           "discoveredComponents": {
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "Yes"
           },
-          "height": 23.0,
+          "height": 20.0,
           "name": "ToolItem_RADIO_small_noimg",
           "style": "RADIO",
           "useFontTheme": false,
-          "width": 62.033203125
+          "width": 51.8232421875
         },
         {
           "discoveredComponents": {
@@ -32286,16 +32286,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32309,7 +32309,7 @@
           "name": "ToolItem_RADIO_small_16x16",
           "style": "RADIO",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
@@ -32319,16 +32319,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32342,33 +32342,33 @@
           "name": "ToolItem_RADIO_small_48x48",
           "style": "RADIO",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 23.0,
+          "height": 20.0,
           "name": "ToolItem_RADIO_large_noimg",
           "style": "RADIO",
           "useFontTheme": false,
-          "width": 261.3203125
+          "width": 191.32421875
         },
         {
           "discoveredComponents": {
@@ -32378,16 +32378,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32401,7 +32401,7 @@
           "name": "ToolItem_RADIO_large_16x16",
           "style": "RADIO",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {
@@ -32411,16 +32411,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32434,7 +32434,7 @@
           "name": "ToolItem_RADIO_large_48x48",
           "style": "RADIO",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {},
@@ -32442,7 +32442,7 @@
             "image": null,
             "text": ""
           },
-          "height": 625.0,
+          "height": 544.0,
           "name": "ToolItem_SEPARATOR_empty_noimg",
           "style": "SEPARATOR",
           "useFontTheme": false,
@@ -32492,27 +32492,27 @@
           "discoveredComponents": {
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "Yes"
           },
-          "height": 23.0,
+          "height": 16.0,
           "name": "ToolItem_SEPARATOR_small_noimg",
           "style": "SEPARATOR",
           "useFontTheme": false,
-          "width": 46.033203125
+          "width": 35.8232421875
         },
         {
           "discoveredComponents": {
@@ -32522,16 +32522,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32545,7 +32545,7 @@
           "name": "ToolItem_SEPARATOR_small_16x16",
           "style": "SEPARATOR",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
@@ -32555,16 +32555,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32578,33 +32578,33 @@
           "name": "ToolItem_SEPARATOR_small_48x48",
           "style": "SEPARATOR",
           "useFontTheme": false,
-          "width": 72.033203125
+          "width": 61.8232421875
         },
         {
           "discoveredComponents": {
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 23.0,
+          "height": 16.0,
           "name": "ToolItem_SEPARATOR_large_noimg",
           "style": "SEPARATOR",
           "useFontTheme": false,
-          "width": 245.3203125
+          "width": 175.32421875
         },
         {
           "discoveredComponents": {
@@ -32614,16 +32614,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32637,7 +32637,7 @@
           "name": "ToolItem_SEPARATOR_large_16x16",
           "style": "SEPARATOR",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {
@@ -32647,16 +32647,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32670,7 +32670,7 @@
           "name": "ToolItem_SEPARATOR_large_48x48",
           "style": "SEPARATOR",
           "useFontTheme": false,
-          "width": 271.3203125
+          "width": 201.32421875
         },
         {
           "discoveredComponents": {},
@@ -32728,27 +32728,27 @@
           "discoveredComponents": {
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "Yes"
           },
-          "height": 23.0,
+          "height": 16.0,
           "name": "ToolItem_DROP_DOWN_small_noimg",
           "style": "DROP_DOWN",
           "useFontTheme": false,
-          "width": 63.033203125
+          "width": 52.8232421875
         },
         {
           "discoveredComponents": {
@@ -32758,16 +32758,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32781,7 +32781,7 @@
           "name": "ToolItem_DROP_DOWN_small_16x16",
           "style": "DROP_DOWN",
           "useFontTheme": false,
-          "width": 89.033203125
+          "width": 78.8232421875
         },
         {
           "discoveredComponents": {
@@ -32791,16 +32791,16 @@
             },
             "text": {
               "content": "Yes",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 34.033203125
+              "width": 23.8232421875
             }
           },
           "expectedComponents": {
@@ -32814,33 +32814,33 @@
           "name": "ToolItem_DROP_DOWN_small_48x48",
           "style": "DROP_DOWN",
           "useFontTheme": false,
-          "width": 89.033203125
+          "width": 78.8232421875
         },
         {
           "discoveredComponents": {
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
             "image": null,
             "text": "This is a long widget text"
           },
-          "height": 23.0,
+          "height": 16.0,
           "name": "ToolItem_DROP_DOWN_large_noimg",
           "style": "DROP_DOWN",
           "useFontTheme": false,
-          "width": 262.3203125
+          "width": 192.32421875
         },
         {
           "discoveredComponents": {
@@ -32850,16 +32850,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32873,7 +32873,7 @@
           "name": "ToolItem_DROP_DOWN_large_16x16",
           "style": "DROP_DOWN",
           "useFontTheme": false,
-          "width": 288.3203125
+          "width": 218.32421875
         },
         {
           "discoveredComponents": {
@@ -32883,16 +32883,16 @@
             },
             "text": {
               "content": "This is a long widget text",
-              "height": 23.0,
+              "height": 16.0,
               "softWrap": true,
               "textStyle": {
                 "fontFamily": "Inter",
-                "fontSize": 20.0,
+                "fontSize": 14.0,
                 "fontStyle": null,
                 "fontWeight": 4,
                 "height": 1.1428571428571428
               },
-              "width": 233.3203125
+              "width": 163.32421875
             }
           },
           "expectedComponents": {
@@ -32906,7 +32906,7 @@
           "name": "ToolItem_DROP_DOWN_large_48x48",
           "style": "DROP_DOWN",
           "useFontTheme": false,
-          "width": 288.3203125
+          "width": 218.32421875
         }
       ],
       "fontFromParent": true
