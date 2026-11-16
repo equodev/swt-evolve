@@ -13,6 +13,9 @@ extension type _NumberFormat._(JSObject _) implements JSObject {
 /// On the web the locale is the browser's, the one the client reports to Java with its viewport.
 Locale userLocale() => WidgetsBinding.instance.platformDispatcher.locale;
 
+/// On the web the user's regional locale is the browser's too.
+Locale systemLocale() => userLocale();
+
 String? _tag;
 String _separator = '.';
 

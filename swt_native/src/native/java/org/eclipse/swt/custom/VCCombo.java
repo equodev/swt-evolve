@@ -154,7 +154,7 @@ public class VCCombo extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 149:
+            case 150:
                 return false;
             case 20:
                 w.write((int) getAlignment());
@@ -187,7 +187,7 @@ public class VCCombo extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 149:
+            case 150:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
             case 20:
                 {

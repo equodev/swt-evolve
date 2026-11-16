@@ -123,6 +123,40 @@ final class DisplayBridgePlatform {
         return OS.GetKeyState(OS.VK_LBUTTON) < 0 || OS.GetKeyState(OS.VK_RBUTTON) < 0 || OS.GetKeyState(OS.VK_MBUTTON) < 0;
     }
 
+    /** {@code LOCALE_SNAME}: a locale's name as a language tag, {@code es-AR}. */
+    private static final int LOCALE_SNAME = 0x5c;
+
+    /**
+     * The language tag of the user's regional format, which Windows' own calendars follow whatever
+     * locale the JVM runs in; null without the native library.
+     */
+    static String regionalLocale() {
+        if (nativeLibraryOff())
+            return null;
+        char[] name = new char[85];
+        int length = getLocaleInfo(OS.LOCALE_USER_DEFAULT, LOCALE_SNAME, name);
+        return length > 1 ? new String(name, 0, length - 1) : null;
+    }
+
+    /**
+     * {@code GetLocaleInfoW} into {@code data}; 0 when it fails. Its {@code char[]} entry point is
+     * {@code OS.GetLocaleInfo} in current SWT and {@code OS.GetLocaleInfoW} in older releases, so it is
+     * looked up reflectively: this class compiles against every release.
+     */
+    private static int getLocaleInfo(int locale, int type, char[] data) {
+        for (String entryPoint : new String[] {"GetLocaleInfo", "GetLocaleInfoW"}) {
+            try {
+                return (Integer) OS.class.getMethod(entryPoint, int.class, int.class, char[].class, int.class)
+                        .invoke(null, locale, type, data, data.length);
+            } catch (NoSuchMethodException absent) {
+                // the other name
+            } catch (ReflectiveOperationException | RuntimeException failed) {
+                return 0;
+            }
+        }
+        return 0;
+    }
+
     /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
     private static boolean nativeLibraryOff() {
         return "false".equals(System.getProperty(LOAD_LIBRARY));

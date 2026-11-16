@@ -96,9 +96,9 @@ public class VCBanner extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 148:
                 return false;
-            case 149:
+            case 150:
                 return false;
             case 19:
                 w.write(getCurveLine());
@@ -113,9 +113,9 @@ public class VCBanner extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
+            case 148:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 149:
+            case 150:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
             case 19:
                 {

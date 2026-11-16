@@ -121,54 +121,54 @@ public class StyledTextPrintOptions implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(516);
-        w.write(header);
-        w.key(515);
-        w.write(footer);
         w.key(517);
-        w.write(jobName);
-        w.key(523);
-        w.write(printTextForeground);
-        w.key(521);
-        w.write(printTextBackground);
-        w.key(522);
-        w.write(printTextFontStyle);
-        w.key(519);
-        w.write(printLineBackground);
-        w.key(520);
-        w.write(printLineNumbers);
+        w.write(header);
+        w.key(516);
+        w.write(footer);
         w.key(518);
+        w.write(jobName);
+        w.key(524);
+        w.write(printTextForeground);
+        w.key(522);
+        w.write(printTextBackground);
+        w.key(523);
+        w.write(printTextFontStyle);
+        w.key(520);
+        w.write(printLineBackground);
+        w.key(521);
+        w.write(printLineNumbers);
+        w.key(519);
         w.write(lineLabels);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 516:
+            case 517:
                 header = r.string();
                 return true;
-            case 515:
+            case 516:
                 footer = r.string();
                 return true;
-            case 517:
+            case 518:
                 jobName = r.string();
                 return true;
-            case 523:
+            case 524:
                 printTextForeground = r.bool();
                 return true;
-            case 521:
+            case 522:
                 printTextBackground = r.bool();
                 return true;
-            case 522:
+            case 523:
                 printTextFontStyle = r.bool();
                 return true;
-            case 519:
+            case 520:
                 printLineBackground = r.bool();
                 return true;
-            case 520:
+            case 521:
                 printLineNumbers = r.bool();
                 return true;
-            case 518:
+            case 519:
                 lineLabels = r.strings();
                 return true;
         }

@@ -129,59 +129,59 @@ public final class Monitor implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(392);
-        w.write(handle);
-        w.key(395);
-        w.write((int) x);
-        w.key(396);
-        w.write((int) y);
-        w.key(394);
-        w.write((int) width);
         w.key(393);
-        w.write((int) height);
-        w.key(390);
-        w.write((int) clientX);
-        w.key(391);
-        w.write((int) clientY);
-        w.key(389);
-        w.write((int) clientWidth);
-        w.key(388);
-        w.write((int) clientHeight);
+        w.write(handle);
+        w.key(396);
+        w.write((int) x);
         w.key(397);
+        w.write((int) y);
+        w.key(395);
+        w.write((int) width);
+        w.key(394);
+        w.write((int) height);
+        w.key(391);
+        w.write((int) clientX);
+        w.key(392);
+        w.write((int) clientY);
+        w.key(390);
+        w.write((int) clientWidth);
+        w.key(389);
+        w.write((int) clientHeight);
+        w.key(398);
         w.write((int) zoom);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 392:
+            case 393:
                 handle = r.int64();
                 return true;
-            case 395:
+            case 396:
                 x = r.int32();
                 return true;
-            case 396:
+            case 397:
                 y = r.int32();
                 return true;
-            case 394:
+            case 395:
                 width = r.int32();
                 return true;
-            case 393:
+            case 394:
                 height = r.int32();
                 return true;
-            case 390:
+            case 391:
                 clientX = r.int32();
                 return true;
-            case 391:
+            case 392:
                 clientY = r.int32();
                 return true;
-            case 389:
+            case 390:
                 clientWidth = r.int32();
                 return true;
-            case 388:
+            case 389:
                 clientHeight = r.int32();
                 return true;
-            case 397:
+            case 398:
                 zoom = r.int32();
                 return true;
         }

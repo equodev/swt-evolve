@@ -14,7 +14,7 @@ import 'package:swtflutter/src/impl/widget_config.dart';
 const double _width = 110;
 const double _height = 22;
 
-VDateTime _date(int style) => VDateTime()
+VDateTime _date(int style, Size size) => VDateTime()
   ..swt = 'DateTime'
   ..id = 94
   ..seq = 1
@@ -26,18 +26,18 @@ VDateTime _date(int style) => VDateTime()
   ..bounds = (VRectangle()
     ..x = 0
     ..y = 0
-    ..width = _width.toInt()
-    ..height = _height.toInt());
+    ..width = size.width.toInt()
+    ..height = size.height.toInt());
 
-Future<void> _pump(WidgetTester tester, int style) async {
+Future<void> _pump(WidgetTester tester, int style, {Size size = const Size(_width, _height)}) async {
   await tester.pumpWidget(EvolveApp(
     theme: ThemeMode.light,
     contentWidget: Align(
       alignment: Alignment.topLeft,
       child: SizedBox(
-        width: _width,
-        height: _height,
-        child: DateTimeSwt<VDateTime>(value: _date(style)),
+        width: size.width,
+        height: size.height,
+        child: DateTimeSwt<VDateTime>(value: _date(style, size)),
       ),
     ),
   ));
@@ -72,6 +72,37 @@ void main() {
         findsOneWidget,
         reason: 'the month was not stepped');
     expect(find.text('October 2026'), findsOneWidget, reason: 'the calendar is open on the date');
+  });
+
+  Rect drawnBox(WidgetTester tester) => tester.getRect(find
+      .descendant(
+          of: find.byType(DateTimeSwt<VDateTime>),
+          matching: find.byWidgetPredicate((w) => w is Container && w.decoration is BoxDecoration))
+      .first);
+
+  for (final (name, style) in [
+    ('drop-down date', _dropDown),
+    ('date', SWT.DATE | SWT.MEDIUM),
+    ('time', SWT.TIME | SWT.MEDIUM),
+  ]) {
+    testWidgets('a $name fills the bounds it is given, as Win32 draws it', (tester) async {
+      await _pump(tester, style);
+      expect(drawnBox(tester), const Rect.fromLTWH(0, 0, _width, _height));
+
+      await _pump(tester, style, size: const Size(200, 40));
+      expect(drawnBox(tester), const Rect.fromLTWH(0, 0, 200, 40));
+    });
+  }
+
+  testWidgets('the calendar button is two scroll bars wide and as tall as the field, as Win32 draws it',
+      (tester) async {
+    await _pump(tester, _dropDown);
+
+    final button = tester.getRect(find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.identifier == 'dropdown:DateTime/94'));
+    expect(button.width, 2 * 17, reason: 'two Win32 scroll bars (SM_CXVSCROLL) wide');
+    expect(button.right, closeTo(_width, 1), reason: 'it ends the field, inside the border');
+    expect(button.height, closeTo(_height, 2), reason: 'it fills the field\'s height, inside the border');
   });
 
   testWidgets('a German locale shows the date as day.month.year', (tester) async {

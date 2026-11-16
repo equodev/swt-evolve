@@ -77,7 +77,7 @@ public class VCaret extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 676:
+            case 677:
                 return false;
             case 79:
                 w.write(getVisible());
@@ -101,7 +101,7 @@ public class VCaret extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 676:
+            case 677:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
             case 79:
                 {

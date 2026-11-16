@@ -24,13 +24,13 @@ public class VSash extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
-                return false;
-            case 149:
+            case 148:
                 return false;
             case 150:
                 return false;
-            case 153:
+            case 151:
+                return false;
+            case 154:
                 return false;
         }
         return super.writeWire(w, key);
@@ -39,13 +39,13 @@ public class VSash extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 147:
-                return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 149:
+            case 148:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
             case 150:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 153:
+            case 151:
+                return dev.equo.swt.WidgetWire.UNHANDLED;
+            case 154:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
         }
         return super.writeWireWhole(w, key);

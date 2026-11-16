@@ -36,9 +36,9 @@ public class VPDFDocument extends VDevice {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(398);
-        w.write(getHeight());
         w.key(399);
+        w.write(getHeight());
+        w.key(400);
         w.write(getWidth());
     }
 }

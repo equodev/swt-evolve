@@ -74,28 +74,28 @@ class VSpinner extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 473: // digits
+      case 474: // digits
         digits = r.int32();
         return true;
-      case 474: // increment
+      case 475: // increment
         increment = r.int32();
         return true;
-      case 476: // maximum
+      case 477: // maximum
         maximum = r.int32();
         return true;
-      case 477: // minimum
+      case 478: // minimum
         minimum = r.int32();
         return true;
-      case 478: // pageIncrement
+      case 479: // pageIncrement
         pageIncrement = r.int32();
         return true;
-      case 479: // selection
+      case 480: // selection
         selection = r.int32();
         return true;
-      case 480: // textLimit
+      case 481: // textLimit
         textLimit = r.int32();
         return true;
-      case 475: // keptText
+      case 476: // keptText
         keptText = r.string();
         return true;
       default:
@@ -109,49 +109,49 @@ class VSpinner extends VComposite {
     {
       final v_ = digits;
       if (v_ != null) {
-        w.keyInt32(473, v_);
+        w.keyInt32(474, v_);
       }
     }
     {
       final v_ = increment;
       if (v_ != null) {
-        w.keyInt32(474, v_);
+        w.keyInt32(475, v_);
       }
     }
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(476, v_);
+        w.keyInt32(477, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(477, v_);
+        w.keyInt32(478, v_);
       }
     }
     {
       final v_ = pageIncrement;
       if (v_ != null) {
-        w.keyInt32(478, v_);
+        w.keyInt32(479, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(479, v_);
+        w.keyInt32(480, v_);
       }
     }
     {
       final v_ = textLimit;
       if (v_ != null) {
-        w.keyInt32(480, v_);
+        w.keyInt32(481, v_);
       }
     }
     {
       final v_ = keptText;
       if (v_ != null) {
-        w.key(475);
+        w.key(476);
         w.string(v_);
       }
     }
@@ -160,13 +160,13 @@ class VSpinner extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(473, digits);
-    visit(474, increment);
-    visit(476, maximum);
-    visit(477, minimum);
-    visit(478, pageIncrement);
-    visit(479, selection);
-    visit(480, textLimit);
-    visit(475, keptText);
+    visit(474, digits);
+    visit(475, increment);
+    visit(477, maximum);
+    visit(478, minimum);
+    visit(479, pageIncrement);
+    visit(480, selection);
+    visit(481, textLimit);
+    visit(476, keptText);
   }
 }

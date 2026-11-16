@@ -6,6 +6,19 @@ import '../widget_config.dart';
 Locale userLocale() {
   final tag = getConfigFlags().locale;
   if (tag == null || tag.isEmpty) return WidgetsBinding.instance.platformDispatcher.locale;
+  return _parseTag(tag);
+}
+
+/// On desktop the locale of the OS user's regional settings, which the OS's own calendars follow
+/// whatever locale the JVM runs in. Java reads it from the OS: Flutter's [Locale], and dart:io's
+/// `Platform.localeName` with it, is the OS's display language instead.
+Locale systemLocale() {
+  final tag = getConfigFlags().regional_locale;
+  if (tag == null || tag.isEmpty) return userLocale();
+  return _parseTag(tag);
+}
+
+Locale _parseTag(String tag) {
   final parts = tag.split('-');
   String? script;
   String? country;

@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/rendering.dart';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:flutter/gestures.dart' show kPrimaryButton;
@@ -22,6 +21,7 @@ import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/client_caret_report.dart';
 import 'utils/key_edit_order.dart';
+import 'utils/drop_down_layout.dart';
 import 'utils/pending_text_echoes.dart';
 import 'key_forwarding.dart';
 import 'utils/pointer.dart';
@@ -715,7 +715,7 @@ class _DropdownComboLayout extends StatelessWidget {
   /// [field] is the field's rect in the coordinates of the overlay the list is shown in.
   Widget _buildOverlay(Rect field) {
     return CustomSingleChildLayout(
-      delegate: _ComboListLayout(field),
+      delegate: DropDownLayout(field),
       child: pointerInterceptor(TapRegion(
         groupId: overlayController,
         onTapOutside: (_) => onDismiss(),
@@ -803,32 +803,6 @@ class _ComboHitArea extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Places the list under the field, and above it when it does not fit underneath and there is more
-/// room above, as native SWT does: a Combo on the window's bottom edge would otherwise open
-/// off-screen.
-class _ComboListLayout extends SingleChildLayoutDelegate {
-  _ComboListLayout(this.field);
-
-  final Rect field;
-
-  @override
-  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
-    final double below = constraints.maxHeight - field.bottom;
-    return constraints.loosen().copyWith(maxHeight: math.max(0.0, math.max(below, field.top)));
-  }
-
-  @override
-  Offset getPositionForChild(Size size, Size childSize) {
-    final double below = size.height - field.bottom;
-    final bool above = childSize.height > below && field.top > below;
-    final double x = math.max(0.0, math.min(field.left, size.width - childSize.width));
-    return Offset(x, above ? field.top - childSize.height : field.bottom);
-  }
-
-  @override
-  bool shouldRelayout(_ComboListLayout oldDelegate) => oldDelegate.field != field;
 }
 
 class _SimpleComboLayout extends StatelessWidget {

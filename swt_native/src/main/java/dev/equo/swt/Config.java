@@ -879,6 +879,29 @@ public class Config {
         return java.util.Locale.getDefault(java.util.Locale.Category.FORMAT);
     }
 
+    /**
+     * The language tag of the locale a POSIX process writes dates in, as GTK's calendar does:
+     * {@code LC_ALL}, else {@code LC_TIME}, else {@code LANG}, each without its encoding or modifier
+     * ({@code de_DE.UTF-8} is {@code de-DE}). The C locale, or none, is {@code en-US}.
+     */
+    public static String posixTimeLocaleTag(String lcAll, String lcTime, String lang) {
+        String name = firstSet(lcAll, lcTime, lang);
+        if (name == null)
+            return "en-US";
+        name = name.split("[.@]", 2)[0];
+        if (name.isEmpty() || name.equals("C") || name.equals("POSIX"))
+            return "en-US";
+        return name.replace('_', '-');
+    }
+
+    private static String firstSet(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isEmpty())
+                return value;
+        }
+        return null;
+    }
+
     /** Whether application icons can be swapped for themed ones: Evolve's set or a client pack. */
     static boolean replacesIcons(ConfigFlags flags) {
         return !flags.disable_evolve_icons || (flags.assets_path != null && !flags.assets_path.trim().isEmpty());

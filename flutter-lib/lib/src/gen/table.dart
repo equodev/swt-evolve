@@ -89,46 +89,46 @@ class VTable extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 559: // columnOrder
+      case 560: // columnOrder
         columnOrder = r.ints();
         return true;
-      case 560: // columns
+      case 561: // columns
         columns = r.refs<VTableColumn>(columns);
         return true;
-      case 561: // editors
+      case 562: // editors
         editors = r.refs<VTableEditor>(editors);
         return true;
-      case 562: // headerBackground
+      case 563: // headerBackground
         headerBackground = r.color();
         return true;
-      case 563: // headerForeground
+      case 564: // headerForeground
         headerForeground = r.color();
         return true;
-      case 564: // headerVisible
+      case 565: // headerVisible
         headerVisible = r.boolean();
         return true;
-      case 566: // items
+      case 567: // items
         items = r.items<VTableItem>(WireType.tableItem, items);
         return true;
-      case 567: // linesVisible
+      case 568: // linesVisible
         linesVisible = r.boolean();
         return true;
-      case 569: // selection
+      case 570: // selection
         selection = r.ints();
         return true;
-      case 570: // sortColumn
+      case 571: // sortColumn
         sortColumn = r.ref<VTableColumn>();
         return true;
-      case 571: // sortDirection
+      case 572: // sortDirection
         sortDirection = r.int32();
         return true;
-      case 572: // topIndex
+      case 573: // topIndex
         topIndex = r.int32();
         return true;
-      case 565: // itemCount
+      case 566: // itemCount
         itemCount = r.int32();
         return true;
-      case 568: // ownerDrawItemHeight
+      case 569: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
         return true;
       default:
@@ -142,92 +142,92 @@ class VTable extends VComposite {
     {
       final v_ = columnOrder;
       if (v_ != null) {
-        w.key(559);
+        w.key(560);
         w.ints(v_);
       }
     }
     {
       final v_ = columns;
       if (v_ != null) {
-        w.key(560);
+        w.key(561);
         w.refs(v_);
       }
     }
     {
       final v_ = editors;
       if (v_ != null) {
-        w.key(561);
+        w.key(562);
         w.refs(v_);
       }
     }
     {
       final v_ = headerBackground;
       if (v_ != null) {
-        w.key(562);
+        w.key(563);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerForeground;
       if (v_ != null) {
-        w.key(563);
+        w.key(564);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerVisible;
       if (v_ != null) {
-        w.keyBoolean(564, v_);
+        w.keyBoolean(565, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(566);
+        w.key(567);
         w.items(v_);
       }
     }
     {
       final v_ = linesVisible;
       if (v_ != null) {
-        w.keyBoolean(567, v_);
+        w.keyBoolean(568, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(569);
+        w.key(570);
         w.ints(v_);
       }
     }
     {
       final v_ = sortColumn;
       if (v_ != null) {
-        w.keyRef(570, v_.id);
+        w.keyRef(571, v_.id);
       }
     }
     {
       final v_ = sortDirection;
       if (v_ != null) {
-        w.keyInt32(571, v_);
+        w.keyInt32(572, v_);
       }
     }
     {
       final v_ = topIndex;
       if (v_ != null) {
-        w.keyInt32(572, v_);
+        w.keyInt32(573, v_);
       }
     }
     {
       final v_ = itemCount;
       if (v_ != null) {
-        w.keyInt32(565, v_);
+        w.keyInt32(566, v_);
       }
     }
     {
       final v_ = ownerDrawItemHeight;
       if (v_ != null) {
-        w.keyInt32(568, v_);
+        w.keyInt32(569, v_);
       }
     }
   }
@@ -235,20 +235,20 @@ class VTable extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(559, columnOrder);
-    visit(560, columns);
-    visit(561, editors);
-    visit(562, headerBackground);
-    visit(563, headerForeground);
-    visit(564, headerVisible);
-    visit(566, items);
-    visit(567, linesVisible);
-    visit(569, selection);
-    visit(570, sortColumn);
-    visit(571, sortDirection);
-    visit(572, topIndex);
-    visit(565, itemCount);
-    visit(568, ownerDrawItemHeight);
+    visit(560, columnOrder);
+    visit(561, columns);
+    visit(562, editors);
+    visit(563, headerBackground);
+    visit(564, headerForeground);
+    visit(565, headerVisible);
+    visit(567, items);
+    visit(568, linesVisible);
+    visit(570, selection);
+    visit(571, sortColumn);
+    visit(572, sortDirection);
+    visit(573, topIndex);
+    visit(566, itemCount);
+    visit(569, ownerDrawItemHeight);
   }
 
   @override

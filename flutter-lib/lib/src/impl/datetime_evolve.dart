@@ -2,6 +2,7 @@ import 'dart:async' show scheduleMicrotask;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/date_time_patterns.dart';
 import 'package:intl/intl.dart';
 import '../gen/datetime.dart';
@@ -9,14 +10,17 @@ import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../impl/composite_evolve.dart';
 import '../theme/theme_extensions/spinner_theme_extension.dart';
+import 'key_forwarding.dart';
 import 'utils/client_locale.dart';
+import 'utils/drop_down_layout.dart';
 import 'utils/widget_utils.dart';
 import 'utils/layered_layout_builder.dart';
 
 const _kDtButtonWidth = 9.0;
 const _kDtIconSize = 9.0;
-// A drop-down date's calendar button is as wide as a Win32 scroll bar (SM_CXVSCROLL), as there.
-const _kDtCalendarButtonWidth = 17.0;
+// A drop-down date's calendar button is as wide as two Win32 scroll bars (2 x SM_CXVSCROLL), as
+// Windows 10 and later draw it: an app that lays a Text over the date leaves that much uncovered.
+const _kDtCalendarButtonWidth = 34.0;
 const _kDtCalendarIconSize = 16.0;
 
 class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
@@ -50,11 +54,23 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
   }
 
   @override
+  void initState() {
+    super.initState();
+    addOpenPopupEscape(_calendarClosesOnKey);
+  }
+
+  @override
   void dispose() {
+    removeOpenPopupEscape(_calendarClosesOnKey);
     _closeCalendarOverlay();
     _focusNode.dispose();
     super.dispose();
   }
+
+  // Win32 offers the Escape that closes its calendar as a Traverse with doit=false, which closes no
+  // dialog around the field, and then as a KeyDown.
+  bool _calendarClosesOnKey(KeyEvent event) =>
+      mounted && _calendarOverlay != null && event.logicalKey == LogicalKeyboardKey.escape;
 
   // The editable part of the control -- its ground and its digits -- follows the cell it edits.
   // The spinner buttons and the drop-down trigger deliberately do not: upstream SWT keeps those
@@ -104,38 +120,41 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
         children: [
           Positioned.fill(
             child: GestureDetector(
-              onTap: () {
-                setState(() => _calendarDropped = false);
-                _closeCalendarOverlay();
-              },
+              onTap: _dismissCalendar,
               behavior: HitTestBehavior.translucent,
             ),
           ),
-          Positioned(
-            left: offset.dx,
-            top: offset.dy + size.height,
-            child: Material(
-              elevation: 4,
-              borderRadius: BorderRadius.circular(4),
-              child: _CalendarWidget(
-                year: _year,
-                month: _month,
-                selectedDay: _day,
-                showWeekNumbers: false,
-                enabled: state.enabled ?? true,
-                colorScheme: colorScheme,
-                onDaySelected: (y, m, d) {
-                  setState(() {
-                    state.year = y;
-                    state.month = m;
-                    state.day = d;
-                    _calendarDropped = false;
-                  });
-                  _closeCalendarOverlay();
-                  // Picked on the press, with the button held.
-                  widget.sendSelectionSelection(state, _makeSelectionEvent()..stateMask = SWT.BUTTON1);
-                },
-                onMonthChanged: (_, __) {},
+          CustomSingleChildLayout(
+            delegate: DropDownLayout(offset & size, shrinkToFit: false),
+            child: Semantics(
+              identifier: 'calendar:${state.swt}/${state.id}',
+              container: true,
+              // The calendar takes its month's width; the layout only bounds it by the window.
+              child: IntrinsicWidth(
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(4),
+                  child: _CalendarWidget(
+                    year: _year,
+                    month: _month,
+                    selectedDay: _day,
+                    showWeekNumbers: false,
+                    enabled: state.enabled ?? true,
+                    colorScheme: colorScheme,
+                    onDaySelected: (y, m, d) {
+                      setState(() {
+                        state.year = y;
+                        state.month = m;
+                        state.day = d;
+                        _calendarDropped = false;
+                      });
+                      _closeCalendarOverlay();
+                      // Picked on the press, with the button held.
+                      widget.sendSelectionSelection(state, _makeSelectionEvent()..stateMask = SWT.BUTTON1);
+                    },
+                    onMonthChanged: (_, __) {},
+                  ),
+                ),
               ),
             ),
           ),
@@ -148,6 +167,12 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
   void _closeCalendarOverlay() {
     _calendarOverlay?.remove();
     _calendarOverlay = null;
+  }
+
+  /// Closes the calendar leaving the date as it was.
+  void _dismissCalendar() {
+    setState(() => _calendarDropped = false);
+    _closeCalendarOverlay();
   }
 
   @override
@@ -316,6 +341,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
       layout.separator,
       calendarButton: hasDropDown
           ? _CalendarButton(
+              semanticsId: 'dropdown:${state.swt}/${state.id}',
               enabled: enabled,
               isOpen: _calendarDropped,
               theme: theme,
@@ -507,13 +533,15 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
             _selectedField = _fieldNearest(details.globalPosition.dx, fields.length);
           });
         },
-        // Fills the bounds Java gave the control, so a click below the drawn field still lands.
         child: Align(
           alignment: AlignmentDirectional.topStart,
           child: LayeredLayoutBuilder(
             builder: (ctx, constraints) {
               final isBounded = constraints.hasBoundedWidth;
+              // The field is drawn over the whole height Java gave it, as Win32 draws its picker, so
+              // it lines up with a Text an app lays beside or over it.
               return Container(
+                height: constraints.hasBoundedHeight ? constraints.maxHeight : null,
                 decoration: BoxDecoration(
                   color: background,
                   border: Border.all(
@@ -624,6 +652,50 @@ final Map<String, Map<String, String>> _datePatterns = dateTimePatternMap();
   return (order: order, separator: separators.first);
 }
 
+// ── Calendar names ───────────────────────────────────────────────────────
+
+// Process-wide and constant: the locale data DateFormat reads ships with intl, and loading it is
+// synchronous.
+bool _dateFormattingLoaded = false;
+
+/// The month header, the weekday labels and the first day of the week a calendar shows in a
+/// locale, as Win32's does.
+class _CalendarNames {
+  final DateFormat _monthAndYear;
+
+  /// The first day of the week, as a [DateTime.weekday].
+  final int firstWeekday;
+
+  /// The weekday labels, starting with [firstWeekday].
+  final List<String> weekdays;
+
+  _CalendarNames._(this._monthAndYear, this.firstWeekday, this.weekdays);
+
+  factory _CalendarNames.of(Locale locale) {
+    if (!_dateFormattingLoaded) {
+      initializeDateFormatting();
+      _dateFormattingLoaded = true;
+    }
+    final name = Intl.verifiedLocale(locale.toLanguageTag(), DateFormat.localeExists,
+        onFailure: (_) => 'en_US')!;
+    final format = DateFormat.yMMMM(name);
+    final symbols = format.dateSymbols;
+    // intl counts the first day from Monday = 0 and its weekday names from Sunday = 0.
+    final first = symbols.FIRSTDAYOFWEEK + 1;
+    // intl has no CLDR short width, which English's two-letter names are.
+    final labels = name.split('_').first == 'en'
+        ? const ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+        : [
+            for (final label in symbols.STANDALONESHORTWEEKDAYS)
+              label.endsWith('.') ? label.substring(0, label.length - 1) : label
+          ];
+    return _CalendarNames._(
+        format, first, [for (var i = 0; i < 7; i++) labels[(first + i) % 7]]);
+  }
+
+  String monthAndYear(DateTime month) => _monthAndYear.format(month);
+}
+
 // ── Field definition ──────────────────────────────────────────────────────
 
 class _FieldDef {
@@ -717,12 +789,14 @@ class _FieldSeparator extends StatelessWidget {
 // ── Calendar button ────────────────────────────────────────────────────────
 
 class _CalendarButton extends StatefulWidget {
+  final String semanticsId;
   final bool enabled;
   final bool isOpen;
   final SpinnerThemeExtension theme;
   final VoidCallback onTap;
 
   const _CalendarButton({
+    required this.semanticsId,
     required this.enabled,
     required this.isOpen,
     required this.theme,
@@ -739,7 +813,7 @@ class _CalendarButtonState extends State<_CalendarButton> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
-    return MouseRegion(
+    return Semantics(identifier: widget.semanticsId, button: true, child: MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -764,7 +838,7 @@ class _CalendarButtonState extends State<_CalendarButton> {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -803,12 +877,6 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
   late int _displayYear;
   late int _displayMonth;
   bool _secondPress = false;
-
-  static const _dayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-  static const _monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
 
   @override
   void initState() {
@@ -876,8 +944,9 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
   @override
   Widget build(BuildContext context) {
     final cs = widget.colorScheme;
+    final names = _CalendarNames.of(systemLocale());
     final firstDay = DateTime(_displayYear, _displayMonth + 1, 1);
-    final startOffset = firstDay.weekday % 7;
+    final startOffset = (firstDay.weekday - names.firstWeekday) % 7;
     final daysInMonth = DateTime(_displayYear, _displayMonth + 2, 0).day;
     final totalCells = startOffset + daysInMonth;
     final rows = (totalCells / 7).ceil();
@@ -901,12 +970,18 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               ),
-              Text(
-                '${_monthNames[_displayMonth]} $_displayYear',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: cs.onSurface,
-                  fontSize: 13,
+              // A locale's longer header shrinks rather than overflow a narrow calendar.
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    names.monthAndYear(firstDay),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               ),
               IconButton(
@@ -936,7 +1011,7 @@ class _CalendarWidgetState extends State<_CalendarWidget> {
                     ),
                   ),
                 ),
-              for (final label in _dayLabels)
+              for (final label in names.weekdays)
                 SizedBox(
                   width: cellSize,
                   child: Text(

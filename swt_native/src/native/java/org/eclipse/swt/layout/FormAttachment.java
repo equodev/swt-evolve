@@ -330,31 +330,31 @@ public final class FormAttachment implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(252);
-        w.write((int) numerator);
-        w.key(251);
-        w.write((int) denominator);
         w.key(253);
+        w.write((int) numerator);
+        w.key(252);
+        w.write((int) denominator);
+        w.key(254);
         w.write((int) offset);
-        w.key(250);
+        w.key(251);
         w.ref(control);
-        w.key(249);
+        w.key(250);
         w.write((int) alignment);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 252:
+            case 253:
                 numerator = r.int32();
                 return true;
-            case 251:
+            case 252:
                 denominator = r.int32();
                 return true;
-            case 253:
+            case 254:
                 offset = r.int32();
                 return true;
-            case 249:
+            case 250:
                 alignment = r.int32();
                 return true;
         }

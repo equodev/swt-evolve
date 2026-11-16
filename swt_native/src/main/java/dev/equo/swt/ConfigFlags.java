@@ -202,6 +202,10 @@ public class ConfigFlags implements WireObject {
     /** The JVM's locale as a language tag, which a desktop client writes dates in. A browser client uses its own. */
     public String locale;
 
+    /** The OS user's regional format as a language tag, which a desktop client's calendar follows, as the
+     *  OS's own does. Null without a native OS to read it from. */
+    public String regional_locale;
+
     /** Double-click pairing window in milliseconds for the shared DoubleTapDetector on the Flutter
      *  side. 0 (the default) keeps Flutter's kDoubleTapTimeout; a positive value overrides it, e.g.
      *  for a test harness whose synthetic click pairs land further apart than a real user's. */
@@ -269,7 +273,7 @@ public class ConfigFlags implements WireObject {
             "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
             "scale_vertical_minimum_at_top", "ctabfolder_chevron_after_tabs",
-            "bigger_icon_size",
+            "bigger_icon_size", "regional_locale",
     };
 
     /** The flags the client sets (a theme picked on its side). */
@@ -374,6 +378,8 @@ public class ConfigFlags implements WireObject {
         w.write(ctabfolder_chevron_after_tabs);
         w.key(WireTable.CONFIG_FLAGS_BIGGER_ICON_SIZE);
         w.write(bigger_icon_size);
+        w.key(WireTable.CONFIG_FLAGS_REGIONAL_LOCALE);
+        w.write(regional_locale);
     }
 
     public static ConfigFlags use_swt_fonts(boolean v) {
@@ -422,6 +428,7 @@ public class ConfigFlags implements WireObject {
                 ", font_point_scale=" + font_point_scale +
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
+                ", regional_locale='" + regional_locale + '\'' +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", use_swt_border=" + use_swt_border +
                 ", scale_vertical_minimum_at_top=" + scale_vertical_minimum_at_top +

@@ -240,16 +240,17 @@ public class Sizes {
             } else {
                 width = 93;   // HH + : + MM + : + SS + spinner + border → 21+6+21+6+21+20+2 - 4
             }
-            height = 32;
+            height = DateTimeSizes.fieldHeight(c.getFont(), c.getExplicitFont());
         } else {
-            // A drop-down date has the calendar button instead of the up/down buttons, and it is wider.
-            int buttons = (style & SWT.DROP_DOWN) != 0 ? 24 : 20;
+            // A drop-down date has the calendar button instead of the up/down buttons: 17 px wider
+            // than them, _kDtCalendarButtonWidth in datetime_evolve.dart.
+            int buttons = (style & SWT.DROP_DOWN) != 0 ? 41 : 20;
             if ((style & SWT.SHORT) != 0) {
                 width = 60 + buttons;  // MM + / + YYYY + border → 21+6+37+2 - 6
             } else {
                 width = 87 + buttons;  // MM + / + DD + / + YYYY + border → 21+6+21+6+37+2 - 6
             }
-            height = 32;
+            height = DateTimeSizes.fieldHeight(c.getFont(), c.getExplicitFont());
         }
         if (wHint != SWT.DEFAULT) width = wHint;
         if (hHint != SWT.DEFAULT) height = hHint;

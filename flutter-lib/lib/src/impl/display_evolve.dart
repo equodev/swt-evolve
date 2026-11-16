@@ -151,6 +151,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (keyboardClaimed) return false;
     // Counted as it comes: a key a menu holds and plays later waits only for the Tabs before it.
     _traversalsBefore[event] = TraversalOrder.begun;
+    // Decided as it comes: the popup it closes is gone by the time a held key is sent.
+    if (event is KeyDownEvent && openPopupClosesOnKey(event)) _closesPopup[event] = true;
     // Keys typed while a pop-up opens wait for it, behind the ones already waiting: the menu can
     // be open a frame before it has the focus.
     if (OpenMenus.holding) {
@@ -198,6 +200,8 @@ class _DisplaySwtState extends State<DisplaySwt> {
   int _keysBehindTraversals = 0;
 
   final Expando<int> _traversalsBefore = Expando();
+
+  final Expando<bool> _closesPopup = Expando();
 
   /// Keys typing into a field, from press to release: never held, as the field applies the
   /// character at once and Java must get the key on the field that took its edit.
@@ -260,6 +264,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       // A key a composition owns already reached the editor as composed text; forwarding it types it twice.
       if (compositionOwnsKey(event.character ?? '')) return;
       final v = mapped ?? mapNewKeyEventToSwt(event);
+      if (_closesPopup[event] == true) v.doit = false;
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
           typed: KeyEditOrder.typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,

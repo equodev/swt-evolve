@@ -13,6 +13,7 @@ import org.eclipse.swt.internal.cocoa.NSEvent;
 import org.eclipse.swt.internal.cocoa.NSPoint;
 import org.eclipse.swt.internal.cocoa.NSRect;
 import org.eclipse.swt.internal.cocoa.NSScreen;
+import org.eclipse.swt.internal.cocoa.NSString;
 import org.eclipse.swt.internal.cocoa.NSThread;
 import org.eclipse.swt.internal.cocoa.NSWindow;
 import org.eclipse.swt.internal.cocoa.OS;
@@ -175,6 +176,21 @@ final class DisplayBridgePlatform {
         if (nativeLibraryOff())
             return false;
         return OS.objc_msgSend(OS.objc_getClass("NSEvent"), OS.sel_registerName("pressedMouseButtons")) != 0;
+    }
+
+    /**
+     * The language tag of the user's regional format ({@code es_AR}, without its {@code @} keywords),
+     * which Cocoa's own calendars follow whatever locale the JVM runs in; null without the native library.
+     */
+    static String regionalLocale() {
+        if (nativeLibraryOff())
+            return null;
+        long locale = OS.objc_msgSend(OS.objc_getClass("NSLocale"), OS.sel_registerName("currentLocale"));
+        long identifier = OS.objc_msgSend(locale, OS.sel_registerName("localeIdentifier"));
+        if (identifier == 0)
+            return null;
+        String name = new NSString(identifier).getString().split("@", 2)[0];
+        return name.isEmpty() ? null : name.replace('_', '-');
     }
 
     /**

@@ -72,6 +72,10 @@ class ConfigFlags implements WireReadable {
   /// The JVM's locale as a language tag, the user's locale on desktop.
   String? locale;
 
+  /// The OS user's regional format as a language tag, which a desktop calendar follows as the OS's own
+  /// does. Null when Java has no native OS to read it from.
+  String? regional_locale;
+
   /// Logical pixels per SWT font point on the host the application runs on, as the Java side
   /// measured its text extents at. Not derivable here: this client's platform is the browser's.
   double? font_point_scale;
@@ -183,6 +187,8 @@ class ConfigFlags implements WireReadable {
         decimal_separator = r.string();
       case WireKey.k_ConfigFlags_locale:
         locale = r.string();
+      case WireKey.k_ConfigFlags_regional_locale:
+        regional_locale = r.string();
       case WireKey.k_ConfigFlags_transparent_menu_check_box:
         transparent_menu_check_box = r.boolean();
       case WireKey.k_ConfigFlags_use_swt_border:

@@ -136,7 +136,7 @@ public class VCTabItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 676:
+            case 677:
                 return false;
             case 66:
                 w.ref(getControl());
@@ -169,7 +169,7 @@ public class VCTabItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 676:
+            case 677:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
             case 66:
                 {

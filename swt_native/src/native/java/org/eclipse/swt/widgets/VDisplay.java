@@ -55,11 +55,18 @@ public class VDisplay {
     protected VDisplay() {
     }
 
+    /** Read once: it is the OS's, and every Display state push carries it. */
+    private static final class RegionalLocale {
+        static final String TAG = DisplayBridgePlatform.regionalLocale();
+    }
+
     public static VDisplay of(DartDisplay display) {
         VDisplay v = new VDisplay();
         v.id = display.getApi().hashCode();
         v.swt = "Display";
         v.config = Config.getConfigFlags();
+        // The OS's, the same for every session: a browser client follows its own locale instead.
+        v.config.regional_locale = RegionalLocale.TAG;
         // Every shell, not only the ones on screen. This list is how the client knows a shell
         // exists at all: a shell missing from it cannot be placed, so the frames this side sends on
         // that shell's own channel land nowhere - while the widgets written inside them are counted

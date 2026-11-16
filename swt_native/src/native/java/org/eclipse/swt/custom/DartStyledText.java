@@ -12360,7 +12360,7 @@ public class DartStyledText extends DartCanvas implements IStyledText {
         return StyledTextHelper.wireStyles(this);
     }
 
-    final TextEdit textEdit = new TextEdit(197, 202, 216, 218, 34);
+    final TextEdit textEdit = new TextEdit(198, 203, 217, 219, 34);
 
     int[] wireStyleIndex() {
         return StyledTextHelper.styleIndexForWire(this);

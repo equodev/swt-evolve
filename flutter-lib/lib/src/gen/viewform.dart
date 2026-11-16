@@ -46,13 +46,13 @@ class VViewForm extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 673: // borderVisible
+      case 674: // borderVisible
         borderVisible = r.boolean();
         return true;
-      case 674: // highlight
+      case 675: // highlight
         highlight = r.int32();
         return true;
-      case 675: // separator
+      case 676: // separator
         separator = r.int32();
         return true;
       default:
@@ -66,19 +66,19 @@ class VViewForm extends VComposite {
     {
       final v_ = borderVisible;
       if (v_ != null) {
-        w.keyBoolean(673, v_);
+        w.keyBoolean(674, v_);
       }
     }
     {
       final v_ = highlight;
       if (v_ != null) {
-        w.keyInt32(674, v_);
+        w.keyInt32(675, v_);
       }
     }
     {
       final v_ = separator;
       if (v_ != null) {
-        w.keyInt32(675, v_);
+        w.keyInt32(676, v_);
       }
     }
   }
@@ -86,8 +86,8 @@ class VViewForm extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(673, borderVisible);
-    visit(674, highlight);
-    visit(675, separator);
+    visit(674, borderVisible);
+    visit(675, highlight);
+    visit(676, separator);
   }
 }

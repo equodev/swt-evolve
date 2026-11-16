@@ -77,21 +77,21 @@ public class VScrollBar extends VWidget {
         ((DartScrollBar) impl).visible = value;
     }
 
-    public static final int ENABLED = 443;
+    public static final int ENABLED = 444;
 
-    public static final int INCREMENT = 444;
+    public static final int INCREMENT = 445;
 
-    public static final int MAXIMUM = 445;
+    public static final int MAXIMUM = 446;
 
-    public static final int MINIMUM = 446;
+    public static final int MINIMUM = 447;
 
-    public static final int PAGE_INCREMENT = 447;
+    public static final int PAGE_INCREMENT = 448;
 
-    public static final int SELECTION = 448;
+    public static final int SELECTION = 449;
 
-    public static final int THUMB = 449;
+    public static final int THUMB = 450;
 
-    public static final int VISIBLE = 450;
+    public static final int VISIBLE = 451;
 
     @Override
     public String wireName(int key) {
@@ -119,30 +119,30 @@ public class VScrollBar extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 676:
+            case 677:
                 return false;
-            case 443:
+            case 444:
                 w.write(getEnabled());
                 return true;
-            case 444:
+            case 445:
                 w.write((int) getIncrement());
                 return true;
-            case 445:
+            case 446:
                 w.write((int) getMaximum());
                 return true;
-            case 446:
+            case 447:
                 w.write((int) getMinimum());
                 return true;
-            case 447:
+            case 448:
                 w.write((int) getPageIncrement());
                 return true;
-            case 448:
+            case 449:
                 w.write((int) getSelection());
                 return true;
-            case 449:
+            case 450:
                 w.write((int) getThumb());
                 return true;
-            case 450:
+            case 451:
                 w.write(getVisible());
                 return true;
         }
@@ -152,27 +152,18 @@ public class VScrollBar extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 676:
+            case 677:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 443:
-                {
-                    boolean v_ = getEnabled();
-                    w.key(443);
-                    w.write(v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 444:
                 {
-                    int v_ = getIncrement();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    boolean v_ = getEnabled();
                     w.key(444);
-                    w.write((int) v_);
+                    w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
             case 445:
                 {
-                    int v_ = getMaximum();
+                    int v_ = getIncrement();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(445);
@@ -181,7 +172,7 @@ public class VScrollBar extends VWidget {
                 }
             case 446:
                 {
-                    int v_ = getMinimum();
+                    int v_ = getMaximum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(446);
@@ -190,7 +181,7 @@ public class VScrollBar extends VWidget {
                 }
             case 447:
                 {
-                    int v_ = getPageIncrement();
+                    int v_ = getMinimum();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(447);
@@ -199,7 +190,7 @@ public class VScrollBar extends VWidget {
                 }
             case 448:
                 {
-                    int v_ = getSelection();
+                    int v_ = getPageIncrement();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(448);
@@ -208,7 +199,7 @@ public class VScrollBar extends VWidget {
                 }
             case 449:
                 {
-                    int v_ = getThumb();
+                    int v_ = getSelection();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(449);
@@ -217,8 +208,17 @@ public class VScrollBar extends VWidget {
                 }
             case 450:
                 {
-                    boolean v_ = getVisible();
+                    int v_ = getThumb();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(450);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 451:
+                {
+                    boolean v_ = getVisible();
+                    w.key(451);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -226,7 +226,7 @@ public class VScrollBar extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 443, 444, 445, 446, 447, 448, 449, 450 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 444, 445, 446, 447, 448, 449, 450, 451 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -240,8 +240,8 @@ public class VScrollBar extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 443:
-            case 450:
+            case 444:
+            case 451:
                 return true;
         }
         return super.wireAlways(key);

@@ -33,7 +33,7 @@ public class VControlEditor {
      */
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 156:
+            case 157:
                 w.ref(getEditor());
                 return true;
         }
@@ -45,12 +45,12 @@ public class VControlEditor {
      */
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 156:
+            case 157:
                 {
                     Control v_ = getEditor();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(156);
+                    w.key(157);
                     w.ref(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -58,7 +58,7 @@ public class VControlEditor {
         return dev.equo.swt.WidgetWire.UNHANDLED;
     }
 
-    private static final int[] wireKeys_ = new int[] { 156 };
+    private static final int[] wireKeys_ = new int[] { 157 };
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

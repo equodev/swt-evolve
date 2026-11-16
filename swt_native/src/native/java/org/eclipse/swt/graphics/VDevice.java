@@ -64,7 +64,7 @@ public class VDevice implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(177);
+        w.key(178);
         {
             FontData[] a_ = getFontList();
             if (a_ == null)
@@ -81,9 +81,9 @@ public class VDevice implements dev.equo.swt.WireObject {
                 }
             }
         }
-        w.key(178);
-        w.write(getTracking());
         w.key(179);
+        w.write(getTracking());
+        w.key(180);
         w.write(getWarnings());
     }
 }

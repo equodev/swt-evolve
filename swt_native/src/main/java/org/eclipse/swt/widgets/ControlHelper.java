@@ -189,9 +189,11 @@ public class ControlHelper {
     /**
      * Offers a key to the menu accelerators, then a traversal key as {@link SWT#Traverse}, before
      * the KeyDown, in the order every platform's key dispatch does. Escape and Enter run the whole
-     * traversal here, up to the shell; the client performs a Tab traversal itself.
+     * traversal here, up to the shell; the client performs a Tab traversal itself. The client sends
+     * an Escape with {@code doit=false} when it closes the control's open drop-down popup.
      */
     public static RoutedKey routeKeyDown(DartControl control, Event key) {
+        boolean closesPopup = key.keyCode == SWT.ESC && !key.doit;
         key.doit = true;
         if (control.getBridge() != null)
             control.getBridge().forgetKeyboardTraversal();
@@ -204,7 +206,9 @@ public class ControlHelper {
             detail = SWT.TRAVERSE_MNEMONIC;
         boolean traversed = false;
         boolean traverseDoit = false;
-        if (key.keyCode == SWT.ESC) {
+        if (closesPopup) {
+            traversed = offerPopupEscape(control, key);
+        } else if (key.keyCode == SWT.ESC) {
             traversed = wholeTraversal(control, key, SWT.TRAVERSE_ESCAPE);
         } else if (detail == SWT.TRAVERSE_RETURN) {
             traversed = wholeTraversal(control, key, SWT.TRAVERSE_RETURN);
@@ -539,6 +543,29 @@ public class ControlHelper {
         Event event = traverseEventOf(keyEvent);
         event.doit = traversesByDefault(impl, detail);
         return impl.traverse(detail, event);
+    }
+
+    /**
+     * Win32 offers the Escape that closes a drop-down's popup to the control and each parent up to
+     * its Shell as a Traverse with {@code doit=false}: it closes no dialog unless a listener asks to.
+     * Unlike {@code Control.traverse}, the walk goes on past a control that listens for Traverse:
+     * Win32 reports the Shell's Traverse too.
+     */
+    private static boolean offerPopupEscape(DartControl origin, Event keyEvent) {
+        Control start = resolveTraverseStart(origin);
+        if (start == null || start.isDisposed())
+            return false;
+        Shell shell = start.getShell();
+        for (Control control = start; control != null && control.getImpl() instanceof DartControl; control = control.getParent()) {
+            Event event = traverseEventOf(keyEvent);
+            event.detail = SWT.TRAVERSE_ESCAPE;
+            event.doit = false;
+            if (((DartControl) control.getImpl()).traverse(event))
+                return true;
+            if (control == shell || control.isDisposed())
+                return false;
+        }
+        return false;
     }
 
     private static Event traverseEventOf(Event keyEvent) {

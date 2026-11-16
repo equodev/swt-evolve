@@ -141,6 +141,12 @@ final class DisplayBridgePlatform {
         return !nativeLibraryOff() && !GTKWrapper.IS_GTK4 && GTKWrapper.isX11();
     }
 
+    /** The language tag of the locale the process writes dates in, which GTK's calendar follows. */
+    static String regionalLocale() {
+        return dev.equo.swt.Config.posixTimeLocaleTag(System.getenv("LC_ALL"), System.getenv("LC_TIME"),
+                System.getenv("LANG"));
+    }
+
     /** Whether the native SWT library is switched off ({@code -Ddev.equo.swt.loadLibrary=false}). */
     private static boolean nativeLibraryOff() {
         return "false".equals(System.getProperty(LOAD_LIBRARY));

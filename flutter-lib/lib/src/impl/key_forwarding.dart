@@ -101,3 +101,13 @@ void addOpenListKeyClaim(bool Function(KeyEvent) claims) => _openListKeyClaims.a
 void removeOpenListKeyClaim(bool Function(KeyEvent) claims) => _openListKeyClaims.remove(claims);
 
 bool openListClaimsKey(KeyEvent event) => _openListKeyClaims.any((claims) => claims(event));
+
+/// Open drop-down popups whose closing Escape reaches SWT as Win32's does: a KeyDown, after a
+/// Traverse that starts with doit=false, so it closes no dialog around the control.
+final Set<bool Function(KeyEvent)> _openPopupEscapes = {};
+
+void addOpenPopupEscape(bool Function(KeyEvent) closes) => _openPopupEscapes.add(closes);
+
+void removeOpenPopupEscape(bool Function(KeyEvent) closes) => _openPopupEscapes.remove(closes);
+
+bool openPopupClosesOnKey(KeyEvent event) => _openPopupEscapes.any((closes) => closes(event));

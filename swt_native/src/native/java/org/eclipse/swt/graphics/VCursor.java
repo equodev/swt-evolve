@@ -46,13 +46,13 @@ public class VCursor extends VResource {
         ((DartCursor) impl).image = value;
     }
 
-    public static final int CURSOR_STYLE = 163;
+    public static final int CURSOR_STYLE = 164;
 
-    public static final int HOTSPOT_X = 164;
+    public static final int HOTSPOT_X = 165;
 
-    public static final int HOTSPOT_Y = 165;
+    public static final int HOTSPOT_Y = 166;
 
-    public static final int IMAGE = 166;
+    public static final int IMAGE = 167;
 
     @Override
     public String wireName(int key) {
@@ -72,16 +72,16 @@ public class VCursor extends VResource {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 163:
+            case 164:
                 w.write((int) getCursorStyle());
                 return true;
-            case 164:
+            case 165:
                 w.write((int) getHotspotX());
                 return true;
-            case 165:
+            case 166:
                 w.write((int) getHotspotY());
                 return true;
-            case 166:
+            case 167:
                 w.image(getImage());
                 return true;
         }
@@ -91,18 +91,9 @@ public class VCursor extends VResource {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 163:
-                {
-                    int v_ = getCursorStyle();
-                    if (v_ == 0)
-                        return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(163);
-                    w.write((int) v_);
-                    return dev.equo.swt.WidgetWire.WRITTEN;
-                }
             case 164:
                 {
-                    int v_ = getHotspotX();
+                    int v_ = getCursorStyle();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(164);
@@ -111,7 +102,7 @@ public class VCursor extends VResource {
                 }
             case 165:
                 {
-                    int v_ = getHotspotY();
+                    int v_ = getHotspotX();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     w.key(165);
@@ -120,10 +111,19 @@ public class VCursor extends VResource {
                 }
             case 166:
                 {
+                    int v_ = getHotspotY();
+                    if (v_ == 0)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(166);
+                    w.write((int) v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
+            case 167:
+                {
                     Image v_ = getImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(166);
+                    w.key(167);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -131,7 +131,7 @@ public class VCursor extends VResource {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 163, 164, 165, 166 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VResource.allWireKeys_(), new int[] { 164, 165, 166, 167 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -160,13 +160,13 @@ public class VCursor extends VResource {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(163);
-        w.write((int) getCursorStyle());
         w.key(164);
-        w.write((int) getHotspotX());
+        w.write((int) getCursorStyle());
         w.key(165);
-        w.write((int) getHotspotY());
+        w.write((int) getHotspotX());
         w.key(166);
+        w.write((int) getHotspotY());
+        w.key(167);
         w.image(getImage());
     }
 }
