@@ -154,7 +154,7 @@ class OpenMenus {
     _opening.add(menu);
   }
 
-  static void hold(KeyEvent event) => _held.add((event: event, modifiers: KeyModifiers.now()));
+  static void hold(KeyEvent event) => _held.add((event: event, modifiers: KeyModifiers.of(event)));
 
   /// Shift+F10 or the menu key, just sent to Java, whose menu has not started opening yet.
   static final Object _keyboardTrigger = Object();
@@ -1188,6 +1188,34 @@ class KeyModifiers {
       shift: keyboard.isShiftPressed,
       alt: keyboard.isAltPressed,
       meta: keyboard.isMetaPressed,
+    );
+  }
+
+  /// The modifiers held when [event] was typed, including those its own platform event reports.
+  /// [HardwareKeyboard] misses a modifier pressed while the app had no focus (the web engine
+  /// synthesizes missed releases, never missed presses). [RawKeyboard] syncs its modifiers from the
+  /// flags of the platform event being dispatched, just before [event] is; a synthesized event has
+  /// no platform event, so for it RawKeyboard may be stale.
+  ///
+  /// RawKeyboard is deprecated and no other API exposes those flags. Without it this falls back to
+  /// HardwareKeyboard alone and a modifier pressed before the app had the focus is lost again
+  /// (key_modifiers_from_event_test).
+  ///
+  /// While AltGr is held, the Ctrl and Alt the browser reports with it (Ctrl+Alt on Windows, Alt
+  /// elsewhere) are AltGr's own: its characters carry neither, so they type and are not shortcuts.
+  factory KeyModifiers.of(KeyEvent event) {
+    final now = KeyModifiers.now();
+    final keys = HardwareKeyboard.instance.logicalKeysPressed;
+    final raw = event.synthesized ? const <LogicalKeyboardKey>{} : RawKeyboard.instance.keysPressed;
+    bool held(LogicalKeyboardKey left, LogicalKeyboardKey right) =>
+        raw.contains(left) || raw.contains(right);
+    final altGr = keys.contains(LogicalKeyboardKey.altGraph) || raw.contains(LogicalKeyboardKey.altGraph);
+    return KeyModifiers(
+      control: !altGr &&
+          (now.control || held(LogicalKeyboardKey.controlLeft, LogicalKeyboardKey.controlRight)),
+      shift: now.shift || held(LogicalKeyboardKey.shiftLeft, LogicalKeyboardKey.shiftRight),
+      alt: !altGr && (now.alt || held(LogicalKeyboardKey.altLeft, LogicalKeyboardKey.altRight)),
+      meta: now.meta || held(LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.metaRight),
     );
   }
 }

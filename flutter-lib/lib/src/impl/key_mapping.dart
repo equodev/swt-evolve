@@ -159,7 +159,7 @@ int _modifierBit(LogicalKeyboardKey key) {
 VEvent mapNewKeyEventToSwt(KeyEvent event) {
   final mapped = _mapLogicalKey(event.logicalKey, _characterOf(event));
 
-  final mods = OpenMenus.modifiersWhenTyped ?? KeyModifiers.now();
+  final mods = OpenMenus.modifiersWhenTyped ?? KeyModifiers.of(event);
   int stateMask = 0;
   if (mods.control) stateMask |= SWT.CTRL;
   if (mods.shift) stateMask |= SWT.SHIFT;

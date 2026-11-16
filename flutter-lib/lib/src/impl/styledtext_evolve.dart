@@ -32,6 +32,7 @@ import '../impl/gcdrawer_evolve.dart';
 import 'widget_config.dart';
 import 'key_forwarding.dart';
 import 'key_mapping.dart';
+import 'menu_evolve.dart' show KeyModifiers;
 import 'utils/composed_text_input.dart';
 import 'utils/resize_reports.dart';
 import 'utils/font_utils.dart';
@@ -385,12 +386,11 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (event.logicalKey == LogicalKeyboardKey.tab) {
       // Flutter's shortcuts traverse on Tab and Shift+Tab only. SWT offers the traversal with any
       // modifier, and StyledText lets a modified Tab leave the editor.
-      final keys = HardwareKeyboard.instance;
-      if (event is KeyDownEvent &&
-          (keys.isControlPressed || keys.isAltPressed || keys.isMetaPressed)) {
+      final keys = KeyModifiers.of(event);
+      if (event is KeyDownEvent && (keys.control || keys.alt || keys.meta)) {
         Actions.maybeInvoke(
           context,
-          keys.isShiftPressed ? const PreviousFocusIntent() : const NextFocusIntent(),
+          keys.shift ? const PreviousFocusIntent() : const NextFocusIntent(),
         );
         return KeyEventResult.handled;
       }
