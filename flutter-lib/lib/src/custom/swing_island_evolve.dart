@@ -36,7 +36,11 @@ import '../impl/key_forwarding.dart';
 @immutable
 class SwingIslandWindow {
   const SwingIslandWindow(
-      {required this.windowId, required this.port, required this.focused, this.surface = false});
+      {required this.windowId,
+      required this.port,
+      required this.focused,
+      this.surface = false,
+      this.javaScale = 0});
 
   /// The engine's id of the frame `SWT_AWT.new_Frame` returned.
   final int windowId;
@@ -53,6 +57,11 @@ class SwingIslandWindow {
 
   /// Whether the window is a secondary one with a Shell of its own, rather than an island's frame.
   final bool surface;
+
+  /// Device pixels per Swing pixel in the engine's JVM (its `sun.java2d.uiScale`), or 0 when the JDK
+  /// takes the monitor's. Native `SWT_AWT` makes Swing's frame the composite's size times SWT's
+  /// zoom over this scale.
+  final double javaScale;
 }
 
 /// Builds the mirror of [window] inside an island.
@@ -111,6 +120,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
   int? _windowId;
   int? _port;
   bool _surface = false;
+  double _javaScale = 0;
 
   /// The mounted islands by id, where [_islandOp] finds the one Java answers.
   static final Map<int, _SwingIslandRegionState> _live = {};
@@ -150,6 +160,7 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
       _windowId = windowId;
       _port = port;
       _surface = decoded['surface'] == true;
+      _javaScale = (decoded['javaScale'] as num?)?.toDouble() ?? 0;
     });
   }
 
@@ -221,7 +232,8 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
           onSecondaryTapUp: (_) {},
           child: builder(
             context,
-            SwingIslandWindow(windowId: windowId, port: port, focused: _focused, surface: _surface),
+            SwingIslandWindow(
+                windowId: windowId, port: port, focused: _focused, surface: _surface, javaScale: _javaScale),
           ),
         ),
       ),

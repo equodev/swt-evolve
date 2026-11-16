@@ -3,9 +3,13 @@ package dev.equo.swt.awt;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
@@ -14,9 +18,11 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartControl;
 import org.eclipse.swt.widgets.DartSwingIsland;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
@@ -142,6 +148,7 @@ public final class SwingIslandHost {
         int[] window = describe(frame, comm);
         listen(parent.getDisplay(), comm);
         mount(child, window[0], window[1], false);
+        followIsland(child, frame);
 
         // The child goes with the EMBEDDED composite, so this covers the parent's dispose too.
         // Off AWT's dispatch thread, Window.dispose waits for that thread, and a host that suspends
@@ -163,6 +170,119 @@ public final class SwingIslandHost {
         child.addListener(SWT.Dispose, e -> parent.removeListener(SWT.Resize, fill));
         child.fill();
         return child;
+    }
+
+    /**
+     * Keeps {@code frame} where {@code island} is on screen, as native {@code SWT_AWT}'s embedded
+     * frame is: the engine's peer is never placed by a window system, so AWT leaves the frame at the
+     * origin, and an application that maps a Swing component's {@code getLocationOnScreen()} back
+     * into SWT ({@code Display.map(null, control, p)}) lands that far off, then clamped against an
+     * edge. Followed through a move of the island or of any of its ancestors, the Shell included, and
+     * through Java's frame taking a new size from the mirror.
+     */
+    static void followIsland(Control island, Frame frame) {
+        new Follower(island, frame).start();
+    }
+
+    /**
+     * Keeps one island's frame at the island's screen position, for as long as the island lives.
+     *
+     * <p>The {@code Move} listeners sit on the ancestors the island has at each placement, not on
+     * the ones it had at mount: an island moved to another parent ({@code Control.setParent}) is
+     * followed from its new chain, from the first placement after the move — the island's own
+     * {@code Resize} or {@code Move}, or any ancestor still in the old chain moving. An island
+     * re-parented with nothing moving afterwards keeps the position it last had.
+     *
+     * <p>Everything this hooks goes when the island's Control is disposed, the frame's
+     * {@code ComponentListener} among them: the parent composite keeps the frame under
+     * {@code SWT_AWT.embeddedFrame}, so a listener left on it would keep the disposed island, and
+     * the widget tree it reaches, alive for as long as the parent.
+     */
+    private static final class Follower extends ComponentAdapter implements Listener {
+
+        private final Control island;
+        private final Frame frame;
+        private final Display display;
+
+        /** The controls carrying this follower's {@code Move} listener: the island and its ancestors. */
+        private final List<Control> watched = new ArrayList<>();
+
+        Follower(Control island, Frame frame) {
+            this.island = island;
+            this.frame = frame;
+            this.display = island.getDisplay();
+        }
+
+        void start() {
+            island.addListener(SWT.Resize, this);
+            island.addListener(SWT.Dispose, e -> unhook());
+            frame.addComponentListener(this);
+            place();
+        }
+
+        /** A move of the island or of one of its ancestors, and the island's own resize. */
+        @Override
+        public void handleEvent(Event event) {
+            place();
+        }
+
+        /** The mirror gave the frame a size, which is what the position is scaled by. */
+        @Override
+        public void componentResized(ComponentEvent event) {
+            onDisplay(display, this::place);
+        }
+
+        private void place() {
+            if (island.isDisposed()) {
+                unhook();
+                return;
+            }
+            watch(ancestry());
+            placeFrame(island, frame);
+        }
+
+        private List<Control> ancestry() {
+            List<Control> chain = new ArrayList<>();
+            for (Control c = island; c != null; c = c.getParent()) chain.add(c);
+            return chain;
+        }
+
+        /** Moves the {@code Move} listener onto {@code chain}, off whatever it was on before. */
+        private void watch(List<Control> chain) {
+            for (Control c : watched) {
+                if (!chain.contains(c) && !c.isDisposed()) c.removeListener(SWT.Move, this);
+            }
+            for (Control c : chain) {
+                if (!watched.contains(c)) c.addListener(SWT.Move, this);
+            }
+            watched.clear();
+            watched.addAll(chain);
+        }
+
+        private void unhook() {
+            for (Control c : watched) {
+                if (!c.isDisposed()) c.removeListener(SWT.Move, this);
+            }
+            watched.clear();
+            if (!island.isDisposed()) island.removeListener(SWT.Resize, this);
+            frame.removeComponentListener(this);
+        }
+    }
+
+    /**
+     * Puts {@code frame} at {@code island}'s screen position in Swing's pixels: SWT's, times the
+     * Swing pixels per SWT unit the mirror gave the frame (its width over the island's), the ratio
+     * native {@code SWT_AWT} gives a frame's position as it does its size. 1 until the mirror has
+     * laid the frame out.
+     */
+    static void placeFrame(Control island, Frame frame) {
+        if (island.isDisposed()) return;
+        Point at = island.toDisplay(0, 0);
+        int width = island.getSize().x;
+        EventQueue.invokeLater(() -> {
+            double swingPerSwt = width > 0 && frame.getWidth() > 0 ? (double) frame.getWidth() / width : 1;
+            frame.setLocation((int) Math.round(at.x * swingPerSwt), (int) Math.round(at.y * swingPerSwt));
+        });
     }
 
     /**
@@ -208,6 +328,7 @@ public final class SwingIslandHost {
         Map<String, Object> info = new LinkedHashMap<>();
         info.put("windowId", windowId);
         info.put("port", port);
+        info.put("javaScale", javaScale());
         if (surface) info.put("surface", true);
         // The region asks when it mounts (it may not exist yet, and a push nobody listens to is
         // dropped) and is answered on its own channel; the push covers a region already there.
@@ -221,6 +342,68 @@ public final class SwingIslandHost {
         child.addListener(SWT.Dispose, e -> islands.remove(windowId, child));
         say("island " + idOf(child) + " mounts window " + windowId
                 + (surface ? " as a Shell" : ""));
+    }
+
+    /**
+     * Device pixels per Swing pixel in this JVM: the {@code sun.java2d.uiScale} the JDK took, 1 with
+     * that scale disabled, or 0 when the JDK takes the monitor's.
+     *
+     * <p>Native {@code SWT_AWT} gives the embedded window the composite's device pixels
+     * ({@code Composite.WM_SIZE} on win32), which SWT counts at its zoom and the JDK at this scale,
+     * so Swing's frame is the composite's size times SWT's zoom over this scale. The mirror lays the
+     * island out at the same ratio.
+     */
+    static double javaScale() {
+        Double taken = takenScale(JDK_GRAPHICS_ENVIRONMENT);
+        if (taken != null) return taken;
+        // The JDK's own reading of the same properties, which it made when its graphics started.
+        return javaScale(System.getProperty("sun.java2d.uiScale.enabled", "true"),
+                System.getProperty("sun.java2d.uiScale"));
+    }
+
+    /** Where the JDK keeps the scale it took; reachable only with {@code sun.java2d} exported. */
+    static final String JDK_GRAPHICS_ENVIRONMENT = "sun.java2d.SunGraphicsEnvironment";
+
+    /**
+     * The scale {@code environment} says this JVM took — 1 with scaling disabled, 0 when the JDK
+     * takes the monitor's — or null when the class is out of reach, which is every JVM that does
+     * not export {@code sun.java2d} to the unnamed modules (the engine's launch flags do).
+     */
+    static Double takenScale(String environment) {
+        try {
+            Class<?> graphics = Class.forName(environment);
+            if (!(Boolean) graphics.getMethod("isUIScaleEnabled").invoke(null)) return 1d;
+            double taken = (Double) graphics.getMethod("getDebugScale").invoke(null);
+            return taken > 0 ? taken : 0d;
+        } catch (ReflectiveOperationException | RuntimeException | LinkageError unexported) {
+            return null;
+        }
+    }
+
+    /**
+     * {@code sun.java2d.uiScale} as the JDK reads it: {@code 1.5}, {@code 1.5x}, {@code 150%} or
+     * {@code 144dpi}; 0 when unset or unreadable, which leaves the monitor's scale.
+     */
+    static double javaScale(String enabled, String uiScale) {
+        if (!"true".equals(enabled)) return 1;
+        if (uiScale == null) return 0;
+        String value = uiScale;
+        double units = 1;
+        if (value.endsWith("x")) {
+            value = value.substring(0, value.length() - 1);
+        } else if (value.endsWith("dpi")) {
+            units = 96;
+            value = value.substring(0, value.length() - 3);
+        } else if (value.endsWith("%")) {
+            units = 100;
+            value = value.substring(0, value.length() - 1);
+        }
+        try {
+            double scale = Double.parseDouble(value);
+            return scale > 0 ? scale / units : 0;
+        } catch (NumberFormatException unreadable) {
+            return 0;
+        }
     }
 
     /**
