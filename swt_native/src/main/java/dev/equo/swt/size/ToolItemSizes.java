@@ -23,13 +23,13 @@ public class ToolItemSizes {
         static final double MIN_WIDTH = 24.0;
         static final double MIN_HEIGHT = 20.0;
         static final double HORIZONTAL_PADDING = 28.0;
-        static final double VERTICAL_PADDING = 0.0;
+        static final double VERTICAL_PADDING = 4.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
     }
 
     static class PUSH {
         static final double MIN_WIDTH = 24.0;
-        static final double MIN_HEIGHT = 20.0;
+        static final double MIN_HEIGHT = 16.0;
         static final double HORIZONTAL_PADDING = 12.0;
         static final double VERTICAL_PADDING = 0.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
@@ -37,7 +37,7 @@ public class ToolItemSizes {
 
     static class SEPARATOR {
         static final double MIN_WIDTH = 20.0;
-        static final double MIN_HEIGHT = 23.0;
+        static final double MIN_HEIGHT = 16.0;
         static final double HORIZONTAL_PADDING = 12.0;
         static final double VERTICAL_PADDING = 0.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
@@ -45,7 +45,7 @@ public class ToolItemSizes {
 
     static class DROP_DOWN {
         static final double MIN_WIDTH = 41.0;
-        static final double MIN_HEIGHT = 20.0;
+        static final double MIN_HEIGHT = 16.0;
         static final double HORIZONTAL_PADDING = 29.0;
         static final double VERTICAL_PADDING = 0.0;
         static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;

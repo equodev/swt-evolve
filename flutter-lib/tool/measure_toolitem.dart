@@ -70,6 +70,7 @@ MeasurementCase createCase(
     fontFromParent: true,
     widgetBuilder: (key) {
       getConfigFlags().use_swt_fonts = !useFontTheme;
+      getConfigFlags().bigger_icon_size = true;
       return ToolItemSwt(key: key, value: value);
     },
   );

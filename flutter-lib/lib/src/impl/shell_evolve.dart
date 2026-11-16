@@ -23,6 +23,7 @@ import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
+import '../impl/dialog_evolve.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
@@ -80,7 +81,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _initialBoundsSent = false;
   /// The bounds Java last set that the drawn size was reported against (see build).
   (int, int, int, int)? _drawnSizeReportedFor;
-  final Set<int> _openedDialogIds = {};
 
   final ValueNotifier<double> _opacityNotifier = ValueNotifier(1.0);
   final FocusScopeNode _focusScopeNode = FocusScopeNode(debugLabel: 'ShellFocusScope');
@@ -101,6 +101,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
     _attachTrackerHost();
+    // A shell that reaches the client with its dialogs gets no setValue for them.
+    openNewDialogs(context, state);
     _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('ShellPopups', VShellPopups.new, (id, record) {
       if (id == state.id) _showPopups(record.popups ?? const []);
     });
@@ -270,22 +272,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // An alpha-only delivery is an animation frame: the notifier above has already carried it, and
     // rebuilding the shell for each one is the cost this bypass exists to avoid.
     if (change != null && change.isOnly(const {gen.WireKey.k_Shell_alpha})) return;
-    // A value is changed in place, so there is no earlier copy to compare against - what the
-    // delivery named is all there is to reason with. A delivery that never mentioned the dialogs
-    // did not change them; one that mentions nothing was a whole widget, and then anything may have.
-    final prevDialogs =
-        (change != null && !change.touches(gen.WireKey.k_Shell_dialogs)) ? (value.dialogs ?? []) : const <VDialog>[];
     super.setValue(value);
-    final newDialogs = value.dialogs ?? [];
-    _openedDialogIds.removeWhere((id) => !newDialogs.any((d) => d.id == id));
-    for (final d in newDialogs) {
-      if (!prevDialogs.any((old) => old.id == d.id) && !_openedDialogIds.contains(d.id)) {
-        _openedDialogIds.add(d.id);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _openDialog(d);
-        });
-      }
-    }
+    openNewDialogs(context, value);
     _noteVisibility(value.visible ?? true);
   }
 
@@ -305,15 +293,6 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     _noteVisibility(state.visible ?? true);
     if (_interacting) return;
     _size = null;
-  }
-
-  void _openDialog(VDialog d) {
-    switch (d.swt) {
-      case 'MessageBox':
-        showMessageBoxDialog(context, d as VMessageBox, d.id);
-      case 'ColorDialog':
-        showColorDialog(context, d as VColorDialog, d.id);
-    }
   }
 
   int get _style => state.style;

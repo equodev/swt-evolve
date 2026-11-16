@@ -100,7 +100,7 @@ ToolItemThemeExtension _getToolItemTheme({
       vertical: 1.0,
     ),
     specialDropdownItemSpacing: 2.0,
-    fontStyle: textTheme.bodyMedium?.copyWith(fontSize: 20.0),
+    fontStyle: textTheme.bodyMedium,
     minTextContrast: kMinTextContrast,
   );
 }

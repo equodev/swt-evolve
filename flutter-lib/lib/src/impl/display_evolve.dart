@@ -18,6 +18,7 @@ import '../comm/tagged_values.dart';
 import 'utils/window_origin.dart';
 import '../custom/csd/csd_state.dart';
 import '../theme/theme_extensions/display_theme_extension.dart';
+import 'dialog_evolve.dart';
 import 'key_forwarding.dart';
 import 'menu_evolve.dart';
 import 'menu_key_trace.dart';
@@ -305,7 +306,10 @@ class _DisplaySwtState extends State<DisplaySwt> {
       FocusRequests.instance.holderFromDisplay(updated.focusHolderId);
       _publishHoldings();
       applySystemMenu(_heldSystemMenu());
-      if (mounted) setState(() {});
+      if (mounted) {
+        _openHeldDialogs();
+        setState(() {});
+      }
     } catch (e) {
       print('DisplaySwt update error: $e');
     }
@@ -447,11 +451,23 @@ class _DisplaySwtState extends State<DisplaySwt> {
   /// The shells the last build drew, by id.
   Set<int?> _builtShellIds = const {};
 
+  /// A dialog is drawn by the shell it is on, but Java puts one on a shell that was never opened
+  /// when no shown shell can host it, and SWT shows it with no visible owner: the display shows
+  /// those. A shell the last build drew still answers for its own.
+  void _openHeldDialogs() {
+    final windowed = _windowedShellIds();
+    for (final s in _display.shells ?? const <VShell>[]) {
+      final held = !(s.visible ?? true) && !windowed.contains(s.id) && !_builtShellIds.contains(s.id);
+      if (held) openNewDialogs(context, s);
+    }
+  }
+
   /// A hidden shell is not built, so nothing listens to it: a change on its own record reaches the
   /// display as a change to what the display holds, and Java need not send the display again after
   /// it. A shell shown that way is drawn only if the display rebuilds for it.
   void _onHeldChanged(VChange change) {
     if (!mounted) return;
+    _openHeldDialogs();
     final drawn = {for (final s in _drawnShells()) s.id};
     if (drawn.length != _builtShellIds.length || !drawn.containsAll(_builtShellIds)) {
       setState(() {});

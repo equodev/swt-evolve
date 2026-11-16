@@ -1594,9 +1594,12 @@ class WidgetMeasurer {
     return null;
   }
 
+  // A box holding text is not an image slot: an Icon glyph (a drop-down arrow) can have the
+  // image's size.
   RenderBoxInfo? _findBoxOfSize(RenderBoxInfo box, Size size) {
     if ((box.size.width - size.width).abs() < 0.5 &&
-        (box.size.height - size.height).abs() < 0.5) {
+        (box.size.height - size.height).abs() < 0.5 &&
+        !_containsText(box)) {
       return box;
     }
     for (var child in box.children) {
@@ -1605,6 +1608,9 @@ class WidgetMeasurer {
     }
     return null;
   }
+
+  bool _containsText(RenderBoxInfo box) =>
+      box.textContent != null || box.children.any(_containsText);
 
   // Finds an icon-sized placeholder: a square leaf box (FutureBuilder SizedBox fallback for icon images).
   RenderBoxInfo? _findIconBox(RenderBoxInfo box) {
