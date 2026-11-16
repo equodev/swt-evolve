@@ -144,6 +144,18 @@ void main() {
     expect(_answers(), isEmpty);
     expect(find.text('Message'), findsOneWidget);
   }, variant: TargetPlatformVariant.desktop());
+
+  testWidgets('the box is in the semantics tree as MessageBox/<id>, with its title and message',
+      (WidgetTester tester) async {
+    final semantics = tester.ensureSemantics();
+    await _showBox(tester, SWT.YES | SWT.NO);
+    final box = find.bySemanticsIdentifier('MessageBox/4242');
+    expect(box, findsOneWidget);
+    final label = tester.getSemantics(box).label;
+    expect(label, contains('Title'));
+    expect(label, contains('Message'));
+    semantics.dispose();
+  });
 }
 
 /// Parks a box of [style] on a Shell, as the Java side does when the box opens, and starts

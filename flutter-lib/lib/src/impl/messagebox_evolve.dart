@@ -21,6 +21,7 @@ void showMessageBoxDialog(BuildContext context, VMessageBox value, int dialogId)
         message: value.message ?? '',
         buttonLabels: value.buttonLabels,
         dialogId: dialogId,
+        semanticsIdentifier: '${value.swt}/${value.id}',
       ),
     ),
   );
@@ -33,13 +34,22 @@ class _MessageBoxDialog extends StatelessWidget {
   final List<String?>? buttonLabels;
   final int dialogId;
 
+  /// The box's `flt-semantics-identifier`, keyed like a widget's `tagSemantics`.
+  final String semanticsIdentifier;
+
   const _MessageBoxDialog({
     required this.style,
     required this.title,
     required this.message,
     required this.buttonLabels,
     required this.dialogId,
+    required this.semanticsIdentifier,
   });
+
+  Widget _tagSemantics(Widget child) {
+    if (!WidgetsBinding.instance.semanticsEnabled) return child;
+    return Semantics(identifier: semanticsIdentifier, container: true, child: child);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +82,7 @@ class _MessageBoxDialog extends StatelessWidget {
         child: Dialog(
           backgroundColor: msgTheme.backgroundColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(msgTheme.borderRadius)),
-          child: ConstrainedBox(
+          child: _tagSemantics(ConstrainedBox(
             constraints: BoxConstraints(minWidth: msgTheme.minWidth, maxWidth: msgTheme.maxWidth),
             child: Padding(
               padding: msgTheme.padding,
@@ -103,7 +113,7 @@ class _MessageBoxDialog extends StatelessWidget {
                 ],
               ),
             ),
-          ),
+          )),
         ),
       ),
     );
