@@ -126,6 +126,8 @@ public class DragDetectHelper {
 
     /** Delivers a MouseMove or MouseUp the client reports, or holds it while a drag detection is under way. */
     static void mouse(DartControl control, int type, Event event) {
+        if (type == SWT.MouseUp)
+            PointerCrossingHelper.released(control.display);
         // On every native the release that ends a Tracker's loop reaches the Tracker alone.
         if (type == SWT.MouseUp && ControlHelper.releaseOwned(control.display))
             return;

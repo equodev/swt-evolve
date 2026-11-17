@@ -1150,6 +1150,7 @@ public class ControlHelper {
 
     /** A press from the client: what the native does before its MouseDown, the MouseDown, and what it completes after. */
     public static void mouseDown(DartControl control, Event e) {
+        PointerCrossingHelper.pressed(control.display);
         pressed(control, e);
         if (control.isDisposed())
             return;
