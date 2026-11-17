@@ -22,11 +22,11 @@ class ButtonSwt<V extends VButton> extends ControlSwt<V> {
   State createState() => ButtonImpl<ButtonSwt<VButton>, VButton>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -59,22 +59,22 @@ class VButton extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 12: // alignment
+      case 320: // alignment
         alignment = r.int32();
         return true;
-      case 13: // grayed
+      case 321: // grayed
         grayed = r.boolean();
         return true;
-      case 14: // image
+      case 322: // image
         image = r.image();
         return true;
-      case 15: // primary
+      case 323: // primary
         primary = r.boolean();
         return true;
-      case 16: // selection
+      case 324: // selection
         selection = r.boolean();
         return true;
-      case 17: // text
+      case 325: // text
         text = r.string();
         return true;
       default:
@@ -88,37 +88,37 @@ class VButton extends VControl {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(12, v_);
+        w.keyInt32(320, v_);
       }
     }
     {
       final v_ = grayed;
       if (v_ != null) {
-        w.keyBoolean(13, v_);
+        w.keyBoolean(321, v_);
       }
     }
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(14, v_.id);
+        w.keyRef(322, v_.id);
       }
     }
     {
       final v_ = primary;
       if (v_ != null) {
-        w.keyBoolean(15, v_);
+        w.keyBoolean(323, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyBoolean(16, v_);
+        w.keyBoolean(324, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(17);
+        w.key(325);
         w.string(v_);
       }
     }
@@ -127,12 +127,12 @@ class VButton extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(12, alignment);
-    visit(13, grayed);
-    visit(14, image);
-    visit(15, primary);
-    visit(16, selection);
-    visit(17, text);
+    visit(320, alignment);
+    visit(321, grayed);
+    visit(322, image);
+    visit(323, primary);
+    visit(324, selection);
+    visit(325, text);
   }
 
   @override

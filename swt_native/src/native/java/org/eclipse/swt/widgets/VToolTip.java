@@ -53,13 +53,13 @@ public class VToolTip extends VWidget {
         ((DartToolTip) impl).visible = value;
     }
 
-    public static final int LOCATION = 624;
+    public static final int LOCATION = 5696;
 
-    public static final int MESSAGE = 625;
+    public static final int MESSAGE = 5697;
 
-    public static final int TEXT = 626;
+    public static final int TEXT = 5698;
 
-    public static final int VISIBLE = 627;
+    public static final int VISIBLE = 5699;
 
     @Override
     public String wireName(int key) {
@@ -79,16 +79,16 @@ public class VToolTip extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 624:
+            case 5696:
                 w.write(getLocation());
                 return true;
-            case 625:
+            case 5697:
                 w.write(getMessage());
                 return true;
-            case 626:
+            case 5698:
                 w.write(getText());
                 return true;
-            case 627:
+            case 5699:
                 w.write(getVisible());
                 return true;
         }
@@ -98,41 +98,41 @@ public class VToolTip extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 624:
+            case 5696:
                 {
                     Point v_ = getLocation();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(624);
+                    w.key(5696);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 625:
+            case 5697:
                 {
                     String v_ = getMessage();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(625);
+                    w.key(5697);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 626:
+            case 5698:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(626);
+                    w.key(5698);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 627:
+            case 5699:
                 {
                     boolean v_ = getVisible();
-                    w.key(627);
+                    w.key(5699);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -140,7 +140,7 @@ public class VToolTip extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 624, 625, 626, 627 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 5696, 5697, 5698, 5699 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -154,7 +154,7 @@ public class VToolTip extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 627:
+            case 5699:
                 return true;
         }
         return super.wireAlways(key);

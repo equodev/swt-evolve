@@ -18,15 +18,15 @@ class ToolItemSwt<V extends VToolItem> extends ItemSwt<V> {
   State createState() => ToolItemImpl<ToolItemSwt<VToolItem>, VToolItem>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionOpenMenu(V val, VEvent? payload) {
-    sendEvent(val, 94, payload); // Selection/OpenMenu
+    sendEvent(val, 87, payload); // Selection/OpenMenu
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -65,31 +65,31 @@ class VToolItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 615: // background
+      case 5632: // background
         background = r.color();
         return true;
-      case 616: // control
+      case 5633: // control
         control = r.ref<VControl>();
         return true;
-      case 617: // disabledImage
+      case 5634: // disabledImage
         disabledImage = r.image();
         return true;
-      case 618: // enabled
+      case 5635: // enabled
         enabled = r.boolean();
         return true;
-      case 619: // foreground
+      case 5636: // foreground
         foreground = r.color();
         return true;
-      case 620: // hotImage
+      case 5637: // hotImage
         hotImage = r.image();
         return true;
-      case 621: // selection
+      case 5638: // selection
         selection = r.boolean();
         return true;
-      case 622: // toolTipText
+      case 5639: // toolTipText
         toolTipText = r.string();
         return true;
-      case 623: // width
+      case 5640: // width
         width = r.int32();
         return true;
       default:
@@ -103,58 +103,58 @@ class VToolItem extends VItem {
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(615);
+        w.key(5632);
         w.colorValue(v_);
       }
     }
     {
       final v_ = control;
       if (v_ != null) {
-        w.keyRef(616, v_.id);
+        w.keyRef(5633, v_.id);
       }
     }
     {
       final v_ = disabledImage;
       if (v_ != null) {
-        w.keyRef(617, v_.id);
+        w.keyRef(5634, v_.id);
       }
     }
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.keyBoolean(618, v_);
+        w.keyBoolean(5635, v_);
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(619);
+        w.key(5636);
         w.colorValue(v_);
       }
     }
     {
       final v_ = hotImage;
       if (v_ != null) {
-        w.keyRef(620, v_.id);
+        w.keyRef(5637, v_.id);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyBoolean(621, v_);
+        w.keyBoolean(5638, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(622);
+        w.key(5639);
         w.string(v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(623, v_);
+        w.keyInt32(5640, v_);
       }
     }
   }
@@ -162,15 +162,15 @@ class VToolItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(615, background);
-    visit(616, control);
-    visit(617, disabledImage);
-    visit(618, enabled);
-    visit(619, foreground);
-    visit(620, hotImage);
-    visit(621, selection);
-    visit(622, toolTipText);
-    visit(623, width);
+    visit(5632, background);
+    visit(5633, control);
+    visit(5634, disabledImage);
+    visit(5635, enabled);
+    visit(5636, foreground);
+    visit(5637, hotImage);
+    visit(5638, selection);
+    visit(5639, toolTipText);
+    visit(5640, width);
   }
 
   @override

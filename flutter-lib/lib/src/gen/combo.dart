@@ -24,23 +24,23 @@ class ComboSwt<V extends VCombo> extends CompositeSwt<V> {
   State createState() => ComboImpl<ComboSwt<VCombo>, VCombo>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 72, payload); // Modify/Modify
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSegmentSegments(V val, VEvent? payload) {
-    sendEvent(val, 92, payload); // Segment/Segments
+    sendEvent(val, 85, payload); // Segment/Segments
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, 114, payload); // Verify/Verify
+    sendEvent(val, 107, payload); // Verify/Verify
   }
 }
 
@@ -71,19 +71,19 @@ class VCombo extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 87: // caretPosition
+      case 960: // caretPosition
         caretPosition = r.int32();
         return true;
-      case 88: // items
+      case 961: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 89: // listVisible
+      case 962: // listVisible
         listVisible = r.boolean();
         return true;
-      case 90: // text
+      case 963: // text
         text = r.string();
         return true;
-      case 91: // textLimit
+      case 964: // textLimit
         textLimit = r.int32();
         return true;
       default:
@@ -97,33 +97,33 @@ class VCombo extends VComposite {
     {
       final v_ = caretPosition;
       if (v_ != null) {
-        w.keyInt32(87, v_);
+        w.keyInt32(960, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(88);
+        w.key(961);
         w.strings(v_);
       }
     }
     {
       final v_ = listVisible;
       if (v_ != null) {
-        w.keyBoolean(89, v_);
+        w.keyBoolean(962, v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(90);
+        w.key(963);
         w.string(v_);
       }
     }
     {
       final v_ = textLimit;
       if (v_ != null) {
-        w.keyInt32(91, v_);
+        w.keyInt32(964, v_);
       }
     }
   }
@@ -131,11 +131,11 @@ class VCombo extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(87, caretPosition);
-    visit(88, items);
-    visit(89, listVisible);
-    visit(90, text);
-    visit(91, textLimit);
+    visit(960, caretPosition);
+    visit(961, items);
+    visit(962, listVisible);
+    visit(963, text);
+    visit(964, textLimit);
   }
 
   @override

@@ -65,12 +65,12 @@ public class VClipboard implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 16;
+        return 17;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(80);
+        w.key(768);
         w.write(getAvailableTypeNames());
     }
 }

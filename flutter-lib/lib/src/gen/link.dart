@@ -22,11 +22,11 @@ class LinkSwt<V extends VLink> extends ControlSwt<V> {
   State createState() => LinkImpl<LinkSwt<VLink>, VLink>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -51,10 +51,10 @@ class VLink extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 372: // linkForeground
+      case 3136: // linkForeground
         linkForeground = r.color();
         return true;
-      case 373: // text
+      case 3137: // text
         text = r.string();
         return true;
       default:
@@ -68,14 +68,14 @@ class VLink extends VControl {
     {
       final v_ = linkForeground;
       if (v_ != null) {
-        w.key(372);
+        w.key(3136);
         w.colorValue(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(373);
+        w.key(3137);
         w.string(v_);
       }
     }
@@ -84,8 +84,8 @@ class VLink extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(372, linkForeground);
-    visit(373, text);
+    visit(3136, linkForeground);
+    visit(3137, text);
   }
 
   @override

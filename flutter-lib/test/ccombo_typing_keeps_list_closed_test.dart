@@ -10,10 +10,11 @@ import 'package:swtflutter/src/gen/ccombo.dart';
 import 'package:swtflutter/src/gen/event.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/widgets.dart';
 import 'package:swtflutter/src/impl/utils/key_edit_order.dart';
 
 /// Modify/Modify, as the generated CComboSwt.sendModifyModify sends it.
-const _modify = 72;
+const _modify = WireChannel.modifyModify;
 
 final _sent = <(int, VEvent?)>[];
 

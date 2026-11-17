@@ -39,9 +39,9 @@ public class VLabel extends VControl {
         ((DartLabel) impl).text = value;
     }
 
-    public static final int IMAGE = 358;
+    public static final int IMAGE = 2944;
 
-    public static final int TEXT = 359;
+    public static final int TEXT = 2945;
 
     @Override
     public String wireName(int key) {
@@ -57,14 +57,14 @@ public class VLabel extends VControl {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 151:
+            case 1164:
                 return false;
-            case 154:
+            case 1167:
                 return false;
-            case 358:
+            case 2944:
                 w.image(getImage());
                 return true;
-            case 359:
+            case 2945:
                 w.write(getText());
                 return true;
         }
@@ -74,27 +74,27 @@ public class VLabel extends VControl {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 151:
+            case 1164:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 154:
+            case 1167:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 358:
+            case 2944:
                 {
                     Image v_ = getImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(358);
+                    w.key(2944);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 359:
+            case 2945:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(359);
+                    w.key(2945);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -102,7 +102,7 @@ public class VLabel extends VControl {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 358, 359 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VControl.allWireKeys_(), new int[] { 2944, 2945 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

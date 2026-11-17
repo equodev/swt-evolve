@@ -68,9 +68,9 @@ public class VTaskItem extends VItem {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 677:
+            case 6208:
                 return false;
-            case 357:
+            case 2881:
                 return false;
         }
         return super.writeWire(w, key);
@@ -79,9 +79,9 @@ public class VTaskItem extends VItem {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 677:
+            case 6208:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 357:
+            case 2881:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
         }
         return super.writeWireWhole(w, key);

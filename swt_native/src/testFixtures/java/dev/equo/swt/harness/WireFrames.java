@@ -225,6 +225,7 @@ public final class WireFrames {
     static {
         for (int i = 1; i < dev.equo.swt.WireTable.PROPERTIES.length; i++) {
             String qualified = dev.equo.swt.WireTable.PROPERTIES[i];
+            if (qualified == null) continue;
             NAMES.put(String.valueOf(i), qualified.substring(qualified.lastIndexOf('.') + 1));
         }
     }
@@ -232,7 +233,7 @@ public final class WireFrames {
     /** The number of the property {@code qualified} ({@code Class.name}). */
     public static int property(String qualified) {
         for (int i = 1; i < dev.equo.swt.WireTable.PROPERTIES.length; i++) {
-            if (dev.equo.swt.WireTable.PROPERTIES[i].equals(qualified)) return i;
+            if (qualified.equals(dev.equo.swt.WireTable.PROPERTIES[i])) return i;
         }
         throw new IllegalArgumentException("no property " + qualified);
     }

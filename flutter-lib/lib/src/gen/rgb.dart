@@ -12,13 +12,13 @@ class VRGB implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 427: // blue
+      case 4032: // blue
         blue = r.int32();
         return true;
-      case 428: // green
+      case 4033: // green
         green = r.int32();
         return true;
-      case 429: // red
+      case 4034: // red
         red = r.int32();
         return true;
       default:
@@ -28,24 +28,24 @@ class VRGB implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(427, blue);
-    visit(428, green);
-    visit(429, red);
+    visit(4032, blue);
+    visit(4033, green);
+    visit(4034, red);
   }
 
   @override
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = blue;
-      w.keyInt32(427, v_);
+      w.keyInt32(4032, v_);
     }
     {
       final v_ = green;
-      w.keyInt32(428, v_);
+      w.keyInt32(4033, v_);
     }
     {
       final v_ = red;
-      w.keyInt32(429, v_);
+      w.keyInt32(4034, v_);
     }
   }
 }

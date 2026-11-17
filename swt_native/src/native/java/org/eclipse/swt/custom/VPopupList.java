@@ -70,13 +70,13 @@ public class VPopupList implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(416);
+        w.key(3840);
         w.object((getFont() == null || getFont().isDisposed() ? null : ((DartFont) getFont().getImpl()).getValue()));
-        w.key(417);
+        w.key(3841);
         w.write(getItems());
-        w.key(418);
+        w.key(3842);
         w.write((int) getMinimumWidth());
-        w.key(419);
+        w.key(3843);
         w.write(getSelection());
     }
 }

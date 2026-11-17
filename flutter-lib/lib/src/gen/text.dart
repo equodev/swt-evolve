@@ -24,23 +24,23 @@ class TextSwt<V extends VText> extends ScrollableSwt<V> {
   State createState() => TextImpl<TextSwt<VText>, VText>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 72, payload); // Modify/Modify
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSegmentSegments(V val, VEvent? payload) {
-    sendEvent(val, 92, payload); // Segment/Segments
+    sendEvent(val, 85, payload); // Segment/Segments
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendVerifyVerify(V val, VEvent? payload) {
-    sendEvent(val, 114, payload); // Verify/Verify
+    sendEvent(val, 107, payload); // Verify/Verify
   }
 }
 
@@ -79,31 +79,31 @@ class VText extends VScrollable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 593: // caretPosition
+      case 5440: // caretPosition
         caretPosition = r.int32();
         return true;
-      case 594: // echoCharacter
+      case 5441: // echoCharacter
         echoCharacter = r.int32();
         return true;
-      case 596: // editable
+      case 5443: // editable
         editable = r.boolean();
         return true;
-      case 598: // message
+      case 5445: // message
         message = r.string();
         return true;
-      case 599: // selection
+      case 5446: // selection
         selection = r.point();
         return true;
-      case 600: // text
+      case 5447: // text
         text = r.string();
         return true;
-      case 601: // textLimit
+      case 5448: // textLimit
         textLimit = r.int32();
         return true;
-      case 597: // edits
+      case 5444: // edits
         edits = r.ints();
         return true;
-      case 595: // editTexts
+      case 5442: // editTexts
         editTexts = r.strings()?.map((e) => e ?? '').toList();
         return true;
       default:
@@ -117,59 +117,59 @@ class VText extends VScrollable {
     {
       final v_ = caretPosition;
       if (v_ != null) {
-        w.keyInt32(593, v_);
+        w.keyInt32(5440, v_);
       }
     }
     {
       final v_ = echoCharacter;
       if (v_ != null) {
-        w.keyInt32(594, v_);
+        w.keyInt32(5441, v_);
       }
     }
     {
       final v_ = editable;
       if (v_ != null) {
-        w.keyBoolean(596, v_);
+        w.keyBoolean(5443, v_);
       }
     }
     {
       final v_ = message;
       if (v_ != null) {
-        w.key(598);
+        w.key(5445);
         w.string(v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(599);
+        w.key(5446);
         w.pointValue(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(600);
+        w.key(5447);
         w.string(v_);
       }
     }
     {
       final v_ = textLimit;
       if (v_ != null) {
-        w.keyInt32(601, v_);
+        w.keyInt32(5448, v_);
       }
     }
     {
       final v_ = edits;
       if (v_ != null) {
-        w.key(597);
+        w.key(5444);
         w.ints(v_);
       }
     }
     {
       final v_ = editTexts;
       if (v_ != null) {
-        w.key(595);
+        w.key(5442);
         w.strings(v_);
       }
     }
@@ -178,15 +178,15 @@ class VText extends VScrollable {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(593, caretPosition);
-    visit(594, echoCharacter);
-    visit(596, editable);
-    visit(598, message);
-    visit(599, selection);
-    visit(600, text);
-    visit(601, textLimit);
-    visit(597, edits);
-    visit(595, editTexts);
+    visit(5440, caretPosition);
+    visit(5441, echoCharacter);
+    visit(5443, editable);
+    visit(5445, message);
+    visit(5446, selection);
+    visit(5447, text);
+    visit(5448, textLimit);
+    visit(5444, edits);
+    visit(5442, editTexts);
   }
 
   @override

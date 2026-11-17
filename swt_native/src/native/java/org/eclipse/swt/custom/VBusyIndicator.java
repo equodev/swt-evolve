@@ -20,7 +20,7 @@ public class VBusyIndicator implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 6;
+        return 7;
     }
 
     @Override

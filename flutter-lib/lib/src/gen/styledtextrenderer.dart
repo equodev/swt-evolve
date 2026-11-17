@@ -42,100 +42,100 @@ class VStyledTextRenderer implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 525: // ascent
+      case 4992: // ascent
         ascent = r.int32();
         return true;
-      case 526: // averageCharWidth
+      case 4993: // averageCharWidth
         averageCharWidth = r.int32();
         return true;
-      case 527: // averageLineHeight
+      case 4994: // averageLineHeight
         averageLineHeight = r.float32();
         return true;
-      case 528: // boldFont
+      case 4995: // boldFont
         boldFont = r.object(VFont.new);
         return true;
-      case 529: // boldItalicFont
+      case 4996: // boldItalicFont
         boldItalicFont = r.object(VFont.new);
         return true;
-      case 531: // bulletsIndices
+      case 4998: // bulletsIndices
         bulletsIndices = r.ints();
         return true;
-      case 532: // descent
+      case 4999: // descent
         descent = r.int32();
         return true;
-      case 533: // fixedPitch
+      case 5000: // fixedPitch
         fixedPitch = r.boolean();
         return true;
-      case 534: // hasLinks
+      case 5001: // hasLinks
         hasLinks = r.boolean();
         return true;
-      case 535: // idleRunning
+      case 5002: // idleRunning
         idleRunning = r.boolean();
         return true;
-      case 536: // italicFont
+      case 5003: // italicFont
         italicFont = r.object(VFont.new);
         return true;
-      case 537: // lineCount
+      case 5004: // lineCount
         lineCount = r.int32();
         return true;
-      case 538: // lineSizes
+      case 5005: // lineSizes
         lineSizes = r.objects(VLineSizeInfo.new);
         return true;
-      case 539: // lineSpacingComputing
+      case 5006: // lineSpacingComputing
         lineSpacingComputing = r.boolean();
         return true;
-      case 541: // lines
+      case 5008: // lines
         lines = r.objects(VLineInfo.new);
         return true;
-      case 542: // linesInAverageLineHeight
+      case 5009: // linesInAverageLineHeight
         linesInAverageLineHeight = r.int32();
         return true;
-      case 543: // maxWidth
+      case 5010: // maxWidth
         maxWidth = r.int32();
         return true;
-      case 544: // maxWidthLineIndex
+      case 5011: // maxWidthLineIndex
         maxWidthLineIndex = r.int32();
         return true;
-      case 545: // ranges
+      case 5012: // ranges
         ranges = r.ints();
         return true;
-      case 546: // redrawLines
+      case 5013: // redrawLines
         redrawLines = r.ints();
         return true;
-      case 547: // regularFont
+      case 5014: // regularFont
         regularFont = r.object(VFont.new);
         return true;
-      case 548: // styleCount
+      case 5015: // styleCount
         styleCount = r.int32();
         return true;
-      case 549: // styledText
+      case 5016: // styledText
         styledText = r.ref<VStyledText>();
         return true;
-      case 550: // styles
+      case 5017: // styles
         styles = r.objects(VStyleRange.new)?.whereType<VStyleRange>().toList();
         return true;
-      case 551: // stylesSet
+      case 5018: // stylesSet
         stylesSet = r
             .objects(VStyleRange.new)
             ?.whereType<VStyleRange>()
             .toList();
         return true;
-      case 552: // stylesSetCount
+      case 5019: // stylesSetCount
         stylesSetCount = r.int32();
         return true;
-      case 553: // tabLength
+      case 5020: // tabLength
         tabLength = r.int32();
         return true;
-      case 554: // tabWidth
+      case 5021: // tabWidth
         tabWidth = r.int32();
         return true;
-      case 555: // topIndex
+      case 5022: // topIndex
         topIndex = r.int32();
         return true;
-      case 540: // lineSpacings
+      case 5007: // lineSpacings
         lineSpacings = r.ints();
         return true;
-      case 530: // bulletTexts
+      case 4997: // bulletTexts
         bulletTexts = r.strings();
         return true;
       default:
@@ -148,200 +148,200 @@ class VStyledTextRenderer implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = ascent;
       if (v_ != null) {
-        w.keyInt32(525, v_);
+        w.keyInt32(4992, v_);
       }
     }
     {
       final v_ = averageCharWidth;
       if (v_ != null) {
-        w.keyInt32(526, v_);
+        w.keyInt32(4993, v_);
       }
     }
     {
       final v_ = averageLineHeight;
       if (v_ != null) {
-        w.key(527);
+        w.key(4994);
         w.float32(v_.toDouble());
       }
     }
     {
       final v_ = boldFont;
       if (v_ != null) {
-        w.key(528);
+        w.key(4995);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = boldItalicFont;
       if (v_ != null) {
-        w.key(529);
+        w.key(4996);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = bulletsIndices;
       if (v_ != null) {
-        w.key(531);
+        w.key(4998);
         w.ints(v_);
       }
     }
     {
       final v_ = descent;
       if (v_ != null) {
-        w.keyInt32(532, v_);
+        w.keyInt32(4999, v_);
       }
     }
     {
       final v_ = fixedPitch;
       if (v_ != null) {
-        w.keyBoolean(533, v_);
+        w.keyBoolean(5000, v_);
       }
     }
     {
       final v_ = hasLinks;
       if (v_ != null) {
-        w.keyBoolean(534, v_);
+        w.keyBoolean(5001, v_);
       }
     }
     {
       final v_ = idleRunning;
       if (v_ != null) {
-        w.keyBoolean(535, v_);
+        w.keyBoolean(5002, v_);
       }
     }
     {
       final v_ = italicFont;
       if (v_ != null) {
-        w.key(536);
+        w.key(5003);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = lineCount;
       if (v_ != null) {
-        w.keyInt32(537, v_);
+        w.keyInt32(5004, v_);
       }
     }
     {
       final v_ = lineSizes;
       if (v_ != null) {
-        w.key(538);
+        w.key(5005);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = lineSpacingComputing;
       if (v_ != null) {
-        w.keyBoolean(539, v_);
+        w.keyBoolean(5006, v_);
       }
     }
     {
       final v_ = lines;
       if (v_ != null) {
-        w.key(541);
+        w.key(5008);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = linesInAverageLineHeight;
       if (v_ != null) {
-        w.keyInt32(542, v_);
+        w.keyInt32(5009, v_);
       }
     }
     {
       final v_ = maxWidth;
       if (v_ != null) {
-        w.keyInt32(543, v_);
+        w.keyInt32(5010, v_);
       }
     }
     {
       final v_ = maxWidthLineIndex;
       if (v_ != null) {
-        w.keyInt32(544, v_);
+        w.keyInt32(5011, v_);
       }
     }
     {
       final v_ = ranges;
       if (v_ != null) {
-        w.key(545);
+        w.key(5012);
         w.ints(v_);
       }
     }
     {
       final v_ = redrawLines;
       if (v_ != null) {
-        w.key(546);
+        w.key(5013);
         w.ints(v_);
       }
     }
     {
       final v_ = regularFont;
       if (v_ != null) {
-        w.key(547);
+        w.key(5014);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = styleCount;
       if (v_ != null) {
-        w.keyInt32(548, v_);
+        w.keyInt32(5015, v_);
       }
     }
     {
       final v_ = styledText;
       if (v_ != null) {
-        w.keyRef(549, v_.id);
+        w.keyRef(5016, v_.id);
       }
     }
     {
       final v_ = styles;
       if (v_ != null) {
-        w.key(550);
+        w.key(5017);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = stylesSet;
       if (v_ != null) {
-        w.key(551);
+        w.key(5018);
         w.list(v_, (e) => w.object(e?.writeWire));
       }
     }
     {
       final v_ = stylesSetCount;
       if (v_ != null) {
-        w.keyInt32(552, v_);
+        w.keyInt32(5019, v_);
       }
     }
     {
       final v_ = tabLength;
       if (v_ != null) {
-        w.keyInt32(553, v_);
+        w.keyInt32(5020, v_);
       }
     }
     {
       final v_ = tabWidth;
       if (v_ != null) {
-        w.keyInt32(554, v_);
+        w.keyInt32(5021, v_);
       }
     }
     {
       final v_ = topIndex;
       if (v_ != null) {
-        w.keyInt32(555, v_);
+        w.keyInt32(5022, v_);
       }
     }
     {
       final v_ = lineSpacings;
       if (v_ != null) {
-        w.key(540);
+        w.key(5007);
         w.ints(v_);
       }
     }
     {
       final v_ = bulletTexts;
       if (v_ != null) {
-        w.key(530);
+        w.key(4997);
         w.strings(v_);
       }
     }
@@ -349,37 +349,37 @@ class VStyledTextRenderer implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(525, ascent);
-    visit(526, averageCharWidth);
-    visit(527, averageLineHeight);
-    visit(528, boldFont);
-    visit(529, boldItalicFont);
-    visit(531, bulletsIndices);
-    visit(532, descent);
-    visit(533, fixedPitch);
-    visit(534, hasLinks);
-    visit(535, idleRunning);
-    visit(536, italicFont);
-    visit(537, lineCount);
-    visit(538, lineSizes);
-    visit(539, lineSpacingComputing);
-    visit(541, lines);
-    visit(542, linesInAverageLineHeight);
-    visit(543, maxWidth);
-    visit(544, maxWidthLineIndex);
-    visit(545, ranges);
-    visit(546, redrawLines);
-    visit(547, regularFont);
-    visit(548, styleCount);
-    visit(549, styledText);
-    visit(550, styles);
-    visit(551, stylesSet);
-    visit(552, stylesSetCount);
-    visit(553, tabLength);
-    visit(554, tabWidth);
-    visit(555, topIndex);
-    visit(540, lineSpacings);
-    visit(530, bulletTexts);
+    visit(4992, ascent);
+    visit(4993, averageCharWidth);
+    visit(4994, averageLineHeight);
+    visit(4995, boldFont);
+    visit(4996, boldItalicFont);
+    visit(4998, bulletsIndices);
+    visit(4999, descent);
+    visit(5000, fixedPitch);
+    visit(5001, hasLinks);
+    visit(5002, idleRunning);
+    visit(5003, italicFont);
+    visit(5004, lineCount);
+    visit(5005, lineSizes);
+    visit(5006, lineSpacingComputing);
+    visit(5008, lines);
+    visit(5009, linesInAverageLineHeight);
+    visit(5010, maxWidth);
+    visit(5011, maxWidthLineIndex);
+    visit(5012, ranges);
+    visit(5013, redrawLines);
+    visit(5014, regularFont);
+    visit(5015, styleCount);
+    visit(5016, styledText);
+    visit(5017, styles);
+    visit(5018, stylesSet);
+    visit(5019, stylesSetCount);
+    visit(5020, tabLength);
+    visit(5021, tabWidth);
+    visit(5022, topIndex);
+    visit(5007, lineSpacings);
+    visit(4997, bulletTexts);
   }
 }
 
@@ -393,10 +393,10 @@ class VLineSizeInfo implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 370: // height
+      case 3072: // height
         height = r.int32();
         return true;
-      case 371: // width
+      case 3073: // width
         width = r.int32();
         return true;
       default:
@@ -409,21 +409,21 @@ class VLineSizeInfo implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = height;
       if (v_ != null) {
-        w.keyInt32(370, v_);
+        w.keyInt32(3072, v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(371, v_);
+        w.keyInt32(3073, v_);
       }
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(370, height);
-    visit(371, width);
+    visit(3072, height);
+    visit(3073, width);
   }
 }
 
@@ -445,34 +445,34 @@ class VLineInfo implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 360: // alignment
+      case 3008: // alignment
         alignment = r.int32();
         return true;
-      case 361: // background
+      case 3009: // background
         background = r.color();
         return true;
-      case 362: // flags
+      case 3010: // flags
         flags = r.int32();
         return true;
-      case 363: // indent
+      case 3011: // indent
         indent = r.int32();
         return true;
-      case 364: // justify
+      case 3012: // justify
         justify = r.boolean();
         return true;
-      case 365: // segments
+      case 3013: // segments
         segments = r.ints();
         return true;
-      case 366: // segmentsChars
+      case 3014: // segmentsChars
         segmentsChars = r.chars();
         return true;
-      case 367: // tabStops
+      case 3015: // tabStops
         tabStops = r.ints();
         return true;
-      case 368: // verticalIndent
+      case 3016: // verticalIndent
         verticalIndent = r.int32();
         return true;
-      case 369: // wrapIndent
+      case 3017: // wrapIndent
         wrapIndent = r.int32();
         return true;
       default:
@@ -485,80 +485,80 @@ class VLineInfo implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(360, v_);
+        w.keyInt32(3008, v_);
       }
     }
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(361);
+        w.key(3009);
         w.colorValue(v_);
       }
     }
     {
       final v_ = flags;
       if (v_ != null) {
-        w.keyInt32(362, v_);
+        w.keyInt32(3010, v_);
       }
     }
     {
       final v_ = indent;
       if (v_ != null) {
-        w.keyInt32(363, v_);
+        w.keyInt32(3011, v_);
       }
     }
     {
       final v_ = justify;
       if (v_ != null) {
-        w.keyBoolean(364, v_);
+        w.keyBoolean(3012, v_);
       }
     }
     {
       final v_ = segments;
       if (v_ != null) {
-        w.key(365);
+        w.key(3013);
         w.ints(v_);
       }
     }
     {
       final v_ = segmentsChars;
       if (v_ != null) {
-        w.key(366);
+        w.key(3014);
         w.chars(v_);
       }
     }
     {
       final v_ = tabStops;
       if (v_ != null) {
-        w.key(367);
+        w.key(3015);
         w.ints(v_);
       }
     }
     {
       final v_ = verticalIndent;
       if (v_ != null) {
-        w.keyInt32(368, v_);
+        w.keyInt32(3016, v_);
       }
     }
     {
       final v_ = wrapIndent;
       if (v_ != null) {
-        w.keyInt32(369, v_);
+        w.keyInt32(3017, v_);
       }
     }
   }
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(360, alignment);
-    visit(361, background);
-    visit(362, flags);
-    visit(363, indent);
-    visit(364, justify);
-    visit(365, segments);
-    visit(366, segmentsChars);
-    visit(367, tabStops);
-    visit(368, verticalIndent);
-    visit(369, wrapIndent);
+    visit(3008, alignment);
+    visit(3009, background);
+    visit(3010, flags);
+    visit(3011, indent);
+    visit(3012, justify);
+    visit(3013, segments);
+    visit(3014, segmentsChars);
+    visit(3015, tabStops);
+    visit(3016, verticalIndent);
+    visit(3017, wrapIndent);
   }
 }

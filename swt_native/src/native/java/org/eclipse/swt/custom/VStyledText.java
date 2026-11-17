@@ -363,67 +363,67 @@ public class VStyledText extends VCanvas {
         return ((DartStyledText) impl).isFixedLineHeight();
     }
 
-    public static final int ALIGNMENT = 485;
+    public static final int ALIGNMENT = 4864;
 
-    public static final int ALWAYS_SHOW_SCROLL_BARS = 486;
+    public static final int ALWAYS_SHOW_SCROLL_BARS = 4865;
 
-    public static final int BLOCK_SELECTION = 487;
+    public static final int BLOCK_SELECTION = 4866;
 
-    public static final int BLOCK_SELECTION_BOUNDS = 488;
+    public static final int BLOCK_SELECTION_BOUNDS = 4867;
 
-    public static final int BOTTOM_MARGIN = 489;
+    public static final int BOTTOM_MARGIN = 4868;
 
-    public static final int CARET_OFFSET = 490;
+    public static final int CARET_OFFSET = 4869;
 
-    public static final int CARET_OFFSETS = 491;
+    public static final int CARET_OFFSETS = 4870;
 
-    public static final int DOUBLE_CLICK_ENABLED = 492;
+    public static final int DOUBLE_CLICK_ENABLED = 4871;
 
-    public static final int EDITABLE = 493;
+    public static final int EDITABLE = 4872;
 
-    public static final int FIXED_LINE_HEIGHT = 494;
+    public static final int FIXED_LINE_HEIGHT = 4873;
 
-    public static final int HORIZONTAL_PIXEL = 495;
+    public static final int HORIZONTAL_PIXEL = 4874;
 
-    public static final int INDENT = 496;
+    public static final int INDENT = 4875;
 
-    public static final int JUSTIFY = 497;
+    public static final int JUSTIFY = 4876;
 
-    public static final int LEFT_MARGIN = 498;
+    public static final int LEFT_MARGIN = 4877;
 
-    public static final int LINE_SPACING = 499;
+    public static final int LINE_SPACING = 4878;
 
-    public static final int MARGIN_COLOR = 500;
+    public static final int MARGIN_COLOR = 4879;
 
-    public static final int RENDERER = 501;
+    public static final int RENDERER = 4880;
 
-    public static final int RIGHT_MARGIN = 502;
+    public static final int RIGHT_MARGIN = 4881;
 
-    public static final int SELECTION = 503;
+    public static final int SELECTION = 4882;
 
-    public static final int SELECTION_BACKGROUND = 504;
+    public static final int SELECTION_BACKGROUND = 4883;
 
-    public static final int SELECTION_FOREGROUND = 505;
+    public static final int SELECTION_FOREGROUND = 4884;
 
-    public static final int SELECTION_RANGES = 506;
+    public static final int SELECTION_RANGES = 4885;
 
-    public static final int STYLE_INDEX = 507;
+    public static final int STYLE_INDEX = 4886;
 
-    public static final int STYLES = 508;
+    public static final int STYLES = 4887;
 
-    public static final int TAB_STOPS = 509;
+    public static final int TAB_STOPS = 4888;
 
-    public static final int TABS = 510;
+    public static final int TABS = 4889;
 
-    public static final int TEXT = 511;
+    public static final int TEXT = 4890;
 
-    public static final int TOP_MARGIN = 512;
+    public static final int TOP_MARGIN = 4891;
 
-    public static final int TOP_PIXEL = 513;
+    public static final int TOP_PIXEL = 4892;
 
-    public static final int WORD_WRAP = 514;
+    public static final int WORD_WRAP = 4893;
 
-    public static final int WRAP_INDENT = 515;
+    public static final int WRAP_INDENT = 4894;
 
     @Override
     public String wireName(int key) {
@@ -497,91 +497,91 @@ public class VStyledText extends VCanvas {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 485:
+            case 4864:
                 w.write((int) getAlignment());
                 return true;
-            case 486:
+            case 4865:
                 w.write(getAlwaysShowScrollBars());
                 return true;
-            case 487:
+            case 4866:
                 w.write(getBlockSelection());
                 return true;
-            case 489:
+            case 4868:
                 w.write((int) getBottomMargin());
                 return true;
-            case 490:
+            case 4869:
                 w.write((int) getCaretOffset());
                 return true;
-            case 492:
+            case 4871:
                 w.write(getDoubleClickEnabled());
                 return true;
-            case 493:
+            case 4872:
                 w.write(getEditable());
                 return true;
-            case 495:
+            case 4874:
                 w.write((int) getHorizontalPixel());
                 return true;
-            case 496:
+            case 4875:
                 w.write((int) getIndent());
                 return true;
-            case 497:
+            case 4876:
                 w.write(getJustify());
                 return true;
-            case 498:
+            case 4877:
                 w.write((int) getLeftMargin());
                 return true;
-            case 499:
+            case 4878:
                 w.write((int) getLineSpacing());
                 return true;
-            case 500:
+            case 4879:
                 w.write(getMarginColor());
                 return true;
-            case 502:
+            case 4881:
                 w.write((int) getRightMargin());
                 return true;
-            case 503:
+            case 4882:
                 w.write(getSelection());
                 return true;
-            case 504:
+            case 4883:
                 w.write(getSelectionBackground());
                 return true;
-            case 505:
+            case 4884:
                 w.write(getSelectionForeground());
                 return true;
-            case 509:
+            case 4888:
                 w.write(getTabStops());
                 return true;
-            case 510:
+            case 4889:
                 w.write((int) getTabs());
                 return true;
-            case 511:
+            case 4890:
                 w.write(getText());
                 return true;
-            case 512:
+            case 4891:
                 w.write((int) getTopMargin());
                 return true;
-            case 513:
+            case 4892:
                 w.write((int) getTopPixel());
                 return true;
-            case 514:
+            case 4893:
                 w.write(getWordWrap());
                 return true;
-            case 515:
+            case 4894:
                 w.write((int) getWrapIndent());
                 return true;
-            case 501:
+            case 4880:
                 w.object(getRenderer());
                 return true;
-            case 506:
+            case 4885:
                 w.write(getSelectionRanges());
                 return true;
-            case 491:
+            case 4870:
                 w.write(getCaretOffsets());
                 return true;
-            case 488:
+            case 4867:
                 w.write(getBlockSelectionBounds());
                 return true;
-            case 508:
+            case 4887:
                 {
                     StyleRange[] a_ = getStyles();
                     if (a_ == null)
@@ -599,10 +599,10 @@ public class VStyledText extends VCanvas {
                     }
                 }
                 return true;
-            case 507:
+            case 4886:
                 w.runs(getStyleIndex());
                 return true;
-            case 494:
+            case 4873:
                 w.write(getFixedLineHeight());
                 return true;
         }
@@ -612,275 +612,275 @@ public class VStyledText extends VCanvas {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 485:
+            case 4864:
                 {
                     int v_ = getAlignment();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(485);
+                    w.key(4864);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 486:
+            case 4865:
                 {
                     boolean v_ = getAlwaysShowScrollBars();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(486);
+                    w.key(4865);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 487:
+            case 4866:
                 {
                     boolean v_ = getBlockSelection();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(487);
+                    w.key(4866);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 489:
+            case 4868:
                 {
                     int v_ = getBottomMargin();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(489);
+                    w.key(4868);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 490:
+            case 4869:
                 {
                     int v_ = getCaretOffset();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(490);
+                    w.key(4869);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 492:
+            case 4871:
                 {
                     boolean v_ = getDoubleClickEnabled();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(492);
+                    w.key(4871);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 493:
+            case 4872:
                 {
                     boolean v_ = getEditable();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(493);
+                    w.key(4872);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 495:
+            case 4874:
                 {
                     int v_ = getHorizontalPixel();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(495);
+                    w.key(4874);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 496:
+            case 4875:
                 {
                     int v_ = getIndent();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(496);
+                    w.key(4875);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 497:
+            case 4876:
                 {
                     boolean v_ = getJustify();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(497);
+                    w.key(4876);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 498:
+            case 4877:
                 {
                     int v_ = getLeftMargin();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(498);
+                    w.key(4877);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 499:
+            case 4878:
                 {
                     int v_ = getLineSpacing();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(499);
+                    w.key(4878);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 500:
+            case 4879:
                 {
                     Color v_ = getMarginColor();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(500);
+                    w.key(4879);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 502:
+            case 4881:
                 {
                     int v_ = getRightMargin();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(502);
+                    w.key(4881);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 503:
+            case 4882:
                 {
                     Point v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(503);
+                    w.key(4882);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 504:
+            case 4883:
                 {
                     Color v_ = getSelectionBackground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(504);
+                    w.key(4883);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 505:
+            case 4884:
                 {
                     Color v_ = getSelectionForeground();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(505);
+                    w.key(4884);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 509:
+            case 4888:
                 {
                     int[] v_ = getTabStops();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(509);
+                    w.key(4888);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 510:
+            case 4889:
                 {
                     int v_ = getTabs();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(510);
+                    w.key(4889);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 511:
+            case 4890:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(511);
+                    w.key(4890);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 512:
+            case 4891:
                 {
                     int v_ = getTopMargin();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(512);
+                    w.key(4891);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 513:
+            case 4892:
                 {
                     int v_ = getTopPixel();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(513);
+                    w.key(4892);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 514:
+            case 4893:
                 {
                     boolean v_ = getWordWrap();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(514);
+                    w.key(4893);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 515:
+            case 4894:
                 {
                     int v_ = getWrapIndent();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(515);
+                    w.key(4894);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 501:
+            case 4880:
                 {
                     VStyledTextRenderer v_ = getRenderer();
                     dev.equo.swt.WireObject o_ = v_;
                     if (o_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(501);
+                    w.key(4880);
                     w.object(o_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 506:
+            case 4885:
                 {
                     int[] v_ = getSelectionRanges();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(506);
+                    w.key(4885);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 491:
+            case 4870:
                 {
                     int[] v_ = getCaretOffsets();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(491);
+                    w.key(4870);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 488:
+            case 4867:
                 {
                     Rectangle v_ = getBlockSelectionBounds();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(488);
+                    w.key(4867);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 508:
+            case 4887:
                 {
                     StyleRange[] v_ = getStyles();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(508);
+                    w.key(4887);
                     {
                         StyleRange[] a_ = v_;
                         if (a_ == null)
@@ -899,23 +899,23 @@ public class VStyledText extends VCanvas {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 507:
+            case 4886:
                 {
                     int[] v_ = getStyleIndex();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(507);
+                    w.key(4886);
                     w.runs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 494:
+            case 4873:
                 {
                     boolean v_ = getFixedLineHeight();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(494);
+                    w.key(4873);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -923,7 +923,7 @@ public class VStyledText extends VCanvas {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 485, 486, 487, 489, 490, 492, 493, 495, 496, 497, 498, 499, 500, 502, 503, 504, 505, 509, 510, 511, 512, 513, 514, 515, 501, 506, 491, 488, 508, 507, 494 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VCanvas.allWireKeys_(), new int[] { 4864, 4865, 4866, 4868, 4869, 4871, 4872, 4874, 4875, 4876, 4877, 4878, 4879, 4881, 4882, 4883, 4884, 4888, 4889, 4890, 4891, 4892, 4893, 4894, 4880, 4885, 4870, 4867, 4887, 4886, 4873 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

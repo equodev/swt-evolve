@@ -43,9 +43,9 @@ public class VAccessible implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(1);
+        w.key(64);
         w.ref(getControl());
-        w.key(2);
+        w.key(65);
         w.write((int) getFocus());
     }
 }

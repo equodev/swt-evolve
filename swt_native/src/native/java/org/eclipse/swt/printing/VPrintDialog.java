@@ -60,13 +60,13 @@ public class VPrintDialog extends VDialog {
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(420);
+        w.key(3904);
         w.write((int) getEndPage());
-        w.key(421);
+        w.key(3905);
         w.write(getPrintToFile());
-        w.key(422);
+        w.key(3906);
         w.write((int) getScope());
-        w.key(423);
+        w.key(3907);
         w.write((int) getStartPage());
     }
 }

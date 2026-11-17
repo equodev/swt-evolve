@@ -15,11 +15,11 @@ class ToolTipSwt<V extends VToolTip> extends WidgetSwt<V> {
   State createState() => ToolTipImpl<ToolTipSwt<VToolTip>, VToolTip>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -48,16 +48,16 @@ class VToolTip extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 624: // location
+      case 5696: // location
         location = r.point();
         return true;
-      case 625: // message
+      case 5697: // message
         message = r.string();
         return true;
-      case 626: // text
+      case 5698: // text
         text = r.string();
         return true;
-      case 627: // visible
+      case 5699: // visible
         visible = r.boolean();
         return true;
       default:
@@ -71,28 +71,28 @@ class VToolTip extends VWidget {
     {
       final v_ = location;
       if (v_ != null) {
-        w.key(624);
+        w.key(5696);
         w.pointValue(v_);
       }
     }
     {
       final v_ = message;
       if (v_ != null) {
-        w.key(625);
+        w.key(5697);
         w.string(v_);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(626);
+        w.key(5698);
         w.string(v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.keyBoolean(627, v_);
+        w.keyBoolean(5699, v_);
       }
     }
   }
@@ -100,10 +100,10 @@ class VToolTip extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(624, location);
-    visit(625, message);
-    visit(626, text);
-    visit(627, visible);
+    visit(5696, location);
+    visit(5697, message);
+    visit(5698, text);
+    visit(5699, visible);
   }
 
   @override

@@ -87,15 +87,15 @@ public class VMenu extends VWidget {
         ((DartMenu) impl).visible = value;
     }
 
-    public static final int ENABLED = 377;
+    public static final int ENABLED = 3264;
 
-    public static final int ITEMS = 378;
+    public static final int ITEMS = 3265;
 
-    public static final int LOCATION = 379;
+    public static final int LOCATION = 3266;
 
-    public static final int ORIENTATION = 380;
+    public static final int ORIENTATION = 3267;
 
-    public static final int VISIBLE = 381;
+    public static final int VISIBLE = 3268;
 
     @Override
     public String wireName(int key) {
@@ -117,19 +117,19 @@ public class VMenu extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 377:
+            case 3264:
                 w.write(getEnabled());
                 return true;
-            case 378:
+            case 3265:
                 w.refs(getItems());
                 return true;
-            case 379:
+            case 3266:
                 w.write(getLocation());
                 return true;
-            case 380:
+            case 3267:
                 w.write((int) getOrientation());
                 return true;
-            case 381:
+            case 3268:
                 w.write(getVisible());
                 return true;
         }
@@ -139,46 +139,46 @@ public class VMenu extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 377:
+            case 3264:
                 {
                     boolean v_ = getEnabled();
-                    w.key(377);
+                    w.key(3264);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 378:
+            case 3265:
                 {
                     MenuItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(378);
+                    w.key(3265);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 379:
+            case 3266:
                 {
                     Point v_ = getLocation();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(379);
+                    w.key(3266);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 380:
+            case 3267:
                 {
                     int v_ = getOrientation();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(380);
+                    w.key(3267);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 381:
+            case 3268:
                 {
                     boolean v_ = getVisible();
-                    w.key(381);
+                    w.key(3268);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -186,7 +186,7 @@ public class VMenu extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 377, 378, 379, 380, 381 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 3264, 3265, 3266, 3267, 3268 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;
@@ -200,8 +200,8 @@ public class VMenu extends VWidget {
     @Override
     public boolean wireAlways(int key) {
         switch(key) {
-            case 377:
-            case 381:
+            case 3264:
+            case 3268:
                 return true;
         }
         return super.wireAlways(key);

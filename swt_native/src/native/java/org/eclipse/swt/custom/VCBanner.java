@@ -78,9 +78,9 @@ public class VCBanner extends VComposite {
         return ((DartCBanner) impl).wireBottomLine();
     }
 
-    public static final int BOTTOM_LINE = 18;
+    public static final int BOTTOM_LINE = 6272;
 
-    public static final int CURVE_LINE = 19;
+    public static final int CURVE_LINE = 6273;
 
     @Override
     public String wireName(int key) {
@@ -96,14 +96,14 @@ public class VCBanner extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 148:
+            case 1161:
                 return false;
-            case 150:
+            case 1163:
                 return false;
-            case 19:
+            case 6273:
                 w.write(getCurveLine());
                 return true;
-            case 18:
+            case 6272:
                 w.write((int) getBottomLine());
                 return true;
         }
@@ -113,27 +113,27 @@ public class VCBanner extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 148:
+            case 1161:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 150:
+            case 1163:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 19:
+            case 6273:
                 {
                     int[] v_ = getCurveLine();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(19);
+                    w.key(6273);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 18:
+            case 6272:
                 {
                     int v_ = getBottomLine();
                     if (v_ == 0)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(18);
+                    w.key(6272);
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -141,7 +141,7 @@ public class VCBanner extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 19, 18 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 6273, 6272 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

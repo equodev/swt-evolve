@@ -58,11 +58,11 @@ class CTabFolderSwt<V extends VCTabFolder> extends CompositeSwt<V> {
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -137,85 +137,85 @@ class VCTabFolder extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 39: // borderVisible
+      case 512: // borderVisible
         borderVisible = r.boolean();
         return true;
-      case 40: // chevronVisible
+      case 513: // chevronVisible
         chevronVisible = r.boolean();
         return true;
-      case 41: // dirtyIndicatorStyle
+      case 538: // dirtyIndicatorStyle
         dirtyIndicatorStyle = r.boolean();
         return true;
-      case 42: // highlight
+      case 514: // highlight
         highlight = r.boolean();
         return true;
-      case 43: // highlightEnabled
+      case 515: // highlightEnabled
         highlightEnabled = r.boolean();
         return true;
-      case 44: // items
+      case 516: // items
         items = r.refs<VCTabItem>(items);
         return true;
-      case 45: // maximizeVisible
+      case 517: // maximizeVisible
         maximizeVisible = r.boolean();
         return true;
-      case 46: // maximized
+      case 518: // maximized
         maximized = r.boolean();
         return true;
-      case 47: // minimizeVisible
+      case 519: // minimizeVisible
         minimizeVisible = r.boolean();
         return true;
-      case 48: // minimized
+      case 520: // minimized
         minimized = r.boolean();
         return true;
-      case 49: // minimumCharacters
+      case 521: // minimumCharacters
         minimumCharacters = r.int32();
         return true;
-      case 50: // selectedImageVisible
+      case 522: // selectedImageVisible
         selectedImageVisible = r.boolean();
         return true;
-      case 51: // selection
+      case 523: // selection
         selection = r.int32();
         return true;
-      case 52: // selectionBackground
+      case 524: // selectionBackground
         selectionBackground = r.color();
         return true;
-      case 53: // selectionBarThickness
+      case 525: // selectionBarThickness
         selectionBarThickness = r.int32();
         return true;
-      case 54: // selectionBgImage
+      case 526: // selectionBgImage
         selectionBgImage = r.image();
         return true;
-      case 55: // selectionForeground
+      case 527: // selectionForeground
         selectionForeground = r.color();
         return true;
-      case 56: // showChevron
+      case 528: // showChevron
         showChevron = r.boolean();
         return true;
-      case 57: // showListPopupSeq
+      case 529: // showListPopupSeq
         showListPopupSeq = r.int32();
         return true;
-      case 58: // single
+      case 530: // single
         single = r.boolean();
         return true;
-      case 59: // stripLayoutSeq
+      case 537: // stripLayoutSeq
         stripLayoutSeq = r.int32();
         return true;
-      case 60: // tabHeight
+      case 531: // tabHeight
         tabHeight = r.intBoxed();
         return true;
-      case 61: // tabPosition
+      case 532: // tabPosition
         tabPosition = r.int32();
         return true;
-      case 62: // topRight
+      case 533: // topRight
         topRight = r.ref<VControl>();
         return true;
-      case 63: // topRightAlignment
+      case 534: // topRightAlignment
         topRightAlignment = r.int32();
         return true;
-      case 64: // unselectedCloseVisible
+      case 535: // unselectedCloseVisible
         unselectedCloseVisible = r.boolean();
         return true;
-      case 65: // unselectedImageVisible
+      case 536: // unselectedImageVisible
         unselectedImageVisible = r.boolean();
         return true;
       default:
@@ -229,167 +229,167 @@ class VCTabFolder extends VComposite {
     {
       final v_ = borderVisible;
       if (v_ != null) {
-        w.keyBoolean(39, v_);
+        w.keyBoolean(512, v_);
       }
     }
     {
       final v_ = chevronVisible;
       if (v_ != null) {
-        w.keyBoolean(40, v_);
+        w.keyBoolean(513, v_);
       }
     }
     {
       final v_ = dirtyIndicatorStyle;
       if (v_ != null) {
-        w.keyBoolean(41, v_);
+        w.keyBoolean(538, v_);
       }
     }
     {
       final v_ = highlight;
       if (v_ != null) {
-        w.keyBoolean(42, v_);
+        w.keyBoolean(514, v_);
       }
     }
     {
       final v_ = highlightEnabled;
       if (v_ != null) {
-        w.keyBoolean(43, v_);
+        w.keyBoolean(515, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(44);
+        w.key(516);
         w.refs(v_);
       }
     }
     {
       final v_ = maximizeVisible;
       if (v_ != null) {
-        w.keyBoolean(45, v_);
+        w.keyBoolean(517, v_);
       }
     }
     {
       final v_ = maximized;
       if (v_ != null) {
-        w.keyBoolean(46, v_);
+        w.keyBoolean(518, v_);
       }
     }
     {
       final v_ = minimizeVisible;
       if (v_ != null) {
-        w.keyBoolean(47, v_);
+        w.keyBoolean(519, v_);
       }
     }
     {
       final v_ = minimized;
       if (v_ != null) {
-        w.keyBoolean(48, v_);
+        w.keyBoolean(520, v_);
       }
     }
     {
       final v_ = minimumCharacters;
       if (v_ != null) {
-        w.keyInt32(49, v_);
+        w.keyInt32(521, v_);
       }
     }
     {
       final v_ = selectedImageVisible;
       if (v_ != null) {
-        w.keyBoolean(50, v_);
+        w.keyBoolean(522, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(51, v_);
+        w.keyInt32(523, v_);
       }
     }
     {
       final v_ = selectionBackground;
       if (v_ != null) {
-        w.key(52);
+        w.key(524);
         w.colorValue(v_);
       }
     }
     {
       final v_ = selectionBarThickness;
       if (v_ != null) {
-        w.keyInt32(53, v_);
+        w.keyInt32(525, v_);
       }
     }
     {
       final v_ = selectionBgImage;
       if (v_ != null) {
-        w.keyRef(54, v_.id);
+        w.keyRef(526, v_.id);
       }
     }
     {
       final v_ = selectionForeground;
       if (v_ != null) {
-        w.key(55);
+        w.key(527);
         w.colorValue(v_);
       }
     }
     {
       final v_ = showChevron;
       if (v_ != null) {
-        w.keyBoolean(56, v_);
+        w.keyBoolean(528, v_);
       }
     }
     {
       final v_ = showListPopupSeq;
       if (v_ != null) {
-        w.keyInt32(57, v_);
+        w.keyInt32(529, v_);
       }
     }
     {
       final v_ = single;
       if (v_ != null) {
-        w.keyBoolean(58, v_);
+        w.keyBoolean(530, v_);
       }
     }
     {
       final v_ = stripLayoutSeq;
       if (v_ != null) {
-        w.keyInt32(59, v_);
+        w.keyInt32(537, v_);
       }
     }
     {
       final v_ = tabHeight;
       if (v_ != null) {
-        w.key(60);
+        w.key(531);
         w.intBoxed(v_);
       }
     }
     {
       final v_ = tabPosition;
       if (v_ != null) {
-        w.keyInt32(61, v_);
+        w.keyInt32(532, v_);
       }
     }
     {
       final v_ = topRight;
       if (v_ != null) {
-        w.keyRef(62, v_.id);
+        w.keyRef(533, v_.id);
       }
     }
     {
       final v_ = topRightAlignment;
       if (v_ != null) {
-        w.keyInt32(63, v_);
+        w.keyInt32(534, v_);
       }
     }
     {
       final v_ = unselectedCloseVisible;
       if (v_ != null) {
-        w.keyBoolean(64, v_);
+        w.keyBoolean(535, v_);
       }
     }
     {
       final v_ = unselectedImageVisible;
       if (v_ != null) {
-        w.keyBoolean(65, v_);
+        w.keyBoolean(536, v_);
       }
     }
   }
@@ -397,33 +397,33 @@ class VCTabFolder extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(39, borderVisible);
-    visit(40, chevronVisible);
-    visit(41, dirtyIndicatorStyle);
-    visit(42, highlight);
-    visit(43, highlightEnabled);
-    visit(44, items);
-    visit(45, maximizeVisible);
-    visit(46, maximized);
-    visit(47, minimizeVisible);
-    visit(48, minimized);
-    visit(49, minimumCharacters);
-    visit(50, selectedImageVisible);
-    visit(51, selection);
-    visit(52, selectionBackground);
-    visit(53, selectionBarThickness);
-    visit(54, selectionBgImage);
-    visit(55, selectionForeground);
-    visit(56, showChevron);
-    visit(57, showListPopupSeq);
-    visit(58, single);
-    visit(59, stripLayoutSeq);
-    visit(60, tabHeight);
-    visit(61, tabPosition);
-    visit(62, topRight);
-    visit(63, topRightAlignment);
-    visit(64, unselectedCloseVisible);
-    visit(65, unselectedImageVisible);
+    visit(512, borderVisible);
+    visit(513, chevronVisible);
+    visit(538, dirtyIndicatorStyle);
+    visit(514, highlight);
+    visit(515, highlightEnabled);
+    visit(516, items);
+    visit(517, maximizeVisible);
+    visit(518, maximized);
+    visit(519, minimizeVisible);
+    visit(520, minimized);
+    visit(521, minimumCharacters);
+    visit(522, selectedImageVisible);
+    visit(523, selection);
+    visit(524, selectionBackground);
+    visit(525, selectionBarThickness);
+    visit(526, selectionBgImage);
+    visit(527, selectionForeground);
+    visit(528, showChevron);
+    visit(529, showListPopupSeq);
+    visit(530, single);
+    visit(537, stripLayoutSeq);
+    visit(531, tabHeight);
+    visit(532, tabPosition);
+    visit(533, topRight);
+    visit(534, topRightAlignment);
+    visit(535, unselectedCloseVisible);
+    visit(536, unselectedImageVisible);
   }
 
   @override

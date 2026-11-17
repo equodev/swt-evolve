@@ -29,10 +29,10 @@ class VItem extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 356: // image
+      case 2880: // image
         image = r.image();
         return true;
-      case 357: // text
+      case 2881: // text
         text = r.string();
         return true;
       default:
@@ -46,13 +46,13 @@ class VItem extends VWidget {
     {
       final v_ = image;
       if (v_ != null) {
-        w.keyRef(356, v_.id);
+        w.keyRef(2880, v_.id);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(357);
+        w.key(2881);
         w.string(v_);
       }
     }
@@ -61,8 +61,8 @@ class VItem extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(356, image);
-    visit(357, text);
+    visit(2880, image);
+    visit(2881, text);
   }
 
   @override

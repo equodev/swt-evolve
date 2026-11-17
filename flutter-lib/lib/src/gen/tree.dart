@@ -27,27 +27,27 @@ class TreeSwt<V extends VTree> extends CompositeSwt<V> {
   State createState() => TreeImpl<TreeSwt<VTree>, VTree>();
 
   void sendModifyModify(V val, VEvent? payload) {
-    sendEvent(val, 72, payload); // Modify/Modify
+    sendEvent(val, 65, payload); // Modify/Modify
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 
   void sendSetDataSetData(V val, VEvent? payload) {
-    sendEvent(val, 96, payload); // SetData/SetData
+    sendEvent(val, 89, payload); // SetData/SetData
   }
 
   void sendTreeCollapse(V val, VEvent? payload) {
-    sendEvent(val, 112, payload); // Tree/Collapse
+    sendEvent(val, 105, payload); // Tree/Collapse
   }
 
   void sendTreeExpand(V val, VEvent? payload) {
-    sendEvent(val, 113, payload); // Tree/Expand
+    sendEvent(val, 106, payload); // Tree/Expand
   }
 }
 
@@ -95,43 +95,43 @@ class VTree extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 638: // columnOrder
+      case 5952: // columnOrder
         columnOrder = r.ints();
         return true;
-      case 639: // columns
+      case 5953: // columns
         columns = r.refs<VTreeColumn>(columns);
         return true;
-      case 640: // editors
+      case 5954: // editors
         editors = r.refs<VTreeEditor>(editors);
         return true;
-      case 641: // headerBackground
+      case 5955: // headerBackground
         headerBackground = r.color();
         return true;
-      case 642: // headerForeground
+      case 5956: // headerForeground
         headerForeground = r.color();
         return true;
-      case 643: // headerVisible
+      case 5957: // headerVisible
         headerVisible = r.boolean();
         return true;
-      case 644: // items
+      case 5958: // items
         items = r.items<VTreeItem>(WireType.treeItem, items);
         return true;
-      case 645: // linesVisible
+      case 5959: // linesVisible
         linesVisible = r.boolean();
         return true;
-      case 647: // selection
+      case 5961: // selection
         selection = r.refs<VTreeItem>(selection);
         return true;
-      case 648: // sortColumn
+      case 5962: // sortColumn
         sortColumn = r.ref<VTreeColumn>();
         return true;
-      case 649: // sortDirection
+      case 5963: // sortDirection
         sortDirection = r.int32();
         return true;
-      case 650: // topItem
+      case 5964: // topItem
         topItem = r.ref<VTreeItem>();
         return true;
-      case 646: // ownerDrawItemHeight
+      case 5960: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
         return true;
       default:
@@ -145,86 +145,86 @@ class VTree extends VComposite {
     {
       final v_ = columnOrder;
       if (v_ != null) {
-        w.key(638);
+        w.key(5952);
         w.ints(v_);
       }
     }
     {
       final v_ = columns;
       if (v_ != null) {
-        w.key(639);
+        w.key(5953);
         w.refs(v_);
       }
     }
     {
       final v_ = editors;
       if (v_ != null) {
-        w.key(640);
+        w.key(5954);
         w.refs(v_);
       }
     }
     {
       final v_ = headerBackground;
       if (v_ != null) {
-        w.key(641);
+        w.key(5955);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerForeground;
       if (v_ != null) {
-        w.key(642);
+        w.key(5956);
         w.colorValue(v_);
       }
     }
     {
       final v_ = headerVisible;
       if (v_ != null) {
-        w.keyBoolean(643, v_);
+        w.keyBoolean(5957, v_);
       }
     }
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(644);
+        w.key(5958);
         w.items(v_);
       }
     }
     {
       final v_ = linesVisible;
       if (v_ != null) {
-        w.keyBoolean(645, v_);
+        w.keyBoolean(5959, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(647);
+        w.key(5961);
         w.refs(v_);
       }
     }
     {
       final v_ = sortColumn;
       if (v_ != null) {
-        w.keyRef(648, v_.id);
+        w.keyRef(5962, v_.id);
       }
     }
     {
       final v_ = sortDirection;
       if (v_ != null) {
-        w.keyInt32(649, v_);
+        w.keyInt32(5963, v_);
       }
     }
     {
       final v_ = topItem;
       if (v_ != null) {
-        w.keyRef(650, v_.id);
+        w.keyRef(5964, v_.id);
       }
     }
     {
       final v_ = ownerDrawItemHeight;
       if (v_ != null) {
-        w.keyInt32(646, v_);
+        w.keyInt32(5960, v_);
       }
     }
   }
@@ -232,19 +232,19 @@ class VTree extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(638, columnOrder);
-    visit(639, columns);
-    visit(640, editors);
-    visit(641, headerBackground);
-    visit(642, headerForeground);
-    visit(643, headerVisible);
-    visit(644, items);
-    visit(645, linesVisible);
-    visit(647, selection);
-    visit(648, sortColumn);
-    visit(649, sortDirection);
-    visit(650, topItem);
-    visit(646, ownerDrawItemHeight);
+    visit(5952, columnOrder);
+    visit(5953, columns);
+    visit(5954, editors);
+    visit(5955, headerBackground);
+    visit(5956, headerForeground);
+    visit(5957, headerVisible);
+    visit(5958, items);
+    visit(5959, linesVisible);
+    visit(5961, selection);
+    visit(5962, sortColumn);
+    visit(5963, sortDirection);
+    visit(5964, topItem);
+    visit(5960, ownerDrawItemHeight);
   }
 
   @override

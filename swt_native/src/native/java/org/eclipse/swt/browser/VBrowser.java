@@ -43,13 +43,13 @@ public class VBrowser extends VComposite {
         return dev.equo.swt.BrowserFunctionRegistry.namesFor(dev.equo.swt.FlutterBridge.id(impl)).toArray(new String[0]);
     }
 
-    public static final int FUNCTION_NAMES = 6;
+    public static final int FUNCTION_NAMES = 192;
 
-    public static final int JAVASCRIPT_ENABLED = 7;
+    public static final int JAVASCRIPT_ENABLED = 193;
 
-    public static final int TEXT = 8;
+    public static final int TEXT = 194;
 
-    public static final int URL = 9;
+    public static final int URL = 195;
 
     @Override
     public String wireName(int key) {
@@ -69,20 +69,20 @@ public class VBrowser extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 148:
+            case 1161:
                 return false;
-            case 150:
+            case 1163:
                 return false;
-            case 7:
+            case 193:
                 w.write(getJavascriptEnabled());
                 return true;
-            case 8:
+            case 194:
                 w.write(getText());
                 return true;
-            case 9:
+            case 195:
                 w.write(getUrl());
                 return true;
-            case 6:
+            case 192:
                 w.write(getFunctionNames());
                 return true;
         }
@@ -92,49 +92,49 @@ public class VBrowser extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 148:
+            case 1161:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 150:
+            case 1163:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 7:
+            case 193:
                 {
                     boolean v_ = getJavascriptEnabled();
                     if (!v_)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(7);
+                    w.key(193);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 8:
+            case 194:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(8);
+                    w.key(194);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 9:
+            case 195:
                 {
                     String v_ = getUrl();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(9);
+                    w.key(195);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 6:
+            case 192:
                 {
                     String[] v_ = getFunctionNames();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(6);
+                    w.key(192);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -142,7 +142,7 @@ public class VBrowser extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 7, 8, 9, 6 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 193, 194, 195, 192 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -35,14 +35,14 @@ public class VBrowserFunction implements dev.equo.swt.WireObject {
 
     @Override
     public int wireTypeId() {
-        return 5;
+        return 6;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(10);
+        w.key(256);
         w.ref(getBrowser());
-        w.key(11);
+        w.key(257);
         w.write(getName());
     }
 }

@@ -10,7 +10,7 @@ class VTransform implements WireReadable, WireWritable, WireVisitable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 637: // elements
+      case 5888: // elements
         elements = r.floats();
         return true;
       default:
@@ -23,7 +23,7 @@ class VTransform implements WireReadable, WireWritable, WireVisitable {
     {
       final v_ = elements;
       if (v_ != null) {
-        w.key(637);
+        w.key(5888);
         w.floats(v_);
       }
     }
@@ -31,6 +31,6 @@ class VTransform implements WireReadable, WireWritable, WireVisitable {
 
   @override
   void visitWire(void Function(int key, Object? value) visit) {
-    visit(637, elements);
+    visit(5888, elements);
   }
 }

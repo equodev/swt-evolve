@@ -50,16 +50,16 @@ class VDecorations extends VCanvas {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 174: // menuBar
+      case 1536: // menuBar
         menuBar = r.ref<VMenu>();
         return true;
-      case 177: // text
+      case 1539: // text
         text = r.string();
         return true;
-      case 175: // menuStripHeight
+      case 1537: // menuStripHeight
         menuStripHeight = r.int32();
         return true;
-      case 176: // ownMenuStrip
+      case 1538: // ownMenuStrip
         ownMenuStrip = r.boolean();
         return true;
       default:
@@ -73,26 +73,26 @@ class VDecorations extends VCanvas {
     {
       final v_ = menuBar;
       if (v_ != null) {
-        w.keyRef(174, v_.id);
+        w.keyRef(1536, v_.id);
       }
     }
     {
       final v_ = text;
       if (v_ != null) {
-        w.key(177);
+        w.key(1539);
         w.string(v_);
       }
     }
     {
       final v_ = menuStripHeight;
       if (v_ != null) {
-        w.keyInt32(175, v_);
+        w.keyInt32(1537, v_);
       }
     }
     {
       final v_ = ownMenuStrip;
       if (v_ != null) {
-        w.keyBoolean(176, v_);
+        w.keyBoolean(1538, v_);
       }
     }
   }
@@ -100,10 +100,10 @@ class VDecorations extends VCanvas {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(174, menuBar);
-    visit(177, text);
-    visit(175, menuStripHeight);
-    visit(176, ownMenuStrip);
+    visit(1536, menuBar);
+    visit(1539, text);
+    visit(1537, menuStripHeight);
+    visit(1538, ownMenuStrip);
   }
 
   @override

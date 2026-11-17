@@ -25,11 +25,11 @@ class TableColumnSwt<V extends VTableColumn> extends ItemSwt<V> {
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -60,19 +60,19 @@ class VTableColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 574: // alignment
+      case 5248: // alignment
         alignment = r.int32();
         return true;
-      case 575: // moveable
+      case 5249: // moveable
         moveable = r.boolean();
         return true;
-      case 576: // resizable
+      case 5250: // resizable
         resizable = r.boolean();
         return true;
-      case 577: // toolTipText
+      case 5252: // toolTipText
         toolTipText = r.string();
         return true;
-      case 578: // width
+      case 5251: // width
         width = r.int32();
         return true;
       default:
@@ -86,32 +86,32 @@ class VTableColumn extends VItem {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(574, v_);
+        w.keyInt32(5248, v_);
       }
     }
     {
       final v_ = moveable;
       if (v_ != null) {
-        w.keyBoolean(575, v_);
+        w.keyBoolean(5249, v_);
       }
     }
     {
       final v_ = resizable;
       if (v_ != null) {
-        w.keyBoolean(576, v_);
+        w.keyBoolean(5250, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(577);
+        w.key(5252);
         w.string(v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(578, v_);
+        w.keyInt32(5251, v_);
       }
     }
   }
@@ -119,11 +119,11 @@ class VTableColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(574, alignment);
-    visit(575, moveable);
-    visit(576, resizable);
-    visit(577, toolTipText);
-    visit(578, width);
+    visit(5248, alignment);
+    visit(5249, moveable);
+    visit(5250, resizable);
+    visit(5252, toolTipText);
+    visit(5251, width);
   }
 
   @override

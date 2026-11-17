@@ -31,9 +31,9 @@ public class VItem extends VWidget {
         ((DartItem) impl).text = value;
     }
 
-    public static final int IMAGE = 356;
+    public static final int IMAGE = 2880;
 
-    public static final int TEXT = 357;
+    public static final int TEXT = 2881;
 
     @Override
     public String wireName(int key) {
@@ -49,10 +49,10 @@ public class VItem extends VWidget {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 356:
+            case 2880:
                 w.image(getImage());
                 return true;
-            case 357:
+            case 2881:
                 w.write(getText());
                 return true;
         }
@@ -62,23 +62,23 @@ public class VItem extends VWidget {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 356:
+            case 2880:
                 {
                     Image v_ = getImage();
                     if (v_ == null || v_.isDisposed())
                         return dev.equo.swt.WidgetWire.AT_ZERO;
-                    w.key(356);
+                    w.key(2880);
                     w.image(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 357:
+            case 2881:
                 {
                     String v_ = getText();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.isEmpty())
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(357);
+                    w.key(2881);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -86,7 +86,7 @@ public class VItem extends VWidget {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 356, 357 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VWidget.allWireKeys_(), new int[] { 2880, 2881 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

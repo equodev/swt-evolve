@@ -76,13 +76,13 @@ public class VCoolBar extends VComposite {
         ((DartCoolBar) impl).wrapIndices = value;
     }
 
-    public static final int ITEM_ORDER = 158;
+    public static final int ITEM_ORDER = 1280;
 
-    public static final int ITEM_SIZES = 159;
+    public static final int ITEM_SIZES = 1281;
 
-    public static final int ITEMS = 160;
+    public static final int ITEMS = 1282;
 
-    public static final int WRAP_INDICES = 161;
+    public static final int WRAP_INDICES = 1283;
 
     @Override
     public String wireName(int key) {
@@ -102,14 +102,14 @@ public class VCoolBar extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 148:
+            case 1161:
                 return false;
-            case 150:
+            case 1163:
                 return false;
-            case 158:
+            case 1280:
                 w.write(getItemOrder());
                 return true;
-            case 159:
+            case 1281:
                 {
                     Point[] a_ = getItemSizes();
                     if (a_ == null)
@@ -120,10 +120,10 @@ public class VCoolBar extends VComposite {
                     }
                 }
                 return true;
-            case 160:
+            case 1282:
                 w.refs(getItems());
                 return true;
-            case 161:
+            case 1283:
                 w.write(getWrapIndices());
                 return true;
         }
@@ -133,29 +133,29 @@ public class VCoolBar extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 148:
+            case 1161:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 150:
+            case 1163:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 158:
+            case 1280:
                 {
                     int[] v_ = getItemOrder();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(158);
+                    w.key(1280);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 159:
+            case 1281:
                 {
                     Point[] v_ = getItemSizes();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(159);
+                    w.key(1281);
                     {
                         Point[] a_ = v_;
                         if (a_ == null)
@@ -167,25 +167,25 @@ public class VCoolBar extends VComposite {
                     }
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 160:
+            case 1282:
                 {
                     CoolItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(160);
+                    w.key(1282);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 161:
+            case 1283:
                 {
                     int[] v_ = getWrapIndices();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(161);
+                    w.key(1283);
                     w.write(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -193,7 +193,7 @@ public class VCoolBar extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 158, 159, 160, 161 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 1280, 1281, 1282, 1283 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

@@ -23,11 +23,11 @@ class ListSwt<V extends VList> extends ScrollableSwt<V> {
   State createState() => ListImpl<ListSwt<VList>, VList>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -54,13 +54,13 @@ class VList extends VScrollable {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 374: // items
+      case 3200: // items
         items = r.strings()?.map((e) => e ?? '').toList();
         return true;
-      case 375: // selection
+      case 3201: // selection
         selection = r.ints();
         return true;
-      case 376: // topIndex
+      case 3202: // topIndex
         topIndex = r.int32();
         return true;
       default:
@@ -74,21 +74,21 @@ class VList extends VScrollable {
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(374);
+        w.key(3200);
         w.strings(v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.key(375);
+        w.key(3201);
         w.ints(v_);
       }
     }
     {
       final v_ = topIndex;
       if (v_ != null) {
-        w.keyInt32(376, v_);
+        w.keyInt32(3202, v_);
       }
     }
   }
@@ -96,8 +96,8 @@ class VList extends VScrollable {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(374, items);
-    visit(375, selection);
-    visit(376, topIndex);
+    visit(3200, items);
+    visit(3201, selection);
+    visit(3202, topIndex);
   }
 }

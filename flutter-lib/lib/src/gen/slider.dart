@@ -22,11 +22,11 @@ class SliderSwt<V extends VSlider> extends ControlSwt<V> {
   State createState() => SliderImpl<SliderSwt<VSlider>, VSlider>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -59,22 +59,22 @@ class VSlider extends VControl {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 468: // increment
+      case 4672: // increment
         increment = r.int32();
         return true;
-      case 469: // maximum
+      case 4673: // maximum
         maximum = r.int32();
         return true;
-      case 470: // minimum
+      case 4674: // minimum
         minimum = r.int32();
         return true;
-      case 471: // pageIncrement
+      case 4675: // pageIncrement
         pageIncrement = r.int32();
         return true;
-      case 472: // selection
+      case 4676: // selection
         selection = r.int32();
         return true;
-      case 473: // thumb
+      case 4677: // thumb
         thumb = r.int32();
         return true;
       default:
@@ -88,37 +88,37 @@ class VSlider extends VControl {
     {
       final v_ = increment;
       if (v_ != null) {
-        w.keyInt32(468, v_);
+        w.keyInt32(4672, v_);
       }
     }
     {
       final v_ = maximum;
       if (v_ != null) {
-        w.keyInt32(469, v_);
+        w.keyInt32(4673, v_);
       }
     }
     {
       final v_ = minimum;
       if (v_ != null) {
-        w.keyInt32(470, v_);
+        w.keyInt32(4674, v_);
       }
     }
     {
       final v_ = pageIncrement;
       if (v_ != null) {
-        w.keyInt32(471, v_);
+        w.keyInt32(4675, v_);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyInt32(472, v_);
+        w.keyInt32(4676, v_);
       }
     }
     {
       final v_ = thumb;
       if (v_ != null) {
-        w.keyInt32(473, v_);
+        w.keyInt32(4677, v_);
       }
     }
   }
@@ -126,11 +126,11 @@ class VSlider extends VControl {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(468, increment);
-    visit(469, maximum);
-    visit(470, minimum);
-    visit(471, pageIncrement);
-    visit(472, selection);
-    visit(473, thumb);
+    visit(4672, increment);
+    visit(4673, maximum);
+    visit(4674, minimum);
+    visit(4675, pageIncrement);
+    visit(4676, selection);
+    visit(4677, thumb);
   }
 }

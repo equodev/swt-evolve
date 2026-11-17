@@ -24,79 +24,79 @@ abstract class ControlSwt<V extends VControl> extends WidgetSwt<V> {
   }
 
   void sendDragDetectDragDetect(V val, VEvent? payload) {
-    sendEvent(val, 28, payload); // DragDetect/DragDetect
+    sendEvent(val, 26, payload); // DragDetect/DragDetect
   }
 
   void sendFocusFocusIn(V val, VEvent? payload) {
-    sendEvent(val, 45, payload); // Focus/FocusIn
+    sendEvent(val, 38, payload); // Focus/FocusIn
   }
 
   void sendFocusFocusOut(V val, VEvent? payload) {
-    sendEvent(val, 46, payload); // Focus/FocusOut
+    sendEvent(val, 39, payload); // Focus/FocusOut
   }
 
   void sendGestureGesture(V val, VEvent? payload) {
-    sendEvent(val, 49, payload); // Gesture/Gesture
+    sendEvent(val, 42, payload); // Gesture/Gesture
   }
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, 56, payload); // Help/Help
+    sendEvent(val, 49, payload); // Help/Help
   }
 
   void sendKeyKeyDown(V val, VEvent? payload) {
-    sendEvent(val, 61, payload); // Key/KeyDown
+    sendEvent(val, 54, payload); // Key/KeyDown
   }
 
   void sendKeyKeyUp(V val, VEvent? payload) {
-    sendEvent(val, 62, payload); // Key/KeyUp
+    sendEvent(val, 55, payload); // Key/KeyUp
   }
 
   void sendMenuDetectMenuDetect(V val, VEvent? payload) {
-    sendEvent(val, 70, payload); // MenuDetect/MenuDetect
+    sendEvent(val, 63, payload); // MenuDetect/MenuDetect
   }
 
   void sendMouseMouseDoubleClick(V val, VEvent? payload) {
-    sendEvent(val, 73, payload); // Mouse/MouseDoubleClick
+    sendEvent(val, 66, payload); // Mouse/MouseDoubleClick
   }
 
   void sendMouseMouseDown(V val, VEvent? payload) {
-    sendEvent(val, 74, payload); // Mouse/MouseDown
+    sendEvent(val, 67, payload); // Mouse/MouseDown
   }
 
   void sendMouseMouseUp(V val, VEvent? payload) {
-    sendEvent(val, 75, payload); // Mouse/MouseUp
+    sendEvent(val, 68, payload); // Mouse/MouseUp
   }
 
   void sendMouseMoveMouseMove(V val, VEvent? payload) {
-    sendEvent(val, 76, payload); // MouseMove/MouseMove
+    sendEvent(val, 69, payload); // MouseMove/MouseMove
   }
 
   void sendMouseTrackMouseEnter(V val, VEvent? payload) {
-    sendEvent(val, 77, payload); // MouseTrack/MouseEnter
+    sendEvent(val, 70, payload); // MouseTrack/MouseEnter
   }
 
   void sendMouseTrackMouseExit(V val, VEvent? payload) {
-    sendEvent(val, 78, payload); // MouseTrack/MouseExit
+    sendEvent(val, 71, payload); // MouseTrack/MouseExit
   }
 
   void sendMouseTrackMouseHover(V val, VEvent? payload) {
-    sendEvent(val, 79, payload); // MouseTrack/MouseHover
+    sendEvent(val, 72, payload); // MouseTrack/MouseHover
   }
 
   void sendMouseWheelMouseWheel(V val, VEvent? payload) {
-    sendEvent(val, 80, payload); // MouseWheel/MouseWheel
+    sendEvent(val, 73, payload); // MouseWheel/MouseWheel
   }
 
   void sendPaintPaint(V val, VEvent? payload) {
-    sendEvent(val, 83, payload); // Paint/Paint
+    sendEvent(val, 76, payload); // Paint/Paint
   }
 
   void sendTouchTouch(V val, VEvent? payload) {
-    sendEvent(val, 107, payload); // Touch/Touch
+    sendEvent(val, 100, payload); // Touch/Touch
   }
 
   void sendTraverseTraverse(V val, VEvent? payload) {
-    sendEvent(val, 111, payload); // Traverse/Traverse
+    sendEvent(val, 104, payload); // Traverse/Traverse
   }
 }
 
@@ -153,58 +153,58 @@ class VControl extends VWidget {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 139: // background
+      case 1152: // background
         background = r.color();
         return true;
-      case 140: // backgroundImage
+      case 1153: // backgroundImage
         backgroundImage = r.image();
         return true;
-      case 141: // bounds
+      case 1154: // bounds
         bounds = r.rect();
         return true;
-      case 142: // cursor
+      case 1155: // cursor
         cursor = r.object(VCursor.new);
         return true;
-      case 143: // dragDetect
+      case 1156: // dragDetect
         dragDetect = r.boolean();
         return true;
-      case 144: // dragSource
+      case 1157: // dragSource
         dragSource = r.boolean();
         return true;
-      case 145: // dragSourceId
+      case 1158: // dragSourceId
         dragSourceId = r.longBoxed();
         return true;
-      case 146: // dropTargetId
+      case 1159: // dropTargetId
         dropTargetId = r.longBoxed();
         return true;
-      case 147: // enabled
+      case 1160: // enabled
         enabled = r.boolBoxed();
         return true;
-      case 148: // font
+      case 1161: // font
         font = r.object(VFont.new);
         return true;
-      case 149: // foreground
+      case 1162: // foreground
         foreground = r.color();
         return true;
-      case 150: // hasOwnBackground
+      case 1163: // hasOwnBackground
         hasOwnBackground = r.boolean();
         return true;
-      case 151: // inheritsBackground
+      case 1164: // inheritsBackground
         inheritsBackground = r.boolean();
         return true;
-      case 152: // menu
+      case 1165: // menu
         menu = r.ref<VMenu>();
         return true;
-      case 153: // region
+      case 1166: // region
         region = r.object(VRegion.new);
         return true;
-      case 154: // tabStop
+      case 1167: // tabStop
         tabStop = r.boolean();
         return true;
-      case 155: // toolTipText
+      case 1168: // toolTipText
         toolTipText = r.string();
         return true;
-      case 156: // visible
+      case 1169: // visible
         visible = r.boolBoxed();
         return true;
       default:
@@ -218,119 +218,119 @@ class VControl extends VWidget {
     {
       final v_ = background;
       if (v_ != null) {
-        w.key(139);
+        w.key(1152);
         w.colorValue(v_);
       }
     }
     {
       final v_ = backgroundImage;
       if (v_ != null) {
-        w.keyRef(140, v_.id);
+        w.keyRef(1153, v_.id);
       }
     }
     {
       final v_ = bounds;
       if (v_ != null) {
-        w.key(141);
+        w.key(1154);
         w.rectValue(v_);
       }
     }
     {
       final v_ = cursor;
       if (v_ != null) {
-        w.key(142);
+        w.key(1155);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = dragDetect;
       if (v_ != null) {
-        w.keyBoolean(143, v_);
+        w.keyBoolean(1156, v_);
       }
     }
     {
       final v_ = dragSource;
       if (v_ != null) {
-        w.keyBoolean(144, v_);
+        w.keyBoolean(1157, v_);
       }
     }
     {
       final v_ = dragSourceId;
       if (v_ != null) {
-        w.key(145);
+        w.key(1158);
         w.longBoxed(v_);
       }
     }
     {
       final v_ = dropTargetId;
       if (v_ != null) {
-        w.key(146);
+        w.key(1159);
         w.longBoxed(v_);
       }
     }
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.key(147);
+        w.key(1160);
         w.boolBoxed(v_);
       }
     }
     {
       final v_ = font;
       if (v_ != null) {
-        w.key(148);
+        w.key(1161);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = foreground;
       if (v_ != null) {
-        w.key(149);
+        w.key(1162);
         w.colorValue(v_);
       }
     }
     {
       final v_ = hasOwnBackground;
       if (v_ != null) {
-        w.keyBoolean(150, v_);
+        w.keyBoolean(1163, v_);
       }
     }
     {
       final v_ = inheritsBackground;
       if (v_ != null) {
-        w.keyBoolean(151, v_);
+        w.keyBoolean(1164, v_);
       }
     }
     {
       final v_ = menu;
       if (v_ != null) {
-        w.keyRef(152, v_.id);
+        w.keyRef(1165, v_.id);
       }
     }
     {
       final v_ = region;
       if (v_ != null) {
-        w.key(153);
+        w.key(1166);
         w.object(v_.writeWire);
       }
     }
     {
       final v_ = tabStop;
       if (v_ != null) {
-        w.keyBoolean(154, v_);
+        w.keyBoolean(1167, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(155);
+        w.key(1168);
         w.string(v_);
       }
     }
     {
       final v_ = visible;
       if (v_ != null) {
-        w.key(156);
+        w.key(1169);
         w.boolBoxed(v_);
       }
     }
@@ -339,24 +339,24 @@ class VControl extends VWidget {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(139, background);
-    visit(140, backgroundImage);
-    visit(141, bounds);
-    visit(142, cursor);
-    visit(143, dragDetect);
-    visit(144, dragSource);
-    visit(145, dragSourceId);
-    visit(146, dropTargetId);
-    visit(147, enabled);
-    visit(148, font);
-    visit(149, foreground);
-    visit(150, hasOwnBackground);
-    visit(151, inheritsBackground);
-    visit(152, menu);
-    visit(153, region);
-    visit(154, tabStop);
-    visit(155, toolTipText);
-    visit(156, visible);
+    visit(1152, background);
+    visit(1153, backgroundImage);
+    visit(1154, bounds);
+    visit(1155, cursor);
+    visit(1156, dragDetect);
+    visit(1157, dragSource);
+    visit(1158, dragSourceId);
+    visit(1159, dropTargetId);
+    visit(1160, enabled);
+    visit(1161, font);
+    visit(1162, foreground);
+    visit(1163, hasOwnBackground);
+    visit(1164, inheritsBackground);
+    visit(1165, menu);
+    visit(1166, region);
+    visit(1167, tabStop);
+    visit(1168, toolTipText);
+    visit(1169, visible);
   }
 
   @override

@@ -53,9 +53,9 @@ public class VTabFolder extends VComposite {
         ((DartTabFolder) impl).selection = value;
     }
 
-    public static final int ITEMS = 556;
+    public static final int ITEMS = 5056;
 
-    public static final int SELECTION = 557;
+    public static final int SELECTION = 5057;
 
     @Override
     public String wireName(int key) {
@@ -71,12 +71,12 @@ public class VTabFolder extends VComposite {
     @Override
     public boolean writeWire(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 150:
+            case 1163:
                 return false;
-            case 556:
+            case 5056:
                 w.refs(getItems());
                 return true;
-            case 557:
+            case 5057:
                 w.refs(getSelection());
                 return true;
         }
@@ -86,27 +86,27 @@ public class VTabFolder extends VComposite {
     @Override
     public int writeWireWhole(dev.equo.swt.WidgetWire w, int key) {
         switch(key) {
-            case 150:
+            case 1163:
                 return dev.equo.swt.WidgetWire.UNHANDLED;
-            case 556:
+            case 5056:
                 {
                     TabItem[] v_ = getItems();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(556);
+                    w.key(5056);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
-            case 557:
+            case 5057:
                 {
                     TabItem[] v_ = getSelection();
                     if (v_ == null)
                         return dev.equo.swt.WidgetWire.AT_ZERO;
                     if (v_.length == 0)
                         return dev.equo.swt.WidgetWire.AT_EMPTY;
-                    w.key(557);
+                    w.key(5057);
                     w.refs(v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
@@ -114,7 +114,7 @@ public class VTabFolder extends VComposite {
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 556, 557 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 5056, 5057 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

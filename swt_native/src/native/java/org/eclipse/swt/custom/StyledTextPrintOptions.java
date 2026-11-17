@@ -121,54 +121,54 @@ public class StyledTextPrintOptions implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(517);
+        w.key(4929);
         w.write(header);
-        w.key(516);
+        w.key(4928);
         w.write(footer);
-        w.key(518);
+        w.key(4930);
         w.write(jobName);
-        w.key(524);
+        w.key(4936);
         w.write(printTextForeground);
-        w.key(522);
+        w.key(4934);
         w.write(printTextBackground);
-        w.key(523);
+        w.key(4935);
         w.write(printTextFontStyle);
-        w.key(520);
+        w.key(4932);
         w.write(printLineBackground);
-        w.key(521);
+        w.key(4933);
         w.write(printLineNumbers);
-        w.key(519);
+        w.key(4931);
         w.write(lineLabels);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 517:
+            case 4929:
                 header = r.string();
                 return true;
-            case 516:
+            case 4928:
                 footer = r.string();
                 return true;
-            case 518:
+            case 4930:
                 jobName = r.string();
                 return true;
-            case 524:
+            case 4936:
                 printTextForeground = r.bool();
                 return true;
-            case 522:
+            case 4934:
                 printTextBackground = r.bool();
                 return true;
-            case 523:
+            case 4935:
                 printTextFontStyle = r.bool();
                 return true;
-            case 520:
+            case 4932:
                 printLineBackground = r.bool();
                 return true;
-            case 521:
+            case 4933:
                 printLineNumbers = r.bool();
                 return true;
-            case 519:
+            case 4931:
                 lineLabels = r.strings();
                 return true;
         }

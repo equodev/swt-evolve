@@ -25,11 +25,11 @@ class ExpandBarSwt<V extends VExpandBar> extends CompositeSwt<V> {
   State createState() => ExpandBarImpl<ExpandBarSwt<VExpandBar>, VExpandBar>();
 
   void sendExpandCollapse(V val, VEvent? payload) {
-    sendEvent(val, 42, payload); // Expand/Collapse
+    sendEvent(val, 35, payload); // Expand/Collapse
   }
 
   void sendExpandExpand(V val, VEvent? payload) {
-    sendEvent(val, 43, payload); // Expand/Expand
+    sendEvent(val, 36, payload); // Expand/Expand
   }
 }
 
@@ -54,10 +54,10 @@ class VExpandBar extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 229: // items
+      case 1920: // items
         items = r.refs<VExpandItem>(items);
         return true;
-      case 230: // spacing
+      case 1921: // spacing
         spacing = r.int32();
         return true;
       default:
@@ -71,14 +71,14 @@ class VExpandBar extends VComposite {
     {
       final v_ = items;
       if (v_ != null) {
-        w.key(229);
+        w.key(1920);
         w.refs(v_);
       }
     }
     {
       final v_ = spacing;
       if (v_ != null) {
-        w.keyInt32(230, v_);
+        w.keyInt32(1921, v_);
       }
     }
   }
@@ -86,8 +86,8 @@ class VExpandBar extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(229, items);
-    visit(230, spacing);
+    visit(1920, items);
+    visit(1921, spacing);
   }
 
   @override

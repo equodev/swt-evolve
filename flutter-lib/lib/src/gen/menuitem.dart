@@ -21,15 +21,15 @@ class MenuItemSwt<V extends VMenuItem> extends ItemSwt<V> {
   }
 
   void sendHelpHelp(V val, VEvent? payload) {
-    sendEvent(val, 56, payload); // Help/Help
+    sendEvent(val, 49, payload); // Help/Help
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -60,19 +60,19 @@ class VMenuItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 382: // accelerator
+      case 3328: // accelerator
         accelerator = r.int32();
         return true;
-      case 383: // enabled
+      case 3329: // enabled
         enabled = r.boolean();
         return true;
-      case 384: // menu
+      case 3330: // menu
         menu = r.ref<VMenu>();
         return true;
-      case 385: // selection
+      case 3331: // selection
         selection = r.boolean();
         return true;
-      case 386: // toolTipText
+      case 3332: // toolTipText
         toolTipText = r.string();
         return true;
       default:
@@ -86,31 +86,31 @@ class VMenuItem extends VItem {
     {
       final v_ = accelerator;
       if (v_ != null) {
-        w.keyInt32(382, v_);
+        w.keyInt32(3328, v_);
       }
     }
     {
       final v_ = enabled;
       if (v_ != null) {
-        w.keyBoolean(383, v_);
+        w.keyBoolean(3329, v_);
       }
     }
     {
       final v_ = menu;
       if (v_ != null) {
-        w.keyRef(384, v_.id);
+        w.keyRef(3330, v_.id);
       }
     }
     {
       final v_ = selection;
       if (v_ != null) {
-        w.keyBoolean(385, v_);
+        w.keyBoolean(3331, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(386);
+        w.key(3332);
         w.string(v_);
       }
     }
@@ -119,11 +119,11 @@ class VMenuItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(382, accelerator);
-    visit(383, enabled);
-    visit(384, menu);
-    visit(385, selection);
-    visit(386, toolTipText);
+    visit(3328, accelerator);
+    visit(3329, enabled);
+    visit(3330, menu);
+    visit(3331, selection);
+    visit(3332, toolTipText);
   }
 
   @override

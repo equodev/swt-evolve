@@ -18,11 +18,11 @@ class CoolItemSwt<V extends VCoolItem> extends ItemSwt<V> {
   State createState() => CoolItemImpl<CoolItemSwt<VCoolItem>, VCoolItem>();
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -47,10 +47,10 @@ class VCoolItem extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 162: // control
+      case 1344: // control
         control = r.ref<VControl>();
         return true;
-      case 163: // preferredSize
+      case 1345: // preferredSize
         preferredSize = r.point();
         return true;
       default:
@@ -64,13 +64,13 @@ class VCoolItem extends VItem {
     {
       final v_ = control;
       if (v_ != null) {
-        w.keyRef(162, v_.id);
+        w.keyRef(1344, v_.id);
       }
     }
     {
       final v_ = preferredSize;
       if (v_ != null) {
-        w.key(163);
+        w.key(1345);
         w.pointValue(v_);
       }
     }
@@ -79,8 +79,8 @@ class VCoolItem extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(162, control);
-    visit(163, preferredSize);
+    visit(1344, control);
+    visit(1345, preferredSize);
   }
 
   @override

@@ -43,10 +43,10 @@ class VCBanner extends VComposite {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 19: // curveLine
+      case 6273: // curveLine
         curveLine = r.ints();
         return true;
-      case 18: // bottomLine
+      case 6272: // bottomLine
         bottomLine = r.int32();
         return true;
       default:
@@ -60,14 +60,14 @@ class VCBanner extends VComposite {
     {
       final v_ = curveLine;
       if (v_ != null) {
-        w.key(19);
+        w.key(6273);
         w.ints(v_);
       }
     }
     {
       final v_ = bottomLine;
       if (v_ != null) {
-        w.keyInt32(18, v_);
+        w.keyInt32(6272, v_);
       }
     }
   }
@@ -75,7 +75,7 @@ class VCBanner extends VComposite {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(19, curveLine);
-    visit(18, bottomLine);
+    visit(6273, curveLine);
+    visit(6272, bottomLine);
   }
 }

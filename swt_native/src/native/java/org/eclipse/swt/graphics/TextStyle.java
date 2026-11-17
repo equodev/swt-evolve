@@ -516,48 +516,48 @@ public class TextStyle implements dev.equo.swt.WireObject {
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
-        w.key(605);
+        w.key(5507);
         w.object((font == null || font.isDisposed() ? null : ((DartFont) font.getImpl()).getValue()));
-        w.key(606);
+        w.key(5508);
         w.write(foreground);
-        w.key(602);
+        w.key(5504);
         w.write(background);
-        w.key(611);
+        w.key(5513);
         w.write(underline);
-        w.key(612);
+        w.key(5514);
         w.write(underlineColor);
-        w.key(613);
+        w.key(5515);
         w.write((int) underlineStyle);
-        w.key(609);
+        w.key(5511);
         w.write(strikeout);
-        w.key(610);
+        w.key(5512);
         w.write(strikeoutColor);
-        w.key(604);
+        w.key(5506);
         w.write((int) borderStyle);
-        w.key(603);
+        w.key(5505);
         w.write(borderColor);
-        w.key(607);
+        w.key(5509);
         w.object(metrics);
-        w.key(608);
+        w.key(5510);
         w.write((int) rise);
     }
 
     @Override
     public boolean readWire(int key, dev.equo.swt.WireReader r) {
         switch(key) {
-            case 611:
+            case 5513:
                 underline = r.bool();
                 return true;
-            case 613:
+            case 5515:
                 underlineStyle = r.int32();
                 return true;
-            case 609:
+            case 5511:
                 strikeout = r.bool();
                 return true;
-            case 604:
+            case 5506:
                 borderStyle = r.int32();
                 return true;
-            case 608:
+            case 5510:
                 rise = r.int32();
                 return true;
         }

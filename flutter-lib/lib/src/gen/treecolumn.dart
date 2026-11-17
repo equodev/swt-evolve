@@ -25,11 +25,11 @@ class TreeColumnSwt<V extends VTreeColumn> extends ItemSwt<V> {
   }
 
   void sendSelectionDefaultSelection(V val, VEvent? payload) {
-    sendEvent(val, 93, payload); // Selection/DefaultSelection
+    sendEvent(val, 86, payload); // Selection/DefaultSelection
   }
 
   void sendSelectionSelection(V val, VEvent? payload) {
-    sendEvent(val, 95, payload); // Selection/Selection
+    sendEvent(val, 88, payload); // Selection/Selection
   }
 }
 
@@ -60,19 +60,19 @@ class VTreeColumn extends VItem {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 651: // alignment
+      case 6016: // alignment
         alignment = r.int32();
         return true;
-      case 652: // moveable
+      case 6017: // moveable
         moveable = r.boolean();
         return true;
-      case 653: // resizable
+      case 6018: // resizable
         resizable = r.boolean();
         return true;
-      case 654: // toolTipText
+      case 6020: // toolTipText
         toolTipText = r.string();
         return true;
-      case 655: // width
+      case 6019: // width
         width = r.int32();
         return true;
       default:
@@ -86,32 +86,32 @@ class VTreeColumn extends VItem {
     {
       final v_ = alignment;
       if (v_ != null) {
-        w.keyInt32(651, v_);
+        w.keyInt32(6016, v_);
       }
     }
     {
       final v_ = moveable;
       if (v_ != null) {
-        w.keyBoolean(652, v_);
+        w.keyBoolean(6017, v_);
       }
     }
     {
       final v_ = resizable;
       if (v_ != null) {
-        w.keyBoolean(653, v_);
+        w.keyBoolean(6018, v_);
       }
     }
     {
       final v_ = toolTipText;
       if (v_ != null) {
-        w.key(654);
+        w.key(6020);
         w.string(v_);
       }
     }
     {
       final v_ = width;
       if (v_ != null) {
-        w.keyInt32(655, v_);
+        w.keyInt32(6019, v_);
       }
     }
   }
@@ -119,11 +119,11 @@ class VTreeColumn extends VItem {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(651, alignment);
-    visit(652, moveable);
-    visit(653, resizable);
-    visit(654, toolTipText);
-    visit(655, width);
+    visit(6016, alignment);
+    visit(6017, moveable);
+    visit(6018, resizable);
+    visit(6020, toolTipText);
+    visit(6019, width);
   }
 
   @override

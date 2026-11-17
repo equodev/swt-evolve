@@ -16,13 +16,13 @@ class VStyleRange extends VTextStyle {
   @override
   bool readWire(int key, WidgetWireReader r) {
     switch (key) {
-      case 482: // fontStyle
+      case 4800: // fontStyle
         fontStyle = r.int32();
         return true;
-      case 483: // length
+      case 4801: // length
         length = r.int32();
         return true;
-      case 484: // start
+      case 4802: // start
         start = r.int32();
         return true;
       default:
@@ -33,24 +33,24 @@ class VStyleRange extends VTextStyle {
   @override
   void visitWire(void Function(int key, Object? value) visit) {
     super.visitWire(visit);
-    visit(482, fontStyle);
-    visit(483, length);
-    visit(484, start);
+    visit(4800, fontStyle);
+    visit(4801, length);
+    visit(4802, start);
   }
 
   @override
   void writeWire(WidgetWireWriter w) {
     {
       final v_ = fontStyle;
-      w.keyInt32(482, v_);
+      w.keyInt32(4800, v_);
     }
     {
       final v_ = length;
-      w.keyInt32(483, v_);
+      w.keyInt32(4801, v_);
     }
     {
       final v_ = start;
-      w.keyInt32(484, v_);
+      w.keyInt32(4802, v_);
     }
   }
 }

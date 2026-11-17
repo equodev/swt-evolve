@@ -42,15 +42,15 @@ public class VColorDialog extends VDialog {
 
     @Override
     public int wireTypeId() {
-        return 18;
+        return 19;
     }
 
     @Override
     public void writeWireFields(dev.equo.swt.WidgetWire w) {
         super.writeWireFields(w);
-        w.key(85);
+        w.key(896);
         w.write(getRGB());
-        w.key(86);
+        w.key(897);
         {
             RGB[] a_ = getRGBs();
             if (a_ == null)
