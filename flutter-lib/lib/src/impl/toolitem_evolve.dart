@@ -30,11 +30,6 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   bool _isHovered = false;
   final _buttonFocus = ToolItemFocusNode(debugLabel: 'ToolItem');
   final _arrowFocus = ToolItemFocusNode(debugLabel: 'ToolItem arrow', arrow: true);
-  Widget? _cachedImageWidget;
-  VImage? _cachedImage;
-  double? _cachedIconSize;
-  Color? _cachedIconColor;
-  bool? _cachedEnabled;
 
   @override
   void dispose() {
@@ -96,49 +91,31 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     ToolItemThemeExtension widgetTheme,
   ) {
     final iconSize = _calculateIconSize(constraints, defaultIconSize);
+    final render = ImageUtils.buildVImageAsync(
+      image,
+      size: iconSize,
+      color: iconColor,
+      enabled: enabled,
+      constraints: constraints,
+      useBinaryImage: true,
+      renderAsIcon: true,
+      disabledOpacity: widgetTheme.disabledOpacity,
+    );
 
-    final imageChanged = _cachedImage != image;
-    final sizeChanged = _cachedIconSize != iconSize;
-    final enabledChanged = _cachedEnabled != enabled;
-    final colorChanged = _cachedIconColor != iconColor;
-
-    if (imageChanged || sizeChanged || enabledChanged || colorChanged) {
-      _cachedImage = image;
-      _cachedIconSize = iconSize;
-      _cachedIconColor = iconColor;
-      _cachedEnabled = enabled;
-      _cachedImageWidget = null;
-    }
-
-    if (_cachedImageWidget != null) {
-      return _cachedImageWidget!;
-    }
-
-    final imageKey = ImageUtils.stableImageKey(image);
-    final futureKey =
-        '${imageKey}_${iconSize}_${iconColor.value}_${enabled}_${widgetTheme.disabledOpacity}';
-
+    // No key: a new colour, size or image swaps the future in place, and the icon already shown
+    // stays until the new one is ready. The loading indicator is only for an item that has never
+    // drawn its icon.
     return FutureBuilder<Widget?>(
-      key: ValueKey(futureKey),
-      future: ImageUtils.buildVImageAsync(
-        image,
-        size: iconSize,
-        color: iconColor,
-        enabled: enabled,
-        constraints: constraints,
-        useBinaryImage: true,
-        renderAsIcon: true,
-        disabledOpacity: widgetTheme.disabledOpacity,
-      ),
+      future: render,
+      initialData: ImageUtils.resolvedRender(render),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          final widget = snapshot.data;
-          if (widget == null) {
-            // Nothing could be drawn for this image; the item still keeps its footprint.
-            return SizedBox(width: iconSize, height: iconSize);
-          }
-          _cachedImageWidget = widget;
+        final widget = snapshot.data;
+        if (widget != null) {
           return widget;
+        }
+        if (snapshot.connectionState == ConnectionState.done) {
+          // Nothing could be drawn for this image; the item still keeps its footprint.
+          return SizedBox(width: iconSize, height: iconSize);
         }
         return SizedBox(
           width: iconSize,

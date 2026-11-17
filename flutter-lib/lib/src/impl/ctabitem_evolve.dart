@@ -28,22 +28,24 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
   ) {
     if (image == null) return null;
     final iconSize = ctabIconSize(image, folderTheme.tabIconSize);
-    final imageKey = ImageUtils.stableImageKey(image);
-    final futureKey =
-        '${imageKey}_${iconSize}_${iconColor?.value ?? 'null'}_$enabled';
+    final render = ImageUtils.buildVImageAsync(
+      image,
+      size: iconSize,
+      color: iconColor,
+      enabled: enabled,
+      useBinaryImage: true,
+      renderAsIcon: true,
+    );
+    // No key: a new colour, size or image swaps the future in place, and the icon already shown
+    // stays until the new one is ready instead of the tab blinking empty.
     return FutureBuilder<Widget?>(
-      key: ValueKey(futureKey),
-      future: ImageUtils.buildVImageAsync(
-        image,
-        size: iconSize,
-        color: iconColor,
-        enabled: enabled,
-        useBinaryImage: true,
-        renderAsIcon: true,
-      ),
+      future: render,
+      initialData: ImageUtils.resolvedRender(render),
       builder: (context, snapshot) {
+        final widget = snapshot.data;
+        if (widget != null) return widget;
         if (snapshot.connectionState == ConnectionState.done) {
-          return snapshot.data ?? const SizedBox.shrink();
+          return const SizedBox.shrink();
         }
         return SizedBox(width: iconSize, height: iconSize);
       },
