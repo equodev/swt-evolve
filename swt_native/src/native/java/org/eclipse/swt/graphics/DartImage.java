@@ -656,6 +656,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         if (imageDataProvider == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
+        this.filename = GraphicsUtils.getFilename(imageDataProvider);
         try {
             initUsingImageDataProvider(imageDataProvider);
             init();

@@ -449,4 +449,80 @@ public class GraphicsUtils {
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
     }
+
+    private static final String IMAGE_DESCRIPTOR = "org.eclipse.jface.resource.ImageDescriptor";
+    private static final String DEVICE_RESOURCE_DESCRIPTOR = "org.eclipse.jface.resource.DeviceResourceDescriptor";
+
+    /**
+     * The name, without extension, of the resource a provider reads its pixels from, or null when it
+     * does not say. A provider built by a JFace {@code ImageDescriptor} holds that descriptor, which
+     * adapts to the resource's URL; this is how an icon packed inside a jar is named. Older JFace
+     * builds a provider nested in the descriptor that holds the URL itself, as a URL or a String.
+     */
+    static String getFilename(ImageDataProvider provider) {
+        if (provider == null) {
+            return null;
+        }
+        Class<?> owner = provider.getClass().getEnclosingClass();
+        boolean nestedInDescriptor = owner != null && isImageDescriptor(owner);
+        for (Class<?> c = provider.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                Class<?> type = f.getType();
+                boolean holdsUrl = nestedInDescriptor && (type == java.net.URL.class || type == String.class);
+                if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) || !(holdsUrl || canHoldImageDescriptor(type))) {
+                    continue;
+                }
+                try {
+                    f.setAccessible(true);
+                    Object value = f.get(provider);
+                    java.net.URL url = holdsUrl ? asUrl(value) : descriptorUrl(value);
+                    if (url != null) {
+                        return getFilename(url.getPath());
+                    }
+                } catch (RuntimeException | IllegalAccessException e) {
+                    // A field we may not read names nothing.
+                }
+            }
+        }
+        return null;
+    }
+
+    private static java.net.URL asUrl(Object value) {
+        if (value instanceof java.net.URL) {
+            return (java.net.URL) value;
+        }
+        try {
+            return value instanceof String ? new java.net.URL((String) value) : null;
+        } catch (java.net.MalformedURLException e) {
+            return null;
+        }
+    }
+
+    private static java.net.URL descriptorUrl(Object holder) {
+        if (holder == null || !isImageDescriptor(holder.getClass())) {
+            return null;
+        }
+        try {
+            java.lang.reflect.Method getAdapter = holder.getClass().getMethod("getAdapter", Class.class);
+            getAdapter.setAccessible(true);
+            Object url = getAdapter.invoke(holder, java.net.URL.class);
+            return url instanceof java.net.URL ? (java.net.URL) url : null;
+        } catch (RuntimeException | ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    /** Whether a field of this declared type can hold an {@code ImageDescriptor}. */
+    private static boolean canHoldImageDescriptor(Class<?> type) {
+        return type == Object.class || DEVICE_RESOURCE_DESCRIPTOR.equals(type.getName()) || isImageDescriptor(type);
+    }
+
+    private static boolean isImageDescriptor(Class<?> type) {
+        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
+            if (IMAGE_DESCRIPTOR.equals(c.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
