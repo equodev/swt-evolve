@@ -1577,6 +1577,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     Color getWidgetColor(int id) {
+        Color themed = dev.equo.swt.ThemeSystemColors.of(this.getApi(), id, Config.systemColorsAreDark(darkTheme()));
+        if (themed != null)
+            return themed;
         switch(id) {
             case SWT.COLOR_WIDGET_DARK_SHADOW:
                 return new Color(this.getApi(), 64, 64, 64);

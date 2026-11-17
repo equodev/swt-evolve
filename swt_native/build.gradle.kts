@@ -260,7 +260,9 @@ sourceSets {
             test {
                 resources {
                     srcDirs("src/${os}/java")
-                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties")
+                    // The filter is the whole test source set's, so src/test/resources' service files need it too.
+                    include("**/*.css", "**/*.png", "**/*.bmp", "**/*.gif", "**/*.svg", "**/*.jpg", "**/SWTMessages*.properties", "**/SWTMessages.properties",
+                        "META-INF/services/*")
                 }
             }
         }
