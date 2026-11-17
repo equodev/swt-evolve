@@ -21,7 +21,7 @@ import org.eclipse.swt.widgets.Text;
  *
  * The row below must show whole: no "<choose date>" drawn over its spinner.
  *
- * Swap Config.forceEquo() for Config.defaultToEclipse() (runEmbedExample) for the native baseline.
+ * For the native baseline, run this file without its Config lines against the stock SWT jar.
  */
 public class CanvasHiddenChildrenSnippet {
 

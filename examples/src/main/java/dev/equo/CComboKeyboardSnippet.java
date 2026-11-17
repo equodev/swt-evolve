@@ -17,8 +17,8 @@ import java.util.Arrays;
  * list; moving with Down and pressing Enter puts the item into the text, fires Selection and closes
  * the list; Enter on the closed CCombo fires DefaultSelection. After every step the selection index,
  * text and list visibility are printed. Every event is printed with a [repro] prefix. Run with
- * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, run
+ * this file without its Config lines against the stock SWT jar.
  */
 public class CComboKeyboardSnippet {
     static final String[] ITEMS = {"Alpha", "Bravo", "Charlie", "Delta", "Echo"};

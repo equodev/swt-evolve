@@ -15,8 +15,8 @@ import java.util.Arrays;
  * Menu accelerators: with every menu closed, pressing an item's accelerator (MOD1+N for New,
  * MOD1+Shift+C for Copy; MOD1 is Command on Cocoa, Ctrl elsewhere) fires Selection on that item.
  * Every event is printed with a [repro] prefix.
- * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, run
+ * this file without its Config lines against the stock SWT jar.
  */
 public class MenuAcceleratorSnippet {
     /** The key SWT.MOD1 stands for: Command on Cocoa, Ctrl elsewhere. */

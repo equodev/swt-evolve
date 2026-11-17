@@ -15,8 +15,8 @@ import java.util.Arrays;
  * Opens a Shell's menu bar from the keyboard. Alt+F opens the &File menu, Alt+E the &Edit menu, and
  * F10 or a lone Alt activates the bar so that Down opens its first menu; each opened menu fires Show.
  * Every event is printed with a [repro] prefix. Run with {@code --drive} to send the keys with
- * java.awt.Robot. For the native baseline, call
- * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * java.awt.Robot. For the native baseline, run
+ * this file without its Config lines against the stock SWT jar.
  */
 public class MenuBarKeyboardSnippet {
     public static void main(String[] args) throws Exception {

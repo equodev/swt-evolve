@@ -15,8 +15,8 @@ import java.util.Arrays;
  * Opens a Tree's pop-up menu from the keyboard. With the Tree focused, Shift+F10 or the context-menu
  * (Apps) key fires MenuDetect with detail MENU_KEYBOARD and shows the menu; arrows then arm items,
  * Enter selects one and a mnemonic letter selects its item. Every event is printed with a [repro] prefix.
- * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * Run with {@code --drive} to send the keys with java.awt.Robot. For the native baseline, run
+ * this file without its Config lines against the stock SWT jar.
  */
 public class ContextMenuKeyboardSnippet {
     public static void main(String[] args) throws Exception {

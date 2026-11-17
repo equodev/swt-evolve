@@ -849,6 +849,7 @@ abstract final class WireKey {
 /// The properties whose values name widgets.
 const Set<int> wireRefKeys = {
   1,
+  10,
   44,
   62,
   66,
@@ -858,12 +859,14 @@ const Set<int> wireRefKeys = {
   157,
   160,
   162,
+  174,
   205,
   208,
   223,
   229,
   231,
   251,
+  316,
   378,
   384,
   438,

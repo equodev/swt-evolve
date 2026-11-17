@@ -15,8 +15,8 @@ import java.util.Arrays;
  * Tab traversal right after the Shell opens. The first Text gets focus with setFocus(), and Tab then
  * moves focus to the next control in the tab order (the Button). The same is repeated after clicking
  * the Text. The focus control is printed after each step with a [repro] prefix. Run with
- * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, run
+ * this file without its Config lines against the stock SWT jar.
  */
 public class TabTraversalAfterSetFocusSnippet {
     public static void main(String[] args) throws Exception {

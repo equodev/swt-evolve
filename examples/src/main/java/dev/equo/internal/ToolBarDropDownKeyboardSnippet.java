@@ -16,8 +16,8 @@ import java.util.Arrays;
  * A ToolBar DROP_DOWN item driven from the keyboard. Tab moves focus into the ToolBar, Right moves to
  * the drop-down item, and Down fires Selection with detail ARROW; the listener then shows the item's
  * menu below it, as applications do. Every event is printed with a [repro] prefix. Run with
- * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, call
- * Config.defaultToEclipse() in place of the useEquo lines and run it with runEmbedExample.
+ * {@code --drive} to send the keys with java.awt.Robot. For the native baseline, run
+ * this file without its Config lines against the stock SWT jar.
  */
 public class ToolBarDropDownKeyboardSnippet {
     public static void main(String[] args) throws Exception {

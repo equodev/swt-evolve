@@ -33,7 +33,7 @@ import java.util.List;
  * <p>The pane on the right prints the state the Java side holds for every item.
  *
  * <p>Run: {@code ./gradlew :examples:runDeskExample -PmainClass=dev.equo.TreeCheckAppDrivenSnippet}
- * <br>Swap Config.forceEquo() for Config.defaultToEclipse() (runEmbedExample) for the native baseline.
+ * <br>For the native baseline, run this file without its Config lines against the stock SWT jar.
  */
 public class TreeCheckAppDrivenSnippet {
 
