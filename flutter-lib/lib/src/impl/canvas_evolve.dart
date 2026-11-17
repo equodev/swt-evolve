@@ -201,6 +201,10 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
       _prevVBarSel = vSel;
     }
 
+    // Neither the children branch nor the scroll bars go through wrap(), which is what answers a
+    // hidden control elsewhere: a hidden Canvas would still paint its children and bars.
+    if (hidden) return const SizedBox.shrink();
+
     final widgetTheme = _theme;
     final hasValidBounds = hasBounds(state.bounds);
     final constraints = getConstraintsFromBounds(state.bounds);

@@ -56,6 +56,9 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
  */
 public class GallerySnippet {
 
+    /** Text of the Text inside the hidden Canvas; a scenario checks it never paints. */
+    private static final String HIDDEN_CANVAS_CHILD_TEXT = "Hidden canvas child";
+
     /** Baseline text of the editable Combo, restored by the "Reset Gallery" listener. */
     private static final String EDITABLE_COMBO_BASELINE = "Typed A";
 
@@ -604,6 +607,13 @@ public class GallerySnippet {
                 status.setText("Canvas clicked");
             }
         });
+        // A hidden Canvas hosting a Text (a custom combo's shape): neither may paint. Not excluded
+        // from the RowLayout, so both keep real bounds while hidden.
+        Canvas hiddenCanvas = new Canvas(menuGroup, SWT.BORDER);
+        hiddenCanvas.setLayout(new FillLayout());
+        new Text(hiddenCanvas, SWT.READ_ONLY).setText(HIDDEN_CANVAS_CHILD_TEXT);
+        hiddenCanvas.setLayoutData(new org.eclipse.swt.layout.RowData(120, 24));
+        hiddenCanvas.setVisible(false);
 
         // SashForm / Sash — the SashForm holds two panes (its internal sash resizes them); the
         // standalone Sash reports its drag to Java, which is the observable event.
