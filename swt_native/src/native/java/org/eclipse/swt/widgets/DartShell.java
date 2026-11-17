@@ -1958,10 +1958,11 @@ public class DartShell extends DartDecorations implements IShell {
         for (org.eclipse.swt.widgets.Control c : _getChildren()) stack.add(c);
         while (!stack.isEmpty()) {
             org.eclipse.swt.widgets.Control c = stack.remove(0);
-            if (c == null || c.isDisposed())
+            // A hidden control hides its subtree.
+            if (c == null || c.isDisposed() || !c.getVisible())
                 continue;
             boolean container = c instanceof org.eclipse.swt.widgets.Composite && !(((org.eclipse.swt.widgets.Composite) c).getImpl() instanceof DartCanvas);
-            boolean focusable = c.getVisible() && c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0 && c.getImpl() instanceof DartControl;
+            boolean focusable = c.isEnabled() && (c.getStyle() & SWT.NO_FOCUS) == 0 && c.getImpl() instanceof DartControl;
             // By kind, not by "has no children": a CTabFolder, its button bars or a CoolBar is childless too, and
             // focusing one puts every folder above it on the active path, which sends them
             // SWT.Activate. An unselected CTabFolder then reports itself as highlighted.
@@ -1990,7 +1991,8 @@ public class DartShell extends DartDecorations implements IShell {
         if (savedFocus != null && savedFocus.isDisposed()) {
             savedFocus = null;
         }
-        if (savedFocus != null) {
+        // Natively the restore goes through setFocus, which refuses a hidden, disabled or NO_FOCUS control.
+        if (savedFocus != null && savedFocus.isVisible() && savedFocus.isEnabled() && (savedFocus.getStyle() & SWT.NO_FOCUS) == 0) {
             db.setFocus((DartControl) savedFocus.getImpl());
         } else if (!focusFirstFocusable()) {
             // Nothing focusable yet: mark the shell itself as focus so getActiveShell()

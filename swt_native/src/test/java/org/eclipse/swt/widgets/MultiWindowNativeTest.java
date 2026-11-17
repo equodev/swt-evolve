@@ -3,8 +3,6 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.ShellWindow;
 import dev.equo.swt.WindowPolicy;
-import dev.equo.swt.comm.CommService;
-import dev.equo.swt.harness.NoopBridge;
 import dev.equo.swt.harness.RecordingComm;
 import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
@@ -611,9 +609,7 @@ class MultiWindowNativeTest {
 
     /** Run the queued UI work (a shell close posted from the registry) to completion. */
     private void drainEventLoop() {
-        while (display.readAndDispatch()) {
-            /* drain */
-        }
+        RecordingDisplayBridge.drainEventLoop(display);
     }
 
     /** A visible top-level shell, which is what makes the policy and the registry consider it. */
@@ -637,34 +633,18 @@ class MultiWindowNativeTest {
     }
 
     private TestBridge install() {
-        FlutterBridge.set(new NoopBridge());
-        display = new Display();
-        FlutterBridge.set(null);
-        DartDisplay dd = (DartDisplay) display.getImpl();
-        TestBridge bridge = new TestBridge(dd);
-        dd.setBridge(bridge);
-        bridge.start(dd);
+        TestBridge bridge = RecordingDisplayBridge.install(TestBridge::new);
+        display = Display.getCurrent();
         return bridge;
     }
 
     /** A Display-level bridge whose only surface is a record of what it was asked to do. */
-    private static final class TestBridge extends DisplayBridge {
-        final RecordingComm comm = new RecordingComm();
+    private static final class TestBridge extends RecordingDisplayBridge {
         final List<RecordingWindow> created = new ArrayList<>();
         boolean refuseToOpen;
 
         TestBridge(DartDisplay display) {
             super(display);
-        }
-
-        @Override
-        protected CommService comm() {
-            return comm;
-        }
-
-        @Override
-        protected void start(DartDisplay display) {
-            registerDisplayClientReady(display);
         }
 
         @Override
