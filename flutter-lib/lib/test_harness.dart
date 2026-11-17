@@ -228,6 +228,7 @@ void registerTestQueryChannel() {
     },
     queryStateJson: queryStateJson,
     queryAllStatesJson: queryAllStatesJson,
+    queryAllStatesByReferenceJson: () => queryAllStatesJson(byReference: true),
     queryStatesJson: queryStatesJson,
     queryPaintOpsJson: queryPaintOpsJson,
     queryTreeItemsJson: queryTreeItemsJson,
@@ -291,17 +292,20 @@ String? queryStateJson(int targetId) {
 /// The live [describeState] of the widgets named by [identifiers] (`{swt}/{id}`), keyed the same
 /// way, as a JSON-encoded object; an identifier with no mounted widget is left out. One walk of the
 /// tree, and only the requested states are encoded, so asking for a few widgets does not pay for
-/// serializing all of them the way [queryAllStatesJson] does.
+/// serializing all of them the way [queryAllStatesJson] does. A nested widget that has a key of
+/// its own is named by `swt` and `id` only.
 String queryStatesJson(List<String> identifiers) {
   final wanted = identifiers.toSet();
   final Map<String, dynamic> found = {};
   final root = WidgetsBinding.instance.rootElement;
   if (root == null || wanted.isEmpty) return jsonEncode(found);
-  void addWithItems(Map<String, dynamic> node) {
+  final mounted = _mountedKeys(root);
+  void addWithItems(Map<String, dynamic> node, {bool nested = false}) {
     final key = '${node['swt']}/${node['id']}';
+    if (nested && mounted.contains(key)) return;
     if (wanted.contains(key)) found[key] = node;
     for (final item in _itemsOf(node)) {
-      addWithItems(item);
+      addWithItems(item, nested: true);
     }
   }
 
@@ -310,7 +314,7 @@ String queryStatesJson(List<String> identifiers) {
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
-        addWithItems(describeState(vstate));
+        addWithItems(describeState(vstate, byReference: mounted));
       }
     }
     el.visitChildren(visit);
@@ -324,14 +328,20 @@ String queryStatesJson(List<String> identifiers) {
 /// identifier, as a JSON-encoded object. Items rendered inline by their parent (VTreeItem,
 /// VTabItem, VExpandItem, ...) have no [WidgetSwtState] of their own, but they ARE nested in
 /// the parent's description, so the descriptions are walked rather than the State objects.
-String queryAllStatesJson() {
+///
+/// [byReference] names a nested widget that has a key of its own by `swt` and `id` only, as
+/// [queryStatesJson] does; without it each description carries its whole subtree.
+String queryAllStatesJson({bool byReference = false}) {
   final root = WidgetsBinding.instance.rootElement;
   final Map<String, dynamic> all = {};
   if (root == null) return jsonEncode(all);
-  void addWithItems(Map<String, dynamic> node) {
-    all['${node['swt']}/${node['id']}'] = node;
+  final mounted = byReference ? _mountedKeys(root) : const <String>{};
+  void addWithItems(Map<String, dynamic> node, {bool nested = false}) {
+    final key = '${node['swt']}/${node['id']}';
+    if (nested && mounted.contains(key)) return;
+    all[key] = node;
     for (final item in _itemsOf(node)) {
-      addWithItems(item);
+      addWithItems(item, nested: true);
     }
   }
 
@@ -339,7 +349,7 @@ String queryAllStatesJson() {
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
-        addWithItems(describeState(vstate));
+        addWithItems(describeState(vstate, byReference: mounted));
       }
     }
     el.visitChildren(visit);
@@ -393,31 +403,59 @@ String queryPaintOpsJson() {
 
 /// [value]'s state as the harness reports it: `swt` and `id`, then every property it holds keyed
 /// by the number the wire gives it, which the reader names from the generated wire table. A value it holds is
-/// described the same way, a widget met again inside its own description by identity only.
-Map<String, dynamic> describeState(Object value) =>
-    value is WireVisitable ? _describe(value, {}) : <String, dynamic>{};
+/// described the same way, a widget met again inside its own description by identity only, and so
+/// is a nested widget whose `{swt}/{id}` is in [byReference].
+Map<String, dynamic> describeState(Object value,
+        {Set<String> byReference = const {}}) =>
+    value is WireVisitable
+        ? _describe(value, {}, byReference, nested: false)
+        : <String, dynamic>{};
 
-Map<String, dynamic> _describe(WireVisitable value, Set<Object> seen) {
+Map<String, dynamic> _describe(
+    WireVisitable value, Set<Object> seen, Set<String> byReference,
+    {bool nested = true}) {
   final out = <String, dynamic>{};
   if (value is VWidget) {
     out['swt'] = value.swt;
     out['id'] = value.id;
+    if (nested && byReference.contains('${value.swt}/${value.id}')) return out;
     if (!seen.add(value)) return out;
   }
   value.visitWire((key, v) {
-    if (v != null) out['$key'] = _plain(v, seen);
+    if (v != null) out['$key'] = _plain(v, seen, byReference);
   });
   return out;
 }
 
-Object? _plain(Object? v, Set<Object> seen) => switch (v) {
+Object? _plain(Object? v, Set<Object> seen, Set<String> byReference) =>
+    switch (v) {
       null || num() || bool() || String() => v,
       Uint8List() => base64Encode(v),
-      List() => [for (final e in v) _plain(e, seen)],
-      Map() => {for (final e in v.entries) '${e.key}': _plain(e.value, seen)},
-      WireVisitable() => _describe(v, seen),
+      List() => [for (final e in v) _plain(e, seen, byReference)],
+      Map() => {
+          for (final e in v.entries)
+            '${e.key}': _plain(e.value, seen, byReference)
+        },
+      WireVisitable() => _describe(v, seen, byReference),
       _ => '$v',
     };
+
+/// The `{swt}/{id}` of every widget mounted with a [WidgetSwtState] of its own. A multi-widget
+/// query describes each of them under its own key, so a parent names them by reference: described
+/// in full inside every ancestor, each widget would be repeated once per level of a deep tree.
+Set<String> _mountedKeys(Element root) {
+  final keys = <String>{};
+  void visit(Element el) {
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate is VWidget) keys.add('${vstate.swt}/${vstate.id}');
+    }
+    el.visitChildren(visit);
+  }
+
+  root.visitChildren(visit);
+  return keys;
+}
 
 /// The widgets described inside [node]'s properties: its items, its children.
 List<Map<String, dynamic>> _itemsOf(Map<String, dynamic> node) {
@@ -508,18 +546,21 @@ bool? _takesInput(int targetId) {
   if (root == null) return null;
   // The widget's own element is where it stands. An Item drawn inline by its owner's build() has
   // none, and stands where its owner does — so that is the fallback, not the first choice.
-  return _takesInputWhere(root, (json) => json['id'] == targetId) ??
-      _takesInputWhere(root, (json) => _findItemById(json, targetId) != null);
+  final mounted = _mountedKeys(root);
+  return _takesInputWhere(root, (vstate) => vstate.id == targetId) ??
+      _takesInputWhere(
+          root,
+          (vstate) =>
+              _findItemById(describeState(vstate, byReference: mounted), targetId) != null);
 }
 
 bool _refusesInput(Widget w) =>
     (w is IgnorePointer && w.ignoring) || (w is ExcludeFocus && w.excluding);
 
-/// Walks down from [root] to the first [WidgetSwtState] whose serialized state satisfies [matches],
+/// Walks down from [root] to the first [WidgetSwtState] whose state satisfies [matches],
 /// answering whether input reaches it: no refusing wrapper on the way down, and none in the
 /// wrapper chain the widget puts above its own content.
-bool? _takesInputWhere(
-    Element root, bool Function(Map<String, dynamic> json) matches) {
+bool? _takesInputWhere(Element root, bool Function(dynamic vstate) matches) {
   bool? answer;
 
   void visit(Element el, bool refused) {
@@ -527,7 +568,7 @@ bool? _takesInputWhere(
     if (_refusesInput(el.widget)) refused = true;
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
-      if (vstate != null && matches(describeState(vstate))) {
+      if (vstate != null && matches(vstate)) {
         answer = !refused && !_ownWrapperRefuses(el);
         return;
       }
@@ -576,6 +617,11 @@ Map<String, dynamic>? _findItemById(Map<String, dynamic> node, int targetId) {
 Map<String, dynamic>? _findStateById(int targetId) {
   final root = WidgetsBinding.instance.rootElement;
   if (root == null) return null;
+  final Element? host = _hostElementById(targetId);
+  if (host is StatefulElement) {
+    return describeState((host.state as WidgetSwtState).state);
+  }
+  final mounted = _mountedKeys(root);
   Map<String, dynamic>? result;
   Map<String, dynamic>? findIn(Map<String, dynamic> node) {
     if (node['id'] == targetId) return node;
@@ -591,7 +637,7 @@ Map<String, dynamic>? _findStateById(int targetId) {
     if (el is StatefulElement && el.state is WidgetSwtState) {
       final dynamic vstate = (el.state as WidgetSwtState).state;
       if (vstate != null) {
-        result = findIn(describeState(vstate));
+        result = findIn(describeState(vstate, byReference: mounted));
         if (result != null) return;
       }
     }

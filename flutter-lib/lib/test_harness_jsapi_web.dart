@@ -10,6 +10,7 @@ import 'dart:js_interop_unsafe';
 /// JS usage:
 ///   const json = window.evolveTest.queryState(targetId);   // String | null, JSON-encoded V*
 ///   const all  = window.evolveTest.queryAllStates();        // String, JSON map {swt/id: V*}
+///   const flat = window.evolveTest.queryAllStatesByReference(); // the same, nested widgets named only
 ///   const some = window.evolveTest.queryStates(['Label/9']); // String, the same map for those ids
 ///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
@@ -18,6 +19,7 @@ void registerTestQueryJsApi({
   required String? Function(int) renderFactsJson,
   required String? Function(int) queryStateJson,
   required String Function() queryAllStatesJson,
+  required String Function() queryAllStatesByReferenceJson,
   required String Function(List<String>) queryStatesJson,
   required String Function() queryPaintOpsJson,
   required String Function() queryTreeItemsJson,
@@ -42,6 +44,10 @@ void registerTestQueryJsApi({
   api.setProperty(
     'queryAllStates'.toJS,
     (() => queryAllStatesJson().toJS).toJS,
+  );
+  api.setProperty(
+    'queryAllStatesByReference'.toJS,
+    (() => queryAllStatesByReferenceJson().toJS).toJS,
   );
   api.setProperty(
     'queryStates'.toJS,

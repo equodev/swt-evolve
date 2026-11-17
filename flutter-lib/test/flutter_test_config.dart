@@ -14,7 +14,8 @@
 // claimed by the next test's widget of the same id. And so do the frames a test recorded as sent,
 // which a later test reading what it sent would read too. And so does the count of frames being
 // applied: a test that ends with a drain scheduled in its fake-async zone would leave every later
-// wait for an apply hanging.
+// wait for an apply hanging. And so does the verdict on the drag in flight: a drag a test left
+// refused would keep every later test's drops from reaching their targets.
 
 import 'dart:async';
 
@@ -27,6 +28,7 @@ import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/impl/utils/dnd_session.dart';
 import 'package:swtflutter/src/impl/widget_ops.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
@@ -42,6 +44,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     FocusRequests.instance.reset();
     EquoCommService.commForTesting.clearSentFrames();
     EquoCommBase.resetForTesting();
+    DragStartVeto.reset();
   });
   await testMain();
 }
