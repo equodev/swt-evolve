@@ -107,11 +107,36 @@ Java_dev_equo_swt_FlutterNative_SetBundleDir(JNIEnv* env, jclass cls, jstring di
     if (c != nullptr) env->ReleaseStringUTFChars(dir, c);
 }
 
+// Whether the F4 of an Alt+F4 the system took is still down, so its release is not delivered either.
+static bool s_system_close_key_down = false;
+
+// Alt+F4 is the system close: Win32 turns the press into SC_CLOSE and no control sees the key. The
+// Flutter view would hand both the press and the release to the framework, so they never reach it.
+static bool TakeSystemCloseKey(const MSG& msg) {
+    if (msg.wParam != VK_F4) {
+        return false;
+    }
+    if (msg.message == WM_SYSKEYDOWN && (HIWORD(msg.lParam) & KF_ALTDOWN)) {
+        s_system_close_key_down = true;
+        ::DefWindowProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
+        return true;
+    }
+    if ((msg.message == WM_SYSKEYUP || msg.message == WM_KEYUP) && s_system_close_key_down) {
+        s_system_close_key_down = false;
+        return true;
+    }
+    return false;
+}
+
 int pumpMessages(int maxMessages) {
     ::MSG msg;
     int count = 0;
     for (int i = 0; i < maxMessages; i++) {
         if (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            if (TakeSystemCloseKey(msg)) {
+                count++;
+                continue;
+            }
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
             count++;
@@ -323,6 +348,10 @@ JNIEXPORT jint JNICALL Java_dev_equo_swt_FlutterNative_Pump(JNIEnv* env, jclass 
             }
             ::PostQuitMessage(0);
             break;
+        }
+        if (TakeSystemCloseKey(msg)) {
+            count++;
+            continue;
         }
         ::TranslateMessage(&msg);
         ::DispatchMessage(&msg);

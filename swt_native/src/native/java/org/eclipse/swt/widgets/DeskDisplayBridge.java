@@ -671,7 +671,8 @@ public class DeskDisplayBridge extends DisplayBridge {
 
     /**
      * The user asked the OS window to close (title-bar X, Alt+F4, Cmd+W) and the runner vetoed the OS
-     * teardown, so the window is <em>still up</em>. Answer with SWT's contract on the main shell:
+     * teardown, so the window is <em>still up</em>. Answer with SWT's contract on the main shell, or
+     * on the active inline shell with a close button ({@link #activeInlineShellToClose}):
      * {@code Shell.close()} fires {@code SWT.Close} while there is still a window to render into, so an
      * application can put up "Save changes before exiting?" and keep everything alive with
      * {@code doit = false}. The window follows the gesture, not the shell count — it is torn down from
@@ -694,13 +695,33 @@ public class DeskDisplayBridge extends DisplayBridge {
             if (main == null || main.isDisposed()) {
                 return;
             }
+            Shell inline = activeInlineShellToClose(api, main);
             closingOnRequest = true;
             try {
-                main.close();
+                (inline != null ? inline : main).close();
             } finally {
                 closingOnRequest = false;
             }
         });
+    }
+
+    /**
+     * The active shell other than {@code main} that is drawn inside the Display's window and has a
+     * close button, or null. Natively such a shell has an OS window of its own, the one Alt+F4 or the
+     * taskbar's close asks; here it shares the Display's window, so the request arrives there.
+     */
+    private Shell activeInlineShellToClose(Display api, Shell main) {
+        Shell active = api.getActiveShell();
+        if (active == null) {
+            // A window manager can take the OS focus from the window before it asks it to close.
+            Control focus = api.getFocusControl();
+            active = focus == null || focus.isDisposed() ? null : focus.getShell();
+        }
+        if (active == null || active == main || (active.getStyle() & SWT.CLOSE) == 0
+                || windowOf(active) != null || NativeWindowShells.drawnByItsOwnWindow(active)) {
+            return null;
+        }
+        return active;
     }
 
     private void onWindowClosed() {

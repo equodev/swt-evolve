@@ -1395,7 +1395,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     public Object windowOf(Object shell) {
         Composite current = shell instanceof Shell ? (Shell) shell : null;
         while (current instanceof Shell && !current.isDisposed()) {
-            if (shellWindows.containsKey(current)) return current;
+            if (isShellWindowed((Shell) current)) return current;
             current = current.getParent();
         }
         return null;
