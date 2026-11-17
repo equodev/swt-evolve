@@ -3855,6 +3855,15 @@ class ImageShape extends Shape {
     return tone;
   }
 
+  /// The image's bounds in logical px: its own width and height (already divided by the zoom its
+  /// pixels were loaded at), else its pixel data's size; null when it carries neither.
+  static Size? _logicalBounds(VImage vImage) {
+    int? positive(int? v) => v != null && v > 0 ? v : null;
+    final w = positive(vImage.width) ?? positive(vImage.imageData?.width);
+    final h = positive(vImage.height) ?? positive(vImage.imageData?.height);
+    return w == null || h == null ? null : Size(w.toDouble(), h.toDouble());
+  }
+
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
       {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255,
@@ -3880,14 +3889,19 @@ class ImageShape extends Shape {
         }
       }
 
+      // An unsized drawImage draws at the image's bounds, so a replacement takes the replaced
+      // image's logical size, not its own.
+      final replacedSize = replacement == null ? null : _logicalBounds(vImage);
+
       if (replacement is String) {
         try {
           final pictureInfo = await vg.loadPicture(SvgStringLoader(replacement), null);
+          final naturalSize = replacedSize ?? pictureInfo.size;
           final destRect = Rect.fromLTWH(
             (opArgs.destX).toDouble(),
             (opArgs.destY).toDouble(),
-            opArgs.destWidth == -1 ? pictureInfo.size.width : (opArgs.destWidth).toDouble(),
-            opArgs.destHeight == -1 ? pictureInfo.size.height : (opArgs.destHeight).toDouble(),
+            opArgs.destWidth == -1 ? naturalSize.width : (opArgs.destWidth).toDouble(),
+            opArgs.destHeight == -1 ? naturalSize.height : (opArgs.destHeight).toDouble(),
           );
           return ImageShape.svg(pictureInfo, destRect,
               clipRect: clipRect, colorFilter: colorFilter, alpha: alpha);
@@ -3950,11 +3964,13 @@ class ImageShape extends Shape {
         );
       }
 
+      final naturalSize =
+          replacedSize ?? Size(uiImage.width.toDouble(), uiImage.height.toDouble());
       final destRect = Rect.fromLTWH(
         (opArgs.destX).toDouble(),
         (opArgs.destY).toDouble(),
-        opArgs.destWidth == -1 ? uiImage.width.toDouble() : (opArgs.destWidth).toDouble(),
-        opArgs.destHeight == -1 ? uiImage.height.toDouble() : (opArgs.destHeight).toDouble(),
+        opArgs.destWidth == -1 ? naturalSize.width : (opArgs.destWidth).toDouble(),
+        opArgs.destHeight == -1 ? naturalSize.height : (opArgs.destHeight).toDouble(),
       );
 
       final srcRect = replacement != null

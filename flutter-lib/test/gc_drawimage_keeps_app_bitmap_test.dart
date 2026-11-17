@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' show Canvas, Color, ImageByteFormat, Paint, PictureRecorder, Rect;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/src/gen/gc.dart';
@@ -97,4 +100,59 @@ void main() {
     expect(shape.type, ImageType.svg,
         reason: 'the application opted in, so assets/icons/left.svg draws');
   });
+
+  test('a replacement drawn by an unsized blit keeps the replaced image\'s logical size', () async {
+    applyConfigFlags(ConfigFlags()..gc_icons_replacement = true);
+    // A 16x16 icon loaded at 200%: its bounds are 16x16, its pixels 32x32; left.svg is 24x24.
+    final image = VImage()
+      ..filename = 'left'
+      ..width = 16
+      ..height = 16
+      ..imageData = (VImageData()
+        ..width = 32
+        ..height = 32
+        ..data = base64Decode(_indicatorPng));
+
+    final shape = await ImageShape.fromVImageDetailed(
+        image, _naturalSizeBlitAt(529, 5), null, useThemeColors: canvasUsesThemeColors);
+
+    expect(shape.type, ImageType.svg);
+    expect(shape.destRect, const Rect.fromLTWH(529, 5, 16, 16));
+  });
+
+  // Last in the file: AssetsManager caches the assets_path it resolves for the whole isolate.
+  test('a PNG replacement from assets_path drawn by an unsized blit keeps the replaced image\'s '
+      'logical size', () async {
+    final dir = await Directory.systemTemp.createTemp('gc_png_replacement');
+    addTearDown(() => dir.delete(recursive: true));
+    File('${dir.path}/left.png').writeAsBytesSync(await _pngOfSize(24, 24));
+    applyConfigFlags(ConfigFlags()
+      ..gc_icons_replacement = true
+      ..assets_path = dir.path);
+    final image = VImage()
+      ..filename = 'left'
+      ..width = 16
+      ..height = 16
+      ..imageData = (VImageData()
+        ..width = 32
+        ..height = 32
+        ..data = base64Decode(_indicatorPng));
+
+    final shape = await ImageShape.fromVImageDetailed(
+        image, _naturalSizeBlitAt(529, 5), null, useThemeColors: canvasUsesThemeColors);
+
+    expect(shape.type, ImageType.raster);
+    expect(shape.image!.width, 24, reason: 'the assets_path PNG must be the one drawn');
+    expect(shape.srcRect, const Rect.fromLTWH(0, 0, 24, 24));
+    expect(shape.destRect, const Rect.fromLTWH(529, 5, 16, 16));
+  });
+}
+
+Future<Uint8List> _pngOfSize(int width, int height) async {
+  final recorder = PictureRecorder();
+  Canvas(recorder).drawRect(
+      Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), Paint()..color = const Color(0xFF000000));
+  final image = await recorder.endRecording().toImage(width, height);
+  final bytes = await image.toByteData(format: ImageByteFormat.png);
+  return bytes!.buffer.asUint8List();
 }
