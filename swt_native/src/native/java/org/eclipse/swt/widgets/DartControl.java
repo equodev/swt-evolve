@@ -2448,11 +2448,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (!shell.isDisposed()) {
             switch(type) {
                 case SWT.FocusIn:
-                    ((DartShell) shell.getImpl()).setActiveControl(this.getApi());
+                    shell.setActiveControl(this.getApi());
                     break;
                 case SWT.FocusOut:
                     if (shell != display.getActiveShell()) {
-                        ((DartShell) shell.getImpl()).setActiveControl(null);
+                        shell.setActiveControl(null);
                     }
                     break;
             }

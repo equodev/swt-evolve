@@ -716,6 +716,14 @@ public class Shell extends Decorations {
         getImpl().setActive();
     }
 
+    void setActiveControl(Control control) {
+        setActiveControl(control, SWT.None);
+    }
+
+    void setActiveControl(Control control, int type) {
+        getImpl().setActiveControl(control, type);
+    }
+
     /**
      * Sets the receiver's alpha value which must be
      * between 0 (transparent) and 255 (opaque).

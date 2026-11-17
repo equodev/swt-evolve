@@ -1192,11 +1192,11 @@ public class DartShell extends DartDecorations implements IShell {
         makeKeyAndOrderFront();
     }
 
-    void setActiveControl(Control control) {
+    public void setActiveControl(Control control) {
         setActiveControl(control, SWT.None);
     }
 
-    void setActiveControl(Control control, int type) {
+    public void setActiveControl(Control control, int type) {
         if (control != null && control.isDisposed())
             control = null;
         if (lastActive != null && lastActive.isDisposed())

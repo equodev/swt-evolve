@@ -302,6 +302,10 @@ public interface IShell extends IDecorations, ImplShell {
      */
     void setActive();
 
+    void setActiveControl(Control control);
+
+    void setActiveControl(Control control, int type);
+
     /**
      * Sets the receiver's alpha value which must be
      * between 0 (transparent) and 255 (opaque).
