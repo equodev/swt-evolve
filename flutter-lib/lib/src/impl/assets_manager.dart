@@ -12,6 +12,13 @@ class AssetsManager {
   static String? _cachedAssetsPath;
   static bool _hasAttemptedResolve = false;
 
+  /// Forgets the resolved `assets_path`, so the next lookup reads the config flag again.
+  @visibleForTesting
+  static void resetForTesting() {
+    _cachedAssetsPath = null;
+    _hasAttemptedResolve = false;
+  }
+
   /// Strips a leading UTF-8 BOM (U+FEFF) from an SVG string. flutter_svg's XML
   /// parser fails on a BOM before the root element, leaving the icon blank
   /// (which reads as "white" on a light theme). Most bundled icons carry one.

@@ -120,7 +120,6 @@ void main() {
     expect(shape.destRect, const Rect.fromLTWH(529, 5, 16, 16));
   });
 
-  // Last in the file: AssetsManager caches the assets_path it resolves for the whole isolate.
   test('a PNG replacement from assets_path drawn by an unsized blit keeps the replaced image\'s '
       'logical size', () async {
     final dir = await Directory.systemTemp.createTemp('gc_png_replacement');

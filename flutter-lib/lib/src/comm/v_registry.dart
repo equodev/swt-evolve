@@ -137,6 +137,10 @@ class VNode {
   /// while being told leaves the list being iterated alone.
   List<void Function(VChange change)> listeners = const [];
 
+  /// How many mounted widgets render this value ([VRegistry.mountAt]), as opposed to code that only
+  /// listens to it: what the test harness reports as on screen.
+  int mounts = 0;
+
   void listen(void Function(VChange change) listener) =>
       listeners = List.of(listeners)..add(listener);
 
@@ -277,7 +281,8 @@ class VRegistry {
       // which is the difference between this and every other arrival.
       _nodes[key] = VNode(value)
         ..asked = node.asked
-        ..listeners = node.listeners;
+        ..listeners = node.listeners
+        ..mounts = node.mounts;
     }
     // The stamp comes with the value, and recording it is what makes the next update mergeable.
     // Java counts a widget written inside an ancestor's payload as delivered, so it computes that
@@ -303,6 +308,22 @@ class VRegistry {
   /// Moves on whenever a channel starts or stops holding a value, or holds a different one: what
   /// [valueOn] answers for a channel stays the same until it does.
   int get epoch => _nodes.epoch;
+
+  /// Every widget held, stand-ins left out, in the order they arrived: for reading state without
+  /// walking the rendered tree.
+  Iterable<VNode> get nodes => _nodes.values.where((node) => !node.awaitingValue);
+
+  /// The widget held under [key], or null when there is none or only a stand-in.
+  VNode? nodeAt(int key) {
+    final node = _nodes[key];
+    return node == null || node.awaitingValue ? null : node;
+  }
+
+  /// The widget a frame would name by [id], or null.
+  VNode? nodeById(int id) {
+    final node = _nodes.indexedOf(id)?.node;
+    return node == null || node.awaitingValue ? null : node;
+  }
 
   VWidget? valueAt(int key) {
     final node = _nodes[key];
@@ -538,6 +559,7 @@ class VRegistry {
     if (node != null) {
       entry.listeners = node.listeners;
       entry.asked = node.asked;
+      entry.mounts = node.mounts;
     }
     _nodes[key] = entry;
     return true;
@@ -707,6 +729,19 @@ class VRegistry {
   /// arrived yet — the interest is recorded and honoured once it does.
   void watchAt(int key, void Function(VChange change) listener) {
     _nodes.putIfAbsent(key, () => VNode(VWidget.empty(), awaitingValue: true)).listen(listener);
+  }
+
+  /// [watchAt] for the widget that renders [key]'s value, counted in [VNode.mounts].
+  void mountAt(int key, void Function(VChange change) listener) {
+    watchAt(key, listener);
+    _nodes[key]!.mounts++;
+  }
+
+  /// Undoes [mountAt].
+  void unmountAt(int key, void Function(VChange change) listener) {
+    final node = _nodes[key];
+    if (node != null && node.mounts > 0) node.mounts--;
+    unwatchAt(key, listener);
   }
 
   /// [watchAt], by channel name: for tests.

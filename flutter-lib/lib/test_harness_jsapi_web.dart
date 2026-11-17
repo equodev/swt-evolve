@@ -12,6 +12,7 @@ import 'dart:js_interop_unsafe';
 ///   const all  = window.evolveTest.queryAllStates();        // String, JSON map {swt/id: V*}
 ///   const flat = window.evolveTest.queryAllStatesByReference(); // the same, nested widgets named only
 ///   const some = window.evolveTest.queryStates(['Label/9']); // String, the same map for those ids
+///   const kind = window.evolveTest.queryStatesOfKind(['Shell/']); // the same, for keys with a prefix
 ///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
 void registerTestQueryJsApi({
@@ -21,6 +22,7 @@ void registerTestQueryJsApi({
   required String Function() queryAllStatesJson,
   required String Function() queryAllStatesByReferenceJson,
   required String Function(List<String>) queryStatesJson,
+  required String Function(List<String>) queryStatesOfKindJson,
   required String Function() queryPaintOpsJson,
   required String Function() queryTreeItemsJson,
   required bool Function(String) expandTreeItem,
@@ -53,6 +55,12 @@ void registerTestQueryJsApi({
     'queryStates'.toJS,
     ((JSArray<JSString> identifiers) => queryStatesJson(
       identifiers.toDart.map((id) => id.toDart).toList(),
+    ).toJS).toJS,
+  );
+  api.setProperty(
+    'queryStatesOfKind'.toJS,
+    ((JSArray<JSString> prefixes) => queryStatesOfKindJson(
+      prefixes.toDart.map((prefix) => prefix.toDart).toList(),
     ).toJS).toJS,
   );
   api.setProperty(

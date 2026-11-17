@@ -89,7 +89,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     final value = widget.value as V;
     final key = _registryKey = VRegistry.keyOf(value);
     VRegistry.instance.register(value);
-    VRegistry.instance.watchAt(key, _onRegistryChanged);
+    VRegistry.instance.mountAt(key, _onRegistryChanged);
     _enterLive(value.id);
   }
 
@@ -142,7 +142,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   void _unsubscribeFromState() {
     final key = _registryKey;
     if (key != null) {
-      VRegistry.instance.unwatchAt(key, _onRegistryChanged);
+      VRegistry.instance.unmountAt(key, _onRegistryChanged);
     }
     _registryKey = null;
     _leaveLive();
@@ -253,7 +253,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
       _unsubscribeFromState();
       _registryKey = key;
       VRegistry.instance.register(incoming);
-      VRegistry.instance.watchAt(key, _onRegistryChanged);
+      VRegistry.instance.mountAt(key, _onRegistryChanged);
       _enterLive(incoming.id);
     }
     extraSetState();

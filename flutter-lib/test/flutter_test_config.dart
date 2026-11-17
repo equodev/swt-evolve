@@ -15,7 +15,9 @@
 // which a later test reading what it sent would read too. And so does the count of frames being
 // applied: a test that ends with a drain scheduled in its fake-async zone would leave every later
 // wait for an apply hanging. And so does the verdict on the drag in flight: a drag a test left
-// refused would keep every later test's drops from reaching their targets.
+// refused would keep every later test's drops from reaching their targets. And so does the
+// `assets_path` the icon replacements resolved: a test that pointed it at a directory it then
+// deleted would leave the next test loading icons from a path that is gone.
 
 import 'dart:async';
 
@@ -25,6 +27,7 @@ import 'package:swtflutter/src/comm/comm_frame.dart';
 import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/delivery_gate.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
+import 'package:swtflutter/src/impl/assets_manager.dart';
 import 'package:swtflutter/src/impl/focus_requests.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
@@ -45,6 +48,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
     EquoCommService.commForTesting.clearSentFrames();
     EquoCommBase.resetForTesting();
     DragStartVeto.reset();
+    AssetsManager.resetForTesting();
   });
   await testMain();
 }
