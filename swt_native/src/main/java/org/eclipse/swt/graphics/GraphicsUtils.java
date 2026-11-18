@@ -510,7 +510,7 @@ public class GraphicsUtils {
                     Object value = f.get(provider);
                     java.net.URL url = holdsUrl ? asUrl(value) : descriptorUrl(value);
                     if (url != null) {
-                        return getFilename(url.getPath());
+                        return urlName(url);
                     }
                     // A composite/decoration descriptor (e.g. a navigator folder JFace draws as base
                     // icon + overlays via DecorationOverlayIcon) does not adapt to a URL; recover the
@@ -577,6 +577,21 @@ public class GraphicsUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * The name of the icon a URL points to: its file name without extension, or, for a URL that keeps
+     * the icon's key in the host and leaves the path empty ({@code icon://IMG_EDIT}), that key without
+     * a leading {@code IMG_} and lower-cased ({@code edit}), the way icon pack entries are named.
+     */
+    static String urlName(java.net.URL url) {
+        String name = getFilename(url.getPath());
+        String host = url.getHost();
+        if ((name == null || name.isEmpty()) && host != null && !host.isEmpty()) {
+            String key = host.regionMatches(true, 0, "IMG_", 0, 4) ? host.substring(4) : host;
+            return key.toLowerCase(java.util.Locale.ROOT);
+        }
+        return name;
     }
 
     private static java.net.URL asUrl(Object value) {

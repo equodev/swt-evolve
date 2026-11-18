@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -183,6 +184,53 @@ class JarImageReplacementTest {
 
         // The composite does not adapt to a URL; the name is recovered from the base at the bottom.
         assertThat(GraphicsUtils.getFilename(nestedCompositeProvider())).isEqualTo("blank_folder");
+    }
+
+    /** A descriptor that adapts to an application URL, the way a JFace URL descriptor does. */
+    private static final class UrlDescriptor extends ImageDescriptor {
+        private final URL url;
+
+        UrlDescriptor(URL url) {
+            this.url = url;
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T getAdapter(Class<T> adapter) {
+            return adapter == URL.class ? (T) url : null;
+        }
+
+        @Override
+        public ImageData getImageData() {
+            return null;
+        }
+    }
+
+    /** A provider whose descriptor adapts to {@code icon://<host><path>}, a protocol of the application's own. */
+    private static ImageDataProvider iconUrlProvider(String host, String path) throws Exception {
+        URLStreamHandler handler = new URLStreamHandler() {
+            @Override
+            protected URLConnection openConnection(URL u) {
+                throw new UnsupportedOperationException();
+            }
+        };
+        ImageDescriptor descriptor = new UrlDescriptor(new URL("icon", host, -1, path, handler));
+        return zoom -> descriptor != null ? null : null;
+    }
+
+    @Test
+    void getFilenameNamesAnIconWhoseUrlKeepsItsKeyInTheHost() throws Exception {
+        assertThat(GraphicsUtils.getFilename(iconUrlProvider("IMG_EDIT", ""))).isEqualTo("edit");
+    }
+
+    @Test
+    void getFilenameNamesAnIconByAHostKeyWithoutThePrefix() throws Exception {
+        assertThat(GraphicsUtils.getFilename(iconUrlProvider("Refresh", ""))).isEqualTo("refresh");
+        assertThat(GraphicsUtils.getFilename(iconUrlProvider("IMG_EDIT", "/"))).isEqualTo("edit");
+    }
+
+    @Test
+    void getFilenamePrefersTheUrlPathOverItsHost() throws Exception {
+        assertThat(GraphicsUtils.getFilename(iconUrlProvider("IMG_EDIT", "/icons/save.png"))).isEqualTo("save");
     }
 
     @Test
