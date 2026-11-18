@@ -8,6 +8,7 @@ void registerTestQueryJsApi({
   required String Function() queryAllStatesByReferenceJson,
   required String Function(List<String>) queryStatesJson,
   required String Function(List<String>) queryStatesOfKindJson,
+  required String Function(List<String>) queryStatesReachableFromJson,
   required Future<String> Function(String condition, int timeoutMs) waitForStatesJson,
   required String Function() queryPaintOpsJson,
   required String Function() queryTreeItemsJson,

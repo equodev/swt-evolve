@@ -235,6 +235,7 @@ void registerTestQueryChannel() {
     queryAllStatesByReferenceJson: () => queryAllStatesJson(byReference: true),
     queryStatesJson: queryStatesJson,
     queryStatesOfKindJson: queryStatesOfKindJson,
+    queryStatesReachableFromJson: queryStatesReachableFromJson,
     waitForStatesJson: waitForStatesJson,
     queryPaintOpsJson: queryPaintOpsJson,
     queryTreeItemsJson: queryTreeItemsJson,
@@ -304,6 +305,29 @@ String queryStatesJson(List<String> identifiers) {
   for (final identifier in identifiers) {
     final node = _nodeNamed(identifier);
     if (node != null && reported.includes(node)) found[identifier] = reported.describe(node);
+  }
+  return jsonEncode(found);
+}
+
+/// [queryStatesJson] for the widgets named by [identifiers] and every reported widget they hold, at
+/// any depth: a widget's subtree (its children, items, their controls) without the rest of the
+/// window.
+String queryStatesReachableFromJson(List<String> identifiers) {
+  final reported = _Reported();
+  final Map<String, dynamic> found = {};
+  final visited = <int>{};
+  final pending = [
+    for (final identifier in identifiers)
+      if (_nodeNamed(identifier) case final node?) node,
+  ];
+  while (pending.isNotEmpty) {
+    final node = pending.removeLast();
+    if (!visited.add(node.key) || !reported.includes(node)) continue;
+    found[_keyOf(node)] = reported.describe(node);
+    for (final key in node.references) {
+      final held = VRegistry.instance.nodeAt(key);
+      if (held != null) pending.add(held);
+    }
   }
   return jsonEncode(found);
 }

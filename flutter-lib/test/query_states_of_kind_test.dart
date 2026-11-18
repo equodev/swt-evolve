@@ -86,6 +86,13 @@ void main() {
     expect(some['TableItem/11'], all['TableItem/11']);
     expect(some['Label/2'], all['Label/2']);
 
+    final table = _decode(queryStatesReachableFromJson(['Table/3', 'Shell/404']));
+    expect(table.keys, unorderedEquals(all.keys.where((k) => k.startsWith('Table'))),
+        reason: 'the table and what it holds, not its siblings or its parent');
+    expect(table['Table/3'], all['Table/3']);
+    expect(table['TableItem/10'], all['TableItem/10']);
+    expect(_decode(queryStatesReachableFromJson(['Composite/1'])).keys, unorderedEquals(all.keys));
+
     final held = VLabel()
       ..id = 99
       ..style = SWT.NONE
