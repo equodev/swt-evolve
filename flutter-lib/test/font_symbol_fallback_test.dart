@@ -27,10 +27,23 @@ void main() {
     expect(FontUtils.textStyleFromVFont(liberation, null).fontFamilyFallback, contains('Inter'));
   });
 
-  test('a family this side does not have keeps resolving to the default font', () {
+  test('where the engine default has no name, a family this side does not have gets no fallback', () {
+    FontUtils.debugEngineDefaultOverride = (family: null);
+    addTearDown(() => FontUtils.debugEngineDefaultOverride = null);
     final unknown = VFont()..fontData = [VFontData()..name = 'System'..height = 12..style = 0];
     expect(FontUtils.textStyleFromVFont(unknown, null).fontFamilyFallback, isNull,
-        reason: 'a fallback list would replace the default font Java measured the text with');
+        reason: 'a fallback list with no default ahead of it would replace the font Java measured');
+  });
+
+  test('with a default font it can name, a family this side does not have falls back behind it', () {
+    FontUtils.debugEngineDefaultOverride = (family: 'Roboto');
+    addTearDown(() => FontUtils.debugEngineDefaultOverride = null);
+    final system = VFont()..fontData = [VFontData()..name = 'system'..height = 11..style = 0];
+    expect(FontUtils.textStyleFromVFont(system, null).fontFamilyFallback, ['Roboto', 'Inter'],
+        reason: 'the default font still draws the text, and a symbol such as \u25B6 comes from Inter '
+            'rather than from the colour emoji font the web engine tries next');
+    final inter = VFont()..fontData = [VFontData()..name = 'Inter'..height = 11..style = 0];
+    expect(FontUtils.textStyleFromVFont(inter, null).fontFamilyFallback, isNull);
   });
 
   testWidgets('a StyledText range in a bundled face without the symbols falls back too',

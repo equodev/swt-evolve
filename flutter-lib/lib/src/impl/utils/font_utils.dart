@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import '../../gen/font.dart';
 import '../../gen/fontdata.dart';
@@ -18,13 +18,22 @@ class FontUtils {
   /// the key symbols. A new substitution target without them belongs here too.
   static const Set<String> _withoutSymbols = {'Liberation Sans', 'Liberation Serif', 'Liberation Mono'};
 
-  /// [fallbackFamilies] behind a bundled face that lacks the symbols, else none. A family this side
-  /// does not have resolves to the engine's default font, which Java's measurements assume; a
-  /// fallback list would take its place.
-  static List<String>? fallbackFor(String? family) =>
-      _withoutSymbols.contains(BundledAssets.bundledFamily(family))
-          ? [for (final fallback in fallbackFamilies) BundledAssets.family(fallback)]
-          : null;
+  /// The engine's default font when it has a name to list: the web engine's Roboto, none on desktop.
+  static const String? _engineDefaultFamily = kIsWeb ? 'Roboto' : null;
+
+  /// Stands in for the engine's default font in a test, `(family: null)` for one with no name.
+  @visibleForTesting
+  static ({String? family})? debugEngineDefaultOverride;
+
+  /// [fallbackFamilies] behind a bundled face lacking the symbols, or behind the engine default.
+  /// The engine default stays first, so text keeps the font Java measured and only symbols change.
+  static List<String>? fallbackFor(String? family) {
+    final symbols = [for (final fallback in fallbackFamilies) BundledAssets.family(fallback)];
+    final bundled = BundledAssets.bundledFamily(family);
+    if (bundled != null) return _withoutSymbols.contains(bundled) ? symbols : null;
+    final engineDefault = (debugEngineDefaultOverride ?? (family: _engineDefaultFamily)).family;
+    return engineDefault == null ? null : [engineDefault, ...symbols];
+  }
 
   /// Calls [onChange] whenever the system fonts change: a font that finishes loading changes how
   /// text lays out, so a cache of laid-out text has to be dropped. Returns false when there is no

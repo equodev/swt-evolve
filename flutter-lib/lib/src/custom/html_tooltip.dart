@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../comm/comm.dart';
 import '../gen/widgets.dart' show WireChannel;
+import '../impl/utils/font_utils.dart';
 
 const String _kEvolveUrlOpenChannel = 'swt.evolve.url.open';
 
@@ -163,7 +164,7 @@ List<InlineSpan> _htmlToSpans(
     var s = base;
     if (bold) s = s.copyWith(fontWeight: FontWeight.w600);
     if (italic) s = s.copyWith(fontStyle: FontStyle.italic);
-    if (mono) s = s.copyWith(fontFamily: 'monospace');
+    if (mono) s = s.copyWith(fontFamily: 'monospace', fontFamilyFallback: FontUtils.fallbackFor('monospace'));
     if (href != null) s = s.copyWith(color: const Color(0xFF1565C0));
     return s;
   }
