@@ -17,6 +17,7 @@ import '../impl/gcdrawer_evolve.dart';
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/held_pointer_mouse_region.dart';
 import 'utils/hover_arbiter.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
@@ -34,12 +35,8 @@ import '../theme/theme_settings/composite_theme_settings.dart';
 /// ordinary composite, but a composite that lays its children out as panels (NoLayout's
 /// `_wrapAsPanel`) leaves a ring of parent background inside every child rectangle. The control
 /// the user sees under a pointer in that ring is the parent, so the ring must not read as child.
-///
-/// Only the press passes it. Forwarding *hover* across the ring as well re-arms the sash cursor
-/// after the MouseExit that should have cleared it: the last hover before the pointer crosses into
-/// the painted child still lands within SashLayout's grab tolerance, and it races that exit through
-/// asyncExec. Leaving hover on the layout rectangle keeps a 5px gap between the last forwarded move
-/// and the exit, which is what makes the reset reliable.
+/// So must the ring a panel composite nested in a child leaves along that child's edge
+/// ([PanelEdge]).
 bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
   final children = state.children;
   if (children == null || children.isEmpty) return false;
@@ -51,7 +48,9 @@ bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
       b.x.toDouble(), b.y.toDouble(),
       b.width.toDouble(), b.height.toDouble(),
     ).deflate(childInset);
-    if (rect.contains(pos)) return true;
+    if (rect.contains(pos) && (childInset > 0 || PanelEdge.gapAt(child, pos - rect.topLeft) == null)) {
+      return true;
+    }
   }
   return false;
 }
@@ -59,13 +58,14 @@ bool _hitsAnyChild(VComposite state, Offset pos, [double childInset = 0]) {
 Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
   final state = impl.state;
   final hoverDepth = ControlNestingScope.depthOf(impl.context);
-  // How far inside its own bounds each child is painted, for the press alone (see _hitsAnyChild).
-  // The e4 workbench divider is that ring plus the band between two part stacks, and SashLayout
-  // engages the resize from a MouseDown on the container, so the ring has to reach it.
+  // The e4 workbench divider is the ring of each child (see _hitsAnyChild) plus the band between two
+  // part stacks, and SashLayout sets its cursor and engages the resize from the container's own
+  // MouseMove and MouseDown, so the ring has to reach it.
   final panelTheme = impl.laysOutChildrenAsPanels
       ? Theme.of(impl.context).extension<CompositeThemeExtension>()
       : null;
   final childInset = panelTheme?.panelChildGap ?? 0.0;
+  bool hitsChild(Offset pos) => _hitsAnyChild(state, pos, childInset);
 
   if (state.menu != null && (state.children?.isNotEmpty ?? false)) {
     content = impl.applyMenu(content);
@@ -79,8 +79,9 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
 
   final forwardsPointer = state.children?.isNotEmpty ?? false;
 
-  Widget listener = MouseRegion(
+  Widget listener = HeldPointerMouseRegion(
     cursor: cursor,
+    held: () => impl.capturedPointerDowns.isNotEmpty,
     // A childless Composite reaches ControlImpl.wrap() (which already sends these); this
     // "has children" path bypasses it, so MouseEnter/MouseExit never fired here before.
     onEnter: (e) => impl.crossPointer(e, hoverDepth, true),
@@ -91,7 +92,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       // Nested MouseRegions all fire onHover for the same point, which is the very thing
       // HoverExclusivityArbiter exists to undo for MouseEnter/MouseExit -- MouseMove needs
       // the same rule. See onPointerMove below for what leaving it out costs.
-      if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition)) return;
+      if (ControlImpl.pointerTakenBelow(e) || hitsChild(e.localPosition)) return;
       final event = impl.moveEvent(e.localPosition.dx.round(), e.localPosition.dy.round());
       impl.sendThrottledMouseMove(state, event, e.buttons);
       impl.restartHover(state, event, e.position);
@@ -104,7 +105,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
       onPointerDown: (e) {
         // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
         // composite, not with an ancestor further up.
-        if (ControlImpl.pointerTakenBelow(e) || _hitsAnyChild(state, e.localPosition, childInset)) return;
+        if (ControlImpl.pointerTakenBelow(e) || hitsChild(e.localPosition)) return;
         if (!impl.forwardsMouseDownOf(e)) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
@@ -147,7 +148,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         impl.widget.sendMouseMouseUp(state, event);
         // A mouse rests where the release left it, as on a childless control; over a child, the
         // child counts its own hover.
-        if (e.kind == PointerDeviceKind.mouse && impl.isOverSelf(e) && !_hitsAnyChild(state, pos)) {
+        if (e.kind == PointerDeviceKind.mouse && impl.isOverSelf(e) && !hitsChild(pos)) {
           impl.restartHover(state, VEvent()
             ..x = event.x
             ..y = event.y, e.position);
@@ -176,7 +177,7 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // the pointer has since wandered over.
         if (ControlImpl.pointerTakenBelow(e)) return;
         final pos = impl.heldLocal(e);
-        if (!impl.capturedPointerDowns.contains(e.pointer) && _hitsAnyChild(state, pos)) {
+        if (!impl.capturedPointerDowns.contains(e.pointer) && hitsChild(pos)) {
           return;
         }
         final event = VEvent()

@@ -31,6 +31,7 @@ class NoLayout extends StatelessWidget {
     final theme = isPanelLayout
         ? Theme.of(context).extension<CompositeThemeExtension>()!
         : null;
+    if (composite != null) PanelEdge.setGap(composite!.id, theme?.panelChildGap, context);
     // Where a composite's children stand. A container whose build() never reaches
     // ControlImpl.blockWhenDisabled (Group lays its children out itself) would otherwise leave
     // them reading an enclosing answer that skips the container's own flag.
@@ -51,7 +52,13 @@ class NoLayout extends StatelessWidget {
               // lays its child out by the bounds.
               child: isPanelLayout
                   ? _wrapAsPanel(_buildChild(child), theme!)
-                  : BoundsSlot(id: child.id, child: LiveLayer(child: ClipRect(child: _buildChild(child)))),
+                  : BoundsSlot(
+                      id: child.id,
+                      child: LiveLayer(
+                        leavesPointerAt: (position) => PanelEdge.gapAt(child, position) != null,
+                        child: ClipRect(child: _buildChild(child)),
+                      ),
+                    ),
             )
         ],
       ),
@@ -173,6 +180,60 @@ class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {
     }
 
     return false;
+  }
+}
+
+/// The gap a composite that lays its children out as panels paints around each of them, which runs
+/// along its own edge too. Where that edge meets a divider of an enclosing container, the strip
+/// reads as part of the divider: the pointer there belongs to the nearest enclosing control whose
+/// own edge the strip does not run along, as the gap between two panels belongs to their parent.
+abstract final class PanelEdge {
+  /// Per composite id, its gap and the [NoLayout] that laid it out: the entry lasts while that
+  /// layout is mounted, so a disposed composite's gap claims no pointer.
+  static final Map<int, (double, BuildContext)> _gaps = {};
+  static double _widest = 0;
+
+  /// Records that the composite numbered [id] panels its children with [gap], or does not (null),
+  /// as the [NoLayout] built in [layout] lays it out.
+  static void setGap(int id, double? gap, BuildContext layout) {
+    if (gap == null || gap <= 0) {
+      _gaps.remove(id);
+      return;
+    }
+    if (!_gaps.containsKey(id)) _gaps.removeWhere((_, entry) => !entry.$2.mounted);
+    _gaps[id] = (gap, layout);
+    if (gap > _widest) _widest = gap;
+  }
+
+  static double? _gapOf(int id) {
+    final entry = _gaps[id];
+    return entry != null && entry.$2.mounted ? entry.$1 : null;
+  }
+
+  /// The width of the panel gap [pos] lies in, in [control]'s coordinates, when that gap runs along
+  /// [control]'s own edge; null when [pos] is on the surface of [control] or of a control in it.
+  static double? gapAt(VControl control, Offset pos) {
+    if (_gaps.isEmpty || control is! VComposite) return null;
+    final bounds = control.bounds;
+    final children = control.children;
+    if (bounds == null || children == null || children.isEmpty) return null;
+    bool alongEdge(double gap) =>
+        pos.dx < gap || pos.dy < gap || pos.dx >= bounds.width - gap || pos.dy >= bounds.height - gap;
+    if (!alongEdge(_widest)) return null;
+    final gap = _gapOf(control.id);
+    // The first child is the one painted on top.
+    for (final child in children) {
+      final b = child.bounds;
+      if (child.visible == false || b == null) continue;
+      final rect = Rect.fromLTWH(b.x.toDouble(), b.y.toDouble(), b.width.toDouble(), b.height.toDouble())
+          .deflate(gap ?? 0);
+      if (!rect.contains(pos)) continue;
+      // A panel is fitted into its slot, which takes the pointer anywhere inside it.
+      if (gap != null) return null;
+      final inner = gapAt(child, pos - rect.topLeft);
+      return inner != null && alongEdge(inner) ? inner : null;
+    }
+    return gap != null && alongEdge(gap) ? gap : null;
   }
 }
 

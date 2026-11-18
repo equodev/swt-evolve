@@ -8,13 +8,29 @@ import 'package:flutter/widgets.dart';
 /// window of controls is not composited one layer each. It must be the control's outermost box: a
 /// relayout inside the control repaints from there.
 class LiveLayer extends SingleChildRenderObjectWidget {
-  const LiveLayer({super.key, super.child});
+  const LiveLayer({super.key, this.leavesPointerAt, super.child});
+
+  /// Where, in its own coordinates, the control leaves the pointer to what lies behind it.
+  final bool Function(Offset position)? leavesPointerAt;
 
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderLiveLayer();
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderLiveLayer()..leavesPointerAt = leavesPointerAt;
+
+  @override
+  void updateRenderObject(BuildContext context, RenderObject renderObject) =>
+      (renderObject as _RenderLiveLayer).leavesPointerAt = leavesPointerAt;
 }
 
 class _RenderLiveLayer extends RenderProxyBox {
+  bool Function(Offset position)? leavesPointerAt;
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (leavesPointerAt?.call(position) ?? false) return false;
+    return super.hitTest(result, position: position);
+  }
+
   /// Consecutive frames repainted before the control gets a layer.
   static const int _framesToPromote = 3;
 

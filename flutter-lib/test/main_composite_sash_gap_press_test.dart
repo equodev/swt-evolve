@@ -67,27 +67,6 @@ VComposite _sashContainer() => VComposite()
     _part(id: 3, bounds: _rect(_bandRight.toInt(), 0, 198, 300)),
   ];
 
-Future<List<String>> _hoverAt(WidgetTester tester, Offset at) async {
-  final events = <String>[];
-  await tester.pumpWidget(EvolveApp(
-    theme: ThemeMode.light,
-    contentWidget: SizedBox(
-      width: 400,
-      height: 300,
-      child: _CapturingMainComposite(
-        value: _sashContainer(),
-        onEvent: (ev, payload) => events.add(ev),
-      ),
-    ),
-  ));
-  await tester.pumpAndSettle();
-  events.clear();
-  final pointer = TestPointer(1, PointerDeviceKind.mouse);
-  await tester.sendEventToBinding(pointer.hover(at));
-  await tester.pumpAndSettle();
-  return events;
-}
-
 Future<List<VEvent?>> _pressAt(WidgetTester tester, Offset at) async {
   final downs = <VEvent?>[];
   await tester.pumpWidget(EvolveApp(
@@ -139,18 +118,5 @@ void main() {
 
     expect(downs, isEmpty,
         reason: 'the part is painted there; the container must not report the press as well');
-  });
-
-  // The painted rectangle is the press's rule alone. Hover reaching across the ring re-arms the
-  // sash cursor after the MouseExit meant to clear it -- the last hover before the pointer crosses
-  // into the part still sits within SashLayout's grab tolerance and races that exit -- and the
-  // resize cursor then stays on over the part the pointer has moved onto.
-  testWidgets('hover in the painted gap is still left to the part', (tester) async {
-    const inGapRing = _bandLeft - _panelChildGap / 2;
-
-    final events = await _hoverAt(tester, const Offset(inGapRing, y));
-
-    expect(events.where((e) => e.contains('MouseMove')), isEmpty,
-        reason: 'hover keeps the layout rectangle, so the exit that clears the cursor wins');
   });
 }
