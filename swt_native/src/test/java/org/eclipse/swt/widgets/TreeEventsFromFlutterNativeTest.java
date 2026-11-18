@@ -574,7 +574,7 @@ class TreeEventsFromFlutterNativeTest {
         TreeItem[] items = roots(tree, 2);
         tree.addListener(SWT.PaintItem, e -> {});
         Event paint = new Event();
-        paint.segments = new int[] {(int) FlutterBridge.id(items[1])};
+        paint.segments = new int[] {(int) FlutterBridge.id(items[1]), 0xFFFFFF};
 
         fromFlutter(tree, "PaintItem/PaintItem", paint);
         runQueued();

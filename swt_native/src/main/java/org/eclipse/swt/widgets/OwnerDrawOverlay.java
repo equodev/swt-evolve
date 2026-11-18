@@ -39,8 +39,14 @@ public final class OwnerDrawOverlay {
         final java.util.Set<Item> paintedAhead = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
         /** Per Table or Tree, the key its rows on screen are cached under for one flush. */
         final java.util.Map<Control, Object> shownKeys = new java.util.WeakHashMap<>();
+        /** Per Table or Tree, the key its selection is cached under for one flush. */
+        final java.util.Map<Control, Object> selectionKeys = new java.util.WeakHashMap<>();
         /** The fonts the cells draw in under the theme, given to the listeners' GC; see {@link OwnerDrawOverlay#font}. */
         final java.util.Map<TextStyle, Font> themeFonts = new java.util.HashMap<>();
+        /** Per row, the RGB of the ground Flutter last reported painting under its overlay. */
+        final java.util.Map<Item, Integer> grounds = new java.util.WeakHashMap<>();
+        /** The colours {@link #grounds} are handed to the listeners' GC in. */
+        final java.util.Map<Integer, Color> groundColors = new java.util.HashMap<>();
     }
 
     private static State state(Widget widget) {
@@ -49,7 +55,10 @@ public final class OwnerDrawOverlay {
         if (!(state instanceof State)) {
             State created = new State();
             display.setData(STATE, created);
-            display.disposeExec(() -> created.themeFonts.values().forEach(Font::dispose));
+            display.disposeExec(() -> {
+                created.themeFonts.values().forEach(Font::dispose);
+                created.groundColors.values().forEach(Color::dispose);
+            });
             state = created;
         }
         return (State) state;
@@ -74,17 +83,22 @@ public final class OwnerDrawOverlay {
         return isListening(row) || state(row).paintedAhead.contains(row);
     }
 
-    /** Flutter mounted an overlay for each of these rows: paint them into it. */
-    public static void rowsListening(DartWidget parent, int[] ids) {
-        if (ids == null || !parent.hooks(SWT.PaintItem)) {
+    /**
+     * Flutter mounted an overlay for each of these rows: paint them into it. {@code rows} holds, for
+     * each row, its id followed by the RGB of the ground Flutter lays the overlay on.
+     */
+    public static void rowsListening(DartWidget parent, int[] rows) {
+        if (rows == null || !parent.hooks(SWT.PaintItem)) {
             return;
         }
-        for (int id : ids) {
-            Object found = FlutterBridge.findById(id);
+        for (int r = 0; r + 1 < rows.length; r += 2) {
+            Object found = FlutterBridge.findById(rows[r]);
+            int ground = rows[r + 1] & 0xFFFFFF;
             if (found instanceof DartTableItem) {
                 DartTableItem item = (DartTableItem) found;
                 if (item.parent.getImpl() != parent) continue;
                 item.ownerDrawOverlay = true;
+                state(item.getApi()).grounds.put(item.getApi(), ground);
                 // Painted again even when painted ahead: the overlay that reports may not be the one
                 // the earlier paint was held for.
                 state(item.getApi()).paintedAhead.remove(item.getApi());
@@ -94,6 +108,7 @@ public final class OwnerDrawOverlay {
                 DartTreeItem item = (DartTreeItem) found;
                 if (item.parent.getImpl() != parent) continue;
                 item.ownerDrawOverlay = true;
+                state(item.getApi()).grounds.put(item.getApi(), ground);
                 state(item.getApi()).paintedAhead.remove(item.getApi());
                 forgetWhatIsShown(item.getApi());
                 TreeHelper.nameOwnerDrawnCells(item);
@@ -132,6 +147,7 @@ public final class OwnerDrawOverlay {
         Rectangle first = bounds(row, 0);
         GC gc = eventGc(parent);
         ((DartGC) gc.getImpl()).paintOwnerDrawnItem(row);
+        boolean selected = isSelected(parent, row);
         Transform toRow = new Transform(parent.getDisplay());
         try {
             toRow.translate(-rowLeft(parent, row), -first.y);
@@ -142,15 +158,16 @@ public final class OwnerDrawOverlay {
                 // Native SWT hands the listeners a GC already set to the cell's colors and font,
                 // and an owner-drawing app draws with them rather than setting its own.
                 gc.setForeground(foreground(row, i));
-                gc.setBackground(background(row, i));
+                gc.setBackground(background(row, i, selected));
                 gc.setFont(font(row, i));
+                int detail = selected ? SWT.SELECTED : 0;
                 if (owner.hooks(SWT.EraseItem)) {
                     Event erase = cellEvent(row, i, gc, cell);
-                    erase.detail = SWT.FOREGROUND | SWT.BACKGROUND;
+                    erase.detail = SWT.FOREGROUND | SWT.BACKGROUND | detail;
                     owner.sendEvent(SWT.EraseItem, erase);
                 }
                 Event paint = cellEvent(row, i, gc, cell);
-                paint.detail = SWT.FOREGROUND;
+                paint.detail = SWT.FOREGROUND | detail;
                 owner.sendEvent(SWT.PaintItem, paint);
             }
         } finally {
@@ -204,9 +221,64 @@ public final class OwnerDrawOverlay {
         return ((TreeItem) row).getForeground(index);
     }
 
-    private static Color background(Item row, int index) {
-        if (row instanceof TableItem) return ((TableItem) row).getBackground(index);
-        return ((TreeItem) row).getBackground(index);
+    /**
+     * The cell's background as native SWT hands it to the listeners: the colour the row is painted
+     * with. Evolve paints its theme's colours rather than SWT's defaults and selection, and paints the
+     * application's colours only under {@code use_swt_colors}, so unless the application's colour is
+     * painted on an unselected row, this is the ground Flutter reported under the row; a fill or
+     * opaque text in it then lands on the row's colour.
+     */
+    private static Color background(Item row, int index, boolean selected) {
+        Color own = row instanceof TableItem ? ((TableItem) row).getBackground(index) : ((TreeItem) row).getBackground(index);
+        if (!selected && Config.getConfigFlags().use_swt_colors && appSetsBackground(row, index)) return own;
+        State state = state(row);
+        Integer ground = state.grounds.get(row);
+        if (ground == null) return own;
+        return state.groundColors.computeIfAbsent(ground,
+                rgb -> new Color(row.getDisplay(), (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF));
+    }
+
+    private static boolean appSetsBackground(Item row, int index) {
+        Color[] cells;
+        Color item;
+        Control parent;
+        Object impl = row.getImpl();
+        if (impl instanceof DartTableItem) {
+            DartTableItem t = (DartTableItem) impl;
+            cells = t.cellBackground;
+            item = t.background;
+            parent = t.parent;
+        } else if (impl instanceof DartTreeItem) {
+            DartTreeItem t = (DartTreeItem) impl;
+            cells = t.cellBackground;
+            item = t.background;
+            parent = t.parent;
+        } else {
+            return true;
+        }
+        if (cells != null && index < cells.length && cells[index] != null) return true;
+        return item != null || ((DartControl) parent.getImpl())._background != null;
+    }
+
+    /** Whether {@code row} is selected, from {@code parent}'s selection read once per flush. */
+    private static boolean isSelected(Control parent, Item row) {
+        Object key = state(row).selectionKeys.computeIfAbsent(parent, p -> new Object());
+        return dev.equo.swt.Serializer.oncePerTape(key, () -> selection(parent)).test(row);
+    }
+
+    private static java.util.function.Predicate<Item> selection(Control parent) {
+        if (parent instanceof Table) {
+            Table table = (Table) parent;
+            java.util.BitSet indices = new java.util.BitSet();
+            for (int index : TableHelper.selectionIndices((DartTable) table.getImpl())) indices.set(index);
+            return row -> {
+                int index = table.indexOf((TableItem) row);
+                return index >= 0 && indices.get(index);
+            };
+        }
+        java.util.Set<Item> items = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        java.util.Collections.addAll(items, ((Tree) parent).getSelection());
+        return items::contains;
     }
 
     /**

@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The owner-draw GC carries the cell's colours as the application set them, whatever the theme, as
- * native SWT hands them to the listeners: Evolve keeps the text legible where it paints it, on the
- * ground actually under each string.
+ * The owner-draw GC carries the cell's foreground as the application set it, whatever the theme, and
+ * as its background the ground the theme paints under the row, which is not the application's colour:
+ * Evolve keeps the text legible where it paints it, on the ground actually under each string.
  *
  * <p>The shape is an Eclipse 4 workbench whose light CSS sets a results table to black on white, run
  * in the dark theme.
@@ -31,7 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TableOwnerDrawThemeColorsFlutterTest {
 
     private static final RGB BLACK = new RGB(0, 0, 0);
-    private static final RGB WHITE = new RGB(255, 255, 255);
+    /** The ground Flutter reports under the row. */
+    private static final RGB GROUND = new RGB(0x20, 0x20, 0x20);
 
     private RecordingBridge bridge;
     private Display display;
@@ -62,7 +63,7 @@ class TableOwnerDrawThemeColorsFlutterTest {
     }
 
     @Test
-    void aTablesCssColours_reachTheGcAsSet_underTheDarkTheme() {
+    void aTablesCssForeground_reachesTheGcAsSet_onTheGroundUnderTheDarkTheme() {
         start("dark");
         Shell shell = new Shell(display);
         Table table = new Table(shell, SWT.NONE);
@@ -76,11 +77,11 @@ class TableOwnerDrawThemeColorsFlutterTest {
         paint(table, row.hashCode(), "Table");
         assertThat(OwnerDrawOverlay.isListening(row)).as("the row is owner-drawn").isTrue();
 
-        assertCellColours(eraseBackground, paintForeground, BLACK, WHITE);
+        assertCellColours(eraseBackground, paintForeground, BLACK, GROUND);
     }
 
     @Test
-    void aTreesCssColours_reachTheGcAsSet_underTheDarkTheme() {
+    void aTreesCssForeground_reachesTheGcAsSet_onTheGroundUnderTheDarkTheme() {
         start("dark");
         Shell shell = new Shell(display);
         Tree tree = new Tree(shell, SWT.NONE);
@@ -94,11 +95,11 @@ class TableOwnerDrawThemeColorsFlutterTest {
         paint(tree, row.hashCode(), "Tree");
         assertThat(OwnerDrawOverlay.isListening(row)).as("the row is owner-drawn").isTrue();
 
-        assertCellColours(eraseBackground, paintForeground, BLACK, WHITE);
+        assertCellColours(eraseBackground, paintForeground, BLACK, GROUND);
     }
 
     @Test
-    void anAppsRowColours_reachTheGcAsSet_underTheDarkTheme() {
+    void anAppsRowForeground_reachesTheGcAsSet_onTheGroundUnderTheDarkTheme() {
         start("dark");
         Shell shell = new Shell(display);
         Table table = new Table(shell, SWT.NONE);
@@ -115,7 +116,7 @@ class TableOwnerDrawThemeColorsFlutterTest {
 
         paint(table, row.hashCode(), "Table");
 
-        assertCellColours(eraseBackground, paintForeground, red.getRGB(), lightBlue.getRGB());
+        assertCellColours(eraseBackground, paintForeground, red.getRGB(), GROUND);
         red.dispose();
         lightBlue.dispose();
     }
@@ -152,7 +153,7 @@ class TableOwnerDrawThemeColorsFlutterTest {
 
     private void paint(Control parent, int rowId, String type) {
         Event e = new Event();
-        e.segments = new int[] { rowId };
+        e.segments = new int[] { rowId, 0x202020 };
         bridge.comm.fireContaining(type + "/" + parent.hashCode() + "/PaintItem/PaintItem", e);
         while (display.readAndDispatch()) {
             // run the handler's asyncExec
@@ -167,7 +168,7 @@ class TableOwnerDrawThemeColorsFlutterTest {
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(paintForeground.get()).as("the GC's foreground is the cell's own")
                     .isEqualTo(foreground);
-            softly.assertThat(eraseBackground.get()).as("the GC's background is the cell's own")
+            softly.assertThat(eraseBackground.get()).as("the GC's background is the ground under the row")
                     .isEqualTo(background);
         });
     }

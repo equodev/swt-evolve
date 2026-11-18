@@ -81,7 +81,9 @@ VTree _tree() => VTree()
 Future<List<int>> _pump(WidgetTester tester, Widget Function(void Function(String, VEvent?)) control) async {
   final requested = <int>[];
   void onEvent(String ev, VEvent? payload) {
-    if (ev == 'PaintItem/PaintItem') requested.addAll(payload?.segments ?? const []);
+    // Each row is its id followed by its ground.
+    final rows = payload?.segments ?? const <int>[];
+    if (ev == 'PaintItem/PaintItem') requested.addAll([for (var i = 0; i < rows.length; i += 2) rows[i]]);
   }
 
   await tester.pumpWidget(EvolveApp(

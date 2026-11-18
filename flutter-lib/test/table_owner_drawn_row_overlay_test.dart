@@ -83,9 +83,10 @@ void main() {
     final requests = await _pump(tester, _table([]));
 
     expect(find.byType(OwnerDrawnRowOverlay), findsOneWidget);
+    final ground = tester.widget<OwnerDrawnRowOverlay>(find.byType(OwnerDrawnRowOverlay)).ground;
     expect(requests, [
-      [11]
-    ]);
+      [11, ground.toARGB32() & 0xFFFFFF]
+    ], reason: 'Java hands the row ground to the paint listeners as the GC background');
     final row = tester.getRect(find.text('check_0710'));
     final overlay = tester.getRect(find.byType(OwnerDrawnRowOverlay));
     expect(overlay.top, lessThanOrEqualTo(row.top));

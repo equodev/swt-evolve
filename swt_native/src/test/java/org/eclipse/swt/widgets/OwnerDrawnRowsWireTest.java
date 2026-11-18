@@ -266,7 +266,7 @@ class OwnerDrawnRowsWireTest {
     /** The client mounted the overlays of {@code rows}. */
     private void listening(Control parent, List<? extends Item> rows) {
         Event e = new Event();
-        e.segments = rows.stream().mapToInt(Object::hashCode).toArray();
+        e.segments = rows.stream().flatMapToInt(row -> java.util.stream.IntStream.of(row.hashCode(), 0xFFFFFF)).toArray();
         String kind = parent instanceof Tree ? "Tree/" : "Table/";
         bridge.comm.fireContaining(kind + parent.hashCode() + "/PaintItem/PaintItem", e);
     }

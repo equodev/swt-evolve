@@ -58,13 +58,13 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
 
   void _requestPaint() {
     final parent = context.findAncestorStateOfType<ControlImpl>();
-    if (parent != null) _OwnerDrawRequests.add(parent, widget.itemId);
+    if (parent != null) _OwnerDrawRequests.add(parent, widget.itemId, widget.ground);
   }
 
   @override
   void didUpdateWidget(OwnerDrawnRowOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // The text was made legible on the old ground (a row just selected or deselected).
+    // The row was painted on the old ground (a row just selected or deselected).
     if (_subscribed &&
         (oldWidget.ground != widget.ground || oldWidget.minContrast != widget.minContrast)) {
       _requestPaint();
@@ -104,27 +104,31 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   }
 }
 
-/// The rows whose overlay started listening this frame, sent to Java once per Table or Tree.
+/// The rows whose overlay started listening this frame, sent to Java once per Table or Tree, each
+/// with the ground it is laid on: Java hands that colour to the listeners as the GC's background.
 class _OwnerDrawRequests {
-  static final Map<ControlImpl, Set<int>> _pending = {};
+  static final Map<ControlImpl, Map<int, Color>> _pending = {};
 
-  static void add(ControlImpl parent, int itemId) {
+  static void add(ControlImpl parent, int itemId, Color ground) {
     // GCs report listening from post-frame callbacks; a microtask runs once they all have, where
     // another post-frame callback would wait for a frame an idle UI never schedules.
-    final ids = _pending.putIfAbsent(parent, () {
+    final rows = _pending.putIfAbsent(parent, () {
       scheduleMicrotask(() => _flush(parent));
-      return <int>{};
+      return <int, Color>{};
     });
-    ids.add(itemId);
+    rows[itemId] = ground;
   }
 
   static void _flush(ControlImpl parent) {
-    final ids = _pending.remove(parent);
-    if (ids == null || ids.isEmpty || !parent.mounted) return;
+    final rows = _pending.remove(parent);
+    if (rows == null || rows.isEmpty || !parent.mounted) return;
     (parent.widget as WidgetSwt).sendEvent(
       parent.state,
       WireChannel.paintItemPaintItem,
-      VEvent()..segments = ids.toList(),
+      VEvent()
+        ..segments = [
+          for (final row in rows.entries) ...[row.key, row.value.toARGB32() & 0xFFFFFF],
+        ],
     );
   }
 }
