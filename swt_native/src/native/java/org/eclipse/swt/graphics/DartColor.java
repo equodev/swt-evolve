@@ -528,9 +528,15 @@ public final class DartColor extends DartResource implements IColor {
         return red;
     }
 
+    int systemColorId;
+
+    Color standsInFor;
+
     public Color _copy() {
         DartColor copy = new DartColor(device, red, green, blue, null);
         copy.alpha = alpha;
+        copy.systemColorId = systemColorId;
+        copy.standsInFor = standsInFor;
         return copy.getApi();
     }
 

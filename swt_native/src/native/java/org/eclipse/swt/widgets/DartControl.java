@@ -2851,7 +2851,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setForeground(Color color) {
         checkWidget();
         color = GraphicsUtils.copyColor(color);
-        Color newValue = color;
+        Color newValue = ThemedSystemColors.legibleForeground(this, color);
         if (!java.util.Objects.equals(this._foreground, newValue)) {
             getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);

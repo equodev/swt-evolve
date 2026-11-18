@@ -325,6 +325,39 @@ public class GraphicsUtils {
         return ((DartColor) color.getImpl())._copy();
     }
 
+    /** Marks {@code color} as the system colour {@code id}; its {@link #copyColor copies} keep the mark. */
+    public static Color tagSystemColor(Color color, int id) {
+        ((DartColor) color.getImpl()).systemColorId = id;
+        return color;
+    }
+
+    /** The system colour id {@code color} was {@link #tagSystemColor tagged} with, 0 for none. */
+    public static int systemColorId(Color color) {
+        return color == null ? 0 : ((DartColor) color.getImpl()).systemColorId;
+    }
+
+    /**
+     * Marks {@code shown} as shown in place of the application colour {@code own}; its
+     * {@link #copyColor copies} keep the mark.
+     */
+    public static Color standIn(Color shown, Color own) {
+        ((DartColor) shown.getImpl()).standsInFor = own;
+        return shown;
+    }
+
+    /** The application colour {@code color} is {@link #standIn shown in place of}, null for none. */
+    public static Color standsInFor(Color color) {
+        return color == null ? null : ((DartColor) color.getImpl()).standsInFor;
+    }
+
+    /** Changes a system colour's channels in place, alpha kept: it follows the theme's variant. */
+    public static void setRGB(Color color, RGB rgb) {
+        DartColor c = (DartColor) color.getImpl();
+        c.red = rgb.red;
+        c.green = rgb.green;
+        c.blue = rgb.blue;
+    }
+
     /** The color's alpha, 255 on a release whose Color has no alpha. */
     public static int getAlpha(Color color) {
         return color.getImpl().getAlpha();

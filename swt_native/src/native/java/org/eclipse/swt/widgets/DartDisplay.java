@@ -1577,6 +1577,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     }
 
     Color getWidgetColor(int id) {
+        if (ThemedSystemColors.follows(id))
+            return ThemedSystemColors.get(this, id);
         Color themed = dev.equo.swt.ThemeSystemColors.of(this.getApi(), id, Config.systemColorsAreDark(darkTheme()));
         if (themed != null)
             return themed;
@@ -1589,39 +1591,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 return new Color(this.getApi(), 192, 192, 192);
             case SWT.COLOR_WIDGET_HIGHLIGHT_SHADOW:
                 return new Color(this.getApi(), 224, 224, 224);
-            // A foreground is only legible against the background it is paired with, so it
-            // has to come from the same scheme: an application that sets neither -- the
-            // common case for owner-drawn content -- inherits both from here.
-            case SWT.COLOR_WIDGET_FOREGROUND:
-                {
-                    if (!Config.systemColorsAreDark(darkTheme()))
-                        return new Color(this.getApi(), 0, 0, 0);
-                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
-                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
-                }
-            case SWT.COLOR_WIDGET_BACKGROUND:
-                {
-                    if (!Config.systemColorsAreDark(darkTheme()))
-                        return new Color(this.getApi(), 240, 240, 240);
-                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
-                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
-                }
             case SWT.COLOR_WIDGET_BORDER:
                 return new Color(this.getApi(), 0, 0, 0);
-            case SWT.COLOR_LIST_FOREGROUND:
-                {
-                    if (!Config.systemColorsAreDark(darkTheme()))
-                        return new Color(this.getApi(), 0, 0, 0);
-                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkOnSurface();
-                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
-                }
-            case SWT.COLOR_LIST_BACKGROUND:
-                {
-                    if (!Config.systemColorsAreDark(darkTheme()))
-                        return new Color(this.getApi(), 255, 255, 255);
-                    dev.equo.swt.size.CanvasTheme t = dev.equo.swt.size.CanvasTheme.getDarkSurface();
-                    return new Color(this.getApi(), t.red(), t.green(), t.blue());
-                }
             case SWT.COLOR_LIST_SELECTION:
                 return new Color(this.getApi(), 51, 153, 255);
             case SWT.COLOR_LIST_SELECTION_TEXT:
@@ -4210,6 +4181,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     static volatile long WEB_PARK_CAP_MS = 16;
 
     volatile String clientPlatform;
+
+    ThemedSystemColors themedSystemColors;
 
     dev.equo.swt.SystemAppearance systemAppearance;
 

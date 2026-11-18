@@ -17,8 +17,13 @@ public final class ThemeSystemColors {
 
     /** The colour {@code id} takes in the current named theme, or null when no provider sets it. */
     public static Color of(Device device, int id, boolean dark) {
-        RGB rgb = of(Providers.ALL, Config.getConfigFlags().theme_name, dark, id);
+        RGB rgb = rgb(id, dark);
         return rgb == null ? null : new Color(device, rgb);
+    }
+
+    /** The RGB {@code id} takes in the current named theme, or null when no provider sets it. */
+    public static RGB rgb(int id, boolean dark) {
+        return of(Providers.ALL, Config.getConfigFlags().theme_name, dark, id);
     }
 
     static RGB of(Iterable<NamedThemeSystemColors> providers, String themeName, boolean dark, int id) {
