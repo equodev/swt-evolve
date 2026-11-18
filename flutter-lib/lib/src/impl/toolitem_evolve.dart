@@ -507,7 +507,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
   Widget build(BuildContext context) {
     final widgetTheme = Theme.of(context).extension<ToolItemThemeExtension>()!;
     final textOnRight = ToolBarConfig.of(context)?.textOnRight ?? true;
-    var text = state.text;
+    var text = state.text == null ? null : stripAccelerators(state.text!);
     var enabled = state.enabled ?? false;
     var bits = SWT.PUSH | SWT.CHECK | SWT.RADIO | SWT.SEPARATOR | SWT.DROP_DOWN;
 
