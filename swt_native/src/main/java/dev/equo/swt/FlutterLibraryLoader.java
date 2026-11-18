@@ -157,14 +157,13 @@ public class FlutterLibraryLoader {
                     setExecutablePermission(required);
             }
             // Pre-load the engine, then the bridge (which links against it). The webview plugin is not
-            // pre-loaded: the bridge dlopens it lazily, so a missing libwebkit2gtk-4.1 leaves the Browser
-            // inactive instead of aborting Display creation. It is still extracted above.
+            // pre-loaded: the bridge dlopens it lazily, so where no build of the plugin loads (no
+            // WebKitGTK 4.1 or 4.0) the Browser is inactive instead of aborting Display creation.
             loadLibrary(flutFile.getAbsolutePath());
             loadLibrary(libFile.getAbsolutePath());
         } else {
             String bundleLib = LINUX_BUNDLE_DIR_NAME + SEP + LIB_SUB_DIR_NAME + SEP;
             loadOSLibraries(LINUX_RELEASE, bundleLib + LINUX_ENGINE_LIB_NAME);
-            loadOSLibraries(LINUX_RELEASE, bundleLib + LINUX_WEBVIEW_PLUGIN_NAME);
             loadOSLibraries(LINUX_RELEASE, RUNNER_DIR_NAME + SEP + LINUX_LIB_NAME);
         }
     }

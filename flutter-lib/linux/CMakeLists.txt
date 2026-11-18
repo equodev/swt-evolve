@@ -135,3 +135,5 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/webkit40/CMakeLists.txt")

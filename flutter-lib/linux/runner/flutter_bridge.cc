@@ -99,15 +99,36 @@ std::string GetSharedLibraryPath() {
   return "";
 }
 
-// Registers the bundled plugins. webview_all is dlopen'd here rather than linked, so its
-// libwebkit2gtk-4.1 dependency is not required to start: if it can't be loaded the Browser
-// is inactive and the app keeps running.
+// The builds of the webview_all plugin, in order of preference: against the system
+// WebKitGTK 4.1, then 4.0 (the only one some distributions ship, such as RHEL 8). The 4.0 build
+// is absent where the Linux bundle was built without its development files.
+static const char *const kWebviewPlugins[] = {
+    "libwebview_all_linux_plugin.so",
+    "libwebview_all_linux_plugin_webkit40.so",
+};
+
+// Registers the bundled plugins. webview_all is dlopen'd here rather than linked, so no
+// WebKitGTK is required to start: if no build of the plugin loads, the Browser is inactive and
+// the app keeps running.
 static void EquoRegisterPlugins(FlView *view) {
-  std::string plugin_path = GetSharedLibraryPath() + "/bundle/lib/libwebview_all_linux_plugin.so";
-  void *handle = dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+  std::string lib_dir = GetSharedLibraryPath() + "/bundle/lib/";
+  void *handle = nullptr;
+  std::string errors;
+  for (const char *plugin : kWebviewPlugins) {
+    std::string plugin_path = lib_dir + plugin;
+    errors += errors.empty() ? "" : "; ";
+    if (!std::filesystem::exists(plugin_path)) {
+      errors += plugin_path + ": not found";
+      continue;
+    }
+    handle = dlopen(plugin_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (handle != nullptr)
+      break;
+    errors += dlerror();
+  }
   if (handle == nullptr) {
     g_warning("Evolve: Browser unavailable - webview plugin not loaded (%s). "
-              "Desktop mode continues without Browser support.", dlerror());
+              "Desktop mode continues without Browser support.", errors.c_str());
     return;
   }
   using RegisterFn = void (*)(FlPluginRegistrar *);

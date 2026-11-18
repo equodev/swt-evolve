@@ -29,7 +29,7 @@ import 'utils/layered_layout_builder.dart';
 /// `webview_flutter` API), which provides a real embedded webview on every
 /// platform:
 ///   web   -> webview_flutter_web      windows -> webview_windows (WebView2)
-///   macos -> WKWebView                linux   -> WebKitGTK (webkit2gtk-4.1)
+///   macos -> WKWebView                linux   -> WebKitGTK (webkit2gtk-4.1, or 4.0)
 ///
 /// Navigation is driven imperatively from the SWT [VBrowser] state, and the
 /// webview's navigation callbacks are mapped onto the SWT Browser events.
