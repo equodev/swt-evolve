@@ -731,6 +731,7 @@ abstract class EquoCommBase {
   static void resetForTesting() {
     _applyingCount = 0;
     _whenApplied.clear();
+    _afterNextApply.clear();
     _owed.clear();
     _paying = false;
   }
@@ -746,6 +747,25 @@ abstract class EquoCommBase {
       scheduleMicrotask(() {
         if (_applyingCount == 0) _runWhenApplied();
       });
+    }
+  }
+
+  static final List<void Function()> _afterNextApply = [];
+
+  /// Runs [callback] once, after the next received frame has been applied: what a test waiting for
+  /// the client's state to change waits for when no frame is coming to show it.
+  static void afterNextApply(void Function() callback) => _afterNextApply.add(callback);
+
+  static void _runAfterNextApply() {
+    if (_afterNextApply.isEmpty) return;
+    final callbacks = List.of(_afterNextApply);
+    _afterNextApply.clear();
+    for (final callback in callbacks) {
+      try {
+        callback();
+      } catch (e, st) {
+        _logHandlerError('afterNextApply', e, st);
+      }
     }
   }
 
@@ -823,7 +843,10 @@ abstract class EquoCommBase {
     _applying = false;
     // The last frame applied is not kept past the drain that applied it.
     _applyQueue.frame = null;
-    if (--_applyingCount == 0) _runWhenApplied();
+    if (--_applyingCount == 0) {
+      _runWhenApplied();
+      _runAfterNextApply();
+    }
   }
 
   /// Resumes the queue once the widget op [handled] answers, holding the frame when it declined.

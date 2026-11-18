@@ -15,5 +15,5 @@ void registerTestQueryJsApi({
   required bool Function(String) expandTreeItem,
   required String Function() queryPrimaryFocus,
   required void Function(void Function()) scheduleFrameSync,
-  required void Function(void Function()) afterNextFrame,
+  required void Function(void Function()) afterNextChange,
 }) {}

@@ -17,7 +17,7 @@ import 'dart:js_interop_unsafe';
 ///   const met  = await window.evolveTest.waitForStates(conditionJson, timeoutMs); // see waitForStatesJson
 ///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
-///   await new Promise(r => window.evolveTest.afterNextFrame(r)); // the app's next frame, none forced
+///   await new Promise(r => window.evolveTest.afterNextChange(r)); // the next frame, or state applied without one
 void registerTestQueryJsApi({
   required String Function() styledTextPerfJson,
   required String? Function(int) renderFactsJson,
@@ -33,7 +33,7 @@ void registerTestQueryJsApi({
   required bool Function(String) expandTreeItem,
   required String Function() queryPrimaryFocus,
   required void Function(void Function()) scheduleFrameSync,
-  required void Function(void Function()) afterNextFrame,
+  required void Function(void Function()) afterNextChange,
 }) {
   // Kept when it exists: an app built on this one may have added its own entries first.
   final api = globalContext.getProperty<JSObject?>('evolveTest'.toJS) ?? JSObject();
@@ -105,9 +105,9 @@ void registerTestQueryJsApi({
     }).toJS,
   );
   api.setProperty(
-    'afterNextFrame'.toJS,
+    'afterNextChange'.toJS,
     ((JSFunction onDone) {
-      afterNextFrame(() => onDone.callAsFunction());
+      afterNextChange(() => onDone.callAsFunction());
     }).toJS,
   );
   globalContext.setProperty('evolveTest'.toJS, api);

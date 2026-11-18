@@ -282,7 +282,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       );
     }
 
-    return tagSemantics(buildTreeItemContent(context));
+    // A row gains a child node (the expander) when its children arrive; as a button its role, and
+    // so its identifier, survive that.
+    return tagSemantics(buildTreeItemContent(context), button: true);
   }
 
   /// Whether the row's owner-draw overlay draws [column] of what [painted] names: it does once it

@@ -19,18 +19,13 @@ void main() {
     applyConfigFlags(ConfigFlags());
   });
 
-  tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMessageHandler('flutter/assets', null));
+  // Not setMockMessageHandler: clearing it would also drop the asset handler flutter_test installs,
+  // and every later asset load of the isolate would wait forever.
+  tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.allMessagesHandler = null);
 
   test('a name the pack lacks is asked for once, however often it is drawn', () async {
     final asked = <String>[];
-    // As served on the web: an unknown asset path answers with the page, not a 404.
-    final page = ByteData.sublistView(Uint8List.fromList(utf8.encode('<!DOCTYPE html><html></html>')));
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMessageHandler('flutter/assets', (message) async {
-      asked.add(utf8.decode(message!.buffer.asUint8List(message.offsetInBytes, message.lengthInBytes)));
-      return page;
-    });
+    _answerAssetsWithThePage(asked);
 
     expect(await AssetsManager.loadReplacement('not_in_the_pack_obj'), isNull);
     final first = asked.length;
@@ -44,15 +39,11 @@ void main() {
 
   test('draws that ask for a missing name at once share one lookup', () async {
     final asked = <String>[];
-    final page = ByteData.sublistView(Uint8List.fromList(utf8.encode('<!DOCTYPE html><html></html>')));
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMessageHandler('flutter/assets', (message) async {
-      asked.add(utf8.decode(message!.buffer.asUint8List(message.offsetInBytes, message.lengthInBytes)));
-      return page;
-    });
+    _answerAssetsWithThePage(asked);
 
     final results = await Future.wait(
-        List.generate(3, (_) => AssetsManager.loadReplacement('also_not_in_the_pack_obj')));
+      List.generate(3, (_) => AssetsManager.loadReplacement('also_not_in_the_pack_obj')),
+    );
     expect(results, everyElement(isNull));
     expect(asked.toSet().length, asked.length, reason: 'each format asked once: $asked');
   });
@@ -63,4 +54,14 @@ void main() {
     }
     expect(await AssetsManager.loadReplacement('not_in_the_pack_obj'), isNull);
   });
+}
+
+/// Answers every asset request as the web serves an unknown path: with the page, not a 404.
+void _answerAssetsWithThePage(List<String> asked) {
+  final page = ByteData.sublistView(Uint8List.fromList(utf8.encode('<!DOCTYPE html><html></html>')));
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.allMessagesHandler = (channel, handler, message) {
+    if (channel != 'flutter/assets') return handler?.call(message);
+    asked.add(utf8.decode(message!.buffer.asUint8List(message.offsetInBytes, message.lengthInBytes)));
+    return Future.value(page);
+  };
 }

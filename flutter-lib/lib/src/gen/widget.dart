@@ -296,13 +296,18 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
   ///
   /// Tooltip and enabled state are additive when semantics are active. We deliberately
   /// do not set `label` here; see `_taggedSemantics`.
-  Widget tagSemantics(Widget child) => _taggedSemantics(state, child);
+  ///
+  /// [button] makes the node a button whatever its children. The web engine otherwise
+  /// derives a tappable node's role from whether it has child nodes, and a role change
+  /// rebuilds the node's element without its `flt-semantics-identifier`.
+  Widget tagSemantics(Widget child, {bool button = false}) =>
+      _taggedSemantics(state, child, button: button);
 
   /// Same as [tagSemantics] but for an SWT Item (TableItem, MenuItem, etc.) rendered
   /// inline by its parent's build() rather than via its own State — `item` is that
   /// item's own VWidget (its swt/id), not this state's.
   Widget tagItemSemantics(VWidget item, Widget child) =>
-      _taggedSemantics(item, child);
+      _taggedSemantics(item, child, button: false);
 
   static const _valueTextSwt = {
     'Text',
@@ -312,7 +317,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
     'Browser',
   };
 
-  Widget _taggedSemantics(VWidget node, Widget child) {
+  Widget _taggedSemantics(VWidget node, Widget child, {required bool button}) {
     final identifier = '${node.swt}/${node.id}';
     // No semantics tree is being built, so the identifier would never surface in the
     // DOM anyway — skip the Semantics wrapper entirely and keep rendering cheap.
@@ -340,6 +345,7 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
           ? tooltip
           : null,
       enabled: node.semanticsEnabled,
+      button: button ? true : null,
       child: child,
     );
   }

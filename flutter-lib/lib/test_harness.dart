@@ -243,7 +243,7 @@ void registerTestQueryChannel() {
     queryPrimaryFocus: queryPrimaryFocus,
     // What a page test reads is laid out text, so its frame is one with every font in.
     scheduleFrameSync: (onSynced) => DeferredFonts.all().then((_) => scheduleFrameSync(onSynced)),
-    afterNextFrame: (onFramed) => SchedulerBinding.instance.addPostFrameCallback((_) => onFramed()),
+    afterNextChange: afterNextChange,
   );
 }
 
@@ -721,6 +721,24 @@ List<Map<String, dynamic>> _itemsOf(Map<String, dynamic> node) {
     if (entry.key != 'swt' && entry.key != 'id') collect(entry.value);
   }
   return result;
+}
+
+/// Runs [onChanged] once, at the client's next change: after the next frame is painted, or after the
+/// next frame from Java is applied when it schedules no frame of its own. Nothing is asked for and
+/// nothing is timed: it returns when there is something new to read, and not before.
+void afterNextChange(void Function() onChanged) {
+  var done = false;
+  void fire() {
+    if (done) return;
+    done = true;
+    onChanged();
+  }
+
+  final scheduler = SchedulerBinding.instance;
+  scheduler.addPostFrameCallback((_) => fire());
+  EquoCommBase.afterNextApply(() {
+    if (!scheduler.hasScheduledFrame && scheduler.schedulerPhase == SchedulerPhase.idle) fire();
+  });
 }
 
 /// Runs [onSynced] once the next frame has been built + painted (see frameSync above).
