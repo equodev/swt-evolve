@@ -49,18 +49,21 @@ TextThemeExtension _getTextTheme({
 }) {
   final baseTextStyle = textTheme.bodyMedium ?? const TextStyle();
   
+  final backgroundColor = isDark ? colorScheme.surfaceContainer : colorScheme.surface;
+
   return TextThemeExtension(
     textColor: colorSchemeExtension.labelInputDefault,
     disabledTextColor: colorSchemeExtension.labelInputDisabled,
     placeholderColor: colorSchemeExtension.surfacePlaceholder,
     helperTextColor: colorScheme.onSurfaceVariant,
     errorTextColor: colorScheme.error,
-    backgroundColor: isDark ? colorScheme.surfaceContainer : colorScheme.surface,
+    backgroundColor: backgroundColor,
     disabledBackgroundColor: colorScheme.surfaceVariant,
     hoverBackgroundColor: colorSchemeExtension.surfaceFocused,
     focusedBackgroundColor: colorSchemeExtension.surfaceFocused,
+    // A dark theme's outline is too dim to frame a field on its own: an empty one would vanish.
     borderColor: isDark
-        ? colorScheme.outline.withOpacity(0.38)
+        ? boundaryOn(colorScheme.outline, backgroundColor)
         : colorSchemeExtension.surfaceBorderEnabled,
     hoverBorderColor: colorSchemeExtension.surfaceBorderHovered,
     focusedBorderColor: colorSchemeExtension.surfaceBorderFocused,

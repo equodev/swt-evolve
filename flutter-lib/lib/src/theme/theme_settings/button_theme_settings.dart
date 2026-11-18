@@ -43,6 +43,11 @@ ButtonThemeExtension _getButtonTheme({
   required TextTheme textTheme,
   required ColorSchemeExtension colorSchemeExtension,
 }) {
+  // A dark theme's outline is too dim to show a check box or radio that is not selected.
+  final indicatorBorderColor = isDark
+      ? boundaryOn(colorScheme.outline, colorScheme.surface)
+      : colorScheme.outline;
+
   return ButtonThemeExtension(
     // Timing
     buttonPressDelay: const Duration(milliseconds: 150),
@@ -78,7 +83,7 @@ ButtonThemeExtension _getButtonTheme({
     radioButtonSelectedColor: colorScheme.primary,
     radioButtonHoverColor: colorScheme.surfaceVariant,
     radioButtonSelectedHoverColor: Color.lerp(colorScheme.primary, colorScheme.onSurface, 0.2) ?? colorScheme.primaryContainer,
-    radioButtonBorderColor: colorScheme.outline,
+    radioButtonBorderColor: indicatorBorderColor,
     radioButtonTextColor: textTheme.bodyMedium?.color ?? colorScheme.onSurface,
     
     // Dropdown Button colors
@@ -91,7 +96,7 @@ ButtonThemeExtension _getButtonTheme({
     // Checkbox colors
     checkboxColor: colorScheme.surface,
     checkboxSelectedColor: colorScheme.primary,
-    checkboxBorderColor: colorScheme.outline,
+    checkboxBorderColor: indicatorBorderColor,
     checkboxCheckmarkColor: colorScheme.onPrimary,
     checkboxTextColor: textTheme.bodyMedium?.color ?? colorScheme.onSurface,
     checkboxHoverColor: colorScheme.surfaceVariant,

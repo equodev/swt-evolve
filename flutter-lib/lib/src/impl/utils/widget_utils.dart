@@ -103,6 +103,10 @@ double contrastRatio(Color a, Color b) {
 /// The default minimum contrast for application text on the theme's ground: WCAG AA for body text.
 const double kMinTextContrast = 4.5;
 
+/// The minimum contrast of a control's boundary (a text field's border, a check box's outline) on
+/// its ground: WCAG's 3:1 for user interface components.
+const double kMinBoundaryContrast = 3.0;
+
 /// [color] when it reads on [ground] at [minRatio], else the same hue and saturation at the
 /// lightness nearest to it that does, on the side of the ground with more room. A colour on the
 /// wrong side is mirrored first, so black on a dark ground turns white, not grey.
@@ -119,6 +123,22 @@ Color legibleOn(Color color, Color ground, {required double minRatio}) {
   if (contrastRatio(at(extreme), ground) < minRatio) return at(extreme);
   return at(_bisectLightness(hsl,
       holds: extreme, fails: start, test: (c) => contrastRatio(c, ground) >= minRatio));
+}
+
+/// [color] when it reads on [ground] at [minRatio], else [color] moved away from the ground just far
+/// enough to: a boundary keeps the theme's shade rather than turning into text.
+Color boundaryOn(Color color, Color ground, {double minRatio = kMinBoundaryContrast}) {
+  if (contrastRatio(color, ground) >= minRatio) return color;
+  final hsl = HSLColor.fromColor(color);
+  final lighten = contrastRatio(Colors.white, ground) >= contrastRatio(Colors.black, ground);
+  final extreme = lighten ? 1.0 : 0.0;
+  if (contrastRatio(hsl.withLightness(extreme).toColor(), ground) < minRatio) {
+    return hsl.withLightness(extreme).toColor();
+  }
+  return hsl
+      .withLightness(_bisectLightness(hsl,
+          holds: extreme, fails: hsl.lightness, test: (c) => contrastRatio(c, ground) >= minRatio))
+      .toColor();
 }
 
 // CIE 1976: below this luminance L* is linear in it.
