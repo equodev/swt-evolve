@@ -735,8 +735,12 @@ fun fragmentHostHeader(): String {
     return "org.eclipse.swt;bundle-version=\"[$major.$minor,$major.${minor + 1})\""
 }
 fun evolveVersion(): Any = gradle.parent?.rootProject?.version ?: project.version
+// OSGi compares a qualifier as text, so the minor and patch of the Evolve release are zero-padded
+// to keep 1.10 after 1.9: 1.10.0 -> v1_010_000. The major is not, so v1_... still sorts after v0_...
+fun evolveQualifier(): String = "v" + evolveVersion().toString().split(".")
+    .mapIndexed { i, part -> if (i == 0) part else part.padStart(3, '0') }.joinToString("_")
 fun hostVersion(suffix: String) = provider {
-    "$swtVersion.v${evolveVersion().toString().replace('.', '_')}-$suffix"
+    "$swtVersion.${evolveQualifier()}-$suffix"
 }
 // -Poss builds the open-source edition: its desktop bundles carry their own qualifier, so p2 never
 // takes them for the enterprise ones of the same release. It keeps the `-hyb` prefix tools match on.
