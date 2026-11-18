@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/icon_aliases.dart' as aliases;
 import 'package:swtflutter/src/impl/utils/bundled_assets.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
@@ -72,6 +73,9 @@ class AssetsManager {
     return absolutePath;
   }
 
+  @visibleForTesting
+  static const iconAliases = aliases.iconAliases;
+
   static Future<Object?> loadReplacement(String filename) async {
     final assetsPath = await _resolveAssetsPath();
     if (assetsPath != null) {
@@ -90,7 +94,8 @@ class AssetsManager {
   /// row commits only once every icon it draws is looked up: one request per name, which
   /// [rootBundle] keeps for the rest of the run, found or not.
   static Future<Object?> _loadFromBundleAssets(String filename) async {
-    final base = filename.split('/').last.split('.').first;
+    final name = filename.split('/').last.split('.').first;
+    final base = iconAliases[name] ?? name;
     try {
       final content =
           _stripBom(await rootBundle.loadString(BundledAssets.path('assets/icons/$base.svg')));
