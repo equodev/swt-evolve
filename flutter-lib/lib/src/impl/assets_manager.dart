@@ -86,39 +86,19 @@ class AssetsManager {
     return null;
   }
 
+  /// The bundled SVG named like [filename], or null. The pack holds SVGs only, and an owner-drawn
+  /// row commits only once every icon it draws is looked up: one request per name, which
+  /// [rootBundle] keeps for the rest of the run, found or not.
   static Future<Object?> _loadFromBundleAssets(String filename) async {
-    String filenameOnly = filename;
-    if (filename.contains('/')) {
-      filenameOnly = filename.split('/').last;
+    final base = filename.split('/').last.split('.').first;
+    try {
+      final content =
+          _stripBom(await rootBundle.loadString(BundledAssets.path('assets/icons/$base.svg')));
+      // On web a missing asset yields the SPA fallback HTML, not a 404.
+      return _looksLikeSvg(content) ? content : null;
+    } catch (_) {
+      return null;
     }
-    final base = filenameOnly.split('.').first;
-    final formats = ['svg', 'png', 'jpg', 'jpeg'];
-
-    for (final format in formats) {
-      try {
-        final assetPath = BundledAssets.path('assets/icons/$base.$format');
-        if (format == 'svg') {
-          try {
-            final content = _stripBom(await rootBundle.loadString(assetPath));
-            // On web a missing asset yields the SPA fallback HTML, not a 404.
-            if (!_looksLikeSvg(content)) continue;
-            return content;
-          } on UnsupportedError {
-            continue;
-          } catch (e) {
-            continue;
-          }
-        } else {
-          final bytes = await rootBundle.load(assetPath);
-          final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
-          final frame = await codec.getNextFrame();
-          return frame.image as Object;
-        }
-      } catch (_) {
-        // asset not found, try next format
-      }
-    }
-    return null;
   }
 
   static Future<Object?> _loadFromExternalPath(
