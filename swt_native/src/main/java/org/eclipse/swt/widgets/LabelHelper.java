@@ -1,6 +1,7 @@
 package org.eclipse.swt.widgets;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 
 public final class LabelHelper {
 
@@ -17,5 +18,17 @@ public final class LabelHelper {
         if ((style & SWT.SEPARATOR) != 0) return SWT.NONE;
         if ((style & SWT.LEFT) != 0) return SWT.LEFT;
         return (style & SWT.CENTER) != 0 ? SWT.CENTER : SWT.RIGHT;
+    }
+
+    /**
+     * Shows the label's image, or its text. Flutter is sent both, the one not on show as empty, so a
+     * switch marks each that now reads otherwise: an empty text hidden behind an image is still empty.
+     */
+    static void show(DartLabel label, Runnable flip) {
+        String wasText = label._displayedText();
+        Image wasImage = label._displayedImage();
+        flip.run();
+        if (!java.util.Objects.equals(wasText, label._displayedText())) label.getValue().markDirty(VLabel.TEXT);
+        if (!java.util.Objects.equals(wasImage, label._displayedImage())) label.getValue().markDirty(VLabel.IMAGE);
     }
 }

@@ -42,8 +42,13 @@ class ExpandItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_ExpandItem() {
-        ExpandItem w = new ExpandItem(expandBar(), SWT.NONE);
+        ExpandItem w = new ExpandItem(new ExpandBar(shell(), SWT.NONE), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_ExpandItem() {
+        assertSetAgainNamesNothing(style -> new ExpandItem(new ExpandBar(shell(), SWT.NONE), style), this::setAll, unwritable("style", "the client never reads it off a ExpandItem"), SWT.NONE);
     }
 
     VExpandItem value(ExpandItem w) {

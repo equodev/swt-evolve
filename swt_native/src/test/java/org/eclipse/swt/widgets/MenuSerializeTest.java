@@ -47,6 +47,11 @@ class MenuSerializeTest extends SerializeTestBase {
         assertNamesEveryChange(w);
     }
 
+    @Test
+    void should_name_nothing_set_again_Menu() {
+        assertSetAgainNamesNothing(style -> new Menu(control()), this::setAll, unwritable(), SWT.NONE);
+    }
+
     VMenu value(Menu w) {
         return ((DartMenu) w.getImpl()).getValue();
     }

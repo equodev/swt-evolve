@@ -161,4 +161,14 @@ public class VCBanner extends VComposite {
     public boolean wireKeepsEmpty(int key) {
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 6273:
+            case 6272:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

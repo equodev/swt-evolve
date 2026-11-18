@@ -26,7 +26,7 @@ class CTabFolderSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CTabFolder")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("borderVisible").equalsTo(w.getBorderVisible(), orAbsentIfFalse));
@@ -74,6 +74,11 @@ class CTabFolderSerializeTest extends SerializeTestBase {
     void should_name_every_change_CTabFolder() {
         CTabFolder w = new CTabFolder(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_CTabFolder() {
+        assertSetAgainNamesNothing(style -> new CTabFolder(shell(), style), this::setAll, unwritable("horizontalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "verticalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "hasOwnBackground", "the client never reads it off a CTabFolder"), SWT.NONE, SWT.CLOSE, SWT.TOP, SWT.BOTTOM, SWT.FLAT, SWT.BORDER, SWT.SINGLE, SWT.MULTI, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VCTabFolder value(CTabFolder w) {

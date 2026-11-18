@@ -471,9 +471,11 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
     @Override
     public void setVisible(boolean visible) {
         checkWidget();
+        boolean wasVisible = getValue().getVisible();
         if (visible)
             _resize();
         super.setVisible(visible);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableCursor.VISIBLE, wasVisible, self -> self.getValue().getVisible());
     }
 
     /**
@@ -591,9 +593,11 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
      */
     @Override
     public void setBackground(Color color) {
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
         background = color;
         super.setBackground(getBackground());
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableCursor.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     /**
@@ -615,9 +619,11 @@ public class DartTableCursor extends DartCanvas implements ITableCursor {
      */
     @Override
     public void setForeground(Color color) {
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getForeground());
         foreground = color;
         super.setForeground(getForeground());
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableCursor.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     /**

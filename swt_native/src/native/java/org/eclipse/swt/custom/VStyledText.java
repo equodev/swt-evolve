@@ -943,4 +943,21 @@ public class VStyledText extends VCanvas {
     public boolean wireKeepsEmpty(int key) {
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 4888:
+            case 4890:
+            case 4892:
+            case 4880:
+            case 4885:
+            case 4867:
+            case 4887:
+            case 4886:
+            case 4873:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

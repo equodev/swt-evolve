@@ -304,6 +304,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         super.setLayout(new CTabFolderLayout());
         int style2 = super.getStyle();
         oldFont = getFont();
+        getValue().markDirty(VCTabFolder.FONT);
         onBottom = (style2 & SWT.BOTTOM) != 0;
         showClose = (style2 & SWT.CLOSE) != 0;
         //	showMin = (style2 & SWT.MIN) != 0; - conflicts with SWT.TOP
@@ -791,18 +792,22 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     void destroyItem(CTabItem item) {
+        int wasSelection = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getSelection());
         CTabFolderHelper.itemsChanged(this);
-        if (inDispose)
+        if (inDispose) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         int index = indexOf(item);
-        if (index == -1)
+        if (index == -1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         if (items.length == 1) {
             items = new CTabItem[0];
             priority = new int[0];
             firstIndex = -1;
             selectedIndex = -1;
-            getValue().markDirty(VCTabFolder.SELECTION);
             Control control = ((DartCTabItem) item.getImpl()).control;
             if (control != null && !control.isDisposed()) {
                 control.setVisible(false);
@@ -815,6 +820,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
             notifyItemCountChange();
             getValue().markDirty(VCTabFolder.ITEMS);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
         }
         CTabItem[] newItems = new CTabItem[items.length - 1];
@@ -833,7 +839,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (selectedIndex == index) {
             Control control = item.getControl();
             selectedIndex = -1;
-            getValue().markDirty(VCTabFolder.SELECTION);
             int nextSelection = mru ? priority[0] : Math.max(0, index - 1);
             setSelection(nextSelection, true);
             getValue().markDirty(VCTabFolder.ITEMS);
@@ -848,6 +853,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW_TABS);
         notifyItemCountChange();
         getValue().markDirty(VCTabFolder.ITEMS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -1751,6 +1757,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         selectionGradientColors = null;
         selectionGradientPercents = null;
         selectionBgImage = null;
+        getValue().markDirty(VCTabFolder.SELECTION_BG_IMAGE);
         selectionBackground = null;
         getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         selectionForeground = null;
@@ -2133,6 +2140,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (oldFont == null || !oldFont.equals(font)) {
             // handle case where  default font changes
             oldFont = font;
+            getValue().markDirty(VCTabFolder.FONT);
             if (!updateTabHeight(false)) {
                 updateItems();
                 redraw();
@@ -2415,9 +2423,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setBackground(Color color) {
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
         super.setBackground(color);
         updateBkImages(true);
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     /**
@@ -2546,8 +2556,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
 
     @Override
     public void setBackgroundImage(Image image) {
+        Image wasBackgroundImage = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackgroundImage());
         super.setBackgroundImage(image);
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
     }
 
     /**
@@ -2561,15 +2573,18 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * </ul>
      */
     public void setBorderVisible(boolean show) {
-        getValue().markDirty(VWidget.STYLE);
         checkWidget();
-        if (this.borderVisible != show) {
-            getValue().markDirty(VCTabFolder.BORDER_VISIBLE);
-        }
-        if (borderVisible == show)
+        int wasStyle = getValue().getStyle();
+        boolean wasBorderVisible = getValue().getBorderVisible();
+        if (borderVisible == show) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.BORDER_VISIBLE, wasBorderVisible, self -> self.getValue().getBorderVisible());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
+        }
         this.borderVisible = show;
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.BORDER_VISIBLE, wasBorderVisible, self -> self.getValue().getBorderVisible());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     /**
@@ -2776,8 +2791,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     @Override
     public void setFont(Font font) {
         checkWidget();
-        if (font != null && font.equals(getFont()))
+        Font wasFont = getValue().getFont();
+        if (font != null && font.equals(getFont())) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.FONT, wasFont, self -> self.getValue().getFont());
             return;
+        }
         super.setFont(font);
         oldFont = getFont();
         // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
@@ -2787,10 +2805,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         ((DartCTabFolderRenderer) renderer.getImpl()).resetChevronFont();
         updateChevronImage(true);
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.FONT, wasFont, self -> self.getValue().getFont());
     }
 
     @Override
     public void setForeground(Color color) {
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getForeground());
         super.setForeground(color);
         // Chevron painting is cached as image and only recreated if number of hidden tabs changed.
         // To apply the new foreground color the image must be recreated with new foreground color.
@@ -2799,6 +2819,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         updateMaxImage();
         updateMinImage();
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     /**
@@ -2845,9 +2866,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean setItemLocation(GC gc) {
+        int wasSelection = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getSelection());
         boolean changed = false;
-        if (items.length == 0)
-            return false;
+        if (items.length == 0) {
+            boolean answerwasSelection = false;
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return answerwasSelection;
+        }
         Rectangle trim = renderer.computeTrim(CTabFolderRenderer.PART_BORDER, SWT.NONE, 0, 0, 0, 0);
         int borderBottom = trim.height + trim.y;
         int borderTop = -trim.y;
@@ -2912,7 +2937,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 }
             }
         }
-        return changed;
+        {
+            boolean answerwasSelection = changed;
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return answerwasSelection;
+        }
     }
 
     /**
@@ -2941,6 +2970,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     void setItemOrder(int[] indices) {
         CTabFolderHelper.itemsChanged(this);
         checkWidget();
+        int wasSelection = getValue().getSelection();
         if (indices == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (indices.length != items.length)
@@ -2964,7 +2994,6 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         items = temp;
         selectedIndex = newSelectedIndex;
-        getValue().markDirty(VCTabFolder.SELECTION);
         // priority[] and firstIndex hold indices into items[], so remap them to the
         // items' new positions to keep the chevron/visible-tab state correct.
         for (int i = 0; i < priority.length; i++) {
@@ -2973,6 +3002,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         if (firstIndex != -1)
             firstIndex = oldToNew[firstIndex];
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -3026,12 +3056,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     boolean setItemSize(GC gc) {
+        int wasSelection = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getSelection());
         boolean changed = false;
         if (isDisposed())
             return changed;
         Point size = getSize();
-        if (size.x <= 0 || size.y <= 0)
-            return changed;
+        if (size.x <= 0 || size.y <= 0) {
+            boolean answerwasSelection = changed;
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return answerwasSelection;
+        }
         ToolBar chevron = getChevron();
         if (chevron != null)
             chevron.setVisible(false);
@@ -3059,10 +3093,17 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                     }
                 }
             }
-            return changed;
+            {
+                boolean answerwasSelection = changed;
+                dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+                return answerwasSelection;
+            }
         }
-        if (items.length == 0)
-            return changed;
+        if (items.length == 0) {
+            boolean answerwasSelection = changed;
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return answerwasSelection;
+        }
         int[] widths;
         int tabAreaWidth = Math.max(0, getRightItemEdge(gc) - getLeftItemEdge(gc, CTabFolderRenderer.PART_BORDER));
         // First, try the minimum tab size at full compression.
@@ -3147,7 +3188,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                 }
             }
         }
-        return changed;
+        {
+            boolean answerwasSelection = changed;
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return answerwasSelection;
+        }
     }
 
     /**
@@ -3165,14 +3210,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setMaximizeVisible(boolean visible) {
         checkWidget();
-        if (this.showMax != visible) {
-            getValue().markDirty(VCTabFolder.MAXIMIZE_VISIBLE);
-        }
-        if (showMax == visible)
+        boolean wasMaximizeVisible = getValue().getMaximizeVisible();
+        if (showMax == visible) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MAXIMIZE_VISIBLE, wasMaximizeVisible, self -> self.getValue().getMaximizeVisible());
             return;
+        }
         // display maximize button
         showMax = visible;
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MAXIMIZE_VISIBLE, wasMaximizeVisible, self -> self.getValue().getMaximizeVisible());
     }
 
     /**
@@ -3210,11 +3256,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setMaximized(boolean maximize) {
         checkWidget();
-        if (this.maximized != maximize) {
-            getValue().markDirty(VCTabFolder.MAXIMIZED);
-        }
-        if (this.maximized == maximize)
+        boolean wasMaximized = getValue().getMaximized();
+        if (this.maximized == maximize) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MAXIMIZED, wasMaximized, self -> self.getValue().getMaximized());
             return;
+        }
         if (maximize && this.minimized)
             setMinimized(false);
         this.maximized = maximize;
@@ -3226,6 +3272,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             //$NON-NLS-1$ //$NON-NLS-2$
             maxItem.setToolTipText(maximized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Maximize"));
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MAXIMIZED, wasMaximized, self -> self.getValue().getMaximized());
     }
 
     /**
@@ -3243,14 +3290,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setMinimizeVisible(boolean visible) {
         checkWidget();
-        if (this.showMin != visible) {
-            getValue().markDirty(VCTabFolder.MINIMIZE_VISIBLE);
-        }
-        if (showMin == visible)
+        boolean wasMinimizeVisible = getValue().getMinimizeVisible();
+        if (showMin == visible) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MINIMIZE_VISIBLE, wasMinimizeVisible, self -> self.getValue().getMinimizeVisible());
             return;
+        }
         // display minimize button
         showMin = visible;
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MINIMIZE_VISIBLE, wasMinimizeVisible, self -> self.getValue().getMinimizeVisible());
     }
 
     /**
@@ -3267,11 +3315,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setMinimized(boolean minimize) {
         checkWidget();
-        if (this.minimized != minimize) {
-            getValue().markDirty(VCTabFolder.MINIMIZED);
-        }
-        if (this.minimized == minimize)
+        boolean wasMinimized = getValue().getMinimized();
+        if (this.minimized == minimize) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MINIMIZED, wasMinimized, self -> self.getValue().getMinimized());
             return;
+        }
         if (minimize && this.maximized)
             setMaximized(false);
         this.minimized = minimize;
@@ -3283,6 +3331,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             //$NON-NLS-1$ //$NON-NLS-2$
             minItem.setToolTipText(minimized ? SWT.getMessage("SWT_Restore") : SWT.getMessage("SWT_Minimize"));
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MINIMIZED, wasMinimized, self -> self.getValue().getMinimized());
     }
 
     /**
@@ -3301,15 +3350,16 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setMinimumCharacters(int count) {
         checkWidget();
-        if (this.minChars != count) {
-            getValue().markDirty(VCTabFolder.MINIMUM_CHARACTERS);
-        }
+        int wasMinimumCharacters = getValue().getMinimumCharacters();
         if (count < 0)
             SWT.error(SWT.ERROR_INVALID_RANGE);
-        if (minChars == count)
+        if (minChars == count) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MINIMUM_CHARACTERS, wasMinimumCharacters, self -> self.getValue().getMinimumCharacters());
             return;
+        }
         minChars = count;
         updateFolder(REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.MINIMUM_CHARACTERS, wasMinimumCharacters, self -> self.getValue().getMinimumCharacters());
     }
 
     /**
@@ -3403,10 +3453,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelection(CTabItem item) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
         if (item == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         int index = indexOf(item);
         setSelection(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -3421,14 +3473,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelection(int index) {
         checkWidget();
-        if (this.selectedIndex != index) {
-            getValue().markDirty(VCTabFolder.SELECTION);
-        }
-        if (index < 0 || index >= items.length)
+        int wasSelection = getValue().getSelection();
+        if (index < 0 || index >= items.length) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         CTabItem selection = items[index];
         if (selectedIndex == index) {
             showItem(selection);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
         }
         int oldIndex = selectedIndex;
@@ -3459,9 +3512,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         redraw();
         if (getBridge() instanceof EmbeddedBridge)
             ((EmbeddedBridge) getBridge()).setBoundsCTabFolder(this, getBounds(), true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     void setSelection(int index, boolean notify) {
+        int wasSelection = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getSelection());
         int oldSelectedIndex = selectedIndex;
         setSelection(index);
         if (notify && selectedIndex != oldSelectedIndex && selectedIndex != -1) {
@@ -3469,6 +3524,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             event.item = getItem(selectedIndex);
             notifyListeners(SWT.Selection, event);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -3490,19 +3546,22 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelectionBackground(Color color) {
         checkWidget();
+        Color wasSelectionBackground = getValue().getSelectionBackground();
         color = GraphicsUtils.copyColor(color);
-        if (inDispose)
+        if (inDispose) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BACKGROUND, wasSelectionBackground, self -> self.getValue().getSelectionBackground());
             return;
-        if (!java.util.Objects.equals(this.selectionBackground, color)) {
-            getValue().markDirty(VCTabFolder.SELECTION_BACKGROUND);
         }
-        if (selectionBackground == color)
+        if (selectionBackground == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BACKGROUND, wasSelectionBackground, self -> self.getValue().getSelectionBackground());
             return;
+        }
         if (color == null)
             color = getDisplay().getSystemColor(SELECTION_BACKGROUND);
         selectionBackground = color;
         if (selectedIndex > -1)
             redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BACKGROUND, wasSelectionBackground, self -> self.getValue().getSelectionBackground());
     }
 
     /**
@@ -3565,6 +3624,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelectionBackground(Color[] colors, int[] percents, boolean vertical) {
         checkWidget();
+        Image wasSelectionBgImage = getValue().getSelectionBgImage();
         int colorsLength;
         if (colors != null) {
             //The colors array can optionally have an extra entry which describes the highlight top color
@@ -3615,8 +3675,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                             break;
                     }
                 }
-                if (same && this.selectionGradientVertical == vertical)
+                if (same && this.selectionGradientVertical == vertical) {
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BG_IMAGE, wasSelectionBgImage, self -> self.getValue().getSelectionBgImage());
                     return;
+                }
             }
         } else {
             selectionBgImage = null;
@@ -3642,6 +3704,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         // Refresh with the new settings
         if (selectedIndex > -1)
             redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BG_IMAGE, wasSelectionBgImage, self -> self.getValue().getSelectionBgImage());
     }
 
     /**
@@ -3657,12 +3720,12 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelectionBackground(Image image) {
         checkWidget();
+        Image wasSelectionBgImage = getValue().getSelectionBgImage();
         image = GraphicsUtils.copyImage(getDisplay(), image);
-        if (!java.util.Objects.equals(this.selectionBgImage, image)) {
-            getValue().markDirty(VCTabFolder.SELECTION_BG_IMAGE);
-        }
-        if (image == selectionBgImage)
+        if (image == selectionBgImage) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BG_IMAGE, wasSelectionBgImage, self -> self.getValue().getSelectionBgImage());
             return;
+        }
         if (image != null) {
             selectionGradientColors = null;
             selectionGradientPercents = null;
@@ -3670,6 +3733,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         selectionBgImage = image;
         if (selectedIndex > -1)
             redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_BG_IMAGE, wasSelectionBgImage, self -> self.getValue().getSelectionBgImage());
     }
 
     /**
@@ -3684,17 +3748,18 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelectionForeground(Color color) {
         checkWidget();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.selectionForeground, color)) {
-            getValue().markDirty(VCTabFolder.SELECTION_FOREGROUND);
-        }
-        if (selectionForeground == color)
+        if (selectionForeground == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
             return;
+        }
         if (color == null)
             color = getDisplay().getSystemColor(SELECTION_FOREGROUND);
         selectionForeground = color;
         if (selectedIndex > -1)
             redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
     }
 
     /**
@@ -3712,11 +3777,11 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelectionBarThickness(int thickness) {
         checkWidget();
-        if (this.selectionHighlightBarThickness != thickness) {
-            getValue().markDirty(VCTabFolder.SELECTION_BAR_THICKNESS);
-        }
         if (thickness < 0) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        }
+        if (this.selectionHighlightBarThickness != thickness) {
+            getValue().markDirty(VCTabFolder.SELECTION_BAR_THICKNESS);
         }
         this.selectionHighlightBarThickness = thickness;
     }
@@ -3752,8 +3817,9 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setSingle(boolean single) {
-        getValue().markDirty(VWidget.STYLE);
         checkWidget();
+        int wasStyle = getValue().getStyle();
+        int wasSelection = getValue().getSelection();
         if (this.single != single) {
             getValue().markDirty(VCTabFolder.SINGLE);
         }
@@ -3768,6 +3834,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             }
             updateFolder(REDRAW);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     int getControlY(Point size, Rectangle[] rects, int borderBottom, int borderTop, int i) {
@@ -3790,14 +3858,13 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setTabHeight(int height) {
         checkWidget();
-        if (this.fixedTabHeight != height) {
-            getValue().markDirty(VCTabFolder.TAB_HEIGHT);
-        }
+        Integer wasTabHeight = getValue().getTabHeight();
         if (height < -1) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         fixedTabHeight = height;
         updateFolder(UPDATE_TAB_HEIGHT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.TAB_HEIGHT, wasTabHeight, self -> self.getValue().getTabHeight());
     }
 
     /**
@@ -3815,12 +3882,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTabPosition(int position) {
-        getValue().markDirty(VWidget.STYLE);
         int newValue = position;
         checkWidget();
-        if (this.tabPosition != newValue) {
-            getValue().markDirty(VCTabFolder.TAB_POSITION);
-        }
+        int wasTabPosition = getValue().getTabPosition();
+        int wasStyle = getValue().getStyle();
         if (position != SWT.TOP && position != SWT.BOTTOM) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
@@ -3829,6 +3894,8 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
             onBottom = position == SWT.BOTTOM;
             updateFolder(REDRAW);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.TAB_POSITION, wasTabPosition, self -> self.getValue().getTabPosition());
     }
 
     /**
@@ -3878,27 +3945,30 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      * @since 3.0
      */
     public void setTopRight(Control control, int alignment) {
-        getValue().markDirty(VCTabFolder.TOP_RIGHT_ALIGNMENT);
         checkWidget();
-        if (!java.util.Objects.equals(this.topRight, control)) {
-            getValue().markDirty(VCTabFolder.TOP_RIGHT);
-        }
+        int wasTopRightAlignment = getValue().getTopRightAlignment();
         if (alignment != SWT.RIGHT && alignment != SWT.FILL && alignment != (SWT.RIGHT | SWT.WRAP)) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (control != null && (control.isDisposed() || control.getParent() != this.getApi())) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (topRight == control && topRightAlignment == alignment)
+        if (topRight == control && topRightAlignment == alignment) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.TOP_RIGHT_ALIGNMENT, wasTopRightAlignment, self -> self.getValue().getTopRightAlignment());
             return;
+        }
         if (topRight != null && !topRight.isDisposed())
             removeTabControl(topRight, false);
+        if (!java.util.Objects.equals(this.topRight, control)) {
+            getValue().markDirty(VCTabFolder.TOP_RIGHT);
+        }
         topRight = control;
         topRightAlignment = alignment;
         alignment &= ~SWT.RIGHT;
         if (control != null)
             addTabControl(control, SWT.TRAIL | alignment, -1, false);
         updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.TOP_RIGHT_ALIGNMENT, wasTopRightAlignment, self -> self.getValue().getTopRightAlignment());
     }
 
     /**
@@ -3916,14 +3986,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setUnselectedCloseVisible(boolean visible) {
         checkWidget();
-        if (this.showUnselectedClose != visible) {
-            getValue().markDirty(VCTabFolder.UNSELECTED_CLOSE_VISIBLE);
-        }
-        if (showUnselectedClose == visible)
+        boolean wasUnselectedCloseVisible = getValue().getUnselectedCloseVisible();
+        if (showUnselectedClose == visible) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.UNSELECTED_CLOSE_VISIBLE, wasUnselectedCloseVisible, self -> self.getValue().getUnselectedCloseVisible());
             return;
+        }
         // display close button when mouse hovers
         showUnselectedClose = visible;
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.UNSELECTED_CLOSE_VISIBLE, wasUnselectedCloseVisible, self -> self.getValue().getUnselectedCloseVisible());
     }
 
     /**
@@ -3954,13 +4025,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setDirtyIndicatorStyle(boolean enabled) {
         checkWidget();
-        if (this.dirtyIndicatorStyle != enabled) {
-            getValue().markDirty(VCTabFolder.DIRTY_INDICATOR_STYLE);
-        }
-        if (dirtyIndicatorStyle == enabled)
+        boolean wasDirtyIndicatorStyle = getValue().getDirtyIndicatorStyle();
+        if (dirtyIndicatorStyle == enabled) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.DIRTY_INDICATOR_STYLE, wasDirtyIndicatorStyle, self -> self.getValue().getDirtyIndicatorStyle());
             return;
+        }
         dirtyIndicatorStyle = enabled;
         updateFolder(REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.DIRTY_INDICATOR_STYLE, wasDirtyIndicatorStyle, self -> self.getValue().getDirtyIndicatorStyle());
     }
 
     /**
@@ -3995,14 +4067,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setUnselectedImageVisible(boolean visible) {
         checkWidget();
-        if (this.showUnselectedImage != visible) {
-            getValue().markDirty(VCTabFolder.UNSELECTED_IMAGE_VISIBLE);
-        }
-        if (showUnselectedImage == visible)
+        boolean wasUnselectedImageVisible = getValue().getUnselectedImageVisible();
+        if (showUnselectedImage == visible) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.UNSELECTED_IMAGE_VISIBLE, wasUnselectedImageVisible, self -> self.getValue().getUnselectedImageVisible());
             return;
+        }
         // display image on unselected items
         showUnselectedImage = visible;
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.UNSELECTED_IMAGE_VISIBLE, wasUnselectedImageVisible, self -> self.getValue().getUnselectedImageVisible());
     }
 
     /**
@@ -4019,14 +4092,15 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setSelectedImageVisible(boolean visible) {
         checkWidget();
-        if (this.showSelectedImage != visible) {
-            getValue().markDirty(VCTabFolder.SELECTED_IMAGE_VISIBLE);
-        }
-        if (showSelectedImage == visible)
+        boolean wasSelectedImageVisible = getValue().getSelectedImageVisible();
+        if (showSelectedImage == visible) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTED_IMAGE_VISIBLE, wasSelectedImageVisible, self -> self.getValue().getSelectedImageVisible());
             return;
+        }
         // display image on selected items
         showSelectedImage = visible;
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.SELECTED_IMAGE_VISIBLE, wasSelectedImageVisible, self -> self.getValue().getSelectedImageVisible());
     }
 
     /**
@@ -4455,14 +4529,14 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
      */
     public void setHighlightEnabled(boolean enabled) {
         checkWidget();
-        if (this.highlightEnabled != enabled) {
-            getValue().markDirty(VCTabFolder.HIGHLIGHT_ENABLED);
-        }
+        boolean wasHighlightEnabled = getValue().getHighlightEnabled();
         if (highlightEnabled == enabled) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.HIGHLIGHT_ENABLED, wasHighlightEnabled, self -> self.getValue().getHighlightEnabled());
             return;
         }
         highlightEnabled = enabled;
         updateFolder(REDRAW);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabFolder.HIGHLIGHT_ENABLED, wasHighlightEnabled, self -> self.getValue().getHighlightEnabled());
     }
 
     /**

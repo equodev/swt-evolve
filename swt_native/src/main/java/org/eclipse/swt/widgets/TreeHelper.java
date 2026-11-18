@@ -104,8 +104,10 @@ public class TreeHelper {
         int[] before = namesRowsScrolledIn(tree) ? shownBand(tree) : null;
         setScrollOffsetY(tree, Math.min(row * itemHeight, maxScrollOffset(tree, rows.size(), itemHeight)));
         nameRowsScrolledIn(tree, before);
+        TreeItem topItem = tree.topItem;
         tree.topItem = rows.get(row);
-        tree.getValue().markDirty(VTree.TOP_ITEM);
+        if (tree.topItem != topItem)
+            tree.getValue().markDirty(VTree.TOP_ITEM);
     }
 
     /** The height the rows scroll in: Flutter's scroll bars float over the rows and take none of it. */
@@ -133,11 +135,12 @@ public class TreeHelper {
         return ordered.toArray(new TreeItem[0]);
     }
 
+    /** The one place the selection changes, marked as {@code TableHelper.setSelectionIfChanged} is. */
     static void setSelection(DartTree tree, TreeItem[] selection) {
-        if (!java.util.Arrays.equals(tree.selection, selection)) {
-            tree.selection = selection;
-            tree.getValue().markDirty(VTree.SELECTION);
-        }
+        if (java.util.Arrays.equals(tree.selection, selection))
+            return;
+        tree.selectionMark = dev.equo.swt.FlutterBridge.markChange(tree, VTree.SELECTION, tree.selection, selection, tree.selectionMark);
+        tree.selection = selection;
     }
 
     /** Adds {@code item} to the selection of a multi-selection tree; a single-selection tree selects only it. */

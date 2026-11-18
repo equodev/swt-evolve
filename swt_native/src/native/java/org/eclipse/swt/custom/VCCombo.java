@@ -291,4 +291,13 @@ public class VCCombo extends VComposite {
     public boolean wireKeepsEmpty(int key) {
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 389:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

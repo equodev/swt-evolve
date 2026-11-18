@@ -425,7 +425,7 @@ tasks.test {
     // EvolveSwingHost's dispatcher classes, which extend/reference these restricted packages.
     jvmArgs("--add-exports", "java.desktop/sun.swing=ALL-UNNAMED",
             "--add-exports", "java.desktop/sun.awt=ALL-UNNAMED")
-    forwardSystemProperties("equo.swt.diff", "equo.swt.binaryWire", "dev.equo.swt.debug")
+    forwardSystemProperties("equo.swt.diff", "equo.swt.binaryWire", "dev.equo.swt.debug", "setAgainSweep.report")
 }
 
 fun Test.configureTestLogging() {

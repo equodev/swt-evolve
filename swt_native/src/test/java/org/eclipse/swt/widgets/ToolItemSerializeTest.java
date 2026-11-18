@@ -49,8 +49,13 @@ class ToolItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_ToolItem() {
-        ToolItem w = new ToolItem(toolBar(), SWT.NONE);
+        ToolItem w = new ToolItem(new ToolBar(shell(), SWT.NONE), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_ToolItem() {
+        assertSetAgainNamesNothing(style -> new ToolItem(new ToolBar(shell(), SWT.NONE), style), this::setAll, unwritable(), SWT.NONE, SWT.PUSH, SWT.CHECK, SWT.RADIO, SWT.SEPARATOR, SWT.DROP_DOWN);
     }
 
     VToolItem value(ToolItem w) {

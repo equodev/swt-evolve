@@ -107,6 +107,23 @@ class ComboListVisibleFromFlutterTest {
     }
 
     @Test
+    @DisplayName("Java opens the list of a combo that is shown, and leaves a hidden one's closed")
+    void javaOpensListOnlyWhenShown() {
+        Combo hidden = combo(SWT.READ_ONLY);
+        value(hidden).clearDirty();
+        hidden.setListVisible(true);
+        assertThat(hidden.getListVisible()).isFalse();
+        assertThat(value(hidden).changedKeys()).doesNotContain(VCombo.LIST_VISIBLE);
+
+        Combo shown = combo(SWT.READ_ONLY);
+        org.mockito.Mockito.when(shown.getParent().isVisible()).thenReturn(true);
+        value(shown).clearDirty();
+        shown.setListVisible(true);
+        assertThat(shown.getListVisible()).isTrue();
+        assertThat(value(shown).changedKeys()).contains(VCombo.LIST_VISIBLE);
+    }
+
+    @Test
     @DisplayName("a list report that arrives after the combo was disposed is dropped")
     void listReportToADisposedComboIsDropped() {
         Combo combo = combo(SWT.READ_ONLY);

@@ -40,8 +40,13 @@ class CaretSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_Caret() {
-        Caret w = new Caret(canvas(), SWT.NONE);
+        Caret w = new Caret(new Canvas(shell(), SWT.NONE), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Caret() {
+        assertSetAgainNamesNothing(style -> new Caret(new Canvas(shell(), SWT.NONE), style), this::setAll, unwritable("style", "the client never reads it off a Caret"), SWT.NONE);
     }
 
     VCaret value(Caret w) {

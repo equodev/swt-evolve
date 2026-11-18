@@ -79,8 +79,10 @@ public class TabFolderHelper {
             if (control != null)
                 control.setVisible(false);
         }
+        boolean hadSelection = folder.selection.length != 0;
         folder.selection = new TabItem[0];
-        folder.getValue().markDirty(VTabFolder.SELECTION);
+        if (hadSelection)
+            folder.getValue().markDirty(VTabFolder.SELECTION);
     }
 
     public static Rectangle getBounds(DartTabItem item) {

@@ -64,7 +64,8 @@ public class DartMocks {
     /**
      * Gives {@code c} a value for each of the properties a fill through setters cannot reach: the
      * ones set by another object (cursor, menu, drag source, drop target), by the parent's
-     * background mode, by the shell's default button, or by what makes a control a Tab stop.
+     * background mode, by the shell's default button, by what makes a control a Tab stop, or by the
+     * client (a Combo's list, which only opens on a combo that is shown).
      */
     public static void fillUnsettable(Control c) {
         c.setCursor(new Cursor(c.getDisplay(), org.eclipse.swt.SWT.CURSOR_HAND));
@@ -88,6 +89,8 @@ public class DartMocks {
         c.addListener(org.eclipse.swt.SWT.KeyDown, e -> { });
         if (c instanceof Link link)
             link.setText("<a>link</a>");
+        if (c.getImpl() instanceof DartCombo combo)
+            ComboHelper.listShownByFlutter(combo, true);
     }
 
     /**

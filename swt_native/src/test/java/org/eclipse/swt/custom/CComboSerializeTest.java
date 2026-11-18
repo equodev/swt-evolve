@@ -27,7 +27,7 @@ class CComboSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "CCombo")
                .containsEntry("text", w.getText())
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
@@ -61,6 +61,11 @@ class CComboSerializeTest extends SerializeTestBase {
     void should_name_every_change_CCombo() {
         CCombo w = new CCombo(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_CCombo() {
+        assertSetAgainNamesNothing(style -> new CCombo(shell(), style), this::setAll, unwritable("horizontalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "verticalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "menu", "setMenu hands the menu to the inner Text and never stores it on the CCombo", "children", "getChildren answers none, as upstream: the field, list and arrow are its own", "hasOwnBackground", "the client never reads it off a CCombo"), SWT.NONE, SWT.BORDER, SWT.READ_ONLY, SWT.FLAT, SWT.LEAD, SWT.LEFT, SWT.CENTER, SWT.TRAIL, SWT.RIGHT, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VCCombo value(CCombo w) {

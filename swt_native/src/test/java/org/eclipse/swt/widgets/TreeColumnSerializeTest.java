@@ -44,8 +44,13 @@ class TreeColumnSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_TreeColumn() {
-        TreeColumn w = new TreeColumn(tree(), SWT.NONE);
+        TreeColumn w = new TreeColumn(new Tree(shell(), SWT.CHECK), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_TreeColumn() {
+        assertSetAgainNamesNothing(style -> new TreeColumn(new Tree(shell(), SWT.CHECK), style), this::setAll, unwritable("style", "the client never reads it off a TreeColumn"), SWT.NONE, SWT.LEFT, SWT.RIGHT, SWT.CENTER);
     }
 
     VTreeColumn value(TreeColumn w) {

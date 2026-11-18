@@ -42,6 +42,20 @@ public class ListHelper {
         return Math.max(1, ListSizes.getItemHeight(list));
     }
 
+    /**
+     * The list's height changed: a scroll past where the items now end stops at their end. The offset is
+     * always kept where it stops, so the item it was at is the top index the client holds.
+     */
+    public static void keepScrollInView(DartList list) {
+        if (list.scrollOffset == 0)
+            return;
+        int pitch = pitch(list);
+        int topIndex = list.scrollOffset / pitch;
+        list.scrollOffset = scrollOffset(list, pitch);
+        if (list.getValue().getTopIndex() != topIndex)
+            list.getValue().markDirty(VList.TOP_INDEX);
+    }
+
     /** The index of the item at the top; 0 for an empty list. */
     public static int getTopIndex(DartList list) {
         int count = list.getItemCount();
@@ -88,8 +102,10 @@ public class ListHelper {
      * will be; Flutter is sent the item to bring to the top.
      */
     private static void scrollTo(DartList list, int offset) {
+        int topIndex = list.getValue().getTopIndex();
         list.scrollOffset = offset;
-        list.getValue().markDirty(VList.TOP_INDEX);
+        if (list.getValue().getTopIndex() != topIndex)
+            list.getValue().markDirty(VList.TOP_INDEX);
     }
 
     /**
@@ -410,8 +426,10 @@ public class ListHelper {
         for (int i = 0; i < itemCount; i++) {
             allIndices[i] = i;
         }
-        list.getValue().markDirty(VList.SELECTION);
+        int[] selection = list.getValue().getSelection();
         list.selection = allIndices;
+        if (!java.util.Arrays.equals(selection, list.getValue().getSelection()))
+            list.getValue().markDirty(VList.SELECTION);
     }
 
     public static void setSelectionRange(DartList list, int start, int end, int itemCount, int style) {

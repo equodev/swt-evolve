@@ -33,21 +33,18 @@ import java.util.function.Consumer;
 @ExtendWith(Mocks.class)
 public class SerializeTestBase {
 
-    /**
-     * Properties this backend changes without naming, held out of the completeness check below so
-     * the rest of it can run.
-     *
-     * <p>{@code hasOwnBackground} is answered from {@code _background != null}, and
-     * {@code _setBackground} names only {@code background}, so a control that gains or loses its
-     * own background never tells the render side. It is a real gap, not a fixture artefact: nine
-     * widgets witness the same one. The embedded backend cannot see it — there the property is a
-     * constant {@code true} — which is why it surfaced only once this suite moved here. Delete the
-     * entry with the fix, not around it.
-     */
-    private static final java.util.Set<String> UNNAMED_ON_PURPOSE = java.util.Set.of("hasOwnBackground");
-
     private final Settings settings;
     private MockedStatic<DartAccessible> mockedStatic;
+
+    /**
+     * The seed the next fill draws its values from, while an assertion needs the same values on every
+     * run; each fill takes the next, so a widget and its twin are filled differently.
+     */
+    private Long fillSeed;
+
+    private Settings settings() {
+        return fillSeed == null ? settings : Settings.from(settings).set(Keys.SEED, fillSeed++);
+    }
 
     protected  SerializeTestBase() {
         settings = Settings.defaults()
@@ -140,7 +137,6 @@ public class SerializeTestBase {
         java.util.Map<String, Object> after = dev.equo.swt.delivery.Canon.canon(serialize(target));
 
         java.util.Set<String> changed = dev.equo.swt.delivery.DeliveryAudit.changedKeys(before, after);
-        changed.removeAll(UNNAMED_ON_PURPOSE);
 
         // Completeness is the property that matters, and the only one asserted: a change that was
         // not named is a change that never ships, silently, for as long as the widget lives.
@@ -160,6 +156,250 @@ public class SerializeTestBase {
         }
     }
 
+    /**
+     * Marks a setter makes although the value it names reads as before, by "Widget.setter property"
+     * ("*" for every widget; "changed setter" for the change call alone), each with why it stays.
+     */
+    private static final String SAME_CONTENT = "a new image or region with the content of the one held travels "
+            + "under the same name, so the client holds it already; telling the two apart would compare pixels";
+
+    private static final String TWIN_IMAGE = "an image with the pixels of another in the same record travels "
+            + "under that one's name, so a whole description names it after whichever of the two was set "
+            + "last; the client holds the same pixels under either";
+
+    private static final String OFFSCREEN_AND_BACK = "upstream moves the control it held off screen and lays out "
+            + "the one it is given, which is the same control; each step is a change, only the two together are not";
+
+    private static final String IN_PLACE = "a table's or tree's rows are described inside its list "
+            + "rather than named: the list reads as it did while a row in it changed";
+
+    private static final java.util.Map<String, String> MARKED_ON_PURPOSE = unwritable(
+            "*.changed setRegion(Region) region", SAME_CONTENT,
+            "TreeItem.changed setExpanded(boolean) Tree.items", IN_PLACE,
+            "TreeItem.changed setItemCount(int) Tree.items", IN_PLACE,
+            "Tree.changed setItemCount(int) items", IN_PLACE,
+            "Table.changed setItemCount(int) items", IN_PLACE,
+            "*.changed setImage(Image) image", SAME_CONTENT,
+            "*.changed setFont(Font) font", "another Font with the data of the one held travels as the same "
+                    + "value; Font compares by the object, and telling the two apart would compare font data",
+            "ToolItem.changed setDisabledImage(Image) disabledImage", SAME_CONTENT,
+            "ToolItem.changed setHotImage(Image) hotImage", SAME_CONTENT,
+            "CTabItem.setControl(Control) Button.visible", "upstream hides the control it is given and shows it "
+                    + "again when it is the same; each step is a change, only the two together are not",
+            "ScrolledComposite.setContent(Control) Button.bounds", "upstream moves the content to the origin and "
+                    + "lays it out again; each step is a change, only the two together are not",
+            "CBanner.setLeft(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "CBanner.setRight(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "CBanner.setBottom(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "ViewForm.setContent(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "ViewForm.setTopLeft(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "ViewForm.setTopCenter(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "ViewForm.setTopRight(Control) Button.bounds", OFFSCREEN_AND_BACK,
+            "CoolItem.setSize(int,int) Button.bounds", "the item lays its control out at a size the bar then "
+                    + "corrects; each step is a change, only the two together are not",
+            "CoolItem.setSize(Point) Button.bounds", "as setSize(int,int), which it calls",
+            "CTabFolder.changed setBackground(Color[],int[]) Button.background", "upstream clears a top-right "
+                    + "control's background for a gradient image Evolve does not draw, and gives it back as the "
+                    + "folder lays its controls out; each step is a change, only the two together are not");
+
+    /**
+     * Setters that change a property of their own widget on the wire without marking it, keyed as in
+     * MARKED_ON_PURPOSE, each with the route the change reaches the client by instead.
+     */
+    private static final java.util.Map<String, String> UNMARKED_ON_PURPOSE = unwritable(
+            "Button.changed setBackgroundImage(Image) image", TWIN_IMAGE,
+            "CTabFolder.changed setBackgroundImage(Image) selectionBgImage", TWIN_IMAGE,
+            "ToolItem.changed setImage(Image) disabledImage", TWIN_IMAGE,
+            "ToolItem.changed setImage(Image) hotImage", TWIN_IMAGE);
+
+    /**
+     * Wire properties no setter of the widget changes, by "Widget.property" ("*" for every widget),
+     * each with what changes them instead. A property the wire compares is left out: its marks do
+     * not count here.
+     */
+    private static final java.util.Map<String, String> SET_ELSEWHERE = unwritable(
+            "*.dragSource", "a DragSource created on the control sets it",
+            "*.dragSourceId", "a DragSource created on the control sets it",
+            "*.dropTargetId", "a DropTarget created on the control sets it",
+            "*.hasOwnBackground", "setBackground changes it; a widget whose client never reads it writes nothing for it",
+            "*.inheritsBackground", "follows the parent's background mode, which the parent's setter changes",
+            "*.tabStop", "computed from the widget's kind and its parent's tab list",
+            "*.children", "changes as children are created, disposed or moved",
+            "*.items", "changes as items are created or disposed",
+            "*.columns", "changes as columns are created or disposed",
+            "*.horizontalBar", "a scroll bar exists by the H_SCROLL style the widget is created with",
+            "*.verticalBar", "a scroll bar exists by the V_SCROLL style the widget is created with",
+            "*.style", "set by the constructor; no setter of this widget rewrites its style bits",
+            "*.font", "the client never reads the font off this widget, so nothing is written for it",
+            "Table.editors", "a TableEditor created on the table sets it",
+            "Tree.editors", "a TreeEditor created on the tree sets it",
+            "Table.columnOrder", "follows the columns, which change as they are created or disposed",
+            "Tree.columnOrder", "follows the columns, which change as they are created or disposed",
+            "Table.ownerDrawItemHeight", "a MeasureItem listener sets it",
+            "Tree.ownerDrawItemHeight", "a MeasureItem listener sets it",
+            "Caret.focused", "follows the focus of the control the caret belongs to",
+            "CTabItem.showing", "follows the folder's layout of its tabs",
+            "CTabFolder.showListPopupSeq", "counts the chevron's list pop-ups, which a click opens",
+            "CTabFolder.stripLayoutSeq", "counts the layouts of the tab strip",
+            "ExpandItem.headerHeight", "follows the bar's font and the item's image",
+            "Combo.caretPosition", "only the client's caret reports move it",
+            "Spinner.keptText", "follows a Verify listener that refuses or rewrites the text",
+            "Browser.functionNames", "a BrowserFunction created on the browser sets it",
+            "Shell.dialogs", "a dialog opened on the shell sets it",
+            "Shell.menuStripHeight", "the measured height of a menu strip, the same for every shell",
+            "Shell.ownMenuStrip", "follows the items of the shell's menu bar, which their creation changes "
+                    + "(Sizes.menuStripChanged)",
+            "CTabFolder.chevronVisible", "only the package-private setChevronVisible changes it, which nothing calls",
+            "CTabFolder.showChevron", "follows the layout of the tabs, which marks it when it flips (layoutItems)",
+            "CTabFolder.highlight", "activation sends it on a channel of its own (CTabFolderHelper.redrawActivation)",
+            "CTabFolder.tabHeight", "the client is sent the strip the folder measures in its queued update, which "
+                    + "a test's display does not run",
+            "Button.primary", "the shell's setDefaultButton sets it",
+            "Caret.blinkRate", "the display's caret blink time sets it",
+            "CCombo.itemTooltips", "setData(\"org.eclipse.swt.custom.CCombo.itemToolTips\", String[]) sets it",
+            "CCombo.listVisible", "the list opens only while the CCombo is visible, which a test's shell is not",
+            "Combo.listVisible", "the list opens only while the Combo is visible, which a test's shell is not",
+            "SashForm.weights", "it takes one weight per child, and the SashForm swept has none",
+            "CoolBar.itemOrder", "setItemLayout takes one entry per item, and the CoolBar swept has none",
+            "CoolBar.itemSizes", "setItemLayout takes one entry per item, and the CoolBar swept has none",
+            "CoolBar.wrapIndices", "it indexes the items, and the CoolBar swept has none",
+            "TableColumn.alignment", "the column swept is its table's first, which is always left aligned, as "
+                    + "natively; MarkSetBackTest sets a second column's",
+            "TreeColumn.alignment", "the column swept is its tree's first, which is always left aligned, as "
+                    + "natively; MarkSetBackTest sets a second column's");
+
+    /**
+     * Asserts that no setter of the widget, given the value its getter returns, marks a property whose
+     * wire value it leaves as it was, on any widget: a mark tells the client its copy is out of date,
+     * and only a compared property ({@code wireCompared}) is checked again before it is written. Run
+     * per style, on the widget as built and once each setter has given it another value, so a default,
+     * a set value and every style's own properties are tried. Asserts as well that every wire property
+     * is changed by some setter, or is listed with what changes it instead, so a property added later
+     * is either swept or named.
+     */
+    @SuppressWarnings("unchecked")
+    protected <W extends Widget> void assertSetAgainNamesNothing(java.util.function.IntFunction<W> make,
+            Consumer<W> fill, java.util.Map<String, String> unwritable, int... styles) {
+        java.util.Set<String> marked = new java.util.TreeSet<>();
+        java.util.Map<String, java.util.Set<String>> reached = new java.util.TreeMap<>();
+        java.util.Set<String> unmarked = new java.util.TreeSet<>();
+        String name = null;
+        java.util.Set<String> wire = new java.util.TreeSet<>();
+        java.util.Set<String> compared = new java.util.TreeSet<>();
+        java.util.Set<String> unread = new java.util.TreeSet<>();
+        for (int style : styles) {
+            W probe = make.apply(style);
+            name = probe.getClass().getSimpleName();
+            VWidget value = ((DartWidget) probe.getImpl()).getValue();
+            wire.addAll(SetAgainSweep.wireNames(value));
+            for (int key : value.wireKeys()) {
+                if (value.wireCompared(key)) compared.add(value.wireName(key));
+                if (!SetAgainSweep.written(value, key)) unread.add(value.wireName(key));
+            }
+            // Seeded per style, so what the sweep reaches is the same on every run.
+            fillSeed = (long) style;
+            SetAgainSweep.Result found;
+            try {
+                found = SetAgainSweep.run(() -> make.apply(style), w -> fill.accept((W) w));
+            } finally {
+                fillSeed = null;
+            }
+            found.marked.forEach((setter, names) -> names.forEach(n -> marked.add(setter + " " + n)));
+            found.reached.forEach((p, by) -> reached.computeIfAbsent(p, k -> new java.util.TreeSet<>()).addAll(by));
+            found.unmarked.forEach((setter, names) -> names.forEach(n -> unmarked.add(setter + " " + n)));
+        }
+        String widget = name;
+        report(widget, wire, compared, unread, reached, unwritable, marked, unmarked);
+        java.util.Set<String> unexplained = new java.util.TreeSet<>(marked);
+        unexplained.removeIf(m -> accepted(MARKED_ON_PURPOSE, widget, m) != null);
+        org.assertj.core.api.Assertions.assertThat(unexplained)
+                .as("%s: these setters mark a property whose wire value they leave as it was", widget)
+                .isEmpty();
+
+        java.util.Set<String> lost = new java.util.TreeSet<>(unmarked);
+        lost.removeIf(m -> accepted(UNMARKED_ON_PURPOSE, widget, m) != null);
+        org.assertj.core.api.Assertions.assertThat(lost)
+                .as("%s: these setters change a property on the wire without marking it, so the client never "
+                        + "gets the change", widget)
+                .isEmpty();
+
+        java.util.Set<String> unreached = new java.util.TreeSet<>(wire);
+        unreached.removeAll(reached.keySet());
+        unreached.removeAll(compared);
+        // A property the client of this widget never reads is written by no change: no setter needs to reach it.
+        unreached.removeAll(unread);
+        // Never written, so never changed on the wire: the test above says why for each.
+        unreached.removeAll(unwritable.keySet());
+        java.util.Set<String> unlisted = new java.util.TreeSet<>(unreached);
+        unlisted.removeIf(p -> SET_ELSEWHERE.containsKey(widget + "." + p) || SET_ELSEWHERE.containsKey("*." + p));
+        org.assertj.core.api.Assertions.assertThat(unlisted)
+                .as("%s: no setter changes these; sweep them or say in SET_ELSEWHERE what does", widget)
+                .isEmpty();
+        java.util.Set<String> stale = new java.util.TreeSet<>();
+        SET_ELSEWHERE.keySet().stream().filter(k -> k.startsWith(widget + "."))
+                .map(k -> k.substring(widget.length() + 1)).filter(reached::containsKey).forEach(stale::add);
+        org.assertj.core.api.Assertions.assertThat(stale)
+                .as("%s: listed in SET_ELSEWHERE but a setter changes them; take them off", widget)
+                .isEmpty();
+    }
+
+    /** Why a sweep finding is accepted, from [table] by the keys the assertions look it up by; null when it is not. */
+    private static String accepted(java.util.Map<String, String> table, String widget, String finding) {
+        String call = finding.replaceFirst("^(as built |changed )", "");
+        for (String key : new String[] {widget + "." + call, "*." + call, widget + "." + finding, "*." + finding}) {
+            if (table.containsKey(key)) return table.get(key);
+        }
+        return null;
+    }
+
+    /**
+     * With {@code -DsetAgainSweep.report=<dir>}, writes {@code <dir>/<Widget>.tsv}: each wire property
+     * with how a change to it reaches the client, then each accepted finding with its reason.
+     */
+    private static void report(String widget, java.util.Set<String> wire, java.util.Set<String> compared,
+            java.util.Set<String> unread, java.util.Map<String, java.util.Set<String>> reached,
+            java.util.Map<String, String> unwritable, java.util.Set<String> marked, java.util.Set<String> unmarked) {
+        String dir = System.getProperty("setAgainSweep.report");
+        if (dir == null) return;
+        StringBuilder out = new StringBuilder();
+        for (String p : wire) {
+            String how;
+            String why;
+            if (unread.contains(p)) {
+                how = "unread";
+                why = "the client of this widget never reads it, so nothing is written";
+            } else if (compared.contains(p)) {
+                how = "compared";
+                why = "marked where it may have changed; written only when it differs from what was sent";
+            } else if (reached.containsKey(p)) {
+                how = "setter";
+                why = String.join(", ", reached.get(p));
+            } else if (unwritable.containsKey(p)) {
+                how = "unwritable";
+                why = unwritable.get(p);
+            } else {
+                how = "elsewhere";
+                why = SET_ELSEWHERE.getOrDefault(widget + "." + p, SET_ELSEWHERE.get("*." + p));
+            }
+            out.append(widget).append('\t').append(p).append('\t').append(how).append('\t').append(why).append('\n');
+        }
+        for (String m : marked) {
+            String why = accepted(MARKED_ON_PURPOSE, widget, m);
+            if (why != null) out.append(widget).append('\t').append(m).append("\tmarked on purpose\t").append(why).append('\n');
+        }
+        for (String m : unmarked) {
+            String why = accepted(UNMARKED_ON_PURPOSE, widget, m);
+            if (why != null) out.append(widget).append('\t').append(m).append("\tunmarked on purpose\t").append(why).append('\n');
+        }
+        try {
+            java.nio.file.Path file = java.nio.file.Paths.get(dir, widget + ".tsv");
+            java.nio.file.Files.createDirectories(file.getParent());
+            java.nio.file.Files.write(file, out.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
     /** Puts the widget in the state the check measures from: sent whole, nothing outstanding. */
     private void firstSend(Widget w) {
         serialize(w);
@@ -171,7 +411,7 @@ public class SerializeTestBase {
 
     protected void setAll(Widget w) {
         InstancioObjectApi<Widget> inst = Instancio.ofObject(w)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
@@ -207,7 +447,7 @@ public class SerializeTestBase {
 
     protected void setAll(ExpandItem w) {
         InstancioObjectApi<ExpandItem> inst = Instancio.ofObject(w)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
@@ -241,7 +481,7 @@ public class SerializeTestBase {
 
     protected void setAll(TabItem w) {
         InstancioObjectApi<TabItem> inst = Instancio.ofObject(w)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"));
@@ -265,7 +505,7 @@ public class SerializeTestBase {
 
     protected void setAll(GC w) {
         InstancioObjectApi<GC> inst = Instancio.ofObject(w)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient();
         try {
             inst
@@ -283,7 +523,7 @@ public class SerializeTestBase {
 
     protected void setAll(CCombo w) {
         InstancioObjectApi<CCombo> inst = Instancio.ofObject(w)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(Widget.class, "setImpl"))
                 .ignore(Select.field(Widget.class, "state"))
@@ -355,7 +595,7 @@ public class SerializeTestBase {
     protected void setAll(org.eclipse.swt.widgets.Menu m) {
         // Menu doesn't have Font/Color setters like other widgets
         InstancioObjectApi<org.eclipse.swt.widgets.Menu> inst = Instancio.ofObject(m)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
@@ -373,7 +613,7 @@ public class SerializeTestBase {
     protected void setAll(org.eclipse.swt.widgets.MenuItem mi) {
         // MenuItem has Image but not Font/Color setters
         InstancioObjectApi<org.eclipse.swt.widgets.MenuItem> inst = Instancio.ofObject(mi)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))
@@ -399,7 +639,7 @@ public class SerializeTestBase {
      */
     protected void setAll(FontData fd) {
         InstancioObjectApi<FontData> inst = Instancio.ofObject(fd)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 20))
@@ -409,7 +649,7 @@ public class SerializeTestBase {
 
     protected void setAll(Accessible a) {
         InstancioObjectApi<Accessible> inst = Instancio.ofObject(a)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(Accessible.class, "setImpl"))
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
@@ -419,7 +659,7 @@ public class SerializeTestBase {
 
     protected void setAll(org.eclipse.swt.widgets.ToolTip tt) {
         InstancioObjectApi<org.eclipse.swt.widgets.ToolTip> inst = Instancio.ofObject(tt)
-                .withSettings(settings)
+                .withSettings(settings())
                 .lenient()
                 .ignore(Select.setter(org.eclipse.swt.widgets.Widget.class, "setImpl"))
                 .ignore(Select.field(org.eclipse.swt.widgets.Widget.class, "state"))

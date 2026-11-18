@@ -900,13 +900,18 @@ public class DartList extends DartScrollable implements IList {
      */
     public void setItem(int index, String string) {
         checkWidget();
+        int[] wasSelection = getValue().getSelection();
+        wasSelection = dev.equo.swt.ChangeMarks.copy(wasSelection);
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (!(0 <= index && index < itemCount))
             error(SWT.ERROR_INVALID_RANGE);
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VList.ITEMS, items[index], string);
+        if (!java.util.Objects.equals(items[index], string))
+            getValue().markDirty(VList.ITEMS);
         items[index] = string;
-        getValue().markDirty(VList.ITEMS);
         setScrollWidth(string);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VList.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -924,8 +929,11 @@ public class DartList extends DartScrollable implements IList {
      * </ul>
      */
     public void setItems(String... items) {
-        getValue().markDirty(VList.ITEMS);
         checkWidget();
+        int[] wasSelection = getValue().getSelection();
+        wasSelection = dev.equo.swt.ChangeMarks.copy(wasSelection);
+        String[] wasItems = getValue().getItems();
+        wasItems = dev.equo.swt.ChangeMarks.copy(wasItems);
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         for (int i = 0; i < items.length; i++) {
@@ -937,6 +945,8 @@ public class DartList extends DartScrollable implements IList {
         itemCount = items.length;
         updateRowCount();
         setScrollWidth();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VList.ITEMS, wasItems, self -> self.getValue().getItems());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VList.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     boolean setScrollWidth(String item) {
@@ -972,9 +982,10 @@ public class DartList extends DartScrollable implements IList {
      * @see List#select(int)
      */
     public void setSelection(int index) {
-        getValue().markDirty(VList.SELECTION);
         ;
         checkWidget();
+        int[] wasSelection = getValue().getSelection();
+        wasSelection = dev.equo.swt.ChangeMarks.copy(wasSelection);
         deselectAll();
         ;
         if (0 <= index && index < itemCount) {
@@ -983,6 +994,7 @@ public class DartList extends DartScrollable implements IList {
             ignoreSelect = false;
             showIndex(index);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VList.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -1187,6 +1199,12 @@ public class DartList extends DartScrollable implements IList {
     }
 
     int scrollOffset;
+
+    @Override
+    void resized() {
+        super.resized();
+        ListHelper.keepScrollInView(this);
+    }
 
     int keptFocusIndex = -1;
 

@@ -178,4 +178,11 @@ public class VWidget {
     public boolean wireKeepsEmpty(int key) {
         return false;
     }
+
+    /**
+     * Whether a change of this property is sent only when it encodes differently from the last one sent.
+     */
+    public boolean wireCompared(int key) {
+        return false;
+    }
 }

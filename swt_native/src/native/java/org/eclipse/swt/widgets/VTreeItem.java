@@ -563,4 +563,16 @@ public class VTreeItem extends VItem {
         }
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 6153:
+            case 6158:
+            case 6156:
+            case 6157:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

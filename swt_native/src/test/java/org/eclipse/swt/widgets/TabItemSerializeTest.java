@@ -42,8 +42,13 @@ class TabItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_TabItem() {
-        TabItem w = new TabItem(tabFolder(), SWT.NONE);
+        TabItem w = new TabItem(new TabFolder(shell(), SWT.NONE), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_TabItem() {
+        assertSetAgainNamesNothing(style -> new TabItem(new TabFolder(shell(), SWT.NONE), style), this::setAll, unwritable(), SWT.NONE);
     }
 
     VTabItem value(TabItem w) {

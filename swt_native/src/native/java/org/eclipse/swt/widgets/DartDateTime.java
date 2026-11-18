@@ -471,10 +471,21 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setDate(int year, int month, int day) {
         checkWidget();
-        if (year < MIN_YEAR || year > MAX_YEAR)
+        int wasYear = getValue().getYear();
+        int wasMonth = getValue().getMonth();
+        int wasDay = getValue().getDay();
+        if (year < MIN_YEAR || year > MAX_YEAR) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.DAY, wasDay, self -> self.getValue().getDay());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.MONTH, wasMonth, self -> self.getValue().getMonth());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.YEAR, wasYear, self -> self.getValue().getYear());
             return;
-        if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(year, month, day))
+        }
+        if (!org.eclipse.swt.widgets.DateTimeHelper.isValidDate(year, month, day)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.DAY, wasDay, self -> self.getValue().getDay());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.MONTH, wasMonth, self -> self.getValue().getMonth());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.YEAR, wasYear, self -> self.getValue().getYear());
             return;
+        }
         if (this.year != year || this.month != month || this.day != day) {
             getValue().markDirty(VDateTime.YEAR);
             getValue().markDirty(VDateTime.MONTH);
@@ -483,6 +494,9 @@ public class DartDateTime extends DartComposite implements IDateTime {
         this.year = year;
         this.month = month;
         this.day = day;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.DAY, wasDay, self -> self.getValue().getDay());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.MONTH, wasMonth, self -> self.getValue().getMonth());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.YEAR, wasYear, self -> self.getValue().getYear());
     }
 
     /**
@@ -631,8 +645,15 @@ public class DartDateTime extends DartComposite implements IDateTime {
      */
     public void setTime(int hours, int minutes, int seconds) {
         checkWidget();
-        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59)
+        int wasSeconds = getValue().getSeconds();
+        int wasMinutes = getValue().getMinutes();
+        int wasHours = getValue().getHours();
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59 || seconds < 0 || seconds > 59) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.HOURS, wasHours, self -> self.getValue().getHours());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.MINUTES, wasMinutes, self -> self.getValue().getMinutes());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.SECONDS, wasSeconds, self -> self.getValue().getSeconds());
             return;
+        }
         if (this.hours != hours || this.minutes != minutes || this.seconds != seconds) {
             getValue().markDirty(VDateTime.HOURS);
             getValue().markDirty(VDateTime.MINUTES);
@@ -641,6 +662,9 @@ public class DartDateTime extends DartComposite implements IDateTime {
         this.hours = hours;
         this.minutes = minutes;
         this.seconds = seconds;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.HOURS, wasHours, self -> self.getValue().getHours());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.MINUTES, wasMinutes, self -> self.getValue().getMinutes());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDateTime.SECONDS, wasSeconds, self -> self.getValue().getSeconds());
     }
 
     /**

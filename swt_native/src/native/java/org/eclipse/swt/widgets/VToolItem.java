@@ -284,4 +284,13 @@ public class VToolItem extends VItem {
     public boolean wireKeepsEmpty(int key) {
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 5640:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

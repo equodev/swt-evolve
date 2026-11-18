@@ -265,6 +265,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean size) {
+        int wasHeight = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getHeight());
         redraw();
         int headerHeight = ((DartExpandBar) parent.getImpl()).getBandHeight();
         if (move) {
@@ -278,7 +279,6 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         if (size) {
             this.width = width;
             this.height = height;
-            getValue().markDirty(VExpandItem.HEIGHT);
             redraw();
         }
         if (control != null && !control.isDisposed()) {
@@ -287,6 +287,7 @@ public class DartExpandItem extends DartItem implements IExpandItem {
             if (size)
                 control.setSize(Math.max(0, width - 2 * BORDER), Math.max(0, height - BORDER));
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandItem.HEIGHT, wasHeight, self -> self.getValue().getHeight());
     }
 
     /**
@@ -343,8 +344,9 @@ public class DartExpandItem extends DartItem implements IExpandItem {
 
     @Override
     public void setImage(Image image) {
+        Image wasImage = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getImage());
+        int wasHeaderHeight = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getHeaderHeight());
         super.setImage(image);
-        getValue().markDirty(VExpandItem.HEADER_HEIGHT);
         int oldImageHeight = imageHeight;
         if (image != null) {
             Rectangle bounds = image.getBounds();
@@ -358,6 +360,8 @@ public class DartExpandItem extends DartItem implements IExpandItem {
         } else {
             redraw();
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandItem.HEADER_HEIGHT, wasHeaderHeight, self -> self.getValue().getHeaderHeight());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -373,20 +377,23 @@ public class DartExpandItem extends DartItem implements IExpandItem {
      */
     public void setHeight(int height) {
         checkWidget();
-        if (this.height != height) {
-            getValue().markDirty(VExpandItem.HEIGHT);
-        }
-        if (height < 0)
+        int wasHeight = getValue().getHeight();
+        if (height < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VExpandItem.HEIGHT, wasHeight, self -> self.getValue().getHeight());
             return;
+        }
         setBounds(0, 0, width, height, false, true);
         if (expanded)
             ((DartExpandBar) parent.getImpl()).layoutItems(parent.indexOf(this.getApi()) + 1, true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandItem.HEIGHT, wasHeight, self -> self.getValue().getHeight());
     }
 
     @Override
     public void setText(String string) {
+        String wasText = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getText());
         super.setText(string);
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandItem.TEXT, wasText, self -> self.getValue().getText());
     }
 
     public ExpandBar _parent() {

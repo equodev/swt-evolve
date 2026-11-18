@@ -178,4 +178,14 @@ public class VViewForm extends VComposite {
     public boolean wireKeepsEmpty(int key) {
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 6337:
+            case 6338:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

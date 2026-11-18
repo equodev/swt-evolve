@@ -21,18 +21,41 @@ public class ControlUtils {
             // A child can be added while the parent is still being constructed, before it has a
             // value to record anything on. Scheduling it is all that can be done then, and all that
             // is needed: a parent that new is sent whole.
-            if (p.getValue() != null) p.getValue().markDirty(VComposite.CHILDREN);
+            if (p.getValue() != null) markChildren(p, obj.getApi());
             else obj.getBridge().dirty(p);
         }
     }
-    
+
     public static void addToParentChildren(IControl obj) {
         if (obj._parent().getImpl() instanceof DartComposite ) { DartComposite p = (DartComposite) obj._parent().getImpl();
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
-            if (p.getValue() != null) p.getValue().markDirty(VComposite.CHILDREN);
+            if (p.getValue() != null) markChildren(p, obj.getApi());
         }
+    }
+
+    /** Takes [control] out of [p]'s children, as a composite does when a child is disposed. */
+    public static void removeChild(DartComposite p, Control control) {
+        if (p.children == null) return;
+        for (int i = 0; i < p.children.length; i++) {
+            if (p.children[i] == control) {
+                Control[] newChildren = new Control[p.children.length - 1];
+                System.arraycopy(p.children, 0, newChildren, 0, i);
+                System.arraycopy(p.children, i + 1, newChildren, i, p.children.length - i - 1);
+                p.children = newChildren;
+                markChildren(p, control);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Marks the children [p] sends, unless [child] is one [p] draws itself: those are left out of
+     * the list it sends (a CCombo's text, list and arrow), which their arrival or order leaves as it was.
+     */
+    private static void markChildren(DartComposite p, Control child) {
+        if (!p._drawsItself(child)) p.getValue().markDirty(VComposite.CHILDREN);
     }
 
     public static void updateChildrenOrderOnMove(Control movedControl, Control referenceControl, boolean moveAbove) {
@@ -64,7 +87,7 @@ public class ControlUtils {
         Control[] children = parentImpl.children;
         int movedIndex = -1;
         int referenceIndex = -1;
-        
+
         for (int i = 0; i < children.length; i++) {
             if (children[i] == movedControl) {
                 movedIndex = i;
@@ -73,21 +96,21 @@ public class ControlUtils {
                 referenceIndex = i;
             }
         }
-        
+
         if (movedIndex == -1) {
             return;
         }
-        
+
         Control[] newChildren = new Control[children.length - 1];
         System.arraycopy(children, 0, newChildren, 0, movedIndex);
         System.arraycopy(children, movedIndex + 1, newChildren, movedIndex, children.length - movedIndex - 1);
-        
+
         int adjustedReferenceIndex = referenceIndex;
         if (referenceControl != null && referenceIndex != -1 && movedIndex < referenceIndex) {
             adjustedReferenceIndex = referenceIndex - 1;
         }
-        
-        int newIndex;       
+
+        int newIndex;
         if (moveAbove) {
             if (referenceControl == null) {
                 newIndex = 0;
@@ -119,7 +142,7 @@ public class ControlUtils {
         System.arraycopy(newChildren, newIndex, finalChildren, newIndex + 1, newChildren.length - newIndex);
 
         parentImpl.children = finalChildren;
-        if (parentImpl.getValue() != null) parentImpl.getValue().markDirty(VComposite.CHILDREN);
+        if (parentImpl.getValue() != null) markChildren(parentImpl, movedControl);
         else ((DartControl) movedControl.getImpl()).getBridge().dirty(parentImpl);
     }
 
@@ -134,7 +157,7 @@ public class ControlUtils {
                     break;
                 }
             }
-            if (p.getValue() != null) p.getValue().markDirty(VComposite.CHILDREN);
+            if (p.getValue() != null) markChildren(p, obj.getApi());
             else obj.getBridge().dirty(p);
         }
     }

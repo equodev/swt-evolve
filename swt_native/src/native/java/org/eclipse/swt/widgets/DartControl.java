@@ -2484,14 +2484,18 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     void setBackground() {
-        if (!drawsBackground())
+        Image wasBackgroundImage = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackgroundImage());
+        if (!drawsBackground()) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
             return;
+        }
         Control control = findBackgroundControl();
         if (control == null)
             control = this.getApi();
         if (((DartControl) control.getImpl()).backgroundImage != null) {
         } else {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
     }
 
     /**
@@ -2516,17 +2520,25 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackground(Color color) {
         checkWidget();
+        boolean wasHasOwnBackground = getValue().getHasOwnBackground();
+        Image wasBackgroundImage = getValue().getBackgroundImage();
+        Color wasBackground = getValue().getBackground();
         _setBackground(color);
         if (color != null) {
             this.updateBackgroundMode();
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.HAS_OWN_BACKGROUND, wasHasOwnBackground, self -> self.getValue().getHasOwnBackground());
     }
 
     private void _setBackground(Color color) {
+        boolean wasHasOwnBackground = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getHasOwnBackground());
+        Image wasBackgroundImage = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackgroundImage());
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
         if (!java.util.Objects.equals(this._background, newValue)) {
-            getValue().markDirty(VControl.BACKGROUND);
             ControlHelper.markDamaged(this);
         }
         if (color != null) {
@@ -2537,6 +2549,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ;
         updateBackgroundColor();
         this._background = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.HAS_OWN_BACKGROUND, wasHasOwnBackground, self -> self.getValue().getHasOwnBackground());
     }
 
     /**
@@ -2566,15 +2581,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBackgroundImage(Image image) {
         checkWidget();
+        Image wasBackgroundImage = getValue().getBackgroundImage();
         image = GraphicsUtils.copyImage(getDisplay(), image);
-        if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            getValue().markDirty(VControl.BACKGROUND_IMAGE);
-            ControlHelper.markDamaged(this);
-        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
+        if (!java.util.Objects.equals(this.backgroundImage, image)) {
+            ControlHelper.markDamaged(this);
+        }
         backgroundImage = image;
         updateBackgroundImage();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
     }
 
     /**
@@ -2607,10 +2623,13 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         setBounds(x, y, Math.max(0, width), Math.max(0, height), true, true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
+        Rectangle wasBounds = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBounds());
         ;
         int finalX = move ? x : this.bounds.x;
         int finalY = move ? y : this.bounds.y;
@@ -2618,8 +2637,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         int finalHeight = resize ? height : this.bounds.height;
         Rectangle newValue = new Rectangle(finalX, finalY, finalWidth, finalHeight);
         boolean boundsChanged = !this.bounds.equals(newValue);
-        if (boundsChanged)
-            getValue().markDirty(VControl.BOUNDS);
         /*
 	* Bug in Cocoa. On Mac 10.8, a text control loses and gains focus
 	* when its bounds changes.  The fix is to ignore these events.
@@ -2646,6 +2663,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ;
         if ((positionChanged || sizeChanged) && !isDisposed())
             PointerCrossingHelper.boundsChanged(this);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     /**
@@ -2673,9 +2691,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setBounds(Rectangle rect) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     /**
@@ -2718,20 +2738,22 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setCursor(Cursor cursor) {
         checkWidget();
-        if (!java.util.Objects.equals(this.cursor, cursor)) {
-            getValue().markDirty(VControl.CURSOR);
-        }
+        Cursor wasCursor = getValue().getCursor();
         if (cursor != null && cursor.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.cursor = cursor;
-        if (!getApi().isEnabled())
+        if (!getApi().isEnabled()) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VControl.CURSOR, wasCursor, self -> self.getValue().getCursor());
             return;
+        }
         //display.setCursor(display.currentControl);
         ;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.CURSOR, wasCursor, self -> self.getValue().getCursor());
     }
 
     void setDefaultFont() {
         if (((DartDisplay) display.getImpl()).smallFonts) {
+            getValue().markDirty(VControl.FONT);
             setSmallSize();
         }
     }
@@ -2753,15 +2775,14 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setDragDetect(boolean dragDetect) {
         boolean newValue = dragDetect;
         checkWidget();
-        if (this.dragDetect != newValue) {
-            getValue().markDirty(VControl.DRAG_DETECT);
-        }
+        boolean wasDragDetect = getValue().getDragDetect();
         this.dragDetect = newValue;
         if (dragDetect) {
             getApi().state |= DRAG_DETECT;
         } else {
             getApi().state &= ~DRAG_DETECT;
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.DRAG_DETECT, wasDragDetect, self -> self.getValue().getDragDetect());
     }
 
     /**
@@ -2819,9 +2840,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setFont(Font font) {
         checkWidget();
+        Font wasFont = getValue().getFont();
         font = GraphicsUtils.copyFont(font);
         if (!java.util.Objects.equals(this.font, font)) {
-            getValue().markDirty(VControl.FONT);
             ControlHelper.markDamaged(this);
         }
         if (font != null) {
@@ -2829,6 +2850,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
                 error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.font = font;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.FONT, wasFont, self -> self.getValue().getFont());
     }
 
     /**
@@ -2850,10 +2872,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setForeground(Color color) {
         checkWidget();
+        Color wasForeground = getValue().getForeground();
         color = GraphicsUtils.copyColor(color);
         Color newValue = ThemedSystemColors.legibleForeground(this, color);
         if (!java.util.Objects.equals(this._foreground, newValue)) {
-            getValue().markDirty(VControl.FOREGROUND);
             ControlHelper.markDamaged(this);
         }
         if (color != null) {
@@ -2863,6 +2885,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         //setForeground(foreground);
         ;
         this._foreground = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     void setForeground(double[] color) {
@@ -2903,7 +2926,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(int x, int y) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         setBounds(x, y, 0, 0, true, false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     /**
@@ -2925,9 +2950,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setLocation(Point location) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(location.x, location.y, 0, 0, true, false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     /**
@@ -2991,13 +3018,16 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setOrientation(int orientation) {
         checkWidget();
+        int wasStyle = getValue().getStyle();
         int flags = SWT.RIGHT_TO_LEFT | SWT.LEFT_TO_RIGHT;
-        if ((orientation & flags) == 0 || (orientation & flags) == flags)
+        if ((orientation & flags) == 0 || (orientation & flags) == flags) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
+        }
         getApi().style &= ~flags;
         getApi().style |= orientation & flags;
         this.orientation = orientation;
-        getValue().markDirty(VWidget.STYLE);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     /**
@@ -3152,7 +3182,9 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setSize(int width, int height) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         setBounds(0, 0, Math.max(0, width), Math.max(0, height), false, true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     /**
@@ -3180,9 +3212,11 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
      */
     public void setSize(Point size) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
     }
 
     void setSmallSize() {
@@ -3312,18 +3346,22 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
+        boolean wasVisible = getValue().getVisible();
         if (getVisible() != newValue) {
-            getValue().markDirty(VControl.VISIBLE);
             if (parent != null && parent.getImpl() instanceof DartTable)
                 ((DartTable) parent.getImpl()).dirty();
         }
         if (!visible) {
-            if ((getApi().state & HIDDEN) != 0)
+            if ((getApi().state & HIDDEN) != 0) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VControl.VISIBLE, wasVisible, self -> self.getValue().getVisible());
                 return;
+            }
             getApi().state |= HIDDEN;
         } else {
-            if ((getApi().state & HIDDEN) == 0)
+            if ((getApi().state & HIDDEN) == 0) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VControl.VISIBLE, wasVisible, self -> self.getValue().getVisible());
                 return;
+            }
             sendEvent(SWT.Show);
             if (isDisposed())
                 return;
@@ -3367,6 +3405,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         }
         if (fixFocus)
             fixFocus(control);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.VISIBLE, wasVisible, self -> self.getValue().getVisible());
     }
 
     void setZOrder() {
@@ -4085,6 +4124,10 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
     }
 
     boolean laidOut = false;
+
+    public String _displayedToolTipText() {
+        return toolTipText;
+    }
 
     PaintState paintState;
 

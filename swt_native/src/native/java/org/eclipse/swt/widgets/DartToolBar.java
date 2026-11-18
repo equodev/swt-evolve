@@ -446,7 +446,9 @@ public class DartToolBar extends DartComposite implements IToolBar {
 
     @Override
     public void setVisible(boolean visible) {
+        boolean wasVisible = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getVisible());
         super.setVisible(visible);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolBar.VISIBLE, wasVisible, self -> self.getValue().getVisible());
     }
 
     public int _itemCount() {

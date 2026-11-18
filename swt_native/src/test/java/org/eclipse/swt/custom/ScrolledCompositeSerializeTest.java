@@ -26,7 +26,7 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ScrolledComposite")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alwaysShowScrollBars").equalsTo(w.getAlwaysShowScrollBars(), orAbsentIfFalse));
@@ -60,6 +60,11 @@ class ScrolledCompositeSerializeTest extends SerializeTestBase {
     void should_name_every_change_ScrolledComposite() {
         ScrolledComposite w = new ScrolledComposite(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_ScrolledComposite() {
+        assertSetAgainNamesNothing(style -> new ScrolledComposite(shell(), style), this::setAll, unwritable("font", "the client never reads it off a ScrolledComposite", "hasOwnBackground", "the client never reads it off a ScrolledComposite"), SWT.NONE, SWT.H_SCROLL, SWT.V_SCROLL, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VScrolledComposite value(ScrolledComposite w) {

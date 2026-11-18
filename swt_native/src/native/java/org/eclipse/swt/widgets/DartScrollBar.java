@@ -484,11 +484,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setIncrement(int value) {
         checkWidget();
+        if (value < 1)
+            return;
         if (this.increment != value) {
             getValue().markDirty(VScrollBar.INCREMENT);
         }
-        if (value < 1)
-            return;
         increment = value;
     }
 
@@ -508,20 +508,23 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (this.enabled != newValue) {
-            getValue().markDirty(VScrollBar.ENABLED);
-        }
+        boolean wasEnabled = getValue().getEnabled();
         if (enabled) {
-            if ((getApi().state & DISABLED) == 0)
+            if ((getApi().state & DISABLED) == 0) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
                 return;
+            }
             getApi().state &= ~DISABLED;
         } else {
-            if ((getApi().state & DISABLED) != 0)
+            if ((getApi().state & DISABLED) != 0) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
                 return;
+            }
             getApi().state |= DISABLED;
         }
         this.enabled = newValue;
         enableWidget(enabled);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
     }
 
     void enableWidget(boolean enabled) {
@@ -544,20 +547,26 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setMaximum(int value) {
         checkWidget();
-        if (this.maximum != value) {
-            getValue().markDirty(VScrollBar.MAXIMUM);
+        int wasSelection = getValue().getSelection();
+        if (value < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return;
         }
-        if (value < 0)
+        if (value <= minimum) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (value <= minimum)
-            return;
+        }
         if (value - minimum < thumb) {
             thumb = value - minimum;
             getValue().markDirty(VScrollBar.THUMB);
         }
         int selection = Math.max(minimum, Math.min(getSelection(), value - thumb));
+        if (this.maximum != value) {
+            getValue().markDirty(VScrollBar.MAXIMUM);
+        }
         this.maximum = value;
         updateBar(selection, minimum, value, thumb);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -575,20 +584,26 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setMinimum(int value) {
         checkWidget();
-        if (this.minimum != value) {
-            getValue().markDirty(VScrollBar.MINIMUM);
+        int wasSelection = getValue().getSelection();
+        if (value < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return;
         }
-        if (value < 0)
+        if (value >= maximum) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (value >= maximum)
-            return;
+        }
         if (maximum - value < thumb) {
             thumb = maximum - value;
             getValue().markDirty(VScrollBar.THUMB);
         }
         int selection = Math.min(maximum - thumb, Math.max(getSelection(), value));
+        if (this.minimum != value) {
+            getValue().markDirty(VScrollBar.MINIMUM);
+        }
         this.minimum = value;
         updateBar(selection, value, maximum, thumb);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -606,11 +621,11 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setPageIncrement(int value) {
         checkWidget();
+        if (value < 1)
+            return;
         if (this.pageIncrement != value) {
             getValue().markDirty(VScrollBar.PAGE_INCREMENT);
         }
-        if (value < 1)
-            return;
         pageIncrement = value;
     }
 
@@ -653,14 +668,18 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setThumb(int value) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
+        if (value < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return;
+        }
+        value = Math.min(value, maximum - minimum);
+        updateBar(getSelection(), minimum, maximum, value);
         if (this.thumb != value) {
             getValue().markDirty(VScrollBar.THUMB);
         }
-        if (value < 1)
-            return;
-        value = Math.min(value, maximum - minimum);
-        updateBar(getSelection(), minimum, maximum, value);
         this.thumb = value;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -686,37 +705,69 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
-        if (this.thumb != thumb) {
-            getValue().markDirty(VScrollBar.THUMB);
-        }
-        if (this.pageIncrement != pageIncrement) {
-            getValue().markDirty(VScrollBar.PAGE_INCREMENT);
-        }
-        if (this.minimum != minimum) {
-            getValue().markDirty(VScrollBar.MINIMUM);
-        }
-        if (this.maximum != maximum) {
-            getValue().markDirty(VScrollBar.MAXIMUM);
-        }
-        if (this.increment != increment) {
-            getValue().markDirty(VScrollBar.INCREMENT);
-        }
-        if (minimum < 0)
+        int wasSelection = getValue().getSelection();
+        int wasThumb = getValue().getThumb();
+        int wasPageIncrement = getValue().getPageIncrement();
+        int wasMinimum = getValue().getMinimum();
+        int wasMaximum = getValue().getMaximum();
+        int wasIncrement = getValue().getIncrement();
+        if (minimum < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (maximum < 0)
+        }
+        if (maximum < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (thumb < 1)
+        }
+        if (thumb < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (increment < 1)
+        }
+        if (increment < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (pageIncrement < 1)
+        }
+        if (pageIncrement < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         this.thumb = thumb = Math.min(thumb, maximum - minimum);
         this.maximum = maximum;
         this.minimum = minimum;
         this.increment = increment;
         this.pageIncrement = pageIncrement;
         updateBar(selection, minimum, maximum, thumb);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.THUMB, wasThumb, self -> self.getValue().getThumb());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrollBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -738,11 +789,10 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (this.visible != newValue) {
-            getValue().markDirty(VScrollBar.VISIBLE);
-        }
+        boolean wasVisible = getValue().getVisible();
         this.visible = newValue;
         ((DartScrollable) parent.getImpl()).setScrollBarVisible(this.getApi(), visible);
+        visibleMark = dev.equo.swt.ChangeMarks.markChange(this, VScrollBar.VISIBLE, wasVisible, self -> self.getValue().getVisible(), visibleMark);
     }
 
     void updateBar(int selection, int minimum, int maximum, int thumb) {
@@ -863,4 +913,6 @@ public class DartScrollBar extends DartWidget implements IScrollBar {
             value = new VScrollBar(this);
         return (VScrollBar) value;
     }
+
+    dev.equo.swt.MarkMemo visibleMark;
 }

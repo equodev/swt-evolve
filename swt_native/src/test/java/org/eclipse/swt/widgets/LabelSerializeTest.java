@@ -26,7 +26,7 @@ class LabelSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Label")
                .containsEntry("text", value(w).getText())
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("image").equalsTo(value(w).getImage(), orAbsentIfNull));
@@ -54,6 +54,11 @@ class LabelSerializeTest extends SerializeTestBase {
     void should_name_every_change_Label() {
         Label w = new Label(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Label() {
+        assertSetAgainNamesNothing(style -> new Label(shell(), style), this::setAll, unwritable("tabStop", "the client never reads it off a Label", "inheritsBackground", "the client never reads it off a Label"), SWT.NONE, SWT.SEPARATOR, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SHADOW_IN, SWT.SHADOW_OUT, SWT.SHADOW_NONE, SWT.CENTER, SWT.LEFT, SWT.RIGHT, SWT.WRAP, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VLabel value(Label w) {

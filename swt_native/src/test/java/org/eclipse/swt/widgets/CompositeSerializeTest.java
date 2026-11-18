@@ -25,7 +25,7 @@ class CompositeSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Composite")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("backgroundMode").equalsTo(w.getBackgroundMode(), orAbsentIf0));
@@ -53,6 +53,11 @@ class CompositeSerializeTest extends SerializeTestBase {
     void should_name_every_change_Composite() {
         Composite w = new Composite(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Composite() {
+        assertSetAgainNamesNothing(style -> new Composite(shell(), style), this::setAll, unwritable(), SWT.NONE, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VComposite value(Composite w) {

@@ -554,17 +554,21 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setAccelerator(int accelerator) {
         checkWidget();
-        if (this.accelerator != accelerator) {
-            getValue().markDirty(VMenuItem.ACCELERATOR);
-        }
-        if (this.accelerator == accelerator)
+        boolean wasSelection = getValue().getSelection();
+        int wasAccelerator = getValue().getAccelerator();
+        if (this.accelerator == accelerator) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.ACCELERATOR, wasAccelerator, self -> self.getValue().getAccelerator());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         this.accelerator = accelerator;
         int key = accelerator & SWT.KEY_MASK;
         if (key == SWT.ESC && /* no masks */
         key == accelerator && !((DartDisplay) display.getImpl()).escAsAcceleratorPresent) {
             ((DartDisplay) display.getImpl()).escAsAcceleratorPresent = true;
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.ACCELERATOR, wasAccelerator, self -> self.getValue().getAccelerator());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -583,15 +587,16 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (this.enabled != newValue) {
-            getValue().markDirty(VMenuItem.ENABLED);
-        }
+        boolean wasSelection = getValue().getSelection();
+        boolean wasEnabled = getValue().getEnabled();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
             getApi().state |= DISABLED;
         }
         this.enabled = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -610,9 +615,11 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setID(int id) {
         int newValue = id;
         checkWidget();
+        boolean wasSelection = getValue().getSelection();
         if (id < 0)
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.ID = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -634,11 +641,21 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     @Override
     public void setImage(Image image) {
         checkWidget();
-        if (this.image == image)
+        Image wasImage = getValue().getImage();
+        boolean wasSelection = getValue().getSelection();
+        if (this.image == image) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        }
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         super.setImage(image);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -668,9 +685,8 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setMenu(Menu menu) {
         checkWidget();
-        if (!java.util.Objects.equals(this.menu, menu)) {
-            getValue().markDirty(VMenuItem.MENU);
-        }
+        Menu wasMenu = getValue().getMenu();
+        boolean wasSelection = getValue().getSelection();
         /* Check to make sure the new menu is valid */
         if ((getApi().style & SWT.CASCADE) == 0) {
             error(SWT.ERROR_MENUITEM_NOT_CASCADE);
@@ -687,8 +703,11 @@ public class DartMenuItem extends DartItem implements IMenuItem {
         }
         /* Assign the new menu */
         Menu oldMenu = this.menu;
-        if (oldMenu == menu)
+        if (oldMenu == menu) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.MENU, wasMenu, self -> self.getValue().getMenu());
             return;
+        }
         if (oldMenu != null)
             ((DartMenu) oldMenu.getImpl()).cascade = null;
         this.menu = menu;
@@ -698,10 +717,11 @@ public class DartMenuItem extends DartItem implements IMenuItem {
             ((DartMenu) menu.getImpl()).cascade = this.getApi();
         }
         if (menu != null) {
-        } else {
         }
         /* Update menu title with parent item title */
         updateText();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.MENU, wasMenu, self -> self.getValue().getMenu());
     }
 
     boolean setRadioSelection(boolean value) {
@@ -709,6 +729,7 @@ public class DartMenuItem extends DartItem implements IMenuItem {
             return false;
         if (getSelection() != value) {
             setSelection(value);
+            getValue().markDirty(VMenuItem.SELECTION);
             sendSelectionEvent(SWT.Selection);
         }
         return true;
@@ -730,12 +751,13 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         checkWidget();
-        if (this.selection != newValue) {
-            getValue().markDirty(VMenuItem.SELECTION);
-        }
-        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
+        boolean wasSelection = getValue().getSelection();
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         this.selection = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -778,14 +800,20 @@ public class DartMenuItem extends DartItem implements IMenuItem {
     @Override
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.TEXT, wasText, self -> self.getValue().getText());
             return;
-        if (text.equals(string))
+        }
+        if (text.equals(string)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.TEXT, wasText, self -> self.getValue().getText());
             return;
+        }
         super.setText(string);
         updateText();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**
@@ -820,17 +848,21 @@ public class DartMenuItem extends DartItem implements IMenuItem {
      */
     public void setToolTipText(String toolTip) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, toolTip)) {
-            getValue().markDirty(VMenuItem.TOOL_TIP_TEXT);
-        }
+        String wasToolTipText = getValue().getToolTipText();
+        boolean wasSelection = getValue().getSelection();
         if (toolTip == null && toolTipText != null) {
             toolTipText = null;
         }
-        if (toolTip == null || toolTip.trim().length() == 0 || toolTip.equals(toolTipText))
+        if (toolTip == null || toolTip.trim().length() == 0 || toolTip.equals(toolTipText)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.TOOL_TIP_TEXT, wasToolTipText, self -> self.getValue().getToolTipText());
             return;
+        }
         toolTipText = toolTip;
         char[] chars = new char[toolTipText.length()];
         toolTipText.getChars(0, chars.length, chars, 0);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenuItem.TOOL_TIP_TEXT, wasToolTipText, self -> self.getValue().getToolTipText());
     }
 
     void updateText() {

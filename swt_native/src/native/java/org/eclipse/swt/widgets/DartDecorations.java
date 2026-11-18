@@ -631,12 +631,12 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setMenuBar(Menu menu) {
         checkWidget();
+        Menu wasMenuBar = getValue().getMenuBar();
         int menuStripBefore = Sizes.ownMenuStripHeight(getApi());
-        if (!java.util.Objects.equals(this.menuBar, menu)) {
-            getValue().markDirty(VDecorations.MENU_BAR);
-        }
-        if (menuBar == menu)
+        if (menuBar == menu) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VDecorations.MENU_BAR, wasMenuBar, self -> self.getValue().getMenuBar());
             return;
+        }
         if (menu != null) {
             if (menu.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -647,6 +647,7 @@ public class DartDecorations extends DartCanvas implements IDecorations {
         }
         menuBar = menu;
         Sizes.menuStripChanged(getApi(), menuStripBefore);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VDecorations.MENU_BAR, wasMenuBar, self -> self.getValue().getMenuBar());
     }
 
     /**
@@ -702,11 +703,11 @@ public class DartDecorations extends DartCanvas implements IDecorations {
      */
     public void setText(String string) {
         checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
         if (!java.util.Objects.equals(this.text, string)) {
             getValue().markDirty(VDecorations.TEXT);
         }
-        if (string == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
     }
 

@@ -25,7 +25,7 @@ class ScaleSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Scale")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("maximum").equalsTo(w.getMaximum(), orAbsentIf0));
@@ -54,6 +54,11 @@ class ScaleSerializeTest extends SerializeTestBase {
     void should_name_every_change_Scale() {
         Scale w = new Scale(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Scale() {
+        assertSetAgainNamesNothing(style -> new Scale(shell(), style), this::setAll, unwritable("font", "the client never reads it off a Scale", "hasOwnBackground", "the client never reads it off a Scale", "inheritsBackground", "the client never reads it off a Scale", "tabStop", "the client never reads it off a Scale"), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VScale value(Scale w) {

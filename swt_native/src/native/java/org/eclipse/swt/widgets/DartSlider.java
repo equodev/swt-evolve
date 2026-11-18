@@ -330,11 +330,11 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setIncrement(int value) {
         checkWidget();
+        if (value < 1)
+            return;
         if (this.increment != value) {
             getValue().markDirty(VSlider.INCREMENT);
         }
-        if (value < 1)
-            return;
         increment = value;
     }
 
@@ -353,20 +353,26 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setMaximum(int value) {
         checkWidget();
-        if (this.maximum != value) {
-            getValue().markDirty(VSlider.MAXIMUM);
+        int wasSelection = getValue().getSelection();
+        if (value < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return;
         }
-        if (value < 0)
+        if (value <= minimum) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (value <= minimum)
-            return;
+        }
         if (value - minimum < thumb) {
             thumb = value - minimum;
             getValue().markDirty(VSlider.THUMB);
         }
         int selection = Math.max(minimum, Math.min(getSelection(), value - thumb));
+        if (this.maximum != value) {
+            getValue().markDirty(VSlider.MAXIMUM);
+        }
         this.maximum = value;
         updateBar(selection, minimum, value, thumb);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -384,20 +390,26 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setMinimum(int value) {
         checkWidget();
-        if (this.minimum != value) {
-            getValue().markDirty(VSlider.MINIMUM);
+        int wasSelection = getValue().getSelection();
+        if (value < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return;
         }
-        if (value < 0)
+        if (value >= maximum) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (value >= maximum)
-            return;
+        }
         if (maximum - value < thumb) {
             thumb = maximum - value;
             getValue().markDirty(VSlider.THUMB);
         }
         int selection = Math.min(maximum - thumb, Math.max(getSelection(), value));
+        if (this.minimum != value) {
+            getValue().markDirty(VSlider.MINIMUM);
+        }
         this.minimum = value;
         updateBar(selection, value, maximum, thumb);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -415,11 +427,11 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setPageIncrement(int value) {
         checkWidget();
+        if (value < 1)
+            return;
         if (this.pageIncrement != value) {
             getValue().markDirty(VSlider.PAGE_INCREMENT);
         }
-        if (value < 1)
-            return;
         pageIncrement = value;
     }
 
@@ -475,14 +487,18 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setThumb(int value) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
+        if (value < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
+            return;
+        }
+        value = Math.min(value, maximum - minimum);
+        updateBar(getSelection(), minimum, maximum, value);
         if (this.thumb != value) {
             getValue().markDirty(VSlider.THUMB);
         }
-        if (value < 1)
-            return;
-        value = Math.min(value, maximum - minimum);
-        updateBar(getSelection(), minimum, maximum, value);
         this.thumb = value;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -508,31 +524,57 @@ public class DartSlider extends DartControl implements ISlider {
      */
     public void setValues(int selection, int minimum, int maximum, int thumb, int increment, int pageIncrement) {
         checkWidget();
-        if (this.thumb != thumb) {
-            getValue().markDirty(VSlider.THUMB);
-        }
-        if (this.pageIncrement != pageIncrement) {
-            getValue().markDirty(VSlider.PAGE_INCREMENT);
-        }
-        if (this.minimum != minimum) {
-            getValue().markDirty(VSlider.MINIMUM);
-        }
-        if (this.maximum != maximum) {
-            getValue().markDirty(VSlider.MAXIMUM);
-        }
-        if (this.increment != increment) {
-            getValue().markDirty(VSlider.INCREMENT);
-        }
-        if (minimum < 0)
+        int wasSelection = getValue().getSelection();
+        int wasThumb = getValue().getThumb();
+        int wasPageIncrement = getValue().getPageIncrement();
+        int wasMinimum = getValue().getMinimum();
+        int wasMaximum = getValue().getMaximum();
+        int wasIncrement = getValue().getIncrement();
+        if (minimum < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (maximum < 0)
+        }
+        if (maximum < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (thumb < 1)
+        }
+        if (thumb < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (increment < 1)
+        }
+        if (increment < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
-        if (pageIncrement < 1)
+        }
+        if (pageIncrement < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.THUMB, wasThumb, self -> self.getValue().getThumb());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         thumb = Math.min(thumb, maximum - minimum);
         this.thumb = thumb;
         this.maximum = maximum;
@@ -540,6 +582,12 @@ public class DartSlider extends DartControl implements ISlider {
         this.increment = increment;
         this.pageIncrement = pageIncrement;
         updateBar(selection, minimum, maximum, thumb);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.PAGE_INCREMENT, wasPageIncrement, self -> self.getValue().getPageIncrement());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.THUMB, wasThumb, self -> self.getValue().getThumb());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSlider.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     int selection;

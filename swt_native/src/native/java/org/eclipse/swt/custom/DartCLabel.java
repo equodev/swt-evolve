@@ -398,8 +398,11 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         notifyListeners(event.type, event);
         event.type = SWT.NONE;
         gradientColors = null;
+        getValue().markDirty(VCLabel.GRADIENT_COLORS);
         gradientPercents = null;
+        getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
         backgroundImage = null;
+        getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
         text = null;
         getValue().markDirty(VCLabel.TEXT);
         image = null;
@@ -448,6 +451,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      */
     public void setAlignment(int align) {
         checkWidget();
+        int wasStyle = getValue().getStyle();
         if (this.align != align) {
             getValue().markDirty(VCLabel.ALIGNMENT);
         }
@@ -458,32 +462,47 @@ public class DartCLabel extends DartCanvas implements ICLabel {
             this.align = align;
             redraw();
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     @Override
     public void setBackground(Color color) {
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
+        Image wasBackgroundImage = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackgroundImage());
+        int[] wasGradientPercents = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getGradientPercents());
+        wasGradientPercents = dev.equo.swt.ChangeMarks.copy(wasGradientPercents);
+        Color[] wasGradientColors = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getGradientColors());
+        wasGradientColors = dev.equo.swt.ChangeMarks.copy(wasGradientColors);
         super.setBackground(color);
         // Are these settings the same as before?
         if (backgroundImage == null && gradientColors == null && gradientPercents == null) {
             if (color == null) {
-                if (background == null)
+                if (background == null) {
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
                     return;
+                }
             } else {
-                if (color.equals(background))
+                if (color.equals(background)) {
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
                     return;
+                }
             }
-        }
-        if (backgroundImage != null)
-            getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
-        if (gradientColors != null) {
-            getValue().markDirty(VCLabel.GRADIENT_COLORS);
-            getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
         }
         background = color;
         backgroundImage = null;
         gradientColors = null;
         gradientPercents = null;
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     /**
@@ -546,12 +565,13 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      *  @since 3.0
      */
     public void setBackground(Color[] colors, int[] percents, boolean vertical) {
-        getValue().markDirty(VCLabel.GRADIENT_VERTICAL);
-        getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
         checkWidget();
-        if (!java.util.Arrays.equals(this.gradientColors, colors)) {
-            getValue().markDirty(VCLabel.GRADIENT_COLORS);
-        }
+        boolean wasGradientVertical = getValue().getGradientVertical();
+        int[] wasGradientPercents = getValue().getGradientPercents();
+        wasGradientPercents = dev.equo.swt.ChangeMarks.copy(wasGradientPercents);
+        Color[] wasGradientColors = getValue().getGradientColors();
+        wasGradientColors = dev.equo.swt.ChangeMarks.copy(wasGradientColors);
+        Image wasBackgroundImage = getValue().getBackgroundImage();
         if (colors != null) {
             if (percents == null || percents.length != colors.length - 1) {
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -587,12 +607,16 @@ public class DartCLabel extends DartCanvas implements ICLabel {
                             break;
                     }
                 }
-                if (same && this.gradientVertical == vertical)
+                if (same && this.gradientVertical == vertical) {
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_VERTICAL, wasGradientVertical, self -> self.getValue().getGradientVertical());
                     return;
+                }
             }
         } else {
             backgroundImage = null;
-            getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
         }
         // Store the new settings
         if (colors == null) {
@@ -608,6 +632,10 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         }
         // Refresh with the new settings
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_VERTICAL, wasGradientVertical, self -> self.getValue().getGradientVertical());
     }
 
     /**
@@ -622,23 +650,30 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      */
     public void setBackground(Image image) {
         checkWidget();
+        Image wasBackgroundImage = getValue().getBackgroundImage();
+        int[] wasGradientPercents = getValue().getGradientPercents();
+        wasGradientPercents = dev.equo.swt.ChangeMarks.copy(wasGradientPercents);
+        Color[] wasGradientColors = getValue().getGradientColors();
+        wasGradientColors = dev.equo.swt.ChangeMarks.copy(wasGradientColors);
         image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            getValue().markDirty(VCLabel.BACKGROUND_IMAGE);
             ControlHelper.markDamaged(this);
         }
-        if (image == backgroundImage)
+        if (image == backgroundImage) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
             return;
+        }
         if (image != null) {
-            if (gradientColors != null) {
-                getValue().markDirty(VCLabel.GRADIENT_COLORS);
-                getValue().markDirty(VCLabel.GRADIENT_PERCENTS);
-            }
             gradientColors = null;
             gradientPercents = null;
         }
         backgroundImage = image;
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_PERCENTS, wasGradientPercents, self -> self.getValue().getGradientPercents());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BACKGROUND_IMAGE, wasBackgroundImage, self -> self.getValue().getBackgroundImage());
     }
 
     /**
@@ -655,19 +690,22 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      */
     public void setBottomMargin(int bottomMargin) {
         checkWidget();
-        if (this.bottomMargin != bottomMargin) {
-            getValue().markDirty(VCLabel.BOTTOM_MARGIN);
-        }
-        if (this.bottomMargin == bottomMargin || bottomMargin < 0)
+        int wasBottomMargin = getValue().getBottomMargin();
+        if (this.bottomMargin == bottomMargin || bottomMargin < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BOTTOM_MARGIN, wasBottomMargin, self -> self.getValue().getBottomMargin());
             return;
+        }
         this.bottomMargin = bottomMargin;
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.BOTTOM_MARGIN, wasBottomMargin, self -> self.getValue().getBottomMargin());
     }
 
     @Override
     public void setFont(Font font) {
+        Font wasFont = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getFont());
         super.setFont(font);
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.FONT, wasFont, self -> self.getValue().getFont());
     }
 
     /**
@@ -707,13 +745,14 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      */
     public void setLeftMargin(int leftMargin) {
         checkWidget();
-        if (this.leftMargin != leftMargin) {
-            getValue().markDirty(VCLabel.LEFT_MARGIN);
-        }
-        if (this.leftMargin == leftMargin || leftMargin < 0)
+        int wasLeftMargin = getValue().getLeftMargin();
+        if (this.leftMargin == leftMargin || leftMargin < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.LEFT_MARGIN, wasLeftMargin, self -> self.getValue().getLeftMargin());
             return;
+        }
         this.leftMargin = leftMargin;
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.LEFT_MARGIN, wasLeftMargin, self -> self.getValue().getLeftMargin());
     }
 
     /**
@@ -765,13 +804,14 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      */
     public void setRightMargin(int rightMargin) {
         checkWidget();
-        if (this.rightMargin != rightMargin) {
-            getValue().markDirty(VCLabel.RIGHT_MARGIN);
-        }
-        if (this.rightMargin == rightMargin || rightMargin < 0)
+        int wasRightMargin = getValue().getRightMargin();
+        if (this.rightMargin == rightMargin || rightMargin < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.RIGHT_MARGIN, wasRightMargin, self -> self.getValue().getRightMargin());
             return;
+        }
         this.rightMargin = rightMargin;
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.RIGHT_MARGIN, wasRightMargin, self -> self.getValue().getRightMargin());
     }
 
     /**
@@ -815,9 +855,11 @@ public class DartCLabel extends DartCanvas implements ICLabel {
 
     @Override
     public void setToolTipText(String string) {
+        String wasToolTipText = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getToolTipText());
         super.setToolTipText(string);
         appToolTipText = super.getToolTipText();
         CLabelHelper.updateShownToolTip(this);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.TOOL_TIP_TEXT, wasToolTipText, self -> self.getValue().getToolTipText());
     }
 
     /**
@@ -834,13 +876,14 @@ public class DartCLabel extends DartCanvas implements ICLabel {
      */
     public void setTopMargin(int topMargin) {
         checkWidget();
-        if (this.topMargin != topMargin) {
-            getValue().markDirty(VCLabel.TOP_MARGIN);
-        }
-        if (this.topMargin == topMargin || topMargin < 0)
+        int wasTopMargin = getValue().getTopMargin();
+        if (this.topMargin == topMargin || topMargin < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.TOP_MARGIN, wasTopMargin, self -> self.getValue().getTopMargin());
             return;
+        }
         this.topMargin = topMargin;
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.TOP_MARGIN, wasTopMargin, self -> self.getValue().getTopMargin());
     }
 
     /**

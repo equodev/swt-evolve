@@ -41,8 +41,13 @@ class CoolItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_CoolItem() {
-        CoolItem w = new CoolItem(coolBar(), SWT.NONE);
+        CoolItem w = new CoolItem(new CoolBar(shell(), SWT.NONE), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_CoolItem() {
+        assertSetAgainNamesNothing(style -> new CoolItem(new CoolBar(shell(), SWT.NONE), style), this::setAll, unwritable("style", "the client never reads it off a CoolItem"), SWT.NONE, SWT.DROP_DOWN);
     }
 
     VCoolItem value(CoolItem w) {

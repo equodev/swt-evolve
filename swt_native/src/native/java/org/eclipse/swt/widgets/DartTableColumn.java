@@ -419,25 +419,35 @@ public class DartTableColumn extends DartItem implements ITableColumn {
      * </ul>
      */
     public void setAlignment(int alignment) {
-        getValue().markDirty(VTableColumn.ALIGNMENT);
         checkWidget();
-        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
+        int wasStyle = getValue().getStyle();
+        int wasAlignment = getValue().getAlignment();
+        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+            dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
+        }
         int index = parent.indexOf(this.getApi());
-        if (index == -1 || index == 0)
+        if (index == -1 || index == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+            dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
+        }
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     @Override
     public void setImage(Image image) {
         checkWidget();
+        Image wasImage = getValue().getImage();
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         super.setImage(image);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -486,15 +496,20 @@ public class DartTableColumn extends DartItem implements ITableColumn {
     public void setResizable(boolean resizable) {
         boolean newValue = resizable;
         checkWidget();
+        int wasWidth = getValue().getWidth();
+        boolean wasResizable = getValue().getResizable();
         if (this.resizable != newValue) {
             getValue().markDirty(VTableColumn.RESIZABLE);
         }
         this.resizable = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.RESIZABLE, wasResizable, self -> self.getValue().getResizable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.WIDTH, wasWidth, self -> self.getValue().getWidth());
     }
 
     @Override
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         super.setText(string);
@@ -502,6 +517,7 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         text.getChars(0, buffer.length, buffer, 0);
         int length = fixMnemonic(buffer);
         displayText = new String(buffer, 0, length);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**
@@ -554,11 +570,13 @@ public class DartTableColumn extends DartItem implements ITableColumn {
         int newValue = width;
         boolean widthChanged = this.width != newValue;
         checkWidget();
-        if (this.width != newValue) {
-            getValue().markDirty(VTableColumn.WIDTH);
-        }
-        if (width < 0)
+        boolean wasResizable = getValue().getResizable();
+        int wasWidth = getValue().getWidth();
+        if (width < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.WIDTH, wasWidth, self -> self.getValue().getWidth());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.RESIZABLE, wasResizable, self -> self.getValue().getResizable());
             return;
+        }
         // TODO how to differentiate 0 and 1 cases?
         width = Math.max(0, width - DartTable.CELL_GAP);
         this.width = newValue;
@@ -566,6 +584,8 @@ public class DartTableColumn extends DartItem implements ITableColumn {
             sendEvent(SWT.Resize);
             ColumnHelper.columnResized(parent, getApi());
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.WIDTH, wasWidth, self -> self.getValue().getWidth());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableColumn.RESIZABLE, wasResizable, self -> self.getValue().getResizable());
     }
 
     @Override

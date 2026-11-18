@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
@@ -461,15 +460,12 @@ public class TextHelper {
     /**
      * The user moved the caret or the selection in the client's field without editing: the caret
      * at {@code offset}, the selection running from {@code anchor} to it. getCaretPosition() and
-     * getSelection() answer from Java's copy, so it follows; nothing is pushed back, and what the
-     * client was last sent of either stops counting as what it holds.
+     * getSelection() answer from Java's copy, so it follows; nothing is pushed back.
      */
     public static void clientCaretMoved(DartText text, int offset, int anchor) {
         ClientCaret moved = new ClientCaret(offset, anchor, text.getCharCount());
         text.caretPosition = moved.caret;
         text.selection = moved.selection;
-        Serializer.clientChanged(text.getValue(), VText.CARET_POSITION);
-        Serializer.clientChanged(text.getValue(), VText.SELECTION);
     }
 
     /**

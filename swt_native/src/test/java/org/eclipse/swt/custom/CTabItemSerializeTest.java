@@ -47,8 +47,13 @@ class CTabItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_CTabItem() {
-        CTabItem w = new CTabItem(cTabFolder(), SWT.NONE);
+        CTabItem w = new CTabItem(new CTabFolder(shell(), SWT.NONE), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_CTabItem() {
+        assertSetAgainNamesNothing(style -> new CTabItem(new CTabFolder(shell(), SWT.NONE), style), this::setAll, unwritable("style", "the client never reads it off a CTabItem"), SWT.NONE);
     }
 
     VCTabItem value(CTabItem w) {

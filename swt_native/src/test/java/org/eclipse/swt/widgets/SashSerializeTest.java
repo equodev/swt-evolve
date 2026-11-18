@@ -25,7 +25,7 @@ class SashSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Sash")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("background").equalsTo(w.getBackground(), orAbsentIfNull));
@@ -51,6 +51,11 @@ class SashSerializeTest extends SerializeTestBase {
     void should_name_every_change_Sash() {
         Sash w = new Sash(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Sash() {
+        assertSetAgainNamesNothing(style -> new Sash(shell(), style), this::setAll, unwritable("tabStop", "the client never reads it off a Sash", "font", "the client never reads it off a Sash", "hasOwnBackground", "the client never reads it off a Sash", "inheritsBackground", "the client never reads it off a Sash"), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SMOOTH, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VSash value(Sash w) {

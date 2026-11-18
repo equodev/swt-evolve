@@ -44,8 +44,13 @@ class TableColumnSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_TableColumn() {
-        TableColumn w = new TableColumn(table(), SWT.NONE);
+        TableColumn w = new TableColumn(new Table(shell(), SWT.CHECK), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_TableColumn() {
+        assertSetAgainNamesNothing(style -> new TableColumn(new Table(shell(), SWT.CHECK), style), this::setAll, unwritable("style", "the client never reads it off a TableColumn"), SWT.NONE, SWT.LEFT, SWT.RIGHT, SWT.CENTER);
     }
 
     VTableColumn value(TableColumn w) {

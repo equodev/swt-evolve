@@ -1288,11 +1288,11 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setEchoChar(char echo) {
         checkWidget();
-        if (this.echoCharacter != echo) {
-            getValue().markDirty(VText.ECHO_CHARACTER);
-        }
-        if ((getApi().style & SWT.MULTI) != 0)
+        int wasEchoCharacter = getValue().getEchoCharacter();
+        if ((getApi().style & SWT.MULTI) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VText.ECHO_CHARACTER, wasEchoCharacter, self -> self.getValue().getEchoCharacter());
             return;
+        }
         if ((getApi().style & SWT.PASSWORD) == 0) {
             Point selection = getSelection();
             char[] text = getTextChars();
@@ -1301,6 +1301,7 @@ public class DartText extends DartScrollable implements IText {
             setSelection(selection);
         }
         echoCharacter = echo;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VText.ECHO_CHARACTER, wasEchoCharacter, self -> self.getValue().getEchoCharacter());
     }
 
     /**
@@ -1316,20 +1317,20 @@ public class DartText extends DartScrollable implements IText {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
+        int wasStyle = getValue().getStyle();
         if (getEditable() != newValue) {
             getValue().markDirty(VText.EDITABLE);
         }
         if (editable) {
             getApi().style &= ~SWT.READ_ONLY;
-            getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         } else {
             getApi().style |= SWT.READ_ONLY;
-            getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         }
         this.editable = newValue;
         if ((getApi().style & SWT.SINGLE) != 0) {
         } else {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     void setEditText(String string) {
@@ -1440,7 +1441,9 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start) {
         checkWidget();
+        Point wasSelection = getValue().getSelection();
         setSelection(start, start);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VText.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -1470,6 +1473,8 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(int start, int end) {
         checkWidget();
+        int wasCaretPosition = getValue().getCaretPosition();
+        Point wasSelection = getValue().getSelection();
         int length = getCharCount();
         int min = Math.min(Math.max(Math.min(start, end), 0), length);
         int max = Math.min(Math.max(Math.max(start, end), 0), length);
@@ -1477,16 +1482,11 @@ public class DartText extends DartScrollable implements IText {
         // A partial update carries only the properties it names, so a selection change
         // that records nothing leaves the client re-applying the range it was last
         // told - the select-all a dialog opens with, re-asserted over the caret after
-        // every keystroke.
-        if (!java.util.Objects.equals(this.selection, newValue)) {
-            getValue().markDirty(VText.SELECTION);
-        }
-        if (this.caretPosition != min) {
-            getValue().markDirty(VText.CARET_POSITION);
-        }
         this.selection = newValue;
         // the caret is in the start of the selection
         this.caretPosition = min;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VText.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VText.CARET_POSITION, wasCaretPosition, self -> self.getValue().getCaretPosition());
     }
 
     /**
@@ -1520,9 +1520,11 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setSelection(Point selection) {
         checkWidget();
+        Point wasSelection = getValue().getSelection();
         if (selection == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setSelection(selection.x, selection.y);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VText.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -1571,14 +1573,13 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
         String newValue = string;
-        if (!java.util.Objects.equals(this.text, newValue)) {
-            getValue().markDirty(VText.TEXT);
-        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         TextHelper.setText(this, string);
         apiEdits.record(this, TextApiEdits.SET_TEXT, "");
+        dev.equo.swt.ChangeMarks.ifChanged(this, VText.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**
@@ -1641,13 +1642,13 @@ public class DartText extends DartScrollable implements IText {
      */
     public void setTextLimit(int limit) {
         checkWidget();
-        if (this.textLimit != limit) {
-            getValue().markDirty(VText.TEXT_LIMIT);
-        }
         if (limit == 0)
             error(SWT.ERROR_CANNOT_BE_ZERO);
         if (limit < 0)
             limit = Text.LIMIT;
+        if (this.textLimit != limit) {
+            getValue().markDirty(VText.TEXT_LIMIT);
+        }
         textLimit = limit;
     }
 

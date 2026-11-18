@@ -298,10 +298,14 @@ public class DartTabItem extends DartItem implements ITabItem {
     @Override
     public void setImage(Image image) {
         checkWidget();
+        Image wasImage = getValue().getImage();
         int index = parent.indexOf(this.getApi());
-        if (index == -1)
+        if (index == -1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTabItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         super.setImage(image);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTabItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -331,13 +335,17 @@ public class DartTabItem extends DartItem implements ITabItem {
     @Override
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int index = parent.indexOf(this.getApi());
-        if (index == -1)
+        if (index == -1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTabItem.TEXT, wasText, self -> self.getValue().getText());
             return;
+        }
         super.setText(string);
         updateText();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTabItem.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**

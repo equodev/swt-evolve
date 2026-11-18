@@ -467,6 +467,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setControl(Control control) {
         checkWidget();
+        Point wasPreferredSize = getValue().getPreferredSize();
         if (!java.util.Objects.equals(this.control, control)) {
             getValue().markDirty(VCoolItem.CONTROL);
         }
@@ -499,6 +500,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
             }
             control.setBounds(((DartCoolBar) parent.getImpl()).fixRectangle(itemBounds.x + MINIMUM_WIDTH, itemBounds.y, controlWidth, itemBounds.height));
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolItem.PREFERRED_SIZE, wasPreferredSize, self -> self.getValue().getPreferredSize());
     }
 
     /**
@@ -559,14 +561,15 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      * </ul>
      */
     public void setPreferredSize(int width, int height) {
-        getValue().markDirty(VCoolItem.PREFERRED_SIZE);
         Point newValue = new Point(width, height);
         checkWidget();
+        Point wasPreferredSize = getValue().getPreferredSize();
         ideal = true;
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         preferredWidth = Math.max(point.x, MINIMUM_WIDTH);
         this._preferredSize = newValue;
         preferredHeight = point.y;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolItem.PREFERRED_SIZE, wasPreferredSize, self -> self.getValue().getPreferredSize());
     }
 
     /**
@@ -584,9 +587,11 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setPreferredSize(Point size) {
         checkWidget();
+        Point wasPreferredSize = getValue().getPreferredSize();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setPreferredSize(size.x, size.y);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolItem.PREFERRED_SIZE, wasPreferredSize, self -> self.getValue().getPreferredSize());
     }
 
     /**
@@ -607,6 +612,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setSize(int width, int height) {
         checkWidget();
+        Point wasPreferredSize = getValue().getPreferredSize();
         Point point = ((DartCoolBar) parent.getImpl()).fixPoint(width, height);
         width = Math.max(point.x, minimumWidth + MINIMUM_WIDTH);
         height = point.y;
@@ -626,6 +632,7 @@ public class DartCoolItem extends DartItem implements ICoolItem {
         }
         ((DartCoolBar) parent.getImpl()).relayout();
         updateChevron();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolItem.PREFERRED_SIZE, wasPreferredSize, self -> self.getValue().getPreferredSize());
     }
 
     /**
@@ -648,9 +655,11 @@ public class DartCoolItem extends DartItem implements ICoolItem {
      */
     public void setSize(Point size) {
         checkWidget();
+        Point wasPreferredSize = getValue().getPreferredSize();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setSize(size.x, size.y);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolItem.PREFERRED_SIZE, wasPreferredSize, self -> self.getValue().getPreferredSize());
     }
 
     void updateChevron() {

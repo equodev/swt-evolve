@@ -209,11 +209,11 @@ public class DartGroup extends DartComposite implements IGroup {
      */
     public void setText(String string) {
         checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
         if (!java.util.Objects.equals(this.text, string)) {
             getValue().markDirty(VGroup.TEXT);
         }
-        if (string == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
         char[] buffer = new char[text.length()];
         text.getChars(0, buffer.length, buffer, 0);

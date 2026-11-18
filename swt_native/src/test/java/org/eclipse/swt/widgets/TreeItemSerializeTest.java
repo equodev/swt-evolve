@@ -46,8 +46,13 @@ class TreeItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_TreeItem() {
-        TreeItem w = new TreeItem(tree(), SWT.NONE);
+        TreeItem w = new TreeItem(new Tree(shell(), SWT.CHECK), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_TreeItem() {
+        assertSetAgainNamesNothing(style -> new TreeItem(new Tree(shell(), SWT.CHECK), style), this::setAll, unwritable("style", "the client never reads it off a TreeItem"), SWT.NONE);
     }
 
     VTreeItem value(TreeItem w) {

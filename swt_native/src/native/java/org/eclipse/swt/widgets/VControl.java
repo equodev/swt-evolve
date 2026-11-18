@@ -197,7 +197,7 @@ public class VControl extends VWidget {
     }
 
     public String getToolTipText() {
-        return ((DartControl) impl).getToolTipText();
+        return ((DartControl) impl)._displayedToolTipText();
     }
 
     public void setToolTipText(String value) {

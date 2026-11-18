@@ -438,11 +438,15 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      * @since 2.0
      */
     public void setOrigin(int x, int y) {
-        getValue().markDirty(VScrolledComposite.ORIGIN);
         Point newValue = new Point(x, y);
         checkWidget();
-        if (content == null)
+        Point wasOrigin = getValue().getOrigin();
+        int wasOriginRequest = getValue().getOriginRequest();
+        if (content == null) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ORIGIN_REQUEST, wasOriginRequest, self -> self.getValue().getOriginRequest());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ORIGIN, wasOrigin, self -> self.getValue().getOrigin());
             return;
+        }
         ScrollBar hBar = getHorizontalBar();
         if (hBar != null) {
             hBar.setSelection(x);
@@ -460,7 +464,8 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
         this.origin = newValue;
         content.setLocation(x, y);
         originRequest++;
-        getValue().markDirty(VScrolledComposite.ORIGIN_REQUEST);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ORIGIN_REQUEST, wasOriginRequest, self -> self.getValue().getOriginRequest());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ORIGIN, wasOrigin, self -> self.getValue().getOrigin());
     }
 
     /**
@@ -479,11 +484,11 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setAlwaysShowScrollBars(boolean show) {
         checkWidget();
-        if (this.alwaysShowScroll != show) {
-            getValue().markDirty(VScrolledComposite.ALWAYS_SHOW_SCROLL_BARS);
-        }
-        if (show == alwaysShowScroll)
+        boolean wasAlwaysShowScrollBars = getValue().getAlwaysShowScrollBars();
+        if (show == alwaysShowScroll) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ALWAYS_SHOW_SCROLL_BARS, wasAlwaysShowScrollBars, self -> self.getValue().getAlwaysShowScrollBars());
             return;
+        }
         alwaysShowScroll = show;
         ScrollBar hBar = getHorizontalBar();
         if (hBar != null && alwaysShowScroll)
@@ -492,6 +497,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
         if (vBar != null && alwaysShowScroll)
             vBar.setVisible(true);
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ALWAYS_SHOW_SCROLL_BARS, wasAlwaysShowScrollBars, self -> self.getValue().getAlwaysShowScrollBars());
     }
 
     /**
@@ -506,6 +512,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setContent(Control content) {
         checkWidget();
+        Point wasOrigin = getValue().getOrigin();
         if (!java.util.Objects.equals(this.content, content)) {
             getValue().markDirty(VScrolledComposite.CONTENT);
         }
@@ -536,6 +543,7 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
             if (vBar != null)
                 vBar.setVisible(alwaysShowScroll);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.ORIGIN, wasOrigin, self -> self.getValue().getOrigin());
     }
 
     /**
@@ -555,13 +563,14 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setExpandHorizontal(boolean expand) {
         checkWidget();
-        if (this.expandHorizontal != expand) {
-            getValue().markDirty(VScrolledComposite.EXPAND_HORIZONTAL);
-        }
-        if (expand == expandHorizontal)
+        boolean wasExpandHorizontal = getValue().getExpandHorizontal();
+        if (expand == expandHorizontal) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.EXPAND_HORIZONTAL, wasExpandHorizontal, self -> self.getValue().getExpandHorizontal());
             return;
+        }
         expandHorizontal = expand;
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.EXPAND_HORIZONTAL, wasExpandHorizontal, self -> self.getValue().getExpandHorizontal());
     }
 
     /**
@@ -581,13 +590,14 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setExpandVertical(boolean expand) {
         checkWidget();
-        if (this.expandVertical != expand) {
-            getValue().markDirty(VScrolledComposite.EXPAND_VERTICAL);
-        }
-        if (expand == expandVertical)
+        boolean wasExpandVertical = getValue().getExpandVertical();
+        if (expand == expandVertical) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.EXPAND_VERTICAL, wasExpandVertical, self -> self.getValue().getExpandVertical());
             return;
+        }
         expandVertical = expand;
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.EXPAND_VERTICAL, wasExpandVertical, self -> self.getValue().getExpandVertical());
     }
 
     /**
@@ -665,17 +675,18 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
      */
     public void setMinSize(int width, int height) {
         checkWidget();
-        if (this.minHeight != height)
-            getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
-        if (this.minWidth != width) {
-            getValue().markDirty(VScrolledComposite.MIN_WIDTH);
-        }
-        if (width == minWidth && height == minHeight)
+        int wasMinHeight = getValue().getMinHeight();
+        int wasMinWidth = getValue().getMinWidth();
+        if (width == minWidth && height == minHeight) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.MIN_WIDTH, wasMinWidth, self -> self.getValue().getMinWidth());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.MIN_HEIGHT, wasMinHeight, self -> self.getValue().getMinHeight());
             return;
+        }
         minWidth = Math.max(0, width);
         minHeight = Math.max(0, height);
-        getValue().markDirty(VScrolledComposite.MIN_HEIGHT);
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.MIN_WIDTH, wasMinWidth, self -> self.getValue().getMinWidth());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.MIN_HEIGHT, wasMinHeight, self -> self.getValue().getMinHeight());
     }
 
     /**
@@ -831,6 +842,30 @@ public class DartScrolledComposite extends DartComposite implements IScrolledCom
 
     int wireOriginRequest() {
         return originRequest;
+    }
+
+    @Override
+    public void setBounds(int x, int y, int width, int height) {
+        Rectangle wasBounds = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBounds());
+        ScrolledCompositeHelper.keepOrigin(this, () -> super.setBounds(x, y, width, height));
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+    }
+
+    @Override
+    public void setBounds(Rectangle rect) {
+        Rectangle wasBounds = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBounds());
+        ScrolledCompositeHelper.keepOrigin(this, () -> super.setBounds(rect));
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScrolledComposite.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+    }
+
+    @Override
+    public void setSize(int width, int height) {
+        ScrolledCompositeHelper.keepOrigin(this, () -> super.setSize(width, height));
+    }
+
+    @Override
+    public void setSize(Point size) {
+        ScrolledCompositeHelper.keepOrigin(this, () -> super.setSize(size));
     }
 
     protected void _hookEvents() {

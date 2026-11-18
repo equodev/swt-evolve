@@ -570,17 +570,19 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setBackground(Color color) {
         checkWidget();
+        Color wasBackground = getValue().getBackground();
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.background, color)) {
-            getValue().markDirty(VToolItem.BACKGROUND);
-        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Color oldColor = background;
         background = color;
-        if (Objects.equals(oldColor, background))
+        if (Objects.equals(oldColor, background)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
             return;
+        }
+        getValue().markDirty(VToolItem.WIDTH);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     /**
@@ -600,24 +602,28 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setControl(Control control) {
         checkWidget();
-        if (!java.util.Objects.equals(this.control, control)) {
-            getValue().markDirty(VToolItem.CONTROL);
-        }
+        Control wasControl = getValue().getControl();
         if (control != null) {
             if (control.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
             if (((DartControl) control.getImpl()).parent != parent)
                 error(SWT.ERROR_INVALID_PARENT);
         }
-        if ((getApi().style & SWT.SEPARATOR) == 0)
+        if ((getApi().style & SWT.SEPARATOR) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.CONTROL, wasControl, self -> self.getValue().getControl());
             return;
-        if (this.control == control)
+        }
+        if (this.control == control) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.CONTROL, wasControl, self -> self.getValue().getControl());
             return;
+        }
         this.control = control;
+        getValue().markDirty(VToolItem.WIDTH);
         if (control != null && !control.isDisposed()) {
             control.moveAbove(null);
         }
         ((DartToolBar) parent.getImpl()).relayout();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.CONTROL, wasControl, self -> self.getValue().getControl());
     }
 
     /**
@@ -639,11 +645,11 @@ public class DartToolItem extends DartItem implements IToolItem {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (this.enabled != newValue) {
-            getValue().markDirty(VToolItem.ENABLED);
-        }
-        if ((getApi().state & DISABLED) == 0 && enabled)
+        boolean wasEnabled = getValue().getEnabled();
+        if ((getApi().state & DISABLED) == 0 && enabled) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
             return;
+        }
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -651,6 +657,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         }
         this.enabled = newValue;
         enableWidget(enabled);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
     }
 
     /**
@@ -672,18 +679,21 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setDisabledImage(Image image) {
         checkWidget();
+        Image wasDisabledImage = getValue().getDisabledImage();
         image = GraphicsUtils.copyImage(getDisplay(), image);
-        if (!java.util.Objects.equals(this.disabledImage, image)) {
-            getValue().markDirty(VToolItem.DISABLED_IMAGE);
-        }
-        if (this.disabledImage == image)
+        if (this.disabledImage == image) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.DISABLED_IMAGE, wasDisabledImage, self -> self.getValue().getDisabledImage());
             return;
+        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.DISABLED_IMAGE, wasDisabledImage, self -> self.getValue().getDisabledImage());
             return;
+        }
         disabledImage = image;
         updateImage(true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.DISABLED_IMAGE, wasDisabledImage, self -> self.getValue().getDisabledImage());
     }
 
     boolean setFocus() {
@@ -713,18 +723,19 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setForeground(Color color) {
         checkWidget();
+        Color wasForeground = getValue().getForeground();
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.foreground, color)) {
-            getValue().markDirty(VToolItem.FOREGROUND);
-        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Color oldColor = foreground;
         foreground = color;
-        if (Objects.equals(oldColor, foreground))
+        if (Objects.equals(oldColor, foreground)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
             return;
+        }
         updateStyle();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     /**
@@ -746,31 +757,40 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setHotImage(Image image) {
         checkWidget();
+        Image wasHotImage = getValue().getHotImage();
         image = GraphicsUtils.copyImage(getDisplay(), image);
-        if (!java.util.Objects.equals(this.hotImage, image)) {
-            getValue().markDirty(VToolItem.HOT_IMAGE);
-        }
-        if (this.hotImage == image)
+        if (this.hotImage == image) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.HOT_IMAGE, wasHotImage, self -> self.getValue().getHotImage());
             return;
+        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.HOT_IMAGE, wasHotImage, self -> self.getValue().getHotImage());
             return;
+        }
         hotImage = image;
         updateImage(true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.HOT_IMAGE, wasHotImage, self -> self.getValue().getHotImage());
     }
 
     @Override
     public void setImage(Image image) {
         checkWidget();
-        if (this.image == image)
+        Image wasImage = getValue().getImage();
+        if (this.image == image) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         super.setImage(image);
         updateImage(true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     boolean setRadioSelection(boolean value) {
@@ -778,6 +798,7 @@ public class DartToolItem extends DartItem implements IToolItem {
             return false;
         if (getSelection() != value) {
             setSelection(value);
+            getValue().markDirty(VToolItem.SELECTION);
             sendSelectionEvent(SWT.Selection);
         }
         return true;
@@ -800,12 +821,14 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setSelection(boolean selected) {
         checkWidget();
-        if (this.selection != selected) {
-            getValue().markDirty(VToolItem.SELECTION);
-        }
-        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0)
+        boolean wasSelection = getValue().getSelection();
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO)) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         this.selection = selected;
+        getValue().markDirty(VToolItem.WIDTH);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -838,12 +861,17 @@ public class DartToolItem extends DartItem implements IToolItem {
     @Override
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.TEXT, wasText, self -> self.getValue().getText());
             return;
-        if (string.equals(getText()))
+        }
+        if (string.equals(getText())) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.TEXT, wasText, self -> self.getValue().getText());
             return;
+        }
         super.setText(string);
         if (text.length() != 0 && image != null) {
             if ((parent.style & SWT.RIGHT) != 0) {
@@ -852,6 +880,7 @@ public class DartToolItem extends DartItem implements IToolItem {
         } else {
         }
         ((DartToolBar) parent.getImpl()).relayout();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolItem.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**
@@ -881,13 +910,13 @@ public class DartToolItem extends DartItem implements IToolItem {
      */
     public void setToolTipText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, string)) {
-            getValue().markDirty(VToolItem.TOOL_TIP_TEXT);
-        }
         if (string == null && toolTipText == null)
             return;
         if (string != null && string.equals(toolTipText))
             return;
+        if (!java.util.Objects.equals(this.toolTipText, string)) {
+            getValue().markDirty(VToolItem.TOOL_TIP_TEXT);
+        }
         toolTipText = string;
         {
             ((DartControl) parent.getImpl()).checkToolTip(this.getApi());
@@ -904,6 +933,7 @@ public class DartToolItem extends DartItem implements IToolItem {
                 return;
             getApi().state |= HIDDEN;
         }
+        getValue().markDirty(VToolItem.WIDTH);
     }
 
     /**

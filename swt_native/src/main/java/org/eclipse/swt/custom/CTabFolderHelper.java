@@ -54,7 +54,9 @@ public class CTabFolderHelper {
         if (!force && folder.tabHeight == oldHeight && folder.stripHeight == oldStripHeight)
             return false;
         folder.oldSize = null;
-        folder.getValue().markDirty(VCTabFolder.TAB_HEIGHT);
+        // The client is sent the strip height (_displayedTabHeight), not the tab height.
+        if (folder.stripHeight != oldStripHeight)
+            folder.getValue().markDirty(VCTabFolder.TAB_HEIGHT);
         return true;
     }
 

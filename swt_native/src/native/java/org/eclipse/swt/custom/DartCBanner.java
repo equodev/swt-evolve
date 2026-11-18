@@ -411,8 +411,10 @@ public class DartCBanner extends DartComposite implements ICBanner {
         if (bottom != null && !bottom.isDisposed()) {
             Point size = bottom.getSize();
             bottom.setLocation(OFFSCREEN - size.x, OFFSCREEN - size.y);
+            getValue().markDirty(VCBanner.BOTTOM_LINE);
         }
         bottom = control;
+        getValue().markDirty(VCBanner.BOTTOM_LINE);
         layout(false);
     }
 
@@ -460,8 +462,12 @@ public class DartCBanner extends DartComposite implements ICBanner {
         if (left != null && !left.isDisposed()) {
             Point size = left.getSize();
             left.setLocation(OFFSCREEN - size.x, OFFSCREEN - size.y);
+            getValue().markDirty(VCBanner.BOTTOM_LINE);
+            getValue().markDirty(VCBanner.CURVE_LINE);
         }
         left = control;
+        getValue().markDirty(VCBanner.BOTTOM_LINE);
+        getValue().markDirty(VCBanner.CURVE_LINE);
         layout(false);
     }
 
@@ -488,8 +494,12 @@ public class DartCBanner extends DartComposite implements ICBanner {
         if (right != null && !right.isDisposed()) {
             Point size = right.getSize();
             right.setLocation(OFFSCREEN - size.x, OFFSCREEN - size.y);
+            getValue().markDirty(VCBanner.BOTTOM_LINE);
+            getValue().markDirty(VCBanner.CURVE_LINE);
         }
         right = control;
+        getValue().markDirty(VCBanner.BOTTOM_LINE);
+        getValue().markDirty(VCBanner.CURVE_LINE);
         layout(false);
     }
 
@@ -556,12 +566,15 @@ public class DartCBanner extends DartComposite implements ICBanner {
             this.simple = simple;
             if (simple) {
                 curve_width = 5;
+                getValue().markDirty(VCBanner.CURVE_LINE);
                 curve_indent = -2;
             } else {
                 curve_width = 50;
+                getValue().markDirty(VCBanner.CURVE_LINE);
                 curve_indent = 5;
             }
             updateCurve(getSize().y);
+            getValue().markDirty(VCBanner.CURVE_LINE);
             layout(false);
             redraw();
         }

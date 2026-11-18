@@ -7,8 +7,12 @@ import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.WireFrames;
 import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
+import org.eclipse.swt.custom.DartCCombo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DartLabel;
+import org.eclipse.swt.widgets.DartWidget;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Mocks;
 import org.eclipse.swt.widgets.Shell;
@@ -186,17 +190,33 @@ class DiffFrameTest {
     }
 
     @Test
-    @DisplayName("a property changed back to what the client holds is not sent at all")
-    void aChangeThatIsNotADifferenceIsDropped() {
+    @DisplayName("a stored property set and set back before the flush is sent again")
+    void aStoredPropertySetBackIsSentAgain() {
         Label label = newLabel();
         DartLabel impl = (DartLabel) label.getImpl();
         sendWhole(label);
         label.setText("settled");
         assertThat(WireFrames.record(impl, CLIENT)).isNotNull();
 
-        // As a layout pass does to bounds: dirty, but equal to what was sent by the flush.
         label.setText("mid");
         label.setText("settled");
+
+        // Its mark decides: nothing compares it with what the client was sent.
+        assertThatWire(WireFrames.record(impl, CLIENT)).containsEntry("text", "settled");
+        assertThat(impl.getValue().anyDirty()).isFalse();
+    }
+
+    @Test
+    @DisplayName("a compared property changed back to what the client holds is not sent at all")
+    void aComparedPropertySetBackIsDropped() {
+        CCombo combo = newCombo();
+        DartCCombo impl = (DartCCombo) combo.getImpl();
+        sendWhole(combo);
+        combo.setText("settled");
+        assertThat(WireFrames.record(impl, CLIENT)).isNotNull();
+
+        combo.setText("mid");
+        combo.setText("settled");
 
         assertThat(WireFrames.record(impl, CLIENT))
                 .as("nothing the client does not hold, so no record")
@@ -224,18 +244,18 @@ class DiffFrameTest {
     @Test
     @DisplayName("a dropped change leaves the write stamp where it was")
     void droppingAnUpdateDoesNotMoveTheBase() {
-        Label label = newLabel();
-        DartLabel impl = (DartLabel) label.getImpl();
-        sendWhole(label);
-        label.setText("settled");
+        CCombo combo = newCombo();
+        DartCCombo impl = (DartCCombo) combo.getImpl();
+        sendWhole(combo);
+        combo.setText("settled");
         WireFrames.record(impl, CLIENT);
         long sentAt = impl.getValue().sentSeq(CLIENT);
 
-        label.setText("mid");
-        label.setText("settled");
+        combo.setText("mid");
+        combo.setText("settled");
         assertThat(WireFrames.record(impl, CLIENT)).isNull();
 
-        label.setText("after");
+        combo.setText("after");
         assertThat(((Number) WireFrames.record(impl, CLIENT).get("_b")).longValue())
                 .as("the next real change is still measured from the last record the client received")
                 .isEqualTo(sentAt);
@@ -244,11 +264,21 @@ class DiffFrameTest {
     // ---- harness ----
 
     /** Sends the widget whole to the client and returns the stamp that state carries. */
-    private long sendWhole(Label label) {
-        DartLabel impl = (DartLabel) label.getImpl();
+    private long sendWhole(Control control) {
+        DartWidget impl = (DartWidget) control.getImpl();
         Serializer.forgetDelivery(impl.getValue());
         WireFrames.record(impl, CLIENT);
         return impl.getValue().sentSeq(CLIENT);
+    }
+
+    /** A CCombo, whose text is compared: it is read from a field the client never sees. */
+    private CCombo newCombo() {
+        Shell shell = Mocks.shell();
+        Composite parent = new Composite(shell, SWT.NONE);
+        CCombo combo = new CCombo(parent, SWT.BORDER);
+        combo.setText("before");
+        settle(parent);
+        return combo;
     }
 
     private Label newLabel() {

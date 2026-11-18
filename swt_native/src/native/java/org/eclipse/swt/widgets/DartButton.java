@@ -423,21 +423,32 @@ public class DartButton extends DartControl implements IButton {
     }
 
     void _setAlignment(int alignment) {
-        getValue().markDirty(VButton.ALIGNMENT);
+        int wasAlignment = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlignment());
+        int wasStyle = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getStyle());
         if ((getApi().style & SWT.ARROW) != 0) {
-            if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0)
+            if ((getApi().style & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT)) == 0) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+                dev.equo.swt.ChangeMarks.ifChanged(this, VButton.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
                 return;
+            }
             getApi().style &= ~(SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
             getApi().style |= alignment & (SWT.UP | SWT.DOWN | SWT.LEFT | SWT.RIGHT);
+            dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VButton.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
             return;
         }
-        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
+        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VButton.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
             return;
+        }
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         /* text is still null when this is called from createHandle() */
         if (text != null) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VButton.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
     }
 
     @Override
@@ -474,11 +485,13 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (this.grayed != grayed) {
-            getValue().markDirty(VButton.GRAYED);
-        }
-        if ((getApi().style & SWT.CHECK) == 0)
+        boolean wasSelection = getValue().getSelection();
+        boolean wasGrayed = getValue().getGrayed();
+        if ((getApi().style & SWT.CHECK) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VButton.GRAYED, wasGrayed, self -> self.getValue().getGrayed());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VButton.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         boolean checked = getSelection();
         this.grayed = grayed;
         if (checked) {
@@ -486,6 +499,8 @@ public class DartButton extends DartControl implements IButton {
             } else {
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VButton.GRAYED, wasGrayed, self -> self.getValue().getGrayed());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VButton.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -506,15 +521,15 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setImage(Image image) {
         checkWidget();
+        Image wasImage = getValue().getImage();
         image = GraphicsUtils.copyImage(getDisplay(), image);
-        if (!java.util.Objects.equals(this.image, image)) {
-            getValue().markDirty(VButton.IMAGE);
-        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if ((getApi().style & SWT.ARROW) != 0)
+        if ((getApi().style & SWT.ARROW) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VButton.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         this.image = image;
         if ((getApi().style & (SWT.RADIO | SWT.CHECK)) == 0) {
         } else {
@@ -524,6 +539,7 @@ public class DartButton extends DartControl implements IButton {
             }
         }
         updateAlignment();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VButton.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     @Override
@@ -532,6 +548,7 @@ public class DartButton extends DartControl implements IButton {
             return false;
         if (getSelection() != value) {
             setSelection(value);
+            getValue().markDirty(VButton.SELECTION);
             sendSelectionEvent(SWT.Selection);
         }
         return true;
@@ -556,15 +573,16 @@ public class DartButton extends DartControl implements IButton {
     public void setSelection(boolean selected) {
         boolean newValue = selected;
         checkWidget();
-        if (this.selection != newValue) {
-            getValue().markDirty(VButton.SELECTION);
-        }
-        if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0)
+        boolean wasSelection = getValue().getSelection();
+        if ((getApi().style & (SWT.CHECK | SWT.RADIO | SWT.TOGGLE)) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VButton.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         this.selection = newValue;
         if (grayed) {
         } else {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VButton.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -603,14 +621,14 @@ public class DartButton extends DartControl implements IButton {
      */
     public void setText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.text, string)) {
-            getValue().markDirty(VButton.TEXT);
-            ControlHelper.relayoutAfterTextChange(getApi());
-        }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if ((getApi().style & SWT.ARROW) != 0)
             return;
+        if (!java.util.Objects.equals(this.text, string)) {
+            getValue().markDirty(VButton.TEXT);
+            ControlHelper.relayoutAfterTextChange(getApi());
+        }
         text = string;
         updateAlignment();
     }

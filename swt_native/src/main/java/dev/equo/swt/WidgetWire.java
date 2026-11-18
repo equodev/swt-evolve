@@ -157,7 +157,7 @@ public final class WidgetWire {
         lastStamp = 0;
         lastKey = 0;
         emptyAt = -1;
-        listFrom = -1;
+        forgetList();
         objectDepth = 0;
     }
 
@@ -329,7 +329,7 @@ public final class WidgetWire {
         size = 0;
         lastKey = 0;
         emptyAt = -1;
-        listFrom = -1;
+        forgetList();
     }
 
     public int size() {
@@ -689,7 +689,7 @@ public final class WidgetWire {
         if (v == null) {
             varint(0);
         } else if (ids != null && listChange(v, ids, key, NOT_ITEMS)) {
-            listWrittenAs(from, namesHash(v, NOT_ITEMS));
+            listWrittenAs(from, v, NOT_ITEMS);
         } else {
             lengthPrefix(v.length);
             for (Object e : v) ref(e);
@@ -710,12 +710,12 @@ public final class WidgetWire {
         if (v == null) {
             varint(0);
         } else if (ids != null && listChange(v, ids, key, type)) {
-            listWrittenAs(from, namesHash(v, type));
+            listWrittenAs(from, v, type);
         } else {
             lengthPrefix(v.length);
             boolean described = false;
             for (Object e : v) described |= item(e, type);
-            if (described) listWrittenAs(from, namesHash(v, type));
+            if (described) listWrittenAs(from, v, type);
         }
         if (ids != null) names.listWritten(key, ids);
     }
@@ -818,17 +818,27 @@ public final class WidgetWire {
         return varlongSize(type == NOT_ITEMS ? z + 1 : (z << 1) + 1);
     }
 
-    /** The list written from {@code from} to here hashes as {@code hash}: see {@link #valueHash}. */
-    private void listWrittenAs(int from, long hash) {
+    /**
+     * The list written from {@code from} to here hashes as {@code v} named whole: see
+     * {@link #valueHash}, which works it out only for a property that is compared.
+     */
+    private void listWrittenAs(int from, Object[] v, int type) {
         listFrom = from;
         listTo = size;
-        listHash = hash;
+        listValues = v;
+        listType = type;
     }
 
-    /** Where the last list that is not written as itself was written, or -1; and what it hashes as. */
+    private void forgetList() {
+        listFrom = -1;
+        listValues = null;
+    }
+
+    /** Where the last list that is not written as itself was written, or -1; and what it names. */
     private int listFrom = -1;
     private int listTo;
-    private long listHash;
+    private Object[] listValues;
+    private int listType;
 
     /** The hash of {@code v} written whole, its elements only named. */
     private static long namesHash(Object[] v, int type) {
@@ -858,8 +868,9 @@ public final class WidgetWire {
      */
     public long valueHash(int from, int to) {
         if (from == listFrom && to == listTo) {
-            listFrom = -1;
-            return listHash;
+            long hash = namesHash(listValues, listType);
+            forgetList();
+            return hash;
         }
         return hash(from, to);
     }

@@ -529,7 +529,6 @@ public class DartCCombo extends DartComposite implements ICCombo {
             return;
         if (drop && !isVisible())
             return;
-        getValue().markDirty(VCCombo.ITEMS);
         getValue().markDirty(VCCombo.LIST_VISIBLE);
         listVisible = drop;
         Display display = getDisplay();
@@ -1210,9 +1209,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
         checkWidget();
         //$NON-NLS-1$
         text.setText("");
+        if (items.length != 0)
+            getValue().markDirty(VCCombo.ITEMS);
         items = new String[0];
         selectionIndex = -1;
-        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1305,17 +1305,19 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void select(int index) {
         checkWidget();
         if (index == -1) {
+            if (!text.getText().isEmpty())
+                getValue().markDirty(VCCombo.TEXT);
             //$NON-NLS-1$
             text.setText("");
             selectionIndex = -1;
         } else if (0 <= index && index < items.length && index != selectionIndex) {
+            if (!text.getText().equals(items[index]))
+                getValue().markDirty(VCCombo.TEXT);
             text.setText(items[index]);
             if (text.getEditable() && text.isFocusControl())
                 text.selectAll();
             selectionIndex = index;
         }
-        getValue().markDirty(VCCombo.TEXT);
-        getValue().markDirty(VCCombo.SELECTION);
     }
 
     /**
@@ -1332,19 +1334,47 @@ public class DartCCombo extends DartComposite implements ICCombo {
      * @since 3.113
      */
     public void setAlignment(int align) {
-        getValue().markDirty(VCCombo.ALIGNMENT);
         checkWidget();
+        int wasTextLimit = getValue().getTextLimit();
+        Point wasSelection = getValue().getSelection();
+        Menu wasMenu = getValue().getMenu();
+        boolean wasEditable = getValue().getEditable();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
         int styleWithoutAlign = getStyle() & ~(SWT.LEFT | SWT.CENTER | SWT.RIGHT);
         createText(styleWithoutAlign | align);
+        getValue().markDirty(VCCombo.TEXT);
         this.alignment = align;
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
     }
 
     @Override
     public void setBackground(Color color) {
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
+        int wasTextLimit = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getTextLimit());
+        Point wasSelection = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSelection());
+        Menu wasMenu = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getMenu());
+        boolean wasEditable = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getEditable());
+        int wasAlignment = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlignment());
+        int wasStyle = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getStyle());
         super.setBackground(color);
         background = color;
-        if (text != null)
+        if (text != null) {
             text.setBackground(color);
+            getValue().markDirty(VCCombo.TEXT);
+        }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     /**
@@ -1362,20 +1392,49 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setEditable(boolean editable) {
         boolean newValue = editable;
         checkWidget();
-        if (this.editable != newValue) {
-            getValue().markDirty(VCCombo.EDITABLE);
-        }
+        int wasTextLimit = getValue().getTextLimit();
+        Point wasSelection = getValue().getSelection();
+        Menu wasMenu = getValue().getMenu();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
+        boolean wasEditable = getValue().getEditable();
         this.editable = newValue;
         text.setEditable(editable);
+        getValue().markDirty(VCCombo.TEXT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
     }
 
     @Override
     public void setEnabled(boolean enabled) {
+        boolean wasEnabled = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getEnabled());
+        boolean wasListVisible = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getListVisible());
+        int wasTextLimit = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getTextLimit());
+        Point wasSelection = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSelection());
+        Menu wasMenu = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getMenu());
+        boolean wasEditable = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getEditable());
+        int wasAlignment = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlignment());
+        int wasStyle = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getStyle());
         super.setEnabled(enabled);
-        if (listVisible)
+        if (listVisible) {
             dropDown(false);
-        if (text != null)
+        }
+        if (text != null) {
             text.setEnabled(enabled);
+            getValue().markDirty(VCCombo.TEXT);
+        }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.LIST_VISIBLE, wasListVisible, self -> self.getValue().getListVisible());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
     }
 
     @Override
@@ -1390,18 +1449,49 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setFont(Font font) {
+        Font wasFont = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getFont());
+        int wasTextLimit = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getTextLimit());
+        Point wasSelection = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSelection());
+        Menu wasMenu = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getMenu());
+        boolean wasEditable = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getEditable());
+        int wasAlignment = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlignment());
+        int wasStyle = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getStyle());
         super.setFont(font);
         this.font = font;
         text.setFont(font);
+        getValue().markDirty(VCCombo.TEXT);
         internalLayout(true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.FONT, wasFont, self -> self.getValue().getFont());
     }
 
     @Override
     public void setForeground(Color color) {
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getForeground());
+        int wasTextLimit = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getTextLimit());
+        Point wasSelection = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSelection());
+        Menu wasMenu = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getMenu());
+        boolean wasEditable = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getEditable());
+        int wasAlignment = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlignment());
+        int wasStyle = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getStyle());
         super.setForeground(color);
         foreground = color;
-        if (text != null)
+        if (text != null) {
             text.setForeground(color);
+            getValue().markDirty(VCCombo.TEXT);
+        }
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     /**
@@ -1428,8 +1518,10 @@ public class DartCCombo extends DartComposite implements ICCombo {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (index < 0 || index >= items.length)
             SWT.error(SWT.ERROR_INVALID_RANGE);
+        if (!string.equals(items[index]))
+            getValue().markDirty(VCCombo.ITEMS);
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VCCombo.ITEMS, items[index], string);
         items[index] = string;
-        getValue().markDirty(VCCombo.ITEMS);
     }
 
     /**
@@ -1448,6 +1540,14 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setItems(String[] items) {
         checkWidget();
+        int wasTextLimit = getValue().getTextLimit();
+        Point wasSelection = getValue().getSelection();
+        Menu wasMenu = getValue().getMenu();
+        boolean wasEditable = getValue().getEditable();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
+        String[] wasItems = getValue().getItems();
+        wasItems = dev.equo.swt.ChangeMarks.copy(wasItems);
         if (items == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         for (String item : items) {
@@ -1457,9 +1557,17 @@ public class DartCCombo extends DartComposite implements ICCombo {
         this.items = items.clone();
         selectionIndex = -1;
         //$NON-NLS-1$
-        if (!text.getEditable())
+        if (!text.getEditable()) {
             text.setText("");
-        getValue().markDirty(VCCombo.ITEMS);
+            getValue().markDirty(VCCombo.TEXT);
+        }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ITEMS, wasItems, self -> self.getValue().getItems());
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
     }
 
     /**
@@ -1503,13 +1611,27 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setListVisible(boolean visible) {
         checkWidget();
+        boolean wasListVisible = getValue().getListVisible();
         dropDown(visible);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.LIST_VISIBLE, wasListVisible, self -> self.getValue().getListVisible());
     }
 
     @Override
     public void setMenu(Menu menu) {
-        getValue().markDirty(VCCombo.MENU);
+        int wasTextLimit = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getTextLimit());
+        Point wasSelection = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSelection());
+        Menu wasMenu = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getMenu());
+        boolean wasEditable = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getEditable());
+        int wasAlignment = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlignment());
+        int wasStyle = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getStyle());
         text.setMenu(menu);
+        getValue().markDirty(VCCombo.TEXT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
     }
 
     /**
@@ -1530,11 +1652,24 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setSelection(Point selection) {
         checkWidget();
+        int wasTextLimit = getValue().getTextLimit();
+        Menu wasMenu = getValue().getMenu();
+        boolean wasEditable = getValue().getEditable();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
+        Point wasSelection = getValue().getSelection();
         if (selection == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         text.setSelection(selection.x, selection.y);
-        this.selection = text.getSelection();
-        getValue().markDirty(VCCombo.SELECTION);
+        getValue().markDirty(VCCombo.TEXT);
+        Point selected = text.getSelection();
+        this.selection = selected;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
     }
 
     /**
@@ -1563,16 +1698,30 @@ public class DartCCombo extends DartComposite implements ICCombo {
      */
     public void setText(String string) {
         checkWidget();
+        int wasTextLimit = getValue().getTextLimit();
+        Point wasSelection = getValue().getSelection();
+        Menu wasMenu = getValue().getMenu();
+        boolean wasEditable = getValue().getEditable();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         int index = indexOf(string);
+        if (!text.getText().equals(string))
+            getValue().markDirty(VCCombo.TEXT);
         text.setText(string);
+        getValue().markDirty(VCCombo.TEXT);
         if (index != -1) {
             if (text.getEditable() && text.isFocusControl())
                 text.selectAll();
             selectionIndex = index;
         }
-        getValue().markDirty(VCCombo.TEXT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
     }
 
     /**
@@ -1592,22 +1741,49 @@ public class DartCCombo extends DartComposite implements ICCombo {
     public void setTextLimit(int limit) {
         int newValue = limit;
         checkWidget();
-        if (this.textLimit != newValue) {
-            getValue().markDirty(VCCombo.TEXT_LIMIT);
-        }
+        Point wasSelection = getValue().getSelection();
+        Menu wasMenu = getValue().getMenu();
+        boolean wasEditable = getValue().getEditable();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
+        int wasTextLimit = getValue().getTextLimit();
         this.textLimit = newValue;
         text.setTextLimit(limit);
+        getValue().markDirty(VCCombo.TEXT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     @Override
     public void setToolTipText(String string) {
         checkWidget();
+        String wasToolTipText = getValue().getToolTipText();
+        int wasTextLimit = getValue().getTextLimit();
+        Point wasSelection = getValue().getSelection();
+        Menu wasMenu = getValue().getMenu();
+        boolean wasEditable = getValue().getEditable();
+        int wasAlignment = getValue().getAlignment();
+        int wasStyle = getValue().getStyle();
         super.setToolTipText(string);
         text.setToolTipText(string);
+        getValue().markDirty(VCCombo.TEXT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ALIGNMENT, wasAlignment, self -> self.getValue().getAlignment());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.EDITABLE, wasEditable, self -> self.getValue().getEditable());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.MENU, wasMenu, self -> self.getValue().getMenu());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.SELECTION, wasSelection, self -> self.getValue().getSelection());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TEXT_LIMIT, wasTextLimit, self -> self.getValue().getTextLimit());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.TOOL_TIP_TEXT, wasToolTipText, self -> self.getValue().getToolTipText());
     }
 
     @Override
     public void setVisible(boolean visible) {
+        boolean wasVisible = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getVisible());
+        boolean wasListVisible = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getListVisible());
         super.setVisible(visible);
         /*
 	 * At this point the widget may have been disposed in a FocusOut event.
@@ -1615,8 +1791,11 @@ public class DartCCombo extends DartComposite implements ICCombo {
 	 */
         if (isDisposed())
             return;
-        if (!visible && listVisible)
+        if (!visible && listVisible) {
             dropDown(false);
+        }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.LIST_VISIBLE, wasListVisible, self -> self.getValue().getListVisible());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.VISIBLE, wasVisible, self -> self.getValue().getVisible());
     }
 
     /**
@@ -1997,11 +2176,13 @@ public class DartCCombo extends DartComposite implements ICCombo {
 
     @Override
     public void setData(String key, Object value) {
+        String[] wasItemTooltips = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getItemTooltips());
+        wasItemTooltips = dev.equo.swt.ChangeMarks.copy(wasItemTooltips);
         if ("org.eclipse.swt.custom.CCombo.itemToolTips".equals(key)) {
             this.itemTooltips = value instanceof String[] ? (String[]) value : null;
-            getValue().markDirty(VCCombo.ITEM_TOOLTIPS);
         }
         super.setData(key, value);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCCombo.ITEM_TOOLTIPS, wasItemTooltips, self -> self.getValue().getItemTooltips());
     }
 
     int selectionIndex = -1;

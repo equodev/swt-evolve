@@ -564,6 +564,7 @@ public class Serializer {
                 if (l.target != 0) {
                     item.value.sent(l.target, item.seq);
                     sentHashes(item.value).wholeAt = item.seq;
+                    sentHashes(item.value).letGo = false;
                     FlutterBridge.registerDelivered(item.impl);
                 }
             }
@@ -826,13 +827,18 @@ public class Serializer {
                         droppedInPlace(mark);
                         continue;
                     }
-                    long hash = frame.valueHash(from, frame.size());
-                    if (seen.same(key, connection, hash)) {
-                        frame.rewind(at, previous);
-                        droppedInPlace(mark);
-                        continue;
+                    boolean compared = value.wireCompared(key);
+                    // A compared property (wireCompared) is left out when it encodes as it was last
+                    // sent; any other property is sent because it is marked.
+                    if (compared) {
+                        long hash = frame.valueHash(from, frame.size());
+                        if (seen.same(key, connection, hash)) {
+                            frame.rewind(at, previous);
+                            droppedInPlace(mark);
+                            continue;
+                        }
+                        seen.put(key, connection, hash);
                     }
-                    seen.put(key, connection, hash);
                     keptInPlace(mark);
                     any = true;
                 }
@@ -876,6 +882,7 @@ public class Serializer {
             frame.endRecord(start);
             delivered(l, impl, value, seq);
             if (l.target != 0) seen.wholeAt = seq;
+            seen.letGo = false;
         }
 
         private void writeWholeKeys(VWidget value, int[] keys, SentHashes seen) {
@@ -897,17 +904,19 @@ public class Serializer {
                     }
                     written = WidgetWire.WRITTEN;
                 }
+                // Only a compared property needs what the client holds: every other one is sent when marked.
+                boolean compared = value.wireCompared(key);
                 if (written == WidgetWire.AT_ZERO) {
-                    seen.put(i, key, connection, WidgetWire.ZERO_HASH);
+                    if (compared) seen.put(i, key, connection, WidgetWire.ZERO_HASH);
                     continue;
                 }
                 if (written == WidgetWire.AT_EMPTY) {
-                    seen.put(i, key, connection, WidgetWire.EMPTY_HASH);
+                    if (compared) seen.put(i, key, connection, WidgetWire.EMPTY_HASH);
                     continue;
                 }
                 int from = frame.valueStart();
                 int to = frame.size();
-                seen.put(i, key, connection, frame.valueHash(from, to));
+                if (compared) seen.put(i, key, connection, frame.valueHash(from, to));
                 if (isDefault(value, key, frame, from, to)) {
                     frame.rewind(at, previous);
                     droppedInPlace(mark);
@@ -1013,20 +1022,11 @@ public class Serializer {
     private static final java.util.concurrent.atomic.AtomicLong tapeSerial = new java.util.concurrent.atomic.AtomicLong();
 
     /**
-     * Has {@code key} written again on {@code value}'s next change even if it encodes as before: a
-     * property naming objects that are described alongside it, such as a table's editors, encodes the
-     * same when only those objects changed.
+     * Has the compared property {@code key} ({@code wireCompared}) written on {@code value}'s next
+     * change even if it encodes as before: the client changed its copy by another route.
      */
     public static void resend(VWidget value, int key) {
         if (value != null) sentHashes(value).forget(key);
-    }
-
-    /**
-     * The client changed {@code key} itself, so what it was last sent no longer says what it holds:
-     * the next change of that property is sent even when it matches that last value.
-     */
-    public static void clientChanged(VWidget value, int key) {
-        resend(value, key);
     }
 
     /** {@code value}'s widget was scheduled for a flush: a whole record written before this does not answer it. */
@@ -1080,6 +1080,11 @@ public class Serializer {
         boolean queued;
         /** Whether a flush has already considered the widget, so it is no longer new to the client. */
         boolean notNew;
+        /**
+         * Whether the client let go of the widget ({@link FlutterBridge#letGo}): a mark made since does
+         * not queue it, since the client is given it whole the next time something names it.
+         */
+        boolean letGo;
         /**
          * The lists of widgets the client {@link #listsFor} holds for this value, by property number;
          * a list not among them is empty there, since the last whole description.

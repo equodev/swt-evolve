@@ -410,20 +410,22 @@ public class DartToolTip extends DartWidget implements IToolTip {
      * </ul>
      */
     public void setLocation(int x, int y) {
-        getValue().markDirty(VToolTip.LOCATION);
         Point newValue = new Point(x, y);
         checkWidget();
-        if (this.x == x && this.y == y)
+        Point wasLocation = getValue().getLocation();
+        if (this.x == x && this.y == y) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.LOCATION, wasLocation, self -> self.getValue().getLocation());
             return;
+        }
         this.x = x;
         this.y = y;
         this.location = newValue;
         if (visible)
             configure();
-        getValue().markDirty(VToolTip.LOCATION);
         if (display != null) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.LOCATION, wasLocation, self -> self.getValue().getLocation());
     }
 
     /**
@@ -471,9 +473,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setMessage(String string) {
         String newValue = string;
         checkWidget();
-        if (!java.util.Objects.equals(this.message, newValue)) {
-            getValue().markDirty(VToolTip.MESSAGE);
-        }
+        String wasMessage = getValue().getMessage();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (layoutMessage != null)
@@ -487,6 +487,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.message = newValue;
         if (visible)
             configure();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.MESSAGE, wasMessage, self -> self.getValue().getMessage());
     }
 
     /**
@@ -505,9 +506,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setText(String string) {
         String newValue = string;
         checkWidget();
-        if (!java.util.Objects.equals(this.text, newValue)) {
-            getValue().markDirty(VToolTip.TEXT);
-        }
+        String wasText = getValue().getText();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (layoutText != null)
@@ -529,6 +528,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.text = newValue;
         if (visible)
             configure();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**
@@ -550,6 +550,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
+        boolean wasVisible = getValue().getVisible();
         if (this.visible != newValue) {
             getValue().markDirty(VToolTip.VISIBLE);
         }
@@ -568,10 +569,10 @@ public class DartToolTip extends DartWidget implements IToolTip {
             };
             display.timerExec(DELAY, runnable);
         }
-        getValue().markDirty(VToolTip.VISIBLE);
         if (display != null) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.VISIBLE, wasVisible, self -> self.getValue().getVisible());
     }
 
     Point location;

@@ -36,16 +36,22 @@ final class TextApiEdits {
         int length = text.getCharCount();
         int start = Math.min(selection.x, length), end = Math.min(selection.y, length);
         boolean recorded = kind == PASTE || kind == CUT;
+        String replaced = recorded ? text.getText().substring(start, end) : "";
+        String added = recorded ? inserted : "";
+        // Read and replaced by one edit's pair: the list changes only if that pair does.
+        boolean textsChange = !read || texts.size() != 2 || !java.util.Objects.equals(texts.get(0), replaced)
+                || !java.util.Objects.equals(texts.get(1), added);
         if (read) {
             edits.clear();
             texts.clear();
             read = false;
         }
         edits.add(new int[] { ++count, kind, start });
-        texts.add(recorded ? text.getText().substring(start, end) : "");
-        texts.add(recorded ? inserted : "");
+        texts.add(replaced);
+        texts.add(added);
         text.getValue().markDirty(VText.EDITS);
-        text.getValue().markDirty(VText.EDIT_TEXTS);
+        if (textsChange)
+            text.getValue().markDirty(VText.EDIT_TEXTS);
     }
 
     /** Number, kind and start of each edit, in order; what is read here is dropped at the next edit. */

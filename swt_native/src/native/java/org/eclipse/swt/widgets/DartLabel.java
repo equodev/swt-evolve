@@ -248,14 +248,19 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public void setAlignment(int alignment) {
         checkWidget();
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        int wasStyle = getValue().getStyle();
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
-        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0)
+        }
+        if ((alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER)) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
+        }
         getApi().style &= ~(SWT.LEFT | SWT.RIGHT | SWT.CENTER);
         getApi().style |= alignment & (SWT.LEFT | SWT.RIGHT | SWT.CENTER);
-        getValue().markDirty(org.eclipse.swt.widgets.VWidget.STYLE);
         _setAlignment();
+        dev.equo.swt.ChangeMarks.ifChanged(this, org.eclipse.swt.widgets.VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     void _setAlignment() {
@@ -292,14 +297,17 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public void setImage(Image image) {
         checkWidget();
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        Image wasImage = getValue().getImage();
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VLabel.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         this.image = image != null ? GraphicsUtils.copyImage(display, image) : null;
-        getValue().markDirty(VLabel.IMAGE);
         _show(image != null);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VLabel.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -335,16 +343,19 @@ public class DartLabel extends DartControl implements ILabel {
      */
     public void setText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.text, string)) {
-            getValue().markDirty(VLabel.TEXT);
-            ControlHelper.relayoutAfterTextChange(getApi());
-        }
+        String wasText = getValue().getText();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if ((getApi().style & SWT.SEPARATOR) != 0)
+        if ((getApi().style & SWT.SEPARATOR) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VLabel.TEXT, wasText, self -> self.getValue().getText());
             return;
+        }
+        if (!java.util.Objects.equals(this.text, string)) {
+            ControlHelper.relayoutAfterTextChange(getApi());
+        }
         text = string;
         _setText();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VLabel.TEXT, wasText, self -> self.getValue().getText());
     }
 
     private void _setText() {
@@ -364,15 +375,10 @@ public class DartLabel extends DartControl implements ILabel {
     }
 
     /**
-     * A label shows its text or its image, whichever was set last, and isImage says which. Flutter
-     * is sent both, the one not on show as empty, so switching between them changes both.
+     * A label shows its text or its image, whichever was set last, and isImage says which.
      */
     private void _show(boolean image) {
-        if (isImage != image) {
-            getValue().markDirty(VLabel.TEXT);
-            getValue().markDirty(VLabel.IMAGE);
-        }
-        isImage = image;
+        LabelHelper.show(this, () -> isImage = image);
     }
 
     public String _displayedText() {

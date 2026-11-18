@@ -278,14 +278,16 @@ public class DartScale extends DartControl implements IScale {
      */
     public void setMaximum(int value) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
+        int wasMaximum = getValue().getMaximum();
         if (minimum < value) {
             maximum = value;
-            getValue().markDirty(VScale.MAXIMUM);
             if (selection > maximum) {
                 selection = maximum;
-                getValue().markDirty(VScale.SELECTION);
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScale.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScale.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -303,14 +305,16 @@ public class DartScale extends DartControl implements IScale {
      */
     public void setMinimum(int value) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
+        int wasMinimum = getValue().getMinimum();
         if (0 <= value && value < maximum) {
             minimum = value;
-            getValue().markDirty(VScale.MINIMUM);
             if (selection < minimum) {
                 selection = minimum;
-                getValue().markDirty(VScale.SELECTION);
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScale.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VScale.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**

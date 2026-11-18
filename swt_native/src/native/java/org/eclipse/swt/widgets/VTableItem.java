@@ -489,4 +489,16 @@ public class VTableItem extends VItem {
         }
         return super.wireKeepsEmpty(key);
     }
+
+    @Override
+    public boolean wireCompared(int key) {
+        switch(key) {
+            case 5384:
+            case 5387:
+            case 5385:
+            case 5386:
+                return true;
+        }
+        return super.wireCompared(key);
+    }
 }

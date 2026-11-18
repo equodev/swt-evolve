@@ -1415,7 +1415,6 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void removeAll() {
         checkWidget();
-        getValue().markDirty(VTree.ITEMS);
         for (int i = 0; i < items.length; i++) {
             TreeItem item = items[i];
             if (item != null && !item.isDisposed())
@@ -1633,14 +1632,14 @@ public class DartTree extends DartComposite implements ITree {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
-        if (!java.util.Arrays.equals(getColumnOrder(), newValue)) {
-            getValue().markDirty(VTree.COLUMN_ORDER);
-        }
+        int[] wasColumnOrder = getValue().getColumnOrder();
+        wasColumnOrder = dev.equo.swt.ChangeMarks.copy(wasColumnOrder);
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
             if (order.length != 0)
                 error(SWT.ERROR_INVALID_ARGUMENT);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTree.COLUMN_ORDER, wasColumnOrder, self -> self.getValue().getColumnOrder());
             return;
         }
         if (order.length != columnCount)
@@ -1679,6 +1678,7 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTree.COLUMN_ORDER, wasColumnOrder, self -> self.getValue().getColumnOrder());
     }
 
     /**
@@ -1702,11 +1702,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setHeaderBackground(Color color) {
         checkWidget();
+        Color wasHeaderBackground = getValue().getHeaderBackground();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        if (!java.util.Objects.equals(this._headerBackground, newValue)) {
-            getValue().markDirty(VTree.HEADER_BACKGROUND);
-        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1714,6 +1712,7 @@ public class DartTree extends DartComposite implements ITree {
         this._headerBackground = newValue;
         if (getHeaderVisible()) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTree.HEADER_BACKGROUND, wasHeaderBackground, self -> self.getValue().getHeaderBackground());
     }
 
     /**
@@ -1737,11 +1736,9 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setHeaderForeground(Color color) {
         checkWidget();
+        Color wasHeaderForeground = getValue().getHeaderForeground();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        if (!java.util.Objects.equals(this._headerForeground, newValue)) {
-            getValue().markDirty(VTree.HEADER_FOREGROUND);
-        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1749,6 +1746,7 @@ public class DartTree extends DartComposite implements ITree {
         this._headerForeground = newValue;
         if (getHeaderVisible()) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTree.HEADER_FOREGROUND, wasHeaderForeground, self -> self.getValue().getHeaderForeground());
     }
 
     /**
@@ -2037,14 +2035,15 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortColumn(TreeColumn column) {
         checkWidget();
-        if (!java.util.Objects.equals(this.sortColumn, column)) {
-            getValue().markDirty(VTree.SORT_COLUMN);
-        }
+        TreeColumn wasSortColumn = getValue().getSortColumn();
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if (column == sortColumn)
+        if (column == sortColumn) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTree.SORT_COLUMN, wasSortColumn, self -> self.getValue().getSortColumn());
             return;
+        }
         setSort(column, sortDirection);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTree.SORT_COLUMN, wasSortColumn, self -> self.getValue().getSortColumn());
     }
 
     /**
@@ -2062,14 +2061,17 @@ public class DartTree extends DartComposite implements ITree {
      */
     public void setSortDirection(int direction) {
         checkWidget();
-        if (this.sortDirection != direction) {
-            getValue().markDirty(VTree.SORT_DIRECTION);
+        int wasSortDirection = getValue().getSortDirection();
+        if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTree.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
+            return;
         }
-        if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE)
+        if (direction == sortDirection) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTree.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
             return;
-        if (direction == sortDirection)
-            return;
+        }
         setSort(sortColumn, direction);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTree.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
     }
 
     void setSort(TreeColumn column, int direction) {
@@ -2348,9 +2350,10 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     public void _dirty() {
-        dev.equo.swt.Serializer.resend(getValue(), VTree.EDITORS);
         getValue().markDirty(VTree.EDITORS);
     }
+
+    dev.equo.swt.MarkMemo selectionMark;
 
     int ownerDrawItemHeight;
 

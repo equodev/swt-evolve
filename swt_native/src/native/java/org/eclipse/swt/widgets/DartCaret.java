@@ -334,8 +334,11 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setBounds(int x, int y, int width, int height) {
         checkWidget();
-        if (this.x == x && this.y == y && this.width == width && this.height == height)
+        Rectangle wasBounds = getValue().getBounds();
+        if (this.x == x && this.y == y && this.width == width && this.height == height) {
+            boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VCaret.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
             return;
+        }
         boolean isFocus = isFocusCaret();
         if (isFocus && isVisible)
             hideCaret();
@@ -343,9 +346,9 @@ public class DartCaret extends DartWidget implements ICaret {
         this.y = y;
         this.width = width;
         this.height = height;
-        getValue().markDirty(VCaret.BOUNDS);
         if (isFocus && isVisible)
             showCaret();
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VCaret.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -369,12 +372,15 @@ public class DartCaret extends DartWidget implements ICaret {
     }
 
     void setFocus() {
-        if (((DartDisplay) display.getImpl()).currentCaret == this.getApi())
+        boolean wasFocused = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getFocused());
+        if (((DartDisplay) display.getImpl()).currentCaret == this.getApi()) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCaret.FOCUSED, wasFocused, self -> self.getValue().getFocused());
             return;
+        }
         display.getImpl().setCurrentCaret(this.getApi());
         if (isVisible)
             showCaret();
-        getValue().markDirty(VCaret.FOCUSED);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCaret.FOCUSED, wasFocused, self -> self.getValue().getFocused());
     }
 
     /**
@@ -418,6 +424,7 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setImage(Image image) {
         checkWidget();
+        Rectangle wasBounds = getValue().getBounds();
         image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.image, image)) {
             getValue().markDirty(VCaret.IMAGE);
@@ -429,9 +436,9 @@ public class DartCaret extends DartWidget implements ICaret {
         if (isFocus && isVisible)
             hideCaret();
         this.image = image;
-        getValue().markDirty(VCaret.BOUNDS);
         if (isFocus && isVisible)
             showCaret();
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VCaret.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -525,19 +532,22 @@ public class DartCaret extends DartWidget implements ICaret {
      */
     public void setVisible(boolean visible) {
         checkWidget();
-        if (this.isVisible != visible) {
-            getValue().markDirty(VCaret.VISIBLE);
+        boolean wasVisible = getValue().getVisible();
+        if (visible == isVisible) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCaret.VISIBLE, wasVisible, self -> self.getValue().getVisible());
+            return;
         }
-        if (visible == isVisible)
-            return;
         isVisible = visible;
-        if (!isFocusCaret())
+        if (!isFocusCaret()) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCaret.VISIBLE, wasVisible, self -> self.getValue().getVisible());
             return;
+        }
         if (isVisible) {
             showCaret();
         } else {
             hideCaret();
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCaret.VISIBLE, wasVisible, self -> self.getValue().getVisible());
     }
 
     boolean showCaret() {
@@ -615,4 +625,6 @@ public class DartCaret extends DartWidget implements ICaret {
             value = new VCaret(this);
         return (VCaret) value;
     }
+
+    dev.equo.swt.MarkMemo boundsMark;
 }

@@ -28,7 +28,7 @@ class StyledTextSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "StyledText")
                .containsEntry("text", w.getText())
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
@@ -84,6 +84,11 @@ class StyledTextSerializeTest extends SerializeTestBase {
     void should_name_every_change_StyledText() {
         StyledText w = new StyledText(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_StyledText() {
+        assertSetAgainNamesNothing(style -> new StyledText(shell(), style), this::setAll, unwritable(), SWT.NONE, SWT.FULL_SELECTION, SWT.MULTI, SWT.READ_ONLY, SWT.SINGLE, SWT.WRAP, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VStyledText value(StyledText w) {

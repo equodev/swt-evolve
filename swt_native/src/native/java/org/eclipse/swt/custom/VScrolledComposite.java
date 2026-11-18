@@ -73,7 +73,7 @@ public class VScrolledComposite extends VComposite {
     }
 
     public Point getOrigin() {
-        return ((DartScrolledComposite) impl).getOrigin();
+        return ScrolledCompositeHelper.wireOrigin((DartScrolledComposite) impl);
     }
 
     public void setOrigin(Point value) {

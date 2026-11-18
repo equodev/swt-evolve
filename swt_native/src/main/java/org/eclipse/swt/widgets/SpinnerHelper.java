@@ -126,8 +126,7 @@ public class SpinnerHelper {
         c.increment = increment;
         c.pageIncrement = pageIncrement;
         c.digits = digits;
-        keepText(c, shown);
-        c.setSelection(selection);
+        keepingText(c, shown, () -> c.setSelection(selection));
     }
 
     /**
@@ -143,8 +142,21 @@ public class SpinnerHelper {
         String shown = getText(c);
         c.getValue().markDirty(VSpinner.DIGITS);
         c.digits = value;
+        keepingText(c, shown, () -> setSelection(c, c.selection, false, true, false));
+    }
+
+    /**
+     * Runs {@code change} with {@code shown} kept in the field, which Verify listeners see while they
+     * decide. A field that shows the selection again as it did before leaves the client's copy right,
+     * so the mark the kept text made is taken back.
+     */
+    private static void keepingText(DartSpinner c, String shown, Runnable change) {
+        String wasKept = c.keptText;
+        boolean keptMarked = c.getValue().changedKeys().contains(VSpinner.KEPT_TEXT);
+        boolean queued = dev.equo.swt.FlutterBridge.isQueued(c);
         keepText(c, shown);
-        setSelection(c, c.selection, false, true, false);
+        change.run();
+        dev.equo.swt.ChangeMarks.takeBackIfSame(c, VSpinner.KEPT_TEXT, keptMarked, queued, wasKept, c.keptText);
     }
 
     /**

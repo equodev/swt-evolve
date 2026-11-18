@@ -298,11 +298,11 @@ public class DartCanvas extends DartComposite implements ICanvas {
      */
     public void setCaret(Caret caret) {
         checkWidget();
-        if (!java.util.Objects.equals(this.caret, caret)) {
-            getValue().markDirty(VCanvas.CARET);
-        }
         Caret newCaret = caret;
         Caret oldCaret = this.caret;
+        if (!java.util.Objects.equals(this.caret, newCaret)) {
+            getValue().markDirty(VCanvas.CARET);
+        }
         this.caret = newCaret;
         if (hasFocus()) {
             if (oldCaret != null)
@@ -318,9 +318,11 @@ public class DartCanvas extends DartComposite implements ICanvas {
     @Override
     public void setFont(Font font) {
         checkWidget();
+        Font wasFont = getValue().getFont();
         if (caret != null)
             caret.setFont(font);
         super.setFont(font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCanvas.FONT, wasFont, self -> self.getValue().getFont());
     }
 
     /**

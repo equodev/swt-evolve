@@ -25,7 +25,7 @@ class ProgressBarSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ProgressBar")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("maximum").equalsTo(w.getMaximum(), orAbsentIf0));
@@ -54,6 +54,11 @@ class ProgressBarSerializeTest extends SerializeTestBase {
     void should_name_every_change_ProgressBar() {
         ProgressBar w = new ProgressBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_ProgressBar() {
+        assertSetAgainNamesNothing(style -> new ProgressBar(shell(), style), this::setAll, unwritable("tabStop", "the client never reads it off a ProgressBar", "font", "the client never reads it off a ProgressBar", "hasOwnBackground", "the client never reads it off a ProgressBar", "inheritsBackground", "the client never reads it off a ProgressBar"), SWT.NONE, SWT.SMOOTH, SWT.HORIZONTAL, SWT.VERTICAL, SWT.INDETERMINATE, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VProgressBar value(ProgressBar w) {

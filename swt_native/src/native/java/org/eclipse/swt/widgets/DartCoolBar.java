@@ -621,6 +621,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         hoverCursor.dispose();
         dragCursor.dispose();
         cursor = null;
+        getValue().markDirty(VCoolBar.CURSOR);
     }
 
     void onMouseDown(Event event) {
@@ -981,6 +982,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
 
     @Override
     public void setBackground(Color color) {
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
         for (CoolItem ci : originalItems) {
             Control ctrl = ci.getControl();
             if (ctrl != null) {
@@ -988,13 +990,17 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
             }
         }
         super.setBackground(color);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     void setItemOrder(int[] itemOrder) {
+        int[] wasWrapIndices = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getWrapIndices());
+        wasWrapIndices = dev.equo.swt.ChangeMarks.copy(wasWrapIndices);
+        Point[] wasItemSizes = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getItemSizes());
+        wasItemSizes = dev.equo.swt.ChangeMarks.copy(wasItemSizes);
+        int[] wasItemOrder = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getItemOrder());
+        wasItemOrder = dev.equo.swt.ChangeMarks.copy(wasItemOrder);
         int[] newValue = itemOrder;
-        if (!java.util.Arrays.equals(this.itemOrder, newValue)) {
-            getValue().markDirty(VCoolBar.ITEM_ORDER);
-        }
         if (itemOrder == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         int count = originalItems.length;
@@ -1017,6 +1023,9 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         items = new CoolItem[1][count];
         this.itemOrder = newValue;
         items[0] = row;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_ORDER, wasItemOrder, self -> self.getValue().getItemOrder());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_SIZES, wasItemSizes, self -> self.getValue().getItemSizes());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.WRAP_INDICES, wasWrapIndices, self -> self.getValue().getWrapIndices());
     }
 
     /**
@@ -1042,10 +1051,9 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     }
 
     void setItemSizes(Point[] sizes) {
+        Point[] wasItemSizes = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getItemSizes());
+        wasItemSizes = dev.equo.swt.ChangeMarks.copy(wasItemSizes);
         Point[] newValue = sizes;
-        if (!java.util.Arrays.equals(this.itemSizes, newValue)) {
-            getValue().markDirty(VCoolBar.ITEM_SIZES);
-        }
         if (sizes == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         CoolItem[] items = getItems();
@@ -1055,6 +1063,7 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         for (int i = 0; i < items.length; i++) {
             items[i].setSize(sizes[i]);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_SIZES, wasItemSizes, self -> self.getValue().getItemSizes());
     }
 
     /**
@@ -1151,9 +1160,12 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     public void setWrapIndices(int[] indices) {
         int[] newValue = indices;
         checkWidget();
-        if (!java.util.Arrays.equals(this.wrapIndices, newValue)) {
-            getValue().markDirty(VCoolBar.WRAP_INDICES);
-        }
+        int[] wasWrapIndices = getValue().getWrapIndices();
+        wasWrapIndices = dev.equo.swt.ChangeMarks.copy(wasWrapIndices);
+        Point[] wasItemSizes = getValue().getItemSizes();
+        wasItemSizes = dev.equo.swt.ChangeMarks.copy(wasItemSizes);
+        int[] wasItemOrder = getValue().getItemOrder();
+        wasItemOrder = dev.equo.swt.ChangeMarks.copy(wasItemOrder);
         if (indices == null)
             indices = new int[0];
         int count = originalItems.length;
@@ -1178,6 +1190,9 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
         }
         this.wrapIndices = newValue;
         relayout();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_ORDER, wasItemOrder, self -> self.getValue().getItemOrder());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_SIZES, wasItemSizes, self -> self.getValue().getItemSizes());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.WRAP_INDICES, wasWrapIndices, self -> self.getValue().getWrapIndices());
     }
 
     @Override
@@ -1197,7 +1212,9 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
     @Override
     public void setCursor(Cursor cursor) {
         checkWidget();
+        Cursor wasCursor = getValue().getCursor();
         super.setCursor(this.cursor = cursor);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.CURSOR, wasCursor, self -> self.getValue().getCursor());
     }
 
     /**
@@ -1235,14 +1252,29 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
      */
     public void setItemLayout(int[] itemOrder, int[] wrapIndices, Point[] sizes) {
         checkWidget();
+        int[] wasWrapIndices = getValue().getWrapIndices();
+        wasWrapIndices = dev.equo.swt.ChangeMarks.copy(wasWrapIndices);
+        Point[] wasItemSizes = getValue().getItemSizes();
+        wasItemSizes = dev.equo.swt.ChangeMarks.copy(wasItemSizes);
+        int[] wasItemOrder = getValue().getItemOrder();
+        wasItemOrder = dev.equo.swt.ChangeMarks.copy(wasItemOrder);
         setItemOrder(itemOrder);
         setWrapIndices(wrapIndices);
         setItemSizes(sizes);
         relayout();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_ORDER, wasItemOrder, self -> self.getValue().getItemOrder());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_SIZES, wasItemSizes, self -> self.getValue().getItemSizes());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.WRAP_INDICES, wasWrapIndices, self -> self.getValue().getWrapIndices());
     }
 
     @Override
     public void setOrientation(int orientation) {
+        int[] wasWrapIndices = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getWrapIndices());
+        wasWrapIndices = dev.equo.swt.ChangeMarks.copy(wasWrapIndices);
+        Point[] wasItemSizes = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getItemSizes());
+        wasItemSizes = dev.equo.swt.ChangeMarks.copy(wasItemSizes);
+        int[] wasItemOrder = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getItemOrder());
+        wasItemOrder = dev.equo.swt.ChangeMarks.copy(wasItemOrder);
         super.setOrientation(orientation);
         for (int row = 0; row < items.length; row++) {
             for (int column = 0; column < items[row].length; column++) {
@@ -1254,6 +1286,9 @@ public class DartCoolBar extends DartComposite implements ICoolBar {
                 ((DartCoolItem) item.getImpl()).updateChevron();
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_ORDER, wasItemOrder, self -> self.getValue().getItemOrder());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.ITEM_SIZES, wasItemSizes, self -> self.getValue().getItemSizes());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCoolBar.WRAP_INDICES, wasWrapIndices, self -> self.getValue().getWrapIndices());
     }
 
     void wrapItems(int maxWidth) {

@@ -435,6 +435,7 @@ public class DartLink extends DartControl implements ILink {
      */
     public void setLinkForeground(Color color) {
         checkWidget();
+        Color wasLinkForeground = getValue().getLinkForeground();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color != null ? color : display.getSystemColor(SWT.COLOR_LINK_FOREGROUND);
         if (!java.util.Objects.equals(this._linkForeground, newValue)) {
@@ -452,6 +453,7 @@ public class DartLink extends DartControl implements ILink {
             setLinkColor(true);
         }
         this._linkForeground = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VLink.LINK_FOREGROUND, wasLinkForeground, self -> self.getValue().getLinkForeground());
     }
 
     @Override
@@ -498,20 +500,25 @@ public class DartLink extends DartControl implements ILink {
      */
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
+        boolean wasTabStop = getTabStop();
         if (!java.util.Objects.equals(this.text, string)) {
-            getValue().markDirty(VLink.TEXT);
-            getValue().markDirty(VControl.TAB_STOP);
             ControlHelper.relayoutAfterTextChange(getApi());
         }
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
-        if (string.equals(text))
+        if (string.equals(text)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VLink.TEXT, wasText, self -> self.getValue().getText());
             return;
+        }
         text = string;
         parse(text);
         focusIndex = offsets.length > 0 ? 0 : -1;
+        if (getTabStop() != wasTabStop)
+            getValue().markDirty(VControl.TAB_STOP);
         for (int i = 0; i < offsets.length; i++) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VLink.TEXT, wasText, self -> self.getValue().getText());
     }
 
     @Override

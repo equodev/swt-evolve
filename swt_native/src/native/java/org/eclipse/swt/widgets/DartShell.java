@@ -1264,8 +1264,10 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
-        if (_getFullScreen())
+        boolean wasFullScreen = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getFullScreen());
+        if (_getFullScreen()) {
             setFullScreen(false);
+        }
         if (!move) {
         }
         if (resize) {
@@ -1289,14 +1291,19 @@ public class DartShell extends DartDecorations implements IShell {
                 updateLayout(false);
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
     }
 
     @Override
     public void setEnabled(boolean enabled) {
         checkWidget();
-        if (((getApi().state & DISABLED) == 0) == enabled)
+        boolean wasEnabled = getValue().getEnabled();
+        if (((getApi().state & DISABLED) == 0) == enabled) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
             return;
+        }
         super.setEnabled(enabled);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
     }
 
     /**
@@ -1325,11 +1332,15 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setFullScreen(boolean fullScreen) {
         checkWidget();
-        if (this.fullScreen != fullScreen) {
-            getValue().markDirty(VShell.FULL_SCREEN);
-        }
-        if (_getFullScreen() == fullScreen)
+        boolean wasModified = getValue().getModified();
+        boolean wasFullScreen = getValue().getFullScreen();
+        int wasAlpha = getValue().getAlpha();
+        if (_getFullScreen() == fullScreen) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
             return;
+        }
         this.fullScreen = fullScreen;
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowFullScreen(this, fullScreen);
@@ -1339,17 +1350,21 @@ public class DartShell extends DartDecorations implements IShell {
                 } else {
                 }
             }
-        } else {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
     }
 
     @Override
     public void setMenuBar(Menu menu) {
         checkWidget();
+        Menu wasMenuBar = getValue().getMenuBar();
         super.setMenuBar(menu);
         if (display.getActiveShell() == this.getApi()) {
             ((DartDisplay) display.getImpl()).setMenuBar(menuBar);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MENU_BAR, wasMenuBar, self -> self.getValue().getMenuBar());
     }
 
     /**
@@ -1408,9 +1423,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setMaximumSize(int width, int height) {
         checkWidget();
-        getValue().markDirty(VShell.MAXIMUM_SIZE);
+        Point wasMaximumSize = getValue().getMaximumSize();
         this.maximumSize = new Point(width, height);
         ShellHelper.shrinkToMaximum(this.getApi(), this.maximumSize);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MAXIMUM_SIZE, wasMaximumSize, self -> self.getValue().getMaximumSize());
     }
 
     /**
@@ -1437,9 +1453,11 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setMaximumSize(Point size) {
         checkWidget();
+        Point wasMaximumSize = getValue().getMaximumSize();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setMaximumSize(size.x, size.y);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MAXIMUM_SIZE, wasMaximumSize, self -> self.getValue().getMaximumSize());
     }
 
     @Override
@@ -1472,9 +1490,10 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setMinimumSize(int width, int height) {
         checkWidget();
-        getValue().markDirty(VShell.MINIMUM_SIZE);
+        Point wasMinimumSize = getValue().getMinimumSize();
         this.minimumSize = new Point(width, height);
         ShellHelper.growToMinimum(this.getApi());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MINIMUM_SIZE, wasMinimumSize, self -> self.getValue().getMinimumSize());
     }
 
     /**
@@ -1496,9 +1515,11 @@ public class DartShell extends DartDecorations implements IShell {
      */
     public void setMinimumSize(Point size) {
         checkWidget();
+        Point wasMinimumSize = getValue().getMinimumSize();
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setMinimumSize(size.x, size.y);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MINIMUM_SIZE, wasMinimumSize, self -> self.getValue().getMinimumSize());
     }
 
     /**
@@ -1516,10 +1537,16 @@ public class DartShell extends DartDecorations implements IShell {
     public void setModified(boolean modified) {
         boolean newValue = modified;
         checkWidget();
+        boolean wasModified = getValue().getModified();
+        boolean wasFullScreen = getValue().getFullScreen();
+        int wasAlpha = getValue().getAlpha();
         if (this.modified != newValue) {
             getValue().markDirty(VShell.MODIFIED);
         }
         this.modified = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
     }
 
     /**
@@ -1563,10 +1590,18 @@ public class DartShell extends DartDecorations implements IShell {
      */
     @Override
     public void setRegion(Region region) {
-        getValue().markDirty(VShell.REGION);
         checkWidget();
-        if ((getApi().style & SWT.NO_TRIM) == 0)
+        Region wasRegion = getValue().getRegion();
+        boolean wasModified = getValue().getModified();
+        boolean wasFullScreen = getValue().getFullScreen();
+        int wasAlpha = getValue().getAlpha();
+        if ((getApi().style & SWT.NO_TRIM) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VShell.REGION, wasRegion, self -> self.getValue().getRegion());
             return;
+        }
         if (region != null) {
             if (region.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1575,9 +1610,12 @@ public class DartShell extends DartDecorations implements IShell {
         }
         this.region = region;
         if (region != null) {
-        } else {
         }
         updateOpaque();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.REGION, wasRegion, self -> self.getValue().getRegion());
     }
 
     public void setScrolling() {
@@ -1602,11 +1640,19 @@ public class DartShell extends DartDecorations implements IShell {
     @Override
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
+        boolean wasModified = getValue().getModified();
+        boolean wasFullScreen = getValue().getFullScreen();
+        int wasAlpha = getValue().getAlpha();
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         super.setText(string);
         if (getBridge() instanceof dev.equo.swt.WindowBridge)
             ((dev.equo.swt.WindowBridge) getBridge()).setWindowTitle(this, string);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.TEXT, wasText, self -> self.getValue().getText());
     }
 
     @Override
@@ -1708,8 +1754,14 @@ public class DartShell extends DartDecorations implements IShell {
 
     @Override
     void setZOrder() {
+        boolean wasModified = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getModified());
+        boolean wasFullScreen = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.getValue().getFullScreen());
+        int wasAlpha = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getAlpha());
         if (fixResize()) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.ALPHA, wasAlpha, self -> self.getValue().getAlpha());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.FULL_SCREEN, wasFullScreen, self -> self.getValue().getFullScreen());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VShell.MODIFIED, wasModified, self -> self.getValue().getModified());
     }
 
     @Override

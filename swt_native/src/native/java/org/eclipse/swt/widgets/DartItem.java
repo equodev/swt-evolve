@@ -180,15 +180,16 @@ public abstract class DartItem extends DartWidget implements IItem {
      */
     public void setImage(Image image) {
         checkWidget();
+        Image wasImage = getValue().getImage();
         image = GraphicsUtils.copyImage(getDisplay(), image);
-        if (!java.util.Objects.equals(this.image, image)) {
-            getValue().markDirty(VItem.IMAGE);
-        }
-        if (this.image == image)
+        if (this.image == image) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         this.image = image;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -209,11 +210,11 @@ public abstract class DartItem extends DartWidget implements IItem {
      */
     public void setText(String string) {
         checkWidget();
+        if (string == null)
+            error(SWT.ERROR_NULL_ARGUMENT);
         if (!java.util.Objects.equals(this.text, string)) {
             getValue().markDirty(VItem.TEXT);
         }
-        if (string == null)
-            error(SWT.ERROR_NULL_ARGUMENT);
         text = string;
         if ((getApi().state & HAS_AUTO_DIRECTION) != 0) {
             updateTextDirection(AUTO_TEXT_DIRECTION);

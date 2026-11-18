@@ -410,16 +410,20 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
 
     @Override
     public void setFont(Font font) {
+        Font wasFont = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getFont());
         super.setFont(font);
         ExpandBarHelper.headersChanged(this);
         this.font = font;
         layoutItems(0, true);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandBar.FONT, wasFont, self -> self.getValue().getFont());
     }
 
     @Override
     public void setForeground(Color color) {
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getForeground());
         super.setForeground(color);
         foreground = color;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandBar.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     void setScrollbar() {
@@ -459,13 +463,15 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
      */
     public void setSpacing(int spacing) {
         checkWidget();
-        if (this.spacing != spacing) {
-            getValue().markDirty(VExpandBar.SPACING);
+        int wasSpacing = getValue().getSpacing();
+        if (spacing < 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VExpandBar.SPACING, wasSpacing, self -> self.getValue().getSpacing());
+            return;
         }
-        if (spacing < 0)
+        if (spacing == this.spacing) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VExpandBar.SPACING, wasSpacing, self -> self.getValue().getSpacing());
             return;
-        if (spacing == this.spacing)
-            return;
+        }
         this.spacing = spacing;
         int width = Math.max(0, getClientArea().width - spacing * 2);
         for (int i = 0; i < itemCount; i++) {
@@ -475,6 +481,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         }
         layoutItems(0, true);
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VExpandBar.SPACING, wasSpacing, self -> self.getValue().getSpacing());
     }
 
     void showItem(ExpandItem item) {
@@ -503,6 +510,7 @@ public class DartExpandBar extends DartComposite implements IExpandBar {
         }
         items = null;
         font = null;
+        getValue().markDirty(VExpandBar.FONT);
         foreground = null;
         focusItem = null;
         getValue().markDirty(VExpandBar.ITEMS);

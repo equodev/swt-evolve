@@ -848,9 +848,7 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (this.enabled != newValue) {
-            getValue().markDirty(VMenu.ENABLED);
-        }
+        boolean wasEnabled = getValue().getEnabled();
         if (enabled) {
             getApi().state &= ~DISABLED;
         } else {
@@ -863,6 +861,7 @@ public class DartMenu extends DartWidget implements IMenu {
             if (item != null) {
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenu.ENABLED, wasEnabled, self -> self.getValue().getEnabled());
     }
 
     /**
@@ -971,11 +970,13 @@ public class DartMenu extends DartWidget implements IMenu {
     public void setVisible(boolean visible) {
         boolean newValue = visible;
         checkWidget();
-        if (this.visible != newValue) {
-            getValue().markDirty(VMenu.VISIBLE);
-        }
-        if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0)
+        Point wasLocation = getValue().getLocation();
+        boolean wasVisible = getValue().getVisible();
+        if ((getApi().style & (SWT.BAR | SWT.DROP_DOWN)) != 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenu.VISIBLE, wasVisible, self -> self.getValue().getVisible());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VMenu.LOCATION, wasLocation, self -> self.getValue().getLocation());
             return;
+        }
         if (visible) {
             if (!hasLocation) {
                 Point menuLocation = display.getCursorLocation();
@@ -992,7 +993,6 @@ public class DartMenu extends DartWidget implements IMenu {
                     y = menuLocation.y;
                     location = menuLocation;
                     hasLocation = true;
-                    getValue().markDirty(VMenu.LOCATION);
                 }
             }
             hasLocation = false;
@@ -1004,6 +1004,8 @@ public class DartMenu extends DartWidget implements IMenu {
             ((DartDisplay) display.getImpl()).removePopup(this.getApi());
             _setVisible(false);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenu.VISIBLE, wasVisible, self -> self.getValue().getVisible());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VMenu.LOCATION, wasLocation, self -> self.getValue().getLocation());
     }
 
     boolean enabled = true;

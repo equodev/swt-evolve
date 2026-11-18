@@ -25,7 +25,7 @@ class ExpandBarSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "ExpandBar")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("spacing").equalsTo(w.getSpacing(), orAbsentIf0));
@@ -54,6 +54,11 @@ class ExpandBarSerializeTest extends SerializeTestBase {
     void should_name_every_change_ExpandBar() {
         ExpandBar w = new ExpandBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_ExpandBar() {
+        assertSetAgainNamesNothing(style -> new ExpandBar(shell(), style), this::setAll, unwritable("horizontalBar", "checkStyle drops H_SCROLL, so the widget never has a horizontal bar", "hasOwnBackground", "the client never reads it off a ExpandBar"), SWT.NONE, SWT.V_SCROLL, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VExpandBar value(ExpandBar w) {

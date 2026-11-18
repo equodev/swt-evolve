@@ -45,8 +45,13 @@ class TableItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_TableItem() {
-        TableItem w = new TableItem(table(), SWT.NONE);
+        TableItem w = new TableItem(new Table(shell(), SWT.CHECK), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_TableItem() {
+        assertSetAgainNamesNothing(style -> new TableItem(new Table(shell(), SWT.CHECK), style), this::setAll, unwritable("style", "the client never reads it off a TableItem"), SWT.NONE);
     }
 
     VTableItem value(TableItem w) {

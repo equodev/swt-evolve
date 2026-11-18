@@ -25,7 +25,7 @@ class ListSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "List")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("items").sameSizeAs(w.getItems()));
@@ -55,6 +55,11 @@ class ListSerializeTest extends SerializeTestBase {
     void should_name_every_change_List() {
         List w = new List(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_List() {
+        assertSetAgainNamesNothing(style -> new List(shell(), style), this::setAll, unwritable("hasOwnBackground", "the client never reads it off a List", "inheritsBackground", "the client never reads it off a List", "tabStop", "the client never reads it off a List"), SWT.NONE, SWT.SINGLE, SWT.MULTI, SWT.NO_SEARCH, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VList value(List w) {

@@ -253,6 +253,19 @@ public class DartTreeItem extends DartItem implements ITreeItem {
     }
 
     void clear() {
+        String wasText = dev.equo.swt.ChangeMarks.read(this, self -> self.text);
+        Image wasImage = dev.equo.swt.ChangeMarks.read(this, self -> self.image);
+        boolean wasChecked = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.checked);
+        boolean wasGrayed = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.grayed);
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.foreground);
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.background);
+        Font wasFont = dev.equo.swt.ChangeMarks.read(this, self -> self.font);
+        Color[] wasForegrounds = dev.equo.swt.ChangeMarks.read(this, self -> self.cellForeground);
+        wasForegrounds = dev.equo.swt.ChangeMarks.copy(wasForegrounds);
+        Font[] wasFonts = dev.equo.swt.ChangeMarks.read(this, self -> self.cellFont);
+        wasFonts = dev.equo.swt.ChangeMarks.copy(wasFonts);
+        Color[] wasBackgrounds = dev.equo.swt.ChangeMarks.read(this, self -> self.cellBackground);
+        wasBackgrounds = dev.equo.swt.ChangeMarks.copy(wasBackgrounds);
         cached = false;
         text = "";
         image = null;
@@ -264,21 +277,21 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         font = null;
         cellFont = null;
         width = -1;
-        getValue().markDirty(VTreeItem.TEXT);
-        getValue().markDirty(VTreeItem.IMAGE);
         getValue().markDirty(VTreeItem.TEXTS);
         getValue().markDirty(VTreeItem.IMAGES);
-        getValue().markDirty(VTreeItem.CHECKED);
-        getValue().markDirty(VTreeItem.GRAYED);
-        getValue().markDirty(VTreeItem.FOREGROUND);
-        getValue().markDirty(VTreeItem.BACKGROUND);
-        getValue().markDirty(VTreeItem.FOREGROUNDS);
-        getValue().markDirty(VTreeItem.BACKGROUNDS);
-        getValue().markDirty(VTreeItem.FONT);
-        getValue().markDirty(VTreeItem.FONTS);
         getValue().markDirty(VTreeItem.PAINTED_IMAGES);
         getValue().markDirty(VTreeItem.PAINTED_TEXTS);
         dirty();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.IMAGE, wasImage, self -> self.image);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.TEXT, wasText, self -> self.text);
     }
 
     /**
@@ -970,22 +983,29 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setBackground(Color color) {
         checkWidget();
+        Color[] wasBackgrounds = this.cellBackground;
+        wasBackgrounds = dev.equo.swt.ChangeMarks.copy(wasBackgrounds);
+        Color wasBackground = this.background;
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.background, color)) {
-            getValue().markDirty(VTreeItem.BACKGROUND);
-        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Color oldColor = background;
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         background = color;
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         cached = true;
         redraw(-1);
-        getValue().markDirty(VTreeItem.BACKGROUNDS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
     }
 
     /**
@@ -1008,27 +1028,37 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setBackground(int index, Color color) {
         checkWidget();
+        Color[] wasBackgrounds = this.cellBackground;
+        wasBackgrounds = dev.equo.swt.ChangeMarks.copy(wasBackgrounds);
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int count = Math.max(1, ((DartTree) parent.getImpl()).columnCount);
-        if (0 > index || index > count - 1)
+        if (0 > index || index > count - 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         if (cellBackground == null) {
-            if (color == null)
+            if (color == null) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
                 return;
+            }
             cellBackground = new Color[count];
         }
         Color oldColor = cellBackground[index];
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.BACKGROUNDS, cellBackground[index], color);
         cellBackground[index] = color;
-        getValue().markDirty(VTreeItem.BACKGROUND);
-        getValue().markDirty(VTreeItem.BACKGROUNDS);
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         cached = true;
         redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
     }
 
     /**
@@ -1043,16 +1073,19 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setChecked(boolean checked) {
         checkWidget();
-        if (this.checked != checked) {
-            getValue().markDirty(VTreeItem.CHECKED);
+        boolean wasChecked = this.checked;
+        if ((parent.style & SWT.CHECK) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+            return;
         }
-        if ((parent.style & SWT.CHECK) == 0)
+        if (this.checked == checked) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
             return;
-        if (this.checked == checked)
-            return;
+        }
         this.checked = checked;
         cached = true;
         redraw(-1);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
     }
 
     /**
@@ -1067,24 +1100,46 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setExpanded(boolean expanded) {
         checkWidget();
-        if (this.expanded != expanded) {
-            getValue().markDirty(VTreeItem.EXPANDED);
-        }
+        boolean wasExpanded = this.expanded;
+        boolean wasGrayed = this.grayed;
+        Color wasForeground = this.foreground;
+        Font wasFont = this.font;
+        boolean wasChecked = this.checked;
+        Color wasBackground = this.background;
         /* Do nothing when the item is a leaf or already expanded */
-        if (itemCount == 0 || expanded == getExpanded())
+        if (itemCount == 0 || expanded == getExpanded()) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.EXPANDED, wasExpanded, self -> self.expanded);
             return;
+        }
         ((DartTree) parent.getImpl()).checkItems();
         ((DartTree) parent.getImpl()).ignoreExpand = true;
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
         this.expanded = expanded;
         ((DartTree) parent.getImpl()).onItemExpanded(this.getApi(), expanded);
         if (expanded) {
         } else {
         }
         ((DartTree) parent.getImpl()).ignoreExpand = false;
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
         cached = true;
         if (!expanded) {
             ((DartTree) parent.getImpl()).setScrollWidth();
+            getValue().markDirty(VTreeItem.TEXTS);
+            getValue().markDirty(VTreeItem.IMAGES);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.EXPANDED, wasExpanded, self -> self.expanded);
     }
 
     /**
@@ -1106,23 +1161,30 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setFont(Font font) {
         checkWidget();
+        Font[] wasFonts = this.cellFont;
+        wasFonts = dev.equo.swt.ChangeMarks.copy(wasFonts);
+        Font wasFont = this.font;
         font = GraphicsUtils.copyFont(font);
-        if (!java.util.Objects.equals(this.font, font)) {
-            getValue().markDirty(VTreeItem.FONT);
-        }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        if (oldFont == font)
+        if (oldFont == font) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
             return;
+        }
         this.font = font;
-        if (oldFont != null && oldFont.equals(font))
+        if (oldFont != null && oldFont.equals(font)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
             return;
+        }
         width = -1;
         cached = true;
         redraw(-1);
-        getValue().markDirty(VTreeItem.FONTS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
     }
 
     /**
@@ -1145,30 +1207,45 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      * @since 3.1
      */
     public void setFont(int index, Font font) {
-        getValue().markDirty(VTreeItem.FONT);
         checkWidget();
+        Font wasFont = this.font;
+        Font[] wasFonts = this.cellFont;
+        wasFonts = dev.equo.swt.ChangeMarks.copy(wasFonts);
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int count = Math.max(1, ((DartTree) parent.getImpl()).columnCount);
-        if (0 > index || index > count - 1)
+        if (0 > index || index > count - 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
             return;
+        }
         if (cellFont == null) {
-            if (font == null)
+            if (font == null) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
                 return;
+            }
             cellFont = new Font[count];
         }
         Font oldFont = cellFont[index];
-        if (oldFont == font)
+        if (oldFont == font) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
             return;
+        }
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.FONTS, cellFont[index], font);
         cellFont[index] = font;
-        getValue().markDirty(VTreeItem.FONT);
-        getValue().markDirty(VTreeItem.FONTS);
-        if (oldFont != null && oldFont.equals(font))
+        if (oldFont != null && oldFont.equals(font)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
             return;
+        }
         width = -1;
         cached = true;
         redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONTS, wasFonts, self -> self.cellFont);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
     }
 
     /**
@@ -1190,22 +1267,29 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setForeground(Color color) {
         checkWidget();
+        Color[] wasForegrounds = this.cellForeground;
+        wasForegrounds = dev.equo.swt.ChangeMarks.copy(wasForegrounds);
+        Color wasForeground = this.foreground;
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.foreground, color)) {
-            getValue().markDirty(VTreeItem.FOREGROUND);
-        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Color oldColor = foreground;
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         foreground = color;
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         cached = true;
         redraw(-1);
-        getValue().markDirty(VTreeItem.FOREGROUNDS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
     }
 
     /**
@@ -1228,27 +1312,37 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setForeground(int index, Color color) {
         checkWidget();
+        Color[] wasForegrounds = this.cellForeground;
+        wasForegrounds = dev.equo.swt.ChangeMarks.copy(wasForegrounds);
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int count = Math.max(1, ((DartTree) parent.getImpl()).columnCount);
-        if (0 > index || index > count - 1)
+        if (0 > index || index > count - 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         if (cellForeground == null) {
-            if (color == null)
+            if (color == null) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
                 return;
+            }
             cellForeground = new Color[count];
         }
         Color oldColor = cellForeground[index];
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.FOREGROUNDS, cellForeground[index], color);
         cellForeground[index] = color;
-        getValue().markDirty(VTreeItem.FOREGROUND);
-        getValue().markDirty(VTreeItem.FOREGROUNDS);
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         cached = true;
         redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
     }
 
     /**
@@ -1264,16 +1358,19 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (this.grayed != grayed) {
-            getValue().markDirty(VTreeItem.GRAYED);
+        boolean wasGrayed = this.grayed;
+        if ((parent.style & SWT.CHECK) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+            return;
         }
-        if ((parent.style & SWT.CHECK) == 0)
+        if (this.grayed == grayed) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
             return;
-        if (this.grayed == grayed)
-            return;
+        }
         this.grayed = grayed;
         cached = true;
         redraw(-1);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
     }
 
     /**
@@ -1299,7 +1396,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         for (int i = 0; i < images.length; i++) {
             setImage(i, images[i]);
         }
-        getValue().markDirty(VTreeItem.IMAGES);
     }
 
     /**
@@ -1320,15 +1416,30 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setImage(int index, Image image) {
         checkWidget();
+        Image wasImage = this.image;
+        boolean wasGrayed = this.grayed;
+        Color wasForeground = this.foreground;
+        Font wasFont = this.font;
+        boolean wasChecked = this.checked;
+        Color wasBackground = this.background;
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         if (((DartTree) parent.getImpl()).imageBounds == null && image != null) {
+            getValue().markDirty(VTreeItem.TEXTS);
+            getValue().markDirty(VTreeItem.IMAGES);
         }
         if (index == 0) {
             if (image != null && image.type == SWT.ICON) {
-                if (image.equals(this.image))
+                if (image.equals(this.image)) {
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.IMAGE, wasImage, self -> self.image);
                     return;
+                }
             }
             width = -1;
             super.setImage(image);
@@ -1338,25 +1449,41 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             if (images == null)
                 images = new Image[count];
             if (image != null && image.type == SWT.ICON) {
-                if (image.equals(images[index]))
+                if (image.equals(images[index])) {
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+                    dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.IMAGE, wasImage, self -> self.image);
                     return;
+                }
             }
+            dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.IMAGES, images[index], image);
+            if (index == 0)
+                dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.IMAGE, images[index], image);
             images[index] = image;
-            getValue().markDirty(VTreeItem.IMAGE);
-            getValue().markDirty(VTreeItem.IMAGES);
         }
         cached = true;
-        if (index == 0)
+        if (index == 0) {
             ((DartTree) parent.getImpl()).setScrollWidth(this.getApi());
+            getValue().markDirty(VTreeItem.TEXTS);
+            getValue().markDirty(VTreeItem.IMAGES);
+        }
         if (0 <= index && index < count)
             redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.IMAGE, wasImage, self -> self.image);
     }
 
     @Override
     public void setImage(Image image) {
         checkWidget();
         setImage(0, image);
-        getValue().markDirty(VTreeItem.IMAGES);
     }
 
     /**
@@ -1379,8 +1506,20 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setItemCount(int count) {
         checkWidget();
+        boolean wasGrayed = this.grayed;
+        Color wasForeground = this.foreground;
+        Font wasFont = this.font;
+        boolean wasChecked = this.checked;
+        Color wasBackground = this.background;
         count = Math.max(0, count);
         ((DartTree) parent.getImpl()).setItemCount(this.getApi(), count);
+        getValue().markDirty(VTreeItem.TEXTS);
+        getValue().markDirty(VTreeItem.IMAGES);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
     }
 
     /**
@@ -1410,7 +1549,6 @@ public class DartTreeItem extends DartItem implements ITreeItem {
             if (string != null)
                 setText(i, string);
         }
-        getValue().markDirty(VTreeItem.TEXTS);
     }
 
     /**
@@ -1434,11 +1572,24 @@ public class DartTreeItem extends DartItem implements ITreeItem {
      */
     public void setText(int index, String string) {
         checkWidget();
+        String wasText = this.text;
+        boolean wasGrayed = this.grayed;
+        Color wasForeground = this.foreground;
+        Font wasFont = this.font;
+        boolean wasChecked = this.checked;
+        Color wasBackground = this.background;
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (index == 0) {
-            if (string.equals(text))
+            if (string.equals(text)) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.TEXT, wasText, self -> self.text);
                 return;
+            }
             width = -1;
             super.setText(string);
         }
@@ -1446,24 +1597,40 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         if (0 <= index && index < count) {
             if (strings == null)
                 strings = new String[count];
-            if (string.equals(strings[index]))
+            if (string.equals(strings[index])) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.TEXT, wasText, self -> self.text);
                 return;
+            }
+            dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.TEXTS, strings[index], string);
+            if (index == 0)
+                dev.equo.swt.ChangeMarks.ifDiffers(this, VTreeItem.TEXT, strings[index], string);
             strings[index] = string;
-            getValue().markDirty(VTreeItem.TEXT);
-            getValue().markDirty(VTreeItem.TEXTS);
         }
         cached = true;
-        if (index == 0)
+        if (index == 0) {
             ((DartTree) parent.getImpl()).setScrollWidth(this.getApi());
+            getValue().markDirty(VTreeItem.TEXTS);
+            getValue().markDirty(VTreeItem.IMAGES);
+        }
         if (0 <= index && index < count)
             redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.GRAYED, wasGrayed, self -> self.grayed);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTreeItem.TEXT, wasText, self -> self.text);
     }
 
     @Override
     public void setText(String string) {
         checkWidget();
         setText(0, string);
-        getValue().markDirty(VTreeItem.TEXTS);
     }
 
     void updateExpanded() {

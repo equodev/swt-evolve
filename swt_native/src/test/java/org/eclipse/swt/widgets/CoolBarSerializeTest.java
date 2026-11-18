@@ -25,7 +25,7 @@ class CoolBarSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "CoolBar")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("itemOrder").equalsTo(w.getItemOrder(), orAbsentIfNull));
@@ -55,6 +55,11 @@ class CoolBarSerializeTest extends SerializeTestBase {
     void should_name_every_change_CoolBar() {
         CoolBar w = new CoolBar(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_CoolBar() {
+        assertSetAgainNamesNothing(style -> new CoolBar(shell(), style), this::setAll, unwritable("horizontalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "verticalBar", "checkStyle drops H_SCROLL and V_SCROLL, so the widget never has scroll bars", "tabStop", "ControlHelper.isTabStop never makes this widget a Tab stop", "font", "the client never reads it off a CoolBar", "hasOwnBackground", "the client never reads it off a CoolBar"), SWT.NONE, SWT.FLAT, SWT.HORIZONTAL, SWT.VERTICAL, SWT.NO_BACKGROUND, SWT.NO_FOCUS, SWT.NO_MERGE_PAINTS, SWT.NO_REDRAW_RESIZE, SWT.NO_RADIO_GROUP, SWT.EMBEDDED, SWT.DOUBLE_BUFFERED, SWT.H_SCROLL, SWT.V_SCROLL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VCoolBar value(CoolBar w) {

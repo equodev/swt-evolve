@@ -184,6 +184,19 @@ public class DartTableItem extends DartItem implements ITableItem {
     }
 
     void clear() {
+        String wasText = dev.equo.swt.ChangeMarks.read(this, self -> self.text);
+        Image wasImage = dev.equo.swt.ChangeMarks.read(this, self -> self.image);
+        boolean wasChecked = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.checked);
+        boolean wasGrayed = dev.equo.swt.ChangeMarks.readBoolean(this, self -> self.grayed);
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.foreground);
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.background);
+        Font wasFont = dev.equo.swt.ChangeMarks.read(this, self -> self.font);
+        Color[] wasForegrounds = dev.equo.swt.ChangeMarks.read(this, self -> self.cellForeground);
+        wasForegrounds = dev.equo.swt.ChangeMarks.copy(wasForegrounds);
+        Font[] wasFonts = dev.equo.swt.ChangeMarks.read(this, self -> self.cellFont);
+        wasFonts = dev.equo.swt.ChangeMarks.copy(wasFonts);
+        Color[] wasBackgrounds = dev.equo.swt.ChangeMarks.read(this, self -> self.cellBackground);
+        wasBackgrounds = dev.equo.swt.ChangeMarks.copy(wasBackgrounds);
         text = "";
         image = null;
         strings = null;
@@ -194,21 +207,21 @@ public class DartTableItem extends DartItem implements ITableItem {
         font = null;
         cellFont = null;
         width = -1;
-        getValue().markDirty(VTableItem.TEXT);
-        getValue().markDirty(VTableItem.IMAGE);
         getValue().markDirty(VTableItem.TEXTS);
         getValue().markDirty(VTableItem.IMAGES);
-        getValue().markDirty(VTableItem.CHECKED);
-        getValue().markDirty(VTableItem.GRAYED);
-        getValue().markDirty(VTableItem.FOREGROUND);
-        getValue().markDirty(VTableItem.BACKGROUND);
-        getValue().markDirty(VTableItem.FOREGROUNDS);
-        getValue().markDirty(VTableItem.BACKGROUNDS);
-        getValue().markDirty(VTableItem.FONT);
-        getValue().markDirty(VTableItem.FONTS);
         getValue().markDirty(VTableItem.PAINTED_IMAGES);
         getValue().markDirty(VTableItem.PAINTED_TEXTS);
         dirty();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.IMAGE, wasImage, self -> self.image);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.TEXT, wasText, self -> self.text);
     }
 
     @Override
@@ -645,22 +658,29 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setBackground(Color color) {
         checkWidget();
+        Color[] wasBackgrounds = this.cellBackground;
+        wasBackgrounds = dev.equo.swt.ChangeMarks.copy(wasBackgrounds);
+        Color wasBackground = this.background;
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.background, color)) {
-            getValue().markDirty(VTableItem.BACKGROUND);
-        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Color oldColor = background;
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         background = color;
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         cached = true;
         redraw(-1);
-        getValue().markDirty(VTableItem.BACKGROUNDS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
     }
 
     /**
@@ -683,27 +703,37 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setBackground(int index, Color color) {
         checkWidget();
+        Color[] wasBackgrounds = this.cellBackground;
+        wasBackgrounds = dev.equo.swt.ChangeMarks.copy(wasBackgrounds);
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int count = Math.max(1, ((DartTable) parent.getImpl()).columnCount);
-        if (0 > index || index > count - 1)
+        if (0 > index || index > count - 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         if (cellBackground == null) {
-            if (color == null)
+            if (color == null) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
                 return;
+            }
             cellBackground = new Color[count];
         }
         Color oldColor = cellBackground[index];
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VTableItem.BACKGROUNDS, cellBackground[index], color);
         cellBackground[index] = color;
-        getValue().markDirty(VTableItem.BACKGROUND);
-        getValue().markDirty(VTableItem.BACKGROUNDS);
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
             return;
+        }
         cached = true;
         redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUNDS, wasBackgrounds, self -> self.cellBackground);
     }
 
     /**
@@ -719,16 +749,19 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setChecked(boolean checked) {
         checkWidget();
-        if (this.checked != checked) {
-            getValue().markDirty(VTableItem.CHECKED);
+        boolean wasChecked = this.checked;
+        if ((parent.style & SWT.CHECK) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+            return;
         }
-        if ((parent.style & SWT.CHECK) == 0)
+        if (this.checked == checked) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
             return;
-        if (this.checked == checked)
-            return;
+        }
         this.checked = checked;
         cached = true;
         redraw(-1);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
     }
 
     /**
@@ -750,23 +783,30 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setFont(Font font) {
         checkWidget();
+        Font[] wasFonts = this.cellFont;
+        wasFonts = dev.equo.swt.ChangeMarks.copy(wasFonts);
+        Font wasFont = this.font;
         font = GraphicsUtils.copyFont(font);
-        if (!java.util.Objects.equals(this.font, font)) {
-            getValue().markDirty(VTableItem.FONT);
-        }
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Font oldFont = this.font;
-        if (oldFont == font)
+        if (oldFont == font) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
             return;
+        }
         this.font = font;
-        if (oldFont != null && oldFont.equals(font))
+        if (oldFont != null && oldFont.equals(font)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
             return;
+        }
         width = -1;
         cached = true;
         redraw(-1);
-        getValue().markDirty(VTableItem.FONTS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
     }
 
     /**
@@ -789,30 +829,45 @@ public class DartTableItem extends DartItem implements ITableItem {
      * @since 3.0
      */
     public void setFont(int index, Font font) {
-        getValue().markDirty(VTableItem.FONT);
         checkWidget();
+        Font wasFont = this.font;
+        Font[] wasFonts = this.cellFont;
+        wasFonts = dev.equo.swt.ChangeMarks.copy(wasFonts);
         if (font != null && font.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int count = Math.max(1, ((DartTable) parent.getImpl()).columnCount);
-        if (0 > index || index > count - 1)
+        if (0 > index || index > count - 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
             return;
+        }
         if (cellFont == null) {
-            if (font == null)
+            if (font == null) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
                 return;
+            }
             cellFont = new Font[count];
         }
         Font oldFont = cellFont[index];
-        if (oldFont == font)
+        if (oldFont == font) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
             return;
+        }
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VTableItem.FONTS, cellFont[index], font);
         cellFont[index] = font;
-        getValue().markDirty(VTableItem.FONT);
-        getValue().markDirty(VTableItem.FONTS);
-        if (oldFont != null && oldFont.equals(font))
+        if (oldFont != null && oldFont.equals(font)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
             return;
+        }
         width = -1;
         cached = true;
         redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONTS, wasFonts, self -> self.cellFont);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
     }
 
     /**
@@ -834,22 +889,29 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setForeground(Color color) {
         checkWidget();
+        Color[] wasForegrounds = this.cellForeground;
+        wasForegrounds = dev.equo.swt.ChangeMarks.copy(wasForegrounds);
+        Color wasForeground = this.foreground;
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.foreground, color)) {
-            getValue().markDirty(VTableItem.FOREGROUND);
-        }
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Color oldColor = foreground;
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         foreground = color;
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         cached = true;
         redraw(-1);
-        getValue().markDirty(VTableItem.FOREGROUNDS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
     }
 
     /**
@@ -872,27 +934,37 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setForeground(int index, Color color) {
         checkWidget();
+        Color[] wasForegrounds = this.cellForeground;
+        wasForegrounds = dev.equo.swt.ChangeMarks.copy(wasForegrounds);
         if (color != null && color.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
         int count = Math.max(1, ((DartTable) parent.getImpl()).columnCount);
-        if (0 > index || index > count - 1)
+        if (0 > index || index > count - 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         if (cellForeground == null) {
-            if (color == null)
+            if (color == null) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
                 return;
+            }
             cellForeground = new Color[count];
         }
         Color oldColor = cellForeground[index];
-        if (oldColor == color)
+        if (oldColor == color) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
+        dev.equo.swt.ChangeMarks.ifDiffers(this, VTableItem.FOREGROUNDS, cellForeground[index], color);
         cellForeground[index] = color;
-        getValue().markDirty(VTableItem.FOREGROUND);
-        getValue().markDirty(VTableItem.FOREGROUNDS);
-        if (oldColor != null && oldColor.equals(color))
+        if (oldColor != null && oldColor.equals(color)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
             return;
+        }
         cached = true;
         redraw(index);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUNDS, wasForegrounds, self -> self.cellForeground);
     }
 
     /**
@@ -908,16 +980,19 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setGrayed(boolean grayed) {
         checkWidget();
-        if (this.grayed != grayed) {
-            getValue().markDirty(VTableItem.GRAYED);
+        boolean wasGrayed = this.grayed;
+        if ((parent.style & SWT.CHECK) == 0) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
+            return;
         }
-        if ((parent.style & SWT.CHECK) == 0)
+        if (this.grayed == grayed) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
             return;
-        if (this.grayed == grayed)
-            return;
+        }
         this.grayed = grayed;
         cached = true;
         redraw(-1);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
     }
 
     /**
@@ -941,7 +1016,6 @@ public class DartTableItem extends DartItem implements ITableItem {
         for (int i = 0; i < images.length; i++) {
             setImage(i, images[i]);
         }
-        getValue().markDirty(VTableItem.IMAGES);
     }
 
     /**
@@ -960,25 +1034,48 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setImage(int index, Image image) {
         checkWidget();
+        boolean wasGrayed = this.grayed;
+        Color wasForeground = this.foreground;
+        Font wasFont = this.font;
+        boolean wasChecked = this.checked;
+        Color wasBackground = this.background;
         int itemIndex = parent.indexOf(this.getApi());
-        if (itemIndex == -1)
+        if (itemIndex == -1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
             return;
+        }
         if (index == 0)
             width = -1;
-        if (!TableHelper.setImage(this, index, image, false, null))
+        if (!TableHelper.setImage(this, index, image, false, null)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
             return;
-        if (index == 0)
+        }
+        if (index == 0) {
             ((DartTable) parent.getImpl()).setScrollWidth(this.getApi());
+            getValue().markDirty(VTableItem.TEXTS);
+            getValue().markDirty(VTableItem.IMAGES);
+        }
         redraw(index);
         getValue().markDirty(VTableItem.IMAGES);
-        getValue().markDirty(VTableItem.IMAGE);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
     }
 
     @Override
     public void setImage(Image image) {
         checkWidget();
         setImage(0, image);
-        getValue().markDirty(VTableItem.IMAGES);
     }
 
     /**
@@ -1029,7 +1126,6 @@ public class DartTableItem extends DartItem implements ITableItem {
             if (string != null)
                 setText(i, string);
         }
-        getValue().markDirty(VTableItem.TEXTS);
     }
 
     /**
@@ -1051,11 +1147,24 @@ public class DartTableItem extends DartItem implements ITableItem {
      */
     public void setText(int index, String string) {
         checkWidget();
+        String wasText = this.text;
+        boolean wasGrayed = this.grayed;
+        Color wasForeground = this.foreground;
+        Font wasFont = this.font;
+        boolean wasChecked = this.checked;
+        Color wasBackground = this.background;
         if (string == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (index == 0) {
-            if (string.equals(text))
+            if (string.equals(text)) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.TEXT, wasText, self -> self.text);
                 return;
+            }
             width = -1;
             super.setText(string);
         }
@@ -1063,25 +1172,40 @@ public class DartTableItem extends DartItem implements ITableItem {
         if (0 <= index && index < count) {
             if (strings == null)
                 strings = new String[count];
-            if (string.equals(strings[index]))
+            if (string.equals(strings[index])) {
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
+                dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.TEXT, wasText, self -> self.text);
                 return;
+            }
+            dev.equo.swt.ChangeMarks.ifDiffers(this, VTableItem.TEXTS, strings[index], string);
+            if (index == 0)
+                dev.equo.swt.ChangeMarks.ifDiffers(this, VTableItem.TEXT, strings[index], string);
             strings[index] = string;
-            getValue().markDirty(VTableItem.TEXT);
-            getValue().markDirty(VTableItem.TEXTS);
         }
         cached = true;
-        if (index == 0)
+        if (index == 0) {
             ((DartTable) parent.getImpl()).setScrollWidth(this.getApi());
+            getValue().markDirty(VTableItem.TEXTS);
+            getValue().markDirty(VTableItem.IMAGES);
+        }
         redraw(index);
         getValue().markDirty(VTableItem.TEXTS);
-        getValue().markDirty(VTableItem.TEXT);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.BACKGROUND, wasBackground, self -> self.background);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.CHECKED, wasChecked, self -> self.checked);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FONT, wasFont, self -> self.font);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.FOREGROUND, wasForeground, self -> self.foreground);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.GRAYED, wasGrayed, self -> self.grayed);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTableItem.TEXT, wasText, self -> self.text);
     }
 
     @Override
     public void setText(String string) {
         checkWidget();
         setText(0, string);
-        getValue().markDirty(VTableItem.TEXTS);
     }
 
     int imageIndent;

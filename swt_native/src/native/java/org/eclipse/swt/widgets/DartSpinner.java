@@ -568,12 +568,16 @@ public class DartSpinner extends DartComposite implements ISpinner {
     public void setIncrement(int value) {
         int newValue = value;
         checkWidget();
-        if (this.increment != newValue) {
-            getValue().markDirty(VSpinner.INCREMENT);
-        }
-        if (value < 1)
+        int wasSelection = getValue().getSelection();
+        int wasIncrement = getValue().getIncrement();
+        if (value < 1) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         this.increment = newValue;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.INCREMENT, wasIncrement, self -> self.getValue().getIncrement());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -591,13 +595,16 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setMaximum(int value) {
         checkWidget();
-        if (value < this.minimum)
+        int wasMaximum = getValue().getMaximum();
+        if (value < this.minimum) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
             return;
+        }
         int pos = getSelection();
-        getValue().markDirty(VSpinner.MAXIMUM);
         this.maximum = value;
         if (pos > value)
             setSelection(value, true, true, false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
     }
 
     /**
@@ -615,13 +622,16 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setMinimum(int value) {
         checkWidget();
-        if (value > this.maximum)
+        int wasMinimum = getValue().getMinimum();
+        if (value > this.maximum) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
             return;
+        }
         int pos = getSelection();
-        getValue().markDirty(VSpinner.MINIMUM);
         this.minimum = value;
         if (pos < value)
             setSelection(value, true, true, false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSpinner.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
     }
 
     /**
@@ -638,11 +648,11 @@ public class DartSpinner extends DartComposite implements ISpinner {
      */
     public void setPageIncrement(int value) {
         checkWidget();
+        if (value < 1)
+            return;
         if (this.pageIncrement != value) {
             getValue().markDirty(VSpinner.PAGE_INCREMENT);
         }
-        if (value < 1)
-            return;
         pageIncrement = value;
     }
 

@@ -175,14 +175,16 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public void setMaximum(int value) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
+        int wasMaximum = getValue().getMaximum();
         if (minimum < value) {
             maximum = value;
-            getValue().markDirty(VProgressBar.MAXIMUM);
             if (selection > maximum) {
                 selection = maximum;
-                getValue().markDirty(VProgressBar.SELECTION);
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VProgressBar.MAXIMUM, wasMaximum, self -> self.getValue().getMaximum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VProgressBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -200,14 +202,16 @@ public class DartProgressBar extends DartControl implements IProgressBar {
      */
     public void setMinimum(int value) {
         checkWidget();
+        int wasSelection = getValue().getSelection();
+        int wasMinimum = getValue().getMinimum();
         if (0 <= value && value < maximum) {
             minimum = value;
-            getValue().markDirty(VProgressBar.MINIMUM);
             if (selection < minimum) {
                 selection = minimum;
-                getValue().markDirty(VProgressBar.SELECTION);
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VProgressBar.MINIMUM, wasMinimum, self -> self.getValue().getMinimum());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VProgressBar.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**

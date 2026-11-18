@@ -26,7 +26,7 @@ class ButtonSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Button")
                .containsEntry("text", w.getText())
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("alignment").equalsTo(w.getAlignment(), orAbsentIf0));
@@ -57,6 +57,11 @@ class ButtonSerializeTest extends SerializeTestBase {
     void should_name_every_change_Button() {
         Button w = new Button(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Button() {
+        assertSetAgainNamesNothing(style -> new Button(shell(), style), this::setAll, unwritable("hasOwnBackground", "the client never reads it off a Button", "inheritsBackground", "the client never reads it off a Button", "tabStop", "the client never reads it off a Button"), SWT.NONE, SWT.ARROW, SWT.CHECK, SWT.PUSH, SWT.RADIO, SWT.TOGGLE, SWT.FLAT, SWT.WRAP, SWT.UP, SWT.DOWN, SWT.LEFT, SWT.RIGHT, SWT.CENTER, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VButton value(Button w) {

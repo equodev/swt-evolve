@@ -6,12 +6,26 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.ScrollBar;
 
 /**
- * Logic of {@code DartScrolledCompositeLayout} kept out of the generated class: the generator strips every call on
- * a {@code GC} from the Dart implementations, and the scroll bars' increments are measured with one.
+ * Logic of {@code DartScrolledComposite} and its layout kept out of the generated classes: the generator strips
+ * every call on a {@code GC} from the Dart implementations, and the scroll bars' increments are measured with one.
  */
 public class ScrolledCompositeHelper {
 
     private ScrolledCompositeHelper() {
+    }
+
+    /** Runs {@code change}, then names the origin when the layout it ran moved the content. */
+    public static void keepOrigin(DartScrolledComposite sc, Runnable change) {
+        org.eclipse.swt.graphics.Point origin = sc.getValue().getOrigin();
+        change.run();
+        dev.equo.swt.ChangeMarks.ifChanged(sc, VScrolledComposite.ORIGIN, origin, self -> self.getValue().getOrigin());
+    }
+
+    /** The origin the client is sent: a content disposed under the composite has none, as no content has. */
+    public static org.eclipse.swt.graphics.Point wireOrigin(DartScrolledComposite sc) {
+        org.eclipse.swt.widgets.Control content = sc.content;
+        if (content == null || content.isDisposed()) return new org.eclipse.swt.graphics.Point(0, 0);
+        return sc.getOrigin();
     }
 
     /** Sets the bars' increments to the composite font's average character width and line height. */

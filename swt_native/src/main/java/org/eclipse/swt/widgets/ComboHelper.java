@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.Serializer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.TextTransfer;
@@ -51,7 +50,6 @@ public class ComboHelper {
         TextHelper.ClientCaret moved = new TextHelper.ClientCaret(offset, anchor, getCharCount(combo));
         combo.caretPosition = moved.caret;
         combo.selection = moved.selection;
-        Serializer.clientChanged(combo.getValue(), VCombo.CARET_POSITION);
     }
 
     /**
@@ -207,6 +205,7 @@ public class ComboHelper {
      * verdict tells it that this push is no echo of its own edit.
      */
     private static void refused(DartCombo combo) {
+        // Java's text did not change, the client's did: only this mark sends the kept text back.
         combo.getValue().markDirty(VCombo.TEXT);
         dev.equo.swt.FlutterBridge.send(combo, dev.equo.swt.WireTable.CHANNEL_MODIFY_VERDICT,
                 dev.equo.swt.Java8.map("doit", false));
@@ -214,7 +213,8 @@ public class ComboHelper {
 
     /** Empties the list; the caller has already asked the Verify listeners about an editable combo's text. */
     public static void removeAll(DartCombo combo) {
-        combo.getValue().markDirty(VCombo.ITEMS);
+        if (combo.items.length != 0)
+            combo.getValue().markDirty(VCombo.ITEMS);
         combo.items = new String[0];
         listEmptied(combo);
     }
@@ -227,13 +227,19 @@ public class ComboHelper {
             if (item == null)
                 combo.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        String[] old = combo.items;
+        boolean marked = combo.getValue().changedKeys().contains(VCombo.ITEMS);
+        boolean queued = dev.equo.swt.FlutterBridge.isQueued(combo);
         combo.removeAll();
-        if (items.length == 0)
-            return;
-        combo.getValue().markDirty(VCombo.ITEMS);
-        combo.items = items.clone();
-        for (String item : combo.items)
-            sendSegments(combo, item);
+        if (items.length != 0) {
+            combo.getValue().markDirty(VCombo.ITEMS);
+            combo.items = items.clone();
+            for (String item : combo.items)
+                sendSegments(combo, item);
+        }
+        // Unmarked before, the client holds the old list; the same list again is nothing to send.
+        if (!marked && java.util.Arrays.equals(old, combo.items))
+            dev.equo.swt.FlutterBridge.takeBack(combo, VCombo.ITEMS, queued);
     }
 
     /** Selects a range of an editable combo's text, clamped to it; a read-only combo shows its whole item selected. */
@@ -341,6 +347,14 @@ public class ComboHelper {
     public static void sendSegments(DartCombo combo) {
         if (!combo.isDisposed())
             sendSegments(combo, combo.getText());
+    }
+
+    /** Java's request to open or close the list, which Flutter carries out when the value it is sent changes. */
+    public static void setListVisible(DartCombo combo, boolean visible) {
+        // As SWT does, a combo that is not shown does not open its list.
+        if (combo.listVisible == visible || (visible && !combo.getApi().isVisible())) return;
+        combo.listVisible = visible;
+        combo.getValue().markDirty(VCombo.LIST_VISIBLE);
     }
 
     /** Flutter draws the drop-down list, so only Flutter can say that it opened or closed. */

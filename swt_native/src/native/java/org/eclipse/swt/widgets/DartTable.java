@@ -1678,14 +1678,14 @@ public class DartTable extends DartComposite implements ITable {
     public void setColumnOrder(int[] order) {
         int[] newValue = order;
         checkWidget();
-        if (!java.util.Arrays.equals(getColumnOrder(), newValue)) {
-            getValue().markDirty(VTable.COLUMN_ORDER);
-        }
+        int[] wasColumnOrder = getValue().getColumnOrder();
+        wasColumnOrder = dev.equo.swt.ChangeMarks.copy(wasColumnOrder);
         if (order == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (columnCount == 0) {
             if (order.length != 0)
                 error(SWT.ERROR_INVALID_ARGUMENT);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTable.COLUMN_ORDER, wasColumnOrder, self -> self.getValue().getColumnOrder());
             return;
         }
         if (order.length != columnCount)
@@ -1724,6 +1724,7 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.COLUMN_ORDER, wasColumnOrder, self -> self.getValue().getColumnOrder());
     }
 
     /**
@@ -1747,11 +1748,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderBackground(Color color) {
         checkWidget();
+        Color wasHeaderBackground = getValue().getHeaderBackground();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        if (!java.util.Objects.equals(this._headerBackground, newValue)) {
-            getValue().markDirty(VTable.HEADER_BACKGROUND);
-        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1759,6 +1758,7 @@ public class DartTable extends DartComposite implements ITable {
         this._headerBackground = newValue;
         if (getHeaderVisible()) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.HEADER_BACKGROUND, wasHeaderBackground, self -> self.getValue().getHeaderBackground());
     }
 
     /**
@@ -1782,11 +1782,9 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setHeaderForeground(Color color) {
         checkWidget();
+        Color wasHeaderForeground = getValue().getHeaderForeground();
         color = GraphicsUtils.copyColor(color);
         Color newValue = color;
-        if (!java.util.Objects.equals(this._headerForeground, newValue)) {
-            getValue().markDirty(VTable.HEADER_FOREGROUND);
-        }
         if (color != null) {
             if (color.isDisposed())
                 error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1794,6 +1792,7 @@ public class DartTable extends DartComposite implements ITable {
         this._headerForeground = newValue;
         if (getHeaderVisible()) {
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.HEADER_FOREGROUND, wasHeaderForeground, self -> self.getValue().getHeaderForeground());
     }
 
     /**
@@ -2154,14 +2153,15 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setSortColumn(TableColumn column) {
         checkWidget();
-        if (!java.util.Objects.equals(this.sortColumn, column)) {
-            getValue().markDirty(VTable.SORT_COLUMN);
-        }
+        TableColumn wasSortColumn = getValue().getSortColumn();
         if (column != null && column.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
-        if (column == sortColumn)
+        if (column == sortColumn) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_COLUMN, wasSortColumn, self -> self.getValue().getSortColumn());
             return;
+        }
         setSort(column, sortDirection);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_COLUMN, wasSortColumn, self -> self.getValue().getSortColumn());
     }
 
     /**
@@ -2179,25 +2179,30 @@ public class DartTable extends DartComposite implements ITable {
      */
     public void setSortDirection(int direction) {
         checkWidget();
-        if (this.sortDirection != direction) {
-            getValue().markDirty(VTable.SORT_DIRECTION);
+        int wasSortDirection = getValue().getSortDirection();
+        if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
+            return;
         }
-        if (direction != SWT.UP && direction != SWT.DOWN && direction != SWT.NONE)
+        if (direction == sortDirection) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
             return;
-        if (direction == sortDirection)
-            return;
+        }
         setSort(sortColumn, direction);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
     }
 
     void setSort(TableColumn column, int direction) {
+        int wasSortDirection = dev.equo.swt.ChangeMarks.readInt(this, self -> self.getValue().getSortDirection());
+        TableColumn wasSortColumn = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSortColumn());
         if (column != null) {
         }
         if (sortColumn != null && sortColumn != column) {
         }
         sortDirection = direction;
-        getValue().markDirty(VTable.SORT_DIRECTION);
         sortColumn = column;
-        getValue().markDirty(VTable.SORT_COLUMN);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_COLUMN, wasSortColumn, self -> self.getValue().getSortColumn());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTable.SORT_DIRECTION, wasSortDirection, self -> self.getValue().getSortDirection());
     }
 
     void setTableEmpty() {
@@ -2507,6 +2512,14 @@ public class DartTable extends DartComposite implements ITable {
         return topIndex;
     }
 
+    dev.equo.swt.MarkMemo selectionMark;
+
+    @Override
+    void resized() {
+        super.resized();
+        TableHelper.keepScrollInRows(this);
+    }
+
     int ownerDrawItemHeight;
 
     int wireOwnerDrawItemHeight() {
@@ -2516,9 +2529,6 @@ public class DartTable extends DartComposite implements ITable {
     Runnable ownerDrawRowsLeft;
 
     public void _dirty() {
-        // The list names the editors and is unchanged by their own changes; written again,
-        // it describes them again.
-        dev.equo.swt.Serializer.resend(getValue(), VTable.EDITORS);
         getValue().markDirty(VTable.EDITORS);
     }
 

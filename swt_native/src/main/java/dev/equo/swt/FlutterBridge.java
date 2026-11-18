@@ -58,7 +58,7 @@ public abstract class FlutterBridge {
             return;
         }
         Serializer.SentHashes memo = Serializer.sentHashes(value);
-        if (memo.queued) return;
+        if (memo.queued || memo.letGo) return;
         memo.queued = true;
         dirtyWidgets.add(widget);
         queuedWidgets++;
@@ -85,7 +85,10 @@ public abstract class FlutterBridge {
             lastQueued = null;
         }
         VWidget value = widget.getValue();
-        if (value != null) value.clearDirty();
+        if (value != null) {
+            value.clearDirty();
+            Serializer.sentHashes(value).letGo = true;
+        }
     }
 
     /**
@@ -108,6 +111,50 @@ public abstract class FlutterBridge {
             if (memo != null && memo.queued) return true;
         }
         return dirty.contains(widget);
+    }
+
+    /** Whether {@code widget} is waiting for the next flush, for a caller about to mark it. */
+    public static boolean isQueued(DartWidget widget) {
+        synchronized (dirty) {
+            return isQueued((Object) widget);
+        }
+    }
+
+    /**
+     * Takes back the mark of {@code key} on {@code widget}, whose value came back to what the client
+     * holds before the flush. A widget left with nothing named would be described whole, so it also
+     * leaves the flush, unless it was waiting for it before the mark ({@code queuedAtMark}).
+     */
+    public static void takeBack(DartWidget widget, int key, boolean queuedAtMark) {
+        VWidget value = widget.getValue();
+        synchronized (dirty) {
+            value.changedKeys().remove(key);
+            if (!value.anyDirty() && !queuedAtMark) {
+                unqueue(widget);
+                lastQueued = null;
+            }
+        }
+    }
+
+    /**
+     * Marks {@code key} on {@code widget} for a value that went from {@code was} to {@code now}: the
+     * first change since the flush remembers {@code was} in {@code memo}, and a value that comes back
+     * to it takes the mark back. For a property that a single call moves away and back (a caret
+     * placed, then placed again once the view has scrolled), which a compare inside the call cannot see.
+     * Returns {@code memo}, made on the first change when null, for the widget to keep.
+     */
+    public static MarkMemo markChange(DartWidget widget, int key, Object was, Object now, MarkMemo memo) {
+        if (java.util.Objects.deepEquals(was, now)) return memo;
+        if (memo == null) memo = new MarkMemo();
+        VWidget value = widget.getValue();
+        if (!value.changedKeys().contains(key)) {
+            memo.value = was;
+            memo.queued = isQueued(widget);
+            value.markDirty(key);
+        } else if (java.util.Objects.deepEquals(now, memo.value)) {
+            takeBack(widget, key, memo.queued);
+        }
+        return memo;
     }
 
     /** Whether nothing is queued; the caller holds {@link #dirty}. */

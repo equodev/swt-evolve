@@ -47,6 +47,11 @@ class ToolTipSerializeTest extends SerializeTestBase {
         assertNamesEveryChange(w);
     }
 
+    @Test
+    void should_name_nothing_set_again_ToolTip() {
+        assertSetAgainNamesNothing(style -> new ToolTip(shell(), style), this::setAll, unwritable(), SWT.NONE, SWT.BALLOON, SWT.ICON_ERROR, SWT.ICON_INFORMATION, SWT.ICON_WARNING);
+    }
+
     VToolTip value(ToolTip w) {
         return ((DartToolTip) w.getImpl()).getValue();
     }

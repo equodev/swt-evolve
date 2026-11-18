@@ -342,10 +342,12 @@ public class DartTrayItem extends DartItem implements ITrayItem {
     @Override
     public void setImage(Image image) {
         checkWidget();
+        Image wasImage = getValue().getImage();
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         super.setImage(image);
         updateImage();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTrayItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**

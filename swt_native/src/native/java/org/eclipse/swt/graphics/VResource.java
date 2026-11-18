@@ -155,6 +155,13 @@ public class VResource implements dev.equo.swt.WireObject {
         return false;
     }
 
+    /**
+     * Whether a change of this property is sent only when it encodes differently from the last one sent.
+     */
+    public boolean wireCompared(int key) {
+        return false;
+    }
+
     @Override
     public int wireTypeId() {
         return 85;

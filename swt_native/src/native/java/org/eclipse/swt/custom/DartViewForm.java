@@ -419,22 +419,26 @@ public class DartViewForm extends DartComposite implements IViewForm {
      */
     public void setBorderVisible(boolean show) {
         checkWidget();
-        if (this.showBorder != show) {
-            getValue().markDirty(VViewForm.BORDER_VISIBLE);
-        }
-        if (showBorder == show)
+        boolean wasBorderVisible = getValue().getBorderVisible();
+        if (showBorder == show) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VViewForm.BORDER_VISIBLE, wasBorderVisible, self -> self.getValue().getBorderVisible());
             return;
+        }
         showBorder = show;
         if (showBorder) {
             borderLeft = borderTop = borderRight = borderBottom = 1;
-            if ((getStyle() & SWT.FLAT) == 0)
+            if ((getStyle() & SWT.FLAT) == 0) {
                 highlight = 2;
+                getValue().markDirty(VViewForm.HIGHLIGHT);
+            }
         } else {
             borderBottom = borderTop = borderLeft = borderRight = 0;
             highlight = 0;
+            getValue().markDirty(VViewForm.HIGHLIGHT);
         }
         layout(false);
         redraw();
+        dev.equo.swt.ChangeMarks.ifChanged(this, VViewForm.BORDER_VISIBLE, wasBorderVisible, self -> self.getValue().getBorderVisible());
     }
 
     /**

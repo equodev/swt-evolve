@@ -1175,11 +1175,14 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public void setJavascriptEnabled(boolean enabled) {
         boolean newValue = enabled;
         checkWidget();
-        if (this.javascriptEnabled != newValue) {
-            getValue().markDirty(VBrowser.JAVASCRIPT_ENABLED);
-        }
+        String wasUrl = getValue().getUrl();
+        String wasText = getValue().getText();
+        boolean wasJavascriptEnabled = getValue().getJavascriptEnabled();
         this.javascriptEnabled = newValue;
         webBrowser.jsEnabledOnNextPage = enabled;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.JAVASCRIPT_ENABLED, wasJavascriptEnabled, self -> self.getValue().getJavascriptEnabled());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.TEXT, wasText, self -> self.getValue().getText());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.URL, wasUrl, self -> self.getValue().getUrl());
     }
 
     /**
@@ -1212,11 +1215,13 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public boolean setText(String html) {
         String newValue = html;
         checkWidget();
-        if (!java.util.Objects.equals(this.text, newValue)) {
-            getValue().markDirty(VBrowser.TEXT);
-        }
+        String wasText = getValue().getText();
         this.text = newValue;
-        return setText(html, true);
+        {
+            boolean answerwasText = setText(html, true);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.TEXT, wasText, self -> self.getValue().getText());
+            return answerwasText;
+        }
     }
 
     /**
@@ -1258,13 +1263,15 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public boolean setText(String html, boolean trusted) {
         String newValue = html;
         checkWidget();
-        if (!java.util.Objects.equals(this.text, newValue)) {
-            getValue().markDirty(VBrowser.TEXT);
-        }
+        String wasText = getValue().getText();
         this.text = newValue;
         if (html == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return webBrowser.setText(html, trusted);
+        {
+            boolean answerwasText = webBrowser.setText(html, trusted);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.TEXT, wasText, self -> self.getValue().getText());
+            return answerwasText;
+        }
     }
 
     /**
@@ -1291,11 +1298,13 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public boolean setUrl(String url) {
         String newValue = url;
         checkWidget();
-        if (!java.util.Objects.equals(this.url, newValue)) {
-            getValue().markDirty(VBrowser.URL);
-        }
+        String wasUrl = getValue().getUrl();
         this.url = newValue;
-        return setUrl(url, null, null);
+        {
+            boolean answerwasUrl = setUrl(url, null, null);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.URL, wasUrl, self -> self.getValue().getUrl());
+            return answerwasUrl;
+        }
     }
 
     /**
@@ -1327,13 +1336,15 @@ public class DartBrowser extends DartComposite implements IBrowser {
     public boolean setUrl(String url, String postData, String[] headers) {
         String newValue = url;
         checkWidget();
-        if (!java.util.Objects.equals(this.url, newValue)) {
-            getValue().markDirty(VBrowser.URL);
-        }
+        String wasUrl = getValue().getUrl();
         this.url = newValue;
         if (url == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return webBrowser.setUrl(url, postData, headers);
+        {
+            boolean answerwasUrl = webBrowser.setUrl(url, postData, headers);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VBrowser.URL, wasUrl, self -> self.getValue().getUrl());
+            return answerwasUrl;
+        }
     }
 
     /**

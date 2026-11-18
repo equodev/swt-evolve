@@ -92,11 +92,16 @@ public class TableHelper {
         return Math.min(table.scrollOffset, maxScrollOffset(table, Math.max(1, table.getItemHeight())));
     }
 
-    /** The rows changed: a scroll past where they now end stops at their end. */
+    /**
+     * The rows or the table's height changed: a scroll past where the rows now end stops at their end.
+     * The offset is always kept where it stops, so the row it was at is the top index the client holds.
+     */
     public static void keepScrollInRows(DartTable table) {
         if (table.scrollOffset == 0) return;
+        int topIndex = table.scrollOffset / Math.max(1, table.getItemHeight());
         table.scrollOffset = scrollOffsetY(table);
         followTopIndex(table);
+        if (table.getValue().getTopIndex() != topIndex) table.getValue().markDirty(VTable.TOP_INDEX);
     }
 
     /** The index of the row at the top; 0 for an empty table. */
@@ -149,10 +154,12 @@ public class TableHelper {
     private static void scrollToRow(DartTable table, int row) {
         int itemHeight = Math.max(1, table.getItemHeight());
         int[] band = namesRowsScrolledIn(table) ? shownBand(table) : null;
+        int topIndex = getTopIndex(table);
         table.scrollOffset = Math.min(row * itemHeight, maxScrollOffset(table, itemHeight));
         nameRowsScrolledIn(table, band);
         followTopIndex(table);
-        table.getValue().markDirty(VTable.TOP_INDEX);
+        if (getTopIndex(table) != topIndex)
+            table.getValue().markDirty(VTable.TOP_INDEX);
     }
 
     /** The height the rows scroll in: Flutter's scroll bars float over the rows and take none of it. */
@@ -180,11 +187,7 @@ public class TableHelper {
 
     /** The first {@code count} of {@code indices} become the selection. */
     public static void replaceSelection(DartTable table, int[] indices, int count) {
-        int[] next = Arrays.copyOf(indices, count);
-        if (!Arrays.equals(table.selection, next)) {
-            table.getValue().markDirty(VTable.SELECTION);
-            table.selection = next;
-        }
+        setSelectionIfChanged(table, Arrays.copyOf(indices, count));
     }
 
     /** The rows changed: a selected row that is no longer one is dropped from the selection. */
@@ -199,17 +202,16 @@ public class TableHelper {
             int[] next = new int[kept];
             for (int i = 0, j = 0; i < selection.length; i++)
                 if (selection[i] < rows) next[j++] = selection[i];
-            table.selection = next;
-            table.getValue().markDirty(VTable.SELECTION);
+            setSelectionIfChanged(table, next);
         }
     }
 
     public static void selectAll(DartTable table, int itemCount) {
-        table.selection = new int[itemCount];
+        int[] all = new int[itemCount];
         for (int i = 0; i < itemCount; i++) {
-            table.selection[i] = i;
+            all[i] = i;
         }
-        table.getValue().markDirty(VTable.SELECTION);
+        setSelectionIfChanged(table, all);
     }
 
     /**
@@ -489,17 +491,15 @@ public class TableHelper {
         }
 
         if ((style & SWT.SINGLE) != 0) {
-            table.getValue().markDirty(VTable.SELECTION);
-            table.selection = new int[] { index };
+            setSelectionIfChanged(table, new int[] { index });
         } else {
             int[] currentSelection = table.selection;
             if (ListItemsHelper.contains(currentSelection, index))
                 return;
-            table.getValue().markDirty(VTable.SELECTION);
             int[] newSelection = Arrays.copyOf(currentSelection, currentSelection.length + 1);
             newSelection[currentSelection.length] = index;
             Arrays.sort(newSelection);
-            table.selection = newSelection;
+            setSelectionIfChanged(table, newSelection);
         }
     }
 
@@ -513,12 +513,10 @@ public class TableHelper {
         end = Math.min(end, itemCount - 1);
 
         if ((style & SWT.SINGLE) != 0) {
-            table.getValue().markDirty(VTable.SELECTION);
-            table.selection = new int[] { start };
+            setSelectionIfChanged(table, new int[] { start });
         } else {
             int[] range = IntStream.rangeClosed(start, end).toArray();
-            table.getValue().markDirty(VTable.SELECTION);
-            table.selection = sortedUnion(table.selection, range);
+            setSelectionIfChanged(table, sortedUnion(table.selection, range));
         }
     }
 
@@ -548,10 +546,7 @@ public class TableHelper {
                 finalSelection = sortedUnion(table.selection, validIndices);
             }
 
-            if (!Arrays.equals(table.selection, finalSelection)) {
-                table.getValue().markDirty(VTable.SELECTION);
-            }
-            table.selection = finalSelection;
+            setSelectionIfChanged(table, finalSelection);
         }
     }
 
@@ -621,8 +616,7 @@ public class TableHelper {
         int[] kept = Arrays.stream(selection).filter(index -> index < itemCount).toArray();
         if (kept.length == selection.length)
             return;
-        table.getValue().markDirty(VTable.SELECTION);
-        table.selection = kept;
+        setSelectionIfChanged(table, kept);
     }
 
     public static void fixSelectionRange(DartTable table, int start, int end) {
@@ -634,10 +628,15 @@ public class TableHelper {
         return IntStream.concat(Arrays.stream(selected), Arrays.stream(added)).sorted().distinct().toArray();
     }
 
+    /**
+     * The one place the selection changes. A selection marked from clean remembers the value the
+     * client holds, and one that comes back to it before the flush takes its mark back: a
+     * setSelection that deselects all and then selects again sends nothing when it ends where it began.
+     */
     private static void setSelectionIfChanged(DartTable table, int[] selection) {
         if (Arrays.equals(selection, table.selection))
             return;
-        table.getValue().markDirty(VTable.SELECTION);
+        table.selectionMark = dev.equo.swt.FlutterBridge.markChange(table, VTable.SELECTION, table.selection, selection, table.selectionMark);
         table.selection = selection;
     }
 
@@ -1062,7 +1061,6 @@ public class TableHelper {
 
     public static boolean setImage(DartTableItem item, int index, Image image, boolean initializeFromPrimaryImage, boolean[] drawTextOut) {
         item.getValue().markDirty(VTableItem.IMAGES);
-        item.getValue().markDirty(VTableItem.IMAGE);
         item.checkWidget();
         if (image != null && image.isDisposed()) {
             item.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -1074,6 +1072,8 @@ public class TableHelper {
                 return false;
             oldImage = item.image;
             item.image = dartImage;
+            if (!java.util.Objects.equals(oldImage, dartImage))
+                item.getValue().markDirty(VTableItem.IMAGE);
         }
         int count = Math.max(1, item.parent.getColumnCount());
         if (index < 0 || index > count - 1)

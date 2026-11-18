@@ -26,7 +26,7 @@ class LinkSerializeTest extends SerializeTestBase {
                .containsEntry("swt", "Link")
                .containsEntry("text", w.getText())
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("linkForeground").equalsTo(w.getLinkForeground(), orAbsentIfNull));
@@ -54,6 +54,11 @@ class LinkSerializeTest extends SerializeTestBase {
     void should_name_every_change_Link() {
         Link w = new Link(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Link() {
+        assertSetAgainNamesNothing(style -> new Link(shell(), style), this::setAll, unwritable("hasOwnBackground", "the client never reads it off a Link", "inheritsBackground", "the client never reads it off a Link"), SWT.NONE, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VLink value(Link w) {

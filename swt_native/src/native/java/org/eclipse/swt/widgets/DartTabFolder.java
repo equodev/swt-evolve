@@ -517,9 +517,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     public void setSelection(TabItem[] items) {
         TabItem[] newValue = items;
         checkWidget();
-        if (!java.util.Arrays.equals(this.selection, newValue)) {
-            getValue().markDirty(VTabFolder.SELECTION);
-        }
+        TabItem[] wasSelection = getValue().getSelection();
+        wasSelection = dev.equo.swt.ChangeMarks.copy(wasSelection);
         if (items == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         if (items.length == 0) {
@@ -531,6 +530,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                     setSelection(index, false, false);
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     /**
@@ -555,12 +555,17 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
     }
 
     void setSelection(int index, boolean notify, boolean force) {
-        getValue().markDirty(VTabFolder.SELECTION);
-        if (!(0 <= index && index < itemCount))
+        TabItem[] wasSelection = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getSelection());
+        wasSelection = dev.equo.swt.ChangeMarks.copy(wasSelection);
+        if (!(0 <= index && index < itemCount)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         int currentIndex = getSelectionIndex();
-        if (!force && currentIndex == index)
+        if (!force && currentIndex == index) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
             return;
+        }
         if (currentIndex != -1) {
             TabItem item = items[currentIndex];
             if (item != null) {
@@ -596,6 +601,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                 }
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VTabFolder.SELECTION, wasSelection, self -> self.getValue().getSelection());
     }
 
     @Override

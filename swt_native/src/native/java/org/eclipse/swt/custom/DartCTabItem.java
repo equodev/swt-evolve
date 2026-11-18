@@ -374,6 +374,9 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setControl(Control control) {
         checkWidget();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
         if (!java.util.Objects.equals(this.control, control)) {
             getValue().markDirty(VCTabItem.CONTROL);
         }
@@ -405,6 +408,9 @@ public class DartCTabItem extends DartItem implements ICTabItem {
                 }
             }
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
     }
 
     /**
@@ -453,19 +459,30 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setFont(Font font) {
         checkWidget();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
         font = GraphicsUtils.copyFont(font);
-        if (!java.util.Objects.equals(this.font, font)) {
-            getValue().markDirty(VCTabItem.FONT);
-        }
         if (font != null && font.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (font == null && this.font == null)
+        if (font == null && this.font == null) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
             return;
-        if (font != null && font.equals(this.font))
+        }
+        if (font != null && font.equals(this.font)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
             return;
+        }
         this.font = font;
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT | DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
     }
 
     /**
@@ -486,18 +503,25 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setForeground(Color color) {
         checkWidget();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Font wasFont = getValue().getFont();
+        Color wasForeground = getValue().getForeground();
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.foreground, color)) {
-            getValue().markDirty(VCTabItem.FOREGROUND);
-        }
         if (color != null) {
             if (color.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (color == foreground)
+        if (color == foreground) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
             return;
+        }
         foreground = color;
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
     }
 
     /**
@@ -518,33 +542,58 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setSelectionForeground(Color color) {
         checkWidget();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
         color = GraphicsUtils.copyColor(color);
-        if (!java.util.Objects.equals(this.selectionForeground, color)) {
-            getValue().markDirty(VCTabItem.SELECTION_FOREGROUND);
-        }
         if (color != null) {
             if (color.isDisposed())
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        if (color == selectionForeground)
+        if (color == selectionForeground) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
             return;
+        }
         selectionForeground = color;
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     @Override
     public void setImage(Image image) {
         checkWidget();
+        Image wasImage = getValue().getImage();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
         if (image != null && image.isDisposed()) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
         Image oldImage = getImage();
-        if (image == null && oldImage == null)
+        if (image == null && oldImage == null) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
-        if (image != null && image.equals(oldImage))
+        }
+        if (image != null && image.equals(oldImage)) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.IMAGE, wasImage, self -> self.getValue().getImage());
             return;
+        }
         super.setImage(image);
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT | DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.IMAGE, wasImage, self -> self.getValue().getImage());
     }
 
     /**
@@ -563,13 +612,23 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setShowClose(boolean close) {
         checkWidget();
-        if (this.showClose != close) {
-            getValue().markDirty(VCTabItem.SHOW_CLOSE);
-        }
-        if (showClose == close)
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
+        boolean wasShowClose = getValue().getShowClose();
+        if (showClose == close) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SHOW_CLOSE, wasShowClose, self -> self.getValue().getShowClose());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
             return;
+        }
         showClose = close;
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SHOW_CLOSE, wasShowClose, self -> self.getValue().getShowClose());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
     }
 
     /**
@@ -591,13 +650,23 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setShowDirty(boolean dirty) {
         checkWidget();
-        if (this.showDirty != dirty) {
-            getValue().markDirty(VCTabItem.SHOW_DIRTY);
-        }
-        if (showDirty == dirty)
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
+        boolean wasShowDirty = getValue().getShowDirty();
+        if (showDirty == dirty) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SHOW_DIRTY, wasShowDirty, self -> self.getValue().getShowDirty());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
             return;
+        }
         showDirty = dirty;
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SHOW_DIRTY, wasShowDirty, self -> self.getValue().getShowDirty());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
     }
 
     /**
@@ -614,14 +683,27 @@ public class DartCTabItem extends DartItem implements ICTabItem {
     @Override
     public void setText(String string) {
         checkWidget();
+        String wasText = getValue().getText();
+        Color wasSelectionForeground = getValue().getSelectionForeground();
+        Color wasForeground = getValue().getForeground();
+        Font wasFont = getValue().getFont();
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        if (string.equals(getText()))
+        if (string.equals(getText())) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+            dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.TEXT, wasText, self -> self.getValue().getText());
             return;
+        }
         super.setText(string);
         shortenedText = null;
         shortenedTextWidth = 0;
         ((DartCTabFolder) parent.getImpl()).updateFolder(DartCTabFolder.UPDATE_TAB_HEIGHT | DartCTabFolder.REDRAW_TABS);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FONT, wasFont, self -> self.getValue().getFont());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.SELECTION_FOREGROUND, wasSelectionForeground, self -> self.getValue().getSelectionForeground());
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.TEXT, wasText, self -> self.getValue().getText());
     }
 
     /**
@@ -646,10 +728,9 @@ public class DartCTabItem extends DartItem implements ICTabItem {
      */
     public void setToolTipText(String string) {
         checkWidget();
-        if (!java.util.Objects.equals(this.toolTipText, string)) {
-            getValue().markDirty(VCTabItem.TOOL_TIP_TEXT);
-        }
+        String wasToolTipText = getValue().getToolTipText();
         toolTipText = string;
+        dev.equo.swt.ChangeMarks.ifChanged(this, VCTabItem.TOOL_TIP_TEXT, wasToolTipText, self -> self.getValue().getToolTipText());
     }
 
     public CTabFolder _parent() {

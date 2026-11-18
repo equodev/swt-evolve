@@ -25,7 +25,7 @@ class SliderSerializeTest extends SerializeTestBase {
         assertJ.containsEntry("id", w.hashCode())
                .containsEntry("swt", "Slider")
                .containsEntry("enabled", w.getEnabled())
-               .containsEntry("toolTipText", w.getToolTipText())
+               .containsEntry("toolTipText", value(w).getToolTipText())
                .containsEntry("visible", w.getVisible())
                .containsEntry("style", w.getStyle());
         assertJ.satisfies(node("increment").equalsTo(w.getIncrement(), orAbsentIf0));
@@ -57,6 +57,11 @@ class SliderSerializeTest extends SerializeTestBase {
     void should_name_every_change_Slider() {
         Slider w = new Slider(shell(), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_Slider() {
+        assertSetAgainNamesNothing(style -> new Slider(shell(), style), this::setAll, unwritable("tabStop", "the client never reads it off a Slider", "font", "the client never reads it off a Slider", "hasOwnBackground", "the client never reads it off a Slider", "inheritsBackground", "the client never reads it off a Slider"), SWT.NONE, SWT.HORIZONTAL, SWT.VERTICAL, SWT.BORDER, SWT.LEFT_TO_RIGHT, SWT.RIGHT_TO_LEFT, SWT.FLIP_TEXT_DIRECTION);
     }
 
     VSlider value(Slider w) {

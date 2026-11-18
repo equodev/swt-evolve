@@ -337,16 +337,19 @@ public class DartSashForm extends DartComposite implements ISashForm {
     @Override
     public void setOrientation(int orientation) {
         checkWidget();
+        int wasStyle = getValue().getStyle();
         if (orientation == SWT.RIGHT_TO_LEFT || orientation == SWT.LEFT_TO_RIGHT) {
             super.setOrientation(orientation);
+            dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
         }
-        if (getOrientation() == orientation)
+        if (getOrientation() == orientation) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
             return;
+        }
         if (orientation != SWT.HORIZONTAL && orientation != SWT.VERTICAL) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
-        getValue().markDirty(VWidget.STYLE);
         sashStyle &= ~(SWT.HORIZONTAL | SWT.VERTICAL);
         sashStyle |= orientation == SWT.VERTICAL ? SWT.HORIZONTAL : SWT.VERTICAL;
         for (int i = 0; i < sashes.length; i++) {
@@ -354,24 +357,29 @@ public class DartSashForm extends DartComposite implements ISashForm {
             sashes[i] = createSash();
         }
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VWidget.STYLE, wasStyle, self -> self.getValue().getStyle());
     }
 
     @Override
     public void setBackground(Color color) {
+        Color wasBackground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getBackground());
         super.setBackground(color);
         background = color;
         for (Sash sash : sashes) {
             sash.setBackground(background);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.BACKGROUND, wasBackground, self -> self.getValue().getBackground());
     }
 
     @Override
     public void setForeground(Color color) {
+        Color wasForeground = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getForeground());
         super.setForeground(color);
         foreground = color;
         for (Sash sash : sashes) {
             sash.setForeground(foreground);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.FOREGROUND, wasForeground, self -> self.getValue().getForeground());
     }
 
     /**
@@ -411,9 +419,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
      */
     public void setMaximizedControl(Control control) {
         checkWidget();
-        if (!java.util.Objects.equals(this.maxControl, control)) {
-            getValue().markDirty(VSashForm.MAXIMIZED_CONTROL);
-        }
+        Control wasMaximizedControl = getValue().getMaximizedControl();
         if (control == null) {
             if (maxControl != null) {
                 this.maxControl = null;
@@ -422,6 +428,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
                     sashe.setVisible(true);
                 }
             }
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.MAXIMIZED_CONTROL, wasMaximizedControl, self -> self.getValue().getMaximizedControl());
             return;
         }
         for (Sash sash : sashes) {
@@ -429,6 +436,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
         }
         maxControl = control;
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.MAXIMIZED_CONTROL, wasMaximizedControl, self -> self.getValue().getMaximizedControl());
     }
 
     /**
@@ -446,21 +454,24 @@ public class DartSashForm extends DartComposite implements ISashForm {
      */
     public void setSashWidth(int width) {
         checkWidget();
-        if (this.getApi().SASH_WIDTH != width) {
-            getValue().markDirty(VSashForm.SASH_WIDTH);
-        }
-        if (getApi().SASH_WIDTH == width)
+        int wasSashWidth = getValue().getSashWidth();
+        if (getApi().SASH_WIDTH == width) {
+            dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.SASH_WIDTH, wasSashWidth, self -> self.getValue().getSashWidth());
             return;
+        }
         getApi().SASH_WIDTH = width;
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.SASH_WIDTH, wasSashWidth, self -> self.getValue().getSashWidth());
     }
 
     @Override
     public void setToolTipText(String string) {
+        String wasToolTipText = dev.equo.swt.ChangeMarks.read(this, self -> self.getValue().getToolTipText());
         super.setToolTipText(string);
         for (Sash sash : sashes) {
             sash.setToolTipText(string);
         }
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.TOOL_TIP_TEXT, wasToolTipText, self -> self.getValue().getToolTipText());
     }
 
     /**
@@ -479,9 +490,10 @@ public class DartSashForm extends DartComposite implements ISashForm {
      * </ul>
      */
     public void setWeights(int... weights) {
-        getValue().markDirty(VSashForm.WEIGHTS);
         int[] newValue = weights;
         checkWidget();
+        int[] wasWeights = getValue().getWeights();
+        wasWeights = dev.equo.swt.ChangeMarks.copy(wasWeights);
         Control[] cArray = getControls(false);
         if (weights == null || weights.length != cArray.length) {
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
@@ -506,6 +518,7 @@ public class DartSashForm extends DartComposite implements ISashForm {
         }
         this.weights = newValue;
         layout(false);
+        dev.equo.swt.ChangeMarks.ifChanged(this, VSashForm.WEIGHTS, wasWeights, self -> self.getValue().getWeights());
     }
 
     int[] weights = new int[0];

@@ -36,7 +36,7 @@ class MenuItemSerializeTest extends SerializeTestBase {
     @Test
     void should_write_every_property_MenuItem() throws Exception {
         assertWritesEveryProperty(style -> {
-            MenuItem w = new MenuItem(menu(), style);
+            MenuItem w = new MenuItem(new Menu(shell(), SWT.DROP_DOWN), style);
             setAll(w);
             fillUnsettable(w);
             return w;
@@ -45,8 +45,13 @@ class MenuItemSerializeTest extends SerializeTestBase {
 
     @Test
     void should_name_every_change_MenuItem() {
-        MenuItem w = new MenuItem(menu(), SWT.NONE);
+        MenuItem w = new MenuItem(new Menu(shell(), SWT.DROP_DOWN), SWT.NONE);
         assertNamesEveryChange(w);
+    }
+
+    @Test
+    void should_name_nothing_set_again_MenuItem() {
+        assertSetAgainNamesNothing(style -> new MenuItem(new Menu(shell(), SWT.DROP_DOWN), style), this::setAll, unwritable(), SWT.NONE, SWT.CHECK, SWT.CASCADE, SWT.PUSH, SWT.RADIO, SWT.SEPARATOR);
     }
 
     VMenuItem value(MenuItem w) {
