@@ -46,23 +46,24 @@ import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.dnd.TransferHelper;
 import org.eclipse.swt.dnd.URLTransfer;
-import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Scrollable;
 
 import sun.awt.AWTAccessor;
 
 /**
- * Delivers an SWT drag over an embedding's canvas to the Swing {@link java.awt.dnd.DropTarget}s
- * inside it.
+ * Delivers an SWT drag over an embedding's control (the blit canvas or a Swing island) to the Swing
+ * {@link java.awt.dnd.DropTarget}s inside it.
  *
  * <p>Natively the embedded frame is a real window and the OS delivers a drag from any toolkit to
- * the AWT drop targets registered on it. Here the frame is off-screen, so the canvas carries an SWT
- * {@link DropTarget} while the frame has any AWT drop target, and replays each SWT drag event as
+ * the AWT drop targets registered on it. Here the frame is off-screen, so the control carries an
+ * SWT {@link DropTarget} while the frame has any AWT drop target, and replays each SWT drag event as
  * the AWT event the native peer would have dispatched: to the deepest component under the pointer
  * that has a drop target, with enter/exit as that component changes.
  *
  * <p>The drag offers the SWT transfers of the {@link DragSource} it started from, read when the drag
- * reaches the canvas, since a source may set them in its own {@code DragStart} listener. Each is
+ * reaches the control, since a source may set them in its own {@code DragStart} listener. Each is
  * mapped to the AWT flavors the native clipboard formats map to; an application-defined transfer
  * reaches AWT through the flavors {@link SystemFlavorMap} associates with its type name, looked up
  * on every query as the native peer does, so a target that registers that mapping during the drag
@@ -75,6 +76,8 @@ final class AwtDropBridge {
     private static final int SWT_OPERATIONS = DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK;
 
     private static final String DRAG_STATE_KEY = AwtDropBridge.class.getName() + ".dragState";
+
+    private static final String NATIVE_SURFACE_STAND_IN = "dev.equo.swing.toolkit.NativeSurfaceHost$Placeholder";
 
     /** One per {@link Display}: the drag in progress, every bridge, and the ones that can take it. */
     private static final class DragState {
@@ -104,7 +107,7 @@ final class AwtDropBridge {
         }
     }
 
-    private final Canvas canvas;
+    private final Control control;
     private final Display display;
     private final DragState drag;
     private final Set<java.awt.dnd.DropTarget> registered = ConcurrentHashMap.newKeySet();
@@ -112,9 +115,9 @@ final class AwtDropBridge {
     private volatile Container root;
     private DropTarget swtTarget;
 
-    AwtDropBridge(Canvas canvas) {
-        this.canvas = canvas;
-        this.display = canvas.getDisplay();
+    AwtDropBridge(Control control) {
+        this.control = control;
+        this.display = control.getDisplay();
         this.drag = dragState(display);
         drag.all.add(this);
     }
@@ -165,15 +168,15 @@ final class AwtDropBridge {
     }
 
     /**
-     * Gives the canvas an SWT drop target while the frame holds any AWT one. The frame only reports
-     * those of lightweight components; a heavyweight one (an OpenGL canvas) registers with its own
+     * Gives the control an SWT drop target while the frame holds any AWT one. The frame only
+     * reports those of lightweight components; a heavyweight one (an OpenGL canvas) registers with its own
      * peer, so the tree is searched for it too, when a drag starts.
      */
     private void sync() {
-        if (canvas.isDisposed()) return;
+        if (control.isDisposed()) return;
         boolean wanted = !registered.isEmpty() || hasDropTarget(root);
         if (wanted && swtTarget == null) {
-            swtTarget = new DropTarget(canvas, SWT_OPERATIONS);
+            swtTarget = new DropTarget(control, SWT_OPERATIONS);
             swtTarget.addDropListener(new Listener());
             drag.active.add(this);
             offerDragTransfers();
@@ -226,7 +229,7 @@ final class AwtDropBridge {
                 e.detail = DND.DROP_NONE;
                 return;
             }
-            Point p = toFrame(e.x, e.y);
+            Point p = toFrame(frame, e.x, e.y);
             Transferable data = new SwtTransferable(offered, transferFor(offered, e.currentDataType), e.data);
             int action = awtAction(() -> session.drop(frame, p, userAction(), sourceActions(), data));
             e.detail = toSwt(action);
@@ -246,7 +249,7 @@ final class AwtDropBridge {
         }
         TransferData type = negotiatedType(offered);
         if (type != null) e.currentDataType = type;
-        Point p = toFrame(e.x, e.y);
+        Point p = toFrame(frame, e.x, e.y);
         Transferable transferable = new SwtTransferable(offered, null, null);
         int action = awtAction(() -> session.motion(frame, p, userAction(), sourceActions(), transferable, operationChanged));
         e.detail = toSwt(action);
@@ -269,10 +272,19 @@ final class AwtDropBridge {
         return types.length > 0 ? types[0] : null;
     }
 
-    /** Drop events carry display coordinates; the frame sits exactly over the canvas. */
-    private Point toFrame(int x, int y) {
-        org.eclipse.swt.graphics.Point local = canvas.toControl(x, y);
-        return new Point(local.x, local.y);
+    /**
+     * Drop events carry display coordinates. The frame sits exactly over the control, but a Swing
+     * island's client sizes it in its own units, which differ from the control's on a scaled display.
+     */
+    private Point toFrame(Container frame, int x, int y) {
+        org.eclipse.swt.graphics.Point local = control.toControl(x, y);
+        org.eclipse.swt.graphics.Rectangle area = control instanceof Scrollable
+                ? ((Scrollable) control).getClientArea() : control.getBounds();
+        return new Point(scale(local.x, area.width, frame.getWidth()), scale(local.y, area.height, frame.getHeight()));
+    }
+
+    private static int scale(int value, int from, int to) {
+        return from > 0 && to > 0 ? (int) Math.round(value * (double) to / from) : value;
     }
 
     private static Transfer transferFor(Transfer[] offered, TransferData type) {
@@ -496,6 +508,7 @@ final class AwtDropBridge {
     static boolean hasDropTarget(Component c) {
         if (c == null) return false;
         if (c.getDropTarget() != null) return true;
+        if (hasDropTarget(standsInFor(c))) return true;
         if (c instanceof Container) {
             for (Component child : ((Container) c).getComponents()) {
                 if (hasDropTarget(child)) return true;
@@ -504,25 +517,42 @@ final class AwtDropBridge {
         return false;
     }
 
-    /** Finds the deepest visible component at {@code (x, y)} of {@code c} that has a drop target. */
-    static Component dropTargetAt(Component c, int x, int y) {
+    /**
+     * Finds the deepest visible component at {@code (x, y)} of {@code c} that has a drop target, and
+     * sets {@code local} to that point in the component's own coordinates.
+     */
+    static Component dropTargetAt(Component c, int x, int y, Point local) {
         if (!c.isVisible() || !c.contains(x, y)) return null;
+        Component moved = standsInFor(c);
+        if (moved != null) {
+            // The stand-in has the moved component's extent, so the point is the same in both.
+            Component hit = dropTargetAt(moved, x, y, local);
+            if (hit != null) return hit;
+        }
         if (c instanceof Container) {
             for (Component child : ((Container) c).getComponents()) {
-                Component hit = dropTargetAt(child, x - child.getX(), y - child.getY());
+                Component hit = dropTargetAt(child, x - child.getX(), y - child.getY(), local);
                 if (hit != null) return hit;
             }
         }
-        return c.getDropTarget() != null ? c : null;
+        if (c.getDropTarget() == null) return null;
+        local.setLocation(x, y);
+        return c;
     }
 
-    static Point toComponent(Container root, Component c, Point p) {
-        int x = p.x, y = p.y;
-        for (Component at = c; at != null && at != root; at = at.getParent()) {
-            x -= at.getX();
-            y -= at.getY();
+    /**
+     * The component swing-evolve's engine moved out of the layout into a window of its own to draw
+     * it on a native surface (an OpenGL canvas), when {@code c} is the stand-in it left in its place;
+     * null otherwise. Known by name: swt_native compiles against nothing of the engine.
+     */
+    static Component standsInFor(Component c) {
+        if (c == null || !NATIVE_SURFACE_STAND_IN.equals(c.getClass().getName())) return null;
+        try {
+            Object moved = c.getClass().getMethod("moved").invoke(c);
+            return moved instanceof Component ? (Component) moved : null;
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return null;
         }
-        return new Point(x, y);
     }
 
     /**
@@ -556,7 +586,8 @@ final class AwtDropBridge {
         }
 
         int motion(Container root, Point p, int userAction, int sourceActions, Transferable t, boolean operationChanged) {
-            Component target = dropTargetAt(root, p.x, p.y);
+            Point local = new Point();
+            Component target = dropTargetAt(root, p.x, p.y, local);
             if (target != current) {
                 exit();
                 if (target == null) return DnDConstants.ACTION_NONE;
@@ -564,8 +595,7 @@ final class AwtDropBridge {
                 begin(target, userAction, sourceActions, t);
                 dragRejected = false;
                 try {
-                    currentDT.dragEnter(
-                            new DropTargetDragEvent(currentDTC, toComponent(root, target, p), currentDA, currentSA));
+                    currentDT.dragEnter(new DropTargetDragEvent(currentDTC, local, currentDA, currentSA));
                 } catch (Exception e) {
                     e.printStackTrace();
                     currentDA = DnDConstants.ACTION_NONE;
@@ -578,7 +608,7 @@ final class AwtDropBridge {
             transferable = t;
             currentA = currentDT.getDefaultActions();
             try {
-                DropTargetDragEvent event = new DropTargetDragEvent(currentDTC, toComponent(root, target, p), currentDA, currentSA);
+                DropTargetDragEvent event = new DropTargetDragEvent(currentDTC, local, currentDA, currentSA);
                 if (operationChanged) currentDT.dropActionChanged(event);
                 else currentDT.dragOver(event);
                 if (dragRejected) currentDA = DnDConstants.ACTION_NONE;
@@ -590,7 +620,8 @@ final class AwtDropBridge {
         }
 
         int drop(Container root, Point p, int userAction, int sourceActions, Transferable t) {
-            Component target = dropTargetAt(root, p.x, p.y);
+            Point local = new Point();
+            Component target = dropTargetAt(root, p.x, p.y, local);
             if (target != current) exit();
             if (target == null || !target.getDropTarget().isActive()) {
                 exit();
@@ -607,7 +638,7 @@ final class AwtDropBridge {
             dropComplete = false;
             dropSucceeded = false;
             try {
-                currentDT.drop(new DropTargetDropEvent(currentDTC, toComponent(root, target, p), currentDA, currentSA, false));
+                currentDT.drop(new DropTargetDropEvent(currentDTC, local, currentDA, currentSA, false));
             } catch (Exception e) {
                 e.printStackTrace();
             }

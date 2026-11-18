@@ -31,6 +31,7 @@ import '../gen/composite.dart';
 import '../impl/composite_evolve.dart';
 import '../impl/focus_requests.dart';
 import '../impl/key_forwarding.dart';
+import '../impl/utils/dnd_utils.dart';
 
 /// The AWT window an island mirrors, as Java described it.
 @immutable
@@ -79,13 +80,20 @@ class SwingIslandSwt extends CompositeSwt<VComposite> {
 }
 
 class SwingIslandImpl extends CompositeImpl<SwingIslandSwt, VComposite> {
+  /// Java gives the island an SWT DropTarget while its frame has AWT ones, and replays the drag to
+  /// them. The negotiator stays in place while there is none, so the drop target attaching to a live
+  /// island does not build the region again and disconnect its mirror.
   @override
-  Widget buildComposite() => ClipRect(
-    child: SwingIslandRegion(
-      key: ValueKey('swing-island-${state.id}'),
-      id: state.id,
-      channel: '${state.swt}/${state.id}',
-      send: (event) => widget.sendEvent(state, event, null),
+  Widget buildComposite() => wrapDropTarget<DndDragPayload>(
+    state: state,
+    onDrop: (_, __, ___, position) => sendControlDrop(position),
+    child: ClipRect(
+      child: SwingIslandRegion(
+        key: ValueKey('swing-island-${state.id}'),
+        id: state.id,
+        channel: '${state.swt}/${state.id}',
+        send: (event) => widget.sendEvent(state, event, null),
+      ),
     ),
   );
 }

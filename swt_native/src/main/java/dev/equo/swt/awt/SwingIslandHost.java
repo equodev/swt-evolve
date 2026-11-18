@@ -143,6 +143,8 @@ public final class SwingIslandHost {
         frame.setUndecorated(true);
         EvolveSwingHost.sizeFrame(frame, child.getClientArea());
         frame.setVisible(true);
+        AwtDropBridge drops = new AwtDropBridge(child);
+        drops.bind(frame);
 
         CommService comm = FlutterBridge.commFor(child.getImpl());
         int[] window = describe(frame, comm);
@@ -154,6 +156,7 @@ public final class SwingIslandHost {
         // Off AWT's dispatch thread, Window.dispose waits for that thread, and a host that suspends
         // AWT dispatch while the workbench closes never answers: the frame goes when AWT runs again.
         child.addListener(SWT.Dispose, e -> {
+            drops.dispose();
             dropFromAwtShutdown(frame);
             if (EventQueue.isDispatchThread()) frame.dispose();
             else EventQueue.invokeLater(frame::dispose);
