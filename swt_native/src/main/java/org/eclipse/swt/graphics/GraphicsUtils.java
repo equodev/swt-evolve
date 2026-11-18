@@ -479,8 +479,67 @@ public class GraphicsUtils {
                     if (url != null) {
                         return getFilename(url.getPath());
                     }
+                    // A composite/decoration descriptor (e.g. a navigator folder JFace draws as base
+                    // icon + overlays via DecorationOverlayIcon) does not adapt to a URL; recover the
+                    // base resource's name so it still matches the icon pack. Gated behind
+                    // gc_icons_replacement: naming a decorated image lets the pack replace it and drop
+                    // the overlay (error/VCS badges), so it stays off unless the product opts into the
+                    // same aggressive icon replacement the owner-draw path already needs.
+                    if (!holdsUrl && value != null && isImageDescriptor(value.getClass())
+                            && Config.getConfigFlags().gc_icons_replacement) {
+                        String base = compositeBaseName(value);
+                        if (base != null) {
+                            return base;
+                        }
+                    }
                 } catch (RuntimeException | IllegalAccessException e) {
                     // A field we may not read names nothing.
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The base resource name of a composite image descriptor (e.g. {@code DecorationOverlayIcon}),
+     * recovered from the base it holds — an {@code Image} that already knows its own name, or a nested
+     * {@code ImageDescriptor} that adapts to a URL. Decoration can nest (a navigator item is decorated
+     * more than once), so the base chain is walked recursively; bounded and cycle-guarded, since these
+     * graphs hold back-references. The overlay is dropped, which is the intended look here.
+     * <p>
+     * It commits to the FIRST field that holds an {@code Image} or {@code ImageDescriptor} — the base —
+     * and returns whatever that yields, even nothing, rather than falling through to a sibling field.
+     * A composite keeps its base there ({@code DecorationOverlayIcon.referenceImageOrDescriptor}) and
+     * its overlays elsewhere (an array, skipped), so this never hands back an overlay's name when the
+     * base has none of its own.
+     */
+    private static String compositeBaseName(Object descriptor) {
+        return compositeBaseName(descriptor, 0,
+                java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>()));
+    }
+
+    private static String compositeBaseName(Object descriptor, int depth, java.util.Set<Object> seen) {
+        if (descriptor == null || depth > 8 || !seen.add(descriptor)) {
+            return null;
+        }
+        for (Class<?> c = descriptor.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                    continue;
+                }
+                Object value;
+                try {
+                    f.setAccessible(true);
+                    value = f.get(descriptor);
+                } catch (RuntimeException | IllegalAccessException e) {
+                    continue;
+                }
+                if (value instanceof Image) {
+                    return ((Image) value).getImpl()._filename();
+                }
+                if (value != null && isImageDescriptor(value.getClass())) {
+                    java.net.URL url = descriptorUrl(value);
+                    return url != null ? getFilename(url.getPath()) : compositeBaseName(value, depth + 1, seen);
                 }
             }
         }

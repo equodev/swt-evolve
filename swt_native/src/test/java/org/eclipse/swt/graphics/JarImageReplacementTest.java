@@ -4,6 +4,7 @@ import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
+import org.eclipse.jface.resource.CompositeImageDescriptor;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.DartMocks;
@@ -136,5 +137,58 @@ class JarImageReplacementTest {
         ImageData data = shown.getImageData();
         RGB rgb = data.palette.getRGB(data.getPixel(0, 0));
         assertThat(rgb.red).isEqualTo(rgb.green).isEqualTo(rgb.blue);
+    }
+
+    /**
+     * A navigator item is drawn as a nested composite image descriptor (a decoration wrapping another
+     * decoration wrapping the base icon). This stub stands in for JFace's {@code DecorationOverlayIcon}
+     * with only the stable {@link CompositeImageDescriptor} contract, so the test compiles against every
+     * SWT/JFace version in the matrix (older builds lack the descriptor-base constructor).
+     */
+    private static final class NestedDecoration extends CompositeImageDescriptor {
+        private final Object base; // an Image, or a nested ImageDescriptor
+
+        NestedDecoration(Object base) {
+            this.base = base;
+        }
+
+        @Override
+        protected Point getSize() {
+            return new Point(1, 1);
+        }
+
+        @Override
+        protected void drawCompositeImage(int width, int height) {
+            // No overlay to draw; the base name is what matters here.
+        }
+    }
+
+    // A provider that holds a two-level composite over a named base image — the shape JFace hands a
+    // decorated navigator icon to the backend. Tests getFilename directly, so it does not depend on how
+    // a given SWT/JFace version builds the image from the descriptor.
+    private ImageDataProvider nestedCompositeProvider() throws Exception {
+        Path base = tmp.resolve("blank_folder.png");
+        Files.write(base, PNG_1x1);
+        Image baseImage = new Image(display, base.toString()); // DartImage names itself "blank_folder"
+        ImageDescriptor nested = new NestedDecoration(new NestedDecoration(baseImage));
+        // The provider only has to carry the descriptor: getFilename reads it by reflection and never
+        // renders it, so the body returns nothing and avoids getImageData, whose signature differs
+        // across the SWT/JFace version matrix.
+        return zoom -> nested != null ? null : null;
+    }
+
+    @Test
+    void getFilenameRecoversANestedCompositesBaseNameWhenGcReplacementIsOn() throws Exception {
+        Config.getConfigFlags().gc_icons_replacement = true;
+
+        // The composite does not adapt to a URL; the name is recovered from the base at the bottom.
+        assertThat(GraphicsUtils.getFilename(nestedCompositeProvider())).isEqualTo("blank_folder");
+    }
+
+    @Test
+    void getFilenameIgnoresACompositeWhenGcReplacementIsOff() throws Exception {
+        // gc_icons_replacement defaults to false: a decorated image stays unnamed and keeps its pixels
+        // (overlay included) rather than collapsing to the base pack icon.
+        assertThat(GraphicsUtils.getFilename(nestedCompositeProvider())).isNull();
     }
 }
