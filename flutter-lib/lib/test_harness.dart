@@ -23,6 +23,7 @@ import 'src/impl/utils/deferred_fonts.dart';
 import 'src/gen/widget.dart';
 import 'src/testing/boot_trace.dart';
 import 'src/testing/frame_stats.dart';
+import 'src/testing/injected_keys.dart';
 import 'src/testing/wire_stats.dart';
 import 'src/testing/render_facts.dart';
 import 'src/testing/tree_test_registry.dart';

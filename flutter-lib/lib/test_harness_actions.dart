@@ -245,6 +245,7 @@ Future<Map<String, Object?>> dragByIds(String from, String to, int steps, int in
 const int _injectedDevice = 0x5157;
 bool _injectedAdded = false;
 Offset _injectedAt = Offset.zero;
+int _injectedView = 0;
 int? _injectedPressed;
 int _lastFrameAt = -1;
 int _framesDrawn = 0;
@@ -267,25 +268,42 @@ void _watchFrames() {
   });
 }
 
-/// Where [map] points: `x`,`y` in the widget `target` (`{swt}/{id}`) when it names one, else `dx`,`dy`
-/// from where the mouse is.
-Offset? _aim(Map<String, dynamic> map) {
+/// Where [map] points, and in which view: `x`,`y` in the widget `target` (`{swt}/{id}`) or
+/// `targetId` (its SWT id) when it names one, else `dx`,`dy` from where the mouse is.
+(Offset, int)? _aim(Map<String, dynamic> map) {
   final target = map['target'] as String?;
-  if (target == null) {
-    return _injectedAt + Offset(((map['dx'] ?? 0) as num).toDouble(), ((map['dy'] ?? 0) as num).toDouble());
+  final targetId = map['targetId'] as num?;
+  if (target == null && targetId == null) {
+    return (
+      _injectedAt + Offset(((map['dx'] ?? 0) as num).toDouble(), ((map['dy'] ?? 0) as num).toDouble()),
+      _injectedView,
+    );
   }
-  final box = _renderBoxByIdentifier(target);
-  if (box == null || !box.attached || !box.hasSize) return null;
-  return box.localToGlobal(Offset((map['x'] as num).toDouble(), (map['y'] as num).toDouble()));
+  final host = target != null ? _hostElementByIdentifier(target) : _hostElementById(targetId!.toInt());
+  final box = host?.renderObject;
+  if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+  final view = View.maybeOf(host!)?.viewId ?? _injectedView;
+  return (box.localToGlobal(Offset((map['x'] as num).toDouble(), (map['y'] as num).toDouble())), view);
 }
 
-/// Moves the injected mouse to [to]: a drag while pressed, a hover otherwise.
-void _moveTo(Offset to) {
+/// The injected device's time: the clock its frames and answers are stamped on.
+Duration _now() => Duration(microseconds: EquoCommBase.clock.elapsedMicroseconds);
+
+/// Moves the injected mouse to [to] in [view]: a drag while pressed, a hover otherwise.
+void _moveTo(Offset to, [int? view]) {
   final binding = GestureBinding.instance;
+  if (view != null && view != _injectedView && _injectedAdded && _injectedPressed == null) {
+    binding.handlePointerEvent(PointerRemovedEvent(
+        viewId: _injectedView, device: _injectedDevice, position: _injectedAt, kind: PointerDeviceKind.mouse,
+        timeStamp: _now()));
+    _injectedAdded = false;
+  }
+  if (view != null && _injectedPressed == null) _injectedView = view;
   if (!_injectedAdded) {
     _injectedAdded = true;
-    binding.handlePointerEvent(
-        PointerAddedEvent(device: _injectedDevice, position: to, kind: PointerDeviceKind.mouse));
+    binding.handlePointerEvent(PointerAddedEvent(
+        viewId: _injectedView, device: _injectedDevice, position: to, kind: PointerDeviceKind.mouse,
+        timeStamp: _now()));
     _injectedAt = to;
   }
   final delta = to - _injectedAt;
@@ -293,70 +311,210 @@ void _moveTo(Offset to) {
   final pressed = _injectedPressed;
   binding.handlePointerEvent(pressed != null
       ? PointerMoveEvent(
+          viewId: _injectedView,
           pointer: pressed,
           device: _injectedDevice,
           position: to,
           delta: delta,
           kind: PointerDeviceKind.mouse,
-          buttons: kPrimaryButton)
-      : PointerHoverEvent(device: _injectedDevice, position: to, delta: delta, kind: PointerDeviceKind.mouse));
+          buttons: _injectedButtons,
+          timeStamp: _now())
+      : PointerHoverEvent(
+          viewId: _injectedView,
+          device: _injectedDevice,
+          position: to,
+          delta: delta,
+          kind: PointerDeviceKind.mouse,
+          timeStamp: _now()));
 }
 
-void _press() {
+/// The buttons the injected mouse holds down.
+int _injectedButtons = 0;
+
+/// The flag of SWT's mouse button [button] (1 left, 2 middle, 3 right).
+int _buttonFlag(int button) => switch (button) {
+      2 => kMiddleMouseButton,
+      3 => kSecondaryMouseButton,
+      _ => kPrimaryButton,
+    };
+
+void _press([int button = 1]) {
+  if (_injectedPressed != null) return;
   final pointer = _pointerSeq++;
   _injectedPressed = pointer;
+  _injectedButtons = _buttonFlag(button);
   GestureBinding.instance.handlePointerEvent(PointerDownEvent(
+      viewId: _injectedView,
       pointer: pointer,
       device: _injectedDevice,
       position: _injectedAt,
       kind: PointerDeviceKind.mouse,
-      buttons: kPrimaryButton));
+      buttons: _injectedButtons,
+      timeStamp: _now()));
 }
 
 void _release() {
   final pointer = _injectedPressed;
   if (pointer == null) return;
   _injectedPressed = null;
+  _injectedButtons = 0;
   GestureBinding.instance.handlePointerEvent(PointerUpEvent(
-      pointer: pointer, device: _injectedDevice, position: _injectedAt, kind: PointerDeviceKind.mouse));
+      viewId: _injectedView,
+      pointer: pointer,
+      device: _injectedDevice,
+      position: _injectedAt,
+      kind: PointerDeviceKind.mouse,
+      timeStamp: _now()));
 }
 
-/// One step of the injected mouse, stamped on [EquoCommBase.clock] (`atMicros`) the moment it is
-/// dispatched, which is also the clock of the frame barrier's `lastFrameAtMicros`:
-///   `hover`/`move` {target, x, y} or {dx, dy} — moves there, dragging while pressed;
-///   `down` {target, x, y}? — moves there when aimed, then presses the primary button;
+// ---- the real mouse --------------------------------------------------------
+
+/// Where the OS's own mouse last was, as the engine reported it: its device, position and view.
+int? _realDevice;
+Offset _realAt = Offset.zero;
+int _realView = 0;
+bool _realWatched = false;
+
+/// Follows the OS's mouse through every pointer event the binding routes, so an injected click or
+/// wheel can land where it is, on its device.
+void _watchReal() {
+  if (_realWatched) return;
+  _realWatched = true;
+  GestureBinding.instance.pointerRouter.addGlobalRoute((PointerEvent e) {
+    if (e.device == _injectedDevice || e.kind != PointerDeviceKind.mouse) return;
+    if (e is PointerHoverEvent || e is PointerMoveEvent || e is PointerAddedEvent) {
+      _realDevice = e.device;
+      _realAt = e.position;
+      _realView = e.viewId;
+    }
+  });
+}
+
+/// Waits until the OS's mouse has reached [to] in [view], or [timeout] passes; whether it did.
+Future<bool> _awaitReal(Offset to, int view, Duration timeout) async {
+  final deadline = DateTime.now().add(timeout);
+  bool there() => _realDevice != null && _realView == view && (_realAt - to).distance <= 1.0;
+  while (!there()) {
+    if (DateTime.now().isAfter(deadline)) return false;
+    await Future<void>.delayed(const Duration(milliseconds: 2));
+  }
+  return true;
+}
+
+/// Presses ([down]) or releases [button] of the OS's mouse where it is, as the engine would.
+int? _realPressed;
+
+void _realButton(bool down, int button) {
+  final device = _realDevice;
+  if (device == null) return;
+  if (down) {
+    if (_realPressed != null) return;
+    final pointer = _pointerSeq++;
+    _realPressed = pointer;
+    GestureBinding.instance.handlePointerEvent(PointerDownEvent(
+        viewId: _realView,
+        pointer: pointer,
+        device: device,
+        position: _realAt,
+        kind: PointerDeviceKind.mouse,
+        buttons: _buttonFlag(button),
+        timeStamp: _now()));
+  } else {
+    final pointer = _realPressed;
+    if (pointer == null) return;
+    _realPressed = null;
+    GestureBinding.instance.handlePointerEvent(PointerUpEvent(
+        viewId: _realView, pointer: pointer, device: device, position: _realAt, kind: PointerDeviceKind.mouse,
+        timeStamp: _now()));
+  }
+}
+
+
+/// The pixels a desktop embedder scrolls for one wheel notch (Linux's `kScrollOffsetMultiplier`).
+const double _pixelsPerNotch = 53.0;
+
+/// Turns the wheel [notches] notches, one scroll signal each, as a desktop embedder reports a wheel.
+void _wheel(int notches) {
+  for (var i = 0; i < notches.abs(); i++) {
+    GestureBinding.instance.handlePointerEvent(PointerScrollEvent(
+        viewId: _injectedView,
+        device: _injectedDevice,
+        position: _injectedAt,
+        kind: PointerDeviceKind.mouse,
+        scrollDelta: Offset(0, notches.sign * _pixelsPerNotch),
+        timeStamp: _now()));
+  }
+}
+
+/// One step of the injected mouse or keyboard, stamped on [EquoCommBase.clock] (`atMicros`) the
+/// moment it is dispatched, which is also the clock of the frame barrier's `lastFrameAtMicros`:
+///   `hover`/`move` {target|targetId, x, y} or {dx, dy} — moves there, dragging while pressed;
+///   `down` {target|targetId, x, y}? {button}? — moves there when aimed, then presses `button`
+///   (1 left, the default, 2 middle, 3 right);
 ///   `up` — releases it; `leave` — the mouse leaves the window;
+///   `wheel` {notches} — turns the wheel where the mouse is, positive towards the user;
+///   with `real`, `down` and `up` act on the OS's own mouse where it is instead;
+///   `awaitReal` {target|targetId, x, y, timeoutMs} — waits until the OS's mouse has reached the
+///   point; answers `arrived`; `watch` — starts following the OS's mouse and the text input
+///   connection ([InjectedKeys.watch]);
+///   `keyDown`/`keyUp` {vk} — presses or releases the key with AWT virtual key code `vk`
+///   ([InjectedKeys]); answers `handled`;
 ///   `path` {target, points: [x0, y0, x1, y1, ...], press, intervalMs} — the whole gesture at a
 ///   user's pace: to the first point, pressed when `press`, through the rest [intervalMs] apart, and
 ///   released at the last. Answers `firstAtMicros`, `lastAtMicros`, `moves` and `frames`, the frames
 ///   drawn from the first input to the last.
 Future<Map<String, Object?>> pointerOp(Map<String, dynamic> map) async {
   _watchFrames();
+  _watchReal();
   final clock = EquoCommBase.clock;
   final op = map['op'] as String;
+  final real = map['real'] == true;
   try {
     switch (op) {
+      case 'watch':
+        InjectedKeys.watch();
+        return {'atMicros': clock.elapsedMicroseconds};
+      case 'awaitReal':
+        final to = _aim(map);
+        if (to == null) return {'error': 'not laid out: ${map['target'] ?? map['targetId']}'};
+        final arrived = await _awaitReal(to.$1, to.$2, Duration(milliseconds: ((map['timeoutMs'] ?? 500) as num).toInt()));
+        return {'atMicros': clock.elapsedMicroseconds, 'arrived': arrived};
+      case 'down' when real:
+        _realButton(true, ((map['button'] ?? 1) as num).toInt());
+        return {'atMicros': clock.elapsedMicroseconds};
+      case 'up' when real:
+        _realButton(false, 1);
+        return {'atMicros': clock.elapsedMicroseconds};
       case 'hover':
       case 'move':
       case 'down':
-        final aimed = map['target'] != null || map['dx'] != null || map['dy'] != null;
-        final to = aimed ? _aim(map) : _injectedAt;
-        if (to == null) return {'error': 'not laid out: ${map['target']}'};
+        final aimed = map['target'] != null || map['targetId'] != null || map['dx'] != null || map['dy'] != null;
+        final to = aimed ? _aim(map) : (_injectedAt, _injectedView);
+        if (to == null) return {'error': 'not laid out: ${map['target'] ?? map['targetId']}'};
         final at = clock.elapsedMicroseconds;
-        if (aimed) _moveTo(to);
-        if (op == 'down') _press();
-        return {'atMicros': at, 'x': to.dx, 'y': to.dy};
+        if (aimed) _moveTo(to.$1, to.$2);
+        if (op == 'down') _press(((map['button'] ?? 1) as num).toInt());
+        return {'atMicros': at, 'x': to.$1.dx, 'y': to.$1.dy};
       case 'up':
         final at = clock.elapsedMicroseconds;
         _release();
         return {'atMicros': at};
+      case 'wheel':
+        final at = clock.elapsedMicroseconds;
+        _wheel((map['notches'] as num).toInt());
+        return {'atMicros': at};
+      case 'keyDown':
+      case 'keyUp':
+        final at = clock.elapsedMicroseconds;
+        return {'atMicros': at, ...InjectedKeys.key((map['vk'] as num).toInt(), op == 'keyDown', _now())};
       case 'leave':
         final at = clock.elapsedMicroseconds;
         _release();
         if (_injectedAdded) {
           _injectedAdded = false;
-          GestureBinding.instance.handlePointerEvent(
-              PointerRemovedEvent(device: _injectedDevice, position: _injectedAt, kind: PointerDeviceKind.mouse));
+          GestureBinding.instance.handlePointerEvent(PointerRemovedEvent(
+              viewId: _injectedView, device: _injectedDevice, position: _injectedAt, kind: PointerDeviceKind.mouse,
+              timeStamp: _now()));
         }
         return {'atMicros': at};
       case 'path':
