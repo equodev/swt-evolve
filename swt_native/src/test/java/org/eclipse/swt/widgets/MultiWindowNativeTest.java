@@ -404,6 +404,30 @@ class MultiWindowNativeTest {
     }
 
     @Test
+    @DisplayName("un-minimizing a detached shell gives its window back the state the shell still has")
+    void unMinimizingRestoresTheShellsState() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "top-level");
+        TestBridge bridge = install();
+        openShell();
+        Shell fullScreen = openShell();
+        Shell maximized = openShell();
+        RecordingWindow fullScreenWindow = bridge.created.get(0);
+        RecordingWindow maximizedWindow = bridge.created.get(1);
+
+        fullScreen.setFullScreen(true);
+        fullScreen.setMinimized(true);
+        fullScreen.setMinimized(false);
+        maximized.setMaximized(true);
+        maximized.setMinimized(true);
+        maximized.setMinimized(false);
+
+        assertThat(fullScreenWindow.states).containsExactly(
+                ShellWindow.STATE_FULLSCREEN, ShellWindow.STATE_MINIMIZED, ShellWindow.STATE_FULLSCREEN);
+        assertThat(maximizedWindow.states).containsExactly(
+                ShellWindow.STATE_MAXIMIZED, ShellWindow.STATE_MINIMIZED, ShellWindow.STATE_MAXIMIZED);
+    }
+
+    @Test
     @DisplayName("an operation on an inline shell reaches no window")
     void inlineShellDrivesNoWindow() {
         System.setProperty(WindowPolicy.MODE_PROPERTY, "top-level");

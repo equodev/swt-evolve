@@ -393,7 +393,6 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv* env, jcl
     }
 }
 
-// state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = fullscreen (approximated as maximized).
 // The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
 // LLONG_MIN when there is no window. In logical pixels, the units SetBounds takes, so a position
 // read back can be set again unchanged.
@@ -499,15 +498,26 @@ JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetOwner(JNIEnv* env, jcl
     s->window->SetOwner((o && o->window) ? o->window->GetHandle() : nullptr);
 }
 
+// state: 0 = restore/normal, 1 = maximized, 2 = minimized, 3 = full screen.
 JNIEXPORT void JNICALL Java_dev_equo_swt_FlutterNative_SetState(JNIEnv* env, jclass cls, jlong context, jint state) {
     Surface* s = reinterpret_cast<Surface*>(context);
     if (!s || !s->window) return;
     HWND hwnd = s->window->GetHandle();
     if (!hwnd) return;
     switch (state) {
-        case 1: ::ShowWindow(hwnd, SW_MAXIMIZE); break;
+        case 1:
+            s->window->SetFullScreen(false);
+            ::ShowWindow(hwnd, SW_MAXIMIZE);
+            break;
         case 2: ::ShowWindow(hwnd, SW_MINIMIZE); break;
-        case 3: ::ShowWindow(hwnd, SW_MAXIMIZE); break;
-        default: ::ShowWindow(hwnd, SW_RESTORE); break;
+        case 3:
+            // A minimized full-screen window comes back full screen.
+            if (s->window->IsFullScreen() && ::IsIconic(hwnd)) ::ShowWindow(hwnd, SW_RESTORE);
+            else s->window->SetFullScreen(true);
+            break;
+        default:
+            if (s->window->IsFullScreen()) s->window->SetFullScreen(false);
+            else ::ShowWindow(hwnd, SW_RESTORE);
+            break;
     }
 }

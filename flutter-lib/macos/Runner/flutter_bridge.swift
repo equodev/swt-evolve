@@ -528,10 +528,12 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
         guard let win = window else { return }
         switch state {
         case 1: // maximized
+            if win.isMiniaturized { win.deminiaturize(nil) }
             if !win.isZoomed { win.zoom(nil) }
         case 2: // minimized
             win.miniaturize(nil)
         case 3: // fullscreen
+            if win.isMiniaturized { win.deminiaturize(nil) }
             if !win.styleMask.contains(.fullScreen) { win.toggleFullScreen(nil) }
         default: // restore / normal
             if win.styleMask.contains(.fullScreen) {

@@ -202,6 +202,40 @@ void Win32Window::SetFrameless(bool frameless) {
   frameless_ = frameless;
 }
 
+void Win32Window::SetFullScreen(bool full_screen) {
+  HWND hwnd = window_handle_;
+  if (!hwnd || full_screen == full_screen_) return;
+  constexpr LONG_PTR kFrame = WS_CAPTION | WS_THICKFRAME;
+  if (full_screen) {
+    placement_before_full_screen_.length = sizeof(WINDOWPLACEMENT);
+    if (!GetWindowPlacement(hwnd, &placement_before_full_screen_)) return;
+    // A maximized window is held to the work area, and a minimized one stays an icon.
+    if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);
+    if (IsZoomed(hwnd)) ShowWindow(hwnd, SW_RESTORE);
+    MONITORINFO monitor = {sizeof(monitor)};
+    if (!GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &monitor)) return;
+    const LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
+    frame_style_before_full_screen_ = style & kFrame;
+    full_screen_ = true;
+    SetWindowLongPtr(hwnd, GWL_STYLE, style & ~kFrame);
+    const RECT& area = monitor.rcMonitor;
+    SetWindowPos(hwnd, HWND_TOP, area.left, area.top, area.right - area.left, area.bottom - area.top,
+                 SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOACTIVATE);
+    return;
+  }
+  full_screen_ = false;
+  SetWindowLongPtr(hwnd, GWL_STYLE, GetWindowLongPtr(hwnd, GWL_STYLE) | frame_style_before_full_screen_);
+  SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+               SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+  WINDOWPLACEMENT placement = placement_before_full_screen_;
+  if (placement.showCmd == SW_SHOWMINIMIZED) {
+    placement.showCmd = (placement.flags & WPF_RESTORETOMAXIMIZED) ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL;
+  }
+  // SetWindowPlacement shows the window it places, and one Java hid stays hidden.
+  if (!IsWindowVisible(hwnd)) placement.showCmd = SW_HIDE;
+  SetWindowPlacement(hwnd, &placement);
+}
+
 bool Win32Window::Show() {
   // Don't show window in headless mode, or one Java asked to keep hidden
   if (headless_ || hidden_by_request_) {

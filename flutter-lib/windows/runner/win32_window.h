@@ -48,6 +48,11 @@ class Win32Window {
   // embedded (child) window.
   void SetOwner(HWND owner);
 
+  // Full screen as Win32 SWT has it: no title bar or borders, and the whole monitor, taskbar
+  // included. Leaving it puts back the frame and the placement the window had, maximized included.
+  void SetFullScreen(bool full_screen);
+  bool IsFullScreen() const { return full_screen_; }
+
   // Show the current window. Returns true if the window was successfully shown.
   bool Show();
 
@@ -140,6 +145,12 @@ class Win32Window {
 
   // True for the desktop-native Display window, whose title bar is drawn by Flutter (CSD).
   bool frameless_ = false;
+
+  bool full_screen_ = false;
+
+  // What leaving full screen puts back: the frame style bits it dropped and where the window was.
+  LONG_PTR frame_style_before_full_screen_ = 0;
+  WINDOWPLACEMENT placement_before_full_screen_ = {sizeof(WINDOWPLACEMENT)};
 
   HWND owner_ = nullptr;
 

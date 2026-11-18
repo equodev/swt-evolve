@@ -864,12 +864,14 @@ Java_dev_equo_swt_FlutterNative_SetState(JNIEnv *env, jclass cls, jlong context,
   switch (state) {
     case 1:
       gtk_window_maximize(win);
+      gtk_window_deiconify(win);
       break;
     case 2:
       gtk_window_iconify(win);
       break;
     case 3:
       gtk_window_fullscreen(win);
+      gtk_window_deiconify(win);
       break;
     default:
       gtk_window_unfullscreen(win);

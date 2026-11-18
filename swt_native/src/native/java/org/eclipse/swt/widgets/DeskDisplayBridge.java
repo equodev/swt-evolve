@@ -1220,7 +1220,7 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public void setWindowMinimized(DartControl control, boolean minimized) {
         if (isMainWindow(control)) {
-            setShellWindowState(windowContext, minimized ? ShellWindow.STATE_MINIMIZED : ShellWindow.STATE_NORMAL);
+            setShellWindowState(windowContext, windowStateOf((Shell) ((DartShell) control).getApi()));
             return;
         }
         super.setWindowMinimized(control, minimized);

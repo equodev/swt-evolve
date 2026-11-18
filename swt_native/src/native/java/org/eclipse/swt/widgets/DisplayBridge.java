@@ -2407,7 +2407,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     @Override
     public void setWindowMinimized(DartControl control, boolean minimized) {
-        setShellWindowState(control, minimized, ShellWindow.STATE_MINIMIZED);
+        ShellWindow window = shellWindowFor(control);
+        // Un-minimizing gives back the state the shell still has, full screen or maximized.
+        if (window != null) window.setState(windowStateOf((Shell) ((DartShell) control).getApi()));
     }
 
     @Override

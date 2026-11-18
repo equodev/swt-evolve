@@ -4,6 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.ServerSocket;
 
+import org.eclipse.swt.internal.win32.MONITORINFO;
+import org.eclipse.swt.internal.win32.OS;
+import org.eclipse.swt.internal.win32.RECT;
+
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -55,6 +59,111 @@ public class Win32WindowBoundsNativeTest {
                             + "the caption starts exactly at the top of the work area")
                     .isEqualTo(below);
         });
+    }
+
+    /**
+     * Win32 SWT's full screen is a window with no title bar or borders over the whole monitor,
+     * taskbar included, where a maximized window only gets the work area. Leaving it puts the
+     * frame and the window's place back.
+     */
+    @ParameterizedTest(name = "csd={0}")
+    @ValueSource(strings = {"overlay", "false"})
+    void fullScreenCoversTheMonitorAndLeavingItPutsTheWindowBack(String csd) throws Exception {
+        withWindow(csd, context -> {
+            long hwnd = FlutterNative.getView(context);
+            moveContentTo(context, 320, 240);
+            int[] placed = windowRect(hwnd);
+            int frame = frameStyle(hwnd);
+            assertThat(frame).as("frame style of a placed window").isNotZero();
+
+            FlutterNative.setState(context, ShellWindow.STATE_FULLSCREEN);
+            assertThat(windowRect(hwnd)).as("full-screen window").containsExactly(monitorRect(hwnd));
+            assertThat(frameStyle(hwnd)).as("frame style in full screen").isZero();
+
+            FlutterNative.setState(context, ShellWindow.STATE_NORMAL);
+            assertThat(windowRect(hwnd)).as("window after full screen").containsExactly(placed);
+            assertThat(frameStyle(hwnd)).as("frame style after full screen").isEqualTo(frame);
+        });
+    }
+
+    @Test
+    void aWindowMaximizedBeforeFullScreenIsMaximizedAfterIt() throws Exception {
+        withWindow("overlay", context -> {
+            long hwnd = FlutterNative.getView(context);
+            FlutterNative.setState(context, ShellWindow.STATE_MAXIMIZED);
+            int[] maximized = windowRect(hwnd);
+
+            FlutterNative.setState(context, ShellWindow.STATE_FULLSCREEN);
+            assertThat(windowRect(hwnd)).as("full-screen window").containsExactly(monitorRect(hwnd));
+            assertThat(OS.IsZoomed(hwnd)).as("maximized in full screen").isFalse();
+
+            FlutterNative.setState(context, ShellWindow.STATE_NORMAL);
+            assertThat(OS.IsZoomed(hwnd)).as("maximized after full screen").isTrue();
+            assertThat(windowRect(hwnd)).as("window after full screen").containsExactly(maximized);
+        });
+    }
+
+    @Test
+    void aMinimizedFullScreenWindowComesBackFullScreen() throws Exception {
+        withWindow("overlay", context -> {
+            long hwnd = FlutterNative.getView(context);
+            FlutterNative.setState(context, ShellWindow.STATE_FULLSCREEN);
+            FlutterNative.setState(context, ShellWindow.STATE_MINIMIZED);
+            assertThat(OS.IsIconic(hwnd)).as("minimized").isTrue();
+
+            FlutterNative.setState(context, ShellWindow.STATE_FULLSCREEN);
+            assertThat(OS.IsIconic(hwnd)).as("minimized after un-minimizing").isFalse();
+            assertThat(windowRect(hwnd)).as("window after un-minimizing").containsExactly(monitorRect(hwnd));
+            assertThat(frameStyle(hwnd)).as("frame style after un-minimizing").isZero();
+        });
+    }
+
+    @Test
+    void aMinimizedFullScreenWindowLeavesFullScreen() throws Exception {
+        withWindow("overlay", context -> {
+            long hwnd = FlutterNative.getView(context);
+            moveContentTo(context, 320, 240);
+            int[] placed = windowRect(hwnd);
+            int frame = frameStyle(hwnd);
+            FlutterNative.setState(context, ShellWindow.STATE_FULLSCREEN);
+            FlutterNative.setState(context, ShellWindow.STATE_MINIMIZED);
+
+            FlutterNative.setState(context, ShellWindow.STATE_NORMAL);
+            assertThat(OS.IsIconic(hwnd)).as("minimized after leaving full screen").isFalse();
+            assertThat(windowRect(hwnd)).as("window after leaving full screen").containsExactly(placed);
+            assertThat(frameStyle(hwnd)).as("frame style after leaving full screen").isEqualTo(frame);
+        });
+    }
+
+    @Test
+    void maximizingAFullScreenWindowLeavesFullScreen() throws Exception {
+        withWindow("overlay", context -> {
+            long hwnd = FlutterNative.getView(context);
+            int frame = frameStyle(hwnd);
+            FlutterNative.setState(context, ShellWindow.STATE_FULLSCREEN);
+
+            FlutterNative.setState(context, ShellWindow.STATE_MAXIMIZED);
+            assertThat(OS.IsZoomed(hwnd)).as("maximized").isTrue();
+            assertThat(frameStyle(hwnd)).as("frame style when maximized").isEqualTo(frame);
+        });
+    }
+
+    private static int[] windowRect(long hwnd) {
+        RECT rect = new RECT();
+        assertThat(OS.GetWindowRect(hwnd, rect)).as("GetWindowRect").isTrue();
+        return new int[] {rect.left, rect.top, rect.right, rect.bottom};
+    }
+
+    private static int[] monitorRect(long hwnd) {
+        MONITORINFO info = new MONITORINFO();
+        info.cbSize = MONITORINFO.sizeof;
+        assertThat(OS.GetMonitorInfo(OS.MonitorFromWindow(hwnd, OS.MONITOR_DEFAULTTONEAREST), info))
+                .as("GetMonitorInfo").isTrue();
+        return new int[] {info.rcMonitor_left, info.rcMonitor_top, info.rcMonitor_right, info.rcMonitor_bottom};
+    }
+
+    private static int frameStyle(long hwnd) {
+        return OS.GetWindowLong(hwnd, OS.GWL_STYLE) & (OS.WS_CAPTION | OS.WS_THICKFRAME);
     }
 
     private interface WindowCheck {
