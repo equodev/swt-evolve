@@ -68,6 +68,18 @@ void main() {
     expect(later, isNotNull, reason: 'the frame after the change answers the wait');
     expect(jsonDecode(later!)['met'], isTrue);
 
+    final painted = jsonDecode(await waitForStatesJson(
+        jsonEncode({
+          'kinds': ['Label/'],
+          'painted': true,
+        }),
+        1000));
+    expect(painted['met'], isTrue);
+    final facts = (painted['painted'] as Map)['Label/2'] as Map;
+    expect(facts['onScreen'], isTrue, reason: 'the label is laid out inside the view');
+    expect(facts['takesInput'], isTrue);
+    expect((facts['rect'] as Map)['width'], 200.0);
+
     String? none;
     waitForStatesJson(_labelText('present', const [], expect: 'none'), 300).then((json) => none = json);
     await tester.pump(const Duration(milliseconds: 400));

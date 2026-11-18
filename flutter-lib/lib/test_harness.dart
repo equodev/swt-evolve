@@ -328,26 +328,47 @@ String queryStatesOfKindJson(List<String> prefixes) =>
 ///   `{"keys": [property numbers], "op": ..., "values": [...]}`: the property is the first of
 ///   `keys` the widget holds (a name is numbered per class). `op` is `eq`, `notEq`, `startsWith`,
 ///   `contains`, `eqIgnoringMnemonic` (any of `values`), `present`, or `absentOrEmpty`;
-/// - `expect`: `some` (a widget matches) or `none` (none does).
+/// - `expect`: `some` (a widget matches) or `none` (none does);
+/// - `painted`: with `some`, met only once a match is painted on screen. The answer then also has
+///   `painted`: each match's rectangle, whether it is on screen, and whether input reaches it.
 Future<String> waitForStatesJson(String conditionJson, int timeoutMs) {
   final condition = _StateCondition(jsonDecode(conditionJson) as Map<String, dynamic>);
   final done = Completer<String>();
   Timer? safety;
   Timer? deadline;
-  void finish(bool met, Map<String, dynamic> states) {
+  void finish(bool met, _Reported reported, List<VNode> matching, Map<int, _PaintFacts>? painted) {
     if (done.isCompleted) return;
     safety?.cancel();
     deadline?.cancel();
-    done.complete(jsonEncode({'met': met, 'states': states}));
+    done.complete(jsonEncode({
+      'met': met,
+      'states': {for (final node in matching) _keyOf(node): reported.describe(node)},
+      if (painted != null)
+        'painted': {
+          for (final node in matching)
+            if (painted[node.key] case final facts?) _keyOf(node): facts.toJson()
+        },
+    }));
   }
 
   bool check() {
     if (done.isCompleted) return true;
     final reported = _Reported();
     final matching = condition.matching(reported);
-    final met = condition.expectNone ? matching.isEmpty : matching.isNotEmpty;
-    if (met) finish(true, {for (final node in matching) _keyOf(node): reported.describe(node)});
-    return met;
+    if (condition.expectNone) {
+      if (matching.isEmpty) finish(true, reported, matching, null);
+      return matching.isEmpty;
+    }
+    if (matching.isEmpty) return false;
+    if (!condition.painted) {
+      finish(true, reported, matching, null);
+      return true;
+    }
+    // Where each match is painted, read off the render tree only once the state matches.
+    final painted = _paintFactsOf({for (final node in matching) node.key});
+    if (!painted.values.any((facts) => facts.onScreen)) return false;
+    finish(true, reported, matching, painted);
+    return true;
   }
 
   void afterEachFrame() {
@@ -360,10 +381,60 @@ Future<String> waitForStatesJson(String conditionJson, int timeoutMs) {
     safety = Timer.periodic(_waitSafetyInterval, (_) => check());
     deadline = Timer(Duration(milliseconds: timeoutMs), () {
       final reported = _Reported();
-      finish(false, {for (final node in condition.matching(reported)) _keyOf(node): reported.describe(node)});
+      final matching = condition.matching(reported);
+      finish(false, reported, matching,
+          condition.painted ? _paintFactsOf({for (final node in matching) node.key}) : null);
     });
   }
   return done.future;
+}
+
+/// Where a mounted widget is painted and whether input reaches it there.
+class _PaintFacts {
+  _PaintFacts(this.rect, this.takesInput);
+
+  final Map<String, double>? rect;
+  final bool takesInput;
+
+  /// Laid out with a size, at least partly inside the view.
+  bool get onScreen {
+    final r = rect;
+    if (r == null || r['width']! <= 0 || r['height']! <= 0) return false;
+    final view = WidgetsBinding.instance.platformDispatcher.implicitView;
+    if (view == null) return true;
+    final size = view.physicalSize / view.devicePixelRatio;
+    return r['x']! + r['width']! > 0 && r['y']! + r['height']! > 0 && r['x']! < size.width && r['y']! < size.height;
+  }
+
+  Map<String, Object?> toJson() => {'rect': rect, 'takesInput': takesInput, 'onScreen': onScreen};
+}
+
+/// [_PaintFacts] for the mounted widgets with [keys], in one walk of the rendered tree that stops
+/// once it has met them all. A widget with no element of its own (an item drawn inline) has none.
+Map<int, _PaintFacts> _paintFactsOf(Set<int> keys) {
+  final found = <int, _PaintFacts>{};
+  final root = WidgetsBinding.instance.rootElement;
+  if (root == null || keys.isEmpty) return found;
+  void visit(Element el, bool refused) {
+    if (found.length == keys.length) return;
+    if (_refusesInput(el.widget)) refused = true;
+    if (el is StatefulElement && el.state is WidgetSwtState) {
+      final dynamic vstate = (el.state as WidgetSwtState).state;
+      if (vstate is VWidget) {
+        final key = VRegistry.keyOf(vstate);
+        if (keys.contains(key) && !found.containsKey(key)) {
+          final box = el.renderObject;
+          found[key] = _PaintFacts(box is RenderBox && box.hasSize && box.attached ? _globalRect(box) : null,
+              !refused && !_ownWrapperRefuses(el));
+        }
+      }
+    }
+    final inherited = refused;
+    el.visitChildren((child) => visit(child, inherited));
+  }
+
+  visit(root, false);
+  return found;
 }
 
 /// How often a wait re-checks without a frame: state can change without anything redrawing.
@@ -377,9 +448,12 @@ class _StateCondition {
       : kinds = [for (final k in json['kinds'] as List? ?? const []) k as String],
         except = {for (final k in json['except'] as List? ?? const []) k as String},
         clauses = [for (final c in json['where'] as List? ?? const []) _Clause(c as Map<String, dynamic>)],
-        expectNone = json['expect'] == 'none';
+        expectNone = json['expect'] == 'none',
+        painted = json['painted'] == true;
 
   final List<String> kinds;
+  /// Met only once a match is painted on screen; the answer then says where each match is.
+  final bool painted;
   final Set<String> except;
   final List<_Clause> clauses;
   final bool expectNone;
