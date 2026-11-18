@@ -88,9 +88,16 @@ void main() {
     expect(centre.computeLuminance(), lessThan(0.4), reason: 'drawn $centre');
   });
 
-  testWidgets('preserve_icon_colors keeps the glyph\'s own colour on a dark tree', (tester) async {
+  testWidgets('preserve_icon_colors keeps the glyph\'s own colour where it reads', (tester) async {
+    setConfigFlags(ConfigFlags()..preserve_icon_colors = true);
+    final centre = await _iconCentre(tester, ThemeMode.light);
+    expect(centre, const Color(0xFF333333));
+  });
+
+  testWidgets('preserve_icon_colors still draws light a glyph that would not read on a dark tree',
+      (tester) async {
     setConfigFlags(ConfigFlags()..preserve_icon_colors = true);
     final centre = await _iconCentre(tester, ThemeMode.dark);
-    expect(centre, const Color(0xFF333333));
+    expect(centre.computeLuminance(), greaterThan(0.4), reason: 'drawn $centre');
   });
 }

@@ -3903,8 +3903,12 @@ class ImageShape extends Shape {
             opArgs.destWidth == -1 ? naturalSize.width : (opArgs.destWidth).toDouble(),
             opArgs.destHeight == -1 ? naturalSize.height : (opArgs.destHeight).toDouble(),
           );
+          final svgFilter = colorFilter ??
+              (ImageUtils.svgNeedsTint(replacement)
+                  ? ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn)
+                  : null);
           return ImageShape.svg(pictureInfo, destRect,
-              clipRect: clipRect, colorFilter: colorFilter, alpha: alpha);
+              clipRect: clipRect, colorFilter: svgFilter, alpha: alpha);
         } catch (e) {
           // SVG failed to load, fall through to raster
         }

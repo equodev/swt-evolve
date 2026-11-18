@@ -205,8 +205,10 @@ class ImageUtils {
 
     final preserveColors = preserveIconColors;
     final fade = disabledOpacity ?? AppOpacities.disabled;
+    final ground = AppColors.getBackgroundColor();
     final cacheKey =
-        '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors-$fade';
+        '$filename-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$preserveColors-$fade-'
+        '${ground.toARGB32()}';
 
     if (_iconCache.containsKey(cacheKey)) {
       return _iconCache[cacheKey];
@@ -221,25 +223,34 @@ class ImageUtils {
 
     final iconSize =
         size ?? (isFontAwesome ? AppSizes.fontAwesomeIcon : AppSizes.icon);
-    final iconColor = preserveColors
-        ? null
-        : (color ?? AppColors.getColor(enabled));
+    final tint = color ?? AppColors.getColor(enabled);
 
-    Widget iconWidget = Icon(iconData, size: iconSize, color: iconColor);
-
-    if (isFontAwesome) {
-      iconWidget = Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: iconWidget,
-      );
+    // A font glyph is monochrome, drawn in the icon theme's color unless tinted. Preserved colors
+    // keep that color only where it reads on the ground.
+    Widget glyph(Color? iconColor) {
+      Widget iconWidget = Icon(iconData, size: iconSize, color: iconColor);
+      if (isFontAwesome) {
+        iconWidget = Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: iconWidget,
+        );
+      }
+      // Fade only when nothing tinted the icon: a disabled tint already carries the state, and
+      // applying both leaves this branch's icons washed out next to a replacement's in the same
+      // toolbar. Same rule as _buildBinaryImage and _buildReplacementWidget.
+      if (iconColor == null || color == null) {
+        iconWidget = Opacity(opacity: enabled ? 1.0 : fade, child: iconWidget);
+      }
+      return iconWidget;
     }
 
-    // Fade only when nothing tinted the icon: a disabled tint already carries the state, and
-    // applying both leaves this branch's icons washed out next to a replacement's in the same
-    // toolbar. Same rule as _buildBinaryImage and _buildReplacementWidget.
-    if (preserveColors || color == null) {
-      iconWidget = Opacity(opacity: enabled ? 1.0 : fade, child: iconWidget);
-    }
+    final Widget iconWidget = preserveColors
+        ? Builder(builder: (context) {
+            final themed = IconTheme.of(context).color;
+            final reads = themed != null && GlyphTone.colorReadsOn(themed, ground);
+            return glyph(reads ? null : tint);
+          })
+        : glyph(tint);
 
     _iconCache[cacheKey] = iconWidget;
     return iconWidget;
@@ -260,10 +271,12 @@ class ImageUtils {
     final preserveColors = preserveIconColors;
     final fade = disabledOpacity ?? AppOpacities.disabled;
     // Only a monochrome glyph takes the tint: color artwork would be flattened into a silhouette.
-    final tinted = renderAsIcon &&
-        !preserveColors &&
-        bytes != null &&
-        GlyphTone.ofEncoded(bytes, GlyphTintLimits.fallback) != null;
+    // Preserved colors still give way to the tint where the glyph would not read on the ground.
+    final tone = renderAsIcon && bytes != null
+        ? GlyphTone.ofEncoded(bytes, GlyphTintLimits.fallback)
+        : null;
+    final tinted = tone != null &&
+        (!preserveColors || !tone.readsOn(AppColors.getBackgroundColor()));
     final cacheKey = renderAsIcon
         ? 'icon-${bytes != null ? GlyphTone.contentKey(bytes) : file ?? 'none'}-${size ?? 'default'}-${color?.value ?? 'default'}-$enabled-$tinted-$fade'
         : (file != null)
@@ -382,6 +395,14 @@ class ImageUtils {
     }
   }
 
+  /// Whether [replacement] is a monochrome SVG that would not read on the theme's ground as drawn,
+  /// so it takes the theme tint even where the application's icon colors are preserved.
+  static bool svgNeedsTint(Object replacement) {
+    if (replacement is! String) return false;
+    final tone = GlyphTone.ofSvg(replacement, GlyphTintLimits.fallback.channelTolerance);
+    return tone != null && !tone.readsOn(AppColors.getBackgroundColor());
+  }
+
   /// Helper to build widget from replacement object (SVG string or ui.Image)
   static Widget? _buildReplacementWidget(
     Object replacement, {
@@ -396,7 +417,7 @@ class ImageUtils {
     double? disabledOpacity,
   }) {
     final preserveColors = preserveIconColors;
-    final Color? effectiveTint = preserveColors
+    final Color? effectiveTint = preserveColors && !svgNeedsTint(replacement)
         ? null
         : (color ?? AppColors.getColor(enabled));
 
@@ -430,7 +451,7 @@ class ImageUtils {
           ),
         );
 
-        if (preserveColors || color == null) {
+        if (effectiveTint == null || color == null) {
           svgContent = Opacity(opacity: enabled ? 1.0 : fade, child: svgContent);
         }
 
@@ -458,7 +479,7 @@ class ImageUtils {
               : null,
         );
 
-        if (preserveColors || color == null) {
+        if (effectiveTint == null || color == null) {
           svgWidget = Opacity(opacity: enabled ? 1.0 : fade, child: svgWidget);
         }
 
@@ -495,7 +516,7 @@ class ImageUtils {
                 ),
         );
 
-        if (preserveColors || color == null) {
+        if (effectiveTint == null || color == null) {
           imageContent = Opacity(
             opacity: enabled ? 1.0 : fade,
             child: imageContent,
@@ -536,7 +557,7 @@ class ImageUtils {
                 fit: BoxFit.contain,
               );
 
-        if (preserveColors || color == null) {
+        if (effectiveTint == null || color == null) {
           imageWidget = Opacity(
             opacity: enabled ? 1.0 : fade,
             child: imageWidget,
@@ -582,7 +603,8 @@ class ImageUtils {
         'future-${stableImageKey(image)}-'
         '${size ?? width ?? height ?? 'default'}-${color?.value ?? 'default'}-'
         '$preserveColors-$useEvolveIcons-$enabled-$renderAsIcon-'
-        '${disabledOpacity ?? AppOpacities.disabled}';
+        '${disabledOpacity ?? AppOpacities.disabled}-'
+        '${AppColors.getBackgroundColor().toARGB32()}';
 
     // Return cached Future if it exists
     if (_futureCache.containsKey(cacheKey)) {

@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/painting.dart';
 import 'package:image/image.dart' as img;
 
+import 'widget_utils.dart' show contrastRatio;
+
 /// What reads as a glyph — an image small enough, and with little enough color, that it has none of
 /// the application's to keep when it is drawn in the theme's colors.
 class GlyphTintLimits {
@@ -38,6 +40,64 @@ class GlyphTone {
       0, 0, 0, 0, 0,
       -k, 0, 0, 0, k * lightest,
     ]);
+  }
+
+  /// Whether the glyph's ink reads on [ground] as drawn, by WCAG 2's non-text contrast.
+  bool readsOn(Color ground) =>
+      contrastRatio(Color.fromARGB(255, darkest, darkest, darkest), ground) >= minGlyphContrast;
+
+  static const double minGlyphContrast = 3.0;
+
+  /// Whether a glyph painted in [color] reads on [ground]; see [readsOn].
+  static bool colorReadsOn(Color color, Color ground) =>
+      contrastRatio(color.withValues(alpha: 1), ground) >= minGlyphContrast;
+
+  static final RegExp _svgPaint = RegExp(
+      r'''(?:fill|stroke|stop-color)\s*(?:=\s*["']|:\s*)([^"';>]+)''',
+      caseSensitive: false);
+  static final Map<String, GlyphTone?> _svgVerdicts = {};
+
+  /// The tone of an SVG whose every paint is one grey, or null when any paint is a color, a
+  /// gradient or a value this does not read. An SVG that names no paint draws in black.
+  static GlyphTone? ofSvg(String svg, int channelTolerance) {
+    final key = '${svg.hashCode}-${svg.length}-$channelTolerance';
+    if (_svgVerdicts.containsKey(key)) return _svgVerdicts[key];
+
+    final greys = <int>[];
+    var monochrome = true;
+    for (final match in _svgPaint.allMatches(svg)) {
+      final value = match.group(1)!.trim().toLowerCase();
+      if (value == 'none' || value == 'transparent') continue;
+      final grey = _svgGrey(value, channelTolerance);
+      if (grey == null) {
+        monochrome = false;
+        break;
+      }
+      greys.add(grey);
+    }
+    final tone = !monochrome
+        ? null
+        : greys.isEmpty
+        ? const GlyphTone(darkest: 0, lightest: 0)
+        : GlyphTone(darkest: greys.reduce(math.min), lightest: greys.reduce(math.max));
+    if (_svgVerdicts.length > 512) _svgVerdicts.clear();
+    _svgVerdicts[key] = tone;
+    return tone;
+  }
+
+  // flutter_svg resolves currentColor to black unless a theme says otherwise.
+  static int? _svgGrey(String value, int channelTolerance) {
+    if (value == 'black' || value == 'currentcolor') return 0;
+    if (value == 'white') return 255;
+    if (!value.startsWith('#')) return null;
+    var hex = value.substring(1);
+    if (hex.length == 3 || hex.length == 4) hex = hex.split('').map((c) => '$c$c').join();
+    if (hex.length != 6 && hex.length != 8) return null;
+    final rgb = int.tryParse(hex.substring(0, 6), radix: 16);
+    if (rgb == null) return null;
+    final r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+    if (math.max(r, math.max(g, b)) - math.min(r, math.min(g, b)) > channelTolerance) return null;
+    return r;
   }
 
   /// The tone of RGBA pixels, or null when a visible pixel carries color.
