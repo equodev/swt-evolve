@@ -13,6 +13,7 @@ import 'dart:js_interop_unsafe';
 ///   const flat = window.evolveTest.queryAllStatesByReference(); // the same, nested widgets named only
 ///   const some = window.evolveTest.queryStates(['Label/9']); // String, the same map for those ids
 ///   const kind = window.evolveTest.queryStatesOfKind(['Shell/']); // the same, for keys with a prefix
+///   const met  = await window.evolveTest.waitForStates(conditionJson, timeoutMs); // see waitForStatesJson
 ///   const ops  = window.evolveTest.queryPaintOps();         // String, JSON map {swt/id: [op, ...]}
 ///   await new Promise(r => window.evolveTest.waitForFrame(r));
 void registerTestQueryJsApi({
@@ -23,6 +24,7 @@ void registerTestQueryJsApi({
   required String Function() queryAllStatesByReferenceJson,
   required String Function(List<String>) queryStatesJson,
   required String Function(List<String>) queryStatesOfKindJson,
+  required Future<String> Function(String condition, int timeoutMs) waitForStatesJson,
   required String Function() queryPaintOpsJson,
   required String Function() queryTreeItemsJson,
   required bool Function(String) expandTreeItem,
@@ -62,6 +64,11 @@ void registerTestQueryJsApi({
     ((JSArray<JSString> prefixes) => queryStatesOfKindJson(
       prefixes.toDart.map((prefix) => prefix.toDart).toList(),
     ).toJS).toJS,
+  );
+  api.setProperty(
+    'waitForStates'.toJS,
+    ((JSString condition, JSNumber timeoutMs) =>
+        waitForStatesJson(condition.toDart, timeoutMs.toDartInt).then((json) => json.toJS).toJS).toJS,
   );
   api.setProperty(
     'queryPaintOps'.toJS,

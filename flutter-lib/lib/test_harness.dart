@@ -234,6 +234,7 @@ void registerTestQueryChannel() {
     queryAllStatesByReferenceJson: () => queryAllStatesJson(byReference: true),
     queryStatesJson: queryStatesJson,
     queryStatesOfKindJson: queryStatesOfKindJson,
+    waitForStatesJson: waitForStatesJson,
     queryPaintOpsJson: queryPaintOpsJson,
     queryTreeItemsJson: queryTreeItemsJson,
     expandTreeItem: expandTreeItem,
@@ -310,6 +311,129 @@ String queryStatesJson(List<String> identifiers) {
 /// order the client received them.
 String queryStatesOfKindJson(List<String> prefixes) =>
     jsonEncode(_Reported().describeWhere((key) => prefixes.any(key.startsWith)));
+
+/// Waits, inside the page, until [conditionJson] holds, and answers once: `{"met": true|false,
+/// "states": {...}}`, the states being the widgets that matched (as [queryStatesJson] keys and
+/// describes them) when it was met, or when [timeoutMs] ran out.
+///
+/// The condition is checked when the wait starts, after every frame, and every
+/// [_waitSafetyInterval] for a change that reaches the registry without a frame. A caller that
+/// polled from outside the page paid a round trip and a serialization per check instead.
+///
+/// The condition, as JSON:
+/// - `kinds`: `{swt}/` prefixes, or whole `{swt}/{id}` keys, of the widgets considered;
+/// - `except`: keys left out;
+/// - `where`: clauses all of which a widget meets to match, each
+///   `{"keys": [property numbers], "op": ..., "values": [...]}`: the property is the first of
+///   `keys` the widget holds (a name is numbered per class). `op` is `eq`, `notEq`, `startsWith`,
+///   `contains`, `eqIgnoringMnemonic` (any of `values`), `present`, or `absentOrEmpty`;
+/// - `expect`: `some` (a widget matches) or `none` (none does).
+Future<String> waitForStatesJson(String conditionJson, int timeoutMs) {
+  final condition = _StateCondition(jsonDecode(conditionJson) as Map<String, dynamic>);
+  final done = Completer<String>();
+  Timer? safety;
+  Timer? deadline;
+  void finish(bool met, Map<String, dynamic> states) {
+    if (done.isCompleted) return;
+    safety?.cancel();
+    deadline?.cancel();
+    done.complete(jsonEncode({'met': met, 'states': states}));
+  }
+
+  bool check() {
+    if (done.isCompleted) return true;
+    final reported = _Reported();
+    final matching = condition.matching(reported);
+    final met = condition.expectNone ? matching.isEmpty : matching.isNotEmpty;
+    if (met) finish(true, {for (final node in matching) _keyOf(node): reported.describe(node)});
+    return met;
+  }
+
+  void afterEachFrame() {
+    if (check()) return;
+    SchedulerBinding.instance.addPostFrameCallback((_) => afterEachFrame());
+  }
+
+  if (!check()) {
+    SchedulerBinding.instance.addPostFrameCallback((_) => afterEachFrame());
+    safety = Timer.periodic(_waitSafetyInterval, (_) => check());
+    deadline = Timer(Duration(milliseconds: timeoutMs), () {
+      final reported = _Reported();
+      finish(false, {for (final node in condition.matching(reported)) _keyOf(node): reported.describe(node)});
+    });
+  }
+  return done.future;
+}
+
+/// How often a wait re-checks without a frame: state can change without anything redrawing.
+const Duration _waitSafetyInterval = Duration(milliseconds: 200);
+
+String _keyOf(VNode node) => '${node.value.swt}/${node.value.id}';
+
+/// A condition of [waitForStatesJson].
+class _StateCondition {
+  _StateCondition(Map<String, dynamic> json)
+      : kinds = [for (final k in json['kinds'] as List? ?? const []) k as String],
+        except = {for (final k in json['except'] as List? ?? const []) k as String},
+        clauses = [for (final c in json['where'] as List? ?? const []) _Clause(c as Map<String, dynamic>)],
+        expectNone = json['expect'] == 'none';
+
+  final List<String> kinds;
+  final Set<String> except;
+  final List<_Clause> clauses;
+  final bool expectNone;
+
+  List<VNode> matching(_Reported reported) {
+    final found = <VNode>[];
+    for (final node in VRegistry.instance.nodes) {
+      final key = _keyOf(node);
+      if (!kinds.any((kind) => kind.endsWith('/') ? key.startsWith(kind) : key == kind)) continue;
+      if (except.contains(key) || !reported.includes(node)) continue;
+      if (clauses.every((clause) => clause.holds(node.value))) found.add(node);
+    }
+    return found;
+  }
+}
+
+class _Clause {
+  _Clause(Map<String, dynamic> json)
+      : keys = {for (final k in json['keys'] as List) (k as num).toInt()},
+        op = json['op'] as String,
+        values = [for (final v in json['values'] as List? ?? const []) '$v'];
+
+  final Set<int> keys;
+  final String op;
+  final List<String> values;
+
+  bool holds(VWidget widget) {
+    Object? value;
+    var held = false;
+    widget.visitWire((key, v) {
+      if (!held && keys.contains(key) && v != null) {
+        value = v;
+        held = true;
+      }
+    });
+    final text = held ? '$value' : null;
+    switch (op) {
+      case 'present':
+        return held;
+      case 'absentOrEmpty':
+        return text == null || text.isEmpty;
+      case 'eq':
+        return text != null && values.contains(text);
+      case 'notEq':
+        return text == null || !values.contains(text);
+      case 'startsWith':
+        return text != null && values.any(text.startsWith);
+      case 'contains':
+        return text != null && values.any(text.contains);
+      case 'eqIgnoringMnemonic':
+        return text != null && values.contains(text.replaceAll('&', ''));
+    }
+    throw ArgumentError('unknown condition op "$op"');
+  }
+}
 
 /// The widget [identifier] (`{swt}/{id}`) names in the registry, or null.
 VNode? _nodeNamed(String identifier) {
