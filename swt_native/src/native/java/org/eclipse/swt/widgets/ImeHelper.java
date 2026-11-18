@@ -27,24 +27,29 @@ public final class ImeHelper {
         IME ime = canvas.getApi().getIME();
         if (ime == null || ime.isDisposed() || !(ime.getImpl() instanceof DartIME))
             return;
-        // The text, the caret within it, and whether it is committed.
+        // The text, the caret within it, whether it is committed, and how many characters before
+        // the caret it replaces.
         dev.equo.swt.WireReader r = new dev.equo.swt.WireReader(payload, 0, payload.length);
         String text = r.string();
         int caret = r.int32();
         boolean commit = r.bool();
+        int replacing = r.int32();
         if (text == null)
             return;
         DartIME impl = (DartIME) ime.getImpl();
         if (commit) {
-            if (commit(impl, text))
+            if (commit(impl, text, replacing))
                 insertCommitted(canvas, text);
         } else {
-            compose(impl, text, caret);
+            compose(impl, text, caret, replacing);
         }
     }
 
-    /** The composition changed to {@code text}, with the caret {@code caret} characters into it. */
-    static void compose(DartIME ime, String text, int caret) {
+    /**
+     * The composition changed to {@code text}, with the caret {@code caret} characters into it. A
+     * composition that starts here takes in the {@code replacing} characters before the selection.
+     */
+    static void compose(DartIME ime, String text, int caret, int replacing) {
         if (!ime.isInlineEnabled())
             return;
         ime.resetStyles();
@@ -56,7 +61,7 @@ public final class ImeHelper {
             ime.sendEvent(SWT.ImeComposition, event);
             if (ime.isDisposed())
                 return;
-            ime.startOffset = event.start;
+            ime.startOffset = Math.max(0, event.start - Math.max(0, replacing));
             end = event.end;
         }
         ime.caretOffset = Math.max(0, Math.min(caret, text.length()));
@@ -78,11 +83,11 @@ public final class ImeHelper {
      * Answers whether the committed text is still to be inserted: the event takes the composed text
      * back out of the document, and the platform then types it (see {@link #insertCommitted}).
      */
-    static boolean commit(DartIME ime, String text) {
+    static boolean commit(DartIME ime, String text, int replacing) {
         if (!ime.isInlineEnabled())
             return false;
         if (ime.startOffset == -1) {
-            compose(ime, text, text.length());
+            compose(ime, text, text.length(), replacing);
             if (ime.isDisposed() || ime.startOffset == -1)
                 return false;
         }

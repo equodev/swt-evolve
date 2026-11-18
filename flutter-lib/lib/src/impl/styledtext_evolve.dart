@@ -34,6 +34,7 @@ import 'key_forwarding.dart';
 import 'key_mapping.dart';
 import 'menu_evolve.dart' show KeyModifiers;
 import 'utils/composed_text_input.dart';
+import 'utils/platform_shortcuts.dart';
 import 'utils/resize_reports.dart';
 import 'utils/font_utils.dart';
 import 'utils/widget_utils.dart';
@@ -115,15 +116,18 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
   /// Holds a text-input connection open while focused so the platform can compose; what it
   /// composes goes to Java's IME.
   late final ComposedTextInput _composedInput = ComposedTextInput(
-    onComposing: (text, caret) => _sendComposition(text, caret, commit: false),
-    onComposedText: (text) => _sendComposition(text, text.length, commit: true),
+    onComposing: (text, caret, replacing) =>
+        _sendComposition(text, caret, replacing, commit: false),
+    onComposedText: (text, replacing) =>
+        _sendComposition(text, text.length, replacing, commit: true),
   );
 
-  void _sendComposition(String text, int caret, {required bool commit}) {
+  void _sendComposition(String text, int caret, int replacing, {required bool commit}) {
     EquoCommService.sendWritten(WidgetWireWriter.startTo(state.wireType, state.id, WireChannel.imeComposition)
           ..string(text)
           ..int32(caret)
-          ..boolean(commit));
+          ..boolean(commit)
+          ..int32(replacing));
   }
 
   String? _metricsSource;
@@ -395,6 +399,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
         return KeyEventResult.handled;
       }
       return KeyEventResult.ignored;
+    }
+    // Java has the key; the browser still needs it to open the character palette.
+    if (isPlatformTextInputShortcut(event)) return KeyEventResult.skipRemainingHandlers;
+    if (event is! KeyUpEvent) {
+      final keys = KeyModifiers.of(event);
+      _composedInput.keyTyped(event.character ?? '', shortcut: keys.control || keys.meta);
     }
     return KeyEventResult.handled;
   }

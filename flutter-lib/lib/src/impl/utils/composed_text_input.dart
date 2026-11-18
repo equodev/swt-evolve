@@ -17,16 +17,21 @@ bool compositionOwnsKey(String character) =>
 /// committing key — a space on U.S. International — so the quote the user asked for arrives as a
 /// space. Accented characters and every CJK IME fail the same way.
 ///
-/// Only compositions are reported: [onComposing] with the text being composed and the caret inside
-/// it, then [onComposedText] with the text that ends it. Ordinary keystrokes reach the editor
-/// through the raw key stream, and reporting those here too would insert them twice. While
+/// Compositions are reported: [onComposing] with the text being composed and the caret inside it,
+/// then [onComposedText] with the text that ends it. So is text inserted with no key held, through
+/// [onComposedText]. Ordinary keystrokes reach the editor through the raw key stream, and reporting
+/// those here too would insert them twice. While
 /// [isComposing] is true the raw key stream must stand down: the keys that drive a composition
 /// carry characters of their own that must stay out of the document.
+///
+/// Both callbacks also get how many characters before the caret the text replaces. The buffer keeps
+/// the text the last key typed, so that the platform can replace it: macOS's press-and-hold accent
+/// menu replaces the letter it was opened on.
 class ComposedTextInput with TextInputClient {
   ComposedTextInput({required this.onComposedText, this.onComposing});
 
-  final void Function(String text) onComposedText;
-  final void Function(String text, int caret)? onComposing;
+  final void Function(String text, int replacing) onComposedText;
+  final void Function(String text, int caret, int replacing)? onComposing;
 
   static const TextInputConfiguration _configuration = TextInputConfiguration(
     inputType: TextInputType.multiline,
@@ -39,6 +44,8 @@ class ComposedTextInput with TextInputClient {
   TextInputConnection? _connection;
   bool _composing = false;
   String? _justCommitted;
+  // What the platform's buffer holds: nothing, or the text the last key typed.
+  TextEditingValue _buffer = TextEditingValue.empty;
 
   /// True from the start of a composition until it commits or is abandoned.
   bool get isComposing => _composing;
@@ -59,8 +66,9 @@ class ComposedTextInput with TextInputClient {
     _activeComposition = this;
     if (_connection?.attached ?? false) return;
     _composing = false;
+    _buffer = TextEditingValue.empty;
     _connection = TextInput.attach(this, _configuration)
-      ..setEditingState(const TextEditingValue())
+      ..setEditingState(_buffer)
       ..show();
   }
 
@@ -69,31 +77,104 @@ class ComposedTextInput with TextInputClient {
     _connection?.close();
     _connection = null;
     _composing = false;
+    _buffer = TextEditingValue.empty;
   }
 
+  /// A key the editor took from the raw key stream. The editor handles it, so the platform never
+  /// sees its text: it is put in the buffer here, for the platform to replace. A key that types
+  /// nothing, or types with Ctrl or Cmd held, empties the buffer.
+  void keyTyped(String character, {bool shortcut = false}) {
+    if (_composing) return;
+    final text = !shortcut && _isPrintable(character) ? character : '';
+    if (text == _buffer.text) return;
+    _buffer = TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
+    _connection?.setEditingState(_buffer);
+  }
+
+  static bool _isPrintable(String character) =>
+      character.isNotEmpty && character.runes.every((r) => r >= 0x20 && r != 0x7f);
+
   @override
-  TextEditingValue? get currentTextEditingValue => const TextEditingValue();
+  TextEditingValue? get currentTextEditingValue => _buffer;
 
   @override
   AutofillScope? get currentAutofillScope => null;
 
   @override
   void updateEditingValue(TextEditingValue value) {
+    // What the platform kept of the buffer, what it replaced at its end, and what it put there.
+    final kept = _keptLength(_buffer.text, value.text);
+    final replacing = _buffer.text.length - kept;
+    final text = value.text.substring(kept);
     if (value.composing.isValid) {
       _composing = true;
-      onComposing?.call(value.text, value.selection.baseOffset.clamp(0, value.text.length));
+      onComposing?.call(text, (value.selection.baseOffset - kept).clamp(0, text.length), replacing);
       return;
     }
-    final committed = _composing ? value.text : '';
+    final endsComposition = _composing;
+    final committed = endsComposition || _isKeylessInsert(value) ? text : '';
     _composing = false;
-    // The buffer exists only to catch a composition, and the document — not it — holds the text.
-    // Left filled, it would prefix itself onto whatever the next composition commits.
-    _connection?.setEditingState(const TextEditingValue());
+    // The document, not the buffer, holds the text. Only what the last key typed stays, for the
+    // platform to replace; anything older would only widen what its ranges can reach.
+    final typedByKey = !endsComposition &&
+        replacing == 0 &&
+        text.isNotEmpty &&
+        value.selection.extentOffset == value.text.length &&
+        _keyIsDown();
+    _buffer = typedByKey
+        ? TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length))
+        : TextEditingValue.empty;
+    _connection?.setEditingState(_buffer);
     if (committed.isNotEmpty) {
-      _justCommitted = committed;
-      onComposedText(committed);
+      // Only a composition's committing key carries the committed text again.
+      if (endsComposition) _justCommitted = committed;
+      onComposedText(committed, replacing);
     }
   }
+
+  /// The length of the common start of [before] and [after], never splitting a surrogate pair.
+  static int _keptLength(String before, String after) {
+    final max = before.length < after.length ? before.length : after.length;
+    var i = 0;
+    while (i < max && before.codeUnitAt(i) == after.codeUnitAt(i)) {
+      i++;
+    }
+    if (i > 0 && i < before.length && _isHighSurrogate(before.codeUnitAt(i - 1))) i--;
+    return i;
+  }
+
+  static bool _isHighSurrogate(int unit) => unit >= 0xD800 && unit <= 0xDBFF;
+
+  /// Text inserted into the empty buffer leaves the caret at its end. With the caret inside it, the
+  /// text is a composition the web engine reported without its range (it does so when the caret
+  /// starts inside the composed text); the buffer is cleared below, which cancels that composition,
+  /// and the browser then delivers its text again as an insert of its own.
+  static bool _isKeylessInsert(TextEditingValue value) =>
+      value.selection.extentOffset == value.text.length && !_keyIsDown();
+
+  /// Whether a non-modifier key is held. The platform reports a key's text between its press and
+  /// its release, and that key already reached the editor through the raw key stream. Text inserted
+  /// with no key held has no other way in. On macOS web a key pressed with Cmd held gets no release
+  /// until the engine synthesizes one, up to 2 s later; text inserted before that is dropped.
+  static bool _keyIsDown() =>
+      HardwareKeyboard.instance.logicalKeysPressed.any((key) => !_modifierKeys.contains(key));
+
+  static final Set<LogicalKeyboardKey> _modifierKeys = {
+    LogicalKeyboardKey.shiftLeft,
+    LogicalKeyboardKey.shiftRight,
+    LogicalKeyboardKey.controlLeft,
+    LogicalKeyboardKey.controlRight,
+    LogicalKeyboardKey.altLeft,
+    LogicalKeyboardKey.altRight,
+    LogicalKeyboardKey.metaLeft,
+    LogicalKeyboardKey.metaRight,
+    LogicalKeyboardKey.altGraph,
+    LogicalKeyboardKey.capsLock,
+    LogicalKeyboardKey.numLock,
+    LogicalKeyboardKey.scrollLock,
+    LogicalKeyboardKey.fn,
+    LogicalKeyboardKey.fnLock,
+  };
 
   @override
   void connectionClosed() {

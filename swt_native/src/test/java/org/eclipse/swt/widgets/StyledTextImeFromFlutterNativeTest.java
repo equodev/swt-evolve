@@ -22,13 +22,19 @@ class StyledTextImeFromFlutterNativeTest extends EventsFromFlutterNativeTestBase
 
     /** What the client sends on ImeComposition, applied as its handler does. */
     private static void report(StyledText st, String text, int caret, boolean commit) {
-        // The text, the caret within it, and whether it is committed, as the client writes them.
+        report(st, text, caret, commit, 0);
+    }
+
+    private static void report(StyledText st, String text, int caret, boolean commit, int replacing) {
+        // The text, the caret within it, whether it is committed, and how many characters before
+        // the caret it replaces, as the client writes them.
         dev.equo.swt.WidgetWire w = dev.equo.swt.WidgetWire.borrow();
         try {
             w.reset();
             w.write(text);
             w.write(caret);
             w.write(commit);
+            w.write(replacing);
             ImeHelper.apply((DartCanvas) st.getImpl(), java.util.Arrays.copyOf(w.buffer(), w.size()));
         } finally {
             dev.equo.swt.WidgetWire.giveBack(w);
@@ -54,6 +60,17 @@ class StyledTextImeFromFlutterNativeTest extends EventsFromFlutterNativeTestBase
         report(st, "に", 1, true);
 
         assertThat(st.getText()).isEqualTo("aにb");
+        assertThat(st.getCaretOffset()).isEqualTo(2);
+    }
+
+    @Test
+    void a_commit_that_replaces_the_letter_before_the_caret_takes_its_place() {
+        // macOS press-and-hold: the accented e picked in the accent menu replaces the e typed before it.
+        StyledText st = styledText("aeb", 2);
+
+        report(st, "é", 1, true, 1);
+
+        assertThat(st.getText()).isEqualTo("aéb");
         assertThat(st.getCaretOffset()).isEqualTo(2);
     }
 

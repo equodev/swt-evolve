@@ -86,4 +86,48 @@ void main() {
       reason: 'Ctrl+S must reach Java, or the app command bound to it can never run',
     );
   });
+
+  testWidgets('a focused StyledText leaves Control+Command+Space to the browser on macOS',
+      (tester) async {
+    final keyDowns = <VEvent?>[];
+
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: _kWidth,
+        height: _kHeight,
+        child: _CapturingStyledTextSwt(
+          value: editor(),
+          onEvent: (ev, payload) {
+            if (ev == 'Key/KeyDown') keyDowns.add(payload);
+          },
+        ),
+      ),
+    ));
+    await tester.tapAt(tester.getCenter(find.byType(_CapturingStyledTextSwt)));
+    FocusRequests.instance.request(7);
+    addTearDown(FocusRequests.instance.reset);
+    await tester.pumpAndSettle();
+    expect(canvasEditorFocused, isTrue, reason: 'sanity: the clicked editor holds the keyboard');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    final spaceHandled = await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+
+    expect(spaceHandled, isFalse,
+        reason: 'a handled keydown has its default prevented, and macOS then never opens the '
+            'Emoji & Symbols palette');
+    expect(keyDowns.any((e) => e != null && e.keyCode == ' '.codeUnitAt(0)), isTrue,
+        reason: 'Java still sees the key');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    final ctrlSpaceHandled = await tester.sendKeyDownEvent(LogicalKeyboardKey.space);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.space);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    expect(ctrlSpaceHandled, isTrue, reason: 'Control+Space stays with the editor');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
 }
