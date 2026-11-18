@@ -11,6 +11,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.DartGC;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.GCHelper;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 
@@ -105,6 +106,16 @@ public final class OwnerDrawOverlay {
         FlutterBridge.forgetWhatIsShown(row);
     }
 
+    /**
+     * A GC for the owner-draw events (MeasureItem, EraseItem, PaintItem) of {@code parent}'s rows.
+     * A compact Table/Tree's GC resolves the system font at the native height its rows are laid out for.
+     */
+    static GC eventGc(Control parent) {
+        GC gc = new GC(parent);
+        if (DisplayHelper.compactRows()) GCHelper.drawCompactRow(gc);
+        return gc;
+    }
+
     static boolean isListening(Item row) {
         Object impl = row.getImpl();
         if (impl instanceof DartTableItem) return ((DartTableItem) impl).ownerDrawOverlay;
@@ -119,7 +130,7 @@ public final class OwnerDrawOverlay {
     static void paint(Control parent, Item row, int columnCount) {
         DartWidget owner = (DartWidget) parent.getImpl();
         Rectangle first = bounds(row, 0);
-        GC gc = new GC(parent);
+        GC gc = eventGc(parent);
         ((DartGC) gc.getImpl()).paintOwnerDrawnItem(row);
         Transform toRow = new Transform(parent.getDisplay());
         try {

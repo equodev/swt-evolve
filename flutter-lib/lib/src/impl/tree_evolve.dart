@@ -313,7 +313,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   }
 
   /// The one height every row is laid out, hit-tested and reported at, as `TreeSizes.getItemHeight`
-  /// computes it: the theme's row, or the font's line and the row's padding when that is taller.
+  /// computes it: the theme's row, or the font's line and the row's padding when that is taller or
+  /// the Tree is compact.
   double _rowHeight(BuildContext context, TreeThemeExtension theme, bool hasMultiColumn) {
     final double themeRow =
         hasMultiColumn ? theme.itemHeightWithCols : theme.itemHeight + theme.itemPadding.vertical;
@@ -325,6 +326,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
     final double line = FontUtils.measureTextWidget('Ag', style).height +
         (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).vertical;
+    if (state.compactRows ?? false) return line.ceilToDouble();
     return (line > themeRow ? line : themeRow).ceilToDouble();
   }
 

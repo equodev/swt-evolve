@@ -64,6 +64,7 @@ class VTable extends VComposite {
   int? topIndex;
 
   int? ownerDrawItemHeight;
+  bool? compactRows;
 
   @override
   void copyFrom(VWidget other) {
@@ -83,6 +84,7 @@ class VTable extends VComposite {
       topIndex = other.topIndex;
       itemCount = other.itemCount;
       ownerDrawItemHeight = other.ownerDrawItemHeight;
+      compactRows = other.compactRows;
     }
   }
 
@@ -130,6 +132,9 @@ class VTable extends VComposite {
         return true;
       case 5193: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
+        return true;
+      case 5198: // compactRows
+        compactRows = r.boolean();
         return true;
       default:
         return super.readWire(key, r);
@@ -230,6 +235,12 @@ class VTable extends VComposite {
         w.keyInt32(5193, v_);
       }
     }
+    {
+      final v_ = compactRows;
+      if (v_ != null) {
+        w.keyBoolean(5198, v_);
+      }
+    }
   }
 
   @override
@@ -249,6 +260,7 @@ class VTable extends VComposite {
     visit(5195, topIndex);
     visit(5190, itemCount);
     visit(5193, ownerDrawItemHeight);
+    visit(5198, compactRows);
   }
 
   @override

@@ -943,7 +943,7 @@ public class TableHelper {
         boolean[] textDrawn = new boolean[count];
         Image[] images = new Image[count];
         boolean[] suppressed;
-        GC gc = new GC(item.parent);
+        GC gc = OwnerDrawOverlay.eventGc(item.parent);
         DartGC dartGc = (DartGC) gc.getImpl();
         // This GC only ever draws through textCapture/imageCapture below — Flutter never
         // learns it exists, so its dispose must not tell Flutter otherwise.

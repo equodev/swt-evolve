@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = 474132839;
+const int wireFingerprint = -1388304526;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -728,6 +728,7 @@ abstract final class WireKey {
   static const int k_TabItem_toolTipText = 5121;
   static const int k_Table_columnOrder = 5184;
   static const int k_Table_columns = 5185;
+  static const int k_Table_compactRows = 5198;
   static const int k_Table_editors = 5186;
   static const int k_Table_headerBackground = 5187;
   static const int k_Table_headerForeground = 5188;
@@ -806,6 +807,7 @@ abstract final class WireKey {
   static const int k_Transform_elements = 5888;
   static const int k_Tree_columnOrder = 5952;
   static const int k_Tree_columns = 5953;
+  static const int k_Tree_compactRows = 5965;
   static const int k_Tree_editors = 5954;
   static const int k_Tree_headerBackground = 5955;
   static const int k_Tree_headerForeground = 5956;
@@ -1773,6 +1775,7 @@ const Map<int, String> wireMapKeyNames = {
   78: 'column',
   79: 'columnOrder',
   80: 'columns',
+  482: 'compactRows',
   81: 'config',
   82: 'content',
   83: 'control',

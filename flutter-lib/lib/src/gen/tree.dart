@@ -71,6 +71,7 @@ class VTree extends VComposite {
   VTreeItem? topItem;
 
   int? ownerDrawItemHeight;
+  bool? compactRows;
 
   @override
   void copyFrom(VWidget other) {
@@ -89,6 +90,7 @@ class VTree extends VComposite {
       sortDirection = other.sortDirection;
       topItem = other.topItem;
       ownerDrawItemHeight = other.ownerDrawItemHeight;
+      compactRows = other.compactRows;
     }
   }
 
@@ -133,6 +135,9 @@ class VTree extends VComposite {
         return true;
       case 5960: // ownerDrawItemHeight
         ownerDrawItemHeight = r.int32();
+        return true;
+      case 5965: // compactRows
+        compactRows = r.boolean();
         return true;
       default:
         return super.readWire(key, r);
@@ -227,6 +232,12 @@ class VTree extends VComposite {
         w.keyInt32(5960, v_);
       }
     }
+    {
+      final v_ = compactRows;
+      if (v_ != null) {
+        w.keyBoolean(5965, v_);
+      }
+    }
   }
 
   @override
@@ -245,6 +256,7 @@ class VTree extends VComposite {
     visit(5963, sortDirection);
     visit(5964, topItem);
     visit(5960, ownerDrawItemHeight);
+    visit(5965, compactRows);
   }
 
   @override

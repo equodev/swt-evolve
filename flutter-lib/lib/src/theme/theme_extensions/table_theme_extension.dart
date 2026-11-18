@@ -48,7 +48,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   final EdgeInsets rowPadding;
   final EdgeInsets headerPadding;
   final EdgeInsets cellPadding;
-  
+  // A cell's padding when the application turned native item heights off (VTable.compactRows).
+  final EdgeInsets compactCellPadding;
+
   // Header properties
   final double headerBorderWidth;
   
@@ -123,6 +125,7 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.rowPadding,
     required this.headerPadding,
     required this.cellPadding,
+    required this.compactCellPadding,
     required this.headerBorderWidth,
     this.rowTextStyle,
     this.headerTextStyle,
@@ -154,5 +157,9 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.eventDefaultDetail,
     required this.minTextContrast,
   });
+
+  /// The theme a Table's rows are laid out with: a compact Table's cells take [compactCellPadding].
+  TableThemeExtension forRows({required bool compact}) =>
+      compact ? copyWith(cellPadding: compactCellPadding) : this;
 }
 

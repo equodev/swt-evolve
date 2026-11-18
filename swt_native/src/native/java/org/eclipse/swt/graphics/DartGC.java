@@ -1145,6 +1145,10 @@ public final class DartGC extends DartResource implements IGC {
         if (imageCapture != null) {
             return;
         }
+        if (GCHelper.drawsNativeLineBox(this)) {
+            y = GCHelper.nativeLineBoxY(this, string, x, y, flags);
+            flags |= SWT.DRAW_TRANSPARENT;
+        }
         VGCDrawTextStringintintint drawOp = VGCDrawTextStringintintint.reused();
         drawOp.string = string;
         drawOp.x = x;
@@ -1709,7 +1713,7 @@ public final class DartGC extends DartResource implements IGC {
     public FontMetrics getFontMetrics() {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        return GCHelper.createFontMetrics(data.font);
+        return GCHelper.fontMetrics(this);
     }
 
     /**
@@ -2627,6 +2631,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (font != null && font.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+        font = GCHelper.fontOf(this, font);
         font = GraphicsUtils.copyFont(font);
         Font newValue = font;
         if (!java.util.Objects.equals(this.font, newValue)) {
@@ -3338,7 +3343,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
         if (string == null)
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
-        return GCHelper.textExtent(string, flags, data.font);
+        return GCHelper.textExtent(this, string, flags);
     }
 
     /**
@@ -3712,6 +3717,8 @@ public final class DartGC extends DartResource implements IGC {
     public java.util.function.Consumer<String> textCapture;
 
     public boolean silentDispose;
+
+    boolean compactRow;
 
     org.eclipse.swt.widgets.Widget ownerDrawItem;
 

@@ -156,9 +156,15 @@ public class VTree extends VComposite {
         return ((DartTree) impl).wireOwnerDrawItemHeight();
     }
 
+    public boolean getCompactRows() {
+        return ((DartTree) impl).wireCompactRows();
+    }
+
     public static final int COLUMN_ORDER = 5952;
 
     public static final int COLUMNS = 5953;
+
+    public static final int COMPACT_ROWS = 5965;
 
     public static final int EDITORS = 5954;
 
@@ -211,6 +217,8 @@ public class VTree extends VComposite {
                 return "topItem";
             case OWNER_DRAW_ITEM_HEIGHT:
                 return "ownerDrawItemHeight";
+            case COMPACT_ROWS:
+                return "compactRows";
         }
         return super.wireName(key);
     }
@@ -258,6 +266,9 @@ public class VTree extends VComposite {
                 return true;
             case 5960:
                 w.write((int) getOwnerDrawItemHeight());
+                return true;
+            case 5965:
+                w.write(getCompactRows());
                 return true;
         }
         return super.writeWire(w, key);
@@ -395,11 +406,20 @@ public class VTree extends VComposite {
                     w.write((int) v_);
                     return dev.equo.swt.WidgetWire.WRITTEN;
                 }
+            case 5965:
+                {
+                    boolean v_ = getCompactRows();
+                    if (!v_)
+                        return dev.equo.swt.WidgetWire.AT_ZERO;
+                    w.key(5965);
+                    w.write(v_);
+                    return dev.equo.swt.WidgetWire.WRITTEN;
+                }
         }
         return super.writeWireWhole(w, key);
     }
 
-    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 5952, 5953, 5954, 5955, 5956, 5957, 5958, 5959, 5961, 5962, 5963, 5964, 5960 });
+    private static final int[] wireKeys_ = dev.equo.swt.WidgetWire.concat(VComposite.allWireKeys_(), new int[] { 5952, 5953, 5954, 5955, 5956, 5957, 5958, 5959, 5961, 5962, 5963, 5964, 5960, 5965 });
 
     protected static int[] allWireKeys_() {
         return wireKeys_;

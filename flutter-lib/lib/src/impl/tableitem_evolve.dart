@@ -47,7 +47,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
   Widget build(BuildContext context) {
     _context = TableItemContext.of(context);
 
-    final theme = Theme.of(context).extension<TableThemeExtension>();
+    final theme = Theme.of(context).extension<TableThemeExtension>()?.forRows(
+        compact: _context?.parentTableValue.compactRows ?? false);
     if (theme == null) {
       return const SizedBox.shrink();
     }

@@ -32,6 +32,121 @@ public class GCHelper {
         return control.getForeground();
     }
 
+    /**
+     * The height of native SWT's {@code Display.getSystemFont()} (macOS's system font size). A
+     * compact Table/Tree row ({@code useNativeItemHeight=false}) is laid out for it: the system font
+     * takes this height in that row's owner-draw events and in the row's height.
+     */
+    public static final int NATIVE_SYSTEM_FONT_HEIGHT = 13;
+
+    /**
+     * Native SWT's {@code getFontMetrics()} ascent and descent for that font (leading 0). Text a
+     * compact row draws in it lies in this line box: its baseline {@code NATIVE_SYSTEM_FONT_ASCENT}
+     * below the y it is drawn at.
+     */
+    public static final int NATIVE_SYSTEM_FONT_ASCENT = 13;
+    public static final int NATIVE_SYSTEM_FONT_DESCENT = 3;
+
+    /** Display data key of its {@link #NATIVE_SYSTEM_FONT_HEIGHT} system fonts, by style (NORMAL, BOLD, ITALIC, both). */
+    private static final String COMPACT_ROW_FONTS = "dev.equo.swt.compactRowFonts";
+
+    /**
+     * Makes {@code gc} the GC of a compact row's owner-draw events: from now on it draws and measures
+     * the system font at {@link #NATIVE_SYSTEM_FONT_HEIGHT}, starting with the font it has.
+     */
+    public static void drawCompactRow(GC gc) {
+        DartGC impl = (DartGC) gc.getImpl();
+        impl.compactRow = true;
+        gc.setFont(impl.data.font);
+    }
+
+    /**
+     * The font {@code gc} takes when set to {@code font}, which setFont has already refused when
+     * disposed. A compact row's GC belongs to a Table or Tree, so its device is their Display.
+     */
+    public static Font fontOf(DartGC gc, Font font) {
+        return gc.compactRow ? compactRowFont((Display) gc.data.device, font) : font;
+    }
+
+    /**
+     * {@code font} in a compact row: the system font, or none, at {@link #NATIVE_SYSTEM_FONT_HEIGHT}
+     * in its style; any other family or height as it is.
+     */
+    private static Font compactRowFont(Display display, Font font) {
+        Font system = display.getSystemFont();
+        if (font != null && !sameFace(font, system)) return font;
+        FontData face = system.getFontData()[0];
+        int style = (font != null ? font.getFontData()[0].getStyle() : face.getStyle()) & (SWT.BOLD | SWT.ITALIC);
+        Font[] fonts = compactRowFonts(display);
+        Font cached = fonts[style];
+        if (cached == null || cached.isDisposed()) {
+            cached = fonts[style] = new Font(display, face.getName(), NATIVE_SYSTEM_FONT_HEIGHT, style);
+        }
+        return cached;
+    }
+
+    /** {@code display}'s compact row fonts, disposed with it. */
+    private static Font[] compactRowFonts(Display display) {
+        Object fonts = display.getData(COMPACT_ROW_FONTS);
+        if (!(fonts instanceof Font[])) {
+            Font[] created = new Font[4];
+            display.setData(COMPACT_ROW_FONTS, created);
+            display.disposeExec(() -> {
+                for (Font f : created) if (f != null) f.dispose();
+            });
+            fonts = created;
+        }
+        return (Font[]) fonts;
+    }
+
+    /** Whether {@code gc} draws in native's system font line box: a compact row's system font. */
+    public static boolean drawsNativeLineBox(DartGC gc) {
+        if (!gc.compactRow) return false;
+        for (Font f : compactRowFonts((Display) gc.data.device)) if (f == gc.data.font) return true;
+        return false;
+    }
+
+    /** How far below its own baseline {@code gc}'s font has native's, in whole pixels. */
+    public static int nativeBaselineShift(DartGC gc) {
+        return NATIVE_SYSTEM_FONT_ASCENT - FontMetricsUtil.computeFontMetrics(gc.data.font)[0];
+    }
+
+    /**
+     * Where {@code drawText(string, x, y, flags)} on {@code gc} draws its glyphs: in native's line box
+     * when {@link #drawsNativeLineBox}, its background filled over that box. Returns the y to draw at.
+     */
+    public static int nativeLineBoxY(DartGC gc, String string, int x, int y, int flags) {
+        if ((flags & SWT.DRAW_TRANSPARENT) == 0) {
+            Point extent = textExtent(gc, string, flags);
+            gc.fillRectangle(x, y, extent.x, extent.y);
+        }
+        return y + nativeBaselineShift(gc);
+    }
+
+    /** {@code gc}'s font metrics; native's system font line box when {@link #drawsNativeLineBox}. */
+    public static FontMetrics fontMetrics(DartGC gc) {
+        FontMetrics metrics = createFontMetrics(gc.data.font);
+        if (!drawsNativeLineBox(gc)) return metrics;
+        DartFontMetrics impl = new DartFontMetrics(null);
+        impl.setMetrics(NATIVE_SYSTEM_FONT_ASCENT, NATIVE_SYSTEM_FONT_DESCENT,
+                NATIVE_SYSTEM_FONT_ASCENT + NATIVE_SYSTEM_FONT_DESCENT, metrics.getAverageCharWidth());
+        return impl.getApi();
+    }
+
+    /** {@link #textExtent(String, int, Font)} in {@code gc}'s font, its lines native's line box tall when {@link #drawsNativeLineBox}. */
+    public static Point textExtent(DartGC gc, String string, int flags) {
+        Point extent = textExtent(string, flags, gc.data.font);
+        if (!drawsNativeLineBox(gc)) return extent;
+        int lines = (flags & SWT.DRAW_DELIMITER) != 0 ? string.split("\r\n|\r|\n", -1).length : 1;
+        return new Point(extent.x, lines * (NATIVE_SYSTEM_FONT_ASCENT + NATIVE_SYSTEM_FONT_DESCENT));
+    }
+
+    private static boolean sameFace(Font font, Font system) {
+        FontData a = font.getFontData()[0];
+        FontData b = system.getFontData()[0];
+        return a.getHeight() == b.getHeight() && a.getName().equalsIgnoreCase(b.getName());
+    }
+
     public static Object stateKeyOf(DartGC gc) {
         if (gc == null) return null;
         return gc.ownerDrawItem != null ? gc.ownerDrawItem : gc.drawable;

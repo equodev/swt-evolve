@@ -34,7 +34,7 @@ public final class TableColumnHelper {
         int width = withPadding(headerWidth(column, dartTable));
         GC gc = null;
         if (dartTable.hooks(SWT.MeasureItem)) {
-            gc = new GC(table);
+            gc = OwnerDrawOverlay.eventGc(table);
             // Only ever measured with: Flutter never hears of this GC, so its dispose must not tell it.
             ((DartGC) gc.getImpl()).silentDispose = true;
         }

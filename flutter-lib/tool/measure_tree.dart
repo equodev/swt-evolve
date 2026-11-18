@@ -35,6 +35,9 @@ void setupCases(WidgetMeasurer measurer) {
       ),
     );
   }
+  measurer.addTestCase(
+    createGeometryCase(geometryWidths.first, 0, compact: true),
+  );
   print('Generated ${measurer.testCases.length} Tree test cases');
 }
 
@@ -55,8 +58,10 @@ MeasurementCase createGeometryCase(
   int width,
   int columnCount, {
   int? fontSize,
+  bool compact = false,
 }) {
   final value = createVTree(true, columnCount)
+    ..compactRows = compact
     ..font = fontSize == null
         ? null
         : (VFont.empty()..fontData = [VFontData.empty()..height = fontSize])
@@ -67,7 +72,9 @@ MeasurementCase createGeometryCase(
       ..height = 400)
     ..items = createGeometryItems(columnCount);
   return MeasurementCase(
-    descr: fontSize == null
+    descr: compact
+        ? 'compact_cols$columnCount'
+        : fontSize == null
         ? 'geometry_width${width}_cols$columnCount'
         : 'fontprobe_cols$columnCount',
     style: 'NONE',

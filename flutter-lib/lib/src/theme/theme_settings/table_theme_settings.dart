@@ -95,7 +95,8 @@ TableThemeExtension _getTableTheme({
     rowPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
     headerPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
     cellPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-    
+    compactCellPadding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 1.0),
+
     // Header properties
     headerBorderWidth: 2.0,
     

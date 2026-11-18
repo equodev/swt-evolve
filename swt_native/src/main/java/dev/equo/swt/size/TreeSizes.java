@@ -6,6 +6,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.DartTree;
+import org.eclipse.swt.widgets.DisplayHelper;
 import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TreeItem;
@@ -19,7 +20,7 @@ public class TreeSizes {
     private static final double HEADER_HEIGHT = 32.0;
     private static final double HEADER_HEIGHT_WITH_COLS = 40.0;
 
-    private static final double ROW_PADDING_VERTICAL = 2.0;
+    public static final double ROW_PADDING_VERTICAL = 2.0;
     private static final int WIDTH_NO_COLUMNS = 200;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
 
@@ -96,6 +97,7 @@ public class TreeSizes {
         } else {
             ts = TextStyle.from(tree.getFont());
         }
+        if (DisplayHelper.compactRows()) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL);
         double textHeight = FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL;
         return (int) Math.ceil(Math.max(textHeight, minHeight));
     }

@@ -38,6 +38,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   EdgeInsets get rowPadding;
   EdgeInsets get headerPadding;
   EdgeInsets get cellPadding;
+  EdgeInsets get compactCellPadding;
   double get headerBorderWidth;
   TextStyle? get rowTextStyle;
   TextStyle? get headerTextStyle;
@@ -99,6 +100,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     EdgeInsets? rowPadding,
     EdgeInsets? headerPadding,
     EdgeInsets? cellPadding,
+    EdgeInsets? compactCellPadding,
     double? headerBorderWidth,
     TextStyle? rowTextStyle,
     TextStyle? headerTextStyle,
@@ -169,6 +171,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       rowPadding: rowPadding ?? this.rowPadding,
       headerPadding: headerPadding ?? this.headerPadding,
       cellPadding: cellPadding ?? this.cellPadding,
+      compactCellPadding: compactCellPadding ?? this.compactCellPadding,
       headerBorderWidth: headerBorderWidth ?? this.headerBorderWidth,
       rowTextStyle: rowTextStyle ?? this.rowTextStyle,
       headerTextStyle: headerTextStyle ?? this.headerTextStyle,
@@ -302,6 +305,9 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       rowPadding: t < 0.5 ? rowPadding : other.rowPadding,
       headerPadding: t < 0.5 ? headerPadding : other.headerPadding,
       cellPadding: t < 0.5 ? cellPadding : other.cellPadding,
+      compactCellPadding: t < 0.5
+          ? compactCellPadding
+          : other.compactCellPadding,
       headerBorderWidth: t < 0.5 ? headerBorderWidth : other.headerBorderWidth,
       rowTextStyle: TextStyle.lerp(rowTextStyle, other.rowTextStyle, t),
       headerTextStyle: TextStyle.lerp(
@@ -494,6 +500,10 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
               other.cellPadding,
             ) &&
             const DeepCollectionEquality().equals(
+              compactCellPadding,
+              other.compactCellPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
               headerBorderWidth,
               other.headerBorderWidth,
             ) &&
@@ -647,6 +657,7 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(rowPadding),
       const DeepCollectionEquality().hash(headerPadding),
       const DeepCollectionEquality().hash(cellPadding),
+      const DeepCollectionEquality().hash(compactCellPadding),
       const DeepCollectionEquality().hash(headerBorderWidth),
       const DeepCollectionEquality().hash(rowTextStyle),
       const DeepCollectionEquality().hash(headerTextStyle),
@@ -722,6 +733,7 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
   EdgeInsets get rowPadding => tableThemeExtension.rowPadding;
   EdgeInsets get headerPadding => tableThemeExtension.headerPadding;
   EdgeInsets get cellPadding => tableThemeExtension.cellPadding;
+  EdgeInsets get compactCellPadding => tableThemeExtension.compactCellPadding;
   double get headerBorderWidth => tableThemeExtension.headerBorderWidth;
   TextStyle? get rowTextStyle => tableThemeExtension.rowTextStyle;
   TextStyle? get headerTextStyle => tableThemeExtension.headerTextStyle;

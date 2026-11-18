@@ -31,7 +31,7 @@ public final class TreeColumnHelper {
         int width = headerWidth(column, dartTree, index);
         GC gc = null;
         if (dartTree.hooks(SWT.MeasureItem)) {
-            gc = new GC(tree);
+            gc = OwnerDrawOverlay.eventGc(tree);
             // Only ever measured with: Flutter never hears of this GC, so its dispose must not tell it.
             ((DartGC) gc.getImpl()).silentDispose = true;
         }

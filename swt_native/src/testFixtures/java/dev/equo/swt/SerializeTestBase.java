@@ -949,7 +949,8 @@ public class SerializeTestBase {
             name = value.getClass().getSimpleName();
             known.addAll(dev.equo.swt.harness.WireFrames.propertiesOf(value));
             // Writing an owner-drawn row runs its listeners, as the real display delivers them.
-            try (Mocks.Delivery ignored = Mocks.deliverEvents(DartMocks.dartDisplay())) {
+            try (Mocks.Delivery ignored = Mocks.deliverEvents(DartMocks.dartDisplay());
+                 AutoCloseable compact = compactRowsFor(value)) {
                 written.addAll(serialize(value).keySet());
             }
         }
@@ -966,6 +967,24 @@ public class SerializeTestBase {
         org.assertj.core.api.Assertions.assertThat(written)
                 .as("%s: the fill leaves these at their default in every style", name)
                 .containsAll(expected);
+    }
+
+    /**
+     * Turns native item heights off while a Table or Tree is written, so its compactRows is not
+     * at its default; an application sets this for the whole process, so it is put back after.
+     */
+    private static AutoCloseable compactRowsFor(Object value) {
+        if (!(value instanceof Table) && !(value instanceof Tree))
+            return () -> { };
+        String key = org.eclipse.swt.widgets.DisplayHelper.USE_NATIVE_ITEM_HEIGHT;
+        String previous = System.getProperty(key);
+        System.setProperty(key, "false");
+        return () -> {
+            if (previous == null)
+                System.clearProperty(key);
+            else
+                System.setProperty(key, previous);
+        };
     }
 
     protected AssertConsumer node(String field) {

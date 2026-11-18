@@ -5,6 +5,7 @@ import dev.equo.swt.FontMetricsUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.DartTable;
+import org.eclipse.swt.widgets.DisplayHelper;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.TableItem;
@@ -20,6 +21,7 @@ public class TableSizes {
 
     private static final double ROW_PADDING_VERTICAL = 8.0;
     private static final double HEADER_PADDING_VERTICAL = 8.0;
+    public static final double COMPACT_ROW_PADDING_VERTICAL = 2.0;
     private static final double BORDER_WIDTH = 2.0;
     private static final int WIDTH_NO_COLUMNS = 70;
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
@@ -137,6 +139,7 @@ public class TableSizes {
         } else {
             ts = TextStyle.from(table.getFont());
         }
+        if (DisplayHelper.compactRows()) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + COMPACT_ROW_PADDING_VERTICAL);
         double textHeight = FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL;
         return (int) Math.ceil(Math.max(textHeight, minHeight));
     }

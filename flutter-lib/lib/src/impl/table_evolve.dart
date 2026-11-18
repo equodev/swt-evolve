@@ -245,7 +245,9 @@ class TableImpl<T extends TableSwt, V extends VTable>
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted) _reportScrollOffset();
     });
-    final widgetTheme = Theme.of(context).extension<TableThemeExtension>()!;
+    final widgetTheme = Theme.of(context)
+        .extension<TableThemeExtension>()!
+        .forRows(compact: state.compactRows ?? false);
     final columns = getColumns();
     final items = getItems();
     final showHeader = state.headerVisible ?? false;

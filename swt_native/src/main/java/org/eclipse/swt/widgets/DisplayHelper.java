@@ -15,6 +15,18 @@ public class DisplayHelper {
 
     static final int ICON_SIZE = 32;
 
+    /**
+     * Whether the application set {@code org.eclipse.swt.internal.cocoa.useNativeItemHeight=false}: the rows of
+     * its Tables and Trees are then one text line tall, with no theme minimum. Read from the property itself, as
+     * the Display field that holds it on Cocoa is missing from older SWT versions.
+     */
+    public static boolean compactRows() {
+        return !Boolean.parseBoolean(System.getProperty(USE_NATIVE_ITEM_HEIGHT, "true"));
+    }
+
+    /** The system property an application sets to false for compact Table and Tree rows. */
+    public static final String USE_NATIVE_ITEM_HEIGHT = "org.eclipse.swt.internal.cocoa.useNativeItemHeight";
+
     static final int ERROR_FILL = 0xD93025;
 
     static final int WARNING_FILL = 0xF9AB00;

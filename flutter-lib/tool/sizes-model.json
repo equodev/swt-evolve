@@ -15895,6 +15895,45 @@
           "style": "NONE",
           "useFontTheme": false,
           "width": 300.0
+        },
+        {
+          "discoveredComponents": {
+            "header": {
+              "height": 28.0,
+              "left": 0.0,
+              "top": 0.0,
+              "width": 300.0
+            },
+            "row": [
+              {
+                "height": 18.0,
+                "left": 0.0,
+                "paddingHorizontal": 16.0,
+                "paddingVertical": 2.0,
+                "top": 28.0,
+                "width": 300.0
+              },
+              {
+                "height": 18.0,
+                "left": 0.0,
+                "paddingHorizontal": 16.0,
+                "paddingVertical": 2.0,
+                "top": 46.0,
+                "width": 300.0
+              }
+            ]
+          },
+          "expectedComponents": {
+            "named": [
+              "header"
+            ],
+            "rowsOf": "TableItemSwt"
+          },
+          "height": 400.0,
+          "name": "Table_NONE_compact_cols0",
+          "style": "NONE",
+          "useFontTheme": false,
+          "width": 300.0
         }
       ]
     },
@@ -33336,6 +33375,59 @@
           },
           "height": 400.0,
           "name": "Tree_NONE_fontprobe_cols3",
+          "style": "NONE",
+          "useFontTheme": false,
+          "width": 300.0
+        },
+        {
+          "discoveredComponents": {
+            "expander": [
+              {
+                "height": 12.0,
+                "left": 16.25,
+                "top": 37.0,
+                "width": 12.0
+              },
+              {
+                "height": 12.0,
+                "left": 32.25,
+                "top": 59.0,
+                "width": 12.0
+              }
+            ],
+            "header": {
+              "height": 32.0,
+              "left": 0.0,
+              "top": 0.0,
+              "width": 300.0
+            },
+            "row": [
+              {
+                "height": 22.0,
+                "left": 8.25,
+                "paddingHorizontal": 16.0,
+                "paddingVertical": 2.0,
+                "top": 32.0,
+                "width": 283.5
+              },
+              {
+                "height": 22.0,
+                "left": 8.25,
+                "paddingHorizontal": 16.0,
+                "paddingVertical": 2.0,
+                "top": 54.0,
+                "width": 283.5
+              }
+            ]
+          },
+          "expectedComponents": {
+            "named": [
+              "header"
+            ],
+            "rowsOf": "TreeItemSwt"
+          },
+          "height": 400.0,
+          "name": "Tree_NONE_compact_cols0",
           "style": "NONE",
           "useFontTheme": false,
           "width": 300.0

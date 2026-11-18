@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 474132839;
+    public static final int FINGERPRINT = -1388304526;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -894,6 +894,7 @@ public final class WireTable {
             "curveLine",
             "regional_locale",
             "separator",
+            "compactRows",
     };
 
     /** Properties as `Class.name`, by number; null where no property has the number. */
@@ -1476,6 +1477,7 @@ public final class WireTable {
         property(5195, "Table.topIndex", "int");
         property(5196, "Table.sortColumn", "ref");
         property(5197, "Table.sortDirection", "int");
+        property(5198, "Table.compactRows", "bool");
         property(5248, "TableColumn.alignment", "int");
         property(5249, "TableColumn.moveable", "bool");
         property(5250, "TableColumn.resizable", "bool");
@@ -1553,6 +1555,7 @@ public final class WireTable {
         property(5962, "Tree.sortColumn", "ref");
         property(5963, "Tree.sortDirection", "int");
         property(5964, "Tree.topItem", "ref");
+        property(5965, "Tree.compactRows", "bool");
         property(6016, "TreeColumn.alignment", "int");
         property(6017, "TreeColumn.moveable", "bool");
         property(6018, "TreeColumn.resizable", "bool");
