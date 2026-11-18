@@ -331,6 +331,7 @@ class _WindowMetricsReporter {
   _WindowMetricsReporter(this.widgetName, this.widgetId) {
     observeViewportChanges(_sendCurrentSize);
     observeWindowClose(_sendWindowClose);
+    if (widgetName == 'Display' && getConfirmClose()) confirmLeavingPage();
     EquoCommService.onReconnect(_resyncAfterReconnect);
     // Config flags land after the first frame, so the first report is made before
     // csd_placement is known. Re-report when they arrive, or the inset above is missed.
@@ -353,12 +354,12 @@ class _WindowMetricsReporter {
     _sendWindowSizedClientReady(widgetName, widgetId);
   }
 
-  // The window/tab is tearing down (pagehide/beforeunload): ask Java to close the SWT shells (no-op on
+  // The window/tab is tearing down (pagehide): ask Java to close the SWT shells (no-op on
   // desktop-native, where the close is detected natively). This fires for a *refresh* exactly as it does
   // for a real close — the browser can't tell them apart here — so it is sent on the dedicated WinUnload
   // channel, which Java defers by a grace period and cancels if the refreshed page reconnects (vs the
-  // CSD close button, which uses WinClose for an immediate, unambiguous close). Sent at most once —
-  // pagehide and beforeunload both fire during one teardown, and a duplicate would race the Java side.
+  // CSD close button, which uses WinClose for an immediate, unambiguous close). Sent at most once:
+  // a duplicate would race the Java side.
   void _sendWindowClose() {
     if (_windowCloseSent) return;
     _windowCloseSent = true;

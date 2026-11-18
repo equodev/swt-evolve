@@ -20,6 +20,9 @@ external JSString? get _theme;
 @JS('window.evolve.enableTestSemantics')
 external JSBoolean? get _enableTestSemantics;
 
+@JS('window.evolve.confirmClose')
+external JSBoolean? get _confirmClose;
+
 @JS('window.evolve.deferredFontManifest')
 external JSString? get _deferredFontManifest;
 
@@ -71,6 +74,11 @@ extension type _KeyboardEvent(JSObject _) implements JSObject {
   external bool get metaKey;
   external bool get ctrlKey;
   external void preventDefault();
+}
+
+extension type _BeforeUnloadEvent(JSObject _) implements JSObject {
+  external void preventDefault();
+  external set returnValue(String value);
 }
 
 // --dart-define fallbacks for a `flutter run` dev launch (Phase 2 web introspection path): when the
@@ -175,10 +183,10 @@ void observeViewportChanges(void Function() onChange) {
 }
 
 /// Fires [onClose] when the browser tab/window is being torn down, so Java can run the SWT shell
-/// close — mirroring the desktop-native window-close path. We listen on both `pagehide` (the
-/// reliable teardown signal: tab close, navigation, bfcache) and `beforeunload`; a socket drop is
-/// deliberately NOT used as the signal, since a dropped socket may just be a transient disconnect
-/// that reconnects. Double delivery is harmless — the Java side closes the shells idempotently.
+/// close — mirroring the desktop-native window-close path. `pagehide` is the teardown itself (tab
+/// close, navigation, bfcache), which a `beforeunload` the user cancelled never reaches; a socket
+/// drop is deliberately NOT used as the signal, since a dropped socket may just be a transient
+/// disconnect that reconnects.
 ///
 /// NOTE: this fires for a *refresh* too — the browser exposes no way to tell a reload from a real
 /// close at unload time. Disambiguation is deferred to Java: the teardown is sent on `WinUnload`
@@ -186,7 +194,22 @@ void observeViewportChanges(void Function() onChange) {
 /// reconnects and re-sends ClientReady. So a refresh keeps the shells alive; a real close ends them.
 void observeWindowClose(void Function() onClose) {
   _addWindowEventListener('pagehide'.toJS, (() { onClose(); }).toJS);
-  _addWindowEventListener('beforeunload'.toJS, (() { onClose(); }).toJS);
+}
+
+/// Whether the page asks the browser to confirm leaving it (`WebFlutterServer.Builder.confirmClose`).
+bool getConfirmClose() => _confirmClose?.toDart ?? false;
+
+/// Has the browser ask the user to confirm a tab close or a reload, as a page with unsaved work
+/// does. Once the page is left, the application's own close questions have no client to answer
+/// them, so Java ends the session instead of waiting on them.
+void confirmLeavingPage() {
+  _addWindowEventListener(
+    'beforeunload'.toJS,
+    ((_BeforeUnloadEvent event) {
+      event.preventDefault();
+      event.returnValue = '';
+    }).toJS,
+  );
 }
 
 /// Stops the browser from acting on a small set of reserved shortcuts (Ctrl/Cmd + S, P, O) so they
