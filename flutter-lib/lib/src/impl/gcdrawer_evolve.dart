@@ -2203,6 +2203,30 @@ String _do(Offset o) => '${o.dx.round()},${o.dy.round()}';
 // ignore: deprecated_member_use
 String _dc(Color c) => '#${c.value.toRadixString(16).padLeft(8, '0')}';
 String _dk(Rect? c) => c == null ? '' : ' clip=${_dr(c)}';
+
+/// A number as dart2js prints it, whichever compiler built the app: a whole number has no
+/// fraction (dart2wasm prints 1.0 as "1.0").
+String _dd(num v) => v == v.truncateToDouble() ? v.toInt().toString() : v.toString();
+
+/// An alignment by its name, as [Alignment.toString] gives it: a release wasm build minifies that
+/// to "Instance of 'minified:…'".
+String _da(Alignment a) {
+  final name = switch ((a.x, a.y)) {
+    (-1.0, -1.0) => 'topLeft',
+    (0.0, -1.0) => 'topCenter',
+    (1.0, -1.0) => 'topRight',
+    (-1.0, 0.0) => 'centerLeft',
+    (0.0, 0.0) => 'center',
+    (1.0, 0.0) => 'centerRight',
+    (-1.0, 1.0) => 'bottomLeft',
+    (0.0, 1.0) => 'bottomCenter',
+    (1.0, 1.0) => 'bottomRight',
+    _ => null,
+  };
+  return name != null
+      ? 'Alignment.$name'
+      : 'Alignment(${a.x.toStringAsFixed(1)}, ${a.y.toStringAsFixed(1)})';
+}
 String _dn(List<Shape> children) => children.map((s) => s.describe()).join('; ');
 
 /// Draws [shape]'s body under its own clip.
@@ -2996,7 +3020,7 @@ class LineShape extends Shape implements _Piece {
   String toString() => 'Line $p1 → $p2${clipRect != null ? " [clipped]" : ""}';
 
   @override
-  String describe() => 'Line ${_do(p1)}->${_do(p2)} ${_dc(color)} w=$strokeWidth cap=$lineCap join=$lineJoin${_dk(clipRect)}';
+  String describe() => 'Line ${_do(p1)}->${_do(p2)} ${_dc(color)} w=${_dd(strokeWidth)} cap=$lineCap join=$lineJoin${_dk(clipRect)}';
 }
 
 class OvalShape extends Shape {
@@ -3027,7 +3051,7 @@ class OvalShape extends Shape {
   String toString() => '${isFilled ? "Fill" : ""}Oval $rect';
 
   @override
-  String describe() => '${isFilled ? "Fill" : "Draw"}Oval ${_dr(rect)} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+  String describe() => '${isFilled ? "Fill" : "Draw"}Oval ${_dr(rect)} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
 abstract interface class GCGround {
@@ -3092,7 +3116,7 @@ class RectShape extends Shape {
   String toString() => '${isFilled ? "Fill" : ""}Rect $rect';
 
   @override
-  String describe() => '${isFilled ? "Fill" : "Draw"}Rect ${_dr(rect)} ${_dc(color)} w=$strokeWidth cap=$lineCap join=$lineJoin${_dk(clipRect)}';
+  String describe() => '${isFilled ? "Fill" : "Draw"}Rect ${_dr(rect)} ${_dc(color)} w=${_dd(strokeWidth)} cap=$lineCap join=$lineJoin${_dk(clipRect)}';
 }
 
 class GradientRectShape extends Shape {
@@ -3138,7 +3162,7 @@ class GradientRectShape extends Shape {
   String toString() => 'GradientRect $rect';
 
   @override
-  String describe() => 'GradientRect ${_dr(rect)} ${_dc(fromColor)}->${_dc(toColor)} $begin->$end${_dk(clipRect)}';
+  String describe() => 'GradientRect ${_dr(rect)} ${_dc(fromColor)}->${_dc(toColor)} ${_da(begin)}->${_da(end)}${_dk(clipRect)}';
 }
 
 /// A fill painted with a GC pattern. The shader is laid out in GC coordinates, as the native
@@ -3241,7 +3265,7 @@ class SegmentsShape extends Shape {
       for (var i = 0; i + 3 < points.length; i += 4)
         '${_do(Offset(points[i], points[i + 1]))}->${_do(Offset(points[i + 2], points[i + 3]))}'
     ];
-    return 'Segments ${ends.join(' ')} ${_dc(color)} w=$strokeWidth cap=$lineCap${_dk(clipRect)}';
+    return 'Segments ${ends.join(' ')} ${_dc(color)} w=${_dd(strokeWidth)} cap=$lineCap${_dk(clipRect)}';
   }
 }
 
@@ -3472,7 +3496,7 @@ class PathShape extends Shape {
   String toString() => '${isFilled ? "Fill" : "Draw"}Path';
 
   @override
-  String describe() => '${isFilled ? "Fill" : "Draw"}Path ${_dr(path.getBounds())} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+  String describe() => '${isFilled ? "Fill" : "Draw"}Path ${_dr(path.getBounds())} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
 class PolygonShape extends Shape {
@@ -3519,7 +3543,7 @@ class PolygonShape extends Shape {
   String toString() => '${isFilled ? "Fill" : ""}Polygon ${points.length ~/ 2} pts';
 
   @override
-  String describe() => '${isFilled ? "Fill" : "Draw"}Polygon ${points.join(",")} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+  String describe() => '${isFilled ? "Fill" : "Draw"}Polygon ${points.join(",")} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
 class PolylineShape extends Shape {
@@ -3560,7 +3584,7 @@ class PolylineShape extends Shape {
   String toString() => 'Polyline ${points.length ~/ 2} pts';
 
   @override
-  String describe() => 'Polyline ${points.join(",")} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+  String describe() => 'Polyline ${points.join(",")} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
 /// The pie fillArc covers. A sweep of a full turn is the whole oval: arcTo draws nothing for it.
@@ -3616,7 +3640,7 @@ class ArcShape extends Shape {
   String toString() => '${isFilled ? "Fill" : "Draw"}Arc $rect';
 
   @override
-  String describe() => '${isFilled ? "Fill" : "Draw"}Arc ${_dr(rect)} ${startAngle.toStringAsFixed(4)}+${sweepAngle.toStringAsFixed(4)} ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+  String describe() => '${isFilled ? "Fill" : "Draw"}Arc ${_dr(rect)} ${startAngle.toStringAsFixed(4)}+${sweepAngle.toStringAsFixed(4)} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
 class RoundRectShape extends Shape {
@@ -3660,7 +3684,7 @@ class RoundRectShape extends Shape {
   String toString() => '${isFilled ? "Fill" : ""}RoundRect $rect';
 
   @override
-  String describe() => '${isFilled ? "Fill" : "Draw"}RoundRect ${_dr(rect)} r=$radiusX,$radiusY ${_dc(color)} w=$strokeWidth${_dk(clipRect)}';
+  String describe() => '${isFilled ? "Fill" : "Draw"}RoundRect ${_dr(rect)} r=${_dd(radiusX)},${_dd(radiusY)} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
 class PointShape extends Shape {
