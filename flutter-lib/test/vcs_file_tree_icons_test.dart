@@ -6,8 +6,8 @@ import 'package:swtflutter/src/impl/assets_manager.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 /// Application icons named like these are replaced by Evolve's own drawing: version-control
-/// actions, file-tree status decorations, diff navigation, common actions and settings-style
-/// commands.
+/// actions, file-tree status decorations, diff navigation, common actions, settings-style
+/// commands and model-diagram elements.
 const _names = [
   'git_16', 'github_16', 'create_repo', 'clone', 'browse_repo', 'repo', 'checkout',
   'diff', 'diff_with_conflict', 'blank_folder', 'blank_file', 'archive_folder',
@@ -26,6 +26,7 @@ const _names = [
   'plus', 'minus', 'check_green', 'close_red', 'close_white', 'export', 'update', 'internet',
   'camera', 'lock', 'cut', 'paste', 'undo', 'redo', 'save',
   'config', 'KeyRing', 'license', 'dp', 'action',
+  'simulink_icon', 'aux_simulink_icon', 'block', 'eml', 'reference_16', 'arrow_up', 'arrow_down',
 ];
 
 void main() {

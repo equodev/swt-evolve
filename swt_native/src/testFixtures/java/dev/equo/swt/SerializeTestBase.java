@@ -237,6 +237,8 @@ public class SerializeTestBase {
             "Tree.columnOrder", "follows the columns, which change as they are created or disposed",
             "Table.ownerDrawItemHeight", "a MeasureItem listener sets it",
             "Tree.ownerDrawItemHeight", "a MeasureItem listener sets it",
+            "Table.compactRows", "follows the process-wide native item height switch, which no setter of the table changes",
+            "Tree.compactRows", "follows the process-wide native item height switch, which no setter of the tree changes",
             "Caret.focused", "follows the focus of the control the caret belongs to",
             "CTabItem.showing", "follows the folder's layout of its tabs",
             "CTabFolder.showListPopupSeq", "counts the chevron's list pop-ups, which a click opens",
