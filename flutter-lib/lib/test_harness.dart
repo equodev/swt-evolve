@@ -243,6 +243,7 @@ void registerTestQueryChannel() {
     queryPrimaryFocus: queryPrimaryFocus,
     // What a page test reads is laid out text, so its frame is one with every font in.
     scheduleFrameSync: (onSynced) => DeferredFonts.all().then((_) => scheduleFrameSync(onSynced)),
+    afterNextFrame: (onFramed) => SchedulerBinding.instance.addPostFrameCallback((_) => onFramed()),
   );
 }
 
