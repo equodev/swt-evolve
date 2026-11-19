@@ -2,19 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../comm/comm.dart';
 import '../gen/event.dart';
 import '../gen/gc.dart';
 import '../gen/widget.dart';
 import 'control_evolve.dart';
 import 'utils/widget_utils.dart' show appPaintsColors;
-import '../gen/widgets.dart' show WireChannel;
+import '../gen/widgets.dart' show WireChannel, WireType;
 
 /// What an owner-drawing Table or Tree paints into one row: its SWT.EraseItem and SWT.PaintItem
 /// drawing, addressed to the row's item id and laid over the row.
 ///
 /// Java paints a row on screen as soon as it sends it, and any other once the overlay reports
 /// listening. Until the overlay shows what Java painted, the row draws its own text and images; then
-/// it leaves the cells its `paintedTexts` and `paintedImages` name to the overlay ([isShown]).
+/// it leaves the cells its `paintedTexts` and `paintedImages` name to the overlay ([isShown]). A row
+/// whose painting arrived before it mounted leaves them from its first frame: its own text sits in
+/// the theme font where Java's does not, so drawing it for the frame before the painting is applied
+/// makes the row's content jump.
 class OwnerDrawnRowOverlay extends StatefulWidget {
   final int itemId;
 
@@ -39,12 +43,22 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
       this.rowFill,
       this.selected = false});
 
-  /// How many overlays of each row (by item id) show what Java painted: an overlay remounted under a
-  /// new parent can show before the one it replaces is gone.
+  /// How many overlays of each row (by item id) show what Java painted, or hold a painting received
+  /// before they mounted and are about to show it: an overlay remounted under a new parent can count
+  /// before the one it replaces is gone.
   static final Map<int, int> _shown = {};
 
-  /// Whether row [itemId]'s overlay shows its painting, so the row leaves those cells to it.
-  static bool isShown(int itemId) => _shown.containsKey(itemId);
+  /// Whether row [itemId]'s overlay shows its painting, or is about to show one already received,
+  /// so the row leaves those cells to it.
+  static bool isShown(int itemId) => _shown.containsKey(itemId) || _paintHeld(itemId);
+
+  /// Whether Java's painting of row [itemId] arrived before the row's GC could take it: the GC
+  /// applies it once mounted, after the frame that mounts it. Only a painting counts: a GC's other
+  /// frames held alone (a dispose, an image) give its overlay nothing to show.
+  static bool _paintHeld(int itemId) =>
+      EquoCommService.holdsWidgetOps(itemId, WireType.gc, WireChannel.b);
+
+  static void _count(int itemId) => _shown.update(itemId, (n) => n + 1, ifAbsent: () => 1);
 
   @override
   State<OwnerDrawnRowOverlay> createState() => OwnerDrawnRowOverlayState();
@@ -54,6 +68,23 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   final GlobalKey gcKey = GlobalKey();
   bool _ready = false;
   bool _subscribed = false;
+
+  /// Whether this overlay counts in [OwnerDrawnRowOverlay._shown].
+  bool _counted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Counted before its GC mounts and takes the held painting, so the row keeps leaving its cells
+    // in any rebuild until the painting shows.
+    if (OwnerDrawnRowOverlay._paintHeld(widget.itemId)) _count();
+    widget.rowFill?.addListener(_onRowFillChosen);
+  }
+
+  void _count() {
+    _counted = true;
+    OwnerDrawnRowOverlay._count(widget.itemId);
+  }
 
   /// What the row's GC keeps its text legible on, or null when the application's colours are
   /// painted as given (use_swt_colors).
@@ -73,12 +104,6 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   void _requestPaint() {
     final parent = context.findAncestorStateOfType<ControlImpl>();
     if (parent != null) _OwnerDrawRequests.add(parent, widget.itemId, widget.ground);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    widget.rowFill?.addListener(_onRowFillChosen);
   }
 
   // The Table's rows now count another fill as their own: this row was painted with the old one.
@@ -107,7 +132,7 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   void onGCReady() {
     if (_ready || !mounted) return;
     setState(() => _ready = true);
-    OwnerDrawnRowOverlay._shown.update(widget.itemId, (n) => n + 1, ifAbsent: () => 1);
+    if (!_counted) _count();
     final owner = context.findAncestorStateOfType<WidgetSwtState>();
     if (owner != null && owner.mounted) (owner.context as Element).markNeedsBuild();
   }
@@ -115,7 +140,7 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   @override
   void dispose() {
     widget.rowFill?.removeListener(_onRowFillChosen);
-    if (_ready) {
+    if (_counted) {
       final left = (OwnerDrawnRowOverlay._shown[widget.itemId] ?? 1) - 1;
       if (left > 0) {
         OwnerDrawnRowOverlay._shown[widget.itemId] = left;

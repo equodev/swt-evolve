@@ -200,6 +200,10 @@ class EquoCommService {
   /// See [EquoCommBase.forgetWidgetOps].
   static void forgetWidgetOps(int id) => _comm.forgetWidgetOps(id);
 
+  /// See [EquoCommBase.holdsWidgetOps].
+  static bool holdsWidgetOps(int id, int type, int channel) =>
+      _comm.holdsWidgetOps(id, type, channel);
+
   /// Completes when the socket first opens.
   static Future<void> get firstOpen => _comm.firstOpen;
 

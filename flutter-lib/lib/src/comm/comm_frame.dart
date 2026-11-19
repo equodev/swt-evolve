@@ -909,6 +909,11 @@ abstract class EquoCommBase {
   /// Lets go of the frames held for widget [id], which will never answer for them: it is gone.
   void forgetWidgetOps(int id) => _heldOps.remove(id);
 
+  /// Whether frames for widget [id] of kind [type] on [channel] (as the wire numbers them) arrived
+  /// before it could answer them, and wait for it.
+  bool holdsWidgetOps(int id, int type, int channel) =>
+      _heldOps[id]?.any((op) => op.type == type && op.channel == channel) ?? false;
+
   /// How many widgets frames are held for at most; see [_holdWidgetOp].
   static const int maxHeldWidgets = 1024;
 

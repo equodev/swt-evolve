@@ -140,6 +140,26 @@ void main() {
     expect(seen, isEmpty, reason: 'nothing is held for a widget once it is gone');
   });
 
+  test('frames held for a widget are told apart by kind and channel until it answers or is gone', () async {
+    _comm.onWidgetOp(_type('Spinner'), WireChannel.keyVerdict, (id, frame, start, end) => false);
+
+    _receive('Spinner/9401/key/verdict', {'doit': true});
+    _receive('Spinner/9402/key/verdict', {'doit': true});
+    await Future<void>.delayed(Duration.zero);
+
+    expect(_comm.holdsWidgetOps(9401, _type('Spinner'), WireChannel.keyVerdict), isTrue);
+    expect(_comm.holdsWidgetOps(9401, _type('Spinner'), WireChannel.keyVetoable), isFalse);
+    expect(_comm.holdsWidgetOps(9401, _type('Text'), WireChannel.keyVerdict), isFalse);
+
+    _comm.replayWidgetOps(9401);
+    _comm.forgetWidgetOps(9402);
+
+    expect(_comm.holdsWidgetOps(9401, _type('Spinner'), WireChannel.keyVerdict), isFalse,
+        reason: 'replayed frames are no longer held');
+    expect(_comm.holdsWidgetOps(9402, _type('Spinner'), WireChannel.keyVerdict), isFalse,
+        reason: 'nothing is held for a widget once it is gone');
+  });
+
   test('frames are held for so many widgets at most, the oldest let go first', () async {
     final listening = <int>{};
     final seen = <int>[];

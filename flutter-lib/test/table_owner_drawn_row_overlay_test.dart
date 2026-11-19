@@ -5,20 +5,22 @@
 // Under, not over: the overlay carries the EraseItem background, and an app that leaves
 // SWT.FOREGROUND set still expects the item's own text on top of it.
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/event.dart';
+import 'package:swtflutter/src/gen/image.dart';
+import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
 import 'package:swtflutter/src/impl/owner_draw_overlay.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
-import 'package:swtflutter/src/gen/gc.dart';
 
-import 'delivery/support/deliver.dart';
 import 'support/gc_frames.dart';
 
 class _CapturingTableSwt extends TableSwt<VTable> {
@@ -30,7 +32,11 @@ class _CapturingTableSwt extends TableSwt<VTable> {
   void sendEvent(VTable val, int channel, VEvent? payload) => onEvent(wireChannelNames[channel]!, payload);
 }
 
-VTable _table(List<int>? paintedTexts) => VTable()
+/// 16x16, opaque #333333.
+const _png =
+    'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR42mMwNjb+TwlmGDVg1IBRA4aLAQDChZgQoP+T9QAAAABJRU5ErkJggg==';
+
+VTable _table(List<int>? paintedTexts, {bool withIcon = false}) => VTable()
   ..id = 1
   ..style = SWT.NONE
   ..headerVisible = false
@@ -43,7 +49,9 @@ VTable _table(List<int>? paintedTexts) => VTable()
     VTableItem()
       ..id = 11
       ..texts = ['check_0710']
-      ..paintedTexts = paintedTexts,
+      ..paintedTexts = paintedTexts
+      ..image = withIcon ? (VImage()..imageData = (VImageData()..data = base64Decode(_png))) : null
+      ..paintedImages = withIcon ? [0] : null,
   ]
   ..bounds = (VRectangle()
     ..x = 0
@@ -101,11 +109,28 @@ void main() {
         reason: 'an overlay that has not shown its painting yet would leave the cell blank');
   });
 
+  testWidgets('a row whose painting arrived before it mounted does not paint that text even in its first frame',
+      (tester) async {
+    await paintRow(11);
+
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: SizedBox(
+        width: 200,
+        height: 300,
+        child: _CapturingTableSwt(value: _table([0], withIcon: true), onEvent: (_, __) {}),
+      ),
+    ));
+
+    expect(tester.widget<Text>(find.text('check_0710')).style?.color, Colors.transparent);
+    expect(find.byType(FutureBuilder<Widget?>), findsNothing, reason: 'nor may it draw the icon the overlay paints');
+    expect(tester.widget<Text>(find.text('stable')).style?.color, isNot(Colors.transparent));
+  });
+
   testWidgets('text the overlay paints keeps its place but is not painted by the row once it shows',
       (tester) async {
     await _pump(tester, _table([0]));
-    receive('GC/11/b', GcFrame().whole(VGC.empty()).opNamed('fillRectangleintintintint', [0, 0, 20, 10]).bytes);
-    await deliverFrame('GC/11/gcDispose', {'fullRepaint': true});
+    await paintRow(11);
     await tester.pump();
 
     final painted = tester.widget<Text>(find.text('check_0710'));
@@ -148,8 +173,7 @@ void main() {
     final shown = find.descendant(of: find.byType(OwnerDrawnRowOverlay), matching: find.byType(IgnorePointer));
     expect(shown, findsNothing, reason: 'nothing painted yet, so the overlay is held offstage');
 
-    receive('GC/11/b', GcFrame().whole(VGC.empty()).opNamed('fillRectangleintintintint', [0, 0, 20, 10]).bytes);
-    await deliverFrame('GC/11/gcDispose', {'fullRepaint': true});
+    await paintRow(11);
     await tester.pump();
 
     expect(shown, findsOneWidget);

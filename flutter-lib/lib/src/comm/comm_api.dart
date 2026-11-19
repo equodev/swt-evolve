@@ -47,6 +47,8 @@ class EquoCommService {
   static void replayWidgetOps(int id) => throw UnsupportedError("EquoComm.replayWidgetOps");
 
   static void forgetWidgetOps(int id) => throw UnsupportedError("EquoComm.forgetWidgetOps");
+  static bool holdsWidgetOps(int id, int type, int channel) =>
+      throw UnsupportedError("EquoComm.holdsWidgetOps");
   static void ensureWidgetOps(void Function() register) =>
       throw UnsupportedError("EquoComm.ensureWidgetOps");
   static FutureOr<void> deliverEscape(Uint8List bytes, int headerAt, int start, int end) =>
