@@ -110,7 +110,13 @@ const double kMinBoundaryContrast = 3.0;
 /// [color] when it reads on [ground] at [minRatio], else the same hue and saturation at the
 /// lightness nearest to it that does, on the side of the ground with more room. A colour on the
 /// wrong side is mirrored first, so black on a dark ground turns white, not grey.
-Color legibleOn(Color color, Color ground, {required double minRatio}) {
+///
+/// With [chosenOn], the ground the application picked [color] for, [color] is only made as legible
+/// on [ground] as it is on that one, and is not mirrored for it: a pale colour the application drew
+/// on white stays pale.
+Color legibleOn(Color color, Color ground, {required double minRatio, Color? chosenOn}) {
+  final pickedPale = chosenOn != null && contrastRatio(color, chosenOn) < minRatio;
+  if (pickedPale) minRatio = contrastRatio(color, chosenOn);
   if (contrastRatio(color, ground) >= minRatio) return color;
   final hsl = HSLColor.fromColor(color);
   final lighten = contrastRatio(Colors.white, ground) >= contrastRatio(Colors.black, ground);
@@ -118,7 +124,11 @@ Color legibleOn(Color color, Color ground, {required double minRatio}) {
   Color at(double lightness) => hsl.withLightness(lightness).toColor();
 
   final mirrored = 1 - hsl.lightness;
-  final start = lighten ? math.max(hsl.lightness, mirrored) : math.min(hsl.lightness, mirrored);
+  final start = pickedPale
+      ? hsl.lightness
+      : lighten
+          ? math.max(hsl.lightness, mirrored)
+          : math.min(hsl.lightness, mirrored);
   if (contrastRatio(at(start), ground) >= minRatio) return at(start);
   if (contrastRatio(at(extreme), ground) < minRatio) return at(extreme);
   return at(_bisectLightness(hsl,

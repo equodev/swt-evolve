@@ -58,7 +58,7 @@ void main() {
       ..background = _v(background);
     final drawer = GCDrawer.embedded(state, onShapesUpdated: (_) {})
       ..rowFill = (() => fill)
-      ..rowGround = () => (ground: _themeRow, minContrast: 4.5);
+      ..rowGround = () => (ground: _themeRow, chosenOn: Colors.white, minContrast: 4.5);
     addTearDown(drawer.dispose);
     draw(drawer);
     EquoCommService.commForTesting.receiveBinary(
@@ -75,7 +75,7 @@ void main() {
     final drawer = GCDrawer.embedded(VGC.empty()..id = id, onShapesUpdated: (_) {})
       ..rowFill = (() => fill)
       ..rowSelected = (() => selected)
-      ..rowGround = () => (ground: _themeRow, minContrast: 4.5);
+      ..rowGround = () => (ground: _themeRow, chosenOn: Colors.white, minContrast: 4.5);
     addTearDown(drawer.dispose);
     return (background, draw) async {
       drawer.state

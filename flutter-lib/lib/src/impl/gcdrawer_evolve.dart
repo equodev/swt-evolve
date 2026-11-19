@@ -114,8 +114,9 @@ class GCDrawer extends GCDrawerBase {
   /// For the GC of an owner-drawn Table or Tree row: the ground Evolve paints the row on and the
   /// widget theme's minimum text contrast; null for any other GC, or when the application's colours
   /// are painted as given. Text is kept legible ([legibleOn]) on what is under it: the row's own
-  /// fills this paint, else this ground.
-  ({Color ground, double minContrast})? Function()? rowGround;
+  /// fills this paint, else this ground, but never more than on `chosenOn`, the row's ground as the
+  /// application set it.
+  ({Color ground, Color chosenOn, double minContrast})? Function()? rowGround;
 
   /// For the GC of an owner-drawn Table row whose theme declares the colour of the row's own fill.
   OwnerDrawnRowFill? Function()? rowFill;
@@ -1424,7 +1425,8 @@ class GCDrawer extends GCDrawerBase {
     final row = rowGround?.call();
     if (row == null) return color;
     final ground = _groundAt(_onRow(box).center, row.ground);
-    return legibleOn(color, ground, minRatio: row.minContrast);
+    return legibleOn(color, ground,
+        minRatio: row.minContrast, chosenOn: ground == row.ground ? row.chosenOn : null);
   }
 
   void _recordRowFill(Rect rect, Color color) {

@@ -13,6 +13,7 @@ import '../gen/swt.dart';
 import '../gen/table.dart';
 import '../gen/tableitem.dart';
 import 'tableitem_evolve.dart';
+import 'color_utils.dart';
 import '../gen/tablecolumn.dart';
 import '../gen/tableeditor.dart';
 import '../gen/droptarget.dart';
@@ -780,6 +781,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 itemId: items[i].id,
                 ground: Color.alphaBlend(
                     rowBackgroundColor(i, items[i], theme), getTableBackgroundColor(state, theme)),
+                chosenOn: colorFromVColor(items[i].background ?? state.background,
+                    defaultColor: Colors.white),
                 minContrast: theme.minTextContrast,
                 rowFill: rowFill,
                 selected: i == _selectedRowIndex || isItemSelected(items[i]),

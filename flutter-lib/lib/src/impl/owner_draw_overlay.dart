@@ -26,6 +26,10 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
   /// listeners' text has to read on wherever they lay no fill of their own.
   final Color ground;
 
+  /// The row's ground as the application set it, which its text colours were picked for: the
+  /// item's or the control's background, else white, SWT's default list background.
+  final Color chosenOn;
+
   /// The Table or Tree theme's minimum text contrast.
   final double minContrast;
 
@@ -39,6 +43,7 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
       {super.key,
       required this.itemId,
       required this.ground,
+      this.chosenOn = Colors.white,
       required this.minContrast,
       this.rowFill,
       this.selected = false});
@@ -88,9 +93,9 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
 
   /// What the row's GC keeps its text legible on, or null when the application's colours are
   /// painted as given (use_swt_colors).
-  ({Color ground, double minContrast})? get textGround => appPaintsColors(context)
+  ({Color ground, Color chosenOn, double minContrast})? get textGround => appPaintsColors(context)
       ? null
-      : (ground: widget.ground, minContrast: widget.minContrast);
+      : (ground: widget.ground, chosenOn: widget.chosenOn, minContrast: widget.minContrast);
 
   /// What the row's GC paints its own fill in, or null when it paints the application's fills.
   OwnerDrawnRowFill? get rowFill => appPaintsColors(context) ? null : widget.rowFill;

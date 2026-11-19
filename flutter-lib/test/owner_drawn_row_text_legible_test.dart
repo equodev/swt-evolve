@@ -58,7 +58,7 @@ void main() {
       ..foreground = _v(foreground)
       ..background = _v(background);
     final drawer = GCDrawer.embedded(state, onShapesUpdated: (_) {})
-      ..rowGround = () => (ground: ground, minContrast: 4.5);
+      ..rowGround = () => (ground: ground, chosenOn: Colors.white, minContrast: 4.5);
     addTearDown(drawer.dispose);
     draw(drawer);
     EquoCommService.commForTesting.receiveBinary(
@@ -102,7 +102,9 @@ void main() {
     final shapes = await paintRow(_darkRow, _red, Colors.white, drawLabel);
 
     final text = HSLColor.fromColor(textOf(shapes));
-    expect(contrastRatio(textOf(shapes), _darkRow), greaterThanOrEqualTo(4.5));
+    expect(contrastRatio(textOf(shapes), _darkRow),
+        greaterThanOrEqualTo(contrastRatio(_red, Colors.white)),
+        reason: 'as legible as on the white it was picked for');
     expect(text.hue, anyOf(lessThan(15), greaterThan(345)));
     expect(text.saturation, greaterThan(0.5));
   });
@@ -118,6 +120,16 @@ void main() {
     final shapes = await paintRow(Colors.white, gray, Colors.white, drawLabel);
 
     expect(textOf(shapes), gray);
+  });
+
+  test('pale text is made only as legible on the row as on the white it was picked for', () async {
+    const gray = Color(0xFFC0C0C0);
+    const paleRow = Color(0xFFD8D8D8);
+    final shapes = await paintRow(paleRow, gray, Colors.white, drawLabel);
+
+    final ratio = contrastRatio(textOf(shapes), paleRow);
+    expect(ratio, greaterThanOrEqualTo(contrastRatio(gray, Colors.white)));
+    expect(ratio, lessThan(2.5), reason: 'the application drew it at 1.8:1, not at 4.5:1');
   });
 
   test('text in the next cell is read against the row, not against another cell\'s fill', () async {
@@ -189,6 +201,16 @@ void main() {
       final overlay = tester.widget<OwnerDrawnRowOverlay>(find.byType(OwnerDrawnRowOverlay));
       expect(overlay.ground, theme.backgroundColor);
       expect(overlay.minContrast, theme.minTextContrast);
+      expect(overlay.chosenOn, Colors.white, reason: 'SWT\'s list background, not the dark row');
+    });
+
+    testWidgets('was picked for the item\'s own background when it set one', (tester) async {
+      final value = table();
+      value.items!.single.background = _v(_lightBlue);
+      await pump(tester, value);
+
+      final overlay = tester.widget<OwnerDrawnRowOverlay>(find.byType(OwnerDrawnRowOverlay));
+      expect(overlay.chosenOn, _lightBlue);
     });
 
     testWidgets('is the selection colour on a selected row', (tester) async {

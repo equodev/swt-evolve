@@ -448,7 +448,12 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             child: DecoratedBox(
               decoration: background,
               child: OwnerDrawnRowOverlay(
-                  itemId: state.id, ground: ground, minContrast: minContrast),
+                  itemId: state.id,
+                  ground: ground,
+                  chosenOn: colorFromVColor(
+                      state.background ?? _context?.parentTreeValue.background,
+                      defaultColor: Colors.white),
+                  minContrast: minContrast),
             ),
           ),
         row,
