@@ -21,6 +21,8 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
   Color get rowHoverBackgroundColor;
   Color get rowSelectedBorderColor;
   double get rowSelectedBorderWidth;
+  Color? get ownerDrawnRowFillColor;
+  Color? get ownerDrawnRowHoverFillColor;
   double get dropFeedbackLineWidth;
   int get dropFeedbackHighlightAlpha;
   double get dragImageOpacity;
@@ -83,6 +85,8 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
     Color? rowHoverBackgroundColor,
     Color? rowSelectedBorderColor,
     double? rowSelectedBorderWidth,
+    Color? ownerDrawnRowFillColor,
+    Color? ownerDrawnRowHoverFillColor,
     double? dropFeedbackLineWidth,
     int? dropFeedbackHighlightAlpha,
     double? dragImageOpacity,
@@ -150,6 +154,10 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
           rowSelectedBorderColor ?? this.rowSelectedBorderColor,
       rowSelectedBorderWidth:
           rowSelectedBorderWidth ?? this.rowSelectedBorderWidth,
+      ownerDrawnRowFillColor:
+          ownerDrawnRowFillColor ?? this.ownerDrawnRowFillColor,
+      ownerDrawnRowHoverFillColor:
+          ownerDrawnRowHoverFillColor ?? this.ownerDrawnRowHoverFillColor,
       dropFeedbackLineWidth:
           dropFeedbackLineWidth ?? this.dropFeedbackLineWidth,
       dropFeedbackHighlightAlpha:
@@ -266,6 +274,16 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       rowSelectedBorderWidth: t < 0.5
           ? rowSelectedBorderWidth
           : other.rowSelectedBorderWidth,
+      ownerDrawnRowFillColor: Color.lerp(
+        ownerDrawnRowFillColor,
+        other.ownerDrawnRowFillColor,
+        t,
+      ),
+      ownerDrawnRowHoverFillColor: Color.lerp(
+        ownerDrawnRowHoverFillColor,
+        other.ownerDrawnRowHoverFillColor,
+        t,
+      ),
       dropFeedbackLineWidth: t < 0.5
           ? dropFeedbackLineWidth
           : other.dropFeedbackLineWidth,
@@ -433,6 +451,14 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
             const DeepCollectionEquality().equals(
               rowSelectedBorderWidth,
               other.rowSelectedBorderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              ownerDrawnRowFillColor,
+              other.ownerDrawnRowFillColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              ownerDrawnRowHoverFillColor,
+              other.ownerDrawnRowHoverFillColor,
             ) &&
             const DeepCollectionEquality().equals(
               dropFeedbackLineWidth,
@@ -640,6 +666,8 @@ mixin _$TableThemeExtensionTailorMixin on ThemeExtension<TableThemeExtension> {
       const DeepCollectionEquality().hash(rowHoverBackgroundColor),
       const DeepCollectionEquality().hash(rowSelectedBorderColor),
       const DeepCollectionEquality().hash(rowSelectedBorderWidth),
+      const DeepCollectionEquality().hash(ownerDrawnRowFillColor),
+      const DeepCollectionEquality().hash(ownerDrawnRowHoverFillColor),
       const DeepCollectionEquality().hash(dropFeedbackLineWidth),
       const DeepCollectionEquality().hash(dropFeedbackHighlightAlpha),
       const DeepCollectionEquality().hash(dragImageOpacity),
@@ -712,6 +740,17 @@ extension TableThemeExtensionBuildContextProps on BuildContext {
       tableThemeExtension.rowSelectedBorderColor;
   double get rowSelectedBorderWidth =>
       tableThemeExtension.rowSelectedBorderWidth;
+
+  /// The colour an owner-drawn row's own fill is painted in: the application colour that fills most
+  /// of the Table's rows. Null paints every owner-drawn fill as the application gives it.
+  Color? get ownerDrawnRowFillColor =>
+      tableThemeExtension.ownerDrawnRowFillColor;
+
+  /// The colour an owner-drawn row's hover fill is painted in: the application colour an unselected
+  /// row is repainted in instead of its own fill. Null, or no [ownerDrawnRowFillColor], paints it as
+  /// the application gives it.
+  Color? get ownerDrawnRowHoverFillColor =>
+      tableThemeExtension.ownerDrawnRowHoverFillColor;
   double get dropFeedbackLineWidth => tableThemeExtension.dropFeedbackLineWidth;
   int get dropFeedbackHighlightAlpha =>
       tableThemeExtension.dropFeedbackHighlightAlpha;

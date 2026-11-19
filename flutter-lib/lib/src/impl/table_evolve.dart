@@ -769,6 +769,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     double rowHeight,
     TableThemeExtension theme,
   ) {
+    final rowFill =
+        _ownerDrawnRowFillOf(theme.ownerDrawnRowFillColor, theme.ownerDrawnRowHoverFillColor);
     final overlays = <Widget>[
       for (int i = window.start; i < window.end && i < items.length; i++)
         if (items[i].paintedTexts != null)
@@ -785,12 +787,26 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 ground: Color.alphaBlend(
                     rowBackgroundColor(i, items[i], theme), getTableBackgroundColor(state, theme)),
                 minContrast: theme.minTextContrast,
+                rowFill: rowFill,
+                selected: i == _selectedRowIndex || isItemSelected(items[i]),
               ),
             ),
           ),
     ];
     // Always a Stack, so the rows are not remounted when the first overlay arrives.
     return Stack(children: [...overlays, rows]);
+  }
+
+  OwnerDrawnRowFill? _ownerDrawnRowFill;
+
+  /// One per Table and theme colours: it keeps which fills are the rows' own and hover fills across
+  /// all of them.
+  OwnerDrawnRowFill? _ownerDrawnRowFillOf(Color? color, Color? hover) {
+    if (color == null) return _ownerDrawnRowFill = null;
+    final current = _ownerDrawnRowFill;
+    return current != null && current.color == color && current.hoverColor == hover
+        ? current
+        : _ownerDrawnRowFill = OwnerDrawnRowFill(color, hoverColor: hover);
   }
 
   /// Rows the table has: for a VIRTUAL table, more than the rows whose data has arrived. Falls back

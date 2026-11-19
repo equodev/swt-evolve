@@ -31,6 +31,7 @@ import 'utils/font_utils.dart';
 import 'utils/glyph_tone.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
+import 'owner_draw_overlay.dart' show OwnerDrawnRowFill;
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
 import '../comm/widget_wire.dart' show WidgetWireReader, WidgetWireWriter;
@@ -114,6 +115,21 @@ class GCDrawer extends GCDrawerBase {
   /// are painted as given. Text is kept legible ([legibleOn]) on what is under it: the row's own
   /// fills this paint, else this ground.
   ({Color ground, double minContrast})? Function()? rowGround;
+
+  /// For the GC of an owner-drawn Table row whose theme declares the colour of the row's own fill.
+  OwnerDrawnRowFill? Function()? rowFill;
+
+  /// Whether the owner-drawn row this GC paints is selected.
+  bool Function()? rowSelected;
+
+  // A rectangle filled on an owner-drawn row in the application colour that is the rows' own fill,
+  // or their hover fill, takes the theme's colour for it.
+  Color _asRowFill(Rect rect, Color color) {
+    final fill = _useThemeColors ? null : rowFill?.call();
+    return fill == null
+        ? color
+        : fill.resolve(state.id, color, _onRow(rect), selected: rowSelected?.call() ?? false);
+  }
 
   // The opaque fills this paint has laid on an owner-drawn row, in row coordinates, the last on top.
   final List<(Rect, Color)> _rowFills = [];
@@ -242,6 +258,7 @@ class GCDrawer extends GCDrawerBase {
       _staging = _spareStaging ?? [];
       _spareStaging = null;
       _rowFills.clear();
+      rowFill?.call()?.painted(state.id);
       _settleNormalFill();
       final cycleTheme = _canvasTheme;
       // Nothing to wait for: committed now, with nothing made for the wait.
@@ -1096,7 +1113,7 @@ class GCDrawer extends GCDrawerBase {
             Path()..addRRect(RRect.fromRectXY(rect, arcWidth / 2.0, arcHeight / 2.0)))) {
       return;
     }
-    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    final color = isFilled ? applyAlpha(_asRowFill(rect, fillColor)) : applyAlpha(strokeColor);
     if (isFilled) _recordRowFill(rect, color);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
@@ -1136,7 +1153,7 @@ class GCDrawer extends GCDrawerBase {
   }) {
     final rect = _getRectFromArgs(x, y, width, height);
     if (isFilled && _patterned && _addPatternFill(Path()..addRect(rect))) return;
-    final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
+    final color = isFilled ? applyAlpha(_asRowFill(rect, fillColor)) : applyAlpha(strokeColor);
     if (isFilled) _recordRowFill(rect, color);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&

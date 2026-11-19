@@ -20,6 +20,15 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
   final Color rowSelectedBorderColor;
   final double rowSelectedBorderWidth;
 
+  /// The colour an owner-drawn row's own fill is painted in: the application colour that fills most
+  /// of the Table's rows. Null paints every owner-drawn fill as the application gives it.
+  final Color? ownerDrawnRowFillColor;
+
+  /// The colour an owner-drawn row's hover fill is painted in: the application colour an unselected
+  /// row is repainted in instead of its own fill. Null, or no [ownerDrawnRowFillColor], paints it as
+  /// the application gives it.
+  final Color? ownerDrawnRowHoverFillColor;
+
   // Drag and drop
   final double dropFeedbackLineWidth;
   final int dropFeedbackHighlightAlpha;
@@ -156,6 +165,8 @@ class TableThemeExtension extends ThemeExtension<TableThemeExtension> with _$Tab
     required this.eventDefaultY,
     required this.eventDefaultDetail,
     required this.minTextContrast,
+    this.ownerDrawnRowFillColor,
+    this.ownerDrawnRowHoverFillColor,
   });
 
   /// The theme a Table's rows are laid out with: a compact Table's cells take [compactCellPadding].
