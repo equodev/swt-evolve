@@ -258,6 +258,12 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
     final itemTheme = widget.itemTheme;
     final expandItem = widget.expandItem;
 
+    final headerBackgroundColor = _isExpanded
+        ? itemTheme.headerBackgroundExpandedColor
+        : (_isHovering
+              ? itemTheme.headerBackgroundHoveredColor
+              : itemTheme.headerBackgroundColor);
+
     // Both states take the application's colour when it set one; only the theme default differs.
     final textColor = getForegroundColor(
       context: context,
@@ -266,17 +272,12 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
           ? itemTheme.foregroundExpandedColor
           : itemTheme.foregroundColor,
       minContrast: itemTheme.minTextContrast,
+      background: headerBackgroundColor,
     );
 
     final iconColor = _isExpanded
         ? itemTheme.iconExpandedColor
         : itemTheme.iconColor;
-
-    final headerBackgroundColor = _isExpanded
-        ? itemTheme.headerBackgroundExpandedColor
-        : (_isHovering
-              ? itemTheme.headerBackgroundHoveredColor
-              : itemTheme.headerBackgroundColor);
 
     final contentBackgroundColor = itemTheme.contentBackgroundColor;
     final borderColor = itemTheme.borderColor;

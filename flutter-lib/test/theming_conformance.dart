@@ -201,9 +201,14 @@ final Map<String, Widget Function()> _widgets = {
   'TabFolder': () => TabFolderSwt(value: _styled(VTabFolder()
     ..style = SWT.NONE
     ..items = [VTabItem()..id = 904..text = 'Tab', VTabItem()..id = 907..text = 'Other'])),
+  // A collapsed item too: the expanded header's ground keeps the probe foreground from being drawn
+  // as given (legibleOn), the collapsed one does not.
   'ExpandBar': () => ExpandBarSwt(value: _styled(VExpandBar()
     ..style = SWT.NONE
-    ..items = [VExpandItem()..id = 905..text = 'Item'..expanded = true])),
+    ..items = [
+      VExpandItem()..id = 905..text = 'Item'..expanded = true,
+      VExpandItem()..id = 908..text = 'Other'..expanded = false,
+    ])),
   'CoolBar': () => CoolBarSwt(value: _styled(VCoolBar()
     ..style = SWT.HORIZONTAL
     ..items = [VCoolItem()..id = 906], w: 260, h: 40)),
