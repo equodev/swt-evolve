@@ -4180,6 +4180,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     static volatile long WEB_PARK_CAP_MS = 16;
 
+    boolean inTextRelayout;
+
     volatile String clientPlatform;
 
     ThemedSystemColors themedSystemColors;

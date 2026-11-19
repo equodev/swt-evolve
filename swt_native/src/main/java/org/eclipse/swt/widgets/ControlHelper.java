@@ -1301,8 +1301,15 @@ public class ControlHelper {
      * {@code flushCache} cannot take a child's layout data (it casts the data to its own type) gets
      * its composite marked as changed instead, as {@code layout(true)} does without asking it to
      * flush that child.
+     * <p>
+     * Text set while this relayout runs schedules none: a layout that sets its children's text as it
+     * lays them out (restoring a label, then shortening it to fit) would otherwise be laid out again
+     * for that text, and schedule the next relayout, forever.
      */
     public static void relayoutAfterTextChange(Control control) {
+        DartDisplay display = (DartDisplay) control.getDisplay().getImpl();
+        if (display.inTextRelayout)
+            return;
         control.getDisplay().asyncExec(() -> {
             if (control.isDisposed())
                 return;
@@ -1316,8 +1323,13 @@ public class ControlHelper {
                 chain.add(composite);
                 child = composite;
             }
-            for (int i = chain.size() - 1; i >= 0; i--) {
-                chain.get(i).getImpl().updateLayout(false);
+            display.inTextRelayout = true;
+            try {
+                for (int i = chain.size() - 1; i >= 0; i--) {
+                    chain.get(i).getImpl().updateLayout(false);
+                }
+            } finally {
+                display.inTextRelayout = false;
             }
         });
     }
