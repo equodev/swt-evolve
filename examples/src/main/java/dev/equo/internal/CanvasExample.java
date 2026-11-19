@@ -2,13 +2,9 @@ package dev.equo.internal;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 
 public class CanvasExample {
-
-    static Color textColor;
-    static int y = 50;
 
     public static void main(String[] args) {
         Display display = new Display();
@@ -19,21 +15,13 @@ public class CanvasExample {
 
         Canvas canvas = new Canvas(shell, SWT.NONE);
 
-        textColor = display.getSystemColor(SWT.COLOR_RED);
-
         canvas.addPaintListener(e -> {
             GC gc = e.gc;
-            gc.setForeground(textColor);
-            gc.drawString("Hello", 50, y);
+            gc.setForeground(display.getSystemColor(SWT.COLOR_GREEN));
+            gc.drawString("Hello", 50, 90);
         });
 
         shell.open();
-
-        display.timerExec(2000, () -> {
-            textColor = display.getSystemColor(SWT.COLOR_GREEN);
-            y = 90;
-            canvas.redraw();
-        });
 
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch())
