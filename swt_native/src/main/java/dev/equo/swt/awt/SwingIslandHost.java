@@ -628,8 +628,11 @@ public final class SwingIslandHost {
 
     private static void openSurface(Display display, CommService comm, Map<?, ?> request) {
         int windowId = intOf(request, "windowId");
-        Shell previous = surfaceShell(display, windowId);
-        if (previous != null) previous.dispose();
+        if (surfaceShell(display, windowId) != null) {
+            // Another client of this Display asked first and may be drawing it: answer, keep it.
+            FlutterBridge.send(comm, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_OPENED, Map.of("windowId", windowId));
+            return;
+        }
 
         Map<Integer, SwingIsland> islands = registry(display, ISLANDS_KEY);
         if (!buildable(islands, windowId, comm)) return;

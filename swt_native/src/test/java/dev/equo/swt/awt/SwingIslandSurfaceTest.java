@@ -493,14 +493,32 @@ class SwingIslandSurfaceTest {
     }
 
     @Test
-    @DisplayName("a second request for one window replaces its Shell")
-    void reopenReplaces() {
+    @DisplayName("a second request for a window whose Shell is open keeps that Shell and says it is open")
+    void reopenKeepsTheOpenShell() {
+        // Every Flutter client of a Display may ask for the same window; the Shell one of them
+        // is waiting on must survive the others' requests.
         Shell first = open(request(9, "frame", 0));
+        bridge.comm.sent.clear();
+
+        Shell second = open(request(9, "frame", 0));
+
+        assertThat(second).isSameAs(first);
+        assertThat(first.isDisposed()).isFalse();
+        assertThat(Arrays.stream(display.getShells()).filter(s -> !s.isDisposed())).containsExactly(first);
+        assertThat(lastSentOn(SwingIslandHost.OPENED_EVENT)).containsEntry("windowId", "9");
+    }
+
+    @Test
+    @DisplayName("a request after the window's Shell was disposed builds a new one")
+    void reopenAfterDisposeBuildsAnew() {
+        Shell first = open(request(9, "frame", 0));
+        bridge.comm.fireContaining(SwingIslandHost.DISPOSE_EVENT, Map.of("windowId", 9));
+        drain();
 
         Shell second = open(request(9, "frame", 0));
 
         assertThat(first.isDisposed()).isTrue();
+        assertThat(second).isNotNull().isNotSameAs(first);
         assertThat(second.isDisposed()).isFalse();
-        assertThat(Arrays.stream(display.getShells()).filter(s -> !s.isDisposed())).containsExactly(second);
     }
 }
