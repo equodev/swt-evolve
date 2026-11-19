@@ -26,6 +26,8 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.TextLayout;
+import org.eclipse.swt.graphics.TextStyle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -64,6 +66,9 @@ public class GallerySnippet {
 
     /** Baseline Value cells of the OwnerDraw Table, restored by the "Reset Gallery" listener. */
     private static final String[] OWNER_DRAW_BASELINE = {"alpha", "beta"};
+
+    /** The OwnerDraw Table's Source cells, drawn only in SWT.PaintItem; the last one in grey. */
+    private static final String[] OWNER_DRAW_SOURCES = {"app", "library"};
 
     /** Hint of the identifier-validating Text, which starts empty. */
     private static final String IDENTIFIER_TEXT_MESSAGE = "Identifier";
@@ -279,8 +284,8 @@ public class GallerySnippet {
         Table ownerDrawTable = new Table(ownerDrawGroup, SWT.BORDER | SWT.FULL_SELECTION);
         ownerDrawTable.setHeaderVisible(true);
         ownerDrawTable.setLinesVisible(true);
-        int[] ownerDrawWidths = {70, 200};
-        String[] ownerDrawHeaders = {"Done", "Value"};
+        int[] ownerDrawWidths = {70, 200, 110};
+        String[] ownerDrawHeaders = {"Done", "Value", "Source"};
         for (int i = 0; i < ownerDrawHeaders.length; i++) {
             TableColumn c = new TableColumn(ownerDrawTable, SWT.NONE);
             c.setText(ownerDrawHeaders[i]);
@@ -302,6 +307,20 @@ public class GallerySnippet {
         tickOffGc.drawRectangle(1, 1, 9, 9);
         tickOffGc.dispose();
         boolean[] ownerDrawTicks = new boolean[OWNER_DRAW_BASELINE.length];
+        // The Source column is drawn the way JFace's StyledCellLabelProvider draws a cell: a
+        // TextLayout whose StyleRange carries the colour, here SWT.COLOR_GRAY for the library row.
+        ownerDrawTable.addListener(SWT.PaintItem, e -> {
+            if (e.index != 2) return;
+            int row = ownerDrawTable.indexOf((TableItem) e.item);
+            TextLayout layout = new TextLayout(display);
+            layout.setText(OWNER_DRAW_SOURCES[row]);
+            if (row == OWNER_DRAW_SOURCES.length - 1) {
+                TextStyle grey = new TextStyle(null, display.getSystemColor(SWT.COLOR_GRAY), null);
+                layout.setStyle(grey, 0, OWNER_DRAW_SOURCES[row].length() - 1);
+            }
+            layout.draw(e.gc, e.x + 4, e.y + 2);
+            layout.dispose();
+        });
         ownerDrawTable.addListener(SWT.PaintItem, e -> {
             if (e.index != 0) return;
             int row = ownerDrawTable.indexOf((TableItem) e.item);
