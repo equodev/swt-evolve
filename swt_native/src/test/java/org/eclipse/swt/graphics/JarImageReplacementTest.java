@@ -234,6 +234,14 @@ class JarImageReplacementTest {
     }
 
     @Test
+    void getFilenameNamesAUrlDescriptorThatIsItsOwnProvider() throws Exception {
+        // JFace 3.28 and 3.29 hand the URL descriptor itself to new Image(device, provider).
+        URL resource = new URL("jar:" + tmp.resolve("app.jar").toUri() + "!/icons/blank_folder.png");
+
+        assertThat(GraphicsUtils.getFilename(new UrlDescriptor(resource))).isEqualTo("blank_folder");
+    }
+
+    @Test
     void getFilenameIgnoresACompositeWhenGcReplacementIsOff() throws Exception {
         // gc_icons_replacement defaults to false: a decorated image stays unnamed and keeps its pixels
         // (overlay included) rather than collapsing to the base pack icon.

@@ -490,11 +490,19 @@ public class GraphicsUtils {
      * The name, without extension, of the resource a provider reads its pixels from, or null when it
      * does not say. A provider built by a JFace {@code ImageDescriptor} holds that descriptor, which
      * adapts to the resource's URL; this is how an icon packed inside a jar is named. Older JFace
-     * builds a provider nested in the descriptor that holds the URL itself, as a URL or a String.
+     * builds a provider nested in the descriptor that holds the URL itself, as a URL or a String, and
+     * some (JFace 3.28 and 3.29) make the URL descriptor its own provider.
+     * <p>
+     * Typed {@code Object} because {@code ImageDataProvider} does not exist before SWT 3.104, and this
+     * code compiles against every SWT version Evolve supports.
      */
-    static String getFilename(ImageDataProvider provider) {
+    static String getFilename(Object provider) {
         if (provider == null) {
             return null;
+        }
+        java.net.URL own = descriptorUrl(provider);
+        if (own != null) {
+            return urlName(own);
         }
         Class<?> owner = provider.getClass().getEnclosingClass();
         boolean nestedInDescriptor = owner != null && isImageDescriptor(owner);
