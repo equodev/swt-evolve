@@ -1,4 +1,4 @@
-# SWT Evolve
+# Evolve for SWT
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-EPL--2.0-blue)
@@ -191,33 +191,34 @@ jars are listed at [dl.equo.dev/evolve](https://dl.equo.dev/evolve/versions.json
 
 ---
 
-## 📊 Project Status: Alpha
+## 📊 Project Status: 1.0
 
-SWT Evolve is currently in an **alpha** stage. While we continue refining the implementation and improving performance, all standard SWT widgets are now implemented and we are already working with customers on commercial prototypes.
+SWT Evolve **1.0** is out. All standard SWT widgets are implemented, the library runs on Windows, macOS, Linux and in the browser, and it is already used by customers in commercial projects.
+
+👉 [**Download SWT Evolve 1.0**](https://github.com/equodev/swt-evolve/releases/latest)
+
 ---
 
 ## 🗺️ Roadmap
 
-Our primary mission is the drive towards a stable `1.0` release. The vision for 1.0 is to provide a complete, modern, and high-performance replacement for the standard SWT library. **We are aiming to deliver this milestone, which includes full widget and API coverage, by the end of 2025.**
-
-This is an ambitious goal, and our priorities are aggressively focused on making it a reality. The key workstreams are:
+With 1.0 released, our work continues on:
 
 ### Core API & Widget Completion
 
-- [ ] Achieve 100% API coverage for all standard SWT widgets and layouts.
-- [ ] Full support for graphical frameworks, including GEF, GMF, and Draw2D.
-    - [x]  Draw2d (FigureCanvas) implemented for Windows.
-    - [x]  GC image support added for Windows, MacOS and Linux.
+- 100% API coverage for all standard SWT widgets and layouts.
+- Full support for graphical frameworks, including GEF, GMF, and Draw2D.
 
 ### Key Features & Milestones
-* [ ] A fully modernized Eclipse IDE experience running flawlessly on SWT Evolve.
-* [ ] Eliminate common UI freezes found in traditional SWT applications with our advanced threading model.
+
+- A fully modernized Eclipse IDE experience running flawlessly on SWT Evolve.
+- Eliminating common UI freezes found in traditional SWT applications with our advanced threading model.
 
 ### Quality & Performance
-* [ ] Continuous performance tuning and memory optimization.
-* [ ] Comprehensive test suite coverage to ensure stability and compatibility.
 
-This roadmap outlines our strategic goals. For a detailed, real-time view of our work-in-progress and upcoming tasks, please visit our **[Public Project Dashboard](https://github.com/orgs/equodev/projects/2/views/1)**.
+- Continuous performance tuning and memory optimization.
+- Comprehensive test suite coverage to ensure stability and compatibility.
+
+For a detailed, real-time view of our work-in-progress and upcoming tasks, please visit our **[Public Project Dashboard](https://github.com/orgs/equodev/projects/2/views/1)**.
 
 ---
 
