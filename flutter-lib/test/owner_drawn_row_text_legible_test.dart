@@ -113,6 +113,13 @@ void main() {
     expect(textOf(shapes), _black);
   });
 
+  test('SWT.COLOR_GRAY text on the light row stays grey, as native draws it', () async {
+    const gray = Color(0xFFC0C0C0);
+    final shapes = await paintRow(Colors.white, gray, Colors.white, drawLabel);
+
+    expect(textOf(shapes), gray);
+  });
+
   test('text in the next cell is read against the row, not against another cell\'s fill', () async {
     final shapes = await paintRow(_darkRow, _black, _lightBlue, (d) {
       fillCell(d);
