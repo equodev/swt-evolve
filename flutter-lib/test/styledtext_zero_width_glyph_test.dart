@@ -75,11 +75,19 @@ void main() {
     await tester.pump(Duration.zero);
 
     final rows = (StyledTextImpl.debugLastGeometry!['lines'] as List).cast<Map<String, dynamic>>();
-    // ignore: avoid_print
-    print('ZW rows=$rows');
     final x1 = _charX(rows[0]);
     final x2 = _charX(rows[1]);
-    expect(x1[_open.length], closeTo(0, 0.5), reason: '"INFO" starts at the left edge');
+    for (var i = 0; i <= _open.length; i++) {
+      expect(x1[i], closeTo(0, 0.5), reason: 'offset $i inside the opening escape is at the left edge');
+    }
+    for (var i = 0; i <= 4; i++) {
+      expect(x1[_open.length + i], closeTo(x2[i], 0.5), reason: 'offset $i of "INFO" matches the plain line');
+    }
+    final infoEnd = x1[_open.length + 4];
+    for (var i = 1; i <= _close.length; i++) {
+      expect(x1[_open.length + 4 + i], closeTo(infoEnd, 0.5),
+          reason: 'offset $i inside the closing escape stays at the end of "INFO"');
+    }
     expect(x1[_line1.length], closeTo(x2[_line2.length], 0.5),
         reason: 'the line ends where the same text without escapes does');
   });

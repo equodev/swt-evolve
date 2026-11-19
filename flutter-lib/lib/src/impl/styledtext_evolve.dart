@@ -694,7 +694,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
               vRange.underline == true ? (vRange.underlineStyle ?? SWT.UNDERLINE_SINGLE) : null,
           borderStyle: (vRange.borderStyle ?? 0) == 0 ? null : vRange.borderStyle,
           borderColor: vRange.borderColor != null ? colorFromVColor(vRange.borderColor) : null,
-          glyphWidth: (vRange.metrics?.width ?? 0) > 0 ? vRange.metrics!.width.toDouble() : null,
+          glyphWidth: vRange.metrics?.width.toDouble(),
           underlineColor: vRange.underline == true && vRange.underlineColor != null
               ? colorFromVColor(vRange.underlineColor)
               : null,
