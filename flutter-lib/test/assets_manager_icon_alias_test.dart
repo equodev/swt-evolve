@@ -162,6 +162,89 @@ const _idePluginIconFiles = [
   'xmlfile.gif', 'xsd_obj.gif', 'zap.svg',
 ];
 
+/// A trace viewer's image files (its views, charts, toolbars, tracing sessions and targets, and the
+/// platform plugins it bundles): each shows a pack icon in the set's style. Brand logos, overlays,
+/// cursor masks and @2x/@4x variants are left out.
+const _traceViewerIconFiles = [
+  'add-context.gif', 'add_bookmark.gif', 'add_button.gif', 'add_obj.gif', 'addchild_button.gif',
+  'addmany_button.gif', 'addnext_button.gif', 'addtoworkset.svg', 'analysis.png',
+  'analysisprovider_obj.gif', 'arraypartition_obj.gif', 'arrow_up.bmp', 'backward_nav.gif',
+  'barchart.png', 'binaries_obj.gif', 'binary_mapping_file.gif', 'bkmrk_nav.svg', 'bkmrk_tsk.svg',
+  'block_selection_mode.svg', 'bookmark_obj.png', 'bp_label.svg', 'breakpoint_view.svg',
+  'brkp_grp.svg', 'brkp_grp4.svg', 'brkp_obj.svg', 'brkp_type.svg', 'btf.png', 'bullet.gif',
+  'callgraph.png', 'callstack.png', 'callstack_view.gif', 'channel.gif', 'channel_disabled.gif',
+  'cheatsheet_task.svg', 'cheatsheet_view.svg', 'class.gif', 'classobject_obj.gif', 'clear.gif',
+  'collapse_all.gif', 'collapseall.svg', 'collapsed_obj.gif', 'colors_view.gif', 'comment_obj.gif',
+  'compare_view.svg', 'connect.gif', 'connection.gif', 'connection_node.gif', 'console_view.svg',
+  'constrainon.gif', 'contextswitch.png', 'control_flow_view.gif', 'control_view.gif',
+  'copy_edit.svg', 'copy_edit_co.svg', 'counter.png', 'cpu-usage.png', 'cpuusage.png',
+  'cpyqual_menu.svg', 'critical-path.png', 'customparser_wizard.gif', 'cut_edit.svg',
+  'debug_exc.svg', 'debug_persp.svg', 'debug_view.svg', 'debuglast_co.svg', 'debugt_obj.gif',
+  'delete.gif', 'delete_button.gif', 'delete_edit.svg', 'delete_trace.gif', 'density.png',
+  'disable.gif', 'disable_event.gif', 'disabled_co.svg', 'disconnect.gif', 'disconnect_co.svg',
+  'display_selected_mb.svg', 'domain.gif', 'down_button.gif', 'drop_to_frame.svg', 'edit.gif',
+  'element_icon.gif', 'enable.gif', 'enable_event.gif', 'enabled_co.svg', 'error_log.svg',
+  'event_disabled.gif', 'event_enabled.gif', 'eventmatching.png', 'events_view.gif',
+  'expand_all.gif', 'expandall.svg', 'experiment.gif', 'export.gif', 'export_brkpts.svg',
+  'export_button.png', 'export_config_obj.svg', 'export_projectset.svg', 'export_wiz.svg',
+  'exportdir_wiz.svg', 'exportpref_obj.svg', 'exportzip_wiz.svg', 'external_tools.svg',
+  'fetch_log_wiz.gif', 'file_obj.svg', 'filter_add.gif', 'filter_items.gif', 'filter_ps.gif',
+  'filters_view.gif', 'flame.png', 'fldr_obj.svg', 'follow_arrow_bwd.gif', 'follow_arrow_fwd.gif',
+  'forward_nav.gif', 'funcdensity.png', 'gantt.png', 'ganttxml.png', 'garland16.png',
+  'generic_editor.svg', 'gotoobj_tsk.svg', 'gotopage_menu.gif', 'group_by.gif',
+  'header_complete.svg', 'header_priority.svg', 'help.gif', 'help_button.gif', 'help_contents.svg',
+  'help_search.svg', 'help_view.svg', 'hide.gif', 'hide_arrows.gif', 'hide_empty_rows.png',
+  'hide_lost_events.gif', 'hierarchy.gif', 'histogram.gif', 'history_view.svg', 'hunk_obj.svg',
+  'ignoreprefs.svg', 'import.gif', 'import_brkpts.svg', 'import_button.png',
+  'import_config_obj.svg', 'import_projectset.svg', 'import_trace.gif', 'import_wiz.svg',
+  'importdir_wiz.svg', 'importpref_obj.svg', 'importzip_wiz.svg', 'index_co.svg', 'inst_ptr.svg',
+  'inst_ptr_top.svg', 'install-handler.png', 'internal_browser.svg', 'ioanalysis.png', 'iu_obj.svg',
+  'iu_update_obj.svg', 'jar_obj.svg', 'keyspref_obj.svg', 'last_edit_pos.svg', 'latency.png',
+  'launchConfiguration.svg', 'lgroup_obj.svg', 'line_icon.gif', 'linechart.png', 'linechartxml.png',
+  'link_ovr.gif', 'logger_disabled.gif', 'logger_enabled.gif', 'mark_occurrences.svg',
+  'memory-usage.png', 'memory_view.svg', 'memoryreset_tsk.svg', 'memusage.png', 'minimap.svg',
+  'module_view.svg', 'monitorexpression_tsk.svg', 'movedown_button.gif', 'moveup_button.gif',
+  'nested_projects.svg', 'network.png', 'new.gif', 'new_con.svg', 'new_persp.svg',
+  'new_tracing_prj.gif', 'new_untitled_text_file.svg', 'new_view.png', 'new_wiz.svg', 'new_xml.gif',
+  'newfile_wiz.svg', 'newfolder_wiz.svg', 'newprj_wiz.svg', 'newSampleProject_wiz.gif',
+  'next_bookmark.gif', 'next_edit_pos.svg', 'next_event.gif', 'next_item.gif', 'next_menu.gif',
+  'next_nav.svg', 'node_end.gif', 'node_obj.gif', 'node_start.gif', 'ok_tbl.gif',
+  'onboarding_resource_persp.png', 'open.gif', 'Optimization.png', 'os_overview.png',
+  'outline_co.svg', 'package_obj.gif', 'paste_edit.svg',
+  'pause_trace.gif', 'pcap.png', 'pcapng.png', 'pin.svg', 'pin_view.gif', 'plus_obj.gif',
+  'prev_bookmark.gif', 'prev_event.gif', 'prev_item.gif', 'prev_menu.gif', 'prev_nav.svg',
+  'print_edit.svg', 'prj_obj.svg', 'problems_view.svg', 'process_obj.gif', 'profile.gif',
+  'profile_exc.svg', 'project_view.gif', 'prop_ps.svg', 'providers.gif', 'pview.svg',
+  'readwrite_obj.svg', 'redo_edit.svg', 'refresh.gif', 'refresh_nav.svg', 'register_view.svg',
+  'rem_all_co.svg', 'rem_all_triggers.svg', 'rem_co.svg', 'remove.gif', 'remove_bookmark.gif',
+  'removefromworkset.svg', 'removememory_tsk.svg', 'rename.gif', 'resource_persp.svg',
+  'resources_view.gif', 'resume_co.svg', 'rldgrmr.gif', 'run_exc.svg', 'runlast_co.svg',
+  'runtime.gif', 'runtoline_co.svg', 'save_button.gif', 'save_edit.svg', 'saveall_edit.svg',
+  'saveas_edit.svg', 'scatter.png', 'scatterchart.png', 'search.svg', 'search_match.gif',
+  'search_match_bookmark.gif', 'search_menu.gif', 'search_seqdiag_menu.gif', 'searchm_obj.svg',
+  'searchres.svg', 'segment_edit.svg', 'select_all.svg', 'select_menu.gif',
+  'sequencediagram_view.gif', 'session_active.gif', 'session_destroyed.gif', 'session_inactive.gif',
+  'sessions.gif', 'set_trace_type.gif', 'shift_l_edit.gif', 'shift_r_edit.gif',
+  'show_hist_traces.gif', 'show_legend.gif', 'show_whitespace_chars.svg', 'sigma.gif',
+  'sinfocenter_obj.svg', 'skip_brkp.svg', 'slocalhelp_obj.svg', 'snapshot.gif', 'sort_alpha.gif',
+  'sort_alpha_rev.gif', 'sort_num.gif', 'sort_num_rev.gif', 'sort_time.gif', 'sort_time_rev.gif',
+  'split_horizontal.svg', 'split_vertical.svg', 'start_trace.gif', 'statistics.png',
+  'statistics_view.gif', 'stckframe_obj.svg', 'stepbystep_co.svg', 'stepinto_co.svg',
+  'stepover_co.svg', 'stepreturn_co.svg', 'stop_trace.gif', 'stream_list_view.gif',
+  'suspend_co.svg', 'sweb_obj.svg', 'swslatency.png', 'synced.svg', 'synch_participants.svg',
+  'synch_synch.svg', 'systemcalls.png', 'tag-generic.gif', 'tag-macro.gif', 'target_add.gif',
+  'target_connected.gif', 'target_delete.gif', 'target_disconnected.gif', 'targets.gif',
+  'tasks_tsk.svg', 'terminate_all_co.svg', 'terminate_co.svg', 'text_mapping_file.gif',
+  'thread_obj.gif', 'threads.png', 'timechart_view.gif', 'toggledetailpane_co.svg', 'toLower.svg',
+  'toUpper.svg', 'trace.gif', 'trace_group.gif', 'trace_import_wiz.png',
+  'tracing_pers.gif', 'tree_explorer.svg', 'tsearch_obj.svg', 'undo_edit.svg',
+  'unknown_parser.gif', 'unpinned_view.gif', 'up_button.gif',
+  'var_cntnt_prvdr.svg', 'variable_view.svg', 'watch_exp.svg', 'watchlist_view.svg',
+  'welcome16.svg', 'welcome_editor.svg', 'wordwrap.svg', 'workingsets.svg', 'workset.svg',
+  'workspace_obj.svg', 'xml_perspective.gif', 'xmldoc.gif', 'zoomIn.svg', 'zoomin_nav.gif',
+  'zoomin_obj.bmp', 'zoomOut.svg', 'zoomout_nav.gif', 'zoomout_obj.bmp',
+];
+
 /// A file whose icon key has a drawing shows that drawing: the toolbar's label printing and the
 /// search field's clear button load their images by file, other parts by `icon://` key.
 const _filesOfKeys = {
@@ -228,6 +311,12 @@ void main() {
   for (final file in _idePluginIconFiles) {
     test('a plugin image named $file shows a pack icon in the set\'s style', () async {
       await _expectPackStyle(await AssetsManager.loadReplacement('icons/full/obj16/$file'), file);
+    });
+  }
+
+  for (final file in _traceViewerIconFiles) {
+    test('a trace viewer image named $file shows a pack icon in the set\'s style', () async {
+      await _expectPackStyle(await AssetsManager.loadReplacement('icons/obj16/$file'), file);
     });
   }
 
