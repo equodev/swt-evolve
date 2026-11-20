@@ -35,8 +35,19 @@ public final class ColumnHelper {
         if (column.isDisposed() || tree == null || tree.isDisposed())
             return;
         sendMovesAfter(tree.getColumns(), tree.getColumnOrder(), tree.indexOf(column));
+        cellsMoved(tree);
+    }
+
+    /** Has an owner-drawn tree's rows drawn again where its columns now stand, as native SWT repaints them. */
+    public static void cellsMoved(Tree tree) {
         DartTree impl = (DartTree) tree.getImpl();
         if (impl.hooks(SWT.PaintItem)) TreeHelper.nameOwnerDrawnCells(impl);
+    }
+
+    /** Has an owner-drawn table's rows drawn again where its columns now stand, as native SWT repaints them. */
+    public static void cellsMoved(Table table) {
+        DartTable impl = (DartTable) table.getImpl();
+        if (impl.hooks(SWT.PaintItem)) TableHelper.nameOwnerDrawnCells(impl);
     }
 
     /**
@@ -48,8 +59,7 @@ public final class ColumnHelper {
         if (column.isDisposed() || table == null || table.isDisposed())
             return;
         sendMovesAfter(table.getColumns(), table.getColumnOrder(), table.indexOf(column));
-        DartTable impl = (DartTable) table.getImpl();
-        if (impl.hooks(SWT.PaintItem)) TableHelper.nameOwnerDrawnCells(impl);
+        cellsMoved(table);
     }
 
     /** Where column {@code index} is shown, or -1. */

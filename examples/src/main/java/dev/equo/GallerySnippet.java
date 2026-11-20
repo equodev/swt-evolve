@@ -290,6 +290,7 @@ public class GallerySnippet {
             TableColumn c = new TableColumn(ownerDrawTable, SWT.NONE);
             c.setText(ownerDrawHeaders[i]);
             c.setWidth(ownerDrawWidths[i]);
+            c.setMoveable(true);
         }
         for (String value : OWNER_DRAW_BASELINE) {
             new TableItem(ownerDrawTable, SWT.NONE).setText(new String[] {"", value});
@@ -829,13 +830,14 @@ public class GallerySnippet {
                 identifierText.setText("");
             }
             table.deselectAll();
-            // A scenario may leave the cell editor open, and its ticks toggled; both are this
-            // section's whole observable state, so the next scenario needs them back.
+            // A scenario may leave the cell editor open, its ticks toggled and its columns
+            // reordered; that is this section's whole observable state.
             if (cellEditor[0] != null && !cellEditor[0].isDisposed()) cellEditor[0].dispose();
             for (int i = 0; i < OWNER_DRAW_BASELINE.length; i++) {
                 ownerDrawTicks[i] = false;
                 ownerDrawTable.getItem(i).setText(1, OWNER_DRAW_BASELINE[i]);
             }
+            ownerDrawTable.setColumnOrder(new int[] {0, 1, 2});
             ownerDrawTable.deselectAll();
             ownerDrawTable.redraw();
             tree.deselectAll();

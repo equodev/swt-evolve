@@ -1724,6 +1724,8 @@ public class DartTable extends DartComposite implements ITable {
                 }
             }
         }
+        if (reorder)
+            ColumnHelper.cellsMoved(this.getApi());
         dev.equo.swt.ChangeMarks.ifChanged(this, VTable.COLUMN_ORDER, wasColumnOrder, self -> self.getValue().getColumnOrder());
     }
 

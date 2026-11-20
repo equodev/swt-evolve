@@ -1678,6 +1678,8 @@ public class DartTree extends DartComposite implements ITree {
                 }
             }
         }
+        if (reorder)
+            ColumnHelper.cellsMoved(this.getApi());
         dev.equo.swt.ChangeMarks.ifChanged(this, VTree.COLUMN_ORDER, wasColumnOrder, self -> self.getValue().getColumnOrder());
     }
 
