@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart'
     show TargetPlatform, debugPrint, defaultTargetPlatform;
 import 'package:webview_all/webview_all.dart'
@@ -8,6 +11,8 @@ import 'package:webview_all/webview_all.dart'
         WebViewCookie,
         WebViewCookieManager;
 import 'package:webview_all_windows/webview_all_windows.dart';
+
+import 'browser_inline_documents.dart' show injectBaseUrl;
 
 /// Non-web platforms use the default WebView creation params (no iframe to
 /// stamp), so this returns null and the caller falls back to `WebViewController()`.
@@ -31,13 +36,43 @@ Object? browserEvalInFrame(
         PlatformWebViewControllerCreationParams? params, String script) =>
     null;
 
-/// Only the web iframe needs a same-origin URL for inline content; native webviews render
-/// `loadHtmlString` scriptably on their own.
-Future<String?> browserInlineDocumentUrl(String html, String? baseUrl) async => null;
+/// The largest document WebView2's NavigateToString, behind `loadHtmlString` on Windows, accepts;
+/// over it, it loads nothing at all. The string reaches it as UTF-16.
+const int _maxStringDocumentBytes = 2 * 1024 * 1024;
 
-String browserInlineDocumentEndpoint() => '';
+int _documentFiles = 0;
 
-void browserRevokeInlineDocumentUrl(String url) {}
+Directory get _documentsDirectory => Directory(
+    '${Directory.systemTemp.path}${Platform.pathSeparator}evolve-browser-documents-$pid');
+
+/// Native webviews render `loadHtmlString` scriptably on their own, so a `setText` document needs
+/// no URL, except one too large for WebView2: that one is written to a file and loaded from it, as
+/// SWT's Edge loads every `setText` document.
+Future<String?> browserInlineDocumentUrl(String html, String? baseUrl) async {
+  if (defaultTargetPlatform != TargetPlatform.windows ||
+      html.length * 2 <= _maxStringDocumentBytes) {
+    return null;
+  }
+  final directory = await _documentsDirectory.create(recursive: true);
+  final file = File('${directory.path}${Platform.pathSeparator}${++_documentFiles}.html');
+  // The BOM makes the webview read the file as UTF-8 whatever the document declares.
+  await file.writeAsBytes([0xEF, 0xBB, 0xBF, ...utf8.encode(injectBaseUrl(html, baseUrl))]);
+  return file.uri.toString();
+}
+
+String browserInlineDocumentEndpoint() {
+  if (defaultTargetPlatform != TargetPlatform.windows) return '';
+  final directory = Uri.directory(_documentsDirectory.path).toString();
+  return directory.substring(0, directory.length - 1);
+}
+
+void browserRevokeInlineDocumentUrl(String url) {
+  try {
+    File.fromUri(Uri.parse(url)).deleteSync();
+  } on FileSystemException catch (e) {
+    debugPrint('Browser: could not delete a setText document file: $e');
+  }
+}
 
 /// No iframe to listen to on non-web platforms; desktop webviews get their
 /// re-injection from the `onPageFinished` navigation delegate instead.

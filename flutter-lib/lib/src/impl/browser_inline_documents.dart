@@ -53,3 +53,14 @@ class InlineDocuments {
   bool isDocument(String url) =>
       url == _current || (_endpoint.isNotEmpty && url.startsWith('$_endpoint/'));
 }
+
+final RegExp _headTag = RegExp(r'<head[^>]*>', caseSensitive: false);
+
+/// [html] resolving its relative URLs against [baseUrl].
+String injectBaseUrl(String html, String? baseUrl) {
+  if (baseUrl == null || baseUrl.isEmpty) return html;
+  final baseTag = '<base href="$baseUrl">';
+  final match = _headTag.firstMatch(html);
+  if (match != null) return html.replaceRange(match.end, match.end, baseTag);
+  return '<head>$baseTag</head>$html';
+}

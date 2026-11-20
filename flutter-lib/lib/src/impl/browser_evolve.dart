@@ -45,6 +45,8 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   String? _loadedUrl;
   String? _loadedText;
   Completer<bool>? _locationChangingCompleter;
+  // Counts the navigations started here, so one still waiting to start knows it was replaced.
+  int _navigations = 0;
   // The Windows webview answers a navigation request by cancelling the navigation and restarting it
   // from its URL, which turns a form POST into a GET without its body. There only the loads started
   // here ask Java (see [_load]).
@@ -67,7 +69,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // is unconditionally unsupported, so DOM-level eval is the only option, and it
   // only works when the content is same-origin (or served through the proxy).
   PlatformWebViewControllerCreationParams? _params;
-  // Web: the same-origin URLs setText documents are served from (see _loadText).
+  // The URLs setText documents are loaded from where the string itself cannot be (see _loadText).
   late final InlineDocuments _inlineDocuments = InlineDocuments(browserInlineDocumentUrl,
       browserRevokeInlineDocumentUrl, browserInlineDocumentEndpoint());
   // Names of registered BrowserFunctions. Each is exposed in the iframe page as
@@ -352,15 +354,20 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       {LoadRequestMethod method = LoadRequestMethod.get,
       Map<String, String> headers = const <String, String>{},
       Uint8List? body}) async {
+    final navigation = ++_navigations;
     if (!_asksNavigationRequests && !await _locationChanging(uri.toString())) return;
+    // A navigation started while Java was being asked replaces this one.
+    if (navigation != _navigations) return;
     _awaitedFrameUrl = _expectSameOrigin ? uri : null;
     await _controller.loadRequest(uri, method: method, headers: headers, body: body);
   }
 
   /// Loads a `setText` document. On web it is served from a same-origin URL so the page is
-  /// scriptable (execute/evaluate/BrowserFunction) — see `browserInlineDocumentUrl`; the native
-  /// webviews render the string directly.
+  /// scriptable (execute/evaluate/BrowserFunction), and on Windows one too large for WebView2 is
+  /// loaded from a file — see `browserInlineDocumentUrl`; otherwise the native webviews render the
+  /// string directly.
   Future<void> _loadText(String html, {String? baseUrl}) async {
+    _navigations++;
     // False when a later setText or setUrl replaced this document while its URL was being made.
     if (!await _inlineDocuments.make(html, baseUrl)) return;
     final url = _inlineDocuments.current;

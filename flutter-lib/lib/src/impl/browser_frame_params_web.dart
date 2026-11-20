@@ -7,6 +7,7 @@ import 'package:webview_all/webview_all.dart'
 import 'package:webview_all_web/webview_all_web.dart';
 
 import 'browser_app_base.dart';
+import 'browser_inline_documents.dart' show injectBaseUrl;
 
 /// On web, stamps the WebView's `<iframe>` with a stable `name`
 /// (`equo-browser-<id>`) so a hosting Equo Chromium standalone window can
@@ -110,7 +111,7 @@ String localFileBaseRewrite(String? basePath) {
 ///
 /// The caller owns the URL: revoke it with [browserRevokeInlineDocumentUrl] once replaced.
 Future<String?> browserInlineDocumentUrl(String html, String? baseUrl) async {
-  final document = _injectBaseUrl(html, baseUrl);
+  final document = injectBaseUrl(html, baseUrl);
   final endpoint = browserInlineDocumentEndpoint();
   try {
     final response = await web.window
@@ -144,16 +145,6 @@ void browserRevokeInlineDocumentUrl(String url) {
   } else {
     web.window.fetch(url.toJS, web.RequestInit(method: 'DELETE')).toDart.ignore();
   }
-}
-
-final RegExp _headTag = RegExp(r'<head[^>]*>', caseSensitive: false);
-
-String _injectBaseUrl(String html, String? baseUrl) {
-  if (baseUrl == null || baseUrl.isEmpty) return html;
-  final baseTag = '<base href="$baseUrl">';
-  final match = _headTag.firstMatch(html);
-  if (match != null) return html.replaceRange(match.end, match.end, baseTag);
-  return '<head>$baseTag</head>$html';
 }
 
 /// Listens for the iframe's native `load` DOM event, fired every time it lands
