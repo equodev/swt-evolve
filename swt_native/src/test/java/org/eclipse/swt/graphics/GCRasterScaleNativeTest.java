@@ -82,6 +82,28 @@ class GCRasterScaleNativeTest {
     }
 
     @Test
+    @DisplayName("a copy of an off-screen image keeps its size and its pixels at the raster scale")
+    void copyOfAScratchBufferKeepsItsSize() {
+        Image source = new Image(display, 10, 8);
+        Image copy = new Image(display, source, SWT.IMAGE_COPY);
+        DartImage impl = (DartImage) copy.getImpl();
+
+        assertThat(copy.getBounds()).isEqualTo(new Rectangle(0, 0, 10, 8));
+        assertThat(impl._wireWidth()).isEqualTo(20);
+        GC onCopy = new GC(copy);
+        assertThat(((DartGC) onCopy.getImpl()).wireBufferScale()).as("a GC on the copy draws in its units").isEqualTo(2f);
+        onCopy.dispose();
+
+        GC gc = new GC(canvas);
+        bridge.comm.sent.clear();
+        gc.drawImage(copy, 0, 0);
+        gc.dispose();
+        assertThat(blitted(0, 0, 20, 16, 0, 0, 10, 8)).as("the copy blits at its own size").isTrue();
+        copy.dispose();
+        source.dispose();
+    }
+
+    @Test
     @DisplayName("a GC on an off-screen image whose width doesn't scale evenly still reaches its last pixel row")
     void gcCoversTheWholeBufferAtAFractionalScale() {
         Config.setClientDeviceZoom(160);

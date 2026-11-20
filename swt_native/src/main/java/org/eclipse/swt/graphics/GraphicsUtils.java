@@ -296,6 +296,30 @@ public class GraphicsUtils {
         return copyImage(display, image);
     }
 
+    /**
+     * Brings the image's {@code imageData} up to what every GC drew on it so far. Whatever reads
+     * {@code imageData} as the image's pixels (getImageData, the copy constructor) calls this first.
+     */
+    static void settlePixels(DartImage image) {
+        GC memGC = image.memGC;
+        if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC) { DartGC dgc = (DartGC) memGC.getImpl();
+            // A GC is still actively drawing on this image (no dispose() yet) — this backend
+            // only renders in response to an explicit signal (see GCImageDrawer), unlike real
+            // SWT where GC draws are immediately visible, so ask it to render the current
+            // state now instead of waiting on pendingRenderFuture, which nothing would
+            // trigger until dispose().
+            dgc.requestRenderSnapshotAndWait();
+        } else {
+            java.util.concurrent.CompletableFuture<Void> f = image.pendingRenderFuture;
+            if (f != null && !f.isDone())
+                DartImage._awaitRender(f);
+        }
+        // Everything above settles a render that is already in flight. This is the other
+        // case: the render finished on the Flutter side and its pixels never crossed, so
+        // reading them is what pulls them over.
+        image._ensureRemotePixels();
+    }
+
     /** The colour of the image data's transparent pixel, or null when it has none. */
     public static Color transparentColor(Device device, ImageData data) {
         if (data == null || data.transparentPixel == -1) return null;

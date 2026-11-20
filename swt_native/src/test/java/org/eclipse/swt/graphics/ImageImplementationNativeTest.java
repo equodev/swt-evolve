@@ -207,6 +207,42 @@ class ImageImplementationNativeTest {
         image.dispose();
     }
 
+    @Test
+    @DisplayName("a copy has the pixels the render side kept for its source")
+    void copyFetchesTheSourcesRemotePixels() {
+        ImageData blue = new ImageData(2, 2, 24, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+        for (int x = 0; x < 2; x++)
+            for (int y = 0; y < 2; y++)
+                blue.setPixel(x, y, 0xFF);
+        ImageLoader loader = new ImageLoader();
+        loader.data = new ImageData[] {blue};
+        java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        loader.save(png, SWT.IMAGE_PNG);
+
+        Image source = new Image(display, 2, 2);
+        impl(source)._adoptRemoteRender(5L, answering(png.toByteArray()));
+        Image copy = new Image(display, source, SWT.IMAGE_COPY);
+
+        ImageData data = copy.getImageData();
+        assertThat(data.palette.getRGB(data.getPixel(1, 1))).isEqualTo(new RGB(0, 0, 255));
+        copy.dispose();
+        source.dispose();
+    }
+
+    @Test
+    @DisplayName("a copy waits for a render of its source in flight")
+    void copyWaitsForTheSourcesRenderInFlight() {
+        Image source = new Image(display, 2, 2);
+        CompletableFuture<Void> render = new CompletableFuture<>();
+        impl(source)._pendingRenderFuture(render);
+        completeLater(render);
+        Image copy = new Image(display, source, SWT.IMAGE_COPY);
+
+        assertThat(render).isDone();
+        copy.dispose();
+        source.dispose();
+    }
+
     private static dev.equo.swt.comm.CommService answering(byte[] answer) {
         return new dev.equo.swt.harness.RecordingComm() {
             @Override
@@ -295,6 +331,33 @@ class ImageImplementationNativeTest {
         Image image = new Image(display, new ByteArrayInputStream(png.toByteArray()));
 
         assertThat(((DartImage) image.getImpl())._imageDataForWire()).isNotNull();
+        image.dispose();
+    }
+
+    @Test
+    @DisplayName("a GC on a copy starts from the copied pixels, a GC on a new image from none")
+    void aGcOnACopyKeepsItsPixelsOnTheWire() {
+        Image blank = new Image(display, 4, 4);
+        Image copy = new Image(display, blank, SWT.IMAGE_COPY);
+        ((DartImage) blank.getImpl())._renderOwnsPixels();
+        ((DartImage) copy.getImpl())._renderOwnsPixels();
+
+        assertThat(((DartImage) blank.getImpl())._imageDataForWire()).isNull();
+        assertThat(((DartImage) copy.getImpl())._imageDataForWire()).isNotNull();
+        blank.dispose();
+        copy.dispose();
+    }
+
+    @Test
+    @DisplayName("once a GC binds an image, it no longer holds its allocated blank buffer")
+    void aBoundImageDropsItsScratchBuffer() {
+        Image image = new Image(display, 4, 4);
+        assertThat(impl(image).scratchBuffer).isNotNull();
+
+        impl(image)._renderOwnsPixels();
+
+        assertThat(impl(image).scratchBuffer).isNull();
+        assertThat(impl(image)._imageDataForWire()).isNull();
         image.dispose();
     }
 

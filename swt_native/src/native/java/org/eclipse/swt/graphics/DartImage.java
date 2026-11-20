@@ -267,7 +267,11 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             default:
                 SWT.error(SWT.ERROR_INVALID_ARGUMENT);
         }
+        GraphicsUtils.settlePixels((DartImage) srcImage.getImpl());
         this.imageData = GraphicsUtils.copyImageData(((DartImage) srcImage.getImpl()).imageData);
+        // A source held at the raster scale keeps its size in the copy, not its pixel count.
+        logicalWidth = ((DartImage) srcImage.getImpl()).logicalWidth;
+        logicalHeight = ((DartImage) srcImage.getImpl()).logicalHeight;
         GraphicsUtils.applyImageStyleFlag(this, ((DartImage) srcImage.getImpl()).styleFlag | flag);
         try {
             this.getApi().type = srcImage.type;
@@ -930,23 +934,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
     public ImageData getImageData(int zoom) {
         if (isDisposed())
             SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
-        if (memGC != null && !memGC.isDisposed() && memGC.getImpl() instanceof DartGC) {
-            DartGC dgc = (DartGC) memGC.getImpl();
-            // A GC is still actively drawing on this image (no dispose() yet) — this backend
-            // only renders in response to an explicit signal (see GCImageDrawer), unlike real
-            // SWT where GC draws are immediately visible, so ask it to render the current
-            // state now instead of waiting on pendingRenderFuture, which nothing would
-            // trigger until dispose().
-            dgc.requestRenderSnapshotAndWait();
-        } else {
-            java.util.concurrent.CompletableFuture<Void> f = pendingRenderFuture;
-            if (f != null && !f.isDone())
-                _awaitRender(f);
-        }
-        // Everything above settles a render that is already in flight. This is the other
-        // case: the render finished on the Flutter side and its pixels never crossed, so
-        // reading them is what pulls them over -- once, here, and nowhere else.
-        _ensureRemotePixels();
+        GraphicsUtils.settlePixels(this);
         // Return a defensive copy: getImageData() must not hand out the backing store, so a
         // caller mutating the returned data can't alter the image (changingImageDataDoesNotAffectImage).
         // A buffer allocated at the raster scale (see _allocateScratchBuffer) is stored at that
@@ -1366,8 +1354,12 @@ public final class DartImage extends DartResource implements Drawable, IImage {
 
     boolean renderOwnsPixels;
 
+    ImageData scratchBuffer;
+
     public void _renderOwnsPixels() {
-        renderOwnsPixels = true;
+        if (imageData == scratchBuffer)
+            renderOwnsPixels = true;
+        scratchBuffer = null;
     }
 
     public ImageData _imageDataForWire() {
@@ -1394,7 +1386,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         double zoom = dev.equo.swt.Config.rasterScale();
         int bufferWidth = width > 0 ? Math.max(1, (int) Math.round(width * zoom)) : width;
         int bufferHeight = height > 0 ? Math.max(1, (int) Math.round(height * zoom)) : height;
-        return GraphicsUtils.blankImageData(bufferWidth, bufferHeight);
+        return scratchBuffer = GraphicsUtils.blankImageData(bufferWidth, bufferHeight);
     }
 
     public int _logicalWidth() {
@@ -1415,7 +1407,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         _setRemoteRef(ref);
     }
 
-    private void _ensureRemotePixels() {
+    void _ensureRemotePixels() {
         if (!remotePixelsStale || remoteRef == null || remoteComm == null)
             return;
         ImageData read = GCHelper.readRemotePixels(device, remoteComm, remoteRef, getBounds());
