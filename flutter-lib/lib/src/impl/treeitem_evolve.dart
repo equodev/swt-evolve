@@ -420,6 +420,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                     getTreeItemBackgroundColor(state, widgetTheme, selected, false, enabled),
                     enabled ? widgetTheme.backgroundColor : widgetTheme.disabledBackgroundColor)
                 : rowGround,
+            selected: selected,
             minContrast: widgetTheme.minTextContrast),
           ),
           if (expanded && hasChildren && (_context?.renderChildItems ?? true))
@@ -438,7 +439,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   /// paints. The row's own [background] (hover, selection) goes under the overlay, not with the row,
   /// or it covers the overlay's drawing.
   Widget _withOwnerDrawOverlay(Widget row,
-      {required BoxDecoration background, required Color ground, required double minContrast}) {
+      {required BoxDecoration background,
+      required Color ground,
+      required bool selected,
+      required double minContrast}) {
     // Always a Stack, so the row is not remounted when the overlay arrives.
     return Stack(
       children: [
@@ -450,9 +454,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
               child: OwnerDrawnRowOverlay(
                   itemId: state.id,
                   ground: ground,
-                  chosenOn: colorFromVColor(
-                      state.background ?? _context?.parentTreeValue.background,
-                      defaultColor: Colors.white),
+                  chosenOn: selected
+                      ? OwnerDrawnRowOverlay.listSelectionColor
+                      : colorFromVColor(state.background ?? _context?.parentTreeValue.background,
+                          defaultColor: Colors.white),
                   minContrast: minContrast),
             ),
           ),

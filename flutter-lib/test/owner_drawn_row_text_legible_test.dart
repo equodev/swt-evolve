@@ -16,6 +16,8 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
+import 'package:swtflutter/src/gen/tree.dart';
+import 'package:swtflutter/src/gen/treeitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/owner_draw_overlay.dart';
@@ -28,6 +30,8 @@ const _darkRow = Color(0xFF1F2937);
 const _black = Color(0xFF000000);
 const _lightBlue = Color(0xFFCCE5FF);
 const _red = Color(0xFFFF0000);
+const _white = Color(0xFFFFFFFF);
+const _listSelection = Color(0xFF3399FF);
 
 VColor _v(Color c) => VColor()
   ..red = (c.r * 255).round()
@@ -51,14 +55,14 @@ void main() {
   /// A row's GC on [ground], drawing what [draw] does with the cell's [foreground] and [background],
   /// as the listeners find them.
   Future<List<Shape>> paintRow(Color ground, Color foreground, Color background,
-      void Function(GCDrawer) draw) async {
+      void Function(GCDrawer) draw, {Color chosenOn = _white}) async {
     final id = nextId++;
     final state = VGC.empty()
       ..id = id
       ..foreground = _v(foreground)
       ..background = _v(background);
     final drawer = GCDrawer.embedded(state, onShapesUpdated: (_) {})
-      ..rowGround = () => (ground: ground, chosenOn: Colors.white, minContrast: 4.5);
+      ..rowGround = () => (ground: ground, chosenOn: chosenOn, minContrast: 4.5);
     addTearDown(drawer.dispose);
     draw(drawer);
     EquoCommService.commForTesting.receiveBinary(
@@ -120,6 +124,28 @@ void main() {
     final shapes = await paintRow(Colors.white, gray, Colors.white, drawLabel);
 
     expect(textOf(shapes), gray);
+  });
+
+  test('selection text on a near-white selected row reads as on SWT.COLOR_LIST_SELECTION',
+      () async {
+    const selectedRow = Color(0xFFD6EBFF);
+    final shapes =
+        await paintRow(selectedRow, _white, _white, drawLabel, chosenOn: _listSelection);
+
+    expect(contrastRatio(textOf(shapes), selectedRow),
+        greaterThanOrEqualTo(contrastRatio(_white, _listSelection)),
+        reason: 'SWT.COLOR_LIST_SELECTION_TEXT on the selection it was picked for');
+  });
+
+  test('SWT.COLOR_GRAY text on the application\'s own white fill stays grey on the dark row',
+      () async {
+    const gray = Color(0xFFC0C0C0);
+    final shapes = await paintRow(_darkRow, gray, _white, (d) {
+      fillCell(d);
+      drawLabel(d);
+    });
+
+    expect(textOf(shapes), gray, reason: 'it lies on the fill it was picked for');
   });
 
   test('pale text is made only as legible on the row as on the white it was picked for', () async {
@@ -221,12 +247,70 @@ void main() {
           Color.alphaBlend(theme.selectedBackgroundColor, theme.backgroundColor));
     });
 
+    testWidgets('was picked for SWT.COLOR_LIST_SELECTION on a selected row', (tester) async {
+      final value = table(selection: [0]);
+      value.items!.single.background = _v(_lightBlue);
+      await pump(tester, value);
+
+      final overlay = tester.widget<OwnerDrawnRowOverlay>(find.byType(OwnerDrawnRowOverlay));
+      expect(overlay.chosenOn, _listSelection,
+          reason: 'an application draws a selected row\'s text for the selection, not the item');
+    });
+
     testWidgets('is none when the application\'s colours are painted as given', (tester) async {
       setConfigFlags(ConfigFlags()..use_swt_colors = true);
       await pump(tester, table());
 
       final row = tester.state<OwnerDrawnRowOverlayState>(find.byType(OwnerDrawnRowOverlay));
       expect(row.textGround, isNull);
+    });
+  });
+
+  group('the tree row the overlay reads on', () {
+    VTree tree() => VTree()
+      ..id = 1
+      ..style = SWT.SINGLE
+      ..enabled = true
+      ..items = [
+        VTreeItem()
+          ..id = 10
+          ..text = 'owner-drawn'
+          ..paintedTexts = [0],
+      ]
+      ..bounds = (VRectangle()
+        ..x = 0
+        ..y = 0
+        ..width = 200
+        ..height = 100);
+
+    Future<OwnerDrawnRowOverlay> pump(WidgetTester tester, VTree value) async {
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: SizedBox(width: 200, height: 100, child: TreeSwt<VTree>(value: value)),
+      ));
+      await tester.pumpAndSettle();
+      return tester.widget<OwnerDrawnRowOverlay>(find.byType(OwnerDrawnRowOverlay));
+    }
+
+    testWidgets('was picked for white, SWT\'s list background, by default', (tester) async {
+      expect((await pump(tester, tree())).chosenOn, _white);
+    });
+
+    testWidgets('was picked for the tree\'s background when it set one', (tester) async {
+      expect((await pump(tester, tree()..background = _v(_lightBlue))).chosenOn, _lightBlue);
+    });
+
+    testWidgets('was picked for the item\'s own background over the tree\'s', (tester) async {
+      final value = tree()..background = _v(_red);
+      value.items!.single.background = _v(_lightBlue);
+      expect((await pump(tester, value)).chosenOn, _lightBlue);
+    });
+
+    testWidgets('was picked for SWT.COLOR_LIST_SELECTION on a selected row', (tester) async {
+      final value = tree();
+      value.items!.single.background = _v(_lightBlue);
+      value.selection = [value.items!.single];
+      expect((await pump(tester, value)).chosenOn, _listSelection);
     });
   });
 }

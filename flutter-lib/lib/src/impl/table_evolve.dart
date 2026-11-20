@@ -766,6 +766,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   ) {
     final rowFill =
         _ownerDrawnRowFillOf(theme.ownerDrawnRowFillColor, theme.ownerDrawnRowHoverFillColor);
+    bool selected(int i) => i == _selectedRowIndex || isItemSelected(items[i]);
     final overlays = <Widget>[
       for (int i = window.start; i < window.end && i < items.length; i++)
         if (items[i].paintedTexts != null)
@@ -781,11 +782,13 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 itemId: items[i].id,
                 ground: Color.alphaBlend(
                     rowBackgroundColor(i, items[i], theme), getTableBackgroundColor(state, theme)),
-                chosenOn: colorFromVColor(items[i].background ?? state.background,
-                    defaultColor: Colors.white),
+                chosenOn: selected(i)
+                    ? OwnerDrawnRowOverlay.listSelectionColor
+                    : colorFromVColor(items[i].background ?? state.background,
+                        defaultColor: Colors.white),
                 minContrast: theme.minTextContrast,
                 rowFill: rowFill,
-                selected: i == _selectedRowIndex || isItemSelected(items[i]),
+                selected: selected(i),
               ),
             ),
           ),

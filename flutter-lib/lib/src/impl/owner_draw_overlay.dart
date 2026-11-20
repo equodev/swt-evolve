@@ -26,9 +26,14 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
   /// listeners' text has to read on wherever they lay no fill of their own.
   final Color ground;
 
-  /// The row's ground as the application set it, which its text colours were picked for: the
-  /// item's or the control's background, else white, SWT's default list background.
+  /// The row's ground as the application set it, which its text colours were picked for: on a
+  /// selected row the selection ([listSelectionColor]), else the item's or the control's
+  /// background, else white, SWT's default list background.
   final Color chosenOn;
+
+  /// SWT.COLOR_LIST_SELECTION as the Display answers it: what an application draws a selected
+  /// row's text for, typically in SWT.COLOR_LIST_SELECTION_TEXT.
+  static const Color listSelectionColor = Color(0xFF3399FF);
 
   /// The Table or Tree theme's minimum text contrast.
   final double minContrast;

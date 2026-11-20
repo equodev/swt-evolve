@@ -114,8 +114,8 @@ class GCDrawer extends GCDrawerBase {
   /// For the GC of an owner-drawn Table or Tree row: the ground Evolve paints the row on and the
   /// widget theme's minimum text contrast; null for any other GC, or when the application's colours
   /// are painted as given. Text is kept legible ([legibleOn]) on what is under it: the row's own
-  /// fills this paint, else this ground, but never more than on `chosenOn`, the row's ground as the
-  /// application set it.
+  /// fills this paint, else this ground, but never more than on what the application set there:
+  /// the colour it filled, else `chosenOn`, the row's ground as it set it.
   ({Color ground, Color chosenOn, double minContrast})? Function()? rowGround;
 
   /// For the GC of an owner-drawn Table row whose theme declares the colour of the row's own fill.
@@ -134,7 +134,8 @@ class GCDrawer extends GCDrawerBase {
   }
 
   // The opaque fills this paint has laid on an owner-drawn row, in row coordinates, the last on top.
-  final List<(Rect, Color)> _rowFills = [];
+  // Each with the colour the application filled it in, which differs when Evolve recoloured it.
+  final List<(Rect, Color, Color)> _rowFills = [];
   static const int _maxRowFills = 256;
 
   /// The control's pixels as they are on screen, read from the nearest repaint boundary that holds
@@ -1116,7 +1117,7 @@ class GCDrawer extends GCDrawerBase {
       return;
     }
     final color = isFilled ? applyAlpha(_asRowFill(rect, fillColor)) : applyAlpha(strokeColor);
-    if (isFilled) _recordRowFill(rect, color);
+    if (isFilled) _recordRowFill(rect, color, applyAlpha(fillColor));
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
         _addDashedStroke(
@@ -1156,7 +1157,7 @@ class GCDrawer extends GCDrawerBase {
     final rect = _getRectFromArgs(x, y, width, height);
     if (isFilled && _patterned && _addPatternFill(Path()..addRect(rect))) return;
     final color = isFilled ? applyAlpha(_asRowFill(rect, fillColor)) : applyAlpha(strokeColor);
-    if (isFilled) _recordRowFill(rect, color);
+    if (isFilled) _recordRowFill(rect, color, applyAlpha(fillColor));
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
         _addDashedPolyline(
@@ -1424,23 +1425,30 @@ class GCDrawer extends GCDrawerBase {
   Color _legibleOnRow(Color color, Rect box) {
     final row = rowGround?.call();
     if (row == null) return color;
-    final ground = _groundAt(_onRow(box).center, row.ground);
-    return legibleOn(color, ground,
-        minRatio: row.minContrast, chosenOn: ground == row.ground ? row.chosenOn : null);
+    final (ground, chosenOn) = _groundAt(_onRow(box).center, row);
+    return legibleOn(color, ground, minRatio: row.minContrast, chosenOn: chosenOn);
   }
 
-  void _recordRowFill(Rect rect, Color color) {
+  /// Records an opaque fill painted in [color] where the application filled in [chosen] (the
+  /// same colour unless Evolve painted the fill in another).
+  void _recordRowFill(Rect rect, Color color, [Color? chosen]) {
     final row = rowGround?.call();
     if (row == null || _rowFills.length >= _maxRowFills) return;
     final onRow = _onRow(rect);
-    _rowFills.add((onRow, Color.alphaBlend(color, _groundAt(onRow.center, row.ground))));
+    final (ground, chosenOn) = _groundAt(onRow.center, row);
+    _rowFills.add((
+      onRow,
+      Color.alphaBlend(color, ground),
+      Color.alphaBlend(chosen ?? color, chosenOn),
+    ));
   }
 
-  Color _groundAt(Offset point, Color row) {
-    for (final (rect, color) in _rowFills.reversed) {
-      if (rect.contains(point)) return color;
+  /// What is painted at [point] and what the application set there: its topmost fill, else the row.
+  (Color, Color) _groundAt(Offset point, ({Color ground, Color chosenOn, double minContrast}) row) {
+    for (final (rect, color, chosen) in _rowFills.reversed) {
+      if (rect.contains(point)) return (color, chosen);
     }
-    return row;
+    return (row.ground, row.chosenOn);
   }
 
   Rect _onRow(Rect rect) {
