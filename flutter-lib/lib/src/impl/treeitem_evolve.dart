@@ -78,10 +78,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       widget: parentTree,
       state: parentTreeValue,
       // The plain row: the drag image lives in the Overlay, outside the Tree whose drop feedback
-      // [content] follows.
-      feedbackBuilder: (_) => Opacity(
-        opacity: Theme.of(context).extension<TreeThemeExtension>()?.dragImageOpacity ?? 0.85,
-        child: Material(type: MaterialType.transparency, child: row),
+      // [content] follows. As wide as the row is on screen, where the list gives it its width.
+      feedbackBuilder: (_) => SizedBox(
+        width: (context.findRenderObject() as RenderBox?)?.size.width,
+        child: Opacity(
+          opacity: Theme.of(context).extension<TreeThemeExtension>()?.dragImageOpacity ?? 0.85,
+          child: Material(type: MaterialType.transparency, child: row),
+        ),
       ),
       dragDetectEvent: () => treeImpl?.dragDetectPayload() ?? VEvent(),
       beforeDragDetect: () {

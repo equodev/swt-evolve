@@ -30,4 +30,17 @@ void main() {
     });
     expect(indented.textHeight, plain.textHeight + 7);
   });
+
+  test('a long text is as tall as its rows, line for line', () {
+    final one = _shape('line', const {});
+    final long = _shape(List.generate(100000, (i) => 'line $i').join('\n'), const {});
+    expect(long.textHeight, 100000 * one.textHeight);
+  });
+
+  test('lines after a vertical indent start the indent lower', () {
+    final long = List.generate(100000, (i) => 'line $i').join('\n');
+    final plain = _shape(long, const {});
+    final indented = _shape(long, const {50000: LineProperties(verticalIndent: 7)});
+    expect(indented.textHeight, plain.textHeight + 7);
+  });
 }

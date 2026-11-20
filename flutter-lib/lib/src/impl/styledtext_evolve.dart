@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection' show ListBase;
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -1721,6 +1722,27 @@ const WidgetSpan _tabPlaceholder = WidgetSpan(
   child: SizedBox.shrink(),
 );
 
+/// The line tops of text whose every line is one row tall: line `i` starts at `i * row`.
+class _RowTops extends ListBase<double> {
+  _RowTops(this.length, this.row);
+
+  @override
+  final int length;
+  final double row;
+
+  @override
+  set length(int value) => throw UnsupportedError('line tops are read-only');
+
+  @override
+  double operator [](int index) {
+    RangeError.checkValidIndex(index, this, 'index', length);
+    return index * row;
+  }
+
+  @override
+  void operator []=(int index, double value) => throw UnsupportedError('line tops are read-only');
+}
+
 class _StyledRun {
   final String text;
   final TextStyle style;
@@ -2150,8 +2172,8 @@ List<int> _lineStartsOf(String text) => _fillLineCache(text).starts;
 
 /// [memo], or a new one, long enough to hold [index]. It grows with the lines asked about, by
 /// doubling, rather than starting at the document's length on every new shape.
-List<int?> _memoHolding(List<int?>? memo, int index) {
-  memo ??= <int?>[];
+List<T?> _memoHolding<T>(List<T?>? memo, int index) {
+  memo ??= <T?>[];
   if (index >= memo.length) memo.length = math.max(index + 1, memo.length * 2);
   return memo;
 }
@@ -2537,8 +2559,8 @@ class TextShape extends Shape {
 
   ({int indent, int wrapIndent, int layoutIndent, TextAlign align, int vIndent, String? bulletText})
       _linePropsFor(int lineIndex) {
-    final memo = _linePropsCache ??= List.filled(_lineStarts.length + 1, null);
-    if (lineIndex >= 0 && lineIndex < memo.length) {
+    if (lineIndex >= 0 && lineIndex <= _lineStarts.length) {
+      final memo = _linePropsCache = _memoHolding(_linePropsCache, lineIndex);
       final cached = memo[lineIndex];
       if (cached != null) return cached;
       final built = _buildLinePropsFor(lineIndex);
@@ -2562,8 +2584,8 @@ class TextShape extends Shape {
 
   _LineLayout _measuredLineNow(
       int lineIndex, String lineText, bool wantCaretX, TextPainter? laidOut, bool paintParagraph) {
-    final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
-    final inRange = lineIndex >= 0 && lineIndex < memo.length;
+    final inRange = lineIndex >= 0 && lineIndex <= _lineStarts.length;
+    final memo = inRange ? _measuredLineCache = _memoHolding(_measuredLineCache, lineIndex) : const <_LineLayout?>[];
     if (inRange && !wantCaretX) {
       final cached = memo[lineIndex];
       if (cached != null) return cached;
@@ -2700,15 +2722,23 @@ class TextShape extends Shape {
 
   List<double> _lineTopsNow(List<String> lines, Size? canvas) {
     final watch = Stopwatch()..start();
-    final tops = List<double>.filled(lines.length + 1, 0);
+    if (_rowsOfRowHeight) {
+      // Line i starts at i rows: nothing to add up or keep, however long the text.
+      final tops = _RowTops(lines.length + 1, _rowHeight);
+      debugLineTopsMicros += watch.elapsedMicroseconds;
+      return tops;
+    }
+    // Unboxed: a list of doubles would allocate each line's top.
+    final tops = Float64List(lines.length + 1);
     final memo = _measuredLineCache;
     double y = 0;
-    if (_rowsOfRowHeight) {
-      // The same sum, without asking each line.
+    if (_uniformRows) {
+      // A row each, and the vertical indent of the few lines that have one.
       final row = _rowHeight;
+      final lineProperties = editingState?.lineProperties;
       for (int i = 0; i < lines.length; i++) {
         tops[i] = y;
-        y += row;
+        y += (lineProperties?[i]?.verticalIndent ?? 0) + row;
       }
       tops[lines.length] = y;
       debugLineTopsMicros += watch.elapsedMicroseconds;
@@ -2716,15 +2746,10 @@ class TextShape extends Shape {
     }
     for (int i = 0; i < lines.length; i++) {
       tops[i] = y;
-      final props = _linePropsFor(i);
-      if (_uniformRows) {
-        y += props.vIndent + _rowHeight;
-      } else {
-        final height = (memo != null && i < memo.length ? memo[i]?.height : null) ??
-            _shapelessHeight(i, lines[i]) ??
-            _measuredLine(i, lines[i]).height;
-        y += props.vIndent + _advance(height, i);
-      }
+      final height = (memo != null && i < memo.length ? memo[i]?.height : null) ??
+          _shapelessHeight(i, lines[i]) ??
+          _measuredLine(i, lines[i]).height;
+      y += _linePropsFor(i).vIndent + _advance(height, i);
     }
     tops[lines.length] = y;
     debugLineTopsMicros += watch.elapsedMicroseconds;
@@ -3623,7 +3648,8 @@ class TextShape extends Shape {
   /// The layout this shape already holds for [lineIndex], or the one the shape before it measured
   /// for the same line, without laying anything out.
   _LineLayout? _knownLine(int lineIndex, String lineText) {
-    final memo = _measuredLineCache ??= List.filled(_lineStarts.length + 1, null);
+    final inRange = lineIndex >= 0 && lineIndex <= _lineStarts.length;
+    final memo = inRange ? _measuredLineCache = _memoHolding(_measuredLineCache, lineIndex) : const <_LineLayout?>[];
     if (lineIndex < memo.length && memo[lineIndex] != null) return memo[lineIndex];
     final donated = _donatedLine(lineIndex, lineText, false);
     if (donated != null && lineIndex < memo.length) memo[lineIndex] = donated;
@@ -3965,13 +3991,24 @@ class TextShape extends Shape {
     final buffer = StringBuffer();
     double x = 0;
     int column = 0;
+    // The runs [x] does not count yet. A run's width only places the tab or fixed-width glyph after
+    // it, so the runs after the line's last one are never measured: an indented line of code is
+    // its tabs and one run.
+    final unmeasured = <_StyledRun>[];
 
     void flush(TextStyle runStyle) {
       if (buffer.isEmpty) return;
       final run = buffer.toString();
       children.add(TextSpan(text: run, style: runStyle));
-      x += _measureRun(run, runStyle);
+      unmeasured.add(_StyledRun(run, runStyle));
       buffer.clear();
+    }
+
+    void measure() {
+      for (final run in unmeasured) {
+        x += _measureRun(run.text, run.style);
+      }
+      unmeasured.clear();
     }
 
     void placeholder(double width) {
@@ -3990,6 +4027,7 @@ class TextShape extends Shape {
         final fixedWidth = _glyphWidthAt(lineStart + column);
         if (char == '\t') {
           flush(leaf.style);
+          measure();
           // Epsilon guards against a run measured a hair under an exact stop, which would
           // otherwise make the tab advance ~0 instead of a full column.
           final nextStop = _nextTabStop(x + 0.01, stops, tabWidth);
@@ -3997,6 +4035,7 @@ class TextShape extends Shape {
           x = nextStop;
         } else if (fixedWidth != null) {
           flush(leaf.style);
+          measure();
           placeholder(fixedWidth);
           x += fixedWidth;
         } else {
@@ -4048,13 +4087,27 @@ class TextShape extends Shape {
     }
   }
 
+  /// Measured once per tab size and style, not once per line that has a tab.
+  ({int columns, TextStyle style, double width})? _tabStopWidthKept;
+
   double _tabStopWidth() {
     final columns = tabs > 0 ? tabs : 4;
-    final width = _measureRun(' ' * columns, style);
-    return width > 0 ? width : columns * (style.fontSize ?? 16) * 0.5;
+    final kept = _tabStopWidthKept;
+    if (kept != null && kept.columns == columns && identical(kept.style, style)) return kept.width;
+    final measured = _measureRun(' ' * columns, style);
+    final width = measured > 0 ? measured : columns * (style.fontSize ?? 16) * 0.5;
+    _tabStopWidthKept = (columns: columns, style: style, width: width);
+    return width;
   }
 
+  /// Runs of a line measured on their own, to place the tab stops after them.
+  @visibleForTesting
+  static int debugRunsMeasured = 0;
+
   double _measureRun(String run, TextStyle runStyle) {
+    final fixed = fixedPitchWidth(run, runStyle);
+    if (fixed != null) return fixed;
+    debugRunsMeasured++;
     final tp = TextPainter(
       text: TextSpan(text: run, style: runStyle),
       textDirection: TextDirection.ltr,
@@ -4062,6 +4115,55 @@ class TextShape extends Shape {
     final width = tp.width;
     tp.dispose();
     return width;
+  }
+
+  /// The width laying [run] out gives, to well under a pixel, from its length when [style] is
+  /// fixed-pitch and the run printable ASCII; else null.
+  @visibleForTesting
+  static double? fixedPitchWidth(String run, TextStyle style) {
+    if (!_isPrintableAscii(run)) return null;
+    final advance = _fixedPitchAdvance(style);
+    return advance == null ? null : run.length * advance;
+  }
+
+  static bool _isPrintableAscii(String run) {
+    for (var k = 0; k < run.length; k++) {
+      final c = run.codeUnitAt(k);
+      if (c < 0x20 || c > 0x7E) return false;
+    }
+    return true;
+  }
+
+  /// The one advance a style gives every printable ASCII character, or null when they differ.
+  /// A code editor's font is fixed-pitch, so a run before a tab is its length in columns.
+  static final Map<TextStyle, double?> _fixedPitchAdvances = {};
+
+  /// Long probes of narrow, wide and mixed characters, so that the advance is exact to well under a
+  /// pixel over a line, and a font that kerns or spaces words apart is not taken for fixed-pitch.
+  static final _pitchProbes = [
+    for (final c in ['0', 'i', 'W', 'm', '.', '_']) c * 32,
+    // A line's width leaves its trailing spaces out, so the spaces sit inside it.
+    '0${' ' * 30}0',
+    'iWm._0 AVTo-y' * 4,
+  ];
+
+  static double? _fixedPitchAdvance(TextStyle style) {
+    if (_fixedPitchAdvances.containsKey(style)) return _fixedPitchAdvances[style];
+    if (_fixedPitchAdvances.length >= 64) _fixedPitchAdvances.clear();
+    double? advance;
+    for (final probe in _pitchProbes) {
+      final tp = TextPainter(text: TextSpan(text: probe, style: style), textDirection: TextDirection.ltr)
+        ..layout();
+      final lines = tp.computeLineMetrics();
+      tp.dispose();
+      final each = (lines.isEmpty ? 0 : lines.first.width) / probe.length;
+      if (each <= 0 || (advance != null && (each - advance).abs() * probe.length > 0.01)) {
+        advance = null;
+        break;
+      }
+      advance ??= each;
+    }
+    return _fixedPitchAdvances[style] = advance;
   }
 
   /// Document offset each logical line starts at. Held per shape because the callers

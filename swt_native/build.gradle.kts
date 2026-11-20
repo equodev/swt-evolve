@@ -836,6 +836,11 @@ platforms.forEach { platform ->
         inputs.files(fileTree(flutterApp.resolve(info.os)) {
             exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
         })
+        // An app built on flutter-lib builds flutter-lib's runner (its CMakeLists names that directory),
+        // so a change to the runner alone has to rebuild it too.
+        if (flutterApp != file("../flutter-lib")) inputs.files(fileTree("../flutter-lib/${info.os}") {
+            exclude("**/ephemeral/**", "Pods/**", "**/*.bak")
+        })
         // A plugin bump changes only the lock, and the plugin's native code is compiled into this build.
         inputs.file(flutterApp.resolve("pubspec.lock"))
         outputs.dir(flutterApp.resolve("build/${info.os}"))

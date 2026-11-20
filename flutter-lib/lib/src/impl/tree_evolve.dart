@@ -63,6 +63,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   // laid out at the content width, not at the viewport width, or they clip their own text
   // again inside the scrollable.
   double? _hScrollContentWidth;
+
+  /// Whether this Tree's items were ever wider than it: from then on its horizontal viewport stays.
+  bool _keepsHorizontalViewport = false;
   // A row's width when its columns keep the widths Java set: their sum and the row's padding.
   double? _columnsContentWidth;
   double? _cachedHeaderHeight;
@@ -751,16 +754,13 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     TreeThemeExtension theme,
   ) {
     final isCheckMode = StyleBits(state.style).has(SWT.CHECK);
-    // Everything a row's width is made of: a resize rebuilds the tree without changing any of it.
-    final inputs = <Object?>[
-      isCheckMode, theme, Theme.of(context), state.font, state.foreground,
-      for (final flat in flatItems) ...[
-        flat.item.text, flat.item.texts?.firstOrNull, flat.item.font, flat.item.foreground,
-        flat.level, flat.item.image != null,
-      ],
-    ];
-    final cached = _contentWidth;
-    if (cached != null && listEquals(cached.inputs, inputs)) return cached.width;
+    // What every row's text is measured in besides its own font and colour: a change to any of it
+    // measures every row again. A resize changes none of it.
+    final shared = <Object?>[theme, Theme.of(context), state.font, state.foreground];
+    if (!listEquals(_textWidthsShared, shared) || _textWidths.length > 4 * flatItems.length + 64) {
+      _textWidths.clear();
+      _textWidthsShared = shared;
+    }
     final checkboxWidth = isCheckMode
         ? (theme.checkboxSize + theme.checkboxSpacing)
         : 0.0;
@@ -773,21 +773,32 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       final item = flat.item;
       final texts = item.texts ?? [];
       final text = item.text ?? (texts.isNotEmpty ? texts[0] ?? '' : '');
-      final textWidth = singleLineTextWidth(
-        text,
-        getTextStyle(
-          context: context,
-          font: cellValue(item.fonts, 0) ?? item.font ?? state.font,
-          // The item's own colour, else the Tree's -- the same cascade the font above uses.
-          textColor: getForegroundColor(
-            foreground: item.foreground ?? state.foreground,
-            defaultColor: theme.itemTextColor,
+      final font = cellValue(item.fonts, 0) ?? item.font ?? state.font;
+      final foreground = item.foreground;
+      // An item's text is measured again only when its text, font or colour changed: renaming one
+      // item measures that one.
+      final kept = _textWidths[item];
+      final double textWidth;
+      if (kept != null && kept.text == text && kept.font == font && kept.foreground == foreground) {
+        textWidth = kept.width;
+      } else {
+        textWidth = singleLineTextWidth(
+          text,
+          getTextStyle(
             context: context,
-            minContrast: theme.minTextContrast,
+            font: font,
+            // The item's own colour, else the Tree's -- the same cascade the font above uses.
+            textColor: getForegroundColor(
+              foreground: foreground ?? state.foreground,
+              defaultColor: theme.itemTextColor,
+              context: context,
+              minContrast: theme.minTextContrast,
+            ),
+            baseTextStyle: theme.itemTextStyle,
           ),
-          baseTextStyle: theme.itemTextStyle,
-        ),
-      );
+        );
+        _textWidths[item] = (text: text, font: font, foreground: foreground, width: textWidth);
+      }
       double width =
           textWidth +
           paddingH +
@@ -797,11 +808,17 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       if (item.image != null) width += iconSpace;
       if (width > widest) widest = width;
     }
-    _contentWidth = (inputs: inputs, width: widest);
+    _contentWidth = (width: widest);
     return widest;
   }
 
-  ({List<Object?> inputs, double width})? _contentWidth;
+  ({double width})? _contentWidth;
+
+  /// The width each item's text was last measured at, with what it was measured from; see
+  /// [_computeContentWidthWithoutColumns].
+  final Map<VTreeItem, ({String text, VFont? font, VColor? foreground, double width})> _textWidths =
+      Map.identity();
+  List<Object?>? _textWidthsShared;
 
   List<double> _computeEffectiveColumnWidths(
     List<VTreeColumn> columns,
@@ -900,20 +917,32 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     );
     _hScrollContentWidth = columns.isEmpty ? totalWidth : _columnsContentWidth;
 
-    final scrollsHorizontally = hasHScroll && totalWidth != null;
+    // A Tree without columns whose items were once wider than it keeps its horizontal viewport while
+    // they fit, as wide as the viewport, with no scroll bar to show. An item whose width crosses the
+    // viewport's, renamed back and forth, would otherwise put the viewport in and take it out
+    // again, and every row under it would be mounted and laid out anew each time. A Tree whose
+    // items always fit never has one, and paints nothing more as it is resized.
+    if (hasHScroll && columns.isEmpty && totalWidth != null) _keepsHorizontalViewport = true;
+    final keepsViewport = hasHScroll && columns.isEmpty && _keepsHorizontalViewport;
+    final scrollsHorizontally = hasHScroll && (totalWidth != null || keepsViewport);
     Widget scrollableContent;
     if (scrollsHorizontally) {
-      scrollableContent = SteadyScrollbar(
-        controller: _horizontalController,
-        thumbVisibility: true,
-        child: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: SingleChildScrollView(
+      Widget scrolling(double width) => SteadyScrollbar(
             controller: _horizontalController,
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(width: totalWidth, child: listViewWithLines),
-          ),
-        ),
+            thumbVisibility: true,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: SingleChildScrollView(
+                controller: _horizontalController,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(width: width, child: listViewWithLines),
+              ),
+            ),
+          );
+      // One shape whether the items overflow or fit: the viewport's own width when they fit.
+      final contentWidth = totalWidth;
+      scrollableContent = LayoutBuilder(
+        builder: (context, constraints) => scrolling(contentWidth ?? constraints.maxWidth),
       );
     } else {
       final contentWidth = _columnsContentWidth;
@@ -1318,7 +1347,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget _buildFlatTreeItemWidget(List<_FlatTreeItem> flatItems, int index) {
     final flatItem = flatItems[index];
 
-    final treeWidth = _hScrollContentWidth ?? state.bounds?.width?.toDouble();
+    // A row without columns takes the list's width, which the list gives it whatever the row asks:
+    // it need not be built again when the widest item, and with it how far the Tree scrolls, changes.
+    final treeWidth =
+        getTreeColumns().isEmpty ? null : _hScrollContentWidth ?? state.bounds?.width?.toDouble();
 
     // What the row reads of the Tree besides what a build of the Tree for anything other than the
     // selection changes, which starts a new epoch: a row a new selection leaves alone is kept.
