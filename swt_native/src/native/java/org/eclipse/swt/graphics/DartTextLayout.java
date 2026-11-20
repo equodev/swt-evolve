@@ -1928,10 +1928,6 @@ public final class DartTextLayout extends DartResource implements ITextLayout {
     }
 
     double getTabWidth() {
-        try {
-            computeRuns();
-        } finally {
-        }
         return 0;
     }
 
