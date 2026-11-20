@@ -6,8 +6,10 @@ import static org.mockito.Mockito.when;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.DartMocks;
 import org.eclipse.swt.widgets.DartTable;
 import org.eclipse.swt.widgets.ScrollBar;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.junit.jupiter.api.Test;
@@ -24,6 +26,9 @@ class TableComputeSizeTest {
     private static DartTable tableWithStyle(int style) {
         DartTable table = mock(DartTable.class);
         when(table.getStyle()).thenReturn(style);
+        Table api = mock(Table.class);
+        when(api.getDisplay()).thenReturn(DartMocks.dartDisplay());
+        when(table.getApi()).thenReturn(api);
         return table;
     }
 

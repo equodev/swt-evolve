@@ -1031,7 +1031,7 @@ public class DartTable extends DartComposite implements ITable {
      */
     public int getItemHeight() {
         checkWidget();
-        if (itemCount == 0 || items == null || items[0] == null || items[0].isDisposed() || DisplayHelper.compactRows()) {
+        if (itemCount == 0 || items == null || items[0] == null || items[0].isDisposed() || DisplayHelper.compactRows(display)) {
             return TableSizes.getItemHeight(this);
         }
         return Sizes.computeSize((DartTableItem) items[0].getImpl(), SWT.DEFAULT, SWT.DEFAULT, true).y;
@@ -2527,7 +2527,7 @@ public class DartTable extends DartComposite implements ITable {
     }
 
     boolean wireCompactRows() {
-        return DisplayHelper.compactRows();
+        return DisplayHelper.compactRows(display);
     }
 
     Runnable ownerDrawRowsLeft;

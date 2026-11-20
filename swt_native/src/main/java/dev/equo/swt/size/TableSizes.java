@@ -139,7 +139,7 @@ public class TableSizes {
         } else {
             ts = TextStyle.from(table.getFont());
         }
-        if (DisplayHelper.compactRows()) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + COMPACT_ROW_PADDING_VERTICAL);
+        if (DisplayHelper.compactRows(table.getApi().getDisplay())) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + COMPACT_ROW_PADDING_VERTICAL);
         double textHeight = FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL;
         return (int) Math.ceil(Math.max(textHeight, minHeight));
     }

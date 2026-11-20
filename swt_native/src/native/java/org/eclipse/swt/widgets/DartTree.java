@@ -2362,7 +2362,7 @@ public class DartTree extends DartComposite implements ITree {
     }
 
     boolean wireCompactRows() {
-        return DisplayHelper.compactRows();
+        return DisplayHelper.compactRows(display);
     }
 
     Runnable ownerDrawRowsLeft;

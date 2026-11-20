@@ -271,6 +271,23 @@ public class DartMocks {
         return d;
     }
 
+    /**
+     * Gives {@code display}'s Tables and Trees compact rows until closed, as a Display created while
+     * {@code useNativeItemHeight=false} does.
+     */
+    public static Restore compactRows(Display display) {
+        DartDisplay impl = (DartDisplay) display.getImpl();
+        boolean was = impl.compactRows;
+        impl.compactRows = true;
+        return () -> impl.compactRows = was;
+    }
+
+    /** Puts back what a test changed, in a try-with-resources. */
+    public interface Restore extends AutoCloseable {
+        @Override
+        void close();
+    }
+
     /** {@code Font systemFont}/{@code Point dpi} live on {@code DartDevice} (package
      *  {@code org.eclipse.swt.graphics}), package-private and thus inaccessible from here. */
     private static void setDeviceField(DartDisplay dartDisplay, String name, Object value) {

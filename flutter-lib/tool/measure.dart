@@ -4197,7 +4197,7 @@ public class CoolBarSizes {
     if (compactPadding != null) {
       // A compact row is one text line and its padding, with no theme floor.
       buffer.writeln(
-        '        if (DisplayHelper.compactRows()) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + $compactPadding);',
+        '        if (DisplayHelper.compactRows($param.getApi().getDisplay())) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + $compactPadding);',
       );
     }
     if (fontSensitive) {

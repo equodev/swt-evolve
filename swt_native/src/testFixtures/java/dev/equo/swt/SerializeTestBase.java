@@ -235,6 +235,8 @@ public class SerializeTestBase {
             "Tree.editors", "a TreeEditor created on the tree sets it",
             "Table.columnOrder", "follows the columns, which change as they are created or disposed",
             "Tree.columnOrder", "follows the columns, which change as they are created or disposed",
+            "Table.compactRows", "the display reads it once, when it is created (CompactItemHeightNativeTest)",
+            "Tree.compactRows", "the display reads it once, when it is created (CompactItemHeightNativeTest)",
             "Table.ownerDrawItemHeight", "a MeasureItem listener sets it",
             "Tree.ownerDrawItemHeight", "a MeasureItem listener sets it",
             "Table.compactRows", "follows the process-wide native item height switch, which no setter of the table changes",
@@ -972,21 +974,13 @@ public class SerializeTestBase {
     }
 
     /**
-     * Turns native item heights off while a Table or Tree is written, so its compactRows is not
-     * at its default; an application sets this for the whole process, so it is put back after.
+     * Gives a Table or Tree compact rows while it is written, so its compactRows is not at its
+     * default; it belongs to the display, so it is put back after.
      */
     private static AutoCloseable compactRowsFor(Object value) {
         if (!(value instanceof Table) && !(value instanceof Tree))
             return () -> { };
-        String key = org.eclipse.swt.widgets.DisplayHelper.USE_NATIVE_ITEM_HEIGHT;
-        String previous = System.getProperty(key);
-        System.setProperty(key, "false");
-        return () -> {
-            if (previous == null)
-                System.clearProperty(key);
-            else
-                System.setProperty(key, previous);
-        };
+        return DartMocks.compactRows(((Widget) value).getDisplay());
     }
 
     protected AssertConsumer node(String field) {

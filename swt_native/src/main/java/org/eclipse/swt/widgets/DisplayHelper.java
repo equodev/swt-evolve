@@ -17,10 +17,18 @@ public class DisplayHelper {
 
     /**
      * Whether the application set {@code org.eclipse.swt.internal.cocoa.useNativeItemHeight=false}: the rows of
-     * its Tables and Trees are then one text line tall, with no theme minimum. Read from the property itself, as
-     * the Display field that holds it on Cocoa is missing from older SWT versions.
+     * {@code display}'s Tables and Trees are then one text line tall, with no theme minimum. As on Cocoa, the
+     * Display reads the property once, when it is created, so a later change leaves its widgets as they are.
      */
-    public static boolean compactRows() {
+    public static boolean compactRows(Display display) {
+        return ((DartDisplay) display.getImpl()).compactRows;
+    }
+
+    /**
+     * What a new Display reads for {@link #compactRows}. Its own field, as Cocoa's useNativeItemHeight is missing
+     * from older SWT versions.
+     */
+    static boolean readCompactRows() {
         return !Boolean.parseBoolean(System.getProperty(USE_NATIVE_ITEM_HEIGHT, "true"));
     }
 

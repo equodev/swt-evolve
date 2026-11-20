@@ -127,7 +127,7 @@ public final class OwnerDrawOverlay {
      */
     static GC eventGc(Control parent) {
         GC gc = new GC(parent);
-        if (DisplayHelper.compactRows()) GCHelper.drawCompactRow(gc);
+        if (DisplayHelper.compactRows(parent.getDisplay())) GCHelper.drawCompactRow(gc);
         return gc;
     }
 

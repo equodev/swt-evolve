@@ -3989,6 +3989,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     volatile int lastEventTime;
 
+    boolean compactRows = DisplayHelper.readCompactRows();
+
     Menu[] shownPopups = new Menu[0];
 
     boolean isPopupAlreadyShown(Menu menu) {

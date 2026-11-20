@@ -35,11 +35,8 @@ import static org.mockito.Mockito.when;
 class CompactItemHeightNativeTest extends SerializeTestBase {
 
     private static int compact(IntSupplier itemHeight) {
-        System.setProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT, "false");
-        try {
+        try (DartMocks.Restore compact = DartMocks.compactRows(DartMocks.dartDisplay())) {
             return itemHeight.getAsInt();
-        } finally {
-            System.clearProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT);
         }
     }
 
@@ -74,6 +71,48 @@ class CompactItemHeightNativeTest extends SerializeTestBase {
         int filled = compact(table::getItemHeight);
 
         assertThat(filled).isLessThan(24).isEqualTo(compactTableRow()).isEqualTo(empty);
+    }
+
+    @Test
+    @DisplayName("a Display reads native item heights off from the property it is created with")
+    void theDisplayReadsTheProperty() {
+        try {
+            System.setProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT, "false");
+            assertThat(DisplayHelper.readCompactRows()).isTrue();
+            System.setProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT, "true");
+            assertThat(DisplayHelper.readCompactRows()).isFalse();
+        } finally {
+            System.clearProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT);
+        }
+        assertThat(DisplayHelper.readCompactRows()).isFalse();
+    }
+
+    @Test
+    @DisplayName("turning native item heights off once the display exists leaves its Tables and Trees as they are")
+    void aLaterPropertyChangeLeavesRowsAsTheyAre() {
+        Shell shell = shell();
+        Table table = new Table(shell, SWT.NONE);
+        new TableItem(table, SWT.NONE).setText("Sample");
+        Tree tree = new Tree(shell, SWT.NONE);
+        new TreeItem(tree, SWT.NONE).setText("Sample");
+        int tableRow = table.getItemHeight();
+        int treeRow = tree.getItemHeight();
+        VTable tableValue = ((DartTable) table.getImpl()).getValue();
+        VTree treeValue = ((DartTree) tree.getImpl()).getValue();
+        tableValue.clearDirty();
+        treeValue.clearDirty();
+
+        System.setProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT, "false");
+        try {
+            assertThat(table.getItemHeight()).isEqualTo(tableRow);
+            assertThat(tree.getItemHeight()).isEqualTo(treeRow);
+            assertThat(tableValue.getCompactRows()).isFalse();
+            assertThat(treeValue.getCompactRows()).isFalse();
+            assertThat(tableValue.changedNames()).doesNotContain("compactRows");
+            assertThat(treeValue.changedNames()).doesNotContain("compactRows");
+        } finally {
+            System.clearProperty(DisplayHelper.USE_NATIVE_ITEM_HEIGHT);
+        }
     }
 
     /** Font heights a PaintItem listener reads: the GC's own font, then fonts it sets. */

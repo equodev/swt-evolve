@@ -97,7 +97,7 @@ public class TreeSizes {
         } else {
             ts = TextStyle.from(tree.getFont());
         }
-        if (DisplayHelper.compactRows()) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL);
+        if (DisplayHelper.compactRows(tree.getApi().getDisplay())) return (int) Math.ceil(FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL);
         double textHeight = FontMetricsUtil.getFontSize("Ag", ts).y() + ROW_PADDING_VERTICAL;
         return (int) Math.ceil(Math.max(textHeight, minHeight));
     }
