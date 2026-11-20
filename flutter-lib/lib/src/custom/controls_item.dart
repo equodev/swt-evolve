@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../impl/config_flags.dart';
 import '../impl/widget_config.dart';
@@ -17,6 +18,44 @@ class ToolbarControl {
 
 /// The controls an app built on this one adds ahead of the scaling control, in order.
 final List<ToolbarControl> toolbarControls = [];
+
+/// Whether a main toolbar is mounted in this client. While none is, [StandaloneToolbarControls]
+/// shows the optional controls row in the window's own top strip instead.
+final ValueNotifier<bool> mainToolbarMounted = ValueNotifier(false);
+
+final Set<Object> _mainToolbars = {};
+
+/// Records a main toolbar coming or going. Applied after the frame: the notifier rebuilds widgets,
+/// which a mount or an unmount must not do in the middle of a build.
+void trackMainToolbar(Object toolbar, {required bool mounted}) {
+  SchedulerBinding.instance.addPostFrameCallback((_) {
+    mounted ? _mainToolbars.add(toolbar) : _mainToolbars.remove(toolbar);
+    mainToolbarMounted.value = _mainToolbars.isNotEmpty;
+  });
+  SchedulerBinding.instance.ensureVisualUpdate();
+}
+
+/// Forgets every main toolbar, for a test that pumps a fresh app.
+@visibleForTesting
+void resetMainToolbars() {
+  _mainToolbars.clear();
+  mainToolbarMounted.value = false;
+}
+
+/// The optional controls row for an app without a main toolbar, at the trailing end of the strip
+/// that holds it (the CSD title strip, or the Shell's own menu strip). Empty while a main toolbar
+/// is mounted, which hosts the row itself.
+class StandaloneToolbarControls extends StatelessWidget {
+  const StandaloneToolbarControls({super.key});
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<bool>(
+        valueListenable: mainToolbarMounted,
+        builder: (context, hasMainToolbar, _) => hasMainToolbar
+            ? const SizedBox.shrink()
+            : const ToolbarOptionalControlsRow(useBoundsLayout: true),
+      );
+}
 
 class ToolbarOptionalControlsRow extends StatefulWidget {
   final bool useBoundsLayout;

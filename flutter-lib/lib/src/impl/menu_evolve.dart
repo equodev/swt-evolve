@@ -464,6 +464,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
             TextStyle(color: textColor);
 
     final stripHeight = DecorationsMenuData.of(context)?.stripHeight;
+    final trailing = DecorationsMenuData.of(context)?.trailing;
     Widget menuBar = QuietAnimatedContainer(
       duration: widgetTheme.animationDuration,
       // The height Java laid the strip out at, which follows the monitor's scale.
@@ -489,6 +490,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           mainAxisAlignment:
           alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: [
+            if (trailing != null && alignRight) const Spacer(),
             for (final (index, item) in menuItems.indexed)
               _MenuBarItem(
                 key: _titleKeys.putIfAbsent(item.id, GlobalKey.new),
@@ -506,6 +508,10 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
                 hasPendingChange: _hasPendingChange,
                 menuState: _menuState,
               ),
+            if (trailing != null) ...[
+              if (!alignRight) const Spacer(),
+              trailing,
+            ],
           ],
         ),
       ),

@@ -6,6 +6,7 @@ import '../../impl/utils/widget_utils.dart' show contrastRatio;
 import '../../impl/widget_config.dart';
 import '../../theme/named_theme.dart';
 import '../../theme/theme.dart' show parseThemeColorFromHex;
+import '../controls_item.dart';
 import 'csd_drag_view.dart';
 import 'equo_window.dart';
 import 'csd_state.dart';
@@ -205,8 +206,18 @@ class CsdOverlayStrip extends StatelessWidget {
     // macOS: traffic lights then title at the left, drag fills the rest.
     // Windows/Linux: title at the left, drag fills the middle, controls at the right.
     final children = controlsLeading
-        ? [const WindowControls(), title, const Expanded(child: CsdDragView())]
-        : [title, const Expanded(child: CsdDragView()), const WindowControls()];
+        ? [
+            const WindowControls(),
+            title,
+            const Expanded(child: CsdDragView()),
+            const StandaloneToolbarControls(),
+          ]
+        : [
+            title,
+            const Expanded(child: CsdDragView()),
+            const StandaloneToolbarControls(),
+            const WindowControls(),
+          ];
 
     return SizedBox(
       height: height,

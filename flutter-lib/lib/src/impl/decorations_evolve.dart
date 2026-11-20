@@ -5,6 +5,7 @@ import '../gen/menu.dart';
 import '../gen/menuitem.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
+import '../custom/controls_item.dart';
 import '../impl/canvas_evolve.dart';
 import '../impl/menu_evolve.dart';
 import '../impl/decorations_align.dart';
@@ -22,12 +23,16 @@ class DecorationsMenuData extends InheritedWidget {
   /// The menu strip's height wherever it is drawn, as Java lays it out (`Sizes.menuStripHeight`).
   final int? stripHeight;
 
+  /// Drawn by the menu bar at its trailing end, on the bar's own background and border.
+  final Widget? trailing;
+
   const DecorationsMenuData({
     super.key,
     required this.menuBar,
     required this.isAtStart,
     required this.isHorizontal,
     this.stripHeight,
+    this.trailing,
     required super.child,
   });
 
@@ -52,7 +57,8 @@ class DecorationsMenuData extends InheritedWidget {
       menuBar != old.menuBar ||
       isAtStart != old.isAtStart ||
       isHorizontal != old.isHorizontal ||
-      stripHeight != old.stripHeight;
+      stripHeight != old.stripHeight ||
+      trailing != old.trailing;
 }
 
 class VerticalMenuIcon extends StatelessWidget {
@@ -262,6 +268,11 @@ class DecorationsImpl<T extends DecorationsSwt, V extends VDecorations>
       isAtStart: align.isAtStart,
       isHorizontal: !align.isVertical,
       stripHeight: state.menuStripHeight,
+      // Without a main toolbar the Shell's own strip also holds the optional controls, unless the
+      // CSD title strip is there to hold them.
+      trailing: state.ownMenuStrip == true && getConfigFlags().csd_placement != 'overlay'
+          ? const StandaloneToolbarControls()
+          : null,
       // Java decides when the Shell draws the strip itself (`Sizes.ownMenuStripHeight`): no visible
       // main toolbar hosts it, so it goes above the client area.
       child: state.ownMenuStrip == true && state.menuBar != null

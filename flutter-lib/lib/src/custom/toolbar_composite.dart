@@ -62,14 +62,27 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
   bool get _isRootToolbar => widget.value.swt == "MainToolbar";
 
+  // Whether this is tracked as a shown main toolbar. A hidden one stays mounted but hosts nothing,
+  // and Java then gives the Shell its own menu strip (`Sizes.ownMenuStripHeight`).
+  bool _tracked = false;
+
+  void _syncTracking() {
+    final shown = _isRootToolbar && state.visible != false;
+    if (shown == _tracked) return;
+    _tracked = shown;
+    trackMainToolbar(this, mounted: shown);
+  }
+
   @override
   void dispose() {
+    if (_tracked) trackMainToolbar(this, mounted: false);
     if (_isRootToolbar) ToastHost.reset();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    _syncTracking();
     final built = super.build(context);
     // Marks the whole toolbar subtree, so a ToolItem anywhere under it can ask whether it is in the
     // main toolbar without knowing how it got there.
