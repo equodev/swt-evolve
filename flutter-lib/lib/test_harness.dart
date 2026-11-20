@@ -142,10 +142,16 @@ void registerTestQueryChannel() {
       });
     }
 
-    if (afterFonts) {
+    // The deferred families are fixed at start and [DeferredFonts.all] asks for every one, so once a
+    // frame has been painted after they were all in, no later sync has a font left to wait for: it
+    // is the paint barrier below.
+    if (afterFonts && !_fontsLaidOut) {
       DeferredFonts.all().then((_) {
         SchedulerBinding.instance.scheduleFrameCallback((_) => began = clock.elapsedMicroseconds);
-        scheduleFrameSync(ack);
+        scheduleFrameSync(() {
+          _fontsLaidOut = true;
+          ack();
+        });
       });
       return;
     }
@@ -261,6 +267,9 @@ String locateJson(List<String> identifiers) =>
 final List<FrameTiming> _frameTimings = <FrameTiming>[];
 
 bool _timingsRegistered = false;
+
+/// Whether a frame has been painted since every deferred font family was in: see the frame sync.
+bool _fontsLaidOut = false;
 
 void _recordFrameTimings() {
   if (_timingsRegistered) return;
