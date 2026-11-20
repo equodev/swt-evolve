@@ -48,6 +48,7 @@ import 'src/impl/utils/image_utils.dart';
 import 'src/impl/control_evolve.dart' show ControlImpl;
 import 'src/impl/utils/raw_pointer_moves.dart';
 import 'src/impl/utils/key_delivery_order.dart';
+import 'src/impl/utils/evolve_binding.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/traversal_veto_scope.dart';
@@ -94,7 +95,7 @@ void main(List<String> args) async {
   }
 
   final bindingStart = BootTrace.nowMicros();
-  WidgetsFlutterBinding.ensureInitialized();
+  EvolveWidgetsBinding.ensureInitialized(followPlatformSemantics: getFollowPlatformSemantics(args));
   BootTrace.step('binding.ensureInitialized', bindingStart);
   unawaited(KeyDeliveryOrder.install(uiThreadOwn: getUiThreadOwn(args)));
   FramePresentation.ensureTracking();

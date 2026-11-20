@@ -43,6 +43,14 @@ _Step _type(String chars) => (tester) async {
       }
     };
 
+/// Enter, as the desktop engines report it to a multi-line field: the newline already in the editing
+/// state, then the newline action.
+_Step _enter() => (tester) async {
+      await _type('\n')(tester);
+      await tester.testTextInput.receiveAction(TextInputAction.newline);
+      await tester.pump();
+    };
+
 _Step _wait(int milliseconds) => (tester) => tester.pump(Duration(milliseconds: milliseconds));
 
 /// A clipboard for the platform channel, as the engine keeps one.
@@ -188,6 +196,10 @@ void main() {
   testWidgets('typing, a new line, and replacing a selection', (tester) async {
     await _same(tester, _mid, [_type('abc'), _type('\n'), _type('d')]);
     await _same(tester, const TextSelection(baseOffset: 5, extentOffset: 30), [_type('xy')]);
+  }, variant: _mac);
+
+  testWidgets('Enter adds one new line', (tester) async {
+    await _same(tester, _mid, [_enter(), _type('d'), _enter()]);
   }, variant: _mac);
 
   testWidgets('page keys', (tester) async {

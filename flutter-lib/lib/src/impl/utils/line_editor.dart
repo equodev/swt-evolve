@@ -429,10 +429,10 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     if (shown != value) _connection?.setEditingState(shown);
   }
 
+  /// The desktop engines and the browser put a multi-line field's newline in the editing state
+  /// themselves before they report the action, as [EditableText] expects, so there is nothing to add.
   @override
-  void performAction(TextInputAction action) {
-    if (action == TextInputAction.newline) _replaceSelection('\n');
-  }
+  void performAction(TextInputAction action) {}
 
   @override
   void performSelector(String selectorName) {

@@ -139,6 +139,9 @@ int? getParentBackgroundColor(List<String> args) {
 
 bool getUiThreadOwn(List<String> args) => false;
 
+/// The browser engine asks for the semantics tree only once its accessibility is turned on.
+bool getFollowPlatformSemantics(List<String> args) => true;
+
 /// The font families flutter_bootstrap.js kept from the engine's start, for DeferredFonts.
 String? getDeferredFontManifest() => _deferredFontManifest?.toDart;
 

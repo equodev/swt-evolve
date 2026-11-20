@@ -63,6 +63,10 @@ int? getParentBackgroundColor(List<String> args) {
 /// Whether the runner gave the UI isolate a thread of its own (the Linux runner does).
 bool getUiThreadOwn(List<String> args) => args.length >= 7 && args[6] == 'ui-thread=own';
 
+/// Whether the semantics tree follows the engine's request for it: not when the runner found no
+/// assistive technology listening (`a11y=off`, the Linux runner).
+bool getFollowPlatformSemantics(List<String> args) => !args.contains('a11y=off');
+
 String? getDeferredFontManifest() => null;
 
 /// Native builds are never embedded in a web iframe. Present to satisfy the

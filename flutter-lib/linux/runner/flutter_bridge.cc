@@ -69,6 +69,7 @@ struct FlutterWindow {
   bool closed;                 // Set when the desktop-native window is closed by the user
   bool close_requested;        // Set when the user asked to close and the teardown was vetoed
   FlMethodChannel *window_channel;  // CSD window channel; top-level window only
+  FlMethodChannel *a11y_channel;    // reports an assistive technology starting later; see WatchAssistiveTechnology
 };
 
 extern "C" void DummyExportedFunction() {
@@ -156,6 +157,63 @@ static FlDartProject *NewDartProject() {
 // engine then queues keys and pointer events in the order GTK delivered them.
 static char kUiThreadOwnArg[] = "ui-thread=own";
 
+// The entrypoint argument that tells Dart no assistive technology is listening (getFollowPlatformSemantics):
+// the engine asks for the semantics tree on every start, since GTK cannot tell it whether one is,
+// and keeping that tree costs every frame.
+static char kA11yOffArg[] = "a11y=off";
+
+// Whether an assistive technology listens on the accessibility bus, read the way browsers read it on
+// Linux. False when no session bus or accessibility bus is running (it is not started for the
+// question) or it does not answer: no assistive technology can reach the application then either.
+static bool AssistiveTechnologyActive() {
+  g_autoptr(GDBusConnection) bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
+  if (bus == nullptr) return false;
+  for (const char *property : {"IsEnabled", "ScreenReaderEnabled"}) {
+    g_autoptr(GVariant) reply = g_dbus_connection_call_sync(
+        bus, "org.a11y.Bus", "/org/a11y/bus", "org.freedesktop.DBus.Properties", "Get",
+        g_variant_new("(ss)", "org.a11y.Status", property), G_VARIANT_TYPE("(v)"),
+        G_DBUS_CALL_FLAGS_NO_AUTO_START, 200, nullptr, nullptr);
+    if (reply == nullptr) continue;
+    g_autoptr(GVariant) value = nullptr;
+    g_variant_get(reply, "(v)", &value);
+    if (g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN) && g_variant_get_boolean(value))
+      return true;
+  }
+  return false;
+}
+
+// The accessibility channels of the windows that started with a11y=off: an assistive technology that
+// starts (or stops) after them is reported on each, so Dart builds the semantics tree from then on.
+static GList *g_a11y_channels = nullptr;
+
+static void OnA11yStatusChanged(GDBusConnection *connection, const gchar *sender, const gchar *path,
+                                const gchar *interface, const gchar *signal, GVariant *parameters,
+                                gpointer user_data) {
+  g_autoptr(FlValue) listening = fl_value_new_bool(AssistiveTechnologyActive());
+  for (GList *l = g_a11y_channels; l != nullptr; l = l->next)
+    fl_method_channel_invoke_method(FL_METHOD_CHANNEL(l->data), "assistiveTechnology", listening,
+                                    nullptr, nullptr, nullptr);
+}
+
+// Subscribes once, on the first window, to the accessibility bus's status changes. The bus is not
+// started for it; one that starts later is not watched.
+static void WatchAssistiveTechnology() {
+  static bool watching = false;
+  if (watching) return;
+  watching = true;
+  GDBusConnection *bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
+  if (bus == nullptr) return;
+  g_dbus_connection_signal_subscribe(bus, "org.a11y.Bus", "org.freedesktop.DBus.Properties",
+                                     "PropertiesChanged", "/org/a11y/bus", "org.a11y.Status",
+                                     G_DBUS_SIGNAL_FLAGS_NONE, OnA11yStatusChanged, nullptr, nullptr);
+}
+
+static void ReleaseA11yChannel(FlutterWindow *w) {
+  if (w->a11y_channel == nullptr) return;
+  g_a11y_channels = g_list_remove(g_a11y_channels, w->a11y_channel);
+  g_clear_object(&w->a11y_channel);
+}
+
 uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
                                   const char *widget_name, const char *theme, jint background_color, jint parent_background_color) {
   FlDartProject *project = NewDartProject();
@@ -198,6 +256,7 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   widget_context->top_window = nullptr;
   widget_context->closed = false;
   widget_context->window_channel = nullptr;
+  widget_context->a11y_channel = nullptr;
 
   // Headless mode: create a hidden window to host Flutter
   if (!parentWnd) {
@@ -525,8 +584,10 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   char bg_c[256];
   sprintf(bg_c, "%d", backgroundColor);
 
-  // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg, uiThread].
-  char *args[8];
+  // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg, uiThread], then
+  // a11y=off when no assistive technology listens.
+  const bool assistive = boot_step("AssistiveTechnologyActive", [] { return AssistiveTechnologyActive(); });
+  char *args[9];
   args[0] = port_c;
   args[1] = id_c;
   args[2] = (char *)widget_name;
@@ -534,7 +595,8 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   args[4] = bg_c;
   args[5] = bg_c;
   args[6] = kUiThreadOwnArg;
-  args[7] = 0;
+  args[7] = assistive ? 0 : kA11yOffArg;
+  args[8] = 0;
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
   boot_record("FlDartProject", project_start);
 
@@ -558,6 +620,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   ctx->closed = false;
   ctx->close_requested = false;
   ctx->window_channel = nullptr;
+  ctx->a11y_channel = nullptr;
 
   GtkWidget *window = boot_step("gtk_window_new", [] { return gtk_window_new(GTK_WINDOW_TOPLEVEL); });
   gtk_window_set_title(GTK_WINDOW(window), widget_name);
@@ -604,6 +667,13 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
       FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(ctx->window_channel, window_method_call_handler,
                                             ctx, nullptr);
+  if (!assistive) {
+    ctx->a11y_channel = fl_method_channel_new(
+        fl_engine_get_binary_messenger(fl_view_get_engine(view)), "dev.equo.swt/accessibility",
+        FL_METHOD_CODEC(codec));
+    g_a11y_channels = g_list_prepend(g_a11y_channels, ctx->a11y_channel);
+    WatchAssistiveTechnology();
+  }
   g_boot_recording = false;
   g_print("FlutterNative.createDisplayWindow port:%d id:%ld name:%s %dx%d\n",
           port, (long)displayId, widget_name, width, height);
@@ -662,6 +732,7 @@ Java_dev_equo_swt_FlutterNative_Dispose(JNIEnv *env, jclass cls, jlong context) 
     fl_method_channel_set_method_call_handler(w->window_channel, nullptr, nullptr, nullptr);
     g_clear_object(&w->window_channel);
   }
+  ReleaseA11yChannel(w);
   if (w->top_window) {
     // window surface: destroying the toplevel destroys the FlView and shuts the engine down.
     //
@@ -753,6 +824,7 @@ Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
       fl_method_channel_set_method_call_handler(ctx->window_channel, nullptr, nullptr, nullptr);
       g_clear_object(&ctx->window_channel);
     }
+    ReleaseA11yChannel(ctx);
     return -1;
   }
   if (ctx && ctx->close_requested) {
