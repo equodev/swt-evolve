@@ -4,7 +4,8 @@ import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GlyphMetrics;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
  * A StyledText whose LineStyleListener hides ANSI escape sequences the way the Eclipse console
  * does: each escape gets a StyleRange with {@code GlyphMetrics(0, 0, 0)}, the text after it gets
  * a colour. The escapes must not be painted and must take no horizontal space, so "INFO" starts
- * at x = 0 and both lines end at the same x. Prints the offsets' locations to compare runs.
+ * at x = 0 and both lines end at the same x.
  */
 public class StyledTextZeroWidthGlyphSnippet {
     static final String ESC = "\u001b";
@@ -57,27 +58,6 @@ public class StyledTextZeroWidthGlyphSnippet {
         });
         shell.setSize(500, 160);
         shell.open();
-        display.timerExec(1500, () -> {
-            int l2 = LINE1.length() + 1;
-            System.out.println("ZW INFO.x=" + text.getLocationAtOffset(LINE1.indexOf("INFO")).x
-                    + " line1End.x=" + text.getLocationAtOffset(LINE1.length()).x
-                    + " line2End.x=" + text.getLocationAtOffset(l2 + LINE2.length()).x
-                    + " line1Bounds=" + text.getTextBounds(0, LINE1.length() - 1)
-                    + " line2Bounds=" + text.getTextBounds(l2, l2 + LINE2.length() - 1)
-                    + " offsetAt(line1End)=" + text.getOffsetAtPoint(
-                            new Point(text.getLocationAtOffset(LINE2.length() + l2).x, 2)));
-            if (args.length > 0) {
-                Rectangle b = text.getClientArea();
-                Image img = new Image(display, b.width, b.height);
-                GC gc = new GC(text);
-                gc.copyArea(img, 0, 0);
-                gc.dispose();
-                ImageLoader loader = new ImageLoader();
-                loader.data = new ImageData[]{img.getImageData()};
-                loader.save(args[0], SWT.IMAGE_PNG);
-                System.out.println("ZW saved " + args[0]);
-            }
-        });
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch()) display.sleep();
         }
