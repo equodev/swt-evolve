@@ -124,6 +124,44 @@ const _appIconFiles = [
   'wiz_day.png', 'wizard.ico',
 ];
 
+/// An IDE plugin set's image files (explorer, dashboard, wizard and view icons its bundles load by
+/// path): each shows a pack icon in the set's style. Brand logos, overlays and animation frames
+/// are left out.
+const _idePluginIconFiles = [
+  'add_target.png', 'add_target_disabled.png', 'advice_obj.gif', 'advises_obj.gif',
+  'after_advice_obj.gif', 'alias_obj.gif', 'aop_config_obj.gif', 'around_advice_obj.gif',
+  'arrow_obj.gif', 'aspect_obj.gif', 'bean_obj.gif', 'beanref_obj.gif', 'before_advice_obj.gif',
+  'bracket.svg', 'callhierarchy-incoming.svg', 'cheatsheet_task.gif', 'check_greyedout.png',
+  'circuit-board.svg', 'close_hot.gif', 'cloud-inactive.png', 'cloud-ready.png', 'cloud_obj.png',
+  'coffee.svg', 'collection_obj.gif', 'configset_obj.gif', 'configure.png', 'constant_obj.gif',
+  'constructor_obj.gif', 'container_debugging.png', 'container_paused.png',
+  'container_started.png', 'container_stopped.png', 'content_assist_separator_obj.gif',
+  'context_obj.gif', 'debug-breakpoint-data-unverified.svg', 'debug-disconnect.svg',
+  'debug-on-cloud.png', 'delete_app.png', 'delete_app_disabled.png', 'description_obj.gif',
+  'download.png', 'ejb_obj.gif', 'event.png', 'feed.png', 'file-binary.svg', 'generic_editor.png',
+  'globe.svg', 'image_debugging.png', 'image_paused.png', 'image_started.png',
+  'image_stopped.png', 'import_obj.gif', 'introduction_obj.gif', 'jms_obj.gif', 'key_obj.gif',
+  'layers.svg', 'library.svg', 'light-bulb-disabled.png', 'light-bulb.png', 'lightbulb.svg',
+  'list_obj.gif', 'live-beans-graph.png', 'map_obj.gif', 'method_override_obj.gif',
+  'namespace.png', 'namespace_bean_obj.gif', 'namespace_component_obj.gif',
+  'new_ajdt_project.gif', 'new_java_project.gif', 'new_roo_project.png', 'new_spring_project.gif',
+  'new_template_project.png', 'new_template_project_obj.png', 'newconfig_wiz.gif', 'news.png',
+  'next_error_nav.gif', 'open_bean_obj.gif', 'open_browser_disabled.gif', 'open_console.png',
+  'open_console_disabled.png', 'pointcut_obj.gif', 'prev.gif', 'prev_error_nav.gif',
+  'priority-1.png', 'project_obj.gif', 'property_obj.gif', 'property_path_obj.gif', 'rebug.png',
+  'rebug_disabled.png', 'record.svg', 'remove_target.png', 'remove_target_disabled.png',
+  'report-bug.gif', 'request_mapping_obj.gif', 'research.png', 'restart.png',
+  'restart_disabled.png', 'resume.gif', 'resumed.gif', 'rs_crashed.gif', 'rs_debugging.png',
+  'rs_flapping.gif', 'rs_inactive.png', 'rs_paused.png', 'rs_running.png', 'rs_unknown.gif',
+  'rss.png', 'rss_configure.png', 'run-on-cloud.png', 'script_obj.gif', 'selectmanifest.gif',
+  'service-inactive.png', 'service.png', 'show_line_numbers.png', 'stop_disabled.png',
+  'suspend.gif', 'suspend_disabled.gif', 'symbol-class.svg', 'symbol-field.svg',
+  'symbol-interface.svg', 'symbol-method.svg', 'symbol-property.svg', 'symbol-value.svg',
+  'target.svg', 'term_restart_disabled.png', 'text-size.svg', 'tutorials.png', 'tx_obj.gif',
+  'update_password.png', 'value_obj.gif', 'verified.svg', 'virtual_folder_obj.gif', 'webinar.png',
+  'xmlfile.gif', 'xsd_obj.gif', 'zap.svg',
+];
+
 /// A file whose icon key has a drawing shows that drawing: the toolbar's label printing and the
 /// search field's clear button load their images by file, other parts by `icon://` key.
 const _filesOfKeys = {
@@ -141,6 +179,19 @@ const _filesOfKeys = {
 Future<bool> _inPack(String name) async {
   final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
   return manifest.listAssets().contains('assets/icons/$name.svg');
+}
+
+/// [replacement] is a pack SVG Evolve can draw in the theme's ink.
+Future<void> _expectPackStyle(Object? replacement, String name) async {
+  expect(replacement, isA<String>(), reason: '$name has a pack icon');
+  final svg = replacement as String;
+  expect(svg, contains('viewBox="0 0 24 24"'));
+  expect(RegExp(r'#[0-9a-fA-F]{3,6}').allMatches(svg).map((m) => m[0]).toSet(),
+      anyOf(isEmpty, {'#000000'}),
+      reason: 'one ink colour, so the theme tints it');
+  final info = await vg.loadPicture(SvgStringLoader(svg), null);
+  expect(info.size, const Size(24, 24));
+  info.picture.dispose();
 }
 
 void main() {
@@ -161,17 +212,7 @@ void main() {
 
   for (final name in _appIconKeys) {
     test('icon://IMG_${name.toUpperCase()} shows a pack icon in the set\'s style', () async {
-      final replacement = await AssetsManager.loadReplacement(name);
-
-      expect(replacement, isA<String>(), reason: '$name has a pack icon');
-      final svg = replacement as String;
-      expect(svg, contains('viewBox="0 0 24 24"'));
-      expect(RegExp(r'#[0-9a-fA-F]{3,6}').allMatches(svg).map((m) => m[0]).toSet(),
-          anyOf(isEmpty, {'#000000'}),
-          reason: 'one ink colour, so the theme tints it');
-      final info = await vg.loadPicture(SvgStringLoader(svg), null);
-      expect(info.size, const Size(24, 24));
-      info.picture.dispose();
+      await _expectPackStyle(await AssetsManager.loadReplacement(name), name);
     });
   }
 
@@ -184,6 +225,12 @@ void main() {
     });
   }
 
+  for (final file in _idePluginIconFiles) {
+    test('a plugin image named $file shows a pack icon in the set\'s style', () async {
+      await _expectPackStyle(await AssetsManager.loadReplacement('icons/full/obj16/$file'), file);
+    });
+  }
+
   for (final MapEntry(key: file, value: key) in _filesOfKeys.entries) {
     test('a bundle file named $file shows the drawing of icon key $key', () async {
       final expected = await AssetsManager.loadReplacement(key);
@@ -191,6 +238,13 @@ void main() {
       expect(await AssetsManager.loadReplacement('icons/16x16/$file'), expected);
     });
   }
+
+  test('the (re)start icon draws its start arrow, not an empty frame', () async {
+    for (final name in ['term_restart', 'restart']) {
+      final svg = await AssetsManager.loadReplacement(name) as String;
+      expect(svg, contains('fill="#000000"'), reason: '$name fills its start arrow');
+    }
+  });
 
   test('every alias names a drawing the pack has', () async {
     for (final MapEntry(key: alias, value: icon) in AssetsManager.iconAliases.entries) {
