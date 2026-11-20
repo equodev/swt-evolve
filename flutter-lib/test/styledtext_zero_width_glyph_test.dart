@@ -1,6 +1,9 @@
 // A range whose GlyphMetrics are 0 wide takes no horizontal space, as on SWT: a console hides
 // ANSI escape sequences that way and colours only the text between them.
 
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
@@ -59,8 +62,77 @@ List<double> _charX(Map<String, dynamic> row) {
   return [for (var i = 0; i <= n; i++) cxu[0] + i * cxu[1].toDouble()];
 }
 
+const _black = Color(0xFF000000);
+const _textStyle = TextStyle(fontSize: 10, height: 1.0, color: _black);
+const _canvas = Size(400, 200);
+
+/// [lines] copies of [_line1], each with its two escapes hidden and "INFO" in green.
+TextShape _console(int lines, {SelectionInfo? selection}) {
+  final text = List.filled(lines, _line1).join('\n');
+  final runs = <StyleRange>[];
+  for (var i = 0, start = 0; i < lines; i++, start += _line1.length + 1) {
+    final info = start + _open.length;
+    runs
+      ..add(StyleRange(start: start, end: info, style: _textStyle, glyphWidth: 0))
+      ..add(StyleRange(start: info, end: info + 4, style: _textStyle.copyWith(color: const Color(0xFF008000))))
+      ..add(StyleRange(start: info + 4, end: info + 4 + _close.length, style: _textStyle, glyphWidth: 0));
+  }
+  return TextShape(
+    text,
+    Offset.zero,
+    _textStyle,
+    null, // textSpan
+    null, // caretInfo
+    false, // wordWrap
+    _canvas,
+    true, // editable
+    1,
+    null, // onTextChanged
+    TextEditingState(characterRanges: runs),
+    selection,
+    10.0, // lineHeight
+  );
+}
+
 void main() {
   setUp(() => StyledTextImpl.debugLastGeometry = null);
+
+  test('a point on an escape hits the visible text next to it', () {
+    final shape = _console(1);
+    // Every escape is 0 wide, so "INFO" starts at x 0 and each glyph is 10 wide.
+    expect(shape.getOffsetFromPosition(const Offset(1, 5), _canvas), _open.length,
+        reason: 'the left edge is the offset after the opening escape');
+    expect(shape.getOffsetFromPosition(const Offset(21, 5), _canvas), _open.length + 2,
+        reason: 'x 21 is inside "F", past the hidden characters');
+    expect(shape.getOffsetFromPosition(const Offset(41, 5), _canvas), _open.length + 4 + _close.length,
+        reason: 'past "INFO" the caret lands after the closing escape, before " started"');
+  });
+
+  test('a selection across an escape is as wide as the visible text it holds', () {
+    // From the start of the line through "INFO" and the closing escape.
+    final shape = _console(1, selection: SelectionInfo(start: 0, end: _open.length + 4 + _close.length));
+    final recorder = ui.PictureRecorder();
+    shape.draw(Canvas(recorder));
+    recorder.endRecording().dispose();
+    final rects = shape.debugPaintedSelectionRects;
+    expect(rects, isNotEmpty);
+    expect(rects.map((r) => r.left).reduce(math.min), closeTo(0, 0.5));
+    expect(rects.map((r) => r.right).reduce(math.max), closeTo(40, 0.5),
+        reason: 'the highlight covers "INFO" only: the escapes add no width');
+  });
+
+  test('laying out a long console checks only the escapes on the lines laid out', () {
+    const lines = 3000;
+    final shape = _console(lines);
+    TextShape.debugGlyphWidthProbes = 0;
+    final recorder = ui.PictureRecorder();
+    shape.draw(Canvas(recorder));
+    recorder.endRecording().dispose();
+    // At most one probe per hidden run on the line for each character laid out; scanning every
+    // run of the document instead costs thousands per character.
+    expect(TextShape.debugGlyphWidthProbes, greaterThan(0));
+    expect(TextShape.debugGlyphWidthProbes, lessThanOrEqualTo(2 * shape.text.length));
+  });
 
   testWidgets('characters under zero-width metrics take no horizontal space', (tester) async {
     final key = GlobalKey<StyledTextImpl>();

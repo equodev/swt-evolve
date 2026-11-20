@@ -3734,6 +3734,10 @@ class TextShape extends Shape {
   @visibleForTesting
   static int debugLinesBucketed = 0;
 
+  /// How many GlyphMetrics runs were checked for a character's fixed width.
+  @visibleForTesting
+  static int debugGlyphWidthProbes = 0;
+
   /// The style runs on [lineIndex].
   @visibleForTesting
   List<StyleRange> debugRunsOnLine(int lineIndex) => _runsOnLine(lineIndex);
@@ -3979,8 +3983,12 @@ class TextShape extends Shape {
     _flattenSpan(lineSpan, style, leaves);
     final lineStart = lineIndex < _lineStarts.length ? _lineStarts[lineIndex] : 0;
     final hasTab = leaves.any((leaf) => leaf.text.contains('\t'));
-    final hasFixedWidth = _runsOnLine(lineIndex).any((r) => r.glyphWidth != null);
-    if (!hasTab && !hasFixedWidth) {
+    // Only this line's runs: a console holds a few escapes per line over thousands of lines.
+    final fixedRuns = [
+      for (final run in _runsOnLine(lineIndex))
+        if (run.glyphWidth != null) run,
+    ];
+    if (!hasTab && fixedRuns.isEmpty) {
       return _TabExpandedLine(lineSpan, const []);
     }
 
@@ -4024,7 +4032,7 @@ class TextShape extends Shape {
     for (final leaf in leaves) {
       for (int i = 0; i < leaf.text.length; i++, column++) {
         final char = leaf.text[i];
-        final fixedWidth = _glyphWidthAt(lineStart + column);
+        final fixedWidth = _glyphWidthAt(lineStart + column, fixedRuns);
         if (char == '\t') {
           flush(leaf.style);
           measure();
@@ -4048,10 +4056,11 @@ class TextShape extends Shape {
     return _TabExpandedLine(TextSpan(style: style, children: children), placeholders);
   }
 
-  /// The width a GlyphMetrics range fixes for the character at [offset], or null.
-  double? _glyphWidthAt(int offset) {
-    for (final range in editingState?.characterRanges ?? const <StyleRange>[]) {
-      if (range.glyphWidth == null || range.start > offset || offset >= range.end) continue;
+  /// The width one of [fixedRuns] fixes for the character at [offset], or null.
+  static double? _glyphWidthAt(int offset, List<StyleRange> fixedRuns) {
+    for (final range in fixedRuns) {
+      debugGlyphWidthProbes++;
+      if (range.start > offset || offset >= range.end) continue;
       return range.glyphWidth;
     }
     return null;
