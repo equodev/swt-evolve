@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -355,7 +356,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     if (constraints != null) {
       return inOwnLayer(SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(trackPointer(ParentForegroundScope(
+          child: tagSemantics(state, trackPointer(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             selectionForeground: state.selectionForeground,
@@ -366,7 +367,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // The tabs letter and colour in the folder's own font/foreground when they carry none.
     return inOwnLayer(SwtControlScope(
         swt: state.swt,
-        child: tagSemantics(trackPointer(ParentForegroundScope(
+        child: tagSemantics(state, trackPointer(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           selectionForeground: state.selectionForeground,
@@ -1265,12 +1266,7 @@ class _CTabBarState extends State<_CTabBar> {
           : BorderSide.none,
     );
 
-    // The tab body gets a semantics node of its own, so the tab's node has a child - and
-    // therefore a settled role - from the first frame. A tappable node with no children is a
-    // button to Flutter Web, and it turns into a plain container once children turn up; the
-    // engine answers that role change by rebuilding the node's DOM element and writing back only
-    // the properties that changed with it, silently dropping the identifier the tab is found by.
-    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: Semantics(container: true, child: MouseRegion(
+    return tagSemantics(tab.vItem, MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       // A held button keeps the mouse with the control it was pressed on, so a drag passing over
       // the tabs lights none of them; the first move after release does.
@@ -1332,7 +1328,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    )));
+    ));
   }
 
   Widget _buildAdvancedTab({
@@ -1494,12 +1490,7 @@ class _CTabBarState extends State<_CTabBar> {
           : BorderSide.none,
     );
 
-    // The tab body gets a semantics node of its own, so the tab's node has a child - and
-    // therefore a settled role - from the first frame. A tappable node with no children is a
-    // button to Flutter Web, and it turns into a plain container once children turn up; the
-    // engine answers that role change by rebuilding the node's DOM element and writing back only
-    // the properties that changed with it, silently dropping the identifier the tab is found by.
-    return Semantics(identifier: '${tab.vItem.swt}/${tab.vItem.id}', child: Semantics(container: true, child: MouseRegion(
+    return tagSemantics(tab.vItem, MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       // A held button keeps the mouse with the control it was pressed on, so a drag passing over
       // the tabs lights none of them; the first move after release does.
@@ -1632,7 +1623,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    )));
+    ));
   }
 
   Widget _buildChevron(CTabFolderThemeExtension widgetTheme) => ChevronAfterTabs(
@@ -1641,7 +1632,7 @@ class _CTabBarState extends State<_CTabBar> {
       );
 
   Widget _buildChevronButton(CTabFolderThemeExtension widgetTheme) {
-    return Semantics(identifier: 'chevron:${widget.state.swt}/${widget.state.id}', button: true, child: MouseRegion(
+    return tagSemantics(null, MouseRegion(
       onEnter: (_) => setState(() => _isChevronHovered = true),
       onExit: (_) => setState(() => _isChevronHovered = false),
       cursor: SystemMouseCursors.click,
@@ -1667,7 +1658,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       )),
-    ));
+    ), id: 'chevron:${widget.state.swt}/${widget.state.id}');
   }
 
   /// Native SWT's showChevron: chevronVisible (default true) and either forced on or overflowing.
@@ -1710,7 +1701,7 @@ class _CTabBarState extends State<_CTabBar> {
     required ValueChanged<bool> onHoverChanged,
     bool enabled = true,
   }) {
-    return Semantics(identifier: semanticsId, button: true, child: MouseRegion(
+    return tagSemantics(null, MouseRegion(
       onEnter: (_) {
         onHoverChanged(true);
       },
@@ -1747,7 +1738,7 @@ class _CTabBarState extends State<_CTabBar> {
           ),
         ),
       ),
-    ));
+    ), id: semanticsId);
   }
 
 

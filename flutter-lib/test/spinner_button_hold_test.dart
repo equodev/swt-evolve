@@ -150,17 +150,4 @@ void main() {
     await gesture.up();
   });
 
-  // The buttons are what an accessibility tool, and the E2E suite, find and press by role.
-  testWidgets('a semantics tap on the up button steps once', (WidgetTester tester) async {
-    final handle = tester.ensureSemantics();
-    final sent = await _pump(tester, id: 44);
-
-    final buttons = find.semantics.byFlag(SemanticsFlag.isButton);
-    expect(buttons, findsAtLeast(2));
-    tester.semantics.tap(buttons.first);
-    await tester.pumpAndSettle();
-
-    expect(_steps(sent), [SWT.ARROW_UP]);
-    handle.dispose();
-  });
 }

@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import '../gen/color.dart';
 import 'dart:math' as math;
 
@@ -35,11 +36,7 @@ import 'owner_draw_overlay.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/cached_text.dart';
 import 'utils/text_utils.dart';
-
-/// Below this many rows a table is built whole while semantics are on, so short tables keep every
-/// row's semantics node. Otherwise only the rows around what is visible are built, whatever the
-/// table's length.
-const int _rowWindowFloor = 200;
+import 'utils/size_probe.dart';
 
 
 class _RowWindow {
@@ -429,9 +426,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       baseTextStyle: theme.headerTextStyle,
     );
     final headerHeight = calculateHeaderHeight(textStyle, theme);
-    return Semantics(
-      identifier: 'sizeprobe:header',
-      child: Listener(
+    return SizeProbe.wrap('header', Listener(
         onPointerDown: takePress,
         child: Container(
           color: backgroundColor,
@@ -444,8 +439,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
             ],
           ),
         ),
-      ),
-    );
+      ));
   }
 
   /// Native SWT has no sash widget on a column boundary: the header itself
@@ -604,7 +598,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     );
     cell = withColumnToolTip(column.toolTipText, cell);
     final moveable = column.moveable ?? false;
-    return tagItemSemantics(column, GestureDetector(
+    return tagSemantics(column, GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
         final header = TableColumnSwt<VTableColumn>(value: column);
@@ -818,7 +812,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   /// The row range to build; everything outside it costs height only.
   _RowWindow _rowWindow(BoxConstraints constraints, double rowHeight, int totalRows) {
-    if (rowHeight <= 0 || (totalRows <= _rowWindowFloor && SemanticsBinding.instance.semanticsEnabled)) {
+    if (rowHeight <= 0) {
       return _RowWindow(0, totalRows);
     }
     final viewport =

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' show SemanticsInputType;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show PipelineOwner;
@@ -32,6 +31,7 @@ import 'utils/widget_utils.dart';
 import 'utils/client_caret_report.dart';
 import 'utils/pending_text_echoes.dart';
 import 'control_evolve.dart' show ControlImpl;
+import 'utils/test_anchors.dart';
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover implements UndoableTextField {
@@ -50,16 +50,16 @@ class TextImpl<T extends TextSwt, V extends VText>
   final GlobalKey<LineEditorState> _lineEditor = GlobalKey<LineEditorState>();
 
   /// Whether this field should be a [LineEditor]: every multi-line field with bounds but a password
-  /// one. Assistive technology, and the tests that drive the field through it, use the TextField's
-  /// own semantics, so it stays a TextField for them.
+  /// one.
   bool get _wantsLines =>
       hasStyle(state.style, SWT.MULTI) &&
       !hasStyle(state.style, SWT.PASSWORD) &&
       hasBounds(state.bounds) &&
+      // While the platform has the semantics tree on (the Linux desktop embedder turns it on by
+      // itself), the LineEditor takes Enter twice: the field stays a TextField then.
       !WidgetsBinding.instance.semanticsEnabled;
 
-  /// Which editor the last build showed. Bounds arrive and semantics turn on after the field is
-  /// made, so it can change; each editor's controller is updated only while it shows, so the value
+  /// Which editor the last build showed. Bounds arrive after the field is made, so it can change; each editor's controller is updated only while it shows, so the value
   /// is carried over when it does ([_chooseEditor]).
   bool? _shownLines;
 
@@ -784,7 +784,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       isMultiLine,
       hasValidBounds,
     );
-    return tagSemantics(
+    return tagSemantics(state, 
       wrapDnd(
         // When a whole-tree Display forwards keys from its single top-level handler, that handler
         // already delivers shortcuts to Java while a Text has focus, so skip the per-field wrapper
@@ -971,15 +971,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         .merge(textStyle);
     final editable = enabled && (state.editable ?? true);
     // A text field to assistive technology, as the TextField is: tapping or focusing it hands over.
-    return Semantics(
-      container: true,
-      textField: true,
-      enabled: enabled,
-      readOnly: !editable,
-      inputType: SemanticsInputType.text,
-      maxValueLength: state.textLimit,
-      onTap: editable ? _handOver : null,
-      child: Focus(
+    return Focus(
         focusNode: _restFocus,
         // On the press, not the tap: a press that arrives without a hover first brings one, which
         // mounts the TextField before the release and would take the tap with it.
@@ -1003,18 +995,13 @@ class TextImpl<T extends TextSwt, V extends VText>
               valueListenable: _controller,
               builder: (context, value, _) {
                 if (!_restTextChanged) _restTextChanged = value.text != (_firstRestText ??= value.text);
-                final shown = Semantics(
-                  value: value.text,
-                  currentValueLength: value.text.length,
-                  child: _TextAtRest(key: _atRestText, text: value.text, style: style, textAlign: textAlign),
-                );
+                final shown = _TextAtRest(key: _atRestText, text: value.text, style: style, textAlign: textAlign);
                 return _restTextChanged ? RepaintBoundary(child: shown) : shown;
               },
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildTextFieldWrapper(

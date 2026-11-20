@@ -23,6 +23,7 @@ import 'utils/text_utils.dart';
 import 'utils/quiet_animations.dart';
 import 'widget_config.dart';
 import 'menu_key_trace.dart';
+import 'utils/test_anchors.dart';
 
 class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     extends ItemImpl<T, V> {
@@ -67,7 +68,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
 
     if (style.has(SWT.CASCADE) && state.menu != null) {
       final split = splitMenuItemText(state.text);
-      return tagSemantics(_CascadeMenuItemRow(
+      return tagSemantics(state, _CascadeMenuItemRow(
         widgetTheme: widgetTheme,
         menuTheme: menuTheme,
         isEnabled: isEnabled,
@@ -81,14 +82,14 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     }
 
     if (style.has(SWT.CHECK)) {
-      return tagSemantics(_buildCheckMenuItem(context, widgetTheme, isEnabled));
+      return tagSemantics(state, _buildCheckMenuItem(context, widgetTheme, isEnabled));
     }
 
     if (style.has(SWT.RADIO)) {
-      return tagSemantics(_buildRadioMenuItem(context, widgetTheme, isEnabled));
+      return tagSemantics(state, _buildRadioMenuItem(context, widgetTheme, isEnabled));
     }
 
-    return tagSemantics(_buildPushMenuItem(context, widgetTheme, isEnabled));
+    return tagSemantics(state, _buildPushMenuItem(context, widgetTheme, isEnabled));
   }
 
   Widget _buildSeparator(MenuItemThemeExtension widgetTheme) {
@@ -504,7 +505,6 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   bool _isPressed = false;
   bool _shown = false;
   MenuItemsWatch? _itemsWatch;
-  AnimationStatus _submenuStatus = AnimationStatus.dismissed;
   // Opened by its mnemonic: the keyboard moves onto the first item as soon as the submenu has one.
   bool _focusFirstItemWhenFilled = false;
 
@@ -645,13 +645,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
   // Hide goes out when the submenu starts closing: onClose waits for the closing animation, by
   // which time the next cascade has already sent its Show.
   void _onSubmenuAnimation(AnimationStatus status) {
-    _submenuStatus = status;
     if (status == AnimationStatus.reverse || status.isDismissed) _sendHide();
-  }
-
-  // Opening a menu that is already open would close it and open it again.
-  void _openOnSemanticsTap() {
-    if (!_submenuStatus.isForwardOrCompleted) _menuController.open(force: true);
   }
 
   void _openFromMnemonic() {
@@ -699,12 +693,7 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
           onPointerDown: (_) => _isPressed = true,
           onPointerUp: (_) => scheduleMicrotask(() => _isPressed = false),
           onPointerCancel: (_) => _isPressed = false,
-          // A semantics tap (what a click becomes on the web once the semantics tree is on) only
-          // opens the submenu too: merged into this node, the button's own toggle never gets it.
-          child: MergeSemantics(
-            child: Semantics(
-              onTap: _openOnSemanticsTap,
-              child: SubmenuButton(
+          child: SubmenuButton(
                 controller: _menuController,
                 focusNode: _buttonFocusNode,
                 onHover: _onHover,
@@ -771,8 +760,6 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
                   ],
                 ),
               ),
-            ),
-          ),
         ),
       ),
     );

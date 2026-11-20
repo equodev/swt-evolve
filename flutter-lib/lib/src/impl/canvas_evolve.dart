@@ -296,30 +296,6 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     ));
   }
 
-  // From Flutter 3.41 a semantics node with no action of its own is unreliable in the web DOM:
-  // it can be marked `pointer-events: none` (measured on this Canvas), or -- when merged with an
-  // image config, as CLabelImpl also does -- lose its `flt-semantics-identifier` attribute
-  // outright. Giving it a real action fixes both, which is why CLabelImpl (a CanvasImpl subclass)
-  // reuses this rather than getting its own copy. A click landing here arrives ONLY as a
-  // SemanticsAction, not as a PointerDown/Up -- measured: an empty onTap left [wrap]'s Listener
-  // untouched and no MouseDown reached Java -- so the action has to forward the click itself.
-  // Not on a plain Canvas: that tap carries no position, and a Canvas acts on where it was clicked.
-  Widget exposeSemanticsTapAction(Widget child) {
-    return Semantics(
-      onTap: () {
-        final size = getBounds();
-        final event = VEvent()
-          ..button = 1
-          ..x = (size.width / 2).round()
-          ..y = (size.height / 2).round()
-          ..count = 1;
-        widget.sendMouseMouseDown(state, event);
-        widget.sendMouseMouseUp(state, event);
-      },
-      child: child,
-    );
-  }
-
   Size getBounds() {
     if (hasBounds(state.bounds)) {
       return Size(

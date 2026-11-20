@@ -86,40 +86,6 @@ List<SemanticsNode> _toolItemNodes(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('a focus request on a ToolItem leaves the focused field focused', (tester) async {
-    final handle = tester.ensureSemantics();
-    final field = FocusNode(debugLabel: 'field');
-
-    await tester.pumpWidget(EvolveApp(
-      theme: ThemeMode.light,
-      contentWidget: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 400, child: TextField(focusNode: field)),
-          SizedBox(width: 400, height: 40, child: _SilentToolBarSwt(value: _toolBar())),
-        ],
-      ),
-    ));
-    await tester.pumpAndSettle();
-    field.requestFocus();
-    await tester.pump();
-    expect(field.hasPrimaryFocus, isTrue);
-
-    final nodes = _toolItemNodes(tester);
-    expect(nodes.where((n) => n.getSemanticsData().hasAction(SemanticsAction.tap)), isNotEmpty);
-
-    final owner = tester.binding.pipelineOwner.semanticsOwner!;
-    for (final node in nodes) {
-      if (!node.getSemanticsData().hasAction(SemanticsAction.focus)) continue;
-      owner.performAction(node.id, SemanticsAction.focus);
-      await tester.pump();
-      expect(field.hasPrimaryFocus, isTrue,
-          reason: 'focus moved to ${FocusManager.instance.primaryFocus}');
-    }
-
-    field.dispose();
-    handle.dispose();
-  });
 
   testWidgets('Tab reaches the tool items', (tester) async {
     final field = FocusNode(debugLabel: 'field');

@@ -12,6 +12,7 @@ import 'utils/double_tap_detector.dart';
 import 'utils/image_utils.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/test_anchors.dart';
 
 class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     extends ItemImpl<T, V> {
@@ -204,7 +205,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
       );
     }
 
-    return tagSemantics(MouseRegion(
+    return tagSemantics(state, MouseRegion(
       cursor: moveable ? SystemMouseCursors.grab : SystemMouseCursors.click,
       child: GestureDetector(
         onTap: () {

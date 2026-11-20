@@ -27,6 +27,7 @@ import 'key_forwarding.dart';
 import 'utils/pointer.dart';
 import 'utils/quiet_animations.dart';
 import 'utils/veto_gate.dart';
+import 'utils/test_anchors.dart';
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes, ClientCaretReport {
@@ -534,7 +535,7 @@ class ComboImpl<T extends ComboSwt, V extends VCombo>
             arrowSpacing: arrowSpacing,
           );
 
-    return tagSemantics(DoubleClickWordSelector(
+    return tagSemantics(state, DoubleClickWordSelector(
       controller: _controller,
       focusNode: _focusNode,
       // The MouseDoubleClick itself is the press's, sent by trackPointer below.
@@ -659,19 +660,12 @@ class _DropdownComboLayout extends StatelessWidget {
                 onDismiss: onDismiss,
                 child: Padding(
                   padding: textPadding,
-                  // The DOM <input> Flutter Web builds for a text field's semantics node is
-                  // disabled unless that node carries SemanticsFlag.isEnabled, and a disabled
-                  // input can never take DOM focus, so no keystroke ever reaches the field. A
-                  // bare EditableText does not set the flag (TextField is what normally does),
-                  // hence this annotation.
                   child: isReadOnly
                       ? Focus(
                           focusNode: focusNode,
                           child: ComboValueText(controller: controller, style: textStyle),
                         )
-                      : Semantics(
-                          enabled: isEnabled,
-                          child: EditableText(
+                      : EditableText(
                             autofillHints: null,
                             controller: controller,
                             focusNode: focusNode,
@@ -686,7 +680,6 @@ class _DropdownComboLayout extends StatelessWidget {
                             selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
                                 Theme.of(context).colorScheme.primary.withOpacity(0.4),
                           ),
-                        ),
                 ),
               ),
             ),
@@ -723,7 +716,7 @@ class _DropdownComboLayout extends StatelessWidget {
         // field. Pinning it to the field's width wraps every item of a Combo
         // an application hinted below its preferred width, and the list then
         // grows down over whatever follows it.
-        child: ConstrainedBox(
+        child: tagSemantics(state, id: 'ComboList/${state.id}', ConstrainedBox(
           constraints: BoxConstraints(minWidth: width),
           child: Container(
             decoration: BoxDecoration(
@@ -762,7 +755,7 @@ class _DropdownComboLayout extends StatelessWidget {
               ),
             ),
           ),
-        ),
+        )),
       )),
     );
   }
@@ -845,11 +838,7 @@ class _SimpleComboLayout extends StatelessWidget {
         children: [
           Padding(
             padding: theme.textFieldPadding,
-            // See _DropdownComboLayout: without isEnabled on the semantics node the
-            // DOM <input> Flutter Web builds for it is disabled and cannot be focused.
-            child: Semantics(
-              enabled: isEnabled,
-              child: EditableText(
+            child: EditableText(
                 autofillHints: null,
                 controller: controller,
                 focusNode: focusNode,
@@ -862,7 +851,6 @@ class _SimpleComboLayout extends StatelessWidget {
                 selectionColor: DefaultSelectionStyle.of(context).selectionColor ??
                     Theme.of(context).colorScheme.primary.withOpacity(0.4),
               ),
-            ),
           ),
           Divider(
             height: theme.dividerHeight,
@@ -891,7 +879,9 @@ class _SimpleComboLayout extends StatelessWidget {
             .toList(),
       ),
     );
-    return hasFixedSize ? Expanded(child: list) : list;
+    // Tagged on its own: the drop-down list opens in the overlay, outside the combo.
+    final tagged = tagSemantics(state, list, id: 'ComboList/${state.id}');
+    return hasFixedSize ? Expanded(child: tagged) : tagged;
   }
 }
 

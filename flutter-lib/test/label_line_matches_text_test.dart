@@ -94,12 +94,4 @@ void main() {
     expect(find.text('Label 12 v7'), findsOneWidget);
   });
 
-  testWidgets('a label line describes its text to semantics as Text does', (tester) async {
-    final handle = tester.ensureSemantics();
-    await tester.pumpWidget(_frame(_line('Label 12', enabled, TextAlign.start), key: GlobalKey()));
-    expect(find.bySemanticsLabel('Label 12'), findsOneWidget);
-    await tester.pumpWidget(_frame(_line('Label 12 v7', enabled, TextAlign.start), key: GlobalKey()));
-    expect(find.bySemanticsLabel('Label 12 v7'), findsOneWidget);
-    handle.dispose();
-  });
 }

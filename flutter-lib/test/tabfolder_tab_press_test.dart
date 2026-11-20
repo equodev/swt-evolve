@@ -80,16 +80,4 @@ void main() {
     expect(calls.where((c) => c == 'Selection/Selection'), hasLength(1), reason: 'the release selects nothing again: $calls');
   });
 
-  testWidgets('a tap that comes with no pointer press, as an accessibility action, still selects the tab', (tester) async {
-    final calls = <String>[];
-    await _pump(tester, SWT.TOP, (ev, payload) => calls.add(ev));
-    calls.clear();
-
-    final semantics = tester.ensureSemantics();
-    tester.semantics.tap(find.semantics.byLabel('Two'));
-    await tester.pump(const Duration(seconds: 1));
-    semantics.dispose();
-
-    expect(calls, contains('Selection/Selection'), reason: '$calls');
-  });
 }

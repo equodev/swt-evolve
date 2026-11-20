@@ -10,8 +10,6 @@ Widget withColumnToolTip(String? toolTipText, Widget child) {
   if (message.isEmpty) return child;
   return Tooltip(
     message: message,
-    // The header carries its own semantics; the tooltip would add itself to the column's name.
-    excludeFromSemantics: true,
     waitDuration: hoverDelay,
     child: child,
   );

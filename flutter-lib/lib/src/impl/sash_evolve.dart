@@ -12,6 +12,7 @@ import '../impl/utils/widget_utils.dart';
 import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'utils/test_anchors.dart';
 
 class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
   int? lastAppliedX;
@@ -235,7 +236,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
       drift = Offset((_localX! - bounds.x!).toDouble(), (_localY! - bounds.y!).toDouble());
     }
 
-    return tagSemantics(Transform.translate(offset: drift, child: trackPointer(sashContent)));
+    return tagSemantics(state, Transform.translate(offset: drift, child: trackPointer(sashContent)));
   }
 
   /// The parent's origin on the view, in SWT units, taken at the press.

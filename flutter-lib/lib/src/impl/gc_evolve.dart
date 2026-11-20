@@ -256,36 +256,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
         painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
       ),
     );
-    // Expose any text painted via the GC (drawString/drawText) as an aria-label so
-    // canvas-drawn controls (e.g. custom buttons) are identifiable in devtools / E2E,
-    // instead of showing up as an opaque `Canvas/<id>` node with no text. Only built
-    // when the semantics tree is active, so normal rendering is unaffected.
-    if (WidgetsBinding.instance.semanticsEnabled) {
-      final label = _paintedTextLabel(shapes);
-      if (label != null) {
-        return Semantics(label: label, child: painted);
-      }
-    }
     return painted;
-  }
-
-  String? _paintedTextLabel(List<Shape> shapes) {
-    final parts = <String>[];
-    void collect(List<Shape> from) {
-      for (final shape in from) {
-        if (shape is TextShape) {
-          final text = shape.text.trim();
-          if (text.isNotEmpty) parts.add(text);
-        } else if (shape is RegionShape) {
-          collect(shape.ops);
-        } else if (shape is ClipPathShape) {
-          collect(shape.children);
-        }
-      }
-    }
-
-    collect(shapes);
-    return parts.isEmpty ? null : parts.join(' ');
   }
 
 }

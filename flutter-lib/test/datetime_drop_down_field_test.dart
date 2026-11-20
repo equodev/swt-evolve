@@ -10,6 +10,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'package:swtflutter/src/impl/utils/test_anchors.dart';
 
 const double _width = 110;
 const double _height = 22;
@@ -47,6 +48,10 @@ Future<void> _pump(WidgetTester tester, int style, {Size size = const Size(_widt
 const int _dropDown = SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN;
 
 void main() {
+  // Widgets are located as a test driver finds them, through the anchor registry.
+  setUpAll(() => TestAnchors.enabled = true);
+  tearDownAll(() => TestAnchors.enabled = false);
+
   testWidgets('a drop-down date has no up/down buttons', (tester) async {
     await _pump(tester, _dropDown);
 
@@ -98,8 +103,8 @@ void main() {
       (tester) async {
     await _pump(tester, _dropDown);
 
-    final button = tester.getRect(find.byWidgetPredicate(
-        (w) => w is Semantics && w.properties.identifier == 'dropdown:DateTime/94'));
+    final at = TestAnchors.locate('dropdown:DateTime/94', hit: false)!;
+    final button = Rect.fromLTWH(at['x'] as double, at['y'] as double, at['width'] as double, at['height'] as double);
     expect(button.width, 2 * 17, reason: 'two Win32 scroll bars (SM_CXVSCROLL) wide');
     expect(button.right, closeTo(_width, 1), reason: 'it ends the field, inside the border');
     expect(button.height, closeTo(_height, 2), reason: 'it fills the field\'s height, inside the border');

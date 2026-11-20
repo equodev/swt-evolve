@@ -837,7 +837,6 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
       actions: _actions,
       child: Focus(
         focusNode: widget.focusNode,
-        includeSemantics: false,
         child: MouseRegion(
           cursor: widget.enabled ? SystemMouseCursors.text : MouseCursor.defer,
           child: Listener(

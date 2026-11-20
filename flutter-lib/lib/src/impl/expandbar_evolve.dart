@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'package:flutter/material.dart';
 import '../gen/event.dart';
 import '../gen/expandbar.dart';
@@ -110,7 +111,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     // with no item there is no header to stop on.
     result = wrapSurfaceFocus(result, tabStop: (state.tabStop ?? false) && expandItems.isNotEmpty);
 
-    return inOwnLayer(SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(result))));
+    return inOwnLayer(SwtControlScope(swt: state.swt, child: tagSemantics(state, trackPointer(result))));
   }
 
   List<Widget> getExpandItems(
@@ -137,7 +138,7 @@ class ExpandBarImpl<T extends ExpandBarSwt, V extends VExpandBar>
     ExpandBarThemeExtension widgetTheme,
     ExpandItemThemeExtension itemTheme,
   ) {
-    return tagItemSemantics(
+    return tagSemantics(
       expandItem,
       _ExpandItemWidget(
         expandItem: expandItem,
@@ -332,9 +333,7 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
             itemTheme.borderWidth,
           );
 
-    return Semantics(
-      identifier: '${expandItem.swt}/${expandItem.id}',
-      child: Container(
+    return tagSemantics(expandItem, Container(
         // The border is drawn over the item for the same reason as the bar's.
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(itemTheme.borderRadius),
@@ -348,15 +347,8 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header. Its own semantics node, so the item's node has a child - and therefore a
-            // settled role - from the first frame. A tappable node with no children is a button to
-            // Flutter Web, and it turns into a plain container as soon as the expanded body brings
-            // children; the engine answers that role change by rebuilding the node's DOM element
-            // and writing back only the properties that changed with it, silently dropping the
-            // `flt-semantics-identifier` this item is found by.
-            Semantics(
-              container: true,
-              child: MouseRegion(
+            // Header.
+            MouseRegion(
                 onEnter: (_) => setState(() => _isHovering = true),
                 onExit: (_) => setState(() => _isHovering = false),
                 child: GestureDetector(
@@ -378,7 +370,6 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
                   ),
                 ),
               ),
-            ),
             // The body starts where the header ends.
             SizeTransition(
               sizeFactor: _expandAnimation,
@@ -397,7 +388,6 @@ class _ExpandItemWidgetState extends State<_ExpandItemWidget>
             ),
           ],
         ),
-      ),
-    );
+      ));
   }
 }

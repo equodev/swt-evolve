@@ -17,6 +17,7 @@ import '../theme/theme_settings/list_theme_settings.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
+import 'utils/test_anchors.dart';
 
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
@@ -108,7 +109,7 @@ class ListImpl<T extends ListSwt, V extends VList>
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;
     final height = hasConstraints ? state.bounds!.height.toDouble() : null;
 
-    return SwtControlScope(swt: state.swt, child: tagSemantics(trackPointer(_StyledList(
+    return SwtControlScope(swt: state.swt, child: tagSemantics(state, trackPointer(_StyledList(
       widgetTheme: widgetTheme,
       itemExtent: itemExtent,
       state: state,
@@ -194,7 +195,6 @@ class _StyledListState extends State<_StyledList> {
   /// The item a primary press landed on while its button is held: a drag selects from it.
   int? _dragOrigin;
 
-  final DoubleTapDetector _tapsWithoutPress = DoubleTapDetector();
 
   @override
   Widget build(BuildContext context) {
@@ -254,7 +254,6 @@ class _StyledListState extends State<_StyledList> {
                       onPress: () => _handleItemPress(index),
                       onRelease: () => _dragOrigin = null,
                       onDragOver: () => _handleDragOver(index),
-                      onTap: () => _handleItemTapWithoutPress(index),
                     );
                   },
                 ),
@@ -273,16 +272,6 @@ class _StyledListState extends State<_StyledList> {
       widget.onItemDoubleClick(true);
     } else {
       _handleItemTap(pressedIndex);
-    }
-  }
-
-  /// A tap through the semantics tree, which the web engine also makes of a pointer click on the
-  /// item: a second one on the same item inside the double-click window is a double click.
-  void _handleItemTapWithoutPress(int tappedIndex) {
-    if (_tapsWithoutPress.registerTap(key: tappedIndex) == 2) {
-      widget.onItemDoubleClick(false);
-    } else {
-      _handleItemTap(tappedIndex);
     }
   }
 
@@ -347,8 +336,6 @@ class _ListItem extends StatefulWidget {
   final VoidCallback onRelease;
   /// The pointer came onto the item with the primary button held.
   final VoidCallback onDragOver;
-  /// A tap with no press before it.
-  final VoidCallback onTap;
 
   const _ListItem({
     required this.widgetTheme,
@@ -361,7 +348,6 @@ class _ListItem extends StatefulWidget {
     required this.onPress,
     required this.onRelease,
     required this.onDragOver,
-    required this.onTap,
   });
 
   @override
@@ -370,9 +356,6 @@ class _ListItem extends StatefulWidget {
 
 class _ListItemState extends State<_ListItem> {
   bool _isHovered = false;
-  // Set while a pointer press is in flight: the press already answered the click, so the tap the
-  // same click completes does not answer it a second time.
-  bool _handledByPress = false;
 
   @override
   Widget build(BuildContext context) {
@@ -412,30 +395,11 @@ class _ListItemState extends State<_ListItem> {
       child: Listener(
         onPointerDown: (e) {
           if (e.buttons != kPrimaryButton) return;
-          _handledByPress = true;
           scheduleMicrotask(widget.onPress);
         },
-        // A press that never became a tap (dragged off the item, cancelled) reaches no tap
-        // callback; once the arena has settled on the release, the press is over either way.
-        onPointerUp: (_) {
-          widget.onRelease();
-          scheduleMicrotask(() => _handledByPress = false);
-        },
-        onPointerCancel: (_) {
-          widget.onRelease();
-          scheduleMicrotask(() => _handledByPress = false);
-        },
-        // A tap with no press before it -- an accessibility or test tap through the semantics
-        // tree -- still selects.
-        child: GestureDetector(
-          onTap: () {
-            if (_handledByPress) {
-              _handledByPress = false;
-            } else {
-              widget.onTap();
-            }
-          },
-          child: Stack(
+        onPointerUp: (_) => widget.onRelease(),
+        onPointerCancel: (_) => widget.onRelease(),
+        child: Stack(
             children: [
               Container(
                 height: widget.extent,
@@ -470,7 +434,6 @@ class _ListItemState extends State<_ListItem> {
                 ),
             ],
           ),
-        ),
       ),
     );
   }

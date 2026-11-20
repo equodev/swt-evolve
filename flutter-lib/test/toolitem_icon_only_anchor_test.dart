@@ -1,16 +1,8 @@
-// An on-screen icon-only ToolItem must keep its semantics identifier node.
-//
-// On Flutter Web an identifier-only semantics node with no accessible name of its own is absorbed
-// into its one unnamed child; the surviving leaf keeps the button role but loses the identifier, so
-// a control named only by its tooltip has no addressable node while on screen. tagSemantics marks
-// such a node explicitChildNodes, keeping it a container that retains its node and id the way a
-// ToolBar always did. This guards that structural invariant at the framework layer: the node is a
-// container, not a merged leaf (childrenCount was 0 before the fix). The DOM-attribute symptom
-// itself only reproduces in the real web engine, which flutter test does not model.
+// An icon-only ToolItem has no text to be found by: its identifier is the only way to reach it,
+// on screen and while its tooltip is up.
 
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -20,8 +12,9 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'package:swtflutter/src/impl/utils/test_anchors.dart';
 
-// A 1x1 PNG, so the item is genuinely icon-only (no text to name it).
+// A 1x1 PNG, so the item is genuinely icon-only.
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
   0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -33,20 +26,6 @@ const List<int> _pngBytes = <int>[
   0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
   0x42, 0x60, 0x82,
 ];
-
-SemanticsNode? _nodeWith(WidgetTester tester, String identifier) {
-  SemanticsNode? found;
-  void visit(SemanticsNode n) {
-    if (n.getSemanticsData().identifier == identifier) found = n;
-    n.visitChildren((c) {
-      visit(c);
-      return true;
-    });
-  }
-
-  visit(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
-  return found;
-}
 
 VToolBar _iconBar() => VToolBar()
   ..id = 200
@@ -88,22 +67,19 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('an icon-only ToolItem identifier node is a container, not a merged leaf',
-      (tester) async {
-    final handle = tester.ensureSemantics();
+  setUpAll(() => TestAnchors.enabled = true);
+  tearDownAll(() => TestAnchors.enabled = false);
+
+  testWidgets('an icon-only ToolItem is found by its identifier', (tester) async {
     await tester.pumpWidget(_host());
     await _settle(tester);
 
-    final node = _nodeWith(tester, 'ToolItem/201');
-    expect(node, isNotNull, reason: 'the icon-only item must carry a semantics node');
-    expect(node!.childrenCount, greaterThan(0),
-        reason: 'the identifier node must keep its child as a separate node (a container); a merged '
-            'leaf loses its flt-semantics-identifier on Flutter Web');
-    handle.dispose();
+    final item = TestAnchors.locate('ToolItem/201');
+    expect(item, isNotNull);
+    expect(item!['paints'], isTrue);
   });
 
-  testWidgets('the identifier node stays a container while the item is hovered', (tester) async {
-    final handle = tester.ensureSemantics();
+  testWidgets('an icon-only ToolItem is still found by its identifier while hovered', (tester) async {
     await tester.pumpWidget(_host());
     await _settle(tester);
 
@@ -113,10 +89,8 @@ void main() {
     await gesture.moveTo(tester.getCenter(find.byType(ToolBarSwt)));
     await _settle(tester);
 
-    final node = _nodeWith(tester, 'ToolItem/201');
-    expect(node, isNotNull, reason: 'still on screen while its tooltip is up');
-    expect(node!.childrenCount, greaterThan(0),
-        reason: 'hovering must not collapse the identifier node into a leaf');
-    handle.dispose();
+    final item = TestAnchors.locate('ToolItem/201');
+    expect(item, isNotNull, reason: 'still on screen while its tooltip is up');
+    expect(item!['paints'], isTrue);
   });
 }

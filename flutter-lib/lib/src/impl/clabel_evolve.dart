@@ -157,8 +157,7 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
       );
 
     return wrap(
-      exposeSemanticsTapAction(
-        Opacity(
+      Opacity(
           opacity: enabled ? 1.0 : widgetTheme.disabledOpacity,
           child: Container(
             constraints: constraints,
@@ -170,7 +169,6 @@ class CLabelImpl<T extends CLabelSwt, V extends VCLabel>
             child: child,
           ),
         ),
-      ),
     );
   }
 

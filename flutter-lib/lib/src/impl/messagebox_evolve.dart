@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../comm/comm.dart';
@@ -34,7 +35,7 @@ class _MessageBoxDialog extends StatelessWidget {
   final List<String?>? buttonLabels;
   final int dialogId;
 
-  /// The box's `flt-semantics-identifier`, keyed like a widget's `tagSemantics`.
+  /// What a test finds the box by, keyed like a widget's `{swt}/{id}`.
   final String semanticsIdentifier;
 
   const _MessageBoxDialog({
@@ -45,11 +46,6 @@ class _MessageBoxDialog extends StatelessWidget {
     required this.dialogId,
     required this.semanticsIdentifier,
   });
-
-  Widget _tagSemantics(Widget child) {
-    if (!WidgetsBinding.instance.semanticsEnabled) return child;
-    return Semantics(identifier: semanticsIdentifier, container: true, child: child);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +78,7 @@ class _MessageBoxDialog extends StatelessWidget {
         child: Dialog(
           backgroundColor: msgTheme.backgroundColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(msgTheme.borderRadius)),
-          child: _tagSemantics(ConstrainedBox(
+          child: tagSemantics(null, id: semanticsIdentifier, ConstrainedBox(
             constraints: BoxConstraints(minWidth: msgTheme.minWidth, maxWidth: msgTheme.maxWidth),
             child: Padding(
               padding: msgTheme.padding,
@@ -205,7 +201,8 @@ class _MessageBoxButtonState extends State<_MessageBoxButton> {
 
     final borderColor = widget.isPrimary ? theme.pushButtonBorderColor : theme.secondaryButtonBorderColor;
 
-    return MouseRegion(
+    // A target of its own for a test, found inside the box by the label it paints.
+    return tagSemantics(null, MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
       child: Material(
@@ -230,6 +227,6 @@ class _MessageBoxButtonState extends State<_MessageBoxButton> {
           ),
         ),
       ),
-    );
+    ), id: 'MessageBoxButton/${identityHashCode(this)}');
   }
 }

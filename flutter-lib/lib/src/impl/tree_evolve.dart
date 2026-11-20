@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'dart:async' show scheduleMicrotask;
 
 import 'package:flutter/foundation.dart' show listEquals;
@@ -36,6 +37,7 @@ import '../testing/tree_test_registry.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
 import 'utils/steady_scrollbar.dart';
+import 'utils/size_probe.dart';
 
 class _FlatTreeItem {
   final VTreeItem item;
@@ -106,10 +108,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _verticalController = ScrollController();
     _verticalController!.addListener(_reportScrollOffset);
     _verticalController!.addListener(_requestVisibleChildren);
-    // E2E test hook. Rows DO carry a per-row Semantics node: each is a TreeItemSwt whose build()
-    // ends in tagSemantics. But the node only exists while the row is built — the list virtualises,
-    // and a row can lose its node while the widget is live — so this registers a handle to read and
-    // expand the tree from the test harness. One-time; cheap.
+    // E2E test hook: a row is tagged only while it is built, and the list virtualises, so this
+    // registers a handle to read and expand the whole tree from the test harness.
     // Remember the key we register under. `state` is reassigned in didUpdateWidget (see
     // WidgetSwtState), so recomputing this string in dispose can produce a DIFFERENT key than the
     // one registered here — the unregister then removes nothing and this handle stays in the
@@ -1099,9 +1099,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     Widget headerContent = Stack(
       children: [
-        Semantics(
-          identifier: 'sizeprobe:header',
-          child: Container(
+        SizeProbe.wrap('header', Container(
             height: headerHeight,
             color: headerBgColor,
             child: TreeLinesVisibleProvider(
@@ -1147,8 +1145,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                 ),
               ),
             ),
-          ),
-        ),
+          )),
         if (showHeaderBorder)
           Positioned(
             left: 0,

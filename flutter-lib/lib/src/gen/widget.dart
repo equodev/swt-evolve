@@ -290,65 +290,6 @@ abstract class WidgetSwtState<T extends WidgetSwt, V extends VWidget>
 
   /// An impl's chance to react to the state it is about to render.
   void extraSetState() {}
-
-  /// Stable id for E2E tooling. Flutter Web exposes this as
-  /// `flt-semantics-identifier`, keyed by the same swt/id pair as the comm channel.
-  ///
-  /// Tooltip and enabled state are additive when semantics are active. We deliberately
-  /// do not set `label` here; see `_taggedSemantics`.
-  ///
-  /// [button] makes the node a button whatever its children. The web engine otherwise
-  /// derives a tappable node's role from whether it has child nodes, and a role change
-  /// rebuilds the node's element without its `flt-semantics-identifier`.
-  Widget tagSemantics(Widget child, {bool button = false}) =>
-      _taggedSemantics(state, child, button: button);
-
-  /// Same as [tagSemantics] but for an SWT Item (TableItem, MenuItem, etc.) rendered
-  /// inline by its parent's build() rather than via its own State — `item` is that
-  /// item's own VWidget (its swt/id), not this state's.
-  Widget tagItemSemantics(VWidget item, Widget child) =>
-      _taggedSemantics(item, child, button: false);
-
-  static const _valueTextSwt = {
-    'Text',
-    'Combo',
-    'CCombo',
-    'StyledText',
-    'Browser',
-  };
-
-  Widget _taggedSemantics(VWidget node, Widget child, {required bool button}) {
-    final identifier = '${node.swt}/${node.id}';
-    // No semantics tree is being built, so the identifier would never surface in the
-    // DOM anyway — skip the Semantics wrapper entirely and keep rendering cheap.
-    if (!WidgetsBinding.instance.semanticsEnabled) return child;
-    final tooltip = node.semanticsTooltip;
-    final text = node.semanticsText;
-    final namedByOwnText =
-        !_valueTextSwt.contains(node.swt) &&
-        text != null &&
-        text.trim().isNotEmpty;
-    // Do not set a label from the widget's text: the child already contributes that
-    // text to semantics, and Flutter Web would expose duplicated DOM text.
-    return Semantics(
-      identifier: identifier,
-      // A tooltip-only-named node has no accessible name, so Flutter Web collapses it
-      // into its unnamed child leaf and drops the flt-semantics-identifier; keep it an
-      // explicit container instead. Nodes named by their own text, or by a child's
-      // merged label (a GC-drawn Canvas), rely on that merge and are left alone.
-      explicitChildNodes:
-          !namedByOwnText && tooltip != null && tooltip.isNotEmpty,
-      tooltip: namedByOwnText || tooltip == null || tooltip.isEmpty
-          ? null
-          : tooltip,
-      hint: namedByOwnText && tooltip != null && tooltip.isNotEmpty
-          ? tooltip
-          : null,
-      enabled: node.semanticsEnabled,
-      button: button ? true : null,
-      child: child,
-    );
-  }
 }
 
 class VWidget implements WireReadable, WireWritable, WireVisitable {
@@ -424,12 +365,6 @@ class VWidget implements WireReadable, WireWritable, WireVisitable {
     }
   }
 
-  /// The tooltip the semantics tree announces; see `WidgetSwtState.tagSemantics`.
-  String? get semanticsTooltip => null;
-
-  /// Whether the semantics tree announces this widget as enabled, when it says.
-  bool? get semanticsEnabled => null;
-
-  /// The caption the widget draws, which names it in the semantics tree before its tooltip.
+  /// The caption the widget draws: its text, for a test that finds it by what it says.
   String? get semanticsText => null;
 }

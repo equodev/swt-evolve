@@ -18,6 +18,7 @@ import 'src/comm/comm.dart';
 import 'src/comm/v_registry.dart';
 import 'src/comm/widget_key.dart' show WidgetKey;
 import 'src/impl/utils/bundled_assets.dart';
+import 'src/impl/utils/size_probe.dart';
 
 const SCREENSHOT = false;
 
@@ -70,14 +71,8 @@ class MeasurementResult {
 Map<String, Size> _findNamedSizes(RenderBox renderBox) {
   final result = <String, Size>{};
   void visit(RenderBox box) {
-    if (box is RenderSemanticsAnnotations) {
-      final identifier = box.properties.identifier;
-      if (identifier != null &&
-          identifier.startsWith('sizeprobe:') &&
-          box.hasSize) {
-        result[identifier.substring('sizeprobe:'.length)] = box.size;
-      }
-    }
+    final probe = box is RenderMetaData ? box.metaData : null;
+    if (probe is SizeProbe && box.hasSize) result[probe.name] = box.size;
     box.visitChildren((child) {
       if (child is RenderBox) visit(child);
     });

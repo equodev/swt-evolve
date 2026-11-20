@@ -65,10 +65,9 @@ void main() {
   testWidgets('mac green button enters and exits full screen, never zooms', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
     await pump(tester, 'mac');
 
-    await tester.tap(find.bySemanticsLabel('Enter Full Screen'));
+    await tester.tap(find.byKey(const ValueKey('Enter Full Screen')));
     await tester.pump(const Duration(milliseconds: 1));
 
     expect(sentChannels(), contains('Display/$windowId/WinFullScreen'));
@@ -76,13 +75,12 @@ void main() {
     expect(csdMaximized.value, isTrue);
 
     EquoCommService.commForTesting.clearSentFrames();
-    await tester.tap(find.bySemanticsLabel('Exit Full Screen'));
+    await tester.tap(find.byKey(const ValueKey('Exit Full Screen')));
     await tester.pump(const Duration(milliseconds: 1));
 
     expect(sentChannels(), contains('Display/$windowId/WinExitFullScreen'));
     expect(windowCalls, isNot(contains('restore')));
     expect(csdMaximized.value, isFalse);
-    semantics.dispose();
   });
 
   testWidgets('title-bar toggle while in full screen exits full screen', (
@@ -146,27 +144,25 @@ void main() {
   testWidgets('the green button shows the full-screen state Java reports', (
     tester,
   ) async {
-    final semantics = tester.ensureSemantics();
     csdListenFullScreenState(windowId);
     await pump(tester, 'mac');
-    expect(find.bySemanticsLabel('Enter Full Screen'), findsOneWidget);
+    expect(find.byKey(const ValueKey('Enter Full Screen')), findsOneWidget);
 
     _deliver('Display/$windowId/WinFullScreenState', {'fullScreen': true});
     await tester.pumpAndSettle();
     expect(csdMaximized.value, isTrue);
-    expect(find.bySemanticsLabel('Exit Full Screen'), findsOneWidget);
+    expect(find.byKey(const ValueKey('Exit Full Screen')), findsOneWidget);
 
     // Leaving full screen from the green button now asks Java to leave it.
     EquoCommService.commForTesting.clearSentFrames();
-    await tester.tap(find.bySemanticsLabel('Exit Full Screen'));
+    await tester.tap(find.byKey(const ValueKey('Exit Full Screen')));
     await tester.pump(const Duration(milliseconds: 1));
     expect(sentChannels(), contains('Display/$windowId/WinExitFullScreen'));
 
     _deliver('Display/$windowId/WinFullScreenState', {'fullScreen': false});
     await tester.pumpAndSettle();
     expect(csdMaximized.value, isFalse);
-    expect(find.bySemanticsLabel('Enter Full Screen'), findsOneWidget);
+    expect(find.byKey(const ValueKey('Enter Full Screen')), findsOneWidget);
     EquoCommService.remove(WireType.display, windowId, WireChannel.winFullScreenState);
-    semantics.dispose();
   });
 }

@@ -178,10 +178,4 @@ class VToolItem extends VItem {
     super.adoptChildren(adopt);
     control = VWidget.adoptOne(control, adopt);
   }
-
-  @override
-  String? get semanticsTooltip => toolTipText;
-
-  @override
-  bool? get semanticsEnabled => enabled;
 }

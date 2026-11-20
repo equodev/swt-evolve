@@ -34,12 +34,35 @@ void registerTestQueryJsApi({
   required String Function() queryPrimaryFocus,
   required void Function(void Function()) scheduleFrameSync,
   required void Function(void Function()) afterNextChange,
+  required String Function(List<String>) locateJson,
+  required String Function(List<String>, String?, bool) nodesJson,
+  required String Function(String, bool, String) textsJson,
+  required bool Function(String) reveal,
 }) {
   // Kept when it exists: an app built on this one may have added its own entries first.
   final api = globalContext.getProperty<JSObject?>('evolveTest'.toJS) ?? JSObject();
   api.setProperty(
     'queryState'.toJS,
     ((JSNumber targetId) => queryStateJson(targetId.toDartInt)?.toJS).toJS,
+  );
+  api.setProperty(
+    'locate'.toJS,
+    ((JSArray<JSString> identifiers) =>
+        locateJson([for (final id in identifiers.toDart) id.toDart]).toJS).toJS,
+  );
+  api.setProperty(
+    'nodes'.toJS,
+    ((JSArray<JSString> prefixes, JSString? within, JSBoolean? paintedText) => nodesJson(
+            [for (final p in prefixes.toDart) p.toDart], within?.toDart, paintedText?.toDart ?? false).toJS).toJS,
+  );
+  api.setProperty(
+    'reveal'.toJS,
+    ((JSString identifier) => reveal(identifier.toDart).toJS).toJS,
+  );
+  api.setProperty(
+    'texts'.toJS,
+    ((JSString text, JSBoolean exact, JSString within) =>
+        textsJson(text.toDart, exact.toDart, within.toDart).toJS).toJS,
   );
   api.setProperty(
     'renderFacts'.toJS,

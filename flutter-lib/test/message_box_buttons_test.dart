@@ -22,6 +22,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/messagebox_evolve.dart';
 import 'package:swtflutter/src/impl/messagebox_layout.dart';
+import 'package:swtflutter/src/impl/utils/test_anchors.dart';
 
 /// What the Java side sends, in the order OK, Cancel, Yes, No, Abort, Retry, Ignore.
 const List<String?> _swtLabels = ['OK', 'Cancel', 'Yes', 'No', 'Abort', 'Retry', 'Ignore'];
@@ -145,16 +146,15 @@ void main() {
     expect(find.text('Message'), findsOneWidget);
   }, variant: TargetPlatformVariant.desktop());
 
-  testWidgets('the box is in the semantics tree as MessageBox/<id>, with its title and message',
-      (WidgetTester tester) async {
-    final semantics = tester.ensureSemantics();
+  testWidgets('the box is found as MessageBox/<id>, and shows its title and message', (WidgetTester tester) async {
+    TestAnchors.enabled = true;
+    addTearDown(() => TestAnchors.enabled = false);
     await _showBox(tester, SWT.YES | SWT.NO);
-    final box = find.bySemanticsIdentifier('MessageBox/4242');
-    expect(box, findsOneWidget);
-    final label = tester.getSemantics(box).label;
-    expect(label, contains('Title'));
-    expect(label, contains('Message'));
-    semantics.dispose();
+
+    expect(TestAnchors.locate('MessageBox/4242'), isNotNull);
+    final box = TestAnchors.nodes(['MessageBox/'], paintedText: true).singleWhere((n) => n['id'] == 'MessageBox/4242');
+    expect(box['text'], contains('Title'));
+    expect(box['text'], contains('Message'));
   });
 }
 

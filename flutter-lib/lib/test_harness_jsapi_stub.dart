@@ -16,4 +16,8 @@ void registerTestQueryJsApi({
   required String Function() queryPrimaryFocus,
   required void Function(void Function()) scheduleFrameSync,
   required void Function(void Function()) afterNextChange,
+  required String Function(List<String>) locateJson,
+  required String Function(List<String>, String?, bool) nodesJson,
+  required String Function(String, bool, String) textsJson,
+  required bool Function(String) reveal,
 }) {}

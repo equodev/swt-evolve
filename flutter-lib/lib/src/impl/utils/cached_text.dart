@@ -1,3 +1,4 @@
+import 'test_anchors.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/rendering.dart';
@@ -140,7 +141,7 @@ class CachedIcon extends Icon {
 
     final icon = this.icon;
     if (icon == null) {
-      return Semantics(label: semanticLabel, child: SizedBox(width: iconSize, height: iconSize));
+      return SizedBox(width: iconSize, height: iconSize);
     }
 
     final iconOpacity = iconTheme.opacity ?? 1.0;
@@ -201,12 +202,7 @@ class CachedIcon extends Icon {
       );
     }
 
-    return Semantics(
-      label: semanticLabel,
-      child: ExcludeSemantics(
-        child: SizedBox(width: iconSize, height: iconSize, child: Center(child: iconWidget)),
-      ),
-    );
+    return SizedBox(width: iconSize, height: iconSize, child: Center(child: iconWidget));
   }
 }
 
@@ -312,7 +308,10 @@ class _SharedPainter {
 /// Lays out and paints like a [RenderParagraph] of one [TextSpan], keeping a laid-out painter per
 /// style for the last two styles. Public for the tests and for tool/measure.dart, which reads the
 /// labels it draws.
-class RenderCachedText extends RenderBox {
+class RenderCachedText extends RenderBox implements PaintedTextSource {
+  @override
+  String? get paintedText => text;
+
   RenderCachedText(this._setup, this._style);
 
   static const _kept = 2;
@@ -324,7 +323,6 @@ class RenderCachedText extends RenderBox {
     _setup = value;
     _forget();
     markNeedsLayout();
-    markNeedsSemanticsUpdate();
   }
 
   TextStyle _style;
@@ -577,15 +575,6 @@ class RenderCachedText extends RenderBox {
 
   @override
   bool hitTestSelf(Offset position) => true;
-
-  /// As a [RenderParagraph] of one plain span describes itself: its label joins the node it sits in.
-  @override
-  void describeSemanticsConfiguration(SemanticsConfiguration config) {
-    super.describeSemanticsConfiguration(config);
-    config
-      ..label = _setup.text
-      ..textDirection = _setup.textDirection;
-  }
 
   @override
   void dispose() {

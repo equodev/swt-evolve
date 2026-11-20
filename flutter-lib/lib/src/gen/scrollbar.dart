@@ -149,7 +149,4 @@ class VScrollBar extends VWidget {
     visit(4421, thumb);
     visit(4422, visible);
   }
-
-  @override
-  bool? get semanticsEnabled => enabled;
 }

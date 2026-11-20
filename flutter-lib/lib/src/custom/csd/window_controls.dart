@@ -128,12 +128,9 @@ class _MacTrafficLightsState extends State<MacTrafficLights> {
     String label, {
     required bool showGlyph,
   }) {
-    // No visual tooltip (macOS doesn't show one), but keep a Semantics label so the controls
-    // stay accessible to screen readers.
-    return Semantics(
-      label: label,
-      button: true,
-      child: _HoverScale(
+    // No visual tooltip: macOS doesn't show one. The label keys the light.
+    return _HoverScale(
+        key: ValueKey(label),
         onTap: onTap,
         child: Container(
           width: _diameter,
@@ -154,8 +151,7 @@ class _MacTrafficLightsState extends State<MacTrafficLights> {
                 )
               : null,
         ),
-      ),
-    );
+      );
   }
 
   @override
@@ -471,7 +467,7 @@ class _GnomeButtonState extends State<_GnomeButton> {
 class _HoverScale extends StatelessWidget {
   final Widget child;
   final VoidCallback onTap;
-  const _HoverScale({required this.child, required this.onTap});
+  const _HoverScale({super.key, required this.child, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

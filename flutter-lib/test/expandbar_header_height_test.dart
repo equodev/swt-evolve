@@ -15,6 +15,7 @@ import 'package:swtflutter/src/gen/expanditem.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'package:swtflutter/src/impl/utils/test_anchors.dart';
 
 const _band = 24;
 const _spacing = 4;
@@ -111,15 +112,16 @@ Rect _header(WidgetTester tester, String title) => tester.getRect(
 );
 
 /// The rectangle of the whole item.
-Rect _itemRect(WidgetTester tester, int id) => tester.getRect(
-  find
-      .byWidgetPredicate(
-        (w) => w is Semantics && w.properties.identifier == 'ExpandItem/$id',
-      )
-      .last,
-);
+Rect _itemRect(WidgetTester tester, int id) {
+  final at = TestAnchors.locate('ExpandItem/$id', hit: false)!;
+  return Rect.fromLTWH(at['x'] as double, at['y'] as double, at['width'] as double, at['height'] as double);
+}
 
 void main() {
+  // Widgets are located as a test driver finds them, through the anchor registry.
+  setUpAll(() => TestAnchors.enabled = true);
+  tearDownAll(() => TestAnchors.enabled = false);
+
   testWidgets('a header is as tall as the band Java measured', (tester) async {
     await _pump(
       tester,

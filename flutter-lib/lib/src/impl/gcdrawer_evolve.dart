@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -2166,7 +2167,31 @@ class _PlaceholderShape extends Shape {
 // ScenePainter
 // ─────────────────────────────────────────────
 
-class ScenePainter extends CustomPainter {
+/// The text drawn by [shapes] (drawString/drawText), in drawing order: what a test reads from a
+/// canvas.
+String? paintedTextOf(List<Shape> shapes) {
+  final parts = <String>[];
+  void collect(List<Shape> from) {
+    for (final shape in from) {
+      if (shape is TextShape) {
+        final text = shape.text.trim();
+        if (text.isNotEmpty) parts.add(text);
+      } else if (shape is RegionShape) {
+        collect(shape.ops);
+      } else if (shape is ClipPathShape) {
+        collect(shape.children);
+      }
+    }
+  }
+
+  collect(shapes);
+  return parts.isEmpty ? null : parts.join(' ');
+}
+
+class ScenePainter extends CustomPainter implements PaintedTextSource {
+  @override
+  String? get paintedText => paintedTextOf(shapes);
+
   // Repaints on a font change too: the text shapes lay out again in a font that loaded after them.
   ScenePainter(this.bg, this.shapes, {this.originY = 0}) : super(repaint: FontUtils.systemFonts);
   final Color bg;

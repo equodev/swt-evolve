@@ -125,7 +125,4 @@ class VTreeColumn extends VItem {
     visit(6020, toolTipText);
     visit(6019, width);
   }
-
-  @override
-  String? get semanticsTooltip => toolTipText;
 }

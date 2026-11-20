@@ -191,26 +191,6 @@ void main() {
     expect(RenderCachedText.sharedPainters, shared);
   });
 
-  testWidgets('a cached label lends its text to the node it sits in, as Text does', (tester) async {
-    final semantics = tester.ensureSemantics();
-    Widget node(String id, Widget label) => Semantics(
-          identifier: id,
-          container: true,
-          child: Row(children: [const SizedBox(width: 4), label]),
-        );
-    await tester.pumpWidget(MaterialApp(
-      home: Column(children: [
-        node('text', const Text('Apply', style: enabled)),
-        node('cached', const ColorCachedText('Apply', style: enabled)),
-      ]),
-    ));
-    SemanticsNode of(String id) => tester.getSemantics(find.bySemanticsIdentifier(id));
-    expect(of('cached').label, 'Apply');
-    expect(of('cached').label, of('text').label);
-    expect(find.bySemanticsLabel('Apply'), findsNWidgets(2));
-    semantics.dispose();
-  });
-
   final iconCases = <String, (IconData, double, Color?, TextDirection, IconThemeData)>{
     'tick': (Icons.check, 14, const Color(0xFFFFFFFF), TextDirection.ltr, const IconThemeData()),
     'themed colour': (Icons.check, 18, null, TextDirection.ltr, const IconThemeData(color: Colors.teal)),

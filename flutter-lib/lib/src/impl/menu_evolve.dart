@@ -27,6 +27,7 @@ import 'utils/mnemonic_text.dart';
 import 'utils/text_utils.dart';
 import 'utils/pointer.dart';
 import 'utils/quiet_animations.dart';
+import 'utils/test_anchors.dart';
 
 class MenuState {
   final Map<VMenuItem, void Function(bool)> radioItemCallbacks = {};
@@ -44,16 +45,6 @@ class MenuState {
   }
 }
 
-/// Tracks whichever standalone popup Menu (POP_UP or DROP_DOWN style, built by
-/// [MenuImpl._buildPopupMenu]) is currently open, so a control that re-triggers its own "show"
-/// action can close it directly instead of asking Java to show it again.
-///
-/// Needed because [MenuAnchor.consumeOutsideTap] dismissal is built on [TapRegion], which only
-/// sees real pointer routing. Under forced accessibility (every E2E run), a tap on a
-/// semantics-tagged control -- including the arrow that opened this same popup -- is delivered as
-/// a [SemanticsAction] and never reaches [TapRegion] at all, so the popup never sees that tap as
-/// "outside" and never closes on its own; the arrow's own handler asks Java to show it again,
-/// which is a no-op because it is already visible.
 /// Opens a menu on Java's `shown`. The ack arrives between frames, where the menu can open at once and
 /// show in the next frame; put off until after a frame, it showed in the one after that. Arriving
 /// during one, it opens after it.
@@ -66,19 +57,6 @@ void _openWhenShown(VoidCallback open) {
   WidgetsBinding.instance.addPostFrameCallback((_) => open());
   // Nothing else may have scheduled the frame this callback needs.
   WidgetsBinding.instance.ensureVisualUpdate();
-}
-
-class OpenPopupMenuTracker {
-  static MenuImpl? _current;
-
-  /// Closes the currently tracked popup, if one is open. Returns whether it did.
-  static bool closeIfOpen() {
-    final current = _current;
-    if (current == null || !current.mounted) return false;
-    if (!current._menuController.isOpen) return false;
-    current._menuController.close();
-    return true;
-  }
 }
 
 /// Follows the items of a cascade's menu, which no widget of its own renders. A cascade asks for
@@ -371,9 +349,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
 
   @override
   void dispose() {
-    if (identical(OpenPopupMenuTracker._current, this)) {
-      OpenPopupMenuTracker._current = null;
-    }
     OpenMenus.remove(_menuController);
     OpenMenus.endOpening(this);
     OpenMenus._activeBars.remove(this);
@@ -536,7 +511,7 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       ),
     );
 
-    return tagSemantics(menuBar);
+    return tagSemantics(state, menuBar);
   }
 
   _MenuBarItemState? _title(int index) {
@@ -709,11 +684,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       });
     }
 
-    // The popup ANCHOR itself is deliberately untagged: its semantics node serves no locator
-    // (items carry their own MenuItem/ identifiers; state queries don't need the DOM), and the
-    // engine reuses a stale full-overlay rect for it across open/close cycles — the node then
-    // intercepts pointer events over the page (after a close) or over the menu's own items
-    // (after a reopen). No node, no stale rect.
     return MenuAnchor(
       controller: _menuController,
       style: MenuStyle(
@@ -730,15 +700,11 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
       alignmentOffset: Offset.zero,
       consumeOutsideTap: true,
       onOpen: () {
-        OpenPopupMenuTracker._current = this;
         if (_showSent) return;
         _showSent = true;
         widget.sendMenuShow(state, null);
       },
       onClose: () {
-        if (identical(OpenPopupMenuTracker._current, this)) {
-          OpenPopupMenuTracker._current = null;
-        }
         _openedFromVisibleFlag = false;
         _pendingContextMenuPosition = null;
         _pendingOpenFromVisibleFlag = false;
@@ -766,9 +732,6 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
           hasPendingChange: _hasPendingChange,
           menuState: _menuState,
           closeMenu: _menuController.close,
-          // No extra Semantics wrapper: with the anchor untagged, each item's own tagSemantics
-          // materializes on its own (a tagged anchor merges them away; an added wrapper here
-          // duplicates every item node instead).
           child: MenuMnemonics(
             focusNode: _itemsFocusNode,
             close: _menuController.close,

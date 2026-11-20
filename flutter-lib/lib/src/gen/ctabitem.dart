@@ -154,7 +154,4 @@ class VCTabItem extends VItem {
     super.adoptChildren(adopt);
     control = VWidget.adoptOne(control, adopt);
   }
-
-  @override
-  String? get semanticsTooltip => toolTipText;
 }

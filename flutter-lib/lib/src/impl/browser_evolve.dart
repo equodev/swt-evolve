@@ -24,6 +24,7 @@ import 'browser_frame_params_stub.dart'
 import 'key_mapping.dart';
 import 'utils/held_size.dart';
 import 'utils/layered_layout_builder.dart';
+import 'utils/test_anchors.dart';
 
 /// Browser implementation backed by the `webview_all` plugin (the federated
 /// `webview_flutter` API), which provides a real embedded webview on every
@@ -806,7 +807,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     // reloaded, when the Browser is shown again.
     return Offstage(
       offstage: hidden,
-      child: inOwnLayer(tagSemantics(ValueListenableBuilder<double>(
+      child: inOwnLayer(tagSemantics(state, ValueListenableBuilder<double>(
         valueListenable: appScaleNotifier,
         builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
       ))),

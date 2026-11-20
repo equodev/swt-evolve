@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'dart:convert';
 import 'dart:typed_data' show Uint8List;
 import 'package:flutter/material.dart';
@@ -20,7 +21,6 @@ import '../custom/toast.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import 'toolbar_evolve.dart';
-import 'menu_evolve.dart' show OpenPopupMenuTracker;
 import 'utils/enter_to_the_shell.dart';
 import 'utils/layered_layout_builder.dart';
 import 'dart:ui';
@@ -285,9 +285,6 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       ) ??
       Tooltip(
         message: stripAccelerators(message),
-        // tagSemantics already places the tooltip in the semantics tree, as the name or
-        // the description; letting Tooltip add it too puts it back into the name.
-        excludeFromSemantics: true,
         preferBelow: widgetTheme.tooltipPreferBelow,
         verticalOffset: widgetTheme.tooltipVerticalOffset,
         margin: widgetTheme.tooltipMargin,
@@ -357,7 +354,8 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
       }
 
       if (isDropdown) {
-      Widget mainContentButton = Material(
+      // A drop-down item's two halves, each a target of its own for a test.
+      Widget mainContentButton = tagSemantics(state, Material(
         color: Colors.transparent,
         child: InkWell(
           focusNode: _buttonFocus,
@@ -380,23 +378,16 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
           borderRadius: BorderRadius.circular(widgetTheme.borderRadius),
           child: adaptChild(child),
         ),
-      );
+      ), id: 'ToolItemButton/${state.id}');
 
-      Widget dropdownArrow = Material(
+      Widget dropdownArrow = tagSemantics(state, Material(
         color: Colors.transparent,
         child: InkWell(
           focusNode: _arrowFocus,
           onTap: enabled
               ? () {
                   setState(() => _isHovered = false);
-                  // The pointer-based dismiss (MenuAnchor.consumeOutsideTap) only sees real
-                  // pointer routing. Under forced accessibility this same arrow's second tap is
-                  // delivered as a SemanticsAction, which bypasses that entirely and reaches here
-                  // instead of being consumed as an outside tap -- close directly rather than
-                  // asking Java to show an already-visible menu again, which is a no-op.
-                  if (!OpenPopupMenuTracker.closeIfOpen()) {
-                    openMenu();
-                  }
+                  openMenu();
                 }
               : null,
           splashColor: widgetTheme.hoverColor.withOpacity(
@@ -417,7 +408,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
             ),
           ),
         ),
-      );
+      ), id: 'ToolItemArrow/${state.id}');
 
       Widget separator = Container(
         width: widgetTheme.separatorBarWidth,
@@ -548,7 +539,7 @@ class ToolItemImpl<T extends ToolItemSwt, V extends VToolItem>
     final effectiveDefaultIconSize =
         constraints != null ? _calculateIconSize(constraints, iconSize) : iconSize;
 
-    return tagSemantics(leaveEnterToTheShell(Container(
+    return tagSemantics(state, leaveEnterToTheShell(Container(
       constraints: constraints,
       child: switch (state.style & bits) {
         SWT.CHECK => () {

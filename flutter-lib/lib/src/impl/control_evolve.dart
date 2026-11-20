@@ -5,8 +5,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderOpacity, RenderProxyBox;
-import 'package:flutter/semantics.dart' show SemanticsBinding;
+import 'package:flutter/rendering.dart' show RenderOpacity;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../comm/v_registry.dart';
@@ -43,6 +42,7 @@ import 'utils/kept_rebuild.dart';
 import 'utils/wheel_input.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
+import 'utils/test_anchors.dart';
 
 abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     extends WidgetSwtState<T, V> implements HeldMove {
@@ -106,25 +106,13 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     }
   }
 
-  /// The mounted controls, which build again when semantics are turned on or off: what a control
-  /// builds and tags depends on whether they are on.
+  /// The mounted controls.
   static final Set<ControlImpl> _mounted = {};
-  static bool _watchingSemantics = false;
-
-  static void _semanticsToggled() {
-    for (final control in _mounted) {
-      if (control.mounted) control.setState(() {});
-    }
-  }
 
   @override
   void initState() {
     super.initState();
     _mounted.add(this);
-    if (!_watchingSemantics) {
-      SemanticsBinding.instance.addSemanticsEnabledListener(_semanticsToggled);
-      _watchingSemantics = true;
-    }
     _resolveSentinelBounds(state);
     HoverExclusivityArbiter.instance.register(this, (hovering) {
       final global = HoverExclusivityArbiter.instance.pointerPosition;
@@ -1035,7 +1023,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       enabled: effective,
       child: Focus(
         focusNode: node,
-        includeSemantics: onKeyEvent != null,
         child: IgnorePointer(ignoring: !effective, child: child),
       ),
     );
@@ -1138,7 +1125,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     final mouseCursor = mouseCursorOf(state.cursor);
     final forwardKeys = forwardsKeysFromWrap && !displayLevelKeyForwardingActive;
     final menu = state.menu;
-    final semantics = WidgetsBinding.instance.semanticsEnabled;
     final disabled = state.enabled == false;
     final effective = enabledEffective;
     final innerKey = (
@@ -1150,9 +1136,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       paintsGCOverlay,
       gcMounted,
       state.id,
-      semantics,
-      semantics ? state.semanticsTooltip : null,
-      semantics ? state.semanticsEnabled : null,
       forwardKeys,
       opacity,
     );
@@ -1183,7 +1166,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
                 blockWhenDisabled(
                     _FadeOpacity(
                         opacity: (disabled ? AppOpacities.disabled : 1) * opacity,
-                        child: semantics ? _SemanticsGeneration(generation: effective, child: inner) : inner),
+                        child: inner),
                     effective: effective,
                     onKeyEvent: forwardKeys ? _forwardKey : null)),
           ),
@@ -1212,7 +1195,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     // Wrap with GC overlay if needed
     widget = wrapWithGCOverlay(widget);
     // Tagged outside the GC overlay: the text the GC draws is the node's name only as a descendant.
-    widget = tagSemantics(widget);
+    widget = tagSemantics(state, widget);
 
     // [forwardKeys] is off when a whole-tree Display forwards keys from a single top-level handler
     // (see [displayLevelKeyForwardingActive]) — otherwise the same key would reach Java twice. Still
@@ -1462,10 +1445,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       // joined the gesture arena and its menu could not open. Translucent keeps the hit passing
       // through to whatever is behind, so a nested control still wins the arena over its parent.
       behavior: HitTestBehavior.translucent,
-      // The tap callbacks below are pointer plumbing for the menu. Left in the semantics tree they
-      // give the control a tap action, and the web engine then answers every click on it with a
-      // position-less semantic tap, so the control never sees its MouseDown/MouseUp.
-      excludeFromSemantics: true,
       onSecondaryTapUp: (details) => openMenuAt(details.localPosition),
       onTapUp: (details) {
         // macOS treats Ctrl+Click as a secondary click.
@@ -1496,38 +1475,6 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   ({int key, Widget widget})? _contextMenu;
 }
 
-
-/// Gives the semantics nodes of [child] new ids whenever [generation] changes, without remounting it.
-///
-/// Enablement decides whether a control's node is tappable, and with that its role on the web, where
-/// the engine builds a new element for a node whose role changes without the identifier the node
-/// already had. A new node is created with it.
-class _SemanticsGeneration extends SingleChildRenderObjectWidget {
-  const _SemanticsGeneration({required this.generation, required super.child});
-
-  final Object generation;
-
-  @override
-  _RenderSemanticsGeneration createRenderObject(BuildContext context) => _RenderSemanticsGeneration(generation);
-
-  @override
-  void updateRenderObject(BuildContext context, _RenderSemanticsGeneration renderObject) =>
-      renderObject.generation = generation;
-}
-
-class _RenderSemanticsGeneration extends RenderProxyBox {
-  _RenderSemanticsGeneration(this._generation);
-
-  Object _generation;
-
-  set generation(Object value) {
-    if (value == _generation) return;
-    _generation = value;
-    if (!attached) return;
-    clearSemantics();
-    markNeedsSemanticsUpdate();
-  }
-}
 
 /// Places a tooltip the way the platform does: top-left corner just below and right of the
 /// pointer, pulled back inside the window rather than clipped, and flipped above the pointer when

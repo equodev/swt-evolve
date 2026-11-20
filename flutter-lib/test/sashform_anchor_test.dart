@@ -1,7 +1,6 @@
-// A SashForm with children carries its own semantics identifier, so a test can read its weights.
+// A SashForm with children is tagged itself, so a test can read its weights.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -10,6 +9,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/sash.dart';
 import 'package:swtflutter/src/gen/sashform.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/utils/test_anchors.dart';
 
 VRectangle _rect(int x, int y, int w, int h) => VRectangle()
   ..x = x
@@ -47,25 +47,11 @@ VSashForm _sashForm() => VSashForm()
     _label(2, 205),
   ];
 
-List<String> _identifiers(SemanticsNode node) {
-  final ids = <String>[];
-  void visit(SemanticsNode n) {
-    final id = n.getSemanticsData().identifier;
-    if (id.isNotEmpty) ids.add(id);
-    n.visitChildren((child) {
-      visit(child);
-      return true;
-    });
-  }
-
-  visit(node);
-  return ids;
-}
-
 void main() {
-  testWidgets('a SashForm with panes and a sash is tagged once, around its children',
-      (tester) async {
-    final handle = tester.ensureSemantics();
+  setUpAll(() => TestAnchors.enabled = true);
+  tearDownAll(() => TestAnchors.enabled = false);
+
+  testWidgets('a SashForm with panes and a sash is tagged once, around its children', (tester) async {
     await tester.pumpWidget(EvolveApp(
       theme: ThemeMode.light,
       contentWidget: Align(
@@ -79,9 +65,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final ids = _identifiers(tester.binding.pipelineOwner.semanticsOwner!.rootSemanticsNode!);
-    expect(ids.where((id) => id == 'SashForm/42'), hasLength(1));
-    expect(ids, containsAll(['Label/1', 'Sash/3', 'Label/2']));
-    handle.dispose();
+    expect(TestAnchors.nodes(['SashForm/']).where((n) => n['id'] == 'SashForm/42'), hasLength(1));
+    final inside = TestAnchors.nodes([], within: 'SashForm/42').map((n) => n['id']);
+    expect(inside, containsAll(['Label/1', 'Sash/3', 'Label/2']));
   });
 }

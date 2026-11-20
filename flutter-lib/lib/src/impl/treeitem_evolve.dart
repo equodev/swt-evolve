@@ -1,8 +1,9 @@
+import 'utils/test_anchors.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'dart:async';
 
-import 'package:flutter/gestures.dart' show PointerDeviceKind, kPrimaryButton, kTouchSlop;
+import 'package:flutter/gestures.dart' show kPrimaryButton, kTouchSlop;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:swtflutter/src/impl/tree_evolve.dart';
@@ -39,8 +40,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   Offset? _lastTapGlobalPosition;
   int? _secondaryPressPointer;
   Offset? _secondaryPressAt;
-  /// Whether the tap under way came through the semantics tree, with no pointer press before it.
-  bool _semanticsTap = false;
 
   /// Whether the press under way landed on the row's check box.
   bool _pressOnCheckbox = false;
@@ -284,7 +283,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     // A row gains a child node (the expander) when its children arrive; as a button its role, and
     // so its identifier, survive that.
-    return tagSemantics(buildTreeItemContent(context), button: true);
+    return tagSemantics(state, buildTreeItemContent(context));
   }
 
   /// Whether the row's owner-draw overlay draws [column] of what [painted] names: it does once it
@@ -880,19 +879,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         color: arrowColor,
       ),
     );
-    if (!WidgetsBinding.instance.semanticsEnabled) return arrow;
-    // The row is one tappable node, and the web hands a click on it to the row as a tap at its
-    // centre, which is never on the arrow. A node of the arrow's own is what an assistive
-    // technology, or a test, can expand the item through. It carries no label: the web writes a
-    // label as text that overflows the 12px node over the row's own text, and takes clicks there.
-    return Semantics(
-      container: true,
-      button: true,
-      identifier: 'TreeItemExpander/${state.id}',
-      expanded: expanded,
-      onTap: enabled ? () => _toggleExpand(expanded) : null,
-      child: arrow,
-    );
+    return tagSemantics(null, arrow, id: 'TreeItemExpander/${state.id}');
   }
 
   Widget? _buildCheckbox({
@@ -1167,7 +1154,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             onTapDown: (TapDownDetails details) {
               _lastTapPosition = details.localPosition;
               _lastTapGlobalPosition = details.globalPosition;
-              _semanticsTap = details.kind == null || details.kind == PointerDeviceKind.unknown;
             },
             // Claims the secondary tap so the tree's own menu detector does not open it twice.
             onSecondaryTapDown: (TapDownDetails details) {
@@ -1176,14 +1162,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             },
             onTap: () {
               if (!enabled) return;
-              // A pointer's press was handled as it went down; a tap through the semantics tree
-              // arrives here with no press before it.
-              if (_semanticsTap) {
-                _semanticsTap = false;
-                final tap = _lastTapPosition;
-                if (tap != null) primaryPress(tap);
-                return;
-              }
               if (_selectOnRelease) {
                 _selectOnRelease = false;
                 final treeImpl = _context?.treeImpl;
@@ -1274,7 +1252,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     required int columnIndex,
     bool hasMultiColumn = false,
   }) {
-    // Text the row's owner-draw overlay paints keeps its place and semantics, but is not painted
+    // Text the row's owner-draw overlay paints keeps its place, but is not painted
     // twice.
     final cellTextColor = _overlayDraws(state.paintedTexts, columnIndex)
         ? Colors.transparent

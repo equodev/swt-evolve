@@ -83,37 +83,6 @@ void main() {
   setUp(() => FocusRequests.instance.reset());
   tearDown(() => FocusRequests.instance.reset());
 
-  testWidgets('semantics turned on after the field is at rest describe it as a text field', (tester) async {
-    await _mount(tester);
-
-    final semantics = tester.ensureSemantics();
-    try {
-      await tester.pump();
-      await tester.pump();
-
-      expect(find.byType(EditableText), findsNothing);
-      expect(_textField(tester).getSemanticsData().value, 'Value');
-    } finally {
-      semantics.dispose();
-    }
-  }, semanticsEnabled: false);
-
-  for (final action in [SemanticsAction.focus, SemanticsAction.tap]) {
-    testWidgets('a field at rest is a text field to assistive technology, and its ${action.name} action '
-        'focuses it', (tester) async {
-      final events = await _mount(tester);
-      final atRest = _textField(tester).getSemanticsData();
-      expect(atRest.value, 'Value');
-      expect(atRest.hasAction(action), isTrue);
-
-      tester.binding.pipelineOwner.semanticsOwner!.performAction(_textField(tester).id, action);
-      await tester.pumpAndSettle();
-      expect(_textFieldFocused(tester), isTrue);
-      expect(events, ['in']);
-      expect(_textField(tester).getSemanticsData().flagsCollection.isFocused, Tristate.isTrue);
-    });
-  }
-
   testWidgets('a change of the system fonts lays the text at rest out again', (tester) async {
     await _mount(tester);
     final atRest = tester.renderObject(find.byWidgetPredicate((w) => '${w.runtimeType}' == '_TextAtRest'));

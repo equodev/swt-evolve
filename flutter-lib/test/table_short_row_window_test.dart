@@ -57,23 +57,4 @@ void main() {
     expect(find.text('row 0'), findsNothing);
   }, semanticsEnabled: false);
 
-  testWidgets('with semantics on every row of a short table has its node', (tester) async {
-    final semantics = tester.ensureSemantics();
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
-    expect(find.text('row ${_rows - 1}'), findsOneWidget);
-    expect(find.bySemanticsIdentifier('TableItem/${100 + _rows - 1}'), findsOneWidget);
-    semantics.dispose();
-  });
-
-  testWidgets('semantics turned on later build the rows it left out', (tester) async {
-    await tester.pumpWidget(_app());
-    await tester.pumpAndSettle();
-    expect(find.text('row ${_rows - 1}'), findsNothing);
-
-    final semantics = tester.ensureSemantics();
-    await tester.pumpAndSettle();
-    expect(find.text('row ${_rows - 1}'), findsOneWidget);
-    semantics.dispose();
-  }, semanticsEnabled: false);
 }

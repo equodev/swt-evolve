@@ -131,10 +131,4 @@ class VMenuItem extends VItem {
     super.adoptChildren(adopt);
     menu = VWidget.adoptOne(menu, adopt);
   }
-
-  @override
-  String? get semanticsTooltip => toolTipText;
-
-  @override
-  bool? get semanticsEnabled => enabled;
 }

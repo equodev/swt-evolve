@@ -233,9 +233,6 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
         // keeps them from an ancestor's detector; the mirror forwards raw pointers, not gestures.
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
-          // A tap action in the semantics tree makes the web engine answer clicks with a semantic
-          // tap, and the mirror would never see the pointer.
-          excludeFromSemantics: true,
           onTapUp: (_) {},
           onSecondaryTapUp: (_) {},
           child: builder(

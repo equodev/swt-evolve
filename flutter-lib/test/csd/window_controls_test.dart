@@ -34,12 +34,11 @@ void main() {
 
   for (final os in ['mac', 'windows', 'linux']) {
     group('$os controls', () {
-      // mac traffic-lights have no Tooltip (just a Semantics label); win/linux use Tooltips.
+      // mac traffic lights have no Tooltip and are keyed by their label; win/linux use Tooltips.
       Finder ctl(String label) =>
-          os == 'mac' ? find.bySemanticsLabel(label) : find.byTooltip(label);
+          os == 'mac' ? find.byKey(ValueKey(label)) : find.byTooltip(label);
 
       testWidgets('minimize / maximize / close fire the right action', (tester) async {
-        final handle = os == 'mac' ? tester.ensureSemantics() : null;
         await pump(tester, os);
 
         await tester.tap(ctl('Minimize'));
@@ -49,16 +48,13 @@ void main() {
         await tester.pump();
 
         expect(calls, ['min', os == 'mac' ? 'fullscreen' : 'maximize', 'close']);
-        handle?.dispose();
       });
 
       testWidgets('reflects maximized state from csdMaximized', (tester) async {
-        final handle = os == 'mac' ? tester.ensureSemantics() : null;
         csdMaximized.value = true;
         await pump(tester, os);
         // When maximized, the middle control offers to restore.
         expect(ctl(os == 'mac' ? 'Exit Full Screen' : 'Restore'), findsOneWidget);
-        handle?.dispose();
       });
     });
   }

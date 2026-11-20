@@ -8,7 +8,6 @@ import 'src/impl/gcdrawer_evolve.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 
 import 'src/comm/comm.dart';
@@ -20,6 +19,7 @@ import 'src/comm/wire_names.dart';
 import 'src/comm/widget_wire.dart' show WireVisitable;
 import 'src/impl/styledtext_evolve.dart' show styledTextPerfSnapshot;
 import 'src/impl/utils/deferred_fonts.dart';
+import 'src/impl/utils/test_anchors.dart';
 import 'src/gen/widget.dart';
 import 'src/testing/boot_trace.dart';
 import 'src/testing/frame_stats.dart';
@@ -244,8 +244,18 @@ void registerTestQueryChannel() {
     // What a page test reads is laid out text, so its frame is one with every font in.
     scheduleFrameSync: (onSynced) => DeferredFonts.all().then((_) => scheduleFrameSync(onSynced)),
     afterNextChange: afterNextChange,
+    locateJson: locateJson,
+    nodesJson: (prefixes, within, paintedText) =>
+        jsonEncode(TestAnchors.nodes(prefixes, within: within, paintedText: paintedText)),
+    textsJson: (text, exact, within) => jsonEncode(TestAnchors.texts(text, exact: exact, within: within)),
+    reveal: TestAnchors.reveal,
   );
 }
+
+/// Each of [identifiers] where it is laid out, `{x, y, width, height, hit}` as
+/// [TestAnchors.locate] answers it, or null when it is not: one JSON object keyed by identifier.
+String locateJson(List<String> identifiers) =>
+    jsonEncode({for (final identifier in identifiers) identifier: TestAnchors.locate(identifier)});
 
 /// The frames the engine has reported since they were last collected, newest last.
 final List<FrameTiming> _frameTimings = <FrameTiming>[];
@@ -263,7 +273,7 @@ void _recordFrameTimings() {
   });
 }
 
-/// Which SWT widget currently holds primary keyboard focus, as its `{swt}/{id}` semantics
+/// Which SWT widget currently holds primary keyboard focus, as its `{swt}/{id}`
 /// identifier -- for tests narrowing down why a key press did not reach the widget they expected,
 /// and for the ones that wait on focus actually moving before typing.
 ///
@@ -591,7 +601,7 @@ class _Reported {
   }
 }
 
-/// Every mounted SWT widget's live [describeState], keyed by its `{swt}/{id}` semantics
+/// Every mounted SWT widget's live [describeState], keyed by its `{swt}/{id}`
 /// identifier, as a JSON-encoded object. Items rendered inline by their parent (VTreeItem,
 /// VTabItem, VExpandItem, ...) have no [WidgetSwtState] of their own, but they ARE nested in
 /// the parent's description, so the descriptions are walked rather than the State objects.

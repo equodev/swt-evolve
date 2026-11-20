@@ -19,6 +19,7 @@ import 'utils/double_tap_detector.dart';
 import 'utils/focus_report.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
+import 'utils/test_anchors.dart';
 
 class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     extends CompositeImpl<T, V> {
@@ -119,7 +120,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     if (tabItems.isEmpty) {
       return SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(trackPointer(hasValidBounds
+          child: tagSemantics(state, trackPointer(hasValidBounds
               ? ConstrainedBox(constraints: constraints!, child: const SizedBox.expand())
               : const SizedBox.shrink())));
     }
@@ -139,7 +140,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     if (hasValidBounds) {
       return inOwnLayer(SwtControlScope(
           swt: state.swt,
-          child: tagSemantics(trackPointer(ParentForegroundScope(
+          child: tagSemantics(state, trackPointer(ParentForegroundScope(
             foreground: state.foreground,
             font: state.font,
             child: ConstrainedBox(constraints: constraints!, child: content),
@@ -149,7 +150,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     // The tabs letter and colour in the folder's own font/foreground: VTabItem has neither.
     return inOwnLayer(SwtControlScope(
         swt: state.swt,
-        child: tagSemantics(trackPointer(ParentForegroundScope(
+        child: tagSemantics(state, trackPointer(ParentForegroundScope(
           foreground: state.foreground,
           font: state.font,
           child: content,
@@ -247,7 +248,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
               ? widgetTheme.tabSelectedTextColor
               : widgetTheme.tabTextColor);
 
-    return tagItemSemantics(vItem, MouseRegion(
+    return tagSemantics(vItem, MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: Listener(
         onPointerDown: (e) {

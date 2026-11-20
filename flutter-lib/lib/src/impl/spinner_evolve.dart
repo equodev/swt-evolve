@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
@@ -374,8 +375,9 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
       ),
       child: Column(
         children: [
-          Expanded(child: _buildUpButton(isInteractive)),
-          Expanded(child: _buildDownButton(isInteractive)),
+          // Each arrow a target of its own for a test, found inside the spinner.
+          Expanded(child: tagSemantics(null, _buildUpButton(isInteractive), id: 'SpinnerUp/${identityHashCode(this)}')),
+          Expanded(child: tagSemantics(null, _buildDownButton(isInteractive), id: 'SpinnerDown/${identityHashCode(this)}')),
         ],
       ),
     );
@@ -564,8 +566,6 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
   int? _pointer;
   // Whether the held pointer is over the button: the repeat steps only then, as Win32's and GTK's do.
   bool _inside = false;
-  // Whether a pointer press stepped since the last press by role, which the same click may also send.
-  bool _steppedByPointer = false;
 
   @override
   void didUpdateWidget(_SpinnerButton oldWidget) {
@@ -590,7 +590,6 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
     if (event.buttons != kPrimaryButton) return;
     _pointer = event.pointer;
     _inside = true;
-    _steppedByPointer = true;
     widget.onPressedChanged(true);
     widget.onStep!(true);
     _repeat = Timer(_SpinnerButton.repeatDelay, () {
@@ -618,27 +617,12 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
     widget.onPressedChanged(false);
   }
 
-  // A press by role (an accessibility tool, the E2E suite) steps once. No MouseDown follows it, so it is no
-  // press of the pointer's. A click the pointer already stepped for is not stepped again.
-  void _semanticTap() {
-    if (_steppedByPointer) {
-      _steppedByPointer = false;
-      return;
-    }
-    widget.onStep?.call(false);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final steps = widget.enabled && widget.onStep != null;
     return MouseRegion(
       onEnter: (_) => widget.onHoverChanged(true),
       onExit: (_) => widget.onHoverChanged(false),
-      child: Semantics(
-        button: true,
-        enabled: steps,
-        onTap: steps ? _semanticTap : null,
-        child: Listener(
+      child: Listener(
           onPointerDown: _press,
           onPointerMove: _move,
           onPointerUp: _up,
@@ -661,7 +645,6 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
             ),
           ),
         ),
-      ),
     );
   }
 }

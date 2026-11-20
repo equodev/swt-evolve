@@ -154,9 +154,8 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
   @override
   Widget build(BuildContext context) {
     final gc = GCSwt<VGC>(key: gcKey, value: VGC()..id = widget.itemId);
-    // The row itself carries the item's semantics; the drawing would only repeat its text.
     return _ready
-        ? IgnorePointer(child: ExcludeSemantics(child: gc))
+        ? IgnorePointer(child: gc)
         : Offstage(child: gc);
   }
 }

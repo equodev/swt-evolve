@@ -5,6 +5,7 @@ import '../gen/widgets.dart';
 import '../impl/item_evolve.dart';
 import '../theme/theme_extensions/coolitem_theme_extension.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/test_anchors.dart';
 
 class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
     extends ItemImpl<T, V> {
@@ -16,7 +17,7 @@ class CoolItemImpl<T extends CoolItemSwt, V extends VCoolItem>
     final width = _getWidth();
     final constraints = _getConstraints(width);
 
-    return tagSemantics(_CoolItemContainer(
+    return tagSemantics(state, _CoolItemContainer(
       constraints: constraints,
       onPressed: _onPressed,
       onDoubleClick: _onDoubleClick,

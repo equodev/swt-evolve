@@ -756,16 +756,12 @@ Widget wrapDraggable<T extends Object>({
     DragSourceSwt<VDragSource>(value: source).sendDragdragFinished(source, null);
   }
 
-  // The image under the pointer is a copy of the control and only a picture of it: nothing to
-  // announce, and it must not stand in the semantics tree as a second node with the control's id.
-  final visual = ExcludeSemantics(
-    child: feedbackBuilder != null
+  final visual = feedbackBuilder != null
         ? feedbackBuilder(child)
         : Opacity(
             opacity: 0.85,
             child: Material(type: MaterialType.transparency, child: child),
-          ),
-  );
+          );
   // A drag with no SWT DragSource behind it (a CTabFolder reordering its own tabs, a workbench
   // moving a view) is not an SWT DnD operation and has no drop answer to show.
   // Drawn shifted back by the slop rather than anchored away from the pointer: a drag target reads

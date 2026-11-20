@@ -237,22 +237,4 @@ void main() {
     expect(_lines(tester).selection, const TextSelection.collapsed(offset: 2));
   });
 
-  testWidgets('what was typed in the LineEditor is in the TextField that replaces it', semanticsEnabled: false, (tester) async {
-    await _pump(tester, _value(''));
-    await _focus(tester);
-    _type(tester, 'typed\nhere');
-    await tester.pump();
-
-    // Semantics turning on, as assistive technology does after the page loads, makes the next build
-    // a TextField; a hover brings that build.
-    final semantics = tester.ensureSemantics();
-    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-    await mouse.addPointer(location: tester.getCenter(find.byType(LineEditor)));
-    await tester.pump();
-
-    expect(find.byType(LineEditor), findsNothing);
-    expect(tester.widget<EditableText>(find.byType(EditableText)).controller.text, 'typed\nhere');
-    await mouse.removePointer();
-    semantics.dispose();
-  });
 }

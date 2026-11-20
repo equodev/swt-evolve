@@ -1,3 +1,4 @@
+import 'utils/test_anchors.dart';
 import 'dart:async' show scheduleMicrotask;
 
 import 'package:flutter/material.dart';
@@ -126,11 +127,8 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
           ),
           CustomSingleChildLayout(
             delegate: DropDownLayout(offset & size, shrinkToFit: false),
-            child: Semantics(
-              identifier: 'calendar:${state.swt}/${state.id}',
-              container: true,
-              // The calendar takes its month's width; the layout only bounds it by the window.
-              child: IntrinsicWidth(
+            // The calendar takes its month's width; the layout only bounds it by the window.
+            child: tagSemantics(null, IntrinsicWidth(
                 child: Material(
                   elevation: 4,
                   borderRadius: BorderRadius.circular(4),
@@ -155,8 +153,7 @@ class DateTimeImpl<T extends DateTimeSwt, V extends VDateTime>
                     onMonthChanged: (_, __) {},
                   ),
                 ),
-              ),
-            ),
+              ), id: 'calendar:${state.swt}/${state.id}'),
           ),
         ],
       ),
@@ -813,7 +810,7 @@ class _CalendarButtonState extends State<_CalendarButton> {
   @override
   Widget build(BuildContext context) {
     final t = widget.theme;
-    return Semantics(identifier: widget.semanticsId, button: true, child: MouseRegion(
+    return tagSemantics(null, MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
@@ -838,7 +835,7 @@ class _CalendarButtonState extends State<_CalendarButton> {
           ),
         ),
       ),
-    ));
+    ), id: widget.semanticsId);
   }
 }
 

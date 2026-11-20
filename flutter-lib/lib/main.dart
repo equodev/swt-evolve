@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'src/impl/widget_ops.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/gen/composite.dart';
@@ -42,6 +41,7 @@ import 'src/gen/gc.dart';
 import 'src/gen/image.dart' show forgetImage;
 import 'src/impl/gcdrawer_evolve.dart';
 import 'src/impl/utils/deferred_fonts.dart';
+import 'src/impl/utils/test_anchors.dart';
 import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/bundled_assets.dart';
 import 'src/impl/utils/image_utils.dart';
@@ -132,16 +132,13 @@ void main(List<String> args) async {
   // the Save-page dialog) so they reach the app; no-op off the web. See suppressBrowserShortcuts.
   suppressBrowserShortcuts();
   reloadOnRendererCrash();
-  // Forces the semantics tree on so Flutter Web emits real <flt-semantics> DOM nodes (with our
-  // Semantics identifiers, see ControlImpl.wrap) for E2E tools like Playwright to find and click.
-  // Off by default: building the semantics tree has a real runtime cost, so production must not pay
-  // for it. This is a pure runtime toggle (no separate build): the embedding app sets
+  // Registers every tagged widget so a test can locate it from the render tree
+  // (window.evolveTest.locate/nodes, see TestAnchors). Off by default: production does not pay for
+  // the registry. A pure runtime toggle: the embedding app sets
   // -Ddev.equo.swt.web.enableTestSemantics=true on its own JVM and WebFlutterServer forwards it into
-  // the served index.html as window.evolve.enableTestSemantics (read by getEnableTestSemantics),
-  // so an already-shipped jar can be flipped into E2E-testable mode without recompiling.
-  final enableTestSemantics = getEnableTestSemantics(args);
-  if (enableTestSemantics) {
-    SemanticsBinding.instance.ensureSemantics();
+  // the served index.html as window.evolve.enableTestSemantics (read by getEnableTestSemantics).
+  if (getEnableTestSemantics(args)) {
+    TestAnchors.enabled = true;
   }
   startSemanticsGhostNodeGuard();
   if (getTraceMenuKeys(args)) MenuKeyTrace.enable();

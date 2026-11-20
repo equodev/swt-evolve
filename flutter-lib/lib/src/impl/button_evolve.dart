@@ -223,8 +223,8 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       );
 
   /// The transparent margin Java reserved on each side of a bezelled button's frame (see
-  /// `push_button_margin`). The surface is painted inside it; the frame itself -- semantics,
-  /// GC overlay -- still spans the bounds.
+  /// `push_button_margin`). The surface is painted inside it; the frame itself -- its GC
+  /// overlay -- still spans the bounds.
   double get _bezelMargin {
     final bezelled = (hasStyle(state.style, SWT.PUSH) || hasStyle(state.style, SWT.TOGGLE)) &&
         !hasStyle(state.style, SWT.FLAT) &&

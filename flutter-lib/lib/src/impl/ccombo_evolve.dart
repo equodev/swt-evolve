@@ -24,6 +24,7 @@ import 'utils/pending_text_echoes.dart';
 import 'utils/key_edit_order.dart';
 import 'key_forwarding.dart';
 import 'utils/quiet_animations.dart';
+import 'utils/test_anchors.dart';
 
 class CComboImpl<T extends CComboSwt, V extends VCCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes, AtRestHandover {
@@ -358,10 +359,10 @@ class CComboImpl<T extends CComboSwt, V extends VCCombo>
     );
 
     if (hasConstraints) {
-      return tagSemantics(SizedBox(width: width, height: height, child: wrapped));
+      return tagSemantics(state, SizedBox(width: width, height: height, child: wrapped));
     }
 
-    return tagSemantics(wrapped);
+    return tagSemantics(state, wrapped);
   }
 
   /// A press in an editable field focuses the field itself, as SWT's CCombo gives its Text the
@@ -706,9 +707,11 @@ class _StyledDropdownCCombo extends StatelessWidget {
         return DropdownMenuEntry<String>(
           value: item,
           label: item,
-          labelWidget: HtmlTooltip(
-            html: tooltip,
-            child: labelWidget,
+          // Tagged on its own: the list opens in the overlay, outside the combo.
+          labelWidget: tagSemantics(
+            state,
+            HtmlTooltip(html: tooltip, child: labelWidget),
+            id: 'CComboItem/${state.id}:$index',
           ),
           style: getCComboEntryStyle(widgetTheme, textStyle, width, extent, () => isHighlighted(index)),
         );
@@ -752,18 +755,9 @@ class _StyledDropdownCCombo extends StatelessWidget {
         : textStyle.copyWith(
             color: DropdownMenuTheme.of(context).disabledColor ??
                 Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38));
-    return Semantics(
-      container: true,
-      button: isReadOnly,
-      textField: !isReadOnly,
-      readOnly: isReadOnly,
-      enabled: enabled,
-      expanded: false,
-      onTap: onTapAtRest == null ? null : () => onTapAtRest!(true),
-      child: ExcludeSemantics(
-        // On the press, not the tap: a press that arrives without a hover first brings one, which
-        // mounts the menu before the release and would take the tap with it.
-        child: Listener(
+    // On the press, not the tap: a press that arrives without a hover first brings one, which
+    // mounts the menu before the release and would take the tap with it.
+    return Listener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: onTapAtRest == null
               ? null
@@ -787,19 +781,14 @@ class _StyledDropdownCCombo extends StatelessWidget {
                         heightFactor: fieldHeight == null ? 1 : null,
                         child: ValueListenableBuilder<TextEditingValue>(
                           valueListenable: controller,
-                          builder: (context, value, _) => Semantics(
-                            value: value.text,
-                            // The same few texts shown by many combos are shaped once between them.
-                            child: ExcludeSemantics(
-                              child: ColorCachedText(
+                          // The same few texts shown by many combos are shaped once between them.
+                          builder: (context, value, _) => ColorCachedText(
                                 value.text,
                                 style: style,
                                 maxLines: 1,
                                 softWrap: false,
                                 overflow: TextOverflow.visible,
                               ),
-                            ),
-                          ),
                         ),
                       ),
                     ),
@@ -819,9 +808,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
               ),
             ]),
           ),
-        ),
-      ),
-    );
+        );
   }
 
   TextAlign _getTextAlign() {

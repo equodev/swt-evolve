@@ -127,7 +127,4 @@ class VMenu extends VWidget {
     super.adoptChildren(adopt);
     VWidget.adoptEach(items, adopt);
   }
-
-  @override
-  bool? get semanticsEnabled => enabled;
 }

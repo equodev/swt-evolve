@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart' show PointerDeviceKind, kPrimaryButton;
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -29,6 +29,7 @@ import 'utils/text_utils.dart';
 import 'control_evolve.dart' show ControlImpl;
 import '../gen/widgets.dart' show WireChannel;
 import 'owner_draw_overlay.dart';
+import 'utils/test_anchors.dart';
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
@@ -99,7 +100,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     final columns = _context?.parentTableValue.columns ?? [];
     final kept = _context?.tableImpl?.keptCells(state, effectiveColumnCount);
     final widths = _context?.tableImpl?.cachedColumnWidths;
-    final semantics = WidgetsBinding.instance.semanticsEnabled;
     final rowGround = Color.alphaBlend(
         _context?.tableImpl?.rowBackgroundColor(rowIndex, state, theme) ?? Colors.transparent,
         enabled ? theme.backgroundColor : theme.disabledBackgroundColor);
@@ -116,8 +116,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         enabled,
         background: rowGround,
       );
-      // Text the row's owner-draw overlay paints keeps its place and semantics, but is not
-      // painted twice.
+      // Text the row's owner-draw overlay paints keeps its place, but is not painted twice.
       final paintedByOverlay = _overlayDraws(state.paintedTexts, columnIndex);
       final font = cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.tableFont;
       final textColor = paintedByOverlay ? Colors.transparent : cellTextColor;
@@ -143,7 +142,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         getCellBackgroundColor(columnIndex, theme),
         width is FixedColumnWidth ? width.value : null,
         theme,
-        semantics,
         getConfigFlags(),
         textMeasureEpoch,
         _context?.parentTable,
@@ -338,17 +336,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         if (count == 2) sendDoubleClick(1, e.position);
       },
       child: GestureDetector(
-      // A tap through the semantics tree arrives here with no press before it, and of no pointer
-      // kind; one a pointer made was already sent above. In a table that scrolls, the pointer's
-      // tap wins the arena only once its drag has given up, after the release.
-      onTapDown: (details) {
-        if (details.kind != null && details.kind != PointerDeviceKind.unknown) return;
-        final count = enabled && _context?.tableImpl != null
-            ? _context!.tableImpl!.registerRowTap(rowIndex)
-            : 1;
-        sendMouseDown(1, count);
-        if (count == 2) sendDoubleClick(1);
-      },
       onTertiaryTapDown: (_) => sendMouseDown(2, 1),
       child: SizedBox(
         height: rowHeight,
@@ -377,7 +364,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
       ),
     );
 
-    return columnIndex == 0 ? tagSemantics(cell) : cell;
+    return columnIndex == 0 ? tagSemantics(state, cell) : cell;
   }
 
   static Alignment _swtToAlignment(int swtAlignment) {
@@ -684,15 +671,13 @@ class _CellHoverZoomState extends State<_CellHoverZoom> {
           child: CompositedTransformFollower(
         link: _link,
         showWhenUnlinked: false,
-        // The real cell underneath still owns every gesture and its semantics; this is paint only.
-        child: ExcludeSemantics(
-          child: IgnorePointer(
+        // The real cell underneath still owns every gesture; this is paint only.
+        child: IgnorePointer(
             // The overlay is outside any Material, where the inherited DefaultTextStyle is the
             // debug one that underlines text in yellow. A transparent Material restores the
             // theme's own text style without painting anything.
             child: Material(type: MaterialType.transparency, child: copy),
           ),
-        ),
       )),
     );
   }

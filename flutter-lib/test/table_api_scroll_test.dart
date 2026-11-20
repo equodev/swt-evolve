@@ -94,13 +94,18 @@ void main() {
   testWidgets('a scroll by the user is reported as the distance the rows moved', (tester) async {
     await _pump(tester, _table());
     EquoCommService.commForTesting.clearSentFrames();
+    final before = {
+      for (var row = 0; row < 100; row++)
+        if (find.text('row $row').evaluate().isNotEmpty) row: _rowTop(tester, row),
+    };
 
     await tester.drag(find.text('row 2'), const Offset(0, -100));
     await tester.pumpAndSettle();
 
+    final kept = before.keys.firstWhere((row) => find.text('row $row').evaluate().isNotEmpty);
     final scrolls = _sent('/Scroll/Scroll');
     expect(scrolls, isNotEmpty);
-    expect(scrolls.last.y!.toDouble(), closeTo(_textInset - _rowTop(tester, 0), 1));
+    expect(scrolls.last.y!.toDouble(), closeTo(before[kept]! - _rowTop(tester, kept), 1));
     expect(scrolls.map((s) => s.detail), everyElement(SWT.PAGE_DOWN));
   });
 
