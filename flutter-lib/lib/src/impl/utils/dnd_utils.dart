@@ -373,17 +373,19 @@ class _DragImageCaptureState extends State<_DragImageCapture> {
 }
 
 /// The drag image a drag from another window carries, drawn here where the source window cannot:
-/// at the pointer, as the source draws it, with the operation badge for what this window's drop
-/// target answered.
+/// at the pointer, as the source draws it, with the operation badge for [operation]. Without a
+/// [picture], only the badge.
 class _RemoteDragImage extends StatelessWidget {
-  const _RemoteDragImage({required this.at, required this.png, required this.size});
+  const _RemoteDragImage({required this.at, required this.picture, required this.operation});
 
   final ValueListenable<Offset> at;
-  final Uint8List png;
-  final Size size;
+  final _DragPicture? picture;
+  final ValueListenable<int> operation;
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<Offset>(
+  Widget build(BuildContext context) {
+    final picture = this.picture;
+    return ValueListenableBuilder<Offset>(
         valueListenable: at,
         builder: (_, at, __) => Positioned(
           left: at.dx,
@@ -392,13 +394,20 @@ class _RemoteDragImage extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Image.memory(png, width: size.width, height: size.height, gaplessPlayback: true),
+                if (picture == null)
+                  const SizedBox.shrink()
+                else
+                  Transform.translate(
+                    offset: picture.offset,
+                    child: Image.memory(picture.png,
+                        width: picture.size.width, height: picture.size.height, gaplessPlayback: true),
+                  ),
                 if (DndDropAnswer.drawsOperationBadge)
                   Positioned(
                     left: 10,
                     top: 16,
                     child: ValueListenableBuilder<int>(
-                      valueListenable: DndDropAnswer.operation,
+                      valueListenable: operation,
                       builder: (_, op, __) => DndDropAnswer._isDrop(op)
                           ? DropOperationBadge(operation: op)
                           : const SizedBox.shrink(),
@@ -409,7 +418,11 @@ class _RemoteDragImage extends StatelessWidget {
           ),
         ),
       );
+  }
 }
+
+/// A drag image as PNG bytes, of [size] points, its top-left at [offset] from the pointer.
+typedef _DragPicture = ({Uint8List png, Size size, Offset offset});
 
 class DragDetectGate {
   static const double thresholdPx = 4.0;
@@ -999,23 +1012,35 @@ class RemoteDragReceiver {
   static const leave = 2;
   static const drop = 3;
 
+  /// Only the drag image and the cursor for an operation, for a drag whose drop targets Java
+  /// negotiates itself; [leave] takes them away.
+  static const feedback = 4;
+
   _DropTargetNegotiatorState? _current;
   OverlayEntry? _image;
+  OverlayEntry? _cursor;
   final ValueNotifier<Offset> _imageAt = ValueNotifier(Offset.zero);
+  final ValueNotifier<int> _feedbackOperation = ValueNotifier(Dnd.dropNone);
 
   /// The drag image Java sent ahead of the first step into this window, until that step shows it.
-  (Uint8List, Size)? _pendingImage;
+  _DragPicture? _pendingImage;
 
-  /// The drag image, [png] of [size], for the next [over] to draw.
-  void image(Uint8List png, Size size) => _pendingImage = (png, size);
+  /// The drag image, [png] of [size] with its top-left at [offset] from the pointer, for the next
+  /// [over] or [feedback] to draw.
+  void image(Uint8List png, Size size, [Offset offset = Offset.zero]) =>
+      _pendingImage = (png: png, size: size, offset: offset);
 
-  /// Handles [over], [leave] and [drop] at [global], a position in [context]'s view. Answers false
-  /// for a drop no drop target here takes.
-  bool handle(BuildContext context, int phase, Offset? global) {
+  /// Handles a step at [global], a position in [context]'s view; [operation] is the cursor's for
+  /// [feedback]. Answers false for a drop no drop target here takes.
+  bool handle(BuildContext context, int phase, Offset? global, {int operation = Dnd.dropNone}) {
+    if (phase == feedback) {
+      if (global != null) _showFeedback(context, global, operation);
+      return true;
+    }
     if (phase == over && global != null) {
       final image = _pendingImage;
       _pendingImage = null;
-      _showImage(context, global, image?.$1, image?.$2);
+      _showImage(context, global, image, DndDropAnswer.operation);
     } else {
       _pendingImage = null;
       _hideImage();
@@ -1041,29 +1066,65 @@ class RemoteDragReceiver {
     return true;
   }
 
-  void _showImage(BuildContext context, Offset global, Uint8List? png, Size? size) {
+  /// Moves the drag image to [global], drawing [picture] in place of the one drawn. With [always],
+  /// the overlay goes up without a picture too, for the operation badge.
+  void _showImage(BuildContext context, Offset global, _DragPicture? picture, ValueListenable<int> operation,
+      {bool always = false}) {
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null) return;
     final box = overlay.context.findRenderObject();
     _imageAt.value = box is RenderBox && box.hasSize ? box.globalToLocal(global) : global;
-    if (png == null || size == null || size.isEmpty) return;
-    _hideImage();
-    final entry = OverlayEntry(builder: (_) => _RemoteDragImage(at: _imageAt, png: png, size: size));
+    if (picture != null && picture.size.isEmpty) picture = null;
+    if (picture == null && (_image != null || !always)) return;
+    _removeImage();
+    final entry = OverlayEntry(
+        builder: (_) => _RemoteDragImage(at: _imageAt, picture: picture, operation: operation));
     _image = entry;
     overlay.insert(entry);
   }
 
-  void _hideImage() {
+  void _showFeedback(BuildContext context, Offset global, int operation) {
+    _feedbackOperation.value = operation;
+    final image = _pendingImage;
+    _pendingImage = null;
+    _showImage(context, global, image, _feedbackOperation, always: true);
+    if (_cursor != null) return;
+    final overlay = Overlay.maybeOf(context, rootOverlay: true);
+    if (overlay == null) return;
+    // The cursor wherever the pointer is; hit testing goes through to what is underneath.
+    final entry = OverlayEntry(
+      builder: (_) => Positioned.fill(
+        child: ValueListenableBuilder<int>(
+          valueListenable: _feedbackOperation,
+          builder: (_, op, __) =>
+              MouseRegion(opaque: false, cursor: DndDropAnswer.cursorFor(op), child: const SizedBox.expand()),
+        ),
+      ),
+    );
+    _cursor = entry;
+    overlay.insert(entry);
+  }
+
+  void _removeImage() {
     final entry = _image;
     _image = null;
     entry?.remove();
     entry?.dispose();
   }
 
+  void _hideImage() {
+    _removeImage();
+    final cursor = _cursor;
+    _cursor = null;
+    cursor?.remove();
+    cursor?.dispose();
+  }
+
   void dispose() {
     _hideImage();
     _current = null;
     _imageAt.dispose();
+    _feedbackOperation.dispose();
   }
 
   void _enter(_DropTargetNegotiatorState? target, Offset? global) {

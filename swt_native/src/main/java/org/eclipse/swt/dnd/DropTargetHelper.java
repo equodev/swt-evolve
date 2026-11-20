@@ -37,6 +37,42 @@ public final class DropTargetHelper {
         this.answer = answer;
     }
 
+    /**
+     * A drag from outside SWT that Java delivers to the Display's drop targets itself, offering its
+     * own data types instead of an SWT {@link DragSource}'s.
+     */
+    public interface ForeignDrag {
+
+        /** The operations the drag's source allows, as {@code DND.DROP_*} bits. */
+        int operations();
+
+        /** The types this drag offers that {@code target} accepts. */
+        TransferData[] types(DropTarget target);
+
+        /** The drag's data as {@code type}, for {@code target}'s Drop. */
+        Object data(DropTarget target, TransferData type);
+
+        /** The drop ended with {@code operation}, {@code DND.DROP_NONE} when nothing was dropped. */
+        void dropped(int operation);
+    }
+
+    private static final String FOREIGN_KEY = DropTargetHelper.class.getName() + ".foreign";
+
+    /** Makes {@code drag} the one {@code display}'s drop targets negotiate with; null ends it. */
+    public static void setForeignDrag(org.eclipse.swt.widgets.Display display, ForeignDrag drag) {
+        display.setData(FOREIGN_KEY, drag);
+    }
+
+    private ForeignDrag foreign() {
+        Object drag = target.getDisplay().getData(FOREIGN_KEY);
+        return drag instanceof ForeignDrag ? (ForeignDrag) drag : null;
+    }
+
+    private TransferData[] offeredTypes() {
+        ForeignDrag foreign = foreign();
+        return foreign != null ? foreign.types(target.getApi()) : target.computeMutualDataTypes(target.matchingDragSource());
+    }
+
     /** The item of {@code control} (a Table, Tree or CTabFolder) the client names by {@code id}, or null. */
     public static Widget findItemById(Control control, long id) {
         // An item the client points at was sent to it, so it is found by its id; one of this control's.
@@ -119,6 +155,7 @@ public final class DropTargetHelper {
             target.selectedOperation = resolveDefault(allowedOperations());
         }
         DartDragSource source = target.matchingDragSource();
+        ForeignDrag foreign = foreign();
         DNDEvent event = new DNDEvent();
         event.widget = target.getApi();
         event.time = e.time;
@@ -127,7 +164,7 @@ public final class DropTargetHelper {
         event.item = item;
         event.feedback = DND.FEEDBACK_SELECT;
         event.operations = allowedOperations();
-        event.dataTypes = target.computeMutualDataTypes(source);
+        event.dataTypes = offeredTypes();
         event.dataType = currentType(event.dataTypes);
         event.detail = e.detail != DND.DROP_NONE ? e.detail : target.selectedOperation;
         int operations = event.operations;
@@ -135,11 +172,14 @@ public final class DropTargetHelper {
         target.deliver(DND.DropAccept, event);
         TransferData type = offeredType(offered, event.dataType);
         int detail = event.detail == DND.DROP_DEFAULT ? resolveDefault(operations) : event.detail;
-        int operation = (type != null || source == null) && (operations & detail) == detail ? detail : DND.DROP_NONE;
+        int operation = (type != null || source == null && foreign == null) && (operations & detail) == detail ? detail : DND.DROP_NONE;
         if (operation != DND.DROP_NONE) {
             event.detail = operation;
             event.dataType = type;
-            event.data = source != null && type != null ? source.requestData(type) : null;
+            if (foreign != null)
+                event.data = foreign.data(target.getApi(), type);
+            else
+                event.data = source != null && type != null ? source.requestData(type) : null;
             target.deliver(DND.Drop, event);
             detail = event.detail == DND.DROP_DEFAULT ? resolveDefault(operations) : event.detail;
             operation = (operations & detail) == detail ? detail : DND.DROP_NONE;
@@ -147,7 +187,10 @@ public final class DropTargetHelper {
         entered = false;
         target.selectedDataType = null;
         target.selectedOperation = DND.DROP_NONE;
-        target.notifyDragSourceOfDragEnd(operation);
+        if (foreign != null)
+            foreign.dropped(operation);
+        else
+            target.notifyDragSourceOfDragEnd(operation);
     }
 
     private void start() {
@@ -164,7 +207,7 @@ public final class DropTargetHelper {
         setDisplayLocation(event, e);
         event.item = item(e);
         event.operations = allowedOperations();
-        event.dataTypes = target.computeMutualDataTypes(target.matchingDragSource());
+        event.dataTypes = offeredTypes();
         event.dataType = currentType(event.dataTypes);
         event.detail = entering ? initialOperation(event.operations) : target.selectedOperation;
         event.feedback = DND.FEEDBACK_SELECT;
@@ -184,6 +227,9 @@ public final class DropTargetHelper {
     /** The operations both ends allow; a drag from outside SWT is bounded by the target alone. */
     private int allowedOperations() {
         int operations = target.getStyle() & (DND.DROP_COPY | DND.DROP_MOVE | DND.DROP_LINK);
+        ForeignDrag foreign = foreign();
+        if (foreign != null)
+            return operations & foreign.operations();
         DartDragSource source = target.matchingDragSource();
         return source != null ? operations & source.getStyle() : operations;
     }
@@ -211,7 +257,7 @@ public final class DropTargetHelper {
     private int acceptedOperation(boolean entering, int detail, int operations) {
         if (detail == DND.DROP_DEFAULT)
             detail = resolveDefault(operations);
-        if (target.selectedDataType == null && target.matchingDragSource() != null)
+        if (target.selectedDataType == null && (target.matchingDragSource() != null || foreign() != null))
             return DND.DROP_NONE;
         boolean allowed = entering ? (operations & detail) != 0 : (operations & detail) == detail;
         return allowed ? detail : DND.DROP_NONE;

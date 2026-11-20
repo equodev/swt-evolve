@@ -14,6 +14,11 @@ public final class TransferHelper {
         return transfer.getTypeNames();
     }
 
+    /** The Java value of {@code type}, whose native data is set. */
+    public static Object toJava(Transfer transfer, TransferData type) {
+        return transfer.nativeToJava(type);
+    }
+
     /** Converts {@code data} into the transfer's first native type; null if it has none. */
     public static TransferData toNative(Transfer transfer, Object data) {
         TransferData[] types = transfer.getSupportedTypes();

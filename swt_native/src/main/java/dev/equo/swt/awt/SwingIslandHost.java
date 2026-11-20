@@ -139,7 +139,7 @@ public final class SwingIslandHost {
         // Shown on the calling (SWT) thread, where the blit path built its frame too. It opens at
         // the island's current size, 0x0 before layout: the mirror reports its real box on its
         // first layout and Java adopts it.
-        Frame frame = new Frame();
+        IslandFrame frame = new IslandFrame(child);
         frame.setUndecorated(true);
         EvolveSwingHost.sizeFrame(frame, child.getClientArea());
         frame.setVisible(true);
@@ -156,6 +156,7 @@ public final class SwingIslandHost {
         // Off AWT's dispatch thread, Window.dispose waits for that thread, and a host that suspends
         // AWT dispatch while the workbench closes never answers: the frame goes when AWT runs again.
         child.addListener(SWT.Dispose, e -> {
+            frame.island = null;
             drops.dispose();
             dropFromAwtShutdown(frame);
             if (EventQueue.isDispatchThread()) frame.dispose();
@@ -163,6 +164,16 @@ public final class SwingIslandHost {
         });
         parent.setData(EMBEDDED_FRAME_KEY, frame);
         return frame;
+    }
+
+    /** An island's frame, which knows its island while the island lives. */
+    static final class IslandFrame extends Frame {
+
+        volatile Control island;
+
+        IslandFrame(Control island) {
+            this.island = island;
+        }
     }
 
     /** The island child, kept at the composite's client area whatever layout the composite has. */

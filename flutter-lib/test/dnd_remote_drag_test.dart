@@ -99,12 +99,19 @@ List<String> _drops(int dropTargetId) =>
 Offset _shellRelative(WidgetTester tester, Offset global) =>
     tester.renderObject<RenderBox>(find.byType(ShellSwt<VShell>)).globalToLocal(global);
 
-const _phases = {'over': RemoteDragReceiver.over, 'leave': RemoteDragReceiver.leave, 'drop': RemoteDragReceiver.drop};
+const _phases = {
+  'over': RemoteDragReceiver.over,
+  'leave': RemoteDragReceiver.leave,
+  'drop': RemoteDragReceiver.drop,
+  'feedback': RemoteDragReceiver.feedback,
+};
 
 /// Java telling the shell [shellId] that a drag from another window is [phase] at [global]: an
-/// event's fields, as RemoteDrag sends a step.
-Future<void> _remote(WidgetTester tester, int shellId, String phase, [Offset? global]) async {
-  final step = VEvent()..detail = _phases[phase];
+/// event's fields, as RemoteDrag sends a step; [operation] is a feedback step's.
+Future<void> _remote(WidgetTester tester, int shellId, String phase, [Offset? global, int? operation]) async {
+  final step = VEvent()
+    ..detail = _phases[phase]
+    ..feedback = operation;
   if (global != null) {
     final at = _shellRelative(tester, global);
     step
@@ -126,6 +133,19 @@ const _png = [
 ];
 
 final _dragImage = find.byWidgetPredicate((w) => w is Image && w.image is MemoryImage);
+
+String _cursorKind(int op) => (DndDropAnswer.cursorFor(op) as SystemMouseCursor).kind;
+
+/// The system cursors the view asks for, in order.
+List<String> _recordCursors(WidgetTester tester) {
+  final cursors = <String>[];
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.mouseCursor, (call) async {
+    if (call.method == 'activateSystemCursor') cursors.add((call.arguments as Map)['kind'] as String);
+    return null;
+  });
+  addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.mouseCursor, null));
+  return cursors;
+}
 
 
 void main() {
@@ -191,6 +211,53 @@ void main() {
 
       await _remote(tester, shellId, 'leave');
       expect(_dragImage, findsNothing);
+    });
+
+    testWidgets('whose drop targets Java negotiates shows its image and cursor only, until it leaves',
+        (tester) async {
+      final shellId = _nextId++;
+      const dropTargetId = 906;
+      await _pump(tester, _shell(shellId, [_canvas(_nextId++, dropTargetId: dropTargetId)]));
+      final cursors = _recordCursors(tester);
+      final at = tester.getCenter(find.byType(CanvasSwt<VCanvas>));
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: at);
+      addTearDown(mouse.removePointer);
+
+      _deliver('Shell/$shellId/DragDetect/dragImage',
+          {'segments': Uint8List.fromList(_png), 'width': 40, 'height': 20, 'x': -20, 'y': -10});
+      await _remote(tester, shellId, 'feedback', at, Dnd.dropCopy);
+      expect(_dragImage, findsOneWidget);
+      expect(tester.getTopLeft(_dragImage), at + const Offset(-20, -10), reason: 'where the source holds it');
+      expect(tester.getSize(_dragImage), const Size(40, 20));
+      expect(cursors.last, _cursorKind(Dnd.dropCopy));
+
+      await mouse.moveTo(at + const Offset(30, 10));
+      await _remote(tester, shellId, 'feedback', at + const Offset(30, 10), Dnd.dropMove);
+      expect(tester.getTopLeft(_dragImage), at + const Offset(10, 0), reason: 'it follows the pointer');
+      expect(cursors.last, _cursorKind(Dnd.dropMove));
+
+      await _remote(tester, shellId, 'leave');
+      expect(_dragImage, findsNothing);
+      expect(cursors.last, isNot(_cursorKind(Dnd.dropMove)));
+      expect(_sent('DropTarget/$dropTargetId/'), isEmpty, reason: 'Java runs the drop targets of this drag');
+    });
+
+    testWidgets('with no image, shows the cursor alone', (tester) async {
+      final shellId = _nextId++;
+      await _pump(tester, _shell(shellId, [_canvas(_nextId++)]));
+      final cursors = _recordCursors(tester);
+      const at = Offset(600, 400);
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: at);
+      addTearDown(mouse.removePointer);
+
+      await _remote(tester, shellId, 'feedback', at, Dnd.dropLink);
+      expect(_dragImage, findsNothing);
+      expect(cursors.last, _cursorKind(Dnd.dropLink));
+
+      await _remote(tester, shellId, 'feedback', at, Dnd.dropNone);
+      expect(cursors.last, _cursorKind(Dnd.dropNone), reason: 'nothing under it takes the drop');
     });
 
     testWidgets('drops on the tree item under it', (tester) async {
@@ -310,13 +377,8 @@ void main() {
     final shellId = _nextId++;
     final canvasId = _nextId++;
     await _pump(tester, _shell(shellId, [_canvas(canvasId, dragSource: true)]));
-    String kind(int op) => (DndDropAnswer.cursorFor(op) as SystemMouseCursor).kind;
-    final cursors = <String>[];
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.mouseCursor, (call) async {
-      if (call.method == 'activateSystemCursor') cursors.add((call.arguments as Map)['kind'] as String);
-      return null;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.mouseCursor, null));
+    const kind = _cursorKind;
+    final cursors = _recordCursors(tester);
 
     final start = tester.getCenter(find.byType(CanvasSwt<VCanvas>));
     final gesture = await tester.startGesture(start, kind: PointerDeviceKind.mouse);

@@ -135,7 +135,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     if (shell == null || payload is! Map) return true;
     final png = payload['segments'];
     if (png is List<int> && png.isNotEmpty) {
-      shell._remoteDrag.image(Uint8List.fromList(png), Size(_num(payload['width']), _num(payload['height'])));
+      shell._remoteDrag.image(Uint8List.fromList(png), Size(_num(payload['width']), _num(payload['height'])),
+          Offset(_num(payload['x']), _num(payload['y'])));
     }
     return true;
   }
@@ -159,7 +160,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final global = x != null && y != null && box != null && box.hasSize
         ? box.localToGlobal(Offset(x.toDouble(), y.toDouble()))
         : null;
-    if (!_remoteDrag.handle(context, step.detail ?? 0, global)) {
+    if (!_remoteDrag.handle(context, step.detail ?? 0, global, operation: step.feedback ?? Dnd.dropNone)) {
       widget.sendEvent(state, gen.WireChannel.dnDRemoteDropNone, VEvent());
     }
   }

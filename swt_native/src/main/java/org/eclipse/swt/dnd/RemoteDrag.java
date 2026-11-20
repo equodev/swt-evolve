@@ -33,6 +33,8 @@ final class RemoteDrag {
     static final int OVER = 1;
     static final int LEAVE = 2;
     static final int DROP = 3;
+    /** Only the drag image and the cursor, at the pointer: see {@link ForeignDragImage}. */
+    static final int FEEDBACK = 4;
 
     private final DartDragSource source;
 
@@ -103,14 +105,22 @@ final class RemoteDrag {
         // Until a DropTarget in the new shell answers, nothing there takes the drop.
         if (entering) answer(DND.DROP_NONE);
         if (shell == null) return;
-        if (entering && image != null) {
-            Map<String, Object> png = Java8.map("segments", image);
-            png.put("width", imageWidth);
-            png.put("height", imageHeight);
-            // Not held behind a pending update, as the step it comes ahead of is not.
-            FlutterBridge.sendNow((DartWidget) shell.getImpl(), WireTable.CHANNEL_DRAG_DETECT_DRAG_IMAGE, png);
-        }
+        if (entering && image != null) sendImage(shell, image, imageWidth, imageHeight, 0, 0);
         send(shell, OVER, x, y);
+    }
+
+    /**
+     * Sends {@code shell} the drag image for the next step into it to draw: {@code png}, of {@code
+     * width} by {@code height} points, its top-left at {@code offsetX, offsetY} from the pointer.
+     */
+    static void sendImage(Shell shell, byte[] png, int width, int height, int offsetX, int offsetY) {
+        Map<String, Object> image = Java8.map("segments", png);
+        image.put("width", width);
+        image.put("height", height);
+        image.put("x", offsetX);
+        image.put("y", offsetY);
+        // Not held behind a pending update, as the step it comes ahead of is not.
+        FlutterBridge.sendNow((DartWidget) shell.getImpl(), WireTable.CHANNEL_DRAG_DETECT_DRAG_IMAGE, image);
     }
 
     /** What a DropTarget answered a drag over it; the one in the shell the drag is over sets the cursor. */
@@ -183,7 +193,12 @@ final class RemoteDrag {
     /** Tells {@code shell} the drag is at {@code phase}, at the display point {@code x, y} unless it left. */
     private void send(Shell shell, int phase, int x, int y) {
         step.phase = phase;
-        if (phase != LEAVE) {
+        send(shell, step, x, y);
+    }
+
+    /** Sends {@code shell} {@code step}, placed at the display point {@code x, y} unless it is a leave. */
+    static void send(Shell shell, Step step, int x, int y) {
+        if (step.phase != LEAVE) {
             Rectangle bounds = shell.getBounds();
             step.x = x - bounds.x;
             step.y = y - bounds.y;
@@ -191,11 +206,15 @@ final class RemoteDrag {
         FlutterBridge.sendFields((DartWidget) shell.getImpl(), WireTable.CHANNEL_DN_D_REMOTE_DRAG, step);
     }
 
-    /** A drag step as the client's Event carries it: the phase, and where the drag is relative to the shell. */
-    private static final class Step implements WireObject {
+    /**
+     * A drag step as the client's Event carries it: the phase, where the drag is relative to the
+     * shell, and for {@link #FEEDBACK} the operation the cursor shows, as {@code Event.feedback}.
+     */
+    static final class Step implements WireObject {
         int phase;
         int x;
         int y;
+        int operation;
 
         @Override
         public void writeWireFields(WidgetWire w) {
@@ -206,6 +225,9 @@ final class RemoteDrag {
             w.write(x);
             w.key(WireTable.EVENT_Y);
             w.write(y);
+            if (phase != FEEDBACK) return;
+            w.key(WireTable.EVENT_FEEDBACK);
+            w.write(operation);
         }
 
         @Override
