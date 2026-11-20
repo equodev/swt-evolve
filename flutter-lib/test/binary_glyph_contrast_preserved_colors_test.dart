@@ -14,6 +14,8 @@ import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'support/icon_renders.dart';
+
 /// preserve_icon_colors keeps an application's icons as drawn, but a monochrome glyph that would
 /// not read on the theme's ground still takes the theme tint: a black toolbar glyph on a dark
 /// theme would otherwise vanish. Color artwork, and a glyph that already reads, stay as drawn.
@@ -179,7 +181,7 @@ Future<Color> _centerPixel(WidgetTester tester, Uint8List png, {int side = 16}) 
     renderAsIcon: true,
   );
   expect(widget, isNotNull);
-  return _paintedCenter(tester, widget!, png, side: side);
+  return (await paintedIconPixels(tester, widget!, side: side))(side ~/ 2, side ~/ 2);
 }
 
 /// Renders the image through the async path a CTabItem uses, with no color of its own, and reads
@@ -194,44 +196,5 @@ Future<Color> _asyncCenterPixel(WidgetTester tester, Uint8List png, {int side = 
         renderAsIcon: true,
       ));
   expect(widget, isNotNull);
-  return _paintedCenter(tester, widget!, png, side: side);
-}
-
-Future<Color> _paintedCenter(WidgetTester tester, Widget widget, Uint8List png,
-    {required int side}) async {
-  final boundaryKey = GlobalKey();
-  await tester.pumpWidget(Directionality(
-    textDirection: TextDirection.ltr,
-    child: Center(
-      child: RepaintBoundary(
-        key: boundaryKey,
-        child: SizedBox(width: side.toDouble(), height: side.toDouble(), child: widget),
-      ),
-    ),
-  ));
-  await tester.runAsync(() async {
-    await precacheImage(MemoryImage(png), tester.element(find.byKey(boundaryKey)));
-  });
-  await tester.pumpAndSettle();
-
-  // The bitmap decodes on the real clock, which pumpAndSettle does not wait for.
-  var center = await _readCenter(tester, boundaryKey, side);
-  for (var i = 0; i < 100 && center.a == 0; i++) {
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
-    await tester.pump();
-    center = await _readCenter(tester, boundaryKey, side);
-  }
-  return center;
-}
-
-Future<Color> _readCenter(WidgetTester tester, GlobalKey boundaryKey, int side) async {
-  late ByteData bytes;
-  await tester.runAsync(() async {
-    final boundary = tester.renderObject(find.byKey(boundaryKey)) as RenderRepaintBoundary;
-    final image = await boundary.toImage();
-    bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
-  });
-  final offset = ((side ~/ 2) * side + side ~/ 2) * 4;
-  return Color.fromARGB(bytes.getUint8(offset + 3), bytes.getUint8(offset),
-      bytes.getUint8(offset + 1), bytes.getUint8(offset + 2));
+  return (await paintedIconPixels(tester, widget!, side: side))(side ~/ 2, side ~/ 2);
 }

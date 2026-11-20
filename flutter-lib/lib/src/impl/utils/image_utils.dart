@@ -302,7 +302,7 @@ class ImageUtils {
             width: imageSize,
             height: imageSize,
             child: ImageIcon(
-              MemoryImage(bytes!),
+              MemoryImage(tone!.inkStencil(bytes!) ?? bytes),
               size: imageSize,
               color: imageColor,
             ),

@@ -29,17 +29,54 @@ class GlyphTone {
   // Below this spread the glyph is one tone of ink, and its alpha alone says where the ink is.
   static const int _minPaperContrast = 64;
 
-  /// Alpha from darkness: [darkest] is full ink, [lightest] is paper. Null for a single-tone glyph.
-  ColorFilter? get inkMask {
+  /// Ink alpha per grey level below [lightest], so that [darkest] is full ink and [lightest] is
+  /// paper. Null for a single-tone glyph.
+  double? get _inkScale {
     final range = lightest - darkest;
-    if (range < _minPaperContrast) return null;
-    final k = 255 / range;
+    return range < _minPaperContrast ? null : 255 / range;
+  }
+
+  /// Alpha from darkness, by [_inkScale]. Null for a single-tone glyph.
+  ColorFilter? get inkMask {
+    final k = _inkScale;
+    if (k == null) return null;
     return ColorFilter.matrix(<double>[
       0, 0, 0, 0, 0,
       0, 0, 0, 0, 0,
       0, 0, 0, 0, 0,
       -k, 0, 0, 0, k * lightest,
     ]);
+  }
+
+  static final Map<String, Uint8List?> _stencils = {};
+
+  /// [encoded] as a PNG whose alpha is [inkMask]'s within the image's own alpha, for a tint that
+  /// paints through alpha: the ink takes it and the paper drops out. Null for a single-tone glyph,
+  /// or for bytes that are not a PNG or a GIF.
+  Uint8List? inkStencil(Uint8List encoded) {
+    final k = _inkScale;
+    if (k == null) return null;
+    // The tone is derived from the content, so the content alone keys the stencil.
+    final key = contentKey(encoded);
+    if (_stencils.containsKey(key)) return _stencils[key];
+
+    final decoder = _decoderFor(encoded);
+    final rgba = decoder == null ? null : _decodeRgba(decoder, encoded);
+    Uint8List? stencil;
+    if (rgba != null) {
+      for (final p in rgba) {
+        final ink = (k * (lightest - p.r)).round().clamp(0, 255);
+        p
+          ..r = 0
+          ..g = 0
+          ..b = 0
+          ..a = ink * p.a.toInt() ~/ 255;
+      }
+      stencil = Uint8List.fromList(img.encodePng(rgba));
+    }
+    if (_stencils.length > 512) _stencils.clear();
+    _stencils[key] = stencil;
+    return stencil;
   }
 
   /// Whether the glyph's ink reads on [ground] as drawn, by WCAG 2's non-text contrast.
@@ -140,11 +177,9 @@ class GlyphTone {
       if (info != null &&
           info.width <= limits.maxSide &&
           info.height <= limits.maxSide) {
-        final decoded = decoder!.decode(bytes);
+        final decoded = _decodeRgba(decoder!, bytes);
         if (decoded != null) {
-          final rgba = decoded
-              .convert(format: img.Format.uint8, numChannels: 4)
-              .getBytes(order: img.ChannelOrder.rgba);
+          final rgba = decoded.getBytes(order: img.ChannelOrder.rgba);
           tone = scan(rgba, limits.channelTolerance, premultiplied: false);
         }
       }
@@ -156,6 +191,10 @@ class GlyphTone {
     _encodedVerdicts[key] = tone;
     return tone;
   }
+
+  /// [bytes] decoded to 8-bit RGBA, or null when [decoder] cannot read them.
+  static img.Image? _decodeRgba(img.Decoder decoder, Uint8List bytes) =>
+      decoder.decode(bytes)?.convert(format: img.Format.uint8, numChannels: 4);
 
   static img.Decoder? _decoderFor(Uint8List bytes) {
     if (bytes.length < 8) return null;
