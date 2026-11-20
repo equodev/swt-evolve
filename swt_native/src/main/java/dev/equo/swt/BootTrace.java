@@ -40,10 +40,11 @@ public final class BootTrace {
 
     /**
      * Starts a step, ended by {@link Span#close()}; steps started before it closes are its children.
-     * Use with try-with-resources. Null while tracing is off or frozen, which try-with-resources skips.
+     * Use with try-with-resources. Null while tracing is off or frozen, or for a null {@code name} (no
+     * step to record), which try-with-resources skips.
      */
     public static Span span(String name) {
-        return ENABLED ? TRACE.span(name) : null;
+        return ENABLED && name != null ? TRACE.span(name) : null;
     }
 
     /** A point in time rather than a step: the first time something happened. */
