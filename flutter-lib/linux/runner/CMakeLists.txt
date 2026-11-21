@@ -11,7 +11,9 @@ set(FLUTTER_LIBRARY_NAME "flutter_bridge")
 # bridge registers it lazily via dlopen instead (EquoRegisterPlugins in flutter_bridge.cc).
 add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "flutter_bridge.cc"
+  "draw_on_arrival.cc"
   "engine_got.cc"
+  "engine_vsync.cc"
   "gl_context.cc"
   "opaque_present.cc"
 )

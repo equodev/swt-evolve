@@ -1,4 +1,6 @@
 #include "flutter_bridge.h"
+#include "draw_on_arrival.h"
+#include "engine_vsync.h"
 #include "opaque_present.h"
 
 #include <flutter_linux/flutter_linux.h>
@@ -300,6 +302,8 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 
   FlView *view = fl_view_new(project);
   GtkWidget *view_widget = GTK_WIDGET(view);
+  GtkWidget *parent_top = gtk_widget_get_toplevel(parent_widget);
+  EngineVsyncInstall(fl_view_get_engine(view), GTK_IS_WINDOW(parent_top) ? parent_top : parent_widget);
 
   // Pre-wrap the FlView in a GtkOverlay and embed THAT into the SWT composite.
   // The webview_all (WebKitGTK) plugin's ensure_overlay() needs the FlView to
@@ -645,6 +649,9 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   // public API as it stands.
   FlView *view = boot_step("fl_view_new", [&] { return fl_view_new(project); });
   GtkWidget *view_widget = GTK_WIDGET(view);
+  boot_step("EngineVsyncInstall", [&] { return EngineVsyncInstall(fl_view_get_engine(view), window); });
+  // Flutter paints this window whole: its frames are drawn as they arrive (draw_on_arrival.cc).
+  boot_step("DrawOnArrivalInstall", [&] { return DrawOnArrivalInstall(window); });
 
   // Pre-wrap the FlView in a GtkOverlay, exactly as the embedded path does: otherwise
   // webview_all's ensure_overlay() destructively reparents the realized FlView when a
