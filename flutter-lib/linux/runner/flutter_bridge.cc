@@ -1,4 +1,5 @@
 #include "flutter_bridge.h"
+#include "opaque_present.h"
 
 #include <flutter_linux/flutter_linux.h>
 #include <gdk/gdkx.h>
@@ -654,6 +655,8 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   gtk_widget_set_vexpand(view_widget, TRUE);
   gtk_container_add(GTK_CONTAINER(overlay), view_widget);
   gtk_container_add(GTK_CONTAINER(window), overlay);
+  // Flutter paints this window whole: present its frames opaque (opaque_present.cc).
+  boot_step("OpaquePresentInstall", [] { return OpaquePresentInstall(); });
   boot_step("gtk_widget_show_all", [&] { gtk_widget_show_all(window); });
 
   ctx->view = view_widget;
