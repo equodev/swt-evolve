@@ -76,6 +76,20 @@ class SashKeyboardMovesSashTest extends KeyRoutingTestBase {
     }
 
     @Test
+    @DisplayName("a key other than an arrow moves nothing and reports nothing")
+    void otherKeysDoNothing() {
+        Sash sash = sash(SWT.VERTICAL, 100, 0, 10, 200);
+        java.util.List<Event> selections = new ArrayList<>();
+        sash.addListener(SWT.Selection, selections::add);
+
+        press(sash, 'a');
+        press(sash, SWT.F1);
+
+        assertThat(selections).isEmpty();
+        assertThat(sash.getBounds().x).isEqualTo(100);
+    }
+
+    @Test
     @DisplayName("the sash stays inside its parent, and a move that changes nothing is not reported")
     void theMoveIsKeptInsideTheParent() {
         Sash sash = sash(SWT.HORIZONTAL, 0, 185, 300, 10);

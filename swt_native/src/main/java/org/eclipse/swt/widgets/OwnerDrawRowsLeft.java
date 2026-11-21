@@ -44,8 +44,12 @@ final class OwnerDrawRowsLeft implements Runnable {
     void arm() {
         left = null;
         next = 0;
-        display.timerExec(SETTLE_MS, this);
+        Object settle = display.getData(SETTLE_KEY);
+        display.timerExec(settle instanceof Integer ? (Integer) settle : SETTLE_MS, this);
     }
+
+    /** Display data overriding {@link #SETTLE_MS}: a test that asserts on the rows still left holds them. */
+    static final String SETTLE_KEY = "dev.equo.swt.ownerDrawRowsSettleMs";
 
     @Override
     public void run() {

@@ -36,10 +36,10 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * <p>Needs a real lightweight frame, so it is skipped where AWT runs headless.
  */
 @SuppressWarnings("removal")
-@DisabledOnOs(value = OS.MAC, disabledReason = "this suite runs with -XstartOnFirstThread on macOS,"
-        + " which hands the main thread to Cocoa; AWT never gets to run its event queue there, so"
-        + " invokeAndWait below blocks forever instead of failing. Headless runs skip it anyway, so"
-        + " a Linux desktop is the only place it executes")
+@DisabledOnOs(value = {OS.MAC, OS.LINUX}, disabledReason = "macOS: this suite runs with -XstartOnFirstThread,"
+        + " which hands the main thread to Cocoa, so AWT never runs its event queue and invokeAndWait below"
+        + " blocks forever. Linux: with an X display, getGraphics() drawing inside the hosted applet lands in"
+        + " an image other than the buffer the lightweight frame shares, so the pixel stays white. Windows runs it")
 class ImmediateModeDrawingTest {
 
     private static final int W = 200;

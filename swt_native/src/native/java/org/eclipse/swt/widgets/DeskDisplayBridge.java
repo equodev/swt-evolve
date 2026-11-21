@@ -792,8 +792,18 @@ public class DeskDisplayBridge extends DisplayBridge {
         clientTopInset = insetTop;
         // A shell placed before the strip's height was known has a window that much too short.
         Shell main = forDisplay == null ? null : mainShell(forDisplay);
-        if (main != null && !main.getMaximized() && !main.getFullScreen())
-            placeWindow(windowBoundsFor(main.getBounds()));
+        if (main == null || main.getMaximized() || main.getFullScreen())
+            return;
+        Rectangle shell = main.getBounds();
+        // Unless the window has been resized since the shell was sized: placing it from the shell would
+        // undo that resize, and the viewport the window reported sizes the shell instead. The shell's
+        // own size, and that size less the strip (the window this placement grows), are not resizes.
+        Rectangle window = newestReportedViewport();
+        boolean resizedElsewhere = window != null && window.width > 1 && window.height > 1
+                && (window.width != shell.width
+                    || window.height != shell.height && window.height != shell.height - insetTop);
+        if (!resizedElsewhere)
+            placeWindow(windowBoundsFor(shell));
     }
 
     /**

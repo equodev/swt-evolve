@@ -87,16 +87,16 @@ class SystemAppearanceReadAheadTest {
     }
 
     @Test
-    void outsideTheDesktopNothingIsReadAhead() throws InterruptedException {
+    void outsideTheDesktopNothingIsReadAhead() {
         System.clearProperty(ConfigFlags.MODE_PROPERTY);
-        CountDownLatch started = new CountDownLatch(1);
-        try (DesktopAppearanceStub desktop = new DesktopAppearanceStub(() -> {
-            started.countDown();
-            return "dark";
-        })) {
-            SystemAppearance.readAhead();
+        try (DesktopAppearanceStub desktop = new DesktopAppearanceStub("dark")) {
+            SystemAppearance appearance = SystemAppearance.readAhead();
+            System.setProperty(ConfigFlags.MODE_PROPERTY, ConfigFlags.MODE_DESKTOP);
 
-            assertThat(started.await(500, TimeUnit.MILLISECONDS)).isFalse();
+            assertThat(appearance.get()).isEqualTo("dark");
+            // Read on the caller, so not ahead. The stub is process-wide: a Display an earlier test
+            // left running may read through it too, so what other threads read says nothing here.
+            assertThat(desktop.readOn).as("the threads that read the desktop").contains(Thread.currentThread());
         }
     }
 }

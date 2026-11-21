@@ -92,6 +92,8 @@ class OwnerDrawnRowsWireTest {
         Tree tree = ownerDrawnTree();
         List<TreeItem> rows = List.of(tree.getItems());
         // A repaint just before leaves rows to name, which a scroll names as it brings them on screen.
+        // Held: a flush slower than the settle delay would name them all before the scroll.
+        display.setData(OwnerDrawRowsLeft.SETTLE_KEY, 600_000);
         tree.redraw();
         flush();
         bridge.comm.sent.clear();
@@ -113,6 +115,7 @@ class OwnerDrawnRowsWireTest {
     void aWheelNotchRepaintsOnlyTheTableRowsItBringsIn() {
         Table table = ownerDrawnTable();
         List<TableItem> rows = List.of(table.getItems());
+        display.setData(OwnerDrawRowsLeft.SETTLE_KEY, 600_000);
         table.redraw();
         flush();
         bridge.comm.sent.clear();

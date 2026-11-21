@@ -80,6 +80,7 @@ public class DartProgressBar extends DartControl implements IProgressBar {
 
     static int checkStyle(int style) {
         style |= SWT.NO_FOCUS;
+        style &= ~SWT.BORDER;
         return checkBits(style, SWT.HORIZONTAL, SWT.VERTICAL, 0, 0, 0, 0);
     }
 

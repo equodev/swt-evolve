@@ -642,6 +642,10 @@ val dartMode = if (dartDebug) "debug" else if (dartProfile) "profile" else "rele
 val flutterApp: File = ((gradle.parent as ExtensionAware?)?.extra?.properties?.get("evolveFlutterApp") as File?)
     ?: file("../flutter-lib")
 
+// The tests that load the native bridge (GLCanvas contexts) find it in the desktop app's build, which a
+// composite build names.
+tasks.test { systemProperty("dev.equo.swt.flutterBuildDir", flutterApp.resolve("build").absolutePath) }
+
 fun CopySpec.copyFlutterNatives(os: String, flutterArch: String, mode: String) {
     // Flutter emits build outputs under a mode-named directory: macOS/Windows capitalize
     // (Products/Debug, runner/Debug), Linux lower-cases (build/linux/<arch>/debug).

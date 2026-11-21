@@ -54,6 +54,12 @@ class GLCanvasContextNativeTest {
         return new GLCanvas(shell, SWT.NONE, data);
     }
 
+    /** GL called with no current context crashes the JVM on macOS instead of failing the test. */
+    private static org.lwjgl.opengl.GLCapabilities capabilities() {
+        assertThat(GLTestContexts.current()).as("the thread's current OpenGL context").isNotZero();
+        return GL.createCapabilities();
+    }
+
     private static GLSurface surfaceOf(GLCanvas canvas) {
         return GLTestContexts.surfaceOf(canvas);
     }
@@ -89,7 +95,7 @@ class GLCanvasContextNativeTest {
     void aClearDrawnAfterSetCurrentIsReadBackFromTheContext() {
         canvas.setCurrent();
         assertThat(canvas.isCurrent()).as("isCurrent() after setCurrent()").isTrue();
-        GL.createCapabilities();
+        capabilities();
 
         GL11.glViewport(0, 0, W, H);
         GL11.glClearColor(1f, 0f, 0f, 1f);
@@ -105,7 +111,11 @@ class GLCanvasContextNativeTest {
     @Test
     void theSwappedFrameIsTopRowFirstAndLeavesTheApplicationsReadStateAlone() {
         canvas.setCurrent();
-        GL.createCapabilities();
+        org.lwjgl.opengl.GLCapabilities gl = capabilities();
+        // A missing extension's function is a null pointer that aborts the JVM when called. Windows' own
+        // software renderer (OpenGL 1.1, what a machine with no GPU driver gets) has neither.
+        org.junit.jupiter.api.Assumptions.assumeTrue(gl.GL_EXT_framebuffer_object && gl.GL_EXT_framebuffer_blit,
+                "this OpenGL has no framebuffer objects");
         // The application's own framebuffer, bound for reading, and a pack alignment the swap must not use.
         int fbo = EXTFramebufferObject.glGenFramebuffersEXT();
         int colour = EXTFramebufferObject.glGenRenderbuffersEXT();
@@ -137,7 +147,7 @@ class GLCanvasContextNativeTest {
     void afterAResizeTheFrameHasTheNewSize() {
         canvas.setBounds(0, 0, W / 2, H / 3);
         canvas.setCurrent();
-        GL.createCapabilities();
+        capabilities();
         GL11.glViewport(0, 0, W / 2, H / 3);
         clear(0, 0, W / 2, H / 3, 0f, 1f, 0f);
 
@@ -152,7 +162,7 @@ class GLCanvasContextNativeTest {
     @Test
     void aSharedContextSeesTheTexturesOfTheOther() {
         canvas.setCurrent();
-        GL.createCapabilities();
+        capabilities();
         int texture = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
         ByteBuffer green = BufferUtils.createByteBuffer(4).put(new byte[] {0, (byte) 255, 0, (byte) 255});
@@ -164,7 +174,7 @@ class GLCanvasContextNativeTest {
         second.setBounds(0, 0, W, H);
         second.setCurrent();
         assertThat(second.isCurrent()).as("the second canvas is current").isTrue();
-        GL.createCapabilities();
+        capabilities();
         ByteBuffer read = BufferUtils.createByteBuffer(4);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
         GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, read);

@@ -100,6 +100,9 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /** What the client had last reported focused when the oldest unanswered request went out: a report
      *  older than every request can name only this control. */
     private DartControl clientFocusAtRequest = null;
+    /** The control of a request the client echoed but has not reported focused yet: it applies a request
+     *  a frame after receiving it, so that report can still cross a newer request. */
+    private DartControl echoedUnreported = null;
     /** One comm (and one surface) per Display, unlike the embedded bridge's shared static comm. */
     private CommService comm;
 
@@ -409,8 +412,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 return;
             long answered = ((Number) seq).longValue();
             api.asyncExec(() -> {
-                if (answered == focusRequestSeq)
+                if (answered == focusRequestSeq) {
+                    DartControl latest = unansweredFocusRequests.peekLast();
+                    echoedUnreported = latest != clientReportedFocus ? latest : null;
                     unansweredFocusRequests.clear();
+                }
             });
         });
     }
@@ -459,6 +465,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return clientReportsReceived.get();
     }
 
+    /** The viewport of the newest client report received, which may not be applied yet. */
+    private volatile Rectangle newestReportedViewport;
+
+    /** The size the window last reported, from the report being applied or a newer one; null before any. */
+    protected Rectangle newestReportedViewport() {
+        return newestReportedViewport;
+    }
+
     private void registerClientReadyHandler(DartDisplay display, long displayId) {
         // Completing clientReady + pushing swt.evolve.properties on the first ClientReady is handled
         // by the shared FlutterBridge.onClientReady template; here we only do the Display-specific
@@ -495,6 +509,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // ClientReady) cancels any pending tab-close — see the browser surface's onDisplayClientReady.
             onDisplayClientReady(first);
 
+            newestReportedViewport = new Rectangle(0, 0, p.width, p.height);
             long received = clientReportsReceived.incrementAndGet();
             Display api = display.getApi();
             Runnable apply = () -> {
@@ -1734,6 +1749,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         super.destroy(control);
         if (focusRequested == control) focusRequested = null;
         unansweredFocusRequests.remove(control);
+        if (echoedUnreported == control) echoedUnreported = null;
         if (clientActivated == control) clientActivated = null;
         if (focused == control) focused = null;
         if (focusHolderSent == control) focusHolderSent = null;
@@ -2088,6 +2104,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     @Override
     public boolean staleFocusReport(DartControl widget) {
         boolean stale = reportPrecedesPendingRequest(widget);
+        if (widget == echoedUnreported)
+            echoedUnreported = null;
         clientReportedFocus = widget;
         return stale;
     }
@@ -2150,8 +2168,12 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 && (widget == clientReportedFocus || unansweredFocusRequests.contains(widget)))
             return;
         focusRequested = widget;
-        if (unansweredFocusRequests.isEmpty())
+        if (unansweredFocusRequests.isEmpty()) {
             clientFocusAtRequest = clientReportedFocus;
+            if (echoedUnreported != null)
+                unansweredFocusRequests.addLast(echoedUnreported);
+            echoedUnreported = null;
+        }
         unansweredFocusRequests.remove(widget);
         unansweredFocusRequests.addLast(widget);
         sendFocusRequest(widget);

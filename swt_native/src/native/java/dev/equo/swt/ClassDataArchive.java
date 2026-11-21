@@ -262,7 +262,11 @@ public final class ClassDataArchive {
         try {
             Enumeration<URL> manifests = loader.getResources("META-INF/MANIFEST.MF");
             while (manifests.hasMoreElements()) {
-                try (InputStream in = manifests.nextElement().openStream()) {
+                // Uncached: a cached jar connection keeps the jar open for the life of the JVM, and on
+                // Windows an open file cannot be deleted or replaced.
+                java.net.URLConnection connection = manifests.nextElement().openConnection();
+                connection.setUseCaches(false);
+                try (InputStream in = connection.getInputStream()) {
                     String version = new Manifest(in).getMainAttributes().getValue("Evolve-Version");
                     if (version != null) return version;
                 }
