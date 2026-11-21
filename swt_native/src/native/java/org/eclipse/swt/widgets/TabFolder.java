@@ -348,6 +348,6 @@ public class TabFolder extends Composite {
     }
 
     public ITabFolder getImpl() {
-        return (ITabFolder) super.getImpl();
+        return (ITabFolder) impl;
     }
 }

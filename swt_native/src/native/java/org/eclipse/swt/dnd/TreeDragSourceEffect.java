@@ -87,6 +87,6 @@ public class TreeDragSourceEffect extends DragSourceEffect {
     }
 
     public ITreeDragSourceEffect getImpl() {
-        return (ITreeDragSourceEffect) super.getImpl();
+        return (ITreeDragSourceEffect) impl;
     }
 }

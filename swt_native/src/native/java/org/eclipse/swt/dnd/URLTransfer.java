@@ -96,6 +96,6 @@ public class URLTransfer extends ByteArrayTransfer {
     }
 
     public IURLTransfer getImpl() {
-        return (IURLTransfer) super.getImpl();
+        return (IURLTransfer) impl;
     }
 }

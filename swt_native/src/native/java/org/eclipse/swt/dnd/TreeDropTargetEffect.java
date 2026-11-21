@@ -129,6 +129,6 @@ public class TreeDropTargetEffect extends DropTargetEffect {
     }
 
     public ITreeDropTargetEffect getImpl() {
-        return (ITreeDropTargetEffect) super.getImpl();
+        return (ITreeDropTargetEffect) impl;
     }
 }

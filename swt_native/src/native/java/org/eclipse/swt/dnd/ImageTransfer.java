@@ -101,6 +101,6 @@ public class ImageTransfer extends ByteArrayTransfer {
     }
 
     public IImageTransfer getImpl() {
-        return (IImageTransfer) super.getImpl();
+        return (IImageTransfer) impl;
     }
 }

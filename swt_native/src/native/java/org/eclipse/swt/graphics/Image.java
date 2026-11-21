@@ -802,6 +802,6 @@ public final class Image extends Resource implements Drawable {
     }
 
     public IImage getImpl() {
-        return (IImage) super.getImpl();
+        return (IImage) impl;
     }
 }

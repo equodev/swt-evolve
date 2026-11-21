@@ -284,6 +284,6 @@ public class DragSource extends Widget {
     }
 
     public IDragSource getImpl() {
-        return (IDragSource) super.getImpl();
+        return (IDragSource) impl;
     }
 }

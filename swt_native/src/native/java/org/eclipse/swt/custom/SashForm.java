@@ -258,6 +258,6 @@ public class SashForm extends Composite {
     }
 
     public ISashForm getImpl() {
-        return (ISashForm) super.getImpl();
+        return (ISashForm) impl;
     }
 }

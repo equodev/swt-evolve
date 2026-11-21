@@ -183,6 +183,6 @@ public class TreeEditor extends ControlEditor {
     }
 
     public ITreeEditor getImpl() {
-        return (ITreeEditor) super.getImpl();
+        return (ITreeEditor) impl;
     }
 }

@@ -190,6 +190,6 @@ public class DirectoryDialog extends Dialog {
     }
 
     public IDirectoryDialog getImpl() {
-        return (IDirectoryDialog) super.getImpl();
+        return (IDirectoryDialog) impl;
     }
 }

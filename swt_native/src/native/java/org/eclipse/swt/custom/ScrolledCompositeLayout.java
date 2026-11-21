@@ -52,6 +52,6 @@ class ScrolledCompositeLayout extends Layout {
     }
 
     public IScrolledCompositeLayout getImpl() {
-        return (IScrolledCompositeLayout) super.getImpl();
+        return (IScrolledCompositeLayout) impl;
     }
 }

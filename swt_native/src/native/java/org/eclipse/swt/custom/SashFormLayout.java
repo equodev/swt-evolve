@@ -52,6 +52,6 @@ class SashFormLayout extends Layout {
     }
 
     public ISashFormLayout getImpl() {
-        return (ISashFormLayout) super.getImpl();
+        return (ISashFormLayout) impl;
     }
 }

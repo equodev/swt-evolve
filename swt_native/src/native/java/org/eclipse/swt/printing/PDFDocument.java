@@ -298,6 +298,6 @@ public final class PDFDocument extends Device {
     }
 
     public IPDFDocument getImpl() {
-        return (IPDFDocument) super.getImpl();
+        return (IPDFDocument) impl;
     }
 }

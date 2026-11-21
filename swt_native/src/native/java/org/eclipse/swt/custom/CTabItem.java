@@ -478,6 +478,6 @@ public class CTabItem extends Item {
     }
 
     public ICTabItem getImpl() {
-        return (ICTabItem) super.getImpl();
+        return (ICTabItem) impl;
     }
 }

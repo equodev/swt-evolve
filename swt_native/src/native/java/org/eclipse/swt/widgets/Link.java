@@ -233,6 +233,6 @@ public class Link extends Control {
     }
 
     public ILink getImpl() {
-        return (ILink) super.getImpl();
+        return (ILink) impl;
     }
 }

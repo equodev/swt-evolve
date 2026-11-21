@@ -363,6 +363,6 @@ public class TrayItem extends Item {
     }
 
     public ITrayItem getImpl() {
-        return (ITrayItem) super.getImpl();
+        return (ITrayItem) impl;
     }
 }

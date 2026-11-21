@@ -397,6 +397,6 @@ public final class Printer extends Device {
     }
 
     public IPrinter getImpl() {
-        return (IPrinter) super.getImpl();
+        return (IPrinter) impl;
     }
 }

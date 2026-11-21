@@ -141,6 +141,6 @@ public class Sash extends Control {
     }
 
     public ISash getImpl() {
-        return (ISash) super.getImpl();
+        return (ISash) impl;
     }
 }

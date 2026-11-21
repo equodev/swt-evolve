@@ -149,6 +149,6 @@ public class Group extends Composite {
     }
 
     public IGroup getImpl() {
-        return (IGroup) super.getImpl();
+        return (IGroup) impl;
     }
 }

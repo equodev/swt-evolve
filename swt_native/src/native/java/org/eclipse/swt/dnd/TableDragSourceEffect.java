@@ -88,6 +88,6 @@ public class TableDragSourceEffect extends DragSourceEffect {
     }
 
     public ITableDragSourceEffect getImpl() {
-        return (ITableDragSourceEffect) super.getImpl();
+        return (ITableDragSourceEffect) impl;
     }
 }

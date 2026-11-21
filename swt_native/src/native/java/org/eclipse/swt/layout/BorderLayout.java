@@ -153,6 +153,6 @@ public class BorderLayout extends Layout {
     }
 
     public IBorderLayout getImpl() {
-        return (IBorderLayout) super.getImpl();
+        return (IBorderLayout) impl;
     }
 }

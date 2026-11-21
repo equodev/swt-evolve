@@ -355,6 +355,6 @@ public class ToolTip extends Widget {
     }
 
     public IToolTip getImpl() {
-        return (IToolTip) super.getImpl();
+        return (IToolTip) impl;
     }
 }

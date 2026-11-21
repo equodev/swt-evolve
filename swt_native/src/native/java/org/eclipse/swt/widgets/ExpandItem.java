@@ -246,6 +246,6 @@ public class ExpandItem extends Item {
     }
 
     public IExpandItem getImpl() {
-        return (IExpandItem) super.getImpl();
+        return (IExpandItem) impl;
     }
 }

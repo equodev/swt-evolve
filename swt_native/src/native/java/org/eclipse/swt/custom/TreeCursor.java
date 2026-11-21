@@ -252,6 +252,6 @@ public class TreeCursor extends Canvas {
     }
 
     public ITreeCursor getImpl() {
-        return (ITreeCursor) super.getImpl();
+        return (ITreeCursor) impl;
     }
 }

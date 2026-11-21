@@ -1016,6 +1016,6 @@ public class CCombo extends Composite {
     }
 
     public ICCombo getImpl() {
-        return (ICCombo) super.getImpl();
+        return (ICCombo) impl;
     }
 }

@@ -559,6 +559,6 @@ public class ScrollBar extends Widget {
     }
 
     public IScrollBar getImpl() {
-        return (IScrollBar) super.getImpl();
+        return (IScrollBar) impl;
     }
 }

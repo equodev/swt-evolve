@@ -244,6 +244,6 @@ public class IME extends Widget {
     }
 
     public IIME getImpl() {
-        return (IIME) super.getImpl();
+        return (IIME) impl;
     }
 }

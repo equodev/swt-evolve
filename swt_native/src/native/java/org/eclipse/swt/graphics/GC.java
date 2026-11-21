@@ -2094,6 +2094,6 @@ public final class GC extends Resource {
     }
 
     public IGC getImpl() {
-        return (IGC) super.getImpl();
+        return (IGC) impl;
     }
 }

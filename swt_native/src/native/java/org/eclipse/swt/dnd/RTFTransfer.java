@@ -94,6 +94,6 @@ public class RTFTransfer extends ByteArrayTransfer {
     }
 
     public IRTFTransfer getImpl() {
-        return (IRTFTransfer) super.getImpl();
+        return (IRTFTransfer) impl;
     }
 }

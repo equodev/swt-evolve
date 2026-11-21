@@ -261,6 +261,6 @@ public class TableCursor extends Canvas {
     }
 
     public ITableCursor getImpl() {
-        return (ITableCursor) super.getImpl();
+        return (ITableCursor) impl;
     }
 }

@@ -180,6 +180,6 @@ public abstract class Item extends Widget {
     }
 
     public IItem getImpl() {
-        return (IItem) super.getImpl();
+        return (IItem) impl;
     }
 }

@@ -226,6 +226,6 @@ public class Label extends Control {
     }
 
     public ILabel getImpl() {
-        return (ILabel) super.getImpl();
+        return (ILabel) impl;
     }
 }

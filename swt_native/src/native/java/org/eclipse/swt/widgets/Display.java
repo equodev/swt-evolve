@@ -1867,6 +1867,6 @@ public class Display extends Device implements Executor {
     }
 
     public IDisplay getImpl() {
-        return (IDisplay) super.getImpl();
+        return (IDisplay) impl;
     }
 }

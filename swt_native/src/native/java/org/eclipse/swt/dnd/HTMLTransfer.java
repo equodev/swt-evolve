@@ -94,6 +94,6 @@ public class HTMLTransfer extends ByteArrayTransfer {
     }
 
     public IHTMLTransfer getImpl() {
-        return (IHTMLTransfer) super.getImpl();
+        return (IHTMLTransfer) impl;
     }
 }

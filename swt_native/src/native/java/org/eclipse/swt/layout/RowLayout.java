@@ -237,6 +237,6 @@ public final class RowLayout extends Layout {
     }
 
     public IRowLayout getImpl() {
-        return (IRowLayout) super.getImpl();
+        return (IRowLayout) impl;
     }
 }

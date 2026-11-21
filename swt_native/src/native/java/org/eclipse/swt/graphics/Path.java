@@ -435,6 +435,6 @@ public class Path extends Resource {
     }
 
     public IPath getImpl() {
-        return (IPath) super.getImpl();
+        return (IPath) impl;
     }
 }

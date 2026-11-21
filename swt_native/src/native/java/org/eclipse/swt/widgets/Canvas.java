@@ -224,6 +224,6 @@ public class Canvas extends Composite {
     }
 
     public ICanvas getImpl() {
-        return (ICanvas) super.getImpl();
+        return (ICanvas) impl;
     }
 }

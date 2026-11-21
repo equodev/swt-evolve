@@ -1089,6 +1089,6 @@ public final class TextLayout extends Resource {
     }
 
     public ITextLayout getImpl() {
-        return (ITextLayout) super.getImpl();
+        return (ITextLayout) impl;
     }
 }

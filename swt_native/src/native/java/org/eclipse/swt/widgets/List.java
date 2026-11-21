@@ -827,6 +827,6 @@ public class List extends Scrollable {
     }
 
     public IList getImpl() {
-        return (IList) super.getImpl();
+        return (IList) impl;
     }
 }

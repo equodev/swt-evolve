@@ -2459,6 +2459,6 @@ public abstract class Control extends Widget implements Drawable {
     }
 
     public IControl getImpl() {
-        return (IControl) super.getImpl();
+        return (IControl) impl;
     }
 }

@@ -189,6 +189,6 @@ public class Pattern extends Resource {
     }
 
     public IPattern getImpl() {
-        return (IPattern) super.getImpl();
+        return (IPattern) impl;
     }
 }

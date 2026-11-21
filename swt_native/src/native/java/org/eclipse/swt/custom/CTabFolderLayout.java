@@ -52,6 +52,6 @@ class CTabFolderLayout extends Layout {
     }
 
     public ICTabFolderLayout getImpl() {
-        return (ICTabFolderLayout) super.getImpl();
+        return (ICTabFolderLayout) impl;
     }
 }

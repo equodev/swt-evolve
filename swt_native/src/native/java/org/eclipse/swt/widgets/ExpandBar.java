@@ -259,6 +259,6 @@ public class ExpandBar extends Composite {
     }
 
     public IExpandBar getImpl() {
-        return (IExpandBar) super.getImpl();
+        return (IExpandBar) impl;
     }
 }

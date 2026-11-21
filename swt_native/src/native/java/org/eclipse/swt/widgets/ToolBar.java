@@ -237,6 +237,6 @@ public class ToolBar extends Composite {
     }
 
     public IToolBar getImpl() {
-        return (IToolBar) super.getImpl();
+        return (IToolBar) impl;
     }
 }

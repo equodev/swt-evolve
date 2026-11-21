@@ -365,6 +365,6 @@ public class Caret extends Widget {
     }
 
     public ICaret getImpl() {
-        return (ICaret) super.getImpl();
+        return (ICaret) impl;
     }
 }

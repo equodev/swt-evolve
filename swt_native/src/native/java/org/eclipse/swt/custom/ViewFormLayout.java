@@ -52,6 +52,6 @@ class ViewFormLayout extends Layout {
     }
 
     public IViewFormLayout getImpl() {
-        return (IViewFormLayout) super.getImpl();
+        return (IViewFormLayout) impl;
     }
 }

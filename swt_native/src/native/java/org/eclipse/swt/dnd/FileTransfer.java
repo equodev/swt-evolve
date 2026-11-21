@@ -104,6 +104,6 @@ public class FileTransfer extends ByteArrayTransfer {
     }
 
     public IFileTransfer getImpl() {
-        return (IFileTransfer) super.getImpl();
+        return (IFileTransfer) impl;
     }
 }

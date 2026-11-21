@@ -335,6 +335,6 @@ public class TaskItem extends Item {
     }
 
     public ITaskItem getImpl() {
-        return (ITaskItem) super.getImpl();
+        return (ITaskItem) impl;
     }
 }

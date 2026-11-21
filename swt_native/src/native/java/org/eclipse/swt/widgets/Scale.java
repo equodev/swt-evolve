@@ -295,6 +295,6 @@ public class Scale extends Control {
     }
 
     public IScale getImpl() {
-        return (IScale) super.getImpl();
+        return (IScale) impl;
     }
 }

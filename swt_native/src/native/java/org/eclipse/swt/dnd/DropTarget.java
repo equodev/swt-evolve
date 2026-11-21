@@ -273,6 +273,6 @@ public class DropTarget extends Widget {
     }
 
     public IDropTarget getImpl() {
-        return (IDropTarget) super.getImpl();
+        return (IDropTarget) impl;
     }
 }

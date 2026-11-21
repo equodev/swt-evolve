@@ -52,6 +52,6 @@ class CBannerLayout extends Layout {
     }
 
     public ICBannerLayout getImpl() {
-        return (ICBannerLayout) super.getImpl();
+        return (ICBannerLayout) impl;
     }
 }

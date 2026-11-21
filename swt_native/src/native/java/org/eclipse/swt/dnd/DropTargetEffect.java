@@ -99,6 +99,6 @@ public class DropTargetEffect extends DropTargetAdapter {
     }
 
     public IDropTargetEffect getImpl() {
-        return (IDropTargetEffect) super.getImpl();
+        return (IDropTargetEffect) impl;
     }
 }

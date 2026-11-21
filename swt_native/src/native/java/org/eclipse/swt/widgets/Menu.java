@@ -649,6 +649,6 @@ public class Menu extends Widget {
     }
 
     public IMenu getImpl() {
-        return (IMenu) super.getImpl();
+        return (IMenu) impl;
     }
 }

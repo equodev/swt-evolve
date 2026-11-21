@@ -3627,6 +3627,6 @@ public class StyledText extends Canvas {
     }
 
     public IStyledText getImpl() {
-        return (IStyledText) super.getImpl();
+        return (IStyledText) impl;
     }
 }

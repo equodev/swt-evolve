@@ -413,6 +413,6 @@ public class DateTime extends Composite {
     }
 
     public IDateTime getImpl() {
-        return (IDateTime) super.getImpl();
+        return (IDateTime) impl;
     }
 }

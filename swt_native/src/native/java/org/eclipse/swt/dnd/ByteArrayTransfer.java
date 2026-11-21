@@ -179,6 +179,6 @@ public abstract class ByteArrayTransfer extends Transfer {
                     return ByteArrayTransfer.this.getTypeNames();
                 }
             };
-        return (IByteArrayTransfer) super.getImpl();
+        return (IByteArrayTransfer) impl;
     }
 }

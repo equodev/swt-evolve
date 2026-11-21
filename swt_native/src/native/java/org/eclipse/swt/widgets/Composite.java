@@ -601,6 +601,6 @@ public class Composite extends Scrollable {
     }
 
     public IComposite getImpl() {
-        return (IComposite) super.getImpl();
+        return (IComposite) impl;
     }
 }

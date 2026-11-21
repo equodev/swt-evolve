@@ -454,6 +454,6 @@ public class TableColumn extends Item {
     }
 
     public ITableColumn getImpl() {
-        return (ITableColumn) super.getImpl();
+        return (ITableColumn) impl;
     }
 }

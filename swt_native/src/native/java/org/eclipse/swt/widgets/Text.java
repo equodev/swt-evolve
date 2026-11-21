@@ -1192,6 +1192,6 @@ public class Text extends Scrollable {
     }
 
     public IText getImpl() {
-        return (IText) super.getImpl();
+        return (IText) impl;
     }
 }

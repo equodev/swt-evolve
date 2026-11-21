@@ -397,6 +397,6 @@ public class Slider extends Control {
     }
 
     public ISlider getImpl() {
-        return (ISlider) super.getImpl();
+        return (ISlider) impl;
     }
 }

@@ -260,6 +260,6 @@ public class PrintDialog extends Dialog {
     }
 
     public IPrintDialog getImpl() {
-        return (IPrintDialog) super.getImpl();
+        return (IPrintDialog) impl;
     }
 }

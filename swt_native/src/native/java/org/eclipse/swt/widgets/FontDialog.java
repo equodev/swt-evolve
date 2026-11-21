@@ -225,6 +225,6 @@ public class FontDialog extends Dialog {
     }
 
     public IFontDialog getImpl() {
-        return (IFontDialog) super.getImpl();
+        return (IFontDialog) impl;
     }
 }

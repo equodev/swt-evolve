@@ -509,6 +509,6 @@ public class ScrolledComposite extends Composite {
     }
 
     public IScrolledComposite getImpl() {
-        return (IScrolledComposite) super.getImpl();
+        return (IScrolledComposite) impl;
     }
 }

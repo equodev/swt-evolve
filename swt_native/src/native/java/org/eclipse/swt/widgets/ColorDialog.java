@@ -171,6 +171,6 @@ public class ColorDialog extends Dialog {
     }
 
     public IColorDialog getImpl() {
-        return (IColorDialog) super.getImpl();
+        return (IColorDialog) impl;
     }
 }

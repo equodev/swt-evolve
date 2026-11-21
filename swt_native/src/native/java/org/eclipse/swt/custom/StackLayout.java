@@ -130,6 +130,6 @@ public class StackLayout extends Layout {
     }
 
     public IStackLayout getImpl() {
-        return (IStackLayout) super.getImpl();
+        return (IStackLayout) impl;
     }
 }

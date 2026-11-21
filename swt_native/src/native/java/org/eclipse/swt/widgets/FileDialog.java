@@ -341,6 +341,6 @@ public class FileDialog extends Dialog {
     }
 
     public IIFileDialog getImpl() {
-        return (IIFileDialog) super.getImpl();
+        return (IIFileDialog) impl;
     }
 }

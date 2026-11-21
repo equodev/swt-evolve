@@ -1373,6 +1373,6 @@ public class Table extends Composite {
     }
 
     public ITable getImpl() {
-        return (ITable) super.getImpl();
+        return (ITable) impl;
     }
 }

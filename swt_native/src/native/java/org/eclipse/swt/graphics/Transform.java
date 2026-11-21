@@ -360,6 +360,6 @@ public class Transform extends Resource {
     }
 
     public ITransform getImpl() {
-        return (ITransform) super.getImpl();
+        return (ITransform) impl;
     }
 }

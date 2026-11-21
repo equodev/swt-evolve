@@ -166,6 +166,6 @@ public class TableEditor extends ControlEditor {
     }
 
     public ITableEditor getImpl() {
-        return (ITableEditor) super.getImpl();
+        return (ITableEditor) impl;
     }
 }

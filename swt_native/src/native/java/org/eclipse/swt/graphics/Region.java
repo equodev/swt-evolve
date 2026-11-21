@@ -524,6 +524,6 @@ public final class Region extends Resource {
     }
 
     public IRegion getImpl() {
-        return (IRegion) super.getImpl();
+        return (IRegion) impl;
     }
 }

@@ -230,6 +230,6 @@ public final class Font extends Resource {
     }
 
     public IFont getImpl() {
-        return (IFont) super.getImpl();
+        return (IFont) impl;
     }
 }

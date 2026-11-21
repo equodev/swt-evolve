@@ -660,6 +660,6 @@ public class TableItem extends Item {
     }
 
     public ITableItem getImpl() {
-        return (ITableItem) super.getImpl();
+        return (ITableItem) impl;
     }
 }

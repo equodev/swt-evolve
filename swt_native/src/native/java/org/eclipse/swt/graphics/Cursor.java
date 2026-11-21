@@ -292,6 +292,6 @@ public final class Cursor extends Resource {
     }
 
     public ICursor getImpl() {
-        return (ICursor) super.getImpl();
+        return (ICursor) impl;
     }
 }

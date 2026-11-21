@@ -1184,6 +1184,6 @@ public class Tree extends Composite {
     }
 
     public ITree getImpl() {
-        return (ITree) super.getImpl();
+        return (ITree) impl;
     }
 }

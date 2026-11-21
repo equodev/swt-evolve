@@ -1019,6 +1019,6 @@ public class Browser extends Composite {
     }
 
     public IBrowser getImpl() {
-        return (IBrowser) super.getImpl();
+        return (IBrowser) impl;
     }
 }

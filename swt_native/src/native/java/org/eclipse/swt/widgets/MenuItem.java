@@ -608,6 +608,6 @@ public class MenuItem extends Item {
     }
 
     public IMenuItem getImpl() {
-        return (IMenuItem) super.getImpl();
+        return (IMenuItem) impl;
     }
 }

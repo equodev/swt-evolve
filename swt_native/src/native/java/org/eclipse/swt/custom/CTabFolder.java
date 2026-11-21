@@ -1611,6 +1611,6 @@ public class CTabFolder extends Composite {
     }
 
     public ICTabFolder getImpl() {
-        return (ICTabFolder) super.getImpl();
+        return (ICTabFolder) impl;
     }
 }

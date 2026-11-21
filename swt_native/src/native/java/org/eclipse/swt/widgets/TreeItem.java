@@ -912,6 +912,6 @@ public class TreeItem extends Item {
     }
 
     public ITreeItem getImpl() {
-        return (ITreeItem) super.getImpl();
+        return (ITreeItem) impl;
     }
 }

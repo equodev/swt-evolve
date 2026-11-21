@@ -337,6 +337,6 @@ public class CoolBar extends Composite {
     }
 
     public ICoolBar getImpl() {
-        return (ICoolBar) super.getImpl();
+        return (ICoolBar) impl;
     }
 }

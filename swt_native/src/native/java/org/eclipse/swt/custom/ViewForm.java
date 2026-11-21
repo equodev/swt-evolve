@@ -324,6 +324,6 @@ public class ViewForm extends Composite {
     }
 
     public IViewForm getImpl() {
-        return (IViewForm) super.getImpl();
+        return (IViewForm) impl;
     }
 }

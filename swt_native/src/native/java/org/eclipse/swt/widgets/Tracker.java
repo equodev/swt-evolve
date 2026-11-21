@@ -326,6 +326,6 @@ public class Tracker extends Widget {
     }
 
     public ITracker getImpl() {
-        return (ITracker) super.getImpl();
+        return (ITracker) impl;
     }
 }

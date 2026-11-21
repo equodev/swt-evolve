@@ -478,6 +478,6 @@ public class Decorations extends Canvas {
     }
 
     public IDecorations getImpl() {
-        return (IDecorations) super.getImpl();
+        return (IDecorations) impl;
     }
 }

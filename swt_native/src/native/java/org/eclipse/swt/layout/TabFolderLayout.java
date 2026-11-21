@@ -51,6 +51,6 @@ public class TabFolderLayout extends Layout {
     }
 
     public ITabFolderLayout getImpl() {
-        return (ITabFolderLayout) super.getImpl();
+        return (ITabFolderLayout) impl;
     }
 }

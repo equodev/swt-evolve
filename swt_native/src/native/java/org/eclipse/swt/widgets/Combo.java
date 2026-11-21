@@ -1051,6 +1051,6 @@ public class Combo extends Composite {
     }
 
     public ICombo getImpl() {
-        return (ICombo) super.getImpl();
+        return (ICombo) impl;
     }
 }

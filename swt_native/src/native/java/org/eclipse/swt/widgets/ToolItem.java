@@ -639,6 +639,6 @@ public class ToolItem extends Item {
     }
 
     public IToolItem getImpl() {
-        return (IToolItem) super.getImpl();
+        return (IToolItem) impl;
     }
 }

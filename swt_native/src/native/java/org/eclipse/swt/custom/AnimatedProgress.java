@@ -117,6 +117,6 @@ public class AnimatedProgress extends Canvas {
     }
 
     public IAnimatedProgress getImpl() {
-        return (IAnimatedProgress) super.getImpl();
+        return (IAnimatedProgress) impl;
     }
 }

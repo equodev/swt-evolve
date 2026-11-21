@@ -199,6 +199,6 @@ public final class FormLayout extends Layout {
     }
 
     public IFormLayout getImpl() {
-        return (IFormLayout) super.getImpl();
+        return (IFormLayout) impl;
     }
 }

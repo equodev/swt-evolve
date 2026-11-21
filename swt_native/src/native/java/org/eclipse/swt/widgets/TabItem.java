@@ -264,6 +264,6 @@ public class TabItem extends Item {
     }
 
     public ITabItem getImpl() {
-        return (ITabItem) super.getImpl();
+        return (ITabItem) impl;
     }
 }

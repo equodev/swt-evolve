@@ -124,6 +124,6 @@ public class TableDropTargetEffect extends DropTargetEffect {
     }
 
     public ITableDropTargetEffect getImpl() {
-        return (ITableDropTargetEffect) super.getImpl();
+        return (ITableDropTargetEffect) impl;
     }
 }

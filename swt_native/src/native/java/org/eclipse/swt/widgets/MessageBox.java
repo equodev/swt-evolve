@@ -176,6 +176,6 @@ public class MessageBox extends Dialog {
     }
 
     public IMessageBox getImpl() {
-        return (IMessageBox) super.getImpl();
+        return (IMessageBox) impl;
     }
 }

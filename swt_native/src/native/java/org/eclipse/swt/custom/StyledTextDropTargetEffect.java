@@ -145,6 +145,6 @@ public class StyledTextDropTargetEffect extends DropTargetEffect {
     }
 
     public IStyledTextDropTargetEffect getImpl() {
-        return (IStyledTextDropTargetEffect) super.getImpl();
+        return (IStyledTextDropTargetEffect) impl;
     }
 }

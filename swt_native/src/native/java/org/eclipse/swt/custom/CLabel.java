@@ -431,6 +431,6 @@ public class CLabel extends Canvas {
     }
 
     public ICLabel getImpl() {
-        return (ICLabel) super.getImpl();
+        return (ICLabel) impl;
     }
 }

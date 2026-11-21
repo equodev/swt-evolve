@@ -200,6 +200,6 @@ public final class GridLayout extends Layout {
     }
 
     public IGridLayout getImpl() {
-        return (IGridLayout) super.getImpl();
+        return (IGridLayout) impl;
     }
 }

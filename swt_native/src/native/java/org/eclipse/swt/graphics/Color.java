@@ -430,6 +430,6 @@ public final class Color extends Resource {
     }
 
     public IColor getImpl() {
-        return (IColor) super.getImpl();
+        return (IColor) impl;
     }
 }

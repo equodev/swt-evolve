@@ -76,6 +76,6 @@ public class DragSourceEffect extends DragSourceAdapter {
     }
 
     public IDragSourceEffect getImpl() {
-        return (IDragSourceEffect) super.getImpl();
+        return (IDragSourceEffect) impl;
     }
 }

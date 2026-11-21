@@ -988,6 +988,6 @@ public class Shell extends Decorations {
     }
 
     public IShell getImpl() {
-        return (IShell) super.getImpl();
+        return (IShell) impl;
     }
 }

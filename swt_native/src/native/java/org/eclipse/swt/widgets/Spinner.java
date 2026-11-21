@@ -543,6 +543,6 @@ public class Spinner extends Composite {
     }
 
     public ISpinner getImpl() {
-        return (ISpinner) super.getImpl();
+        return (ISpinner) impl;
     }
 }

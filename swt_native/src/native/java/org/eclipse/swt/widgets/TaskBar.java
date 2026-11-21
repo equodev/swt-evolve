@@ -120,6 +120,6 @@ public class TaskBar extends Widget {
     }
 
     public ITaskBar getImpl() {
-        return (ITaskBar) super.getImpl();
+        return (ITaskBar) impl;
     }
 }

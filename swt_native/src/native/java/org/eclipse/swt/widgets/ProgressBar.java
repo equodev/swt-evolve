@@ -228,6 +228,6 @@ public class ProgressBar extends Control {
     }
 
     public IProgressBar getImpl() {
-        return (IProgressBar) super.getImpl();
+        return (IProgressBar) impl;
     }
 }

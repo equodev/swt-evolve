@@ -307,6 +307,6 @@ public class CBanner extends Composite {
     }
 
     public ICBanner getImpl() {
-        return (ICBanner) super.getImpl();
+        return (ICBanner) impl;
     }
 }

@@ -439,6 +439,6 @@ public class CoolItem extends Item {
     }
 
     public ICoolItem getImpl() {
-        return (ICoolItem) super.getImpl();
+        return (ICoolItem) impl;
     }
 }

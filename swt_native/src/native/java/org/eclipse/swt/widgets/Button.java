@@ -364,6 +364,6 @@ public class Button extends Control {
     }
 
     public IButton getImpl() {
-        return (IButton) super.getImpl();
+        return (IButton) impl;
     }
 }

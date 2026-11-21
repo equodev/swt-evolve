@@ -99,6 +99,6 @@ public class TextTransfer extends ByteArrayTransfer {
     }
 
     public ITextTransfer getImpl() {
-        return (ITextTransfer) super.getImpl();
+        return (ITextTransfer) impl;
     }
 }

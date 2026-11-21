@@ -107,6 +107,6 @@ public class Tray extends Widget {
     }
 
     public ITray getImpl() {
-        return (ITray) super.getImpl();
+        return (ITray) impl;
     }
 }

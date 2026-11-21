@@ -454,6 +454,6 @@ public class TreeColumn extends Item {
     }
 
     public ITreeColumn getImpl() {
-        return (ITreeColumn) super.getImpl();
+        return (ITreeColumn) impl;
     }
 }

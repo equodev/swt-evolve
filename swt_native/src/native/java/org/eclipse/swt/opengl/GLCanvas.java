@@ -109,6 +109,6 @@ public class GLCanvas extends Canvas {
     }
 
     public IGLCanvas getImpl() {
-        return (IGLCanvas) super.getImpl();
+        return (IGLCanvas) impl;
     }
 }

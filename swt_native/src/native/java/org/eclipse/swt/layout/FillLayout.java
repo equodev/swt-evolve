@@ -146,6 +146,6 @@ public final class FillLayout extends Layout {
     }
 
     public IFillLayout getImpl() {
-        return (IFillLayout) super.getImpl();
+        return (IFillLayout) impl;
     }
 }

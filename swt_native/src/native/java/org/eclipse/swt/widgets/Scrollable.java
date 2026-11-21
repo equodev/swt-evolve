@@ -210,6 +210,6 @@ public abstract class Scrollable extends Control {
     }
 
     public IScrollable getImpl() {
-        return (IScrollable) super.getImpl();
+        return (IScrollable) impl;
     }
 }
