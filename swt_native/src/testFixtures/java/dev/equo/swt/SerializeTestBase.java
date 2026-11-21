@@ -427,6 +427,11 @@ public class SerializeTestBase {
         inst = inst
                 .withFillType(FillType.POPULATE_NULLS_AND_DEFAULT_PRIMITIVES)
                 .generate(Select.all(int.class), gen -> gen.ints().range(1, 1000))
+                // Enough items to scroll and select through; every one of them travels with its
+                // widget, so each is described again around every setter call the sweep makes.
+                .generate(Select.setter(Table.class, "setItemCount"), gen -> gen.ints().range(1, 49))
+                .generate(Select.setter(Tree.class, "setItemCount"), gen -> gen.ints().range(1, 49))
+                .generate(Select.setter(TreeItem.class, "setItemCount"), gen -> gen.ints().range(1, 49))
                 .generate(Select.all(Image.class), gen -> gen.oneOf(createTestImage()));
         if (!(w instanceof CoolItem)) {
             inst = inst.generate(Select.all(boolean.class), gen -> gen.booleans().probability(1.0)); // Always true

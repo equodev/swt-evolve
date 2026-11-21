@@ -1820,6 +1820,7 @@ public class DartTable extends DartComposite implements ITable {
             getValue().markDirty(VTable.HEADER_VISIBLE);
         }
         this.headerVisible = newValue;
+        TableHelper.keepScrollInRows(this);
     }
 
     /**
