@@ -372,8 +372,12 @@ Future<Map<int, int>> _paintedColors(WidgetTester tester, Widget child) async {
   // blinking caret) never settles, and the sweep would stall on its timeout instead of reporting.
   await tester.pump();
   // An image ground decodes asynchronously; without a real async turn the widget paints before
-  // MemoryImage has produced anything and the sweep reads "no image" as "wrong colour".
-  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 120)));
+  // MemoryImage has produced anything and the sweep reads "no image" as "wrong colour". The wait
+  // lasts until the decode is done, not a fixed time: a loaded machine decodes slower.
+  final decodeDeadline = DateTime.now().add(const Duration(seconds: 10));
+  while (imageCache.pendingImageCount > 0 && DateTime.now().isBefore(decodeDeadline)) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 10)));
+  }
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
 

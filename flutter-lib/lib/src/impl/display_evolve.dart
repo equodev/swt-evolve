@@ -267,7 +267,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
       if (_closesPopup[event] == true) v.doit = false;
       if (v.keyCode != 0 || v.character != 0) {
         KeyEditOrder.instance.forward(
-          typed: KeyEditOrder.typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
+          typed: KeyEditOrder.instance.awaitsField(v.character ?? 0),
           send: () => EquoCommService.sendTo(gen.WireType.display, id, gen.WireChannel.keyKeyDown, v),
         );
       }

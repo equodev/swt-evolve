@@ -133,7 +133,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller.addListener(_trackEmptiness);
     _focusNode.addListener(_handleFocusChange);
     _restFocus.addListener(_handleRestFocus);
-    KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping);
+    KeyEditOrder.instance.registerEditor(_focusNode, _takesTyping, submitsOnEnter: _submitsOnEnter);
     _modifyGate.attach(state.wireType, state.id);
     _modifyGate.onUnmatched = _revertOptimisticEdit;
     // Initialize caret position
@@ -1056,11 +1056,14 @@ class TextImpl<T extends TextSwt, V extends VText>
 
   bool _takesTyping() => (state.editable ?? true) && !hasStyle(state.style, SWT.READ_ONLY);
 
+  bool _submitsOnEnter() =>
+      !hasStyle(state.style, SWT.MULTI) && !HardwareKeyboard.instance.isShiftPressed;
+
   void _handleSubmitted(String value) {
     // Shift+Return is only a key in a single-line Text (Cocoa, GTK and the desktop embedders do not
     // submit on it); the web's input element submits on any Enter.
-    if (HardwareKeyboard.instance.isShiftPressed) return;
-    widget.sendSelectionDefaultSelection(state, null);
+    if (!HardwareKeyboard.instance.isShiftPressed) widget.sendSelectionDefaultSelection(state, null);
+    KeyEditOrder.instance.submitted();
   }
 
   void _handleFocusChange() {

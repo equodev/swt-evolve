@@ -46,7 +46,7 @@ void forwardControlKey(KeyEvent event,
     if (v.keyCode == 0 && v.character == 0) return;
     _forwardedPresses.add(event.physicalKey);
     KeyEditOrder.instance.forward(
-      typed: KeyEditOrder.typesCharacter(v.character ?? 0) && KeyEditOrder.instance.editorFocused,
+      typed: KeyEditOrder.instance.awaitsField(v.character ?? 0),
       send: () => keyDown(v),
     );
   } else if (event is KeyUpEvent && _forwardedPresses.remove(event.physicalKey)) {

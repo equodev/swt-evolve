@@ -212,7 +212,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     _controller = TextEditingController(text: _heldText);
     _focusNode = FocusNode();
     _focusNode.addListener(_handleFocusChange);
-    KeyEditOrder.instance.registerEditor(_focusNode, () => widget.enabled && !widget.readOnly);
+    KeyEditOrder.instance.registerEditor(_focusNode, () => widget.enabled && !widget.readOnly,
+        submitsOnEnter: () => true);
     widget.modifyGate.onUnmatched = _revertVetoedEdit;
   }
 
@@ -514,6 +515,8 @@ class _ThemedSpinnerState extends State<_ThemedSpinner> {
     } catch (e) {
       _localValue = null;
       _controller.text = _heldText;
+    } finally {
+      KeyEditOrder.instance.submitted();
     }
   }
 
