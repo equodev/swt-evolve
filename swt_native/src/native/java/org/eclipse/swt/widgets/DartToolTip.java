@@ -422,7 +422,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
         this.location = newValue;
         if (visible)
             configure();
-        if (display != null) {
+        if (display != null && getVisible()) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
         }
         dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.LOCATION, wasLocation, self -> self.getValue().getLocation());
@@ -569,7 +569,7 @@ public class DartToolTip extends DartWidget implements IToolTip {
             };
             display.timerExec(DELAY, runnable);
         }
-        if (display != null) {
+        if (display != null && visible) {
             ((DartDisplay) display.getImpl())._addActiveTooltip(this.getApi());
         }
         dev.equo.swt.ChangeMarks.ifChanged(this, VToolTip.VISIBLE, wasVisible, self -> self.getValue().getVisible());

@@ -108,6 +108,32 @@ public final class GcFrames {
     /** A binary batch as its entries, each decoded as a frame of its own: a GC frame as its ops, in place. */
     public static List<Entry> batch(byte[] batch) {
         List<Entry> out = new ArrayList<>();
+        eachEntry(batch, (channel, at, length) -> {
+            Decoded decoded = decode(channel, java.util.Arrays.copyOfRange(batch, at, at + length));
+            if (MessageBatch.EVENT.equals(decoded.event()) && decoded.value() instanceof List<?> ops) {
+                for (Object op : ops) out.add((Entry) op);
+            } else {
+                out.add(new Entry(decoded.event(), decoded.value()));
+            }
+        });
+        return out;
+    }
+
+    /** The bytes of a binary batch's entries that are not on {@code channel}: their payloads, headers left out. */
+    public static int payloadBytesOutside(byte[] batch, String channel) {
+        int[] bytes = {0};
+        eachEntry(batch, (entryChannel, at, length) -> {
+            if (!channel.equals(entryChannel)) bytes[0] += length;
+        });
+        return bytes[0];
+    }
+
+    private interface EntryVisitor {
+        void entry(String channel, int payloadAt, int length);
+    }
+
+    /** Walks a binary batch: each entry is its channel header, its payload's length as a varint, its payload. */
+    private static void eachEntry(byte[] batch, EntryVisitor visit) {
         int pos = 0;
         while (pos < batch.length) {
             dev.equo.swt.comm.ChannelHeader.Decoded entry = dev.equo.swt.comm.ChannelHeader.decode(batch, pos, batch.length);
@@ -118,15 +144,9 @@ public final class GcFrames {
                 length |= (b & 0x7F) << shift;
                 if ((b & 0x80) == 0) break;
             }
-            Decoded decoded = decode(entry.channel(), java.util.Arrays.copyOfRange(batch, at, at + length));
-            if (MessageBatch.EVENT.equals(decoded.event()) && decoded.value() instanceof List<?> ops) {
-                for (Object op : ops) out.add((Entry) op);
-            } else {
-                out.add(new Entry(decoded.event(), decoded.value()));
-            }
+            visit.entry(entry.channel(), at, length);
             pos = at + length;
         }
-        return out;
     }
 
     /** A payload decoded: tagged values as the values they hold, anything else as its UTF-8 text; null for none. */

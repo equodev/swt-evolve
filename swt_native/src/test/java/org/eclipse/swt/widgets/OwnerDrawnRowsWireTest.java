@@ -2,6 +2,8 @@ package org.eclipse.swt.widgets;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.WidgetWire;
+import dev.equo.swt.comm.MessageBatch;
 import dev.equo.swt.harness.BatchEntries;
 import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
@@ -244,11 +246,14 @@ class OwnerDrawnRowsWireTest {
         return states;
     }
 
-    /** What the GC frames sent so far take on the wire. */
+    /** What the GC traffic sent so far takes: its frames' payloads, those inside a flush's message included. */
     private int gcBytes() {
         int bytes = 0;
         for (RecordingComm.Frame frame : bridge.comm.sent) {
-            if (frame.wire == 0) bytes += frame.size;
+            if (frame.wire != 0) continue;
+            bytes += MessageBatch.EVENT.equals(frame.event)
+                    ? GcFrames.payloadBytesOutside(frame.bytes, WidgetWire.CHANNEL)
+                    : frame.size;
         }
         return bytes;
     }

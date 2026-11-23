@@ -178,10 +178,18 @@ public final class WidgetWire {
         return size;
     }
 
+    /** Sends this frame: into the message of the flush running on this thread, or on its own. */
     public void sendTo(CommService comm) {
         if (records == 0) return;
         writeCount(buf, countAt);
-        comm.sendFrame(buf, 0, size);
+        FlutterBridge.sendFrame(comm, buf, size);
+    }
+
+    /** Adds this frame to {@code batch}, as one of its entries. */
+    void addTo(dev.equo.swt.comm.MessageBatch batch) {
+        if (records == 0) return;
+        writeCount(buf, countAt);
+        batch.addFrame(buf, countAt, size);
     }
 
     /** The frame's payload, for tests: what {@link #sendTo} would send after the frame header. */

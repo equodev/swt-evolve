@@ -155,7 +155,7 @@ public final class GcWire {
     }
 
     public void sendTo(CommService comm) {
-        if (records > 0) comm.sendFrame(buf, 0, size);
+        if (records > 0) FlutterBridge.sendFrame(comm, buf, size);
     }
 
     /** This frame's records as {@link #entries(String, byte[], int, int)} reads them, past its channel header. */

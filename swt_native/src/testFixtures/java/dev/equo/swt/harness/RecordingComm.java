@@ -64,8 +64,16 @@ public class RecordingComm implements CommService {
         send(Channels.name(type, id, channel), payload);
     }
 
+    private final java.util.concurrent.atomic.AtomicInteger messages = new java.util.concurrent.atomic.AtomicInteger();
+
+    /** The socket messages sent, however many frames each carries. */
+    public int messages() {
+        return messages.get();
+    }
+
     @Override
     public void sendFrame(byte[] frame, int offset, int length) {
+        messages.incrementAndGet();
         dev.equo.swt.comm.ChannelHeader.Decoded header = dev.equo.swt.comm.ChannelHeader.decode(frame, offset, offset + length);
         send(header.channel(), java.util.Arrays.copyOfRange(frame, header.payloadStart(), offset + length));
     }

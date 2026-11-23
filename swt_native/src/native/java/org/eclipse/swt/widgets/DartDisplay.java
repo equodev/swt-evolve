@@ -4205,8 +4205,9 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     ArrayList<ToolTip> activeTooltips = new ArrayList<>();
 
     public void _addActiveTooltip(ToolTip tip) {
-        if (!activeTooltips.contains(tip))
-            activeTooltips.add(tip);
+        if (activeTooltips.contains(tip))
+            return;
+        activeTooltips.add(tip);
         if (displayBridge != null)
             displayBridge.sendDisplayUpdate(this);
     }

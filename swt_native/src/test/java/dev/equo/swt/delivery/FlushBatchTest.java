@@ -2,9 +2,14 @@ package dev.equo.swt.delivery;
 
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.WidgetWire;
+import dev.equo.swt.harness.BatchEntries;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.harness.WireValues;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Mocks;
@@ -108,6 +113,72 @@ class FlushBatchTest {
         FlutterBridge.update();
 
         assertThat(bridge.comm.sent).isEmpty();
+    }
+
+    @Test
+    @DisplayName("what a flush draws goes in its message, ahead of its records")
+    void whatAFlushDrawsTravelsWithItsRecords() {
+        Composite parent = new Composite(Mocks.shell(), SWT.NONE);
+        Canvas canvas = new Canvas(parent, SWT.NONE);
+        Label label = new Label(parent, SWT.NONE);
+        settle(parent);
+        int before = bridge.comm.messages();
+
+        label.setText("changed");
+        paintDuringTheFlush(canvas, 1);
+        FlutterBridge.update();
+
+        assertThat(bridge.comm.messages() - before).as("the paint and the records, one message").isEqualTo(1);
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
+        int paint = indexOf(entries, e -> e.channel().startsWith("GC/"));
+        int records = indexOf(entries, e -> e.channel().equals(WidgetWire.CHANNEL));
+        assertThat(paint).as("the paint is in it").isNotNegative();
+        assertThat(records).as("the records come after the paint they may name").isGreaterThan(paint);
+    }
+
+    @Test
+    @DisplayName("a flush past the size bound goes out as more than one message, the records still last")
+    void aFlushTooBigIsSplit() {
+        Composite parent = new Composite(Mocks.shell(), SWT.NONE);
+        Canvas canvas = new Canvas(parent, SWT.NONE);
+        Label label = new Label(parent, SWT.NONE);
+        settle(parent);
+        int before = bridge.comm.messages();
+
+        label.setText("changed");
+        // Well past the 1 MB bound in draw ops alone.
+        paintDuringTheFlush(canvas, 150_000);
+        FlutterBridge.update();
+
+        assertThat(bridge.comm.messages() - before).as("the paint, then the records").isEqualTo(2);
+        List<GcFrames.Entry> entries = BatchEntries.of(bridge.comm.sent);
+        assertThat(indexOf(entries, e -> e.channel().equals(WidgetWire.CHANNEL)))
+                .as("the records still come after the paint")
+                .isGreaterThan(indexOf(entries, e -> e.channel().startsWith("GC/")));
+    }
+
+    /** Enrols state whose flush draws {@code lines} lines on {@code canvas}: a paint the flush makes. */
+    private static void paintDuringTheFlush(Canvas canvas, int lines) {
+        FlutterBridge.dirty(new FlutterBridge.DirtyState() {
+            @Override
+            public boolean isStale() {
+                return false;
+            }
+
+            @Override
+            public void flush() {
+                GC gc = new GC(canvas);
+                for (int i = 0; i < lines; i++) gc.drawLine(i, 0, i, 10);
+                gc.dispose();
+            }
+        });
+    }
+
+    private static int indexOf(List<GcFrames.Entry> entries, java.util.function.Predicate<GcFrames.Entry> match) {
+        for (int i = 0; i < entries.size(); i++) {
+            if (match.test(entries.get(i))) return i;
+        }
+        return -1;
     }
 
     // ---- harness ----

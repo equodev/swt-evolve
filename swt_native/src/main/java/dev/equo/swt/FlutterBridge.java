@@ -668,9 +668,6 @@ public abstract class FlutterBridge {
             flushOrder(flush);
             lastQueued = null;
         }
-        // A Paint the flush released has drawn by now: its ops go out ahead of this flush's records.
-        if (org.eclipse.swt.widgets.PaintPacing.flushing(flush)) flushOpBatches();
-
         // Everything this flush sends belongs to one moment, so it travels as one message. Only the
         // sends made inline are caught: a widget still waiting on clientReady sends when it can.
         // A flush started inside another, while one of its records is written, hands the outer one
@@ -681,6 +678,8 @@ public abstract class FlutterBridge {
         Display lastDisplay = null;
         boolean lastInline = false;
         try {
+        // A Paint the flush released has drawn by now: its ops go in this flush's message, ahead of its records.
+        if (org.eclipse.swt.widgets.PaintPacing.flushing(flush)) flushOpBatches();
         for (int i = 0; i < flush.size(); i++) {
             Object widget = flush.get(i);
             // Non-widget state (the Display) sends itself, and does so without waiting on
@@ -731,6 +730,24 @@ public abstract class FlutterBridge {
             // gone mid-send) must not keep another comm's frames, already counted as delivered, from
             // their client. The first failure is reported once every frame has been tried.
             RuntimeException failed = null;
+            // The records go last in the same message: what the flush drew or described along the
+            // way (paint ops, the images they name) is what they refer to.
+            for (int i = 0; i < running.tapes.size(); i++) {
+                Serializer.Tape tape = running.tapes.get(i);
+                try {
+                    if (!tape.isEmpty()) {
+                        TAP.widgetFrame(tape.frame());
+                        CommService comm = running.tapeComms.get(i);
+                        MessageBatch batch = running.batchFor(comm);
+                        tape.addTo(batch);
+                        sendIfFull(comm, batch);
+                    }
+                } catch (RuntimeException e) {
+                    if (failed == null) failed = e;
+                } finally {
+                    tape.release();
+                }
+            }
             for (int i = 0; i < running.batches.size(); i++) {
                 MessageBatch batch = running.batches.get(i);
                 try {
@@ -739,13 +756,6 @@ public abstract class FlutterBridge {
                     if (failed == null) failed = e;
                 } finally {
                     releaseBatch(batch);
-                }
-            }
-            for (int i = 0; i < running.tapes.size(); i++) {
-                try {
-                    sendTape(running.tapeComms.get(i), running.tapes.get(i));
-                } catch (RuntimeException e) {
-                    if (failed == null) failed = e;
                 }
             }
             flushState.close(running);
@@ -1089,17 +1099,42 @@ public abstract class FlutterBridge {
         TAP.sent(buffer, payloadStart, length);
         Flush running = FLUSH.get().current;
         if (running != null) {
-            MessageBatch batch = running.batchFor(comm);
-            batch.addFrame(buffer, payloadStart, length);
-            // A flush big enough to be worth splitting: one unbounded message would stall the
-            // client's decode as surely as the frames it replaced stalled its event loop.
-            if (batch.byteSize() >= MAX_BATCH_BYTES) {
-                comm.send(batch);
-                batch.clear();
-            }
+            join(running, comm, buffer, payloadStart, length);
             return;
         }
         comm.sendFrame(buffer, 0, length);
+    }
+
+    /**
+     * Sends the whole frame {@code frame[0, length)}: into the message of the flush running on this
+     * thread, as the sends it makes inline do, or straight out when none is. For what a flush draws
+     * or describes along the way (paint ops, an image a paint names), which belongs to its moment.
+     */
+    static void sendFrame(CommService comm, byte[] frame, int length) {
+        Flush running = FLUSH.get().current;
+        if (running == null) {
+            comm.sendFrame(frame, 0, length);
+            return;
+        }
+        join(running, comm, frame, ChannelHeader.decode(frame, 0, length).payloadStart(), length);
+    }
+
+    private static void join(Flush running, CommService comm, byte[] frame, int payloadStart, int length) {
+        MessageBatch batch = running.batchFor(comm);
+        batch.addFrame(frame, payloadStart, length);
+        sendIfFull(comm, batch);
+    }
+
+    /**
+     * A flush big enough to be worth splitting goes out in parts, between frames: one unbounded
+     * message would stall the client's decode as surely as the frames it replaced stalled its
+     * event loop.
+     */
+    private static void sendIfFull(CommService comm, MessageBatch batch) {
+        if (batch.byteSize() >= MAX_BATCH_BYTES) {
+            comm.send(batch);
+            batch.clear();
+        }
     }
 
     /**
