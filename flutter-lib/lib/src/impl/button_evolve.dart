@@ -31,18 +31,17 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   @override
   FocusNode? get swtFocusNode => _focusNode;
 
-  static IconData _getArrowIcon(int alignment) {
+  /// The chevron an arrow button draws, and whether it points sideways.
+  static (IconData, bool horizontal) _arrowGlyph(int alignment) {
     switch (alignment) {
       case SWT.UP:
-        return Icons.keyboard_arrow_up;
-      case SWT.DOWN:
-        return Icons.keyboard_arrow_down;
+        return (Icons.keyboard_arrow_up, false);
       case SWT.LEFT:
-        return Icons.keyboard_arrow_left;
+        return (Icons.keyboard_arrow_left, true);
       case SWT.RIGHT:
-        return Icons.keyboard_arrow_right;
+        return (Icons.keyboard_arrow_right, true);
       default:
-        return Icons.keyboard_arrow_down;
+        return (Icons.keyboard_arrow_down, false);
     }
   }
 
@@ -700,20 +699,22 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     String? text,
   ) {
     final alignment = state.alignment ?? SWT.CENTER;
-    final arrowIcon = _getArrowIcon(alignment);
+    final (arrowIcon, horizontal) = _arrowGlyph(alignment);
 
     final constraints = getConstraintsFromBounds(state.bounds);
-    final hasValidBounds = hasBounds(state.bounds);
+    final borderWidth = widgetTheme.pushButtonBorderWidth;
+    final iconSize = getArrowIconSize(state, widgetTheme, horizontal: horizontal);
+    final radius = BorderRadius.circular(getArrowButtonRadius(state, widgetTheme));
 
     Widget button = Material(
-      borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+      borderRadius: radius,
       child: InkWell(
         onTap: _onPressed,
         focusNode: _focusNode,
         // An arrow button is NO_FOCUS in SWT: never focused, and no tab stop.
         canRequestFocus: false,
         onFocusChange: _onFocusChange,
-        borderRadius: BorderRadius.circular(widgetTheme.pushButtonBorderRadius),
+        borderRadius: radius,
         child: QuietAnimatedContainer(
           duration: widgetTheme.buttonPressDelay,
           constraints: constraints,
@@ -721,25 +722,31 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
             color: enabled
                 ? widgetTheme.pushButtonColor
                 : widgetTheme.pushButtonDisabledColor,
-            borderRadius: BorderRadius.circular(
-              widgetTheme.pushButtonBorderRadius,
-            ),
+            borderRadius: radius,
             border: Border.all(
               color: widgetTheme.pushButtonBorderColor,
-              width: widgetTheme.pushButtonBorderWidth,
+              width: borderWidth,
             ),
           ),
-          child: Icon(
-            arrowIcon,
-            size: widgetTheme.dropdownButtonIconSize,
-            color: enabled
-                ? getForegroundColor(
-                    foreground: _ownForeground,
-                    defaultColor: widgetTheme.pushButtonTextColor,
-                    context: context,
-                    minContrast: widgetTheme.minTextContrast,
-                  )
-                : widgetTheme.disabledForegroundColor,
+          // The chevron inks only part of its glyph box, which may be larger than the button.
+          child: OverflowBox(
+            fit: OverflowBoxFit.deferToChild,
+            minWidth: 0,
+            minHeight: 0,
+            maxWidth: iconSize,
+            maxHeight: iconSize,
+            child: Icon(
+              arrowIcon,
+              size: iconSize,
+              color: enabled
+                  ? getForegroundColor(
+                      foreground: _ownForeground,
+                      defaultColor: widgetTheme.pushButtonTextColor,
+                      context: context,
+                      minContrast: widgetTheme.minTextContrast,
+                    )
+                  : widgetTheme.disabledForegroundColor,
+            ),
           ),
         ),
       ),

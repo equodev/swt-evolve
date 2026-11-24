@@ -241,6 +241,33 @@ Color getPushButtonTextColor(
       : widgetTheme.secondaryButtonTextColor;
 }
 
+/// The share of its glyph box a Material keyboard_arrow chevron inks: 7.41 of 24 units in the
+/// direction it points, 12 of 24 across it.
+const _chevronInkDepth = 7.41 / 24;
+const _chevronInkSpan = 12 / 24;
+
+/// The size of an arrow button's chevron icon. As native SWT, the arrow grows with the button, its
+/// long side half the button's shorter side; it is never drawn below the theme's size, which is the
+/// smallest that reads, unless its ink would not fit inside the border.
+double getArrowIconSize(VButton state, ButtonThemeExtension widgetTheme, {required bool horizontal}) {
+  if (!hasBounds(state.bounds)) return widgetTheme.dropdownButtonIconSize;
+  final width = state.bounds!.width.toDouble();
+  final height = state.bounds!.height.toDouble();
+  final border = widgetTheme.pushButtonBorderWidth;
+  final scaled = min(width, height) / 2 / _chevronInkSpan;
+  final fitWidth = max(0.0, width - 2 * border) / (horizontal ? _chevronInkDepth : _chevronInkSpan);
+  final fitHeight = max(0.0, height - 2 * border) / (horizontal ? _chevronInkSpan : _chevronInkDepth);
+  return min(max(widgetTheme.dropdownButtonIconSize, scaled), min(fitWidth, fitHeight));
+}
+
+/// An arrow button's corner radius: within a quarter of its shorter side, so that a narrow button
+/// still reads as a rectangle rather than a pill.
+double getArrowButtonRadius(VButton state, ButtonThemeExtension widgetTheme) {
+  if (!hasBounds(state.bounds)) return widgetTheme.pushButtonBorderRadius;
+  final shortSide = min(state.bounds!.width, state.bounds!.height).toDouble();
+  return min(widgetTheme.pushButtonBorderRadius, shortSide / 4);
+}
+
 double getCheckboxSize(
   VButton state,
   ButtonThemeExtension widgetTheme, {
