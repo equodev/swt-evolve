@@ -21,6 +21,7 @@ import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/decorations_align.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
+import 'delivery/support/deliver.dart';
 import 'support/menu_bar_fixtures.dart';
 import 'support/menu_shown_ack.dart';
 
@@ -104,6 +105,29 @@ Future<void> _openDropDown(WidgetTester tester, List<VMenuItem> items) async {
   await tester.tap(find.text('File'));
   await tester.pumpAndSettle();
   await ackMenuShown(tester, 202);
+}
+
+/// Opens the menu bar collapsed into its button, then the drop-down of its `File` entry, holding
+/// [items]; the bar's other entry, `Window`, has an image.
+Future<void> _openCollapsedDropDown(WidgetTester tester, List<VMenuItem> items) async {
+  final bar = VMenu()
+    ..id = 200
+    ..style = SWT.BAR
+    ..enabled = true
+    ..items = [
+      _item(201, SWT.CASCADE, 'File', submenu: items),
+      _item(203, SWT.CASCADE, 'Window', image: true, submenu: [_item(2031, SWT.PUSH, 'New Window')]),
+    ];
+  setConfigFlags(ConfigFlags()..decorations_align = DecorationsAlign.vleft);
+  addTearDown(resetConfigFlags);
+  await pumpDecorations(tester, decorations(menuBar: bar, children: [mainToolbar()]));
+  await tester.tap(find.byIcon(Icons.menu));
+  await tester.pumpAndSettle();
+  final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+  await mouse.addPointer(location: Offset.zero);
+  addTearDown(mouse.removePointer);
+  await mouse.moveTo(tester.getCenter(find.text('File')));
+  await tester.pumpAndSettle();
 }
 
 /// The x of [finder] within the menu item that holds it, so menus placed anywhere compare.
@@ -205,5 +229,26 @@ void main() {
     ]);
     expect(_labelX(tester, _plain), leadingX,
         reason: 'with no leading content a label starts where an icon would');
+  });
+
+  testWidgets('labels in a drop-down of the collapsed menu bar share one column', (tester) async {
+    await _openCollapsedDropDown(tester, [
+      _item(2011, SWT.PUSH, _withImage, image: true),
+      _item(2012, SWT.PUSH, _plain),
+    ]);
+    _expectOneColumn(tester, [_withImage, _plain]);
+    _expectOneColumn(tester, ['File', 'Window']);
+  });
+
+  testWidgets('an item that gets an image while the menu is open moves every label to one column',
+      (tester) async {
+    await _openPopup(tester, [_item(101, SWT.PUSH, _plain), _item(102, SWT.PUSH, 'Close Project')]);
+    expect(find.byType(Image), findsNothing);
+
+    await deliverWhole(_item(101, SWT.PUSH, _plain, image: true));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Image), findsOneWidget, reason: 'the item shows its new image');
+    _expectOneColumn(tester, [_plain, 'Close Project']);
   });
 }
