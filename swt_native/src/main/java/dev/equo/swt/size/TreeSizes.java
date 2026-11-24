@@ -25,9 +25,7 @@ public class TreeSizes {
     private static final int NATIVE_SCROLLER_AND_BEZEL_TRIM = 15 + 2;
 
     private static final double EDGE_GAP_FRACTION = 0.0275;
-    private static final double EDGE_GAP_FRACTION_WITH_COLS = 0.005;
     private static final double ITEM_PADDING_LEFT = 8.0;
-    private static final double ITEM_PADDING_LEFT_WITH_COLS = 12.0;
     private static final double ITEM_INDENT = 16.0;
     private static final double ITEM_INDENT_WITH_COLS = 16.0;
     private static final double EXPAND_ICON_SIZE = 12.0;
@@ -108,24 +106,22 @@ public class TreeSizes {
         return (int) Math.ceil(minHeight);
     }
 
-    /** Where a row's box starts: after the edge gap. An owner-drawn row's overlay starts here. */
+    /** Where a row's box starts: after the edge gap, or at 0 with columns, which start at 0. An owner-drawn row's overlay starts here. */
     public static double getRowLeft(DartTree tree) {
-        double gapFraction = tree.getColumnCount() > 1 ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;
+        return tree.getColumnCount() > 0 ? 0 : getEdgeGap(tree);
+    }
+
+    /** The gap at the left edge of a tree without columns. */
+    private static double getEdgeGap(DartTree tree) {
         Rectangle bounds = tree.getBounds();
-        return (bounds != null ? bounds.width : 0) * gapFraction;
+        return (bounds != null ? bounds.width : 0) * EDGE_GAP_FRACTION;
     }
 
     /** Where an item's expander starts: inside the tree column, wherever the column order shows it. */
     public static double getExpanderLeft(DartTree tree, int level) {
-        boolean withCols = tree.getColumnCount() > 1;
-        double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;
-        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
-        return org.eclipse.swt.widgets.Sizes.treeColumnLeft(tree, 0) + getRowLeft(tree) + paddingLeft + indent * level;
-    }
-
-    /** Where the first column starts in a row: the expander's left edge at level 0, after the edge gap and the row's padding. */
-    public static int getCellsLeft(DartTree tree) {
-        return (int) Math.round(getExpanderLeft(tree, 0));
+        if (tree.getColumnCount() == 0) return getEdgeGap(tree) + ITEM_PADDING_LEFT + ITEM_INDENT * level;
+        double indent = tree.getColumnCount() > 1 ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;
+        return org.eclipse.swt.widgets.Sizes.treeColumnLeft(tree, 0) + indent * level;
     }
 
     /** Where an item's first cell content starts: after its indent, the expander and any checkbox. */

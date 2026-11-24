@@ -96,8 +96,8 @@ public final class TreeColumnHelper {
             width = event.width;
         }
         if (index == 0) {
-            // Column 0 starts after the edge gap and the row padding, and holds the indent and the expander.
-            width += TreeSizes.getContentLeft(tree, cell.getApi()) - TreeSizes.getCellsLeft(tree);
+            // Column 0 holds the indent and the expander.
+            width += TreeSizes.getContentLeft(tree, cell.getApi()) - Sizes.treeColumnLeft(tree, 0);
         }
         return width;
     }

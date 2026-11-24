@@ -18,15 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Where Java says a multi-column Tree's cells are. An owner-drawing listener paints at these
  * bounds into an overlay laid over the row Flutter rendered, so they have to be where Flutter puts
- * the cells: after the tree's edge gap and the row's padding, at the widths Java set. The Flutter
+ * the cells: from the tree's left edge, at the widths Java set. The Flutter
  * side of the same numbers is pinned by tree_column_widths_from_java_test.dart.
  */
 @ExtendWith(Mocks.class)
 class TreeCellBoundsTest {
 
     private static final int TREE_WIDTH = 300;
-    // A multi-column row's cells start after the edge gap (0.005 of 300, 1.5) and the row padding (12).
-    private static final int CELLS_LEFT = 14;
     // A left-aligned cell's content starts after the cell padding (4) and the alignment inset (4).
     private static final int TEXT_INSET = 8;
 
@@ -61,12 +59,22 @@ class TreeCellBoundsTest {
     }
 
     @Test
-    void cellsStartAfterTheRowPaddingAtTheWidthsJavaSet() {
+    void cellsStartAtTheWidthsJavaSet() {
         TreeItem item = itemInThreeColumns();
 
-        assertThat(item.getBounds(1).x).isEqualTo(CELLS_LEFT + 150);
+        assertThat(item.getBounds(1).x).isEqualTo(150);
         assertThat(item.getBounds(1).width).isEqualTo(120);
         assertThat(item.getBounds(2).x - item.getBounds(1).x).isEqualTo(120);
+    }
+
+    @Test
+    void columnZeroContentStartsAfterTheExpanderAlone() {
+        TreeItem item = itemInThreeColumns();
+        // The expander (12) and its spacing (8), from column 0's left edge, as natively.
+        int expander = 20;
+
+        assertThat(item.getBounds(0).x).isEqualTo(expander);
+        assertThat(item.getBounds(0).width).isEqualTo(150 - expander);
     }
 
     @Test
