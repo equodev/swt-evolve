@@ -58,6 +58,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double? _cachedRowHeight;
   double? _cachedHeaderOffset;
   Map<int, TableColumnWidth>? _cachedColumnWidths;
+  TextStyle? _cachedRowTextStyle;
+  final Map<int, EdgeInsets> _columnCellPaddings = {};
   final ScrollController _verticalScrollController = ScrollController();
 
   /// Scrolls header and rows together when an H_SCROLL table's columns are wider than it.
@@ -268,6 +270,8 @@ class TableImpl<T extends TableSwt, V extends VTable>
     // An owner-drawing Table (CDT's project-template chooser) paints a bold title + description —
     // two lines — into each row and asks for that height in SWT.MeasureItem; it travels as
     // ownerDrawItemHeight. A row sized to the font alone clips it, so take the taller of the two.
+    _cachedRowTextStyle = rowTextStyle;
+    _columnCellPaddings.clear();
     _cachedRowHeight = math.max(
         calculateRowHeight(rowTextStyle, widgetTheme),
         (state.ownerDrawItemHeight ?? 0).toDouble());
@@ -1406,6 +1410,38 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double get cachedRowHeight => _cachedRowHeight ?? 20.0;
   double get cachedHeaderOffset => _cachedHeaderOffset ?? 0.0;
   Map<int, TableColumnWidth>? get cachedColumnWidths => _cachedColumnWidths;
+
+  /// The padding every row's cell in [columnIndex] takes, so a column's cells start at one x. In a
+  /// column the application pinned, it yields as far as the widest cell that can fit needs; a cell
+  /// cut off even with no padding does not decide it.
+  EdgeInsets columnCellPadding(int columnIndex, TableThemeExtension theme) {
+    return _columnCellPaddings.putIfAbsent(columnIndex, () {
+      final width = _cachedColumnWidths?[columnIndex];
+      final style = _cachedRowTextStyle;
+      if (width is! FixedColumnWidth || style == null) return theme.cellPadding;
+      final checkbox =
+          hasStyle(SWT.CHECK) && columnIndex == 0 ? 20.0 + theme.cellPadding.left : 0.0;
+      final image = (style.fontSize ?? 16.0) + theme.cellPadding.left;
+      var padding = theme.cellPadding;
+      for (final item in getItems()) {
+        final texts = item.texts;
+        final text = texts != null && columnIndex < texts.length
+            ? (texts[columnIndex] ?? '')
+            : (columnIndex == 0 ? (item.text ?? '') : '');
+        if (text.isEmpty) continue;
+        final images = item.images;
+        final hasImage = images != null
+            ? columnIndex < images.length && images[columnIndex] != null
+            : columnIndex == 0 && item.image != null;
+        final content = checkbox + (hasImage ? image : 0.0) + measureTableText(text, style);
+        if (content > width.value) continue;
+        final fitted = fitCellPadding(theme.cellPadding,
+            available: width.value, contentWidth: content);
+        if (fitted.left < padding.left) padding = fitted;
+      }
+      return padding;
+    });
+  }
 
   bool hasStyle(int style) {
     return StyleBits(state.style).has(style);

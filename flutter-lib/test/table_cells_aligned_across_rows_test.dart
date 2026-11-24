@@ -11,15 +11,16 @@ import 'package:swtflutter/src/gen/tableitem.dart';
 /// A check table whose columns the application sized: every row starts its
 /// texts at the same x in each column, whether the text fits the column or is
 /// cut off.
-const double _tableWidth = 500;
+const double _tableWidth = 600;
 
 const _rows = [
-  ['2026-06', 'https://download.eclipse.org/releases/2026-06'],
+  ['2026-06', 'https://download.eclipse.org/releases/2026-06', 'Enabled'],
   [
     'Eclipse IDE integration for Maven and other long names',
-    'https://download.eclipse.org/technology/m2e/releases/latest/and/more'
+    'https://download.eclipse.org/technology/m2e/releases/latest/and/more',
+    'Enabled'
   ],
-  ['SWT Evolve', 'https://dl.equo.dev/swt-evolve/p2'],
+  ['SWT Evolve', 'https://dl.equo.dev/swt-evolve/p2', 'Enabled'],
 ];
 
 VTable _table() => VTable()
@@ -38,6 +39,11 @@ VTable _table() => VTable()
       ..width = 260
       ..alignment = SWT.LEFT
       ..text = 'Location',
+    VTableColumn()
+      ..id = 4
+      ..width = 100
+      ..alignment = SWT.LEFT
+      ..text = 'Enabled',
   ]
   ..items = [
     for (var i = 0; i < _rows.length; i++)
@@ -76,5 +82,16 @@ void main() {
 
     final xs = [for (final r in _rows) tester.getTopLeft(find.text(r[1])).dx];
     expect(xs.toSet(), hasLength(1), reason: 'Location x per row: $xs');
+  });
+
+  testWidgets('a cut-off Name keeps the gap before Location', (tester) async {
+    await tester.pumpWidget(_wrap(_table()));
+    await tester.pumpAndSettle();
+
+    final longRow = _rows[1];
+    final nameRight = tester.getTopRight(find.text(longRow[0])).dx;
+    final locationLeft = tester.getTopLeft(find.text(longRow[1])).dx;
+    expect(locationLeft - nameRight, greaterThan(0),
+        reason: 'Name ends at $nameRight, Location starts at $locationLeft');
   });
 }

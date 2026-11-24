@@ -169,34 +169,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     });
   }
 
-  EdgeInsets _fitCellPadding(
-    BuildContext context,
-    int columnIndex,
-    ColorCachedText label,
-    TextStyle textStyle,
-    TableThemeExtension theme,
-    bool showCheckbox,
-    VImage? cellImage,
-  ) {
-    final cellText = label.data!;
-    if (cellText.isEmpty) return theme.cellPadding;
-    final widths = _context?.tableImpl?.cachedColumnWidths;
-    final width = widths == null ? null : widths[columnIndex];
-    if (width is! FixedColumnWidth) return theme.cellPadding;
-
-    double chrome = 0.0;
-    if (showCheckbox) chrome += 20.0 + theme.cellPadding.left;
-    if (cellImage != null) {
-      chrome += (textStyle.fontSize ?? 16.0) + theme.cellPadding.left;
-    }
-    return fitCellPadding(
-      theme.cellPadding,
-      available: width.value - chrome,
-      // Read off the label's own shaped text where it shapes as the measure would.
-      contentWidth: shapedSingleLineTextWidth(cellText, textStyle, () => label.measuredWidth(context, textStyle)),
-    );
-  }
-
   /// Whether the row's owner-draw overlay draws [column] of what [painted] names: it does once it
   /// shows, and until then the row draws it itself.
   bool _overlayDraws(List<int>? painted, int column) =>
@@ -244,8 +216,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
               ? TextAlign.right
               : TextAlign.left,
     );
-    final cellPadding = _fitCellPadding(
-        context, columnIndex, label, textStyle, theme, showCheckbox, cellImage);
+    final cellPadding =
+        _context?.tableImpl?.columnCellPadding(columnIndex, theme) ?? theme.cellPadding;
 
     // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in only
     // for a press that carries no position.
