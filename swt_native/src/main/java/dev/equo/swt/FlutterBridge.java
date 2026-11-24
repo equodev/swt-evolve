@@ -1317,7 +1317,7 @@ public abstract class FlutterBridge {
     public static void onClientEvents(DartWidget widget, String[] events) {
         CommService comm = commFor(widget);
         int type = typeOf(widget);
-        if (comm.onType(type, Event.class, new ClientEventsByType(comm))) {
+        if (comm.onType(type, Event.class, new ClientEventsByType(comm, releasedIds(comm)))) {
             // Found by its id from now on: a widget is entered when first sent, but one that takes
             // the client's events need never be sent itself (a DropTarget is drawn by its control).
             registerForRefresh(widget);
@@ -1330,20 +1330,24 @@ public abstract class FlutterBridge {
     /**
      * The client events of every widget on one comm, found by the id their channel names: a widget
      * known to the client was sent, and so can be found by its id (see {@link #registerForRefresh}).
-     * One that has been disposed is not found, and its events are dropped. The ids are looked up
-     * across the JVM, so a widget reached through another comm is not this one's: its client cannot
-     * send events to another session's widgets.
+     * One that has been disposed is not found, and its events are dropped quietly when this comm
+     * released it lately; an id it never released is still reported. The ids are looked up across
+     * the JVM, so a widget reached through another comm is not this one's: its client cannot send
+     * events to another session's widgets.
      */
     private static final class ClientEventsByType implements CommService.TypeCallback<Event> {
         private final CommService comm;
+        private final ReleasedIds released;
 
-        ClientEventsByType(CommService comm) {
+        ClientEventsByType(CommService comm, ReleasedIds released) {
             this.comm = comm;
+            this.released = released;
         }
 
         @Override
         public Object target(String type, long id, int channel, String rest) {
             Object found = findById(id);
+            if (found == null) return released != null && released.contains(id) ? GONE : null;
             if (!(found instanceof DartWidget)) return null;
             DartWidget widget = (DartWidget) found;
             if (commFor(widget) != comm) return null;
@@ -1357,6 +1361,36 @@ public abstract class FlutterBridge {
         public void accept(Object widget, String rest, Event ev) {
             deliverClientEvent((DartWidget) widget, rest, ev);
         }
+    }
+
+    /**
+     * The ids of the widgets one comm released lately, newest kept: its client may still send their
+     * events until it hears of the disposals. Bounded, so a long session does not grow it for good.
+     */
+    private static final class ReleasedIds {
+        private static final int CAPACITY = 4096;
+        private final java.util.LinkedHashSet<Long> ids = new java.util.LinkedHashSet<>();
+
+        synchronized void add(long id) {
+            ids.remove(id);
+            ids.add(id);
+            if (ids.size() > CAPACITY) {
+                java.util.Iterator<Long> oldest = ids.iterator();
+                oldest.next();
+                oldest.remove();
+            }
+        }
+
+        synchronized boolean contains(long id) {
+            return ids.contains(id);
+        }
+    }
+
+    /** {@code comm}'s {@link ReleasedIds}, or null where it keeps no per-connection state. */
+    private static ReleasedIds releasedIds(CommService comm) {
+        return comm instanceof AbstractBinaryCommService
+                ? ((AbstractBinaryCommService) comm).attachment(ReleasedIds.class, ReleasedIds::new)
+                : null;
     }
 
     private static String alternateTypeName(String name) {
@@ -2329,7 +2363,9 @@ public abstract class FlutterBridge {
 
     /**
      * Drops what a disposed {@code widget} left registered: every handler it registered, under
-     * either of its names, and its entry in the table refresh requests are looked up in. The comm is
+     * either of its names, and its entry in the table refresh requests are looked up in; its id is
+     * kept among the comm's {@link ReleasedIds}, so the events still in flight for it are not reported
+     * as unhandled. The comm is
      * found as {@link #commFor} found it rather than through the widget's bridge: an Item has none,
      * and its handlers would otherwise keep it, and all it refers to, reachable.
      */
@@ -2345,6 +2381,8 @@ public abstract class FlutterBridge {
         CommService comm = commFor(widget);
         if (comm == null) return;
         removeOwners(comm, widget);
+        ReleasedIds released = api == null ? null : releasedIds(comm);
+        if (released != null) released.add(api.hashCode());
     }
 
     public void setBounds(DartControl control, Rectangle bounds) {

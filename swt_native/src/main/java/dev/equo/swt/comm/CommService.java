@@ -66,9 +66,17 @@ public interface CommService {
     /** What {@link #onType} hands a message on a channel of a widget of its type. */
     interface TypeCallback<T> {
         /**
+         * What {@link #target} returns for a message that is this callback's but whose widget is
+         * gone: the client sends events until it hears of a disposal, so the message is dropped
+         * without being reported as unhandled.
+         */
+        Object GONE = new Object();
+
+        /**
          * What the message on the channel numbered {@code channel} (named {@code rest}) of the widget
-         * of type {@code type} numbered {@code id} is for, or null when it is not this callback's:
-         * read before its payload is decoded, and handed to {@link #accept} with it.
+         * of type {@code type} numbered {@code id} is for, {@link #GONE} when that widget no longer
+         * exists, or null when it is not this callback's: read before its payload is decoded, and
+         * handed to {@link #accept} with it.
          */
         Object target(String type, long id, int channel, String rest);
 

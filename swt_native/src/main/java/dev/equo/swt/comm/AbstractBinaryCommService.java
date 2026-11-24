@@ -408,12 +408,16 @@ public abstract class AbstractBinaryCommService implements CommService {
         TypeHandler<?>[] types = typesByNumber;
         TypeHandler<?> byType = type < types.length ? types[type] : null;
         Object target = byType == null ? null : byType.callback.target(byType.type, id, channel, rest);
-        if (target == null) {
-            byType = alternate != 0 && alternate < types.length ? types[alternate] : null;
-            target = byType == null ? null : byType.callback.target(byType.type, id, channel, rest);
+        if (target == null || target == TypeCallback.GONE) {
+            TypeHandler<?> byAlternate = alternate != 0 && alternate < types.length ? types[alternate] : null;
+            Object found = byAlternate == null ? null : byAlternate.callback.target(byAlternate.type, id, channel, rest);
+            if (found != null) {
+                byType = byAlternate;
+                target = found;
+            }
         }
         if (target == null) return false;
-        byType.handle(target, rest, data, offset, length, serializer, logTag);
+        if (target != TypeCallback.GONE) byType.handle(target, rest, data, offset, length, serializer, logTag);
         return true;
     }
 
