@@ -1375,7 +1375,10 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      * @since 3.112
      */
     public static boolean isSystemDarkTheme() {
-        return Config.darkTheme(systemAppearanceOf(Display.getCurrent()));
+        dev.equo.swt.SystemAppearance system = systemAppearanceOf(Display.getCurrent());
+        if (system != null && Config.appTheme() == null)
+            system.awaitClient();
+        return Config.darkTheme(system);
     }
 
     /**
