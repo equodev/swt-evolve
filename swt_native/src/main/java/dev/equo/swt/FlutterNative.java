@@ -55,19 +55,40 @@ public final class FlutterNative {
                 backgroundColor, parentBackgroundColor, width, height, csdEnabled, impellerEnabled());
     }
 
-    /** {@code -Ddev.equo.swt.impeller=true|false} forces the Windows engines' renderer either way. */
+    /** {@code -Ddev.equo.swt.impeller=true|false} forces the renderer either way (Windows and Linux). */
     public static final String IMPELLER_PROPERTY = "dev.equo.swt.impeller";
 
     /**
-     * Whether the Windows engines render with Impeller, which compiles its pipelines on every engine
-     * start, on the UI thread. On unless shells can get windows of their own: each of those starts an
-     * engine. The measuring engines follow the same choice, so text is measured by the renderer that
-     * paints it. Other runners ignore it.
+     * Whether the engines render with Impeller, which compiles its pipelines on every engine start,
+     * on the UI thread. On Windows: on unless shells can get windows of their own (each starts an
+     * engine). On Linux: on where there is a usable GPU, off (Skia) on a software GL stack where
+     * Impeller would run its shaders on the CPU and the UI would crawl. The measuring engines follow
+     * the same choice, so text is measured by the renderer that paints it.
      */
     static boolean impellerEnabled() {
         String forced = System.getProperty(IMPELLER_PROPERTY);
-        if (forced != null && !forced.trim().isEmpty()) return Boolean.parseBoolean(forced.trim());
-        return WindowPolicy.isSingleWindow();
+        if (forced != null && !forced.trim().isEmpty()) {
+            return Boolean.parseBoolean(forced.trim());
+        }
+        boolean linux = isLinux();
+        return decideImpeller(linux, linux && SoftwareGl.present(), WindowPolicy.isSingleWindow());
+    }
+
+    /**
+     * Pure renderer policy (package-private for the unit test). Windows and macOS keep the
+     * single-window default they always had; Linux keeps Impeller where there is a usable GPU and
+     * falls back to Skia only on a software GL stack. The {@code -D} override is handled by the
+     * caller before this is reached.
+     */
+    static boolean decideImpeller(boolean linux, boolean softwareGl, boolean singleWindowDefault) {
+        if (!linux) {
+            return singleWindowDefault;
+        }
+        return !softwareGl;
+    }
+
+    private static boolean isLinux() {
+        return System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("linux");
     }
 
     /** Native view handle of a surface: the embedded view, or a window's content view. */

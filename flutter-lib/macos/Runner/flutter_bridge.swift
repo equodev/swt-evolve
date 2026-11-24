@@ -749,7 +749,7 @@ private func surfaceFrom(_ context: jlong) -> FlutterSurface? {
 
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_Initialize")
 public func FlutterNative_initialize(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, port: jint, parent: jlong, widget_id: jlong, widget_name: jstring, theme: jstring, background_color: jint, parent_background_color: jint, width: jint, height: jint, csd_enabled: jboolean, impeller_enabled: jboolean) -> jlong {
-    // impeller_enabled is the Windows engine's renderer choice; the macOS engine always renders with Impeller.
+    // impeller_enabled is the renderer choice Java makes for Windows and Linux both; the macOS engine always renders with Impeller.
     cacheEngineLookups()
     let name = jstringToSwift(env, widget_name)
     let themeString = jstringToSwift(env, theme)

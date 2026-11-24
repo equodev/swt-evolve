@@ -150,9 +150,11 @@ static void EquoRegisterPlugins(FlView *view) {
 // The UI isolate gets a thread of its own. On the platform thread every task the engine posts it (a
 // frame from Java, a frame request) waits a GLib timeout of at least one millisecond
 // (FlTaskRunner), and runs only while Java pumps the loop.
-static FlDartProject *NewDartProject() {
+static FlDartProject *NewDartProject(gboolean impeller_enabled) {
   FlDartProject *project = fl_dart_project_new();
   fl_dart_project_set_ui_thread_policy(project, FL_UI_THREAD_POLICY_RUN_ON_SEPARATE_THREAD);
+  // Java picks the renderer (Skia on a software-GL stack, else Impeller); honour its choice here.
+  fl_dart_project_set_enable_impeller(project, impeller_enabled);
   return project;
 }
 
@@ -218,8 +220,9 @@ static void ReleaseA11yChannel(FlutterWindow *w) {
 }
 
 uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
-                                  const char *widget_name, const char *theme, jint background_color, jint parent_background_color) {
-  FlDartProject *project = NewDartProject();
+                                  const char *widget_name, const char *theme, jint background_color, jint parent_background_color,
+                                  jboolean impeller_enabled) {
+  FlDartProject *project = NewDartProject(impeller_enabled);
   std::string base_path = GetSharedLibraryPath();
   // AOT (release) ships libapp.so; a --debug (JIT) build has no libapp.so and runs the kernel from
   // flutter_assets instead — which also brings up the Dart VM Service for DTD/MCP introspection.
@@ -570,9 +573,9 @@ static void DropCapturedCrossings(GdkEvent *event, gpointer) {
 // Creates a visible top-level GtkWindow hosting one FlView for the whole Display.
 FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widget_name,
                                    const char *theme, int backgroundColor, int width, int height,
-                                   bool csdEnabled) {
+                                   bool csdEnabled, gboolean impeller_enabled) {
   const gint64 project_start = g_get_real_time();
-  FlDartProject *project = NewDartProject();
+  FlDartProject *project = NewDartProject(impeller_enabled);
   std::string base_path = GetSharedLibraryPath();
   // See note above: skip the AOT library in --debug (JIT) builds so the engine runs the kernel
   // from flutter_assets and exposes the Dart VM Service.
@@ -711,17 +714,15 @@ Java_dev_equo_swt_FlutterNative_Initialize(JNIEnv *env, jclass cls, jint port, j
                                            jint background_color, jint parent_background_color,
                                            jint width, jint height, jboolean csd_enabled,
                                            jboolean impeller_enabled) {
-  // The renderer choice is the Windows engine's; this embedder has no Impeller switch.
-  (void)impeller_enabled;
   const char *name = env->GetStringUTFChars(widget_name, NULL);
   const char *th = env->GetStringUTFChars(theme, NULL);
   FlutterWindow *w;
   if (width > 0 && height > 0) {
     w = createDisplayWindow(port, widget_id, name, th, background_color, width, height,
-                            csd_enabled == JNI_TRUE);
+                            csd_enabled == JNI_TRUE, impeller_enabled);
   } else {
     w = reinterpret_cast<FlutterWindow *>(
-        InitializeFlutterWindow(port, (void *)parent, widget_id, name, th, background_color, parent_background_color));
+        InitializeFlutterWindow(port, (void *)parent, widget_id, name, th, background_color, parent_background_color, impeller_enabled));
   }
   env->ReleaseStringUTFChars(widget_name, name);
   env->ReleaseStringUTFChars(theme, th);

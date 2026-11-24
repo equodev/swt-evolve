@@ -1,9 +1,5 @@
 package dev.equo.swt;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
-
 /** Reads the light/dark setting of the desktop the JVM runs on, by asking the OS's own settings tool. */
 final class DesktopAppearance {
     private DesktopAppearance() {
@@ -39,31 +35,7 @@ final class DesktopAppearance {
         return scheme.toLowerCase(java.util.Locale.ROOT).contains("dark") ? "dark" : "light";
     }
 
-    /**
-     * Runs a short query command and returns its trimmed output, or null when it cannot be run.
-     * Bounded by a timeout because this sits on the Display initialization path.
-     */
     private static String run(String... command) {
-        Process process = null;
-        try {
-            process = new ProcessBuilder(command).redirectErrorStream(false).start();
-            String output;
-            try (InputStream in = process.getInputStream()) {
-                output = new String(Java8.readAllBytes(in), StandardCharsets.UTF_8).trim();
-            }
-            if (!process.waitFor(2, TimeUnit.SECONDS)) {
-                return null;
-            }
-            return output;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        } catch (Exception e) {
-            return null;
-        } finally {
-            if (process != null && process.isAlive()) {
-                process.destroyForcibly();
-            }
-        }
+        return Commands.run(command);
     }
 }
