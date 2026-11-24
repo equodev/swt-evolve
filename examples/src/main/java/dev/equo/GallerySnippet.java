@@ -466,6 +466,8 @@ public class GallerySnippet {
             moreItem.setText(entry);
             moreItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
         }
+        // One item with an image and the rest without: their labels still start in one column.
+        toolDropDownMenu.getItem(0).setImage(new Image(display, getImagePath("synced.png")));
         MenuItem moreCascade = new MenuItem(toolDropDownMenu, SWT.CASCADE);
         moreCascade.setText("More C");
         Menu moreSubMenu = new Menu(shell, SWT.DROP_DOWN);
