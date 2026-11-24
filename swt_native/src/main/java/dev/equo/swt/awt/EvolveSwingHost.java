@@ -1016,6 +1016,10 @@ public final class EvolveSwingHost {
             } finally {
                 g2.dispose();
             }
+            if (GlPresentHook.enabled()) {
+                BufferedImage presented = presentedImage(GlPresentHook.frame(heavy), sw, sh);
+                if (presented != null) img = presented;
+            }
         }
         int[] src = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
         for (int row = 0; row < sh; row++) {
@@ -1035,6 +1039,27 @@ public final class EvolveSwingHost {
                 snapshot[destRowBase + px] = (a << 24) | (r << 16) | (g << 8) | b;
             }
         }
+    }
+
+    /**
+     * {@code frame} ({@code [width, height, argb...]}, top row first) as a {@code sw}x{@code sh} image,
+     * stretched when the window's pixels and the blit's differ; null when there is no frame.
+     */
+    static BufferedImage presentedImage(int[] frame, int sw, int sh) {
+        if (frame == null || frame.length < 2) return null;
+        int fw = frame[0], fh = frame[1];
+        if (fw <= 0 || fh <= 0 || frame.length < 2 + fw * fh) return null;
+        BufferedImage image = new BufferedImage(fw, fh, BufferedImage.TYPE_INT_ARGB);
+        image.setRGB(0, 0, fw, fh, frame, 2, fw);
+        if (fw == sw && fh == sh) return image;
+        BufferedImage scaled = new BufferedImage(sw, sh, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = scaled.createGraphics();
+        try {
+            g.drawImage(image, 0, 0, sw, sh, null);
+        } finally {
+            g.dispose();
+        }
+        return scaled;
     }
 
     /**

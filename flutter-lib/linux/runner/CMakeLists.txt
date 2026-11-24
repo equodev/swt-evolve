@@ -16,8 +16,9 @@ add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "engine_vsync.cc"
   "gl_context.cc"
   "opaque_present.cc"
+  "gl_present_hook.cc"
 )
-# gl_context.cc dlopens libGL and libX11, so the bridge loads where they are missing.
+# gl_context.cc and gl_present_hook.cc dlopen libGL and libX11, so the bridge loads where they are missing.
 target_link_libraries(${FLUTTER_LIBRARY_NAME} PRIVATE ${CMAKE_DL_LIBS})
 
 # Add JNI include directories
