@@ -295,6 +295,19 @@ Alignment getAlignmentFromTextAlign(TextAlign textAlign) {
   }
 }
 
+/// [padding] shrunk so [contentWidth] fits in [available]: the horizontal padding yields first,
+/// evenly on both sides, down to zero.
+EdgeInsets fitCellPadding(
+  EdgeInsets padding, {
+  required double available,
+  required double contentWidth,
+}) {
+  final double room = available - contentWidth;
+  if (room >= padding.horizontal) return padding;
+  final double half = room > 0 ? room / 2 : 0;
+  return padding.copyWith(left: half, right: half);
+}
+
 EdgeInsets adjustPaddingForAlignment({
   required EdgeInsets basePadding,
   required int? alignment,

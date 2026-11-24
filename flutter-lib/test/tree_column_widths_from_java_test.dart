@@ -125,8 +125,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_horizontalScrollExtent(tester), 0);
-    // The last header's title area: its 50 minus the 8 left and 4 right insets.
-    expect(tester.getSize(find.text('COLUMN 2')).width, closeTo(38, 1.0));
+    final lastHeader = find.byWidgetPredicate((w) => w is TreeColumnSwt && w.value.id == 4);
+    expect(tester.getSize(lastHeader).width, closeTo(50, 0.5));
   });
 
   // Tree.checkStyle adds H_SCROLL | V_SCROLL to every tree unless it is created with NO_SCROLL.

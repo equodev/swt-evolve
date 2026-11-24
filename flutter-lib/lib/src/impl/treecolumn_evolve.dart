@@ -23,11 +23,6 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   bool _isDragging = false;
   Offset? _dragPosition;
 
-  double _calculateLeftPadding(bool isFirstColumn, TreeThemeExtension theme) {
-    if (!isFirstColumn) return 0.0;
-    return theme.expandIconSize + theme.expandIconSpacing;
-  }
-
   VEvent _createEvent({
     required TreeThemeExtension theme,
     required int width,
@@ -75,6 +70,10 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
   /// The room between a header's image and its text.
   static const double headerImageGap = 4.0;
 
+  /// The width a header's image takes: an icon rendered with no explicit size
+  /// lays out in the toolbar's minimum box.
+  static const double headerImageWidth = AppSizes.toolbarMinSize;
+
   Widget _buildHeaderImage(VImage image) {
     final render = ImageUtils.buildVImageAsync(
       image,
@@ -84,10 +83,13 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     );
     return Padding(
       padding: const EdgeInsets.only(right: headerImageGap),
-      child: FutureBuilder<Widget?>(
-        future: render,
-        initialData: ImageUtils.resolvedRender(render),
-        builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
+      child: SizedBox(
+        width: headerImageWidth,
+        child: FutureBuilder<Widget?>(
+          future: render,
+          initialData: ImageUtils.resolvedRender(render),
+          builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }
@@ -99,7 +101,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     required VImage? image,
     required Color textColor,
     required bool uppercase,
-    required EdgeInsets adjustedPadding,
+    required EdgeInsets padding,
     required MainAxisAlignment textAlignment,
     required TextAlign textAlign,
     required Color bgColor,
@@ -120,31 +122,43 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     );
     effectiveStyle = effectiveStyle.copyWith(color: headerColor);
     final int sortDirection = cell?.sortDirection ?? SWT.NONE;
-    return withColumnToolTip(state.toolTipText, Container(
-      padding: adjustedPadding,
-      decoration: BoxDecoration(color: bgColor),
-      child: Row(
-        mainAxisAlignment: textAlignment,
-        children: [
-          if (image != null) _buildHeaderImage(image),
-          Expanded(
-            child: Text(
-              uppercase ? text.toUpperCase() : text,
-              style: effectiveStyle,
-              textAlign: textAlign,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    final bool sorted = sortDirection == SWT.UP || sortDirection == SWT.DOWN;
+    final double sortIconSize = (effectiveStyle.fontSize ?? 12) + 2;
+    final String shown = uppercase ? text.toUpperCase() : text;
+    final double contentWidth = (shown.isEmpty ? 0.0 : singleLineTextWidth(shown, effectiveStyle)) +
+        (image != null ? headerImageWidth + headerImageGap : 0.0) +
+        (sorted ? sortIconSize : 0.0);
+    return withColumnToolTip(state.toolTipText, LayoutBuilder(builder: (context, constraints) {
+      // In a column too narrow for both, the padding yields to the label.
+      final EdgeInsets fitted = constraints.hasBoundedWidth
+          ? fitCellPadding(padding, available: constraints.maxWidth, contentWidth: contentWidth)
+          : padding;
+      return Container(
+        padding: fitted,
+        decoration: BoxDecoration(color: bgColor),
+        child: Row(
+          mainAxisAlignment: textAlignment,
+          children: [
+            if (image != null) _buildHeaderImage(image),
+            Expanded(
+              child: Text(
+                shown,
+                style: effectiveStyle,
+                textAlign: textAlign,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-          if (sortDirection == SWT.UP || sortDirection == SWT.DOWN)
-            Icon(
-              sortDirection == SWT.UP ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              size: (effectiveStyle.fontSize ?? 12) + 2,
-              color: headerColor,
-            ),
-        ],
-      ),
-    ));
+            if (sorted)
+              Icon(
+                sortDirection == SWT.UP ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                size: sortIconSize,
+                color: headerColor,
+              ),
+          ],
+        ),
+      );
+    }));
   }
 
   Widget _buildColumnBorder({required TreeThemeExtension theme}) {
@@ -164,8 +178,6 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     final widgetTheme = Theme.of(context).extension<TreeThemeExtension>()!;
 
     final bool hasMultiColumn = TreeHasMultiColumnProvider.of(context);
-    final int? columnIndex = TreeColumnIndexProvider.of(context);
-    final bool isFirstColumn = columnIndex == 0;
     final bool linesVisible = TreeLinesVisibleProvider.of(context);
     final bool isLastColumn = TreeColumnIsLastProvider.of(context);
 
@@ -182,10 +194,6 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
         ? widgetTheme.columnDraggingBackgroundColor
         : Colors.transparent;
 
-    final double leftPadding = _calculateLeftPadding(
-      isFirstColumn,
-      widgetTheme,
-    );
     final textAlign = getTextAlignFromStyle(alignment ?? 0, TextAlign.left);
     final textAlignment = getMainAxisAlignmentFromTextAlign(
       textAlign,
@@ -193,16 +201,13 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
     );
 
     const double extraPadding = 4.0;
-    EdgeInsets adjustedPadding = adjustPaddingForAlignment(
+    EdgeInsets padding = adjustPaddingForAlignment(
       basePadding: widgetTheme.columnPadding,
       alignment: alignment,
-      leftPadding: leftPadding,
       extraPadding: extraPadding,
     );
     if (!isLastColumn) {
-      adjustedPadding = adjustedPadding.copyWith(
-        right: adjustedPadding.right + widgetTheme.columnDividerGap,
-      );
+      padding = padding.copyWith(right: padding.right + widgetTheme.columnDividerGap);
     }
 
     return tagSemantics(state, MouseRegion(
@@ -231,7 +236,7 @@ class TreeColumnImpl<T extends TreeColumnSwt, V extends VTreeColumn>
               image: state.image,
               textColor: textColor,
               uppercase: hasMultiColumn,
-              adjustedPadding: adjustedPadding,
+              padding: padding,
               textAlignment: textAlignment,
               textAlign: textAlign,
               bgColor: bgColor,

@@ -1092,7 +1092,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     double maxWidth,
     Color itemsBackgroundColor,
   ) {
-    final prefix = widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
     final defaultWidth = widgetTheme.columnDefaultWidth.round();
     final borderWidth = widgetTheme.columnBorderWidth;
 
@@ -1138,7 +1137,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                 child: Row(
                   key: _headerRowKey,
                   children: [
-                    // In the column order; the tree column keeps its expander room wherever it is.
+                    // In the column order. Each header spans its whole column, the tree column's
+                    // too: its rows indent for the expander, its header does not, as natively.
                     ...order.asMap().entries.map((entry) {
                       final int position = entry.key;
                       final int columnIndex = entry.value;
@@ -1147,23 +1147,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                       cumulativeWidth += width;
                       if (position < order.length - 1) {
                         linePositions.add(cumulativeWidth - borderWidth);
-                      }
-                      if (columnIndex == 0) {
-                        return TreeCellBox(
-                          width: width,
-                          minContentWidth: prefix,
-                          child: Row(
-                            children: [
-                              SizedBox(width: prefix),
-                              Expanded(
-                                child: getWidgetForTreeColumn(
-                                  column,
-                                  columnIndex,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
                       }
                       return SizedBox(
                         width: width,
@@ -1316,16 +1299,13 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget getWidgetForTreeColumn(VTreeColumn column, int columnIndex) {
     final bool isLastColumn = isLastShown(columnIndex);
     final bool sorted = state.sortColumn != null && state.sortColumn!.id == column.id;
-    return TreeColumnIndexProvider(
-      columnIndex: columnIndex,
-      child: TreeColumnIsLastProvider(
-        isLastColumn: isLastColumn,
-        child: TreeHeaderCellProvider(
-          sortDirection: sorted ? (state.sortDirection ?? SWT.NONE) : SWT.NONE,
-          foreground: state.headerForeground,
-          dropIndexAt: _headerDropIndexAt,
-          child: TreeColumnSwt(value: column),
-        ),
+    return TreeColumnIsLastProvider(
+      isLastColumn: isLastColumn,
+      child: TreeHeaderCellProvider(
+        sortDirection: sorted ? (state.sortDirection ?? SWT.NONE) : SWT.NONE,
+        foreground: state.headerForeground,
+        dropIndexAt: _headerDropIndexAt,
+        child: TreeColumnSwt(value: column),
       ),
     );
   }
@@ -2574,27 +2554,6 @@ class TreeEffectiveColumnWidthsProvider extends InheritedWidget {
       if (effectiveWidths![i] != oldWidget.effectiveWidths![i]) return true;
     }
     return false;
-  }
-}
-
-class TreeColumnIndexProvider extends InheritedWidget {
-  final int columnIndex;
-
-  const TreeColumnIndexProvider({
-    super.key,
-    required this.columnIndex,
-    required super.child,
-  });
-
-  static int? of(BuildContext context) {
-    final provider = context
-        .dependOnInheritedWidgetOfExactType<TreeColumnIndexProvider>();
-    return provider?.columnIndex;
-  }
-
-  @override
-  bool updateShouldNotify(TreeColumnIndexProvider oldWidget) {
-    return columnIndex != oldWidget.columnIndex;
   }
 }
 

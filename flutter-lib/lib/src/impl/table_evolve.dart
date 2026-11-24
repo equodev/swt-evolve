@@ -548,7 +548,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
     final double? columnWidth = _columnWidthAt(columnIndex);
     final EdgeInsets headerPadding = columnWidth == null
         ? theme.headerPadding
-        : fitTableCellPadding(
+        : fitCellPadding(
             theme.headerPadding,
             available: columnWidth -
                 (showCheckboxSpace ? 20.0 + theme.cellPadding.left : 0.0),
@@ -1476,17 +1476,6 @@ class TableItemSwtWrapper {
 double measureTableText(String text, TextStyle style) {
   if (text.isEmpty) return 0.0;
   return singleLineTextWidth(text, style);
-}
-
-EdgeInsets fitTableCellPadding(
-  EdgeInsets padding, {
-  required double available,
-  required double contentWidth,
-}) {
-  final double room = available - contentWidth;
-  if (room >= padding.horizontal) return padding;
-  final double half = room > 0 ? room / 2 : 0;
-  return padding.copyWith(left: half, right: half);
 }
 
 class TableItemContext {

@@ -189,7 +189,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     if (cellImage != null) {
       chrome += (textStyle.fontSize ?? 16.0) + theme.cellPadding.left;
     }
-    return fitTableCellPadding(
+    return fitCellPadding(
       theme.cellPadding,
       available: width.value - chrome,
       // Read off the label's own shaped text where it shapes as the measure would.

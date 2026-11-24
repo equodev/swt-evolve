@@ -91,6 +91,9 @@ double _headerLeft(WidgetTester tester, String text) {
   return tester.getTopLeft(_header(text).first).dx - treeLeft;
 }
 
+Finder _headerCell(int columnId) =>
+    find.byWidgetPredicate((w) => w is TreeColumnSwt && w.value.id == columnId);
+
 void main() {
   testWidgets('a long value does not shrink the column the application sized', (tester) async {
     await _pump(tester, _tree(nameWidth: 200, valueWidth: 296));
@@ -99,10 +102,12 @@ void main() {
         reason: 'the Name column is 200px wide; the long value is clipped in its own column');
   });
 
-  testWidgets('columns that fit keep growing to their content', (tester) async {
+  testWidgets('a column narrower than its content keeps the application\'s width', (tester) async {
     await _pump(tester, _tree(nameWidth: 40, valueWidth: 60, value: 'short'));
 
-    expect(_headerLeft(tester, 'Value'), greaterThan(60),
-        reason: "'Driver Files' is wider than 40px and there is room for it");
+    // The Name column starts where its first row's cell does; the Value column, where it ends.
+    final nameLeft = tester.getTopLeft(find.byKey(const ValueKey('tree_cell_10_0'))).dx;
+    expect(tester.getTopLeft(_headerCell(3)).dx - nameLeft, closeTo(40, 0.5),
+        reason: "'Driver Files' is wider than 40px, and the Name column stays 40px wide");
   });
 }
