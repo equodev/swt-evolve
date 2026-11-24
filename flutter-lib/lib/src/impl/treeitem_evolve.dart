@@ -934,6 +934,13 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     );
   }
 
+  /// With columns the row starts at the tree's left edge with no left padding, as natively.
+  EdgeInsets _rowPadding(TreeThemeExtension theme, bool hasMultiColumn) {
+    final padding = hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding;
+    final hasColumns = _context?.treeImpl?.getTreeColumns().isNotEmpty ?? false;
+    return hasColumns ? padding.copyWith(left: 0) : padding;
+  }
+
   Widget _buildItemPrefix({
     required TreeThemeExtension theme,
     required int level,
@@ -1047,11 +1054,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     // is relative to the row's outer box, so the row padding counts). The band spans the
     // full row height on purpose: the arrow icon is only expandIconSize tall and centred,
     // and anything outside it used to be discarded silently instead of toggling.
-    final EdgeInsets rowPadding = hasMultiColumn
-        ? widgetTheme.itemPaddingWithCols
-        : widgetTheme.itemPadding;
-    final double expanderHitLeft =
-        rowPadding.left + widgetTheme.itemIndent * level;
+    final double expanderHitLeft = _rowPadding(widgetTheme, hasMultiColumn).left +
+        widgetTheme.itemIndent * level;
     final double expanderHitRight =
         expanderHitLeft + widgetTheme.expandIconSize;
 
@@ -1224,9 +1228,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
                   hasMultiColumn: hasMultiColumn,
                 ),
               ),
-              padding: hasMultiColumn
-                  ? widgetTheme.itemPaddingWithCols
-                  : widgetTheme.itemPadding,
+              padding: _rowPadding(widgetTheme, hasMultiColumn),
               child: OverflowBox(
                 minHeight: 0,
                 maxHeight: double.infinity,

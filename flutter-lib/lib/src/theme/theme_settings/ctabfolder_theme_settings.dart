@@ -37,7 +37,8 @@ CTabFolderThemeExtension _getCTabFolderTheme({
   required ColorSchemeExtension colorSchemeExtension,
 }) {
   final baseTextStyle = textTheme.bodyLarge ?? const TextStyle();
-  final selectedTextColor = colorScheme.onSurface;
+  // The selected tab stands out by background and frame, not by its text colour.
+  final textColor = colorScheme.onSurfaceVariant;
   final highlightColor = colorSchemeExtension.ctabFolderHighlightColor;
   final unselectedColor = colorSchemeExtension.ctabFolderUnselectedColor;
 
@@ -62,8 +63,8 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     tabDisabledBorderColor: colorSchemeExtension.surfaceBorderDisabled,
 
     // Tab text colors
-    tabTextColor: colorScheme.onSurfaceVariant,
-    tabSelectedTextColor: selectedTextColor,
+    tabTextColor: textColor,
+    tabSelectedTextColor: textColor,
     tabHoverTextColor: colorScheme.onSurface,
     tabDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
     

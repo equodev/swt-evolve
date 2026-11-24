@@ -840,9 +840,10 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       final gapFraction = hasMultiColumn
           ? theme.itemEdgeGapFractionWithCols
           : theme.itemEdgeGapFraction;
+      // The rows start at the tree's left edge: only the right gap and padding are outside the columns.
       final rowPadding =
-          (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).horizontal;
-      final inner = availableWidth * (1 - 2 * gapFraction) - rowPadding;
+          (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).right;
+      final inner = availableWidth * (1 - gapFraction) - rowPadding;
       final result = columns.map((c) => (c.width ?? 0).toDouble()).toList();
       final sum = result.reduce((a, b) => a + b);
       _columnsContentWidth = rowPadding + (sum > inner ? sum : inner);
@@ -878,7 +879,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final gapFraction = hasMultiColumn
         ? widgetTheme.itemEdgeGapFractionWithCols
         : widgetTheme.itemEdgeGapFraction;
-    final leftGap = maxWidth * gapFraction;
+    // With columns, as natively, column 0 starts at the tree's left edge with no gap.
+    final leftGap = columns.isEmpty ? maxWidth * gapFraction : 0.0;
     final rightGap = maxWidth * gapFraction;
 
     Widget listViewWithLines = _buildListViewWithColumnLines(
@@ -1189,7 +1191,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     final contentWidth = _columnsContentWidth;
     if (contentWidth != null) {
       // Columns at Java's widths can be wider than the tree: the header then scrolls with the
-      // rows, and is inset by the rows' padding so each title sits over its own column.
+      // rows, from the tree's left edge as they do, so each title sits over its own column.
       final rowPadding =
           hasMultiColumn ? widgetTheme.itemPaddingWithCols : widgetTheme.itemPadding;
       final columnsHeader = headerContent;
@@ -1211,7 +1213,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
             maxHeight: headerHeight,
             child: Container(
               color: headerBgColor,
-              padding: EdgeInsets.only(left: rowPadding.left, right: rowPadding.right),
+              padding: EdgeInsets.only(right: rowPadding.right),
               child: columnsHeader,
             ),
           ),
@@ -1222,15 +1224,9 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
     if (hasMultiColumn) {
       final gapFraction = widgetTheme.itemEdgeGapFractionWithCols;
-      final leftGap = maxWidth * gapFraction;
       final rightGap = maxWidth * gapFraction;
       headerContent = Row(
         children: [
-          Container(
-            width: leftGap,
-            height: headerHeight,
-            color: itemsBackgroundColor,
-          ),
           Expanded(child: headerContent),
           Container(
             width: rightGap,

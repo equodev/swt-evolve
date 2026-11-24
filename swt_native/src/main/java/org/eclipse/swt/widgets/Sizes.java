@@ -804,18 +804,15 @@ public class Sizes {
                     + dev.equo.swt.size.TreeSizes.getTextWidth(item.getApi(), 0);
             return new Rectangle(left, row.y, width, row.height);
         }
-        // Flutter starts a row's cells after the tree's edge gap and the row's padding, each where the
-        // column order shows its column.
-        int x = dev.equo.swt.size.TreeSizes.getCellsLeft(dartTree) - treeColumnLeft(dartTree, 0) + treeColumnLeft(dartTree, index) - scrolled;
+        int x = treeColumnLeft(dartTree, index) - scrolled;
         int width = index < columns.length ? columns[index].getWidth() : 0;
         if (index == 0) return new Rectangle(left, row.y, Math.max(0, x + width - left), row.height);
         return new Rectangle(x, row.y, width, row.height);
     }
 
-    /** Where column {@code index} of a tree starts: after the columns shown before it in the tree's order; 0 without columns. */
+    /** Where column {@code index} of a tree starts: after the columns shown before it in the tree's order. */
     public static int treeColumnLeft(DartTree tree, int index) {
         int count = tree.columnCount;
-        if (index >= count) return 0;
         int[] widths = new int[count];
         for (int i = 0; i < count; i++) widths[i] = tree.columns[i].getWidth();
         return ColumnHelper.positions(widths, tree.getColumnOrder())[index];

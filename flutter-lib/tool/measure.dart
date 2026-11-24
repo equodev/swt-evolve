@@ -4407,13 +4407,7 @@ public class CoolBarSizes {
         '    private static final double EDGE_GAP_FRACTION = ${_d(plain.gapFraction!)};',
       );
       buffer.writeln(
-        '    private static final double EDGE_GAP_FRACTION_WITH_COLS = ${_d(withCols.gapFraction!)};',
-      );
-      buffer.writeln(
         '    private static final double ITEM_PADDING_LEFT = ${_d(plain.paddingLeft!)};',
-      );
-      buffer.writeln(
-        '    private static final double ITEM_PADDING_LEFT_WITH_COLS = ${_d(withCols.paddingLeft!)};',
       );
       buffer.writeln(
         '    private static final double ITEM_INDENT = ${_d(plain.indent!)};',
@@ -4520,17 +4514,25 @@ public class CoolBarSizes {
     final itemType = '${widgetType}Item';
     buffer.writeln();
     buffer.writeln(
-      '    /** Where a row\'s box starts: after the edge gap. An owner-drawn row\'s overlay starts here. */',
+      '    /** Where a row\'s box starts: after the edge gap, or at 0 with columns, which start at 0. An owner-drawn row\'s overlay starts here. */',
     );
     buffer.writeln(
       '    public static double getRowLeft(Dart$widgetType $param) {',
     );
     buffer.writeln(
-      '        double gapFraction = $param.getColumnCount() > 1 ? EDGE_GAP_FRACTION_WITH_COLS : EDGE_GAP_FRACTION;',
+      '        return $param.getColumnCount() > 0 ? 0 : getEdgeGap($param);',
+    );
+    buffer.writeln('    }');
+    buffer.writeln();
+    buffer.writeln(
+      '    /** The gap at the left edge of a $param without columns. */',
+    );
+    buffer.writeln(
+      '    private static double getEdgeGap(Dart$widgetType $param) {',
     );
     buffer.writeln('        Rectangle bounds = $param.getBounds();');
     buffer.writeln(
-      '        return (bounds != null ? bounds.width : 0) * gapFraction;',
+      '        return (bounds != null ? bounds.width : 0) * EDGE_GAP_FRACTION;',
     );
     buffer.writeln('    }');
     // x of the left edge of a level's expand/collapse arrow, relative to the widget's top-left.
@@ -4542,15 +4544,14 @@ public class CoolBarSizes {
     buffer.writeln(
       '    public static double getExpanderLeft(Dart$widgetType $param, int level) {',
     );
-    buffer.writeln('        boolean withCols = $param.getColumnCount() > 1;');
     buffer.writeln(
-      '        double paddingLeft = withCols ? ITEM_PADDING_LEFT_WITH_COLS : ITEM_PADDING_LEFT;',
+      '        if ($param.getColumnCount() == 0) return getEdgeGap($param) + ITEM_PADDING_LEFT + ITEM_INDENT * level;',
     );
     buffer.writeln(
-      '        double indent = withCols ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
+      '        double indent = $param.getColumnCount() > 1 ? ITEM_INDENT_WITH_COLS : ITEM_INDENT;',
     );
     buffer.writeln(
-      '        return $_treeColumnLeft($param, 0) + getRowLeft($param) + paddingLeft + indent * level;',
+      '        return $_treeColumnLeft($param, 0) + indent * level;',
     );
     buffer.writeln('    }');
     // Where an item's own content begins, and what its parts are reported to take. These answer
@@ -4558,17 +4559,6 @@ public class CoolBarSizes {
     // geometry they are derived from instead of being hand-written into the file afterwards.
     final row = sizingTheme.extension<TreeThemeExtension>();
     if (row != null) {
-      buffer.writeln();
-      buffer.writeln(
-        '    /** Where the first column starts in a row: the expander\'s left edge at level 0, after the edge gap and the row\'s padding. */',
-      );
-      buffer.writeln(
-        '    public static int getCellsLeft(Dart$widgetType $param) {',
-      );
-      buffer.writeln(
-        '        return (int) Math.round(getExpanderLeft($param, 0));',
-      );
-      buffer.writeln('    }');
       buffer.writeln();
       buffer.writeln(
         '    /** Where an item\'s first cell content starts: after its indent, the expander and any checkbox. */',

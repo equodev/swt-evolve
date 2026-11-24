@@ -1,7 +1,7 @@
 // Drift guard. JFace's ColumnViewer maps a click to a column with `TreeItem.getBounds(int)`, which
-// Java answers on its own (`Sizes.treeCell`): the columns start past the tree's edge gap and the
-// row's padding (`TreeSizes.getCellsLeft`), column i at the sum of the widths of the columns before
-// it, and column 0's indent, expander and checkbox sit inside column 0's width. A cell drawn
+// Java answers on its own (`Sizes.treeCell`): as natively, column i starts at the sum of the widths
+// of the columns before it, from the tree's left edge, and column 0's indent, expander and
+// checkbox sit inside column 0's width, the expander at its left edge. A cell drawn
 // anywhere else sends a click on it to another column: an inline editor on the first column has to
 // open for a click on the right half of that cell.
 //
@@ -22,16 +22,11 @@ import 'delivery/support/deliver.dart';
 const double _treeWidth = 400;
 
 // TreeSizes' constants, mirrored from theme_settings/tree_theme_settings.dart.
-const double _edgeGapFractionWithCols = 0.005;
-const double _itemPaddingLeftWithCols = 12.0;
-const double _edgeGapFraction = 0.0275;
-const double _itemPaddingLeft = 8.0;
 const double _itemIndent = 16.0;
 
-/// Where the first column starts, as `TreeSizes.getCellsLeft` has it.
-double _cellsLeft(int columnCount) => columnCount > 1
-    ? _treeWidth * _edgeGapFractionWithCols + _itemPaddingLeftWithCols
-    : _treeWidth * _edgeGapFraction + _itemPaddingLeft;
+/// Where the first column starts, as `Sizes.treeColumnLeft(tree, 0)` has it: the tree's left edge, as
+/// natively.
+const double _columnsLeft = 0;
 
 VTreeColumn _column(int id, String text, int width) => VTreeColumn()
   ..id = id
@@ -93,7 +88,7 @@ Rect _header(WidgetTester tester, int column) => tester
 /// the widths before it.
 List<double> _lefts(List<int> widths) {
   final lefts = <double>[];
-  var x = _cellsLeft(widths.length);
+  var x = _columnsLeft;
   for (final w in widths) {
     lefts.add(x);
     x += w;
@@ -126,19 +121,18 @@ void main() {
   testWidgets('the indent and the expander are inside column 0, not ahead of it', (tester) async {
     await _pump(tester, _tree([_column(2, 'Name', 150), _column(3, 'Value', 120)]));
 
-    final gap = _treeWidth * _edgeGapFractionWithCols;
     final rootArrow = tester
         .getRect(find.byIcon(Icons.keyboard_arrow_down))
         .translate(-_treeRect.left, -_treeRect.top);
-    expect(rootArrow.left, moreOrLessEquals(gap + _itemPaddingLeftWithCols),
-        reason: 'TreeSizes.getExpanderLeft for level 0');
+    expect(rootArrow.left, moreOrLessEquals(_columnsLeft),
+        reason: 'TreeSizes.getExpanderLeft for level 0: at column 0\'s left edge, as natively');
 
     final childText = tester
         .getRect(find.text('Name child'))
         .translate(-_treeRect.left, -_treeRect.top);
-    expect(childText.left, greaterThan(gap + _itemPaddingLeftWithCols + _itemIndent),
+    expect(childText.left, greaterThan(_columnsLeft + _itemIndent),
         reason: 'one level in, the text is indented');
-    final cellsLeft = _cellsLeft(2);
+    const cellsLeft = _columnsLeft;
     expect(childText.right, lessThanOrEqualTo(cellsLeft + 150),
         reason: 'the indented text still ends inside column 0');
     expect(_cell(tester, 20, 1).left, moreOrLessEquals(cellsLeft + 150),
@@ -149,7 +143,7 @@ void main() {
     const widths = [150, 120];
     await _pump(tester, _tree([_column(2, 'Name', widths[0]), _column(3, 'Value', widths[1])]));
 
-    final cellsLeft = _cellsLeft(2);
+    const cellsLeft = _columnsLeft;
     expect(_header(tester, 0).right, moreOrLessEquals(cellsLeft + 150));
     expect(_header(tester, 1).left, moreOrLessEquals(cellsLeft + 150));
     expect(_header(tester, 1).width, moreOrLessEquals(120));
@@ -159,7 +153,7 @@ void main() {
     await _pump(tester, _tree([_column(2, 'Name', 180)]));
 
     final cell = _cell(tester, 10, 0);
-    expect(cell.left, moreOrLessEquals(_cellsLeft(1)));
+    expect(cell.left, moreOrLessEquals(_columnsLeft));
     expect(cell.width, moreOrLessEquals(180));
   });
 
@@ -172,7 +166,7 @@ void main() {
             style: SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL));
 
     expect(tester.takeException(), isNull);
-    final cellsLeft = _cellsLeft(2);
+    const cellsLeft = _columnsLeft;
     expect(_cell(tester, 10, 1).left, moreOrLessEquals(cellsLeft + 300));
     expect(_cell(tester, 10, 1).width, moreOrLessEquals(250));
     expect(_header(tester, 1).left, moreOrLessEquals(cellsLeft + 300));
@@ -183,6 +177,6 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(_cell(tester, 20, 0).width, moreOrLessEquals(10));
-    expect(_cell(tester, 20, 2).left, moreOrLessEquals(_cellsLeft(3) + 10));
+    expect(_cell(tester, 20, 2).left, moreOrLessEquals(_columnsLeft + 10));
   });
 }

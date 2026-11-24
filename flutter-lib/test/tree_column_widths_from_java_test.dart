@@ -1,5 +1,5 @@
 // Java places a Tree's cells at the column widths it set (TreeItem.getBounds, SWT.PaintItem), so
-// Flutter must not scale or widen them; the cell origin mirrors TreeSizes.getCellsLeft.
+// Flutter must not scale or widen them; the cell origin mirrors Sizes.treeColumnLeft.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,8 +82,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final treeLeft = tester.getTopLeft(find.byType(TreeSwt<VTree>)).dx;
-    // 1.5 edge gap (0.005 of 300) + 12 row padding + 150 first column + 8 text inset.
-    expect(tester.getTopLeft(find.text('beta')).dx - treeLeft, closeTo(171.5, 1.0));
+    // 150 first column, from the tree's left edge, + 8 text inset.
+    expect(tester.getTopLeft(find.text('beta')).dx - treeLeft, closeTo(158, 1.0));
   });
 
   testWidgets('columns wider than the tree scroll horizontally', (tester) async {
@@ -117,7 +117,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     final treeLeft = tester.getTopLeft(find.byType(TreeSwt<VTree>)).dx;
-    expect(tester.getTopLeft(find.text('gamma')).dx - treeLeft, closeTo(171.5, 1.0));
+    expect(tester.getTopLeft(find.text('gamma')).dx - treeLeft, closeTo(158, 1.0));
   });
 
   testWidgets('the last column is not widened to fill the tree', (tester) async {
@@ -139,7 +139,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       final treeLeft = tester.getTopLeft(find.byType(TreeSwt<VTree>)).dx;
-      expect(tester.getTopLeft(find.text('beta')).dx - treeLeft, closeTo(171.5, 1.0));
+      expect(tester.getTopLeft(find.text('beta')).dx - treeLeft, closeTo(158, 1.0));
       expect(tester.getTopLeft(find.text('gamma')).dx - tester.getTopLeft(find.text('beta')).dx,
           _widths[1]);
     });

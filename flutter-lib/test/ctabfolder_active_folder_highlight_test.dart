@@ -11,7 +11,6 @@ import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 // ignore: unused_import
 import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
-import 'package:swtflutter/src/theme/theme_extensions/ctabitem_theme_extension.dart';
 
 VCTabFolder _folder({
   required int id,
@@ -48,9 +47,6 @@ Text _label(WidgetTester tester, String label) => tester.widget<Text>(find.text(
 bool _emphasised(WidgetTester tester, String label) =>
     _label(tester, label).style?.fontWeight == FontWeight.w700;
 
-CTabItemThemeExtension _itemTheme(WidgetTester tester, String label) =>
-    Theme.of(tester.element(find.text(label).first)).extension<CTabItemThemeExtension>()!;
-
 void main() {
   testWidgets('only the folder that holds focus emphasises its selected tab',
       (WidgetTester tester) async {
@@ -64,10 +60,38 @@ void main() {
         reason: 'the folder that holds focus must mark its selected tab');
     expect(_emphasised(tester, 'Idle'), isFalse,
         reason: 'a folder that was never activated must not look focused');
-    expect(_label(tester, 'Active').style?.color, _itemTheme(tester, 'Active').tabItemActiveTextColor);
-    expect(_label(tester, 'Idle').style?.color, _itemTheme(tester, 'Idle').tabItemTextColor,
-        reason: 'a selected tab in a folder without focus is dimmed, so only the active one stands out');
+    expect(_label(tester, 'Active').style?.color, _label(tester, 'Idle').style?.color,
+        reason: 'focus changes the selected tab\'s weight, not its text colour');
   });
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('the active tab keeps the unselected text colour in $mode',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(EvolveApp(
+        theme: mode,
+        contentWidget: _stack(VCTabFolder()
+          ..id = 4000
+          ..style = SWT.NONE
+          ..selection = 1
+          ..enabled = true
+          ..highlight = true
+          ..highlightEnabled = true
+          ..items = [
+            VCTabItem()
+              ..id = 4001
+              ..text = 'Resources',
+            VCTabItem()
+              ..id = 4002
+              ..text = 'Control Flow',
+          ]),
+      ));
+      while (tester.takeException() != null) {}
+
+      expect(_emphasised(tester, 'Control Flow'), isTrue);
+      expect(_label(tester, 'Control Flow').style?.color, _label(tester, 'Resources').style?.color,
+          reason: 'the active tab is marked by weight and frame, not by a brighter colour');
+    });
+  }
 
   testWidgets('highlightEnabled=false opts the folder out of the emphasis',
       (WidgetTester tester) async {
@@ -80,8 +104,73 @@ void main() {
     expect(_emphasised(tester, 'Opted out'), isFalse,
         reason: 'setHighlightEnabled(false) opts the folder out of the '
             'active-folder rendering, active or not');
-    expect(_label(tester, 'Opted out').style?.color,
-        _itemTheme(tester, 'Opted out').tabItemSelectedTextColor,
-        reason: 'a folder outside activation keeps its selected tab in the selected colour');
   });
+
+  for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+    testWidgets('with highlightEnabled=false the selected tab keeps the unselected text colour in $mode',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(EvolveApp(
+        theme: mode,
+        contentWidget: _stack(VCTabFolder()
+          ..id = 5000
+          ..style = SWT.NONE
+          ..selection = 1
+          ..enabled = true
+          ..highlightEnabled = false
+          ..items = [
+            VCTabItem()
+              ..id = 5001
+              ..text = 'Outline',
+            VCTabItem()
+              ..id = 5002
+              ..text = 'Problems',
+          ]),
+      ));
+      while (tester.takeException() != null) {}
+
+      expect(_label(tester, 'Problems').style?.color, _label(tester, 'Outline').style?.color);
+    });
+
+    testWidgets('the selected tab draws its dirty dot in the unselected text colour in $mode',
+        (WidgetTester tester) async {
+      VCTabItem dirtyItem(int id, String text) => VCTabItem()
+        ..id = id
+        ..text = text
+        ..showClose = true
+        ..showDirty = true
+        ..showing = true;
+      await tester.pumpWidget(EvolveApp(
+        theme: mode,
+        contentWidget: SizedBox(
+          width: 600,
+          height: 240,
+          child: CTabFolderSwt<VCTabFolder>(
+              value: VCTabFolder()
+                ..id = 6000
+                ..style = SWT.CLOSE
+                ..enabled = true
+                ..selection = 0
+                ..dirtyIndicatorStyle = true
+                ..items = [dirtyItem(6001, 'A.java'), dirtyItem(6002, 'B.java')]),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      final dots = find
+          .byWidgetPredicate((w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).shape == BoxShape.circle)
+          .evaluate()
+          .toList()
+        ..sort((a, b) => tester.getCenter(find.byWidget(a.widget)).dx.compareTo(
+            tester.getCenter(find.byWidget(b.widget)).dx));
+      Color rgb(Element dot) =>
+          ((dot.widget as DecoratedBox).decoration as BoxDecoration).color!.withAlpha(255);
+
+      expect(dots, hasLength(2));
+      expect(rgb(dots[0]), rgb(dots[1]),
+          reason: 'the dot takes the tab text colour, and the selected tab no longer has its own');
+    });
+  }
 }
