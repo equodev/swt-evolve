@@ -322,20 +322,6 @@ Size Function(String text) singleLineTextSizes(TextStyle? style) {
   return (text) => _measureIn(measures, text, style, 1);
 }
 
-/// [singleLineTextWidth], asking [shaped] first: the width text about to be drawn reports when it is
-/// shaped exactly as this measure would shape it, or null when it is not. Remembered like a measure.
-double shapedSingleLineTextWidth(String text, TextStyle style, double? Function() shaped) {
-  var measures = _measuresFor(style);
-  final known = measures.shapedWidths[text];
-  if (known != null) return known;
-  final width = shaped() ?? _measureIn(measures, text, style, 1).width;
-  _listenForFonts();
-  if (_keptSizes >= _maxTextSizes) _dropMeasures();
-  measures = _measuresFor(style);
-  _keptSizes++;
-  return measures.shapedWidths[text] = width;
-}
-
 void _listenForFonts() {
   if (_listeningForFonts) return;
   _listeningForFonts = FontUtils.listenToSystemFonts(() {
@@ -382,9 +368,6 @@ class _Measures {
 
   final int generation;
   final Map<(String, int?), Size> sizes = {};
-
-  /// See [shapedSingleLineTextWidth].
-  final Map<String, double> shapedWidths = {};
 }
 
 /// The kept sizes for [style]. A style is hashed and compared field by field, so the instance asked

@@ -1,6 +1,5 @@
 import 'test_anchors.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
@@ -54,35 +53,6 @@ class ColorCachedText extends Text {
           style: source.value, textAlign: textAlign, softWrap: softWrap, overflow: overflow, maxLines: maxLines),
     );
   }
-
-  /// The width [singleLineTextWidth] measures for [data] in [measured], read off the text this label
-  /// lays out in [context], or null when that text is not shaped as [measured] would shape it.
-  ///
-  /// The shaped text is kept for the label built next with the same text and style, so a build that
-  /// checks whether its text fits does not shape it a second time.
-  double? measuredWidth(BuildContext context, TextStyle measured) {
-    if (animatedStyle != null) return null;
-    final leaf = _leaf(context);
-    if (leaf.textDirection != TextDirection.ltr || !_shapedAlike(leaf.style, measured)) return null;
-    final fontSize = leaf.style.fontSize ?? kDefaultFontSize;
-    if (leaf.textScaler.scale(fontSize) != fontSize) return null;
-    return RenderCachedText._maxIntrinsicWidthOf(leaf._setup, leaf.style);
-  }
-
-  /// Whether text in [a] and in [b] comes out of shaping the same: what they differ in, if anything,
-  /// is only painted, or only sets the line height. A weight, slant or spacing left unset is the
-  /// engine's default for it.
-  static bool _shapedAlike(TextStyle a, TextStyle b) =>
-      a.fontFamily == b.fontFamily &&
-      listEquals(a.fontFamilyFallback, b.fontFamilyFallback) &&
-      a.fontSize == b.fontSize &&
-      (a.fontWeight ?? FontWeight.normal) == (b.fontWeight ?? FontWeight.normal) &&
-      (a.fontStyle ?? FontStyle.normal) == (b.fontStyle ?? FontStyle.normal) &&
-      (a.letterSpacing ?? 0) == (b.letterSpacing ?? 0) &&
-      (a.wordSpacing ?? 0) == (b.wordSpacing ?? 0) &&
-      a.locale == b.locale &&
-      listEquals(a.fontFeatures, b.fontFeatures) &&
-      listEquals(a.fontVariations, b.fontVariations);
 
   _CachedTextLeaf _leaf(BuildContext context) {
     // Resolved the way Text resolves them.
@@ -351,10 +321,6 @@ class RenderCachedText extends RenderBox implements PaintedTextSource {
 
   static final _shared = <_PainterKey, _SharedPainter>{};
 
-  /// Painters shaped for [ColorCachedText.measuredWidth] that no label has taken up yet.
-  static final _unclaimed = <_PainterKey>{};
-  static const _maxUnclaimed = 512;
-
   static _SharedPainter _newShared(_PainterKey key) {
     final _PainterKey(:setup, :style) = key;
     return _SharedPainter(
@@ -371,34 +337,6 @@ class RenderCachedText extends RenderBox implements PaintedTextSource {
         textHeightBehavior: setup.textHeightBehavior,
       ),
     );
-  }
-
-  /// The widest the text of [setup] in [style] lays out, from the painter labels of that text and
-  /// style share, shaping it for them if none holds one yet.
-  static double _maxIntrinsicWidthOf(_TextSetup setup, TextStyle style) {
-    final key = _PainterKey(setup, style);
-    var shared = _shared[key];
-    if (shared == null) {
-      if (_unclaimed.length >= _maxUnclaimed) _dropUnclaimed();
-      shared = _shared[key] = _newShared(key);
-      _unclaimed.add(key);
-    }
-    if (shared.widths == null) {
-      shared.painter.layout();
-      shared.widths = (0, double.infinity);
-    }
-    return shared.painter.maxIntrinsicWidth;
-  }
-
-  static void _dropUnclaimed() {
-    for (final key in _unclaimed) {
-      final shared = _shared[key];
-      if (shared != null && shared.users == 0) {
-        _shared.remove(key);
-        shared.painter.dispose();
-      }
-    }
-    _unclaimed.clear();
   }
 
   /// The attached labels, which a change of the system fonts lays out again.
@@ -490,7 +428,7 @@ class RenderCachedText extends RenderBox implements PaintedTextSource {
     }
     final key = _PainterKey(_setup, _style);
     final shared = _shared[key] ??= _newShared(key);
-    if (shared.users++ == 0) _unclaimed.remove(key);
+    shared.users++;
     while (_painters.length >= _kept) {
       _release(_painters.removeAt(0));
     }
