@@ -21,11 +21,11 @@ public class LabelSizes {
 
     static class NONE {
         static final double MIN_WIDTH = 8.0;
-        static final double MIN_HEIGHT = 4.0;
+        static final double MIN_HEIGHT = 5.0;
         static final double HORIZONTAL_PADDING = 8.0;
         static final double VERTICAL_PADDING = 4.0;
         static final double IMAGE_SPACING = 8.0;
-        static final boolean EMPTY_TEXT_AFFECTS_SIZING = false;
+        static final boolean EMPTY_TEXT_AFFECTS_SIZING = true;
     }
 
     static class HORIZONTAL_SEPARATOR {
@@ -56,7 +56,7 @@ public class LabelSizes {
             width = wHint != SWT.DEFAULT ? wHint : VERTICAL_SEPARATOR.MIN_WIDTH;
             height = hHint != SWT.DEFAULT ? hHint : VERTICAL_SEPARATOR.MIN_HEIGHT;
         } else { // NONE, WRAP
-            m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING);
+            m.text = computeText(widget, m, NONE.EMPTY_TEXT_AFFECTS_SIZING && Drawn.image(widget) == null);
             m.image = computeImage(widget);
             width = wHint != SWT.DEFAULT ? wHint : ((m.text.x() > 0 || m.image.x() > 0) ? Math.max((m.text.x() + m.image.x() + (m.image.x() > 0 && m.text.x() > 0 ? NONE.IMAGE_SPACING : 0)) + ((m.text.x() > 0 || m.image.x() > 0) ? NONE.HORIZONTAL_PADDING : 0), NONE.MIN_WIDTH) : 0.0);
             boolean wraps = hasFlags(style, SWT.WRAP);
@@ -67,9 +67,10 @@ public class LabelSizes {
                 double imageSpacing = imageWidth > 0 ? NONE.IMAGE_SPACING : 0;
                 double availableWidth = Math.max(1.0, wHint - ((m.text.x() > 0 || imageWidth > 0) ? NONE.HORIZONTAL_PADDING : 0) - imageWidth - imageSpacing);
                 PointD wrapped = FontMetricsUtil.getFontSizeWrapped(Drawn.text(widget), m.textStyle, availableWidth);
+                wrapped = new PointD(wrapped.x(), Math.max(wrapped.y(), m.text.y()));
                 height = Math.max(Math.max(wrapped.y(), m.image.y()) + (wrapped.y() > 0 || m.image.y() > 0 ? NONE.VERTICAL_PADDING : 0), NONE.MIN_HEIGHT);
             } else {
-                height = Math.max(Math.max(m.text.y(), m.image.y()) + ((m.text.y() > 0 || m.image.y() > 0) ? NONE.VERTICAL_PADDING : 0), NONE.MIN_HEIGHT);
+                height = Math.max(Math.max(m.text.y(), m.image.y()) + NONE.VERTICAL_PADDING, NONE.MIN_HEIGHT);
             }
         }
 

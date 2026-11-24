@@ -2463,13 +2463,18 @@ class WidgetMeasurer {
 
         if (imageBeforeText) writeImage();
         if (hasAnyTextBasedWidget) {
-          if (imageBeforeText) {
-            buffer.writeln(
-              "$indent// With an image set, Dart's empty-text branch never runs (it shows only the image) --",
-            );
-            buffer.writeln(
-              "$indent// so empty text reserves a line only when there's no image to take that branch instead.",
-            );
+          // A Label with an image and no text draws only the image, as CLabel does: an empty
+          // line is held only without an image.
+          if (imageBeforeText ||
+              (widgetType == 'Label' && hasAnyImageSupport)) {
+            if (imageBeforeText) {
+              buffer.writeln(
+                "$indent// With an image set, Dart's empty-text branch never runs (it shows only the image) --",
+              );
+              buffer.writeln(
+                "$indent// so empty text reserves a line only when there's no image to take that branch instead.",
+              );
+            }
             buffer.writeln(
               '${indent}m.text = computeText(widget, m, $styleName.EMPTY_TEXT_AFFECTS_SIZING && $drawnImage == null);',
             );

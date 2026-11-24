@@ -17,6 +17,10 @@ void main() {
   runApp(MeasurementApp(measurer: measurer));
 }
 
+// Images shorter than a text line, down to one pixel, so MIN_HEIGHT comes from the smallest
+// image label rather than from one line of text.
+const labelImages = [...Images, (8, 8), (4, 4), (1, 1)];
+
 void setupCases(WidgetMeasurer measurer) {
   final styles = [
     ('NONE', SWT.NONE),
@@ -28,7 +32,7 @@ void setupCases(WidgetMeasurer measurer) {
   for (final style in styles) {
     for (final text in Texts) {
       for (final fontSize in Fonts) {
-        for (final image in Images) {
+        for (final image in labelImages) {
           final caseName =
               '${text.$1}_font${fontSize}_${(image != null) ? '${image.$1}x${image.$2}' : 'noimg'}';
           measurer.addTestCase(

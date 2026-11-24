@@ -365,7 +365,8 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
           imageWidget,
           if (text.isNotEmpty) SizedBox(width: widgetTheme.iconTextSpacing),
         ],
-        if (text.isNotEmpty)
+        // Without an image, an empty label still holds one line, as on every native.
+        if (text.isNotEmpty || imageWidget == null)
           Flexible(
             child: hasValidBounds
                 ? ConstrainedBox(

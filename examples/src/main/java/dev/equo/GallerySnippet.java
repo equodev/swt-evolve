@@ -749,6 +749,20 @@ public class GallerySnippet {
             Label prompt = new Label(dialog, SWT.NONE);
             prompt.setText("Your name:");
 
+            // A text Label, an empty one and their row sharing one GridData, as
+            // FilteredItemsSelectionDialog's "Matching items:" row does.
+            Composite matchingRow = new Composite(dialog, SWT.NONE);
+            GridLayout matchingLayout = new GridLayout(2, false);
+            matchingLayout.marginWidth = 0;
+            matchingLayout.marginHeight = 0;
+            matchingRow.setLayout(matchingLayout);
+            GridData matchingData = new GridData(GridData.FILL_HORIZONTAL);
+            Label matchingLabel = new Label(matchingRow, SWT.NONE);
+            matchingLabel.setText("Matching items:");
+            matchingLabel.setLayoutData(matchingData);
+            new Label(matchingRow, SWT.RIGHT).setLayoutData(matchingData);
+            matchingRow.setLayoutData(matchingData);
+
             Text nameInput = new Text(dialog, SWT.BORDER);
             GridData inputData = new GridData(SWT.FILL, SWT.CENTER, true, false);
             inputData.widthHint = 220;
