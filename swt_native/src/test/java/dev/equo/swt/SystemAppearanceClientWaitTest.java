@@ -73,4 +73,28 @@ class SystemAppearanceClientWaitTest {
 
         assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(1_000);
     }
+
+    @Test
+    void theSystemThemeWaitsForTheClientWhenTheApplicationHasNoThemeOfItsOwn() {
+        SystemAppearance appearance = SystemAppearance.readAhead(10_000);
+        CompletableFuture.runAsync(() -> appearance.report("dark"),
+                CompletableFuture.delayedExecutor(200, TimeUnit.MILLISECONDS));
+
+        assertThat(Config.darkTheme(SystemAppearance.awaitingClient(appearance))).isTrue();
+    }
+
+    @Test
+    void noWaitWhenTheApplicationSetsItsOwnTheme() {
+        ConfigFlags flags = new ConfigFlags();
+        flags.force_theme = "light";
+        Config.setConfigFlags(flags);
+        SystemAppearance appearance = SystemAppearance.readAhead(10_000);
+
+        long start = System.nanoTime();
+        SystemAppearance answered = SystemAppearance.awaitingClient(appearance);
+
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(1_000);
+        assertThat(answered).isSameAs(appearance);
+        assertThat(Config.darkTheme(answered)).isFalse();
+    }
 }

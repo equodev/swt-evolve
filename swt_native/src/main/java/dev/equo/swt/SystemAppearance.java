@@ -56,6 +56,16 @@ public final class SystemAppearance {
         }
     }
 
+    /**
+     * {@code system}, after {@link #awaitClient} when the application defines no theme of its own: the
+     * appearance {@code Display.isSystemDarkTheme()} answers the application from.
+     */
+    public static SystemAppearance awaitingClient(SystemAppearance system) {
+        if (system != null && Config.appTheme() == null)
+            system.awaitClient();
+        return system;
+    }
+
     /** What the client reported, "dark" or "light"; null before it reports. */
     public String reported() {
         return reported;
