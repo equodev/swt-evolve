@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -240,9 +241,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     final toggle = indicator != null || (columns?.toggle ?? false);
     final image = icon != null || (columns?.image ?? false);
     if (!toggle && !image) return null;
-    final toggleWidth = widgetTheme.checkboxSize > widgetTheme.radioButtonSize
-        ? widgetTheme.checkboxSize
-        : widgetTheme.radioButtonSize;
+    final toggleWidth = math.max(widgetTheme.checkboxSize, widgetTheme.radioButtonSize);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
