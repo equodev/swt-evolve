@@ -298,10 +298,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
   int get _style => state.style;
   bool get _hasTitle => (_style & SWT.TITLE) != 0;
-  /// An ON_TOP shell is a popup its owner shows without handing over activation, so a click inside
-  /// it must not activate it either: activating deactivates the owner, and an owner that closes on
-  /// Deactivate -- a command palette, whose field and list are two such shells -- tears the popup
-  /// down before the click that was meant for it is dispatched.
+  /// An ON_TOP shell is a popup its owner shows without handing over activation. Whether a press
+  /// inside it activates it is Java's call (`DisplayBridge.activateShellOnPress`), made before the
+  /// focus moves, so the client does not take the focus for it on pointer down.
   bool get _isOnTop => (_style & SWT.ON_TOP) != 0;
   bool get _hasClose => (_style & SWT.CLOSE) != 0;
   bool get _hasMax => (_style & SWT.MAX) != 0;

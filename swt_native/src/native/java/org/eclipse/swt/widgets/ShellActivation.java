@@ -8,6 +8,21 @@ final class ShellActivation {
     private ShellActivation() {
     }
 
+    /**
+     * The control whose shell {@link Display#getActiveShell()} reports. While a FocusOut is sent the
+     * Display names the control losing the focus as the focus control, but the activation has moved
+     * with the focus already: natively the active shell is the key window, which a press into another
+     * shell changes before the focus leaves the old one.
+     */
+    static Control activeShellFocus(DartDisplay display) {
+        if (display.focusEvent == org.eclipse.swt.SWT.FocusOut && display.displayBridge != null) {
+            Control next = display.displayBridge.getFocused();
+            if (next != null)
+                return next;
+        }
+        return display.getFocusControl();
+    }
+
     /** A shell taking the activation deactivates the visible one it takes it from. */
     static void deactivatePrevious(Shell previous, Shell next) {
         if (previous != null && previous != next && !previous.isDisposed() && previous.isVisible())

@@ -1027,7 +1027,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
      */
     public Shell getActiveShell() {
         checkDevice();
-        Control focus = getFocusControl();
+        Control focus = ShellActivation.activeShellFocus(this);
         if (focus != null && !focus.isDisposed()) {
             Shell shell = focus.getShell();
             if (canBeActiveShell(shell)) {

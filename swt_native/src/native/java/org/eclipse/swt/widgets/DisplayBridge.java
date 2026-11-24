@@ -2277,12 +2277,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     /**
      * A press in an inactive shell activates it before its MouseDown, as the window manager does
      * natively; the client's own report of that activation comes later and is absorbed. An ON_TOP
-     * shell is never activated by a press (see the client's shell), so neither is it here.
+     * popup shown without activation is activated by a press too, as Cocoa makes it key and Win32
+     * answers WM_MOUSEACTIVATE, before the focus moves into it: a JFace hover closes on its editor's
+     * FocusOut unless it is the active shell then. An ON_TOP NO_FOCUS shell is not activated.
      */
     @Override
     public void activateShellOnPress(DartControl control) {
         Shell shell = shellOf(control);
-        if (shell == null || !(shell.getImpl() instanceof DartShell) || (shell.getStyle() & org.eclipse.swt.SWT.ON_TOP) != 0)
+        int noActivation = org.eclipse.swt.SWT.ON_TOP | org.eclipse.swt.SWT.NO_FOCUS;
+        if (shell == null || !(shell.getImpl() instanceof DartShell) || (shell.getStyle() & noActivation) == noActivation)
             return;
         if (shell.getDisplay().getActiveShell() != shell)
             shell.setActive();
