@@ -225,6 +225,28 @@ class MenuChangeNotifier extends InheritedWidget {
   bool updateShouldNotify(MenuChangeNotifier oldWidget) => false;
 }
 
+/// The leading columns a menu reserves in every item, so all its labels start at one x: a toggle
+/// column when any item is CHECK or RADIO, an image column when any item has an image.
+class MenuLeadingColumns extends InheritedWidget {
+  final bool toggle;
+  final bool image;
+
+  MenuLeadingColumns({super.key, required Iterable<VMenuItem> items, required super.child})
+      : toggle = items.any((item) => StyleBits(item.style).hasAny(SWT.CHECK, SWT.RADIO)),
+        image = items.any((item) => item.image != null);
+
+  /// For a list of item widgets, as the drop-down and cascade menus keep them.
+  MenuLeadingColumns.ofChildren(List<Widget> children, {Key? key, required Widget child})
+      : this(key: key, items: children.whereType<MenuItemSwt>().map((w) => w.value), child: child);
+
+  static MenuLeadingColumns? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<MenuLeadingColumns>();
+
+  @override
+  bool updateShouldNotify(MenuLeadingColumns oldWidget) =>
+      toggle != oldWidget.toggle || image != oldWidget.image;
+}
+
 class MenuImpl<T extends MenuSwt, V extends VMenu>
     extends WidgetSwtState<T, V> {
   final MenuController _menuController = MenuController();
@@ -744,11 +766,14 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
             child: Focus(
               focusNode: _unarmedFocusNode,
               onKeyEvent: _armFromUnarmed,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: menuItems
-                    .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                    .toList(),
+              child: MenuLeadingColumns(
+                items: menuItems,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: menuItems
+                      .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                      .toList(),
+                ),
               ),
             ),
           ),
@@ -1068,9 +1093,12 @@ class _MenuBarItemState extends State<_MenuBarItem> {
               child: MenuMnemonics(
                 focusNode: _itemsFocusNode,
                 close: _closeFromKeyboard,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: _menuChildren,
+                child: MenuLeadingColumns.ofChildren(
+                  _menuChildren,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: _menuChildren,
+                  ),
                 ),
               ),
             ),
