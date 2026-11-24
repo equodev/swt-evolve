@@ -204,6 +204,103 @@ class GCHelperNativeTest {
         assertThat(comm.handlers).isEmpty();
     }
 
+    /**
+     * A comm no client has connected to yet: a pixel request waits in it, as a real comm holds its
+     * frames, and is answered once {@link #connect} hands it to the client.
+     */
+    private static class LateClientComm extends RecordingComm {
+        private final byte[] answer;
+        private final CompletableFuture<Void> client = new CompletableFuture<>();
+        private final java.util.List<Long> held = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+        LateClientComm(byte[] answer) {
+            this.answer = answer;
+        }
+
+        @Override
+        public java.util.concurrent.Future<Void> firstClient() {
+            return client;
+        }
+
+        @Override
+        public void send(String eventName, byte[] payload) {
+            super.send(eventName, payload);
+            long ref = ByteBuffer.wrap(payload).getLong();
+            if (client.isDone()) answer(ref);
+            else held.add(ref);
+        }
+
+        void connect() {
+            client.complete(null);
+            for (long ref : held) answer(ref);
+        }
+
+        @SuppressWarnings("unchecked")
+        private void answer(long ref) {
+            Consumer<byte[]> handler = (Consumer<byte[]>) handlers.get("Image/" + ref + "/pixelsResult");
+            if (handler != null)
+                handler.accept(answer);
+        }
+    }
+
+    @Test
+    @DisplayName("in the browser a pixel read made before any client connected waits for one, not just its deadline")
+    void pixelReadBeforeTheFirstClient() throws Exception {
+        String mode = ConfigFlags.mode();
+        System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        try {
+            byte[] bytes = png(1, 1, 0);
+            LateClientComm comm = new LateClientComm(bytes);
+            Thread connecting = new Thread(() -> {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                comm.connect();
+            });
+            connecting.start();
+
+            assertThat(GCHelper.fetchRemotePixels(display, comm, 15, 50)).isEqualTo(bytes);
+            connecting.join(5000);
+        } finally {
+            if (mode != null)
+                ConfigFlags.setMode(mode);
+        }
+    }
+
+    @Test
+    @DisplayName("in the browser an interrupted wait for the first client gives up and keeps the interrupt")
+    void pixelReadInterruptedBeforeTheFirstClient() {
+        String mode = ConfigFlags.mode();
+        System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        Thread.currentThread().interrupt();
+        try {
+            assertThat(GCHelper.fetchRemotePixels(display, new LateClientComm(png(1, 1, 0)), 16, 5000)).isNull();
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+            if (mode != null)
+                ConfigFlags.setMode(mode);
+        }
+    }
+
+    @Test
+    @DisplayName("in the browser a wait for the first client ends when its display is disposed")
+    void pixelReadOnADisposedDisplayBeforeTheFirstClient() {
+        String mode = ConfigFlags.mode();
+        System.clearProperty(ConfigFlags.MODE_PROPERTY);
+        try {
+            Display disposing = org.mockito.Mockito.mock(Display.class);
+            org.mockito.Mockito.when(disposing.isDisposed()).thenReturn(false, true);
+
+            assertThat(GCHelper.fetchRemotePixels(disposing, new LateClientComm(png(1, 1, 0)), 17, 5000)).isNull();
+        } finally {
+            if (mode != null)
+                ConfigFlags.setMode(mode);
+        }
+    }
+
     @Test
     @DisplayName("off the UI thread a pixel read with no device has no display to wait on")
     void pixelReadOffTheUiThread() throws Exception {

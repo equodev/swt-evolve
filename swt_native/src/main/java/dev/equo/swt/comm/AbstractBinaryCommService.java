@@ -54,6 +54,8 @@ public abstract class AbstractBinaryCommService implements CommService {
     private final String logTag = "[" + getClass().getSimpleName() + "]";
     private final List<byte[]> pendingFrames = new ArrayList<>();
     private volatile boolean firstClientConnected = false;
+    /** Completed together with {@link #firstClientConnected}. */
+    private final java.util.concurrent.CompletableFuture<Void> firstClient = new java.util.concurrent.CompletableFuture<>();
     /** Set while the first client is handed the held frames; guarded by {@link #pendingFrames}. */
     private boolean handingOver;
 
@@ -88,6 +90,11 @@ public abstract class AbstractBinaryCommService implements CommService {
     /** Whether a client has connected; until one does, every frame sent is buffered for it. */
     public boolean hasClient() {
         return firstClientConnected;
+    }
+
+    @Override
+    public java.util.concurrent.Future<Void> firstClient() {
+        return firstClient;
     }
 
     @Override
@@ -234,6 +241,7 @@ public abstract class AbstractBinaryCommService implements CommService {
                 if (pendingFrames.isEmpty()) {
                     firstClientConnected = true;
                     handingOver = false;
+                    firstClient.complete(null);
                     return;
                 }
                 drain = new ArrayList<>(pendingFrames);

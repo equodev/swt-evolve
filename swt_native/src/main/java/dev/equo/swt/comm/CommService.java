@@ -110,6 +110,17 @@ public interface CommService {
         return 1;
     }
 
+    /**
+     * Done once a client has connected and been handed every frame sent before it did. Until then a
+     * request sent here waits for a client, so whoever waits for its answer can tell "not answered
+     * yet" from "nobody to answer".
+     *
+     * <p>Transports whose client is there from the start can leave this at its default.
+     */
+    default java.util.concurrent.Future<Void> firstClient() {
+        return java.util.concurrent.CompletableFuture.completedFuture(null);
+    }
+
     int getPort();
 
     void stop();

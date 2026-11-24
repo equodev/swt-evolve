@@ -570,7 +570,7 @@ public class GCHelper {
             if (display != null && !display.isDisposed()) display.wake();
         });
         comm.send(0, 0, dev.equo.swt.WireTable.CHANNEL_IMAGE_REQUEST_PIXELS, java.nio.ByteBuffer.allocate(8).putLong(remoteRef).array());
-        awaitOnDisplay(display, answered, timeoutMs);
+        awaitOnDisplay(display, comm, answered, timeoutMs);
         if (!answered.isDone()) comm.remove(dev.equo.swt.WireTable.TYPE_IMAGE, remoteRef, dev.equo.swt.WireTable.CHANNEL_PIXELS_RESULT);
         return result[0];
     }
@@ -580,9 +580,11 @@ public class GCHelper {
      * off-screen engine needs SWT's event loop to start and render — while on web the engine runs
      * in the browser and answers on its own thread, so dispatching would only sleep.
      */
-    private static void awaitOnDisplay(Display display, java.util.concurrent.CompletableFuture<Void> future, long timeoutMs) {
+    private static void awaitOnDisplay(Display display, dev.equo.swt.comm.CommService comm,
+            java.util.concurrent.CompletableFuture<Void> future, long timeoutMs) {
         if (display == null || display.isDisposed()) return;
         if (!dev.equo.swt.ConfigFlags.isDesktopMode()) {
+            if (!awaitFirstClient(display, comm)) return;
             try {
                 future.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
@@ -592,6 +594,28 @@ public class GCHelper {
             return;
         }
         awaitRenderPumping(display, future, (int) timeoutMs);
+    }
+
+    /**
+     * A browser renders nothing until its page connects, which the user may do long after the
+     * application started; what was sent before waits in the comm for it. So a request's deadline
+     * only starts once a client is there. False when the wait ends without one: the Display was
+     * disposed or the thread interrupted. It blocks without dispatching, like every wait for a pixel
+     * answer, so no application code runs inside the read; before a client there is nothing to paint.
+     */
+    private static boolean awaitFirstClient(Display display, dev.equo.swt.comm.CommService comm) {
+        java.util.concurrent.Future<Void> client = comm.firstClient();
+        while (!client.isDone()) {
+            if (display.isDisposed()) return false;
+            try {
+                client.get(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            } catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e) {
+            }
+        }
+        return true;
     }
 
 
