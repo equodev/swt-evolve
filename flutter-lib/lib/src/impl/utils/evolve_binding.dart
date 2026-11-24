@@ -7,9 +7,11 @@ import 'package:flutter/widgets.dart';
 ///
 /// The Linux embedder asks for that tree on every start, since GTK gives it no way to tell whether
 /// an assistive technology is listening, and keeping the tree costs every frame a third or more of
-/// its build and layout. The runner answers that question itself (on the accessibility bus) and
-/// passes it in, then reports an assistive technology that starts or stops later on
-/// [accessibilityChannel]. An explicit [ensureSemantics] (the test semantics) still turns the tree on.
+/// its build and layout. The Windows embedder asks whenever any UI Automation client queries the
+/// window, screen reader or not. Each runner answers that question itself (the accessibility bus,
+/// the system's screen reader flag) and passes it in, then reports an assistive technology that
+/// starts or stops later on [accessibilityChannel]. An explicit [ensureSemantics] (the test
+/// semantics) still turns the tree on.
 class EvolveWidgetsBinding extends WidgetsFlutterBinding {
   EvolveWidgetsBinding._(this.followPlatformSemantics);
 

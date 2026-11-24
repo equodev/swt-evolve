@@ -63,3 +63,8 @@ std::string Utf8FromUtf16(const wchar_t* utf16_string) {
   }
   return utf8_string;
 }
+
+bool AssistiveTechnologyActive() {
+  BOOL running = FALSE;
+  return ::SystemParametersInfo(SPI_GETSCREENREADER, 0, &running, 0) && running;
+}

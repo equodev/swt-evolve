@@ -17,6 +17,10 @@ class FlutterWindow : public Win32Window {
   explicit FlutterWindow(const flutter::DartProject& project);
   virtual ~FlutterWindow();
 
+  // Whether Dart started without the semantics tree (a11y=off) and so has to hear when a screen
+  // reader starts or stops. Set before Create.
+  void SetReportsAssistiveTechnology(bool reports) { reports_assistive_technology_ = reports; }
+
  protected:
   // Win32Window:
   bool OnCreate() override;
@@ -38,6 +42,12 @@ class FlutterWindow : public Win32Window {
 
   // The CSD window channel; null for embedded/headless surfaces that have no window chrome.
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> window_channel_;
+
+  bool reports_assistive_technology_ = false;
+
+  // Reports to Dart a screen reader that starts or stops after the engine started
+  // (dev.equo.swt/accessibility, `assistiveTechnology`); null unless reports_assistive_technology_.
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> a11y_channel_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

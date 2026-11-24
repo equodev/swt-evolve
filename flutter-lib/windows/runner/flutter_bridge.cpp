@@ -85,6 +85,10 @@ static std::wstring BundleBase() {
     return g_bundle_override.empty() ? GetDllPath() : g_bundle_override;
 }
 
+// The entrypoint argument that tells Dart no screen reader runs (getFollowPlatformSemantics), so it
+// declines the engine's request for the semantics tree.
+static constexpr char kA11yOffArg[] = "a11y=off";
+
 // Impeller compiles its pipelines on every engine start, on the UI thread. Java turns it off when
 // shells get windows of their own, each with its own engine; text is then measured off it too.
 static flutter::DartProject EngineProject(bool impeller) {
@@ -212,13 +216,17 @@ FlutterWindow* createDisplayWindow(int port, HWND owner, int64_t displayId, std:
 
     flutter::DartProject project = boot_trace::Step("DartProject", [&] { return EngineProject(impeller); });
 
-    // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg]. Passing the real
-    // widget background (not 0) avoids the Flutter theme rendering a pure-black Display background.
+    // Same arg layout as the embedded path: [port, id, name, theme, bg, parentBg], then a11y=off when
+    // no screen reader runs. Passing the real widget background (not 0) avoids the Flutter theme
+    // rendering a pure-black Display background.
     std::string bg = std::to_string(backgroundColor);
     std::vector<std::string> arguments = {std::to_string(port), std::to_string(displayId), widgetName, theme, bg, bg};
+    const bool assistive = boot_trace::Step("AssistiveTechnologyActive", [] { return AssistiveTechnologyActive(); });
+    if (!assistive) arguments.push_back(kA11yOffArg);
     project.set_dart_entrypoint_arguments(std::move(arguments));
 
     FlutterWindow* window = new FlutterWindow(project);
+    window->SetReportsAssistiveTechnology(!assistive);
     if (!s_first_engine) {
         s_first_engine = window;
     }

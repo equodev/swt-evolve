@@ -16,4 +16,8 @@ std::string Utf8FromUtf16(const wchar_t* utf16_string);
 // encoded in UTF-8. Returns an empty std::vector<std::string> on failure.
 std::vector<std::string> GetCommandLineArguments();
 
+// Whether a screen reader is running. The engine builds its accessibility tree whenever any UI
+// Automation client asks for the window's root, which plenty of non-assistive software does.
+bool AssistiveTechnologyActive();
+
 #endif  // RUNNER_UTILS_H_

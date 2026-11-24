@@ -64,7 +64,7 @@ int? getParentBackgroundColor(List<String> args) {
 bool getUiThreadOwn(List<String> args) => args.length >= 7 && args[6] == 'ui-thread=own';
 
 /// Whether the semantics tree follows the engine's request for it: not when the runner found no
-/// assistive technology listening (`a11y=off`, the Linux runner).
+/// assistive technology listening (`a11y=off`, the Linux and Windows runners).
 bool getFollowPlatformSemantics(List<String> args) => !args.contains('a11y=off');
 
 String? getDeferredFontManifest() => null;

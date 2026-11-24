@@ -6,6 +6,7 @@
 
 #include "boot_trace.h"
 #include "flutter/generated_plugin_registrant.h"
+#include "utils.h"
 
 namespace {
 
@@ -59,6 +60,11 @@ bool FlutterWindow::OnCreate() {
   }
   boot_trace::Step("RegisterPlugins", [&] { RegisterPlugins(flutter_controller_->engine()); });
   SetupWindowChannel();
+  if (reports_assistive_technology_) {
+    a11y_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+        flutter_controller_->engine()->messenger(), "dev.equo.swt/accessibility",
+        &flutter::StandardMethodCodec::GetInstance());
+  }
   boot_trace::Step("SetChildContent",
                    [&] { SetChildContent(flutter_controller_->view()->GetNativeWindow()); });
 
@@ -132,6 +138,7 @@ void FlutterWindow::OnDestroy() {
     window_channel_->SetMethodCallHandler(nullptr);
     window_channel_.reset();
   }
+  a11y_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_.reset();
   }
@@ -157,6 +164,13 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
     case WM_FONTCHANGE:
       if (flutter_controller_) {
         flutter_controller_->engine()->ReloadSystemFonts();
+      }
+      break;
+    case WM_SETTINGCHANGE:
+      if (wparam == SPI_SETSCREENREADER && a11y_channel_) {
+        a11y_channel_->InvokeMethod(
+            "assistiveTechnology",
+            std::make_unique<flutter::EncodableValue>(AssistiveTechnologyActive()));
       }
       break;
     case WM_ACTIVATE:
