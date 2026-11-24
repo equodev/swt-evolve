@@ -147,11 +147,12 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
       );
 
   /// The editor fill marks a place to type. A read-only StyledText is text to read, so it sits on the
-  /// surface like a Label or a read-only Text does.
+  /// surface like a Label or a read-only Text does. Under a [SwtColorScope] the application's ground
+  /// is painted, as its text colour and margins are: the colours it picked are a pair.
   @override
   Color get bg =>
       ParentBackgroundScope.backgroundOf(context) ??
-      getBackgroundColor(background: state.background, defaultColor: null) ??
+      getBackgroundColor(background: state.background, defaultColor: null, context: context) ??
       ((state.editable ?? false)
           ? _styledTextTheme.backgroundColor
           : Theme.of(context).colorScheme.surface);
