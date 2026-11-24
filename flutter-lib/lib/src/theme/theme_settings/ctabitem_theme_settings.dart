@@ -36,13 +36,15 @@ CTabItemThemeExtension _getCTabItemTheme({
   required ColorSchemeExtension colorSchemeExtension,
 }) {
   final baseTextStyle = textTheme.bodyMedium ?? const TextStyle();
-  
+  // A selected tab, focused or not, stands out by weight, background and frame, not by its text colour.
+  final textColor = colorScheme.onSurfaceVariant;
+
   return CTabItemThemeExtension(
     // Tab item text colors
-    tabItemTextColor: colorScheme.onSurfaceVariant,
-    tabItemSelectedTextColor: colorScheme.onSurface,
+    tabItemTextColor: textColor,
+    tabItemSelectedTextColor: textColor,
     tabItemDisabledTextColor: colorSchemeExtension.onSurfaceVariantDisabled,
-    tabItemActiveTextColor: colorScheme.onSurface,
+    tabItemActiveTextColor: textColor,
     tabItemActiveFontWeight: FontWeight.w700,
     
     // Tab item typography
@@ -66,7 +68,7 @@ CTabItemThemeExtension _getCTabItemTheme({
   );
 }
 
-/// A tab label's theme colour: strongest on the active folder's selected tab, unselected on a selected tab whose folder has no focus.
+/// A tab label's theme colour; a selected tab whose folder has no focus takes the unselected colour.
 Color getCTabItemTextColor(
   CTabItemThemeExtension theme, {
   required bool selected,
