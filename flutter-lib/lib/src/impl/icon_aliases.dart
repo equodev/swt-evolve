@@ -235,6 +235,20 @@ const iconAliases = {
   'xmlfile': 'xml_file',
   'xsd_obj': 'schema_obj',
 
+  // Image files of a task list view (toolbar and view menu).
+  'filter-complete': 'showcomplete_tsk',
+  'filter-mytasks': 'person',
+  'filter-priority': 'header_priority',
+  'go-up': 'up_nav',
+  'icons-legend': 'show_legend',
+  'link-editor': 'synced',
+  'presentation-categorized': 'category_group',
+  'presentation-scheduled': 'calendar',
+  'repositories': 'repo',
+  'repository-synchronize': 'synch_synch',
+  'task-new': 'new_wiz',
+  'task-search': 'search',
+
   // Image files of a trace viewer (analysis views, charts, tracing sessions and targets).
   'add_button': 'add',
   'binaries_obj': 'binary_co',
