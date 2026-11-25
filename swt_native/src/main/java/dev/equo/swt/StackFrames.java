@@ -16,4 +16,13 @@ public interface StackFrames {
 
     /** Whether any frame matches, with a null {@code methodName} matching any method. */
     boolean anyMatch(String className, String methodName);
+
+    /**
+     * The first {@code limit} distinct classes on the stack whose names start with none of
+     * {@code excludedPrefixes}, innermost first; null where frames carry no class reference (below
+     * Java 9, a stack trace has only class names).
+     */
+    default Class<?>[] classesOutside(String[] excludedPrefixes, int limit) {
+        return null;
+    }
 }

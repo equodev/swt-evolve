@@ -24,6 +24,23 @@ public final class StackWalkerFrames implements StackFrames {
     }
 
     @Override
+    public Class<?>[] classesOutside(String[] excludedPrefixes, int limit) {
+        return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(frames -> frames
+                .map(StackWalker.StackFrame::getDeclaringClass)
+                .filter(c -> !startsWithAny(c.getName(), excludedPrefixes))
+                .distinct()
+                .limit(limit)
+                .toArray(Class<?>[]::new));
+    }
+
+    private static boolean startsWithAny(String name, String[] prefixes) {
+        for (String prefix : prefixes) {
+            if (name.startsWith(prefix)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean anyMatch(String className, String methodName) {
         return WALKER.walk(frames -> frames.anyMatch(f ->
                 className.equals(f.getClassName())
