@@ -37,8 +37,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OwnerDrawnRowsWireTest {
 
     private static final int ROWS = 80;
-    /** Bytes a repainted row may take when only its transform changed: the paint itself, and the change. */
-    private static final int ROW_REPAINT_BUDGET = 64;
+    /**
+     * Bytes a repainted row may take when only where it starts changed: the paint itself, and the
+     * change of its transform and of its cell's clip, which the row's origin moves.
+     */
+    private static final int ROW_REPAINT_BUDGET = 66;
     /** Bytes a row whose overlay just mounted may take: its paint, and the GC whole. */
     private static final int MOUNTED_ROW_BUDGET = 130;
 
@@ -85,6 +88,8 @@ class OwnerDrawnRowsWireTest {
             assertThat(WireValues.mentions(state, "_whole")).as("a change, not the GC whole: %s", state).isFalse();
             assertThat(WireValues.mentions(state, "transform")).as("%s", state).isTrue();
             assertThat(WireValues.mentions(state, "font")).as("%s", state).isFalse();
+            assertThat(state.keySet()).as("only the transform and the cell's clip change: %s", state)
+                    .filteredOn(key -> !key.startsWith("_")).containsOnly("transform", "clipping");
         }
         assertThat(gcBytes()).isLessThanOrEqualTo(ROW_REPAINT_BUDGET * painted.size());
     }

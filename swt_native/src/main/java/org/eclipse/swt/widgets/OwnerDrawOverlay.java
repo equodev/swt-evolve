@@ -46,8 +46,7 @@ public final class OwnerDrawOverlay {
         /** Per row, the RGB of the ground Flutter last reported painting under its overlay. */
         final java.util.Map<Item, Integer> grounds = new java.util.WeakHashMap<>();
         /** The colours {@link #grounds} are handed to the listeners' GC in. */
-        final java.util.Map<Integer, Color> groundColors = new java.util.HashMap<>();
-    }
+        final java.util.Map<Integer, Color> groundColors = new java.util.HashMap<>();    }
 
     private static State state(Widget widget) {
         Display display = widget.getDisplay();
@@ -150,7 +149,9 @@ public final class OwnerDrawOverlay {
         boolean selected = isSelected(parent, row);
         Transform toRow = new Transform(parent.getDisplay());
         try {
-            toRow.translate(-rowLeft(parent, row), -first.y);
+            float rowLeft = rowLeft(parent, row);
+            int leftmost = leftmostColumn(parent);
+            toRow.translate(-rowLeft, -first.y);
             gc.setTransform(toRow);
             for (int i = 0; i < columnCount; i++) {
                 if (isHiddenColumn(parent, i)) continue;
@@ -160,11 +161,15 @@ public final class OwnerDrawOverlay {
                 gc.setForeground(foreground(row, i));
                 gc.setBackground(background(row, i, selected));
                 gc.setFont(font(row, i));
+                Rectangle clip = clip(parent, i, cell, i == leftmost, rowLeft);
+                gc.setClipping(clip);
                 int detail = selected ? SWT.SELECTED : 0;
                 if (owner.hooks(SWT.EraseItem)) {
                     Event erase = cellEvent(row, i, gc, cell);
                     erase.detail = SWT.FOREGROUND | SWT.BACKGROUND | detail;
                     owner.sendEvent(SWT.EraseItem, erase);
+                    // Native SWT gives PaintItem a GC of its own: a clip EraseItem set does not carry over.
+                    gc.setClipping(clip);
                 }
                 Event paint = cellEvent(row, i, gc, cell);
                 paint.detail = SWT.FOREGROUND | detail;
@@ -186,6 +191,41 @@ public final class OwnerDrawOverlay {
         event.width = cell.width;
         event.height = cell.height;
         return event;
+    }
+
+    /**
+     * The area native SWT clips a cell's listeners to, the same for EraseItem and PaintItem: the
+     * whole column on the row, so what they draw past it (a StyledCellLabelProvider's TextLayout has
+     * no width) stops at the column's edge. The column holding the checkbox (a Table's column 0) or
+     * the indent and expander (a Tree's leftmost column) covers them too. With no columns, the one
+     * column spans the control: its area reaches the client area's right edge, past the widest row.
+     */
+    private static Rectangle clip(Control parent, int index, Rectangle cell, boolean leftmost, float rowLeft) {
+        boolean columnless = columnCount(parent) == 0;
+        int left;
+        int right = cell.x + cell.width;
+        if (parent instanceof Table && !columnless) {
+            if (index != 0) return cell;
+            left = cell.x - dev.equo.swt.size.TableSizes.getLeadingInset((DartTable) parent.getImpl());
+        } else {
+            if (!leftmost) return cell;
+            left = Math.min(cell.x, Math.round(rowLeft));
+        }
+        if (columnless) {
+            Rectangle client = ((Scrollable) parent).getClientArea();
+            right = Math.max(right, client.x + client.width);
+        }
+        return new Rectangle(left, cell.y, right - left, cell.height);
+    }
+
+    private static int columnCount(Control parent) {
+        return parent instanceof Table ? ((Table) parent).getColumnCount() : ((Tree) parent).getColumnCount();
+    }
+
+    /** The index of the column shown leftmost. */
+    private static int leftmostColumn(Control parent) {
+        int[] order = parent instanceof Table ? ((Table) parent).getColumnOrder() : ((Tree) parent).getColumnOrder();
+        return order.length == 0 ? 0 : order[0];
     }
 
     /**
