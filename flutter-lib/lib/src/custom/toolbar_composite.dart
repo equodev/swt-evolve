@@ -458,10 +458,17 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 /// The ground is a decoration, as it is on any other trim composite, so a press on the bare frame
 /// stays on it. [build] is told whether the composite is such a frame, so it leaves the ground to
 /// this; any other trim composite is returned as [build] makes it.
+///
+/// The frame reports the pointer over its grip, as a Canvas with children does: the application
+/// moves the contribution from the frame's MouseDown, MouseMove and DragDetect. A press there takes
+/// no focus, as on the rest of the trim.
 Widget _withFrameGC(CompositeImpl composite, Color ground, Widget Function(bool isFrame) build) {
   if (composite.widget.value is! VCanvas) return build(false);
-  return composite.stackGCUnderChildren(
-      (child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child), build(true));
+  return wrapCompositeInteractionChrome(
+      composite,
+      composite.stackGCUnderChildren(
+          (child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child),
+          build(true)));
 }
 
 class ChipAddonImages extends InheritedWidget {
