@@ -124,6 +124,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
           ? (columns[columnIndex].alignment ?? SWT.LEFT)
           : SWT.LEFT;
       final width = widths?[columnIndex];
+      final cellPadding =
+          _context?.tableImpl?.columnCellPadding(columnIndex, theme) ?? theme.cellPadding;
       // Everything the cell is built from: a row rebuilt for a change to one cell keeps the others
       // as they were, without building their styles and widgets again only to find them equal.
       final key = (
@@ -141,6 +143,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         _cellImageForColumn(columnIndex)?.imageData,
         getCellBackgroundColor(columnIndex, theme),
         width is FixedColumnWidth ? width.value : null,
+        cellPadding,
         theme,
         getConfigFlags(),
         textMeasureEpoch,
@@ -162,6 +165,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
         theme,
         rowIndex,
         hasCheckStyle && columnIndex == 0,
+        cellPadding,
         columnAlignment,
       );
       kept?[columnIndex] = (key, cell);
@@ -193,7 +197,8 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     TextStyle textStyle,
     TableThemeExtension theme,
     int rowIndex,
-    bool showCheckbox, [
+    bool showCheckbox,
+    EdgeInsets cellPadding, [
     int columnAlignment = SWT.LEFT,
   ]) {
     final cellImage = _cellImageForColumn(columnIndex);
@@ -216,9 +221,6 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
               ? TextAlign.right
               : TextAlign.left,
     );
-    final cellPadding =
-        _context?.tableImpl?.columnCellPadding(columnIndex, theme) ?? theme.cellPadding;
-
     // Where the pointer is on the Table, as SWT reports a press; the cell's centre stands in only
     // for a press that carries no position.
     VEvent pointedEvent(Offset? globalPosition) {

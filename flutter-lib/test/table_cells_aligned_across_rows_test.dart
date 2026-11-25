@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/impl/table_evolve.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
@@ -66,6 +67,44 @@ Widget _wrap(VTable value) => EvolveApp(
       ),
     );
 
+const _long = 'Integration builds';
+
+/// One column the application sized, with a row per text; widgets are numbered from [id].
+VTable _pinned(double width, List<String> texts, {int id = 100}) => VTable()
+  ..id = id
+  ..style = SWT.NONE
+  ..headerVisible = true
+  ..columns = [
+    VTableColumn()
+      ..id = id + 1
+      ..width = width.round()
+      ..alignment = SWT.LEFT
+      ..text = 'Site',
+  ]
+  ..items = [
+    for (var i = 0; i < texts.length; i++)
+      VTableItem()
+        ..id = id + 10 + i
+        ..texts = [texts[i]],
+  ]
+  ..bounds = (VRectangle()
+    ..x = 0
+    ..y = 0
+    ..width = _tableWidth.toInt()
+    ..height = 300);
+
+/// A column width [_long] fits only once the padding yields: its text width plus 6.
+Future<double> _widthFittingLongOnlyWithLessPadding(WidgetTester tester) async {
+  await tester.pumpWidget(_wrap(_pinned(_tableWidth - 20, [_long], id: 200)));
+  await tester.pumpAndSettle();
+  final textWidth = tester
+      .renderObject<RenderBox>(find.text(_long))
+      .getMaxIntrinsicWidth(double.infinity);
+  await tester.pumpWidget(const SizedBox());
+  await tester.pumpAndSettle();
+  return textWidth + 6;
+}
+
 void main() {
   testWidgets('every row starts its Name text at the same x', (tester) async {
     await tester.pumpWidget(_wrap(_table()));
@@ -93,5 +132,36 @@ void main() {
     final locationLeft = tester.getTopLeft(find.text(longRow[1])).dx;
     expect(locationLeft - nameRight, greaterThan(0),
         reason: 'Name ends at $nameRight, Location starts at $locationLeft');
+  });
+
+  testWidgets('a row added after the first build starts where the rows already shown start',
+      (tester) async {
+    final table = _pinned(await _widthFittingLongOnlyWithLessPadding(tester), ['Releases']);
+    await tester.pumpWidget(_wrap(table));
+    await tester.pumpAndSettle();
+
+    table.items = [...table.items!, VTableItem()..id = 150..texts = [_long]];
+    // ignore: invalid_use_of_protected_member
+    tester.state(find.byType(TableSwt<VTable>)).setState(() {});
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(find.text(_long)).dx,
+        tester.getTopLeft(find.text('Releases')).dx);
+  });
+
+  testWidgets('a row whose text changes starts where the other rows start', (tester) async {
+    final table =
+        _pinned(await _widthFittingLongOnlyWithLessPadding(tester), ['Releases', 'Updates']);
+    await tester.pumpWidget(_wrap(table));
+    await tester.pumpAndSettle();
+
+    table.items![1].texts = [_long];
+    final impl = tester.state<TableImpl>(find.byType(TableSwt<VTable>));
+    // ignore: invalid_use_of_protected_member
+    impl.setValue(table);
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(find.text(_long)).dx,
+        tester.getTopLeft(find.text('Releases')).dx);
   });
 }

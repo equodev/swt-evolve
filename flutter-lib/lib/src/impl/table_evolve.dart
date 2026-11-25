@@ -2,6 +2,7 @@ import 'utils/test_anchors.dart';
 import '../gen/color.dart';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
@@ -59,7 +60,13 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double? _cachedHeaderOffset;
   Map<int, TableColumnWidth>? _cachedColumnWidths;
   TextStyle? _cachedRowTextStyle;
+
+  /// [columnCellPadding] by column, kept across builds until a delivery may have changed a row, or
+  /// the row count, the column widths, the row style or the theme's padding change.
   final Map<int, EdgeInsets> _columnCellPaddings = {};
+  Object? _paddingInputs;
+  List<double?>? _paddingWidths;
+  bool _rowsChanged = false;
   final ScrollController _verticalScrollController = ScrollController();
 
   /// Scrolls header and rows together when an H_SCROLL table's columns are wider than it.
@@ -167,6 +174,10 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   void setValue(V value) {
+    final change = lastChange;
+    if (change == null || change.ofHeld || change.touches(WireKey.k_Table_items)) {
+      _rowsChanged = true;
+    }
     super.setValue(value);
     if (lastChange?.touches(WireKey.k_Table_topIndex) ?? true) _scrollToTopIndexAfterLayout();
   }
@@ -267,11 +278,28 @@ class TableImpl<T extends TableSwt, V extends VTable>
       ),
       baseTextStyle: widgetTheme.rowTextStyle,
     );
+    _cachedRowTextStyle = rowTextStyle;
+    final paddingInputs = (
+      items.length,
+      rowTextStyle,
+      widgetTheme.cellPadding,
+      hasStyle(SWT.CHECK),
+    );
+    final paddingWidths = [
+      for (final w in columnWidths?.values ?? const <TableColumnWidth>[])
+        w is FixedColumnWidth ? w.value : null
+    ];
+    if (_rowsChanged ||
+        paddingInputs != _paddingInputs ||
+        !listEquals(paddingWidths, _paddingWidths)) {
+      _columnCellPaddings.clear();
+      _paddingInputs = paddingInputs;
+      _paddingWidths = paddingWidths;
+      _rowsChanged = false;
+    }
     // An owner-drawing Table (CDT's project-template chooser) paints a bold title + description —
     // two lines — into each row and asks for that height in SWT.MeasureItem; it travels as
     // ownerDrawItemHeight. A row sized to the font alone clips it, so take the taller of the two.
-    _cachedRowTextStyle = rowTextStyle;
-    _columnCellPaddings.clear();
     _cachedRowHeight = math.max(
         calculateRowHeight(rowTextStyle, widgetTheme),
         (state.ownerDrawItemHeight ?? 0).toDouble());
@@ -555,7 +583,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         : fitCellPadding(
             theme.headerPadding,
             available: columnWidth -
-                (showCheckboxSpace ? 20.0 + theme.cellPadding.left : 0.0),
+                (showCheckboxSpace ? checkboxCellWidth(theme) : 0.0),
             contentWidth: measureTableText(headerText, textStyle),
           );
 
@@ -567,7 +595,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
         child: Row(
           children: [
             if (showCheckboxSpace)
-              SizedBox(width: 20.0 + theme.cellPadding.left),
+              SizedBox(width: checkboxCellWidth(theme)),
             if (column.image != null)
               FutureBuilder<Widget?>(
                 future: ImageUtils.buildVImageAsync(
@@ -1315,7 +1343,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     bool hasCheckStyle,
   ) {
     final Map<int, TableColumnWidth> widths = {};
-    const double checkboxWidth = 20.0;
 
     final headerTextStyle = getTextStyle(
       context: context,
@@ -1328,13 +1355,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final column = columns[i];
       double width = (column.width ?? 0).toDouble();
       if (hasCheckStyle && i == 0) {
-        width += checkboxWidth + theme.cellPadding.left;
+        width += checkboxCellWidth(theme);
       }
       if (!_userResizedColumns.contains(column.id)) {
         width = math.max(
           width,
-          _headerTextFloor(column, headerTextStyle, theme, hasCheckStyle, i,
-              checkboxWidth),
+          _headerTextFloor(column, headerTextStyle, theme, hasCheckStyle, i),
         );
       }
       widths[i] = FixedColumnWidth(width);
@@ -1348,7 +1374,6 @@ class TableImpl<T extends TableSwt, V extends VTable>
     TableThemeExtension theme,
     bool hasCheckStyle,
     int columnIndex,
-    double checkboxWidth,
   ) {
     if ((column.width ?? 0) <= 0) return 0.0;
     final headerText = stripAccelerators(column.text);
@@ -1356,7 +1381,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
     double floor = measureTableText(headerText, headerTextStyle);
     if (hasCheckStyle && columnIndex == 0) {
-      floor += checkboxWidth + theme.cellPadding.left;
+      floor += checkboxCellWidth(theme);
     }
     if (column.image != null) {
       floor += (headerTextStyle.fontSize ?? 16.0) + theme.headerPadding.left;
@@ -1420,8 +1445,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
       final style = _cachedRowTextStyle;
       if (width is! FixedColumnWidth || style == null) return theme.cellPadding;
       final checkbox =
-          hasStyle(SWT.CHECK) && columnIndex == 0 ? 20.0 + theme.cellPadding.left : 0.0;
-      final image = (style.fontSize ?? 16.0) + theme.cellPadding.left;
+          hasStyle(SWT.CHECK) && columnIndex == 0 ? checkboxCellWidth(theme) : 0.0;
       var padding = theme.cellPadding;
       for (final item in getItems()) {
         final texts = item.texts;
@@ -1429,11 +1453,22 @@ class TableImpl<T extends TableSwt, V extends VTable>
             ? (texts[columnIndex] ?? '')
             : (columnIndex == 0 ? (item.text ?? '') : '');
         if (text.isEmpty) continue;
+        // A row with a font of its own measures in it, as its cell renders.
+        final font = cellValue(item.fonts, columnIndex) ?? item.font;
+        final cellStyle = font == null
+            ? style
+            : getTextStyle(
+                context: context,
+                font: font,
+                textColor: style.color ?? Colors.black,
+                baseTextStyle: theme.rowTextStyle);
         final images = item.images;
         final hasImage = images != null
             ? columnIndex < images.length && images[columnIndex] != null
             : columnIndex == 0 && item.image != null;
-        final content = checkbox + (hasImage ? image : 0.0) + measureTableText(text, style);
+        final content = checkbox +
+            (hasImage ? cellImageWidth(cellStyle, theme) : 0.0) +
+            measureTableText(text, cellStyle);
         if (content > width.value) continue;
         final fitted = fitCellPadding(theme.cellPadding,
             available: width.value, contentWidth: content);
@@ -1508,6 +1543,13 @@ class TableItemSwtWrapper {
     return tableItemImpl.buildCells(context, theme);
   }
 }
+
+/// The width a CHECK table's check box takes before the first cell's content, its gap included.
+double checkboxCellWidth(TableThemeExtension theme) => 20.0 + theme.cellPadding.left;
+
+/// The width a cell's image takes before its text, its gap included.
+double cellImageWidth(TextStyle style, TableThemeExtension theme) =>
+    (style.fontSize ?? 16.0) + theme.cellPadding.left;
 
 double measureTableText(String text, TextStyle style) {
   if (text.isEmpty) return 0.0;
