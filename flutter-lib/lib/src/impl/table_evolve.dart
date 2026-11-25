@@ -61,12 +61,14 @@ class TableImpl<T extends TableSwt, V extends VTable>
   Map<int, TableColumnWidth>? _cachedColumnWidths;
   TextStyle? _cachedRowTextStyle;
 
-  /// [columnCellPadding] by column, kept across builds until a delivery may have changed a row, or
-  /// the row count, the column widths, the row style or the theme's padding change.
+  /// [columnCellPadding] by column, kept across builds until a delivery may have changed a row, a
+  /// row's owner-draw overlay starts or stops painting its images, or the row count, the column
+  /// widths, the row style or the theme's padding change.
   final Map<int, EdgeInsets> _columnCellPaddings = {};
   Object? _paddingInputs;
   List<double?>? _paddingWidths;
   bool _rowsChanged = false;
+  bool _overlayRebuildPending = false;
   final ScrollController _verticalScrollController = ScrollController();
 
   /// Scrolls header and rows together when an H_SCROLL table's columns are wider than it.
@@ -132,6 +134,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
   @override
   void initState() {
     super.initState();
+    OwnerDrawnRowOverlay.addShownListener(_overlayShownChanged);
     _verticalScrollController.addListener(_verticalScrolled);
     _verticalScrollController.addListener(_reportUserScroll);
     _horizontalScrollController.addListener(_reportScrollOffset);
@@ -377,6 +380,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
 
   @override
   void dispose() {
+    OwnerDrawnRowOverlay.removeShownListener(_overlayShownChanged);
     MenuDetectGate.forget(state.id);
     _verticalScrollController.dispose();
     _horizontalScrollController.dispose();
@@ -1436,6 +1440,20 @@ class TableImpl<T extends TableSwt, V extends VTable>
   double get cachedHeaderOffset => _cachedHeaderOffset ?? 0.0;
   Map<int, TableColumnWidth>? get cachedColumnWidths => _cachedColumnWidths;
 
+  // A row whose overlay paints its images leaves them out of the cell, and so out of the fit. The
+  // overlay counts while the tree builds or unmounts, so the rebuild waits for the frame's end.
+  void _overlayShownChanged(int itemId) {
+    if (_overlayRebuildPending) return;
+    final paintsImages = getItems()
+        .any((item) => item.id == itemId && (item.paintedImages?.isNotEmpty ?? false));
+    if (!paintsImages) return;
+    _overlayRebuildPending = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _overlayRebuildPending = false;
+      if (mounted) setState(() => _rowsChanged = true);
+    });
+  }
+
   /// The padding every row's cell in [columnIndex] takes, so a column's cells start at one x. In a
   /// column the application pinned, it yields as far as the widest cell that can fit needs; a cell
   /// cut off even with no padding does not decide it.
@@ -1463,9 +1481,12 @@ class TableImpl<T extends TableSwt, V extends VTable>
                 textColor: style.color ?? Colors.black,
                 baseTextStyle: theme.rowTextStyle);
         final images = item.images;
-        final hasImage = images != null
-            ? columnIndex < images.length && images[columnIndex] != null
-            : columnIndex == 0 && item.image != null;
+        final overlayPaintsImage = (item.paintedImages?.contains(columnIndex) ?? false) &&
+            OwnerDrawnRowOverlay.isShown(item.id);
+        final hasImage = !overlayPaintsImage &&
+            (images != null
+                ? columnIndex < images.length && images[columnIndex] != null
+                : columnIndex == 0 && item.image != null);
         final content = checkbox +
             (hasImage ? cellImageWidth(cellStyle, theme) : 0.0) +
             measureTableText(text, cellStyle);

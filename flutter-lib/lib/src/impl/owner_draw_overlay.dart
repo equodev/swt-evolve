@@ -68,7 +68,26 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
   static bool _paintHeld(int itemId) =>
       EquoCommService.holdsWidgetOps(itemId, WireType.gc, WireChannel.b);
 
-  static void _count(int itemId) => _shown.update(itemId, (n) => n + 1, ifAbsent: () => 1);
+  static final Set<void Function(int itemId)> _shownListeners = {};
+
+  /// Calls [listener] with a row's item id whenever [isShown] starts or stops counting an overlay
+  /// of that row.
+  static void addShownListener(void Function(int itemId) listener) => _shownListeners.add(listener);
+
+  static void removeShownListener(void Function(int itemId) listener) =>
+      _shownListeners.remove(listener);
+
+  static void _shownChanged(int itemId) {
+    for (final listener in [..._shownListeners]) {
+      listener(itemId);
+    }
+  }
+
+  static void _count(int itemId) {
+    final first = !_shown.containsKey(itemId);
+    _shown.update(itemId, (n) => n + 1, ifAbsent: () => 1);
+    if (first) _shownChanged(itemId);
+  }
 
   @override
   State<OwnerDrawnRowOverlay> createState() => OwnerDrawnRowOverlayState();
@@ -156,6 +175,7 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
         OwnerDrawnRowOverlay._shown[widget.itemId] = left;
       } else {
         OwnerDrawnRowOverlay._shown.remove(widget.itemId);
+        OwnerDrawnRowOverlay._shownChanged(widget.itemId);
       }
     }
     super.dispose();

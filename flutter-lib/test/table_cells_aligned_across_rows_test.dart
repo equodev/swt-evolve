@@ -1,13 +1,19 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/impl/table_evolve.dart';
+import 'package:swtflutter/src/gen/image.dart';
+import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
 import 'package:swtflutter/src/gen/tablecolumn.dart';
 import 'package:swtflutter/src/gen/tableitem.dart';
+
+import 'support/gc_frames.dart';
 
 /// A check table whose columns the application sized: every row starts its
 /// texts at the same x in each column, whether the text fits the column or is
@@ -163,5 +169,28 @@ void main() {
 
     expect(tester.getTopLeft(find.text(_long)).dx,
         tester.getTopLeft(find.text('Releases')).dx);
+  });
+
+  testWidgets('a row whose icon its owner-draw overlay paints fits its text once the overlay shows',
+      (tester) async {
+    // 16x16, opaque #333333.
+    const png =
+        'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR42mMwNjb+TwlmGDVg1IBRA4aLAQDChZgQoP+T9QAAAABJRU5ErkJggg==';
+    final table =
+        _pinned(await _widthFittingLongOnlyWithLessPadding(tester), ['Releases', _long]);
+    table.items![1]
+      ..image = (VImage()..imageData = (VImageData()..data = base64Decode(png)))
+      ..paintedTexts = []
+      ..paintedImages = [0];
+    await tester.pumpWidget(_wrap(table));
+    await tester.pumpAndSettle();
+
+    await paintRow(table.items![1].id!);
+    await tester.pumpAndSettle();
+
+    final long = tester.renderObject<RenderBox>(find.text(_long));
+    expect(long.size.width, long.getMaxIntrinsicWidth(double.infinity),
+        reason: 'the row no longer draws the icon, so its text fits with less padding');
+    expect(tester.getTopLeft(find.text(_long)).dx, tester.getTopLeft(find.text('Releases')).dx);
   });
 }
