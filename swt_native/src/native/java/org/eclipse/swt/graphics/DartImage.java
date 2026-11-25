@@ -396,6 +396,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         super(device, api);
         this.imageData = GraphicsUtils.copyImageData(data);
         data = this.imageData;
+        pixelCreators = GraphicsUtils.pixelImageCreators();
         try {
             init(data, 100);
             init();
@@ -444,6 +445,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         }
         source = GraphicsUtils.copyImageData(source);
         this.imageData = source;
+        pixelCreators = GraphicsUtils.pixelImageCreators();
         mask = GraphicsUtils.copyImageData(mask);
         try {
             mask = ImageData.convertMask(mask);
@@ -1321,6 +1323,8 @@ public final class DartImage extends DartResource implements Drawable, IImage {
         if (ref != null)
             _sendAfterQueuedDraws(dev.equo.swt.WireTable.CHANNEL_IMAGE_RELEASE_REMOTE_REF, ref);
     }
+
+    Class<?>[] pixelCreators;
 
     boolean describedToClient;
 

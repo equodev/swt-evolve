@@ -1422,6 +1422,7 @@ public class DartTreeItem extends DartItem implements ITreeItem {
         Font wasFont = this.font;
         boolean wasChecked = this.checked;
         Color wasBackground = this.background;
+        image = org.eclipse.swt.graphics.GraphicsUtils.copyImage(getDisplay(), image);
         if (image != null && image.isDisposed()) {
             error(SWT.ERROR_INVALID_ARGUMENT);
         }
