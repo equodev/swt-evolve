@@ -288,6 +288,14 @@ public class GallerySnippet {
             TableItem ti = new TableItem(table, SWT.NONE);
             ti.setText(row);
         }
+        // A colour swatch filled with a GC, as applications build one for a colour cell.
+        Image swatch = new Image(display, 12, 12);
+        GC swatchGc = new GC(swatch);
+        swatchGc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+        swatchGc.fillRectangle(0, 0, 12, 12);
+        swatchGc.drawRectangle(0, 0, 11, 11);
+        swatchGc.dispose();
+        table.getItem(rows.length - 1).setImage(swatch);
         // Only DefaultSelection (double-click) writes to status: single-click Selection is already
         // asserted directly against live Dart `selection` state, and adding a Selection listener
         // here too would make the status label race between the two events on a double-click.
