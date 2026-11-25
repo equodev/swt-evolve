@@ -257,7 +257,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             selectedIndex: _selectedIndex,
             tabItems: tabItems,
             tabHeight: tabRowHeight,
-            useSimpleStyle: false,
             outline: outline,
             stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
@@ -316,7 +315,6 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             selectedIndex: _selectedIndex,
             tabItems: tabItems,
             tabHeight: tabRowHeight,
-            useSimpleStyle: false,
             outline: outline,
             stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
@@ -667,7 +665,6 @@ class _CTabBar extends StatefulWidget {
   final int selectedIndex;
   final List<CTabItem> tabItems;
   final double? tabHeight;
-  final bool useSimpleStyle;
   /// The folder's outline, which the strip carries along its page-side edge and over the selected
   /// tab; null when the folder draws none.
   final BorderSide? outline;
@@ -702,7 +699,6 @@ class _CTabBar extends StatefulWidget {
     required this.selectedIndex,
     required this.tabItems,
     required this.tabHeight,
-    required this.useSimpleStyle,
     this.outline,
     this.stripClip = 0,
     required this.topRightComposite,
@@ -871,64 +867,12 @@ class _CTabBarState extends State<_CTabBar> {
             : [])
         : widget.tabItems;
 
-    if (widget.useSimpleStyle) {
-      return _buildSimpleTabBar(context, widgetTheme, visibleTabs, widget.tabHeight);
-    } else {
-      return _buildAdvancedTabBar(
-        context,
-        widgetTheme,
-        visibleTabs,
-        widget.tabHeight,
-        widget.topRightComposite,
-      );
-    }
-  }
-
-  Widget _buildSimpleTabBar(
-    BuildContext context,
-    CTabFolderThemeExtension widgetTheme,
-    List<CTabItem> tabs,
-    double? height,
-  ) {
-    final isTabBottom = widget.state.tabPosition == SWT.BOTTOM;
-    Widget tabBarContent = Row(
-      children: [
-        Expanded(
-          child: _buildHorizontalScrollableTabs(
-            widgetTheme: widgetTheme,
-            child: Row(
-              children: tabs.asMap().entries.map((entry) {
-                final int index = entry.key;
-                final CTabItem tab = entry.value;
-
-                return Expanded(
-                  child: _buildSimpleTab(
-                    context: context,
-                    widgetTheme: widgetTheme,
-                    isSelected: index == widget.selectedIndex,
-                    isHovered: index == _hoveredTabIndex,
-                    tab: tab,
-                    onTap: () => widget.onTabSelected(index),
-                    onClose: tab.showCloseButton
-                        ? () => widget.onTabClose(index)
-                        : null,
-                    isTabBottom: isTabBottom,
-                    onHoverEnter: () => _hoverTab(index),
-                    onHoverExit: () => _unhoverTab(index),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-
-    return _buildTabBarContainer(
-      widgetTheme: widgetTheme,
-      height: height,
-      child: tabBarContent,
-      isTabBottom: isTabBottom,
+    return _buildAdvancedTabBar(
+      context,
+      widgetTheme,
+      visibleTabs,
+      widget.tabHeight,
+      widget.topRightComposite,
     );
   }
 
@@ -1164,171 +1108,6 @@ class _CTabBarState extends State<_CTabBar> {
       ),
     );
     return (row, rowHeight);
-  }
-
-  Widget _buildSimpleTab({
-    required BuildContext context,
-    required CTabFolderThemeExtension widgetTheme,
-    required bool isSelected,
-    required bool isHovered,
-    required CTabItem tab,
-    required VoidCallback onTap,
-    VoidCallback? onClose,
-    required bool isTabBottom,
-    required VoidCallback onHoverEnter,
-    required VoidCallback onHoverExit,
-  }) {
-    final enabled = widget.state.enabled ?? false;
-
-    final resolvedSelectionBackground = getBackgroundColor(
-      background: widget.state.selectionBackground,
-      defaultColor: widgetTheme.tabSelectedBackgroundColor,
-    ) ?? widgetTheme.tabSelectedBackgroundColor;
-    final resolvedSelectionForeground = getForegroundColor(
-      context: context,
-      foreground: widget.state.selectionForeground,
-      defaultColor: widgetTheme.tabSelectedTextColor,
-      minContrast: widgetTheme.minTextContrast,
-      background: resolvedSelectionBackground,
-    );
-
-    final themeTextColor = getCTabTextColor(
-      widgetTheme,
-      isSelected,
-      enabled,
-      resolvedSelectionForeground: resolvedSelectionForeground,
-      isHovered: isHovered,
-    );
-    // The folder's own colours win over the theme's when the application set them.
-    final textColor = getForegroundColor(
-      foreground: widget.state.foreground,
-      defaultColor: themeTextColor,
-      context: context,
-      minContrast: widgetTheme.minTextContrast,
-    );
-    final themeBackground = getCTabBackgroundColor(
-      widgetTheme,
-      isSelected,
-      enabled,
-      resolvedSelectionBackground: resolvedSelectionBackground,
-      isHovered: isHovered,
-    );
-    final backgroundColor = isSelected
-        ? themeBackground
-        : (getBackgroundColor(
-              background: widget.state.background,
-              defaultColor: themeBackground,
-              context: context,
-            ) ??
-            themeBackground);
-    final borderColor = getCTabBorderColor(widgetTheme, enabled, isHovered: isHovered);
-    final textStyle = getTextStyle(
-      context: context,
-      font: widget.state.font,
-      textColor: textColor,
-      baseTextStyle: getCTabTextStyle(widgetTheme, isSelected, enabled),
-    );
-
-    final border = Border(
-      right: BorderSide(
-        color: borderColor,
-        width: widgetTheme.tabBorderWidth,
-      ),
-      bottom: !isTabBottom && isSelected && enabled
-          ? BorderSide(
-              color: backgroundColor,
-              width:
-                  (widget.state.selectionBarThickness != null &&
-                      widget.state.selectionBarThickness! > 0)
-                  ? widget.state.selectionBarThickness!.toDouble()
-                  : widgetTheme.tabSelectedBorderWidth,
-            )
-          : !isTabBottom
-          ? BorderSide(
-              color: borderColor,
-              width: widgetTheme.tabBorderWidth,
-            )
-          : BorderSide.none,
-      top: isTabBottom && isSelected && enabled
-          ? BorderSide(
-              color: backgroundColor,
-              width:
-                  (widget.state.selectionBarThickness != null &&
-                      widget.state.selectionBarThickness! > 0)
-                  ? widget.state.selectionBarThickness!.toDouble()
-                  : widgetTheme.tabSelectedBorderWidth,
-            )
-          : isTabBottom
-          ? BorderSide(
-              color: borderColor,
-              width: widgetTheme.tabBorderWidth,
-            )
-          : BorderSide.none,
-    );
-
-    return tagSemantics(tab.vItem, MouseRegion(
-      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      // A held button keeps the mouse with the control it was pressed on, so a drag passing over
-      // the tabs lights none of them; the first move after release does.
-      onEnter: (_) {
-        if (!ActiveDragTracker.isSuppressingHover) onHoverEnter();
-      },
-      onHover: (_) {
-        if (!isHovered && !ActiveDragTracker.isSuppressingHover) onHoverEnter();
-      },
-      onExit: (_) => onHoverExit(),
-      child: GestureDetector(
-        onTap: onTap,
-        child: CustomPaint(
-          foregroundPainter: _RectangularSides(border),
-          child: QuietAnimatedContainer(
-          duration: widgetTheme.hoverRevealDuration,
-          curve: Curves.easeOut,
-          height: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: widgetTheme.tabHorizontalPadding,
-            vertical: widgetTheme.tabVerticalPadding,
-          ).add(border.dimensions),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: isTabBottom
-                ? BorderRadius.only(
-                    bottomLeft: Radius.circular(widgetTheme.tabBorderRadius),
-                    bottomRight: Radius.circular(widgetTheme.tabBorderRadius),
-                  )
-                : BorderRadius.only(
-                    topLeft: Radius.circular(widgetTheme.tabBorderRadius),
-                    topRight: Radius.circular(widgetTheme.tabBorderRadius),
-                  ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              tab.customContent ??
-                  Text(
-                    _getTabText(tab.label),
-                    style:
-                        textStyle?.copyWith(color: textColor) ??
-                        TextStyle(color: textColor),
-                  ),
-              if (onClose != null || tab.showDirty) ...[
-                SizedBox(width: widgetTheme.tabCloseButtonSpacing),
-                _CloseOrDirty(
-                  dirty: tab.showDirty,
-                  onClose: onClose,
-                  enabled: true,
-                  iconSize: widgetTheme.tabCloseIconSize,
-                  closeColor: widgetTheme.tabCloseButtonColor,
-                  dotColor: textColor.withAlpha(isSelected ? 190 : 140),
-                  bottomPadding: 0,
-                ),
-              ],
-            ],
-          ),
-          ),
-        ),
-      ),
-    ));
   }
 
   Widget _buildAdvancedTab({
