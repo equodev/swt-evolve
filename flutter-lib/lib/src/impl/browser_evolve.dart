@@ -356,6 +356,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       Map<String, String> headers = const <String, String>{},
       Uint8List? body}) async {
     final navigation = ++_navigations;
+    _followedLinkUrl = null;
     if (!_asksNavigationRequests && !await _locationChanging(uri.toString())) return;
     // A navigation started while Java was being asked replaces this one.
     if (navigation != _navigations) return;
@@ -369,6 +370,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// string directly.
   Future<void> _loadText(String html, {String? baseUrl}) async {
     _navigations++;
+    _followedLinkUrl = null;
     // False when a later setText or setUrl replaced this document while its URL was being made.
     if (!await _inlineDocuments.make(html, baseUrl)) return;
     final url = _inlineDocuments.current;
@@ -472,8 +474,13 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     final navigation = ++_navigations;
     if (!await _locationChanging(url)) return;
     if (!mounted || navigation != _navigations) return;
+    _followedLinkUrl = url;
     proceed();
   }
+
+  /// The link the frame was last let follow, reported for the frame's document while it can't be
+  /// read; cleared once a navigation is requested or the frame is readable again.
+  String? _followedLinkUrl;
 
   /// Sends a key typed inside the iframe on this Browser's own channel, where `DartControl`
   /// dispatches it as SWT.KeyDown/KeyUp. Nothing else forwards these keys, so it cannot double up.
@@ -529,13 +536,18 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     if (_params != null) {
       try {
         final b = browserEvalInFrame(_params, 'document.baseURI');
+        _followedLinkUrl = null;
         if (b is String &&
             !_inlineDocuments.isDocument(b) &&
             (b.startsWith('http://') || b.startsWith('https://')) &&
             !b.contains('/proxy?url=')) {
           return b;
         }
-      } catch (_) {}
+      } catch (_) {
+        // A cross-origin frame can't be read and the webview reports the previous document's URL.
+        final followed = _followedLinkUrl;
+        if (followed != null) return followed;
+      }
     }
     return _unproxyUrl(rawUrl);
   }
