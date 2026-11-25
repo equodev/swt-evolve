@@ -257,6 +257,9 @@ public class GraphicsUtils {
             }
             return dartImage.getApi();
         } else if (image.getImpl() instanceof DartImage) { DartImage di = (DartImage) image.getImpl();
+            if (di.filename == null && di.pixelCreators != null) {
+                di.filename = cachedResourceName(image, di.pixelCreators);
+            }
             if (!Config.getConfigFlags().image_disable_icons_replacement && di.filename != null) {
                 if (tryApplyReplacement(di.filename, di)) {
                     di.filename = null;
@@ -266,6 +269,77 @@ public class GraphicsUtils {
         } else {
             return image;
         }
+    }
+
+    /**
+     * The first classes outside SWT on the stack of an image being built from pixel data, or null
+     * when icon replacement is off. Decoding a resource stream into an {@code ImageData} loses the
+     * resource's name; the classes that did it are where {@link #cachedResourceName} looks for it.
+     * Several, because the class that decodes is not always the one that caches: WindowBuilder's
+     * {@code ResourceManager} decodes through its superclass and keeps the image in its own map.
+     */
+    static Class<?>[] pixelImageCreators() {
+        if (Config.getConfigFlags().image_disable_icons_replacement) {
+            return null;
+        }
+        Class<?>[] creators = dev.equo.swt.CallerClasses.outside(
+                new String[] {"org.eclipse.swt.", "dev.equo.swt.", "java.", "jdk."}, 3);
+        return creators == null || creators.length == 0 ? null : creators;
+    }
+
+    /**
+     * The name of the resource {@code image} was decoded from, read from the cache one of its
+     * creators keeps it in: an image cache such as WindowBuilder's {@code ResourceManager} holds each
+     * image in a static map under the resource's URL or path. Null when no such map holds it.
+     */
+    static String cachedResourceName(Image image, Class<?>[] creators) {
+        for (Class<?> creator : creators) {
+            String name = cachedResourceName(image, creator);
+            if (name != null) {
+                return name;
+            }
+        }
+        return null;
+    }
+
+    private static String cachedResourceName(Image image, Class<?> creator) {
+        for (Class<?> c = creator; c != null && c != Object.class; c = c.getSuperclass()) {
+            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+                if (!java.lang.reflect.Modifier.isStatic(f.getModifiers())
+                        || !java.util.Map.class.isAssignableFrom(f.getType())) {
+                    continue;
+                }
+                try {
+                    f.setAccessible(true);
+                    Object map = f.get(null);
+                    if (!(map instanceof java.util.Map)) {
+                        continue;
+                    }
+                    for (java.util.Map.Entry<?, ?> e : ((java.util.Map<?, ?>) map).entrySet()) {
+                        if (e.getValue() == image) {
+                            String name = resourceKeyName(e.getKey());
+                            if (name != null && !name.isEmpty()) {
+                                return name;
+                            }
+                        }
+                    }
+                } catch (RuntimeException | IllegalAccessException e) {
+                    // A cache we may not read, or one changing under us, names nothing.
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String resourceKeyName(Object key) {
+        if (key instanceof java.net.URL) {
+            return urlName((java.net.URL) key);
+        }
+        if (key instanceof String) {
+            java.net.URL url = asUrl(key);
+            return url != null ? urlName(url) : getFilename((String) key);
+        }
+        return null;
     }
 
     /**
