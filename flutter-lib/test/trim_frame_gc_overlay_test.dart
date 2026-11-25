@@ -51,6 +51,17 @@ VComposite _bar(String swt, VCanvas frame, VRectangle bounds) => VComposite()
   ..children = [frame]
   ..bounds = bounds;
 
+Finder get _frameWidget => find.byWidgetPredicate(
+    (w) => (w is ToolbarComposite || w is SideBarComposite) && (w as CompositeSwt).value.id == _frameId);
+
+Finder get _frameToolBar => find.byWidgetPredicate((w) => w is ToolBarSwt && w.value.id == _frameId + 1);
+
+/// The contribution sits where Java put it in its frame, clear of the drag-handle strip.
+void _expectToolBarAt(WidgetTester tester, Offset inFrame) {
+  expect(tester.getTopLeft(_frameToolBar) - tester.getTopLeft(_frameWidget), inFrame,
+      reason: 'the ToolBar leaves the grip strip uncovered');
+}
+
 Finder get _frameGC => find.byWidgetPredicate(
     (w) => w is GCSwt && w.value.id == _frameId,
     skipOffstage: false);
@@ -92,6 +103,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    _expectToolBarAt(tester, const Offset(5, 0));
     await _expectGripPainted(tester, const Size(89, 22));
   });
 
@@ -107,12 +119,12 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    _expectToolBarAt(tester, const Offset(0, 5));
     expect(_frameGC, findsOneWidget, reason: 'the frame Canvas mounts a GC for its own id');
     await _paintGrip(tester, 20, 5);
     final gc = tester.state(_frameGC) as dynamic;
     expect(gc.paintOps as List, isNotEmpty, reason: 'the grip Java draws on the frame reaches its GC');
-    expect(tester.getSize(_frameGC), tester.getSize(find.byWidgetPredicate(
-        (w) => w is SideBarComposite && w.value.id == _frameId)),
+    expect(tester.getSize(_frameGC), tester.getSize(_frameWidget),
         reason: 'the GC layer covers the whole frame');
   });
 }
