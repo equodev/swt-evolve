@@ -105,6 +105,7 @@ class LineEditor extends StatefulWidget {
     this.onChanged,
     this.onWordSelected,
     this.handlesPointer = true,
+    this.wrap = true,
   });
 
   final LineEditorController controller;
@@ -129,6 +130,9 @@ class LineEditor extends StatefulWidget {
   /// others, from a parent that covers more than the text: a TextField takes a press anywhere in
   /// its decoration as a press on the text.
   final bool handlesPointer;
+
+  /// Whether a line longer than the editor's width breaks into rows.
+  final bool wrap;
 
   @override
   State<LineEditor> createState() => LineEditorState();
@@ -303,6 +307,7 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
       final render = _render;
       if (render == null || !mounted || !_scrollController.hasClients || !_value.selection.isValid) return;
       final caret = render.getLocalRectForCaret(_value.selection.extent);
+      render.revealHorizontally(caret);
       final target = _offsetToReveal(render, caret);
       // Always a new animation, even to where the view is: it ends any reveal still running.
       _scrollController.animateTo(target, duration: _revealDuration, curve: Curves.fastOutSlowIn);
@@ -380,7 +385,7 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     );
   }
 
-  void _sendEditingState() => _connection?.setEditingState(_windowValue());
+  void _sendEditingState() => _connection?.setEditingState(asInputValue(_windowValue()));
 
   void _sendGeometry() {
     final render = _render;
@@ -393,7 +398,7 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
   }
 
   @override
-  TextEditingValue? get currentTextEditingValue => _windowValue();
+  TextEditingValue? get currentTextEditingValue => asInputValue(_windowValue());
 
   @override
   AutofillScope? get currentAutofillScope => null;
@@ -403,7 +408,8 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
     final old = _value;
     final from = _windowStart;
     final before = _windowText;
-    final after = value.text;
+    final reported = keepLineBreaks(before, value);
+    final after = reported.text;
     var proposed = old;
     if (after != before) {
       final (:prefix, :suffix) = commonEnds(before, after);
@@ -412,11 +418,12 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
         after.substring(prefix, after.length - suffix),
       );
     }
-    final selection = value.selection.isValid
-        ? value.selection.copyWith(baseOffset: value.selection.baseOffset + from, extentOffset: value.selection.extentOffset + from)
+    final selection = reported.selection.isValid
+        ? reported.selection.copyWith(
+            baseOffset: reported.selection.baseOffset + from, extentOffset: reported.selection.extentOffset + from)
         : proposed.selection;
-    final composing = value.composing.isValid
-        ? TextRange(start: value.composing.start + from, end: value.composing.end + from)
+    final composing = reported.composing.isValid
+        ? TextRange(start: reported.composing.start + from, end: reported.composing.end + from)
         : TextRange.empty;
     _applyingInput = true;
     try {
@@ -425,7 +432,7 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
       _applyingInput = false;
     }
     // What the input method holds no longer matches what is shown: a held edit, or a window that moved.
-    final shown = _windowValue();
+    final shown = asInputValue(_windowValue());
     if (shown != value) _connection?.setEditingState(shown);
   }
 
@@ -480,7 +487,35 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
   void bringIntoView(TextPosition position) {
     final render = _render;
     if (render == null || !_scrollController.hasClients) return;
-    _scrollController.jumpTo(_offsetToReveal(render, render.getLocalRectForCaret(position)));
+    final caret = render.getLocalRectForCaret(position);
+    render.revealHorizontally(caret);
+    _scrollController.jumpTo(_offsetToReveal(render, caret));
+  }
+
+  /// A wheel or trackpad scroll that is mostly sideways scrolls a text that does not wrap sideways;
+  /// the modifier that turns a vertical Scrollable's wheel sideways (Shift) turns this one too.
+  void _scrollSideways(PointerSignalEvent event) {
+    final render = _render;
+    if (event is! PointerScrollEvent || render == null) return;
+    final flip = event.kind == PointerDeviceKind.mouse &&
+        HardwareKeyboard.instance.logicalKeysPressed.any(ScrollConfiguration.of(context).pointerAxisModifiers.contains);
+    final sideways = flip ? event.scrollDelta.dy : event.scrollDelta.dx;
+    final down = flip ? event.scrollDelta.dx : event.scrollDelta.dy;
+    if (sideways.abs() <= down.abs()) return;
+    // At an end, the scroll is left to an enclosing scrollable.
+    final target = clampDouble(render.scrollX + sideways, 0, render.maxScrollX);
+    if (target == render.scrollX) return;
+    GestureBinding.instance.pointerSignalResolver.register(event, (_) => _scrollXBy(sideways));
+  }
+
+  void _scrollXBy(double delta) {
+    final render = _render;
+    if (render == null || delta == 0) return;
+    final before = render.scrollX;
+    render.scrollX = before + delta;
+    if (render.scrollX != before && _connection != null) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => _sendGeometry());
+    }
   }
 
   /// A selection the keyboard made: brought into view, then shown.
@@ -809,27 +844,33 @@ class LineEditorState extends State<LineEditor> with TextInputClient implements 
       controller: _scrollController,
       axisDirection: AxisDirection.down,
       scrollBehavior: ScrollConfiguration.of(context).copyWith(scrollbars: true, overscroll: false),
-      viewportBuilder: (context, offset) => LineEditorViewport(
-        key: _viewportKey,
-        document: _value.document,
-        selection: _value.selection.isValid ? _value.selection : null,
-        composing: _editable && focused ? _value.composing : TextRange.empty,
-        style: widget.style,
-        strutStyle: strut,
-        textAlign: widget.textAlign,
-        textDirection: Directionality.of(context),
-        textScaler: textScaler,
-        textHeightBehavior: DefaultTextHeightBehavior.maybeOf(context),
-        offset: offset,
-        showCursor: _cursorVisible,
-        cursorColor: cursorColor,
-        cursorWidth: 2.0,
-        cursorRadius: apple ? const Radius.circular(2.0) : null,
-        cursorOffset: apple ? Offset(iOSHorizontalOffset / devicePixelRatio, 0) : Offset.zero,
-        paintCursorAboveText: apple,
-        selectionColor: focused ? selectionColor : null,
-        devicePixelRatio: devicePixelRatio,
-        hasFocus: focused,
+      // Below the Scrollable's own listener, so that a sideways scroll is seen first.
+      viewportBuilder: (context, offset) => Listener(
+        onPointerSignal: widget.wrap ? null : _scrollSideways,
+        onPointerPanZoomUpdate: widget.wrap ? null : (event) => _scrollXBy(-event.localPanDelta.dx),
+        child: LineEditorViewport(
+          key: _viewportKey,
+          document: _value.document,
+          selection: _value.selection.isValid ? _value.selection : null,
+          composing: _editable && focused ? _value.composing : TextRange.empty,
+          style: widget.style,
+          strutStyle: strut,
+          textAlign: widget.textAlign,
+          textDirection: Directionality.of(context),
+          textScaler: textScaler,
+          textHeightBehavior: DefaultTextHeightBehavior.maybeOf(context),
+          offset: offset,
+          showCursor: _cursorVisible,
+          cursorColor: cursorColor,
+          cursorWidth: 2.0,
+          cursorRadius: apple ? const Radius.circular(2.0) : null,
+          cursorOffset: apple ? Offset(iOSHorizontalOffset / devicePixelRatio, 0) : Offset.zero,
+          paintCursorAboveText: apple,
+          selectionColor: focused ? selectionColor : null,
+          devicePixelRatio: devicePixelRatio,
+          hasFocus: focused,
+          wrap: widget.wrap,
+        ),
       ),
     );
 
@@ -956,13 +997,13 @@ class _SelectionAction<T extends DirectionalCaretMovementIntent> extends Context
   bool _atWrapUpstream(TextPosition position) {
     final text = state._value.text;
     final end = TextPosition(offset: state._render!.getLineAtOffset(position).end, affinity: TextAffinity.upstream);
-    return end == position && end.offset != text.length && text.codeUnitAt(position.offset) != 0x0A;
+    return end == position && end.offset != text.length && !LineDocument.breaksLineAt(text, position.offset);
   }
 
   bool _atWrapDownstream(TextPosition position) {
     final text = state._value.text;
     final start = TextPosition(offset: state._render!.getLineAtOffset(position).start);
-    return start == position && start.offset != 0 && text.codeUnitAt(position.offset - 1) != 0x0A;
+    return start == position && start.offset != 0 && !LineDocument.breaksLineAt(text, position.offset - 1);
   }
 
   @override
