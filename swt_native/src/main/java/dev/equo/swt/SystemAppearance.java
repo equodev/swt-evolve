@@ -49,6 +49,8 @@ public final class SystemAppearance {
         if (reported != null || ConfigFlags.isDesktopMode()) return;
         long left = clientDeadline - System.nanoTime();
         if (left <= 0) return;
+        // A plain wait on the Display thread: the client's report arrives on the communication thread,
+        // so it cannot deadlock, and it is paid at most once per Display, only when the app sets no theme.
         try (BootTrace.Span span = BootTrace.span("clientAppearance.wait")) {
             clientReported.await(left, TimeUnit.NANOSECONDS);
         } catch (InterruptedException e) {
