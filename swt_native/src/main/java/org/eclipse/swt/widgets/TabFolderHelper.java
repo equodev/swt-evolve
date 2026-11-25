@@ -11,7 +11,8 @@ import org.eclipse.swt.graphics.Rectangle;
 /**
  * Where the tabs of a TabFolder sit. The tab strip is drawn by the render side, so the bounds are
  * modelled from its layout, with the sizes {@link TabFolderTheme} measured off it: a row of tabs from
- * the left edge, each as wide as its label plus what the tab draws around it.
+ * the left edge, each as wide as its label plus what the tab draws around it, shifted by the scroll
+ * the render side reports for a strip narrower than its tabs.
  */
 public class TabFolderHelper {
 
@@ -85,9 +86,43 @@ public class TabFolderHelper {
             folder.getValue().markDirty(VTabFolder.SELECTION);
     }
 
+    /**
+     * The part of the strip the render side shows, as {@code x, width}: {@code x} is how far the
+     * strip has scrolled, {@code width} the viewport the tabs scroll in, which ends where the scroll
+     * arrows start. An empty text, or one that is not two numbers, forgets it.
+     */
+    public static void handleStripLaidOut(DartTabFolder folder, Event e) {
+        if (folder.isDisposed()) return;
+        int[] shown = null;
+        if (e.text != null) {
+            String[] parts = e.text.split(",");
+            if (parts.length == 2) {
+                try {
+                    shown = new int[] {Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim())};
+                } catch (NumberFormatException malformed) {
+                    shown = null;
+                }
+            }
+        }
+        folder.shownStrip = shown;
+    }
+
+    /** How far the drawn strip has scrolled its tabs to the left. */
+    private static int stripScroll(TabFolder folder) {
+        int[] shown = ((DartTabFolder) folder.getImpl()).shownStrip;
+        return shown != null ? shown[0] : 0;
+    }
+
+    /** Whether {@code x} falls in the part of the strip the tabs show in, not on its arrows. */
+    private static boolean inTabViewport(TabFolder folder, int x) {
+        int[] shown = ((DartTabFolder) folder.getImpl()).shownStrip;
+        return shown == null || (x >= 0 && x < shown[1]);
+    }
+
+    /** Where the tab is drawn, the strip's scroll applied: a tab scrolled out of view lies outside the folder. */
     public static Rectangle getBounds(DartTabItem item) {
         TabFolder folder = item.parent;
-        int x = 0;
+        int x = -stripScroll(folder);
         for (TabItem other : folder.getItems()) {
             int width = tabWidth(other);
             if (other == item.getApi()) {
@@ -147,11 +182,13 @@ public class TabFolderHelper {
         return false;
     }
 
+    /** The tab drawn under {@code point}: none over the scroll arrows or past the tabs. */
     public static TabItem itemAt(DartTabFolder folder, Point point) {
         TabFolder api = folder.getApi();
+        if (!inTabViewport(api, point.x)) return null;
         int y = tabTop(api);
         int height = tabHeight(api);
-        int x = 0;
+        int x = -stripScroll(api);
         for (TabItem item : api.getItems()) {
             int width = tabWidth(item);
             if (new Rectangle(x, y, width, height).contains(point))

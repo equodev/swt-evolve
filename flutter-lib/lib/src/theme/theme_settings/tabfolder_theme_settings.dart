@@ -83,7 +83,22 @@ TabFolderThemeExtension _getTabFolderTheme({
     // Tab content area
     tabContentBackgroundColor: colorScheme.surface,
     tabContentBorderColor: colorSchemeExtension.surfaceBorderEnabled,
+
+    tabScrollArrowIconScale: 0.75,
   );
+}
+
+/// An arrow that scrolls the strip: the tabs' surface, set off from them by a line on its left.
+BoxDecoration getTabScrollArrowDecoration(TabFolderThemeExtension theme) {
+  return BoxDecoration(
+    color: theme.tabBackgroundColor,
+    border: Border(left: BorderSide(color: theme.tabBorderColor, width: theme.tabBorderWidth)),
+  );
+}
+
+/// The chevron of an arrow that scrolls the strip, greyed while it has nowhere to scroll.
+Color getTabScrollArrowIconColor(TabFolderThemeExtension theme, {required bool enabled}) {
+  return enabled ? theme.tabTextColor : theme.tabDisabledTextColor;
 }
 
 /// The ring painted over the tab holding keyboard focus.

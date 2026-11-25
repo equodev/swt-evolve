@@ -403,7 +403,9 @@ class ImageUtils {
     return tone != null && !tone.readsOn(AppColors.getBackgroundColor());
   }
 
-  /// Helper to build widget from replacement object (SVG string or ui.Image)
+  /// Helper to build widget from replacement object (SVG string or ui.Image). [ownColors] marks an
+  /// already-rendered image, not an icon asset: the theme tint is for icon assets only, so it is
+  /// drawn in its own colours, only faded when disabled.
   static Widget? _buildReplacementWidget(
     Object replacement, {
     required String filename,
@@ -415,8 +417,9 @@ class ImageUtils {
     BoxConstraints? constraints,
     bool renderAsIcon = true,
     double? disabledOpacity,
+    bool ownColors = false,
   }) {
-    final preserveColors = preserveIconColors;
+    final preserveColors = ownColors || preserveIconColors;
     final Color? effectiveTint = preserveColors && !svgNeedsTint(replacement)
         ? null
         : (color ?? AppColors.getColor(enabled));
@@ -738,6 +741,7 @@ class ImageUtils {
         constraints: constraints,
         renderAsIcon: renderAsIcon,
         disabledOpacity: disabledOpacity,
+        ownColors: true,
       );
     }
 

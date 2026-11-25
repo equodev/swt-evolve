@@ -79,6 +79,13 @@ public class GallerySnippet {
      * enough that a short word's verdicts all arrive before the client stops waiting (400 ms).
      */
     private static final long IDENTIFIER_VERIFY_DELAY_MS = 100;
+
+    /** First line of the MULTI Text without WRAP: several times its width, and with no descenders. */
+    private static final String NO_WRAP_LONG_LINE =
+            "This line is much too wide to fit inside the field and thus it must stick out at the end";
+    /** The MULTI Text without WRAP: Text.DELIMITER and an application's own "\r\n" after it. */
+    private static final String NO_WRAP_TEXT = NO_WRAP_LONG_LINE + Text.DELIMITER + "Second line\r\n";
+
     public static void main(String[] args) throws IOException {
         Config.forceEquo();
 
@@ -224,6 +231,14 @@ public class GallerySnippet {
             }
         });
         identifierText.addModifyListener(e -> status.setText("Identifier: " + identifierText.getText()));
+        // Without WRAP, the long line stays one line and runs past the right edge.
+        Text noWrapText = new Text(textGroup, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
+        noWrapText.setText(NO_WRAP_TEXT);
+        GridData noWrapData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false);
+        noWrapData.widthHint = 160;
+        noWrapData.heightHint = 60;
+        noWrapText.setLayoutData(noWrapData);
+        noWrapText.addModifyListener(e -> status.setText("No-WRAP line breaks: " + lineBreaksOf(noWrapText.getText())));
 
         // Combo / CCombo / List
         Group selectGroup = section(root, "Combo / CCombo / List");
@@ -273,6 +288,14 @@ public class GallerySnippet {
             TableItem ti = new TableItem(table, SWT.NONE);
             ti.setText(row);
         }
+        // A colour swatch filled with a GC, as applications build one for a colour cell.
+        Image swatch = new Image(display, 12, 12);
+        GC swatchGc = new GC(swatch);
+        swatchGc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+        swatchGc.fillRectangle(0, 0, 12, 12);
+        swatchGc.drawRectangle(0, 0, 11, 11);
+        swatchGc.dispose();
+        table.getItem(rows.length - 1).setImage(swatch);
         // Only DefaultSelection (double-click) writes to status: single-click Selection is already
         // asserted directly against live Dart `selection` state, and adding a Selection listener
         // here too would make the status label race between the two events on a double-click.
@@ -866,6 +889,10 @@ public class GallerySnippet {
             ccombo.select(0);
             list.deselectAll();
             text.setText("Editable text field");
+            // Same echo concern as the editable Combo above.
+            if (!NO_WRAP_TEXT.equals(noWrapText.getText())) {
+                noWrapText.setText(NO_WRAP_TEXT);
+            }
             // Only touch the StyledText when a scenario actually changed it: setText fires its
             // ModifyListener, whose web round-trip echo can land AFTER the baseline status below
             // and overwrite the next scenario's status assert with "StyledText modified".
@@ -936,6 +963,11 @@ public class GallerySnippet {
     // browser window. Capping every section to the same width keeps the whole gallery inside
     // ~1000px regardless of how wide any one widget's content wants to be.
     private static final int SECTION_WIDTH = 460;
+
+    /** The line breaks of {@code text} in order, each spelled as its escape ({@code \r}, {@code \n}). */
+    private static String lineBreaksOf(String text) {
+        return text.replaceAll("[^\r\n]", "").replace("\r", "\\r").replace("\n", "\\n");
+    }
 
     private static Group section(Composite parent, String title) {
         Group group = new Group(parent, SWT.NONE);

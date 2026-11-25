@@ -46,7 +46,11 @@ class TabFolderThemeExtension extends ThemeExtension<TabFolderThemeExtension> wi
   // Ring around the tab holding keyboard focus
   final Color tabFocusRingColor;
   final double tabFocusRingWidth;
-  
+
+  // The arrows that scroll a strip narrower than its tabs: each a square of the strip's height,
+  // its chevron this fraction of it
+  final double tabScrollArrowIconScale;
+
   const TabFolderThemeExtension({
     required this.tabBarBackgroundColor,
     required this.tabBarBorderColor,
@@ -72,6 +76,7 @@ class TabFolderThemeExtension extends ThemeExtension<TabFolderThemeExtension> wi
     required this.tabContentBorderColor,
     required this.tabFocusRingColor,
     required this.tabFocusRingWidth,
+    required this.tabScrollArrowIconScale,
   });
 }
 
