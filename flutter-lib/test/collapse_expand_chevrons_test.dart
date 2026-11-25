@@ -9,51 +9,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/svg_path.dart';
+
 const _collapse = <String>['collapseall', 'collapse_all_mini'];
 const _expand = <String>['expandall'];
 
 /// Ink is allowed this close to the other chevron before the two read as one shape.
 const double _margin = 0.5;
 
-/// One polyline of corner points per subpath, for a path made of `M`/`m` and `L`/`l` commands.
-List<List<Offset>> _parsePath(String d) {
-  final subpaths = <List<Offset>>[];
-  var pen = Offset.zero;
-  for (final token in RegExp(r'[A-Za-z][^A-Za-z]*').allMatches(d)) {
-    final command = token.group(0)![0];
-    final n = RegExp(r'-?\d*\.?\d+')
-        .allMatches(token.group(0)!.substring(1))
-        .map((m) => double.parse(m.group(0)!))
-        .toList();
-    for (var i = 0; i + 1 < n.length; i += 2) {
-      final p = Offset(n[i], n[i + 1]);
-      final relative = command == command.toLowerCase();
-      pen = relative ? pen + p : p;
-      if ((command == 'M' || command == 'm') && i == 0) {
-        subpaths.add([pen]);
-      } else if ('MmLl'.contains(command)) {
-        subpaths.last.add(pen);
-      } else {
-        throw UnsupportedError('path command $command');
-      }
-    }
-  }
-  return subpaths;
-}
-
-double _pointToSegment(Offset p, Offset a, Offset b) {
-  final ab = b - a;
-  final lengthSquared = ab.dx * ab.dx + ab.dy * ab.dy;
-  if (lengthSquared == 0) return (p - a).distance;
-  final t = (((p - a).dx * ab.dx + (p - a).dy * ab.dy) / lengthSquared).clamp(0.0, 1.0);
-  return (p - (a + ab * t)).distance;
-}
-
 double _segmentDistance(Offset a, Offset b, Offset c, Offset d) => [
-      _pointToSegment(a, c, d),
-      _pointToSegment(b, c, d),
-      _pointToSegment(c, a, b),
-      _pointToSegment(d, a, b),
+      pointToSegment(a, c, d),
+      pointToSegment(b, c, d),
+      pointToSegment(c, a, b),
+      pointToSegment(d, a, b),
     ].reduce(math.min);
 
 bool _segmentsCross(Offset a, Offset b, Offset c, Offset d) {
@@ -94,7 +62,7 @@ class _Chevrons {
 Future<_Chevrons> _load(String icon) async {
   final svg = await rootBundle.loadString('assets/icons/$icon.svg');
   final path = RegExp(r'<path\b[^>]*>').firstMatch(svg)!.group(0)!;
-  final subpaths = _parsePath(RegExp(r'\bd="([^"]*)"').firstMatch(path)!.group(1)!);
+  final subpaths = parseSvgPath(RegExp(r'\bd="([^"]*)"').firstMatch(path)!.group(1)!).subpaths;
   final strokeWidth = double.parse(RegExp(r'stroke-width="([^"]*)"').firstMatch(path)!.group(1)!);
   expect(subpaths, hasLength(2), reason: '$icon is two chevrons');
   for (final c in subpaths) {

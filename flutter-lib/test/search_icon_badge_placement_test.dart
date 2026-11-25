@@ -13,6 +13,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/svg_path.dart';
+
 /// The whole family, including the three icons whose badge already sat clear.
 const _family = <String>[
   'search_rem',
@@ -36,7 +38,7 @@ const double _viewBox = 24;
 /// points within [halfWidth] of the centreline -- caps included.
 class _Ink {
   _Ink(this.subpaths, this.halfWidth)
-      : points = subpaths.expand(_densify).toList(growable: false);
+      : points = subpaths.expand(densify).toList(growable: false);
 
   /// One polyline of corner points per subpath.
   final List<List<Offset>> subpaths;
@@ -46,7 +48,7 @@ class _Ink {
   final List<Offset> points;
 
   double distanceTo(Offset a, Offset b) =>
-      points.map((p) => _pointToSegment(p, a, b)).reduce(math.min) - halfWidth;
+      points.map((p) => pointToSegment(p, a, b)).reduce(math.min) - halfWidth;
 
   double get minRadius =>
       points.map((p) => (p - _lensCentre).distance).reduce(math.min) - halfWidth;
@@ -70,83 +72,6 @@ const _lensRadius = 5.0;
 const _handleStart = Offset(13, 13);
 const _handleEnd = Offset(20, 20);
 
-double _pointToSegment(Offset p, Offset a, Offset b) {
-  final ab = b - a;
-  final lengthSquared = ab.dx * ab.dx + ab.dy * ab.dy;
-  if (lengthSquared == 0) return (p - a).distance;
-  final t = (((p - a).dx * ab.dx + (p - a).dy * ab.dy) / lengthSquared).clamp(0.0, 1.0);
-  return (p - (a + ab * t)).distance;
-}
-
-/// Splits an SVG number list, where a minus sign doubles as a separator ("l3 2-3 2").
-List<double> _numbers(String s) => RegExp(r'-?\d*\.?\d+')
-    .allMatches(s)
-    .map((m) => double.parse(m.group(0)!))
-    .toList();
-
-List<Offset> _densify(List<Offset> vertices) {
-  if (vertices.length < 2) return vertices;
-  final out = <Offset>[vertices.first];
-  for (var i = 1; i < vertices.length; i++) {
-    final steps = math.max(1, ((vertices[i] - vertices[i - 1]).distance / 0.1).ceil());
-    for (var s = 1; s <= steps; s++) {
-      out.add(Offset.lerp(vertices[i - 1], vertices[i], s / steps)!);
-    }
-  }
-  return out;
-}
-
-/// Reads the subset of the path grammar these assets use. Anything else throws, so an asset
-/// this guard cannot read fails the test instead of passing it by default.
-List<List<Offset>> _parsePath(String d) {
-  final subpaths = <List<Offset>>[];
-  var current = <Offset>[];
-  var cursor = Offset.zero;
-  for (final token in RegExp(r'[A-Za-z][^A-Za-z]*').allMatches(d)) {
-    final command = token.group(0)![0];
-    final args = _numbers(token.group(0)!.substring(1));
-    switch (command) {
-      case 'M':
-      case 'm':
-        if (current.length > 1) subpaths.add(current);
-        for (var i = 0; i + 1 < args.length; i += 2) {
-          cursor = command == 'M'
-              ? Offset(args[i], args[i + 1])
-              : cursor + Offset(args[i], args[i + 1]);
-          if (i == 0) {
-            current = <Offset>[cursor];
-          } else {
-            current.add(cursor);
-          }
-        }
-      case 'L':
-      case 'l':
-        for (var i = 0; i + 1 < args.length; i += 2) {
-          cursor = command == 'L'
-              ? Offset(args[i], args[i + 1])
-              : cursor + Offset(args[i], args[i + 1]);
-          current.add(cursor);
-        }
-      case 'H':
-      case 'h':
-        for (final a in args) {
-          cursor = Offset(command == 'H' ? a : cursor.dx + a, cursor.dy);
-          current.add(cursor);
-        }
-      case 'V':
-      case 'v':
-        for (final a in args) {
-          cursor = Offset(cursor.dx, command == 'V' ? a : cursor.dy + a);
-          current.add(cursor);
-        }
-      default:
-        throw UnsupportedError('path command "$command" in "$d"');
-    }
-  }
-  if (current.length > 1) subpaths.add(current);
-  return subpaths;
-}
-
 double _attribute(String element, String name) {
   final match = RegExp('$name="([^"]*)"').firstMatch(element);
   expect(match, isNotNull, reason: 'no $name on $element');
@@ -169,7 +94,8 @@ List<_Ink> _shapes(String svg) {
         ]
       ], halfWidth));
     } else {
-      shapes.add(_Ink(_parsePath(RegExp(r'd="([^"]*)"').firstMatch(source)!.group(1)!), halfWidth));
+      final d = RegExp(r'd="([^"]*)"').firstMatch(source)!.group(1)!;
+      shapes.add(_Ink(parseSvgPath(d).subpaths, halfWidth));
     }
   }
   return shapes;
