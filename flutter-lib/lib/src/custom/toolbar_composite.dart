@@ -62,6 +62,8 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 
   bool get _isRootToolbar => widget.value.swt == "MainToolbar";
 
+  bool get _isFrame => widget.value is VCanvas;
+
   // Whether this is tracked as a shown main toolbar. A hidden one stays mounted but hosts nothing,
   // and Java then gives the Shell its own menu strip (`Sizes.ownMenuStripHeight`).
   bool _tracked = false;
@@ -291,9 +293,9 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         ],
       );
 
-      return Container(
+      return _withFrameGC(this, backgroundColor, Container(
         height: toolbarHeight,
-        decoration: BoxDecoration(color: backgroundColor),
+        decoration: _isFrame ? null : BoxDecoration(color: backgroundColor),
         child: ToolbarAreaMarker(
           active: true,
           background: backgroundColor,
@@ -309,7 +311,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 : toolbarRow,
           ),
         ),
-      );
+      ));
     }
 
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
@@ -336,8 +338,8 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       ],
     );
 
-    return Container(
-      decoration: BoxDecoration(color: backgroundColor),
+    return _withFrameGC(this, backgroundColor, Container(
+      decoration: _isFrame ? null : BoxDecoration(color: backgroundColor),
       child: ToolbarAreaMarker(
         active: true,
         background: backgroundColor,
@@ -354,7 +356,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
               : nonBoundsRow,
         ),
       ),
-    );
+    ));
   }
 
   /// Puts a DOM window-drag surface behind the toolbar so pressing bare toolbar
@@ -451,6 +453,16 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     }
     return mapWidgetFromValue(child);
   }
+}
+
+/// A trim contribution's frame is a Canvas that draws its drag-handle grip through its GC, so the
+/// frame paints its [ground] under the GC and the contribution it holds over it, as a Canvas does.
+/// The ground is a decoration, as it is on any other trim composite, so a press on the bare frame
+/// stays on it. Any other trim composite is returned as [built].
+Widget _withFrameGC(CompositeImpl composite, Color ground, Widget built) {
+  if (composite.widget.value is! VCanvas) return built;
+  return composite.stackGCUnderChildren(
+      (child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child), built);
 }
 
 class ChipAddonImages extends InheritedWidget {
@@ -611,11 +623,12 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
         ),
     ];
 
-    return Container(
+    final isFrame = widget.value is VCanvas;
+    return _withFrameGC(this, backgroundColor, Container(
       key: _containerKey,
       height: containerHeight,
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: isFrame ? null : backgroundColor,
         border: Border(top: BorderSide(color: dividerColor, width: borderWidth)),
       ),
       child: ToolbarAreaMarker(
@@ -627,7 +640,7 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget buildMapWidgetFromValue(VControl child) {
