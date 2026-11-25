@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter/services.dart' show TextEditingValue, TextRange;
 
-/// A text as the lines it breaks into at `\n`, each found by where it starts.
+/// A text as the lines it breaks into at each line break (`\n`, or a `\r` not followed by `\n`),
+/// each found by where it starts.
 ///
 /// Immutable. An edit makes a new document that remembers which lines it replaced in the one it was
 /// made from ([isEditOf], [editLine], [removedLines], [insertedLines]), so whatever is kept per line
@@ -55,12 +57,12 @@ class LineDocument {
 
   int lineStart(int line) => starts[line];
 
-  /// Where [line] ends, before its `\n`.
+  /// Where [line] ends, before its line break. A `\r\n` line keeps its `\r`.
   int lineEnd(int line) => line + 1 < starts.length ? starts[line + 1] - 1 : text.length;
 
   String line(int line) => text.substring(starts[line], lineEnd(line));
 
-  /// The line [offset] is in. An offset at a line's end, before its `\n`, is in that line.
+  /// The line [offset] is in. An offset at a line's end, before its line break, is in that line.
   int lineAt(int offset) {
     var lo = 0, hi = starts.length - 1;
     while (lo < hi) {
@@ -84,13 +86,15 @@ class LineDocument {
       _replacedBy(result, start, end, insertEnd);
 
   LineDocument _replacedBy(String newText, int start, int end, int insertEnd) {
-    final first = lineAt(start);
+    // Whether a `\r` just before the edit breaks a line depends on what follows it now.
+    final from = start > 0 && text.codeUnitAt(start - 1) == 0x0D ? start - 1 : start;
+    final first = lineAt(from);
     final last = lineAt(end);
     final insertLength = insertEnd - start;
     final delta = insertLength - (end - start);
-    final inserted = _startsOf(newText, start, insertEnd, start);
+    final inserted = _startsOf(newText, from, insertEnd, from);
     // Lines before [first] keep their starts, [first] keeps its own, the inserted text adds one
-    // line per `\n`, and every line after [last] moves by [delta].
+    // line per line break, and every line after [last] moves by [delta].
     final keptAfter = starts.length - last - 1;
     final out = Int32List(first + 1 + inserted.length - 1 + keptAfter);
     out.setRange(0, first + 1, starts);
@@ -106,17 +110,89 @@ class LineDocument {
   static Int32List _startsOf(String text, int from, int to, int base) {
     var count = 1;
     for (var i = from; i < to; i++) {
-      if (text.codeUnitAt(i) == 0x0A) count++;
+      if (breaksLineAt(text, i)) count++;
     }
     final out = Int32List(count);
     var n = 1;
     out[0] = base;
     for (var i = from; i < to; i++) {
-      if (text.codeUnitAt(i) == 0x0A) out[n++] = base + i - from + 1;
+      if (breaksLineAt(text, i)) out[n++] = base + i - from + 1;
     }
     return out;
   }
+
+  /// Whether `text[i]` is a line break: a `\n`, or a `\r` that no `\n` follows.
+  static bool breaksLineAt(String text, int i) {
+    final c = text.codeUnitAt(i);
+    return c == 0x0A || (c == 0x0D && (i + 1 == text.length || text.codeUnitAt(i + 1) != 0x0A));
+  }
 }
+
+/// [value] as an input method is given it: a browser's textarea holds each line break as `\n` and
+/// counts its offsets in that text, so every editor hands it that form.
+TextEditingValue asInputValue(TextEditingValue value) {
+  final text = value.text;
+  if (!text.contains('\r')) return value;
+  int map(int offset) {
+    if (offset < 0) return offset;
+    var mapped = 0;
+    for (var i = 0; i < offset; i++, mapped++) {
+      if (_isCrLf(text, i) && i + 1 < offset) i++;
+    }
+    return mapped;
+  }
+
+  return TextEditingValue(
+    text: text.replaceAll(_lineBreak, '\n'),
+    selection: value.selection.copyWith(baseOffset: map(value.selection.baseOffset), extentOffset: map(value.selection.extentOffset)),
+    composing: value.composing.isValid ? TextRange(start: map(value.composing.start), end: map(value.composing.end)) : value.composing,
+  );
+}
+
+/// What an input method reports, [reported], read against [sent], the text it was given in
+/// [asInputValue]'s form: the line breaks the edit left alone keep their form in [sent], and the
+/// offsets count them so.
+TextEditingValue keepLineBreaks(String sent, TextEditingValue reported) {
+  final text = reported.text;
+  if (text.contains('\r') || !sent.contains('\r')) return reported;
+  final asInput = sent.replaceAll(_lineBreak, '\n');
+  // Each offset into [asInput], as an offset into [sent].
+  final toSent = Int32List(asInput.length + 1);
+  for (var i = 0, s = 0; i <= asInput.length; i++, s++) {
+    toSent[i] = s;
+    if (s < sent.length && _isCrLf(sent, s)) s++;
+  }
+  final String kept;
+  final int Function(int) map;
+  if (asInput == text) {
+    kept = sent;
+    map = (offset) => toSent[offset];
+  } else {
+    final (:prefix, :suffix) = commonEnds(asInput, text);
+    final head = toSent[prefix];
+    final tail = toSent[asInput.length - suffix];
+    kept = sent.substring(0, head) + text.substring(prefix, text.length - suffix) + sent.substring(tail);
+    map = (offset) => offset <= prefix
+        ? toSent[offset]
+        : offset >= text.length - suffix
+            ? kept.length - sent.length + toSent[asInput.length - text.length + offset]
+            : head + offset - prefix;
+  }
+  int mapped(int offset) => offset < 0 || offset > text.length ? offset : map(offset);
+  return TextEditingValue(
+    text: kept,
+    selection: reported.selection.copyWith(
+        baseOffset: mapped(reported.selection.baseOffset), extentOffset: mapped(reported.selection.extentOffset)),
+    composing: reported.composing.isValid
+        ? TextRange(start: mapped(reported.composing.start), end: mapped(reported.composing.end))
+        : reported.composing,
+  );
+}
+
+bool _isCrLf(String text, int i) =>
+    text.codeUnitAt(i) == 0x0D && i + 1 < text.length && text.codeUnitAt(i + 1) == 0x0A;
+
+final _lineBreak = RegExp('\r\n?');
 
 /// How many code units [a] and [b] have in common at their start, and then, of what is left, at
 /// their end: what lies between is the one range an edit of [a] into [b] replaced.

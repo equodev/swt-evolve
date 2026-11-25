@@ -31,6 +31,10 @@ class TabFolderSwt<V extends VTabFolder> extends CompositeSwt<V> {
   void sendSelectionSelection(V val, VEvent? payload) {
     sendEvent(val, 88, payload); // Selection/Selection
   }
+
+  void sendTabFolderstripLaidOut(V val, VEvent? payload) {
+    sendEvent(val, 255, payload); // TabFolder/stripLaidOut
+  }
 }
 
 class VTabFolder extends VComposite {

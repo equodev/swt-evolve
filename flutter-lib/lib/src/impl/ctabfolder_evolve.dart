@@ -37,6 +37,7 @@ import '../theme/theme_extensions/ctabfolder_theme_extension.dart';
 import '../theme/theme_settings/ctabfolder_theme_settings.dart';
 import 'utils/dnd_session.dart' show ActiveDragTracker;
 import 'utils/dnd_utils.dart';
+import 'utils/strip_scroll.dart';
 import 'utils/layered_layout_builder.dart';
 import 'utils/tracker_session.dart';
 import 'utils/image_utils.dart';
@@ -729,6 +730,9 @@ class _CTabBarState extends State<_CTabBar> {
   bool _hasOverflow = false;
   Timer? _scrollbarHideTimer;
   late final ScrollController _horizontalScrollController;
+  /// A native CTabFolder keeps the selected tab in view (`showItem`): where upstream picks which
+  /// tabs to show and parks the rest behind the chevron, this strip scrolls to it instead.
+  late final StripReveal _reveal;
   final ValueNotifier<bool> _minimizeHovered = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _maximizeHovered = ValueNotifier<bool>(false);
   // How far the tab row ends before the chevron's slot, set as the row lays out.
@@ -771,7 +775,13 @@ class _CTabBarState extends State<_CTabBar> {
   void initState() {
     super.initState();
     _horizontalScrollController = ScrollController();
-    _revealSelectedAfterLayout();
+    _reveal = StripReveal(
+      strip: _horizontalScrollController,
+      selectedTab: () => _rowState.currentState?.tabBox(
+          (widget.state.single ?? false) ? 0 : _computeEffectiveSelected(widget.selectedIndex)),
+      mounted: () => mounted,
+    );
+    _reveal.schedule();
   }
 
   @override
@@ -783,44 +793,7 @@ class _CTabBarState extends State<_CTabBar> {
     }
     if (widget.selectedIndex != oldWidget.selectedIndex ||
         widget.tabItems.length != oldWidget.tabItems.length) {
-      _revealSelectedAfterLayout();
-    }
-  }
-
-  bool _revealPending = false;
-  bool _revealing = false;
-  double? _revealedViewport;
-  double? _revealedExtent;
-
-  /// A native CTabFolder keeps the selected tab in view (`showItem`): where upstream picks which
-  /// tabs to show and parks the rest behind the chevron, this strip scrolls to it instead.
-  void _revealSelectedAfterLayout() {
-    if (_revealPending) return;
-    _revealPending = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _revealPending = false;
-      if (mounted) _revealSelected();
-    });
-  }
-
-  void _revealSelected() {
-    if (!_horizontalScrollController.hasClients) return;
-    final position = _horizontalScrollController.position;
-    if (!position.hasContentDimensions || !position.hasViewportDimension) return;
-    _revealedViewport = position.viewportDimension;
-    _revealedExtent = position.maxScrollExtent;
-    final index = (widget.state.single ?? false)
-        ? 0
-        : _computeEffectiveSelected(widget.selectedIndex);
-    final tab = _rowState.currentState?.tabBox(index);
-    if (tab == null || !tab.attached || !tab.hasSize) return;
-    // The end first, then the start: a tab wider than the strip shows its leading edge.
-    _revealing = true;
-    try {
-      position.ensureVisible(tab, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
-      position.ensureVisible(tab, alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart);
-    } finally {
-      _revealing = false;
+      _reveal.schedule();
     }
   }
 
@@ -1540,7 +1513,7 @@ class _CTabBarState extends State<_CTabBar> {
           },
           child: NotificationListener<ScrollUpdateNotification>(
             onNotification: (notification) {
-              if (!_revealing) {
+              if (!_reveal.revealing) {
                 _showScrollbar();
                 _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
               }
@@ -1562,27 +1535,7 @@ class _CTabBarState extends State<_CTabBar> {
                 onPointerDown: (_) {
                   _showScrollbar();
                 },
-                // A vertical wheel doesn't scroll a horizontal viewport by default; map it
-                // to horizontal offset.
-                onPointerSignal: (event) {
-                  if (event is! PointerScrollEvent) return;
-                  if (!_horizontalScrollController.hasClients) return;
-                  final position = _horizontalScrollController.position;
-                  if (!position.hasContentDimensions ||
-                      position.maxScrollExtent <= 0) {
-                    return;
-                  }
-                  final delta = event.scrollDelta.dy != 0
-                      ? event.scrollDelta.dy
-                      : event.scrollDelta.dx;
-                  final target = (position.pixels + delta)
-                      .clamp(0.0, position.maxScrollExtent);
-                  if (target != position.pixels) {
-                    _horizontalScrollController.jumpTo(target);
-                    _showScrollbar();
-                    _hideScrollbarAfterDelay(widgetTheme.scrollbarHideDelay);
-                  }
-                },
+                onPointerSignal: (event) => wheelStrip(_horizontalScrollController, event),
                 child: ValueListenableBuilder<bool>(
                   valueListenable: _scrollbarVisible,
                   builder: (context, visible, strip) => Scrollbar(
@@ -1622,12 +1575,8 @@ class _CTabBarState extends State<_CTabBar> {
       setState(() => _hasOverflow = overflow);
     }
     // A strip that starts to overflow, narrows, or has a tab grow (a dirty marker, the bold label
-    // of an active folder) can leave the selected tab out. A user scroll changes neither.
-    if (overflow && position.hasViewportDimension &&
-        (position.viewportDimension != _revealedViewport ||
-            position.maxScrollExtent != _revealedExtent)) {
-      _revealSelectedAfterLayout();
-    }
+    // of an active folder) can leave the selected tab out.
+    _reveal.metricsChanged();
   }
 
   void _setOverflow(bool overflow) {

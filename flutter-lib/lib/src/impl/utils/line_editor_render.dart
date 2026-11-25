@@ -46,7 +46,9 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
     required Color? selectionColor,
     required double devicePixelRatio,
     required bool hasFocus,
+    bool wrap = true,
   })  : _document = document,
+        _wrap = wrap,
         _selection = selection,
         _composing = composing,
         _style = style,
@@ -79,9 +81,46 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
     if (value.isEditOf(old)) {
       _spliceLines(value);
     } else {
+      _scrollX = 0;
       _resetLines();
     }
     markNeedsLayout();
+  }
+
+  /// Whether a line longer than the width breaks into rows; if not, the view scrolls sideways.
+  bool _wrap;
+  bool get wrap => _wrap;
+  set wrap(bool value) {
+    if (value == _wrap) return;
+    _wrap = value;
+    _scrollX = 0;
+    _resetLayout();
+  }
+
+  /// How far a text that does not wrap is scrolled to the left.
+  double _scrollX = 0;
+  double get scrollX => _scrollX;
+  set scrollX(double value) {
+    final x = clampDouble(value, 0, maxScrollX);
+    if (x == _scrollX) return;
+    _scrollX = x;
+    markNeedsPaint();
+  }
+
+  /// How far a text that does not wrap scrolls sideways: to the end of the widest line in view, or
+  /// of the caret's line.
+  double get maxScrollX {
+    if (_wrap || !hasSize) return 0;
+    var widest = 0.0;
+    final last = _lineAtY(_offset.pixels + size.height);
+    for (var line = _lineAtY(_offset.pixels); line <= last; line++) {
+      widest = math.max(widest, _painter(line).width);
+    }
+    final caret = _selection;
+    if (caret != null && caret.isValid) {
+      widest = math.max(widest, _painter(_document.lineAt(caret.extentOffset.clamp(0, _document.length))).width);
+    }
+    return math.max(0.0, widest + _caretMargin - size.width);
   }
 
   TextSelection? _selection;
@@ -343,7 +382,7 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
   double _estimate(int line) {
     final width = _layoutWidth;
     final chars = _document.lineEnd(line) - _document.lineStart(line);
-    if (width <= 0 || chars == 0) return rowHeight;
+    if (!_wrap || width <= 0 || chars == 0) return rowHeight;
     final rows = (chars * _advance / width).ceil();
     return rowHeight * math.max(1, rows);
   }
@@ -365,7 +404,7 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
       _configureSpan(p, _lineSpan(line));
       _painters[line] = p;
     }
-    p.layout(minWidth: _layoutWidth, maxWidth: _layoutWidth);
+    p.layout(minWidth: _layoutWidth, maxWidth: _wrap ? _layoutWidth : double.infinity);
     if (_measured[line] == 0 || _heights[line] != p.height) {
       _heights[line] = p.height;
       _measured[line] = 1;
@@ -413,7 +452,7 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
   double _maxScrollExtent = 0;
 
   /// Whether more text is laid out than shows, which the paint is clipped to.
-  bool get _hasVisualOverflow => _maxScrollExtent > 0 || _offset.pixels != 0;
+  bool get _hasVisualOverflow => _maxScrollExtent > 0 || _offset.pixels != 0 || !_wrap;
 
   // --- layout ---
 
@@ -467,6 +506,8 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
       final settled = _offset.applyContentDimensions(0, _maxScrollExtent);
       if (settled && (shift == 0 || pixels <= 0)) break;
     }
+    // A wider field or a shorter line leaves no blank past the end of the text.
+    if (_scrollX > 0) _scrollX = math.min(_scrollX, maxScrollX);
     _evictPainters();
   }
 
@@ -515,7 +556,21 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
   // --- geometry ---
 
   /// The paint origin of the content: the view scrolls it up by the offset.
-  Offset get _paintOffset => Offset(0, -_offset.pixels);
+  Offset get _paintOffset => Offset(-_scrollX, -_offset.pixels);
+
+  /// Scrolls a text that does not wrap sideways, the least that shows [caret] (in this box's
+  /// coordinates), as a native field follows its caret along a long line.
+  void revealHorizontally(Rect caret) {
+    if (_wrap) return;
+    var x = _scrollX;
+    if (caret.right > size.width) x += caret.right - size.width;
+    if (caret.left < 0) x += caret.left;
+    // [caret] may be on a line out of view, which [maxScrollX] does not count.
+    x = clampDouble(x, 0, math.max(maxScrollX, caret.right + _scrollX - size.width));
+    if (x == _scrollX) return;
+    _scrollX = x;
+    markNeedsPaint();
+  }
 
   /// [position] in content coordinates, as the line it falls in reports it.
   ({int line, TextPainter painter, int local}) _locate(TextPosition position) {
@@ -548,7 +603,7 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
     final local = TextPosition(offset: at.local, affinity: caretPosition.affinity);
     final caretOffset = at.painter.getOffsetForCaret(local, _caretPrototype) + Offset(0, tops[at.line]);
     var caretRect = _caretPrototype.shift(caretOffset + _cursorOffset);
-    final scrollableWidth = math.max(_layoutWidth + _caretMargin, size.width);
+    final scrollableWidth = math.max(math.max(_layoutWidth, at.painter.width) + _caretMargin, size.width);
     final caretX = clampDouble(caretRect.left, 0, math.max(scrollableWidth - _caretMargin, 0));
     caretRect = Offset(caretX, caretRect.top) & caretRect.size;
     final fullHeight = at.painter.getFullHeightForCaret(local, _caretPrototype);
@@ -698,7 +753,7 @@ class RenderLineEditor extends RenderBox implements TextLayoutMetrics {
     final firstLine = line == 0, lastLine = line == _document.lineCount - 1;
     final top = tops[line];
     // RenderEditable clips each box to the paragraph, which here is the whole text.
-    final bounds = Rect.fromLTRB(0, -top, _layoutWidth, contentHeight - top);
+    final bounds = Rect.fromLTRB(0, -top, _wrap ? _layoutWidth : double.infinity, contentHeight - top);
     final out = <Rect>[];
     final rowRight = List<double?>.filled(metrics.length, null);
     final rowTop = List<double?>.filled(metrics.length, null);
@@ -944,6 +999,7 @@ class LineEditorViewport extends LeafRenderObjectWidget {
     required this.selectionColor,
     required this.devicePixelRatio,
     required this.hasFocus,
+    this.wrap = true,
   });
 
   final LineDocument document;
@@ -965,6 +1021,7 @@ class LineEditorViewport extends LeafRenderObjectWidget {
   final Color? selectionColor;
   final double devicePixelRatio;
   final bool hasFocus;
+  final bool wrap;
 
   @override
   RenderLineEditor createRenderObject(BuildContext context) => RenderLineEditor(
@@ -987,6 +1044,7 @@ class LineEditorViewport extends LeafRenderObjectWidget {
         selectionColor: selectionColor,
         devicePixelRatio: devicePixelRatio,
         hasFocus: hasFocus,
+        wrap: wrap,
       );
 
   @override
@@ -1010,7 +1068,8 @@ class LineEditorViewport extends LeafRenderObjectWidget {
       ..paintCursorAboveText = paintCursorAboveText
       ..selectionColor = selectionColor
       ..devicePixelRatio = devicePixelRatio
-      ..hasFocus = hasFocus;
+      ..hasFocus = hasFocus
+      ..wrap = wrap;
   }
 }
 

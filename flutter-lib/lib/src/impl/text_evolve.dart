@@ -23,6 +23,7 @@ import 'utils/hover_arbiter.dart';
 import 'utils/key_edit_order.dart';
 import 'utils/at_rest.dart';
 import 'utils/double_tap_detector.dart';
+import 'utils/line_document.dart';
 import 'utils/line_editor.dart';
 import 'utils/text_undo.dart';
 import 'utils/text_utils.dart';
@@ -35,7 +36,7 @@ import 'utils/test_anchors.dart';
 
 class TextImpl<T extends TextSwt, V extends VText>
     extends ScrollableImpl<T, V> with PendingTextEchoes, ClientCaretReport, AtRestHandover implements UndoableTextField {
-  late TextEditingController _controller;
+  late _TextFieldController _controller;
 
   /// A single-line field's build reads its height (the decoration is that tall) and no other part
   /// of its size.
@@ -73,13 +74,13 @@ class TextImpl<T extends TextSwt, V extends VText>
     if (shown == null || shown == lines) return;
     fromJava(() {
       if (lines) {
-        final selection = _controller.selection;
+        final java = _controller.javaValue;
         _lineController.value = _lineController.value.editedTo(
-          _controller.text,
-          selection.isValid ? selection : TextSelection.collapsed(offset: _controller.text.length),
+          java.text,
+          java.selection.isValid ? java.selection : TextSelection.collapsed(offset: java.text.length),
         );
       } else {
-        _controller.value = TextEditingValue(text: _lineController.text, selection: _lineController.selection);
+        _controller.javaValue = TextEditingValue(text: _lineController.text, selection: _lineController.selection);
       }
     });
   }
@@ -88,7 +89,7 @@ class TextImpl<T extends TextSwt, V extends VText>
       _lines ??= LineEditorController(state.text ?? '')..addListener(_updateCaretPosition);
 
   /// The text on display, whichever editor shows it.
-  String get _currentText => _usesLines ? _lineController.text : _controller.text;
+  String get _currentText => _usesLines ? _lineController.text : _controller.javaText;
 
   final FocusNode _focusNode = FocusNode();
   /// Stands in for [_focusNode] while the field is drawn at rest: focus arriving here, by traversal or
@@ -127,7 +128,7 @@ class TextImpl<T extends TextSwt, V extends VText>
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: state.text);
+    _controller = _TextFieldController(text: state.text, multiLine: () => hasStyle(state.style, SWT.MULTI));
     _isEmpty.value = _controller.text.isEmpty;
     _controller.addListener(_updateCaretPosition);
     _controller.addListener(_trackEmptiness);
@@ -219,10 +220,10 @@ class TextImpl<T extends TextSwt, V extends VText>
           _handleLinesChanged(next.text);
         }
       } else {
-        final old = _controller.value;
+        final old = _controller.javaValue;
         final next = TextEditingValue(text: old.text.replaceRange(start, end, replacement), selection: selection);
         if (identical(_gateEdit(old, next), next)) {
-          _controller.value = next;
+          _controller.javaValue = next;
           _handleTextChanged(next.text);
         }
       }
@@ -331,8 +332,15 @@ class TextImpl<T extends TextSwt, V extends VText>
       record?.call();
       return newValue;
     }
-    _holdEdit(oldValue, newValue, () => _controller.value = newValue, record);
+    _holdEdit(oldValue, newValue, () => _controller.javaValue = newValue, record);
     return oldValue;
+  }
+
+  /// [_gateEdit] for the TextField, whose formatters see the input form of its text.
+  TextEditingValue _gateTextField(TextEditingValue oldValue, TextEditingValue newValue) {
+    final java = _controller.javaValue;
+    final edited = keepLineBreaks(java.text, newValue);
+    return identical(_gateEdit(java, edited), edited) ? newValue : oldValue;
   }
 
   /// The Modify Java is deciding on; one at a time, so that Java never decides on, or commits, an
@@ -385,13 +393,13 @@ class TextImpl<T extends TextSwt, V extends VText>
     while (_held.isNotEmpty && _inFlight == null && mounted) {
       final edit = _held.removeAt(0);
       final (fromText, fromSelection) =
-          _usesLines ? (_lineController.text, _lineController.selection) : (_controller.text, _controller.selection);
+          _usesLines ? (_lineController.text, _lineController.selection) : (_controller.javaText, _controller.javaSelection);
       final (text, selection) = edit.on(fromText, fromSelection);
       if (text == fromText) continue;
       final record = _undoRecorder(fromText, fromSelection, text, selection, TextRange.empty);
       final void Function() apply = _usesLines
           ? () => _lineController.value = _lineController.value.editedTo(text, selection)
-          : () => _controller.value = TextEditingValue(text: text, selection: selection);
+          : () => _controller.javaValue = TextEditingValue(text: text, selection: selection);
       if (_modifyGate.armed) {
         _proposeModify(_ProposedEdit(text, selection.baseOffset, apply, record));
       } else {
@@ -430,11 +438,10 @@ class TextImpl<T extends TextSwt, V extends VText>
       }
       return;
     }
-    if (_controller.text != authoritative) {
-      fromJava(() => _controller.value = _controller.value.copyWith(
+    if (_controller.javaText != authoritative) {
+      fromJava(() => _controller.javaValue = TextEditingValue(
             text: authoritative,
             selection: TextSelection.collapsed(offset: authoritative.length),
-            composing: TextRange.empty,
           ));
     }
   }
@@ -466,22 +473,21 @@ class TextImpl<T extends TextSwt, V extends VText>
     // has typed further in the meantime, resetting the controller to the echoed (older) text
     // silently drops those keystrokes (the mid-word lost character on slow machines). See
     // PendingTextEchoes: our own in-flight echoes are ignored, external changes fall through.
-    if (isStaleTextEcho(newText, _controller.text)) return;
-    bool textChanged = _controller.text != newText;
+    if (isStaleTextEcho(newText, _controller.javaText)) return;
+    bool textChanged = _controller.javaText != newText;
 
     if (textChanged) {
       final cursorOffset = _isReadOnly ? 0 : newText.length;
 
-      _controller.value = _controller.value.copyWith(
+      _controller.javaValue = TextEditingValue(
         text: newText,
         selection: TextSelection.collapsed(offset: cursorOffset),
-        composing: TextRange.empty,
       );
 
       if (state.selection != null) {
         // The selection Java last sent may belong to a longer text.
         final end = newText.length;
-        _controller.selection = TextSelection(
+        _controller.javaSelection = TextSelection(
           baseOffset: state.selection!.x.clamp(0, end),
           extentOffset: state.selection!.y.clamp(0, end),
         );
@@ -489,10 +495,10 @@ class TextImpl<T extends TextSwt, V extends VText>
     }
 
     final sel = state.selection;
-    if (_selectionPushed && sel != null && sel.x != sel.y && sel.y <= _controller.text.length) {
+    if (_selectionPushed && sel != null && sel.x != sel.y && sel.y <= _controller.javaText.length) {
       final desired = TextSelection(baseOffset: sel.x, extentOffset: sel.y);
-      if (_controller.selection != desired) {
-        _controller.selection = desired;
+      if (_controller.javaSelection != desired) {
+        _controller.javaSelection = desired;
       }
     }
   }
@@ -554,13 +560,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     TextAlign textAlign,
   ) {
     final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
-    final decorationTheme = InputDecorationTheme.of(context);
-    final own = _decoration(context, widgetTheme, true, true);
-    // What TextField makes of its decoration and of its style.
-    final decoration = own.applyDefaults(decorationTheme).copyWith(
-          enabled: enabled,
-          hintMaxLines: own.hintMaxLines ?? decorationTheme.hintMaxLines,
-        );
+    final decoration = _effectiveDecoration(context, _decoration(context, widgetTheme, true, true), enabled);
+    // What TextField makes of its style.
     final inputStyle = Theme.of(context).textTheme.bodyLarge!;
     final style = inputStyle
         .merge(TextStyle(color: enabled ? inputStyle.color : inputStyle.color?.withOpacity(0.38)))
@@ -585,6 +586,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         formatter: _gateLines,
         onChanged: _handleLinesChanged,
         handlesPointer: false,
+        wrap: hasStyle(state.style, SWT.WRAP),
         // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
         // as a selection report, through _updateCaretPosition.
         onWordSelected: (start, end) {
@@ -661,7 +663,7 @@ class TextImpl<T extends TextSwt, V extends VText>
           _controller.selection = _clickSelection(tapped.clamp(0, end), clicks);
           _selectDragFromRest(tapped);
         } else {
-          fromJava(() => _controller.selection = _javaSelection(end));
+          fromJava(() => _controller.javaSelection = _javaSelection(_controller.javaText.length));
         }
         _focusNode.requestFocus();
       });
@@ -887,6 +889,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     final isObscured = isPassword || echoChar != null;
     final singleLine = !isMultiLine || isPassword;
     final shouldExpand = hasValidBounds && !singleLine;
+    final unwrapped = shouldExpand && !hasStyle(state.style, SWT.WRAP);
 
     final cursorColor = getForegroundColor(
       foreground: state.foreground,
@@ -896,6 +899,8 @@ class TextImpl<T extends TextSwt, V extends VText>
     );
 
     final textField = TextField(
+      // Kept across [_unwrapped] coming and going with the bounds, so the field keeps its input connection.
+      key: _textField,
       // SWT text has no autofill; on the web an autofill field leaves its form in the page.
       autofillHints: null,
       controller: _controller,
@@ -915,7 +920,8 @@ class TextImpl<T extends TextSwt, V extends VText>
           singleLine ? TextAlignVertical.center : TextAlignVertical.top,
       textAlign: textAlign,
       style: textStyle,
-      decoration: decoration,
+      // [_unwrapped] decorates the field: no decorator of its own, nor its hover and focus animations.
+      decoration: unwrapped ? null : decoration,
       keyboardType: isMultiLine ? TextInputType.multiline : TextInputType.text,
       // Return with Flutter's default `done` restarts the input connection, and on the web the
       // restarted one has no input element until the field lays out again: typing after it is lost.
@@ -924,7 +930,9 @@ class TextImpl<T extends TextSwt, V extends VText>
       // SWT rejects the keystroke at the limit; Flutter's default on web lets over-limit
       // text stand until composition ends, which briefly renders it.
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
-      inputFormatters: [TextInputFormatter.withFunction(_gateEdit)],
+      inputFormatters: [
+        TextInputFormatter.withFunction(_gateTextField),
+      ],
       onChanged: _handleTextChanged,
       // Flutter's default here also unfocuses the field. An SWT Text keeps the focus on Return:
       // Java goes on routing keys to it, so the next keystroke typed has to land in it too.
@@ -942,12 +950,68 @@ class TextImpl<T extends TextSwt, V extends VText>
       clicks: _clicks,
       // The MouseDoubleClick itself is the press's (ControlImpl); the word it selects reaches Java
       // as a selection report, through _updateCaretPosition.
-      onWordSelected: _wordSelected,
+      onWordSelected: (start, end) {
+        final word = _controller.javaSelectionOf(TextSelection(baseOffset: start, extentOffset: end));
+        _wordSelected(word.start, word.end);
+      },
       onSecondaryPress: () => keepCaretOnSecondaryPress(
           _controller.selection, (caret) => _controller.selection = caret, _controller.text.length),
-      child: textField,
+      child: unwrapped ? _unwrapped(context, decoration, textStyle, textAlign, enabled, textField) : textField,
     );
   }
+
+  final GlobalKey _textField = GlobalKey();
+
+  /// What TextField makes of [own], less its counter and its length error, which SWT Text has neither of.
+  static InputDecoration _effectiveDecoration(BuildContext context, InputDecoration own, bool enabled,
+      {int? hintMaxLines}) {
+    final theme = InputDecorationTheme.of(context);
+    return own
+        .applyDefaults(theme)
+        .copyWith(enabled: enabled, hintMaxLines: own.hintMaxLines ?? theme.hintMaxLines ?? hintMaxLines);
+  }
+
+  /// A multi-line field without SWT.WRAP: a TextField lays its text out at its own width, so it is
+  /// made as wide as its widest line, inside the decoration, and scrolls sideways to show the caret.
+  Widget _unwrapped(BuildContext context, InputDecoration decoration, TextStyle textStyle, TextAlign textAlign,
+      bool enabled, Widget field) {
+    final effective = _effectiveDecoration(context, decoration, enabled);
+    _unwrappedField.value = field;
+    return ListenableBuilder(
+      listenable: Listenable.merge([_focusNode, _isEmpty]),
+      builder: (context, lines) => InputDecorator(
+        decoration: effective,
+        baseStyle: textStyle,
+        textAlign: textAlign,
+        textAlignVertical: TextAlignVertical.top,
+        isFocused: _focusNode.hasFocus,
+        isHovering: hovered,
+        isEmpty: _isEmpty.value,
+        expands: true,
+        child: lines,
+      ),
+      child: _sideScroll,
+    );
+  }
+
+  /// The field [_sideScroll] shows, set on every build: a new field rebuilds itself alone.
+  final ValueNotifier<Widget> _unwrappedField = ValueNotifier(const SizedBox.shrink());
+
+  /// [_unwrappedField] as wide as its widest line, scrolling sideways; built once.
+  late final Widget _sideScroll = RepaintBoundary(
+    // The decoration's focus and hover animations repaint the decoration alone, not the lines.
+    child: LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: IntrinsicWidth(
+            child: ValueListenableBuilder<Widget>(valueListenable: _unwrappedField, builder: (_, field, _) => field),
+          ),
+        ),
+      ),
+    ),
+  );
 
   /// The field at rest: the decoration a TextField puts around its text, around the text drawn the
   /// way its EditableText draws it unfocused.
@@ -958,13 +1022,9 @@ class TextImpl<T extends TextSwt, V extends VText>
     TextAlign textAlign,
   ) {
     final textStyle = getTextFieldTextStyle(context, state, widgetTheme);
-    final decorationTheme = InputDecorationTheme.of(context);
-    final own = _decoration(context, widgetTheme, false, true);
-    // What TextField makes of its decoration and of its style.
-    final decoration = own.applyDefaults(decorationTheme).copyWith(
-          enabled: enabled,
-          hintMaxLines: own.hintMaxLines ?? decorationTheme.hintMaxLines ?? 1,
-        );
+    final decoration =
+        _effectiveDecoration(context, _decoration(context, widgetTheme, false, true), enabled, hintMaxLines: 1);
+    // What TextField makes of its style.
     final inputStyle = Theme.of(context).textTheme.bodyLarge!;
     final style = inputStyle
         .merge(TextStyle(color: enabled ? inputStyle.color : inputStyle.color?.withOpacity(0.38)))
@@ -1045,11 +1105,12 @@ class TextImpl<T extends TextSwt, V extends VText>
       _handleSubmitted(clean);
       return;
     }
-    state.text = value;
-    recordSentText(value);
+    final java = _controller.javaValue;
+    state.text = java.text;
+    recordSentText(java.text);
     var e = VEvent()
-      ..text = value
-      ..start = _controller.selection.baseOffset;
+      ..text = java.text
+      ..start = java.selection.baseOffset;
     widget.sendModifyModify(state, e);
     KeyEditOrder.instance.editApplied();
   }
@@ -1124,7 +1185,7 @@ class TextImpl<T extends TextSwt, V extends VText>
   void sendCaretReport(VEvent event) => widget.sendVerifyVerify(state, event);
 
   /// The caret is the selection's moving end, in whichever controller holds the text.
-  void _updateCaretPosition() => reportSelection(_usesLines ? _lineController.selection : _controller.selection);
+  void _updateCaretPosition() => reportSelection(_usesLines ? _lineController.selection : _controller.javaSelection);
 
   @override
   void dispose() {
@@ -1134,6 +1195,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     _controller.dispose();
     _lines?.dispose();
     _isEmpty.dispose();
+    _unwrappedField.dispose();
     _focusNode.removeListener(_handleFocusChange);
     FocusManager.instance.removeListener(_followFocusAfterMenu);
     KeyEditOrder.instance.unregisterEditor(_focusNode);
@@ -1141,6 +1203,54 @@ class TextImpl<T extends TextSwt, V extends VText>
     _restFocus.removeListener(_handleRestFocus);
     _restFocus.dispose();
     super.dispose();
+  }
+}
+
+/// The TextField's controller. Its value is the text in the form an input method is given it
+/// ([asInputValue]), as the TextField sends it to the platform; [javaValue] is the text Java holds,
+/// with the line breaks Java gave it.
+class _TextFieldController extends TextEditingController {
+  _TextFieldController({String? text, required bool Function() multiLine})
+      : _multiLine = multiLine,
+        _java = text ?? '',
+        super(text: multiLine() ? asInputValue(TextEditingValue(text: text ?? '')).text : text);
+
+  final bool Function() _multiLine;
+
+  /// [text] with the line breaks Java gave it.
+  String _java;
+
+  String get javaText => _java;
+
+  TextEditingValue get javaValue => _multiLine() ? keepLineBreaks(_java, value) : value;
+
+  set javaValue(TextEditingValue java) {
+    _java = java.text;
+    super.value = _multiLine() ? asInputValue(java) : java;
+  }
+
+  TextSelection get javaSelection => javaValue.selection;
+
+  set javaSelection(TextSelection selection) => javaValue = javaValue.copyWith(selection: selection);
+
+  /// [selection], an offset pair into [text], as offsets into [javaText].
+  TextSelection javaSelectionOf(TextSelection selection) => _multiLine()
+      ? keepLineBreaks(_java, value.copyWith(selection: selection)).selection
+      : selection;
+
+  @override
+  set value(TextEditingValue newValue) {
+    if (!_multiLine()) {
+      _java = newValue.text;
+    } else if (newValue.text.contains('\r')) {
+      // Only Java's form has a "\r".
+      javaValue = newValue;
+      return;
+    } else if (newValue.text != text) {
+      // An edit of the input form: the line breaks it left alone keep the form Java gave them.
+      _java = keepLineBreaks(_java, newValue).text;
+    }
+    super.value = newValue;
   }
 }
 
@@ -1193,6 +1303,7 @@ class _ProposedEdit {
   /// Takes the undo step, once shown.
   final VoidCallback? record;
 }
+
 
 /// One line of text laid out and painted the way an unfocused, unscrolled single-line EditableText
 /// lays out and paints it.

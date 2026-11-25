@@ -642,6 +642,8 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
         return selection;
     }
 
+    int[] shownStrip;
+
     @Override
     void resized() {
         super.resized();
@@ -688,7 +690,7 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
 
     @Override
     protected String[] _clientEvents() {
-        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection", "Selection/Selection");
+        return FlutterBridge.joinEvents(super._clientEvents(), "Selection/DefaultSelection", "Selection/Selection", "TabFolder/stripLaidOut");
     }
 
     @Override
@@ -711,6 +713,15 @@ public class DartTabFolder extends DartComposite implements ITabFolder {
                         if (isDisposed())
                             return;
                         TabFolderHelper.select(this, e.index, e.stateMask);
+                    });
+                    return;
+                }
+            case "TabFolder/stripLaidOut":
+                {
+                    getDisplay().asyncExec(() -> {
+                        if (isDisposed())
+                            return;
+                        TabFolderHelper.handleStripLaidOut(this, e);
                     });
                     return;
                 }

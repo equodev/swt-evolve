@@ -5,7 +5,7 @@ library;
 import 'dart:js_interop';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:swtflutter/src/impl/utils/raw_pointer_moves.dart';
+import 'package:swtflutter/src/impl/utils/raw_pointer.dart';
 import 'package:web/web.dart' as web;
 
 void main() {
