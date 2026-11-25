@@ -306,19 +306,12 @@ public class DeskDisplayBridge extends DisplayBridge {
         return window != null ? window.context : mainWindowContext();
     }
 
-    /** The live window of {@code start} or of its nearest ancestor shell that has one, else null. */
+    /** The live window {@code start} is drawn in, null for the Display's. */
     private NativeShellWindow nearestWindow(Composite start) {
-        Composite current = start;
-        while (current instanceof Shell && !current.isDisposed()) {
-            if (current.getImpl() instanceof DartShell) {
-                ShellWindow window = shellWindowFor((DartShell) current.getImpl());
-                if (window instanceof NativeShellWindow && window.isAlive()) {
-                    return (NativeShellWindow) window;
-                }
-            }
-            current = current.getParent();
-        }
-        return null;
+        Object root = windowOf(start);
+        if (!(root instanceof Shell) || !(((Shell) root).getImpl() instanceof DartShell)) return null;
+        ShellWindow window = shellWindowFor((DartShell) ((Shell) root).getImpl());
+        return window instanceof NativeShellWindow && window.isAlive() ? (NativeShellWindow) window : null;
     }
 
     /**

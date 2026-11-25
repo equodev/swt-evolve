@@ -425,25 +425,15 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       return scope == null ? const SizedBox.shrink() : const Positioned(left: 0, top: 0, child: SizedBox.shrink());
     }
     if (scope == null) {
-      // No chrome scope above: this shell is the root of its own window, so it is also the only
-      // thing that can host a popup or a shell opened over it. Inside the Display's window the
-      // Display draws those instead, and _popups and _windowShells stay empty there.
-      Widget content = super.build(context);
+      // No chrome scope above: this shell fills the window it is drawn in. In one of its own it
+      // draws the popups, shells and tooltips opened over it; in the Display's window the Display
+      // does, and Java sends this shell none.
+      final content = super.build(context);
       // This shell IS the window, so its bounds are where the window sits on screen: publish that
       // for anything consuming a screen coordinate inside it (a popup's location, a drop target).
       final b0 = state.bounds;
       final windowOrigin =
           b0 == null ? Offset.zero : Offset(b0.x.toDouble(), b0.y.toDouble());
-      if (_popups.isNotEmpty) {
-        content = Stack(children: [
-          Positioned.fill(child: content),
-          for (final popup in _popups)
-            KeyedSubtree(
-              key: ValueKey(popup.id),
-              child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
-            ),
-        ]);
-      }
       final own = FocusScope(
         node: _focusScopeNode,
         onKeyEvent: _handleShellKey,
@@ -455,12 +445,18 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
           child: content,
         ),
       );
-      // Beside the focus scope, not in it: the keyboard in one of them deactivates this shell. The
-      // stack is there with none too, or the first one would rebuild everything in the shell anew.
+      // Beside the focus scope, not in it: the keyboard in a shell drawn here deactivates this one,
+      // and in the popup of such a shell does not activate it. The stack is there with none too, or
+      // the first one would rebuild everything in the shell anew.
       return WindowOriginScope(
         origin: windowOrigin,
         child: Stack(children: [
           Positioned.fill(child: own),
+          for (final popup in _popups)
+            KeyedSubtree(
+              key: ValueKey(popup.id),
+              child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
+            ),
           if (_windowShells.isNotEmpty)
             Positioned.fill(
               child: LayoutBuilder(

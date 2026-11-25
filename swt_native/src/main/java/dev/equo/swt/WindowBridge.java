@@ -56,8 +56,9 @@ public interface WindowBridge {
 
     /**
      * Identifies the window this shell is drawn into: the shell rooting a window of its own that is
-     * {@code shell} or its nearest ancestor, or null for the bridge's own window. Two shells with the
-     * same answer are drawn by the same client.
+     * {@code shell} or its nearest ancestor, or null for the bridge's own window. An ancestor hidden
+     * with its window, or whose window is going away, does not count. Two shells with the same answer
+     * are drawn by the same client.
      */
     default Object windowOf(Object shell) {
         return null;

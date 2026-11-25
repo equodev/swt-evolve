@@ -980,6 +980,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         try {
             // Before the value is built: what it names as windowed has to be the windows that exist.
             java.util.Set<Shell> leftOwnWindow = syncShellWindows();
+            // Before the Display's own record names one of them as its main shell.
+            emptyRecordsOfClosedWindows();
             VDisplay vd = VDisplay.of(display);
             vd.activeShellId = publishedActiveShell = activeShellId();
             vd.mainShellId = publishedMainShell = mainShellId(display);
@@ -1207,11 +1209,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (display == null || point == null)
             return;
         Shell[] shells = display.shellsInDrawOrder();
+        // The drag started in the active shell; a pane of another window is not stacked over it.
+        Object window = windowOf(display.getActiveShell());
         // Drawn in this order, so the last one containing the point is the one in front.
         for (int i = shells.length - 1; i >= 0; i--) {
             Shell shell = shells[i];
             if (shell.isDisposed() || !shell.isVisible() || isMainShell(display, shell)
-                    || shellWindows.containsKey(shell))
+                    || shellWindows.containsKey(shell) || windowOf(shell) != window)
                 continue;
             int style = shell.getStyle();
             boolean titled = (style & SWT.NO_TRIM) == 0 && (style & (SWT.TITLE | SWT.CLOSE)) != 0;
@@ -1294,7 +1298,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return !lostWindows.contains(shell) && WindowPolicy.ownsWindow(shell, false);
     }
 
-    /** The window hosting {@code control}'s shell, or null when it is drawn inside the Display's. */
+    /** The window {@code control}'s shell has of its own, or null when it is drawn inside another. */
     protected ShellWindow shellWindowFor(DartControl control) {
         if (!(control instanceof DartShell)) return null;
         return shellWindows.get((Shell) ((DartShell) control).getApi());
@@ -1472,43 +1476,83 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return drawn.toArray(new Shell[0]);
     }
 
-    /** What each window was last told to draw inside it, then the active shell, so a settled set is not re-sent. */
-    private final java.util.Map<Shell, java.util.List<Long>> sentWindowShells =
-            new java.util.IdentityHashMap<>();
+    /** The shells a window was last told to draw inside it, and the active one it was told of. */
+    private static final class SentShells {
+        final java.util.List<Shell> shells;
+        final long activeShellId;
 
-    /** Hands every window of its own the shells drawn inside it (see {@link VWindowShells}). */
+        SentShells(java.util.List<Shell> shells, long activeShellId) {
+            this.shells = shells;
+            this.activeShellId = activeShellId;
+        }
+    }
+
+    private final java.util.Map<Shell, SentShells> sentWindowShells = new java.util.IdentityHashMap<>();
+
+    /** Hands every window of its own the shells drawn inside it. */
     private void syncWindowShells() {
-        if (shellWindows.isEmpty() && sentWindowShells.isEmpty()) return;
-        sentWindowShells.keySet().removeIf(window -> !shellWindows.containsKey(window));
         for (Shell window : shellWindows.keySet()) {
             if (!window.isDisposed()) syncWindowShells(window);
         }
     }
 
     private void syncWindowShells(Shell window) {
-        VWindowShells payload = new VWindowShells();
-        payload.windowShellId = window.hashCode();
-        payload.shells = shellsDrawnIn(window);
-        java.util.List<Long> before = sentWindowShells.get(window);
-        if (payload.shells.length == 0 && before == null) return;
-        payload.activeShellId = payload.shells.length == 0 ? 0 : publishedActiveShell;
-        java.util.List<Long> state = new java.util.ArrayList<>();
-        for (Shell shell : payload.shells) state.add((long) shell.hashCode());
-        state.add(payload.activeShellId);
-        if (state.equals(before)) return;
-        sentWindowShells.put(window, state);
-        // Described, not named: what was delivered of these went to the client drawing the Display.
-        for (Shell shell : payload.shells) {
-            boolean held = before != null && before.subList(0, before.size() - 1).contains((long) shell.hashCode());
-            if (!held && shell.getImpl() instanceof DartShell) {
-                dev.equo.swt.Serializer.forgetDelivery(((DartShell) shell.getImpl()).getValue());
-            }
-        }
+        java.util.List<Shell> shells = java.util.Arrays.asList(shellsDrawnIn(window));
+        SentShells before = sentWindowShells.get(window);
+        if (shells.isEmpty() && before == null) return;
+        long active = shells.isEmpty() ? 0 : publishedActiveShell;
+        if (before != null && before.activeShellId == active && before.shells.equals(shells)) return;
+        sentWindowShells.put(window, new SentShells(shells, active));
+        java.util.List<Widget> added = new java.util.ArrayList<>(shells);
+        if (before != null) added.removeAll(before.shells);
+        sendWindowShells(window, shells.toArray(new Shell[0]), active, added);
+    }
+
+    /**
+     * Tells the client of {@code window} the shells it draws inside it, bottom first: that client never
+     * listens to the Display, whose record has the Display's own client leave them out.
+     */
+    private void sendWindowShells(Shell window, Shell[] shells, long activeShellId, java.util.List<Widget> undelivered) {
+        sendWindowRecord("WindowShells", window, new int[] { VDisplay.SHELLS, VDisplay.ACTIVE_SHELL_ID }, (w, key) -> {
+            if (key == VDisplay.SHELLS) w.refs(shells);
+            else w.write(activeShellId);
+            return true;
+        }, undelivered);
+    }
+
+    /**
+     * Sends the window rooted at {@code window} a record of what it draws. {@code undelivered} is
+     * described in full, not referenced: what the Display's client was already sent counts as
+     * delivered, and this one, which has never seen it, cannot resolve a reference to it.
+     */
+    private void sendWindowRecord(String type, Shell window, int[] keys, dev.equo.swt.Serializer.KeyedWriter properties,
+            java.util.List<? extends Widget> undelivered) {
         try {
-            FlutterBridge.writeTape(comm(), tape -> tape.describeHolder(
-                    "WindowShells", payload.windowShellId, VWindowShells.wireKeys(), payload::writeWire));
+            for (Widget widget : undelivered) {
+                if (widget.getImpl() instanceof DartWidget) {
+                    dev.equo.swt.Serializer.forgetDelivery(((DartWidget) widget.getImpl()).getValue());
+                }
+            }
+            FlutterBridge.writeTape(comm(), tape -> tape.describeHolder(type, window.hashCode(), keys, properties));
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Frames are broadcast, so the Display's client holds the last record of each window too, and would
+     * draw what it lists once that window's shell is drawn there.
+     */
+    private void emptyRecordsOfClosedWindows() {
+        for (Shell window : new java.util.ArrayList<>(sentWindowShells.keySet())) {
+            if (shellWindows.containsKey(window)) continue;
+            boolean listed = !sentWindowShells.remove(window).shells.isEmpty();
+            if (listed && !window.isDisposed()) sendWindowShells(window, new Shell[0], 0, java.util.Collections.emptyList());
+        }
+        for (Shell window : new java.util.ArrayList<>(sentShellPopups.keySet())) {
+            if (shellWindows.containsKey(window)) continue;
+            boolean listed = !sentShellPopups.remove(window).isEmpty();
+            if (listed && !window.isDisposed()) sendShellPopups(window, new Menu[0], new ToolTip[0]);
         }
     }
 
@@ -1522,7 +1566,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /** What each windowed shell was last told its popups and tooltips were, so a settled set is not re-sent. */
-    private final java.util.Map<Shell, java.util.List<Long>> sentShellPopups =
+    private final java.util.Map<Shell, java.util.List<Widget>> sentShellPopups =
             new java.util.IdentityHashMap<>();
 
     /**
@@ -1533,43 +1577,32 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * widget tree, so nothing carries them into the shell's own frame. A tooltip does too.
      */
     private void syncShellPopups() {
-        if (shellWindows.isEmpty() && sentShellPopups.isEmpty()) return;
-        sentShellPopups.keySet().removeIf(shell -> !shellWindows.containsKey(shell));
         for (Shell shell : shellWindows.keySet()) {
             if (shell.isDisposed()) continue;
             Menu[] popups = popupsFor(shell);
             ToolTip[] tooltips = tooltipsFor(shell);
-            java.util.List<Long> ids = new java.util.ArrayList<>(popups.length + tooltips.length);
-            for (Menu menu : popups) ids.add((long) menu.hashCode());
-            for (ToolTip tip : tooltips) ids.add((long) tip.hashCode());
+            java.util.List<Widget> shown = listOf(popups, tooltips);
             // Sent on every Display push otherwise, which is every frame — and a popup that is
             // still up is still in the list.
-            if (ids.equals(sentShellPopups.get(shell))) continue;
-            sentShellPopups.put(shell, ids);
-            VShellPopups payload = new VShellPopups();
-            payload.shellId = shell.hashCode();
-            payload.popups = popups;
-            payload.tooltips = tooltips;
-            try {
-                // Described in full, not referenced: a popup the Display's client was already sent
-                // counts as delivered, and this client — which has never seen it — cannot resolve a
-                // reference to something it was never given.
-                for (Menu menu : popups) {
-                    if (menu.getImpl() instanceof DartMenu) {
-                        dev.equo.swt.Serializer.forgetDelivery(((DartMenu) menu.getImpl()).getValue());
-                    }
-                }
-                for (ToolTip tip : tooltips) {
-                    if (tip.getImpl() instanceof DartToolTip) {
-                        dev.equo.swt.Serializer.forgetDelivery(((DartToolTip) tip.getImpl()).getValue());
-                    }
-                }
-                FlutterBridge.writeTape(comm(), tape ->
-                        tape.describeHolder("ShellPopups", payload.shellId, VShellPopups.WIRE_KEYS, payload::writeWire));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            if (shown.equals(sentShellPopups.get(shell))) continue;
+            sentShellPopups.put(shell, shown);
+            sendShellPopups(shell, popups, tooltips);
         }
+    }
+
+    private void sendShellPopups(Shell window, Menu[] popups, ToolTip[] tooltips) {
+        VShellPopups payload = new VShellPopups();
+        payload.shellId = window.hashCode();
+        payload.popups = popups;
+        payload.tooltips = tooltips;
+        sendWindowRecord("ShellPopups", window, VShellPopups.WIRE_KEYS, payload::writeWire, listOf(popups, tooltips));
+    }
+
+    private static java.util.List<Widget> listOf(Menu[] popups, ToolTip[] tooltips) {
+        java.util.List<Widget> shown = new java.util.ArrayList<>(popups.length + tooltips.length);
+        java.util.Collections.addAll(shown, popups);
+        java.util.Collections.addAll(shown, tooltips);
+        return shown;
     }
 
     /**

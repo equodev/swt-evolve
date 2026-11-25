@@ -47,7 +47,8 @@ public class VDisplay {
 
     /**
      * The shells drawn in another window rather than inside this one, or null when there are none:
-     * those with a window of their own, and those drawn inside one of them ({@link VWindowShells}).
+     * those with a window of their own, and those drawn inside one of them, which that window's
+     * client is told of in its {@code WindowShells} record.
      * The client must leave each out of its own stack: a second Flutter client is drawing it, and
      * rendering it here as well would put it on screen twice.
      */

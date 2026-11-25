@@ -23,8 +23,9 @@ import org.eclipse.swt.widgets.Shell;
  * </pre>
  * {@code dialogs}/{@code modal} default to {@code inline} under {@code top-level} and to
  * {@code own} under {@code all}, so each mode has a coherent default and either can still be
- * overridden on its own. A modal shell drawn inline keeps the overlay that dims what it blocks,
- * which a separate OS window cannot reproduce — hence the default.
+ * overridden on its own. A modal shell drawn inline keeps the overlay that dims the window it is
+ * drawn in, which a separate OS window cannot reproduce — hence the default. An application modal
+ * blocks the other windows too, undimmed.
  *
  * <p>A single shell overrides all of it through {@link #SHELL_DATA_KEY}:
  * <pre>shell.setData("dev.equo.swt.window", Boolean.TRUE);</pre>

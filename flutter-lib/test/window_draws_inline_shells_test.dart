@@ -6,18 +6,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/comm/comm_frame.dart';
+import 'package:swtflutter/src/comm/comm_ws.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/button.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/display.dart';
+import 'package:swtflutter/src/gen/menu.dart';
+import 'package:swtflutter/src/gen/menuitem.dart';
 import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/tooltip.dart';
 import 'package:swtflutter/src/gen/widgets.dart' as gen;
+import 'package:swtflutter/src/impl/display_evolve.dart';
 import 'package:swtflutter/src/impl/shell_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'package:swtflutter/src/theme/theme_extensions/display_theme_extension.dart';
+
+import 'support/menu_shown_ack.dart';
 
 const _viewport = Size(900, 600);
 
@@ -201,6 +209,67 @@ void main() {
     await showTooltips(tester, _window(5181), [tip(5290, 360, 250)]);
 
     expect(find.text('Saved'), findsNothing);
+  });
+
+  testWidgets('a tooltip over a dialog of the Display is not covered by it', (tester) async {
+    tester.view.physicalSize = _viewport;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: DisplaySwt(
+          value: VDisplay()
+            ..id = 5300
+            ..shells = [_window(5310), _dialog(5320)]
+            ..mainShellId = 5310
+            ..tooltips = [tip(5330, 450, 400)]),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('a popup opened over a dialog of this window leaves the window inactive', (tester) async {
+    EquoCommBase.recordSentFrames = true;
+    addTearDown(() {
+      EquoCommBase.recordSentFrames = false;
+      EquoCommService.commForTesting.clearSentFrames();
+    });
+    final window = _window(5190);
+    await pumpWindow(tester, window);
+    await drawInside(tester, window, [_dialog(5290)], active: 5290);
+    final dialogScope = FocusScope.of(tester.element(find.text('Save changes?')));
+    dialogScope.requestFocus();
+    await tester.pumpAndSettle();
+    EquoCommService.commForTesting.clearSentFrames();
+
+    VRegistry.instance.deliverHolderForTesting(
+        'ShellPopups',
+        window.id!,
+        VShellPopups()
+          ..popups = [
+            VMenu()
+              ..id = 5295
+              ..style = SWT.POP_UP
+              ..enabled = true
+              ..visible = true
+              ..location = (VPoint()
+                ..x = 450
+                ..y = 400)
+              ..items = [
+                VMenuItem()
+                  ..id = 5296
+                  ..style = SWT.PUSH
+                  ..enabled = true
+                  ..text = 'Copy'
+              ]
+          ]);
+    await tester.pumpAndSettle();
+    await ackMenuShown(tester, 5295);
+
+    expect(find.text('Copy'), findsOneWidget);
+    final channels = EquoCommService.commForTesting.sentFrames.map((f) => EquoCommBase.decodeFrame(f).$1);
+    expect(channels.where((c) => c.endsWith('ctivate')), isEmpty);
   });
 
   testWidgets('a record for another window draws nothing here', (tester) async {

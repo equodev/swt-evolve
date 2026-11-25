@@ -232,8 +232,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a modal drawn inline over a windowed shell is drawn in that shell's window")
     void inlineModalIsDrawnInItsParentsWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -249,8 +248,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a modal drawn inline over the main shell is drawn in the Display's window")
     void inlineModalOfTheMainShellStaysInItsWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         Shell main = openShell();
         Shell second = openShell();
@@ -263,8 +261,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a dialog opened from an inline dialog follows it into its window")
     void nestedInlineDialogsShareTheWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -279,8 +276,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a closed inline dialog is let go of by the window that drew it")
     void closedInlineDialogLeavesItsWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -295,38 +291,35 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("an inline dialog comes back to the Display's window when its parent takes it over")
     void inlineDialogFollowsItsParentBackToTheDisplayWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         Shell welcome = openShell();
         Shell workbench = openShell();
         Shell prompt = openModal(workbench);
+        showToolTip(workbench);
         assertThat(drawnByTheDisplay(bridge, prompt)).isFalse();
 
         welcome.setVisible(false);
 
         assertThat(bridge.windowedShells()).isEmpty();
         assertThat(drawnByTheDisplay(bridge, prompt)).isTrue();
+        assertThat(shellsDrawnBy(bridge, workbench))
+                .as("the Display's client was sent that record too, and would draw the prompt twice")
+                .isEmpty();
+        assertThat(tooltipsDrawnBy(bridge, workbench)).isEmpty();
     }
 
     @Test
     @DisplayName("a window's first handshake gets the dialogs already open over its shell")
     void windowConnectingLateIsSentItsInlineDialogs() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
         Shell prompt = openModal(second);
         bridge.comm.sent.clear();
 
-        ClientReadyPayload p = new ClientReadyPayload();
-        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
-        p.width = 400;
-        p.height = 300;
-        p.isFirst = true;
-        bridge.comm.fireContaining("Shell/" + second.hashCode() + "/ClientReady", p);
-        drainEventLoop();
+        firstHandshake(bridge, second);
 
         assertThat(shellsDrawnBy(bridge, second)).containsExactly((long) prompt.hashCode());
         assertThat(bridge.comm.sent)
@@ -338,8 +331,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a dialog over a hidden window is drawn in the Display's")
     void inlineDialogOverAHiddenWindowIsDrawnByTheDisplay() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -356,8 +348,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a dialog opened as its window's client goes away is drawn in the Display's")
     void inlineDialogOverALeavingWindowIsDrawnByTheDisplay() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -372,8 +363,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a popup opened over an inline dialog is drawn in the dialog's window")
     void popupOverAnInlineDialogIsDrawnInItsWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -434,8 +424,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a tooltip of an inline dialog is drawn in the window that draws the dialog")
     void tooltipOfAnInlineDialogIsDrawnInItsWindow() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         openShell();
         Shell second = openShell();
@@ -456,13 +445,7 @@ class MultiWindowNativeTest {
         ToolTip tip = showToolTip(second);
         bridge.comm.sent.clear();
 
-        ClientReadyPayload p = new ClientReadyPayload();
-        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
-        p.width = 400;
-        p.height = 300;
-        p.isFirst = true;
-        bridge.comm.fireContaining("Shell/" + second.hashCode() + "/ClientReady", p);
-        drainEventLoop();
+        firstHandshake(bridge, second);
 
         assertThat(tooltipsDrawnBy(bridge, second)).containsExactly((long) tip.hashCode());
         assertThat(bridge.comm.sent)
@@ -723,13 +706,7 @@ class MultiWindowNativeTest {
         String channel = "Shell/" + detached.hashCode();
         bridge.comm.sent.clear();
 
-        ClientReadyPayload p = new ClientReadyPayload();
-        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
-        p.width = 400;
-        p.height = 300;
-        p.isFirst = true;
-        bridge.comm.fireContaining(channel + "/ClientReady", p);
-        drainEventLoop();
+        firstHandshake(bridge, detached);
 
         // This client is rooted at the shell and never listens on Display/{id}, the one frame a
         // shell is normally delivered inside. Without a description of its own it would render an
@@ -746,8 +723,7 @@ class MultiWindowNativeTest {
     @Test
     @DisplayName("a popup window that connects after Java focused its field is told to focus it")
     void popupWindowIsSentTheFocusItsFieldWasGiven() {
-        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
-        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        allWindowsWithInlineModals();
         TestBridge bridge = install();
         Shell main = openShell();
         ClientReadyPayload mainReady = new ClientReadyPayload();
@@ -797,13 +773,7 @@ class MultiWindowNativeTest {
         Shell detached = openShell();
         bridge.comm.sent.clear();
 
-        ClientReadyPayload p = new ClientReadyPayload();
-        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
-        p.width = 400;
-        p.height = 300;
-        p.isFirst = true;
-        bridge.comm.fireContaining("Shell/" + detached.hashCode() + "/ClientReady", p);
-        drainEventLoop();
+        firstHandshake(bridge, detached);
 
         // Its own client, sent nothing so far. Without the configuration it renders the shell
         // against defaults: the application's theme is lost, and the window chrome it is supposed
@@ -878,6 +848,22 @@ class MultiWindowNativeTest {
     /** Run the queued UI work (a shell close posted from the registry) to completion. */
     private void drainEventLoop() {
         RecordingDisplayBridge.drainEventLoop(display);
+    }
+
+    private static void allWindowsWithInlineModals() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+    }
+
+    /** The client of {@code window}'s own window connecting. */
+    private void firstHandshake(TestBridge bridge, Shell window) {
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
+        p.width = 400;
+        p.height = 300;
+        p.isFirst = true;
+        bridge.comm.fireContaining("Shell/" + window.hashCode() + "/ClientReady", p);
+        drainEventLoop();
     }
 
     /** A visible top-level shell, which is what makes the policy and the registry consider it. */

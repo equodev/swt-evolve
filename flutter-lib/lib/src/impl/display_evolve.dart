@@ -551,12 +551,13 @@ class _DisplaySwtState extends State<DisplaySwt> {
             key: ValueKey(popup.id),
             child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
           ),
+        ...floatingShells(context, dialogShells, constraints, _display.activeShellId),
+        // Above the shells: one of them can be the tooltip's own.
         for (final tooltip in (_display.tooltips ?? []))
           KeyedSubtree(
             key: ValueKey('tooltip_${tooltip.id}'),
             child: Positioned.fill(child: gen.mapWidgetFromValue(tooltip)),
           ),
-        ...floatingShells(context, dialogShells, constraints, _display.activeShellId),
       ]),
       );
     }));
