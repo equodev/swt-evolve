@@ -64,6 +64,35 @@ class SystemAppearanceClientWaitTest {
     }
 
     @Test
+    void onceTheClientReportedAskingAgainDoesNotWait() {
+        SystemAppearance appearance = SystemAppearance.readAhead(10_000);
+        appearance.report("dark");
+
+        long start = System.nanoTime();
+        appearance.awaitClient();
+
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(1_000);
+        assertThat(Config.darkTheme(appearance)).isTrue();
+    }
+
+    @Test
+    void anInterruptedWaitEndsAndKeepsTheInterrupt() {
+        SystemAppearance appearance = SystemAppearance.readAhead(10_000);
+
+        Thread.currentThread().interrupt();
+        long start = System.nanoTime();
+        try {
+            appearance.awaitClient();
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(1_000);
+        assertThat(Config.darkTheme(appearance)).isFalse();
+    }
+
+    @Test
     void aReportNamingNoVariantEndsTheWait() {
         SystemAppearance appearance = SystemAppearance.readAhead(10_000);
         appearance.report("");
