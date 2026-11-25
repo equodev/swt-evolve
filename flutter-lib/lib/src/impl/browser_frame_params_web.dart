@@ -230,6 +230,67 @@ bool installBrowserFrameKeyHandling(
   }
 }
 
+/// Holds back a link the user follows inside the iframe and hands its absolute URL to
+/// [onNavigate], which calls `proceed` to let the frame load it: such a navigation never reaches
+/// the webview's navigation delegate, so `LocationListener.changing` could not veto it otherwise.
+/// Form submissions are not intercepted. Same-origin content only; returns whether the listener is
+/// in place. A navigation replaces the document, so the caller re-installs per load.
+bool installBrowserFrameNavigationHandling(
+    PlatformWebViewControllerCreationParams? params,
+    void Function(String url, void Function() proceed) onNavigate) {
+  if (params is! WebWebViewControllerCreationParams) return false;
+  try {
+    // ignore: invalid_use_of_visible_for_testing_member
+    final iFrame = params.iFrame;
+    final doc = iFrame.contentDocument;
+    if (doc == null) return false;
+    const marker = '__equoNavigationHandling';
+    if (doc.getProperty(marker.toJS).isDefinedAndNotNull) return true;
+    doc.setProperty(marker.toJS, true.toJS);
+    // Bubble phase, so a page handler that cancels the click keeps the link from being followed.
+    doc.addEventListener(
+        'click',
+        ((web.MouseEvent e) {
+          if (e.defaultPrevented) return;
+          final url = _followedLinkUrl(e, doc);
+          if (url == null) return;
+          e.preventDefault();
+          onNavigate(url, () {
+            if (iFrame.contentDocument != doc) return;
+            doc.defaultView?.location.assign(url);
+          });
+        }).toJS);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// The absolute URL the click [e] makes [doc] navigate to in place, or null when it opens
+/// elsewhere, downloads, runs script or only scrolls within the document.
+String? _followedLinkUrl(web.MouseEvent e, web.Document doc) {
+  if (e.button != 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return null;
+  // The target lives in the iframe's realm, so it is probed by property rather than by type.
+  final target = e.target as JSObject?;
+  if (target == null || !target.has('closest')) return null;
+  final link = (target as web.Element).closest('a[href], area[href]');
+  if (link == null || link.hasAttribute('download')) return null;
+  final frameTarget = link.getAttribute('target') ?? '';
+  if (frameTarget.isNotEmpty && frameTarget.toLowerCase() != '_self') return null;
+  final href = link.getAttribute('href')!;
+  if (href.startsWith('#')) return null;
+  final url = web.URL(href, doc.baseURI);
+  if (url.protocol == 'javascript:') return null;
+  final current = web.URL(doc.URL);
+  if (url.hash.isNotEmpty &&
+      url.origin == current.origin &&
+      url.pathname == current.pathname &&
+      url.search == current.search) {
+    return null;
+  }
+  return url.href;
+}
+
 /// The web iframe is released with its element.
 Future<void> browserReleaseWebView(WebViewController controller) async {}
 

@@ -167,6 +167,7 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
       for (final name in _functionNames) {
         _injectBrowserFunction(name);
       }
+      installBrowserFrameNavigationHandling(_params, _followFrameLink);
     });
 
     // Desktop only (web uses the sync-XHR shim). Must be added before the first
@@ -463,6 +464,15 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
     return reportedUrl == 'about:blank' &&
         (_loadedText == null || _inlineDocuments.current != null || _inlineDocuments.pending) &&
         _loadedUrl != 'about:blank';
+  }
+
+  /// Lets the frame follow a link the user clicked in it unless LocationListener.changing vetoes
+  /// it or another navigation started while Java was being asked.
+  Future<void> _followFrameLink(String url, void Function() proceed) async {
+    final navigation = ++_navigations;
+    if (!await _locationChanging(url)) return;
+    if (!mounted || navigation != _navigations) return;
+    proceed();
   }
 
   /// Sends a key typed inside the iframe on this Browser's own channel, where `DartControl`

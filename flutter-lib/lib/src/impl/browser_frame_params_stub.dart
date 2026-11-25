@@ -87,6 +87,12 @@ bool installBrowserFrameKeyHandling(
             onKey) =>
     false;
 
+/// Native webviews report in-frame link navigations to their navigation delegate.
+bool installBrowserFrameNavigationHandling(
+        PlatformWebViewControllerCreationParams? params,
+        void Function(String url, void Function() proceed) onNavigate) =>
+    false;
+
 /// Releases the native webview behind [controller]; removing the WebView widget does not. Windows
 /// disposes its WebView2. On macOS the webview lives until the controller is collected and keeps
 /// loading meanwhile, and a response arriving after its engine is gone aborts the process, so the

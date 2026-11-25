@@ -12,6 +12,7 @@ import java.nio.file.StandardCopyOption;
 import dev.equo.swt.Config;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
+import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.CTabFolder;
@@ -730,7 +731,8 @@ public class GallerySnippet {
         browserData.heightHint = 60;
         browser.setLayoutData(browserData);
         String browserHtml = "<html><head><title>Gallery Browser</title></head>"
-                + "<body><h1>Hello from Browser</h1></body></html>";
+                + "<body><h1>Hello from Browser <a href='http://gallery.invalid/next'>Next page</a></h1>"
+                + "</body></html>";
         browser.setText(browserHtml);
         // Only report scenario-driven titles: the initial load and the reset's restore both
         // carry the original title, and their async echo would otherwise overwrite whatever
@@ -748,6 +750,14 @@ public class GallerySnippet {
             }
         });
         boolean[] browserReloaded = {false};
+        // The link names a page this listener shows itself, the way an intro page's links do.
+        browser.addLocationListener(LocationListener.changingAdapter(e -> {
+            if (e.location == null || !e.location.startsWith("http://gallery.invalid/")) return;
+            e.doit = false;
+            browserReloaded[0] = true;
+            browser.setText("<html><head><title>Gallery Browser Link</title></head>"
+                    + "<body><h1>Link handled</h1></body></html>");
+        }));
 
         // Dialog — a secondary (child) Shell with its own Text input, opened modally on
         // demand. Unlike MessageBox (a one-off Flutter showDialog()), this exercises a real
