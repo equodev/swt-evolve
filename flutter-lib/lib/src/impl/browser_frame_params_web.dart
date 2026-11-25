@@ -275,7 +275,10 @@ String? _inFrameLinkUrl(web.MouseEvent e, web.Document doc) {
   if (target == null || !target.has('closest')) return null;
   final link = (target as web.Element).closest('a[href], area[href]');
   if (link == null || link.hasAttribute('download')) return null;
-  final frameTarget = link.getAttribute('target') ?? '';
+  // A link without its own target opens where the document's <base target> says.
+  final frameTarget = link.getAttribute('target') ??
+      doc.querySelector('base[target]')?.getAttribute('target') ??
+      '';
   if (frameTarget.isNotEmpty && frameTarget.toLowerCase() != '_self') return null;
   final href = link.getAttribute('href')!;
   if (href.startsWith('#')) return null;
