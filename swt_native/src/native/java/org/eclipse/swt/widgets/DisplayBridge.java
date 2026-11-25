@@ -1512,16 +1512,25 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         }
     }
 
-    /** What each windowed shell was last told its popups were, so a settled set is not re-sent. */
+    /** The tooltips a windowed shell has to draw itself, in Display order, or an empty array. */
+    private ToolTip[] tooltipsFor(Shell shell) {
+        java.util.ArrayList<ToolTip> mine = new java.util.ArrayList<>();
+        for (ToolTip tip : forDisplay._activeTooltips()) {
+            if (windowOf(tip.getParent()) == shell) mine.add(tip);
+        }
+        return mine.toArray(new ToolTip[0]);
+    }
+
+    /** What each windowed shell was last told its popups and tooltips were, so a settled set is not re-sent. */
     private final java.util.Map<Shell, java.util.List<Long>> sentShellPopups =
             new java.util.IdentityHashMap<>();
 
     /**
-     * Hands every windowed shell the popups opened over it, on its own channel.
+     * Hands every windowed shell the popups and tooltips opened over it, on its own channel.
      *
      * <p>A popup is drawn by the client that owns the window it was opened over, and the shell's
      * client cannot learn of one any other way: popups hang off the Display, not off the shell's
-     * widget tree, so nothing carries them into the shell's own frame.
+     * widget tree, so nothing carries them into the shell's own frame. A tooltip does too.
      */
     private void syncShellPopups() {
         if (shellWindows.isEmpty() && sentShellPopups.isEmpty()) return;
@@ -1529,8 +1538,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         for (Shell shell : shellWindows.keySet()) {
             if (shell.isDisposed()) continue;
             Menu[] popups = popupsFor(shell);
-            java.util.List<Long> ids = new java.util.ArrayList<>(popups.length);
+            ToolTip[] tooltips = tooltipsFor(shell);
+            java.util.List<Long> ids = new java.util.ArrayList<>(popups.length + tooltips.length);
             for (Menu menu : popups) ids.add((long) menu.hashCode());
+            for (ToolTip tip : tooltips) ids.add((long) tip.hashCode());
             // Sent on every Display push otherwise, which is every frame — and a popup that is
             // still up is still in the list.
             if (ids.equals(sentShellPopups.get(shell))) continue;
@@ -1538,6 +1549,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             VShellPopups payload = new VShellPopups();
             payload.shellId = shell.hashCode();
             payload.popups = popups;
+            payload.tooltips = tooltips;
             try {
                 // Described in full, not referenced: a popup the Display's client was already sent
                 // counts as delivered, and this client — which has never seen it — cannot resolve a
@@ -1545,6 +1557,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 for (Menu menu : popups) {
                     if (menu.getImpl() instanceof DartMenu) {
                         dev.equo.swt.Serializer.forgetDelivery(((DartMenu) menu.getImpl()).getValue());
+                    }
+                }
+                for (ToolTip tip : tooltips) {
+                    if (tip.getImpl() instanceof DartToolTip) {
+                        dev.equo.swt.Serializer.forgetDelivery(((DartToolTip) tip.getImpl()).getValue());
                     }
                 }
                 FlutterBridge.writeTape(comm(), tape ->
@@ -1612,6 +1629,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // What was sent before this window connected only reached the clients already there.
                 if (p.isFirst && sentWindowShells.remove(shell) != null)
                     syncWindowShells(shell);
+                if (p.isFirst && sentShellPopups.remove(shell) != null)
+                    syncShellPopups();
                 if (p.isFirst && focused != null && focused == focusRequested && windowOf(shellOf(focused)) == shell)
                     sendFocusRequest(focused);
                 if (p.width <= 0 || p.height <= 0) return;

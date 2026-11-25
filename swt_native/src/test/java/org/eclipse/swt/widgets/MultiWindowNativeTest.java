@@ -391,6 +391,86 @@ class MultiWindowNativeTest {
                 .doesNotContain((long) menu.hashCode());
     }
 
+    // ---- tooltips -----------------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("a tooltip of a windowed shell is drawn in that shell's window until it is disposed")
+    void tooltipIsDrawnInItsShellsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+
+        ToolTip tip = showToolTip(second);
+
+        assertThat(listed(latestDisplayState(bridge), "tooltips"))
+                .as("drawn by the Display's client it shows over the wrong window")
+                .doesNotContain((long) tip.hashCode());
+        assertThat(tooltipsDrawnBy(bridge, second)).containsExactly((long) tip.hashCode());
+
+        tip.setVisible(false);
+        assertThat(tooltipsDrawnBy(bridge, second))
+                .as("hidden, it is still the window's: its client fades it out, and shows it again")
+                .containsExactly((long) tip.hashCode());
+
+        tip.dispose();
+        assertThat(tooltipsDrawnBy(bridge, second)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a tooltip of the main shell is drawn in the Display's window")
+    void tooltipOfTheMainShellStaysInItsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        TestBridge bridge = install();
+        Shell main = openShell();
+        Shell second = openShell();
+
+        ToolTip tip = showToolTip(main);
+
+        assertThat(listed(latestDisplayState(bridge), "tooltips")).containsExactly((long) tip.hashCode());
+        assertThat(tooltipsDrawnBy(bridge, second)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a tooltip of an inline dialog is drawn in the window that draws the dialog")
+    void tooltipOfAnInlineDialogIsDrawnInItsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+
+        ToolTip tip = showToolTip(openModal(second));
+
+        assertThat(listed(latestDisplayState(bridge), "tooltips")).doesNotContain((long) tip.hashCode());
+        assertThat(tooltipsDrawnBy(bridge, second)).containsExactly((long) tip.hashCode());
+    }
+
+    @Test
+    @DisplayName("a window's first handshake gets the tooltip already shown over its shell")
+    void windowConnectingLateIsSentItsTooltip() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        ToolTip tip = showToolTip(second);
+        bridge.comm.sent.clear();
+
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
+        p.width = 400;
+        p.height = 300;
+        p.isFirst = true;
+        bridge.comm.fireContaining("Shell/" + second.hashCode() + "/ClientReady", p);
+        drainEventLoop();
+
+        assertThat(tooltipsDrawnBy(bridge, second)).containsExactly((long) tip.hashCode());
+        assertThat(bridge.comm.sent)
+                .as("named without being described, the window would have nothing to draw for it")
+                .anyMatch(f -> f.event.equals("ToolTip/" + tip.hashCode())
+                        && f.value instanceof Map<?, ?> state && !state.containsKey("_d"));
+    }
+
     // ---- closing ------------------------------------------------------------------------------------
 
     @Test
@@ -814,6 +894,19 @@ class MultiWindowNativeTest {
         modal.setBounds(100, 100, 320, 160);
         modal.setVisible(true);
         return modal;
+    }
+
+    private static ToolTip showToolTip(Shell parent) {
+        ToolTip tip = new ToolTip(parent, SWT.BALLOON);
+        tip.setMessage("Saved");
+        tip.setAutoHide(false);
+        tip.setVisible(true);
+        return tip;
+    }
+
+    /** The tooltips {@code window}'s client was last told to draw. */
+    private static List<Long> tooltipsDrawnBy(TestBridge bridge, Shell window) {
+        return listed(latest(bridge, "Shell/" + window.hashCode() + "/Popups"), "tooltips");
     }
 
     /** Whether the Display's own client draws {@code shell}: it lists it and is not told to leave it out. */

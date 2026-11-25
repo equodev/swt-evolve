@@ -22,6 +22,7 @@ import '../gen/event.dart';
 import '../gen/messagebox.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
+import '../gen/tooltip.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/dialog_evolve.dart';
@@ -133,7 +134,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // A shell that reaches the client with its dialogs gets no setValue for them.
     openNewDialogs(context, state);
     _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('ShellPopups', VShellPopups.new, (id, record) {
-      if (id == state.id) _showPopups(record.popups ?? const []);
+      if (id == state.id) _showPopups(record.popups ?? const [], record.tooltips ?? const []);
     });
     _stopWindowShells = VRegistry.instance.onHolder<VWindowShells>('WindowShells', VWindowShells.new, (id, record) {
       if (id == state.id) _showWindowShells(record);
@@ -233,10 +234,16 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   /// What holds this shell's popup menus: the shell's popups record, keyed apart from the shell.
   int get _popupsKey => WidgetKey.of(gen.WireType.shellPopups, state.id);
 
-  void _showPopups(List<VMenu> menus) {
-    VRegistry.instance.holdsAt(_popupsKey, menus);
+  /// Tooltips of the shells this window draws, sent with [_popups] for the same reason.
+  List<VToolTip> _tooltips = const [];
+
+  void _showPopups(List<VMenu> menus, List<VToolTip> tooltips) {
+    VRegistry.instance.holdsAt(_popupsKey, [...menus, ...tooltips]);
     if (!mounted) return;
-    setState(() => _popups = menus);
+    setState(() {
+      _popups = menus;
+      _tooltips = tooltips;
+    });
   }
 
   /// Where a window-global pointer position falls in the coordinate space Java works in: measured
@@ -461,6 +468,12 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
                   children: floatingShells(context, _windowShells, viewport, _activeShellId),
                 ),
               ),
+            ),
+          // Above the shells: one of them can be the tooltip's own.
+          for (final tooltip in _tooltips)
+            KeyedSubtree(
+              key: ValueKey(tooltip.id),
+              child: Positioned.fill(child: gen.mapWidgetFromValue(tooltip)),
             ),
         ]),
       );

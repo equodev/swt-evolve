@@ -27,6 +27,7 @@ import '../gen/item.dart';
 import '../gen/menu.dart';
 import '../gen/shell.dart';
 import '../gen/styledtext.dart';
+import '../gen/tooltip.dart';
 import '../gen/widgets.dart';
 import '../impl/utils/style_index_change.dart';
 import 'comm.dart';
@@ -1211,15 +1212,22 @@ class _Indexed {
   final VNode node;
 }
 
-/// A shell's popups, or the display's own, as a binary frame describes them: the menus, already
-/// resolved to held values.
+/// A shell's popups and tooltips, or the display's own popups, as a binary frame describes them:
+/// already resolved to held values.
 class VShellPopups implements WireReadable {
   List<VMenu>? popups;
+  List<VToolTip>? tooltips;
 
   @override
   bool readWire(int key, WidgetWireReader r) {
-    if (key != WireKey.k_Display_popups) return false;
-    popups = r.refs<VMenu>();
+    switch (key) {
+      case WireKey.k_Display_popups:
+        popups = r.refs<VMenu>();
+      case WireKey.k_Display_tooltips:
+        tooltips = r.refs<VToolTip>();
+      default:
+        return false;
+    }
     return true;
   }
 }

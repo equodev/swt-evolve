@@ -108,7 +108,9 @@ public class VDisplay {
         ArrayList<ToolTip> tooltipList = new ArrayList<>();
         if (allTooltips != null) {
             for (ToolTip t : allTooltips) {
-                if (t != null && !t.isDisposed()) {
+                // As a popup: one of a shell another window draws is drawn by that window's client.
+                if (t != null && !t.isDisposed()
+                        && (display.displayBridge == null || display.displayBridge.windowOf(t.getParent()) == null)) {
                     tooltipList.add(t);
                 }
             }

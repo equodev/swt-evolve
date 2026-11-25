@@ -9,9 +9,11 @@ import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/comm/v_registry.dart';
 import 'package:swtflutter/src/gen/button.dart';
 import 'package:swtflutter/src/gen/composite.dart';
+import 'package:swtflutter/src/gen/point.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/shell.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/gen/tooltip.dart';
 import 'package:swtflutter/src/gen/widgets.dart' as gen;
 import 'package:swtflutter/src/impl/shell_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
@@ -149,6 +151,56 @@ void main() {
     expect(find.text('Find'), findsOneWidget);
     expect(overlay(tester), findsNothing);
     expect(find.text('Window content').hitTestable(), findsOneWidget);
+  });
+
+  Future<void> showTooltips(WidgetTester tester, VShell window, List<VToolTip> tooltips) async {
+    VRegistry.instance
+        .deliverHolderForTesting('ShellPopups', window.id!, VShellPopups()..tooltips = tooltips);
+    await tester.pumpAndSettle();
+  }
+
+  VToolTip tip(int id, int x, int y) => VToolTip()
+    ..swt = 'ToolTip'
+    ..id = id
+    ..style = SWT.BALLOON
+    ..message = 'Saved'
+    ..location = (VPoint()
+      ..x = x
+      ..y = y)
+    ..visible = true;
+
+  testWidgets('a tooltip of this window is drawn in it, at its screen position', (tester) async {
+    final window = _window(5160);
+    await pumpWindow(tester, window);
+
+    await showTooltips(tester, window, [tip(5260, 360, 250)]);
+
+    final at = tester.getTopLeft(find.text('Saved'));
+    expect(at.dx, inInclusiveRange(60, 90));
+    expect(at.dy, inInclusiveRange(50, 80));
+    expect(find.text('Window content').hitTestable(), findsOneWidget);
+
+    await showTooltips(tester, window, const []);
+    expect(find.text('Saved'), findsNothing);
+  });
+
+  testWidgets('a tooltip over a dialog of this window is not covered by it', (tester) async {
+    final window = _window(5170);
+    await pumpWindow(tester, window);
+    await drawInside(tester, window, [_dialog(5270)]);
+
+    await showTooltips(tester, window, [tip(5280, 450, 400)]);
+
+    expect(find.text('Saved').hitTestable(), findsOneWidget);
+  });
+
+  testWidgets('a tooltip of another window draws nothing here', (tester) async {
+    final window = _window(5180);
+    await pumpWindow(tester, window);
+
+    await showTooltips(tester, _window(5181), [tip(5290, 360, 250)]);
+
+    expect(find.text('Saved'), findsNothing);
   });
 
   testWidgets('a record for another window draws nothing here', (tester) async {
