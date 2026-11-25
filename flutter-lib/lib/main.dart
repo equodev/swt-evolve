@@ -46,7 +46,8 @@ import 'src/impl/utils/frame_presentation.dart';
 import 'src/impl/utils/bundled_assets.dart';
 import 'src/impl/utils/image_utils.dart';
 import 'src/impl/control_evolve.dart' show ControlImpl;
-import 'src/impl/utils/raw_pointer_moves.dart';
+import 'src/impl/utils/press_replay.dart';
+import 'src/impl/utils/raw_pointer.dart';
 import 'src/impl/utils/key_delivery_order.dart';
 import 'src/impl/utils/evolve_binding.dart';
 import 'src/impl/utils/swt_zoom_scale.dart';
@@ -100,6 +101,7 @@ void main(List<String> args) async {
   unawaited(KeyDeliveryOrder.install(uiThreadOwn: getUiThreadOwn(args)));
   FramePresentation.ensureTracking();
   listenRawPointerMoves(ControlImpl.rawMove);
+  PressReplay.ensureInstalled();
   BootTrace.recordFirstFrames(4);
   DeferredFonts.configure(getDeferredFontManifest());
   final assetsStart = BootTrace.nowMicros();

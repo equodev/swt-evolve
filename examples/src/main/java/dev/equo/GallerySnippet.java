@@ -151,9 +151,16 @@ public class GallerySnippet {
         // "&Push" registers 'P' as the button's mnemonic (the '&' is stripped from the visible text).
         // Alt+P then activates it from anywhere in the shell — see KeyboardShortcutTest.
         push.setText("&Push");
+        // The status names the mouse events before the selection: "Push pressed, released, clicked"
+        // for a mouse click, "Push clicked" for the mnemonic.
+        StringBuilder pushMouse = new StringBuilder();
+        push.addListener(SWT.MouseDown, e -> pushMouse.replace(0, pushMouse.length(), "pressed, "));
+        push.addListener(SWT.MouseUp, e -> pushMouse.append("released, "));
         push.addSelectionListener(widgetSelectedAdapter(e -> {
-            System.out.println("Push clicked");
-            status.setText("Push clicked");
+            String text = "Push " + pushMouse + "clicked";
+            pushMouse.setLength(0);
+            System.out.println(text);
+            status.setText(text);
         }));
         Button check = new Button(buttonGroup, SWT.CHECK);
         check.setText("Check");
