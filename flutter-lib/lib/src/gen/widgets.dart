@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = 313011147;
+const int wireFingerprint = 744332902;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -1031,6 +1031,7 @@ abstract final class WireType {
   static const int viewForm = 132; // ViewForm
   static const int widgetSizeBridge = 133; // WidgetSizeBridge
   static const int displayPopups = 134; // DisplayPopups
+  static const int windowShells = 135; // WindowShells
 }
 
 /// Type names by the number a frame names a value's class with.
@@ -1168,6 +1169,7 @@ const Map<int, String> wireTypeNames = {
   131: 'URLTransfer',
   132: 'ViewForm',
   133: 'WidgetSizeBridge',
+  135: 'WindowShells',
 };
 
 /// Channel names by the number a message names its channel with: a global name, or what follows

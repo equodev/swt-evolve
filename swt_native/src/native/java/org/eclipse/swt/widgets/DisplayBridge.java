@@ -993,6 +993,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 tape.describeHolder("Display", vd.id, VDisplay.WIRE_KEYS, vd::writeWire, displaySent);
                 tape.describeHolder("DisplayPopups", vd.id, VShellPopups.WIRE_KEYS, popups::writeWire, displayPopupsSent);
             });
+            syncWindowShells();
             syncShellPopups();
             syncDisplayWindow(display, leftOwnWindow);
             FlutterBridge.displayBootstrapped = true;
@@ -1411,10 +1412,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     public Object windowOf(Object shell) {
         Composite current = shell instanceof Shell ? (Shell) shell : null;
         while (current instanceof Shell && !current.isDisposed()) {
-            if (isShellWindowed((Shell) current)) return current;
+            if (isShellWindowed((Shell) current) && (current == shell || drawsInlineShells((Shell) current))) return current;
             current = current.getParent();
         }
         return null;
+    }
+
+    /** Not a window hidden with its shell, nor one on its way out: a shell drawn there would not be on screen. */
+    private boolean drawsInlineShells(Shell windowed) {
+        ShellWindow window = shellWindows.get(windowed);
+        return windowed.getVisible() && (window == null || window.drawsInlineShells());
     }
 
     @Override
@@ -1448,9 +1455,61 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         if (all == null) return new Menu[0];
         java.util.ArrayList<Menu> mine = new java.util.ArrayList<>();
         for (Menu menu : all) {
-            if (menu != null && !menu.isDisposed() && popupShell(menu) == shell) mine.add(menu);
+            if (menu != null && !menu.isDisposed() && windowOf(popupShell(menu)) == shell) mine.add(menu);
         }
         return mine.toArray(new Menu[0]);
+    }
+
+    /** The visible shells drawn inside {@code window}'s own window, bottom first, or an empty array. */
+    private Shell[] shellsDrawnIn(Shell window) {
+        java.util.ArrayList<Shell> drawn = new java.util.ArrayList<>();
+        for (Shell shell : forDisplay.shellsInDrawOrder()) {
+            if (shell != null && shell != window && !shell.isDisposed() && shell.getVisible()
+                    && windowOf(shell) == window && !NativeWindowShells.drawnByItsOwnWindow(shell)) {
+                drawn.add(shell);
+            }
+        }
+        return drawn.toArray(new Shell[0]);
+    }
+
+    /** What each window was last told to draw inside it, then the active shell, so a settled set is not re-sent. */
+    private final java.util.Map<Shell, java.util.List<Long>> sentWindowShells =
+            new java.util.IdentityHashMap<>();
+
+    /** Hands every window of its own the shells drawn inside it (see {@link VWindowShells}). */
+    private void syncWindowShells() {
+        if (shellWindows.isEmpty() && sentWindowShells.isEmpty()) return;
+        sentWindowShells.keySet().removeIf(window -> !shellWindows.containsKey(window));
+        for (Shell window : shellWindows.keySet()) {
+            if (!window.isDisposed()) syncWindowShells(window);
+        }
+    }
+
+    private void syncWindowShells(Shell window) {
+        VWindowShells payload = new VWindowShells();
+        payload.windowShellId = window.hashCode();
+        payload.shells = shellsDrawnIn(window);
+        java.util.List<Long> before = sentWindowShells.get(window);
+        if (payload.shells.length == 0 && before == null) return;
+        payload.activeShellId = payload.shells.length == 0 ? 0 : publishedActiveShell;
+        java.util.List<Long> state = new java.util.ArrayList<>();
+        for (Shell shell : payload.shells) state.add((long) shell.hashCode());
+        state.add(payload.activeShellId);
+        if (state.equals(before)) return;
+        sentWindowShells.put(window, state);
+        // Described, not named: what was delivered of these went to the client drawing the Display.
+        for (Shell shell : payload.shells) {
+            boolean held = before != null && before.subList(0, before.size() - 1).contains((long) shell.hashCode());
+            if (!held && shell.getImpl() instanceof DartShell) {
+                dev.equo.swt.Serializer.forgetDelivery(((DartShell) shell.getImpl()).getValue());
+            }
+        }
+        try {
+            FlutterBridge.writeTape(comm(), tape -> tape.describeHolder(
+                    "WindowShells", payload.windowShellId, VWindowShells.wireKeys(), payload::writeWire));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /** What each windowed shell was last told its popups were, so a settled set is not re-sent. */
@@ -1550,8 +1609,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 // handshake, or it renders the whole shell against default theme and flags.
                 broadcastSwtEvolveProperties();
                 sendShellState(shell);
-                // A focus request sent before this window connected only reached the clients already there.
-                if (p.isFirst && focused != null && focused == focusRequested && shellOf(focused) == shell)
+                // What was sent before this window connected only reached the clients already there.
+                if (p.isFirst && sentWindowShells.remove(shell) != null)
+                    syncWindowShells(shell);
+                if (p.isFirst && focused != null && focused == focusRequested && windowOf(shellOf(focused)) == shell)
                     sendFocusRequest(focused);
                 if (p.width <= 0 || p.height <= 0) return;
                 if (makeRoomForShellWindowInset(shell, p.insetTop)) return;
@@ -1596,8 +1657,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
-     * The shells the client must leave out of the Display's own window because each is drawn in a
-     * window of its own. Null when there are none, so the common frame is unchanged.
+     * The shells the client must leave out of the Display's own window because each is drawn in
+     * another one. Null when there are none, so the common frame is unchanged.
      */
     private long[] windowedShellIds() {
         // Only on the desktop is a shell drawn by the native window it wraps.
@@ -1605,7 +1666,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         java.util.List<Shell> windowed = new java.util.ArrayList<>(shellWindows.keySet());
         if (forDisplay != null) {
             for (Shell shell : forDisplay._shells()) {
-                if (NativeWindowShells.drawnByItsOwnWindow(shell)) windowed.add(shell);
+                boolean drawnInAnother = !isShellWindowed(shell) && windowOf(shell) != null;
+                if (drawnInAnother || NativeWindowShells.drawnByItsOwnWindow(shell)) windowed.add(shell);
             }
         }
         long[] ids = new long[windowed.size()];

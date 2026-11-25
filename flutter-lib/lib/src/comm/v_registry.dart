@@ -25,6 +25,7 @@ import '../gen/display.dart';
 import '../gen/image.dart';
 import '../gen/item.dart';
 import '../gen/menu.dart';
+import '../gen/shell.dart';
 import '../gen/styledtext.dart';
 import '../gen/widgets.dart';
 import '../impl/utils/style_index_change.dart';
@@ -366,6 +367,7 @@ class VRegistry {
     WireType.display: VDisplay.new,
     WireType.displayPopups: VShellPopups.new,
     WireType.shellPopups: VShellPopups.new,
+    WireType.windowShells: VWindowShells.new,
   };
 
   /// The value held for the widget a frame names by [id], or null.
@@ -1218,6 +1220,28 @@ class VShellPopups implements WireReadable {
   bool readWire(int key, WidgetWireReader r) {
     if (key != WireKey.k_Display_popups) return false;
     popups = r.refs<VMenu>();
+    return true;
+  }
+}
+
+/// The shells a window of its own draws inside itself, bottom first, as a binary frame describes
+/// them: already resolved to held values.
+class VWindowShells implements WireReadable {
+  List<VShell>? shells;
+
+  /// The shell SWT considers active; see [VDisplay.activeShellId].
+  int? activeShellId;
+
+  @override
+  bool readWire(int key, WidgetWireReader r) {
+    switch (key) {
+      case WireKey.k_Display_shells:
+        shells = r.refs<VShell>();
+      case WireKey.k_Display_activeShellId:
+        activeShellId = r.int64();
+      default:
+        return false;
+    }
     return true;
   }
 }

@@ -512,15 +512,16 @@ public class DeskDisplayBridge extends DisplayBridge {
     /**
      * The user asked a detached shell's window to close and the runner vetoed the OS teardown, so
      * that window is still up. Same contract as the Display's own window, one shell out:
-     * {@code SWT.Close} while there is still something to render into, and the window follows only
-     * if the shell is actually disposed.
+     * {@code SWT.Close} while there is still something to render into, on the shell or on the active
+     * one drawn inside its window, and the window follows only if the shell is actually disposed.
      */
     private void closeShellFromWindow(Shell shell) {
         Display api = forDisplay == null ? null : forDisplay.getApi();
         if (api == null || api.isDisposed()) return;
         api.asyncExec(() -> {
             if (api.isDisposed() || shell.isDisposed()) return;
-            shell.close();
+            Shell inline = activeInlineShellToClose(api, shell, shell);
+            (inline != null ? inline : shell).close();
         });
     }
 
@@ -713,7 +714,7 @@ public class DeskDisplayBridge extends DisplayBridge {
             if (main == null || main.isDisposed()) {
                 return;
             }
-            Shell inline = activeInlineShellToClose(api, main);
+            Shell inline = activeInlineShellToClose(api, main, null);
             closingOnRequest = true;
             try {
                 (inline != null ? inline : main).close();
@@ -724,19 +725,21 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /**
-     * The active shell other than {@code main} that is drawn inside the Display's window and has a
-     * close button, or null. Natively such a shell has an OS window of its own, the one Alt+F4 or the
-     * taskbar's close asks; here it shares the Display's window, so the request arrives there.
+     * The active shell other than {@code host} that is drawn inside the window {@code host} fills and
+     * has a close button, or null. Natively such a shell has an OS window of its own, the one Alt+F4
+     * or the taskbar's close asks; here it shares {@code host}'s window, so the request arrives there.
+     *
+     * @param window the shell rooting that window ({@link #windowOf}), null for the Display's
      */
-    private Shell activeInlineShellToClose(Display api, Shell main) {
+    private Shell activeInlineShellToClose(Display api, Shell host, Shell window) {
         Shell active = api.getActiveShell();
         if (active == null) {
             // A window manager can take the OS focus from the window before it asks it to close.
             Control focus = api.getFocusControl();
             active = focus == null || focus.isDisposed() ? null : focus.getShell();
         }
-        if (active == null || active == main || (active.getStyle() & SWT.CLOSE) == 0
-                || windowOf(active) != null || NativeWindowShells.drawnByItsOwnWindow(active)) {
+        if (active == null || active == host || (active.getStyle() & SWT.CLOSE) == 0
+                || windowOf(active) != window || NativeWindowShells.drawnByItsOwnWindow(active)) {
             return null;
         }
         return active;
@@ -1060,7 +1063,7 @@ public class DeskDisplayBridge extends DisplayBridge {
         for (Shell shell : display._shells()) {
             if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
             if (NativeWindowShells.drawnByItsOwnWindow(shell)) ownWindow = true;
-            else if (!isShellWindowed(shell)) return ShownShells.DRAWN_IN_WINDOW;
+            else if (windowOf(shell) == null) return ShownShells.DRAWN_IN_WINDOW;
         }
         return ownWindow ? ShownShells.ONLY_WRAPPED_WINDOWS : ShownShells.NONE;
     }
@@ -1133,10 +1136,10 @@ public class DeskDisplayBridge extends DisplayBridge {
     @Override
     public boolean hostsActiveWindow(Object shell) {
         if (!(shell instanceof Shell) || ((Shell) shell).isDisposed()) return false;
-        // A detached shell has a window of its own and answers for that one; every other shell is
-        // drawn inside the Display's window and answers for it.
+        // Each shell answers for the window it is drawn in.
+        Object root = windowOf(shell);
         for (NativeShellWindow w : shellWindowsToPump) {
-            if (w.shell == shell) return w.isActive();
+            if (w.shell == root) return w.isActive();
         }
         return hasNativeWindow() && windowActive(windowContext);
     }

@@ -4,8 +4,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Shell;
 
 /**
- * Decides which {@link Shell}s are hosted in a window of their own rather than drawn inside the
- * window that hosts the {@code Display}.
+ * Decides which {@link Shell}s are hosted in a window of their own rather than drawn inline: inside
+ * the window their parent is drawn in, which for one without a parent is the {@code Display}'s.
  *
  * <p>The whole-tree surfaces render every shell into one window by default: the main shell fills it
  * and every other shell is drawn as a floating pane with its own chrome. An application built around
@@ -153,8 +153,8 @@ public final class WindowPolicy {
      * container rather than as a window — a splash painted edge to edge, an off-screen shell a
      * layout parks hidden widgets under — and a window of its own cannot honour that, because the
      * OS or the browser frames it regardless: the user gets chrome the shell refused, around
-     * content never meant to be looked at, that it may dispose moments later. Drawn inside the
-     * Display's window instead, which is the frameless floating pane such a shell asked to be.
+     * content never meant to be looked at, that it may dispose moments later. Drawn inline
+     * instead, which is the frameless floating pane such a shell asked to be.
      *
      * <p>A trimless shell that does want a window says so through {@link #SHELL_DATA_KEY} or a
      * {@link Resolver}; both are read before this.

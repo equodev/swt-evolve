@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 313011147;
+    public static final int FINGERPRINT = 744332902;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -410,6 +410,7 @@ public final class WireTable {
             "ViewForm",
             "WidgetSizeBridge",
             "DisplayPopups",
+            "WindowShells",
     };
 
     /** The keys of a map sent as tagged values, by number. */
@@ -2739,6 +2740,9 @@ public final class WireTable {
 
     /** The type `DisplayPopups`. */
     public static final int TYPE_DISPLAY_POPUPS = 134;
+
+    /** The type `WindowShells`. */
+    public static final int TYPE_WINDOW_SHELLS = 135;
 
     /** The display's `activeShellId`. */
     public static final int DISPLAY_ACTIVE_SHELL_ID = 1792;

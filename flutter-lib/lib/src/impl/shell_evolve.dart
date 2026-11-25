@@ -70,6 +70,34 @@ class FloatingShellChromeScope extends InheritedWidget {
       activeShellId != oldWidget.activeShellId;
 }
 
+bool isModalShell(VShell shell) =>
+    (shell.style & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL | SWT.PRIMARY_MODAL)) != 0;
+
+/// [shells], bottom first, as the panes drawn inside a window over the shell that fills it, with the
+/// overlay that dims what the topmost modal one blocks. For a [Stack] that fills [viewport].
+List<Widget> floatingShells(
+    BuildContext context, List<VShell> shells, BoxConstraints viewport, int? activeShellId) {
+  final topmostModal = shells.lastIndexWhere(isModalShell);
+  return [
+    for (var i = 0; i < shells.length; i++) ...[
+      if (i == topmostModal)
+        Positioned.fill(
+          child: ColoredBox(
+            color: Theme.of(context).extension<DisplayThemeExtension>()!.modalOverlayColor,
+          ),
+        ),
+      KeyedSubtree(
+        key: ValueKey(shells[i].id),
+        child: FloatingShellChromeScope(
+          viewportConstraints: viewport,
+          activeShellId: activeShellId,
+          child: gen.mapWidgetFromValue(shells[i]),
+        ),
+      ),
+    ],
+  ];
+}
+
 /// A shell is placed on whole pixels: its position goes to Java as integers and comes back as the
 /// shell's bounds, so a half pixel here would move the shell once Java repeats it.
 Offset wholePixels(Offset offset) => Offset(offset.dx.roundToDouble(), offset.dy.roundToDouble());
@@ -106,6 +134,32 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     openNewDialogs(context, state);
     _stopPopupRecords = VRegistry.instance.onHolder<VShellPopups>('ShellPopups', VShellPopups.new, (id, record) {
       if (id == state.id) _showPopups(record.popups ?? const []);
+    });
+    _stopWindowShells = VRegistry.instance.onHolder<VWindowShells>('WindowShells', VWindowShells.new, (id, record) {
+      if (id == state.id) _showWindowShells(record);
+    });
+  }
+
+  void Function()? _stopWindowShells;
+
+  /// The shells drawn inside this one's window, when this client is that window. Empty in every other
+  /// client: Java sends them only to the window drawing them (see `DisplayBridge.syncWindowShells`).
+  List<VShell> _windowShells = const [];
+  int? _activeShellId;
+
+  /// What holds [_windowShells]: the window's record, keyed apart from the shell.
+  int get _windowShellsKey => WidgetKey.of(gen.WireType.windowShells, state.id);
+
+  void _showWindowShells(VWindowShells record) {
+    final shells = record.shells ?? const <VShell>[];
+    for (final shell in shells) {
+      VRegistry.instance.register(shell);
+    }
+    VRegistry.instance.holdsAt(_windowShellsKey, shells);
+    if (!mounted) return;
+    setState(() {
+      _windowShells = shells;
+      _activeShellId = record.activeShellId;
     });
   }
 
@@ -230,6 +284,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     if (trackerHost != null) TrackerSession.detachHost(trackerHost);
     _stopPopupRecords?.call();
     VRegistry.instance.holdsAt(_popupsKey, const []);
+    _stopWindowShells?.call();
+    VRegistry.instance.holdsAt(_windowShellsKey, const []);
     _unlistenRemoteDrag();
     _remoteDrag.dispose();
     _opacityNotifier.dispose();
@@ -363,8 +419,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     }
     if (scope == null) {
       // No chrome scope above: this shell is the root of its own window, so it is also the only
-      // thing that can host a popup opened over it. Inside the Display's window the Display draws
-      // the popups instead, and _popups stays empty there.
+      // thing that can host a popup or a shell opened over it. Inside the Display's window the
+      // Display draws those instead, and _popups and _windowShells stay empty there.
       Widget content = super.build(context);
       // This shell IS the window, so its bounds are where the window sits on screen: publish that
       // for anything consuming a screen coordinate inside it (a popup's location, a drop target).
@@ -381,19 +437,32 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
             ),
         ]);
       }
+      final own = FocusScope(
+        node: _focusScopeNode,
+        onKeyEvent: _handleShellKey,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) {
+            if (!_isOnTop && !_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
+          },
+          child: content,
+        ),
+      );
+      // Beside the focus scope, not in it: the keyboard in one of them deactivates this shell. The
+      // stack is there with none too, or the first one would rebuild everything in the shell anew.
       return WindowOriginScope(
         origin: windowOrigin,
-        child: FocusScope(
-          node: _focusScopeNode,
-          onKeyEvent: _handleShellKey,
-          child: Listener(
-            behavior: HitTestBehavior.translucent,
-            onPointerDown: (_) {
-              if (!_isOnTop && !_focusScopeNode.hasFocus) _focusScopeNode.requestFocus();
-            },
-            child: content,
-          ),
-        ),
+        child: Stack(children: [
+          Positioned.fill(child: own),
+          if (_windowShells.isNotEmpty)
+            Positioned.fill(
+              child: LayoutBuilder(
+                builder: (context, viewport) => Stack(
+                  children: floatingShells(context, _windowShells, viewport, _activeShellId),
+                ),
+              ),
+            ),
+        ]),
       );
     }
 

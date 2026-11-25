@@ -402,7 +402,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     if (b == null || b.x != 0 || b.y != 0) return false;
     if (b.width == 1024 && b.height == 768) return true; // eclipse workbench default
     if (_fillsViewport(s, constraints)) return true;
-    return !_isModal(s) && b.width == constraints.maxWidth.toInt() && b.height == constraints.maxHeight.toInt();
+    return !isModalShell(s) && b.width == constraints.maxWidth.toInt() && b.height == constraints.maxHeight.toInt();
   }
 
   /// The lone shell takes the viewport when it already covers it, or when Java has not sized it
@@ -415,7 +415,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
     final b = s.bounds;
     return b != null &&
         _isUnsized(s) &&
-        !_isModal(s) &&
+        !isModalShell(s) &&
         (s.style & SWT.RESIZE) != 0 &&
         b.x == 0 &&
         b.y == 0;
@@ -424,7 +424,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   bool _fillsViewport(VShell s, BoxConstraints constraints) {
     final b = s.bounds;
     if (b == null) return false;
-    return !_isModal(s) &&
+    return !isModalShell(s) &&
         b.width >= (constraints.maxWidth * 0.8).round() &&
         b.height >= (constraints.maxHeight * 0.8).round();
   }
@@ -437,13 +437,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
       return 0;
     }
     return bounds.width * bounds.height;
-  }
-
-  static bool _isModal(VShell s) {
-    final style = s.style;
-    return (style & SWT.APPLICATION_MODAL) != 0 ||
-        (style & SWT.SYSTEM_MODAL) != 0 ||
-        (style & SWT.PRIMARY_MODAL) != 0;
   }
 
   List<VShell> _drawnShells() {
@@ -544,11 +537,6 @@ class _DisplaySwtState extends State<DisplaySwt> {
         });
       }
 
-      var topmostModalIndex = -1;
-      for (var i = 0; i < dialogShells.length; i++) {
-        if (_isModal(dialogShells[i])) topmostModalIndex = i;
-      }
-
       return WindowOriginScope(
         origin: mainOrigin,
         child: Stack(children: [
@@ -568,24 +556,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
             key: ValueKey('tooltip_${tooltip.id}'),
             child: Positioned.fill(child: gen.mapWidgetFromValue(tooltip)),
           ),
-        for (var i = 0; i < dialogShells.length; i++) ...[
-          if (i == topmostModalIndex)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Theme.of(context)
-                    .extension<DisplayThemeExtension>()!
-                    .modalOverlayColor,
-              ),
-            ),
-          KeyedSubtree(
-            key: ValueKey(dialogShells[i].id),
-            child: FloatingShellChromeScope(
-              viewportConstraints: constraints,
-              activeShellId: _display.activeShellId,
-              child: gen.mapWidgetFromValue(dialogShells[i]),
-            ),
-          ),
-        ],
+        ...floatingShells(context, dialogShells, constraints, _display.activeShellId),
       ]),
       );
     }));

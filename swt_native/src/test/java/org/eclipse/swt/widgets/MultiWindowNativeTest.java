@@ -227,6 +227,170 @@ class MultiWindowNativeTest {
         assertThat(bridge.created).hasSize(windowsBefore + 1);
     }
 
+    // ---- shells drawn inside a window ---------------------------------------------------------------
+
+    @Test
+    @DisplayName("a modal drawn inline over a windowed shell is drawn in that shell's window")
+    void inlineModalIsDrawnInItsParentsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(second);
+
+        assertThat(bridge.windowedShells()).as("inline: no window of its own").containsExactly(second);
+        assertThat(drawnByTheDisplay(bridge, prompt))
+                .as("a prompt about the second window blocks the first one when it is drawn there")
+                .isFalse();
+        assertThat(shellsDrawnBy(bridge, second)).containsExactly((long) prompt.hashCode());
+    }
+
+    @Test
+    @DisplayName("a modal drawn inline over the main shell is drawn in the Display's window")
+    void inlineModalOfTheMainShellStaysInItsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        Shell main = openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(main);
+
+        assertThat(drawnByTheDisplay(bridge, prompt)).isTrue();
+        assertThat(shellsDrawnBy(bridge, second)).doesNotContain((long) prompt.hashCode());
+    }
+
+    @Test
+    @DisplayName("a dialog opened from an inline dialog follows it into its window")
+    void nestedInlineDialogsShareTheWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(second);
+        Shell nested = openModal(prompt);
+
+        assertThat(drawnByTheDisplay(bridge, nested)).isFalse();
+        assertThat(shellsDrawnBy(bridge, second))
+                .containsExactly((long) prompt.hashCode(), (long) nested.hashCode());
+    }
+
+    @Test
+    @DisplayName("a closed inline dialog is let go of by the window that drew it")
+    void closedInlineDialogLeavesItsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(second);
+        assertThat(shellsDrawnBy(bridge, second)).isNotEmpty();
+
+        prompt.dispose();
+
+        assertThat(shellsDrawnBy(bridge, second)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("an inline dialog comes back to the Display's window when its parent takes it over")
+    void inlineDialogFollowsItsParentBackToTheDisplayWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        Shell welcome = openShell();
+        Shell workbench = openShell();
+        Shell prompt = openModal(workbench);
+        assertThat(drawnByTheDisplay(bridge, prompt)).isFalse();
+
+        welcome.setVisible(false);
+
+        assertThat(bridge.windowedShells()).isEmpty();
+        assertThat(drawnByTheDisplay(bridge, prompt)).isTrue();
+    }
+
+    @Test
+    @DisplayName("a window's first handshake gets the dialogs already open over its shell")
+    void windowConnectingLateIsSentItsInlineDialogs() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(second);
+        bridge.comm.sent.clear();
+
+        ClientReadyPayload p = new ClientReadyPayload();
+        p.wireFingerprint = dev.equo.swt.WireTable.FINGERPRINT;
+        p.width = 400;
+        p.height = 300;
+        p.isFirst = true;
+        bridge.comm.fireContaining("Shell/" + second.hashCode() + "/ClientReady", p);
+        drainEventLoop();
+
+        assertThat(shellsDrawnBy(bridge, second)).containsExactly((long) prompt.hashCode());
+        assertThat(bridge.comm.sent)
+                .as("named without being described, the window would have nothing to draw for it")
+                .anyMatch(f -> f.event.equals("Shell/" + prompt.hashCode())
+                        && f.value instanceof Map<?, ?> state && !state.containsKey("_d"));
+    }
+
+    @Test
+    @DisplayName("a dialog over a hidden window is drawn in the Display's")
+    void inlineDialogOverAHiddenWindowIsDrawnByTheDisplay() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(second);
+
+        second.setVisible(false);
+
+        assertThat(drawnByTheDisplay(bridge, prompt))
+                .as("a modal drawn in a window that is not on screen blocks with nothing to answer")
+                .isTrue();
+        assertThat(shellsDrawnBy(bridge, second)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a dialog opened as its window's client goes away is drawn in the Display's")
+    void inlineDialogOverALeavingWindowIsDrawnByTheDisplay() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        bridge.created.get(0).leaving = true; // a browser window, reported unloaded
+
+        Shell prompt = openModal(second);
+
+        assertThat(drawnByTheDisplay(bridge, prompt)).isTrue();
+        assertThat(shellsDrawnBy(bridge, second)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a popup opened over an inline dialog is drawn in the dialog's window")
+    void popupOverAnInlineDialogIsDrawnInItsWindow() {
+        System.setProperty(WindowPolicy.MODE_PROPERTY, "all");
+        System.setProperty(WindowPolicy.MODAL_PROPERTY, "inline");
+        TestBridge bridge = install();
+        openShell();
+        Shell second = openShell();
+        Shell prompt = openModal(second);
+        Menu menu = new Menu(prompt, SWT.POP_UP);
+        new MenuItem(menu, SWT.PUSH).setText("Copy");
+        prompt.setMenu(menu);
+        menu.setVisible(true);
+        drainEventLoop();
+        pushDisplayUpdate();
+
+        assertThat(listed(latest(bridge, "Shell/" + second.hashCode() + "/Popups"), "popups"))
+                .contains((long) menu.hashCode());
+        assertThat(listed(latest(bridge, "Display/" + display.hashCode() + "/Popups"), "popups"))
+                .doesNotContain((long) menu.hashCode());
+    }
+
     // ---- closing ------------------------------------------------------------------------------------
 
     @Test
@@ -643,12 +807,51 @@ class MultiWindowNativeTest {
         return shell;
     }
 
+    /** A JFace dialog's shape: a titled application-modal child of the window it is about. */
+    private Shell openModal(Shell parent) {
+        Shell modal = new Shell(parent, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+        modal.setText("Save changes?");
+        modal.setBounds(100, 100, 320, 160);
+        modal.setVisible(true);
+        return modal;
+    }
+
+    /** Whether the Display's own client draws {@code shell}: it lists it and is not told to leave it out. */
+    private boolean drawnByTheDisplay(TestBridge bridge, Shell shell) {
+        Map<String, Object> state = latestDisplayState(bridge);
+        long id = shell.hashCode();
+        return listed(state, "shells").contains(id) && !listed(state, "windowedShellIds").contains(id);
+    }
+
+    /** The shells {@code window}'s client was last told to draw inside it, bottom first. */
+    private static List<Long> shellsDrawnBy(TestBridge bridge, Shell window) {
+        return listed(latest(bridge, "WindowShells/" + window.hashCode()), "shells");
+    }
+
+    /** The ids {@code key} lists in {@code state}, as widgets or as plain numbers. */
+    private static List<Long> listed(Map<String, Object> state, String key) {
+        List<Long> ids = new ArrayList<>();
+        if (!(state.get(key) instanceof List<?> list)) return ids;
+        for (Object element : list) {
+            Object id = element instanceof Map<?, ?> widget ? widget.get("id") : element;
+            ids.add(((Number) id).longValue());
+        }
+        return ids;
+    }
+
+    /** The last record sent on {@code channel}, empty when there was none. */
+    private static Map<String, Object> latest(TestBridge bridge, String channel) {
+        Map<String, Object> state = Map.of();
+        for (RecordingComm.Frame frame : bridge.comm.sent) {
+            if (frame.event.equals(channel)) state = frame.state();
+        }
+        return state;
+    }
+
     private Map<String, Object> latestDisplayState(TestBridge bridge) {
-        String channel = "Display/" + display.hashCode();
-        List<RecordingComm.Frame> frames =
-                bridge.comm.sent.stream().filter(f -> f.event.equals(channel)).toList();
-        assertThat(frames).as("no Display frame was ever produced").isNotEmpty();
-        return frames.get(frames.size() - 1).state();
+        Map<String, Object> state = latest(bridge, "Display/" + display.hashCode());
+        assertThat(state).as("no Display frame was ever produced").isNotEmpty();
+        return state;
     }
 
     /** Whether any record in {@code state} holds {@code expected} under {@code key}. */
@@ -705,9 +908,15 @@ class MultiWindowNativeTest {
         Rectangle bounds;
         boolean closed;
         boolean alive = true;
+        boolean leaving;
 
         RecordingWindow(Shell shell) {
             this.shell = shell;
+        }
+
+        @Override
+        public boolean drawsInlineShells() {
+            return alive && !leaving;
         }
 
         @Override

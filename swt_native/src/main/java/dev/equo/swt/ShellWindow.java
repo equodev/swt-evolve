@@ -48,6 +48,14 @@ public interface ShellWindow {
         return null;
     }
 
+    /**
+     * Whether a shell shown over this window's can be drawn inside it: false once its client is known
+     * to be going away, though the window is still registered.
+     */
+    default boolean drawsInlineShells() {
+        return isAlive();
+    }
+
     /** Takes the window down. Called once, when the shell stops being hosted in one. */
     void close();
 

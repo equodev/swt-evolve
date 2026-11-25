@@ -46,9 +46,10 @@ public class VDisplay {
     public long focusHolderId;
 
     /**
-     * The shells drawn in a window of their own rather than inside this one, or null when there are
-     * none. The client must leave each out of its own stack: a second Flutter client, rooted at that
-     * shell, is drawing it, and rendering it here as well would put it on screen twice.
+     * The shells drawn in another window rather than inside this one, or null when there are none:
+     * those with a window of their own, and those drawn inside one of them ({@link VWindowShells}).
+     * The client must leave each out of its own stack: a second Flutter client is drawing it, and
+     * rendering it here as well would put it on screen twice.
      */
     public long[] windowedShellIds;
 
@@ -90,11 +91,11 @@ public class VDisplay {
                 if (menu == null || menu.isDisposed()) {
                     continue;
                 }
-                // A popup opened over a shell that has a window of its own is drawn by that
-                // window's client, which was sent it on the shell's own channel. Drawing it here
-                // as well would put it on screen twice, in the wrong window both times.
+                // A popup opened over a shell that another window draws is drawn by that window's
+                // client, which was sent it on its own shell's channel. Drawing it here as well
+                // would put it on screen twice, in the wrong window both times.
                 Shell owner = bridge == null ? null : DisplayBridge.popupShell(menu);
-                if (owner != null && bridge.isShellWindowed(owner)) {
+                if (owner != null && bridge.windowOf(owner) != null) {
                     continue;
                 }
                 popupList.add(menu);
