@@ -295,12 +295,18 @@ sourceSets {
 
 run {
     val jfaceVersion: String by project
+    val jfaceTextVersion: String by project
+    val eclipseTextVersion: String by project
     val coreCommandsVersion: String by project
     val equinoxCommonVersion: String by project
     dependencies {
         "testImplementation"("org.eclipse.platform:org.eclipse.jface:$jfaceVersion") {
             exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
         }
+        "testImplementation"("org.eclipse.platform:org.eclipse.jface.text:$jfaceTextVersion") {
+            exclude(group = "org.eclipse.platform", module = "org.eclipse.swt")
+        }
+        "testImplementation"("org.eclipse.platform:org.eclipse.text:$eclipseTextVersion")
         "testImplementation"("org.eclipse.platform:org.eclipse.core.commands:$coreCommandsVersion")
         "testImplementation"("org.eclipse.platform:org.eclipse.equinox.common:$equinoxCommonVersion")
 
