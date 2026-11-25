@@ -89,6 +89,7 @@ class TableOwnerDrawPaintAheadTest extends SerializeTestBase {
         Table table = table();
         impl = (DartTable) table.getImpl();
         when(table.getColumnCount()).thenReturn(1);
+        when(table.getColumnOrder()).thenReturn(new int[] { 0 });
         when(impl.hooks(SWT.PaintItem)).thenReturn(true);
         when(impl.hooks(SWT.EraseItem)).thenReturn(true);
         when(impl.getItemHeight()).thenReturn(ROW);
