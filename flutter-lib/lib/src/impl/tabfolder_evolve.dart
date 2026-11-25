@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +18,7 @@ import '../impl/ctabfolder_evolve.dart';
 import '../theme/theme_extensions/tabfolder_theme_extension.dart';
 import 'utils/double_tap_detector.dart';
 import 'utils/focus_report.dart';
+import 'utils/strip_scroll.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 import 'utils/test_anchors.dart';
@@ -36,6 +38,25 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
   /// The tab a primary press landed on, until the folder's own press handling reads it.
   int? _pressedTab;
+
+  /// A strip narrower than its tabs scrolls, keeps the selected tab in view and shows a pair of
+  /// arrows at its end, as Win32's tab control does.
+  final ScrollController _strip = ScrollController();
+  final GlobalKey _stripView = GlobalKey();
+  bool _overflow = false;
+  double? _stripHeight;
+  late final StripReveal _reveal =
+      StripReveal(strip: _strip, selectedTab: () => _tabBox(_selectedIndex), mounted: () => mounted);
+
+  /// The strip last reported to Java as "scroll,viewport", or null while the tabs fit.
+  String? _reportedStrip;
+
+  /// The row of tabs the folder last built, handed to [_TabRow] so a rebuilt folder rebuilds the
+  /// row and not the scroll view around it.
+  final ValueNotifier<Widget> _tabs = ValueNotifier(const SizedBox.shrink());
+  late final Widget _tabRow = _TabRow(tabs: _tabs);
+  Widget? _stripShell;
+  Object? _stripShellInputs;
 
   FocusNode _tabNode(int index) {
     while (_tabNodes.length <= index) {
@@ -68,6 +89,8 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     for (final node in _tabNodes) {
       node.dispose();
     }
+    _strip.dispose();
+    _tabs.dispose();
     super.dispose();
   }
 
@@ -75,6 +98,8 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   void initState() {
     super.initState();
     _selectedIndex = _getSelectedIndexFromState();
+    _strip.addListener(_reportStrip);
+    _reveal.schedule();
 
     // Send initial selection event
     if (_selectedIndex >= 0) {
@@ -91,6 +116,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
       setState(() {
         _selectedIndex = newIndex;
       });
+      _reveal.schedule();
     }
   }
 
@@ -174,6 +200,29 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     List<TabItem> tabItems,
   ) {
     final hasValidBounds = hasBounds(state.bounds);
+    _tabs.value = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        ...tabItems.asMap().entries.map((entry) {
+          final int index = entry.key;
+          final TabItem tab = entry.value;
+          final vItem = state.items![index];
+
+          return KeyedSubtree(
+            key: ValueKey(vItem.id),
+            child: _buildTab(
+              context: context,
+              widgetTheme: widgetTheme,
+              isSelected: index == _selectedIndex,
+              tab: tab,
+              vItem: vItem,
+              index: index,
+            ),
+          );
+        }).toList(),
+      ],
+    );
 
     return Container(
       width: hasValidBounds ? double.infinity : null,
@@ -190,29 +239,160 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
           width: widgetTheme.tabBorderWidth,
         )),
       ),
-      child: _TabRow(
-        child: Row(
-          mainAxisSize: hasValidBounds ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            ...tabItems.asMap().entries.map((entry) {
-              final int index = entry.key;
-              final TabItem tab = entry.value;
-              final vItem = state.items![index];
+      child: hasValidBounds ? _scrollingStrip(context, widgetTheme) : _tabRow,
+    );
+  }
 
-              return KeyedSubtree(
-                key: ValueKey(vItem.id),
-                child: _buildTab(
-                  context: context,
-                  widgetTheme: widgetTheme,
-                  isSelected: index == _selectedIndex,
-                  tab: tab,
-                  vItem: vItem,
-                  index: index,
-                ),
-              );
-            }).toList(),
+  /// The tabs in a horizontal viewport, with the arrows after it while they overflow. The viewport
+  /// clips only sideways: the selected tab hangs over the strip's line. Built again only when the
+  /// arrows change: a tab change rebuilds the row of tabs alone.
+  Widget _scrollingStrip(BuildContext context, TabFolderThemeExtension widgetTheme) {
+    final arrows = _overflow && _stripHeight != null;
+    final behavior = ScrollConfiguration.of(context);
+    final inputs = (widgetTheme, behavior, arrows ? _stripHeight : null, arrows ? state.enabled : null);
+    if (_stripShell == null || inputs != _stripShellInputs) {
+      _stripShellInputs = inputs;
+      _stripShell = _buildStripShell(widgetTheme, behavior, arrows);
+    }
+    return _stripShell!;
+  }
+
+  Widget _buildStripShell(TabFolderThemeExtension widgetTheme, ScrollBehavior behavior, bool arrows) {
+    // Keyed so the scroll view keeps its position when the arrows come or go.
+    final viewport = Listener(
+      key: _stripView,
+      onPointerSignal: (event) => wheelStrip(_strip, event),
+      child: ClipRect(
+        clipper: const _SidewaysClip(),
+        // The web maps the arrow keys to ScrollIntent; on a tab they move the selection only.
+        child: Actions(
+          actions: {ScrollIntent: DoNothingAction(consumesKey: false)},
+          // A tab strip neither stretches nor shows a scrollbar, on any platform.
+          child: ScrollConfiguration(
+            behavior: behavior.copyWith(overscroll: false, scrollbars: false),
+            child: SingleChildScrollView(
+              controller: _strip,
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              child: _tabRow,
+            ),
+          ),
+        ),
+      ),
+    );
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: (notification) {
+        if (notification.depth == 0) _stripMetricsChanged();
+        return false;
+      },
+      child: arrows
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [Expanded(child: viewport), _scrollArrows(widgetTheme, _stripHeight!)],
+            )
+          : viewport,
+    );
+  }
+
+  /// The arrows take the strip's height and the width of two squares of it.
+  double get _arrowsWidth => _overflow && _stripHeight != null ? 2 * _stripHeight! : 0;
+
+  /// Shows or hides the arrows as the tabs come to overflow the strip or fit it again, and keeps
+  /// the selected tab in view when the strip or its tabs change size; a scroll changes neither.
+  void _stripMetricsChanged() {
+    if (!mounted || !_strip.hasClients) return;
+    final position = _strip.position;
+    if (!position.hasContentDimensions || !position.hasViewportDimension) return;
+    final height = _stripView.currentContext?.size?.height;
+    // Measured against the strip without the arrows, so showing them doesn't keep them shown.
+    final overflow = position.maxScrollExtent > _arrowsWidth + 0.5;
+    if (overflow != _overflow || height != _stripHeight) {
+      setState(() {
+        _overflow = overflow;
+        _stripHeight = height;
+      });
+    }
+    _reveal.metricsChanged();
+    _reportStrip();
+  }
+
+  /// Tells Java which part of an overflowing strip is shown, so TabItem.getBounds and
+  /// TabFolder.getItem(Point) follow the scroll (TabFolderHelper.handleStripLaidOut). A strip
+  /// whose tabs fit again sends one empty report.
+  void _reportStrip() {
+    if (!mounted || !_strip.hasClients) return;
+    final position = _strip.position;
+    if (!position.hasContentDimensions || !position.hasViewportDimension) return;
+    final report = position.maxScrollExtent > 0.5
+        ? '${position.pixels.round()},${position.viewportDimension.round()}'
+        : null;
+    if (report == _reportedStrip) return;
+    _reportedStrip = report;
+    widget.sendTabFolderstripLaidOut(state, VEvent()..text = report ?? '');
+  }
+
+  RenderObject? _tabBox(int index) {
+    if (index < 0 || index >= _tabNodes.length || index >= (state.items?.length ?? 0)) return null;
+    final box = _tabNodes[index].context?.findRenderObject();
+    return box != null && box.attached ? box : null;
+  }
+
+  /// Scrolls the strip by one tab: to the start of the first tab past its scrolled edge, or of the
+  /// last one before it.
+  void _stepStrip(int direction) {
+    if (!_strip.hasClients) return;
+    final position = _strip.position;
+    double? target;
+    for (var i = 0; i < (state.items?.length ?? 0); i++) {
+      final tab = _tabBox(i);
+      final viewport = tab == null ? null : RenderAbstractViewport.maybeOf(tab);
+      if (viewport == null) continue;
+      final start = viewport.getOffsetToReveal(tab!, 0).offset;
+      if (direction > 0 && start > position.pixels + 0.5) {
+        target = start;
+        break;
+      }
+      if (direction < 0 && start < position.pixels - 0.5) target = start;
+    }
+    target ??= direction > 0 ? position.maxScrollExtent : position.minScrollExtent;
+    _strip.jumpTo(target.clamp(position.minScrollExtent, position.maxScrollExtent));
+  }
+
+  Widget _scrollArrows(TabFolderThemeExtension widgetTheme, double size) {
+    final enabled = state.enabled ?? false;
+    return ListenableBuilder(
+      listenable: _strip,
+      builder: (context, _) {
+        final position = _strip.hasClients ? _strip.position : null;
+        final known = position != null && position.hasContentDimensions;
+        final back = enabled && known && position.pixels > position.minScrollExtent + 0.5;
+        final forward = enabled && known && position.pixels < position.maxScrollExtent - 0.5;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _scrollArrow(widgetTheme, size, Icons.chevron_left, back ? () => _stepStrip(-1) : null),
+            _scrollArrow(widgetTheme, size, Icons.chevron_right, forward ? () => _stepStrip(1) : null),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _scrollArrow(TabFolderThemeExtension widgetTheme, double size, IconData icon, VoidCallback? onStep) {
+    return MouseRegion(
+      cursor: onStep != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onStep,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: getTabScrollArrowDecoration(widgetTheme),
+          child: Icon(
+            icon,
+            size: size * widgetTheme.tabScrollArrowIconScale,
+            color: getTabScrollArrowIconColor(widgetTheme, enabled: onStep != null),
+          ),
         ),
       ),
     );
@@ -354,6 +534,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
         state.selection = [state.items![index]];
       }
     });
+    _reveal.schedule();
   }
 
   void _handleTabSelection(int index, {int stateMask = 0}) {
@@ -412,14 +593,53 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
   }
 }
 
-/// Marks the row of tabs for the measurement; lays out as its child.
-class _TabRow extends StatelessWidget {
-  const _TabRow({required this.child});
+/// Marks the row of tabs for the measurement; shows the row the folder last built.
+class _TabRow extends StatefulWidget {
+  const _TabRow({required this.tabs});
 
-  final Widget child;
+  final ValueListenable<Widget> tabs;
 
   @override
-  Widget build(BuildContext context) => child;
+  State<_TabRow> createState() => _TabRowState();
+}
+
+class _TabRowState extends State<_TabRow> {
+  @override
+  void initState() {
+    super.initState();
+    widget.tabs.addListener(_changed);
+  }
+
+  @override
+  void didUpdateWidget(_TabRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tabs != widget.tabs) {
+      oldWidget.tabs.removeListener(_changed);
+      widget.tabs.addListener(_changed);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.tabs.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) => widget.tabs.value;
+}
+
+/// Clips at the left and right edges only.
+class _SidewaysClip extends CustomClipper<Rect> {
+  const _SidewaysClip();
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(0, -size.height, size.width, 2 * size.height);
+
+  @override
+  bool shouldReclip(_SidewaysClip oldClipper) => false;
 }
 
 class TabItem {

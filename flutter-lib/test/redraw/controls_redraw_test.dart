@@ -316,10 +316,10 @@ const budgets = <String, Budget>{
   'datetime.hover': Budget(0, 0, 0.01),
   'datetime.click': Budget(81, 26, 0.01),
   'datetime.disable': Budget(84, 63, 0.01),
-  'tabfolder.java': Budget(69, 51, 0.03),
+  'tabfolder.java': Budget(69, 57, 0.03),
   'tabfolder.hover': Budget(0, 0, 0.01),
   'tabfolder.click': Budget(0, 0, 0.01),
-  'tabfolder.disable': Budget(130, 51, 0.03),
+  'tabfolder.disable': Budget(130, 57, 0.03),
 };
 
 void main() {

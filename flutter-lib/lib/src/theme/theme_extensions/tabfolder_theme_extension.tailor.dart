@@ -35,6 +35,7 @@ mixin _$TabFolderThemeExtensionTailorMixin
   Color get tabContentBorderColor;
   Color get tabFocusRingColor;
   double get tabFocusRingWidth;
+  double get tabScrollArrowIconScale;
 
   @override
   TabFolderThemeExtension copyWith({
@@ -62,6 +63,7 @@ mixin _$TabFolderThemeExtensionTailorMixin
     Color? tabContentBorderColor,
     Color? tabFocusRingColor,
     double? tabFocusRingWidth,
+    double? tabScrollArrowIconScale,
   }) {
     return TabFolderThemeExtension(
       tabBarBackgroundColor:
@@ -97,6 +99,8 @@ mixin _$TabFolderThemeExtensionTailorMixin
           tabContentBorderColor ?? this.tabContentBorderColor,
       tabFocusRingColor: tabFocusRingColor ?? this.tabFocusRingColor,
       tabFocusRingWidth: tabFocusRingWidth ?? this.tabFocusRingWidth,
+      tabScrollArrowIconScale:
+          tabScrollArrowIconScale ?? this.tabScrollArrowIconScale,
     );
   }
 
@@ -198,6 +202,9 @@ mixin _$TabFolderThemeExtensionTailorMixin
         t,
       )!,
       tabFocusRingWidth: t < 0.5 ? tabFocusRingWidth : other.tabFocusRingWidth,
+      tabScrollArrowIconScale: t < 0.5
+          ? tabScrollArrowIconScale
+          : other.tabScrollArrowIconScale,
     );
   }
 
@@ -301,6 +308,10 @@ mixin _$TabFolderThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               tabFocusRingWidth,
               other.tabFocusRingWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              tabScrollArrowIconScale,
+              other.tabScrollArrowIconScale,
             ));
   }
 
@@ -332,6 +343,7 @@ mixin _$TabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabContentBorderColor),
       const DeepCollectionEquality().hash(tabFocusRingColor),
       const DeepCollectionEquality().hash(tabFocusRingWidth),
+      const DeepCollectionEquality().hash(tabScrollArrowIconScale),
     ]);
   }
 }
@@ -375,4 +387,6 @@ extension TabFolderThemeExtensionBuildContextProps on BuildContext {
       tabFolderThemeExtension.tabContentBorderColor;
   Color get tabFocusRingColor => tabFolderThemeExtension.tabFocusRingColor;
   double get tabFocusRingWidth => tabFolderThemeExtension.tabFocusRingWidth;
+  double get tabScrollArrowIconScale =>
+      tabFolderThemeExtension.tabScrollArrowIconScale;
 }
