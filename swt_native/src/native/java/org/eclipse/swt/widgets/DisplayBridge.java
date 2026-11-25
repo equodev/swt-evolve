@@ -1643,7 +1643,18 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         // else carries a change to it: adding a menu is as invisible as removing one. Rate-limited,
         // and a no-op wherever the menu bar belongs in the window -- see MacMenuBar#sync.
         DisplayBridgePlatform.syncMenuBar();
+        // An application whose workspace names another variant than the one it started in, as an
+        // Eclipse IDE does once its workspace is chosen, moves to it as a settings change would.
+        int themeChanges = dev.equo.swt.Config.workspaceThemeChanges();
+        if (themeChanges != workspaceThemeChangesFollowed) {
+            workspaceThemeChangesFollowed = themeChanges;
+            broadcastSwtEvolveProperties();
+            if (forDisplay != null) ThemedSystemColors.followVariant(forDisplay.getApi());
+        }
     }
+
+    /** The workspace theme changes this Display's client and system colours already follow. */
+    private int workspaceThemeChangesFollowed = dev.equo.swt.Config.workspaceThemeChanges();
 
     /**
      * Whether {@code DartDisplay.sleep()} must wait through {@link #sleep(int)} (capped, pump-driven)

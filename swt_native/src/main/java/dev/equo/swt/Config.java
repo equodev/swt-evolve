@@ -949,9 +949,11 @@ public class Config {
             configFlags.show_scaling_control = Boolean.getBoolean("swt.evolve.show_scaling_control");
             configFlags.decorations_align = DecorationsAlign.fromString(System.getProperty("swt.evolve.decorations_align", "vleft"));
             configFlags.print_move = Boolean.getBoolean("dev.equo.swt.printMove");
-            // The variant the application defines, "dark" or "light". Null leaves it to the system the
-            // client runs on (see darkTheme).
-            configFlags.force_theme = System.getProperty("swt.evolve.force_theme");
+            // The variant the application defines, "dark" or "light": the flag, else the one its
+            // workspace theme names. Null leaves it to the system the client runs on (see darkTheme).
+            configFlags.force_theme = System.getProperty(FORCE_THEME);
+            workspaceTheme = null;
+            readWorkspaceTheme(configFlags);
             // Never null in a running app: some widgets draw differently without a theme name.
             configFlags.theme_name = System.getProperty("swt.evolve.theme_name", ConfigFlags.DEFAULT_THEME_NAME);
             // Client-Side Decorations: a single property selects placement and on/off
@@ -1312,6 +1314,42 @@ public class Config {
     private static volatile java.lang.reflect.Method systemDarkThemeMethod;
     private static volatile boolean systemDarkThemeLookedUp;
 
+    static final String FORCE_THEME = "swt.evolve.force_theme";
+
+    /** The workspace the theme was last read from, and the variant read there: the JVM's, like the flags. */
+    private static String workspaceThemeArea;
+    private static String workspaceTheme;
+    /** How many times a workspace changed the theme; each Display counts the ones it has followed. */
+    private static int workspaceThemeChanges;
+
+    /**
+     * How many times a workspace has changed the theme. An Eclipse IDE started without {@code -data}
+     * chooses its workspace after its Display starts, past the first read of the flags; a Display that
+     * sees this count move sends its client the flags again.
+     */
+    public static synchronized int workspaceThemeChanges() {
+        followWorkspace();
+        return workspaceThemeChanges;
+    }
+
+    /** Takes the variant of a workspace that appeared since the last read. */
+    private static synchronized void followWorkspace() {
+        ConfigFlags flags = getConfigFlags();
+        String area = EclipseWorkspaceTheme.instanceArea();
+        if (area == null || area.equals(workspaceThemeArea)) return;
+        String before = flags.force_theme;
+        readWorkspaceTheme(flags);
+        if (!java.util.Objects.equals(before, flags.force_theme)) workspaceThemeChanges++;
+    }
+
+    /** The flag outranks the workspace, and so does a theme a {@link ConfigFlagsDefaults} chose. */
+    private static void readWorkspaceTheme(ConfigFlags flags) {
+        workspaceThemeArea = EclipseWorkspaceTheme.instanceArea();
+        if (System.getProperty(FORCE_THEME) != null || !java.util.Objects.equals(flags.force_theme, workspaceTheme)) return;
+        workspaceTheme = EclipseWorkspaceTheme.detect();
+        flags.force_theme = workspaceTheme;
+    }
+
     /** "dark" or "light" for a value naming one, in any case; null for anything else. */
     static String themeVariant(String value) {
         if (value == null) return null;
@@ -1321,6 +1359,8 @@ public class Config {
 
     /** The theme the application defines, "dark" or "light"; null when it defines none. */
     public static String appTheme() {
+        // Colours an application reads as soon as its workspace is chosen take that workspace's theme.
+        followWorkspace();
         return themeVariant(getConfigFlags().force_theme);
     }
 
