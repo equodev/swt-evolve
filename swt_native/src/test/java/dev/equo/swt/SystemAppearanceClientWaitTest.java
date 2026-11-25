@@ -64,6 +64,19 @@ class SystemAppearanceClientWaitTest {
     }
 
     @Test
+    void aReportNamingNoVariantEndsTheWait() {
+        SystemAppearance appearance = SystemAppearance.readAhead(10_000);
+        appearance.report("");
+
+        long start = System.nanoTime();
+        appearance.awaitClient();
+
+        assertThat(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start)).isLessThan(1_000);
+        assertThat(appearance.reported()).isNull();
+        assertThat(Config.darkTheme(appearance)).isFalse();
+    }
+
+    @Test
     void aDesktopDisplayDoesNotWaitForAClient() {
         System.setProperty(ConfigFlags.MODE_PROPERTY, ConfigFlags.MODE_DESKTOP);
         SystemAppearance appearance = SystemAppearance.readAhead(10_000);
