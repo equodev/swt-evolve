@@ -185,6 +185,24 @@ public class DeskDisplayBridge extends DisplayBridge {
             applyWindowOrigin(main, mainWindowOrigin());
         }
         pumpWindows(true);
+        sendOpenedDocuments();
+    }
+
+    /** Each file the OS asked to open goes to the application as {@code SWT.OpenDocument}, as natively. */
+    private void sendOpenedDocuments() {
+        String[] paths = takeOpenedDocuments();
+        if (paths == null) return;
+        for (String path : paths) {
+            if (forDisplay == null || forDisplay.getApi().isDisposed()) return;
+            Event event = new Event();
+            event.text = path;
+            forDisplay.sendEvent(SWT.OpenDocument, event);
+        }
+    }
+
+    /** Seam: tests hand files in without JNI. A Display without a window of its own is asked for none. */
+    protected String[] takeOpenedDocuments() {
+        return windowContext != 0 ? FlutterNative.takeOpenedDocuments() : null;
     }
 
     /** The windows' event loops only: no shell bounds or origin sync, and a close is only queued. */

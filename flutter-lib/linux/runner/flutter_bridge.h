@@ -67,6 +67,9 @@ Java_dev_equo_swt_FlutterNative_GetCursorLocation(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 Java_dev_equo_swt_FlutterNative_SetCursorLocation(JNIEnv *env, jclass cls, jint x, jint y);
 
+JNIEXPORT jobjectArray JNICALL
+Java_dev_equo_swt_FlutterNative_TakeOpenedDocuments(JNIEnv *env, jclass cls);
+
 JNIEXPORT void JNICALL
 Java_dev_equo_swt_FlutterNative_SetVisible(JNIEnv *env, jclass cls, jlong context, jboolean visible);
 

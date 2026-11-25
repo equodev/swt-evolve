@@ -239,6 +239,14 @@ public final class FlutterNative {
     }
 
     /**
+     * The files the OS asked the application to open since the last call (Finder's Open With, a file
+     * dropped on the Dock icon), or null when there are none. macOS runner only.
+     */
+    public static String[] takeOpenedDocuments() {
+        return TakeOpenedDocuments();
+    }
+
+    /**
      * Points the native bridge at an external app-bundle directory (the EWT-owned combined
      * bundle: {@code <dir>/lib/libapp.so} + {@code <dir>/data/flutter_assets}). Must be
      * called before the first {@link #initialize}. Passing null/absent restores the default
@@ -259,6 +267,8 @@ public final class FlutterNative {
     private static native long GetCursorLocation();
 
     private static native boolean SetCursorLocation(int x, int y);
+
+    private static native String[] TakeOpenedDocuments();
 
     private static native boolean IsActive(long context);
 

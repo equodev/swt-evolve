@@ -912,6 +912,12 @@ Java_dev_equo_swt_FlutterNative_SetCursorLocation(JNIEnv *env, jclass cls, jint 
   return JNI_FALSE;
 }
 
+// Files to open reach a GTK application on its command line, not as events: there are none here.
+JNIEXPORT jobjectArray JNICALL
+Java_dev_equo_swt_FlutterNative_TakeOpenedDocuments(JNIEnv *env, jclass cls) {
+  return nullptr;
+}
+
 // Whether the window holds the keyboard focus the OS grants. GTK tracks this per toplevel, so it
 // answers for a window that is merely visible as well as one the user is working in.
 JNIEXPORT jboolean JNICALL

@@ -474,6 +474,11 @@ JNIEXPORT jboolean JNICALL Java_dev_equo_swt_FlutterNative_SetCursorLocation(JNI
     return ::SetCursorPos(target.physical.x, target.physical.y) ? JNI_TRUE : JNI_FALSE;
 }
 
+// Files to open reach a Windows application on its command line, not as events: there are none here.
+JNIEXPORT jobjectArray JNICALL Java_dev_equo_swt_FlutterNative_TakeOpenedDocuments(JNIEnv* env, jclass cls) {
+    return nullptr;
+}
+
 // Whether this window is the one the OS gives keyboard input to. The foreground window is the
 // right test rather than GetActiveWindow, which is per-thread and answers for a thread whose
 // windows are all in the background.

@@ -29,6 +29,36 @@ import OpenGL.GL
 private var deskAppConsideredRunning = false
 private var isRunningOverrideInstalled = false
 
+/// The files the OS asks the application to open (Finder's Open With, a file dropped on the Dock
+/// icon, `open -a`), kept until Java takes them as SWT.OpenDocument events, as native SWT's
+/// application delegate sends them. Without a handler of its own AppKit hands them to
+/// NSDocumentController, which knows no document types here and runs a modal alert inside the pump's
+/// nextEvent: the SWT event loop then never gets the thread back.
+@MainActor
+private final class OpenDocuments: NSObject {
+    static let shared = OpenDocuments()
+
+    private var pending: [String] = []
+
+    func install() {
+        NSAppleEventManager.shared().setEventHandler(
+            self, andSelector: #selector(handleOpenDocuments(_:withReplyEvent:)),
+            forEventClass: AEEventClass(kCoreEventClass), andEventID: AEEventID(kAEOpenDocuments))
+    }
+
+    @objc private func handleOpenDocuments(_ event: NSAppleEventDescriptor, withReplyEvent reply: NSAppleEventDescriptor) {
+        guard let files = event.paramDescriptor(forKeyword: keyDirectObject) else { return }
+        // A single file may come as the descriptor itself rather than as a list of one.
+        let items = files.numberOfItems > 0 ? (1...files.numberOfItems).compactMap { files.atIndex($0) } : [files]
+        pending.append(contentsOf: items.compactMap { $0.fileURLValue?.path })
+    }
+
+    func take() -> [String] {
+        defer { pending.removeAll() }
+        return pending
+    }
+}
+
 /// Steps of the native side's start, in microseconds since the epoch (the clock the Java and Dart
 /// sides of the boot trace read), answered on the window channel's `bootTrace`. Only the first
 /// window's start is recorded, so the list stays bounded however many windows the app opens.
@@ -362,6 +392,8 @@ class FlutterDisplayWindowController: FlutterSurface, NSWindowDelegate {
             // Bootstrap the app without entering the modal run loop (so this JNI call returns to
             // Java). The SWT event loop then services Cocoa via pump().
             bootStep("finishLaunching") { app.finishLaunching() }
+            // After finishLaunching, which installs AppKit's own handler, so this one replaces it.
+            bootStep("open documents handler") { OpenDocuments.shared.install() }
             // From here we service the AppKit loop ourselves via pump(); treat the app as running.
             deskAppConsideredRunning = true
             bootStep("makeKeyAndOrderFront") { win.makeKeyAndOrderFront(nil) }
@@ -848,6 +880,22 @@ public func FlutterNative_getOrigin(env: UnsafeMutablePointer<JNIEnv?>, cls: jcl
 @MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_IsActive")
 public func FlutterNative_isActive(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass, context: jlong) -> jboolean {
     return (surfaceFrom(context)?.isActive() ?? false) ? jboolean(1) : jboolean(0)
+}
+
+/// The files the OS asked to open since the last call, or null when there are none.
+@MainActor @_cdecl("Java_dev_equo_swt_FlutterNative_TakeOpenedDocuments")
+public func FlutterNative_takeOpenedDocuments(env: UnsafeMutablePointer<JNIEnv?>, cls: jclass) -> jobjectArray? {
+    let paths = OpenDocuments.shared.take()
+    if paths.isEmpty { return nil }
+    let jni = env.pointee!.pointee
+    guard let stringClass = jni.FindClass(env, "java/lang/String"),
+          let array = jni.NewObjectArray(env, jsize(paths.count), stringClass, nil) else { return nil }
+    for (i, path) in paths.enumerated() {
+        let element = jni.NewStringUTF(env, path)
+        jni.SetObjectArrayElement(env, array, jsize(i), element)
+        jni.DeleteLocalRef(env, element)
+    }
+    return array
 }
 
 // The work area, and reading or moving the pointer, are asked of the Windows runner only; here they
