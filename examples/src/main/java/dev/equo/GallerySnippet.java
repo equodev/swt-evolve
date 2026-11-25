@@ -364,6 +364,31 @@ public class GallerySnippet {
             status.setText("OwnerDraw cell editor opened");
         });
 
+        // Pinned Columns — a CHECK table whose first column is too narrow for one row's text, so
+        // that row's cell is cut off while the others fit.
+        Group pinnedGroup = section(root, "Pinned Columns");
+        pinnedGroup.setLayout(new FillLayout());
+        GridData pinnedData = new GridData(SWT.FILL, SWT.CENTER, false, false);
+        pinnedData.widthHint = SECTION_WIDTH;
+        pinnedData.heightHint = 90;
+        pinnedGroup.setLayoutData(pinnedData);
+        Table pinnedTable = new Table(pinnedGroup, SWT.BORDER | SWT.CHECK | SWT.FULL_SELECTION);
+        pinnedTable.setHeaderVisible(true);
+        pinnedTable.setLinesVisible(true);
+        String[] pinnedHeaders = {"Site", "Address"};
+        int[] pinnedWidths = {120, 220};
+        for (int i = 0; i < pinnedHeaders.length; i++) {
+            TableColumn c = new TableColumn(pinnedTable, SWT.NONE);
+            c.setText(pinnedHeaders[i]);
+            c.setWidth(pinnedWidths[i]);
+        }
+        String[][] sites = {{"Releases", "example.com/releases"},
+                {"Integration builds for every platform", "example.com/integration"},
+                {"Updates", "example.com/updates"}};
+        for (String[] site : sites) {
+            new TableItem(pinnedTable, SWT.NONE).setText(site);
+        }
+
         // Tree
         Group treeGroup = section(root, "Tree");
         treeGroup.setLayout(new FillLayout());
@@ -466,6 +491,8 @@ public class GallerySnippet {
             moreItem.setText(entry);
             moreItem.addSelectionListener(widgetSelectedAdapter(e -> status.setText(entry + " selected")));
         }
+        // One item with an image and the rest without: their labels still start in one column.
+        toolDropDownMenu.getItem(0).setImage(new Image(display, getImagePath("synced.png")));
         MenuItem moreCascade = new MenuItem(toolDropDownMenu, SWT.CASCADE);
         moreCascade.setText("More C");
         Menu moreSubMenu = new Menu(shell, SWT.DROP_DOWN);

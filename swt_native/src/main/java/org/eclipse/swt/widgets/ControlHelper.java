@@ -27,6 +27,24 @@ public class ControlHelper {
     // opened during that dispatch carries it to Flutter, which composites within it.
     private static Rectangle paintDamage;
 
+    /** JFace's vertical ruler of a text editor: each of its columns is a Canvas inside it. */
+    static final String RULER_CANVAS = "org.eclipse.jface.text.source.CompositeRuler$CompositeRulerCanvas";
+
+    /**
+     * What {@code control} answers for getBackground(): {@code background}, except for a column of an
+     * editor's vertical ruler while Evolve paints dark, which answers the ruler's. The annotation and
+     * folding columns fill themselves with their own background, which an e4 CSS theme sets by widget
+     * class name; e4 does not see their anonymous Canvas subclass as a Canvas, so a dark theme's
+     * editor rule misses them and they keep a colour the rest of the editor does not have.
+     */
+    public static org.eclipse.swt.graphics.Color background(DartControl control, org.eclipse.swt.graphics.Color background) {
+        Composite parent = control.parent;
+        if (parent == null || !RULER_CANVAS.equals(parent.getClass().getName())) return background;
+        if (!(control.display.getImpl() instanceof DartDisplay) || !((DartDisplay) control.display.getImpl()).darkTheme())
+            return background;
+        return parent.getBackground();
+    }
+
     /** The outline Evolve draws inside the bounds of a control created with BORDER. */
     static final int BORDER_WIDTH = 1;
 

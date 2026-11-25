@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -223,6 +224,102 @@ class MenuChangeNotifier extends InheritedWidget {
 
   @override
   bool updateShouldNotify(MenuChangeNotifier oldWidget) => false;
+}
+
+/// The leading columns a menu reserves in every item, so all its labels start at one x: a toggle
+/// column when any item is CHECK or RADIO, an image column when any item has an image. It follows
+/// its items' own updates: an item changed while the menu is open redraws only its own row.
+class MenuLeadingColumns extends StatefulWidget {
+  const MenuLeadingColumns({super.key, required this.items, required this.child});
+
+  /// For a list of item widgets, as the drop-down and cascade menus keep them.
+  MenuLeadingColumns.ofChildren(List<Widget> children, {Key? key, required Widget child})
+      : this(key: key, items: children.whereType<MenuItemSwt>().map((w) => w.value).toList(), child: child);
+
+  final List<VMenuItem> items;
+  final Widget child;
+
+  static ({bool toggle, bool image})? of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_MenuLeadingScope>()?.columns;
+
+  @override
+  State<MenuLeadingColumns> createState() => _MenuLeadingColumnsState();
+}
+
+class _MenuLeadingColumnsState extends State<MenuLeadingColumns> {
+  List<int> _keys = const [];
+  late ({bool toggle, bool image}) _columns;
+
+  @override
+  void initState() {
+    super.initState();
+    _watch();
+    _columns = _columnsOf(widget.items);
+  }
+
+  @override
+  void didUpdateWidget(MenuLeadingColumns oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(_keys, _keysOf(widget.items))) {
+      _unwatch();
+      _watch();
+    }
+    _columns = _columnsOf(widget.items);
+  }
+
+  @override
+  void dispose() {
+    _unwatch();
+    super.dispose();
+  }
+
+  static List<int> _keysOf(List<VMenuItem> items) => [for (final item in items) VRegistry.keyOf(item)];
+
+  void _watch() {
+    _keys = _keysOf(widget.items);
+    for (final key in _keys) {
+      VRegistry.instance.watchAt(key, _itemChanged);
+    }
+  }
+
+  void _unwatch() {
+    for (final key in _keys) {
+      VRegistry.instance.unwatchAt(key, _itemChanged);
+    }
+  }
+
+  void _itemChanged(VChange change) {
+    if (!mounted) return;
+    final columns = _columnsOf(widget.items);
+    if (columns != _columns) setState(() => _columns = columns);
+  }
+
+  /// [items] as the registry holds them now, which an item's own update reaches first.
+  static ({bool toggle, bool image}) _columnsOf(List<VMenuItem> items) {
+    final held = [
+      for (final item in items)
+        switch (VRegistry.instance.valueAt(VRegistry.keyOf(item))) {
+          final VMenuItem value => value,
+          _ => item,
+        },
+    ];
+    return (
+      toggle: held.any((item) => StyleBits(item.style).hasAny(SWT.CHECK, SWT.RADIO)),
+      image: held.any((item) => item.image != null),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => _MenuLeadingScope(columns: _columns, child: widget.child);
+}
+
+class _MenuLeadingScope extends InheritedWidget {
+  const _MenuLeadingScope({required this.columns, required super.child});
+
+  final ({bool toggle, bool image}) columns;
+
+  @override
+  bool updateShouldNotify(_MenuLeadingScope oldWidget) => columns != oldWidget.columns;
 }
 
 class MenuImpl<T extends MenuSwt, V extends VMenu>
@@ -744,11 +841,14 @@ class MenuImpl<T extends MenuSwt, V extends VMenu>
             child: Focus(
               focusNode: _unarmedFocusNode,
               onKeyEvent: _armFromUnarmed,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: menuItems
-                    .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                    .toList(),
+              child: MenuLeadingColumns(
+                items: menuItems,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: menuItems
+                      .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                      .toList(),
+                ),
               ),
             ),
           ),
@@ -1068,9 +1168,12 @@ class _MenuBarItemState extends State<_MenuBarItem> {
               child: MenuMnemonics(
                 focusNode: _itemsFocusNode,
                 close: _closeFromKeyboard,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: _menuChildren,
+                child: MenuLeadingColumns.ofChildren(
+                  _menuChildren,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: _menuChildren,
+                  ),
                 ),
               ),
             ),

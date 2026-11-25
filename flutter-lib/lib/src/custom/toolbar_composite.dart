@@ -291,9 +291,9 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
         ],
       );
 
-      return Container(
+      return _withFrameGC(this, backgroundColor, (isFrame) => Container(
         height: toolbarHeight,
-        decoration: BoxDecoration(color: backgroundColor),
+        decoration: isFrame ? null : BoxDecoration(color: backgroundColor),
         child: ToolbarAreaMarker(
           active: true,
           background: backgroundColor,
@@ -309,7 +309,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
                 : toolbarRow,
           ),
         ),
-      );
+      ));
     }
 
     final widgets = visibleChildren.map((child) => buildMapWidgetFromValue(child)).toList();
@@ -336,8 +336,8 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
       ],
     );
 
-    return Container(
-      decoration: BoxDecoration(color: backgroundColor),
+    return _withFrameGC(this, backgroundColor, (isFrame) => Container(
+      decoration: isFrame ? null : BoxDecoration(color: backgroundColor),
       child: ToolbarAreaMarker(
         active: true,
         background: backgroundColor,
@@ -354,7 +354,7 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
               : nonBoundsRow,
         ),
       ),
-    );
+    ));
   }
 
   /// Puts a DOM window-drag surface behind the toolbar so pressing bare toolbar
@@ -451,6 +451,17 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
     }
     return mapWidgetFromValue(child);
   }
+}
+
+/// A trim contribution's frame is a Canvas that draws its drag-handle grip through its GC, so the
+/// frame paints its [ground] under the GC and the contribution it holds over it, as a Canvas does.
+/// The ground is a decoration, as it is on any other trim composite, so a press on the bare frame
+/// stays on it. [build] is told whether the composite is such a frame, so it leaves the ground to
+/// this; any other trim composite is returned as [build] makes it.
+Widget _withFrameGC(CompositeImpl composite, Color ground, Widget Function(bool isFrame) build) {
+  if (composite.widget.value is! VCanvas) return build(false);
+  return composite.stackGCUnderChildren(
+      (child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child), build(true));
 }
 
 class ChipAddonImages extends InheritedWidget {
@@ -611,23 +622,40 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
         ),
     ];
 
-    return Container(
+    final topBorder = Border(top: BorderSide(color: dividerColor, width: borderWidth));
+    // A frame keeps its contribution where Java put it: past the drag-handle strip on its top edge.
+    final ownBounds = state.bounds;
+    final hasBounds = ownBounds != null &&
+        ownBounds.width > 0 &&
+        ownBounds.height > 0 &&
+        visibleChildren.every((c) => c.bounds != null);
+    return _withFrameGC(this, backgroundColor, (isFrame) => Container(
       key: _containerKey,
+      width: isFrame && hasBounds ? ownBounds.width.toDouble() : null,
       height: containerHeight,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border(top: BorderSide(color: dividerColor, width: borderWidth)),
-      ),
+      // A frame's border is drawn over it, so it does not push the contribution off its bounds.
+      decoration: isFrame ? null : BoxDecoration(color: backgroundColor, border: topBorder),
+      foregroundDecoration: isFrame ? BoxDecoration(border: topBorder) : null,
       child: ToolbarAreaMarker(
         active: true,
         child: Stack(
           children: [
-            Column(mainAxisSize: MainAxisSize.max, children: widgets),
+            if (isFrame && hasBounds)
+              for (var i = 0; i < visibleChildren.length; i++)
+                Positioned(
+                  left: visibleChildren[i].bounds!.x.toDouble(),
+                  top: visibleChildren[i].bounds!.y.toDouble(),
+                  width: visibleChildren[i].bounds!.width.toDouble(),
+                  height: visibleChildren[i].bounds!.height.toDouble(),
+                  child: widgets[i],
+                )
+            else
+              Column(mainAxisSize: MainAxisSize.max, children: widgets),
             ...dividers,
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget buildMapWidgetFromValue(VControl child) {

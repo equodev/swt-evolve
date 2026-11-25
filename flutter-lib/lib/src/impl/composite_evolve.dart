@@ -354,7 +354,6 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
     );
   }
 
-  @visibleForTesting
   Widget stackGCUnderChildren(
       Widget Function(Widget) paintBackground, Widget children) {
     final gc = gcOverlay ?? (VGC()..id = state.id);

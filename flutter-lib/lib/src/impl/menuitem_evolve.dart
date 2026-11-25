@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +74,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
         menuTheme: menuTheme,
         isEnabled: isEnabled,
         text: split.label,
-        leading: _buildMenuIcon(widgetTheme, isEnabled),
+        leading: _buildLeading(context, widgetTheme, isEnabled),
         trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
         subMenu: state.menu!,
         onArm: _sendArm,
@@ -119,14 +120,15 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       onArm: _sendArm,
       onHelp: _helpOnF1,
       onTap: isEnabled ? _onCheckPressed : null,
-      leading: _buildToggleLeading(
+      leading: _buildLeading(
+        context,
+        widgetTheme,
+        isEnabled,
         indicator: _MenuCheckbox(
           widgetTheme: widgetTheme,
           isEnabled: isEnabled,
           isSelected: isChecked,
         ),
-        widgetTheme: widgetTheme,
-        isEnabled: isEnabled,
       ),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
       label: split.label,
@@ -164,14 +166,15 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
       onArm: _sendArm,
       onHelp: _helpOnF1,
       onTap: isEnabled ? _onRadioPressed : null,
-      leading: _buildToggleLeading(
+      leading: _buildLeading(
+        context,
+        widgetTheme,
+        isEnabled,
         indicator: _MenuRadioButton(
           widgetTheme: widgetTheme,
           isEnabled: isEnabled,
           isSelected: isSelected,
         ),
-        widgetTheme: widgetTheme,
-        isEnabled: isEnabled,
       ),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
       label: split.label,
@@ -206,7 +209,7 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
             () => capturedWidget.sendSelectionSelection(capturedState, null));
         notifier.closeMenu();
       } : null,
-      leading: _buildMenuIcon(widgetTheme, isEnabled),
+      leading: _buildLeading(context, widgetTheme, isEnabled),
       trailing: _buildAcceleratorText(widgetTheme, isEnabled, split.shortcut),
       label: split.label,
       child: MnemonicText(split.label, style: textStyle),
@@ -225,22 +228,36 @@ class MenuItemImpl<T extends MenuItemSwt, V extends VMenuItem>
     );
   }
 
-  Widget _buildToggleLeading({
-    required Widget indicator,
-    required MenuItemThemeExtension widgetTheme,
-    required bool isEnabled,
+  /// The item's toggle [indicator] and image, each in its column of the menu
+  /// ([MenuLeadingColumns]); a column the menu reserves stays empty in an item without that part.
+  Widget? _buildLeading(
+    BuildContext context,
+    MenuItemThemeExtension widgetTheme,
+    bool isEnabled, {
+    Widget? indicator,
   }) {
+    final columns = MenuLeadingColumns.of(context);
     final icon = _buildMenuIcon(widgetTheme, isEnabled);
-    if (icon == null) return indicator;
+    final toggle = indicator != null || (columns?.toggle ?? false);
+    final image = icon != null || (columns?.image ?? false);
+    if (!toggle && !image) return null;
+    final toggleWidth = math.max(widgetTheme.checkboxSize, widgetTheme.radioButtonSize);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        indicator,
-        SizedBox(width: widgetTheme.iconTextSpacing),
-        icon,
+        if (toggle) _leadingSlot(toggleWidth, indicator),
+        if (toggle && image) SizedBox(width: widgetTheme.iconTextSpacing),
+        if (image) _leadingSlot(widgetTheme.iconSize, icon),
       ],
     );
   }
+
+  static Widget _leadingSlot(double width, Widget? content) => SizedBox(
+        width: width,
+        child: content == null
+            ? null
+            : Align(alignment: Alignment.centerLeft, heightFactor: 1, child: content),
+      );
 
   void _registerRadioCallback(BuildContext context) {
     final notifier = MenuChangeNotifier.of(context);
@@ -740,7 +757,10 @@ class _CascadeMenuItemRowState extends State<_CascadeMenuItemRow> with MenuMnemo
                       focusNode: _submenuFocusNode,
                       close: _menuController.close,
                       onFocusChange: (_) => _closeSubmenuIfFocusLeft(),
-                      child: Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
+                      child: MenuLeadingColumns.ofChildren(
+                        _menuChildren,
+                        child: Column(mainAxisSize: MainAxisSize.min, children: _menuChildren),
+                      ),
                     ),
                   ),
                 ],

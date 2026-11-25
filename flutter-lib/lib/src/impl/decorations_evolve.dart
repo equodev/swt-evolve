@@ -215,11 +215,14 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
             focusNode: _itemsFocusNode,
             close: _controller.close,
             items: _items,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: data.items
-                  .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
-                  .toList(),
+            child: MenuLeadingColumns(
+              items: data.items,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: data.items
+                    .map((item) => MenuItemSwt(key: ValueKey(item.id), value: item))
+                    .toList(),
+              ),
             ),
           ),
         )),
