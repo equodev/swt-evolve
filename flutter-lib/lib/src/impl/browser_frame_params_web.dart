@@ -252,7 +252,7 @@ bool installBrowserFrameNavigationHandling(
         'click',
         ((web.MouseEvent e) {
           if (e.defaultPrevented) return;
-          final url = _followedLinkUrl(e, doc);
+          final url = _inFrameLinkUrl(e, doc);
           if (url == null) return;
           e.preventDefault();
           onNavigate(url, () {
@@ -268,7 +268,7 @@ bool installBrowserFrameNavigationHandling(
 
 /// The absolute URL the click [e] makes [doc] navigate to in place, or null when it opens
 /// elsewhere, downloads, runs script or only scrolls within the document.
-String? _followedLinkUrl(web.MouseEvent e, web.Document doc) {
+String? _inFrameLinkUrl(web.MouseEvent e, web.Document doc) {
   if (e.button != 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return null;
   // The target lives in the iframe's realm, so it is probed by property rather than by type.
   final target = e.target as JSObject?;
