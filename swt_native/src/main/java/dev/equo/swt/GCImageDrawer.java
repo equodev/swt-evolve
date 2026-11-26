@@ -362,7 +362,7 @@ public class GCImageDrawer extends EmbeddedBridge {
         if (width <= 0 || height <= 0 || (long) width * height > MAX_KEYED_PIXELS) return 0;
         long h = Fnv.ofLong(Fnv.ofLong(Fnv.EMPTY, width), height);
         org.eclipse.swt.graphics.Color background = image.getBackground();
-        h = Fnv.ofLong(h, background == null || background.isDisposed() ? -1 : background.getRGBA().hashCode());
+        h = Fnv.ofLong(h, background == null || background.isDisposed() ? -1 : background.getRGB().hashCode());
         org.eclipse.swt.graphics.ImageData data = image.getImageData();
         if (data == null) return Fnv.ofLong(h, -1);
         h = Fnv.ofLong(h, data.width);

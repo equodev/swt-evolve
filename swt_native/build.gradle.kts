@@ -9,6 +9,14 @@ import org.gradle.process.ExecOperations
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
+import org.gradle.api.artifacts.transform.InputArtifact
+import org.gradle.api.artifacts.transform.TransformAction
+import org.gradle.api.artifacts.transform.TransformOutputs
+import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.artifacts.type.ArtifactTypeDefinition
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 
 plugins {
     java
@@ -293,6 +301,44 @@ sourceSets {
         runtimeClasspath += output + nativeBackend.output + nativeBackend.runtimeClasspath
     }
 }
+
+// Eclipse re-signs only the bundles a release changes, so a release can pair two jars of one split
+// package (org.eclipse.jface.text.source, in jface.text and org.eclipse.text) signed with different
+// certificates. OSGi loads each bundle on its own; a flat classpath refuses the second jar with a
+// SecurityException, so the tests load the Eclipse jars without their signatures.
+abstract class StripEclipseSignatures : TransformAction<TransformParameters.None> {
+    @get:InputArtifact
+    abstract val input: Provider<FileSystemLocation>
+
+    override fun transform(outputs: TransformOutputs) {
+        val jar = input.get().asFile
+        if (!jar.name.startsWith("org.eclipse.")) {
+            outputs.file(input)
+            return
+        }
+        val signature = Regex("META-INF/[^/]+\\.(SF|RSA|DSA|EC)")
+        ZipFile(jar).use { zip ->
+            ZipOutputStream(outputs.file("unsigned/${jar.name}").outputStream()).use { out ->
+                for (entry in zip.entries()) {
+                    if (signature.matches(entry.name)) continue
+                    out.putNextEntry(ZipEntry(entry.name))
+                    zip.getInputStream(entry).use { it.copyTo(out) }
+                    out.closeEntry()
+                }
+            }
+        }
+    }
+}
+val unsignedJar = Attribute.of("dev.equo.unsigned", Boolean::class.javaObjectType)
+dependencies {
+    attributesSchema { attribute(unsignedJar) }
+    artifactTypes.getByName("jar") { attributes.attribute(unsignedJar, false) }
+    registerTransform(StripEclipseSignatures::class) {
+        from.attribute(unsignedJar, false).attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jar")
+        to.attribute(unsignedJar, true).attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, "jar")
+    }
+}
+configurations.named("testRuntimeClasspath") { attributes.attribute(unsignedJar, true) }
 
 run {
     val jfaceVersion: String by project
