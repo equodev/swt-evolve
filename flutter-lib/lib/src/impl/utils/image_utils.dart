@@ -957,6 +957,9 @@ class RemoteRender {
   final int contentKey;
   ui.Image? _raster;
 
+  /// The named pixels [_raster] is, when it was taken from [_rastersByContent] rather than made here.
+  _KeptRaster? _kept;
+
   bool get hasPixels => _raster != null;
 
   Future<ui.Image> rasterise() async => rasteriseSync();
@@ -967,38 +970,42 @@ class RemoteRender {
     final made = _raster;
     if (made != null) return made;
     final key = contentKey == 0 ? null : (contentKey, width, height);
-    final kept = key == null ? null : _rastersByContent.remove(key);
+    if (key == null) {
+      if (WireStats.on) WireStats.rendersRasterised++;
+      return _raster = picture!.toImageSync(width, height);
+    }
+    var kept = _rastersByContent.remove(key);
     if (kept != null) {
       if (WireStats.on) WireStats.rendersReused++;
-      // Back in as the most recently used.
-      _rastersByContent[key!] = kept;
-      return _raster = kept.clone();
+    } else {
+      if (WireStats.on) WireStats.rendersRasterised++;
+      kept = _KeptRaster(picture!.toImageSync(width, height));
     }
-    if (WireStats.on) WireStats.rendersRasterised++;
-    final raster = _raster = picture!.toImageSync(width, height);
-    if (key != null) _keepRaster(key, raster.clone());
-    return raster;
+    // In as the most recently used.
+    _keep(key, kept);
+    kept.users++;
+    _kept = kept;
+    // The kept image itself, not a clone of it: on the web renderers, disposing a render's clone of
+    // a kept toImageSync image blanked the images the other renders draw.
+    return _raster = kept.image;
   }
 
   /// Pixels of named renders, by name and size, least recently used first. Java names only small
   /// images, so the few kept here hold little.
-  static final Map<(int, int, int), ui.Image> _rastersByContent = {};
+  static final Map<(int, int, int), _KeptRaster> _rastersByContent = {};
   static const int _maxKeptRasters = 64;
 
-  static void _keepRaster((int, int, int) key, ui.Image raster) {
-    _rastersByContent[key] = raster;
+  static void _keep((int, int, int) key, _KeptRaster kept) {
+    _rastersByContent[key] = kept;
     while (_rastersByContent.length > _maxKeptRasters) {
-      final oldest = _rastersByContent.keys.first;
-      final evicted = _rastersByContent.remove(oldest)!;
-      // After the frame, as in [dispose].
-      WidgetsBinding.instance.endOfFrame.then((_) => evicted.dispose());
+      _rastersByContent.remove(_rastersByContent.keys.first)!.drop();
     }
   }
 
-  /// Drops the kept pixels of named renders.
+  /// Drops the kept pixels of named renders; renders still drawing them keep them until disposed.
   static void clearKeptRasters() {
-    for (final raster in _rastersByContent.values) {
-      raster.dispose();
+    for (final kept in _rastersByContent.values) {
+      kept.drop();
     }
     _rastersByContent.clear();
   }
@@ -1009,11 +1016,47 @@ class RemoteRender {
 
   void dispose() {
     final raster = _raster;
+    final kept = _kept;
     _raster = null;
+    _kept = null;
+    if (kept != null) {
+      kept.release();
+      return;
+    }
     // After the frame, not now: on the web renderers, disposing an image made by toImageSync while
     // another is being rasterised in the same frame corrupts that one.
     if (raster != null) WidgetsBinding.instance.endOfFrame.then((_) => raster.dispose());
     // The picture is not disposed: committed display lists may still draw it, and it cannot be
     // cloned. The engine reclaims it once unreferenced.
+  }
+}
+
+/// A named render's pixels, shared by every render with that name. Disposed once nothing draws them
+/// and [RemoteRender._rastersByContent] does not hold them, whichever comes last.
+class _KeptRaster {
+  _KeptRaster(this.image);
+
+  final ui.Image image;
+
+  /// How many renders draw [image].
+  int users = 0;
+  bool _dropped = false;
+
+  /// Stops keeping it for later renders.
+  void drop() {
+    _dropped = true;
+    _disposeIfUnused();
+  }
+
+  /// One render stops drawing it.
+  void release() {
+    users--;
+    _disposeIfUnused();
+  }
+
+  void _disposeIfUnused() {
+    if (!_dropped || users > 0) return;
+    // After the frame, as in [RemoteRender.dispose].
+    WidgetsBinding.instance.endOfFrame.then((_) => image.dispose());
   }
 }

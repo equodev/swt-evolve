@@ -23,11 +23,51 @@ void main() {
     return ImageUtils.remoteRender(ref)!.rasteriseSync();
   }
 
-  test('a render named like one already rasterised takes its pixels', () {
+  test('a render named like one already rasterised draws the same image', () {
     final first = rasterOf(fill(const Color(0xFF102030)), 1, 30, 4242);
     final second = rasterOf(fill(const Color(0xFF102030)), 1, 30, 4242);
 
-    expect(second.isCloneOf(first), isTrue);
+    // The same image, not a clone: on the web renderers, disposing a render's clone of a kept image
+    // blanked the images the other renders draw.
+    expect(identical(second, first), isTrue);
+  });
+
+  testWidgets('a render disposed leaves the named image to the renders still drawing it', (tester) async {
+    final kept = rasterOf(fill(const Color(0xFF102030)), 1, 30, 4343);
+    final ref = nextRef;
+    rasterOf(fill(const Color(0xFF102030)), 1, 30, 4343);
+
+    ImageUtils.remoteRender(ref)!.dispose();
+    await tester.pump();
+
+    expect(kept.debugDisposed, isFalse);
+  });
+
+  testWidgets('a named image no longer kept is disposed once no render draws it', (tester) async {
+    final ref = nextRef;
+    final image = rasterOf(fill(const Color(0xFF102030)), 1, 30, 4444);
+
+    RemoteRender.clearKeptRasters();
+    await tester.pump();
+    expect(image.debugDisposed, isFalse, reason: 'a render still draws it');
+
+    ImageUtils.remoteRender(ref)!.dispose();
+    await tester.pump();
+    expect(image.debugDisposed, isTrue);
+  });
+
+  testWidgets('a named image no render draws stays kept until dropped', (tester) async {
+    final ref = nextRef;
+    final image = rasterOf(fill(const Color(0xFF102030)), 1, 30, 4545);
+
+    ImageUtils.remoteRender(ref)!.dispose();
+    await tester.pump();
+    expect(image.debugDisposed, isFalse);
+    expect(identical(rasterOf(fill(const Color(0xFF102030)), 1, 30, 4545), image), isTrue);
+
+    ImageUtils.clearCache();
+    await tester.pump();
+    expect(image.debugDisposed, isFalse, reason: 'the render made last still draws it');
   });
 
   test('an unnamed render is rasterised on its own', () {
