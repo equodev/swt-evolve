@@ -18,21 +18,34 @@ class FontUtils {
   /// the key symbols. A new substitution target without them belongs here too.
   static const Set<String> _withoutSymbols = {'Liberation Sans', 'Liberation Serif', 'Liberation Mono'};
 
-  /// The engine's default font when it has a name to list: the web engine's Roboto, none on desktop.
-  static const String? _engineDefaultFamily = kIsWeb ? 'Roboto' : null;
+  /// The face a family this side does not have, such as SWT's "System", is drawn in, when it has a
+  /// name to list. The web engine's is Roboto. The Linux engine's is whichever of a list of faces
+  /// the host has installed, which Java cannot measure, so there it is the bundled Inter, the face
+  /// Java measures "System" with (FontMetricsUtil.metrics). Windows and macOS have one default
+  /// each, the one Java's table for that OS was measured on, and it has no name.
+  @visibleForTesting
+  static String? defaultFaceFor({required bool web, required TargetPlatform platform}) {
+    if (web) return 'Roboto';
+    return platform == TargetPlatform.linux ? BundledAssets.family('Inter') : null;
+  }
+
+  static String? get _defaultFace => defaultFaceFor(web: kIsWeb, platform: defaultTargetPlatform);
 
   /// Stands in for the engine's default font in a test, `(family: null)` for one with no name.
   @visibleForTesting
   static ({String? family})? debugEngineDefaultOverride;
 
-  /// [fallbackFamilies] behind a bundled face lacking the symbols, or behind the engine default.
-  /// The engine default stays first, so text keeps the font Java measured and only symbols change.
+  /// [fallbackFamilies] behind a bundled face lacking the symbols, or behind the default face.
+  /// The default face stays first, so text keeps the font Java measured and only symbols change.
+  /// It also stands behind a family the host has installed: a glyph that face lacks comes from it
+  /// before the engine's own fallback.
   static List<String>? fallbackFor(String? family) {
     final symbols = [for (final fallback in fallbackFamilies) BundledAssets.family(fallback)];
     final bundled = BundledAssets.bundledFamily(family);
     if (bundled != null) return _withoutSymbols.contains(bundled) ? symbols : null;
-    final engineDefault = (debugEngineDefaultOverride ?? (family: _engineDefaultFamily)).family;
-    return engineDefault == null ? null : [engineDefault, ...symbols];
+    final defaultFace = (debugEngineDefaultOverride ?? (family: _defaultFace)).family;
+    if (defaultFace == null) return null;
+    return [defaultFace, ...symbols.where((fallback) => fallback != defaultFace)];
   }
 
   /// Calls [onChange] whenever the system fonts change: a font that finishes loading changes how

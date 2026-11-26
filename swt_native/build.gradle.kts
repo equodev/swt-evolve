@@ -200,8 +200,9 @@ dependencies {
     }
 }
 
-// The desktop surface paints text with the host's own font stack, which each OS's table in
-// src/desktopFontMetrics was measured on. Each native<OS> tree gets that table as
+// The desktop surface paints text with the host's Flutter engine, which each OS's table in
+// src/desktopFontMetrics was measured on (on Linux "System" is drawn and measured in the bundled
+// Inter, FontMetricsUtil.metrics). Each native<OS> tree gets that table as
 // GenDesktopFontMetrics, beside the shared GenFontMetrics the web surface measures with (see
 // FontMetricsUtil.metrics).
 val desktopFontMetrics = oss.filter { it.startsWith("native") }.associateWith { os ->

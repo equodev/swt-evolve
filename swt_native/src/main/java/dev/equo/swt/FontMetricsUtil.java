@@ -73,10 +73,11 @@ public final class FontMetricsUtil {
     }
 
     /**
-     * Under the desktop surface text is painted by the host's own font stack, not by the fonts the
-     * web client bundles and substitutes, so it has to be measured with metrics taken from that
-     * stack. Each desktop jar carries them as this class, built from the embedded backend's table
-     * for the same OS; the web and embedded builds do not have it and never run that surface.
+     * Under the desktop surface text is painted by the host's Flutter engine, not with the fonts the
+     * web client substitutes, so it has to be measured with metrics taken on that host: its own
+     * faces, and on Linux the bundled Inter for "System" ({@link #metrics}). Each desktop jar carries
+     * them as this class, built from the embedded backend's table for the same OS; the web and
+     * embedded builds do not have it and never run that surface.
      */
     private static final String DESKTOP_METRICS_CLASS = "dev.equo.swt.GenDesktopFontMetrics";
 
@@ -112,15 +113,45 @@ public final class FontMetricsUtil {
     }
 
     /**
-     * The metrics for a font id ({@link #getId}): the host's own under the desktop surface when it
-     * has them, otherwise the shared table, which also holds the fonts every surface bundles.
+     * The metrics for a font id ({@link #getId}): under the desktop surface those of the face the
+     * client draws it in when the desktop table has them, otherwise the shared table, which also
+     * holds the fonts every surface bundles.
      */
     public static Metrics metrics(String fontId) {
         if (ConfigFlags.isDesktopMode()) {
-            Metrics m = desktopMetrics().get(fontId);
+            Metrics m = desktopMetrics().get(desktopFontId(fontId, HOST_OS_NAME));
             if (m != null) return m;
         }
         return GenFontMetrics.DATA.get(fontId);
+    }
+
+    /** The host the desktop surface runs its client on, which does not change while the process runs. */
+    private static final String HOST_OS_NAME = System.getProperty("os.name", "");
+
+    /**
+     * The desktop table's id for {@code fontId} on a host named {@code osName}: on Linux "System" is
+     * looked up as {@link #LINUX_DESKTOP_SYSTEM_FACE}; Windows and macOS keep every id.
+     */
+    static String desktopFontId(String fontId, String osName) {
+        boolean linux = osName != null && osName.toLowerCase(java.util.Locale.ROOT).contains("linux");
+        return linux ? linuxDesktopFontId(fontId) : fontId;
+    }
+
+    private static final String SYSTEM_FAMILY = "System";
+
+    /**
+     * The face the desktop client on Linux draws "System" in (font_utils.dart, the engine default
+     * family). Linux has no single default face: the engine takes whichever of a list the host has
+     * installed, so the client draws a face it bundles and "System" is measured with that face's
+     * rows. Windows and macOS each have one default, the one their table's "System" rows hold.
+     */
+    static final String LINUX_DESKTOP_SYSTEM_FACE = "Inter";
+
+    /** {@code fontId} with the "System" family replaced by {@link #LINUX_DESKTOP_SYSTEM_FACE}; any other id as it is. */
+    static String linuxDesktopFontId(String fontId) {
+        int styleAt = SYSTEM_FAMILY.length();
+        boolean system = fontId.length() == styleAt + "-0-0".length() && fontId.startsWith(SYSTEM_FAMILY + "-");
+        return system ? LINUX_DESKTOP_SYSTEM_FACE + fontId.substring(styleAt) : fontId;
     }
 
     /** A typographic point is 1/72", the unit an SWT {@code FontData} height is given in. */
