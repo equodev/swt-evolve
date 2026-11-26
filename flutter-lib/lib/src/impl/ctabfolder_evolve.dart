@@ -25,7 +25,7 @@ import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
-import '../nolayout.dart' show BoundsSlot;
+import '../nolayout.dart' show BoundsSlot, NoLayout, SashPanelMarker;
 import '../gen/color.dart';
 import '../gen/image.dart';
 import '../gen/rectangle.dart';
@@ -160,15 +160,40 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     if (children == null) return true;
     for (final child in children) {
       if (child.swt != 'ToolBar' || VRegistry.keyOf(child) != key) continue;
-      final topRight = state.topRight;
-      if (topRight != null && VRegistry.keyOf(topRight) == key) return true;
-      for (final item in state.items ?? const <VCTabItem>[]) {
-        final control = item.control;
-        if (control != null && VRegistry.keyOf(control) == key) return true;
-      }
-      return false;
+      return _placedByFolder(key);
     }
     return true;
+  }
+
+  /// Whether the widget at [key] is the folder's top-right control or a tab's page, which the folder
+  /// lays out itself.
+  bool _placedByFolder(int key) {
+    final topRight = state.topRight;
+    if (topRight != null && VRegistry.keyOf(topRight) == key) return true;
+    for (final item in state.items ?? const <VCTabItem>[]) {
+      final control = item.control;
+      if (control != null && VRegistry.keyOf(control) == key) return true;
+    }
+    return false;
+  }
+
+  /// The children that are no tab's page, top-right control or bar of the folder's own, which SWT
+  /// leaves where their owner put them, in folder coordinates. Those stacked under the selected
+  /// tab's page are left out: the page fills the body and covers them.
+  List<VControl> _looseChildren() {
+    final children = state.children;
+    if (children == null || children.isEmpty) return const [];
+    final items = state.items ?? const <VCTabItem>[];
+    final shown = _selectedIndex < items.length ? items[_selectedIndex].control : null;
+    final shownKey = shown == null ? null : VRegistry.keyOf(shown);
+    final loose = <VControl>[];
+    for (final child in children) {
+      final key = VRegistry.keyOf(child);
+      if (key == shownKey) break;
+      if (child.swt == 'ToolBar' || _placedByFolder(key)) continue;
+      loose.add(child);
+    }
+    return loose;
   }
 
   @override
@@ -390,6 +415,15 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
           )),
       ],
     );
+    // Always a Stack, so a free child appearing or going leaves the strip and the pages mounted.
+    final loose = _looseChildren();
+    column = Stack(fit: StackFit.passthrough, children: [
+      column,
+      if (loose.isNotEmpty)
+        Positioned.fill(
+          child: SashPanelMarker(active: false, child: NoLayout(children: loose, composite: state)),
+        ),
+    ]);
     if (outline != null) {
       column = CustomPaint(
         foregroundPainter: _FolderOutline(

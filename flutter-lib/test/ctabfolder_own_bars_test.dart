@@ -1,7 +1,7 @@
 // Upstream builds a CTabFolder's minimize, maximize and chevron buttons as ToolBars among its
 // children and moves them on every layout of the folder: a sash drag beside it does it on every
 // step. This folder draws those buttons itself and never those bars, so a bar moving is no change to
-// it. Another child it holds and does not render still is.
+// it. Another child it holds is drawn at its bounds, and moves with them.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -126,13 +126,14 @@ void main() {
     expect(builds(), 0);
   });
 
-  testWidgets('another child it holds and does not render still tells it', (tester) async {
+  testWidgets('another child it holds is drawn, and follows its bounds', (tester) async {
     await _mount(tester);
-    final builds = _countFolderBuilds();
+    final other = find.byWidgetPredicate((w) => w is CompositeSwt && w.value.id == 660);
+    expect(tester.getTopLeft(other).dx, 400);
 
     await deliverChange(_other(390, seq: 11), keys: [WireKey.k_Control_bounds], base: 10);
     await tester.pump();
 
-    expect(builds(), greaterThan(0));
+    expect(tester.getTopLeft(other).dx, 390);
   });
 }
