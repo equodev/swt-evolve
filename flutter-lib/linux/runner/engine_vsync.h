@@ -18,6 +18,10 @@
 // when that instance does not look like the one this was written against.
 bool EngineVsyncInstall(FlEngine *engine, GtkWidget *window);
 
+// |engine|'s FlMouseCursorHandler, which emits "cursor-changed" when Flutter asks for a cursor, or
+// null when FlEngine's instance does not look like the one this was written against.
+GObject *EngineMouseCursorHandler(FlEngine *engine);
+
 // A duration event in the engine's timeline (its Embedder stream), on the calling thread, so that the
 // runner's own steps of a frame show next to the engine's. Nothing until EngineVsyncInstall has seen
 // an engine, or while no timeline is recording.

@@ -857,7 +857,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       case 0: return SystemMouseCursors.basic;           // CURSOR_ARROW
       case 1: return SystemMouseCursors.wait;            // CURSOR_WAIT
       case 2: return SystemMouseCursors.precise;         // CURSOR_CROSS
-      case 5: return SystemMouseCursors.move;            // CURSOR_SIZEALL
+      // Not move: Linux names it the CSS `move`, which cursor themes such as Adwaita draw as the
+      // plain arrow. all-scroll is the four-way arrow (GDK_FLEUR on GTK SWT), IDC_SIZEALL on Windows.
+      case 5: return SystemMouseCursors.allScroll;       // CURSOR_SIZEALL
       case 6: return SystemMouseCursors.resizeUpLeftDownRight;  // CURSOR_SIZENESW
       case 7: return SystemMouseCursors.resizeUpDown;    // CURSOR_SIZENS
       case 8: return SystemMouseCursors.resizeUpRightDownLeft;  // CURSOR_SIZENWSE

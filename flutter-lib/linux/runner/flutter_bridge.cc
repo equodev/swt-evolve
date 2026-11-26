@@ -3,6 +3,7 @@
 #include "engine_vsync.h"
 #include "motion_on_arrival.h"
 #include "opaque_present.h"
+#include "system_cursor.h"
 
 #include <flutter_linux/flutter_linux.h>
 #include <gdk/gdkx.h>
@@ -311,6 +312,7 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
   GtkWidget *view_widget = GTK_WIDGET(view);
   GtkWidget *parent_top = gtk_widget_get_toplevel(parent_widget);
   EngineVsyncInstall(fl_view_get_engine(view), GTK_IS_WINDOW(parent_top) ? parent_top : parent_widget);
+  SystemCursorInstall(view);
 
   // Pre-wrap the FlView in a GtkOverlay and embed THAT into the SWT composite.
   // The webview_all (WebKitGTK) plugin's ensure_overlay() needs the FlView to
@@ -669,6 +671,8 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   FlView *view = boot_step("fl_view_new", [&] { return fl_view_new(project); });
   GtkWidget *view_widget = GTK_WIDGET(view);
   boot_step("EngineVsyncInstall", [&] { return EngineVsyncInstall(fl_view_get_engine(view), window); });
+  // SWT cursors Flutter names differently, as GTK's SWT shows them (system_cursor.h).
+  boot_step("SystemCursorInstall", [&] { return SystemCursorInstall(view); });
   // Flutter paints this window whole: its frames are drawn as they arrive (draw_on_arrival.cc).
   boot_step("DrawOnArrivalInstall", [&] { return DrawOnArrivalInstall(window); });
   // And the pointer's motion reaches it as it arrives (motion_on_arrival.cc).

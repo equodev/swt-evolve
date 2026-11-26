@@ -17,6 +17,7 @@ add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "gl_context.cc"
   "motion_on_arrival.cc"
   "opaque_present.cc"
+  "system_cursor.cc"
   "gl_present_hook.cc"
 )
 # gl_context.cc and gl_present_hook.cc dlopen libGL and libX11, so the bridge loads where they are missing.

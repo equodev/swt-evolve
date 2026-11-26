@@ -210,4 +210,16 @@ void main() {
         SystemMouseCursors.basic,
         reason: 'once released, the part under the pointer shows its own cursor again');
   });
+
+  // Where a vertical and a horizontal sash meet, SashLayout sets SIZEALL. Flutter's move cursor is
+  // the CSS `move`, which a Linux cursor theme such as Adwaita draws as the plain arrow; all-scroll
+  // is the four-way arrow GTK's SWT shows (GDK_FLEUR), and the same IDC_SIZEALL on Windows.
+  testWidgets('a container set to SIZEALL shows the four-way resize cursor', (tester) async {
+    await _mount(tester, _sashContainer(70, cursor: VCursor()..cursorStyle = SWT.CURSOR_SIZEALL));
+
+    await _mouseAt(tester, const Offset(_bandLeft + _sashWidth / 2, _y));
+
+    expect(RendererBinding.instance.mouseTracker.debugDeviceActiveCursor(_mouse),
+        SystemMouseCursors.allScroll);
+  });
 }

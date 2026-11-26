@@ -115,6 +115,23 @@ bool LooksLikeTheInstance(FlEngine *engine, FlEngineInstance *instance) {
 
 } // namespace
 
+GObject *EngineMouseCursorHandler(FlEngine *engine) {
+  if (engine == nullptr) return nullptr;
+  auto *instance = reinterpret_cast<FlEngineInstance *>(engine);
+  if (instance->binary_messenger == nullptr ||
+      instance->binary_messenger != fl_engine_get_binary_messenger(engine) ||
+      instance->texture_registrar != fl_engine_get_texture_registrar(engine) ||
+      instance->embedder_api.struct_size != sizeof(FlutterEngineProcTable)) {
+    return nullptr;
+  }
+  auto *handler = static_cast<GObject *>(instance->mouse_cursor_handler);
+  if (handler == nullptr || !G_IS_OBJECT(handler) ||
+      strcmp(G_OBJECT_TYPE_NAME(handler), "FlMouseCursorHandler") != 0) {
+    return nullptr;
+  }
+  return handler;
+}
+
 void EngineTraceBegin(const char *name) {
   if (g_trace_begin != nullptr) g_trace_begin(name);
 }
