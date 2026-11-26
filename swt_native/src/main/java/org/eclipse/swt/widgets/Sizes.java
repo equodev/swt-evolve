@@ -42,11 +42,16 @@ public class Sizes {
         return new Point(trim.width, trim.height);
     }
 
+    /**
+     * The outline of a Button created with BORDER, drawn inside its bounds, is added around the measure and
+     * the hints, as Win32 adds the border width.
+     */
     public static Point computeSize(DartButton c, int wHint, int hHint, boolean changed) {
         Point size = ButtonSizes.computeSize(c, wHint, hHint, changed);
         if (wHint == SWT.DEFAULT)
             size.x += 2 * pushButtonMargin(c.getApi().getStyle());
-        return size;
+        int border = ControlHelper.borderWidth(c);
+        return new Point(size.x + 2 * border, size.y + 2 * border);
     }
 
     /** The transparent margin on each side of a bezelled button; the render side paints inside it. */
@@ -301,14 +306,18 @@ public class Sizes {
 
     /**
      * A negative hint other than {@link SWT#DEFAULT} counts as zero. A Link that shows no text is as wide
-     * as the measure says, as on Win32 and GTK (Cocoa makes it 64 wide).
+     * as the measure says, as on Win32 and GTK (Cocoa makes it 64 wide). The hints are the text's: the
+     * outline of a Link created with BORDER, drawn inside its bounds, is added around them, as Win32 and
+     * GTK add the border width.
      */
     public static Point computeSize(DartLink c, int wHint, int hHint, boolean changed) {
         if (wHint != SWT.DEFAULT && wHint < 0)
             wHint = 0;
         if (hHint != SWT.DEFAULT && hHint < 0)
             hHint = 0;
-        return LinkSizes.computeSize(c, wHint, hHint, changed);
+        Point size = LinkSizes.computeSize(c, wHint, hHint, changed);
+        int border = ControlHelper.borderWidth(c);
+        return new Point(size.x + 2 * border, size.y + 2 * border);
     }
 
     public static Point computeSize(DartList c, int wHint, int hHint, boolean changed) {
