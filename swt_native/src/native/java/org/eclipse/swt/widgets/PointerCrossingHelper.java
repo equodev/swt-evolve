@@ -31,6 +31,8 @@ final class PointerCrossingHelper {
     }
 
     static void moved(DartControl control, Event e) {
+        // Before its fields are read: a later move may still be merged into it until here.
+        dev.equo.swt.MoveCompression.taken(control, e);
         ((DartDisplay) control.display.getImpl()).cursorLocation = control.toDisplay(e.x, e.y);
         control.display.setData(BUTTON_HELD, (e.stateMask & SWT.BUTTON_MASK) != 0 ? Boolean.TRUE : null);
     }

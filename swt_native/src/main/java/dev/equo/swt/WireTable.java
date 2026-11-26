@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 1986568125;
+    public static final int FINGERPRINT = 313011147;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -270,6 +270,7 @@ public final class WireTable {
             "evolve.test.bootTrace",
             "evolve.test.bootTraceResponse",
             "TabFolder/stripLaidOut",
+            "swt.evolve.move.handled",
     };
 
     /** Record type names by number. */
@@ -2336,6 +2337,9 @@ public final class WireTable {
 
     /** The channel `TabFolder/stripLaidOut`. */
     public static final int CHANNEL_TAB_FOLDER_STRIP_LAID_OUT = 255;
+
+    /** The channel `swt.evolve.move.handled`. */
+    public static final int CHANNEL_SWT_EVOLVE_MOVE_HANDLED = 256;
 
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;

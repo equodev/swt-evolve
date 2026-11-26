@@ -17,6 +17,13 @@ import java.util.function.Consumer;
  */
 public class RecordingComm implements CommService {
 
+    private final dev.equo.swt.MoveCompression moves = new dev.equo.swt.MoveCompression();
+
+    @Override
+    public dev.equo.swt.MoveCompression moves() {
+        return moves;
+    }
+
     /**
      * A recorded outbound frame: its channel ({@link #event}) and its payload decoded ({@link #value},
      * see {@link GcFrames#decode}); a widget record's value is its state.
@@ -58,13 +65,14 @@ public class RecordingComm implements CommService {
     public final List<Frame> sent = new CopyOnWriteArrayList<>();
     public final Map<String, Consumer<?>> handlers = new ConcurrentHashMap<>();
     private int wireFramesSent;
+    /** The messages sent, each counted once however many frames {@link #sent} records for it. */
+    public final java.util.concurrent.atomic.AtomicInteger messages = new java.util.concurrent.atomic.AtomicInteger();
 
     @Override
     public void send(int type, long id, int channel, byte[] payload) {
+        messages.incrementAndGet();
         send(Channels.name(type, id, channel), payload);
     }
-
-    private final java.util.concurrent.atomic.AtomicInteger messages = new java.util.concurrent.atomic.AtomicInteger();
 
     /** The socket messages sent, however many frames each carries. */
     public int messages() {
@@ -98,8 +106,51 @@ public class RecordingComm implements CommService {
             for (WireFrames.Record r : WireFrames.records(payload)) sent.add(new Frame(r.channel(), r.state(), wire, null, r.size(), List.of()));
             return;
         }
+        // A flush's records travel in its batch, after the frames of what it painted: recorded as the
+        // frame of records it would have been on its own, between the runs of the batch's other entries.
+        if (dev.equo.swt.comm.MessageBatch.EVENT.equals(eventName) && carriesRecords(payload)) {
+            int pos = 0;
+            int runStart = 0;
+            while (pos < payload.length) {
+                int[] entry = entryAt(payload, pos);
+                if (entry == null) break;
+                if (entry[0] == 1) {
+                    if (pos > runStart) send(eventName, java.util.Arrays.copyOfRange(payload, runStart, pos));
+                    send(dev.equo.swt.WidgetWire.CHANNEL, java.util.Arrays.copyOfRange(payload, entry[1], entry[2]));
+                    runStart = entry[2];
+                }
+                pos = entry[2];
+            }
+            if (payload.length > runStart) send(eventName, java.util.Arrays.copyOfRange(payload, runStart, payload.length));
+            return;
+        }
         GcFrames.Decoded frame = GcFrames.decode(eventName, payload);
         sent.add(new Frame(frame.event(), frame.value(), 0, payload, payload.length, GcFrames.opsNamedIn(eventName, payload)));
+    }
+
+    /** Whether the batch {@code payload} has a frame of widget records among its entries. */
+    private static boolean carriesRecords(byte[] payload) {
+        for (int pos = 0; pos < payload.length; ) {
+            int[] entry = entryAt(payload, pos);
+            if (entry == null) return false;
+            if (entry[0] == 1) return true;
+            pos = entry[2];
+        }
+        return false;
+    }
+
+    /** The batch entry at {@code pos}: 1 when it is a frame of widget records, else 0; its payload's start and end. */
+    private static int[] entryAt(byte[] batch, int pos) {
+        dev.equo.swt.comm.ChannelHeader.Decoded entry = dev.equo.swt.comm.ChannelHeader.decode(batch, pos, batch.length);
+        if (entry == null) return null;
+        int at = entry.payloadStart();
+        int length = 0;
+        for (int shift = 0; ; shift += 7) {
+            int b = batch[at++] & 0xFF;
+            length |= (b & 0x7F) << shift;
+            if (b < 0x80) break;
+        }
+        return new int[] {dev.equo.swt.WidgetWire.CHANNEL.equals(entry.channel()) ? 1 : 0, at, at + length};
     }
 
     /** How many binary frames of widget records carried what is in {@link #sent}. */

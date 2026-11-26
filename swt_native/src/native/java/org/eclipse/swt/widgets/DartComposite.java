@@ -1092,6 +1092,8 @@ public class DartComposite extends DartScrollable implements IComposite {
         return layoutDeferred;
     }
 
+    dev.equo.swt.MarkMemo childrenMark;
+
     @Override
     void createWidget() {
         getApi().state |= CANVAS;

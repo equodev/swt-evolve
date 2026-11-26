@@ -14,6 +14,7 @@ public final class WireStats {
     static long frames;
     static long bytes;
     static long binaryFrames;
+    static long messages;
 
     private WireStats() {
     }
@@ -22,19 +23,24 @@ public final class WireStats {
     public static synchronized void start() {
         if (!BridgeTap.installed(TAP))
             throw new IllegalStateException("wire stats are counted only with -Ddev.equo.swt.wireStats=true");
-        flushes = flushNanos = sendNanos = frames = bytes = binaryFrames = 0;
+        flushes = flushNanos = sendNanos = frames = bytes = binaryFrames = messages = 0;
         on = true;
     }
 
     /**
      * Stops counting and returns what was counted: {@code flushes, flushNanos, sendNanos, frames, bytes,
-     * binaryFrames}.
+     * binaryFrames, messages}: a message, one write to the transport, carries a frame or a batch of them.
      * {@code flushNanos} covers the whole flush, {@code sendNanos} the part of it spent handing the
      * written messages to the transport.
      */
     public static synchronized long[] stop() {
         on = false;
-        return new long[] { flushes, flushNanos, sendNanos, frames, bytes, binaryFrames };
+        return new long[] { flushes, flushNanos, sendNanos, frames, bytes, binaryFrames, messages };
+    }
+
+    /** A message went to the transport. */
+    public static void message() {
+        if (on) messages++;
     }
 
     static final BridgeTap TAP = new BridgeTap() {

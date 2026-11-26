@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import 'timed_layout.dart';
+
 /// A [LayoutBuilder] whose own relayouts repaint nothing but itself.
 ///
 /// A LayoutBuilder lays itself out again whenever any widget below it is marked dirty between two
@@ -14,8 +16,11 @@ class LayeredLayoutBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
-        child: LayoutBuilder(
-          builder: (context, constraints) => RepaintBoundary(child: builder(context, constraints)),
-        ),
+        child: timedLayout(
+            context,
+            'LB',
+            LayoutBuilder(
+              builder: (context, constraints) => RepaintBoundary(child: builder(context, constraints)),
+            )),
       );
 }

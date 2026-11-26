@@ -417,7 +417,7 @@ public final class DartGC extends DartResource implements IGC {
                     if (skipRenderOnDispose) {
                         drawer.abandon();
                         di.cancelRenderFuture();
-                    } else if (drawer.endDrawCycle(false)) {
+                    } else if (drawer.endDrawCycle(false, this)) {
                         // Pixels are crossing back, so this thread waits for them.
                         image.getImageData();
                     } else {
@@ -1630,7 +1630,11 @@ public final class DartGC extends DartResource implements IGC {
             return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
         if (bounds != null && this.clipping != null)
             clip = clip.intersection(bounds);
-        return GCHelper.isTransforming(transform) ? GCHelper.transformBounds(transform, clip, true) : clip;
+        if (GCHelper.isTransforming(transform))
+            clip = GCHelper.transformBounds(transform, clip, true);
+        if (clip.x + clip.width > shownRight)
+            clip.width = Math.max(0, shownRight - clip.x);
+        return clip;
     }
 
     /**
@@ -3721,6 +3725,8 @@ public final class DartGC extends DartResource implements IGC {
     boolean compactRow;
 
     org.eclipse.swt.widgets.Widget ownerDrawItem;
+
+    int shownRight = Integer.MAX_VALUE;
 
     public void paintOwnerDrawnItem(org.eclipse.swt.widgets.Widget item) {
         ownerDrawItem = item;

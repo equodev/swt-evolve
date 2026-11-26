@@ -25,6 +25,7 @@ import '../gen/event.dart';
 import '../gen/swt.dart';
 import '../gen/widget.dart';
 import '../gen/widgets.dart';
+import '../nolayout.dart' show BoundsSlot;
 import '../gen/color.dart';
 import '../gen/image.dart';
 import '../gen/rectangle.dart';
@@ -65,6 +66,33 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     extends CompositeImpl<T, V> {
   /// The widget holding the tabs, one keyed subtree per tab: where measure_ctabfolder reads a tab.
   static const tabRow = 'TabDragRow';
+
+  /// Java lays the tabs out again on every resize and numbers each layout (stripLayoutSeq); it uses
+  /// a strip report only for the layout it is drawn for. The report reads the number when it is
+  /// made, after a frame: a new one asks for a report, not for a build.
+  @override
+  Set<int> get placementKeys => const {WireKey.k_Control_bounds, WireKey.k_CTabFolder_stripLayoutSeq};
+
+  /// The folder's build reads its size where its layout reads it again anyway: the root box takes
+  /// the slot's size, and the tab bar works out the topRight control's place in a layout builder
+  /// that builds again at each new width. A topRight control wrapped onto a row of its own under
+  /// the tabs is placed from the folder's height in the build: that folder rebuilds.
+  @override
+  bool sizeIsLayoutOnly(Size built, int width, int height) =>
+      !(state.tabPosition == SWT.BOTTOM && ((state.topRightAlignment ?? 0) & SWT.WRAP) != 0);
+
+  /// Bumped when Java lays the tabs out again: the tab bar answers with a strip report.
+  final ValueNotifier<int> _stripReportAsked = ValueNotifier<int>(0);
+
+  @override
+  void setValue(V value) {
+    if (lastChange?.touches(WireKey.k_CTabFolder_stripLayoutSeq) ?? false) {
+      _stripReportAsked.value++;
+      // The report follows a frame, and a change that rebuilds nothing would not cause one.
+      WidgetsBinding.instance.ensureVisualUpdate();
+    }
+    super.setValue(value);
+  }
 
   /// The widget the chevron is drawn in: where measure_ctabfolder reads its width.
   static const chevronProbe = 'ChevronAfterTabs';
@@ -108,6 +136,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   @override
   void dispose() {
+    VRegistry.instance.forgetDrawsHeldAt(_heldKey, _drawsHeld);
+    _stripReportAsked.dispose();
     final popup = _chevronPopupRoute;
     if (popup != null && popup.isActive) {
       // The navigator cannot change routes while the tree that disposes this folder is locked.
@@ -118,9 +148,33 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     super.dispose();
   }
 
+  /// The registry key the folder's test of what it draws ([_drawsHeld]) was given under.
+  late final int _heldKey = VRegistry.keyOf(state);
+
+  /// Of the widgets the folder holds, whether it draws the one at [key]. Upstream builds its
+  /// minimize, maximize and chevron buttons as ToolBars among its children and moves them on every
+  /// layout; this folder draws those buttons itself and never those bars. The ToolBar it does draw
+  /// is a top-right control or a tab's page.
+  bool _drawsHeld(int key) {
+    final children = state.children;
+    if (children == null) return true;
+    for (final child in children) {
+      if (child.swt != 'ToolBar' || VRegistry.keyOf(child) != key) continue;
+      final topRight = state.topRight;
+      if (topRight != null && VRegistry.keyOf(topRight) == key) return true;
+      for (final item in state.items ?? const <VCTabItem>[]) {
+        final control = item.control;
+        if (control != null && VRegistry.keyOf(control) == key) return true;
+      }
+      return false;
+    }
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
+    VRegistry.instance.drawsHeldAt(_heldKey, _drawsHeld);
     // -1 means genuinely unselected (not Java's skipDefaultValues null=0); fall back to item 0.
     final selection = state.selection;
     _selectedIndex = (selection != null && selection >= 0) ? selection : 0;
@@ -194,6 +248,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   @override
   Widget build(BuildContext context) {
     if (hidden) return const SizedBox.shrink();
+    builtAtBounds();
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
 
@@ -270,6 +325,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
             onStripLayout: _handleStripLayout,
+            stripReportAsked: _stripReportAsked,
             dragPointFor: _dragPointFor,
             folderPointFor: _folderPointFor,
           )),
@@ -328,6 +384,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             onTabDragStarted: _handleTabDragStarted,
             onChevronShowList: _handleChevronShowList,
             onStripLayout: _handleStripLayout,
+            stripReportAsked: _stripReportAsked,
             dragPointFor: _dragPointFor,
             folderPointFor: _folderPointFor,
           )),
@@ -465,7 +522,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             child: page,
           );
         },
-        child: mapWidgetFromValue(control),
+        // Laid out at its bounds, which the builder above follows: a resize need not build it again.
+        child: BoundsSlot(id: control.id, child: mapWidgetFromValue(control)),
       );
     }
     return Container();
@@ -687,6 +745,9 @@ class _CTabBar extends StatefulWidget {
   /// when they cannot be placed in this frame.
   final bool Function(List<DrawnTab> tabs)? onStripLayout;
 
+  /// Notifies when the folder wants the strip reported again without building it again.
+  final Listenable? stripReportAsked;
+
   /// The point to report for a drag on a tab, given where that tab is drawn and where the press
   /// went down.
   final Offset? Function(Rect tabInGlobal, Offset? pressInGlobal)? dragPointFor;
@@ -712,6 +773,7 @@ class _CTabBar extends StatefulWidget {
     this.onTabDragStarted,
     this.onChevronShowList,
     this.onStripLayout,
+    this.stripReportAsked,
     this.dragPointFor,
     this.folderPointFor,
   });
@@ -782,11 +844,18 @@ class _CTabBarState extends State<_CTabBar> {
       mounted: () => mounted,
     );
     _reveal.schedule();
+    widget.stripReportAsked?.addListener(_reportStrip);
   }
+
+  void _reportStrip() => _rowState.currentState?.scheduleStripReport();
 
   @override
   void didUpdateWidget(_CTabBar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.stripReportAsked, widget.stripReportAsked)) {
+      oldWidget.stripReportAsked?.removeListener(_reportStrip);
+      widget.stripReportAsked?.addListener(_reportStrip);
+    }
     if (_pendingFrom != null) {
       _pendingFrom = null;
       _pendingTo = null;
@@ -799,6 +868,7 @@ class _CTabBarState extends State<_CTabBar> {
 
   @override
   void dispose() {
+    widget.stripReportAsked?.removeListener(_reportStrip);
     _scrollbarHideTimer?.cancel();
     _scrollbarVisible.dispose();
     _hoveringTopBar.dispose();
@@ -1977,20 +2047,28 @@ Rect _rectIn(RenderBox folder, RenderBox child) => Rect.fromPoints(
 Rect _globalRect(RenderBox box) => Rect.fromPoints(
     box.localToGlobal(Offset.zero), box.localToGlobal(box.size.bottomRight(Offset.zero)));
 
-/// The first laid-out box under [root] marked with [marker].
-RenderBox? _markedIn(RenderObject root, Object marker) {
-  RenderBox? found;
+/// The first laid-out boxes under [root] marked with [a] and with [b], in one walk: a strip report
+/// looks for two marks in every tab, after every frame that rebuilt the row.
+(RenderBox?, RenderBox?) _markedIn(RenderObject root, Object a, Object b) {
+  RenderBox? foundA;
+  RenderBox? foundB;
   void visit(RenderObject node) {
-    if (found != null) return;
-    if (node is RenderMetaData && node.metaData == marker && node.hasSize) {
-      found = node;
-      return;
+    if (foundA != null && foundB != null) return;
+    if (node is RenderMetaData && node.hasSize) {
+      if (foundA == null && node.metaData == a) {
+        foundA = node;
+        return;
+      }
+      if (foundB == null && node.metaData == b) {
+        foundB = node;
+        return;
+      }
     }
     node.visitChildren(visit);
   }
 
   visit(root);
-  return found;
+  return (foundA, foundB);
 }
 
 /// A CTabFolder's tab row. Every tab is a Flutter [Draggable] carrying a [DndDragPayload] and
@@ -2082,8 +2160,8 @@ class _TabDragRowState extends State<TabDragRow> {
     for (var i = 0; i < widget.children.length; i++) {
       final box = _itemBox(i);
       if (box == null || !box.hasSize) return;
-      final close = _markedIn(box, _tabCloseButton);
-      tabs.add(DrawnTab(box, close, shortened: _markedIn(box, ctabShortenedLabel) != null));
+      final (close, shortened) = _markedIn(box, _tabCloseButton, ctabShortenedLabel);
+      tabs.add(DrawnTab(box, close, shortened: shortened != null));
     }
     // The folder can be laid out again without this row being rebuilt or scrolled, which is all
     // that otherwise asks for a report, so a frame that could not place the tabs asks again.

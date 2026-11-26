@@ -122,7 +122,7 @@ Color getCComboItemBackgroundColor(CComboThemeExtension widgetTheme, bool isSele
 /// plus the item's vertical padding when that is taller, rounded up to a whole pixel.
 /// CComboListSizes.java mirrors this rule for `getItemHeight()`.
 double ccomboItemExtent(CComboThemeExtension theme, TextStyle style) {
-  final line = FontUtils.measureTextWidget('Ag', style).height + theme.textFieldPadding.vertical;
+  final line = FontUtils.lineHeight(style) + theme.textFieldPadding.vertical;
   return (line > theme.itemHeight ? line : theme.itemHeight).ceilToDouble();
 }
 

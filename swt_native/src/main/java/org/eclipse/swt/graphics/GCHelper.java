@@ -61,6 +61,15 @@ public class GCHelper {
     }
 
     /**
+     * Tells {@code gc} that its drawable shows nothing right of {@code right}, in user space: its
+     * {@link GC#getClipping()} stops there, as a native control's GC does at the control's edge, while
+     * the clip it sends may run past it.
+     */
+    public static void showsUpTo(GC gc, int right) {
+        ((DartGC) gc.getImpl()).shownRight = right;
+    }
+
+    /**
      * The font {@code gc} takes when set to {@code font}, which setFont has already refused when
      * disposed. A compact row's GC belongs to a Table or Tree, so its device is their Display.
      */

@@ -15,23 +15,25 @@ public class ControlUtils {
 
     public static void addToParentChildren(DartControl obj) {
         if (obj.parent.getImpl() instanceof DartComposite ) { DartComposite p = (DartComposite) obj.parent.getImpl();
+            Control[] before = p.children;
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
             // A child can be added while the parent is still being constructed, before it has a
             // value to record anything on. Scheduling it is all that can be done then, and all that
             // is needed: a parent that new is sent whole.
-            if (p.getValue() != null) markChildren(p, obj.getApi());
+            if (p.getValue() != null) markChildren(p, obj.getApi(), before);
             else obj.getBridge().dirty(p);
         }
     }
 
     public static void addToParentChildren(IControl obj) {
         if (obj._parent().getImpl() instanceof DartComposite ) { DartComposite p = (DartComposite) obj._parent().getImpl();
+            Control[] before = p.children;
             Control[] newArray = p.children != null ? Arrays.copyOf(p.children, p.children.length + 1) : new Control[1];
             newArray[newArray.length - 1] = obj.getApi();
             p.children = newArray;
-            if (p.getValue() != null) markChildren(p, obj.getApi());
+            if (p.getValue() != null) markChildren(p, obj.getApi(), before);
         }
     }
 
@@ -40,11 +42,12 @@ public class ControlUtils {
         if (p.children == null) return;
         for (int i = 0; i < p.children.length; i++) {
             if (p.children[i] == control) {
+                Control[] before = p.children;
                 Control[] newChildren = new Control[p.children.length - 1];
                 System.arraycopy(p.children, 0, newChildren, 0, i);
                 System.arraycopy(p.children, i + 1, newChildren, i, p.children.length - i - 1);
                 p.children = newChildren;
-                markChildren(p, control);
+                markChildren(p, control, before);
                 return;
             }
         }
@@ -53,9 +56,24 @@ public class ControlUtils {
     /**
      * Marks the children [p] sends, unless [child] is one [p] draws itself: those are left out of
      * the list it sends (a CCombo's text, list and arrow), which their arrival or order leaves as it was.
+     *
+     * <p>The mark is taken back when the changes since the last send add up to no change
+     * ({@link dev.equo.swt.FlutterBridge#markChange}), as two reorders that undo each other do: a
+     * CTabFolder brings one toolbar to the top and then the other on every layout. A list named as
+     * changed is sent, with each changed child in full, and the client rebuilds the composite.
      */
-    private static void markChildren(DartComposite p, Control child) {
-        if (!p._drawsItself(child)) p.getValue().markDirty(VComposite.CHILDREN);
+    private static void markChildren(DartComposite p, Control child, Control[] before) {
+        if (p._drawsItself(child)) return;
+        VComposite value = p.getValue();
+        // A value that keeps no record of its changes (a test's stand-in) is only marked.
+        if (value.changedKeys() == null) {
+            value.markDirty(VComposite.CHILDREN);
+            return;
+        }
+        p.childrenMark = dev.equo.swt.FlutterBridge.markChange(p, VComposite.CHILDREN, before, p.children,
+                p.childrenMark);
+        // Still a change: it waits for the next flush, as any mark does, even one already recorded.
+        if (value.changedKeys().contains(VComposite.CHILDREN)) value.markDirty(VComposite.CHILDREN);
     }
 
     public static void updateChildrenOrderOnMove(Control movedControl, Control referenceControl, boolean moveAbove) {
@@ -142,12 +160,13 @@ public class ControlUtils {
         System.arraycopy(newChildren, newIndex, finalChildren, newIndex + 1, newChildren.length - newIndex);
 
         parentImpl.children = finalChildren;
-        if (parentImpl.getValue() != null) markChildren(parentImpl, movedControl);
+        if (parentImpl.getValue() != null) markChildren(parentImpl, movedControl, children);
         else ((DartControl) movedControl.getImpl()).getBridge().dirty(parentImpl);
     }
 
     private static void removeFromParentChildren(DartControl obj) {
         if (obj.parent.getImpl() instanceof DartComposite) { DartComposite p = (DartComposite) obj.parent.getImpl();
+            Control[] before = p.children;
             for (int i = 0; i < p.children.length; i++) {
                 if (p.children[i] == obj.getApi()) {
                     Control[] newChildren = new Control[p.children.length - 1];
@@ -157,7 +176,7 @@ public class ControlUtils {
                     break;
                 }
             }
-            if (p.getValue() != null) markChildren(p, obj.getApi());
+            if (p.getValue() != null) markChildren(p, obj.getApi(), before);
             else obj.getBridge().dirty(p);
         }
     }

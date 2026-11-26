@@ -185,6 +185,20 @@ public class GcWireTest {
     }
 
     @Test
+    @DisplayName("an image's gcDispose carries the key its render is named by, which fits 52 bits")
+    void imageDisposeCarriesItsContentKey() {
+        GcWire w = new GcWire();
+        w.begin(GC, 7);
+        long key = (1L << 52) - 3;
+        w.dispose(GcWire.Dispose.ofImage(12, false, false, key));
+        w.dispose(GcWire.Dispose.ofImage(13, false, false));
+        assertEntries(w,
+                entry("GC/7/gcDispose", record("fullRepaint", true, "pixels", false, "retain", false, "ref", 12L,
+                        "contentKey", key)),
+                entry("GC/7/gcDispose", record("fullRepaint", true, "pixels", false, "retain", false, "ref", 13L)));
+    }
+
+    @Test
     @DisplayName("an op and a state key both sides number go by their numbers, spelling out no name")
     void numberedOpAndKeySpellNothing() {
         GcWire w = new GcWire();

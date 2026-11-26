@@ -10,6 +10,9 @@ final class PaintState {
     /** A Paint is on its way. Not drawCount, which is SWT's setRedraw counter. */
     boolean queued;
 
+    /** The control's Paint listeners are running on the UI thread. */
+    boolean painting;
+
     /**
      * The client still shows a frame a Paint listener drew. Native SWT repaints on every redraw(),
      * listener or not; here only a Paint cycle replaces that frame.

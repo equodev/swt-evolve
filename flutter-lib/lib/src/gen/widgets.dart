@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = 1986568125;
+const int wireFingerprint = 313011147;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -1405,6 +1405,7 @@ const Map<int, String> wireChannelNames = {
   216: 'swt.evolve.focus',
   217: 'swt.evolve.focus.seen',
   218: 'swt.evolve.focusHolder',
+  256: 'swt.evolve.move.handled',
   219: 'swt.evolve.properties',
   221: 'swt.evolve.test.runUi',
   222: 'swt.evolve.test.runUiResponse',
@@ -1690,6 +1691,7 @@ abstract final class WireChannel {
   static const int evolveTestBootTraceResponse =
       254; // evolve.test.bootTraceResponse
   static const int tabFolderStripLaidOut = 255; // TabFolder/stripLaidOut
+  static const int swtEvolveMoveHandled = 256; // swt.evolve.move.handled
 }
 
 /// Map keys by the number a map sent as tagged values names them with.

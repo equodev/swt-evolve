@@ -30,6 +30,7 @@ import 'assets_manager.dart';
 import 'color_utils.dart';
 import 'utils/font_utils.dart';
 import 'utils/glyph_tone.dart';
+import 'utils/svg_tint.dart';
 import 'utils/image_utils.dart';
 import 'utils/widget_utils.dart';
 import 'owner_draw_overlay.dart' show OwnerDrawnRowFill;
@@ -210,7 +211,7 @@ class GCDrawer extends GCDrawerBase {
         ..clear()
         ..addAll(_staging);
       _staging = [];
-      await _renderAndSend(ref, wantPixels, retain: retain);
+      await _renderAndSend(ref, wantPixels, retain: retain, contentKey: ending.contentKey);
       if (retain) return;
       onDisposed?.call();
       // Nothing reuses this gcId after this point, so tear down now.
@@ -1582,7 +1583,10 @@ class GCDrawer extends GCDrawerBase {
   /// Renders the drawn state and keeps it here, registered under the ref Java minted. Nothing
   /// crosses back unless [wantPixels] — the pixels are fetched later, and only if some Java caller
   /// actually reads them (see `Image/requestPixels` in main.dart).
-  Future<void> _renderAndSend(int ref, bool wantPixels, {bool retain = false}) async {
+  ///
+  /// [contentKey], when not 0, is what Java names the render's content by: a render with the key of
+  /// one already rasterised takes its pixels (see [RemoteRender.contentKey]).
+  Future<void> _renderAndSend(int ref, bool wantPixels, {bool retain = false, int contentKey = 0}) async {
     // Abandoned draw: nobody will ever read this render, so skip painting it. A hot path, since
     // JFace rebuilds its buffer Image on every repaint.
     if (ref == 0 && !wantPixels) {
@@ -1593,9 +1597,12 @@ class GCDrawer extends GCDrawerBase {
     final hidesBase = _hidesBase(shapes);
     final picture = _paintToPicture(shapes, drawBase: !hidesBase);
     final depth = hidesBase || _basePicture == null ? 0 : _baseDepth + 1;
+    // A retained drawer's render becomes the next one's base, which Java does not name.
+    assert(!retain || contentKey == 0);
     if (ref != 0) {
       ImageUtils.registerRemotePicture(ref, picture, _imgWidth > 0 ? _imgWidth : 1,
-          _imgHeight > 0 ? _imgHeight : 1, depth: depth);
+          _imgHeight > 0 ? _imgHeight : 1,
+          depth: depth, contentKey: contentKey);
     }
     // A retained drawer's next base stays a picture until it nests [_maxBaseDepth] deep.
     final flatten = retain && depth >= _maxBaseDepth;
@@ -3971,7 +3978,12 @@ class ImageShape extends Shape {
 
       if (replacement is String) {
         try {
-          final pictureInfo = await vg.loadPicture(SvgStringLoader(replacement), null);
+          final svgTint = !preserveColors || ImageUtils.svgNeedsTint(replacement)
+              ? (tint ?? AppColors.getColor(true))
+              : null;
+          // Decoded once (SvgPictures), with the tint put into the picture where it can be: a
+          // filtered picture costs a layer of its own on every frame (SvgTint).
+          final (pictureInfo, filtered) = await SvgPictures.load(replacement, svgTint);
           final naturalSize = replacedSize ?? pictureInfo.size;
           final destRect = Rect.fromLTWH(
             (opArgs.destX).toDouble(),
@@ -3979,10 +3991,7 @@ class ImageShape extends Shape {
             opArgs.destWidth == -1 ? naturalSize.width : (opArgs.destWidth).toDouble(),
             opArgs.destHeight == -1 ? naturalSize.height : (opArgs.destHeight).toDouble(),
           );
-          final svgFilter = colorFilter ??
-              (ImageUtils.svgNeedsTint(replacement)
-                  ? ColorFilter.mode(tint ?? AppColors.getColor(true), BlendMode.srcIn)
-                  : null);
+          final svgFilter = filtered ? ColorFilter.mode(svgTint!, BlendMode.srcIn) : null;
           return ImageShape.svg(pictureInfo, destRect,
               clipRect: clipRect, colorFilter: svgFilter, alpha: alpha);
         } catch (e) {
@@ -4239,6 +4248,7 @@ class _Dispose {
     pixels = flags & 4 != 0;
     retain = flags & 8 != 0;
     ref = r.varint();
+    contentKey = flags & 16 != 0 ? r.varint() : 0;
     damage = null;
     if (flags & 2 != 0) {
       final x = r.zigzag().toDouble(), y = r.zigzag().toDouble();
@@ -4252,5 +4262,9 @@ class _Dispose {
   bool pixels = false;
   bool retain = false;
   int ref = 0;
+
+  /// What the render shows, as Java names it: renders with the same key draw the same pixels. 0 when
+  /// unnamed.
+  int contentKey = 0;
   Rect? damage;
 }

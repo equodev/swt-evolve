@@ -128,6 +128,15 @@ public final class GcFrames {
         return bytes[0];
     }
 
+    /** The payloads of a binary batch's entries on {@code channel}, as sent, in order. */
+    public static List<byte[]> payloadsOn(byte[] batch, String channel) {
+        List<byte[]> out = new ArrayList<>();
+        eachEntry(batch, (entryChannel, at, length) -> {
+            if (channel.equals(entryChannel)) out.add(java.util.Arrays.copyOfRange(batch, at, at + length));
+        });
+        return out;
+    }
+
     private interface EntryVisitor {
         void entry(String channel, int payloadAt, int length);
     }

@@ -793,6 +793,7 @@ abstract class EquoCommBase {
   void _drainNow() {
     final queue = _applyQueue;
     var handedOff = false;
+    final drainStart = perfMarksEnabled ? perfNow() : 0.0;
     try {
       while (queue.length > 0) {
         queue.take();
@@ -823,6 +824,7 @@ abstract class EquoCommBase {
         }
       }
     } finally {
+      if (perfMarksEnabled) perfSpan('Comm.drain', drainStart, perfNow());
       if (!handedOff) _drainEnded();
     }
   }

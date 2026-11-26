@@ -113,6 +113,23 @@ class FontUtils {
     return size;
   }
 
+  /// The height of one line of text in [style], as [measureTextWidget] measures it: what a row or
+  /// an item is sized by. Laying text out to learn it is most of what sizing a Tree's rows costs,
+  /// and a Tree sizes them each time it is laid out at a new width, so the heights are kept, per
+  /// style and scaler, until the system fonts change (a font that loads changes them).
+  static double lineHeight(TextStyle? style) {
+    if (!_lineHeightsKept) _lineHeightsKept = listenToSystemFonts(_lineHeights.clear);
+    if (!_lineHeightsKept) return measureTextWidget('Ag', style).height;
+    final key = (style, textWidgetScaler);
+    final kept = _lineHeights[key];
+    if (kept != null) return kept;
+    if (_lineHeights.length >= 256) _lineHeights.clear();
+    return _lineHeights[key] = measureTextWidget('Ag', style).height;
+  }
+
+  static final Map<(TextStyle?, TextScaler), double> _lineHeights = {};
+  static bool _lineHeightsKept = false;
+
   /// Convert SWT font style to Flutter FontWeight and FontStyle
   static (FontWeight, FontStyle) convertSwtFontStyle(int swtFontStyle) {
     FontWeight weight = FontWeight.normal;

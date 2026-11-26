@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderProxyBox, ScrollDirection;
+import '../comm/v_registry.dart';
 import '../gen/point.dart';
 import '../gen/scrollbar.dart';
 import '../gen/scrolledcomposite.dart';
@@ -45,11 +46,31 @@ class ScrolledCompositeImpl<
     if (_userScrolled) return;
     final h = state.horizontalBar?.selection ?? 0;
     final v = state.verticalBar?.selection ?? 0;
+    _followedH = h;
+    _followedV = v;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _userScrolled) return;
       _jumpTo(_horizontalController, h);
       _jumpTo(_verticalController, v);
     });
+  }
+
+  /// The selections of the scroll bars the last build had the view follow.
+  int? _followedH;
+  int? _followedV;
+
+  /// The registry key the test of what this draws ([_drawsHeld]) was given under.
+  late final int _heldKey = VRegistry.keyOf(state);
+
+  /// Of the widgets this holds, whether it draws the one at [key]. Its views draw the scroll bars
+  /// and keep their own offset, so of a bar only a selection the view still follows changes what
+  /// it draws; the range, thumb and increments Java sets on every resize do not.
+  bool _drawsHeld(int key) {
+    final h = state.horizontalBar;
+    if (h != null && VRegistry.keyOf(h) == key) return !_userScrolled && (h.selection ?? 0) != _followedH;
+    final v = state.verticalBar;
+    if (v != null && VRegistry.keyOf(v) == key) return !_userScrolled && (v.selection ?? 0) != _followedV;
+    return true;
   }
 
   /// Where the view stops for [offset]: at its end when the offset lies past it.
@@ -165,10 +186,12 @@ class ScrolledCompositeImpl<
     _verticalController = _NoRevealScrollController();
     _takenRequest = state.originRequest ?? 0;
     _requestedOrigin = state.origin;
+    VRegistry.instance.drawsHeldAt(_heldKey, _drawsHeld);
   }
 
   @override
   void dispose() {
+    VRegistry.instance.forgetDrawsHeldAt(_heldKey, _drawsHeld);
     _horizontalController?.dispose();
     _verticalController?.dispose();
     super.dispose();

@@ -1048,17 +1048,35 @@ class VRegistry {
     // Nearly always one holder, kept as its key; several are copied, since telling one may change
     // who holds what.
     if (held is int) {
-      _tellReferrer(held, pass);
+      _tellReferrer(held, pass, key);
     } else {
       for (final holder in List.of(held as Set<int>)) {
-        _tellReferrer(holder, pass);
+        _tellReferrer(holder, pass, key);
       }
     }
   }
 
-  void _tellReferrer(int holder, int pass) {
+  /// What a widget being drawn said, through [drawsHeldAt], about which of the widgets it holds it
+  /// draws, by its key.
+  final Map<int, bool Function(int heldKey)> _drawsHeld = {};
+
+  /// Lets the widget at [key] say which of the widgets it holds it draws: one it does not is no
+  /// change to it ([test] false for that widget's key). A widget without a test draws everything it
+  /// holds.
+  void drawsHeldAt(int key, bool Function(int heldKey) test) => _drawsHeld[key] = test;
+
+  /// Undoes [drawsHeldAt], unless the widget at [key] was drawn again meanwhile with a [test] of
+  /// its own: a state replacing another for the same widget starts before the old one is disposed.
+  void forgetDrawsHeldAt(int key, bool Function(int heldKey) test) {
+    if (_drawsHeld[key] == test) _drawsHeld.remove(key);
+  }
+
+  void _tellReferrer(int holder, int pass, int heldKey) {
     final node = _nodes[holder];
     if (node == null || node.toldInPass == pass) return;
+    // Not counted as told: another widget it holds may change in the same pass, and that one it
+    // may draw.
+    if (node.listeners.isNotEmpty && !(_drawsHeld[holder]?.call(heldKey) ?? true)) return;
     node.toldInPass = pass;
     // Not a bounds change: what the holder draws changed, not where the holder is.
     final listeners = node.listeners;

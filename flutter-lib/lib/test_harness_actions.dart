@@ -146,6 +146,9 @@ int _lastFrameAt = -1;
 int _framesDrawn = 0;
 bool _framesWatched = false;
 
+/// When each frame drawn while a `path` gesture runs was done, on [EquoCommBase.clock]; null otherwise.
+List<int>? _pathFrames;
+
 /// When the last frame finished building and painting, on [EquoCommBase.clock]; -1 before any.
 int lastFrameAtMicros() {
   _watchFrames();
@@ -160,6 +163,7 @@ void _watchFrames() {
       .addPersistentFrameCallback((_) {
     _lastFrameAt = EquoCommBase.clock.elapsedMicroseconds;
     _framesDrawn++;
+    _pathFrames?.add(_lastFrameAt);
   });
 }
 
@@ -426,6 +430,7 @@ Future<Map<String, Object?>> pointerOp(Map<String, dynamic> map) async {
         final press = map['press'] == true;
         final first = clock.elapsedMicroseconds;
         final frames0 = _framesDrawn;
+        final drawnAt = _pathFrames = <int>[];
         _moveTo(points.first);
         if (press) _press();
         var last = first;
@@ -439,17 +444,28 @@ Future<Map<String, Object?>> pointerOp(Map<String, dynamic> map) async {
           last = clock.elapsedMicroseconds;
           _release();
         }
+        _pathFrames = null;
         return {
           'firstAtMicros': first,
           'lastAtMicros': last,
           'moves': points.length - 1,
           'frames': _framesDrawn - frames0,
+          ..._gaps(drawnAt),
         };
     }
     return {'error': 'unknown op $op'};
   } catch (e) {
     return {'error': '$e'};
   }
+}
+
+/// The time between consecutive frames of [drawnAt]: how evenly a gesture's frames came, where a
+/// mean hides the long ones a user sees as a stutter.
+Map<String, int> _gaps(List<int> drawnAt) {
+  if (drawnAt.length < 2) return const {};
+  final gaps = [for (var i = 1; i < drawnAt.length; i++) drawnAt[i] - drawnAt[i - 1]]..sort();
+  int at(double q) => gaps[((gaps.length - 1) * q).round()];
+  return {'gapP50Micros': at(0.5), 'gapP90Micros': at(0.9), 'gapMaxMicros': gaps.last};
 }
 
 // ---- public actions --------------------------------------------------------

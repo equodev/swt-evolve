@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show PipelineOwner, RenderProxyBox;
 import '../main.dart';
 import 'gen/composite.dart';
 import 'gen/control.dart';
@@ -51,7 +52,8 @@ class NoLayout extends StatelessWidget {
               // A panel's child is sized by its own build and then fitted, so only a plain slot
               // lays its child out by the bounds.
               child: isPanelLayout
-                  ? _wrapAsPanel(_buildChild(child), theme!)
+                  ? _wrapAsPanel(_AtBounds(control: child, child: BoundsSlot(id: child.id, child: _buildChild(child))),
+                      theme!)
                   : BoundsSlot(
                       id: child.id,
                       child: LiveLayer(
@@ -99,6 +101,74 @@ class NoLayout extends StatelessWidget {
       ),
     );
   }
+}
+
+/// [child] laid out at [control]'s bounds, read when it is laid out and again whenever they change:
+/// a panel fits its child into its slot from the size the child takes, and the child's own build
+/// would otherwise have to be the one to size it, building it again on every resize.
+class _AtBounds extends SingleChildRenderObjectWidget {
+  const _AtBounds({required this.control, super.child});
+
+  final VControl control;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderAtBounds(control);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderAtBounds renderObject) => renderObject.control = control;
+}
+
+class _RenderAtBounds extends RenderProxyBox {
+  _RenderAtBounds(this._control);
+
+  VControl _control;
+  Listenable? _changes;
+
+  set control(VControl value) {
+    if (identical(value, _control)) return;
+    _control = value;
+    if (attached) _listen();
+    markNeedsLayout();
+  }
+
+  void _listen() {
+    _changes?.removeListener(markNeedsLayout);
+    _changes = VRegistry.instance.boundsChangesAt([VRegistry.keyOf(_control)])..addListener(markNeedsLayout);
+  }
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _listen();
+  }
+
+  @override
+  void detach() {
+    _changes?.removeListener(markNeedsLayout);
+    _changes = null;
+    super.detach();
+  }
+
+  BoxConstraints _at(BoxConstraints constraints) {
+    final b = _control.bounds;
+    if (b == null || b.width <= 0 || b.height <= 0) return constraints;
+    return BoxConstraints.tightFor(width: b.width.toDouble(), height: b.height.toDouble()).enforce(constraints);
+  }
+
+  @override
+  void performLayout() {
+    final child = this.child;
+    if (child == null) {
+      size = _at(constraints).constrain(Size.zero);
+      return;
+    }
+    child.layout(_at(constraints), parentUsesSize: true);
+    size = constraints.constrain(child.size);
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) =>
+      constraints.constrain(child?.getDryLayout(_at(constraints)) ?? Size.zero);
 }
 
 class _AbsoluteLayoutDelegate extends MultiChildLayoutDelegate {

@@ -22,11 +22,13 @@ class PendingMove {
 
   /// Holds [owner]'s move, to be sent once [afterMicros] microseconds have passed. It replaces a
   /// move [owner] held before; a move another control held is that control's last one, so it is sent
-  /// first.
+  /// first. The wait is the latest asked for: what a move waits on (the throttle window, or Java
+  /// catching up with the last one) may end later than what the one it replaces waited on.
   static void hold(HeldMove owner, int afterMicros) {
     if (_owner != null && !identical(_owner, owner)) flush();
     _owner = owner;
-    _timer ??= Timer(Duration(microseconds: afterMicros), flush);
+    _timer?.cancel();
+    _timer = Timer(Duration(microseconds: afterMicros), flush);
   }
 
   /// Sends the held move now, if there is one.

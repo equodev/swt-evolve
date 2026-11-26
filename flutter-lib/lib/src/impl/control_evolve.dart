@@ -26,6 +26,7 @@ import '../impl/key_forwarding.dart';
 import '../impl/key_mapping.dart';
 import '../impl/menu_evolve.dart';
 import 'utils/frame_interval.dart';
+import 'utils/move_flow.dart';
 import 'utils/pending_move.dart';
 import 'utils/perf_marks.dart';
 import 'utils/round_trip_timing.dart';
@@ -316,9 +317,11 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   void sendThrottledMouseMove(V state, VEvent event, int buttons) {
     HoverExclusivityArbiter.instance.flushPending();
     event.stateMask = moveStateMask(buttons);
-    final wait = _lastMouseMoveMicros + _moveWindowMicros - nowMicros();
+    final now = nowMicros();
+    // Held for the throttle window, and while Java has yet to send what the last move caused.
+    final wait = math.max(_lastMouseMoveMicros + _moveWindowMicros - now, MoveFlow.waitMicros(now));
     if (wait > 0) {
-      // The pointer may stop here: the move is sent when the window ends unless another replaces it.
+      // The pointer may stop here: the move is sent when the wait ends unless another replaces it.
       _heldState = state;
       _heldEvent = event;
       PendingMove.hold(this, wait);
@@ -354,7 +357,9 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   static int Function() nowMicros = () => _clock.elapsedMicroseconds;
 
   void _sendMouseMove(V state, VEvent event) {
+    if (perfMarksEnabled) perfCount('Move.send');
     _lastMouseMoveMicros = nowMicros();
+    MoveFlow.sent(_lastMouseMoveMicros);
     widget.sendMouseMoveMouseMove(state, event);
     // After the send, not around it: this times the round trip the move starts.
     RoundTripTiming.trace();
@@ -519,6 +524,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   }
 
   void _sendDragMove(V state, VEvent event, Offset position, int buttons) {
+    if (perfMarksEnabled) perfCount('Move.drag');
     if (_dndDragging && _dndDragAllowed == true) return;
     // A move that does not move is not reported: Win32 SWT drops it, and some engines deliver one
     // with the press.
@@ -528,6 +534,16 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     event.stateMask = moveStateMask(buttons);
     if (_dndDragging && _dndDragAllowed == null) {
       _movesBeforeDragStart.add(event);
+      return;
+    }
+    // While Java has yet to send what the last move caused, the latest position waits, as a native
+    // toolkit compresses the motion an application is too busy to take.
+    final wait = MoveFlow.waitMicros(nowMicros());
+    if (wait > 0) {
+      if (perfMarksEnabled) perfCount('Move.hold');
+      _heldState = state;
+      _heldEvent = event;
+      PendingMove.hold(this, wait);
       return;
     }
     _sendMouseMove(state, event);
@@ -1294,6 +1310,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     );
   }
 
+  /// What a change may name and still only place the control ([sizeIsLayoutOnly]): its bounds, and
+  /// for a control with one, a property it reads when it is laid out or painted rather than built.
+  Set<int> get placementKeys => const {WireKey.k_Control_bounds};
+
   /// Whether this control's build reads where it stands and not only its size. Where a control
   /// stands is otherwise its parent's layout, which follows the move on its own.
   bool get buildsFromPosition => false;
@@ -1319,8 +1339,12 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
   bool _onlyPlaced() {
     final built = _builtSize;
     final b = state.bounds;
-    if (built == null || b == null || buildsFromPosition) return false;
-    if (!(lastChange?.isOnly(const {WireKey.k_Control_bounds}) ?? false)) return false;
+    if (b == null || buildsFromPosition) return false;
+    if (!(lastChange?.isOnly(placementKeys) ?? false)) return false;
+    // A hidden control builds nothing at any size: an unselected tab's page is laid out again on
+    // every resize of its folder.
+    if (hidden) return true;
+    if (built == null) return false;
     if (built.width == b.width && built.height == b.height) return true;
     return built.width > 0 &&
         built.height > 0 &&

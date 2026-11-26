@@ -45,6 +45,13 @@ class CanvasGcScope extends InheritedWidget {
 
 class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     extends CompositeImpl<T, V> {
+  /// A plain Canvas reads its size as constraints only, ones its parent's layout imposes anyway:
+  /// its GC fills it ([wrapWithGCOverlay]) and [NoLayout] lays its children out at their bounds.
+  /// Its subclasses draw from the size, and its scroll bars are laid out from it.
+  @override
+  bool sizeIsLayoutOnly(Size built, int width, int height) =>
+      state.swt == 'Canvas' && !hasStyle(state.style, SWT.H_SCROLL | SWT.V_SCROLL);
+
   // Its layer is on the Focus around wrap(), which is further out.
   @override
   bool get drawsInOwnLayer => false;
@@ -204,6 +211,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     // Neither the children branch nor the scroll bars go through wrap(), which is what answers a
     // hidden control elsewhere: a hidden Canvas would still paint its children and bars.
     if (hidden) return const SizedBox.shrink();
+    // The children branch does not go through wrap() either, which records the size built at: a
+    // Canvas only moved (a toolbar's, as the window lays out) is then not built again.
+    builtAtBounds();
 
     final widgetTheme = _theme;
     final hasValidBounds = hasBounds(state.bounds);

@@ -816,6 +816,7 @@ class TableImpl<T extends TableSwt, V extends VTable>
               color: rowBackgroundColor(i, items[i], theme),
               child: OwnerDrawnRowOverlay(
                 itemId: items[i].id,
+                clipped: getColumns().isEmpty,
                 ground: Color.alphaBlend(
                     rowBackgroundColor(i, items[i], theme), getTableBackgroundColor(state, theme)),
                 chosenOn: selected(i)

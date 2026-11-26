@@ -1,6 +1,7 @@
 #include "flutter_bridge.h"
 #include "draw_on_arrival.h"
 #include "engine_vsync.h"
+#include "motion_on_arrival.h"
 #include "opaque_present.h"
 
 #include <flutter_linux/flutter_linux.h>
@@ -16,6 +17,8 @@
 #include <stdlib.h>   // setenv
 #include <string>     // std::string
 #include <type_traits>
+
+static void InitXThreads();
 
 // The webview_all Browser backend on Linux is WebKitGTK, which defaults to a
 // hardware GL renderer (accelerated compositing / DMABUF). Now that the FlView
@@ -266,6 +269,7 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 
   // Headless mode: create a hidden window to host Flutter
   if (!parentWnd) {
+    InitXThreads();
     if (!gtk_init_check(nullptr, nullptr)) {
       g_printerr("Failed to initialize GTK\n");
       return 0;
@@ -400,6 +404,17 @@ static int equo_x_error_handler(::Display *dpy, XErrorEvent *e) {
     return 0;
   }
   return equo_previous_x_handler != nullptr ? equo_previous_x_handler(dpy, e) : 0;
+}
+
+// Makes Xlib safe for the threads that share GDK's X connection: GTK's main thread reads events from
+// it while the engine's raster thread presents through it (GLX/EGL on X11). Without XInitThreads,
+// libX11 before 1.8 aborts ("Unknown request in queue while dequeuing") when the two meet. It must
+// come before GTK opens the display; libX11 1.8 and later already call it when they load.
+static void InitXThreads() {
+  static bool done = false;
+  if (done) return;
+  done = true;
+  XInitThreads();
 }
 
 static void InstallXErrorHandler() {
@@ -608,6 +623,7 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
   boot_record("FlDartProject", project_start);
 
+  InitXThreads();
   if (!boot_step("gtk_init", [] { return gtk_init_check(nullptr, nullptr); })) {
     g_printerr("Failed to initialize GTK\n");
     return nullptr;
@@ -655,6 +671,10 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   boot_step("EngineVsyncInstall", [&] { return EngineVsyncInstall(fl_view_get_engine(view), window); });
   // Flutter paints this window whole: its frames are drawn as they arrive (draw_on_arrival.cc).
   boot_step("DrawOnArrivalInstall", [&] { return DrawOnArrivalInstall(window); });
+  // And the pointer's motion reaches it as it arrives (motion_on_arrival.cc).
+  boot_step("MotionOnArrivalInstall", [] { return MotionOnArrivalInstall(); });
+  // And GDK keeps reading events while its frame clock waits to paint (motion_on_arrival.h).
+  boot_step("EventsUnpausedInstall", [&] { return EventsUnpausedInstall(window); });
 
   // Pre-wrap the FlView in a GtkOverlay, exactly as the embedded path does: otherwise
   // webview_all's ensure_overlay() destructively reparents the realized FlView when a
@@ -808,10 +828,12 @@ Java_dev_equo_swt_FlutterNative_SetBounds(JNIEnv *env, jclass cls, jlong context
 JNIEXPORT jint JNICALL
 Java_dev_equo_swt_FlutterNative_PumpMessages(JNIEnv *env, jclass cls, jint maxMessages) {
   int count = 0;
+  EngineTraceBegin("Equo::PumpMessages");
   while ((maxMessages <= 0 || count < maxMessages) && gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
     count++;
   }
+  EngineTraceEnd("Equo::PumpMessages");
   return count;
 }
 
@@ -823,6 +845,7 @@ JNIEXPORT jint JNICALL
 Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
   FlutterWindow *ctx = reinterpret_cast<FlutterWindow *>(context);
   int count = 0;
+  EngineTraceBegin("Equo::Pump");
   while (gtk_events_pending()) {
     gtk_main_iteration_do(FALSE);
     count++;
@@ -830,6 +853,7 @@ Java_dev_equo_swt_FlutterNative_Pump(JNIEnv *env, jclass cls, jlong context) {
       break;
     }
   }
+  EngineTraceEnd("Equo::Pump");
   if (ctx && ctx->closed) {
     if (ctx->window_channel) {
       fl_method_channel_set_method_call_handler(ctx->window_channel, nullptr, nullptr, nullptr);
@@ -857,7 +881,9 @@ Java_dev_equo_swt_FlutterNative_WaitEvents(JNIEnv *env, jclass cls, jlong contex
   g_source_set_callback(
       timeout, [](gpointer) -> gboolean { return G_SOURCE_REMOVE; }, nullptr, nullptr);
   g_source_attach(timeout, mc);
+  EngineTraceBegin("Equo::Wait");
   g_main_context_iteration(mc, TRUE);
+  EngineTraceEnd("Equo::Wait");
   g_source_destroy(timeout);
   g_source_unref(timeout);
 }
@@ -880,6 +906,40 @@ Java_dev_equo_swt_FlutterNative_SetTitle(JNIEnv *env, jclass cls, jlong context,
   env->ReleaseStringUTFChars(title, t);
 }
 
+// A toplevel's origin as last read from the server, until the window is configured, mapped,
+// unmapped or realized again: on X11 gdk_window_get_origin is a round trip (XTranslateCoordinates),
+// and Java asks on every turn of its event loop, so the GTK thread waited on the X server each time.
+// A toplevel only moves by a ConfigureNotify (the window manager sends one for a move of its
+// frame), which GTK reports as configure-event.
+struct OriginCache {
+  bool valid;
+  gint x, y;
+};
+
+static constexpr char kOriginCacheKey[] = "dev.equo.swt.origin";
+
+static gboolean ForgetOrigin(GtkWidget *widget, GdkEvent *, gpointer data) {
+  static_cast<OriginCache *>(data)->valid = false;
+  return FALSE;
+}
+
+static void ForgetOriginOn(GtkWidget *widget, gpointer data) {
+  static_cast<OriginCache *>(data)->valid = false;
+}
+
+static OriginCache *OriginCacheOf(GtkWidget *window) {
+  auto *cache = static_cast<OriginCache *>(g_object_get_data(G_OBJECT(window), kOriginCacheKey));
+  if (cache != nullptr) return cache;
+  cache = g_new0(OriginCache, 1);
+  g_object_set_data_full(G_OBJECT(window), kOriginCacheKey, cache, g_free);
+  g_signal_connect(window, "configure-event", G_CALLBACK(ForgetOrigin), cache);
+  g_signal_connect(window, "map-event", G_CALLBACK(ForgetOrigin), cache);
+  g_signal_connect(window, "unmap-event", G_CALLBACK(ForgetOrigin), cache);
+  g_signal_connect(window, "realize", G_CALLBACK(ForgetOriginOn), cache);
+  g_signal_connect(window, "unrealize", G_CALLBACK(ForgetOriginOn), cache);
+  return cache;
+}
+
 // The window's CONTENT origin in screen coordinates, packed (x << 32) | (y & 0xFFFFFFFF), or
 // LLONG_MIN when it cannot be told.
 JNIEXPORT jlong JNICALL
@@ -888,10 +948,14 @@ Java_dev_equo_swt_FlutterNative_GetOrigin(JNIEnv *env, jclass cls, jlong context
   if (!w || !w->top_window || !GTK_IS_WIDGET(w->top_window)) return LLONG_MIN;
   GdkWindow *gdk = gtk_widget_get_window(w->top_window);
   if (!gdk) return LLONG_MIN;
-  gint x = 0, y = 0;
-  gdk_window_get_origin(gdk, &x, &y);
-  return (static_cast<jlong>(x) << 32)
-         | (static_cast<jlong>(static_cast<guint32>(y)));
+  OriginCache *cache = OriginCacheOf(w->top_window);
+  if (!cache->valid) {
+    gdk_window_get_origin(gdk, &cache->x, &cache->y);
+    // Not kept before the window is shown: until it is mapped no configure-event tells of a move.
+    cache->valid = gtk_widget_get_mapped(w->top_window);
+  }
+  return (static_cast<jlong>(cache->x) << 32)
+         | (static_cast<jlong>(static_cast<guint32>(cache->y)));
 }
 
 // The work area, and reading or moving the pointer, are asked of the Windows runner only; here they

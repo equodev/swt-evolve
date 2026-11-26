@@ -26,6 +26,9 @@ public class MockFlutterBridge extends FlutterBridge {
 
         @Override
         public void afterEach(ExtensionContext context) throws Exception {
+            // A widget left queued joins the next test's first update and holds back the sends queued
+            // behind that update.
+            FlutterBridge.clearDirty();
             FlutterBridge.set(null);
         }
     }

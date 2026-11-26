@@ -140,6 +140,28 @@ class ControlDamagePaintTest {
     }
 
     @Test
+    @DisplayName("a new background image delivers a Paint")
+    void backgroundImageChangeDeliversPaint() {
+        Label label = label();
+        AtomicInteger paints = countPaints(label);
+        label.setBackgroundImage(new org.eclipse.swt.graphics.Image(shell.getDisplay(), 1, 30));
+        pumpAsync();
+        assertThat(paints.get()).as("Paint events after a background image change").isPositive();
+    }
+
+    @Test
+    @DisplayName("a background image a control's paint listener sets on it delivers no second Paint")
+    void backgroundImageSetWhilePaintingDeliversNoSecondPaint() {
+        Label label = label();
+        AtomicInteger paints = countPaints(label);
+        // As Eclipse Forms' Section does: a new gradient for its new size, made and set while it paints.
+        label.addPaintListener(e -> label.setBackgroundImage(new org.eclipse.swt.graphics.Image(shell.getDisplay(), 1, 30)));
+        label.redraw();
+        pumpAsync();
+        assertThat(paints.get()).as("Paint events after one redraw()").isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("a new foreground delivers a Paint")
     void foregroundChangeDeliversPaint() {
         Label label = label();

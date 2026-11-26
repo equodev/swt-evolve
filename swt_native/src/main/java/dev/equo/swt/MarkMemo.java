@@ -8,4 +8,6 @@ package dev.equo.swt;
 public final class MarkMemo {
     Object value;
     boolean queued;
+    /** {@link ChangedKeys#clears()} when {@link #value} was taken: it holds only until the next flush. */
+    int sent;
 }

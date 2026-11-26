@@ -1342,7 +1342,7 @@ public final class DartImage extends DartResource implements Drawable, IImage {
             Display disp = (Display) device;
             dev.equo.swt.comm.CommService c = dev.equo.swt.FlutterBridge.resolveDisplayGcComm(disp);
             if (c != null) {
-                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> c.send(0, 0, channel, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
+                dev.equo.swt.GCImageDrawer.afterQueuedOps(() -> dev.equo.swt.FlutterBridge.awaitPendingDeferredSends().whenComplete((r, e) -> dev.equo.swt.FlutterBridge.sendInFlush(c, channel, java.nio.ByteBuffer.allocate(8).putLong(id).array())));
             }
         }
     }

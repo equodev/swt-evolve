@@ -121,9 +121,17 @@ public abstract class AbstractBinaryCommService implements CommService {
     /** A frame larger than this is composed in a buffer of its own, so no thread keeps one that size. */
     private static final int MAX_SCRATCH = 64 * 1024;
 
+    private final dev.equo.swt.MoveCompression moves = new dev.equo.swt.MoveCompression();
+
+    @Override
+    public dev.equo.swt.MoveCompression moves() {
+        return moves;
+    }
+
     @Override
     public void sendFrame(byte[] frame, int offset, int length) {
         bytesSent.add(length);
+        dev.equo.swt.WireStats.message();
         if (heldForFirstClient(frame, offset, length, true)) return;
         broadcast(frame, offset, length);
     }

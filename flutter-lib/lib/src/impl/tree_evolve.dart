@@ -1,10 +1,10 @@
 import 'utils/test_anchors.dart';
 import 'dart:async' show scheduleMicrotask;
 
-import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/foundation.dart' show listEquals, ValueListenable;
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show OverflowBoxFit;
+import 'package:flutter/rendering.dart' show BoxHitTestResult, OverflowBoxFit, PipelineOwner, RenderProxyBox;
 import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 import '../theme/theme_settings/tree_theme_settings.dart';
 import 'package:flutter/services.dart';
@@ -71,6 +71,18 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   double? _cachedHeaderHeight;
   double? _cachedItemHeight;
 
+  /// The width every row of a Tree with columns is laid out at (its columns' content, or the Tree's
+  /// own width), null for a Tree without columns, whose rows take the list's. Read by each row when
+  /// it is laid out ([TreeRowWidth]) rather than built: a resize changes it, and would otherwise build
+  /// every row again.
+  final ValueNotifier<double?> rowWidth = ValueNotifier(null);
+
+  /// Where an owner-drawn row's painting sits from the row's left edge. Java draws it from the edge
+  /// gap rounded up to a whole unit (OwnerDrawOverlay.rowLeft): the gap is a fraction of the Tree's
+  /// width, and a painting drawn from the gap itself changed at every step of a resize, and was sent
+  /// and drawn again each time. Read when the overlay is painted ([TreeOwnerDrawShift]).
+  final ValueNotifier<double> ownerDrawShift = ValueNotifier(0);
+
   /// The row height last laid out, honouring an owner-draw row's measured
   /// height (VTree.ownerDrawItemHeight); rows read it so every row matches the
   /// slot. Null until the first layout, where the caller falls back to theme.
@@ -133,6 +145,12 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   late final TestTreeHandle _testTreeHandle;
 
+  /// A Tree reads its size only inside its layout builder ([createTreeView]), which builds again at
+  /// each new size anyway: the columns, a row's width and a cell editor's are worked out there. A
+  /// resize need not rebuild the Tree, and so need not mark every row stale.
+  @override
+  bool sizeIsLayoutOnly(Size built, int width, int height) => true;
+
   @override
   Widget build(BuildContext context) {
     _cachedWidgetTheme = Theme.of(context).extension<TreeThemeExtension>();
@@ -142,18 +160,16 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     ));
   }
 
-  /// Whether a delivery that named only the selection asked for the coming build, and whether
-  /// anything else did: see [_reusesItems].
-  bool _selectionAsked = false;
+  /// Whether anything but a delivery that named only the selection asked for the coming build: see
+  /// [_reusesItems].
   bool _beyondSelection = false;
   bool _deliveringSelection = false;
 
   /// Whether this build may reuse what the last one made of the items: every rebuild asked for since
   /// came from a delivery that named only the selection, which changes neither which rows there are
-  /// nor what they measure.
+  /// nor what they measure, or none was asked for and the layout builder builds again at a new size.
   bool _reusesItems() {
-    final reuse = _selectionAsked && !_beyondSelection && _lastFlatItems != null;
-    _selectionAsked = false;
+    final reuse = !_beyondSelection && _lastFlatItems != null;
     _beyondSelection = false;
     return reuse;
   }
@@ -163,9 +179,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
 
   @override
   void setState(VoidCallback fn) {
-    if (_deliveringSelection) {
-      _selectionAsked = true;
-    } else {
+    if (!_deliveringSelection) {
       _beyondSelection = true;
       if (!_deliveringHeld) _treeChanged = true;
     }
@@ -327,7 +341,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       textColor: theme.itemTextColor,
       baseTextStyle: theme.itemTextStyle,
     );
-    final double line = FontUtils.measureTextWidget('Ag', style).height +
+    final double line = FontUtils.lineHeight(style) +
         (hasMultiColumn ? theme.itemPaddingWithCols : theme.itemPadding).vertical;
     if (state.compactRows ?? false) return line.ceilToDouble();
     return (line > themeRow ? line : themeRow).ceilToDouble();
@@ -882,6 +896,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     // With columns, as natively, column 0 starts at the tree's left edge with no gap.
     final leftGap = columns.isEmpty ? maxWidth * gapFraction : 0.0;
     final rightGap = maxWidth * gapFraction;
+    ownerDrawShift.value = leftGap.ceilToDouble() - leftGap;
 
     Widget listViewWithLines = _buildListViewWithColumnLines(
       flatItems,
@@ -918,6 +933,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       maxWidth - leftGap - rightGap,
     );
     _hScrollContentWidth = columns.isEmpty ? totalWidth : _columnsContentWidth;
+    rowWidth.value = columns.isEmpty ? null : _hScrollContentWidth ?? state.bounds?.width?.toDouble();
 
     // A Tree without columns whose items were once wider than it keeps its horizontal viewport while
     // they fit, as wide as the viewport, with no scroll bar to show. An item whose width crosses the
@@ -1323,11 +1339,8 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
   Widget _buildFlatTreeItemWidget(List<_FlatTreeItem> flatItems, int index) {
     final flatItem = flatItems[index];
 
-    // A row without columns takes the list's width, which the list gives it whatever the row asks:
-    // it need not be built again when the widest item, and with it how far the Tree scrolls, changes.
-    final treeWidth =
-        getTreeColumns().isEmpty ? null : _hScrollContentWidth ?? state.bounds?.width?.toDouble();
-
+    // A row reads its width when it is laid out ([rowWidth]): a new width lays the rows out again
+    // without building them again.
     // What the row reads of the Tree besides what a build of the Tree for anything other than the
     // selection changes, which starts a new epoch: a row a new selection leaves alone is kept.
     final id = flatItem.item.id;
@@ -1335,7 +1348,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       flatItem.item,
       flatItem.level,
       _rowsEpoch,
-      treeWidth,
       _selectedIds.contains(id),
       index + 1 < flatItems.length && _selectedIds.contains(flatItems[index + 1].item.id),
       hasFocus,
@@ -1351,7 +1363,6 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
       parentTreeValue: state,
       treeImpl: this,
       treeFont: state.font,
-      treeWidth: treeWidth,
       renderChildItems: false,
     );
     _keptRows[id] = (key, row);
@@ -2330,19 +2341,19 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
     _horizontalController?.dispose();
     _verticalController?.dispose();
     _focusNode.dispose();
+    rowWidth.dispose();
+    ownerDrawShift.dispose();
     super.dispose();
   }
 }
 
 /// What a kept row was built from: the item by identity, the rest by value.
 class _RowKey {
-  const _RowKey(this.item, this.level, this.epoch, this.width, this.selected, this.nextSelected,
-      this.treeFocused);
+  const _RowKey(this.item, this.level, this.epoch, this.selected, this.nextSelected, this.treeFocused);
 
   final VTreeItem item;
   final int level;
   final int epoch;
-  final double? width;
   final bool selected;
   final bool nextSelected;
   final bool treeFocused;
@@ -2353,13 +2364,12 @@ class _RowKey {
       identical(other.item, item) &&
       other.level == level &&
       other.epoch == epoch &&
-      other.width == width &&
       other.selected == selected &&
       other.nextSelected == nextSelected &&
       other.treeFocused == treeFocused;
 
   @override
-  int get hashCode => Object.hash(identityHashCode(item), level, epoch, width, selected, nextSelected, treeFocused);
+  int get hashCode => Object.hash(identityHashCode(item), level, epoch, selected, nextSelected, treeFocused);
 }
 
 class TreeItemSwtWrapper extends StatelessWidget {
@@ -2370,7 +2380,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
   final VTree parentTreeValue;
   final TreeImpl? treeImpl;
   final VFont? treeFont;
-  final double? treeWidth;
   final bool renderChildItems;
 
   const TreeItemSwtWrapper({
@@ -2382,7 +2391,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
     required this.parentTreeValue,
     this.treeImpl,
     this.treeFont,
-    this.treeWidth,
     this.renderChildItems = true,
   }) : super(key: key);
 
@@ -2395,7 +2403,6 @@ class TreeItemSwtWrapper extends StatelessWidget {
       parentTreeValue: parentTreeValue,
       treeImpl: treeImpl,
       treeFont: treeFont,
-      treeWidth: treeWidth,
       renderChildItems: renderChildItems,
       child: TreeItemSwt(
         value: treeItem,
@@ -2413,7 +2420,6 @@ class TreeItemContext {
   final TreeImpl? treeImpl;
   final VFont? treeFont;
   final List<VTreeItem>? selection;
-  final double? treeWidth;
   final bool renderChildItems;
   final bool treeFocused;
 
@@ -2425,7 +2431,6 @@ class TreeItemContext {
     this.treeImpl,
     this.treeFont,
     this.selection,
-    this.treeWidth,
     this.renderChildItems = true,
     this.treeFocused = false,
   });
@@ -2448,7 +2453,6 @@ class TreeItemContextProvider extends InheritedWidget {
     required VTree parentTreeValue,
     TreeImpl? treeImpl,
     VFont? treeFont,
-    double? treeWidth,
     bool renderChildItems = true,
     required Widget child,
   }) : context = TreeItemContext(
@@ -2459,7 +2463,6 @@ class TreeItemContextProvider extends InheritedWidget {
          treeImpl: treeImpl,
          treeFont: treeFont,
          selection: treeImpl?.state.selection,
-         treeWidth: treeWidth,
          renderChildItems: renderChildItems,
          treeFocused: treeImpl?.hasFocus ?? false,
        ),
@@ -2654,5 +2657,147 @@ class TreeCellBox extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// A Tree's row, laid out at the width the Tree gives its rows ([TreeImpl.rowWidth]), or at
+/// [fallback] while it gives none, or at the width the row is offered when both are null: what a
+/// SizedBox of that width does, with the width read when the row is laid out. A new width lays the
+/// rows out again without building them again.
+class TreeRowWidth extends SingleChildRenderObjectWidget {
+  const TreeRowWidth({super.key, required this.width, this.fallback, super.child});
+
+  final ValueListenable<double?>? width;
+  final double? fallback;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderTreeRowWidth(width, fallback);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderTreeRowWidth renderObject) {
+    renderObject
+      ..width = width
+      ..fallback = fallback;
+  }
+}
+
+class _RenderTreeRowWidth extends RenderProxyBox {
+  _RenderTreeRowWidth(this._width, this._fallback);
+
+  ValueListenable<double?>? _width;
+  double? _fallback;
+
+  set width(ValueListenable<double?>? value) {
+    if (identical(value, _width)) return;
+    if (attached) _width?.removeListener(markNeedsLayout);
+    _width = value;
+    if (attached) _width?.addListener(markNeedsLayout);
+    markNeedsLayout();
+  }
+
+  set fallback(double? value) {
+    if (value == _fallback) return;
+    _fallback = value;
+    markNeedsLayout();
+  }
+
+  BoxConstraints _tight(BoxConstraints constraints) =>
+      BoxConstraints.tightFor(width: _width?.value ?? _fallback ?? double.infinity).enforce(constraints);
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _width?.addListener(markNeedsLayout);
+  }
+
+  @override
+  void detach() {
+    _width?.removeListener(markNeedsLayout);
+    super.detach();
+  }
+
+  @override
+  void performLayout() {
+    final inner = _tight(constraints);
+    final child = this.child;
+    if (child == null) {
+      size = inner.constrain(Size.zero);
+      return;
+    }
+    child.layout(inner, parentUsesSize: true);
+    size = child.size;
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final inner = _tight(constraints);
+    return child?.getDryLayout(inner) ?? inner.constrain(Size.zero);
+  }
+}
+
+/// Paints [child] moved sideways by [shift], read when it paints: an owner-drawn row's painting,
+/// which Java draws from a whole unit near the row's left edge ([TreeImpl.ownerDrawShift]). A new
+/// shift paints it again without building or laying it out.
+class TreeOwnerDrawShift extends SingleChildRenderObjectWidget {
+  const TreeOwnerDrawShift({super.key, required this.shift, super.child});
+
+  final ValueListenable<double>? shift;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderTreeOwnerDrawShift(shift);
+
+  @override
+  void updateRenderObject(BuildContext context, _RenderTreeOwnerDrawShift renderObject) {
+    renderObject.shift = shift;
+  }
+}
+
+class _RenderTreeOwnerDrawShift extends RenderProxyBox {
+  _RenderTreeOwnerDrawShift(this._shift);
+
+  ValueListenable<double>? _shift;
+
+  set shift(ValueListenable<double>? value) {
+    if (identical(value, _shift)) return;
+    if (attached) _shift?.removeListener(markNeedsPaint);
+    _shift = value;
+    if (attached) _shift?.addListener(markNeedsPaint);
+    markNeedsPaint();
+  }
+
+  double get _dx => _shift?.value ?? 0;
+
+  @override
+  void attach(PipelineOwner owner) {
+    super.attach(owner);
+    _shift?.addListener(markNeedsPaint);
+  }
+
+  @override
+  void detach() {
+    _shift?.removeListener(markNeedsPaint);
+    super.detach();
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final child = this.child;
+    if (child != null) context.paintChild(child, offset.translate(_dx, 0));
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    final child = this.child;
+    if (child == null) return false;
+    return result.addWithPaintOffset(
+      offset: Offset(_dx, 0),
+      position: position,
+      hitTest: (result, transformed) => child.hitTest(result, position: transformed),
+    );
+  }
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) {
+    transform.translate(_dx, 0.0);
   }
 }

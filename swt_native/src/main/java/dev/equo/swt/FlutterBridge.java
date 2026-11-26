@@ -148,11 +148,20 @@ public abstract class FlutterBridge {
         if (memo == null) memo = new MarkMemo();
         VWidget value = widget.getValue();
         if (!value.changedKeys().contains(key)) {
+            // Taken back since the last flush, by a compare nested in this one (a setter calling
+            // another): the value is still what the client holds.
+            if (memo.sent == value.changedKeys().clears() && java.util.Objects.deepEquals(now, memo.value)) return memo;
             memo.value = was;
             memo.queued = isQueued(widget);
+            memo.sent = value.changedKeys().clears();
             value.markDirty(key);
-        } else if (java.util.Objects.deepEquals(now, memo.value)) {
+        } else if (memo.sent == value.changedKeys().clears() && java.util.Objects.deepEquals(now, memo.value)) {
+            // Only what this compare remembered since the last flush is what the client holds: a key
+            // something else marked meanwhile is not this compare's to take back.
             takeBack(widget, key, memo.queued);
+        } else {
+            // Marked already, and still changed: marking again queues a widget the flush let go of.
+            value.markDirty(key);
         }
         return memo;
     }
@@ -225,6 +234,7 @@ public abstract class FlutterBridge {
         TAP.wired(comm);
         if (ECHO_TIMING)
             comm.on(0, 0, WireTable.CHANNEL_SWT_EVOLVE_TIMING_PING, Object.class, m -> echoTiming(comm, m));
+        comm.on(0, 0, MoveCompression.CHANNEL, Object.class, m -> MoveCompression.asked(comm));
         return comm;
     }
 
@@ -640,46 +650,147 @@ public abstract class FlutterBridge {
 
     /** The event loop's flush. */
     public static CompletableFuture<Void> updateFrame() {
-        return update();
+        // A paint pass about to run flushes after it paints: what the turn changed then goes with what
+        // it drew, in one message, rather than ahead of it. Only for a few turns, so a queue of
+        // runnables ahead of the pass never holds the records back for long.
+        FlushState flushState = FLUSH.get();
+        if (flushState.current == null && org.eclipse.swt.widgets.PaintPass.pending()
+                && flushState.leftToPass < MAX_LEFT_TO_PASS) {
+            flushState.leftToPass++;
+            return SENT;
+        }
+        flushState.leftToPass = 0;
+        CompletableFuture<Void> sent = update(true);
+        // After the flush: an answer follows the updates of the moves it answers, the Paints they asked
+        // for included, so a paint pass still to run answers instead. Nothing is left to answer here
+        // when the flush's message carried it.
+        if (!org.eclipse.swt.widgets.PaintPass.pending()) MoveCompression.answer();
+        return sent;
     }
+
+    /**
+     * Runs {@code work}, then flushes, what both send a client going as one message, the answer to the
+     * moves handled last: a paint pass, whose frames are what the moves that asked for it drew.
+     */
+    public static void inOneMessage(Runnable work) {
+        FLUSH.get().leftToPass = 0;
+        oneMessage(work, true, true);
+        // Not carried when the records were too big to join the message.
+        MoveCompression.answer();
+    }
+
+    /** Tells the client on {@code comm} that the updates of the moves it reported are on their way. */
+    static void sendMoveHandled(CommService comm) {
+        try {
+            serializeAndSend(comm, MoveCompression.CHANNEL, java.util.Collections.emptyMap());
+        } catch (IOException | RuntimeException e) {
+            // The client then waits out its own timeout, as it would for an answer lost in transit.
+        }
+    }
+
+    /** How many turns in a row the event loop's flush may be left to a paint pass. */
+    private static final int MAX_LEFT_TO_PASS = 3;
 
     /** What a flush returns once everything it had is on its way: shared, as nothing completes it. */
     private static final CompletableFuture<Void> SENT = CompletableFuture.completedFuture(null);
 
     /** Flushes everything now: callers that block on the result need the state out on this call. */
     public static CompletableFuture<Void> update() {
-        flushOpBatches();
-        if (nothingQueued()) {
-            return SENT;
-        }
+        return update(false);
+    }
 
-        long flushStart = TAP.flushStarted();
+    /**
+     * {@link #update()}, with what it sends a client in one message: the frames of the GCs painted,
+     * then the records, then, with {@code answerMoves}, the answer to the moves handled. A message
+     * costs a socket write here and a read and a turn of the client's loop there whatever its size,
+     * and one step of a resize repaints dozens of GCs.
+     */
+    private static CompletableFuture<Void> update(boolean answerMoves) {
+        List<CompletableFuture<Void>> futures = oneMessage(null, answerMoves, false);
+        if (futures == null) return SENT;
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    /**
+     * {@code work}, then the flush, in one message per client. With {@code answerMoves} the answer goes
+     * last, unless a paint pass is still to run and {@code beforePaints} is false.
+     */
+    private static List<CompletableFuture<Void>> oneMessage(Runnable work, boolean answerMoves, boolean pass) {
+        // Everything this flush sends belongs to one moment, so it travels as one message. Only the
+        // sends made inline are caught: a widget still waiting on clientReady sends when it can.
+        // A flush started inside another, while one of its records is written, hands the outer one
+        // back as it found it: the outer frame is still open, and sending it early would send it twice.
+        FlushState flushState = FLUSH.get();
+        Flush outer = flushState.current;
+        Flush running = flushState.open();
+        flushState.current = running;
+        boolean timed = false;
+        long flushStart = 0;
         List<CompletableFuture<Void>> futures = null;
+        try {
+            if (work != null) work.run();
+            flushOpBatches();
+            if (!nothingQueued()) {
+                timed = true;
+                flushStart = TAP.flushStarted();
+                futures = flushWidgets(running);
+            }
+            running.recordsIntoBatches();
+            // Last in the message, after the updates it answers for.
+            if (answerMoves && outer == null && running.tapes.isEmpty()
+                    && (pass || !org.eclipse.swt.widgets.PaintPass.pending())) MoveCompression.answer();
+        } finally {
+            // A send made from here on goes out on its own, as one made outside any flush does, or into
+            // the flush this one started inside.
+            flushState.current = outer;
+            long sendStart = timed ? TAP.flushSending(flushStart) : 0;
+            // Each frame goes out whatever happened to the one before: a comm that fails (its client
+            // gone mid-send) must not keep another comm's frames, already counted as delivered, from
+            // their client. The first failure is reported once every frame has been tried.
+            RuntimeException failed = null;
+            for (int i = 0; i < running.batches.size(); i++) {
+                MessageBatch batch = running.batches.get(i);
+                try {
+                    if (!batch.isEmpty()) running.batchComms.get(i).send(batch);
+                } catch (RuntimeException e) {
+                    if (failed == null) failed = e;
+                } finally {
+                    releaseBatch(batch);
+                }
+            }
+            for (int i = 0; i < running.tapes.size(); i++) {
+                try {
+                    sendTape(running.tapeComms.get(i), running.tapes.get(i));
+                } catch (RuntimeException e) {
+                    if (failed == null) failed = e;
+                }
+            }
+            flushState.close(running);
+            if (timed) TAP.flushEnded(flushStart, sendStart);
+            if (failed != null) throw failed;
+        }
+        return futures;
+    }
 
+    /** Sends the dirty widgets' records into {@code running}; what is left to wait for, or null. */
+    private static List<CompletableFuture<Void>> flushWidgets(Flush running) {
+        List<CompletableFuture<Void>> futures = null;
         // Drain, don't copy-then-clear: clearing after the sends discarded every mark made while
         // this flush ran, and nothing re-marks them, so that state never reached Dart at all.
         // Anything dirtied from here on belongs to the next flush.
         // Every widget gets a record of its own and names its children by id, so nothing is carried
         // inside an ancestor and there is no ancestry to work out.
-        FlushState flushState = FLUSH.get();
-        Flush running = flushState.open();
         ArrayList<Object> flush = running.widgets;
         synchronized (dirty) {
             flushOrder(flush);
             lastQueued = null;
         }
-        // Everything this flush sends belongs to one moment, so it travels as one message. Only the
-        // sends made inline are caught: a widget still waiting on clientReady sends when it can.
-        // A flush started inside another, while one of its records is written, hands the outer one
-        // back as it found it: the outer frame is still open, and sending it early would send it twice.
-        Flush outer = flushState.current;
-        flushState.current = running;
+        // A Paint the flush released has drawn by now: its ops go out ahead of this flush's records.
+        if (org.eclipse.swt.widgets.PaintPacing.flushing(flush)) flushOpBatches();
+
         // The widgets of one flush nearly always share a display, whose thread is asked once.
         Display lastDisplay = null;
         boolean lastInline = false;
-        try {
-        // A Paint the flush released has drawn by now: its ops go in this flush's message, ahead of its records.
-        if (org.eclipse.swt.widgets.PaintPacing.flushing(flush)) flushOpBatches();
         for (int i = 0; i < flush.size(); i++) {
             Object widget = flush.get(i);
             // Non-widget state (the Display) sends itself, and does so without waiting on
@@ -721,49 +832,7 @@ public abstract class FlutterBridge {
                 }));
             }
         }
-        } finally {
-            // A send made from here on goes out on its own, as one made outside any flush does, or into
-            // the flush this one started inside.
-            flushState.current = outer;
-            long sendStart = TAP.flushSending(flushStart);
-            // Each frame goes out whatever happened to the one before: a comm that fails (its client
-            // gone mid-send) must not keep another comm's frames, already counted as delivered, from
-            // their client. The first failure is reported once every frame has been tried.
-            RuntimeException failed = null;
-            // The records go last in the same message: what the flush drew or described along the
-            // way (paint ops, the images they name) is what they refer to.
-            for (int i = 0; i < running.tapes.size(); i++) {
-                Serializer.Tape tape = running.tapes.get(i);
-                try {
-                    if (!tape.isEmpty()) {
-                        TAP.widgetFrame(tape.frame());
-                        CommService comm = running.tapeComms.get(i);
-                        MessageBatch batch = running.batchFor(comm);
-                        tape.addTo(batch);
-                        sendIfFull(comm, batch);
-                    }
-                } catch (RuntimeException e) {
-                    if (failed == null) failed = e;
-                } finally {
-                    tape.release();
-                }
-            }
-            for (int i = 0; i < running.batches.size(); i++) {
-                MessageBatch batch = running.batches.get(i);
-                try {
-                    running.batchComms.get(i).send(batch);
-                } catch (RuntimeException e) {
-                    if (failed == null) failed = e;
-                } finally {
-                    releaseBatch(batch);
-                }
-            }
-            flushState.close(running);
-            TAP.flushEnded(flushStart, sendStart);
-            if (failed != null) throw failed;
-        }
-        if (futures == null) return SENT;
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        return futures;
     }
 
     /** Sends {@code widget}'s record, for a flush: on the widget's display thread. */
@@ -1174,6 +1243,28 @@ public abstract class FlutterBridge {
             return tape;
         }
 
+        /**
+         * Moves each comm's records into its batch, after the frames already there, so the two go as
+         * one message. A tape too big to join stays, and is sent on its own after the batch.
+         */
+        void recordsIntoBatches() {
+            for (int i = 0; i < tapes.size(); ) {
+                Serializer.Tape tape = tapes.get(i);
+                if (!tape.isEmpty()) {
+                    MessageBatch batch = batchFor(tapeComms.get(i));
+                    if (batch.byteSize() + tape.frame().byteSize() > MAX_BATCH_BYTES) {
+                        i++;
+                        continue;
+                    }
+                    TAP.widgetFrame(tape.frame());
+                    tape.frame().addTo(batch);
+                }
+                tape.release();
+                tapes.remove(i);
+                tapeComms.remove(i);
+            }
+        }
+
         void clear() {
             widgets.clear();
             batchComms.clear();
@@ -1186,6 +1277,10 @@ public abstract class FlutterBridge {
     /** A thread's running flush, and the ones it can reuse: a flush can start inside another. */
     private static final class FlushState {
         Flush current;
+        /** The comms with a move handled on this thread since their last answer ({@link MoveCompression}). */
+        java.util.Set<CommService> owedMoveAnswers;
+        /** The event loop's flushes in a row left to a paint pass ({@link #updateFrame}). */
+        int leftToPass;
         private final java.util.ArrayDeque<Flush> spare = new java.util.ArrayDeque<>();
 
         Flush open() {
@@ -1200,6 +1295,22 @@ public abstract class FlutterBridge {
     }
 
     private static final ThreadLocal<FlushState> FLUSH = ThreadLocal.withInitial(FlushState::new);
+
+    /** {@code comm} is owed the answer to a move this thread handled. */
+    static void oweMoveAnswer(CommService comm) {
+        FlushState state = FLUSH.get();
+        if (state.owedMoveAnswers == null) state.owedMoveAnswers = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        state.owedMoveAnswers.add(comm);
+    }
+
+    /** The comms owed an answer by this thread, now taken; null for none. */
+    static CommService[] takeMoveAnswers() {
+        java.util.Set<CommService> owed = FLUSH.get().owedMoveAnswers;
+        if (owed == null || owed.isEmpty()) return null;
+        CommService[] taken = owed.toArray(new CommService[0]);
+        owed.clear();
+        return taken;
+    }
 
 
     /** Batches already grown to a flush's size, reused so their buffer is not regrown every turn. */
@@ -1292,6 +1403,7 @@ public abstract class FlutterBridge {
             }
             stampEventTime(widget);
             TAP.received(widget, name, ev);
+            MoveCompression.interrupt(commFor(widget));
             // A message whose body is absent deserializes to null, and handlers read the Event
             // straight away — DartText's DefaultSelection does `e.detail == SWT.ICON_CANCEL`, so a
             // bodyless Enter in a Text threw NullPointerException out of an asyncExec, which e4
@@ -1406,6 +1518,10 @@ public abstract class FlutterBridge {
         }
         stampEventTime(widget);
         TAP.received(widget, channel, ev);
+        if (MoveCompression.merge(commFor(widget), widget, channel, ev)) {
+            TAP.skipped(widget, channel, "merged into the move still queued");
+            return;
+        }
         if (ev == null) {
             TAP.skipped(widget, channel, "empty body: substituting a blank Event");
             widget.clientEvent(channel, new Event());
@@ -1533,10 +1649,20 @@ public abstract class FlutterBridge {
         GcWire batch;
         /** The ops drawn so far, as a running hash. */
         long drawn;
+        /**
+         * The ops drawn so far and the state they were drawn with, as a running hash: what an image
+         * GC's render shows, given the image it started from. Unknown once a state goes out as a change
+         * to one the hash never saw. An image described to the client during the paint makes it unlike
+         * any other, so a render that draws one is never reused.
+         */
+        long content;
+        boolean contentKnown;
         /** Whether the paint restated the GC's state. */
         boolean staged;
         /** Whether the GC's state changed since it was last staged. */
         boolean stateDirty;
+        /** Whether part of the paint went out before its end: its last frame is then not all of it. */
+        boolean partSent;
         /** Resources the buffered ops wrote, credited only once the batch is sent. */
         final ArrayList<Object> written = new ArrayList<>();
         /** What was last sent of each property of the GC's state. */
@@ -1548,8 +1674,11 @@ public abstract class FlutterBridge {
             this.gc = gc;
             batch = null;
             drawn = EMPTY_CYCLE;
+            content = EMPTY_CYCLE;
+            contentKnown = true;
             staged = false;
             stateDirty = false;
+            partSent = false;
             written.clear();
             sent.clear();
             own.clear();
@@ -1596,7 +1725,9 @@ public abstract class FlutterBridge {
             // The client is told the image anew because what it shows changed. The frame names it
             // by id all the same, so a paint that only blits it is the same bytes as the last one:
             // without this, it would be dropped as a repeat and the client would keep the old image.
-            drawn = (drawn ^ IMAGES_DESCRIBED.incrementAndGet()) * 0x100000001b3L;
+            long described = IMAGES_DESCRIBED.incrementAndGet();
+            drawn = Fnv.mix(drawn, described);
+            content = Fnv.mix(content, described);
             FlutterBridge bridge = getBridge(gc);
             if (bridge instanceof GCImageDrawer) ((GCImageDrawer) bridge).queueOp(send);
             else send.run();
@@ -1631,9 +1762,18 @@ public abstract class FlutterBridge {
         /** Whether the client numbered {@link #holdsConnection} holds {@link #held}. */
         boolean holds;
         int holdsConnection;
+        /**
+         * The client and a hash of the bytes of the last whole paint sent on the drawable's channel,
+         * when {@link #framed}: a paint that would send the very same bytes again leaves the channel
+         * as it was, its state included, and shows nothing new.
+         */
+        boolean framed;
+        int frameConnection;
+        long frameHash;
 
         /** The client's channel holds what is not known: the next GC on it describes itself whole. */
         void clear() {
+            framed = false;
             painted = false;
             stated = false;
             stateSeq = 0;
@@ -1754,6 +1894,18 @@ public abstract class FlutterBridge {
         // what is already shown is dropped.
         boolean repeat = !paint.staged && shown != null && shown.painted
                 && shown.paintConnection == connection && shown.paintDrawn == paint.drawn;
+        // A paint that restates the GC's state is not dropped above, as the channel's state moves
+        // with it. But one whose bytes are those of the last paint on the channel, all of it in this
+        // frame, takes the channel from the state that paint left to that same state: an
+        // owner-drawn row painted again at each step of a resize sets its colors and fonts the same
+        // way every time.
+        long frame = 0;
+        boolean whole = shown != null && !paint.partSent && paint.batch != null;
+        if (whole) {
+            GcWire batch = paint.batch;
+            frame = Fnv.of(EMPTY_CYCLE, batch.buffer(), batch.headerLength(), batch.byteSize() - batch.headerLength());
+            repeat |= shown.framed && shown.frameConnection == connection && shown.frameHash == frame;
+        }
         if (DROP_REPEATED_REPAINTS && repeat) {
             // Nothing in this paint reaches the client, so nothing it wrote counts as held.
             paint.written.clear();
@@ -1765,6 +1917,9 @@ public abstract class FlutterBridge {
                 shown.painted = true;
                 shown.paintConnection = connection;
                 shown.paintDrawn = paint.drawn;
+                shown.framed = whole;
+                shown.frameConnection = connection;
+                shown.frameHash = frame;
             }
             flushOpBatch(paint);
         }
@@ -1797,16 +1952,22 @@ public abstract class FlutterBridge {
             boolean staged;
             long seq;
             if (Serializer.mayDiffResources() && base != 0 && held == base && value.anyDirty()) {
+                int from = batch.byteSize();
                 seq = serializer.toDiffBinary(gc, base, batch, paint.sent);
                 staged = seq != base;
                 // The channel holds a state no whole description was hashed from.
                 paint.stateShown().stated = false;
+                // An image GC's channel starts blank with each GC, so the change is to a state this
+                // paint itself sent: the same paint writes the same change.
+                if (paint.target == null) paint.content = Fnv.of(paint.content, batch.buffer(), from, batch.byteSize() - from);
+                else paint.contentKnown = false;
             } else if (Serializer.mayDiffResources() && paint.shown != null && paint.shown.holds
                     && paint.shown.holdsConnection == connection) {
                 // Another GC described itself on this channel last: this one sends what differs from it.
                 staged = serializer.changeFrom(gc, paint.shown.held, batch, paint.sent);
                 seq = Serializer.nextWriteStamp();
                 paint.shown.stated = false;
+                paint.contentKnown = false;
             } else {
                 staged = addGcStateIfChanged(paint, batch, connection);
                 // Staged or already held, the channel now holds this GC's state.
@@ -1832,6 +1993,8 @@ public abstract class FlutterBridge {
     private static boolean addGcStateIfChanged(GcPaint paint, GcWire batch, int connection) {
         WidgetWire props = serializer.wholeState(paint.gc, batch, paint.sent);
         long hash = props.hash(0, props.size());
+        // The ops after this draw with this state, whether or not the client needs telling.
+        paint.content = Fnv.mix(paint.content, hash);
         Shown seen = paint.stateShown();
         if (seen.stated && seen.stateConnection == connection && seen.stateHash == hash) return false;
         seen.stated = true;
@@ -1860,6 +2023,10 @@ public abstract class FlutterBridge {
         int from = batch.byteSize();
         if (args instanceof GcWire.Op) {
             batch.op((GcWire.Op) args);
+            // Numbered by their first place in the frame, so an op in a later frame of the same
+            // paint can read as another: what it draws is the op's name and arguments either way.
+            paint.content = Fnv.of(Fnv.mix(paint.content, ((GcWire.Op) args).number()),
+                    batch.buffer(), from, batch.byteSize() - from);
         } else if (args == ENDING_PAINT) {
             batch.dispose(fullRepaint, damage, 0, false, false);
         } else if (args instanceof GcWire.Dispose) {
@@ -1868,17 +2035,20 @@ public abstract class FlutterBridge {
             throw new IllegalArgumentException("no wire form for " + (args == null ? "nothing" : args.getClass().getName())
                     + " on the GC channel " + ChannelHeader.name(channel));
         }
-        paint.drawn = fnv(paint.drawn, batch.buffer(), from, batch.byteSize() - from);
+        paint.drawn = Fnv.of(paint.drawn, batch.buffer(), from, batch.byteSize() - from);
     }
 
-    /** FNV offset basis: the hash of a paint that has buffered nothing. */
-    private static final long EMPTY_CYCLE = 0xcbf29ce484222325L;
+    /** The hash of a paint that has buffered nothing. */
+    private static final long EMPTY_CYCLE = Fnv.EMPTY;
 
-    private static long fnv(long hash, byte[] bytes, int offset, int length) {
-        for (int i = offset; i < offset + length; i++) {
-            hash = (hash ^ (bytes[i] & 0xFF)) * 0x100000001b3L;
-        }
-        return hash;
+    /**
+     * What {@code gc} has drawn so far and the state it drew with, as a running hash; 0 when it
+     * drew nothing or the hash cannot tell (see {@link GcPaint#content}).
+     */
+    static long paintContent(DartGC gc) {
+        GcPaint paint = (GcPaint) gc.getValue().wireMemo;
+        if (paint == null || paint.gc != gc || !paint.contentKnown || paint.content == EMPTY_CYCLE) return 0;
+        return paint.content;
     }
 
     /** An image GC's paint is ended by its drawer, not by a {@code gcDispose}, so the drawer flushes it. */
@@ -1926,7 +2096,8 @@ public abstract class FlutterBridge {
         if (!(resource instanceof DartGC)) return;
         DartGC gc = (DartGC) resource;
         GcPaint paint = (GcPaint) gc.getValue().wireMemo;
-        if (paint != null) flushOpBatch(paint);
+        // Straight out, not into a running flush's message: the caller waits for what they cause.
+        if (paint != null) flushOpBatch(paint, true);
         // An Image-backed GC buffers its ops until the drawer is started, and only a caller
         // wanting an answer starts it.
         FlutterBridge gcBridge = getBridge(gc);
@@ -1947,6 +2118,11 @@ public abstract class FlutterBridge {
     }
 
     private static void flushOpBatch(GcPaint paint) {
+        flushOpBatch(paint, false);
+    }
+
+    /** Sends {@code paint}'s frame; {@code now} keeps it out of the message of a running flush. */
+    private static void flushOpBatch(GcPaint paint, boolean now) {
         DartGC gc = paint.gc;
         GcWire batch = takeBatch(paint);
         if (batch == null) {
@@ -1958,7 +2134,8 @@ public abstract class FlutterBridge {
             releaseWire(batch);
             return;
         }
-        TAP.gcFrame(batch);
+        paint.partSent = true;
+        TAP.gcFrame(batch, paint.target);
         CommService comm = commFor(gc);
         int connection = comm == null ? 0 : comm.connectionId();
         FlutterBridge bridge = getBridge(gc);
@@ -1971,6 +2148,9 @@ public abstract class FlutterBridge {
             paint.written.clear();
             Thread borrower = Thread.currentThread();
             ((GCImageDrawer) bridge).queueOp(() -> {
+                // In the running flush's message, ahead of the paint that fills with it: the client
+                // registers a render as it applies its frames, so one sent on its own can arrive after
+                // that paint, which then finds no render and decodes the image's data instead.
                 batch.sendTo(comm);
                 Serializer.creditResources(written, connection);
                 // As the tape of an image's record: given back only on the thread that took it.
@@ -1978,11 +2158,86 @@ public abstract class FlutterBridge {
             });
             return;
         }
-        batch.sendTo(comm);
+        if (now) batch.sendNowTo(comm);
+        else sendGcFrame(comm, batch);
         // The bytes are on their way, so what they carried counts as held from here on.
         Serializer.creditResources(paint.written, connection);
         paint.written.clear();
         releaseWire(batch);
+    }
+
+    /**
+     * An empty frame on the channel numbered {@code channel} of the widget of type {@code type} numbered
+     * {@code id}: into the message of the flush running on this thread when there is one.
+     */
+    public static void sendEmpty(CommService comm, int type, long id, int channel) {
+        Flush running = FLUSH.get().current;
+        if (running == null || comm == null) {
+            if (comm != null) comm.send(type, id, channel, null);
+            return;
+        }
+        running.batchFor(comm).add(type, id, channel, EMPTY, 0, 0);
+    }
+
+    private static final byte[] EMPTY = new byte[0];
+
+    /**
+     * {@code payload} on the channel numbered {@code channel} of the widget of type {@code type}
+     * numbered {@code id}: into the message of the flush running on this thread when there is one, in
+     * order with what the flush sends around it, or on its own.
+     */
+    static void send(CommService comm, int type, long id, int channel, byte[] payload) {
+        Flush running = FLUSH.get().current;
+        if (running == null) {
+            comm.send(type, id, channel, payload);
+            return;
+        }
+        MessageBatch batch = running.batchFor(comm);
+        batch.add(type, id, channel, payload, 0, payload.length);
+        sendIfFull(comm, batch);
+    }
+
+    /**
+     * {@code payload} on the global channel numbered {@code channel}, for what may arrive late but not
+     * early, such as letting go of an image: into the message of the flush running on this thread, or
+     * of the next flush when none is. Every send made before it is already out or in that message
+     * ahead of it, so it cannot overtake what still names the image; and the turn of the event loop
+     * after the one that made it flushes, so it does not wait for long.
+     */
+    public static void sendInFlush(CommService comm, int channel, byte[] payload) {
+        if (FLUSH.get().current != null) {
+            send(comm, 0, 0, channel, payload);
+            return;
+        }
+        dirty(new DirtyState() {
+            @Override
+            public boolean isStale() {
+                return false;
+            }
+
+            @Override
+            public void flush() {
+                send(comm, 0, 0, channel, payload);
+            }
+        });
+    }
+
+    /**
+     * A GC's frame, into the message of the flush running on this thread when there is one (the
+     * paints a flush releases, the rows a record's owner draw repaints), ahead of its records.
+     */
+    private static void sendGcFrame(CommService comm, GcWire frame) {
+        Flush running = FLUSH.get().current;
+        if (running == null || comm == null || frame.isEmpty()) {
+            frame.sendTo(comm);
+            return;
+        }
+        MessageBatch batch = running.batchFor(comm);
+        batch.addFrame(frame.buffer(), frame.headerLength(), frame.byteSize());
+        if (batch.byteSize() >= MAX_BATCH_BYTES) {
+            comm.send(batch);
+            batch.clear();
+        }
     }
 
     private static final ThreadLocal<java.util.ArrayDeque<GcWire>> spareWires =

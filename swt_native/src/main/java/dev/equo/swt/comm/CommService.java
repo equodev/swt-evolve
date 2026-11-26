@@ -17,6 +17,11 @@ public interface CommService {
      */
     void sendFrame(byte[] frame, int offset, int length);
 
+    /** The moves this client reported that still wait for the UI thread; null merges none. */
+    default dev.equo.swt.MoveCompression moves() {
+        return null;
+    }
+
     /** Sends a run of frames as one message; a batch of one goes unwrapped. */
     default void send(MessageBatch batch) {
         batch.sendTo(this);

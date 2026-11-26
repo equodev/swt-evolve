@@ -51,6 +51,9 @@ public class SashHelper {
         sash.lastY = e.y;
         Rectangle bounds = sash.getBounds();
         sash.setBounds(e.x, e.y, bounds.width, bounds.height);
+        // Marked again: the move back to where the client has the sash would take the mark back.
+        if (release && !sash.isDisposed())
+            sash.getValue().markDirty(VControl.BOUNDS);
     }
 
     /**

@@ -16,12 +16,14 @@ abstract class BridgeTap {
     static final BridgeTap NONE = new BridgeTap() {
     };
 
-    /** The tap the properties ask for: the debug log, the bench's counters, a test's observer. */
+    /** The tap the properties ask for: the debug log, the bench's counters, a test's observer, a trace file. */
     static BridgeTap select() {
         List<BridgeTap> taps = new ArrayList<>();
         if (Config.isDebug()) taps.add(new DebugTap());
         if (Boolean.getBoolean("dev.equo.swt.wireStats")) taps.add(WireStats.TAP);
         if (Boolean.getBoolean("dev.equo.swt.observeSends")) taps.add(ObservedSends.TAP);
+        String trace = System.getProperty("dev.equo.swt.traceTap");
+        if (trace != null && !trace.isEmpty()) taps.add(new TraceTap(trace));
         if (taps.isEmpty()) return NONE;
         if (taps.size() == 1) return taps.get(0);
         return new Chain(taps.toArray(new BridgeTap[0]));
@@ -64,6 +66,24 @@ abstract class BridgeTap {
 
     /** A GC's paint goes out. */
     void gcFrame(GcWire frame) {
+    }
+
+    /** {@link #gcFrame(GcWire)}, with the drawable the GC paints ({@code null} for an image GC). */
+    void gcFrame(GcWire frame, Object target) {
+        gcFrame(frame);
+    }
+
+    /** Something worth placing on a trace happened now: a step of the UI thread's work. */
+    void mark(String name) {
+    }
+
+    /** A step of the UI thread's work ran from {@code startNanos} ({@link System#nanoTime}) to now. */
+    void span(String name, long startNanos) {
+    }
+
+    /** Whether marks and spans are recorded: callers skip measuring when not. */
+    boolean tracing() {
+        return false;
     }
 
     /** An event arrived for {@code widget} on {@code channel}, the part of its name after the widget. */
@@ -124,6 +144,27 @@ abstract class BridgeTap {
         @Override
         void widgetFrame(WidgetWire frame) {
             for (BridgeTap t : taps) t.widgetFrame(frame);
+        }
+
+        @Override
+        void gcFrame(GcWire frame, Object target) {
+            for (BridgeTap t : taps) t.gcFrame(frame, target);
+        }
+
+        @Override
+        void mark(String name) {
+            for (BridgeTap t : taps) t.mark(name);
+        }
+
+        @Override
+        void span(String name, long startNanos) {
+            for (BridgeTap t : taps) t.span(name, startNanos);
+        }
+
+        @Override
+        boolean tracing() {
+            for (BridgeTap t : taps) if (t.tracing()) return true;
+            return false;
         }
 
         @Override

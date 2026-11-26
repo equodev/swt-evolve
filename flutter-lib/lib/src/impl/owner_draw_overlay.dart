@@ -44,6 +44,11 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
   /// Whether the row is selected: its fill then is no hover fill.
   final bool selected;
 
+  /// Whether the painting is cut at the row's edge. Java clips a row of a Table or Tree with no
+  /// columns with no right edge, so a resize leaves its painting as it was; the row, as wide as
+  /// the control's viewport or its widest item, is where native SWT's one column ends.
+  final bool clipped;
+
   const OwnerDrawnRowOverlay(
       {super.key,
       required this.itemId,
@@ -51,7 +56,8 @@ class OwnerDrawnRowOverlay extends StatefulWidget {
       this.chosenOn = Colors.white,
       required this.minContrast,
       this.rowFill,
-      this.selected = false});
+      this.selected = false,
+      this.clipped = false});
 
   /// How many overlays of each row (by item id) show what Java painted, or hold a painting received
   /// before they mounted and are about to show it: an overlay remounted under a new parent can count
@@ -183,7 +189,9 @@ class OwnerDrawnRowOverlayState extends State<OwnerDrawnRowOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    final gc = GCSwt<VGC>(key: gcKey, value: VGC()..id = widget.itemId);
+    final Widget gc = widget.clipped
+        ? ClipRect(child: GCSwt<VGC>(key: gcKey, value: VGC()..id = widget.itemId))
+        : GCSwt<VGC>(key: gcKey, value: VGC()..id = widget.itemId);
     return _ready
         ? IgnorePointer(child: gc)
         : Offstage(child: gc);

@@ -15,6 +15,7 @@ add_library(${FLUTTER_LIBRARY_NAME} SHARED
   "engine_got.cc"
   "engine_vsync.cc"
   "gl_context.cc"
+  "motion_on_arrival.cc"
   "opaque_present.cc"
   "gl_present_hook.cc"
 )

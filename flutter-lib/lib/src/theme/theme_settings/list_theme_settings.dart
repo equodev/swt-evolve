@@ -75,7 +75,7 @@ ListThemeExtension _getListTheme({
 /// The height a List lays each item out in: the theme's item height, or one line of [style] plus
 /// the item's vertical padding when that is taller. ListSizes.java mirrors this rule.
 double listItemExtent(ListThemeExtension theme, TextStyle style) =>
-    listItemExtentForLine(theme, FontUtils.measureTextWidget('Ag', style).height);
+    listItemExtentForLine(theme, FontUtils.lineHeight(style));
 
 /// [listItemExtent] for a measured [line] height, rounded up to a whole pixel as Java's
 /// `ListSizes.getItemHeight` does, so both report and lay out the same pitch.

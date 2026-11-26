@@ -38,6 +38,35 @@ class ToolTipImplementationNativeTest {
         return ((DartToolTip) tip.getImpl()).getValue();
     }
 
+    // Applications hide their tips on every mouse move (a display filter), and each display update
+    // sends the whole display: hiding a tip that is not shown must not send one.
+    @Test
+    @DisplayName("hiding a tip that is not shown updates nothing")
+    void hidingAHiddenTipUpdatesNothing() {
+        DartDisplay display = (DartDisplay) shell.getDisplay().getImpl();
+        ToolTip tip = new ToolTip(shell, SWT.NONE);
+        org.mockito.Mockito.clearInvocations(display); // the display mock is shared with earlier tests
+
+        tip.setVisible(false);
+        tip.setVisible(false);
+
+        org.mockito.Mockito.verify(display, org.mockito.Mockito.never())._addActiveTooltip(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("showing a tip lists it with the display; hiding it does not list it again")
+    void showingATipListsItHidingItDoesNot() {
+        DartDisplay display = (DartDisplay) shell.getDisplay().getImpl();
+        ToolTip tip = new ToolTip(shell, SWT.NONE);
+        tip.setText("Title");
+        org.mockito.Mockito.clearInvocations(display);
+
+        tip.setVisible(true);
+        org.mockito.Mockito.verify(display, org.mockito.Mockito.times(1))._addActiveTooltip(tip);
+        tip.setVisible(false);
+        org.mockito.Mockito.verify(display, org.mockito.Mockito.times(1))._addActiveTooltip(tip);
+    }
+
     @Test
     @DisplayName("a tip shown without a location is drawn where the pointer is")
     void withoutALocationTheTipGoesToThePointer() {

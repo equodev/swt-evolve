@@ -185,8 +185,8 @@ public final class WidgetWire {
         FlutterBridge.sendFrame(comm, buf, size);
     }
 
-    /** Adds this frame to {@code batch}, as one of its entries. */
-    void addTo(dev.equo.swt.comm.MessageBatch batch) {
+    /** Copies what {@link #sendTo} would send into {@code batch}, as its next entry. */
+    public void addTo(dev.equo.swt.comm.MessageBatch batch) {
         if (records == 0) return;
         writeCount(buf, countAt);
         batch.addFrame(buf, countAt, size);

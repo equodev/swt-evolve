@@ -38,10 +38,10 @@ class OwnerDrawnRowsWireTest {
 
     private static final int ROWS = 80;
     /**
-     * Bytes a repainted row may take when only where it starts changed: the paint itself, and the
-     * change of its transform and of its cell's clip, which the row's origin moves.
+     * Bytes a repainted row may take when only its transform changed: the paint itself, the change, and
+     * its entry's header in the message of the flush that repainted it.
      */
-    private static final int ROW_REPAINT_BUDGET = 66;
+    private static final int ROW_REPAINT_BUDGET = 72;
     /** Bytes a row whose overlay just mounted may take: its paint, and the GC whole. */
     private static final int MOUNTED_ROW_BUDGET = 130;
 
@@ -74,12 +74,26 @@ class OwnerDrawnRowsWireTest {
     }
 
     @Test
-    void aSashStepSendsEachTreeRowsNewTransformAndNotItsWholeGc() {
+    void aSashStepWithinAWholeUnitOfEdgeGapSendsNoTreeRow() {
         Tree tree = ownerDrawnTree();
         List<TreeItem> rows = List.of(tree.getItems());
 
-        // The tree's edge gap is a share of its width, so each row starts somewhere else.
+        // The tree's edge gap is a share of its width (8.25 at 300, 8.525 at 310): rounded up, as the
+        // rows' paintings are drawn from, it is the same, and so is every painting.
         tree.setBounds(0, 0, 310, 200);
+        flush();
+
+        assertThat(painted(rows)).as("no row painted anything new").isEmpty();
+    }
+
+    @Test
+    void aSashStepPastAWholeUnitOfEdgeGapSendsEachTreeRowsNewTransformAndNotItsWholeGc() {
+        Tree tree = ownerDrawnTree();
+        List<TreeItem> rows = List.of(tree.getItems());
+
+        // The edge gap rounded up goes from 9 to 10 (9.075 at 330): each row's painting moves a unit,
+        // drawn the same.
+        tree.setBounds(0, 0, 330, 200);
         flush();
 
         Set<Integer> painted = painted(rows);
@@ -88,8 +102,9 @@ class OwnerDrawnRowsWireTest {
             assertThat(WireValues.mentions(state, "_whole")).as("a change, not the GC whole: %s", state).isFalse();
             assertThat(WireValues.mentions(state, "transform")).as("%s", state).isTrue();
             assertThat(WireValues.mentions(state, "font")).as("%s", state).isFalse();
-            assertThat(state.keySet()).as("only the transform and the cell's clip change: %s", state)
-                    .filteredOn(key -> !key.startsWith("_")).containsOnly("transform", "clipping");
+            // A tree without columns clips its rows with no right edge, so the clip stays put too.
+            assertThat(state.keySet()).as("only the transform changes: %s", state)
+                    .filteredOn(key -> !key.startsWith("_")).containsOnly("transform");
         }
         assertThat(gcBytes()).isLessThanOrEqualTo(ROW_REPAINT_BUDGET * painted.size());
     }

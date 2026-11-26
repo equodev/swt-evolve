@@ -349,9 +349,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       background: rowGround,
     );
 
-    double? totalTreeWidth = _context?.treeWidth;
+    // The width when the Tree gives its rows none ([TreeImpl.rowWidth]).
+    double? totalTreeWidth;
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    if (totalTreeWidth == null) {
+    {
       if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
         final prefix =
             widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
@@ -382,8 +383,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             ? widgetTheme.itemHeightWithCols
             : (widgetTheme.itemHeight + widgetTheme.itemPadding.vertical));
 
-    return SizedBox(
-      width: totalTreeWidth ?? double.infinity,
+    return TreeRowWidth(
+      width: _context?.treeImpl?.rowWidth,
+      fallback: totalTreeWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -451,14 +453,18 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
             key: ValueKey(state.id),
             child: DecoratedBox(
               decoration: background,
-              child: OwnerDrawnRowOverlay(
-                  itemId: state.id,
-                  ground: ground,
-                  chosenOn: selected
-                      ? OwnerDrawnRowOverlay.listSelectionColor
-                      : colorFromVColor(state.background ?? _context?.parentTreeValue.background,
-                          defaultColor: Colors.white),
-                  minContrast: minContrast),
+              child: TreeOwnerDrawShift(
+                shift: _context?.treeImpl?.ownerDrawShift,
+                child: OwnerDrawnRowOverlay(
+                    itemId: state.id,
+                    clipped: _context?.treeImpl?.getTreeColumns().isEmpty ?? true,
+                    ground: ground,
+                    chosenOn: selected
+                        ? OwnerDrawnRowOverlay.listSelectionColor
+                        : colorFromVColor(state.background ?? _context?.parentTreeValue.background,
+                            defaultColor: Colors.white),
+                    minContrast: minContrast),
+              ),
             ),
           ),
         row,
@@ -488,7 +494,6 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         parentTreeValue: _context!.parentTreeValue,
         treeImpl: _context?.treeImpl,
         treeFont: _context?.treeFont,
-        treeWidth: _context?.treeWidth,
         child: TreeItemSwt(
           value: childItem,
           key: ValueKey('tree_child_item_${childItem.id}'),
@@ -1059,9 +1064,10 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final double expanderHitRight =
         expanderHitLeft + widgetTheme.expandIconSize;
 
-    double? totalTreeWidth = _context?.treeWidth;
+    // The width when the Tree gives its rows none ([TreeImpl.rowWidth]).
+    double? totalTreeWidth;
     final effectiveWidths = TreeEffectiveColumnWidthsProvider.of(context);
-    if (totalTreeWidth == null) {
+    {
       if (effectiveWidths != null && effectiveWidths.isNotEmpty) {
         final prefix =
             widgetTheme.expandIconSize + widgetTheme.expandIconSpacing;
@@ -1134,8 +1140,9 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
       }
     }
 
-    return SizedBox(
-      width: totalTreeWidth ?? double.infinity,
+    return TreeRowWidth(
+      width: _context?.treeImpl?.rowWidth,
+      fallback: totalTreeWidth,
       // The tree reports the pointer entering and leaving it; a row's hover is its own paint only.
       child: MouseRegion(
         cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,

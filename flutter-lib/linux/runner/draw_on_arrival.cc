@@ -31,16 +31,26 @@ bool ResizedLately(GtkWidget *window) {
   return at != 0 && g_get_monotonic_time() - at < kResizeQuietUs;
 }
 
+// A zero-length event in the timeline: why a redraw was left to GDK's clock.
+void Skipped(const char *why) {
+  EngineTraceBegin(why);
+  EngineTraceEnd(why);
+}
+
 // The engine's gtk_widget_queue_draw: the redraw is queued as before, and a window drawn on arrival
 // paints at once. A paint that queues another redraw does not paint again inside itself; GDK takes
 // that one at its next tick.
 void QueueDraw(GtkWidget *widget) {
   gtk_widget_queue_draw(widget);
-  if (g_painting || !g_main_context_is_owner(g_main_context_default())) return;
+  if (g_painting) return Skipped("Equo::DrawSkipped:painting");
+  if (!g_main_context_is_owner(g_main_context_default())) return Skipped("Equo::DrawSkipped:notOwner");
   GtkWidget *top = gtk_widget_get_toplevel(widget);
-  if (top == nullptr || g_object_get_data(G_OBJECT(top), kWindowKey) == nullptr || ResizedLately(top)) return;
+  if (top == nullptr || g_object_get_data(G_OBJECT(top), kWindowKey) == nullptr) {
+    return Skipped("Equo::DrawSkipped:window");
+  }
+  if (ResizedLately(top)) return Skipped("Equo::DrawSkipped:resized");
   GdkWindow *window = gtk_widget_get_window(top);
-  if (window == nullptr || !gdk_window_is_viewable(window)) return;
+  if (window == nullptr || !gdk_window_is_viewable(window)) return Skipped("Equo::DrawSkipped:hidden");
   g_painting = true;
   EngineTraceBegin("Equo::DrawOnArrival");
   G_GNUC_BEGIN_IGNORE_DEPRECATIONS

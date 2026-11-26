@@ -11,6 +11,8 @@ import '../icons_map.dart';
 import '../widget_config.dart';
 import 'frame_presentation.dart';
 import 'glyph_tone.dart';
+import 'svg_tint.dart';
+import '../../testing/wire_stats.dart' show WireStats;
 
 class ImageUtils {
   static final Map<String, Widget> _iconCache = {};
@@ -101,9 +103,9 @@ class ImageUtils {
 
   /// Holds a render as a picture; pixels are made only when something reads them.
   static void registerRemotePicture(int ref, ui.Picture picture, int width, int height,
-      {int depth = 0}) {
+      {int depth = 0, int contentKey = 0}) {
     final previous = _remoteImageCache[ref];
-    _remoteImageCache[ref] = RemoteRender(picture, width, height, depth);
+    _remoteImageCache[ref] = RemoteRender(picture, width, height, depth, contentKey);
     previous?.dispose();
     _wakeRemoteWaiters(ref);
   }
@@ -403,6 +405,20 @@ class ImageUtils {
     return tone != null && !tone.readsOn(AppColors.getBackgroundColor());
   }
 
+  /// [svg] drawn in [tint] as a srcIn colour filter draws it, the tint put into the picture where
+  /// it can be (see [SvgTint]): a filtered picture costs a layer of its own on every frame.
+  static Widget tintedSvg(String svg, Color? tint, {double? width, double? height}) {
+    final baked = tint == null ? null : SvgTint.loader(svg, tint);
+    if (baked != null) return SvgPicture(baked, width: width, height: height, fit: BoxFit.contain);
+    return SvgPicture.string(
+      svg,
+      width: width,
+      height: height,
+      fit: BoxFit.contain,
+      colorFilter: tint != null ? ColorFilter.mode(tint, BlendMode.srcIn) : null,
+    );
+  }
+
   /// Helper to build widget from replacement object (SVG string or ui.Image). [ownColors] marks an
   /// already-rendered image, not an icon asset: the theme tint is for icon assets only, so it is
   /// drawn in its own colours, only faded when disabled.
@@ -444,14 +460,7 @@ class ImageUtils {
         Widget svgContent = SizedBox(
           width: svgSize,
           height: svgSize,
-          child: SvgPicture.string(
-            replacement,
-            width: svgSize,
-            height: svgSize,
-            colorFilter: effectiveTint != null
-                ? ColorFilter.mode(effectiveTint, BlendMode.srcIn)
-                : null,
-          ),
+          child: tintedSvg(replacement, effectiveTint, width: svgSize, height: svgSize),
         );
 
         if (effectiveTint == null || color == null) {
@@ -472,15 +481,7 @@ class ImageUtils {
           widget = svgContent;
         }
       } else {
-        Widget svgWidget = SvgPicture.string(
-          replacement,
-          width: width,
-          height: height,
-          fit: BoxFit.contain,
-          colorFilter: effectiveTint != null
-              ? ColorFilter.mode(effectiveTint, BlendMode.srcIn)
-              : null,
-        );
+        Widget svgWidget = tintedSvg(replacement, effectiveTint, width: width, height: height);
 
         if (effectiveTint == null || color == null) {
           svgWidget = Opacity(opacity: enabled ? 1.0 : fade, child: svgWidget);
@@ -860,6 +861,7 @@ class ImageUtils {
     _backgroundImageCache.clear();
     _replacedByName.clear();
     _replacedByNamePending.clear();
+    RemoteRender.clearKeptRasters();
   }
 
   static Map<String, int> getCacheStats() => {
@@ -934,13 +936,14 @@ class ImageUtils {
 
 /// A GC render kept as a picture, rasterised at most once and only when its pixels are read.
 class RemoteRender {
-  RemoteRender(this.picture, this.width, this.height, [this.depth = 0]);
+  RemoteRender(this.picture, this.width, this.height, [this.depth = 0, this.contentKey = 0]);
 
   RemoteRender.ofImage(ui.Image image)
       : picture = null,
         width = image.width,
         height = image.height,
         depth = 0,
+        contentKey = 0,
         _raster = image;
 
   final ui.Picture? picture;
@@ -948,18 +951,61 @@ class RemoteRender {
 
   /// How many earlier renders [picture] draws inside itself as its base.
   final int depth;
+
+  /// What Java names this render's content by, 0 when unnamed: renders with the same key draw the
+  /// same pixels, so the pixels made of one serve the next ([_rastersByContent]).
+  final int contentKey;
   ui.Image? _raster;
 
   bool get hasPixels => _raster != null;
 
   Future<ui.Image> rasterise() async => rasteriseSync();
 
-  /// Uses [ui.Picture.toImageSync]: the image stays on the GPU, so a blit never reads pixels back.
+  /// Uses [ui.Picture.toImageSync], which CanvasKit reads back from the GPU, so a render named like
+  /// one already rasterised takes that one's pixels instead.
   ui.Image rasteriseSync() {
     final made = _raster;
     if (made != null) return made;
-    return _raster = picture!.toImageSync(width, height);
+    final key = contentKey == 0 ? null : (contentKey, width, height);
+    final kept = key == null ? null : _rastersByContent.remove(key);
+    if (kept != null) {
+      if (WireStats.on) WireStats.rendersReused++;
+      // Back in as the most recently used.
+      _rastersByContent[key!] = kept;
+      return _raster = kept.clone();
+    }
+    if (WireStats.on) WireStats.rendersRasterised++;
+    final raster = _raster = picture!.toImageSync(width, height);
+    if (key != null) _keepRaster(key, raster.clone());
+    return raster;
   }
+
+  /// Pixels of named renders, by name and size, least recently used first. Java names only small
+  /// images, so the few kept here hold little.
+  static final Map<(int, int, int), ui.Image> _rastersByContent = {};
+  static const int _maxKeptRasters = 64;
+
+  static void _keepRaster((int, int, int) key, ui.Image raster) {
+    _rastersByContent[key] = raster;
+    while (_rastersByContent.length > _maxKeptRasters) {
+      final oldest = _rastersByContent.keys.first;
+      final evicted = _rastersByContent.remove(oldest)!;
+      // After the frame, as in [dispose].
+      WidgetsBinding.instance.endOfFrame.then((_) => evicted.dispose());
+    }
+  }
+
+  /// Drops the kept pixels of named renders.
+  static void clearKeptRasters() {
+    for (final raster in _rastersByContent.values) {
+      raster.dispose();
+    }
+    _rastersByContent.clear();
+  }
+
+  /// How many named renders' pixels are kept, for tests.
+  @visibleForTesting
+  static int get keptRasters => _rastersByContent.length;
 
   void dispose() {
     final raster = _raster;

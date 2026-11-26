@@ -114,6 +114,9 @@ public final class DropTargetHelper {
 
     /** DragEnter, DragOver, DragOperationChanged or DropAccept. */
     void negotiate(int eventType, Event e) {
+        // Before its fields are read: a later DragOver may still be merged into it until here.
+        if (eventType == DND.DragOver)
+            dev.equo.swt.MoveCompression.dragOverTaken(target, e);
         // A drag whose DragEnter never arrived starts here all the same.
         boolean entering = eventType == DND.DragEnter || !entered;
         if (entering)

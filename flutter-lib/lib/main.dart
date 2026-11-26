@@ -31,6 +31,7 @@ import 'src/impl/client_ready.dart';
 import 'src/impl/menu_key_trace.dart';
 import 'src/impl/display_evolve.dart';
 import 'src/impl/focus_requests.dart';
+import 'src/impl/utils/perf_inspect.dart';
 import 'fontSize.dart' as font_size;
 import 'imageSize.dart' as image_size;
 import 'widgetSize.dart' as widget_size;
@@ -74,6 +75,7 @@ void main(List<String> args) async {
 
   // Dormant test-support channel (no-op in production; see test_harness.dart).
   test_harness.registerTestQueryChannel();
+  registerPerfInspector();
   // Every client holds widgets, whatever it was opened to show, so every client takes their changes.
   EquoCommService.onBytesAt(gen.WireChannel.swtEvolveWire, VRegistry.instance.applyWire);
   registerWidgetOps();

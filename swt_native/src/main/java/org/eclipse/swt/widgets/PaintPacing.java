@@ -162,7 +162,7 @@ public final class PaintPacing {
             state.inFlight.addLast(pacer.clock.getAsLong());
         }
         // Nothing of a repeat reached the client, so it is asked to answer for its next frame.
-        if (repeat) comm.send(dev.equo.swt.WireTable.TYPE_GC, id, dev.equo.swt.WireTable.CHANNEL_NEXT_FRAME, null);
+        if (repeat) FlutterBridge.sendEmpty(comm, dev.equo.swt.WireTable.TYPE_GC, id, dev.equo.swt.WireTable.CHANNEL_NEXT_FRAME);
     }
 
     /** The Paint [drawable] is finishing repeats what its client shows and is not being sent. */

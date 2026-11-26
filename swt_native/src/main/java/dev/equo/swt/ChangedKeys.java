@@ -15,6 +15,7 @@ public final class ChangedKeys extends AbstractSet<Integer> {
 
     private int[] keys = new int[8];
     private int size;
+    private int clears;
 
     public boolean add(int key) {
         if (indexOf(key) >= 0) return false;
@@ -92,6 +93,12 @@ public final class ChangedKeys extends AbstractSet<Integer> {
     @Override
     public void clear() {
         size = 0;
+        clears++;
+    }
+
+    /** How many times the keys were cleared: a flush clears them, so it numbers what has been sent. */
+    public int clears() {
+        return clears;
     }
 
     @Override

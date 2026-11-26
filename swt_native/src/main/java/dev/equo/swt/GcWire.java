@@ -154,8 +154,19 @@ public final class GcWire {
         return buf;
     }
 
+    /** Where the frame's records start: past the header naming the GC. */
+    public int headerLength() {
+        return header == null ? 0 : header.length;
+    }
+
+    /** Sends this frame: into the message of the flush running on this thread, or on its own. */
     public void sendTo(CommService comm) {
         if (records > 0) FlutterBridge.sendFrame(comm, buf, size);
+    }
+
+    /** Sends this frame on its own, now, even while a flush runs: its caller waits for the answer. */
+    void sendNowTo(CommService comm) {
+        if (records > 0) comm.sendFrame(buf, 0, size);
     }
 
     /** This frame's records as {@link #entries(String, byte[], int, int)} reads them, past its channel header. */
@@ -221,47 +232,62 @@ public final class GcWire {
     /**
      * What ends a GC's paint ({@code gcDispose}), positionally: a flags byte (bit 0, the paint replaces
      * what was drawn; bit 1, a damage rectangle follows; bit 2, the client sends the render's pixels
-     * back; bit 3, the drawer keeps drawing on the render), the image's render ref, then the damage as
-     * zigzag x, y, width and height.
+     * back; bit 3, the drawer keeps drawing on the render; bit 4, a content key follows), the image's
+     * render ref, the content key, then the damage as zigzag x, y, width and height.
+     *
+     * <p>The content key names what an image's render shows: two renders with the same key draw the
+     * same pixels, so the client may give the second the pixels it made of the first. It fits 52 bits,
+     * which a web client reads exactly.
      */
     public static final class Dispose {
-        /** At most: the flags, a ref and four rectangle values. */
-        static final int MAX_BYTES = 1 + 10 + 4 * 5;
+        /** At most: the flags, a ref, a content key and four rectangle values. */
+        static final int MAX_BYTES = 1 + 10 + 10 + 4 * 5;
 
         final boolean fullRepaint;
         final org.eclipse.swt.graphics.Rectangle damage;
         final long ref;
         final boolean pixels;
         final boolean retain;
+        final long contentKey;
 
-        private Dispose(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref, boolean pixels, boolean retain) {
+        private Dispose(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref, boolean pixels, boolean retain,
+                long contentKey) {
             this.fullRepaint = fullRepaint;
             this.damage = damage;
             this.ref = ref;
             this.pixels = pixels;
             this.retain = retain;
+            this.contentKey = contentKey;
         }
 
         /** A control's paint, replacing what it drew when {@code fullRepaint}, scoped to {@code damage} when not null. */
         public static Dispose ofPaint(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage) {
-            return new Dispose(fullRepaint, damage, 0, false, false);
+            return new Dispose(fullRepaint, damage, 0, false, false, 0);
         }
 
         /** An image's paint, rendered into the client's image {@code ref} (0: render nothing). */
         public static Dispose ofImage(long ref, boolean pixels, boolean retain) {
-            return new Dispose(true, null, ref, pixels, retain);
+            return ofImage(ref, pixels, retain, 0);
+        }
+
+        /** {@link #ofImage(long, boolean, boolean)}, naming what the render shows by {@code contentKey} (0: unnamed). */
+        public static Dispose ofImage(long ref, boolean pixels, boolean retain, long contentKey) {
+            return new Dispose(true, null, ref, pixels, retain, contentKey);
         }
 
         /** Writes the fields into {@code out} at {@code at}; returns where they end. */
         int write(byte[] out, int at) {
-            return write(out, at, fullRepaint, damage, ref, pixels, retain);
+            return write(out, at, fullRepaint, damage, ref, pixels, retain, contentKey);
         }
 
         static int write(byte[] out, int at, boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref,
-                boolean pixels, boolean retain) {
+                boolean pixels, boolean retain, long contentKey) {
             boolean scoped = damage != null;
-            out[at++] = (byte) ((fullRepaint ? 1 : 0) | (scoped ? 2 : 0) | (pixels ? 4 : 0) | (retain ? 8 : 0));
+            boolean keyed = contentKey != 0;
+            out[at++] = (byte) ((fullRepaint ? 1 : 0) | (scoped ? 2 : 0) | (pixels ? 4 : 0) | (retain ? 8 : 0)
+                    | (keyed ? 16 : 0));
             at = varint(out, at, ref);
+            if (keyed) at = varint(out, at, contentKey);
             if (scoped) {
                 at = varint(out, at, zigzag(damage.x));
                 at = varint(out, at, zigzag(damage.y));
@@ -286,6 +312,7 @@ public final class GcWire {
             out.put("pixels", (flags & 4) != 0);
             out.put("retain", (flags & 8) != 0);
             out.put("ref", r.varlong());
+            if ((flags & 16) != 0) out.put("contentKey", r.varlong());
             if ((flags & 2) != 0) {
                 Map<String, Object> damage = new java.util.LinkedHashMap<>();
                 for (String key : new String[] {"x", "y", "width", "height"}) {
@@ -313,18 +340,23 @@ public final class GcWire {
 
     /** Ends the GC's paint on this frame: a {@code gcDispose} of {@code d}, written straight into it. */
     public void dispose(Dispose d) {
-        dispose(d.fullRepaint, d.damage, d.ref, d.pixels, d.retain);
+        dispose(d.fullRepaint, d.damage, d.ref, d.pixels, d.retain, d.contentKey);
     }
 
     /** {@link #dispose(Dispose)} from the fields themselves. */
     public void dispose(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref, boolean pixels, boolean retain) {
+        dispose(fullRepaint, damage, ref, pixels, retain, 0);
+    }
+
+    private void dispose(boolean fullRepaint, org.eclipse.swt.graphics.Rectangle damage, long ref, boolean pixels, boolean retain,
+            long contentKey) {
         records++;
         varint(ESCAPE);
         ensure(size + dev.equo.swt.comm.ChannelHeader.MAX_NUMBERED + 1 + Dispose.MAX_BYTES);
         size = dev.equo.swt.comm.ChannelHeader.write(buf, size, type, id, WireTable.CHANNEL_GC_DISPOSE);
         // The fields take fewer than 127 bytes, so their length (plus one) fits the one byte kept for it.
         int lengthAt = size++;
-        size = Dispose.write(buf, size, fullRepaint, damage, ref, pixels, retain);
+        size = Dispose.write(buf, size, fullRepaint, damage, ref, pixels, retain, contentKey);
         buf[lengthAt] = (byte) (size - lengthAt);
     }
 

@@ -904,6 +904,44 @@ public class ControlHelper {
      * Declares that what the control paints is out of date. Reachable from the custom-widget
      * package, unlike Widget.hooks(int).
      */
+    /**
+     * A control's background image changed. The client draws that image itself, under what the
+     * control paints, so the change shows without a Paint; one is still wanted for a paint listener
+     * that draws with {@code getBackgroundImage()}. A listener that sets its own control's image
+     * while painting it has drawn this Paint with that image already, so it asks for no second one.
+     */
+    public static void backgroundImageChanged(DartControl c) {
+        if (c.paintState != null && c.paintState.painting) return;
+        markDamaged(c);
+    }
+
+    /**
+     * Whether moving {@code c} above (or below) {@code sibling} — the top (or bottom) when null — would
+     * leave its parent's drawing order as it is. Such a move does nothing, and skipping it skips the
+     * walk it starts: every later sibling's whole subtree has its visible region reset. CTabFolder
+     * moves its toolbar to the top, where it already is, on every resize.
+     */
+    public static boolean zOrderUnchanged(DartControl c, Control sibling, boolean above) {
+        Control self = c.getApi();
+        if (sibling == self) return true;
+        Composite parent = self.getParent();
+        if (parent == null) return false;
+        Control[] children = parent.getImpl()._getChildren();
+        int index = indexOf(children, self);
+        if (index < 0) return false;
+        if (sibling == null) return above ? index == 0 : index == children.length - 1;
+        int at = indexOf(children, sibling);
+        if (at < 0) return false;
+        return above ? index == at - 1 : index == at + 1;
+    }
+
+    private static int indexOf(Control[] children, Control control) {
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] == control) return i;
+        }
+        return -1;
+    }
+
     public static void markDamaged(DartControl c) {
         if (paints(c)) {
             paint(c);
@@ -1005,13 +1043,18 @@ public class ControlHelper {
     }
 
     private static void dispatchPaint(DartControl c) {
-        c.getDisplay().asyncExec(() -> {
-            paintState(c).queued = false;
-            // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
-            if (c.drawCount > 0)
-                return;
-            firePaint(c);
-        });
+        PaintPass.add(c);
+    }
+
+    /** A Paint {@link PaintPass} runs: sends it, if one is still wanted. */
+    static void runDispatchedPaint(DartControl c) {
+        if (!paintState(c).queued)
+            return;
+        paintState(c).queued = false;
+        // Drawing may have been turned off in between; setRedraw(true) delivers the Paint then.
+        if (c.drawCount > 0)
+            return;
+        firePaint(c);
     }
 
 
@@ -1045,6 +1088,10 @@ public class ControlHelper {
         // against widgets that are mid-teardown. Balanced in a finally; nested paints just
         // increment further and unwind cleanly.
         inPaintDepth++;
+        PaintState state = paintState(c);
+        boolean outerPainting = state.painting;
+        state.painting = true;
+        long traced = dev.equo.swt.Trace.started();
         try {
             // A FigureCanvas takes this Paint like any other control. draw2d answers it by painting
             // its whole figure tree straight into the event's GC (DeferredUpdateManager#paint), and
@@ -1055,7 +1102,9 @@ public class ControlHelper {
             // blit deposited -- for a fresh buffer, an opaque black rectangle.
             sendPaint(c, damage, scoped);
         } finally {
+            state.painting = outerPainting;
             inPaintDepth--;
+            dev.equo.swt.Trace.paintEnded(c.getApi().getClass(), traced);
         }
         PaintPacing.painted(c);
     }

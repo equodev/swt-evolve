@@ -50,6 +50,14 @@ public class GCImageDrawer extends EmbeddedBridge {
     private volatile Image dartImage;
     private volatile Consumer<ByteBuffer> onImageResult;
     private boolean started;
+    /** What the image held when its drawer started, as a hash; 0 when it cannot be named (see {@link #baseKey}). */
+    private long baseKey;
+
+    /** Only images this small are named by content: hashing a large one's pixels would cost more than it saves. */
+    static final int MAX_KEYED_PIXELS = 128 * 128;
+
+    /** Content keys fit 52 bits, which a web client reads exactly. */
+    private static final long KEY_BITS = (1L << 52) - 1;
 
     /** Ops buffered until Flutter's GCDrawer listeners are registered. */
     private final List<Runnable> pendingOps = new ArrayList<>();
@@ -222,11 +230,14 @@ public class GCImageDrawer extends EmbeddedBridge {
         // produced yet, leaving the render side waiting on its own output as its base.
         final byte[] imageInit = dartImage != null && dartImage.getImpl() instanceof DartImage
                 ? Serializer.wireFields(((DartImage) dartImage.getImpl()).getValue()) : null;
+        baseKey = dartImage != null && dartImage.getImpl() instanceof DartImage
+                ? baseKey(((DartImage) dartImage.getImpl()).getValue()) : 0;
         if (comm != null) {
-            // No handshake: frames apply one at a time in arrival order, so the GC/create handler
-            // has built the drawer before anything sent after it is applied.
-            comm.send(0, 0, WireTable.CHANNEL_GC_CREATE, ByteBuffer.allocate(8).putLong(gcId).array());
-            if (imageInit != null) comm.send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_INIT, imageInit);
+            // No handshake: frames apply one at a time in arrival order, a batch's entries too, so the
+            // GC/create handler has built the drawer before anything sent after it is applied. In the
+            // running flush's message, as the ops after them are.
+            FlutterBridge.send(comm, 0, 0, WireTable.CHANNEL_GC_CREATE, ByteBuffer.allocate(8).putLong(gcId).array());
+            if (imageInit != null) FlutterBridge.send(comm, WireTable.TYPE_GC, gcId, WireTable.CHANNEL_IMAGE_INIT, imageInit);
             flushOps();
             return;
         }
@@ -286,6 +297,18 @@ public class GCImageDrawer extends EmbeddedBridge {
      * @return whether pixels are on their way back, i.e. whether the caller must wait for them.
      */
     public boolean endDrawCycle(boolean needsPixelsForMirror) {
+        return endDrawCycle(needsPixelsForMirror, 0L);
+    }
+
+    /**
+     * {@link #endDrawCycle(boolean)}, for the GC that drew the render: the render is named by what
+     * it shows, so the client can reuse the pixels of one that showed the same.
+     */
+    public boolean endDrawCycle(boolean needsPixelsForMirror, org.eclipse.swt.graphics.DartGC gc) {
+        return endDrawCycle(needsPixelsForMirror, FlutterBridge.paintContent(gc));
+    }
+
+    private boolean endDrawCycle(boolean needsPixelsForMirror, long drawn) {
         start();
         // Only the shared engine can own the picture: an isolated off-screen engine has its own
         // image cache, which the Display's engine cannot resolve a ref against.
@@ -301,7 +324,8 @@ public class GCImageDrawer extends EmbeddedBridge {
                 if (sink != null) sink.accept(bytes);
             });
         }
-        GcWire.Dispose dispose = GcWire.Dispose.ofImage(remoteRef, wantPixels, false);
+        long contentKey = remoteRef != 0 ? contentKey(baseKey, drawn) : 0;
+        GcWire.Dispose dispose = GcWire.Dispose.ofImage(remoteRef, wantPixels, false, contentKey);
         if (!FlutterBridge.flushBufferedOpsWith(this, dispose)) {
             queueOp(() -> c.send(WireTable.TYPE_GC, gcId, WireTable.CHANNEL_GC_DISPOSE, dispose.encode()));
         }
@@ -318,6 +342,45 @@ public class GCImageDrawer extends EmbeddedBridge {
             dart._adoptRemoteRender(remoteRef, c);
         }
         return wantPixels;
+    }
+
+    /** The key of a render that drew {@code drawn} over a base named {@code base}; 0 when either is unnamed. */
+    static long contentKey(long base, long drawn) {
+        if (base == 0 || drawn == 0) return 0;
+        long key = Fnv.ofLong(Fnv.ofLong(Fnv.EMPTY, base), drawn) & KEY_BITS;
+        return key == 0 ? 1 : key;
+    }
+
+    /**
+     * What a GC on {@code image} starts from, as a hash: its size, background and pixels. 0 for one
+     * that starts from a render, a file or an SVG, whose pixels this side does not hold, and for one
+     * larger than {@link #MAX_KEYED_PIXELS}.
+     */
+    static long baseKey(org.eclipse.swt.graphics.VImage image) {
+        if (image.getRemoteRef() != null || image.getFilename() != null || image.getSvgContent() != null) return 0;
+        int width = image.getWidth(), height = image.getHeight();
+        if (width <= 0 || height <= 0 || (long) width * height > MAX_KEYED_PIXELS) return 0;
+        long h = Fnv.ofLong(Fnv.ofLong(Fnv.EMPTY, width), height);
+        org.eclipse.swt.graphics.Color background = image.getBackground();
+        h = Fnv.ofLong(h, background == null || background.isDisposed() ? -1 : background.getRGBA().hashCode());
+        org.eclipse.swt.graphics.ImageData data = image.getImageData();
+        if (data == null) return Fnv.ofLong(h, -1);
+        h = Fnv.ofLong(h, data.width);
+        h = Fnv.ofLong(h, data.height);
+        h = Fnv.ofLong(h, data.depth);
+        h = Fnv.ofLong(h, data.bytesPerLine);
+        h = Fnv.ofLong(h, data.transparentPixel);
+        h = Fnv.ofLong(h, data.alpha);
+        h = Fnv.of(h, data.data);
+        h = Fnv.of(h, data.alphaData);
+        h = Fnv.of(h, data.maskData);
+        org.eclipse.swt.graphics.PaletteData palette = data.palette;
+        if (palette != null) {
+            h = Fnv.ofLong(h, palette.isDirect ? 1 : 0);
+            h = Fnv.ofLong(Fnv.ofLong(Fnv.ofLong(h, palette.redMask), palette.greenMask), palette.blueMask);
+            if (palette.colors != null) for (org.eclipse.swt.graphics.RGB rgb : palette.colors) h = Fnv.ofLong(h, rgb.hashCode());
+        }
+        return h == 0 ? 1 : h;
     }
 
     /**

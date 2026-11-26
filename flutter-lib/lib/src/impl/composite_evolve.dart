@@ -449,8 +449,9 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
 
     // wrapCompositeInteractionChrome(), unlike wrap() above, never applies wrapDnd() —
     // apply it explicitly so a Composite with children can still be a Draggable/DragTarget.
-    // Only a plain Composite: a Shell places itself from where its bounds stand.
-    if (state.swt == 'Composite') builtAtBounds();
+    // Any composite: one whose build reads its size says so (sizeIsLayoutOnly), and a Shell, which
+    // places itself from where its bounds stand, says that (buildsFromPosition).
+    builtAtBounds();
     final gcWrapped = stackGCUnderChildren(paintBackground, inner);
     final dndWrapped = wrapsWholeWidgetForDnd ? wrapDnd(gcWrapped) : gcWrapped;
     // A Composite that is a Tab stop is reached before its children.

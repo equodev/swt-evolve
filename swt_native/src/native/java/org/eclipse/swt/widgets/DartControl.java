@@ -1746,6 +1746,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (parent != ((DartControl) control.getImpl()).parent)
                 return;
         }
+        if (ControlHelper.zOrderUnchanged(this, control, true))
+            return;
         setZOrder(control, true);
         ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, true);
     }
@@ -1778,6 +1780,8 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             if (parent != ((DartControl) control.getImpl()).parent)
                 return;
         }
+        if (ControlHelper.zOrderUnchanged(this, control, false))
+            return;
         setZOrder(control, false);
         ControlUtils.updateChildrenOrderOnMove(this.getApi(), control, false);
     }
@@ -2586,7 +2590,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (image != null && image.isDisposed())
             error(SWT.ERROR_INVALID_ARGUMENT);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            ControlHelper.markDamaged(this);
+            ControlHelper.backgroundImageChanged(this);
         }
         backgroundImage = image;
         updateBackgroundImage();
@@ -2625,7 +2629,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         Rectangle wasBounds = getValue().getBounds();
         setBounds(x, y, Math.max(0, width), Math.max(0, height), true, true);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     void setBounds(int x, int y, int width, int height, boolean move, boolean resize) {
@@ -2663,7 +2667,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         ;
         if ((positionChanged || sizeChanged) && !isDisposed())
             PointerCrossingHelper.boundsChanged(this);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -2695,7 +2699,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (rect == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(rect.x, rect.y, Math.max(0, rect.width), Math.max(0, rect.height), true, true);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -2928,7 +2932,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         Rectangle wasBounds = getValue().getBounds();
         setBounds(x, y, 0, 0, true, false);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -2954,7 +2958,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (location == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(location.x, location.y, 0, 0, true, false);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -3184,7 +3188,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         checkWidget();
         Rectangle wasBounds = getValue().getBounds();
         setBounds(0, 0, Math.max(0, width), Math.max(0, height), false, true);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     /**
@@ -3216,7 +3220,7 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
         if (size == null)
             error(SWT.ERROR_NULL_ARGUMENT);
         setBounds(0, 0, Math.max(0, size.x), Math.max(0, size.y), false, true);
-        dev.equo.swt.ChangeMarks.ifChanged(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds());
+        boundsMark = dev.equo.swt.ChangeMarks.markChange(this, VControl.BOUNDS, wasBounds, self -> self.getValue().getBounds(), boundsMark);
     }
 
     void setSmallSize() {
@@ -4451,4 +4455,6 @@ public abstract class DartControl extends DartWidget implements Drawable, IContr
             value = new VControl(this);
         return (VControl) value;
     }
+
+    dev.equo.swt.MarkMemo boundsMark;
 }

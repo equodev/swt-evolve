@@ -162,6 +162,7 @@ public final class OwnerDrawOverlay {
                 gc.setBackground(background(row, i, selected));
                 gc.setFont(font(row, i));
                 Rectangle clip = clip(parent, i, cell, i == leftmost, rowLeft);
+                GCHelper.showsUpTo(gc, shownRight(parent, cell));
                 gc.setClipping(clip);
                 int detail = selected ? SWT.SELECTED : 0;
                 if (owner.hooks(SWT.EraseItem)) {
@@ -198,7 +199,14 @@ public final class OwnerDrawOverlay {
      * whole column on the row, so what they draw past it (a StyledCellLabelProvider's TextLayout has
      * no width) stops at the column's edge. The column holding the checkbox (a Table's column 0) or
      * the indent and expander (a Tree's leftmost column) covers them too. With no columns, the one
-     * column spans the control: its area reaches the client area's right edge, past the widest row.
+     * column spans the control: its area reaches the client area's right edge ({@link #shownRight}),
+     * past the widest row.
+     *
+     * <p>That edge moves with every pixel the control is resized by, and a row whose clip moved is
+     * sent and drawn again. So the clip of a row with no columns is sent with no right edge, which
+     * leaves the row's painting the same across a resize: the client cuts such a row at its own edge,
+     * the client area's or the widest row's, and the listeners' GC reports the clip ending at
+     * {@link #shownRight}.
      */
     private static Rectangle clip(Control parent, int index, Rectangle cell, boolean leftmost, float rowLeft) {
         boolean columnless = columnCount(parent) == 0;
@@ -211,11 +219,21 @@ public final class OwnerDrawOverlay {
             if (!leftmost) return cell;
             left = Math.min(cell.x, Math.round(rowLeft));
         }
-        if (columnless) {
-            Rectangle client = ((Scrollable) parent).getClientArea();
-            right = Math.max(right, client.x + client.width);
-        }
+        if (columnless) right = left + UNBOUNDED;
         return new Rectangle(left, cell.y, right - left, cell.height);
+    }
+
+    /** How wide a clip with no right edge is: past any control's width. */
+    private static final int UNBOUNDED = 1 << 20;
+
+    /**
+     * The right edge of what native SWT shows of {@code cell}: the client area's, or the cell's own
+     * past it, with no columns; with columns, the clip's own.
+     */
+    private static int shownRight(Control parent, Rectangle cell) {
+        if (columnCount(parent) != 0) return Integer.MAX_VALUE;
+        Rectangle client = ((Scrollable) parent).getClientArea();
+        return Math.max(cell.x + cell.width, client.x + client.width);
     }
 
     private static int columnCount(Control parent) {
@@ -229,13 +247,18 @@ public final class OwnerDrawOverlay {
     }
 
     /**
-     * Where the row's overlay starts: a Tree row at the tree's edge with columns and after its edge
-     * gap without, a Table row at the table's edge.
+     * Where the row's overlay draws from: a Tree row at the tree's edge with columns and from its edge
+     * gap rounded up to a whole unit without, a Table row from the table's edge.
+     *
+     * <p>A Tree's edge gap is a fraction of its width. Rounded up, as the cells are placed
+     * (TreeSizes.getContentLeft), a cell keeps its place in the painting however wide the tree, so a
+     * resize leaves the painting unchanged. The client lays the painting out from the same rounding
+     * ({@code ownerDrawShift} in tree_evolve.dart).
      */
     private static float rowLeft(Control parent, Item row) {
         // A table's overlay scrolls sideways with its row, while the cell bounds are in the client area.
         if (row instanceof TableItem) return -TableHelper.scrollOffsetX((DartTable) parent.getImpl());
-        return (float) dev.equo.swt.size.TreeSizes.getRowLeft((DartTree) parent.getImpl());
+        return (float) Math.ceil(dev.equo.swt.size.TreeSizes.getRowLeft((DartTree) parent.getImpl()));
     }
 
     /**

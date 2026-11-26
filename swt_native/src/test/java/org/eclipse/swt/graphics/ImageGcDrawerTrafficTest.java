@@ -147,11 +147,10 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         frame.dispose();
         gc.dispose();
 
-        // Sent once every send already deferred has gone, which may be on another thread.
-        int released = comm.awaitSent("Image/forget", 5000);
+        int released = flushUntilSent("Image/forget", 5000);
         assertThat(released).as("the disposed image was never released on the client").isNotNegative();
         synchronized (comm) {
-            assertThat(ByteBuffer.wrap(comm.raw.get(released)).getLong()).isEqualTo(id);
+            assertThat(comm.forgotten).containsExactly(id);
             assertThat(comm.sent.subList(0, released))
                     .as("the release overtook the draw that names the image")
                     .anyMatch(e -> e.endsWith("/drawImageImageintint"));
@@ -160,11 +159,52 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     }
 
     @Test
+    void an_image_let_go_of_between_flushes_is_released_in_the_next_flush_message() throws InterruptedException {
+        // A form's title gradient is made anew and the last one disposed on each resize of a drag,
+        // outside any flush: a message for each would outnumber the step's own.
+        Image frame = new Image(device(), 16, 16);
+        Image canvas = new Image(device(), 64, 64);
+        GC gc = new GC(canvas);
+        gc.drawImage(frame, 0, 0);
+        gc.dispose();
+        long id = FlutterBridge.id(frame.getImpl());
+        frame.dispose();
+
+        assertThat(comm.awaitSent("Image/forget", 300)).as("released before the next flush, on its own").isNegative();
+        int before = comm.messages;
+        Image[] drawn = new Image[1];
+        FlutterBridge.inOneMessage(() -> drawn[0] = gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+
+        synchronized (comm) {
+            assertThat(comm.forgotten).as("released by the next flush").containsExactly(id);
+            assertThat(comm.messages - before).as("in that flush's message, with what it drew").isEqualTo(1);
+        }
+        drawn[0].dispose();
+        canvas.dispose();
+    }
+
+    @Test
     void an_image_the_client_never_saw_is_not_released_there() throws InterruptedException {
         Image scratch = new Image(device(), 16, 16);
         scratch.dispose();
 
-        assertThat(comm.awaitSent("Image/forget", 500)).isNegative();
+        assertThat(flushUntilSent("Image/forget", 500)).isNegative();
+    }
+
+    /**
+     * Flushes, as each turn of the event loop does, until {@code eventName} has gone or
+     * {@code timeoutMs} has passed: its index in what was sent, or -1. The release of an image is
+     * enrolled for the next flush once every send already deferred has gone, which may be on
+     * another thread, so the flush that carries it may not be the first.
+     */
+    private int flushUntilSent(String eventName, long timeoutMs) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (true) {
+            FlutterBridge.inOneMessage(() -> {
+            });
+            int at = comm.awaitSent(eventName, 20);
+            if (at >= 0 || System.currentTimeMillis() >= deadline) return at;
+        }
     }
 
     @Test
@@ -251,6 +291,148 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         assertThat(comm.sent).containsSubsequence("GC/1/fillRectangleintintintint", "GC/create", "GC/1/gcDispose");
     }
 
+    @Test
+    void images_drawn_alike_are_named_alike() {
+        // The client takes the pixels of a render named like one it already rasterised.
+        Long first = contentKeyOf(gradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+        Long second = contentKeyOf(gradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+
+        assertThat(first).as("a small image drawn on a blank one is named").isNotNull().isNotZero();
+        assertThat(second).isEqualTo(first);
+    }
+
+    @Test
+    void images_a_gc_draws_alike_are_named_alike() {
+        Long first = contentKeyOf(gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+        Long second = contentKeyOf(gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+
+        assertThat(first).as("a small image a GC drew on is named").isNotNull().isNotZero();
+        assertThat(second).isEqualTo(first);
+    }
+
+    @Test
+    void images_drawn_alike_while_a_flush_runs_are_named_alike() {
+        // As a paint pass draws them, while a flush runs.
+        Image[] drawn = new Image[1];
+        comm.payloads.clear();
+        dev.equo.swt.FlutterBridge.inOneMessage(() -> drawn[0] = gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+        Long first = contentKeyOf(drawn[0]);
+        comm.payloads.clear();
+        dev.equo.swt.FlutterBridge.inOneMessage(() -> drawn[0] = gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+        Long second = contentKeyOf(drawn[0]);
+
+        assertThat(first).as("a render drawn during a flush is named").isNotNull().isNotZero();
+        assertThat(second).isEqualTo(first);
+    }
+
+    @Test
+    void an_image_drawn_while_a_flush_runs_travels_in_the_flush_message() {
+        // Sent on its own, the render reached the client after the paint that fills with it, which
+        // then found no render and decoded the image's data instead.
+        boolean[] outBeforeTheFlushEnded = new boolean[1];
+        Image[] drawn = new Image[1];
+        int before = comm.messages;
+        dev.equo.swt.FlutterBridge.inOneMessage(() -> {
+            drawn[0] = gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220));
+            outBeforeTheFlushEnded[0] = comm.sent.stream().anyMatch(e -> e.endsWith("/gcDispose"));
+        });
+
+        assertThat(outBeforeTheFlushEnded[0]).as("the render's gcDispose waited for the flush's message").isFalse();
+        assertThat(comm.sent).as("and went in it").anyMatch(e -> e.endsWith("/gcDispose"));
+        assertThat(comm.messages).isGreaterThan(before);
+        drawn[0].dispose();
+    }
+
+    @Test
+    void an_image_drawn_while_a_flush_runs_is_one_message_with_it() {
+        // GC/create and imageInit too, ahead of the ops they set up: a paint that makes a gradient
+        // anew on every move of a drag costs no messages of its own.
+        Image[] drawn = new Image[1];
+        int before = comm.messages;
+        dev.equo.swt.FlutterBridge.inOneMessage(
+                () -> drawn[0] = gcGradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+
+        assertThat(comm.messages - before).as("the render, created and drawn, in one message").isEqualTo(1);
+        int created = comm.sent.indexOf("GC/create");
+        int disposed = java.util.stream.IntStream.range(0, comm.sent.size())
+                .filter(i -> comm.sent.get(i).endsWith("/gcDispose")).findFirst().orElse(-1);
+        assertThat(created).as("GC/create is in it").isNotNegative();
+        assertThat(disposed).as("ahead of the gcDispose that ends the render").isGreaterThan(created);
+        drawn[0].dispose();
+    }
+
+    @Test
+    void images_drawn_with_other_colors_or_sizes_are_named_apart() {
+        Long gradient = contentKeyOf(gradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
+
+        assertThat(contentKeyOf(gradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 221)))).isNotEqualTo(gradient);
+        assertThat(contentKeyOf(gradient(1, 28, new Color(10, 20, 30), new Color(200, 210, 220)))).isNotEqualTo(gradient);
+        assertThat(contentKeyOf(gradient(2, 30, new Color(10, 20, 30), new Color(200, 210, 220)))).isNotEqualTo(gradient);
+    }
+
+    @Test
+    void an_image_drawn_over_its_last_render_is_not_named() {
+        // What it shows depends on that render, whose pixels this side does not hold.
+        Image image = new Image(device(), 16, 16);
+        GC first = new GC(image);
+        first.fillRectangle(0, 0, 16, 16);
+        first.dispose();
+        comm.payloads.clear();
+
+        GC second = new GC(image);
+        second.drawLine(0, 0, 15, 15);
+        second.dispose();
+
+        assertThat(contentKeys()).containsOnlyNulls();
+        image.dispose();
+    }
+
+    @Test
+    void a_large_image_is_not_named() {
+        // Hashing its pixels would cost more than a read-back saves.
+        assertThat(contentKeyOf(gradient(200, 200, new Color(10, 20, 30), new Color(200, 210, 220)))).isNull();
+    }
+
+    /** An image of {@code width} by {@code height} filled with a vertical gradient, as Eclipse Forms makes its title bars'. */
+    private Image gradient(int width, int height, Color from, Color to) {
+        comm.payloads.clear();
+        return new Image(device(), (gc, w, h) -> {
+            gc.setForeground(from);
+            gc.setBackground(to);
+            gc.fillGradientRectangle(0, 0, w, h, true);
+        }, width, height);
+    }
+
+    /** {@link #gradient}, drawn by a GC on a new image, as Eclipse Forms' FormImages does. */
+    private Image gcGradient(int width, int height, Color from, Color to) {
+        comm.payloads.clear();
+        Image image = new Image(device(), width, height);
+        GC gc = new GC(image);
+        gc.setForeground(from);
+        gc.setBackground(to);
+        gc.fillGradientRectangle(0, 0, width, height, true);
+        gc.dispose();
+        return image;
+    }
+
+    /** The content key the render of {@code image}, just drawn, was named by; null when unnamed. */
+    private Long contentKeyOf(Image image) {
+        List<Long> keys = contentKeys();
+        image.dispose();
+        assertThat(keys).as("the render's gcDispose").hasSize(1);
+        return keys.get(0);
+    }
+
+    /** The content key of each gcDispose sent since the payloads were last cleared, null for one without. */
+    private List<Long> contentKeys() {
+        List<Long> keys = new ArrayList<>();
+        for (Map<String, Object> dispose : WireValues.find(comm.carried(), m -> m.containsKey("retain") && m.containsKey("ref"))) {
+            Object key = dispose.get("contentKey");
+            keys.add(key == null ? null : ((Number) key).longValue());
+        }
+        return keys;
+    }
+
     /** Whether some record in {@code carried} describes image data. */
     private static boolean describesImageData(List<Object> carried) {
         return !WireValues.find(carried, m -> m.get("imageData") instanceof Map).isEmpty();
@@ -273,6 +455,8 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         final List<GcFrames.Entry> payloads = new ArrayList<>();
         /** The payload of each entry in {@link #sent} that travelled on its own, by the same index. */
         final List<byte[]> raw = new ArrayList<>();
+        /** The id each Image/forget names, whether it travelled on its own or in a batch. */
+        final List<Long> forgotten = new ArrayList<>();
         int messages;
         final Map<String, Consumer<?>> handlers = new LinkedHashMap<>();
         /** For each copyArea request, whether Java was listening on the exact channel the client answers on. */
@@ -304,6 +488,9 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         synchronized void send(String eventName, byte[] payload) {
             GcFrames.Decoded frame = GcFrames.decode(eventName, payload);
             messages++;
+            List<byte[]> forgets = MessageBatch.EVENT.equals(eventName) ? GcFrames.payloadsOn(payload, "Image/forget")
+                    : "Image/forget".equals(frame.event()) ? List.of(payload) : List.of();
+            for (byte[] forget : forgets) forgotten.add(ByteBuffer.wrap(forget).getLong());
             if (MessageBatch.EVENT.equals(frame.event()) && frame.value() instanceof List<?> entries) {
                 for (Object entry : entries) {
                     payloads.add((GcFrames.Entry) entry);

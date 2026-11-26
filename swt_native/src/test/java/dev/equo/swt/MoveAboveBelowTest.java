@@ -60,6 +60,51 @@ public class MoveAboveBelowTest {
         assertThat(composite.getChildren()).as("after label.moveBelow(button)").containsExactly(button, label, child);
     }
 
+    /** The bridge, counting the drawing-order changes it is told of. */
+    private static final class CountingBridge extends MockFlutterBridge {
+        int zOrders;
+
+        @Override
+        public void setZOrder(DartControl control, Control sibling, boolean above) {
+            zOrders++;
+        }
+    }
+
+    // CTabFolder moves its toolbar to the top on every resize, where it already is. Such a move must
+    // leave the order and tell the client nothing: setZOrder walks every later sibling's subtree.
+    @Test
+    public void aMoveToWhereTheControlAlreadyIsDoesNothing() {
+        CountingBridge bridge = new CountingBridge();
+        FlutterBridge.set(bridge);
+        Composite composite = new Composite(shell(), SWT.NONE);
+        Label label = new Label(composite, SWT.NONE);
+        Button button = new Button(composite, SWT.NONE);
+        Composite child = new Composite(composite, SWT.NONE);
+
+        label.moveAbove(null);
+        label.moveAbove(button);
+        button.moveBelow(label);
+        child.moveBelow(null);
+        child.moveAbove(child);
+
+        assertThat(composite.getChildren()).as("order after moves that change nothing").containsExactly(label, button, child);
+        assertThat(bridge.zOrders).as("drawing-order changes sent").isZero();
+    }
+
+    @Test
+    public void aMoveThatChangesTheOrderIsStillSent() {
+        CountingBridge bridge = new CountingBridge();
+        FlutterBridge.set(bridge);
+        Composite composite = new Composite(shell(), SWT.NONE);
+        Label label = new Label(composite, SWT.NONE);
+        Button button = new Button(composite, SWT.NONE);
+
+        button.moveAbove(null);
+
+        assertThat(composite.getChildren()).as("order after button.moveAbove(null)").containsExactly(button, label);
+        assertThat(bridge.zOrders).as("drawing-order changes sent").isEqualTo(1);
+    }
+
     @Test
     public void moveBelow_null_movesToBottom() {
         Composite composite = new Composite(shell(), SWT.NONE);

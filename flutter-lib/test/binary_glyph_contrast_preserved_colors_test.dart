@@ -12,6 +12,7 @@ import 'package:swtflutter/src/gen/imagedata.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/gcdrawer_evolve.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+import 'package:swtflutter/src/impl/utils/svg_tint.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'support/icon_renders.dart';
@@ -130,15 +131,19 @@ void main() {
   });
 }
 
-/// The color filter the replacement SVG is painted with, null when it is drawn as authored.
+/// The srcIn tint the replacement SVG is drawn in, as a filter or put into its picture; null when it
+/// is drawn as authored.
 Future<ColorFilter?> _svgFilter(WidgetTester tester, String svg) async {
   final widget = ImageUtils.buildVImage(VImage()..svgContent = svg, size: 16, renderAsIcon: true);
   expect(widget, isNotNull);
   await tester.pumpWidget(Directionality(textDirection: TextDirection.ltr, child: widget!));
-  return tester.widget<SvgPicture>(find.byType(SvgPicture)).colorFilter;
+  final picture = tester.widget<SvgPicture>(find.byType(SvgPicture));
+  final baked = SvgTint.tintOf(picture.bytesLoader);
+  return baked != null ? ColorFilter.mode(baked, BlendMode.srcIn) : picture.colorFilter;
 }
 
-/// The color filter a GC drawImage paints the replacement SVG with, null when drawn as authored.
+/// The srcIn tint a GC drawImage draws the replacement SVG in, as a filter or put into its picture;
+/// null when drawn as authored.
 Future<ColorFilter?> _gcSvgFilter(WidgetTester tester, String svg) async {
   final blit = VGCDrawImageImageintintintintintintintint(
     destX: 0,
@@ -153,7 +158,8 @@ Future<ColorFilter?> _gcSvgFilter(WidgetTester tester, String svg) async {
   final shape = await tester.runAsync(() => ImageShape.fromVImageDetailed(
       VImage()..svgContent = svg, blit, null, useThemeColors: true));
   expect(shape!.type, ImageType.svg);
-  return shape.colorFilter;
+  final baked = SvgPictures.tintOf(shape.pictureInfo!);
+  return baked != null ? ColorFilter.mode(baked, BlendMode.srcIn) : shape.colorFilter;
 }
 
 /// The color a named icon's glyph is painted in, under an icon theme of [iconThemeColor] (the

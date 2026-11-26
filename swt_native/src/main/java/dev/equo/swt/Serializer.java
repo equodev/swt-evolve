@@ -478,10 +478,6 @@ public class Serializer {
             frame.sendTo(comm);
         }
 
-        void addTo(dev.equo.swt.comm.MessageBatch batch) {
-            frame.addTo(batch);
-        }
-
         @Override
         public void widget(Object api) {
             if (api instanceof org.eclipse.swt.widgets.Widget) {

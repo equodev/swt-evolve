@@ -657,7 +657,7 @@ public class DartCLabel extends DartCanvas implements ICLabel {
         wasGradientColors = dev.equo.swt.ChangeMarks.copy(wasGradientColors);
         image = GraphicsUtils.copyImage(getDisplay(), image);
         if (!java.util.Objects.equals(this.backgroundImage, image)) {
-            ControlHelper.markDamaged(this);
+            ControlHelper.backgroundImageChanged(this);
         }
         if (image == backgroundImage) {
             dev.equo.swt.ChangeMarks.ifChanged(this, VCLabel.GRADIENT_COLORS, wasGradientColors, self -> self.getValue().getGradientColors());

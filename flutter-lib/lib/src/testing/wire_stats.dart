@@ -25,6 +25,9 @@ class WireStats {
   static int applyMicros = 0;
   static int builtFrames = 0;
   static int buildMicros = 0;
+  /// Renders rasterised for their pixels, and those that took the pixels kept for their content key.
+  static int rendersRasterised = 0;
+  static int rendersReused = 0;
   static bool _framePending = false;
   static int _since = 0;
 
@@ -35,6 +38,7 @@ class WireStats {
 
   static void start() {
     frames = bytes = decodeMicros = applyMicros = builtFrames = buildMicros = 0;
+    rendersRasterised = rendersReused = 0;
     _since = now();
     on = true;
     EquoCommBase.receiveTimer = _timer;
@@ -66,6 +70,8 @@ class WireStats {
       'applyMicros': applyMicros,
       'builtFrames': builtFrames,
       'buildMicros': buildMicros,
+      'rendersRasterised': rendersRasterised,
+      'rendersReused': rendersReused,
     };
   }
 
