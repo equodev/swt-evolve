@@ -535,7 +535,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     if (ControlImpl.wheelKeptBelow(event)) return;
     // The Canvas scrolls by the wheel, so it keeps it: its parents do not report it again.
     ControlImpl.markWheelKept(event);
-    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0))) {
+    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0), gesture: wheelGesture)) {
       widget.sendMouseWheelMouseWheel(state, wheel);
     }
   }

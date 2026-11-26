@@ -937,11 +937,14 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return false;
   }
 
+  /// The wheel travel this control has not reported yet.
+  final WheelGesture wheelGesture = WheelGesture();
+
   /// Reports the mouse wheel to Java at [localPosition]: SWT.MouseWheel for its vertical part,
   /// positive up, and SWT.MouseHorizontalWheel for its horizontal part, positive left.
   void reportWheel(PointerSignalEvent event, Offset localPosition) {
     if (event is! PointerScrollEvent || wheelKeptBelow(event)) return;
-    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0))) {
+    for (final wheel in wheelEvents(event, stateMask: moveStateMask(0), gesture: wheelGesture)) {
       widget.sendMouseWheelMouseWheel(
         state,
         wheel

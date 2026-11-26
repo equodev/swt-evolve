@@ -3,6 +3,7 @@
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
@@ -15,6 +16,7 @@ import 'package:swtflutter/src/gen/scrollbar.dart';
 import 'package:swtflutter/src/gen/styledtext.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/widgets.dart' show wireChannelNames;
+import 'package:swtflutter/src/impl/utils/wheel_input.dart';
 
 class _WheelCanvasSwt extends CanvasSwt<VCanvas> {
   const _WheelCanvasSwt({required super.value, required this.wheels});
@@ -118,9 +120,12 @@ Future<void> _pump(WidgetTester tester, Widget control) async {
   await tester.pump();
 }
 
-/// Two fingers moving up the trackpad by [distance], in [steps] updates, at [at].
+/// Two fingers moving up the trackpad by [distance], in [steps] updates, at [at]. By default each
+/// update moves one line of wheel travel.
 Future<void> _swipeUp(WidgetTester tester,
-        {double distance = 60, int steps = 3, Offset at = const Offset(150, 100)}) =>
+        {double distance = 3 * wheelPixelsPerEvent,
+        int steps = 3,
+        Offset at = const Offset(150, 100)}) =>
     _swipe(tester, Offset(0, -distance), steps: steps, at: at);
 
 /// Two fingers moving by [pan] on the trackpad, in [steps] updates, at [at].
@@ -143,16 +148,26 @@ void main() {
 
     await _swipeUp(tester);
 
-    // One wheel per pan update; fingers moving up scroll the content down, as a wheel turned
+    // One wheel per line of travel; fingers moving up scroll the content down, as a wheel turned
     // towards the user does.
     expect(wheels.map((e) => e.count), [-1, -1, -1]);
+  });
+
+  testWidgets('small pan updates over a Canvas gather into one wheel per line', (tester) async {
+    final wheels = <VEvent>[];
+    await _pump(tester, _WheelCanvasSwt(value: _canvas(), wheels: wheels));
+
+    await _swipeUp(tester, distance: 60, steps: 30);
+
+    // The first update, then one per line of the remaining 58 px.
+    expect(wheels.map((e) => e.count), [-1, -1]);
   });
 
   testWidgets('a horizontal swipe over a Canvas does not scroll it vertically', (tester) async {
     final wheels = <VEvent>[];
     await _pump(tester, _WheelCanvasSwt(value: _canvas(), wheels: wheels));
 
-    await _swipe(tester, const Offset(-60, 0));
+    await _swipe(tester, const Offset(-3 * wheelPixelsPerEvent, 0));
 
     // Fingers moving left scroll the content right, which SWT counts negative.
     expect(wheels.map((e) => (e.type, e.count)), List.filled(3, (SWT.MouseHorizontalWheel, -1)));
@@ -167,6 +182,19 @@ void main() {
 
     expect(wheels, isNotEmpty);
     expect(wheels.fold<int>(0, (sum, e) => sum + e.detail!), 60);
+  });
+
+  testWidgets('a two-finger swipe with Ctrl over a StyledText gathers into one wheel per line',
+      (tester) async {
+    final wheels = <VEvent>[];
+    await _pump(tester, _WheelStyledTextSwt(value: _styledText(), wheels: wheels));
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await _swipeUp(tester, distance: 60, steps: 30);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+
+    // The first update, then one per line of the remaining 58 px.
+    expect(wheels.map((e) => (e.count, e.stateMask! & SWT.CTRL)), [(-1, SWT.CTRL), (-1, SWT.CTRL)]);
   });
 
   testWidgets('a two-finger swipe over a Composite reaches Java as a mouse wheel', (tester) async {

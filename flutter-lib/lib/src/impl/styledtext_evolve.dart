@@ -1121,7 +1121,9 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
     if (ControlImpl.wheelKeptBelow(event)) return;
     ControlImpl.markWheelKept(event);
     final stateMask = moveStateMask(0);
-    for (final wheel in wheelEvents(event, stateMask: stateMask)) {
+    // With a modifier held the wheel does not scroll by pixels, so its travel gathers as elsewhere.
+    final gesture = stateMask & SWT.MODIFIER_MASK != 0 ? wheelGesture : null;
+    for (final wheel in wheelEvents(event, stateMask: stateMask, gesture: gesture)) {
       if (wheel.type == SWT.MouseWheel && stateMask & SWT.MODIFIER_MASK == 0) {
         final exact = _wheelCarry + wheelDelta(event).dy;
         final pixels = exact.round();
