@@ -230,8 +230,8 @@ class CsdOverlayStrip extends StatelessWidget {
 }
 
 /// Eight transparent edge/corner handles around the whole window that initiate a native
-/// resize via `window.equo.beginResize`. Hidden while maximized/fullscreen. Geometry and
-/// cursors mirror the dialog resize wrapper in shell_evolve.dart.
+/// resize via `window.equo.beginResize`. Hidden while maximized/fullscreen. They lie inside
+/// the window, which has nothing outside it, and pass every press on to the content below.
 class CsdResizeEdges extends StatelessWidget {
   const CsdResizeEdges({super.key});
 

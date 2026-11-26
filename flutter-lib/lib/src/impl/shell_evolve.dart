@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'menu_evolve.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -586,15 +587,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     final minFH = minBodyH + headerH;
     final maxFH = maxBodyH + headerH;
 
-    Widget framed = SizedBox(
-      width: w,
-      height: frameH,
-      child: _ResizableWrapper(
-        enabled: _hasResize && !_maximized && !isFullScreen,
-        width: w,
-        height: frameH,
-        onResizeStart: () => setState(() => _interacting = true),
-        onResize: (delta, edge) => setState(() {
+    Widget framed = SizedBox(width: w, height: frameH, child: column);
+
+    void resize(Offset delta, _ResizeEdge edge) => setState(() {
           final curW  = _size?.width ?? bodyW;
           final curFH = (_size?.height ?? bodyH) + headerH;
           final loW  = math.min(minBodyW, curW);
@@ -633,14 +628,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
           }
           _offset = (_offset ?? offset) + Offset(odx, ody);
           _size   = Size(newW, (newFH - headerH).clamp(loFH - headerH, maxBodyH));
-        }),
-        onResizeEnd: () {
-          setState(() => _interacting = false);
-          sendBoundsToJava();
-        },
-        child: column,
-      ),
-    );
+        });
 
     final isTooltipLike = (_style & SWT.ON_TOP) != 0 && (_style & SWT.TOOL) != 0;
     final shellBg = isTooltipLike ? theme.tooltipShellBackgroundColor : null;
@@ -714,8 +702,23 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     return Positioned(
       left: offset.dx,
       top: offset.dy,
-      child: RepaintBoundary(
-        child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+      child: _ResizableWrapper(
+        enabled: _hasResize && !_maximized && !isFullScreen,
+        room: EdgeInsets.fromLTRB(
+          offset.dx,
+          offset.dy,
+          viewport.maxWidth - offset.dx - w - chromeEdge,
+          viewport.maxHeight - offset.dy - frameH - chromeEdge,
+        ),
+        onResizeStart: () => setState(() => _interacting = true),
+        onResize: resize,
+        onResizeEnd: () {
+          setState(() => _interacting = false);
+          sendBoundsToJava();
+        },
+        child: RepaintBoundary(
+          child: pointerInterceptor(RegionClip.maybe(state.region, opacityWrapped)),
+        ),
       ),
     );
   }
@@ -856,9 +859,14 @@ class _TitleBarButtonState extends State<_TitleBarButton> {
   }
 }
 
+/// A resizable shell's resize border, laid in a band just outside its frame, as a native window's
+/// is: a RESIZE shell adds no trim, its client area is the whole frame, and every point of the frame
+/// belongs to the controls in it. The frame stays this widget's own box, so the shell's render box
+/// keeps the origin and size Java's bounds describe.
 class _ResizableWrapper extends StatelessWidget {
   final bool enabled;
-  final double width, height;
+  /// The space between each side of the frame and the viewport's edge.
+  final EdgeInsets room;
   final VoidCallback? onResizeStart;
   final void Function(Offset delta, _ResizeEdge edge) onResize;
   final VoidCallback? onResizeEnd;
@@ -866,28 +874,24 @@ class _ResizableWrapper extends StatelessWidget {
 
   static const double _h = 8.0;
 
+  static const _frameKey = ValueKey('frame');
+
   const _ResizableWrapper({
     this.enabled = true,
-    required this.width,
-    required this.height,
+    required this.room,
     this.onResizeStart,
     required this.onResize,
     this.onResizeEnd,
     required this.child,
   });
 
-  void _bottom(DragUpdateDetails d) => onResize(d.delta, _ResizeEdge.bottom);
-  void _top(DragUpdateDetails d)    => onResize(d.delta, _ResizeEdge.top);
-  void _right(DragUpdateDetails d)  => onResize(d.delta, _ResizeEdge.right);
-  void _left(DragUpdateDetails d)   => onResize(d.delta, _ResizeEdge.left);
-  void _se(DragUpdateDetails d)     => onResize(d.delta, _ResizeEdge.se);
-  void _sw(DragUpdateDetails d)     => onResize(d.delta, _ResizeEdge.sw);
-  void _ne(DragUpdateDetails d)     => onResize(d.delta, _ResizeEdge.ne);
-  void _nw(DragUpdateDetails d)     => onResize(d.delta, _ResizeEdge.nw);
-
+  // Keyed by edge: a handle that moves between the frame's sides of the stack mid-drag keeps it, so
+  // its subtree is the same on either side. Outside the frame it is outside the frame's pointer
+  // interceptor, so it takes its own: on web a platform view (Browser) under it takes the press
+  // otherwise.
   Widget _handle(
     MouseCursor cursor,
-    void Function(DragUpdateDetails) onPan, {
+    _ResizeEdge edge, {
     double? top,
     double? bottom,
     double? left,
@@ -896,49 +900,110 @@ class _ResizableWrapper extends StatelessWidget {
     double? h,
   }) =>
       Positioned(
+        key: ValueKey(edge),
         top: top,
         bottom: bottom,
         left: left,
         right: right,
         width: w,
         height: h,
-        child: MouseRegion(
+        child: pointerInterceptor(MouseRegion(
           cursor: cursor,
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onPanStart: (_) => onResizeStart?.call(),
-            onPanUpdate: onPan,
+            onPanUpdate: (d) => onResize(d.delta, edge),
             onPanEnd: (_) => onResizeEnd?.call(),
             onPanCancel: onResizeEnd,
           ),
-        ),
+        )),
       );
 
   @override
-  Widget build(BuildContext context) => Stack(
-        clipBehavior: Clip.none,
-        children: [
-          child,
-          if (enabled) ...[
-            _handle(SystemMouseCursors.resizeUpDown, _top,
-                top: 0, left: 0, right: 0, h: _h),
-            _handle(SystemMouseCursors.resizeUpDown, _bottom,
-                bottom: 0, left: _h, right: _h, h: _h),
-            _handle(SystemMouseCursors.resizeLeftRight, _left,
-                left: 0, top: 0, bottom: 0, w: _h),
-            _handle(SystemMouseCursors.resizeLeftRight, _right,
-                right: 0, top: _h, bottom: _h, w: _h),
-            _handle(SystemMouseCursors.resizeUpLeftDownRight, _nw,
-                left: 0, top: 0, w: _h * 2, h: _h * 2),
-            _handle(SystemMouseCursors.resizeUpRightDownLeft, _ne,
-                right: 0, top: 0, w: _h * 2, h: _h * 2),
-            _handle(SystemMouseCursors.resizeUpRightDownLeft, _sw,
-                left: 0, bottom: 0, w: _h * 2, h: _h * 2),
-            _handle(SystemMouseCursors.resizeUpLeftDownRight, _se,
-                right: 0, bottom: 0, w: _h * 2, h: _h * 2),
-          ],
-        ],
+  // The frame wins every hit inside it unless a handle comes after it. Outside the viewport a band
+  // can't be reached, so on such a side it lies inside the frame, over it: a shell as big as the
+  // viewport keeps its border, as a window as big as the screen does.
+  Widget build(BuildContext context) {
+    if (!enabled) {
+      return _OutsetHitStack(outset: _h, children: [KeyedSubtree(key: _frameKey, child: child)]);
+    }
+    final inL = room.left < _h, inT = room.top < _h, inR = room.right < _h, inB = room.bottom < _h;
+    final under = <Widget>[], over = <Widget>[];
+    void side(bool inset, Widget handle) => (inset ? over : under).add(handle);
+    side(inT, _handle(SystemMouseCursors.resizeUpDown, _ResizeEdge.top,
+        top: inT ? 0 : -_h, left: 0, right: 0, h: _h));
+    side(inB, _handle(SystemMouseCursors.resizeUpDown, _ResizeEdge.bottom,
+        bottom: inB ? 0 : -_h, left: 0, right: 0, h: _h));
+    side(inL, _handle(SystemMouseCursors.resizeLeftRight, _ResizeEdge.left,
+        left: inL ? 0 : -_h, top: 0, bottom: 0, w: _h));
+    side(inR, _handle(SystemMouseCursors.resizeLeftRight, _ResizeEdge.right,
+        right: inR ? 0 : -_h, top: 0, bottom: 0, w: _h));
+    // A corner straddles each outside edge, reaching _h into the frame under it for an L-shaped grip
+    // outside; against an inset edge it covers only that edge's band.
+    void corner(MouseCursor cursor, _ResizeEdge edge,
+        {required bool x0, required bool y0, required bool inX, required bool inY}) {
+      final dx = inX ? 0.0 : -_h, dy = inY ? 0.0 : -_h;
+      final cw = inX ? _h : _h * 2, ch = inY ? _h : _h * 2;
+      side(inX || inY, _handle(cursor, edge,
+          left: x0 ? dx : null, right: x0 ? null : dx,
+          top: y0 ? dy : null, bottom: y0 ? null : dy, w: cw, h: ch));
+    }
+    corner(SystemMouseCursors.resizeUpLeftDownRight, _ResizeEdge.nw,
+        x0: true, y0: true, inX: inL, inY: inT);
+    corner(SystemMouseCursors.resizeUpRightDownLeft, _ResizeEdge.ne,
+        x0: false, y0: true, inX: inR, inY: inT);
+    corner(SystemMouseCursors.resizeUpRightDownLeft, _ResizeEdge.sw,
+        x0: true, y0: false, inX: inL, inY: inB);
+    corner(SystemMouseCursors.resizeUpLeftDownRight, _ResizeEdge.se,
+        x0: false, y0: false, inX: inR, inY: inB);
+    return _OutsetHitStack(
+      outset: _h,
+      children: [...under, KeyedSubtree(key: _frameKey, child: child), ...over],
+    );
+  }
+}
+
+/// A [Stack] that also takes hits up to [outset] outside its own box, where the children it lays
+/// past its edges are. A [RenderBox] takes only the hits inside its size.
+class _OutsetHitStack extends Stack {
+  final double outset;
+
+  const _OutsetHitStack({required this.outset, super.children}) : super(clipBehavior: Clip.none);
+
+  @override
+  RenderStack createRenderObject(BuildContext context) => _RenderOutsetHitStack(
+        outset: outset,
+        alignment: alignment,
+        textDirection: textDirection ?? Directionality.maybeOf(context),
+        fit: fit,
+        clipBehavior: clipBehavior,
       );
+
+  @override
+  void updateRenderObject(BuildContext context, RenderStack renderObject) {
+    super.updateRenderObject(context, renderObject);
+    (renderObject as _RenderOutsetHitStack).outset = outset;
+  }
+}
+
+class _RenderOutsetHitStack extends RenderStack {
+  double outset;
+
+  _RenderOutsetHitStack({
+    required this.outset,
+    super.alignment,
+    super.textDirection,
+    super.fit,
+    super.clipBehavior,
+  });
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!(Offset.zero & size).inflate(outset).contains(position)) return false;
+    if (!hitTestChildren(result, position: position)) return false;
+    result.add(BoxHitTestEntry(this, position));
+    return true;
+  }
 }
 
 enum _ResizeEdge { top, bottom, left, right, nw, ne, sw, se }
