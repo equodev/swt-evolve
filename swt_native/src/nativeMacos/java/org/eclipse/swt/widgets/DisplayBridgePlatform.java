@@ -9,9 +9,13 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.Callback;
 import org.eclipse.swt.internal.cocoa.CGPoint;
 import org.eclipse.swt.internal.cocoa.NSApplication;
+import org.eclipse.swt.internal.cocoa.NSAutoreleasePool;
+import org.eclipse.swt.internal.cocoa.NSDate;
 import org.eclipse.swt.internal.cocoa.NSEvent;
+import org.eclipse.swt.internal.cocoa.NSObject;
 import org.eclipse.swt.internal.cocoa.NSPoint;
 import org.eclipse.swt.internal.cocoa.NSRect;
+import org.eclipse.swt.internal.cocoa.NSRunLoop;
 import org.eclipse.swt.internal.cocoa.NSScreen;
 import org.eclipse.swt.internal.cocoa.NSString;
 import org.eclipse.swt.internal.cocoa.NSThread;
@@ -294,6 +298,37 @@ final class DisplayBridgePlatform {
         NSEvent event;
         while ((event = application.nextEventMatchingMask(NS_ANY_EVENT_MASK, null, OS.NSDefaultRunLoopMode, true)) != null)
             application.sendEvent(event);
+    }
+
+    /**
+     * Whether the idle Display can wait in the main run loop instead of on its wake permit: only on
+     * the main thread of a browser-surface run that launched NSApp. AppKit work other threads hand to
+     * the main thread, AWT's first-use setup among them, runs only while that loop runs, as it does
+     * while native SWT's Display sleeps.
+     */
+    static boolean canParkInRunLoop() {
+        return launched && webDisplays > 0 && NSThread.isMainThread();
+    }
+
+    /**
+     * Runs the main run loop in its default mode until one input source is handled, {@link
+     * #wakeRunLoop()} is called or {@code millis} pass. Only after {@link #canParkInRunLoop()}.
+     * It dequeues no NSEvent: events stay for whoever reads them. A pool drains what the call and the
+     * sources it runs autorelease, as native SWT's {@code sleep()} does around the same call.
+     */
+    static void parkInRunLoop(long millis) {
+        NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
+        try {
+            NSRunLoop.currentRunLoop().runMode(OS.NSDefaultRunLoopMode, NSDate.dateWithTimeIntervalSinceNow(millis / 1000.0));
+        } finally {
+            pool.release();
+        }
+    }
+
+    /** Ends a {@link #parkInRunLoop} from any thread, the way native SWT's Display wakes. */
+    static void wakeRunLoop() {
+        NSObject object = new NSObject().alloc().init();
+        object.performSelectorOnMainThread(OS.sel_release, null, false);
     }
 
     /**

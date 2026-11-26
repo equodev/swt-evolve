@@ -3432,7 +3432,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
                 if (displayBridge != null && displayBridge.needsPump()) {
                     displayBridge.sleep((int) untilNextTimer(displayBridge.parkCapMillis()));
                 } else {
-                    _wakeSignal.tryAcquire(untilNextTimer(WEB_PARK_CAP_MS), java.util.concurrent.TimeUnit.MILLISECONDS);
+                    DisplayBridge.parkIdle(this, untilNextTimer(WEB_PARK_CAP_MS));
                 }
             }
         } catch (InterruptedException e) {
@@ -3624,6 +3624,7 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
 
     void wakeThread() {
         _wakeSignal.release();
+        DisplayBridge.wakeIdle(this);
         if (displayBridge != null && displayBridge.needsPump())
             displayBridge.wake();
     }
@@ -4181,6 +4182,8 @@ public class DartDisplay extends DartDevice implements Executor, IDisplay {
     final java.util.concurrent.Semaphore _wakeSignal = new java.util.concurrent.Semaphore(0);
 
     static volatile long WEB_PARK_CAP_MS = 16;
+
+    volatile boolean _parkedInRunLoop;
 
     boolean inTextRelayout;
 

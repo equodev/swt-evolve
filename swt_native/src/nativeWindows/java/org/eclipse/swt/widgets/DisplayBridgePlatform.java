@@ -42,6 +42,17 @@ final class DisplayBridgePlatform {
     static void release() {
     }
 
+    /** Only macOS hands work to the main thread's run loop: the idle Display waits on its wake permit. */
+    static boolean canParkInRunLoop() {
+        return false;
+    }
+
+    static void parkInRunLoop(long millis) {
+    }
+
+    static void wakeRunLoop() {
+    }
+
     /** No application menu outside macOS: the platform has no such concept. */
     static Menu systemMenu(Display display) {
         return null;

@@ -1711,6 +1711,33 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     }
 
     /**
+     * Idle wait of a Display with no pump-driven surface, ended by its wake permit or after {@code
+     * millis}. On the macOS main thread of a browser-surface run it waits in the main run loop
+     * instead, which other threads rely on to run what they hand to the AppKit main thread: AWT's
+     * first use blocks on it.
+     */
+    static void parkIdle(DartDisplay display, long millis) throws InterruptedException {
+        if (!DisplayBridgePlatform.canParkInRunLoop()) {
+            display._wakeSignal.tryAcquire(millis, java.util.concurrent.TimeUnit.MILLISECONDS);
+            return;
+        }
+        // Set before the permit is checked, so a wake after that check sees it and ends the wait.
+        display._parkedInRunLoop = true;
+        try {
+            if (!display._wakeSignal.tryAcquire())
+                DisplayBridgePlatform.parkInRunLoop(millis);
+        } finally {
+            display._parkedInRunLoop = false;
+        }
+    }
+
+    /** Ends a {@link #parkIdle} waiting in the run loop; the wake permit ends any other. */
+    static void wakeIdle(DartDisplay display) {
+        if (display._parkedInRunLoop)
+            DisplayBridgePlatform.wakeRunLoop();
+    }
+
+    /**
      * Waits for {@code done}, at most {@code timeoutMillis}, without running application code: no
      * asyncExec, timer, paint or deferred event, as none runs inside a native call SWT answers
      * synchronously (an image's pixels, say). A JFace page caches its size the first time it is
