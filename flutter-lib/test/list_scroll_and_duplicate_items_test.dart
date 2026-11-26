@@ -156,6 +156,48 @@ void main() {
   );
 
   testWidgets(
+    'the viewport and the rows\' height are reported once laid out, and with each scroll',
+    (tester) async {
+      await _pump(tester, _list());
+      final position = tester
+          .state<ScrollableState>(find.descendant(
+              of: find.byType(ListView), matching: find.byType(Scrollable)))
+          .position;
+      final rowsHeight = (position.maxScrollExtent + position.viewportDimension).round();
+
+      expect(_sent('/Scroll/Scroll').last,
+          isA<VEvent>()
+              .having((e) => e.y, 'y', 0)
+              .having((e) => e.detail, 'detail', position.viewportDimension.round())
+              .having((e) => e.count, 'count', rowsHeight));
+      expect(rowsHeight, greaterThan(position.viewportDimension));
+
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pump();
+
+      expect(_sent('/Scroll/Scroll').last,
+          isA<VEvent>()
+              .having((e) => e.y, 'y', position.maxScrollExtent.round())
+              .having((e) => e.count, 'count', rowsHeight));
+    },
+  );
+
+  testWidgets('more items report the rows\' new height without a scroll', (tester) async {
+    await _pump(tester, _list(items: ['a', 'b']));
+    final before = _sent('/Scroll/Scroll').last;
+    expect(before.count, before.detail);
+
+    await deliverChange(
+      _list(items: [for (var i = 0; i < 60; i++) 'item $i'], seq: 10),
+      keys: [WireKey.k_List_items],
+      base: 1,
+    );
+    await tester.pumpAndSettle();
+
+    expect(_sent('/Scroll/Scroll').last.count, greaterThan(before.detail!));
+  });
+
+  testWidgets(
     'of two items with the same text, only the selected one is highlighted',
     (tester) async {
       await _pump(
@@ -201,6 +243,7 @@ void main() {
     'the wheel leaves a list without V_SCROLL where it is, as Win32 and GTK do; Java still scrolls it',
     (tester) async {
       await _pump(tester, _list(style: SWT.SINGLE));
+      EquoCommService.commForTesting.clearSentFrames();
 
       tester.binding.handlePointerEvent(
           PointerScrollEvent(position: _listRect.center, scrollDelta: const Offset(0, 100)));

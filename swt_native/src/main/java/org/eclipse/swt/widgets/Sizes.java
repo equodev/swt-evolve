@@ -596,6 +596,7 @@ public class Sizes {
         // Same as getClientArea(DartScrollable): a CoolBar only ever reaches the inherited method.
         if (widget instanceof DartCoolBar) return computeTrim((DartCoolBar) widget, x, y, width, height);
         if (CompositeHelper.framesItsContent(widget)) return CompositeHelper.computeTrim((DartComposite) widget, x, y, width, height);
+        if (widget instanceof DartList) return ListSizes.computeTrim(x, y, width, height);
         int menuBar = menuStripOutsideClientArea(widget);
         return new Rectangle(x, y - menuBar, width, height + menuBar);
     }
@@ -1051,7 +1052,8 @@ public class Sizes {
         int vBarWidth = takesRoom(widget.verticalBar) ? SCROLL_BAR_SIZE : 0;
         int hBarHeight = takesRoom(widget.horizontalBar) ? SCROLL_BAR_SIZE : 0;
         int menuBar = menuStripOutsideClientArea(widget);
-        return new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
+        Rectangle area = new Rectangle(0, 0, Math.max(0, b.width - vBarWidth), Math.max(0, b.height - hBarHeight - menuBar));
+        return widget instanceof DartList ? ListSizes.getClientArea(area) : area;
     }
 
     /**

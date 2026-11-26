@@ -60,6 +60,8 @@ void _writeSizes(ListThemeExtension theme, String outputDir) {
     )
     ..writeln('    private static final int EMPTY_WIDTH = 100;')
     ..writeln('    private static final int MIN_EXTENT = 64;')
+    ..writeln('    /** The border the List draws inside its bounds on each side, around its items. */')
+    ..writeln('    private static final int FRAME = ${theme.borderWidth.ceil()};')
     ..writeln()
     ..writeln('    private ListSizes() {')
     ..writeln('    }')
@@ -77,6 +79,21 @@ void _writeSizes(ListThemeExtension theme, String outputDir) {
     ..writeln('            height = MIN_EXTENT;')
     ..writeln('        Rectangle trim = list.computeTrim(0, 0, width, height);')
     ..writeln('        return new Point(trim.width, trim.height);')
+    ..writeln('    }')
+    ..writeln()
+    ..writeln('    /** The list\'s bounds around a client area: the frame added on each side. */')
+    ..writeln('    public static Rectangle computeTrim(int x, int y, int width, int height) {')
+    ..writeln(
+      '        return new Rectangle(x - FRAME, y - FRAME, width + 2 * FRAME, height + 2 * FRAME);',
+    )
+    ..writeln('    }')
+    ..writeln()
+    ..writeln('    /** The part of {@code area}, a client area at the list\'s origin, inside the frame. */')
+    ..writeln('    public static Rectangle getClientArea(Rectangle area) {')
+    ..writeln('        return new Rectangle(area.x + FRAME, area.y + FRAME,')
+    ..writeln(
+      '                Math.max(0, area.width - 2 * FRAME), Math.max(0, area.height - 2 * FRAME));',
+    )
     ..writeln('    }')
     ..writeln()
     ..writeln(

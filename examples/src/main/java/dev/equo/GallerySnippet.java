@@ -262,6 +262,12 @@ public class GallerySnippet {
         List list = new List(selectGroup, SWT.BORDER | SWT.SINGLE);
         list.setItems(new String[] {"List item 1", "List item 2", "List item 3"});
         list.addSelectionListener(widgetDefaultSelectedAdapter(e -> status.setText("List item default-selected")));
+        // H_SCROLL lists: one at its preferred size, one narrower than its item, which scrolls sideways.
+        List sizedList = new List(selectGroup, SWT.BORDER | SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL);
+        sizedList.setItems(new String[] {"Short", "The Longest String"});
+        List narrowList = new List(selectGroup, SWT.BORDER | SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL);
+        narrowList.setItems(new String[] {"An item wider than its list"});
+        narrowList.setLayoutData(new RowData(80, SWT.DEFAULT));
 
         // Table
         Group tableGroup = section(root, "Table");

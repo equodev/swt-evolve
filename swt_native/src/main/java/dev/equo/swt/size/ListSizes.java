@@ -19,6 +19,8 @@ public class ListSizes {
     private static final double ITEM_PADDING_HORIZONTAL = 16.0;
     private static final int EMPTY_WIDTH = 100;
     private static final int MIN_EXTENT = 64;
+    /** The border the List draws inside its bounds on each side, around its items. */
+    private static final int FRAME = 1;
 
     private ListSizes() {
     }
@@ -32,6 +34,17 @@ public class ListSizes {
             height = MIN_EXTENT;
         Rectangle trim = list.computeTrim(0, 0, width, height);
         return new Point(trim.width, trim.height);
+    }
+
+    /** The list's bounds around a client area: the frame added on each side. */
+    public static Rectangle computeTrim(int x, int y, int width, int height) {
+        return new Rectangle(x - FRAME, y - FRAME, width + 2 * FRAME, height + 2 * FRAME);
+    }
+
+    /** The part of {@code area}, a client area at the list's origin, inside the frame. */
+    public static Rectangle getClientArea(Rectangle area) {
+        return new Rectangle(area.x + FRAME, area.y + FRAME,
+                Math.max(0, area.width - 2 * FRAME), Math.max(0, area.height - 2 * FRAME));
     }
 
     /** One line of the item text and its padding, never less than the theme's item height. */

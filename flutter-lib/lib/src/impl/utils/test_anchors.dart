@@ -164,10 +164,10 @@ class TestAnchors {
   }
 
   /// Every paragraph laid out with [text] inside a widget whose identifier starts with [within]
-  /// (a kind, "Table/"), in paint order: `{id, text, bounds, paints, hit}`, `id` being `text:<n>`
-  /// by position. Only those widgets' subtrees are walked. [exact] matches the whole text;
-  /// otherwise it is contained, case aside. Text drawn inline by its owner (a list's items, a
-  /// menu's) is found too, with no anchor of its own.
+  /// (a kind, "Table/"), in paint order: `{id, text, bounds, paints, hit, cut}`, `id` being
+  /// `text:<n>` by position, `cut` whether the paragraph was elided. Only those widgets' subtrees
+  /// are walked. [exact] matches the whole text; otherwise it is contained, case aside. Text drawn
+  /// inline by its owner (a list's items, a menu's) is found too, with no anchor of its own.
   static List<Map<String, Object>> texts(String text, {required bool exact, required String within}) {
     final wanted = exact ? text.trim() : text.trim().toLowerCase();
     final found = <Map<String, Object>>[];
@@ -202,6 +202,7 @@ class TestAnchors {
             'bounds': {'x': origin.dx, 'y': origin.dy, 'width': size.width, 'height': size.height},
             'paints': paints,
             'hit': hit,
+            'cut': node is RenderParagraph && node.didExceedMaxLines,
           });
         }
       }

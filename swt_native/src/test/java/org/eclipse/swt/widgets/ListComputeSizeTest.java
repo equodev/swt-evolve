@@ -84,6 +84,25 @@ class ListComputeSizeTest {
     }
 
     @Test
+    @DisplayName("the client area lies inside the frame the list draws, and the preferred size has room for it")
+    void clientAreaInsideTheFrame() {
+        for (int style : new int[] {SWT.SINGLE, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL}) {
+            List list = new List(parent, style);
+            list.setItems(new String[] {"Apples", "The Longest String"});
+            Point preferred = list.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+            list.setSize(preferred);
+
+            Rectangle client = list.getClientArea();
+
+            assertThat(client.x).as("style %d", style).isPositive();
+            assertThat(client.y).as("style %d", style).isEqualTo(client.x);
+            assertThat(new Point(client.width, client.height)).as("style %d", style)
+                    .isEqualTo(new Point(preferred.x - 2 * client.x, preferred.y - 2 * client.y));
+            assertThat(list.computeSize(client.width, client.height)).as("style %d", style).isEqualTo(preferred);
+        }
+    }
+
+    @Test
     @DisplayName("the trim around the client area is the list's bounds")
     void clientAreaRoundTrip() {
         int[] styles = {SWT.NONE, SWT.BORDER, SWT.BORDER | SWT.V_SCROLL, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL};

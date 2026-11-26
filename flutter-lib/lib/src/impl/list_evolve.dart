@@ -23,11 +23,12 @@ import 'menu_evolve.dart' show OwnPressListener;
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _acrossScrollController = ScrollController();
 
   /// The height the items are laid out in.
   double? _itemExtent;
 
-  int? _reportedScrollOffset;
+  (int, int, int, int?, int?, int?)? _reportedScroll;
 
   @override
   bool get keepsWheel => true;
@@ -36,12 +37,14 @@ class ListImpl<T extends ListSwt, V extends VList>
   void initState() {
     super.initState();
     _scrollController.addListener(_reportScrollOffset);
+    _acrossScrollController.addListener(_reportScrollOffset);
     if (state.topIndex != null) _scrollToTopIndexAfterLayout();
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _acrossScrollController.dispose();
     super.dispose();
   }
 
@@ -58,15 +61,34 @@ class ListImpl<T extends ListSwt, V extends VList>
   }
 
   /// Java keeps how far the items are scrolled: getTopIndex and API scrolling are computed from it.
+  /// The event also carries the viewport ([VEvent.detail]) and rows' height ([VEvent.count]) and,
+  /// with H_SCROLL, the sideways offset ([VEvent.x]), viewport ([VEvent.width]) and items' width
+  /// ([VEvent.end]): Java's scroll bars take those ranges.
   void _reportScrollOffset() {
     final extent = _itemExtent;
     if (!_scrollController.hasClients || extent == null) return;
-    final offset = _scrollController.offset.round();
-    if (offset == _reportedScrollOffset) return;
-    _reportedScrollOffset = offset;
+    final down = _scrollController.position;
+    if (!down.hasContentDimensions || !down.hasViewportDimension) return;
+    final across = _acrossScrollController.hasClients ? _acrossScrollController.position : null;
+    final measured = across != null && across.hasContentDimensions && across.hasViewportDimension;
+    final report = (
+      down.pixels.round(),
+      down.viewportDimension.round(),
+      (down.maxScrollExtent + down.viewportDimension).round(),
+      measured ? across.pixels.round() : null,
+      measured ? across.viewportDimension.round() : null,
+      measured ? (across.maxScrollExtent + across.viewportDimension).round() : null,
+    );
+    if (report == _reportedScroll) return;
+    _reportedScroll = report;
     widget.sendEvent(state, WireChannel.scrollScroll, VEvent()
-      ..y = offset
-      ..height = extent.round());
+      ..y = report.$1
+      ..height = extent.round()
+      ..detail = report.$2
+      ..count = report.$3
+      ..x = report.$4
+      ..width = report.$5
+      ..end = report.$6);
   }
 
   /// Brings the item Java asked for to the top, once the items are laid out. Flutter clamps the
@@ -109,14 +131,23 @@ class ListImpl<T extends ListSwt, V extends VList>
     final hasConstraints = hasBounds(state.bounds);
     final width = hasConstraints ? state.bounds!.width.toDouble() : null;
     final height = hasConstraints ? state.bounds!.height.toDouble() : null;
+    final measure = singleLineTextSizes(itemTextStyle);
+    final across = styleBits.has(SWT.H_SCROLL)
+        ? state.items!.fold(0.0, (double w, item) => max(w, measure(item).width)) +
+            widgetTheme.itemPadding.horizontal
+        : null;
 
-    return SwtControlScope(swt: state.swt, child: tagSemantics(state, trackPointer(_StyledList(
+    return SwtControlScope(swt: state.swt, child: tagSemantics(state, trackPointer(
+        NotificationListener<ScrollMetricsNotification>(
+            onNotification: _reportScrollMetrics, child: _StyledList(
       widgetTheme: widgetTheme,
       itemExtent: itemExtent,
       state: state,
       items: state.items!,
       selection: state.selection!,
       scrollController: _scrollController,
+      acrossScrollController: _acrossScrollController,
+      across: across,
       enabled: isEnabled,
       isMultiSelect: isMultiSelect,
       width: width,
@@ -138,7 +169,13 @@ class ListImpl<T extends ListSwt, V extends VList>
       },
       onFocusIn: () => widget.sendFocusFocusIn(state, null),
       onFocusOut: () => widget.sendFocusFocusOut(state, null),
-    ))));
+    )))));
+  }
+
+  /// A new viewport or rows' size changes the bars' range without a scroll.
+  bool _reportScrollMetrics(ScrollMetricsNotification notification) {
+    _reportScrollOffset();
+    return false;
   }
 
 }
@@ -151,6 +188,10 @@ class _StyledList extends StatefulWidget {
   /// The selected indices: items with the same text are told apart by where they are.
   final List<int> selection;
   final ScrollController scrollController;
+  final ScrollController acrossScrollController;
+  /// With H_SCROLL, the widest item and its padding: the items are at least this wide and scroll
+  /// sideways in a narrower list. Null without H_SCROLL.
+  final double? across;
   final bool enabled;
   final bool isMultiSelect;
   final Function(List<int>) onSelectionChanged;
@@ -170,6 +211,8 @@ class _StyledList extends StatefulWidget {
     required this.items,
     required this.selection,
     required this.scrollController,
+    required this.acrossScrollController,
+    required this.across,
     required this.enabled,
     required this.isMultiSelect,
     required this.onSelectionChanged,
@@ -213,6 +256,31 @@ class _StyledListState extends State<_StyledList> {
     final borderColor = _isFocused
         ? theme.focusedBorderColor
         : theme.borderColor;
+    final across = widget.across;
+    final rows = ListView.builder(
+      controller: widget.scrollController,
+      // Win32's and GTK's list take no wheel without a vertical scroll bar; Java's
+      // top index still scrolls it.
+      physics: StyleBits(widget.state.style).has(SWT.V_SCROLL)
+          ? null
+          : const NeverScrollableScrollPhysics(),
+      itemCount: widget.items.length,
+      itemExtent: widget.itemExtent,
+      itemBuilder: (context, index) {
+        return _ListItem(
+          widgetTheme: theme,
+          extent: widget.itemExtent,
+          state: widget.state,
+          item: widget.items[index],
+          index: index,
+          isSelected: widget.selection.contains(index),
+          enabled: widget.enabled,
+          onPress: () => _handleItemPress(index),
+          onRelease: () => _dragOrigin = null,
+          onDragOver: () => _handleDragOver(index),
+        );
+      },
+    );
 
     return Focus(
       onFocusChange: (hasFocus) {
@@ -234,34 +302,34 @@ class _StyledListState extends State<_StyledList> {
           ),
           child: widget.items.isEmpty
               ? const SizedBox.shrink()
-              : ListView.builder(
-                  controller: widget.scrollController,
-                  // Win32's and GTK's list take no wheel without a vertical scroll bar; Java's
-                  // top index still scrolls it.
-                  physics: StyleBits(widget.state.style).has(SWT.V_SCROLL)
-                      ? null
-                      : const NeverScrollableScrollPhysics(),
-                  itemCount: widget.items.length,
-                  itemExtent: widget.itemExtent,
-                  itemBuilder: (context, index) {
-                    return _ListItem(
-                      widgetTheme: theme,
-                      extent: widget.itemExtent,
-                      state: widget.state,
-                      item: widget.items[index],
-                      index: index,
-                      isSelected: widget.selection.contains(index),
-                      enabled: widget.enabled,
-                      onPress: () => _handleItemPress(index),
-                      onRelease: () => _dragOrigin = null,
-                      onDragOver: () => _handleDragOver(index),
-                    );
-                  },
-                ),
+              : across == null
+                  ? rows
+                  : _scrollableAcross(context, rows, across),
         ),
       ),
     );
   }
+
+  /// The rows in a sideways viewport, at least [across] wide. The vertical bar stays on the list's
+  /// right edge: it sits outside the horizontal viewport, so it listens one scrollable deep.
+  Widget _scrollableAcross(BuildContext context, Widget rows, double across) => LayoutBuilder(
+        builder: (context, constraints) => Scrollbar(
+          controller: widget.scrollController,
+          notificationPredicate: (notification) =>
+              notification.metrics.axis == Axis.vertical && notification.depth == 1,
+          child: Scrollbar(
+            controller: widget.acrossScrollController,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: SingleChildScrollView(
+                controller: widget.acrossScrollController,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(width: max(across, constraints.maxWidth), child: rows),
+              ),
+            ),
+          ),
+        ),
+      );
 
   /// A double click is two presses on the same item; the control's click chain alone also joins
   /// presses on neighbouring items.
@@ -407,11 +475,9 @@ class _ListItemState extends State<_ListItem> {
                 color: baseBackgroundColor,
                 padding: theme.itemPadding,
                 alignment: Alignment.centerLeft,
-                child: Text(
-                  widget.item,
-                  style: textStyle,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: StyleBits(widget.state.style).has(SWT.H_SCROLL)
+                    ? Text(widget.item, style: textStyle, softWrap: false)
+                    : Text(widget.item, style: textStyle, overflow: TextOverflow.ellipsis),
               ),
               if (widget.isSelected && widget.enabled)
                 AnimatedOpacity(

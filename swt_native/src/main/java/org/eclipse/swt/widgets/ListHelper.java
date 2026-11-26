@@ -54,6 +54,7 @@ public class ListHelper {
         list.scrollOffset = scrollOffset(list, pitch);
         if (list.getValue().getTopIndex() != topIndex)
             list.getValue().markDirty(VList.TOP_INDEX);
+        showOffsetOnVerticalBar(list);
     }
 
     /** The index of the item at the top; 0 for an empty list. */
@@ -106,17 +107,56 @@ public class ListHelper {
         list.scrollOffset = offset;
         if (list.getValue().getTopIndex() != topIndex)
             list.getValue().markDirty(VList.TOP_INDEX);
+        showOffsetOnVerticalBar(list);
+    }
+
+    /** A scroll Java made moves the vertical bar's thumb with no Selection, as on Win32. */
+    private static void showOffsetOnVerticalBar(DartList list) {
+        ScrollBar bar = list.getApi().getVerticalBar();
+        if (bar == null)
+            return;
+        DartScrollBar impl = (DartScrollBar) bar.getImpl();
+        impl.selection = Math.max(impl.minimum, Math.min(scrollOffset(list, pitch(list)), impl.maximum - impl.thumb));
     }
 
     /**
      * Flutter scrolled the items to {@code event.y} pixels, in items {@code event.height} pixels high. The
      * offset is kept in this list's item pitch, so the top index read back is the item Flutter shows at the
      * top. Flutter is not sent the top index back.
+     * <p>
+     * Flutter also reports the viewport ({@code event.detail}) and the rows' height ({@code event.count}), and
+     * with H_SCROLL the sideways offset ({@code event.x}), viewport ({@code event.width}) and items' width
+     * ({@code event.end}). Each bar takes its range in pixels, as GTK's do (Win32 counts the vertical one in
+     * rows, Cocoa keeps 0..100), and a new offset is a Selection on it.
      */
     public static void recordScrollOffset(DartList list, Event event) {
-        int y = Math.max(0, event.y);
         int extent = event.height;
-        list.scrollOffset = extent > 0 ? (int) ((long) y * pitch(list) / extent) : y;
+        list.scrollOffset = inPitch(list, Math.max(0, event.y), extent);
+        ScrollBar vertical = list.getApi().getVerticalBar();
+        if (vertical != null && event.detail > 0)
+            recordBarScroll(vertical, list.scrollOffset, inPitch(list, event.detail, extent), inPitch(list, event.count, extent));
+        ScrollBar horizontal = list.getApi().getHorizontalBar();
+        if (horizontal != null && event.width > 0)
+            recordBarScroll(horizontal, event.x, event.width, event.end);
+    }
+
+    /** {@code pixels} of rows laid out {@code extent} high, in this list's item pitch. */
+    private static int inPitch(DartList list, int pixels, int extent) {
+        return extent > 0 ? (int) ((long) pixels * pitch(list) / extent) : pixels;
+    }
+
+    private static void recordBarScroll(ScrollBar bar, int offset, int viewport, int content) {
+        DartScrollBar impl = (DartScrollBar) bar.getImpl();
+        int thumb = viewport;
+        int maximum = Math.max(content, thumb);
+        int selection = Math.max(0, Math.min(offset, maximum - thumb));
+        boolean moved = impl.selection != selection;
+        impl.minimum = 0;
+        impl.maximum = maximum;
+        impl.thumb = thumb;
+        impl.selection = selection;
+        if (moved)
+            impl.sendSelection();
     }
 
     /**
