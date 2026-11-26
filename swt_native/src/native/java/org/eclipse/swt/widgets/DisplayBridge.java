@@ -2194,11 +2194,26 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
                 && parent.getShell().hashCode() == previousActiveShellId;
     }
 
+    /**
+     * Moves the client's keyboard focus to {@code widget}. Unless {@code always}, a focus Java takes on
+     * its own is pushed only where the client cannot reach it by itself:
+     * <ul>
+     * <li>a cell editor ({@link #isCellEditorControl}): it is created, placed and focused in one
+     * event-loop pass, with no gesture of the user's to put the client's focus there;</li>
+     * <li>a StyledText: an editor is focused by its part's activation, and without the client's focus
+     * it shows no caret and composes no input;</li>
+     * <li>the client's focus held by a hidden control of the same shell ({@link #clientFocusHiddenIn}):
+     * keys typed there reach no field on screen.</li>
+     * </ul>
+     * A popup's filter, the Text a shell activation lands on, is pushed by
+     * {@link #requestActivatedShellFocus}: the client hears which shell became active, never which field.
+     */
     private void requestClientFocus(DartControl widget, boolean always) {
         Control api = widget == null ? null : widget.getApi();
         if (api == null || api.isDisposed())
             return;
-        if (!always && !isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText))
+        if (!always && !isCellEditorControl(api) && !(api instanceof org.eclipse.swt.custom.StyledText)
+                && !clientFocusHiddenIn(api.getShell()))
             return;
         // Asked already, and either still on its way or answered by the client holding it. A request
         // the client answered elsewhere -- spent before the control could take it, or followed by the
@@ -2216,6 +2231,16 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         unansweredFocusRequests.remove(widget);
         unansweredFocusRequests.addLast(widget);
         sendFocusRequest(widget);
+    }
+
+    /**
+     * Whether the control the client holds the keys on is a hidden one of {@code shell}, as a wizard
+     * page Next hid: keys typed there reach no field on screen, and no gesture of the user's can move
+     * them off it, so any control Java focuses then is pushed to the client.
+     */
+    private boolean clientFocusHiddenIn(Shell shell) {
+        Control held = clientReportedFocus == null ? null : clientReportedFocus.getApi();
+        return held != null && !held.isDisposed() && held.getShell() == shell && !held.isVisible();
     }
 
     private void sendFocusRequest(DartControl widget) {
@@ -2237,17 +2262,6 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
      * {@link Canvas} -- the way a custom-drawn grid places its inline editor over a cell it paints,
      * either directly or framed by Composites the editor creates over the cell. A shell is a
      * {@code Canvas} too, but its children are ordinary fields, so the search stops there.
-     *
-     * <p>Moving the client's focus is deliberately limited to that case. Pushing it for every control
-     * Java focuses is measurably unsafe today: the Eclipse IDE New Project wizard, driven through the
-     * e2e suite, goes from 10/10 green to 5 failures with the field's keystrokes landing out of order,
-     * and the cause is the focus move itself rather than the transport (a run with the transport intact
-     * and only the move disabled is green). A cell editor is the case the render side genuinely cannot
-     * resolve on its own -- it is created, placed and focused inside one event-loop pass, with no user
-     * gesture anywhere -- so it is the one that is honoured until the general case is understood. A
-     * StyledText is honoured too: an editor is focused by its part's activation, and without the
-     * client's focus it shows no caret and composes no input. A Text that a shell activation lands on
-     * is honoured too (a popup's filter): the client hears which shell became active, never which field.
      */
     private static boolean isCellEditorControl(Control control) {
         Composite parent = control.getParent();
