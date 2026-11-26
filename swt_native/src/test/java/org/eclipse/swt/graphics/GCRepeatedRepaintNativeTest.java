@@ -147,4 +147,50 @@ class GCRepeatedRepaintNativeTest {
         assertThat(fills(drain())).as("the client asked because what it shows is not what was last sent")
                 .isTrue();
     }
+
+    @Test
+    @DisplayName("a repaint that blits an image drawn again since the last paint is sent")
+    void blitOfARedrawnImageIsSent() {
+        // A line number ruler: it draws its numbers into a buffer image, then blits the buffer. The
+        // buffer's render stays on the client, named by a ref, as it does on the Display's comm.
+        boolean bootstrapped = FlutterBridge.displayBootstrapped;
+        FlutterBridge.displayBootstrapped = true;
+        FlutterBridge.setDisplayGcCommResolver(d -> bridge.comm);
+        Image buffer = new Image(display, 20, 100);
+        try {
+            // The first blit also states the GC, so the blits that repeat byte for byte start at the second.
+            drawInto(buffer, 10);
+            blit(buffer);
+            drawInto(buffer, 20);
+            blit(buffer);
+            drain();
+
+            drawInto(buffer, 30);
+            blit(buffer);
+
+            assertThat(drain()).as("the blit's bytes repeat, but the image they name shows something else")
+                    .anyMatch(e -> e.channel().contains("drawImage"));
+        } finally {
+            buffer.dispose();
+            FlutterBridge.setDisplayGcCommResolver(null);
+            FlutterBridge.displayBootstrapped = bootstrapped;
+        }
+    }
+
+    private void drawInto(Image image, int height) {
+        GC gc = new GC(image);
+        gc.fillRectangle(0, 0, 20, height);
+        gc.dispose();
+    }
+
+    private void blit(Image image) {
+        ControlHelper.inPaintDepth++;
+        try {
+            GC gc = new GC(canvas);
+            gc.drawImage(image, 0, 0);
+            gc.dispose();
+        } finally {
+            ControlHelper.inPaintDepth--;
+        }
+    }
 }

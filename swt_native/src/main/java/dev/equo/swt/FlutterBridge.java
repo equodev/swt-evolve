@@ -1663,6 +1663,8 @@ public abstract class FlutterBridge {
         boolean stateDirty;
         /** Whether part of the paint went out before its end: its last frame is then not all of it. */
         boolean partSent;
+        /** The last image description the paint sent ({@link #IMAGES_DESCRIBED}), 0 if none. */
+        long described;
         /** Resources the buffered ops wrote, credited only once the batch is sent. */
         final ArrayList<Object> written = new ArrayList<>();
         /** What was last sent of each property of the GC's state. */
@@ -1679,6 +1681,7 @@ public abstract class FlutterBridge {
             staged = false;
             stateDirty = false;
             partSent = false;
+            described = 0;
             written.clear();
             sent.clear();
             own.clear();
@@ -1725,7 +1728,7 @@ public abstract class FlutterBridge {
             // The client is told the image anew because what it shows changed. The frame names it
             // by id all the same, so a paint that only blits it is the same bytes as the last one:
             // without this, it would be dropped as a repeat and the client would keep the old image.
-            long described = IMAGES_DESCRIBED.incrementAndGet();
+            described = IMAGES_DESCRIBED.incrementAndGet();
             drawn = Fnv.mix(drawn, described);
             content = Fnv.mix(content, described);
             FlutterBridge bridge = getBridge(gc);
@@ -1898,12 +1901,14 @@ public abstract class FlutterBridge {
         // with it. But one whose bytes are those of the last paint on the channel, all of it in this
         // frame, takes the channel from the state that paint left to that same state: an
         // owner-drawn row painted again at each step of a resize sets its colors and fonts the same
-        // way every time.
+        // way every time. Its bytes name an image by id only, so one described anew (a buffer drawn
+        // again, then blitted) is folded in: the same bytes then show something else.
         long frame = 0;
         boolean whole = shown != null && !paint.partSent && paint.batch != null;
         if (whole) {
             GcWire batch = paint.batch;
             frame = Fnv.of(EMPTY_CYCLE, batch.buffer(), batch.headerLength(), batch.byteSize() - batch.headerLength());
+            if (paint.described != 0) frame = Fnv.ofLong(frame, paint.described);
             repeat |= shown.framed && shown.frameConnection == connection && shown.frameHash == frame;
         }
         if (DROP_REPEATED_REPAINTS && repeat) {
