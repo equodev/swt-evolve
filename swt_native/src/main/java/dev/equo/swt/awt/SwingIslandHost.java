@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.function.BiConsumer;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
@@ -29,6 +30,7 @@ import org.eclipse.swt.widgets.Shell;
 import dev.equo.swt.Config;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.SwingIsland;
+import dev.equo.swt.WindowBridge;
 import dev.equo.swt.WindowPolicy;
 import dev.equo.swt.comm.CommService;
 
@@ -201,7 +203,12 @@ public final class SwingIslandHost {
      * through Java's frame taking a new size from the mirror.
      */
     static void followIsland(Control island, Frame frame) {
-        new Follower(island, frame).start();
+        followIsland(island, frame, EngineCalls.INSTANCE.windowBounds);
+    }
+
+    /** {@link #followIsland(Control, Frame)}, telling {@code windowBounds} where the window that draws it is. */
+    static void followIsland(Control island, Frame frame, BiConsumer<Frame, java.awt.Rectangle> windowBounds) {
+        new Follower(island, frame, windowBounds).start();
     }
 
     /**
@@ -222,25 +229,33 @@ public final class SwingIslandHost {
 
         private final Control island;
         private final Frame frame;
+        private final BiConsumer<Frame, java.awt.Rectangle> windowBounds;
         private final Display display;
 
         /** The controls carrying this follower's {@code Move} listener: the island and its ancestors. */
         private final List<Control> watched = new ArrayList<>();
 
-        Follower(Control island, Frame frame) {
+        /** Says when Shells get and lose windows of their own, or null on a surface without any. */
+        private final WindowBridge windows;
+        private final Runnable onWindows = this::place;
+
+        Follower(Control island, Frame frame, BiConsumer<Frame, java.awt.Rectangle> windowBounds) {
             this.island = island;
             this.frame = frame;
+            this.windowBounds = windowBounds;
             this.display = island.getDisplay();
+            this.windows = windowsOf(island);
         }
 
         void start() {
             island.addListener(SWT.Resize, this);
             island.addListener(SWT.Dispose, e -> unhook());
             frame.addComponentListener(this);
+            if (windows != null) windows.addShellWindowListener(onWindows);
             place();
         }
 
-        /** A move of the island or of one of its ancestors, and the island's own resize. */
+        /** A move of the island or of one of its ancestors, the island's own resize, and a Shell's. */
         @Override
         public void handleEvent(Event event) {
             place();
@@ -258,7 +273,7 @@ public final class SwingIslandHost {
                 return;
             }
             watch(ancestry());
-            placeFrame(island, frame);
+            placeFrame(island, frame, windowBounds);
         }
 
         private List<Control> ancestry() {
@@ -270,22 +285,31 @@ public final class SwingIslandHost {
         /** Moves the {@code Move} listener onto {@code chain}, off whatever it was on before. */
         private void watch(List<Control> chain) {
             for (Control c : watched) {
-                if (!chain.contains(c) && !c.isDisposed()) c.removeListener(SWT.Move, this);
+                if (!chain.contains(c)) unwatch(c);
             }
             for (Control c : chain) {
-                if (!watched.contains(c)) c.addListener(SWT.Move, this);
+                if (watched.contains(c)) continue;
+                c.addListener(SWT.Move, this);
+                // A Shell's window can change size and leave the island the size it was.
+                if (c instanceof Shell) c.addListener(SWT.Resize, this);
             }
             watched.clear();
             watched.addAll(chain);
         }
 
+        private void unwatch(Control c) {
+            if (c.isDisposed()) return;
+            c.removeListener(SWT.Move, this);
+            if (c instanceof Shell) c.removeListener(SWT.Resize, this);
+        }
+
         private void unhook() {
-            for (Control c : watched) {
-                if (!c.isDisposed()) c.removeListener(SWT.Move, this);
-            }
+            watched.forEach(this::unwatch);
             watched.clear();
             if (!island.isDisposed()) island.removeListener(SWT.Resize, this);
             frame.removeComponentListener(this);
+            if (windows != null) windows.removeShellWindowListener(onWindows);
+            EventQueue.invokeLater(() -> windowBounds.accept(frame, null));
         }
     }
 
@@ -294,15 +318,37 @@ public final class SwingIslandHost {
      * Swing pixels per SWT unit the mirror gave the frame (its width over the island's), the ratio
      * native {@code SWT_AWT} gives a frame's position as it does its size. 1 until the mirror has
      * laid the frame out.
+     *
+     * <p>Tells {@code windowBounds}, in the same task and pixels, where the window that draws the island
+     * is when it is not the bridge's own: the one {@link WindowBridge#windowOf} names for its Shell, the
+     * Shell's own or, for a Shell drawn inline, the one its parent is drawn in. What the island hangs
+     * past that window is cut, and Swing fits its popups to the screen alone.
      */
-    static void placeFrame(Control island, Frame frame) {
+    static void placeFrame(Control island, Frame frame, BiConsumer<Frame, java.awt.Rectangle> windowBounds) {
         if (island.isDisposed()) return;
         Point at = island.toDisplay(0, 0);
         int width = island.getSize().x;
+        WindowBridge windows = windowsOf(island);
+        Rectangle window = windows == null ? null : windows.ownWindowBounds(windows.windowOf(island.getShell()));
         EventQueue.invokeLater(() -> {
-            double swingPerSwt = width > 0 && frame.getWidth() > 0 ? (double) frame.getWidth() / width : 1;
+            boolean laidOut = width > 0 && frame.getWidth() > 0;
+            double swingPerSwt = laidOut ? (double) frame.getWidth() / width : 1;
             frame.setLocation((int) Math.round(at.x * swingPerSwt), (int) Math.round(at.y * swingPerSwt));
+            windowBounds.accept(frame, laidOut && window != null ? scaled(window, swingPerSwt) : null);
         });
+    }
+
+    private static java.awt.Rectangle scaled(Rectangle r, double by) {
+        return new java.awt.Rectangle((int) Math.round(r.x * by), (int) Math.round(r.y * by),
+                (int) Math.round(r.width * by), (int) Math.round(r.height * by));
+    }
+
+    /** What knows the windows of {@code control}'s Display, or null on a surface that has none. */
+    private static WindowBridge windowsOf(Control control) {
+        if (!(control.getImpl() instanceof DartControl)) return null;
+        FlutterBridge bridge = ((DartControl) control.getImpl()).getBridge();
+        if (bridge == null) bridge = FlutterBridge.injected();
+        return bridge instanceof WindowBridge ? (WindowBridge) bridge : null;
     }
 
     /**
@@ -852,17 +898,39 @@ public final class SwingIslandHost {
 
     private static final String NOT_CALLABLE = "swing-evolve's engine is present but not callable";
 
+    /** {@code engine}'s {@code setIslandWindowBounds}, which an older engine does not have. */
+    static BiConsumer<Frame, java.awt.Rectangle> windowBoundsCall(Class<?> engine) {
+        Method call;
+        try {
+            call = engine == null ? null : engine.getMethod("setIslandWindowBounds", Frame.class, java.awt.Rectangle.class);
+        } catch (NoSuchMethodException older) {
+            call = null;
+        }
+        if (call == null) return (frame, bounds) -> { };
+        Method present = call;
+        return (frame, bounds) -> {
+            try {
+                present.invoke(null, frame, bounds);
+            } catch (ReflectiveOperationException e) {
+                say("setIslandWindowBounds failed: " + e);
+            }
+        };
+    }
+
     /** The engine's entry points, looked up once, on the first frame. */
     private static final class EngineCalls {
         static final EngineCalls INSTANCE = new EngineCalls();
 
         Method windowIdOf, start, comm, getPort;
+        /** Where the window that draws an island's frame is, or null; does nothing on an engine that does not ask. */
+        final BiConsumer<Frame, java.awt.Rectangle> windowBounds;
         /** Why the engine cannot be called, or null. */
         String unavailable;
         Throwable cause;
 
         private EngineCalls() {
             Class<?> engineClass = Config.swingEngineClass("dev.equo.swing.engine.Engine");
+            windowBounds = windowBoundsCall(engineClass);
             Class<?> commClass = Config.swingEngineClass("dev.equo.swing.bridge.comm.CommService");
             if (engineClass == null || commClass == null) {
                 unavailable = "swing-evolve's engine classes are not loadable";

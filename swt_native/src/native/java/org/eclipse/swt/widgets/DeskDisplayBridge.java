@@ -296,6 +296,18 @@ public class DeskDisplayBridge extends DisplayBridge {
     }
 
     /**
+     * The strip included. Not {@link #windowBoundsFor(Rectangle, int)}, which moves a window being placed
+     * down to the top of the work area: this shell is already where its window was placed.
+     */
+    @Override
+    public Rectangle ownWindowBounds(Object shell) {
+        Rectangle bounds = super.ownWindowBounds(shell);
+        if (bounds == null) return null;
+        int inset = nearestWindow((Shell) shell).insetTop;
+        return new Rectangle(bounds.x, bounds.y - inset, bounds.width, bounds.height + inset);
+    }
+
+    /**
      * The window a detached shell's window is owned by, the way a native child shell is owned by its
      * parent's: the one its parent is drawn into. 0 for a parentless shell.
      */

@@ -1,5 +1,6 @@
 package dev.equo.swt;
 
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.DartControl;
 
 /**
@@ -63,6 +64,18 @@ public interface WindowBridge {
     default Object windowOf(Object shell) {
         return null;
     }
+
+    /**
+     * The rectangle, in display coordinates, of {@code shell}'s window of its own: an OS window, the strip
+     * its client draws above the shell included, or a browser's page. Null for a shell without one, or
+     * whose window is gone; {@link #windowOf} names the window such a shell is drawn into.
+     */
+    Rectangle ownWindowBounds(Object shell);
+
+    /** Runs {@code listener} on the UI thread after a shell got a window of its own, or stopped having one. */
+    void addShellWindowListener(Runnable listener);
+
+    void removeShellWindowListener(Runnable listener);
 
     /** The display's shells in the order the clients draw them, the topmost last. */
     Object[] shellsInDrawOrder();

@@ -1328,7 +1328,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         java.util.Set<Shell> leftOwnWindow =
                 java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
-        shellWindows.entrySet().removeIf(entry -> {
+        boolean changed = shellWindows.entrySet().removeIf(entry -> {
             Shell shell = entry.getKey();
             ShellWindow window = entry.getValue();
             if (!window.isAlive()) {
@@ -1349,7 +1349,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             return false;
         });
 
-        if (!supportsShellWindows()) return leftOwnWindow;
+        if (!supportsShellWindows()) {
+            if (changed) notifyShellWindowListeners();
+            return leftOwnWindow;
+        }
         for (Shell shell : forDisplay._shells()) {
             if (shell == null || shell.isDisposed() || !shell.getVisible()) continue;
             if (shellWindows.containsKey(shell) || !ownsWindow(shell)) continue;
@@ -1368,8 +1371,29 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             // is applied here.
             int state = windowStateOf(shell);
             if (state != ShellWindow.STATE_NORMAL) window.setState(state);
+            changed = true;
         }
+        if (changed) notifyShellWindowListeners();
         return leftOwnWindow;
+    }
+
+    private final java.util.List<Runnable> shellWindowListeners = new java.util.ArrayList<>();
+
+    @Override
+    public void addShellWindowListener(Runnable listener) {
+        shellWindowListeners.add(listener);
+    }
+
+    @Override
+    public void removeShellWindowListener(Runnable listener) {
+        shellWindowListeners.remove(listener);
+    }
+
+    /** Posted: {@link #syncShellWindows} runs inside a serialization flush, where coordinates are half-formed. */
+    private void notifyShellWindowListeners() {
+        Display api = forDisplay.getApi();
+        if (shellWindowListeners.isEmpty() || api == null || api.isDisposed()) return;
+        api.asyncExec(() -> new java.util.ArrayList<>(shellWindowListeners).forEach(Runnable::run));
     }
 
     /**
@@ -1420,6 +1444,14 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             current = current.getParent();
         }
         return null;
+    }
+
+    /** A shell's window starts where the shell does and is the size its client reports for it. */
+    @Override
+    public Rectangle ownWindowBounds(Object shell) {
+        if (!(shell instanceof Shell) || ((Shell) shell).isDisposed()) return null;
+        ShellWindow window = shellWindows.get(shell);
+        return window == null || !window.isAlive() ? null : ((Shell) shell).getBounds();
     }
 
     /** Not a window hidden with its shell, nor one on its way out: a shell drawn there would not be on screen. */

@@ -122,7 +122,7 @@ class SwingIslandFrameLocationTest {
         // The mirror gave the frame two Swing pixels per SWT unit: its position scales the same way.
         Frame frame = frameOf(742);
 
-        SwingIslandHost.placeFrame(island, frame);
+        SwingIslandHost.placeFrame(island, frame, (of, bounds) -> { });
         drainEdt();
 
         verify(frame).setLocation(2 * SCREEN_X, 2 * SCREEN_Y);
@@ -133,7 +133,7 @@ class SwingIslandFrameLocationTest {
         Frame frame = frameOf(371);
         when(island.isDisposed()).thenReturn(true);
 
-        SwingIslandHost.placeFrame(island, frame);
+        SwingIslandHost.placeFrame(island, frame, (of, bounds) -> { });
         drainEdt();
 
         verify(frame, never()).setLocation(anyInt(), anyInt());
@@ -224,7 +224,7 @@ class SwingIslandFrameLocationTest {
             layOut();
             Frame frame = frameOf(VIEW_W);
 
-            SwingIslandHost.placeFrame(islandInPanel, frame);
+            SwingIslandHost.placeFrame(islandInPanel, frame, (of, bounds) -> { });
             drainEdt();
 
             Point painted = islandInPanel.toDisplay(0, 0);
