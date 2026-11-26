@@ -9,6 +9,7 @@ import '../gen/swt.dart';
 import '../gen/widgets.dart' show WireKey;
 import '../impl/composite_evolve.dart';
 import '../impl/control_evolve.dart';
+import '../impl/menu_evolve.dart' show OwnPressListener;
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_settings/button_theme_settings.dart';
 import 'utils/font_utils.dart';
@@ -193,8 +194,9 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
   }
 
   /// A native button is selected by a primary release over it after a press on it, however far the
-  /// pointer travelled while held; Flutter's tap gives up once it moves past its slop.
-  Widget _selectOnReleaseInside(Widget button) => Listener(
+  /// pointer travelled while held; Flutter's tap gives up once it moves past its slop. A press that
+  /// closes an open menu selects nothing.
+  Widget _selectOnReleaseInside(Widget button) => OwnPressListener(
         onPointerDown: (e) {
           _primaryPressed = e.buttons == kPrimaryButton && (state.enabled ?? false)
               && _isOverButton(e);

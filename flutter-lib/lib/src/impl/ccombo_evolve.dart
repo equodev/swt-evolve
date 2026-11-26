@@ -25,6 +25,7 @@ import 'utils/key_edit_order.dart';
 import 'key_forwarding.dart';
 import 'utils/quiet_animations.dart';
 import 'utils/test_anchors.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class CComboImpl<T extends CComboSwt, V extends VCCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes, AtRestHandover {
@@ -757,7 +758,7 @@ class _StyledDropdownCCombo extends StatelessWidget {
                 Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38));
     // On the press, not the tap: a press that arrives without a hover first brings one, which
     // mounts the menu before the release and would take the tap with it.
-    return Listener(
+    return OwnPressListener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: onTapAtRest == null
               ? null

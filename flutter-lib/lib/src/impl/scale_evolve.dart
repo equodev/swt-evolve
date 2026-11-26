@@ -14,6 +14,7 @@ import '../theme/theme_settings/scale_theme_settings.dart';
 import 'utils/widget_utils.dart';
 import 'utils/quiet_animations.dart';
 import 'widget_config.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class ScaleImpl<T extends ScaleSwt, V extends VScale>
     extends ControlImpl<T, V> {
@@ -54,7 +55,7 @@ class ScaleImpl<T extends ScaleSwt, V extends VScale>
     final isVertical = hasStyle(state.style, SWT.VERTICAL);
     final size = getScaleSize(state, widgetTheme, isVertical: isVertical);
 
-    return wrap(Listener(
+    return wrap(OwnPressListener(
       onPointerDown: (e) {
         _changedDuringPress = false;
         // Only a press on the track counts; one beyond its ends does nothing (see _InertMargin).
@@ -512,7 +513,7 @@ class _InertMargin extends StatelessWidget {
   const _InertMargin({required this.onPress});
 
   @override
-  Widget build(BuildContext context) => Listener(
+  Widget build(BuildContext context) => OwnPressListener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: (_) => onPress(),
         child: const SizedBox.expand(),

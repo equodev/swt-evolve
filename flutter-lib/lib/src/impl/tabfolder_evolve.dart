@@ -22,6 +22,7 @@ import 'utils/strip_scroll.dart';
 import 'utils/widget_utils.dart';
 import 'widget_config.dart';
 import 'utils/test_anchors.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
     extends CompositeImpl<T, V> {
@@ -430,7 +431,7 @@ class TabFolderImpl<T extends TabFolderSwt, V extends VTabFolder>
 
     return tagSemantics(vItem, MouseRegion(
       cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: Listener(
+      child: OwnPressListener(
         onPointerDown: (e) {
           if (e.buttons == kPrimaryButton) _pressedTab = index;
         },

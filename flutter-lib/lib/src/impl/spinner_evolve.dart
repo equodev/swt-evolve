@@ -19,6 +19,7 @@ import 'utils/text_utils.dart';
 import 'utils/veto_gate.dart';
 import 'utils/widget_utils.dart';
 import 'utils/quiet_animations.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class SpinnerImpl<T extends SpinnerSwt, V extends VSpinner>
     extends CompositeImpl<T, V> {
@@ -625,7 +626,7 @@ class _SpinnerButtonState extends State<_SpinnerButton> {
     return MouseRegion(
       onEnter: (_) => widget.onHoverChanged(true),
       onExit: (_) => widget.onHoverChanged(false),
-      child: Listener(
+      child: OwnPressListener(
           onPointerDown: _press,
           onPointerMove: _move,
           onPointerUp: _up,

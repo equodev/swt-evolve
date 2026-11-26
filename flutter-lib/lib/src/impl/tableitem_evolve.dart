@@ -30,6 +30,7 @@ import 'control_evolve.dart' show ControlImpl;
 import '../gen/widgets.dart' show WireChannel;
 import 'owner_draw_overlay.dart';
 import 'utils/test_anchors.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     extends ItemImpl<T, V> {
@@ -290,7 +291,7 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
 
     // Tag only the first cell as the row's anchor for E2E tooling (Playwright etc.) —
     // tagging every cell would give the row's id to several DOM nodes at once.
-    final cell = Listener(
+    final cell = OwnPressListener(
       // The primary press is sent from the raw down, not from a tap gesture: the gesture is only
       // recognised once the arena settles, after the Table has already reported its focus, and
       // SWT delivers the press first. The click count is registered here too, because that is

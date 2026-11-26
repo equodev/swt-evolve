@@ -13,6 +13,7 @@ import '../theme/theme_extensions/sash_theme_extension.dart';
 import 'package:swtflutter/src/styles.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 import 'utils/test_anchors.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
   int? lastAppliedX;
@@ -173,7 +174,7 @@ class SashImpl<T extends SashSwt, V extends VSash> extends ControlImpl<T, V> {
         // reached first. Each move of the drag in between reports its own here too, ahead of its
         // MouseMove: a gesture recognizer would hear the move only after the control's Listener.
         // The second press of a double click reports neither, as on Win32 and Cocoa.
-        child: Listener(
+        child: OwnPressListener(
           onPointerDown: enabled
               ? (e) {
                   _primaryPress = e.buttons == kPrimaryButton;

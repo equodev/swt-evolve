@@ -14,6 +14,7 @@ import '../styles.dart';
 import '../impl/control_evolve.dart';
 import '../impl/gc_evolve.dart';
 import '../impl/gcdrawer_evolve.dart';
+import '../impl/menu_evolve.dart' show OpenMenus;
 import '../impl/scrollable_evolve.dart';
 import '../custom/toolbar_composite.dart';
 import 'utils/double_tap_detector.dart';
@@ -106,7 +107,8 @@ Widget wrapCompositeInteractionChrome(CompositeImpl impl, Widget content) {
         // Taken first: a child that takes no pointer (a disabled one) leaves the press with this
         // composite, not with an ancestor further up.
         if (ControlImpl.pointerTakenBelow(e) || hitsChild(e.localPosition)) return;
-        if (!impl.forwardsMouseDownOf(e)) return;
+        // Not captured either, so its release is not reported.
+        if (!impl.forwardsMouseDownOf(e) || OpenMenus.closesOnPress(e)) return;
         final pos = e.localPosition;
         if (forwardsPointer) {
           // Captured so onPointerUp can forward it regardless of where the pointer ends up.

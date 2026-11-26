@@ -18,7 +18,7 @@ import '../theme/theme_settings/text_theme_settings.dart';
 import 'key_forwarding.dart';
 import 'shell_evolve.dart';
 import 'key_mapping.dart';
-import 'menu_evolve.dart' show MenuImpl, OpenMenus;
+import 'menu_evolve.dart' show MenuImpl, OpenMenus, OwnPressListener;
 import 'utils/hover_arbiter.dart';
 import 'utils/key_edit_order.dart';
 import 'utils/at_rest.dart';
@@ -599,7 +599,7 @@ class TextImpl<T extends TextSwt, V extends VText>
     // A press anywhere in the decoration is a press on the text, as a TextField takes it.
     return MouseRegion(
       cursor: enabled ? SystemMouseCursors.text : SystemMouseCursors.basic,
-      child: Listener(
+      child: OwnPressListener(
         onPointerDown: (e) {
           // The application Menu opens through ControlImpl.applyMenu(): the editor never sees the
           // secondary press, which focuses the field and leaves its caret, as a native Text does.
@@ -1035,7 +1035,7 @@ class TextImpl<T extends TextSwt, V extends VText>
         focusNode: _restFocus,
         // On the press, not the tap: a press that arrives without a hover first brings one, which
         // mounts the TextField before the release and would take the tap with it.
-        child: Listener(
+        child: OwnPressListener(
           behavior: HitTestBehavior.opaque,
           onPointerDown: _handOverOnPress,
           onPointerMove: _dragFromRest,

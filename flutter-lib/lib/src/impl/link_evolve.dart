@@ -11,6 +11,7 @@ import './utils/font_utils.dart';
 import './utils/link_markup.dart';
 import './utils/mnemonic_text.dart';
 import '../theme/theme_extensions/link_theme_extension.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class LinkImpl<T extends LinkSwt, V extends VLink> extends ControlImpl<T, V> {
   /// The node a click on a Link that holds an anchor focuses, as Java asks for it.
@@ -209,7 +210,7 @@ class _StyledLinkState extends State<StyledLink> {
           );
     // Inside the control's own pointer handling, so the anchor's Selection reaches Java ahead of the
     // release's MouseUp, as every native reports it.
-    return Listener(
+    return OwnPressListener(
       onPointerDown: (e) => _pressedAnchor = e.buttons == kPrimaryButton ? _anchorAt(e.position) : null,
       onPointerCancel: (_) => _pressedAnchor = null,
       onPointerUp: (e) {

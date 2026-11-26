@@ -205,6 +205,7 @@ class _VerticalMenuButtonState extends State<VerticalMenuButton> {
       ),
       alignmentOffset: Offset.zero,
       anchorTapClosesMenu: false,
+      consumeOutsideTap: true,
       onClose: _onClose,
       menuChildren: [
         pointerInterceptor(MenuChangeNotifier(

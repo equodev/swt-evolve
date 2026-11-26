@@ -38,6 +38,7 @@ import 'utils/layered_layout_builder.dart';
 import 'utils/text_utils.dart';
 import 'utils/steady_scrollbar.dart';
 import 'utils/size_probe.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class _FlatTreeItem {
   final VTreeItem item;
@@ -510,7 +511,7 @@ class TreeImpl<T extends TreeSwt, V extends VTree> extends CompositeImpl<T, V> {
                             backgroundColor,
                           ),
                         Expanded(
-                          child: Listener(
+                          child: OwnPressListener(
                             onPointerDown: _takeFocusOnRowsPress,
                             child: _buildContentWithEdgeGaps(
                               flatItems,

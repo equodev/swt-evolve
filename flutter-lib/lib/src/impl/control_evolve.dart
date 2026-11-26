@@ -638,9 +638,25 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
     return null;
   }
 
-  /// Pointers pressed on this control's own scroll bars, which are not forwarded as mouse events:
-  /// a native scroll bar is outside the client area.
-  final Set<int> scrollBarPointers = {};
+  /// Pointers whose press, moves and release are not forwarded as mouse events: a press on this
+  /// control's own scroll bars (a native scroll bar is outside the client area), and the press that
+  /// closes an open menu ([OpenMenus.closesOnPress]).
+  final Set<int> unreportedPointers = {};
+
+  /// The secondary press made while a menu was open, which [applyMenu]'s tap recognizer loses to
+  /// that menu: its release opens this control's menu instead.
+  ({int pointer, Offset at})? _menuPressUnderOpenMenu;
+
+  static PointerEvent? _releaseThatOpenedMenu;
+
+  /// Claims [release] for the one menu it opens: the innermost control's handler is reached first,
+  /// and the controls around it, which see the same release, then leave it.
+  static bool claimMenuRelease(PointerUpEvent release) {
+    final event = release.original ?? release;
+    if (identical(event, _releaseThatOpenedMenu)) return false;
+    _releaseThatOpenedMenu = event;
+    return true;
+  }
 
   /// Whether this press continues the click chain [registerPointerDown] counts: same button, inside
   /// the double-click window and distance. Answers before the press is registered, for a handler
@@ -1243,7 +1259,8 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         if (keepsWheel) markWheelKept(e);
       },
       onPointerDown: (e) {
-        if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
+        if (OpenMenus.closesOnPress(e)) unreportedPointers.add(e.pointer);
+        if (pointerTakenBelow(e) || unreportedPointers.contains(e.pointer)) return;
         registerPointerDown(e);
         if (forwardsMouseDownOf(e)) {
           final event = VEvent()
@@ -1274,7 +1291,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
         forgetDragDetect(e.pointer);
         final pos = heldLocal(e);
         releasePointer(e);
-        if (scrollBarPointers.remove(e.pointer)) return;
+        if (unreportedPointers.remove(e.pointer)) return;
         final event = VEvent()
           ..button = swtButton
           ..x = pos.dx.round()
@@ -1293,10 +1310,10 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       onPointerCancel: (e) {
         forgetDragDetect(e.pointer);
         releasePointer(e);
-        scrollBarPointers.remove(e.pointer);
+        unreportedPointers.remove(e.pointer);
       },
       onPointerMove: (e) {
-        if (pointerTakenBelow(e) || scrollBarPointers.contains(e.pointer)) return;
+        if (pointerTakenBelow(e) || unreportedPointers.contains(e.pointer)) return;
         // No hover while a button is held: the pointer is moving, not resting.
         _hoverTimer?.cancel();
         maybeSendDragDetect(e);
@@ -1462,7 +1479,7 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
       }
     }
 
-    return GestureDetector(
+    final detector = GestureDetector(
       // A control that paints itself rather than composing hit-testable children -- a Canvas
       // draws its whole scene through the GC overlay, which is an IgnorePointer over an empty
       // box -- offers nothing for the default deferToChild to land on, so the detector never
@@ -1483,6 +1500,26 @@ abstract class ControlImpl<T extends ControlSwt, V extends VControl>
           _contextMenuFor(menu),
         ],
       ),
+    );
+    // The right click that closes an open menu still opens this one, in the same click.
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) {
+        _menuPressUnderOpenMenu = e.buttons == kSecondaryButton && OpenMenus.takesPressGestures()
+            ? (pointer: e.pointer, at: e.position)
+            : null;
+      },
+      onPointerUp: (e) {
+        final press = _menuPressUnderOpenMenu;
+        if (press == null || press.pointer != e.pointer) return;
+        _menuPressUnderOpenMenu = null;
+        if ((e.position - press.at).distance > kTouchSlop) return;
+        if (claimMenuRelease(e)) openMenuAt(e.localPosition);
+      },
+      onPointerCancel: (e) {
+        if (_menuPressUnderOpenMenu?.pointer == e.pointer) _menuPressUnderOpenMenu = null;
+      },
+      child: detector,
     );
   }
 

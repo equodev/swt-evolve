@@ -10,6 +10,7 @@ import '../gen/composite.dart';
 import '../gen/control.dart';
 import '../gen/event.dart';
 import 'control_evolve.dart' show ControlImpl;
+import 'menu_evolve.dart' show OpenMenus;
 import '../gen/gc.dart';
 import '../gen/image.dart';
 import '../gen/scrollbar.dart';
@@ -264,8 +265,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
         // Take keyboard focus so a childless Canvas receives keystrokes. Skip when
         // the Canvas hosts child widgets — they manage their own focus and stealing
         // it on every click would break them. Natively only the primary button focuses, and a
-        // press on a scroll bar, outside the client area, focuses nothing.
-        if (scrollBarPointers.contains(e.pointer)) return;
+        // press on a scroll bar, outside the client area, focuses nothing. A press that closes a
+        // menu focuses nothing either, as on GTK and Cocoa.
+        if (unreportedPointers.contains(e.pointer) || OpenMenus.closesOnPress(e)) return;
         if (!hasActiveChildren && focusesOnPress && (e.buttons & kPrimaryButton) != 0) {
           _keyboardFocus.requestFocus();
         }
@@ -376,9 +378,9 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
     );
   }
 
-  /// Claims presses on the bar so the control does not also take them (see [scrollBarPointers]).
+  /// Claims presses on the bar so the control does not also take them (see [unreportedPointers]).
   Widget _claimsPointers(Widget bar) => Listener(
-        onPointerDown: (e) => scrollBarPointers.add(e.pointer),
+        onPointerDown: (e) => unreportedPointers.add(e.pointer),
         child: bar,
       );
 
@@ -483,7 +485,7 @@ class CanvasImpl<T extends CanvasSwt, V extends VCanvas>
               // The corner between the bars is no more the client area than the bars are.
               child: Listener(
                 behavior: HitTestBehavior.opaque,
-                onPointerDown: (e) => scrollBarPointers.add(e.pointer),
+                onPointerDown: (e) => unreportedPointers.add(e.pointer),
                 child: const SizedBox.expand(),
               ),
             ),

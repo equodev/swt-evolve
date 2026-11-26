@@ -26,6 +26,7 @@ import 'utils/dnd_utils.dart';
 import 'utils/widget_utils.dart';
 import 'owner_draw_overlay.dart';
 import 'utils/dnd_session.dart' show ActiveDragTracker;
+import 'menu_evolve.dart' show OwnPressListener;
 
 class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     extends ItemImpl<T, V> {
@@ -224,7 +225,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           if (e.pointer != _secondaryPressPointer) return;
           _secondaryPressPointer = null;
           if ((e.position - _secondaryPressAt!).distance > kTouchSlop) return;
-          _openContextMenu();
+          if (ControlImpl.claimMenuRelease(e)) _openContextMenu();
         },
         onPointerCancel: (PointerCancelEvent e) {
           if (e.pointer == _secondaryPressPointer) _secondaryPressPointer = null;
@@ -912,7 +913,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {},
-      child: Listener(
+      child: OwnPressListener(
         // Reached before the row's own press listener: the box toggles on its tap, and the row
         // does not select on the press.
         onPointerDown: (_) => _pressOnCheckbox = true,
@@ -1160,7 +1161,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
           if (!_isHovered) return;
           setState(() => _isHovered = false);
         },
-        child: _notingContextMenuPress(Listener(
+        child: _notingContextMenuPress(OwnPressListener(
           // The tree sends its MouseDown from the same press after this listener, so the row's
           // events go out once that press has been handled.
           onPointerDown: (PointerDownEvent e) {

@@ -18,6 +18,7 @@ import 'utils/double_tap_detector.dart';
 import 'utils/text_utils.dart';
 import 'utils/widget_utils.dart';
 import 'utils/test_anchors.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class ListImpl<T extends ListSwt, V extends VList>
     extends ScrollableImpl<T, V> {
@@ -392,7 +393,7 @@ class _ListItemState extends State<_ListItem> {
       onExit: (_) => setState(() => _isHovered = false),
       // Answered on the press, as natively, so the selection is in place for the MouseUp; on a
       // microtask, as the control's own MouseDown listener runs after this one.
-      child: Listener(
+      child: OwnPressListener(
         onPointerDown: (e) {
           if (e.buttons != kPrimaryButton) return;
           scheduleMicrotask(widget.onPress);

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/gestures.dart' show kPrimaryButton;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show HitTestEntry, RenderPointerListener;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'menu_key_trace.dart';
@@ -106,6 +108,15 @@ class OpenMenus {
 
   static bool get _anyOpen => _controllers.any((controller) => controller.isOpen);
 
+  /// Whether [event] is a primary press that closes an open menu. That press only dismisses the
+  /// menu: the control under the pointer gets no mouse event or focus from it. A secondary press
+  /// still reaches the control, which may open its own context menu.
+  static bool closesOnPress(PointerDownEvent event) => event.buttons == kPrimaryButton && _anyOpen;
+
+  /// Whether a press now loses the gesture arena to an open menu, which consumes every press
+  /// outside it: a control's own tap recognizers never see that press.
+  static bool takesPressGestures() => _anyOpen;
+
   /// Counts [controller]'s menu from its anchor's mount to its [remove].
   static void add(MenuController controller) => _controllers.add(controller);
 
@@ -192,6 +203,74 @@ class OpenMenus {
     if (_held.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) => _playNextHeld());
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+}
+
+/// A [Listener] for a control's own raw press handling (a row that selects on the press, a part
+/// that fires on its release): a primary press that closes an open menu ([OpenMenus.closesOnPress])
+/// only dismisses the menu, so none of that pointer's events, from its down to its up, reach the
+/// callbacks. A raw listener is not held back by the menu's consumed outside tap, as gestures are.
+/// A render object widget, as [Listener] is, so it adds no build of its own.
+class OwnPressListener extends SingleChildRenderObjectWidget {
+  const OwnPressListener({
+    super.key,
+    this.behavior = HitTestBehavior.deferToChild,
+    this.onPointerDown,
+    this.onPointerMove,
+    this.onPointerUp,
+    this.onPointerCancel,
+    super.child,
+  });
+
+  final HitTestBehavior behavior;
+  final PointerDownEventListener? onPointerDown;
+  final PointerMoveEventListener? onPointerMove;
+  final PointerUpEventListener? onPointerUp;
+  final PointerCancelEventListener? onPointerCancel;
+
+  @override
+  RenderPointerListener createRenderObject(BuildContext context) => _RenderOwnPressListener(
+        behavior: behavior,
+        onPointerDown: onPointerDown,
+        onPointerMove: onPointerMove,
+        onPointerUp: onPointerUp,
+        onPointerCancel: onPointerCancel,
+      );
+
+  @override
+  void updateRenderObject(BuildContext context, RenderPointerListener renderObject) {
+    renderObject
+      ..behavior = behavior
+      ..onPointerDown = onPointerDown
+      ..onPointerMove = onPointerMove
+      ..onPointerUp = onPointerUp
+      ..onPointerCancel = onPointerCancel;
+  }
+}
+
+class _RenderOwnPressListener extends RenderPointerListener {
+  _RenderOwnPressListener({
+    super.behavior,
+    super.onPointerDown,
+    super.onPointerMove,
+    super.onPointerUp,
+    super.onPointerCancel,
+  });
+
+  /// The pointers whose press closed a menu, until their up or cancel.
+  final Set<int> _dismissing = {};
+
+  @override
+  void handleEvent(PointerEvent event, HitTestEntry entry) {
+    if (event is PointerDownEvent && OpenMenus.closesOnPress(event)) {
+      _dismissing.add(event.pointer);
+      return;
+    }
+    if (_dismissing.contains(event.pointer)) {
+      if (event is PointerUpEvent || event is PointerCancelEvent) _dismissing.remove(event.pointer);
+      return;
+    }
+    super.handleEvent(event, entry);
   }
 }
 
@@ -1154,6 +1233,7 @@ class _MenuBarItemState extends State<_MenuBarItem> {
             ),
           ),
         ),
+        consumeOutsideTap: true,
         onClose: _onClose,
         menuChildren: [
           pointerInterceptor(MenuChangeNotifier(

@@ -28,6 +28,7 @@ import 'utils/pointer.dart';
 import 'utils/quiet_animations.dart';
 import 'utils/veto_gate.dart';
 import 'utils/test_anchors.dart';
+import 'menu_evolve.dart' show OwnPressListener;
 
 class ComboImpl<T extends ComboSwt, V extends VCombo>
     extends CompositeImpl<T, V> with PendingTextEchoes, ClientCaretReport {
@@ -783,7 +784,7 @@ class _ComboHitArea extends StatelessWidget {
     }
     return TapRegion(
       groupId: listGroup,
-      child: Listener(
+      child: OwnPressListener(
         behavior: HitTestBehavior.opaque,
         onPointerDown: (e) {
           if (e.buttons == kPrimaryButton) {
