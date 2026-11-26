@@ -362,6 +362,28 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
     }
 
     @Test
+    void pixels_read_while_a_flush_runs_are_asked_for_after_the_render_they_read() {
+        // A view whose Paint draws an image and then copies it, as a trace viewer's histogram does: the
+        // copy reads the render's pixels back. The paint pass holds what it sends for one message, so
+        // the render has to go out first, or the client is asked for a render it does not have and Java
+        // waits out the read's timeout, three times, on the UI thread.
+        Image image = new Image(device(), 16, 16);
+        Image[] copy = new Image[1];
+        dev.equo.swt.FlutterBridge.inOneMessage(() -> {
+            GC gc = new GC(image);
+            gc.fillRectangle(0, 0, 16, 16);
+            gc.dispose();
+            copy[0] = new Image(device(), image, SWT.IMAGE_COPY);
+        });
+
+        assertThat(comm.pixelsAskedAfterARender).as("the copy read the render's pixels back").isNotEmpty();
+        assertThat(comm.pixelsAskedAfterARender).as("the client was asked for a render it had not been sent")
+                .containsOnly(true);
+        copy[0].dispose();
+        image.dispose();
+    }
+
+    @Test
     void images_drawn_with_other_colors_or_sizes_are_named_apart() {
         Long gradient = contentKeyOf(gradient(1, 30, new Color(10, 20, 30), new Color(200, 210, 220)));
 
@@ -461,6 +483,11 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
         final Map<String, Consumer<?>> handlers = new LinkedHashMap<>();
         /** For each copyArea request, whether Java was listening on the exact channel the client answers on. */
         final List<Boolean> copyAreaAnswerHeard = new ArrayList<>();
+        /**
+         * For each request for a render's pixels, whether a render had reached the client before it:
+         * the client can only read back a render it was given.
+         */
+        final List<Boolean> pixelsAskedAfterARender = new ArrayList<>();
 
         @Override
         public void send(int type, long id, int channel, byte[] payload) {
@@ -522,7 +549,20 @@ class ImageGcDrawerTrafficTest extends SerializeTestBase {
                 // The client answers on the channel the request came in on, plus "Response".
                 copyAreaAnswerHeard.add(handlers.containsKey(eventName + "Response"));
                 answer("/copyAreaImageintintResponse", renderResult());
+            } else if (eventName.equals("Image/requestPixels")) {
+                pixelsAskedAfterARender.add(sent.stream().anyMatch(e -> e.endsWith("/gcDispose")));
+                // Answered either way, so a test that gets the order wrong fails rather than waits.
+                answer("/pixelsResult", png(16, 16));
             }
+        }
+
+        private static byte[] png(int width, int height) {
+            ImageLoader loader = new ImageLoader();
+            loader.data = new ImageData[] {
+                    new ImageData(width, height, 32, new PaletteData(0xFF0000, 0xFF00, 0xFF)) };
+            ByteArrayOutputStream png = new ByteArrayOutputStream();
+            loader.save(png, SWT.IMAGE_PNG);
+            return png.toByteArray();
         }
 
         @SuppressWarnings("unchecked")

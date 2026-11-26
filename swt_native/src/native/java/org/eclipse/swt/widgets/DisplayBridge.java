@@ -1894,6 +1894,8 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     public static void awaitWithoutDispatch(Display api, java.util.concurrent.Future<?> done, int timeoutMillis) {
         if (api == null || api.isDisposed() || !(api.getImpl() instanceof DartDisplay))
             return;
+        // What the client answers for may be held by a running paint pass for its one message.
+        dev.equo.swt.FlutterBridge.sendHeldBeforeAwaiting();
         DartDisplay display = (DartDisplay) api.getImpl();
         DisplayBridge bridge = display.displayBridge;
         // Only the display's thread may drive its event loop.

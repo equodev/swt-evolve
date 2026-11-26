@@ -426,6 +426,8 @@ public class GCHelper {
     public static void awaitRenderPumping(Display display, java.util.concurrent.Future<?> render, int timeoutMillis) {
         if (display == null || display.isDisposed())
             return;
+        // What the render needs may be held by a running paint pass for its one message.
+        dev.equo.swt.FlutterBridge.sendHeldBeforeAwaiting();
         long deadline = System.nanoTime() + timeoutMillis * 1_000_000L;
         // Display#sleep() has no timeout of its own: this timer wakes it to re-check the deadline.
         Runnable wakeOnTimeout = () -> {
@@ -578,6 +580,8 @@ public class GCHelper {
             answered.complete(null);
             if (display != null && !display.isDisposed()) display.wake();
         });
+        // A paint pass holds what it sends for one message, the render asked for perhaps among it.
+        dev.equo.swt.FlutterBridge.sendHeldBeforeAwaiting();
         comm.send(0, 0, dev.equo.swt.WireTable.CHANNEL_IMAGE_REQUEST_PIXELS, java.nio.ByteBuffer.allocate(8).putLong(remoteRef).array());
         awaitOnDisplay(display, comm, answered, timeoutMs);
         if (!answered.isDone()) comm.remove(dev.equo.swt.WireTable.TYPE_IMAGE, remoteRef, dev.equo.swt.WireTable.CHANNEL_PIXELS_RESULT);

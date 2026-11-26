@@ -679,6 +679,40 @@ public abstract class FlutterBridge {
         MoveCompression.answer();
     }
 
+    /**
+     * Sends now what the flush running on this thread holds, for a caller about to wait on the client's
+     * answer: the client answers only for what it was given, such as the pixels of a render a paint
+     * pass drew and has yet to send. The flush stays open, and what it is given from here on goes
+     * when it ends. Outside a flush everything is already on its way, and this does nothing.
+     */
+    public static void sendHeldBeforeAwaiting() {
+        Flush running = FLUSH.get().current;
+        if (running == null) return;
+        RuntimeException failed = null;
+        for (int i = 0; i < running.batches.size(); i++) {
+            MessageBatch batch = running.batches.get(i);
+            try {
+                if (!batch.isEmpty()) running.batchComms.get(i).send(batch);
+            } catch (RuntimeException e) {
+                if (failed == null) failed = e;
+            } finally {
+                releaseBatch(batch);
+            }
+        }
+        running.batches.clear();
+        running.batchComms.clear();
+        for (int i = 0; i < running.tapes.size(); i++) {
+            try {
+                sendTape(running.tapeComms.get(i), running.tapes.get(i));
+            } catch (RuntimeException e) {
+                if (failed == null) failed = e;
+            }
+        }
+        running.tapes.clear();
+        running.tapeComms.clear();
+        if (failed != null) throw failed;
+    }
+
     /** Tells the client on {@code comm} that the updates of the moves it reported are on their way. */
     static void sendMoveHandled(CommService comm) {
         try {
