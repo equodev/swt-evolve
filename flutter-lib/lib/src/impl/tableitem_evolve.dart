@@ -455,27 +455,25 @@ class TableItemImpl<T extends TableItemSwt, V extends VTableItem>
     bool enabled, {
     Color? background,
   }) {
-    final defaultColor = getTableCellDefaultTextColor(theme, isSelected, enabled);
-
-    final cellForeground = getCellForeground(columnIndex);
-    return getForegroundColor(
-      context: context,
+    return cellTextColor(
+      context,
       // Cell, else row, else the Table's own -- the cascade SWT resolves.
-      foreground: cellForeground ?? state.foreground ?? _context?.tableForeground,
-      defaultColor: defaultColor,
+      foreground: getCellForeground(columnIndex) ?? state.foreground ?? _context?.tableForeground,
+      defaultColor: getTableCellDefaultTextColor(theme, isSelected, enabled),
+      cell: getCellBackground(columnIndex),
+      selected: isSelected,
+      ground: background ?? theme.backgroundColor,
       minContrast: theme.minTextContrast,
-      background: background,
     );
   }
 
-  Color getCellBackgroundColor(int columnIndex, TableThemeExtension theme) {
-    final cellBackground = getCellBackground(columnIndex);
-    return getBackgroundColor(
-          background: cellBackground ?? state.background,
-          defaultColor: Colors.transparent,
-        ) ??
-        Colors.transparent;
-  }
+  // An owner-drawn row's overlay, under the row, paints its cells' backgrounds.
+  Color getCellBackgroundColor(int columnIndex, TableThemeExtension theme) => state.paintedTexts != null
+      ? Colors.transparent
+      : cellDataBackground(getCellBackground(columnIndex),
+              selected: _context?.tableImpl?.isItemSelected(state) ?? false) ??
+          getBackgroundColor(background: state.background, defaultColor: Colors.transparent) ??
+          Colors.transparent;
 
   double calculateRowHeight(TextStyle textStyle, TableThemeExtension theme) =>
       singleLineTextSize('Ag', textStyle).height + theme.cellPadding.vertical;

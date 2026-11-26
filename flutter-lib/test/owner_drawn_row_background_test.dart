@@ -1,13 +1,15 @@
 // An owner-drawn row's overlay sits under the row, so the row's own text stays above the
 // SWT.EraseItem background the overlay replays. The row's background (hover, selection, alternate
 // row band) must then sit under the overlay too: laid with the row, it covers everything the
-// overlay draws, including the text of every cell the overlay owns.
+// overlay draws, including the text of every cell the overlay owns. So must a background the item
+// set for one cell, which the overlay's GC fills before PaintItem, as native SWT does.
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
+import 'package:swtflutter/src/gen/color.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/table.dart';
@@ -59,7 +61,15 @@ List<Color> _fillsOver(WidgetTester tester, Finder overlay, {int? tableRow}) {
   return fills;
 }
 
-VTree _tree() => VTree()
+const _red = Color(0xFFFF0000);
+
+VColor _vRed() => VColor()
+  ..alpha = 0xFF
+  ..red = 255
+  ..green = 0
+  ..blue = 0;
+
+VTree _tree({VColor? cell}) => VTree()
   ..id = 1
   ..style = SWT.SINGLE
   ..enabled = true
@@ -67,7 +77,8 @@ VTree _tree() => VTree()
     VTreeItem()
       ..id = 10
       ..text = 'owner-drawn'
-      ..paintedTexts = [0],
+      ..paintedTexts = [0]
+      ..backgrounds = cell == null ? null : [cell],
   ]
   ..bounds = (VRectangle()
     ..x = 0
@@ -83,7 +94,7 @@ Future<void> _pumpTree(WidgetTester tester, VTree value) async {
   await tester.pumpAndSettle();
 }
 
-VTable _table() => VTable()
+VTable _table({VColor? cell}) => VTable()
   ..id = 1
   ..style = SWT.SINGLE
   ..enabled = true
@@ -97,7 +108,8 @@ VTable _table() => VTable()
     VTableItem()
       ..id = 11
       ..texts = ['owner-drawn']
-      ..paintedTexts = [0],
+      ..paintedTexts = [0]
+      ..backgrounds = cell == null ? null : [cell],
   ]
   ..bounds = (VRectangle()
     ..x = 0
@@ -145,5 +157,19 @@ void main() {
 
     expect(_fillsOver(tester, overlay, tableRow: 1), isEmpty,
         reason: 'the selection background covers the text the overlay paints');
+  });
+
+  testWidgets('an owner-drawn table row lays no cell background over its overlay', (tester) async {
+    await _pumpTable(tester, _table(cell: _vRed()));
+
+    expect(_fillsOver(tester, overlay, tableRow: 1), isNot(contains(_red)),
+        reason: 'the cell background covers the text the overlay paints');
+  });
+
+  testWidgets('an owner-drawn tree item lays no cell background over its overlay', (tester) async {
+    await _pumpTree(tester, _tree(cell: _vRed()));
+
+    expect(_fillsOver(tester, overlay), isNot(contains(_red)),
+        reason: 'the cell background covers the text the overlay paints');
   });
 }

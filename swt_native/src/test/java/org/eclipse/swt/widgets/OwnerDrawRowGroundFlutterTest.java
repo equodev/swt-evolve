@@ -3,10 +3,12 @@ package org.eclipse.swt.widgets;
 import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.harness.GcFrames;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.graphics.Rectangle;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -143,6 +146,59 @@ class OwnerDrawRowGroundFlutterTest {
         lightBlue.dispose();
     }
 
+    @Test
+    void inTheTheme_aTableCellsOwnBackground_reachesTheGc_andFillsTheCell_unlessTheRowIsSelected() {
+        Table table = new Table(new Shell(display), SWT.FULL_SELECTION);
+        table.setBounds(0, 0, 300, 200);
+        Color pink = new Color(display, 255, 204, 229);
+        TableItem plain = new TableItem(table, SWT.NONE);
+        TableItem coloured = new TableItem(table, SWT.NONE);
+        TableItem chosen = new TableItem(table, SWT.NONE);
+        coloured.setBackground(0, pink);
+        chosen.setBackground(0, pink);
+        table.setSelection(2);
+        Map<Item, Seen> seen = listen(table);
+
+        paint(table, "Table", new Item[] { plain, coloured, chosen }, BASE, BAND, SELECTION);
+
+        assertCellColour(seen, plain, coloured, chosen, pink, coloured.getBounds(0));
+        pink.dispose();
+    }
+
+    @Test
+    void inTheTheme_aTreeCellsOwnBackground_reachesTheGc_andFillsTheCell_unlessTheRowIsSelected() {
+        Tree tree = new Tree(new Shell(display), SWT.FULL_SELECTION);
+        tree.setBounds(0, 0, 300, 200);
+        Color pink = new Color(display, 255, 204, 229);
+        TreeItem plain = new TreeItem(tree, SWT.NONE);
+        TreeItem coloured = new TreeItem(tree, SWT.NONE);
+        TreeItem chosen = new TreeItem(tree, SWT.NONE);
+        coloured.setBackground(0, pink);
+        chosen.setBackground(0, pink);
+        tree.setSelection(chosen);
+        Map<Item, Seen> seen = listen(tree);
+
+        paint(tree, "Tree", new Item[] { plain, coloured, chosen }, BASE, BAND, SELECTION);
+
+        assertCellColour(seen, plain, coloured, chosen, pink, coloured.getBounds(0));
+        pink.dispose();
+    }
+
+    @Test
+    void anEraseItemThatTakesTheBackground_leavesTheCellUnfilled() {
+        Table table = new Table(new Shell(display), SWT.FULL_SELECTION);
+        table.setBounds(0, 0, 300, 200);
+        Color pink = new Color(display, 255, 204, 229);
+        new TableItem(table, SWT.NONE).setBackground(0, pink);
+        table.addListener(SWT.EraseItem, event -> event.detail &= ~SWT.BACKGROUND);
+        listen(table);
+
+        paint(table, "Table", table.getItems(), BASE);
+
+        org.assertj.core.api.Assertions.assertThat(cellFills()).as("cells filled with their own colour").isEmpty();
+        pink.dispose();
+    }
+
     // ---- harness ----------------------------------------------------------------------------------
 
     private static final class Seen {
@@ -185,6 +241,27 @@ class OwnerDrawRowGroundFlutterTest {
             if (impl instanceof DartTableItem) ((DartTableItem) impl).getTexts();
             if (impl instanceof DartTreeItem) ((DartTreeItem) impl).getTexts();
         }
+    }
+
+    /** The rectangles the owner-draw GC filled, each as {@code [x, y, width, height]}. */
+    private List<List<?>> cellFills() {
+        return GcFrames.argsOf(bridge.comm.sent, "fillRectangleintintintint");
+    }
+
+    private void assertCellColour(Map<Item, Seen> seen, Item plain, Item coloured, Item chosen, Color colour,
+            Rectangle cell) {
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(seen.get(plain).eraseBackground).as("a cell with no colour: EraseItem's GC")
+                    .isEqualTo(BASE);
+            softly.assertThat(seen.get(coloured).eraseBackground).as("the coloured cell: EraseItem's GC")
+                    .isEqualTo(colour.getRGB());
+            softly.assertThat(seen.get(coloured).paintBackground).as("the coloured cell: PaintItem's GC")
+                    .isEqualTo(colour.getRGB());
+            softly.assertThat(seen.get(chosen).paintBackground).as("a selected coloured cell is on the selection")
+                    .isEqualTo(SELECTION);
+            softly.assertThat(cellFills()).as("only the unselected coloured cell is filled")
+                    .containsOnly(List.of(cell.x, cell.y, cell.width, cell.height));
+        });
     }
 
     private static void assertGrounds(Map<Item, Seen> seen, Item[] rows) {

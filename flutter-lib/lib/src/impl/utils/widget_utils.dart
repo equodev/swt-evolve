@@ -88,6 +88,33 @@ Color? getBackgroundColor({
   return defaultColor;
 }
 
+/// The background an item set for one cell (`TableItem.setBackground(int, Color)`), or null. It is
+/// data the application shows, like a colour swatch, so it is painted whatever `use_swt_colors` says.
+/// A [selected] item shows its selection highlight there instead.
+Color? cellDataBackground(VColor? background, {required bool selected}) =>
+    background == null || selected ? null : colorFromVColor(background);
+
+/// The text colour of a cell whose item set it [cell] as background, on a row painted [ground]:
+/// [foreground] or [defaultColor], legible on the cell's colour unless the application owns its colours.
+Color cellTextColor(BuildContext context,
+    {required VColor? foreground,
+    required Color defaultColor,
+    required VColor? cell,
+    required bool selected,
+    required Color ground,
+    required double minContrast}) {
+  final cellBackground = cellDataBackground(cell, selected: selected);
+  final on = cellBackground == null ? ground : Color.alphaBlend(cellBackground, ground);
+  final text = getForegroundColor(
+      context: context,
+      foreground: foreground,
+      defaultColor: defaultColor,
+      minContrast: minContrast,
+      background: on);
+  if (cellBackground == null || appPaintsColors(context)) return text;
+  return legibleOn(text, on, minRatio: minContrast);
+}
+
 /// What an item set for one column (`TreeItem.setForeground(int, Color)` and the like), or null
 /// when it set nothing there and the item's own value applies.
 T? cellValue<T>(List<T?>? cells, int column) =>

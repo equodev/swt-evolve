@@ -295,6 +295,8 @@ public class GallerySnippet {
             TableItem ti = new TableItem(table, SWT.NONE);
             ti.setText(row);
         }
+        // A colour the application gives one cell, the way a colour column shows its swatch.
+        table.getItem(1).setBackground(1, table.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
         // A colour swatch filled with a GC, as applications build one for a colour cell.
         Image swatch = new Image(display, 12, 12);
         GC swatchGc = new GC(swatch);

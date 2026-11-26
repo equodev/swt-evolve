@@ -158,19 +158,27 @@ public final class OwnerDrawOverlay {
                 Rectangle cell = bounds(row, i);
                 // Native SWT hands the listeners a GC already set to the cell's colors and font,
                 // and an owner-drawing app draws with them rather than setting its own.
+                Color cellColor = cellColor(row, i, selected);
                 gc.setForeground(foreground(row, i));
-                gc.setBackground(background(row, i, selected));
+                gc.setBackground(cellColor != null ? cellColor : background(row, i, selected));
                 gc.setFont(font(row, i));
                 Rectangle clip = clip(parent, i, cell, i == leftmost, rowLeft);
                 GCHelper.showsUpTo(gc, shownRight(parent, cell));
                 gc.setClipping(clip);
                 int detail = selected ? SWT.SELECTED : 0;
+                boolean fill = cellColor != null;
                 if (owner.hooks(SWT.EraseItem)) {
                     Event erase = cellEvent(row, i, gc, cell);
                     erase.detail = SWT.FOREGROUND | SWT.BACKGROUND | detail;
                     owner.sendEvent(SWT.EraseItem, erase);
+                    fill &= erase.doit && (erase.detail & SWT.BACKGROUND) != 0;
                     // Native SWT gives PaintItem a GC of its own: a clip EraseItem set does not carry over.
                     gc.setClipping(clip);
+                }
+                // As native SWT does, between EraseItem and PaintItem.
+                if (fill) {
+                    gc.setBackground(cellColor);
+                    gc.fillRectangle(cell);
                 }
                 Event paint = cellEvent(row, i, gc, cell);
                 paint.detail = SWT.FOREGROUND | detail;
@@ -302,6 +310,15 @@ public final class OwnerDrawOverlay {
         if (ground == null) return own;
         return state.groundColors.computeIfAbsent(ground,
                 rgb -> new Color(row.getDisplay(), (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF));
+    }
+
+    /** The colour the item set for cell {@code index}, painted as data unless the row is selected; else null. */
+    private static Color cellColor(Item row, int index, boolean selected) {
+        if (selected) return null;
+        Object impl = row.getImpl();
+        Color[] cells = impl instanceof DartTableItem ? ((DartTableItem) impl).cellBackground
+                : impl instanceof DartTreeItem ? ((DartTreeItem) impl).cellBackground : null;
+        return cells != null && index < cells.length ? cells[index] : null;
     }
 
     private static boolean appSetsBackground(Item row, int index) {

@@ -1277,14 +1277,18 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
   }) {
     // Text the row's owner-draw overlay paints keeps its place, but is not painted
     // twice.
-    final cellTextColor = _overlayDraws(state.paintedTexts, columnIndex)
+    final cell = cellValue(state.backgrounds, columnIndex);
+    final selected = _context?.treeImpl?.isItemSelected(state.id) ?? false;
+    final color = _overlayDraws(state.paintedTexts, columnIndex)
         ? Colors.transparent
-        : getForegroundColor(
-            context: context,
+        : cellTextColor(
+            context,
             foreground: cellValue(state.foregrounds, columnIndex) ?? state.foreground,
             defaultColor: textColor,
+            cell: cell,
+            selected: selected,
+            ground: _rowGround ?? theme.backgroundColor,
             minContrast: theme.minTextContrast,
-            background: _rowGround ?? theme.backgroundColor,
           );
     final TextStyle baseStyle = hasMultiColumn
         ? (theme.itemTextStyleWithCols ?? theme.itemTextStyle ?? const TextStyle())
@@ -1292,7 +1296,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
     final cellTextStyle = getTextStyle(
       context: context,
       font: cellValue(state.fonts, columnIndex) ?? state.font ?? _context?.treeFont,
-      textColor: cellTextColor,
+      textColor: color,
       baseTextStyle: baseStyle,
     );
 
@@ -1310,7 +1314,7 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
         ? _buildItemIcon(
             theme,
             _context?.parentTreeValue.enabled ?? true,
-            _context?.treeImpl?.isItemSelected(state.id) ?? false,
+            selected,
             /* hasChildren */ false,
             /* expanded */ false,
             _overlayDraws(state.paintedImages, columnIndex) ? null : cellValue(state.images, columnIndex),
@@ -1355,10 +1359,8 @@ class TreeItemImpl<T extends TreeItemSwt, V extends VTreeItem>
 
     return Container(
       padding: adjustedPadding,
-      color: getBackgroundColor(
-        background: cellValue(state.backgrounds, columnIndex),
-        defaultColor: null,
-      ),
+      // An owner-drawn row's overlay, under the row, paints its cells' backgrounds.
+      color: state.paintedTexts != null ? null : cellDataBackground(cell, selected: selected),
       child: textWidget,
     );
   }
