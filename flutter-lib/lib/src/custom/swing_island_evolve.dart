@@ -13,7 +13,8 @@
 ///    mirror claims keys and Java's window gains focus; Java is told `Focus/FocusIn` so
 ///    `Display.getFocusControl()` is the island; and the island claims the keyboard from the
 ///    Display-level forwarder ([claimKeyboard]) so each key is dispatched to exactly one engine.
-///    Focus leaving reverses all three.
+///    Focus leaving reverses all three. A focused island also keeps the Escape from the Shell around
+///    it; its other keys go on up the focus tree, so Tab moves the focus out.
 ///  * where the mirror goes: the builder only builds it, inside the region's [Focus].
 library;
 
@@ -22,6 +23,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../comm/comm.dart';
 import '../comm/channel_header.dart';
@@ -224,6 +226,12 @@ class _SwingIslandRegionState extends State<SwingIslandRegion> {
     if (windowId == null || port == null || builder == null) return const SizedBox.expand();
     return Focus(
       focusNode: _node,
+      // The mirror's keyboard handler had the Escape first: it must not also close the dialog around
+      // the island, which the Shell does with it where no Display forwards keys. The platform is
+      // answered as the Shell answers it.
+      onKeyEvent: (_, event) => event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape
+          ? KeyEventResult.handled
+          : KeyEventResult.ignored,
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: (_) => _node.requestFocus(),
