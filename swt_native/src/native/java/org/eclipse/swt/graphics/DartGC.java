@@ -554,11 +554,7 @@ public final class DartGC extends DartResource implements IGC {
                 return;
             }
         }
-        VGCDrawImageImageintint drawOp = new VGCDrawImageImageintint();
-        drawOp.image = GraphicsUtils.copyImageForDraw(display, image);
-        drawOp.x = x;
-        drawOp.y = y;
-        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINT, drawOp);
+        GCHelper.sendDrawImage(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINT, image, x, y);
     }
 
     /**
@@ -705,17 +701,7 @@ public final class DartGC extends DartResource implements IGC {
                 srcHeight = Math.round(srcHeight * sy);
             }
         }
-        VGCDrawImageImageintintintintintintintint drawOp = new VGCDrawImageImageintintintintintintintint();
-        drawOp.image = GraphicsUtils.copyImageForDraw(display, srcImage);
-        drawOp.srcX = srcX;
-        drawOp.srcY = srcY;
-        drawOp.srcWidth = srcWidth;
-        drawOp.srcHeight = srcHeight;
-        drawOp.destX = destX;
-        drawOp.destY = destY;
-        drawOp.destWidth = destWidth;
-        drawOp.destHeight = destHeight;
-        FlutterBridge.send(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT, drawOp);
+        GCHelper.sendDrawImage(this, dev.equo.swt.WireTable.CHANNEL_DRAW_IMAGE_IMAGEINTINTINTINTINTINTINTINT, srcImage, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
     }
 
     /**
@@ -2389,7 +2375,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        color = GraphicsUtils.copyColor(color);
+        color = GraphicsUtils.keepColor(background, color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.background, newValue)) {
             getValue().markDirty(VGC.BACKGROUND);
@@ -2667,7 +2653,7 @@ public final class DartGC extends DartResource implements IGC {
             SWT.error(SWT.ERROR_NULL_ARGUMENT);
         if (color.isDisposed())
             SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-        color = GraphicsUtils.copyColor(color);
+        color = GraphicsUtils.keepColor(foreground, color);
         Color newValue = color;
         if (!java.util.Objects.equals(this.foreground, newValue)) {
             getValue().markDirty(VGC.FOREGROUND);

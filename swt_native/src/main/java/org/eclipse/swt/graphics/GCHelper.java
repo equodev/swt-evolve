@@ -11,6 +11,35 @@ public class GCHelper {
     private GCHelper() {
     }
 
+    /** Sends a draw of [image] at its natural size on the thread's reused op, which keeps no image after. */
+    public static void sendDrawImage(DartGC gc, int channel, Image image, int x, int y) {
+        Image drawn = GraphicsUtils.copyImageForDraw(gc.getDisplay(), image);
+        VGC.VGCDrawImageImageintint drawOp = VGC.VGCDrawImageImageintint.reused();
+        drawOp.image = drawn;
+        drawOp.x = x;
+        drawOp.y = y;
+        dev.equo.swt.FlutterBridge.send(gc, channel, drawOp);
+        drawOp.image = null;
+    }
+
+    /** Sends a draw of part of [image] into a destination rectangle on the thread's reused op, which keeps no image after. */
+    public static void sendDrawImage(DartGC gc, int channel, Image image, int srcX, int srcY, int srcWidth, int srcHeight,
+            int destX, int destY, int destWidth, int destHeight) {
+        Image drawn = GraphicsUtils.copyImageForDraw(gc.getDisplay(), image);
+        VGC.VGCDrawImageImageintintintintintintintint drawOp = VGC.VGCDrawImageImageintintintintintintintint.reused();
+        drawOp.image = drawn;
+        drawOp.srcX = srcX;
+        drawOp.srcY = srcY;
+        drawOp.srcWidth = srcWidth;
+        drawOp.srcHeight = srcHeight;
+        drawOp.destX = destX;
+        drawOp.destY = destY;
+        drawOp.destWidth = destWidth;
+        drawOp.destHeight = destHeight;
+        dev.equo.swt.FlutterBridge.send(gc, channel, drawOp);
+        drawOp.image = null;
+    }
+
     public static Drawable drawableOf(DartGC gc) {
         return gc == null ? null : gc.drawable;
     }

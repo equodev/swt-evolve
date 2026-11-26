@@ -996,6 +996,7 @@ class StyledTextImpl<T extends StyledTextSwt, V extends VStyledText>
               child: RepaintBoundary(child: ClipRect(child: CustomPaint(
               painter: ScenePainter(
               originY: bandTop,
+              devicePixelRatio: View.of(context).devicePixelRatio,
                 bg,
                 List.unmodifiable([
                   if (shape != null) shape,

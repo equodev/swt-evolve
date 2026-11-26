@@ -107,7 +107,7 @@ void main() {
   testWidgets('a GC scene is painted again when a font arrives', (tester) async {
     await tester.pumpWidget(Directionality(
       textDirection: TextDirection.ltr,
-      child: CustomPaint(size: const Size(40, 20), painter: ScenePainter(Colors.white, const [])),
+      child: CustomPaint(size: const Size(40, 20), painter: ScenePainter(Colors.white, const [], devicePixelRatio: 1)),
     ));
     final scene = tester.renderObject<RenderCustomPaint>(
       find.byWidgetPredicate((w) => w is CustomPaint && w.painter is ScenePainter),

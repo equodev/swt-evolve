@@ -376,10 +376,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     Color textColor,
   ) {
     double width = 0;
-    final imageData = state.image?.imageData;
-    if (imageData != null) {
-      width += imageData.width?.toDouble() ?? 0;
-    }
+    width += ImageUtils.imageSize(state.image)?.width ?? 0;
     if (text != null && text.isNotEmpty) {
       // The colour does not change the width.
       final key = (text, state.font, baseTextStyle, getConfigFlags(), textMeasureEpoch);
@@ -527,7 +524,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       widgetTheme,
       textLineHeight: textStyle.height ?? 14.0,
       hasText: state.text?.isNotEmpty == true,
-      hasImage: state.image != null && state.image?.imageData != null,
+      hasImage: ImageUtils.imageSize(state.image) != null,
     );
 
     // checkboxCheckmarkColor is picked to contrast with the selected fill; on the
@@ -626,7 +623,7 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
       widgetTheme,
       textLineHeight: textStyle.height ?? 14.0,
       hasText: state.text?.isNotEmpty == true,
-      hasImage: state.image != null && state.image?.imageData != null,
+      hasImage: ImageUtils.imageSize(state.image) != null,
     );
     final radioButtonInnerSize = widgetTheme.radioButtonInnerSize;
     final radioButtonBorderRadius = widgetTheme.radioButtonBorderRadius;
@@ -774,28 +771,20 @@ class ButtonImpl<T extends ButtonSwt, V extends VButton>
     final swtAlignment = state.alignment ?? SWT.CENTER;
 
     Widget? imageWidget;
-    if (includeImage && state.image != null && state.image?.imageData != null) {
-      final double imageWidth = state.image!.imageData!.width?.toDouble() ?? 0;
-      final double imageHeight =
-          state.image!.imageData!.height?.toDouble() ?? 0;
-
-      if (imageWidth > 0 && imageHeight > 0) {
-        final builtImage = ImageUtils.buildVImage(
+    final imageSize = includeImage ? ImageUtils.imageSize(state.image) : null;
+    if (imageSize != null) {
+      imageWidget = SizedBox.fromSize(
+        size: imageSize,
+        child: ImageUtils.buildVImage(
           state.image,
-          width: imageWidth,
-          height: imageHeight,
+          width: imageSize.width,
+          height: imageSize.height,
           enabled: enabled,
           constraints: null,
           useBinaryImage: true,
           renderAsIcon: true,
-        );
-
-        imageWidget = SizedBox(
-          width: imageWidth,
-          height: imageHeight,
-          child: builtImage,
-        );
-      }
+        ),
+      );
     }
 
     final alignment = (imageWidget != null)

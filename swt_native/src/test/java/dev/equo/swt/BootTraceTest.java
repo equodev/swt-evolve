@@ -43,6 +43,16 @@ class BootTraceTest {
     }
 
     @Test
+    void aSpanWithoutANameRecordsNothingAndLeavesLaterStepsWorking() {
+        try (BootTrace.Span none = trace.span(null)) {
+            assertThat(none).isNull();
+        }
+        trace.mark("after", true);
+
+        assertThat(names()).containsExactly("after");
+    }
+
+    @Test
     void aSpanLeftByAnExceptionStillEnds() {
         try (BootTrace.Span span = trace.span("throws")) {
             throw new IllegalStateException();

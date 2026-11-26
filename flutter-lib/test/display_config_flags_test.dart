@@ -81,4 +81,15 @@ void main() {
     expect(configFlagsVersion.value, 2);
     expect(getConfigFlags().force_theme, 'dark');
   });
+
+  test('gc_approximate_batching turned off arrives off; unsent, it is left on', () {
+    final off = ConfigFlags.read(Uint8List.fromList(WidgetWireWriter.encodeWith((w) {
+      w.key(WireKey.k_ConfigFlags_gc_approximate_batching);
+      w.boolean(false);
+      w.u8(0);
+    })));
+
+    expect(off.gc_approximate_batching, isFalse);
+    expect(_flags('light').gc_approximate_batching, isNull, reason: 'a GC batches approximately unless told not to');
+  });
 }

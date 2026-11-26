@@ -863,7 +863,32 @@ class ImageUtils {
       );
     }
 
+    // Drawn with a GC: Java sends only the ref, and the render it names may land after this build.
+    if (image.remoteRef != null) {
+      final render = buildVImageAsync(
+        image,
+        size: size, width: width, height: height,
+        color: color, enabled: enabled,
+        constraints: constraints, useBinaryImage: useBinaryImage,
+        renderAsIcon: renderAsIcon, disabledOpacity: disabledOpacity,
+      );
+      return FutureBuilder<Widget?>(
+        future: render,
+        initialData: resolvedRender(render),
+        builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
+      );
+    }
+
     return null;
+  }
+
+  /// The size an image is drawn at: its pixels', else the size Java sends for an image it holds no
+  /// pixels of (one drawn with a GC, whose render stays on this side).
+  static Size? imageSize(VImage? image) {
+    final width = image?.imageData?.width ?? image?.width;
+    final height = image?.imageData?.height ?? image?.height;
+    if (width == null || height == null || width <= 0 || height <= 0) return null;
+    return Size(width.toDouble(), height.toDouble());
   }
 
   /// Returns a stable string key for a VImage suitable for use as a widget key.
@@ -944,13 +969,23 @@ class ImageUtils {
     final Object data = image!.imageData!.data!;
     if (data is String) return _decode(data);
     // A clone: callers dispose what they are given, and the decoded original serves the next draw.
-    final decoded = await (_decodedFrom[data] ??= _decode(data));
+    final decoded = await (_decodedFrom[data] ??= _decode(data).then((image) {
+      if (image != null) _decodedImages[data] = image;
+      return image;
+    }));
     return decoded?.clone();
   }
+
+  /// What [decodeVImageToUIImage] has already decoded from [data], or null; the caller disposes
+  /// what it is given, so it is given a clone.
+  static ui.Image? decodedNow(Object data) => _decodedImages[data]?.clone();
 
   /// Decoded images by the bytes they were decoded from, so an image drawn again is not decoded
   /// again. Held for as long as those bytes are, which is as long as the image is.
   static final Expando<Future<ui.Image?>> _decodedFrom = Expando();
+
+  /// The images of [_decodedFrom] once decoded, for a draw that need not wait for them.
+  static final Expando<ui.Image> _decodedImages = Expando();
 
   static Future<ui.Image?> _decode(Object data) async {
     try {

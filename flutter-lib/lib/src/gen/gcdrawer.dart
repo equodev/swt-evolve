@@ -8,6 +8,7 @@ import '../comm/gc_wire.dart';
 import '../comm/tagged_values.dart';
 import '../gen/gc.dart';
 import '../gen/widgets.dart';
+import '../testing/gc_stats.dart';
 
 /// Each op's argument types, by the number a frame defines it with (see GcWireReader).
 const Map<int, String> gcOpSignatures = {
@@ -56,10 +57,16 @@ abstract class GCDrawerBase {
   static FutureOr<bool> _frameOp(int id, Uint8List frame, int start, int end) {
     final drawer = live[id];
     if (drawer == null) return false;
+    final startedAt = GcStats.on ? GcStats.now() : 0;
     // One reader for every paint, unless a paint waiting on an escape still holds it.
     if (_readerBusy) {
       final applied = drawer._applyFrame(GcWireReader(frame, start, end));
-      return applied is Future ? applied.then(_handled) : true;
+      if (applied is Future) {
+        return applied.then(
+          GcStats.on ? (_) => _applied(end - start, startedAt) : _handled,
+        );
+      }
+      return _applied(end - start, startedAt);
     }
     _readerBusy = true;
     FutureOr<void> applied;
@@ -70,9 +77,18 @@ abstract class GCDrawerBase {
       rethrow;
     }
     if (applied is Future) {
-      return applied.whenComplete(_freeReader).then(_handled);
+      return applied
+          .whenComplete(_freeReader)
+          .then(
+            GcStats.on ? (_) => _applied(end - start, startedAt) : _handled,
+          );
     }
     _readerBusy = false;
+    return _applied(end - start, startedAt);
+  }
+
+  static bool _applied(int length, int startedAt) {
+    if (GcStats.on) GcStats.frame(length, startedAt);
     return true;
   }
 

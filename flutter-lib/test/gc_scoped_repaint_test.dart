@@ -56,7 +56,7 @@ void main() {
 
   Future<Uint8List> rasterize(List<Shape> shapes, {Color bg = canvasBg}) async {
     final recorder = ui.PictureRecorder();
-    ScenePainter(bg, shapes)
+    ScenePainter(bg, shapes, devicePixelRatio: 1)
         .paint(Canvas(recorder), canvasSize);
     final image = await recorder
         .endRecording()

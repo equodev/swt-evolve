@@ -32,10 +32,12 @@ import 'utils/font_utils.dart';
 import 'utils/glyph_tone.dart';
 import 'utils/svg_tint.dart';
 import 'utils/image_utils.dart';
+import 'widget_config.dart' show getConfigFlags;
 import 'utils/widget_utils.dart';
 import 'owner_draw_overlay.dart' show OwnerDrawnRowFill;
 import 'styledtext_evolve.dart';
 import 'widget_config.dart';
+import '../testing/gc_stats.dart';
 import '../comm/widget_wire.dart' show WidgetWireReader, WidgetWireWriter;
 
 // ─────────────────────────────────────────────
@@ -60,6 +62,7 @@ class GCDrawer extends GCDrawerBase {
   /// channels a drawer answers by [_imageInit] and the rest.
   static void registerOps() {
     final type = WireType.gc;
+    _SdfLineAtlas.prepare();
     GCDrawerBase.registerOps(type);
     EquoCommService.onWidgetOp(type, WireChannel.imageInit, _imageInitOp);
     EquoCommService.onWidgetOp(type, WireChannel.gcDispose, _gcDisposeOp);
@@ -231,14 +234,17 @@ class GCDrawer extends GCDrawerBase {
 
   final void Function(List<Shape>)? onGCDispose;
 
-  /// Called when scoped repaints have stacked past [_maxRegionLayers], or when the scene was drawn
-  /// under another Canvas theme; the Canvas answers with a full-area Paint, which redraws the scene
-  /// as one display list.
+  /// Called when scoped repaints have stacked past what a full-area Paint would replay (see
+  /// [_maxRegionLayers]), or when the scene was drawn under another Canvas theme; the Canvas answers
+  /// with a full-area Paint, which redraws the scene as one display list.
   final void Function()? onFullRepaintNeeded;
 
-  // Layers inside a later damage are dropped, so only damage that keeps shifting by less than its
-  // own size (a drag) stacks this deep. Every layer is replayed on every frame, so it stays low.
+  // Every held draw is replayed on every frame: past this many layers, once they replay more than
+  // two full scenes, a full-area Paint (one Java Paint) is cheaper than keeping them.
   static const int _maxRegionLayers = 16;
+
+  /// The draws the last full-area Paint left to replay: what one full scene costs a frame.
+  int _fullSceneDraws = 0;
 
   // Set once the full-area Paint is asked for, so the cycles before it arrives don't ask again.
   bool _fullRepaintRequested = false;
@@ -318,6 +324,8 @@ class GCDrawer extends GCDrawerBase {
   /// the cycle's colors were resolved from.
   void _commit(
       List<Shape> cycleStaging, bool fullRepaint, Rect? damage, CanvasThemeExtension? cycleTheme) {
+    final startedAt = GcStats.on ? GcStats.now() : 0;
+    _cycleStyles.clear();
     var kept = 0;
     for (var k = 0; k < cycleStaging.length; k++) {
       final shape = cycleStaging[k];
@@ -340,9 +348,10 @@ class GCDrawer extends GCDrawerBase {
       // stays and this cycle becomes a layer over it. It erases its rectangle first, so
       // whatever was painted entirely inside it is gone; anything whose area is unknown stays.
       _dropInside(damage, keep);
+      _dropErasedFromLayers(damage, keep);
       shapes.add(RegionShape(damage, [...cycleStaging, ..._lateLoadedImages]));
       _lateLoadedImages.clear();
-      if (!_fullRepaintRequested && _regionLayers() > _maxRegionLayers) {
+      if (!_fullRepaintRequested && _pastLayerBudget()) {
         _fullRepaintRequested = true;
         onFullRepaintNeeded?.call();
       }
@@ -360,6 +369,7 @@ class GCDrawer extends GCDrawerBase {
       shapes.addAll(cycleStaging);
       shapes.addAll(_lateLoadedImages);
       _lateLoadedImages.clear();
+      if (fullRepaint) _fullSceneDraws = shapes.length;
     }
 
     // The committed frame, empty included: a cycle that drew nothing has to blank the control,
@@ -367,6 +377,11 @@ class GCDrawer extends GCDrawerBase {
     onGCDispose?.call(List.of(shapes, growable: false));
     onShapesUpdated?.call(shapes);
     _reportInFrame();
+    if (GcStats.on) {
+      GcStats.commits++;
+      GcStats.commitMicros += GcStats.now() - startedAt;
+      GcStats.shapesHeld += shapes.length;
+    }
   }
 
   /// Captures [_settleScreenCopies] replaced by the background, disposed once nothing draws them.
@@ -396,12 +411,20 @@ class GCDrawer extends GCDrawerBase {
     }
   }
 
-  int _regionLayers() {
-    var n = 0;
+  /// Whether the held layers are past [_maxRegionLayers] and replay more than two full scenes: a
+  /// layer is its erase and the ops it still holds.
+  bool _pastLayerBudget() {
+    var layers = 0, draws = 0;
     for (var k = 0; k < shapes.length; k++) {
-      if (shapes[k] is RegionShape) n++;
+      final s = shapes[k];
+      if (s is RegionShape) {
+        layers++;
+        draws += 1 + s.ops.length;
+      } else {
+        draws++;
+      }
     }
-    return n;
+    return layers > _maxRegionLayers && draws > 2 * _fullSceneDraws;
   }
 
   /// Tells Java the frame that shows this paint has begun, which is when it sends the control's next
@@ -489,6 +512,45 @@ class GCDrawer extends GCDrawerBase {
   /// The dropped shapes that hold images, to release them: reused from commit to commit.
   final List<Shape> _dropped = [];
 
+  /// Drops from every held layer the ops [damage] erases: a layer only shows through its own
+  /// rectangle, so an op whose part inside it lies wholly inside [damage] can never show again. A
+  /// drag's damage covers the figure an earlier layer drew, and what that layer keeps is the band
+  /// no later damage reaches.
+  void _dropErasedFromLayers(Rect damage, Set<ui.Image> keep) {
+    final dropped = _dropped..clear();
+    for (var k = 0; k < shapes.length; k++) {
+      final layer = shapes[k];
+      if (layer is! RegionShape || !layer.rect.overlaps(damage)) continue;
+      // A layer is replaced, never changed: the frame committed before still draws the one it holds.
+      final ops = layer.ops;
+      List<Shape>? kept;
+      for (var j = 0; j < ops.length; j++) {
+        final op = ops[j];
+        if (_erasedIn(op, layer.rect, damage)) {
+          kept ??= ops.sublist(0, j);
+          if (op.holdsImages) dropped.add(op);
+        } else {
+          kept?.add(op);
+        }
+      }
+      if (kept != null) shapes[k] = RegionShape(layer.rect, kept);
+    }
+    if (dropped.isEmpty) return;
+    collectShapeImages(shapes, keep);
+    disposeShapeImages(dropped, keep: keep);
+    dropped.clear();
+  }
+
+  /// Whether what [op] paints inside [layer] lies wholly inside [damage].
+  static bool _erasedIn(Shape op, Rect layer, Rect damage) {
+    var area = op.paintedBounds;
+    if (area == null) return false;
+    final clip = op.clipRect;
+    if (clip != null) area = area.intersect(clip);
+    area = area.intersect(layer);
+    return area.width <= 0 || area.height <= 0 || _containsRect(damage, area);
+  }
+
   /// Called by GCImpl.build() to provide context for text style resolution.
   void syncContext(BuildContext ctx) {
     _context = ctx;
@@ -547,21 +609,24 @@ class GCDrawer extends GCDrawerBase {
   Color _themed(VColor? swtColor, Color? themeColor, Color fallback) {
     if (_useThemeColors) return themeColor ?? fallback;
     if (swtColor == null) return fallback;
-    // Every op asks for its colour; the last two made are kept, by value, since a paint alternates
-    // between its background and its foreground.
+    // Every op asks for its colour, and a paint draws with a handful: the last few made are kept,
+    // by value.
     final argb = swtColor.alpha * 0x1000000 + (swtColor.red << 16) + (swtColor.green << 8) + swtColor.blue;
-    if (argb == _argb0) return _color0!;
-    if (argb == _argb1) return _color1!;
+    for (var i = 0; i < _ColorSlots.count; i++) {
+      if (_themedArgb[i] == argb) return _themedColor[i]!;
+    }
     final color = colorFromVColor(swtColor, defaultColor: fallback);
-    _argb1 = _argb0;
-    _color1 = _color0;
-    _argb0 = argb;
-    _color0 = color;
+    final slot = _themedNext;
+    _themedNext = (slot + 1) % _ColorSlots.count;
+    _themedArgb[slot] = argb;
+    _themedColor[slot] = color;
+    _argbOfKnown(color, argb);
     return color;
   }
 
-  int _argb0 = -1, _argb1 = -1;
-  Color? _color0, _color1;
+  final List<int> _themedArgb = List.filled(_ColorSlots.count, -1);
+  final List<Color?> _themedColor = List.filled(_ColorSlots.count, null);
+  int _themedNext = 0;
 
   // Used until a theme is resolved: the standalone image drawer renders offscreen, never builds,
   // and so never gets a context (_canvasTheme stays null). Falls back to the global dark/light
@@ -717,6 +782,9 @@ class GCDrawer extends GCDrawerBase {
 
   /// The line style's dash pattern, worked out once per style and width: every line drawn asks for
   /// it, and a drawing alternates between a few of them.
+  /// Whether strokes are dashed, read before a caller builds the outline it would dash.
+  bool get _dashedStrokes => (state.lineStyle ?? SWT.LINE_SOLID) != SWT.LINE_SOLID;
+
   List<double>? get _dashPattern {
     final style = state.lineStyle ?? SWT.LINE_SOLID;
     if (style == SWT.LINE_SOLID) return null;
@@ -817,9 +885,23 @@ class GCDrawer extends GCDrawerBase {
     return out;
   }
 
+  /// The dashes of lines drawn before, by ends, pattern and offset, emptied when full.
+  static final Map<_DashKey, Float32List> _lineDashes = {};
+  static const int _lineDashesCapacity = 1024;
+  static final _DashKey _dashProbe = _DashKey();
+
   /// The "on" runs of [pattern] along the straight line [from]-[to], as the endpoint pairs
-  /// [SegmentsShape] strokes.
+  /// [SegmentsShape] strokes. A line's dashes are kept, so drawing it again reuses them.
   Float32List _dashSegments(Offset from, Offset to, List<double> pattern) {
+    if (state.lineStyle == SWT.LINE_CUSTOM) return _dashSegmentsOf(from, to, pattern);
+    final key = _dashProbe.set(from, to, pattern, (state.lineDashOffset ?? 0).toDouble());
+    final held = _lineDashes[key];
+    if (held != null) return held;
+    if (_lineDashes.length >= _lineDashesCapacity) _lineDashes.clear();
+    return _lineDashes[key.held()] = _dashSegmentsOf(from, to, pattern);
+  }
+
+  Float32List _dashSegmentsOf(Offset from, Offset to, List<double> pattern) {
     final total = (to - from).distance;
     var period = 0.0;
     for (final d in pattern) {
@@ -974,8 +1056,27 @@ class GCDrawer extends GCDrawerBase {
   Color applyAlpha(Color color) {
     final alpha = state.alpha ?? 255;
     if (alpha == 255) return color;
-    return color.withOpacity(alpha / 255.0);
+    // The colour with its alpha replaced, as withOpacity gives it, made once per colour and alpha:
+    // withOpacity works the channels out of floats three times and makes a new colour each call.
+    final rgb = _argbOf(color) & 0xFFFFFF;
+    for (var i = 0; i < _ColorSlots.count; i++) {
+      if (_alphaRgb[i] == rgb && _alphaOf[i] == alpha) return _alphaColor[i]!;
+    }
+    final argb = alpha * 0x1000000 + rgb;
+    final made = Color(argb);
+    final slot = _alphaNext;
+    _alphaNext = (slot + 1) % _ColorSlots.count;
+    _alphaRgb[slot] = rgb;
+    _alphaOf[slot] = alpha;
+    _alphaColor[slot] = made;
+    _argbOfKnown(made, argb);
+    return made;
   }
+
+  final List<int> _alphaRgb = List.filled(_ColorSlots.count, -1);
+  final List<int> _alphaOf = List.filled(_ColorSlots.count, -1);
+  final List<Color?> _alphaColor = List.filled(_ColorSlots.count, null);
+  int _alphaNext = 0;
 
   /// Fills [path] with the GC's background pattern. False when no pattern is set.
   /// Whether fills draw with a pattern: checked before building the path [_addPatternFill] takes,
@@ -1079,9 +1180,65 @@ class GCDrawer extends GCDrawerBase {
     }
     shape = _hinted(shape);
     final transform = currentTransform;
-    _staging.add(_clipped(_xored(transform == null
-        ? shape
-        : TransformShape(transform, [shape], clipping))));
+    final moved = transform == null ? shape : _translated(shape, transform);
+    if (moved != null) {
+      _staging.add(_clipped(_xored(moved)));
+      return;
+    }
+    final clip = clipping;
+    // A shape under the transform and clip of the one staged before it goes in with it: one canvas
+    // transform for both, and their run is drawn as it would be under two.
+    final open = _openTransform;
+    if (open != null && _staging.isNotEmpty && identical(_staging.last, open) && open.clipRect == clip &&
+        _sameMatrix(open.matrix, transform!) && !_wrapsOwnTransform) {
+      open.children.add(shape);
+      return;
+    }
+    final wrapped = TransformShape(transform!, [shape], clip);
+    final staged = _clipped(_xored(wrapped));
+    _openTransform = identical(staged, wrapped) ? wrapped : null;
+    _staging.add(staged);
+  }
+
+  /// The transform [_addShape] staged last, while nothing has been wrapped around it.
+  TransformShape? _openTransform;
+
+  bool get _wrapsOwnTransform => state.XORMode == true || textClipMask != null || clipShape != null;
+
+  static bool _sameMatrix(Float64List a, Float64List b) {
+    if (identical(a, b)) return true;
+    for (var i = 0; i < 16; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  /// [shape] moved by [transform] when that is a translation by whole units, under the clip the
+  /// transform would have drawn it under: it lands on the same pixels as drawn translated, and as a
+  /// shape of its own a rectangle joins the runs of its neighbours and a curve is drawn without a
+  /// transform of its own. Null for any other transform or shape: a line or polygon in a run is
+  /// antialiased by the run's edges, so it keeps its transform.
+  Shape? _translated(Shape shape, Float64List m) {
+    if (m[0] != 1 || m[5] != 1 || m[10] != 1 || m[15] != 1 || m[1] != 0 || m[2] != 0 || m[3] != 0 ||
+        m[4] != 0 || m[6] != 0 || m[7] != 0 || m[8] != 0 || m[9] != 0 || m[11] != 0 || m[14] != 0) {
+      return null;
+    }
+    final dx = m[12], dy = m[13];
+    if (dx != dx.roundToDouble() || dy != dy.roundToDouble()) return null;
+    final by = Offset(dx, dy);
+    final clip = clipping;
+    return switch (shape) {
+      RectShape s => RectShape(s.rect.shift(by), s.color, s.strokeWidth, s.lineCap, s.lineJoin,
+          isFilled: s.isFilled, clipRect: clip),
+      OvalShape s => OvalShape(s.rect.shift(by), s.color, s.strokeWidth, isFilled: s.isFilled, clipRect: clip),
+      RoundRectShape s => RoundRectShape(s.rect.shift(by), s.radiusX, s.radiusY, s.color, s.strokeWidth, s.lineCap,
+          s.lineJoin, isFilled: s.isFilled, clipRect: clip),
+      ArcShape s => ArcShape(s.rect.shift(by), s.startAngle, s.sweepAngle, s.color, s.strokeWidth, s.lineCap,
+          s.lineJoin, isFilled: s.isFilled, clipRect: clip),
+      PathShape s => s.moved(by, clip),
+      TextShape s => TextShape(s.text, s.off + by, s.style, clip),
+      _ => null,
+    };
   }
 
   /// Wraps [shape] when the GC is in XOR mode, which is how draw2d and GEF draw every piece of
@@ -1121,7 +1278,7 @@ class GCDrawer extends GCDrawerBase {
     if (isFilled) _recordRowFill(rect, color, applyAlpha(fillColor));
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
-        _addDashedStroke(
+        _dashedStrokes && _addDashedStroke(
             () => Path()
               ..addRRect(RRect.fromRectXY(rect, arcWidth / 2.0, arcHeight / 2.0)),
             color)) {
@@ -1143,7 +1300,7 @@ class GCDrawer extends GCDrawerBase {
     if (isFilled && _patterned && _addPatternFill(Path()..addOval(rect))) return;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
-    if (!isFilled && _addDashedStroke(() => Path()..addOval(rect), color)) return;
+    if (!isFilled && _dashedStrokes && _addDashedStroke(() => Path()..addOval(rect), color)) return;
     _addShape(OvalShape(rect, color, strokeWidth,
         isFilled: isFilled, clipRect: _childClip));
   }
@@ -1161,7 +1318,7 @@ class GCDrawer extends GCDrawerBase {
     if (isFilled) _recordRowFill(rect, color, applyAlpha(fillColor));
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
-        _addDashedPolyline(
+        _dashedStrokes && _addDashedPolyline(
             [rect.topLeft, rect.topRight, rect.bottomRight, rect.bottomLeft], color,
             close: true)) {
       return;
@@ -1184,7 +1341,7 @@ class GCDrawer extends GCDrawerBase {
       }
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
-      if (!isFilled && _addDashedPolyline(_offsets(points), color, close: true)) {
+      if (!isFilled && _dashedStrokes && _addDashedPolyline(_offsets(points), color, close: true)) {
         return;
       }
       _addShape(PolygonShape(points, color, strokeWidth, lineCap, lineJoin,
@@ -1201,7 +1358,7 @@ class GCDrawer extends GCDrawerBase {
     if (points.length >= minPoints) {
       final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
       final strokeWidth = isFilled ? 0.0 : lineWidth;
-      if (!isFilled && _addDashedPolyline(_offsets(points), color)) {
+      if (!isFilled && _dashedStrokes && _addDashedPolyline(_offsets(points), color)) {
         return;
       }
       _addShape(PolylineShape(points, color, strokeWidth, lineCap, lineJoin,
@@ -1210,9 +1367,9 @@ class GCDrawer extends GCDrawerBase {
   }
 
   void _addPathShape(VPath? path, {required bool isFilled}) {
-    final built = _buildPath(path);
+    final source = _PathSource.of(path?.pathData, _fillType);
     // One fill op, so the strings take the geometry's color rather than resolving it again.
-    final color = built != null ? _addPathGeometry(built, isFilled: isFilled) : null;
+    final color = source != null ? _addPathGeometry(source, isFilled: isFilled) : null;
     for (final text in _pathTexts(path, isFilled: isFilled, color: color)) {
       _addShape(_legiblePathText(text));
     }
@@ -1234,11 +1391,11 @@ class GCDrawer extends GCDrawerBase {
   }
 
   /// The color the geometry was drawn with, or null when a pattern filled it.
-  Color? _addPathGeometry(Path built, {required bool isFilled}) {
-    if (isFilled && _addPatternFill(built)) return null;
+  Color? _addPathGeometry(_PathSource source, {required bool isFilled}) {
+    if (isFilled && state.backgroundPattern != null && _addPatternFill(source.build(Offset.zero))) return null;
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
-    if (!isFilled && _addDashedStroke(() => built, color)) return color;
-    _addShape(PathShape(built, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
+    if (!isFilled && _dashedStrokes && _addDashedStroke(() => source.build(Offset.zero), color)) return color;
+    _addShape(PathShape.of(source, Offset.zero, color, isFilled ? 0.0 : lineWidth, lineCap, lineJoin,
         isFilled: isFilled, clipRect: _childClip));
     return color;
   }
@@ -1302,36 +1459,8 @@ class GCDrawer extends GCDrawerBase {
   Path? _buildPath(VPath? vPath, {PathFillType? fillType}) =>
       _buildPathData(vPath?.pathData, fillType: fillType);
 
-  Path? _buildPathData(VPathData? pathData, {PathFillType? fillType}) {
-    final types = pathData?.types;
-    final points = pathData?.points;
-    if (types == null || points == null || types.isEmpty) return null;
-    final path = Path()
-      ..fillType = fillType ?? _fillType;
-    var i = 0;
-    bool has(int n) => i + n <= points.length;
-    for (final type in types) {
-      switch (type) {
-        case SWT.PATH_MOVE_TO:
-          if (!has(2)) return path;
-          path.moveTo(points[i++], points[i++]);
-        case SWT.PATH_LINE_TO:
-          if (!has(2)) return path;
-          path.lineTo(points[i++], points[i++]);
-        case SWT.PATH_QUAD_TO:
-          if (!has(4)) return path;
-          path.quadraticBezierTo(
-              points[i++], points[i++], points[i++], points[i++]);
-        case SWT.PATH_CUBIC_TO:
-          if (!has(6)) return path;
-          path.cubicTo(points[i++], points[i++], points[i++], points[i++],
-              points[i++], points[i++]);
-        case SWT.PATH_CLOSE:
-          path.close();
-      }
-    }
-    return path;
-  }
+  Path? _buildPathData(VPathData? pathData, {PathFillType? fillType}) =>
+      _PathSource.of(pathData, fillType ?? _fillType)?.build(Offset.zero);
 
   void _addArcShape({
     required int x,
@@ -1354,7 +1483,7 @@ class GCDrawer extends GCDrawerBase {
     final color = isFilled ? applyAlpha(fillColor) : applyAlpha(strokeColor);
     final strokeWidth = isFilled ? 0.0 : lineWidth;
     if (!isFilled &&
-        _addDashedStroke(
+        _dashedStrokes && _addDashedStroke(
             () => Path()
               ..addArc(rect, _degToRad(-startAngle.toDouble()),
                   _degToRad(-arcAngle.toDouble())),
@@ -1381,7 +1510,7 @@ class GCDrawer extends GCDrawerBase {
   /// The style text is drawn in, the same object while the GC's font and colour stay the same: the
   /// layout cache compares styles, and an identical one is the cheapest to compare.
   TextStyle _textStyle(VFont? font, Color color) {
-    final argb = color.toARGB32();
+    final argb = _argbOf(color);
     final held = _style;
     if (held != null && identical(font, _styledFont) && identical(_context, _styledContext) && argb == _styledColor) {
       return held;
@@ -1389,8 +1518,33 @@ class GCDrawer extends GCDrawerBase {
     _styledFont = font;
     _styledContext = _context;
     _styledColor = argb;
-    return _style = FontUtils.textStyleFromVFont(font, _context, color: color, applyDpiScaling: true);
+    // Text that switches font or colour from one string to the next, as highlighting does, finds the
+    // style of each switch built once per cycle. The font is decoded afresh with every change, so it
+    // is told by its data; a style takes only the first.
+    final data = font?.fontData;
+    final first = data == null || data.isEmpty ? null : data.first;
+    final key = (first?.name, first?.height, first?.style, argb, _context);
+    final built = _cycleStyles[key];
+    if (built != null) return _style = built;
+    if (_cycleStyles.length >= 64) _cycleStyles.clear();
+    return _style = _cycleStyles[key] =
+        _sameStyle(FontUtils.textStyleFromVFont(font, _context, color: color, applyDpiScaling: true));
   }
+
+  /// The styles built this cycle; cleared when it is committed, so a change of theme or zoom between
+  /// cycles is built anew.
+  final Map<(String?, int?, int?, int, BuildContext?), TextStyle> _cycleStyles = {};
+
+  /// Equal styles as one object. Every cycle decodes the GC's font afresh, so the style built from it
+  /// is new each cycle; the one kept from an earlier cycle is returned instead.
+  static TextStyle _sameStyle(TextStyle style) {
+    final kept = _styles[style];
+    if (kept != null) return kept;
+    if (_styles.length >= 256) _styles.clear();
+    return _styles[style] = style;
+  }
+
+  static final Map<TextStyle, TextStyle> _styles = {};
 
   void _drawText({
     required String text,
@@ -1463,11 +1617,20 @@ class GCDrawer extends GCDrawerBase {
   String _processTextFlags(String text, int flags) {
     final mnemonic =
         (flags & SWT.DRAW_MNEMONIC) != 0 ? stripAccelerators(text) : text;
+    if (!_hasBreakOrTab(mnemonic)) return mnemonic;
     return mnemonic
         .replaceAll('\r\n', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
         .replaceAll('\r', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
         .replaceAll('\n', (flags & SWT.DRAW_DELIMITER) != 0 ? '\n' : ' ')
         .replaceAll('\t', (flags & SWT.DRAW_TAB) != 0 ? '        ' : ' ');
+  }
+
+  static bool _hasBreakOrTab(String text) {
+    for (var i = 0; i < text.length; i++) {
+      final c = text.codeUnitAt(i);
+      if (c == 0x0A || c == 0x0D || c == 0x09) return true;
+    }
+    return false;
   }
 
   // ── Image handling ──────────────────────────────────────────────────────
@@ -1747,9 +1910,7 @@ class GCDrawer extends GCDrawerBase {
           s.rect.translate(offset.dx, offset.dy), s.radiusX, s.radiusY,
           s.color, s.strokeWidth, s.lineCap, s.lineJoin,
           isFilled: s.isFilled, clipRect: clipArea),
-      PathShape s => PathShape(
-          s.path.shift(offset), s.color, s.strokeWidth, s.lineCap, s.lineJoin,
-          isFilled: s.isFilled, clipRect: clipArea),
+      PathShape s => s.moved(offset, clipArea),
       PatternFillShape s => s.translated(offset, clipArea),
       ClipPathShape s => ClipPathShape(
           s.path.shift(offset)..fillType = s.path.fillType,
@@ -1865,9 +2026,30 @@ class GCDrawer extends GCDrawerBase {
 
   void _processImageAsync(
       VImage vImage, VGCDrawImageImageintintintintintintintint opArgs) {
+    final alpha = state.alpha ?? 255;
+    // An image already decoded is staged now: waiting on it would only delay the cycle's commit.
+    final ready = _useThemeColors ? null : ImageShape.fromDecoded(vImage, opArgs, _childClip, alpha);
+    if (ready != null) {
+      final transform = currentTransform;
+      _staging.add(_wrapImage(ready, transform, transform == null ? null : clipping, clipShape,
+          textClipMask, _antiAlias, _filterQuality));
+      return;
+    }
     _stageAsync(ImageShape.fromVImageDetailed(vImage, opArgs, _childClip,
         tint: imageTintColor, glyphLimits: glyphTintLimits,
-        alpha: state.alpha ?? 255, useThemeColors: _useThemeColors));
+        alpha: alpha, useThemeColors: _useThemeColors));
+  }
+
+  /// [image] under the GC state its op was drawn in.
+  static Shape _wrapImage(Shape image, Float64List? transform, Rect? deviceClip, Path? shapeClip,
+      List<Shape>? textMask, bool antiAlias, FilterQuality? filter) {
+    final Shape hinted =
+        antiAlias && filter == null ? image : RenderHintsShape(antiAlias, filter, [image]);
+    final Shape shape =
+        transform == null ? hinted : TransformShape(transform, [hinted], deviceClip);
+    return textMask != null
+        ? MaskShape(textMask, [shape])
+        : shapeClip == null ? shape : ClipPathShape(shapeClip, [shape]);
   }
 
   /// Stages a shape that resolves after its op, in that op's slot.
@@ -1889,18 +2071,8 @@ class GCDrawer extends GCDrawerBase {
     final textMask = textClipMask;
     final antiAlias = _antiAlias;
     final filter = _filterQuality;
-    f.then((decoded) {
-      final Shape imageShape = antiAlias && filter == null
-          ? decoded
-          : RenderHintsShape(antiAlias, filter, [decoded]);
-      final Shape shape = transform == null
-          ? imageShape
-          : TransformShape(transform, [imageShape], deviceClip);
-      _onImageLoaded(stagingList, idx,
-          textMask != null
-              ? MaskShape(textMask, [shape])
-              : shapeClip == null ? shape : ClipPathShape(shapeClip, [shape]));
-    });
+    f.then((decoded) => _onImageLoaded(stagingList, idx,
+        _wrapImage(decoded, transform, deviceClip, shapeClip, textMask, antiAlias, filter)));
   }
 
   void _onImageLoaded(List<Shape> stagingList, int idx, Shape shape) {
@@ -1918,7 +2090,7 @@ class GCDrawer extends GCDrawerBase {
     final pattern = _dashPattern;
     if (pattern != null) {
       _addShape(SegmentsShape(_dashSegments(from, to, pattern), applyAlpha(lineColor), lineWidth,
-          lineCap, _childClip));
+          lineCap, _childClip, true));
       return;
     }
     _addShape(LineShape(
@@ -2210,9 +2382,23 @@ class ScenePainter extends CustomPainter implements PaintedTextSource {
   String? get paintedText => paintedTextOf(shapes);
 
   // Repaints on a font change too: the text shapes lay out again in a font that loaded after them.
-  ScenePainter(this.bg, this.shapes, {this.originY = 0}) : super(repaint: FontUtils.systemFonts);
+  // The app's zoom too: which rectangles a run draws depends on where their edges land on device
+  // pixels, and the zoom is applied above this painter, out of the canvas transform.
+  ScenePainter(this.bg, this.shapes, {this.originY = 0, required this.devicePixelRatio})
+      : super(repaint: _repaint);
   final Color bg;
   final List<Shape> shapes;
+
+  static Listenable? _merged;
+  static Listenable get _repaint {
+    final fonts = FontUtils.systemFonts;
+    if (fonts == null) return appScaleNotifier;
+    return _merged ??= Listenable.merge([fonts, appScaleNotifier]);
+  }
+
+  /// Device pixels per logical pixel of the view painted into, before the app's zoom: the canvas
+  /// transform leaves both out.
+  final double devicePixelRatio;
 
   /// Content y of the painted slice; shapes stay in content coordinates and the canvas is shifted.
   final double originY;
@@ -2227,7 +2413,17 @@ class ScenePainter extends CustomPainter implements PaintedTextSource {
     canvas.drawRect(Offset.zero & size, Paint()..color = bg);
     canvas.save();
     if (originY != 0) canvas.translate(0, -originY);
-    drawShapeRun(canvas, shapes, background: bg);
+    _RenderHints.devicePixelRatio = devicePixelRatio * appScaleNotifier.value;
+    final startedAt = GcStats.on ? GcStats.now() : 0;
+    try {
+      drawShapeRun(canvas, shapes, background: bg);
+    } finally {
+      _RenderHints.devicePixelRatio = 1;
+    }
+    if (GcStats.on) {
+      GcStats.paints++;
+      GcStats.recordMicros += GcStats.now() - startedAt;
+    }
     canvas.restore();
     if (ownLayer) canvas.restore();
   }
@@ -2235,7 +2431,7 @@ class ScenePainter extends CustomPainter implements PaintedTextSource {
   @override
   bool shouldRepaint(ScenePainter o) {
     // Compare shapes, not the list: every build makes a fresh list.
-    if (o.bg != bg || o.originY != originY) return true;
+    if (o.bg != bg || o.originY != originY || o.devicePixelRatio != devicePixelRatio) return true;
     if (o.shapes.length != shapes.length) return true;
     for (int i = 0; i < shapes.length; i++) {
       final was = o.shapes[i];
@@ -2305,6 +2501,11 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
   var px = 0.0;
   Rect? open;
   var clipped = false;
+  // A nested run (a shape that holds shapes) reads the grid of its own canvas state; this run's is
+  // put back when it returns, and read once it is first needed.
+  final outerScale = _grid.scale, outerDx = _grid.dx, outerDy = _grid.dy;
+  var gridRead = false;
+  _approximate = getConfigFlags().gc_approximate_batching != false;
 
   var i = 0;
   while (i < shapes.length) {
@@ -2350,11 +2551,16 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
       if (clipped) c.restore();
       clipped = false;
       open = null;
+      if (GcStats.on) GcStats.drawnAlone(s);
       s.draw(c);
       i++;
       continue;
     }
-    final clip = s.clipRect;
+    if (!gridRead && s is RectShape && s.clipRect != null) {
+      _grid.read(c);
+      gridRead = true;
+    }
+    final clip = _runClip(s);
     if (clip != open || (clip == null && clipped)) {
       if (clipped) c.restore();
       clipped = false;
@@ -2364,42 +2570,135 @@ void drawShapeRun(ui.Canvas c, List<Shape> shapes, {ui.Color? background}) {
         c.clipRect(clip);
         clipped = true;
         open = clip;
+        if (GcStats.on) GcStats.clips++;
       }
     }
-    // A run needs a second shape to join it: one alone draws as itself.
-    if (!_mayJoinRun(s) ||
-        i + 1 == shapes.length ||
-        !_mayJoinRun(shapes[i + 1]) ||
-        shapes[i + 1].clipRect != clip) {
+    if (_approximate && s is OvalShape && i + 1 < shapes.length && shapes[i + 1] is OvalShape) {
+      if (!gridRead) {
+        _grid.read(c);
+        gridRead = true;
+      }
+      final count = _OvalAtlas.mayStart(s, shapes[i + 1] as OvalShape) ? _OvalAtlas.drawRun(c, shapes, i) : 0;
+      if (count > 0) {
+        if (GcStats.on) {
+          GcStats.runs++;
+          GcStats.shapesInRuns += count;
+        }
+        i += count;
+        continue;
+      }
+    }
+    // A run needs a second shape to join it: one alone draws as itself. A polyline's triangles cost
+    // more to build than it to draw, so they are not built when the next shape cannot join it.
+    if (!_mayJoinRun(s) || i + 1 == shapes.length || (s is PolylineShape && !_mayJoinRun(shapes[i + 1]))) {
+      if (GcStats.on) GcStats.drawnAlone(s);
       s.paintBody(c);
       i++;
       continue;
     }
     if (px == 0) px = _devicePixel(c);
-    final count = _trianglesFrom(shapes, i, px);
+    if (!gridRead) {
+      _grid.read(c);
+      gridRead = true;
+    }
+    final span = _trianglesFrom(shapes, i, px);
+    final count = _runCount;
     if (count > 1) {
       final run = _run;
-      var vertices = 0, indices = 0;
-      for (var k = 0; k < count; k++) {
-        vertices += run[k]!.vertices;
-        indices += run[k]!.indices;
+      if (_fewRectangles(run, count)) {
+        // A rectangle in a run lies on whole device pixels, where drawing it paints what its
+        // triangles do; a few are cheaper drawn than a triangle list is built.
+        for (var k = 0; k < count; k++) {
+          (run[k]! as RectShape).paintBody(c);
+        }
+      } else {
+        var vertices = 0, indices = 0;
+        for (var k = 0; k < count; k++) {
+          vertices += run[k]!.vertices;
+          indices += run[k]!.indices;
+        }
+        final list = _TriangleList(vertices, indices, px);
+        for (var k = 0; k < count; k++) {
+          run[k]!.addTo(list);
+        }
+        final built = list.build();
+        if (list.textured) {
+          c.drawVertices(built, BlendMode.modulate, _SdfLineAtlas.paint!);
+        } else {
+          c.drawVertices(built, BlendMode.dst, _runPaint);
+        }
       }
-      final list = _TriangleList(vertices, indices, px);
-      for (var k = 0; k < count; k++) {
-        run[k]!.addTo(list);
+      if (GcStats.on) {
+        GcStats.runs++;
+        GcStats.shapesInRuns += count;
+        GcStats.drawnAfterRuns += _passedCount;
       }
-      c.drawVertices(list.build(), BlendMode.dst, _runPaint);
-      i += count;
+      // The shapes the run reached past, after it and in their order: none overlaps what it moved.
+      // One under a clip of its own is passed only by a run under none, and clips itself.
+      final passed = _passed;
+      for (var k = 0; k < _passedCount; k++) {
+        final p = passed[k]!;
+        if (p.clipRect == clip) {
+          p.paintBody(c);
+        } else {
+          p.draw(c);
+        }
+      }
+      i += span;
     } else {
+      if (GcStats.on) GcStats.drawnAlone(s);
       s.paintBody(c);
       i++;
     }
   }
   if (clipped) c.restore();
+  _grid
+    ..scale = outerScale
+    ..dx = outerDx
+    ..dy = outerDy;
+}
+
+/// [color] as ARGB. A paint draws with a few colours, each the same object every time, and
+/// [Color.toARGB32] works it out from floats on every call: the last few are kept.
+int _argbOf(Color color) {
+  for (var i = 0; i < _ColorSlots.count; i++) {
+    if (identical(_argbColors[i], color)) return _argbValues[i];
+  }
+  final argb = color.toARGB32();
+  _argbOfKnown(color, argb);
+  return argb;
+}
+
+/// Records that [color] is [argb].
+void _argbOfKnown(Color color, int argb) {
+  final slot = _argbNext;
+  _argbNext = (slot + 1) % _ColorSlots.count;
+  _argbColors[slot] = color;
+  _argbValues[slot] = argb;
+}
+
+final List<Color?> _argbColors = List.filled(_ColorSlots.count, null);
+final List<int> _argbValues = List.filled(_ColorSlots.count, 0);
+int _argbNext = 0;
+
+/// How many colours a colour memo keeps, replaced oldest first.
+abstract final class _ColorSlots {
+  static const int count = 8;
 }
 
 /// What a triangle run draws with: the colours are the vertices', so the paint carries nothing.
 final Paint _runPaint = Paint();
+
+/// The most rectangles a run draws one by one instead of as a triangle list.
+const int _fewestForTriangles = 4;
+
+bool _fewRectangles(List<_Piece?> run, int count) {
+  if (count >= _fewestForTriangles) return false;
+  for (var k = 0; k < count; k++) {
+    if (run[k] is! RectShape) return false;
+  }
+  return true;
+}
 
 /// What a triangle run draws for one shape: its geometry, prepared once.
 abstract class _Piece {
@@ -2427,15 +2726,26 @@ class _Strokes implements _Piece {
 /// A filled convex polygon as its outline inset and outset by half a device pixel, corner by corner.
 class _ConvexFill implements _Piece {
   _ConvexFill(this.inner, this.outer, this.color);
-  final Float32List inner, outer;
+  final Float32List inner;
+
+  /// Where the canvas multisamples, null: the polygon is [inner] alone, its edges antialiased by the
+  /// samples as a filled path's are.
+  final Float32List? outer;
   final Color color;
 
   @override
-  int get vertices => _TriangleList.verticesFor(inner.length ~/ 2);
+  int get vertices => outer == null ? inner.length ~/ 2 : _TriangleList.verticesFor(inner.length ~/ 2);
   @override
-  int get indices => _TriangleList.indicesFor(inner.length ~/ 2);
+  int get indices => outer == null ? (inner.length ~/ 2 - 2) * 3 : _TriangleList.indicesFor(inner.length ~/ 2);
   @override
-  void addTo(_TriangleList list) => list.addPolygon(inner, outer, color);
+  void addTo(_TriangleList list) {
+    final outer = this.outer;
+    if (outer == null) {
+      list.addFan(inner, color);
+    } else {
+      list.addPolygon(inner, outer, color);
+    }
+  }
 
   /// [s] as a convex fill, or null when it is not a simple convex polygon whose outline can be moved
   /// half a pixel in and out: those stay paths. Turning the same way at every corner is not enough
@@ -2468,6 +2778,14 @@ class _ConvexFill implements _Piece {
       turning += math.atan2(cross, ax * bx + ay * by);
     }
     if (sign == 0 || (turning.abs() - 2 * math.pi).abs() > 0.01) return null;
+    if (_TriangleList.multisampled) {
+      final corners = Float32List(n * 2);
+      for (var k = 0; k < n; k++) {
+        corners[k * 2] = xs[k];
+        corners[k * 2 + 1] = ys[k];
+      }
+      return _ConvexFill(corners, null, s.color);
+    }
     // Outward normal of the edge from k to k+1: the interior lies on the side the corners turn to.
     final nx = Float64List(n), ny = Float64List(n);
     for (var k = 0; k < n; k++) {
@@ -2501,50 +2819,767 @@ class _ConvexFill implements _Piece {
   }
 }
 
+/// Whether wide polylines join runs: on the web, where a wide stroke is a path tessellated every
+/// frame. Impeller strokes them on the GPU, which costs less than building their triangles.
+@visibleForTesting
+bool polylinesJoinRuns = kIsWeb;
+
+/// Forces whether runs take the canvas to multisample, in place of asking the engine.
+@visibleForTesting
+bool? debugMultisampled;
+
+/// How many times [_OvalAtlas] has drawn its sprites anew.
+@visibleForTesting
+int ovalAtlasBuilds = 0;
+
+/// Ovals drawn as sprites of one image: each distinct oval is drawn once, white, at its size and
+/// position within a device pixel, by the same oval draw it gets on its own, and a run of ovals is
+/// then one atlas draw, each sprite tinted by its colour. Each pixel is the oval's coverage times its
+/// colour, as drawn on its own, but for the coverage being kept in eight bits. A GPU renderer issues
+/// one draw per oval; this is one per run.
+///
+/// Impeller's oval shader bends an edge pixel's coverage towards the colour's luma, so where it draws,
+/// a sprite is drawn in a grey of its oval's luma, to the nearest of [_lumaSteps], and the image keeps
+/// only its coverage.
+class _OvalAtlas {
+  /// The largest sprite side, in device pixels; a larger oval is drawn on its own.
+  static const int _maxSide = 128;
+
+  /// How many greys a sprite is drawn in where Impeller draws: one luma step bends coverage by at most
+  /// 0.414 / 62, under two levels.
+  static const int _lumaSteps = 32;
+
+  static int _lumaStep(Color c) => ((0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) * (_lumaSteps - 1)).round();
+
+  /// Makes a grey sprite white, keeping its coverage.
+  static final Paint _coverageOnly = Paint()
+    ..colorFilter = const ColorFilter.matrix(
+        [0, 0, 0, 0, 255, 0, 0, 0, 0, 255, 0, 0, 0, 0, 255, 0, 0, 0, 1, 0]);
+
+  /// The fewest ovals drawn as one atlas draw: a few cost less drawn one by one.
+  static const int _fewest = 4;
+
+  /// Whether a run may start at [first] followed by [second], told without working out their
+  /// sprites: where a hairline outline follows every fill, no run forms, and none is looked for.
+  static bool mayStart(OvalShape first, OvalShape second) =>
+      _grid.scale != 0 && _wideEnough(first) && _wideEnough(second);
+
+  static bool _wideEnough(OvalShape s) => s.isFilled || s.strokeWidth * _grid.scale >= 2;
+
+  /// The image's size; once its sprites no longer fit, it is emptied and drawn anew for the ovals in
+  /// hand.
+  static const int _atlasWidth = 2048;
+  static const int _atlasHeight = 2048;
+
+  /// Each sprite's place in [_image], by [_key]: left, top, right, bottom.
+  static final Map<int, int> _slots = {};
+  static final List<double> _rects = [];
+  /// The ovals the sprites are drawn from, with the device scale and the position within a device
+  /// pixel each was keyed at, and the key.
+  static final List<(OvalShape, double, double, double, int)> _sprites = [];
+  static ui.Image? _image;
+
+  static Float32List _transforms = Float32List(0), _sources = Float32List(0);
+  static Int32List _colors = Int32List(0);
+  static final Paint _atlasPaint = Paint()..filterQuality = FilterQuality.none;
+
+  /// The sprite an oval is drawn as, as one number: whether it is filled, its device width, height and
+  /// stroke width in quarter pixels, and where it starts within a device pixel, in quarters; -1 when
+  /// it cannot be a sprite. Packed by arithmetic, not bit operations, which are 32-bit in JavaScript.
+  /// A stroke under two device pixels is not one: a hairline is drawn by other means than a wide
+  /// stroke, which a sprite does not reproduce.
+  static int _key(OvalShape s) {
+    final scale = _grid.scale;
+    if (scale == 0 || !_RenderHints.antiAlias) return -1;
+    final r = _alignedRect(s.rect, s.strokeWidth, !s.isFilled);
+    final w = _quarters(r.width * scale), h = _quarters(r.height * scale);
+    final stroke = s.isFilled ? 0 : _quarters(s.strokeWidth * scale);
+    final fx = _quarters(r.left * scale + _grid.dx), fy = _quarters(r.top * scale + _grid.dy);
+    if (w == null || h == null || stroke == null || fx == null || fy == null || w <= 0 || h <= 0) return -1;
+    if (!s.isFilled && stroke < 8) return -1;
+    if ((math.max(w, h) + stroke) ~/ 4 + 4 > _maxSide) return -1;
+    final key = (s.isFilled ? 1 : 0) + 2 * (w + 1024 * (h + 1024 * (stroke + 1024 * (fx % 4 + 4 * (fy % 4)))));
+    return _TriangleList.multisampled ? key * _lumaSteps + _lumaStep(s.color) : key;
+  }
+
+  /// [v] in quarter pixels when it is a whole number of them.
+  static int? _quarters(double v) {
+    final q = v * 4;
+    final r = q.roundToDouble();
+    return (q - r).abs() > 1e-6 ? null : r.toInt();
+  }
+
+  /// The keys of the ovals of the run being drawn.
+  static List<int> _runKeys = List.filled(64, 0);
+
+  /// Draws the ovals from [start] that share its clip as one atlas draw, and returns how many; 0 when
+  /// fewer than [_fewest] can.
+  static int drawRun(ui.Canvas c, List<Shape> shapes, int start) {
+    final clip = shapes[start].clipRect;
+    var end = start;
+    var missing = false;
+    while (end < shapes.length) {
+      final s = shapes[end];
+      if (s is! OvalShape || s.clipRect != clip) break;
+      final key = _key(s);
+      if (key < 0) break;
+      final k = end - start;
+      if (k == _runKeys.length) _runKeys = List.filled(k * 2, 0)..setRange(0, k, _runKeys);
+      _runKeys[k] = key;
+      if (!missing && !_slots.containsKey(key)) missing = true;
+      end++;
+    }
+    if (end - start < _fewest) return 0;
+    if (missing) end = _build(shapes, start, end);
+    final count = end - start;
+    if (count < _fewest) return 0;
+    if (_transforms.length < count * 4) {
+      _transforms = Float32List(count * 4);
+      _sources = Float32List(count * 4);
+      _colors = Int32List(count);
+    }
+    final scale = _grid.scale, inv = 1 / scale;
+    for (var k = 0; k < count; k++) {
+      final s = shapes[start + k] as OvalShape;
+      final slot = _slots[_runKeys[k]]!;
+      final r = _alignedRect(s.rect, s.strokeWidth, !s.isFilled);
+      final pad = _pad(s, scale);
+      // The sprite's top left lands on the device pixel its oval starts in, less the pad.
+      final ox = (r.left * scale + _grid.dx).floorToDouble() - pad, oy = (r.top * scale + _grid.dy).floorToDouble() - pad;
+      _transforms[k * 4] = inv;
+      _transforms[k * 4 + 1] = 0;
+      _transforms[k * 4 + 2] = (ox - _grid.dx) * inv;
+      _transforms[k * 4 + 3] = (oy - _grid.dy) * inv;
+      _sources[k * 4] = _rects[slot * 4];
+      _sources[k * 4 + 1] = _rects[slot * 4 + 1];
+      _sources[k * 4 + 2] = _rects[slot * 4 + 2];
+      _sources[k * 4 + 3] = _rects[slot * 4 + 3];
+      _colors[k] = _argbOf(s.color);
+    }
+    c.drawRawAtlas(_image!, Float32List.sublistView(_transforms, 0, count * 4),
+        Float32List.sublistView(_sources, 0, count * 4), Int32List.sublistView(_colors, 0, count), BlendMode.modulate,
+        null, _atlasPaint);
+    return count;
+  }
+
+  /// Device pixels of room round an oval's box in its sprite: half its stroke, and its antialiasing.
+  static double _pad(OvalShape s, double scale) =>
+      (s.isFilled ? 0 : ((s.strokeWidth > 0 ? s.strokeWidth : 1 / scale) * scale / 2).ceilToDouble()) + 2;
+
+  /// Draws the image anew with every sprite it holds and those of the ovals from [start] to [end],
+  /// and returns where the ovals it holds sprites for end: before [end] when they do not all fit.
+  static int _build(List<Shape> shapes, int start, int end) {
+    _add(shapes, start, end);
+    _tallestFirst();
+    if (_pack() < _sprites.length) {
+      _slots.clear();
+      _sprites.clear();
+      _add(shapes, start, end);
+      _tallestFirst();
+      var fitted = _pack();
+      if (fitted < _sprites.length) {
+        // The run's own ovals do not all fit: the first ones in drawing order go in this draw, and
+        // the rest start the next.
+        _slots.clear();
+        _sprites.clear();
+        _add(shapes, start, end);
+        fitted = _pack();
+      }
+      if (fitted < _sprites.length) {
+        _sprites.length = fitted;
+        _slots.removeWhere((_, slot) => slot >= fitted);
+        var k = start;
+        while (k < end && _slots.containsKey(_runKeys[k - start])) {
+          k++;
+        }
+        end = k;
+      }
+    }
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final grey = _TriangleList.multisampled;
+    if (grey) canvas.saveLayer(null, _coverageOnly);
+    var bottom = 0.0;
+    for (var n = 0; n < _sprites.length; n++) {
+      final (s, scale, phaseX, phaseY, _) = _sprites[n];
+      final r = _alignedRect(s.rect, s.strokeWidth, !s.isFilled);
+      final pad = _pad(s, scale);
+      final x = _rects[n * 4], y = _rects[n * 4 + 1];
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(x, y, _rects[n * 4 + 2], _rects[n * 4 + 3]));
+      canvas.translate(x + pad + phaseX, y + pad + phaseY);
+      canvas.scale(scale);
+      canvas.translate(-r.left, -r.top);
+      final level = grey ? (_lumaStep(s.color) * 255 / (_lumaSteps - 1)).round() : 255;
+      OvalShape(s.rect, Color.fromARGB(255, level, level, level), s.strokeWidth, isFilled: s.isFilled).paintBody(canvas);
+      canvas.restore();
+      bottom = math.max(bottom, _rects[n * 4 + 3]);
+    }
+    if (grey) canvas.restore();
+    _image?.dispose();
+    _image = recorder.endRecording().toImageSync(_atlasWidth, math.max(bottom.ceil(), 1));
+    ovalAtlasBuilds++;
+    return end;
+  }
+
+  /// Gives a sprite to each oval from [start] to [end] that has none.
+  static void _add(List<Shape> shapes, int start, int end) {
+    for (var k = start; k < end; k++) {
+      final key = _runKeys[k - start];
+      if (_slots.containsKey(key)) continue;
+      _slots[key] = _sprites.length;
+      final s = shapes[k] as OvalShape;
+      final r = _alignedRect(s.rect, s.strokeWidth, !s.isFilled);
+      final fx = r.left * _grid.scale + _grid.dx, fy = r.top * _grid.scale + _grid.dy;
+      _sprites.add((s, _grid.scale, fx - fx.floorToDouble(), fy - fy.floorToDouble(), key));
+    }
+  }
+
+  /// A sprite's width and height in the image.
+  static double _spriteWidth((OvalShape, double, double, double, int) sprite) {
+    final (s, scale, phaseX, _, _) = sprite;
+    return (phaseX + _alignedRect(s.rect, s.strokeWidth, !s.isFilled).width * scale + 2 * _pad(s, scale))
+        .ceilToDouble();
+  }
+
+  static double _spriteHeight((OvalShape, double, double, double, int) sprite) {
+    final (s, scale, _, phaseY, _) = sprite;
+    return (phaseY + _alignedRect(s.rect, s.strokeWidth, !s.isFilled).height * scale + 2 * _pad(s, scale))
+        .ceilToDouble();
+  }
+
+  /// Orders the sprites tallest first, and their slots with them: rows of sprites of about one height
+  /// waste little of the image, where sprites in drawing order leave each row as tall as its tallest
+  /// and fill the image before every sprite is in.
+  static void _tallestFirst() {
+    _sprites.sort((a, b) => _spriteHeight(b).compareTo(_spriteHeight(a)));
+    _slots.clear();
+    for (var n = 0; n < _sprites.length; n++) {
+      _slots[_sprites[n].$5] = n;
+    }
+  }
+
+  /// Places the sprites in rows across the image, into [_rects], and returns how many fit in it.
+  static int _pack() {
+    var x = 0.0, y = 0.0, row = 0.0;
+    _rects.clear();
+    for (var n = 0; n < _sprites.length; n++) {
+      final w = _spriteWidth(_sprites[n]), h = _spriteHeight(_sprites[n]);
+      if (x + w > _atlasWidth) {
+        x = 0;
+        y += row;
+        row = 0;
+      }
+      if (y + h > _atlasHeight) return n;
+      _rects..add(x)..add(y)..add(x + w)..add(y + h);
+      x += w;
+      row = math.max(row, h);
+    }
+    return _sprites.length;
+  }
+}
+
+/// How many polyline strokes [_PolylineStroke] has built rather than found kept.
+@visibleForTesting
+int polylineStrokesBuilt = 0;
+
+/// A straight dashed line: its ends, pattern and dash offset. A pattern is the same list for a line
+/// style and width, so it compares by identity. Looked up with one reused key, copied only when kept.
+final class _DashKey {
+  Offset from = Offset.zero, to = Offset.zero;
+  List<double> pattern = const [];
+  double offset = 0;
+  @override
+  int hashCode = 0;
+
+  _DashKey set(Offset from, Offset to, List<double> pattern, double offset) {
+    this.from = from;
+    this.to = to;
+    this.pattern = pattern;
+    this.offset = offset;
+    hashCode = Object.hash(from, to, identityHashCode(pattern), offset);
+    return this;
+  }
+
+  _DashKey held() => _DashKey()
+    ..from = from
+    ..to = to
+    ..pattern = pattern
+    ..offset = offset
+    ..hashCode = hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _DashKey && other.hashCode == hashCode && identical(other.pattern, pattern) &&
+      other.offset == offset && other.from == from && other.to == to;
+}
+
+/// A polyline and its stroke. Looked up with one reused key, copied only when kept.
+final class _PolylineKey {
+  List<int> points = const [];
+  double strokeWidth = 0, px = 0;
+  int lineCap = 0, lineJoin = 0, argb = 0;
+  bool antiAlias = false;
+
+  @override
+  int hashCode = 0;
+
+  _PolylineKey set(List<int> points, double strokeWidth, int lineCap, int lineJoin, int argb, double px,
+      bool antiAlias) {
+    this.points = points;
+    this.strokeWidth = strokeWidth;
+    this.lineCap = lineCap;
+    this.lineJoin = lineJoin;
+    this.argb = argb;
+    this.px = px;
+    this.antiAlias = antiAlias;
+    var h = points.length;
+    for (var i = 0; i < points.length; i++) {
+      h = (h * 31 + points[i]) & 0x3FFFFFFF;
+    }
+    hashCode = Object.hash(h, strokeWidth, lineCap, lineJoin, argb, px, antiAlias);
+    return this;
+  }
+
+  _PolylineKey held() => _PolylineKey()
+    ..points = points
+    ..strokeWidth = strokeWidth
+    ..lineCap = lineCap
+    ..lineJoin = lineJoin
+    ..argb = argb
+    ..px = px
+    ..antiAlias = antiAlias
+    ..hashCode = hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _PolylineKey || other.hashCode != hashCode) return false;
+    if (other.strokeWidth != strokeWidth || other.px != px || other.lineCap != lineCap ||
+        other.lineJoin != lineJoin || other.argb != argb || other.antiAlias != antiAlias ||
+        other.points.length != points.length) {
+      return false;
+    }
+    for (var i = 0; i < points.length; i++) {
+      if (other.points[i] != points[i]) return false;
+    }
+    return true;
+  }
+}
+
+/// Whether runs also take the shapes whose triangles antialias their edges slightly differently from
+/// the shape drawn on its own (`gc_approximate_batching`, on unless the application turns it off).
+/// Without it a run takes only what it draws to the same pixels: rectangles and lines on whole device
+/// pixels, dashes, which are drawn as these same triangles on their own too, and where the canvas
+/// multisamples, convex fills. Read per run.
+bool _approximate = true;
+
 /// Whether [s] is of a kind [_pieceOf] may make a piece of, decided without the device pixel: a
 /// shape that cannot join a run is drawn without reading the canvas transform back.
 bool _mayJoinRun(Shape s) =>
     (s is LineShape && s.lineCap != SWT.CAP_ROUND) ||
     (s is SegmentsShape && s.lineCap != SWT.CAP_ROUND && s.points.isNotEmpty) ||
-    (s is PolygonShape && s.isFilled && s.points.length >= 6);
+    (s is RectShape && s.mayJoinRun) ||
+    ((_approximate || _TriangleList.multisampled) && s is PolygonShape && s.isFilled && s.points.length >= 6) ||
+    (_approximate && s is GradientRectShape && s._alongAnAxis) ||
+    (polylinesJoinRuns && _approximate && s is PolylineShape && !s.isFilled && s.points.length >= 4);
 
 /// What a triangle run can draw [s] as, or null when it is drawn on its own.
 _Piece? _pieceOf(Shape s, double px) {
-  if (s is LineShape && s.lineCap != SWT.CAP_ROUND) return s;
+  if (s is LineShape && s.lineCap != SWT.CAP_ROUND) {
+    if (!_approximate) return s._fillsGridQuad() ? s : null;
+    if (_TriangleList.sdfLines && !s._fillsGridQuad() && !_TriangleList.sdfFits(s.strokeWidth, s._length, s.lineCap, px)) {
+      return null;
+    }
+    return s;
+  }
   if (s is SegmentsShape && s.lineCap != SWT.CAP_ROUND && s.points.isNotEmpty) {
     return _Strokes(s.points, s.strokeWidth, s.lineCap, s.color);
   }
-  if (s is PolygonShape) return _ConvexFill.of(s, px);
+  if (s is RectShape) return s.joinsRun ? s : null;
+  // Where the canvas multisamples, a convex fill is its own triangles and paints what its path does.
+  if (s is PolygonShape) return _approximate || _TriangleList.multisampled ? _ConvexFill.of(s, px) : null;
+  if (!_approximate) return null;
+  if (s is GradientRectShape) return s._onGrid ? s : null;
+  if (s is PolylineShape) return _PolylineStroke.of(s, px);
   return null;
 }
 
+/// A wide polyline's stroke as triangles that never overlap, so a translucent colour is laid once, as
+/// the stroke lays it: each segment a quad cut where it meets its neighbour on the inside of a turn,
+/// each join filled from its corner on the outside, the caps likewise, and a ring that fades across a
+/// device pixel all round the outline. Only for a stroke that cannot reach over itself; any other is
+/// drawn on its own.
+class _PolylineStroke implements _Piece {
+  _PolylineStroke._(this._positions, this._colors, this._indices);
+  final Float32List _positions;
+  final Int32List _colors;
+  final Uint16List _indices;
+
+  @override
+  int get vertices => _colors.length;
+  @override
+  int get indices => _indices.length;
+  @override
+  void addTo(_TriangleList list) => list.addMesh(_positions, _colors, _indices);
+
+  /// The most points a polyline drawn this way has: its segments are checked against each other.
+  static const int _maxPoints = 64;
+
+  /// A Paint's: beyond it a miter join is drawn as a bevel.
+  static const double _miterLimit = 4;
+
+  /// Strokes built, by polyline and device pixel, kept while the same polylines are drawn again: a
+  /// GC repaints its polylines every frame, and building one costs more than looking it up. Emptied
+  /// when full, so it holds more than a diagram's connectors. A polyline that cannot be drawn this way
+  /// is kept too, as null.
+  static final Map<_PolylineKey, _PolylineStroke?> _built = {};
+  static const int _capacity = 1024;
+  static final _PolylineKey _probe = _PolylineKey();
+
+  static _PolylineStroke? of(PolylineShape s, double px) {
+    if (_TriangleList.strip || s.isFilled || s.points.length < 4 || s.points.length > 2 * _maxPoints) return null;
+    final key = _probe.set(s.points, s.strokeWidth, s.lineCap, s.lineJoin, _argbOf(s.color), px,
+        _RenderHints.antiAlias);
+    final kept = _built[key];
+    if (kept != null || _built.containsKey(key)) return kept;
+    if (_built.length >= _capacity) _built.clear();
+    polylineStrokesBuilt++;
+    return _built[key.held()] = _build(s, px);
+  }
+
+  static _PolylineStroke? _build(PolylineShape s, double px) {
+    final f = _RenderHints.antiAlias ? px / 2 : 0.0;
+    final h = s.strokeWidth / 2;
+    if (h <= f) return null;
+    final shift = _strokeShift(s.strokeWidth, true).dx;
+    final xs = Float64List(s.points.length ~/ 2), ys = Float64List(s.points.length ~/ 2);
+    var m = 0;
+    for (var i = 0; i + 1 < s.points.length; i += 2) {
+      final x = s.points[i] + shift, y = s.points[i + 1] + shift;
+      if (m > 0 && xs[m - 1] == x && ys[m - 1] == y) continue;
+      xs[m] = x;
+      ys[m] = y;
+      m++;
+    }
+    if (m < 2) return null;
+    final ux = Float64List(m - 1), uy = Float64List(m - 1);
+    for (var i = 0; i + 1 < m; i++) {
+      final dx = xs[i + 1] - xs[i], dy = ys[i + 1] - ys[i], l = math.sqrt(dx * dx + dy * dy);
+      ux[i] = dx / l;
+      uy[i] = dy / l;
+    }
+    final ho = h + f;
+    final cap = s.lineCap;
+    // At each corner: which way it turns, how far the inside cut runs back along both segments, how
+    // far the outside turns, and whether it is mitred.
+    final turn = Float64List(m), trim = Float64List(m), angle = Float64List(m), dots = Float64List(m);
+    final mitred = Uint8List(m);
+    for (var j = 1; j + 1 < m; j++) {
+      final a = j - 1;
+      final dot = ux[a] * ux[j] + uy[a] * uy[j], cross = ux[a] * uy[j] - uy[a] * ux[j];
+      // Near a reversal the inside cut runs far back along both segments.
+      if (1 + dot < 0.05) return null;
+      turn[j] = cross;
+      dots[j] = dot;
+      trim[j] = ho * cross.abs() / (1 + dot);
+      angle[j] = math.atan2(cross.abs(), dot);
+      mitred[j] = s.lineJoin == SWT.JOIN_MITER && 1 / math.sqrt((1 + dot) / 2) <= _miterLimit ? 1 : 0;
+    }
+    for (var i = 0; i + 1 < m; i++) {
+      final dx = xs[i + 1] - xs[i], dy = ys[i + 1] - ys[i];
+      if (trim[i] + trim[i + 1] > math.sqrt(dx * dx + dy * dy)) return null;
+    }
+    // Segments that do not meet stay further apart than the stroke is wide, caps included.
+    final apart = 2 * ho + (cap == SWT.CAP_SQUARE ? 2 * h : 0);
+    for (var i = 0; i + 2 < m - 1; i++) {
+      final il = math.min(xs[i], xs[i + 1]) - apart, ir = math.max(xs[i], xs[i + 1]) + apart;
+      final it = math.min(ys[i], ys[i + 1]) - apart, ib = math.max(ys[i], ys[i + 1]) + apart;
+      for (var k = i + 2; k + 1 < m; k++) {
+        if (math.max(xs[k], xs[k + 1]) < il || math.min(xs[k], xs[k + 1]) > ir) continue;
+        if (math.max(ys[k], ys[k + 1]) < it || math.min(ys[k], ys[k + 1]) > ib) continue;
+        if (!_segmentsApart(xs[i], ys[i], xs[i + 1], ys[i + 1], xs[k], ys[k], xs[k + 1], ys[k + 1], apart)) {
+          return null;
+        }
+      }
+    }
+    final quarter = _TriangleList.quarterSteps(ho, px);
+    if (quarter == 0) return null;
+    final step = math.pi / 2 / quarter;
+    final round = s.lineJoin == SWT.JOIN_ROUND;
+
+    final hiLoop = <double>[], hoLoop = <double>[];
+    final l0 = Int32List(m - 1), l1 = Int32List(m - 1), r0 = Int32List(m - 1), r1 = Int32List(m - 1);
+    final inner = Int32List(m), outerFrom = Int32List(m), outerTo = Int32List(m);
+    var endCapFrom = 0, endCapTo = 0, startCapFrom = 0;
+
+    // The outline at [w] from the line, as a loop: along the left side, round the end, back along the
+    // right side and round the start. Both loops have the same corners, one for one.
+    void trace(double w, List<double> out, bool record) {
+      int add(double x, double y) {
+        out
+          ..add(x)
+          ..add(y);
+        return out.length ~/ 2 - 1;
+      }
+
+      // Points on the side [side] of corner [j], turning from segment [from]'s normal by [sweep].
+      void join(int j, double side, int from, double sweep) {
+        if (round) {
+          final steps = (angle[j] / step).ceil();
+          final start = math.atan2(side * ux[from], -side * uy[from]);
+          for (var k = 1; k < steps; k++) {
+            final a = start + sweep * k / steps;
+            add(xs[j] + w * math.cos(a), ys[j] + w * math.sin(a));
+          }
+        } else if (mitred[j] == 1) {
+          final a = j - 1, q = side * w / (1 + dots[j]);
+          add(xs[j] + (-uy[a] - uy[j]) * q, ys[j] + (ux[a] + ux[j]) * q);
+        }
+      }
+
+      // How far past each end the outline runs: a flat end where the line ends, a square one half the
+      // width further, a round one from where its arc starts.
+      final s0 = cap == SWT.CAP_SQUARE ? -w : (cap == SWT.CAP_ROUND ? 0.0 : h - w), e0 = -s0;
+      final last = m - 2;
+      final first = add(xs[0] - uy[0] * w + ux[0] * s0, ys[0] + ux[0] * w + uy[0] * s0);
+      if (record) l0[0] = first;
+      for (var j = 1; j + 1 < m; j++) {
+        final a = j - 1;
+        if (turn[j] >= 0) {
+          final q = w / (1 + dots[j]);
+          final k = add(xs[j] + (-uy[a] - uy[j]) * q, ys[j] + (ux[a] + ux[j]) * q);
+          if (record) l1[a] = l0[j] = inner[j] = k;
+        } else {
+          final from = add(xs[j] - uy[a] * w, ys[j] + ux[a] * w);
+          join(j, 1, a, -angle[j]);
+          final to = add(xs[j] - uy[j] * w, ys[j] + ux[j] * w);
+          if (record) {
+            l1[a] = outerFrom[j] = from;
+            l0[j] = outerTo[j] = to;
+          }
+        }
+      }
+      final pe = m - 1;
+      final leftEnd = add(xs[pe] - uy[last] * w + ux[last] * e0, ys[pe] + ux[last] * w + uy[last] * e0);
+      if (cap == SWT.CAP_ROUND) {
+        final start = math.atan2(ux[last], -uy[last]);
+        for (var k = 1; k < 2 * quarter; k++) {
+          final a = start - k * math.pi / (2 * quarter);
+          add(xs[pe] + w * math.cos(a), ys[pe] + w * math.sin(a));
+        }
+      }
+      final rightEnd = add(xs[pe] + uy[last] * w + ux[last] * e0, ys[pe] - ux[last] * w + uy[last] * e0);
+      if (record) {
+        l1[last] = endCapFrom = leftEnd;
+        r1[last] = endCapTo = rightEnd;
+      }
+      for (var j = m - 2; j >= 1; j--) {
+        final a = j - 1;
+        if (turn[j] >= 0) {
+          final from = add(xs[j] + uy[j] * w, ys[j] - ux[j] * w);
+          join(j, -1, j, -angle[j]);
+          final to = add(xs[j] + uy[a] * w, ys[j] - ux[a] * w);
+          if (record) {
+            r0[j] = outerFrom[j] = from;
+            r1[a] = outerTo[j] = to;
+          }
+        } else {
+          final q = w / (1 + dots[j]);
+          final k = add(xs[j] + (uy[a] + uy[j]) * q, ys[j] - (ux[a] + ux[j]) * q);
+          if (record) r0[j] = r1[a] = inner[j] = k;
+        }
+      }
+      final rightStart = add(xs[0] + uy[0] * w + ux[0] * s0, ys[0] - ux[0] * w + uy[0] * s0);
+      if (record) r0[0] = startCapFrom = rightStart;
+      if (cap == SWT.CAP_ROUND) {
+        final start = math.atan2(-ux[0], uy[0]);
+        for (var k = 1; k < 2 * quarter; k++) {
+          final a = start - k * math.pi / (2 * quarter);
+          add(xs[0] + w * math.cos(a), ys[0] + w * math.sin(a));
+        }
+      }
+    }
+
+    trace(h - f, hiLoop, true);
+    trace(ho, hoLoop, false);
+    final n = hiLoop.length ~/ 2;
+    final indices = <int>[];
+    for (var i = 0; i + 1 < m; i++) {
+      indices.addAll([l0[i], l1[i], r1[i], l0[i], r1[i], r0[i]]);
+    }
+    // Joins and caps are convex, so each is fanned from a corner of its own rather than from the
+    // line's point, which an SWT polyline puts on a pixel centre: triangles meeting on a pixel centre
+    // may each leave it uncovered.
+    for (var j = 1; j + 1 < m; j++) {
+      for (var k = outerFrom[j]; k < outerTo[j]; k++) {
+        indices.addAll([inner[j], k, k + 1]);
+      }
+    }
+    if (cap == SWT.CAP_ROUND) {
+      for (var k = endCapFrom + 1; k < endCapTo; k++) {
+        indices.addAll([endCapFrom, k, k + 1]);
+      }
+      for (var k = startCapFrom + 1; k < n - 1; k++) {
+        indices.addAll([startCapFrom, k, k + 1]);
+      }
+      indices.addAll([startCapFrom, n - 1, 0]);
+    }
+    for (var k = 0; k < n; k++) {
+      final q = k + 1 == n ? 0 : k + 1;
+      indices.addAll([k, n + k, n + q, k, n + q, q]);
+    }
+    final rgb = _argbOf(s.color) & 0xFFFFFF, core = ((s.color.a * 255).round() << 24) | rgb;
+    final colors = Int32List(2 * n);
+    for (var k = 0; k < 2 * n; k++) {
+      colors[k] = k < n ? core : rgb;
+    }
+    return _PolylineStroke._(Float32List.fromList([...hiLoop, ...hoLoop]), colors,
+        Uint16List.fromList(indices));
+  }
+
+  /// Whether the segments from ([ax], [ay]) to ([bx], [by]) and from ([cx], [cy]) to ([dx], [dy]) are
+  /// at least [distance] apart.
+  static bool _segmentsApart(double ax, double ay, double bx, double by, double cx, double cy, double dx, double dy,
+      double distance) {
+    double side(double px, double py, double qx, double qy, double rx, double ry) =>
+        (qx - px) * (ry - py) - (qy - py) * (rx - px);
+    final d1 = side(ax, ay, bx, by, cx, cy), d2 = side(ax, ay, bx, by, dx, dy);
+    final d3 = side(cx, cy, dx, dy, ax, ay), d4 = side(cx, cy, dx, dy, bx, by);
+    if (d1 * d2 <= 0 && d3 * d4 <= 0) return false;
+    double toSegment(double px, double py, double qx, double qy, double rx, double ry) {
+      final ex = rx - qx, ey = ry - qy, l2 = ex * ex + ey * ey;
+      final t = l2 == 0 ? 0.0 : (((px - qx) * ex + (py - qy) * ey) / l2).clamp(0.0, 1.0);
+      final x = qx + t * ex - px, y = qy + t * ey - py;
+      return math.sqrt(x * x + y * y);
+    }
+
+    return toSegment(ax, ay, cx, cy, dx, dy) >= distance &&
+        toSegment(bx, by, cx, cy, dx, dy) >= distance &&
+        toSegment(cx, cy, ax, ay, bx, by) >= distance &&
+        toSegment(dx, dy, ax, ay, bx, by) >= distance;
+  }
+}
+
 /// Puts in [_run] the pieces of the shapes from [start] under the same clip that one triangle list
-/// can hold, and returns how many. Paint may change along the run: triangles in one list are blended
-/// in the order they are listed, as separate draws would be, so the run paints what drawing the
-/// shapes one by one does.
+/// can hold ([_runCount] of them), and returns how many shapes the run spans. Paint may change along
+/// the run: triangles in one list are blended in the order they are listed, as separate draws would
+/// be, so the run paints what drawing the shapes one by one does.
+///
+/// While the run holds only rectangles, a shape that cannot join is reached past while its area is
+/// known and no piece taken after it overlaps it, and is put in [_passed] ([_passedCount]) to be drawn
+/// after the run: only the order of shapes that share no pixel changes. Rectangles only, because a
+/// rectangle draws the same pixels in a run as on its own; a line or polygon in a run is antialiased
+/// by the run's own edges, so one that would have been drawn on its own must stay so.
 int _trianglesFrom(List<Shape> shapes, int start, double px) {
   // Kept, and read before the next run is made: no run is made while another is being drawn.
-  var count = 0;
-  var vertices = 0;
-  final clip = shapes[start].clipRect;
+  var count = 0, passed = 0, vertices = 0, end = start + 1, passedAtEnd = 0;
+  var rectangles = true;
+  final clip = _runClip(shapes[start]);
   for (var i = start; i < shapes.length; i++) {
     final s = shapes[i];
-    if (s.clipRect != clip) break;
-    final piece = _pieceOf(s, px);
-    if (piece == null || vertices + piece.vertices > _TriangleList.maxVertices) break;
-    vertices += piece.vertices;
-    if (count == _run.length) _run = List.filled(count * 2, null)..setRange(0, count, _run);
-    _run[count++] = piece;
+    if (!s.clipsBody) break;
+    var piece = _mayJoinRun(s) ? _pieceOf(s, px) : null;
+    if (piece != null && _runClip(s) != clip) piece = null;
+    if (piece == null && s.clipRect != clip && clip != null) break;
+    // Taken now it would paint before a shape it overlaps: the run ends, and it may start the next.
+    if (piece != null && passed > 0 && (piece is! RectShape || !_clearOfPassed(s, passed))) break;
+    if (piece != null) {
+      if (vertices + piece.vertices > _TriangleList.maxVertices) break;
+      vertices += piece.vertices;
+      if (count == _run.length) _run = List.filled(count * 2, null)..setRange(0, count, _run);
+      _run[count++] = piece;
+      end = i + 1;
+      passedAtEnd = passed;
+      if (piece is! RectShape) rectangles = false;
+      continue;
+    }
+    if (!rectangles || passed == _maxPassed) break;
+    var area = s.paintedBounds;
+    if (area == null) break;
+    final own = s.clipRect;
+    if (own != null) area = area.intersect(own);
+    _passed[passed] = s;
+    _passedAreas[passed++] = area;
   }
-  return count;
+  _runCount = count;
+  // Shapes passed after the last piece were not reached past: they draw as themselves.
+  _passedCount = passedAtEnd;
+  return end - start;
+}
+
+/// The clip [s] has to be drawn under: none for an on-grid rectangle wholly inside its clip, which then
+/// clips away nothing; [_grid] has been read for the run's canvas.
+Rect? _runClip(Shape s) {
+  final clip = s.clipRect;
+  if (clip == null || s is! RectShape || !s.joinsRun) return clip;
+  return _containsRect(clip, s.exactArea) ? null : clip;
+}
+
+/// Pieces in [_run], and shapes in [_passed], of the last [_trianglesFrom].
+int _runCount = 0, _passedCount = 0;
+
+/// How many shapes a run reaches past; each piece after them is checked against all of them.
+const int _maxPassed = 32;
+
+List<Shape?> _passed = List.filled(_maxPassed, null);
+
+/// The areas of the shapes in [_passed], read once each as they are passed.
+final List<Rect?> _passedAreas = List.filled(_maxPassed, null);
+
+/// Whether [s] shares no pixel with the first [passed] shapes in [_passed].
+bool _clearOfPassed(Shape s, int passed) {
+  final area = s.paintedBounds;
+  if (area == null) return false;
+  for (var k = 0; k < passed; k++) {
+    if (_passedAreas[k]!.overlaps(area)) return false;
+  }
+  return true;
 }
 
 List<_Piece?> _run = List.filled(64, null);
 
+/// How [c]'s coordinates land on device pixels, read for the run being drawn.
+final _DeviceGrid _grid = _DeviceGrid();
+
+class _DeviceGrid {
+  /// Device pixels per canvas unit, or 0 when the canvas is rotated, skewed or scaled unevenly.
+  double scale = 0;
+  double dx = 0, dy = 0;
+
+  void read(ui.Canvas c) {
+    final m = c.getTransform();
+    final ratio = _RenderHints.devicePixelRatio;
+    final aligned = m[1] == 0 && m[4] == 0 && m[3] == 0 && m[7] == 0 && m[15] == 1 && m[0] == m[5] && m[0] > 0;
+    scale = aligned ? m[0] * ratio : 0;
+    dx = m[12] * ratio;
+    dy = m[13] * ratio;
+  }
+
+  bool onX(double x) => _whole(x * scale + dx);
+  bool onY(double y) => _whole(y * scale + dy);
+
+  static bool _whole(double v) => (v - v.roundToDouble()).abs() < 1e-6;
+}
+
+/// The box around [points] (x, y pairs), grown by [margin]; null for none.
+Rect? _pointsBounds(List<num> points, double margin) {
+  if (points.length < 2) return null;
+  var l = points[0].toDouble(), t = points[1].toDouble(), r = l, b = t;
+  for (var i = 2; i + 1 < points.length; i += 2) {
+    final x = points[i].toDouble(), y = points[i + 1].toDouble();
+    l = math.min(l, x);
+    r = math.max(r, x);
+    t = math.min(t, y);
+    b = math.max(b, y);
+  }
+  return Rect.fromLTRB(l - margin, t - margin, r + margin, b + margin);
+}
+
 /// One device pixel in [c]'s current coordinates.
 double _devicePixel(ui.Canvas c) {
   final m = c.getTransform();
-  final scale = math.sqrt(m[0] * m[0] + m[1] * m[1]);
+  // On screen the view's pixel ratio is applied after the scene is recorded, out of the transform.
+  final scale = math.sqrt(m[0] * m[0] + m[1] * m[1]) * _RenderHints.devicePixelRatio;
   return scale > 0 ? 1 / scale : 1;
 }
 
@@ -2748,6 +3783,10 @@ Float64List tileMatrix(VImage vImage, ui.Image image) {
 class _RenderHints {
   static bool antiAlias = true;
   static FilterQuality? filterQuality;
+
+  /// What the canvas transform is scaled by to reach device pixels: 1 where it already maps to them
+  /// (an off-screen render), the view's ratio on screen.
+  static double devicePixelRatio = 1;
 }
 
 Paint _paint() => Paint()..isAntiAlias = _RenderHints.antiAlias;
@@ -2935,11 +3974,20 @@ class TextShape extends Shape {
   @override
   final Rect? clipRect;
 
-  // Looked up rather than held: the shared cache disposes what it evicts.
-  TextPainter get painter => _TextLayouts.of(text, style);
+  TextPainter? _painter;
+  int _laidOutIn = -1;
 
-  TextShape translated(Offset offset, Rect clipArea) =>
-      TextShape(text, off + offset, style, clipArea);
+  /// The layout, looked up again only once a system font change has cleared the cache.
+  TextPainter get painter {
+    final held = _painter;
+    if (held != null && _laidOutIn == _TextLayouts.generation) return held;
+    _laidOutIn = _TextLayouts.generation;
+    return _painter = _TextLayouts.of(text, style);
+  }
+
+  TextShape translated(Offset offset, Rect clipArea) => TextShape(text, off + offset, style, clipArea)
+    .._painter = _painter
+    .._laidOutIn = _laidOutIn;
 
   @override
   bool get clipsBody => true;
@@ -2947,10 +3995,34 @@ class TextShape extends Shape {
   @override
   void draw(ui.Canvas c) => _drawClipped(c, this);
 
+  /// Each layout's text, recorded once at the origin: recording a paragraph converts every glyph run
+  /// it has, frame after frame, where drawing a picture of it records one reference. Not on the web,
+  /// whose renderer spends more drawing a picture than recording the paragraph saves.
+  static final Expando<ui.Picture> _recorded = Expando();
+
   @override
   void paintBody(ui.Canvas c) {
-    painter.paint(c, off);
+    final tp = painter;
+    if (kIsWeb) {
+      tp.paint(c, off);
+      return;
+    }
+    final picture = _recorded[tp] ??= () {
+      final recorder = ui.PictureRecorder();
+      tp.paint(ui.Canvas(recorder), Offset.zero);
+      return recorder.endRecording();
+    }();
+    c.save();
+    c.translate(off.dx, off.dy);
+    c.drawPicture(picture);
+    c.restore();
   }
+
+  @override
+  late final Rect? paintedBounds = () {
+    final tp = painter;
+    return Rect.fromLTWH(off.dx, off.dy, tp.width, tp.height).inflate(tp.height);
+  }();
 
   @override
   String toString() => 'Text "$text" @ $off${clipRect != null ? " [clipped]" : ""}';
@@ -2972,11 +4044,12 @@ class TextShape extends Shape {
 class _TextLayouts {
   static final Map<_LayoutKey, _Layout> _layouts = {};
   static const int _capacity = 512;
+  static final _LayoutKey _probe = _LayoutKey();
   static bool _watchingFonts = false;
 
   static TextPainter of(String text, TextStyle style) {
     if (!_watchingFonts) _watchingFonts = FontUtils.listenToSystemFonts(_clear);
-    final key = _LayoutKey(text, style);
+    final key = _probe.set(text, style);
     final held = _layouts[key];
     if (held != null) {
       held.used = true;
@@ -2986,7 +4059,7 @@ class _TextLayouts {
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
-    _layouts[key] = _Layout(painter);
+    _layouts[key.held()] = _Layout(painter);
     // Evicted, not disposed: a picture recorded with it may be rasterised later -- an Image's
     // render is read back only when asked for -- and on the web a disposed paragraph draws as
     // garbage there. The engine frees it once nothing references it.
@@ -3001,7 +4074,13 @@ class _TextLayouts {
     return painter;
   }
 
-  static void _clear() => _layouts.clear();
+  /// Counts the times the cache was cleared, so a shape knows its held layout is stale.
+  static int generation = 0;
+
+  static void _clear() {
+    _layouts.clear();
+    generation++;
+  }
 }
 
 class _Layout {
@@ -3010,16 +4089,27 @@ class _Layout {
   bool used = false;
 }
 
-/// A text and its style, hashed once: a style's own hash goes over every field it has.
+/// A text and its style, hashed once: a style's own hash goes over every field it has. Looked up with
+/// one reused key, copied only when kept.
 final class _LayoutKey {
-  _LayoutKey(this.text, this.style) : hashCode = Object.hash(text, _styleHashes[style] ??= style.hashCode);
-
   static final Expando<int> _styleHashes = Expando();
 
-  final String text;
-  final TextStyle style;
+  String text = '';
+  TextStyle style = const TextStyle();
   @override
-  final int hashCode;
+  int hashCode = 0;
+
+  _LayoutKey set(String text, TextStyle style) {
+    this.text = text;
+    this.style = style;
+    hashCode = Object.hash(text, _styleHashes[style] ??= style.hashCode);
+    return this;
+  }
+
+  _LayoutKey held() => _LayoutKey()
+    ..text = text
+    ..style = style
+    ..hashCode = hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -3032,6 +4122,8 @@ class LineShape extends Shape implements _Piece {
   /// sets everything it draws with, so one paint serves them all instead of one per line.
   static final Paint _linePaint = Paint();
 
+  late final double _length = (p2 - p1).distance;
+
   /// The ends as drawn, moved by [_strokeShift] once rather than per draw.
   late final Offset _from = _aligned(p1), _to = _aligned(p2);
 
@@ -3042,6 +4134,10 @@ class LineShape extends Shape implements _Piece {
 
   LineShape(this.p1, this.p2, this.color, this.strokeWidth, this.lineCap,
       this.lineJoin, [this.clipRect]);
+
+  // A cap reaches half the width past an end, and the half-pixel shift of an odd width one more.
+  @override
+  late final Rect? paintedBounds = Rect.fromPoints(p1, p2).inflate(math.max(strokeWidth, 1) + 1);
   final Offset p1, p2;
   final Color color;
   final double strokeWidth;
@@ -3068,12 +4164,57 @@ class LineShape extends Shape implements _Piece {
 
   // As a piece of a triangle run: one straight segment with a flat or square cap.
   @override
-  int get vertices => _TriangleList.verticesFor(4);
+  int get vertices => _TriangleList.sdfLines ? _TriangleList.sdfLineVertices : _TriangleList.verticesFor(4);
   @override
-  int get indices => _TriangleList.indicesFor(4);
+  int get indices => _TriangleList.sdfLines ? _TriangleList.sdfLineIndices : _TriangleList.indicesFor(4);
   @override
-  void addTo(_TriangleList list) =>
-      list.addSegment(p1.dx, p1.dy, p2.dx, p2.dy, strokeWidth, lineCap, color);
+  void addTo(_TriangleList list) {
+    if (_fillsGridQuad()) {
+      list.addQuad(_quad[0], _quad[1], _quad[2], _quad[3], _argbOf(color));
+      return;
+    }
+    if (_TriangleList.sdfLines) {
+      list.addSdfLine(_from.dx, _from.dy, _to.dx, _to.dy, strokeWidth, lineCap, color);
+      return;
+    }
+    list.addSegment(p1.dx, p1.dy, p2.dx, p2.dy, strokeWidth, lineCap, color);
+  }
+
+  /// The rectangle [_fillsGridQuad] found: left, top, right and bottom.
+  static final Float64List _quad = Float64List(4);
+
+  /// Whether this is a horizontal or vertical line whose edges land on whole device pixels, which it
+  /// covers wholly, as the stroke drawn on its own does: one quad, with no ring to antialias it, put
+  /// in [_quad]. [_grid] has been read for the run's canvas.
+  bool _fillsGridQuad() {
+    if (strokeWidth > 0 && (p1.dx == p2.dx || p1.dy == p2.dy) && _grid.scale != 0) {
+      final half = strokeWidth / 2;
+      final cap = lineCap == SWT.CAP_SQUARE ? half : 0.0;
+      final width = strokeWidth.round();
+      final shift = width.isEven && width != 0 ? 0.0 : 0.5;
+      final double l, t, r, b;
+      if (p1.dy == p2.dy) {
+        l = math.min(p1.dx, p2.dx) - cap + shift;
+        r = math.max(p1.dx, p2.dx) + cap + shift;
+        t = p1.dy + shift - half;
+        b = p1.dy + shift + half;
+      } else {
+        l = p1.dx + shift - half;
+        r = p1.dx + shift + half;
+        t = math.min(p1.dy, p2.dy) - cap + shift;
+        b = math.max(p1.dy, p2.dy) + cap + shift;
+      }
+      if (r > l && b > t && _grid.onX(l) && _grid.onX(r) && _grid.onY(t) && _grid.onY(b)) {
+        _quad
+          ..[0] = l
+          ..[1] = t
+          ..[2] = r
+          ..[3] = b;
+        return true;
+      }
+    }
+    return false;
+  }
 
   @override
   String toString() => 'Line $p1 → $p2${clipRect != null ? " [clipped]" : ""}';
@@ -3083,6 +4224,10 @@ class LineShape extends Shape implements _Piece {
 }
 
 class OvalShape extends Shape {
+  @override
+  late final Rect? paintedBounds =
+      Rect.fromPoints(rect.topLeft, rect.bottomRight).inflate(isFilled ? 1 : math.max(strokeWidth, 1) + 1);
+
   OvalShape(this.rect, this.color, this.strokeWidth,
       {this.isFilled = false, this.clipRect});
   final Rect rect;
@@ -3119,7 +4264,7 @@ abstract interface class GCGround {
   Color? get renderedGround;
 }
 
-class RectShape extends Shape {
+class RectShape extends Shape implements _Piece {
   /// What every rectangle draws with, as [LineShape] has one: a rectangle sets its style, and its
   /// stroke when it strokes, so nothing another one left behind shows.
   static final Paint _rectPaint = Paint();
@@ -3171,6 +4316,94 @@ class RectShape extends Shape {
     c.drawRect(_drawn, paint);
   }
 
+  /// Whether a triangle run draws it exactly as [paintBody] does: every edge on a whole device pixel,
+  /// where an antialiased edge covers whole pixels. A hairline is one device pixel wide only at a
+  /// device scale of 1, where it is drawn as the renderer antialiases it: each corner pixel covered
+  /// at half strength once by each of the two edges that meet there.
+  bool get joinsRun {
+    if (!mayJoinRun) return false;
+    final scale = _grid.scale;
+    if (scale == 0) return false;
+    final r = _drawn;
+    final l = math.min(r.left, r.right), t = math.min(r.top, r.bottom);
+    final rr = math.max(r.left, r.right), b = math.max(r.top, r.bottom);
+    if (isFilled) return _grid.onX(l) && _grid.onY(t) && _grid.onX(rr) && _grid.onY(b);
+    if (_hairline) {
+      return scale == 1 && _RenderHints.antiAlias && _grid.onX(l - 0.5) && _grid.onY(t - 0.5);
+    }
+    // The outer corner on the grid, and the stroke and the box whole numbers of device pixels, put
+    // every other edge on it too.
+    final half = strokeWidth / 2;
+    return _grid.onX(l - half) &&
+        _grid.onY(t - half) &&
+        _DeviceGrid._whole(strokeWidth * scale) &&
+        _DeviceGrid._whole((rr - l) * scale) &&
+        _DeviceGrid._whole((b - t) * scale);
+  }
+
+  /// What [joinsRun] asks of the rectangle alone, without the device grid: a fill, or a mitred
+  /// outline round a rectangle with area.
+  bool get mayJoinRun =>
+      isFilled ||
+      (lineJoin != SWT.JOIN_ROUND && lineJoin != SWT.JOIN_BEVEL && rect.width != 0 && rect.height != 0);
+
+  bool get _hairline => !isFilled && strokeWidth <= 0;
+
+  /// The pixels it paints while [joinsRun]: its edges then lie on whole device pixels, so nothing is
+  /// antialiased past them.
+  Rect get exactArea {
+    final r = _drawn;
+    final l = math.min(r.left, r.right), t = math.min(r.top, r.bottom);
+    final rr = math.max(r.left, r.right), b = math.max(r.top, r.bottom);
+    if (isFilled) return Rect.fromLTRB(l, t, rr, b);
+    final half = _hairline ? 0.5 : strokeWidth / 2;
+    return Rect.fromLTRB(l - half, t - half, rr + half, b + half);
+  }
+
+  // As a piece of a triangle run: the fill, or the outline as bands that do not overlap.
+  int get _quads => isFilled ? 1 : (_hairline ? 12 : 4);
+  @override
+  int get vertices => !isFilled && !_hairline ? _TriangleList.ringVertices : _quads * _TriangleList.quadVertices;
+  @override
+  int get indices => !isFilled && !_hairline ? _TriangleList.ringIndices : _quads * _TriangleList.quadIndices;
+  @override
+  void addTo(_TriangleList list) {
+    final argb = _argbOf(color);
+    final r = _drawn;
+    final l = math.min(r.left, r.right), t = math.min(r.top, r.bottom);
+    final rr = math.max(r.left, r.right), b = math.max(r.top, r.bottom);
+    if (isFilled) {
+      if (rr > l && b > t) list.addQuad(l, t, rr, b, argb);
+      return;
+    }
+    final half = _hairline ? 0.5 : strokeWidth / 2;
+    final ol = l - half, ot = t - half, or = rr + half, ob = b + half;
+    if (_hairline) {
+      final corner = ((argb >>> 24) >> 1) << 24 | (argb & 0xFFFFFF);
+      for (var pass = 0; pass < 2; pass++) {
+        list.addQuad(ol, ot, ol + 1, ot + 1, corner);
+        list.addQuad(or - 1, ot, or, ot + 1, corner);
+        list.addQuad(ol, ob - 1, ol + 1, ob, corner);
+        list.addQuad(or - 1, ob - 1, or, ob, corner);
+      }
+      if (or - ol > 2) {
+        list.addQuad(ol + 1, ot, or - 1, ot + 1, argb);
+        list.addQuad(ol + 1, ob - 1, or - 1, ob, argb);
+      }
+      if (ob - ot > 2) {
+        list.addQuad(ol, ot + 1, ol + 1, ob - 1, argb);
+        list.addQuad(or - 1, ot + 1, or, ob - 1, argb);
+      }
+      return;
+    }
+    final il = l + half, it = t + half, ir = rr - half, ib = b - half;
+    if (ir <= il || ib <= it) {
+      list.addQuad(ol, ot, or, ob, argb);
+      return;
+    }
+    list.addRing(ol, ot, or, ob, il, it, ir, ib, argb);
+  }
+
   @override
   String toString() => '${isFilled ? "Fill" : ""}Rect $rect';
 
@@ -3178,7 +4411,7 @@ class RectShape extends Shape {
   String describe() => '${isFilled ? "Fill" : "Draw"}Rect ${_dr(rect)} ${_dc(color)} w=${_dd(strokeWidth)} cap=$lineCap join=$lineJoin${_dk(clipRect)}';
 }
 
-class GradientRectShape extends Shape {
+class GradientRectShape extends Shape implements _Piece {
   GradientRectShape(this.rect, this.fromColor, this.toColor, bool vertical,
       [this.clipRect])
       : begin = vertical ? Alignment.topCenter : Alignment.centerLeft,
@@ -3201,20 +4434,60 @@ class GradientRectShape extends Shape {
   @override
   void draw(ui.Canvas c) => _drawClipped(c, this);
 
+  /// The shaders made, by what they are made from: a gradient repainted frame after frame is the
+  /// same shader, and making one is a native object each time.
+  static final Map<_GradientKey, ui.Shader> _shaders = {};
+  static const int _shadersCapacity = 256;
+  static final _GradientKey _shaderProbe = _GradientKey();
+
+  ui.Shader get _shader {
+    final key = _shaderProbe.set(rect, fromColor, toColor, begin, end);
+    final held = _shaders[key];
+    if (held != null) return held;
+    if (_shaders.length >= _shadersCapacity) _shaders.clear();
+    return _shaders[key.held()] =
+        LinearGradient(begin: begin, end: end, colors: [fromColor, toColor]).createShader(rect);
+  }
+
   @override
   void paintBody(ui.Canvas c) {
-    final gradient = LinearGradient(
-      begin: begin,
-      end: end,
-      colors: [fromColor, toColor],
-    );
     // Impeller draws a rect filled by a shader as an SDF blended with the shader in two offscreen
     // passes; the same pixels drawn as a clipped paint take none. The clip is the rect sorted, as a
     // rect is filled: a negative width or height swaps the gradient's colours, it does not empty it.
     c.save();
     c.clipRect(Rect.fromPoints(rect.topLeft, rect.bottomRight));
-    c.drawPaint(_paint()..shader = gradient.createShader(rect));
+    c.drawPaint(_paint()..shader = _shader);
     c.restore();
+  }
+
+  /// Whether it runs top to bottom or left to right, as fillGradientRectangle's do.
+  bool get _alongAnAxis =>
+      (begin == Alignment.topCenter && end == Alignment.bottomCenter) ||
+      (begin == Alignment.centerLeft && end == Alignment.centerRight);
+
+  bool get _vertical => begin == Alignment.topCenter;
+
+  /// Whether its edges land on whole device pixels: a run's quad then covers what its clip does.
+  /// [_grid] has been read for the run's canvas.
+  bool get _onGrid {
+    final r = Rect.fromPoints(rect.topLeft, rect.bottomRight);
+    return _grid.scale != 0 && !r.isEmpty && _grid.onX(r.left) && _grid.onX(r.right) && _grid.onY(r.top) &&
+        _grid.onY(r.bottom);
+  }
+
+  // As a piece of a triangle run: one quad whose colours run from edge to edge. A gradient between two
+  // colours along one axis is linear in it, which the quad's two triangles reproduce at every pixel.
+  @override
+  int get vertices => _TriangleList.quadVertices;
+  @override
+  int get indices => _TriangleList.quadIndices;
+  @override
+  void addTo(_TriangleList list) {
+    final r = Rect.fromPoints(rect.topLeft, rect.bottomRight);
+    // A negative width or height swaps which edge the gradient starts at.
+    final reversed = _vertical ? rect.height < 0 : rect.width < 0;
+    final first = _argbOf(reversed ? toColor : fromColor), last = _argbOf(reversed ? fromColor : toColor);
+    list.addGradientQuad(r.left, r.top, r.right, r.bottom, first, last, _vertical);
   }
 
   @override
@@ -3278,8 +4551,15 @@ class PatternFillShape extends Shape {
 
 /// Separate straight segments stroked with one paint: [points] holds their endpoint pairs.
 class SegmentsShape extends Shape {
-  SegmentsShape(this.points, this.color, this.strokeWidth, this.lineCap, [this.clipRect]);
+  @override
+  late final Rect? paintedBounds = _pointsBounds(points, math.max(strokeWidth, 1) + 1);
+
+  SegmentsShape(this.points, this.color, this.strokeWidth, this.lineCap, [this.clipRect, this.fixed = false]);
   final Float32List points;
+
+  /// Whether [points] never changes once made, as the dashes a GC works out do: their triangles are
+  /// then kept with the list itself rather than looked up by its coordinates.
+  final bool fixed;
   final Color color;
   final double strokeWidth;
   final int lineCap;
@@ -3296,16 +4576,8 @@ class SegmentsShape extends Shape {
   void paintBody(ui.Canvas c) {
     if (points.isEmpty) return;
     if (lineCap != SWT.CAP_ROUND) {
-      final px = _devicePixel(c);
-      final chunk = _TriangleList.maxSegments * 4;
-      for (var from = 0; from < points.length; from += chunk) {
-        final part = Float32List.sublistView(points, from, math.min(points.length, from + chunk));
-        final segments = part.length ~/ 4;
-        c.drawVertices(
-            (_TriangleList(segments * _TriangleList.verticesFor(4), segments * _TriangleList.indicesFor(4), px)
-                  ..addSegments(part, strokeWidth, lineCap, color))
-                .build(),
-            BlendMode.dst, _runPaint);
+      for (final triangles in _SegmentTriangles.of(points, strokeWidth, lineCap, color, _devicePixel(c), fixed)) {
+        c.drawVertices(triangles, BlendMode.dst, _runPaint);
       }
       return;
     }
@@ -3326,6 +4598,124 @@ class SegmentsShape extends Shape {
     ];
     return 'Segments ${ends.join(' ')} ${_dc(color)} w=${_dd(strokeWidth)} cap=$lineCap${_dk(clipRect)}';
   }
+}
+
+/// [_SdfLineAtlas]'s texture, as it is made where Impeller draws.
+@visibleForTesting
+({Uint8List pixels, int width, int height}) sdfLineAtlas() =>
+    (pixels: _SdfLineAtlas.pixels(), width: _SdfLineAtlas.width, height: _SdfLineAtlas.height);
+
+/// The triangles a run gives the line from ([x1], [y1]) to ([x2], [y2]) where Impeller draws, at
+/// [px] canvas units a device pixel; null for a line a run leaves to be drawn on its own there.
+@visibleForTesting
+({Float32List positions, Float32List textures, Int32List colors, Uint16List indices})? sdfLineMesh(
+    double x1, double y1, double x2, double y2, double strokeWidth, int lineCap, Color color, double px) {
+  final length = math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  if (!_TriangleList.sdfFits(strokeWidth, length, lineCap, px)) return null;
+  final list = _TriangleList(_TriangleList.sdfLineVertices, _TriangleList.sdfLineIndices, px)
+    ..addSdfLine(x1, y1, x2, y2, strokeWidth, lineCap, color);
+  final v = list._v;
+  return (
+    positions: Float32List.fromList(list.positions.sublist(0, v * 2)),
+    textures: Float32List.fromList(list._textures!.sublist(0, v * 2)),
+    colors: Int32List.fromList(list.colors.sublist(0, v)),
+    indices: Uint16List.fromList(list.indices!.sublist(0, list._n)),
+  );
+}
+
+/// What Impeller's SDF shader lays on a line's pixels, as a texture: Impeller draws a line on its own
+/// as a rectangle at least a device pixel each way, whose pixels take
+/// `gamma(1 - smoothstep(-0.5, 0.5, sdf))`, `sdf` being the pixel centre's signed distance to the
+/// rectangle in device pixels and `gamma` leaning towards the line colour's luma. A line in a run gives
+/// each vertex where it lies relative to the rectangle's ends (x) and sides (y) as texture
+/// coordinates, so every pixel samples the same value.
+///
+/// Per luma step, a tile of distances and one for hairlines, stacked down the texture. Along, a tile
+/// holds distances past an end from -0.5 to 0.5 device pixels, and the texture's own edges clamp
+/// any further, which is what the shader gives there: a line's coordinates run from end to middle.
+/// Across, on a multisampled canvas a pixel only partly inside a triangle is shaded at its centre,
+/// outside the triangle, so its coordinates run on past what the triangle's vertices hold, by up to
+/// [reach] device pixels: each tile holds that far past what any vertex gives. Where a distance
+/// folds, at a line's middle, it runs on the wrong way past it, so a fold is only where the line is
+/// opaque that far round it; a line narrower than that is drawn on its own, but for a hairline.
+class _SdfLineAtlas {
+  static const int lumas = 64, steps = 16, width = steps + 1;
+
+  /// How far a multisampled pixel's samples lie from its centre, in device pixels, at most: under the
+  /// standard 4x pattern, 0.375 each way.
+  static const double reach = 0.55;
+
+  /// A tile of distances past a side, from -0.5 to 0.5 device pixels and [gutter] texels further
+  /// either way: a line's vertices hold at most [reach] past those, and a pixel reaches that far again.
+  static const int gutter = 18, tile = steps + 1 + 2 * gutter;
+
+  /// A tile of positions across a line half a device pixel either side of its middle, which every
+  /// line thinner than a pixel is, [hairlineHalf] texels either way: its vertices lie [reach] past half
+  /// a pixel outside it, and a pixel reaches that far again.
+  static const int hairlineHalf = 34, hairlineTile = 2 * hairlineHalf + 1;
+
+  static const int height = (tile + hairlineTile) * lumas;
+
+  /// What a run with SDF lines in it is drawn with, once the texture is made; null until then, and
+  /// where the canvas is not Impeller's.
+  static Paint? paint;
+  static bool _started = false;
+
+  /// Makes the texture, where Impeller draws. Its lines are drawn as before until it is made.
+  static void prepare() {
+    if (_started || kIsWeb || !ui.ImageFilter.isShaderFilterSupported) return;
+    _started = true;
+    ui.decodeImageFromPixels(pixels(), width, height, ui.PixelFormat.rgba8888, (image) {
+      paint = Paint()
+        ..shader = ImageShader(image, TileMode.clamp, TileMode.clamp, Matrix4.identity().storage,
+            filterQuality: FilterQuality.low);
+    });
+  }
+
+  /// The texture's premultiplied white texels, luma step after luma step.
+  static Uint8List pixels() {
+    final out = Uint8List(width * height * 4);
+    var o = 0;
+    void put(double a) {
+      out[o] = out[o + 1] = out[o + 2] = out[o + 3] = (a * 255).round();
+      o += 4;
+    }
+
+    for (var l = 0; l < lumas; l++) {
+      final luma = l / (lumas - 1);
+      for (var j = 0; j < tile; j++) {
+        for (var i = 0; i < width; i++) {
+          put(coverage(i / steps - 0.5, (j - gutter) / steps - 0.5, luma));
+        }
+      }
+      for (var j = 0; j < hairlineTile; j++) {
+        for (var i = 0; i < width; i++) {
+          put(coverage(i / steps - 0.5, ((j - hairlineHalf) / steps).abs() - 0.5, luma));
+        }
+      }
+    }
+    return out;
+  }
+
+  /// The shader's alpha at [dx] past a rectangle's end and [dy] past its side, in device pixels.
+  static double coverage(double dx, double dy, double luma) {
+    final ox = math.max(dx, 0.0), oy = math.max(dy, 0.0);
+    final sdf = math.sqrt(ox * ox + oy * oy) + math.min(math.max(dx, dy), 0.0);
+    final t = (sdf + 0.5).clamp(0.0, 1.0);
+    final c = 1 - t * t * (3 - 2 * t);
+    return (1 - luma) * (1 - math.sqrt(1 - c)) + luma * math.sqrt(c);
+  }
+
+  static int _luma(int rgb) {
+    final luma = (0.2126 * ((rgb >> 16) & 0xFF) + 0.7152 * ((rgb >> 8) & 0xFF) + 0.0722 * (rgb & 0xFF)) / 255;
+    return (luma * (lumas - 1)).round();
+  }
+
+  /// The texture coordinate of a distance of -0.5 past a side, in the tile for [rgb]'s luma.
+  static double rowOf(int rgb) => _luma(rgb) * (tile + hairlineTile) + gutter + 0.5;
+
+  /// The texture coordinate of a hairline's middle, in the hairline tile for [rgb]'s luma.
+  static double hairlineRowOf(int rgb) => _luma(rgb) * (tile + hairlineTile) + tile + hairlineHalf + 0.5;
 }
 
 /// Triangles that carry their own antialiasing, for straight segments and convex fills: each shape
@@ -3356,6 +4746,11 @@ class _TriangleList {
   /// the strip's extra vertices; elsewhere the indexed list is the cheaper one to draw.
   static const bool strip = kIsWeb && !kIsWasm;
 
+  /// Whether the canvas antialiases by multisampling, as Impeller does: a filled path is then its
+  /// triangles with no fringe of its own, and a fill in a run is the same triangles.
+  static bool get multisampled => debugMultisampled ?? (_multisampled ??= !kIsWeb && ui.ImageFilter.isShaderFilterSupported);
+  static bool? _multisampled;
+
   /// Vertices a shape of [corners] corners takes. As a strip: its ring, its core, and the repeated
   /// vertices that join it to its neighbours with triangles of no area.
   static int verticesFor(int corners) => strip ? 3 * corners + 4 : 2 * corners;
@@ -3370,8 +4765,14 @@ class _TriangleList {
   /// one list's memory, since every split costs a call.
   static const int maxVertices = kIsWasm ? 1024 : (strip ? 1 << 20 : 0xFFFF);
 
-  /// Segments per list.
-  static final int maxSegments = maxVertices ~/ verticesFor(4);
+  /// Whether a segment stroked [strokeWidth] wide is a hairline here: no wider than one device pixel
+  /// [px] and antialiased, so its core has no width and it goes as [_hairline] does.
+  static bool isHairline(double strokeWidth, double px) =>
+      !strip && _RenderHints.antiAlias && (strokeWidth > 0 ? strokeWidth : px) <= px;
+
+  /// Vertices and indices a segment stroked [strokeWidth] wide takes at device pixel [px].
+  static int segmentVertices(double strokeWidth, double px) => isHairline(strokeWidth, px) ? 6 : verticesFor(4);
+  static int segmentIndices(double strokeWidth, double px) => isHairline(strokeWidth, px) ? 18 : indicesFor(4);
 
   /// One device pixel.
   final double px;
@@ -3468,7 +4869,7 @@ class _TriangleList {
   void addSegment(double x1, double y1, double x2, double y2, double strokeWidth, int lineCap, Color color) {
     final segment = math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
     if (segment == 0) return;
-    final rgb = color.toARGB32() & 0xFFFFFF;
+    final rgb = _argbOf(color) & 0xFFFFFF;
     final f = _RenderHints.antiAlias ? px / 2 : 0.0;
     final half = (strokeWidth > 0 ? strokeWidth : px) / 2;
     final cap = lineCap == SWT.CAP_SQUARE ? half : 0.0;
@@ -3489,6 +4890,11 @@ class _TriangleList {
     final iax = ux * li, iay = uy * li, ibx = -uy * hi, iby = ux * hi;
     final oax = ux * lo, oay = uy * lo, obx = -uy * ho, oby = ux * ho;
     final inner = _inner, outer = _outer;
+    if (hi == 0 && !strip) {
+      _hairline(mx - iax, my - iay, mx + iax, my + iay, mx - oax - obx, my - oay - oby, mx + oax - obx,
+          my + oay - oby, mx + oax + obx, my + oay + oby, mx - oax + obx, my - oay + oby, core, rgb);
+      return;
+    }
     // Corners go round the rectangle (-l,-h), (l,-h), (l,h), (-l,h) in the segment's own frame.
     inner[0] = mx - iax - ibx;
     inner[1] = my - iay - iby;
@@ -3509,24 +4915,552 @@ class _TriangleList {
     _shape(inner, outer, 4, core, rgb);
   }
 
+  /// [_shape] for a segment whose core has no width: its inner corners meet in pairs at ([ax], [ay])
+  /// and ([bx], [by]), so the core and the ring's two ends are triangles of no area, which cover no
+  /// pixel. The rest of the ring is six triangles over six vertices.
+  void _hairline(double ax, double ay, double bx, double by, double o0x, double o0y, double o1x, double o1y,
+      double o2x, double o2y, double o3x, double o3y, int core, int edge) {
+    final base = _v;
+    _vertex(base, ax, ay, core);
+    _vertex(base + 1, bx, by, core);
+    _vertex(base + 2, o0x, o0y, edge);
+    _vertex(base + 3, o1x, o1y, edge);
+    _vertex(base + 4, o2x, o2y, edge);
+    _vertex(base + 5, o3x, o3y, edge);
+    _v = base + 6;
+    final a = base, b = base + 1, o0 = base + 2, o1 = base + 3, o2 = base + 4, o3 = base + 5;
+    final indices = this.indices!;
+    var n = _n;
+    indices[n++] = a;
+    indices[n++] = o0;
+    indices[n++] = o1;
+    indices[n++] = a;
+    indices[n++] = o1;
+    indices[n++] = b;
+    indices[n++] = b;
+    indices[n++] = o1;
+    indices[n++] = o2;
+    indices[n++] = b;
+    indices[n++] = o2;
+    indices[n++] = o3;
+    indices[n++] = b;
+    indices[n++] = o3;
+    indices[n++] = a;
+    indices[n++] = a;
+    indices[n++] = o3;
+    indices[n++] = o0;
+    _n = n;
+  }
+
   /// Adds a convex fill: its [inner] outline at full coverage, and a ring out to its [outer] one
   /// fading to none.
+  /// The convex polygon [corners] as a fan of triangles from its first corner, at full coverage.
+  void addFan(Float32List corners, Color color) {
+    final argb = ((color.a * 255).round() << 24) | (_argbOf(color) & 0xFFFFFF);
+    final n = corners.length ~/ 2, base = _v, positions = this.positions, colors = this.colors;
+    for (var k = 0; k < n; k++) {
+      positions[(base + k) * 2] = corners[k * 2];
+      positions[(base + k) * 2 + 1] = corners[k * 2 + 1];
+      colors[base + k] = argb;
+    }
+    _v = base + n;
+    final indices = this.indices!;
+    for (var k = 1; k + 1 < n; k++) {
+      indices[_n++] = base;
+      indices[_n++] = base + k;
+      indices[_n++] = base + k + 1;
+    }
+  }
+
   void addPolygon(Float32List inner, Float32List outer, Color color) {
-    final rgb = color.toARGB32() & 0xFFFFFF;
+    final rgb = _argbOf(color) & 0xFFFFFF;
     _shape(inner, outer, inner.length ~/ 2, ((color.a * 255).round() << 24) | rgb, rgb);
   }
 
-  ui.Vertices build() => strip
-      ? ui.Vertices.raw(ui.VertexMode.triangleStrip, Float32List.sublistView(positions, 0, _v * 2),
-          colors: Int32List.sublistView(colors, 0, _v))
-      : ui.Vertices.raw(ui.VertexMode.triangles, Float32List.sublistView(positions, 0, _v * 2),
-          colors: Int32List.sublistView(colors, 0, _v), indices: Uint16List.sublistView(indices!, 0, _n));
+  /// Chords per quarter turn of a curve of [radius], so that none strays from it by more than a tenth
+  /// of device pixel [px]; 0 when that takes more than [maxQuarterSteps], and the shape goes alone.
+  static int quarterSteps(double radius, double px) {
+    final r = radius / px;
+    if (r <= 0.1) return 2;
+    final steps = (math.pi / 4 / math.acos(1 - 0.1 / r)).ceil();
+    return steps > maxQuarterSteps ? 0 : math.max(steps, 2);
+  }
+
+  static const int maxQuarterSteps = 32;
+
+  /// Adds triangles made elsewhere: [indices] count from this list's next vertex.
+  void addMesh(Float32List positions, Int32List colors, Uint16List indices) {
+    final base = _v;
+    this.positions.setRange(base * 2, base * 2 + positions.length, positions);
+    this.colors.setRange(base, base + colors.length, colors);
+    final out = this.indices!;
+    var n = _n;
+    for (var i = 0; i < indices.length; i++) {
+      out[n++] = base + indices[i];
+    }
+    _n = n;
+    _v = base + colors.length;
+  }
+
+  /// Adds the rectangle from ([l], [t]) to ([r], [b]) in [argb], at full coverage with no ring.
+  void addQuad(double l, double t, double r, double b, int argb) {
+    final positions = this.positions, colors = this.colors;
+    var v = _v;
+    if (strip) {
+      // Repeated first and last vertices join it to its neighbours with triangles of no area.
+      _vertex(v++, l, t, argb);
+      _vertex(v++, l, t, argb);
+      _vertex(v++, r, t, argb);
+      _vertex(v++, l, b, argb);
+      _vertex(v++, r, b, argb);
+      _vertex(v++, r, b, argb);
+      _v = v;
+      return;
+    }
+    positions[v * 2] = l;
+    positions[v * 2 + 1] = t;
+    positions[v * 2 + 2] = r;
+    positions[v * 2 + 3] = t;
+    positions[v * 2 + 4] = r;
+    positions[v * 2 + 5] = b;
+    positions[v * 2 + 6] = l;
+    positions[v * 2 + 7] = b;
+    colors[v] = argb;
+    colors[v + 1] = argb;
+    colors[v + 2] = argb;
+    colors[v + 3] = argb;
+    final indices = this.indices!;
+    indices[_n++] = v;
+    indices[_n++] = v + 1;
+    indices[_n++] = v + 2;
+    indices[_n++] = v;
+    indices[_n++] = v + 2;
+    indices[_n++] = v + 3;
+    _v = v + 4;
+  }
+
+  void _vertex(int v, double x, double y, int argb) {
+    positions[v * 2] = x;
+    positions[v * 2 + 1] = y;
+    colors[v] = argb;
+  }
+
+  static int get quadVertices => strip ? 6 : 4;
+  static int get quadIndices => strip ? 0 : 6;
+
+  /// What [addRing] takes: as a strip, round the ring and back to its start, joined to its
+  /// neighbours by repeated vertices.
+  static int get ringVertices => strip ? 12 : 8;
+  static int get ringIndices => strip ? 0 : 24;
+
+  /// Adds the band between the rectangle from ([ol], [ot]) to ([or], [ob]) and the one inside it
+  /// from ([il], [it]) to ([ir], [ib]), in [argb], at full coverage with no ring to antialias it:
+  /// two triangles per side, which meet on the corners' diagonals.
+  void addRing(double ol, double ot, double or, double ob, double il, double it, double ir, double ib, int argb) {
+    var v = _v;
+    if (strip) {
+      _vertex(v++, ol, ot, argb);
+      _vertex(v++, ol, ot, argb);
+      _vertex(v++, il, it, argb);
+      _vertex(v++, or, ot, argb);
+      _vertex(v++, ir, it, argb);
+      _vertex(v++, or, ob, argb);
+      _vertex(v++, ir, ib, argb);
+      _vertex(v++, ol, ob, argb);
+      _vertex(v++, il, ib, argb);
+      _vertex(v++, ol, ot, argb);
+      _vertex(v++, il, it, argb);
+      _vertex(v++, il, it, argb);
+      _v = v;
+      return;
+    }
+    _vertex(v, ol, ot, argb);
+    _vertex(v + 1, or, ot, argb);
+    _vertex(v + 2, or, ob, argb);
+    _vertex(v + 3, ol, ob, argb);
+    _vertex(v + 4, il, it, argb);
+    _vertex(v + 5, ir, it, argb);
+    _vertex(v + 6, ir, ib, argb);
+    _vertex(v + 7, il, ib, argb);
+    final indices = this.indices!;
+    var n = _n;
+    for (var k = 0; k < 4; k++) {
+      final q = k == 3 ? 0 : k + 1;
+      indices[n++] = v + k;
+      indices[n++] = v + q;
+      indices[n++] = v + 4 + q;
+      indices[n++] = v + k;
+      indices[n++] = v + 4 + q;
+      indices[n++] = v + 4 + k;
+    }
+    _n = n;
+    _v = v + 8;
+  }
+
+  /// Adds the rectangle from ([l], [t]) to ([r], [b]) at full coverage, [first] along its top or left
+  /// edge and [last] along the opposite one, as [vertical] says.
+  void addGradientQuad(double l, double t, double r, double b, int first, int last, bool vertical) {
+    final tr = vertical ? first : last, bl = vertical ? last : first;
+    var v = _v;
+    if (strip) {
+      // Repeated first and last vertices join it to its neighbours with triangles of no area.
+      _vertex(v++, l, t, first);
+      _vertex(v++, l, t, first);
+      _vertex(v++, r, t, tr);
+      _vertex(v++, l, b, bl);
+      _vertex(v++, r, b, last);
+      _vertex(v++, r, b, last);
+      _v = v;
+      return;
+    }
+    _vertex(v, l, t, first);
+    _vertex(v + 1, r, t, tr);
+    _vertex(v + 2, r, b, last);
+    _vertex(v + 3, l, b, bl);
+    final indices = this.indices!;
+    indices[_n++] = v;
+    indices[_n++] = v + 1;
+    indices[_n++] = v + 2;
+    indices[_n++] = v;
+    indices[_n++] = v + 2;
+    indices[_n++] = v + 3;
+    _v = v + 4;
+  }
+
+  ui.Vertices build() {
+    if (strip) {
+      return ui.Vertices.raw(ui.VertexMode.triangleStrip, Float32List.sublistView(positions, 0, _v * 2),
+          colors: Int32List.sublistView(colors, 0, _v));
+    }
+    final textures = _textures;
+    if (textures != null) _untextured(textures, _v);
+    return ui.Vertices.raw(ui.VertexMode.triangles, Float32List.sublistView(positions, 0, _v * 2),
+        textureCoordinates: textures == null ? null : Float32List.sublistView(textures, 0, _v * 2),
+        colors: Int32List.sublistView(colors, 0, _v), indices: Uint16List.sublistView(indices!, 0, _n));
+  }
+
+  /// Whether a line in a run goes as [addSdfLine]: where Impeller draws, once [_SdfLineAtlas] is made,
+  /// under a canvas scaled evenly. [_grid] has been read for the run's canvas.
+  static bool get sdfLines => _SdfLineAtlas.paint != null && _grid.scale != 0;
+  static const int sdfLineVertices = 12, sdfLineIndices = 36;
+
+  static Float32List _texturesBuffer = Float32List(0);
+
+  /// Texture coordinates, once a line has been shaded from [_SdfLineAtlas]: the list is then drawn
+  /// with its paint, every other vertex sampling a texel at full coverage.
+  Float32List? _textures;
+  int _t = 0;
+
+  bool get textured => _textures != null;
+
+  void _untextured(Float32List textures, int to) {
+    for (var v = _t; v < to; v++) {
+      textures[v * 2] = 0.5;
+      textures[v * 2 + 1] = 0.5;
+    }
+    _t = to;
+  }
+
+  /// Whether [addSdfLine] paints what Impeller does for a line [strokeWidth] wide and [length] long:
+  /// one thinner than a device pixel, or at least two wide, and at least two long: where a distance
+  /// folds, the line is opaque as far round as a multisampled pixel reaches.
+  static bool sdfFits(double strokeWidth, double length, int lineCap, double px) {
+    final e = px / 2, w = strokeWidth / 2, l = length / 2 + (lineCap == SWT.CAP_FLAT ? 0 : w);
+    return (w <= e || w >= px) && l >= px;
+  }
+
+  /// The line from ([x1], [y1]) to ([x2], [y2]) as Impeller draws one on its own, for one [sdfFits]
+  /// takes: a rectangle at least a device pixel each way, fainter by what that adds to a thinner one,
+  /// its pixels shaded from [_SdfLineAtlas]. Drawn [_SdfLineAtlas.reach] past where it fades out, so
+  /// a multisampled pixel has every sample covered. Across, its edges and two points that far inside
+  /// where it fades in, the distance holding still between those, or its middle, where the line is too
+  /// narrow for those, the distance folding there; across a hairline, its edges.
+  void addSdfLine(double x1, double y1, double x2, double y2, double strokeWidth, int lineCap, Color color) {
+    final length = math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    final ux = length > 0 ? (x2 - x1) / length : 1.0, uy = length > 0 ? (y2 - y1) / length : 0.0;
+    final px = this.px, e = px / 2, pad = _SdfLineAtlas.reach * px;
+    final w = strokeWidth / 2, l = length / 2 + (lineCap == SWT.CAP_FLAT ? 0 : w);
+    final hw = math.max(w, e), hl = math.max(l, e);
+    var alpha = color.a;
+    if (strokeWidth != 0 && (hw != w || hl != l)) alpha *= w * l / (hw * hl);
+    final rgb = _argbOf(color) & 0xFFFFFF;
+    final argb = ((alpha * 255).round() << 24) | rgb;
+    final along = _sdfAlong, alongTexels = _sdfAlongTexels, across = _sdfAcross, acrossTexels = _sdfAcrossTexels;
+    // Along: its ends, past where it fades out, and its middle, the texture's edges clamping between.
+    const steps = _SdfLineAtlas.steps;
+    const columns = 3;
+    along[0] = -hl - e - pad;
+    along[1] = 0;
+    along[2] = hl + e + pad;
+    alongTexels[0] = alongTexels[2] = 0.5 + (1 + _SdfLineAtlas.reach) * steps;
+    alongTexels[1] = 0.5 - (hl / px - 0.5) * steps;
+    final int rows;
+    if (hw == e) {
+      rows = 2;
+      final hairline = _SdfLineAtlas.hairlineRowOf(rgb), out = (e + e + pad) / px * steps;
+      across[0] = -e - e - pad;
+      across[1] = e + e + pad;
+      acrossTexels[0] = hairline - out;
+      acrossTexels[1] = hairline + out;
+    } else {
+      rows = _sdfStations(across, acrossTexels, hw, px, _SdfLineAtlas.rowOf(rgb));
+    }
+    final mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    final positions = this.positions, colors = this.colors;
+    final textures = _textures ??= _texturesBuffer.length >= positions.length
+        ? _texturesBuffer
+        : (_texturesBuffer = Float32List(positions.length));
+    final base = _v;
+    _untextured(textures, base);
+    var v = base;
+    for (var i = 0; i < columns; i++) {
+      final ax = mx + ux * along[i], ay = my + uy * along[i], tx = alongTexels[i];
+      for (var j = 0; j < rows; j++) {
+        final a = across[j];
+        positions[v * 2] = ax - uy * a;
+        positions[v * 2 + 1] = ay + ux * a;
+        textures[v * 2] = tx;
+        textures[v * 2 + 1] = acrossTexels[j];
+        colors[v] = argb;
+        v++;
+      }
+    }
+    _v = _t = v;
+    final indices = this.indices!;
+    for (var i = 0; i + 1 < columns; i++) {
+      for (var j = 0; j + 1 < rows; j++) {
+        final a = base + i * rows + j;
+        indices[_n++] = a;
+        indices[_n++] = a + rows;
+        indices[_n++] = a + rows + 1;
+        indices[_n++] = a;
+        indices[_n++] = a + rows + 1;
+        indices[_n++] = a + 1;
+      }
+    }
+  }
+
+  /// The offsets from a line's middle, in one direction, at which a rectangle reaching [half] from it
+  /// is cut, and the texture coordinate there in a tile whose distance of -0.5 lies at [origin]: its
+  /// edges [_SdfLineAtlas.reach] past where it fades out, and that far inside where it fades in, or
+  /// its middle where those meet. How many.
+  static int _sdfStations(Float64List at, Float64List texels, double half, double px, double origin) {
+    const steps = _SdfLineAtlas.steps, reach = _SdfLineAtlas.reach;
+    final e = px / 2, pad = reach * px, deep = half - e - pad;
+    final edge = origin + (1 + reach) * steps;
+    at[0] = -half - e - pad;
+    texels[0] = edge;
+    if (deep <= 0) {
+      at[1] = 0;
+      texels[1] = origin - (half / px - 0.5) * steps;
+      at[2] = half + e + pad;
+      texels[2] = edge;
+      return 3;
+    }
+    at[1] = -deep;
+    at[2] = deep;
+    texels[1] = texels[2] = origin - reach * steps;
+    at[3] = half + e + pad;
+    texels[3] = edge;
+    return 4;
+  }
+
+  static final Float64List _sdfAlong = Float64List(3), _sdfAlongTexels = Float64List(3);
+  static final Float64List _sdfAcross = Float64List(4), _sdfAcrossTexels = Float64List(4);
+}
+
+/// The triangles a [SegmentsShape] drawn on its own is stroked with, kept while the same segments are
+/// drawn again: a dashed line is thousands of dashes, the same ones every frame. Built from the
+/// segments, stroke and device pixel only, so an equal key builds the same triangles.
+class _SegmentTriangles {
+  static final Map<_SegmentsKey, List<ui.Vertices>> _built = {};
+  static const int _capacity = 256;
+
+  /// The triangles of a list that never changes, by the list.
+  static final Expando<_HeldTriangles> _ofFixed = Expando();
+
+  static List<ui.Vertices> of(Float32List points, double strokeWidth, int lineCap, Color color, double px,
+      [bool fixed = false]) {
+    final argb = _argbOf(color), antiAlias = _RenderHints.antiAlias;
+    if (fixed) {
+      final held = _ofFixed[points];
+      if (held != null && held.strokeWidth == strokeWidth && held.lineCap == lineCap && held.argb == argb &&
+          held.px == px && held.antiAlias == antiAlias) {
+        return held.built;
+      }
+      final built = _buildAll(points, strokeWidth, lineCap, color, px);
+      _ofFixed[points] = _HeldTriangles(strokeWidth, lineCap, argb, px, antiAlias, built);
+      return built;
+    }
+    final key = _SegmentsKey.probe(points, strokeWidth, lineCap, argb, px, antiAlias);
+    final held = _built[key];
+    if (held != null) return held;
+    // Dropped, not disposed: a picture recorded with them may still be drawn.
+    if (_built.length >= _capacity) _built.clear();
+    final built = _buildAll(points, strokeWidth, lineCap, color, px);
+    _built[key.held()] = built;
+    return built;
+  }
+
+  static List<ui.Vertices> _buildAll(Float32List points, double strokeWidth, int lineCap, Color color, double px) {
+    final chunk = _TriangleList.maxVertices ~/ _TriangleList.segmentVertices(strokeWidth, px) * 4;
+    return <ui.Vertices>[
+      for (var from = 0; from < points.length; from += chunk)
+        _build(Float32List.sublistView(points, from, math.min(points.length, from + chunk)), strokeWidth,
+            lineCap, color, px),
+    ];
+  }
+
+  static ui.Vertices _build(Float32List part, double strokeWidth, int lineCap, Color color, double px) {
+    final segments = part.length ~/ 4;
+    return (_TriangleList(segments * _TriangleList.segmentVertices(strokeWidth, px),
+            segments * _TriangleList.segmentIndices(strokeWidth, px), px)
+          ..addSegments(part, strokeWidth, lineCap, color))
+        .build();
+  }
+}
+
+class _HeldTriangles {
+  _HeldTriangles(this.strokeWidth, this.lineCap, this.argb, this.px, this.antiAlias, this.built);
+  final double strokeWidth;
+  final int lineCap;
+  final int argb;
+  final double px;
+  final bool antiAlias;
+  final List<ui.Vertices> built;
+}
+
+/// Segments and their stroke, equal when every coordinate is the same bit for bit. Looked up with one
+/// reused key over a reused copy of the coordinates, copied only when kept.
+final class _SegmentsKey {
+  _SegmentsKey._();
+
+  static final _SegmentsKey _probe = _SegmentsKey._();
+  static Float32List _scratch = Float32List(0);
+  static Int32List _scratchBits = Int32List(0);
+
+  static _SegmentsKey probe(Float32List points, double strokeWidth, int lineCap, int argb, double px, bool antiAlias) {
+    if (_scratch.length < points.length) {
+      _scratch = Float32List(points.length * 2);
+      _scratchBits = Int32List.view(_scratch.buffer);
+    }
+    _scratch.setRange(0, points.length, points);
+    return _probe
+      ..bits = _scratchBits
+      ..length = points.length
+      ..strokeWidth = strokeWidth
+      ..lineCap = lineCap
+      ..argb = argb
+      ..px = px
+      ..antiAlias = antiAlias
+      ..hashCode = Object.hash(_hashBits(_scratchBits, points.length), strokeWidth, lineCap, argb, px, antiAlias);
+  }
+
+  /// This key over a copy of the coordinates, so the points it was made from can change.
+  _SegmentsKey held() => _SegmentsKey._()
+    ..bits = Int32List.fromList(Int32List.sublistView(bits, 0, length))
+    ..length = length
+    ..strokeWidth = strokeWidth
+    ..lineCap = lineCap
+    ..argb = argb
+    ..px = px
+    ..antiAlias = antiAlias
+    ..hashCode = hashCode;
+
+  Int32List bits = Int32List(0);
+  int length = 0;
+  double strokeWidth = 0;
+  int lineCap = 0;
+  int argb = 0;
+  double px = 0;
+  bool antiAlias = false;
+  @override
+  int hashCode = 0;
+
+  static int _hashBits(Int32List bits, int length) {
+    var h = length;
+    for (var i = 0; i < length; i++) {
+      h = (h * 31 + bits[i]) & 0x3FFFFFFF;
+    }
+    return h;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _SegmentsKey || other.hashCode != hashCode || other.strokeWidth != strokeWidth ||
+        other.lineCap != lineCap || other.argb != argb || other.px != px || other.antiAlias != antiAlias ||
+        other.length != length) {
+      return false;
+    }
+    final a = bits, b = other.bits;
+    for (var i = 0; i < length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+}
+
+/// A gradient's rectangle, colours and direction. Looked up with one reused key, copied only when kept.
+final class _GradientKey {
+  Rect rect = Rect.zero;
+  Color from = const Color(0x00000000), to = const Color(0x00000000);
+  Alignment begin = Alignment.center, end = Alignment.center;
+  @override
+  int hashCode = 0;
+
+  _GradientKey set(Rect rect, Color from, Color to, Alignment begin, Alignment end) {
+    this.rect = rect;
+    this.from = from;
+    this.to = to;
+    this.begin = begin;
+    this.end = end;
+    hashCode = Object.hash(rect, from, to, begin, end);
+    return this;
+  }
+
+  _GradientKey held() => _GradientKey()
+    ..rect = rect
+    ..from = from
+    ..to = to
+    ..begin = begin
+    ..end = end
+    ..hashCode = hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _GradientKey && other.hashCode == hashCode && other.rect == rect && other.from == from &&
+      other.to == to && other.begin == begin && other.end == end;
 }
 
 class PathShape extends Shape {
-  PathShape(this.path, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
-      {this.isFilled = false, this.clipRect});
-  final Path path;
+  PathShape(Path path, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect})
+      : _path = path,
+        _source = null,
+        _by = Offset.zero;
+
+  /// The path [source] describes, moved by [by], built the first time it is needed: moving the
+  /// shape again builds no path in between.
+  PathShape.of(_PathSource source, Offset by, this.color, this.strokeWidth, this.lineCap, this.lineJoin,
+      {this.isFilled = false, this.clipRect})
+      : _source = source,
+        _by = by;
+
+  final _PathSource? _source;
+  final Offset _by;
+  Path? _path;
+
+  Path get path => _path ??= _KeptPaths.ofSource(_source!, _by);
+
+  /// This shape moved by [by], under [clipRect].
+  PathShape moved(Offset by, Rect? clipRect) {
+    final source = _source;
+    return source != null && _path == null
+        ? PathShape.of(source, _by + by, color, strokeWidth, lineCap, lineJoin,
+            isFilled: isFilled, clipRect: clipRect)
+        : PathShape(path.shift(by), color, strokeWidth, lineCap, lineJoin, isFilled: isFilled, clipRect: clipRect);
+  }
+
   final Color color;
   final double strokeWidth;
   final int lineCap;
@@ -3558,7 +5492,255 @@ class PathShape extends Shape {
   String describe() => '${isFilled ? "Fill" : "Draw"}Path ${_dr(path.getBounds())} ${_dc(color)} w=${_dd(strokeWidth)}${_dk(clipRect)}';
 }
 
+/// How many paths have been built from a GC's Path data.
+@visibleForTesting
+int pathsBuilt = 0;
+
+/// A Dart-backed Path's points and types, as the wire holds them, and the rule it fills by.
+class _PathSource {
+  _PathSource(this.types, this.points, this.fillType);
+
+  final List<int> types;
+  final List<double> points;
+  final PathFillType fillType;
+
+  static _PathSource? of(VPathData? data, PathFillType fillType) {
+    final types = data?.types;
+    final points = data?.points;
+    if (types == null || points == null || types.isEmpty) return null;
+    return _PathSource(types, points, fillType);
+  }
+
+  /// The path, every point moved by [by]. Points missing for a segment end it there.
+  Path build(Offset by) {
+    pathsBuilt++;
+    final dx = by.dx, dy = by.dy;
+    final path = Path()..fillType = fillType;
+    var i = 0;
+    bool has(int n) => i + n <= points.length;
+    for (final type in types) {
+      switch (type) {
+        case SWT.PATH_MOVE_TO:
+          if (!has(2)) return path;
+          path.moveTo(points[i++] + dx, points[i++] + dy);
+        case SWT.PATH_LINE_TO:
+          if (!has(2)) return path;
+          path.lineTo(points[i++] + dx, points[i++] + dy);
+        case SWT.PATH_QUAD_TO:
+          if (!has(4)) return path;
+          path.quadraticBezierTo(points[i++] + dx, points[i++] + dy, points[i++] + dx, points[i++] + dy);
+        case SWT.PATH_CUBIC_TO:
+          if (!has(6)) return path;
+          path.cubicTo(points[i++] + dx, points[i++] + dy, points[i++] + dx, points[i++] + dy,
+              points[i++] + dx, points[i++] + dy);
+        case SWT.PATH_CLOSE:
+          path.close();
+      }
+    }
+    return path;
+  }
+}
+
+/// How many paths [_KeptPaths] has built to keep.
+@visibleForTesting
+int keptPathsBuilt = 0;
+
+/// Paths kept by the geometry they are built from: a GC repaints the same shapes frame after frame,
+/// and a path is a native object built with a call per segment. Geometry drawn once is built in the
+/// shared path, as before; drawn again, it gets a path of its own, kept until the cache is full.
+abstract final class _KeptPaths {
+  static const int _capacity = 1024;
+  static final Map<_PointsPathKey, Path?> _points = {};
+  static final Map<_PiePathKey, Path?> _pies = {};
+  static final Map<_SourcePathKey, Path> _sources = {};
+  static final _PointsPathKey _pointsProbe = _PointsPathKey();
+  static final _PiePathKey _pieProbe = _PiePathKey();
+  static final _SourcePathKey _sourceProbe = _SourcePathKey();
+
+  static Path ofPoints(List<int> points, double shift, bool closed, PathFillType fillType) {
+    final key = _pointsProbe.set(points, shift, closed, fillType);
+    final kept = _points[key];
+    if (kept != null) return kept;
+    final seen = _points.containsKey(key);
+    if (!seen && _points.length >= _capacity) _points.clear();
+    final path = seen ? _keep(Path()..fillType = fillType) : _pointsPath(fillType);
+    path.moveTo(points[0] + shift, points[1] + shift);
+    for (int i = 2; i < points.length; i += 2) {
+      path.lineTo(points[i] + shift, points[i + 1] + shift);
+    }
+    if (closed) path.close();
+    if (seen) {
+      _points[key] = path;
+    } else {
+      _points[key.held()] = null;
+    }
+    return path;
+  }
+
+  static Path ofPie(Rect rect, double startAngle, double sweepAngle) {
+    final key = _pieProbe.set(rect, startAngle, sweepAngle);
+    final kept = _pies[key];
+    if (kept != null) return kept;
+    final seen = _pies.containsKey(key);
+    if (!seen && _pies.length >= _capacity) _pies.clear();
+    final path = piePath(rect, startAngle, sweepAngle, seen ? _keep(Path()) : _pointsPath(PathFillType.nonZero));
+    if (seen) {
+      _pies[key] = path;
+    } else {
+      _pies[key.held()] = null;
+    }
+    return path;
+  }
+
+  /// The path [source] describes moved by [by]: the one built before for the same data, or a new one.
+  static Path ofSource(_PathSource source, Offset by) {
+    final key = _sourceProbe.set(source, by);
+    final kept = _sources[key];
+    if (kept != null) return kept;
+    if (_sources.length >= _capacity) _sources.clear();
+    return _sources[key.held()] = _keep(source.build(by));
+  }
+
+  static Path _keep(Path path) {
+    keptPathsBuilt++;
+    return path;
+  }
+}
+
+/// Points, the shift they are drawn at, whether they close and the rule they fill by. Looked up with
+/// one reused key, copied only when kept; the points are the shape's own list, which nothing changes.
+final class _PointsPathKey {
+  List<int> points = const [];
+  double shift = 0;
+  bool closed = false;
+  PathFillType fillType = PathFillType.nonZero;
+  @override
+  int hashCode = 0;
+
+  _PointsPathKey set(List<int> points, double shift, bool closed, PathFillType fillType) {
+    this.points = points;
+    this.shift = shift;
+    this.closed = closed;
+    this.fillType = fillType;
+    var h = points.length;
+    for (var i = 0; i < points.length; i++) {
+      h = (h * 31 + points[i]) & 0x3FFFFFFF;
+    }
+    hashCode = Object.hash(h, shift, closed, fillType);
+    return this;
+  }
+
+  _PointsPathKey held() => _PointsPathKey()
+    ..points = points
+    ..shift = shift
+    ..closed = closed
+    ..fillType = fillType
+    ..hashCode = hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _PointsPathKey || other.hashCode != hashCode || other.shift != shift || other.closed != closed ||
+        other.fillType != fillType || other.points.length != points.length) {
+      return false;
+    }
+    final a = points, b = other.points;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
+}
+
+/// A pie slice's box and angles. Looked up with one reused key, copied only when kept.
+final class _PiePathKey {
+  Rect rect = Rect.zero;
+  double start = 0, sweep = 0;
+  @override
+  int hashCode = 0;
+
+  _PiePathKey set(Rect rect, double start, double sweep) {
+    this.rect = rect;
+    this.start = start;
+    this.sweep = sweep;
+    hashCode = Object.hash(rect, start, sweep);
+    return this;
+  }
+
+  _PiePathKey held() => _PiePathKey()
+    ..rect = rect
+    ..start = start
+    ..sweep = sweep
+    ..hashCode = hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _PiePathKey && other.hashCode == hashCode && other.start == start && other.sweep == sweep &&
+      other.rect == rect;
+}
+
+/// A Path's data, as the wire holds it, and the offset it is moved by. Looked up with one reused key,
+/// copied only when kept; the lists are the decoded op's own, which nothing changes.
+final class _SourcePathKey {
+  List<int> types = const [];
+  List<double> points = const [];
+  PathFillType fillType = PathFillType.nonZero;
+  double dx = 0, dy = 0;
+  @override
+  int hashCode = 0;
+
+  _SourcePathKey set(_PathSource source, Offset by) {
+    types = source.types;
+    points = source.points;
+    fillType = source.fillType;
+    dx = by.dx;
+    dy = by.dy;
+    var h = types.length;
+    for (var i = 0; i < types.length; i++) {
+      h = (h * 31 + types[i]) & 0x3FFFFFFF;
+    }
+    for (var i = 0; i < points.length; i++) {
+      h = (h * 31 + points[i].hashCode) & 0x3FFFFFFF;
+    }
+    hashCode = Object.hash(h, fillType, dx, dy);
+    return this;
+  }
+
+  _SourcePathKey held() => _SourcePathKey()
+    ..types = types
+    ..points = points
+    ..fillType = fillType
+    ..dx = dx
+    ..dy = dy
+    ..hashCode = hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _SourcePathKey || other.hashCode != hashCode || other.fillType != fillType || other.dx != dx ||
+        other.dy != dy || other.types.length != types.length || other.points.length != points.length) {
+      return false;
+    }
+    for (var i = 0; i < types.length; i++) {
+      if (other.types[i] != types[i]) return false;
+    }
+    for (var i = 0; i < points.length; i++) {
+      if (other.points[i] != points[i]) return false;
+    }
+    return true;
+  }
+}
+
+/// The one path a polygon, a polyline or a pie slice is built in and drawn from: drawing records the path's
+/// geometry as it is then, so the next shape can reset and rebuild it.
+final Path _sharedPointsPath = Path();
+
+Path _pointsPath(PathFillType fillType) => _sharedPointsPath
+  ..reset()
+  ..fillType = fillType;
+
 class PolygonShape extends Shape {
+  @override
+  late final Rect? paintedBounds = _pointsBounds(points, isFilled ? 1 : 2 * math.max(strokeWidth, 1) + 1);
+
   PolygonShape(this.points, this.color, this.strokeWidth, this.lineCap,
       this.lineJoin,
       {this.isFilled = false,
@@ -3583,19 +5765,14 @@ class PolygonShape extends Shape {
   @override
   void paintBody(ui.Canvas c) {
     if (points.length < (isFilled ? 6 : 4)) return;
-    final path = Path()
-      ..fillType = fillType
-      ..moveTo(points[0].toDouble(), points[1].toDouble());
-    for (int i = 2; i < points.length; i += 2) {
-      path.lineTo(points[i].toDouble(), points[i + 1].toDouble());
-    }
-    path.close();
-    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, _paint()
+    // The points carry the stroke's half-pixel shift; the canvas is not moved.
+    final shift = _strokeShift(strokeWidth, !isFilled).dx;
+    c.drawPath(_KeptPaths.ofPoints(points, shift, true, fillType), _paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin)));
+      ..strokeJoin = getStrokeJoin(lineJoin));
   }
 
   @override
@@ -3626,17 +5803,14 @@ class PolylineShape extends Shape {
   @override
   void paintBody(ui.Canvas c) {
     if (points.length < 4) return;
-    final path = Path()
-      ..moveTo(points[0].toDouble(), points[1].toDouble());
-    for (int i = 2; i < points.length; i += 2) {
-      path.lineTo(points[i].toDouble(), points[i + 1].toDouble());
-    }
-    _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, _paint()
+    // The points carry the stroke's half-pixel shift; the canvas is not moved.
+    final shift = _strokeShift(strokeWidth, !isFilled).dx;
+    c.drawPath(_KeptPaths.ofPoints(points, shift, false, PathFillType.nonZero), _paint()
       ..color = color
       ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = getStrokeCap(lineCap)
-      ..strokeJoin = getStrokeJoin(lineJoin)));
+      ..strokeJoin = getStrokeJoin(lineJoin));
   }
 
   @override
@@ -3647,9 +5821,12 @@ class PolylineShape extends Shape {
 }
 
 /// The pie fillArc covers. A sweep of a full turn is the whole oval: arcTo draws nothing for it.
-Path piePath(Rect rect, double startAngle, double sweepAngle) {
-  if (sweepAngle.abs() >= 2 * math.pi) return Path()..addOval(rect);
-  return Path()
+///
+/// Built in [into] when given, which a shape drawing it at once passes so as to make no path of its own.
+Path piePath(Rect rect, double startAngle, double sweepAngle, [Path? into]) {
+  final path = into ?? Path();
+  if (sweepAngle.abs() >= 2 * math.pi) return path..addOval(rect);
+  return path
     ..moveTo(rect.center.dx, rect.center.dy)
     ..arcTo(rect, startAngle, sweepAngle, false)
     ..close();
@@ -3688,8 +5865,7 @@ class ArcShape extends Shape {
         ..strokeJoin = getStrokeJoin(lineJoin);
     }
     if (isFilled) {
-      final path = piePath(rect, startAngle, sweepAngle);
-      _strokeAligned(c, strokeWidth, !isFilled, () => c.drawPath(path, paint));
+      c.drawPath(_KeptPaths.ofPie(rect, startAngle, sweepAngle), paint);
     } else {
       c.drawArc(_alignedRect(rect, strokeWidth, true), startAngle, sweepAngle, false, paint);
     }
@@ -3794,7 +5970,6 @@ class FocusRectShape extends Shape {
     _addDottedLine(path, Offset(rect.right, rect.bottom), Offset(rect.left, rect.bottom));
     _addDottedLine(path, Offset(rect.left, rect.bottom), Offset(rect.left, rect.top));
     c.drawPath(path, paint);
-    if (clipRect != null) c.restore();
   }
 
   void _addDottedLine(Path path, Offset start, Offset end) {
@@ -3947,6 +6122,37 @@ class ImageShape extends Shape {
     return w == null || h == null ? null : Size(w.toDouble(), h.toDouble());
   }
 
+  static Rect _destOf(VGCDrawImageImageintintintintintintintint opArgs, Size naturalSize) =>
+      Rect.fromLTWH(
+        (opArgs.destX).toDouble(),
+        (opArgs.destY).toDouble(),
+        opArgs.destWidth == -1 ? naturalSize.width : (opArgs.destWidth).toDouble(),
+        opArgs.destHeight == -1 ? naturalSize.height : (opArgs.destHeight).toDouble(),
+      );
+
+  static Rect _srcOf(VGCDrawImageImageintintintintintintintint opArgs, ui.Image image) =>
+      Rect.fromLTWH(
+        (opArgs.srcX).toDouble(),
+        (opArgs.srcY).toDouble(),
+        opArgs.srcWidth == -1 ? image.width.toDouble() : (opArgs.srcWidth).toDouble(),
+        opArgs.srcHeight == -1 ? image.height.toDouble() : (opArgs.srcHeight).toDouble(),
+      );
+
+  /// The blit [fromVImageDetailed] resolves to, made now when that needs nothing it would wait for:
+  /// an application bitmap already decoded, drawn as its own colors. Null otherwise.
+  static ImageShape? fromDecoded(VImage vImage,
+      VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect, int alpha) {
+    if (vImage.remoteRef != null || (vImage.svgContent?.isNotEmpty ?? false)) return null;
+    if (gcIconsReplacement && (vImage.filename?.isNotEmpty ?? false)) return null;
+    final data = vImage.imageData?.data;
+    if (data == null || data is String) return null;
+    final image = ImageUtils.decodedNow(data);
+    if (image == null) return null;
+    return ImageShape.raster(image, _srcOf(opArgs, image),
+        _destOf(opArgs, Size(image.width.toDouble(), image.height.toDouble())),
+        clipRect: clipRect, alpha: alpha);
+  }
+
   static Future<ImageShape> fromVImageDetailed(VImage vImage,
       VGCDrawImageImageintintintintintintintint opArgs, Rect? clipRect,
       {Color? tint, GlyphTintLimits? glyphLimits, int alpha = 255,
@@ -4055,21 +6261,10 @@ class ImageShape extends Shape {
 
       final naturalSize =
           replacedSize ?? Size(uiImage.width.toDouble(), uiImage.height.toDouble());
-      final destRect = Rect.fromLTWH(
-        (opArgs.destX).toDouble(),
-        (opArgs.destY).toDouble(),
-        opArgs.destWidth == -1 ? naturalSize.width : (opArgs.destWidth).toDouble(),
-        opArgs.destHeight == -1 ? naturalSize.height : (opArgs.destHeight).toDouble(),
-      );
-
+      final destRect = _destOf(opArgs, naturalSize);
       final srcRect = replacement != null
           ? Rect.fromLTWH(0, 0, uiImage.width.toDouble(), uiImage.height.toDouble())
-          : Rect.fromLTWH(
-              (opArgs.srcX).toDouble(),
-              (opArgs.srcY).toDouble(),
-              opArgs.srcWidth == -1 ? uiImage.width.toDouble() : (opArgs.srcWidth).toDouble(),
-              opArgs.srcHeight == -1 ? uiImage.height.toDouble() : (opArgs.srcHeight).toDouble(),
-            );
+          : _srcOf(opArgs, uiImage);
 
       // A resolved icon is tinted; an already-rendered bitmap keeps its colors, unless the Canvas
       // itself is themed and the bitmap is a monochrome glyph.

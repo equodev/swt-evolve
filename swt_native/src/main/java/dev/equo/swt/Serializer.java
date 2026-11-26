@@ -766,10 +766,13 @@ public class Serializer {
         /** {@code image}'s record, when the client lacks it. */
         public void describeImage(org.eclipse.swt.graphics.Image image) {
             if (image == null || image.isDisposed()) return;
-            targeting(connection, () -> {
+            int outer = enterTarget(connection);
+            try {
                 image(image);
                 settle(local());
-            });
+            } finally {
+                leaveTarget(outer);
+            }
         }
 
         /** Describes everything owed, which can owe more. */

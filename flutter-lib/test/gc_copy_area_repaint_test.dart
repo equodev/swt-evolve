@@ -36,7 +36,7 @@ void main() {
             valueListenable: shown,
             builder: (context, shapes, _) => CustomPaint(
               size: Size(_width.toDouble(), _height.toDouble()),
-              painter: ScenePainter(_bg, shapes),
+              painter: ScenePainter(_bg, shapes, devicePixelRatio: 1),
             ),
           ),
         ),

@@ -12,6 +12,11 @@ import 'control_evolve.dart';
 import 'gcdrawer_evolve.dart';
 import 'owner_draw_overlay.dart';
 
+
+/// How many times a GC has looked for the owner-drawn row it paints.
+@visibleForTesting
+int gcRowLookups = 0;
+
 class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   late GCDrawer _drawer;
   List<Shape> _snapshot = [];
@@ -44,10 +49,11 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
       onShapesUpdated: _onShapesUpdated,
       onGCDispose: _onGCDispose,
       onFullRepaintNeeded: _requestFullRepaintFromParent,
+    // Asked on every fill and text op: a GC outside an owner-drawn row must not walk to the root for them.
     )
-      ..rowGround = (() => mounted ? _ownerDrawnRow()?.textGround : null)
-      ..rowFill = (() => mounted ? _ownerDrawnRow()?.rowFill : null)
-      ..rowSelected = () => mounted && (_ownerDrawnRow()?.widget.selected ?? false);
+      ..rowGround = (() => mounted && _inOwnerDrawnRow ? _ownerDrawnRow()?.textGround : null)
+      ..rowFill = (() => mounted && _inOwnerDrawnRow ? _ownerDrawnRow()?.rowFill : null)
+      ..rowSelected = () => mounted && _inOwnerDrawnRow && (_ownerDrawnRow()?.widget.selected ?? false);
     // The op channels are registered now; tell the owner it may ask Java to paint.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _notifyParentGCSubscribed();
@@ -96,7 +102,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   }
 
   void _notifyParentGCSubscribed() {
-    final row = _ownerDrawnRow();
+    final row = _inOwnerDrawnRow ? _ownerDrawnRow() : null;
     if (row != null) {
       row.onGCSubscribed();
       return;
@@ -176,7 +182,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
   void _notifyParentGCReady() {
     final bool ready =
         _stateDelivered || _drawer.shapes.isNotEmpty || _snapshot.isNotEmpty;
-    final row = _ownerDrawnRow();
+    final row = _inOwnerDrawnRow ? _ownerDrawnRow() : null;
     if (row != null) {
       if (ready) row.onGCReady();
       return;
@@ -196,6 +202,7 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
 
   /// The owner-drawn Table/Tree row this GC paints, when it is one.
   OwnerDrawnRowOverlayState? _ownerDrawnRow() {
+    gcRowLookups++;
     final row = context.findAncestorStateOfType<OwnerDrawnRowOverlayState>();
     return row != null && row.gcKey == widget.key ? row : null;
   }
@@ -253,7 +260,8 @@ class GCImpl<T extends GCSwt, V extends VGC> extends GCState<T, V> {
     final Widget painted = RepaintBoundary(
       child: CustomPaint(
         size: bounds,
-        painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes),
+        painter: ScenePainter(shapes.isEmpty ? Colors.transparent : canvasBg, shapes,
+            devicePixelRatio: View.of(context).devicePixelRatio),
       ),
     );
     return painted;

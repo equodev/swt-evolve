@@ -79,7 +79,7 @@ public final class BootTrace {
         private boolean frozen;
 
         synchronized Span span(String name) {
-            if (frozen) return null;
+            if (frozen || name == null) return null;
             int[] level = depth.get();
             Step step = new Step(name, level[0]++, nowMicros(), -1);
             steps.add(step);

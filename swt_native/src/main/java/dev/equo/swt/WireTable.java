@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 744332902;
+    public static final int FINGERPRINT = 1570364007;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -898,6 +898,7 @@ public final class WireTable {
             "regional_locale",
             "separator",
             "compactRows",
+            "gc_approximate_batching",
     };
 
     /** Properties as `Class.name`, by number; null where no property has the number. */
@@ -1045,6 +1046,7 @@ public final class WireTable {
         property(1130, "ConfigFlags.scale_vertical_minimum_at_top", "bool");
         property(1131, "ConfigFlags.ctabfolder_chevron_after_tabs", "bool");
         property(1132, "ConfigFlags.regional_locale", "string");
+        property(1133, "ConfigFlags.gc_approximate_batching", "bool");
         property(1152, "Control.background", "color");
         property(1153, "Control.backgroundImage", "image");
         property(1154, "Control.bounds", "rect");
@@ -2905,6 +2907,9 @@ public final class WireTable {
 
     /** The flag `regional_locale`. */
     public static final int CONFIG_FLAGS_REGIONAL_LOCALE = 1132;
+
+    /** The flag `gc_approximate_batching`. */
+    public static final int CONFIG_FLAGS_GC_APPROXIMATE_BATCHING = 1133;
 
     /** The event's `button`. */
     public static final int EVENT_BUTTON = 1856;

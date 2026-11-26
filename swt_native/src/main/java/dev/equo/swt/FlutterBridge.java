@@ -1746,7 +1746,7 @@ public abstract class FlutterBridge {
         public void image(org.eclipse.swt.graphics.Image image) {
             CommService comm = commFor(gc);
             if (comm == null) return;
-            Serializer.Tape tape = new Serializer.Tape(comm.connectionId());
+            Serializer.Tape tape = Serializer.Tape.borrow(comm.connectionId());
             tape.describeImage(image);
             if (tape.isEmpty()) {
                 tape.release();

@@ -104,6 +104,10 @@ class ConfigFlags implements WireReadable {
   /// (`swt.evolve.ctabfolder_chevron_after_tabs`). Off by default: at the strip's end.
   bool? ctabfolder_chevron_after_tabs;
 
+  /// A GC batches into one draw also the shapes whose edges are then antialiased or rounded slightly
+  /// differently from drawn one by one (`swt.evolve.gc_approximate_batching`). On unless sent false.
+  bool? gc_approximate_batching;
+
   /// The flags as an object of a binary frame, read field by field.
   @override
   bool readWire(int key, WidgetWireReader r) {
@@ -199,6 +203,8 @@ class ConfigFlags implements WireReadable {
         ctabfolder_chevron_after_tabs = r.boolean();
       case WireKey.k_ConfigFlags_bigger_icon_size:
         bigger_icon_size = r.boolean();
+      case WireKey.k_ConfigFlags_gc_approximate_batching:
+        gc_approximate_batching = r.boolean();
       default:
         return false;
     }

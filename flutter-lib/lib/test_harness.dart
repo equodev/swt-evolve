@@ -24,6 +24,7 @@ import 'src/gen/widget.dart';
 import 'src/testing/boot_trace.dart';
 import 'src/testing/frame_stats.dart';
 import 'src/testing/injected_keys.dart';
+import 'src/testing/gc_stats.dart';
 import 'src/testing/wire_stats.dart';
 import 'src/testing/render_facts.dart';
 import 'src/testing/tree_test_registry.dart';
@@ -195,17 +196,18 @@ void registerTestQueryChannel() {
 
   // Receive-side cost of widget state: `evolve.test.wireStats` {statsId, action: start|stop} answers on
   // `evolve.test.wireStatsResponse` {statsId, stats}; see [WireStats]. `stats.styledText` holds the
-  // StyledText counters over the same span.
+  // StyledText counters over the same span, and `stats.gc` the GC paint counters (see [GcStats]).
   EquoCommService.on(0, 0, WireChannel.evolveTestWireStats, (dynamic req) {
     final map = (req as Map).cast<String, dynamic>();
     final int statsId = (map['statsId'] as num).toInt();
     final Map<String, dynamic> stats;
     if (map['action'] == 'start') {
       WireStats.start();
+      GcStats.start();
       styledTextPerfSnapshot();
       stats = const <String, dynamic>{};
     } else {
-      stats = {...WireStats.stop(), 'styledText': styledTextPerfSnapshot()};
+      stats = {...WireStats.stop(), 'styledText': styledTextPerfSnapshot(), 'gc': GcStats.stop()};
     }
     _reply(WireChannel.evolveTestWireStatsResponse, {'statsId': statsId, 'stats': stats});
   });

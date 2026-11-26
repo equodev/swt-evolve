@@ -71,7 +71,7 @@ void main() {
     EquoCommService.commForTesting.receiveBinary(channels.frame('GC/$id/gcDispose', body));
     await settle();
     final recorder = ui.PictureRecorder();
-    ScenePainter(canvasBg, drawer.shapes).paint(Canvas(recorder), canvasSize);
+    ScenePainter(canvasBg, drawer.shapes, devicePixelRatio: 1).paint(Canvas(recorder), canvasSize);
     final image = await recorder
         .endRecording()
         .toImage(canvasSize.width.toInt(), canvasSize.height.toInt());

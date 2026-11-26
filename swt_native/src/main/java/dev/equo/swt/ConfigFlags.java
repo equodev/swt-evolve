@@ -254,6 +254,12 @@ public class ConfigFlags implements WireObject {
      *  {@code -Dswt.evolve.scale_vertical_minimum_at_top=true}. */
     public boolean scale_vertical_minimum_at_top;
 
+    /** A GC batches into one draw also the shapes whose edges are then antialiased slightly
+     *  or rounded differently from drawn one by one: lines off the pixel grid, convex polygons, ovals,
+     *  gradients and, on the web, wide polylines. On by default;
+     *  {@code -Dswt.evolve.gc_approximate_batching=false} batches only what draws the same pixels. */
+    public boolean gc_approximate_batching = true;
+
     /** Not a type a value names at runtime: the flags only ever travel as the display's. */
     @Override
     public int wireTypeId() {
@@ -273,7 +279,7 @@ public class ConfigFlags implements WireObject {
             "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
             "scale_vertical_minimum_at_top", "ctabfolder_chevron_after_tabs",
-            "bigger_icon_size", "regional_locale",
+            "bigger_icon_size", "regional_locale", "gc_approximate_batching",
     };
 
     /** The flags the client sets (a theme picked on its side). */
@@ -380,6 +386,8 @@ public class ConfigFlags implements WireObject {
         w.write(bigger_icon_size);
         w.key(WireTable.CONFIG_FLAGS_REGIONAL_LOCALE);
         w.write(regional_locale);
+        w.key(WireTable.CONFIG_FLAGS_GC_APPROXIMATE_BATCHING);
+        w.write(gc_approximate_batching);
     }
 
     public static ConfigFlags use_swt_fonts(boolean v) {
@@ -429,6 +437,7 @@ public class ConfigFlags implements WireObject {
                 ", push_button_margin=" + push_button_margin +
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", regional_locale='" + regional_locale + '\'' +
+                ", gc_approximate_batching=" + gc_approximate_batching +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", use_swt_border=" + use_swt_border +
                 ", scale_vertical_minimum_at_top=" + scale_vertical_minimum_at_top +

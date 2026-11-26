@@ -335,8 +335,9 @@ class LabelImpl<T extends LabelSwt, V extends VLabel>
     // Handle image
     Widget? imageWidget;
     if (state.image != null) {
-      final imgW = state.image?.imageData?.width?.toDouble() ?? widgetTheme.iconSize;
-      final imgH = state.image?.imageData?.height?.toDouble() ?? widgetTheme.iconSize;
+      final imgSize = ImageUtils.imageSize(state.image);
+      final imgW = imgSize?.width ?? widgetTheme.iconSize;
+      final imgH = imgSize?.height ?? widgetTheme.iconSize;
       imageWidget = SizedBox(
         width: imgW,
         height: imgH,

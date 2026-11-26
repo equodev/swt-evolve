@@ -95,9 +95,10 @@ void main() {
 
     final shapes = await committed(drawer, id);
 
-    expect(shapes, hasLength(5));
-    expect(shapes.whereType<TransformShape>(), hasLength(5),
+    // Drawn one after another under the same transform and clip, they share one.
+    expect(shapes.whereType<TransformShape>(), hasLength(shapes.length),
         reason: 'geometry drawn under a transform must be transformed like the text is');
+    expect([for (final s in shapes.cast<TransformShape>()) ...s.children], hasLength(5));
     for (final s in shapes.cast<TransformShape>()) {
       expect(s.matrix[0], 1.5);
       expect(s.matrix[5], 1.5);

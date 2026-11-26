@@ -423,6 +423,24 @@ public class GraphicsUtils {
         return ((DartColor) color.getImpl())._copy();
     }
 
+    /**
+     * What a setter stores for {@code color} when it holds {@code held}: {@code held} itself while it is
+     * a live copy of the same colour, else a {@link #copyColor copy}. A setter re-applying an equal colour
+     * (a paint setting its colours before every op) then allocates nothing.
+     */
+    public static Color keepColor(Color held, Color color) {
+        if (held != null && color != null && !held.isDisposed() && !color.isDisposed()) {
+            if (held == color) return held;
+            DartColor kept = (DartColor) held.getImpl(), asked = (DartColor) color.getImpl();
+            if (kept.device == asked.device && kept.red == asked.red && kept.green == asked.green
+                    && kept.blue == asked.blue && kept.alpha == asked.alpha
+                    && kept.systemColorId == asked.systemColorId && kept.standsInFor == asked.standsInFor) {
+                return held;
+            }
+        }
+        return copyColor(color);
+    }
+
     /** Marks {@code color} as the system colour {@code id}; its {@link #copyColor copies} keep the mark. */
     public static Color tagSystemColor(Color color, int id) {
         ((DartColor) color.getImpl()).systemColorId = id;
