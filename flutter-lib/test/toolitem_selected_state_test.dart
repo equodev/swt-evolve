@@ -8,6 +8,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'support/icon_renders.dart';
 
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
@@ -67,7 +68,7 @@ Future<BoxDecoration> _pumpAndFindDecoration(
       ),
     ),
   ));
-  await tester.pumpAndSettle();
+  await settleIconRenders(tester);
 
   // The button's own decoration carries a borderRadius; the outer wrapper
   // Container (plain background fill) does not, which disambiguates the two.

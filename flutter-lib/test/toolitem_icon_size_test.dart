@@ -10,6 +10,7 @@ import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/config_flags.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
+import 'support/icon_renders.dart';
 
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
@@ -65,7 +66,7 @@ void main() {
         child: ToolBarSwt(value: _toolBar(_item(width: 24))),
       ),
     ));
-    await tester.pumpAndSettle();
+    await settleIconRenders(tester);
 
     final icon = find.byType(Image);
     expect(icon, findsOneWidget, reason: 'the item must render its icon');

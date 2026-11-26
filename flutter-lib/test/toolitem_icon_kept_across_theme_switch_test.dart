@@ -66,7 +66,7 @@ void main() {
       theme: ThemeMode.light,
       contentWidget: SizedBox(width: 200, height: 40, child: ToolBarSwt(value: _toolBar(png))),
     ));
-    await letIconRendersLand(tester);
+    await settleIconRenders(tester);
     expect(_icon, findsOneWidget, reason: 'the icon is drawn under the first theme');
     final firstThemeRender = shownIconRender(tester, _item);
 
@@ -81,7 +81,7 @@ void main() {
           reason: 'frame $frame of the theme switch lost the icon already shown');
     }
 
-    await letIconRendersLand(tester);
+    await settleIconRenders(tester);
     expect(_spinner, findsNothing);
     expect(_icon, findsOneWidget, reason: 'the icon is drawn under the new theme');
     expect(shownIconRender(tester, _item), isNot(same(firstThemeRender)),

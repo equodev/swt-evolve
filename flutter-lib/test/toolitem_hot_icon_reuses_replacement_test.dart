@@ -11,6 +11,7 @@ import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
 import 'package:swtflutter/src/impl/utils/image_utils.dart';
+import 'support/icon_renders.dart';
 
 /// The hover state of a ToolItem is the disabled state's problem again: an application names its
 /// hot icon as a second file (Eclipse fills it from `IAction.getHoverImageDescriptor()`), which the
@@ -95,7 +96,7 @@ Future<void> _pump(WidgetTester tester, VToolItem item) async {
       child: ToolBarSwt(value: _toolBar(item)),
     ),
   ));
-  await tester.pumpAndSettle();
+  await settleIconRenders(tester);
 }
 
 /// Moves the pointer onto the item and lets the hover animation finish.
@@ -104,7 +105,7 @@ Future<void> _hover(WidgetTester tester) async {
   await gesture.addPointer(location: Offset.zero);
   addTearDown(gesture.removePointer);
   await gesture.moveTo(tester.getCenter(find.byType(ToolItemSwt)));
-  await tester.pumpAndSettle();
+  await settleIconRenders(tester);
 }
 
 /// The application bytes being drawn, whether through an [ImageIcon] or an [Image].

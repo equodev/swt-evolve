@@ -14,6 +14,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'support/icon_renders.dart';
 
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
@@ -101,7 +102,7 @@ Future<Size> _iconSize(WidgetTester tester, VToolBar bar) async {
       ),
     ),
   ));
-  await tester.pumpAndSettle();
+  await settleIconRenders(tester);
   final icons = find.byType(Image);
   expect(icons, findsNWidgets(_iconCount), reason: 'every icon item must render its image');
   return tester.getRect(icons.first).size;

@@ -24,6 +24,7 @@ import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
 import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'support/visible_region.dart';
+import 'support/icon_renders.dart';
 
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
@@ -133,7 +134,7 @@ void _expectEveryItemDrawnWholeWhileHovered(String shape, int iconCount, VContro
           ),
         ),
       ));
-      await tester.pumpAndSettle();
+      await settleIconRenders(tester);
       while (tester.takeException() != null) {}
       expect(_icons, findsNWidgets(iconCount), reason: 'every item must render its image');
 
@@ -143,7 +144,7 @@ void _expectEveryItemDrawnWholeWhileHovered(String shape, int iconCount, VContro
       await gesture.addPointer(location: const Offset(400, 300));
       addTearDown(gesture.removePointer);
       await gesture.moveTo(tester.getCenter(target));
-      await tester.pumpAndSettle();
+      await settleIconRenders(tester);
       final hovered = tester.getRect(target);
       expect(hovered.height, greaterThan(atRest.height), reason: 'the zoom did not apply');
       expect(hovered.center.dx, closeTo(atRest.center.dx, 0.01),
@@ -192,7 +193,7 @@ void main() {
         ),
       ),
     ));
-    await tester.pumpAndSettle();
+    await settleIconRenders(tester);
     while (tester.takeException() != null) {}
 
     final target = _icons.first;
@@ -202,7 +203,7 @@ void main() {
     await gesture.addPointer(location: const Offset(400, 300));
     addTearDown(gesture.removePointer);
     await gesture.moveTo(Offset(atRest.center.dx, (viewportTop + atRest.bottom) / 2));
-    await tester.pumpAndSettle();
+    await settleIconRenders(tester);
 
     final hovered = tester.getRect(target);
     expect(hovered.height, greaterThan(atRest.height), reason: 'the zoom did not apply');

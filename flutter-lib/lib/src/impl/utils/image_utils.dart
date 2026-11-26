@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../gen/image.dart';
 import '../assets_manager.dart';
@@ -20,6 +21,7 @@ class ImageUtils {
   // Cache for async image loading Futures to prevent recreation on every rebuild
   static final Map<String, Future<Widget?>> _futureCache = {};
   static final Expando<String> _contentKeys = Expando();
+  static final Expando<ImageProvider> _bitmaps = Expando('bitmap');
 
   /// What each cached render resolved to, readable synchronously by a widget mounted after it did.
   static final Expando<Widget> _resolvedRenders = Expando('resolved render');
@@ -291,6 +293,7 @@ class ImageUtils {
 
     try {
       Widget imageWidget;
+      ImageProvider? bitmap;
 
       if (renderAsIcon) {
         // Icon rendering (for toolbars)
@@ -304,7 +307,7 @@ class ImageUtils {
             width: imageSize,
             height: imageSize,
             child: ImageIcon(
-              MemoryImage(tone!.inkStencil(bytes!) ?? bytes),
+              bitmap = MemoryImage(tone!.inkStencil(bytes!) ?? bytes),
               size: imageSize,
               color: imageColor,
             ),
@@ -316,16 +319,14 @@ class ImageUtils {
             );
           }
         } else {
-          iconContent = SizedBox(
+          final image = Image.memory(
+            bytes!,
             width: imageSize,
             height: imageSize,
-            child: Image.memory(
-              bytes!,
-              width: imageSize,
-              height: imageSize,
-              fit: BoxFit.contain,
-            ),
+            fit: BoxFit.contain,
           );
+          bitmap = image.image;
+          iconContent = SizedBox(width: imageSize, height: imageSize, child: image);
           iconContent = Opacity(
             opacity: enabled ? 1.0 : fade,
             child: iconContent,
@@ -378,6 +379,7 @@ class ImageUtils {
           print("ERROR: No image source");
           image = Image.memory(Uint8List(0)); // fallback
         }
+        if (bytes != null) bitmap = image.image;
         imageWidget = ConstrainedBox(
           constraints:
               constraints ??
@@ -386,6 +388,7 @@ class ImageUtils {
         );
       }
 
+      if (bitmap != null) _bitmaps[imageWidget] = bitmap;
       _imageCache[cacheKey] = imageWidget;
       return imageWidget;
     } catch (e) {
@@ -642,6 +645,31 @@ class ImageUtils {
     return future;
   }
 
+  /// Completes once [bitmap] is decoded into the image cache. An `Image` handed a new provider
+  /// paints nothing until its bytes decode, so a render resolved only after that is drawn with its
+  /// pixels on the frame it replaces the previous one.
+  static Future<void> _decoded(ImageProvider bitmap) {
+    final done = Completer<void>();
+    final stream = bitmap.resolve(ImageConfiguration.empty);
+    late final ImageStreamListener listener;
+    void finish() {
+      if (done.isCompleted) return;
+      done.complete();
+      // Held until the frame that shows the render has subscribed, as precacheImage does.
+      SchedulerBinding.instance.addPostFrameCallback((_) => stream.removeListener(listener));
+    }
+
+    listener = ImageStreamListener(
+      (info, _) {
+        info.dispose();
+        finish();
+      },
+      onError: (_, _) => finish(),
+    );
+    stream.addListener(listener);
+    return done.future;
+  }
+
   /// Internal implementation that actually loads the image
   static Future<Widget?> _buildVImageAsyncImpl(
     VImage image, {
@@ -712,7 +740,7 @@ class ImageUtils {
 
     // Try binary image data (encoded PNG/JPG bytes sent from Java)
     if (useBinaryImage && image.imageData?.data != null) {
-      return _buildBinaryImage(
+      final widget = _buildBinaryImage(
         bytes: asBytes(image.imageData!.data!),
         size: size,
         width: width,
@@ -723,6 +751,9 @@ class ImageUtils {
         renderAsIcon: renderAsIcon,
         disabledOpacity: disabledOpacity,
       );
+      final bitmap = widget == null ? null : _bitmaps[widget];
+      if (bitmap != null) await _decoded(bitmap);
+      return widget;
     }
 
     // Drawn with a GC: the render stayed here and Java sent only its ref, no pixels.

@@ -9,6 +9,7 @@ import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
 import 'package:swtflutter/src/gen/toolitem.dart';
+import 'support/icon_renders.dart';
 
 const List<int> _pngBytes = <int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, //
@@ -89,7 +90,7 @@ void main() {
       theme: ThemeMode.light,
       contentWidget: _inTrimColumn(bar),
     ));
-    await tester.pumpAndSettle();
+    await settleIconRenders(tester);
 
     expect(
       tester.getSize(find.byType(ToolBarSwt)).height,
