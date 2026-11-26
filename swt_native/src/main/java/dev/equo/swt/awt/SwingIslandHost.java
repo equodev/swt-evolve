@@ -124,6 +124,12 @@ public final class SwingIslandHost {
     /** The Display's Shells built for the mirror bundle, by windowId. */
     private static final String SURFACES_KEY = SwingIslandHost.class.getName() + ".surfaces";
 
+    /** Set on a Shell built for a window AWT makes modal, whatever the Shell's own style. */
+    private static final String MODAL_WINDOW_KEY = SwingIslandHost.class.getName() + ".modalWindow";
+
+    /** Set on a Display while its blocker's FocusIn hands the focus to a modal window's island. */
+    private static final String HANDING_OVER_KEY = SwingIslandHost.class.getName() + ".handingOver";
+
     /** Set on a Display whose comm answers the bundle's Shell requests. */
     private static final String LISTENING_KEY = SwingIslandHost.class.getName() + ".listening";
 
@@ -554,16 +560,33 @@ public final class SwingIslandHost {
      *
      * <p>Also raises a modal window's Shell back over a modal Shell opened after it: the newest modal
      * Shell is drawn on top with the client's modal scrim under it, and would cover a window that
-     * AWT, not SWT, blocks.
+     * AWT, not SWT, blocks. A {@linkplain #isBlocker blocker} does not keep the activation from it
+     * either, whenever it takes it: the client may report that one late. It gives the focus back as it
+     * gets it, for a key already queued behind that report is handled before anything deferred.
      */
     static void listen(Display display, CommService comm) {
         if (display.getData(LISTENING_KEY) != null) return;
         display.setData(LISTENING_KEY, Boolean.TRUE);
-        display.addFilter(SWT.Show, e -> {
-            if (e.widget instanceof Shell && isModal((Shell) e.widget)) {
-                Shell shown = (Shell) e.widget;
-                // Deferred until open() has activated and focused it.
-                onDisplay(display, () -> raiseModalSurfaceOver(display, shown));
+        Listener raise = e -> {
+            if (!(e.widget instanceof Shell) || !isModal((Shell) e.widget)) return;
+            Shell shell = (Shell) e.widget;
+            if (e.type == SWT.Activate && !isBlocker(shell)) return;
+            // Deferred until open(), or the activation, has focused it.
+            onDisplay(display, () -> raiseModalSurfaceOver(display, shell));
+        };
+        display.addFilter(SWT.Show, raise);
+        display.addFilter(SWT.Activate, raise);
+        display.addFilter(SWT.FocusIn, e -> {
+            if (!(e.widget instanceof Shell) || !isBlocker((Shell) e.widget)) return;
+            // An application that moves the focus back to its blocker from inside this hand-over keeps it.
+            if (display.getData(HANDING_OVER_KEY) != null) return;
+            Shell covered = modalSurfaceUnder(display, (Shell) e.widget);
+            if (covered == null) return;
+            display.setData(HANDING_OVER_KEY, Boolean.TRUE);
+            try {
+                focusIsland(covered);
+            } finally {
+                display.setData(HANDING_OVER_KEY, null);
             }
         });
         comm.on(0, 0, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_SURFACE, Object.class, p -> {
@@ -595,19 +618,55 @@ public final class SwingIslandHost {
         return (shell.getStyle() & (SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL | SWT.PRIMARY_MODAL)) != 0;
     }
 
-    /** Raises the newest open modal Shell built for a window, which {@code shown}, just opened, covers. */
-    private static void raiseModalSurfaceOver(Display display, Shell shown) {
-        if (shown.isDisposed() || !shown.isVisible()) return;
+    /**
+     * Whether {@code shell} is there only to block SWT: modal, fully transparent, with neither trim nor
+     * content, so there is nothing in it a person could see or a key could be for. A trimless modal
+     * Shell the application paints on is not one.
+     */
+    private static boolean isBlocker(Shell shell) {
+        return isModal(shell) && shell.getAlpha() == 0 && !WindowPolicy.hasTrim(shell)
+                && shell.getChildren().length == 0;
+    }
+
+    /** Raises the modal window's Shell that {@code over}, just opened or activated, covers. */
+    private static void raiseModalSurfaceOver(Display display, Shell over) {
+        Shell covered = modalSurfaceUnder(display, over);
+        if (covered == null) return;
+        covered.setActive();
+        if (isBlocker(over) && !covered.isDisposed()) focusIsland(covered);
+    }
+
+    /**
+     * The newest open modal window's Shell that {@code over} must not keep under it, or null. One whose
+     * modality is AWT's alone goes over a blocker only: SWT's own dialogs go on top of it.
+     */
+    private static Shell modalSurfaceUnder(Display display, Shell over) {
+        if (over.isDisposed() || !over.isVisible()) return null;
         Map<Integer, Shell> surfaces = registry(display, SURFACES_KEY);
-        if (surfaces.containsValue(shown)) return;
+        if (surfaces.containsValue(over)) return null;
+        boolean blocker = isBlocker(over);
         Shell covered = null;
         for (Shell shell : display.getShells()) {
-            if (surfaces.containsValue(shell) && !shell.isDisposed() && shell.isVisible() && isModal(shell)
-                    && !isDescendant(shown, shell)) {
+            if (surfaces.containsValue(shell) && !shell.isDisposed() && shell.isVisible()
+                    && (blocker ? shell.getData(MODAL_WINDOW_KEY) != null : isModal(shell))
+                    && !isDescendant(over, shell)) {
                 covered = shell;
             }
         }
-        if (covered != null) covered.setActive();
+        return covered;
+    }
+
+    /**
+     * Focuses the island of a Shell built for a window, past the SWT modality that would refuse it and
+     * on the client too: the keyboard of an AWT window is not SWT's to block.
+     */
+    private static void focusIsland(Shell surface) {
+        for (Control child : surface.getChildren()) {
+            if (!(child.getImpl() instanceof DartSwingIsland)) continue;
+            DartControl island = (DartControl) child.getImpl();
+            island.getBridge().setFocus(island);
+            island.getBridge().focusClient(island);
+        }
     }
 
     private static boolean isDescendant(Shell shell, Shell ancestor) {
@@ -638,6 +697,11 @@ public final class SwingIslandHost {
     }
 
     private static void openSurface(Display display, CommService comm, Map<?, ?> request) {
+        openSurface(display, comm, request, SWT_MODAL_SURFACES);
+    }
+
+    /** {@code swtModal}: whether a modal window's Shell is modal to SWT too ({@link #SWT_MODAL_SURFACES}). */
+    static void openSurface(Display display, CommService comm, Map<?, ?> request, boolean swtModal) {
         int windowId = intOf(request, "windowId");
         if (surfaceShell(display, windowId) != null) {
             // Another client of this Display asked first and may be drawing it: answer, keep it.
@@ -652,6 +716,7 @@ public final class SwingIslandHost {
         Shell parent = owner != null ? owner.getShell() : display.getActiveShell();
         String kind = String.valueOf(request.get("kind"));
         boolean resizable = Boolean.TRUE.equals(request.get("resizable"));
+        boolean modal = Boolean.TRUE.equals(request.get("modal"));
         Shell shell;
         if ("frame".equals(kind)) {
             shell = new Shell(display, resizable ? SWT.SHELL_TRIM : SWT.SHELL_TRIM & ~(SWT.RESIZE | SWT.MAX));
@@ -659,7 +724,7 @@ public final class SwingIslandHost {
             // Swing's document and toolkit modality collapse to APPLICATION_MODAL.
             int style = "dialog".equals(kind)
                     ? SWT.DIALOG_TRIM | (resizable ? SWT.RESIZE : 0)
-                            | (Boolean.TRUE.equals(request.get("modal")) && SWT_MODAL_SURFACES ? SWT.APPLICATION_MODAL : 0)
+                            | (modal && swtModal ? SWT.APPLICATION_MODAL : 0)
                     : SWT.NO_TRIM;
             shell = parent != null ? new Shell(parent, style) : new Shell(display, style);
         }
@@ -682,8 +747,15 @@ public final class SwingIslandHost {
         });
         mount(island, windowId, intOf(request, "port"), true);
         shell.layout(true);
+        if (modal) shell.setData(MODAL_WINDOW_KEY, Boolean.TRUE);
         shell.open();
+        if (modal && !shell.isDisposed() && heldByBlocker(display)) focusIsland(shell);
         FlutterBridge.send(comm, dev.equo.swt.WireTable.CHANNEL_SWING_ISLAND_OPENED, Map.of("windowId", windowId));
+    }
+
+    private static boolean heldByBlocker(Display display) {
+        Control focus = display.getFocusControl();
+        return focus != null && !focus.isDisposed() && isBlocker(focus.getShell());
     }
 
     /**

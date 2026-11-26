@@ -160,7 +160,7 @@ public final class WindowPolicy {
      * <p>A trimless shell that does want a window says so through {@link #SHELL_DATA_KEY} or a
      * {@link Resolver}; both are read before this.
      */
-    static boolean hasTrim(Shell shell) {
+    public static boolean hasTrim(Shell shell) {
         return (shell.getStyle() & TRIM_MASK) != 0;
     }
 
