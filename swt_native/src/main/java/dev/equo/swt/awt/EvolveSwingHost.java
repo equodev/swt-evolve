@@ -1153,26 +1153,57 @@ public final class EvolveSwingHost {
     }
 
     /**
-     * Gives a heavyweight root-pane container — the {@code JApplet} an application wraps its Swing
-     * content in — a lightweight peer, so it becomes part of the frame's own lightweight tree.
+     * Gives the heavyweight container an application wraps its Swing content in — a
+     * {@code JApplet}, or a plain AWT {@code Panel} — a lightweight peer, so it becomes part of the
+     * frame's own lightweight tree.
      *
      * <p>As a heavyweight it has a native surface nobody ever shows, and anything drawn through
      * {@code getGraphics()} anywhere inside it lands on that surface and is lost: a lightweight
-     * component's {@code getGraphics()} resolves to its nearest heavyweight ancestor's. Lightweight,
-     * the same call resolves to the frame's buffer. Must be called while {@code c} has no peer,
-     * between its removal from one parent and its addition to the next, so that {@code addNotify}
-     * keeps the given peer instead of creating a native one.
+     * component's {@code getGraphics()} resolves to its nearest heavyweight ancestor's. A plain
+     * {@code Panel}'s surface answers no graphics at all, so a Swing text editor that measures its
+     * font with {@code getGraphics()} when it is added fails and the content never shows.
+     * Lightweight, the same call resolves to the frame's buffer. Must be called while {@code c} has
+     * no peer, between its removal from one parent and its addition to the next, so that
+     * {@code addNotify} keeps the given peer instead of creating a native one.
+     *
+     * <p>A {@code Panel} subclass keeps its native surface: it may draw on it itself.
      *
      * <p>Needs {@code --add-exports java.desktop/sun.awt=ALL-UNNAMED} at runtime; without it the
      * container stays heavyweight, as it was before.
      */
     static void hostAsLightweight(Component c) {
         if (c.isDisplayable()) return;
-        if (!(c instanceof java.awt.Panel) || !(c instanceof javax.swing.RootPaneContainer)) return;
+        boolean applet = c instanceof java.awt.Panel && c instanceof javax.swing.RootPaneContainer;
+        if (!applet && c.getClass() != java.awt.Panel.class) return;
         try {
             AWTAccessor.getComponentAccessor().setPeer(c, new NullComponentPeer());
         } catch (LinkageError | RuntimeException notAccessible) {
         }
+    }
+
+    /**
+     * The frame's layout: a {@code BorderLayout} holding {@code root} in its centre that makes each
+     * other child a lightweight-hosted one ({@link #hostAsLightweight}) before it is notified.
+     *
+     * <p>An application adds its content to the frame, and only afterwards is it relocated into the
+     * content root; the add has notified it by then, so a heavyweight wrapper got its native surface
+     * and a Swing text editor inside it already asked that surface for graphics and failed.
+     * {@code Container.addImpl} invalidates a valid parent after the child is in its list and before
+     * it notifies it, and that invalidation reaches the layout: the one point that sees the child
+     * first.
+     */
+    static BorderLayout hostingLayout(Component root) {
+        BorderLayout hosting = new BorderLayout() {
+            @Override
+            public void invalidateLayout(Container target) {
+                for (Component child : target.getComponents()) {
+                    if (child != root) hostAsLightweight(child);
+                }
+                super.invalidateLayout(target);
+            }
+        };
+        if (root != null) hosting.addLayoutComponent(root, BorderLayout.CENTER);
+        return hosting;
     }
 
     private static final class Host {
@@ -1283,6 +1314,8 @@ public final class EvolveSwingHost {
          * off-screen), restoring the root pane.
          */
         private void interceptAdds(JLightweightFrame frame) {
+            // The relocation below runs after the add, which has already notified the child.
+            frame.setLayout(hostingLayout(frame.getRootPane()));
             frame.addContainerListener(new ContainerListener() {
                 @Override
                 public void componentAdded(ContainerEvent e) {
