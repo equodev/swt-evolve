@@ -843,15 +843,13 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
     private void repositionShells(DartDisplay display, java.util.Map<Shell, Rectangle> placed, Rectangle defaultBounds) {
         Shell main = mainShell(display);
         Rectangle viewport = display.bounds;
-        // Read before any move below: moving a shell counts as sizing it.
-        java.util.Set<Shell> unsized = new java.util.HashSet<>(unsizedShells);
         for (java.util.Map.Entry<Shell, Rectangle> entry : placed.entrySet()) {
             Shell shell = entry.getKey();
             if (shell.isDisposed() || shell == main || shellWindows.containsKey(shell)) continue;
             Rectangle at = entry.getValue();
             Shell parent = shell.getParent() instanceof Shell ? (Shell) shell.getParent() : null;
             boolean inParent = parent != null && !parent.isDisposed() && placed.containsKey(parent)
-                    && !unsized.contains(parent);
+                    && !isUnsized(parent);
             Rectangle before = inParent ? placed.get(parent) : defaultBounds;
             Rectangle after = inParent ? parent.getBounds() : viewport;
             if (before.equals(after) || !before.contains(at.x, at.y)) continue;
@@ -860,7 +858,10 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
             int y = inside(recentered(at.y, at.height, before.y, before.height, after.y, after.height),
                     at.height, viewport.y, viewport.height);
             if (x == at.x && y == at.y) continue;
+            boolean unsized = isUnsized(shell);
             shell.setLocation(x, y);
+            // Placing it on the viewport is not the application sizing it.
+            if (unsized) unsizedShells.add(shell);
             // The client draws only shown shells, so only those can have been drawn from the old position.
             if (shell.getVisible()) repositionedShells.add(shell);
         }
