@@ -164,6 +164,138 @@ class LocalFileServingTest {
                 .satisfies(f -> assertThat(f.getCanonicalFile()).isEqualTo(graphic.getCanonicalFile()));
     }
 
+    /**
+     * Eclipse's intro merges stylesheets contributed by other plugins into a page whose base is
+     * the intro theme's directory, and they reference their own graphics relatively
+     * ({@code url(../graphics/rap.png)} from {@code intro/css/overview.css}).
+     */
+    @Test
+    void rewriteLocalResources_keepsAStylesheetOutsideTheBaseRootAddressableFromItsRelativeUrls()
+            throws Exception {
+        File plugins = Files.createTempDirectory("equo-settext-plugins").toFile();
+        File base = new File(plugins, "org.eclipse.ui.intro.universal/themes/solstice/html");
+        base.mkdirs();
+        File style = new File(plugins, "org.eclipse.rap.tools.intro/intro/css/overview.css");
+        style.getParentFile().mkdirs();
+        Files.writeString(style.toPath(), "img{background-image:url(../graphics/rap.png)}",
+                StandardCharsets.UTF_8);
+        File graphic = new File(plugins, "org.eclipse.rap.tools.intro/intro/graphics/rap.png");
+        graphic.getParentFile().mkdirs();
+        Files.writeString(graphic.toPath(), "png", StandardCharsets.UTF_8);
+
+        String html = "<html><head><BASE href=\"file://" + base.getAbsolutePath() + "/\">"
+                + "<LINK rel=\"stylesheet\" href=\"file://" + style.getAbsolutePath() + "\">"
+                + "</head><body></body></html>";
+
+        LocalFileServing.ServedHtml served = LocalFileServing.rewriteLocalResources(html);
+
+        assertThat(served).isNotNull();
+        java.util.regex.Matcher link = java.util.regex.Pattern
+                .compile("href=\"(" + LocalFileServing.URL_PREFIX + "[^\"]*overview\\.css)\"")
+                .matcher(served.html);
+        assertThat(link.find()).as("the stylesheet is served under /local-file/").isTrue();
+        // What the browser asks for after resolving the stylesheet's own url(../graphics/rap.png).
+        String requested = java.net.URI.create("http://localhost" + link.group(1))
+                .resolve("../graphics/rap.png").getPath();
+        String rest = requested.substring(LocalFileServing.URL_PREFIX.length());
+        int slash = rest.indexOf('/');
+        assertThat(slash).as("the request %s keeps a token segment", requested).isPositive();
+        assertThat(LocalFileServing.resolve(rest.substring(0, slash), rest.substring(slash + 1)))
+                .as("the request %s serves the stylesheet's graphic", requested)
+                .isNotNull()
+                .satisfies(f -> assertThat(f.getCanonicalFile()).isEqualTo(graphic.getCanonicalFile()));
+    }
+
+    /** The plugin layout of the test above: {@code <plugin>/intro/css/overview.css} and its graphic. */
+    private static File introPlugin(String css) throws Exception {
+        File plugin = new File(Files.createTempDirectory("equo-settext-plugins").toFile(), "org.eclipse.rap.tools.intro");
+        File style = new File(plugin, "intro/css/overview.css");
+        style.getParentFile().mkdirs();
+        Files.writeString(style.toPath(), css, StandardCharsets.UTF_8);
+        File graphic = new File(plugin, "intro/graphics/rap.png");
+        graphic.getParentFile().mkdirs();
+        Files.writeString(graphic.toPath(), "png", StandardCharsets.UTF_8);
+        return plugin;
+    }
+
+    private static String pageLinking(File style) {
+        return "<html><head><LINK rel=\"stylesheet\" href=\"file://" + style.getAbsolutePath()
+                + "\"></head><body></body></html>";
+    }
+
+    /** {@code [token, path below it]} of the served stylesheet. */
+    private static String[] servedStylesheet(LocalFileServing.ServedHtml served) {
+        assertThat(served).isNotNull();
+        java.util.regex.Matcher link = java.util.regex.Pattern
+                .compile("href=\"" + LocalFileServing.URL_PREFIX + "([^/\"]+)/([^\"]*overview\\.css)\"")
+                .matcher(served.html);
+        assertThat(link.find()).as("the stylesheet is served under /local-file/").isTrue();
+        return new String[] {link.group(1), link.group(2)};
+    }
+
+    @Test
+    void rewriteLocalResources_aStylesheetsWiderRootServesOnlyItsFolderAndWhatItNames() throws Exception {
+        File plugin = introPlugin("img{background-image:url(../graphics/rap.png)}");
+        File intro = new File(plugin, "intro");
+        for (String unnamed : new String[] {"graphics/unnamed.png", "secret/key.txt"}) {
+            File f = new File(intro, unnamed);
+            f.getParentFile().mkdirs();
+            Files.writeString(f.toPath(), "x", StandardCharsets.UTF_8);
+        }
+        File sibling = new File(intro, "css/print.css");
+        Files.writeString(sibling.toPath(), "body{}", StandardCharsets.UTF_8);
+
+        String[] served = servedStylesheet(LocalFileServing.rewriteLocalResources(
+                pageLinking(new File(intro, "css/overview.css"))));
+
+        assertThat(served[1]).as("served under the root that holds its graphic").isEqualTo("css/overview.css");
+        assertThat(LocalFileServing.resolve(served[0], "graphics/rap.png")).as("the named graphic").isNotNull();
+        assertThat(LocalFileServing.resolve(served[0], "css/print.css")).as("the stylesheet's own folder").isNotNull();
+        assertThat(LocalFileServing.resolve(served[0], "graphics/unnamed.png"))
+                .as("a file the stylesheet does not name, beside one it does").isNull();
+        assertThat(LocalFileServing.resolve(served[0], "secret/key.txt"))
+                .as("a folder under the shared root the stylesheet never names").isNull();
+    }
+
+    @Test
+    void rewriteLocalResources_aUrlInsideACssCommentDoesNotWidenTheRoot() throws Exception {
+        File plugin = introPlugin("/* img{background-image:url(../graphics/rap.png)} */ body{}");
+
+        String[] served = servedStylesheet(LocalFileServing.rewriteLocalResources(
+                pageLinking(new File(plugin, "intro/css/overview.css"))));
+
+        assertThat(served[1]).as("served under its own folder").isEqualTo("overview.css");
+    }
+
+    @Test
+    void rewriteLocalResources_aUrlToAMissingFileDoesNotWidenTheRoot() throws Exception {
+        File plugin = introPlugin("img{background-image:url(../graphics/missing.png)}");
+
+        String[] served = servedStylesheet(LocalFileServing.rewriteLocalResources(
+                pageLinking(new File(plugin, "intro/css/overview.css"))));
+
+        assertThat(served[1]).as("served under its own folder").isEqualTo("overview.css");
+    }
+
+    @Test
+    void stylesheetScans_rescanAStylesheetOnlyWhenItsModificationTimeChanges() throws Exception {
+        File plugin = introPlugin("img{background-image:url(../graphics/rap.png)}");
+        File style = new File(plugin, "intro/css/overview.css");
+        long modified = style.lastModified();
+        LocalFileServing.StylesheetScans scans = new LocalFileServing.StylesheetScans();
+        assertThat(servedStylesheet(LocalFileServing.rewriteLocalResources(pageLinking(style), scans))[1])
+                .isEqualTo("css/overview.css");
+
+        Files.writeString(style.toPath(), "body{}", StandardCharsets.UTF_8);
+        style.setLastModified(modified);
+        assertThat(servedStylesheet(LocalFileServing.rewriteLocalResources(pageLinking(style), scans))[1])
+                .as("same modification time: the cached scan").isEqualTo("css/overview.css");
+
+        style.setLastModified(modified + 2000);
+        assertThat(servedStylesheet(LocalFileServing.rewriteLocalResources(pageLinking(style), scans))[1])
+                .as("a newer modification time: scanned again").isEqualTo("overview.css");
+    }
+
     @Test
     void rewriteLocalResources_leavesADocumentWithNoLocalResourceAlone() {
         assertThat(LocalFileServing.rewriteLocalResources(

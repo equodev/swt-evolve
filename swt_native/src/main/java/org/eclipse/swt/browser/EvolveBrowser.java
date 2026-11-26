@@ -18,6 +18,8 @@ import dev.equo.swt.FlutterBridge;
 public class EvolveBrowser extends WebBrowser {
     private String url = "";
     private String text = "";
+    private final dev.equo.swt.LocalFileServing.StylesheetScans stylesheetScans =
+            new dev.equo.swt.LocalFileServing.StylesheetScans();
     private volatile boolean canGoBack = false;
     private volatile boolean canGoForward = false;
     private Display display;
@@ -250,7 +252,7 @@ public class EvolveBrowser extends WebBrowser {
         // sub-resources an application embeds -- see LocalFileServing. The rewritten copy travels
         // alongside the original, which the desktop webviews (where file: works) keep using.
         dev.equo.swt.LocalFileServing.ServedHtml served =
-                dev.equo.swt.LocalFileServing.rewriteLocalResources(html);
+                dev.equo.swt.LocalFileServing.rewriteLocalResources(html, stylesheetScans);
         if (served != null) {
             args.put("localFileText", served.html);
             if (served.basePath != null) args.put("localFileBase", served.basePath);

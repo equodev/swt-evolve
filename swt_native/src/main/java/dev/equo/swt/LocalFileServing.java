@@ -8,9 +8,15 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
+import java.util.ArrayDeque;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,7 +48,7 @@ public final class LocalFileServing {
     /** URL path prefix under which {@link #registerIfLocalFile} registrations are served. */
     public static final String URL_PREFIX = "/local-file/";
 
-    private static final Map<String, File> rootsByToken = new ConcurrentHashMap<>();
+    private static final Map<String, Root> rootsByToken = new ConcurrentHashMap<>();
     private static final Map<String, String> tokensByPath = new ConcurrentHashMap<>();
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -59,6 +65,19 @@ public final class LocalFileServing {
 
     /** Only worth scanning for a {@code <base>} tag in the head, so cap the read. */
     private static final int BASE_HREF_SCAN_LIMIT = 32 * 1024;
+
+    /** A stylesheet's references are read from this much of it. */
+    private static final int STYLESHEET_SCAN_LIMIT = 256 * 1024;
+
+    /** At most this many stylesheets, the first and those it imports, are read per scan. */
+    private static final int STYLESHEET_SCAN_FILES = 16;
+
+    /** A CSS comment, or an unterminated one running to the end of what was read. */
+    private static final Pattern CSS_COMMENT = Pattern.compile("/\\*.*?(?:\\*/|$)", Pattern.DOTALL);
+
+    /** A CSS {@code url(...)} argument (group 1) or an {@code @import "..."} string (group 2). */
+    private static final Pattern CSS_REFERENCE = Pattern.compile(
+            "url\\(\\s*[\"']?([^\"')]+)|@import\\s+[\"']([^\"']+)", Pattern.CASE_INSENSITIVE);
 
     /** Whether filesystem paths here may start with a drive letter. */
     private static final boolean DRIVE_PATHS = File.separatorChar == '\\';
@@ -85,6 +104,73 @@ public final class LocalFileServing {
         /** {@code "<token>/<relativePath>"}, ready to append to the endpoint's base path. */
         public String tokenPath() {
             return token + "/" + relativePath;
+        }
+    }
+
+    /**
+     * A registered directory. A stylesheet's root (see {@link #stylesheetRoot}) is scoped: requests
+     * under it reach only the stylesheet's own folder and the files it names, not the rest of the
+     * ancestor that had to become the root for its relative urls to resolve.
+     */
+    private static final class Root {
+        final File dir;
+        /** Subtrees a request may reach, or {@code null} for all of {@link #dir}. */
+        final Set<Path> subtrees;
+        final Set<Path> files;
+
+        Root(File dir, Set<Path> subtrees, Set<Path> files) {
+            this.dir = dir;
+            this.subtrees = subtrees;
+            this.files = files;
+        }
+
+        boolean allows(Path resolved) {
+            if (subtrees == null) return true;
+            Path canonical;
+            try {
+                canonical = resolved.toFile().getCanonicalFile().toPath();
+            } catch (Exception e) {
+                return false;
+            }
+            if (files.contains(canonical)) return true;
+            for (Path subtree : subtrees) {
+                if (canonical.startsWith(subtree)) return true;
+            }
+            return false;
+        }
+    }
+
+    /** What {@link #scanStylesheet} found in one stylesheet, as of its modification time. */
+    private static final class StylesheetScan {
+        final long modified;
+        /** The ancestor its relative urls need as root, or {@code null} when its folder suffices. */
+        final Path root;
+        final Path dir;
+        final Set<Path> targets;
+
+        StylesheetScan(long modified, Path root, Path dir, Set<Path> targets) {
+            this.modified = modified;
+            this.root = root;
+            this.dir = dir;
+            this.targets = targets;
+        }
+    }
+
+    /**
+     * Stylesheet scans, keyed by canonical path and reused while the file's modification time is
+     * unchanged, so a page set again and again reads each stylesheet once. One per Browser.
+     */
+    public static final class StylesheetScans {
+        private final Map<String, StylesheetScan> byPath = new ConcurrentHashMap<>();
+
+        StylesheetScan get(File file) throws Exception {
+            File canonical = file.getCanonicalFile();
+            long modified = canonical.lastModified();
+            StylesheetScan cached = byPath.get(canonical.getPath());
+            if (cached != null && cached.modified == modified) return cached;
+            StylesheetScan scan = scanStylesheet(canonical, modified);
+            byPath.put(canonical.getPath(), scan);
+            return scan;
         }
     }
 
@@ -143,7 +229,16 @@ public final class LocalFileServing {
             // Fall back to the non-canonicalized form; resolve() still guards traversal.
         }
         String token = tokensByPath.computeIfAbsent(dir.getPath(), p -> newToken());
-        rootsByToken.put(token, dir);
+        rootsByToken.put(token, new Root(dir, null, null));
+        return token;
+    }
+
+    /** Registers a stylesheet's root, scoped to its folder and its targets (see {@link Root}). */
+    private static String registerStylesheetRoot(StylesheetScan scan) {
+        StringBuilder key = new StringBuilder(scan.root.toString()).append('\0').append(scan.dir);
+        for (Path target : new TreeSet<>(scan.targets)) key.append('\0').append(target);
+        String token = tokensByPath.computeIfAbsent(key.toString(), k -> newToken());
+        rootsByToken.put(token, new Root(scan.root.toFile(), Collections.singleton(scan.dir), scan.targets));
         return token;
     }
 
@@ -166,6 +261,11 @@ public final class LocalFileServing {
      * embedding a path in HTML it asked us to render.
      */
     public static ServedHtml rewriteLocalResources(String html) {
+        return rewriteLocalResources(html, new StylesheetScans());
+    }
+
+    /** {@link #rewriteLocalResources(String)}, reusing the stylesheet scans in {@code scans}. */
+    public static ServedHtml rewriteLocalResources(String html, StylesheetScans scans) {
         if (html == null || html.isEmpty()) return null;
         File baseDir = documentBaseDir(html);
         String basePath = baseDir == null ? null : URL_PREFIX + registerRoot(baseDir) + "/";
@@ -174,7 +274,7 @@ public final class LocalFileServing {
         int copied = 0;
         boolean rewrote = false;
         while (m.find()) {
-            String served = servedPath(m.group(), baseDir);
+            String served = servedPath(m.group(), baseDir, scans);
             if (served == null) continue;
             out.append(html, copied, m.start()).append(served);
             copied = m.end();
@@ -211,9 +311,11 @@ public final class LocalFileServing {
      * flattened to {@code /local-file/<its-own-token>/x.css} turns its {@code url(../graphics/y.png)}
      * into {@code /local-file/graphics/y.png}, which names no registration at all. Keeping the
      * directory structure under the root the document itself declared makes those resolve where
-     * they were meant to. Anything outside that root falls back to its own parent directory.
+     * they were meant to. Anything outside that root is served under its own parent directory,
+     * or, for a stylesheet, under the nearest directory that also holds what its relative urls
+     * name (see {@link #stylesheetRoot}).
      */
-    private static String servedPath(String fileUrl, File baseDir) {
+    private static String servedPath(String fileUrl, File baseDir, StylesheetScans scans) {
         Path path = parseFileUrl(fileUrl);
         if (path == null) return null;
         File file = path.toFile();
@@ -224,7 +326,77 @@ public final class LocalFileServing {
         if (file.isDirectory()) return URL_PREFIX + registerRoot(file) + "/";
         File parent = file.getParentFile();
         if (parent == null || file.getName().isEmpty()) return null;
+        StylesheetScan scan = stylesheetRoot(file, scans);
+        if (scan != null) {
+            String relative = relativize(scan.root.toFile(), file);
+            if (relative != null) return URL_PREFIX + registerStylesheetRoot(scan) + "/" + relative;
+        }
         return URL_PREFIX + registerRoot(parent) + "/" + encodeSegment(file.getName());
+    }
+
+    /**
+     * The scan of a stylesheet whose relative {@code url(...)} and {@code @import} references climb
+     * out of its directory, or {@code null} when none does. Served under its own directory, the
+     * browser resolves {@code url(../graphics/y.png)} above the token, where nothing is registered.
+     */
+    private static StylesheetScan stylesheetRoot(File file, StylesheetScans scans) {
+        if (!file.getName().toLowerCase(Locale.ROOT).endsWith(".css") || !file.isFile()) return null;
+        try {
+            StylesheetScan scan = scans.get(file);
+            return scan.root == null ? null : scan;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Finds the existing files a stylesheet's relative references name, following its
+     * {@code @import}s, and the nearest ancestor of its directory holding them all. A reference
+     * that would make a filesystem root that ancestor is dropped. Comments are skipped.
+     */
+    private static StylesheetScan scanStylesheet(File canonical, long modified) throws Exception {
+        Path dir = canonical.toPath().getParent();
+        if (dir == null) return new StylesheetScan(modified, null, null, null);
+        Path root = dir;
+        Set<Path> targets = new HashSet<>();
+        Set<Path> read = new HashSet<>();
+        Deque<Path> toRead = new ArrayDeque<>();
+        toRead.add(canonical.toPath());
+        while (!toRead.isEmpty() && read.size() < STYLESHEET_SCAN_FILES) {
+            Path sheet = toRead.poll();
+            if (!read.add(sheet)) continue;
+            String css = CSS_COMMENT.matcher(readHead(sheet.toFile(), STYLESHEET_SCAN_LIMIT)).replaceAll(" ");
+            Matcher m = CSS_REFERENCE.matcher(css);
+            while (m.find()) {
+                Path target = relativeTarget(sheet.getParent(), m.group(1) != null ? m.group(1) : m.group(2));
+                if (target == null) continue;
+                Path common = root;
+                while (common != null && !target.startsWith(common)) common = common.getParent();
+                if (common == null || common.getParent() == null) continue;
+                root = common;
+                targets.add(target);
+                if (target.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".css")) {
+                    toRead.add(target);
+                }
+            }
+        }
+        return new StylesheetScan(modified, root.equals(dir) ? null : root, dir, targets);
+    }
+
+    /** The existing file a stylesheet's relative reference names, or {@code null}. */
+    private static Path relativeTarget(Path dir, String ref) {
+        String path = ref.trim().split("[?#]", 2)[0];
+        if (path.isEmpty() || path.startsWith("/") || path.startsWith("\\")
+                || path.matches("^[A-Za-z][A-Za-z0-9+.-]*:.*")) {
+            return null;
+        }
+        try {
+            File target = dir.resolve(Java8.urlDecode(path.replace("+", "%2B"), StandardCharsets.UTF_8))
+                    .normalize().toFile();
+            return target.isFile() ? target.getCanonicalFile().toPath() : null;
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 
     /**
@@ -392,11 +564,11 @@ public final class LocalFileServing {
      * ({@code C:/...} on Windows, see {@link #relativizeBaseHref}).
      */
     public static File resolve(String token, String relativePath) {
-        File root = rootsByToken.get(token);
+        Root root = rootsByToken.get(token);
         if (root != null) {
-            Path rootPath = root.toPath().normalize();
+            Path rootPath = root.dir.toPath().normalize();
             Path resolved = rootPath.resolve(relativePath).normalize();
-            if (resolved.startsWith(rootPath)) {
+            if (resolved.startsWith(rootPath) && root.allows(resolved)) {
                 File file = resolved.toFile();
                 if (file.isFile()) return file;
             }

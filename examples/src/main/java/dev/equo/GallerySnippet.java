@@ -783,7 +783,9 @@ public class GallerySnippet {
         // see above). Filtering the known-bad value here protects every status-based
         // scenario in the suite until the underlying frame-scoping bug is fixed.
         browser.addTitleListener(e -> {
-            if (!"Gallery Browser".equals(e.title) && !"swtflutter".equals(e.title)) {
+            // The local page reports its location instead.
+            if (!"Gallery Browser".equals(e.title) && !"swtflutter".equals(e.title)
+                    && !"Gallery Local Page".equals(e.title)) {
                 status.setText("Browser title: " + e.title);
             }
         });
@@ -815,6 +817,36 @@ public class GallerySnippet {
             browserReloaded[0] = true;
             browser.setText("<html><head><title>Gallery Browser Reloaded</title></head>"
                     + "<body><h1>Hello again</h1></body></html>");
+        }));
+        // A page whose <base href> and stylesheet are local files, the way an Eclipse intro page
+        // is. It is still a setText document, so its location reads about:blank.
+        boolean[] localPageShown = {false};
+        browser.addLocationListener(LocationListener.changedAdapter(e -> {
+            if (localPageShown[0]) status.setText("Local page location: " + e.location);
+        }));
+        Button showLocalPage = new Button(dialogGroup, SWT.PUSH);
+        showLocalPage.setText("Show Local Page");
+        String[] localPageBase = {null};
+        showLocalPage.addSelectionListener(widgetSelectedAdapter(e -> {
+            if (localPageBase[0] == null) {
+                try {
+                    Path dir = Files.createTempDirectory("gallery-local-page");
+                    Path css = Files.write(dir.resolve("local.css"), "h1 { color: green; }".getBytes());
+                    dir.toFile().deleteOnExit();
+                    css.toFile().deleteOnExit();
+                    localPageBase[0] = dir.toUri().toString();
+                } catch (IOException ex) {
+                    status.setText("Local page: " + ex);
+                    return;
+                }
+            }
+            String base = localPageBase[0];
+            browserReloaded[0] = true;
+            localPageShown[0] = true;
+            browser.setText("<html><head><base href='" + base + "'>"
+                    + "<link rel='stylesheet' href='" + base + "local.css'>"
+                    + "<title>Gallery Local Page</title></head>"
+                    + "<body><h1>Local page</h1></body></html>");
         }));
         openDialog.addSelectionListener(widgetSelectedAdapter(e -> {
             Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
@@ -959,6 +991,7 @@ public class GallerySnippet {
             tip.setVisible(false);
             if (browserReloaded[0]) { // restore silently (the TitleListener ignores the original title)
                 browserReloaded[0] = false;
+                localPageShown[0] = false;
                 browser.setText(browserHtml);
             }
             sashForm.setWeights(new int[] {1, 1});

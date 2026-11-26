@@ -530,15 +530,17 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   /// iframe's own location is an opaque `/proxy?url=…` wrapper; the proxy injects
   /// a `<base href>` of the *final* fetched URL (after redirects), so the
   /// same-origin document's [baseURI] is the real address. Falls back to
-  /// decoding the proxy wrapper, then to the raw URL.
+  /// decoding the proxy wrapper, then to the raw URL. A `setText` document is
+  /// `about:blank` whatever base it was given.
   String? _resolveReportedUrl(String? rawUrl) {
     if (_loadedLocalFile) return _loadedUrl;
     if (_params != null) {
       try {
-        final b = browserEvalInFrame(_params, 'document.baseURI');
+        final href = browserEvalInFrame(_params, 'location.href');
         _followedLinkUrl = null;
+        if (href is String && _inlineDocuments.isDocument(href)) return 'about:blank';
+        final b = browserEvalInFrame(_params, 'document.baseURI');
         if (b is String &&
-            !_inlineDocuments.isDocument(b) &&
             (b.startsWith('http://') || b.startsWith('https://')) &&
             !b.contains('/proxy?url=')) {
           return b;
