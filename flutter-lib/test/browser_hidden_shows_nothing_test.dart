@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/browser.dart';
@@ -10,6 +11,9 @@ import 'delivery/support/deliver.dart';
 
 /// A Browser hidden with setVisible(false) shows nothing, as natively, and shown again it shows the
 /// same page: its web view stays mounted, so the page is neither recreated nor reloaded.
+///
+/// Hidden, its web view is still painted, at one nearly transparent pixel: on web the iframe joins
+/// the page only once painted, so a Browser hidden before its first load would never load it.
 void main() {
   late _FakeWebViewPlatform platform;
 
@@ -19,31 +23,53 @@ void main() {
     WebViewPlatform.instance = platform;
   });
 
-  testWidgets('a hidden Browser paints nothing and keeps its page for when it is shown',
+  testWidgets('a Browser created hidden still paints its web view, invisibly', (tester) async {
+    await tester.pumpWidget(_app(_browser(visible: false)));
+    await tester.pump();
+    await _expectPaintedInvisibly(tester);
+  });
+
+  testWidgets('a hidden Browser shows nothing and keeps its page for when it is shown',
       (tester) async {
-    await tester.pumpWidget(EvolveApp(
-      theme: ThemeMode.light,
-      contentWidget: Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox(width: 200, height: 100, child: BrowserSwt(value: _browser(visible: true))),
-      ),
-    ));
+    await tester.pumpWidget(_app(_browser(visible: true)));
     await tester.pump();
     expect(await _paintsAfterRepaint(tester), greaterThan(0));
+    expect(_WebViewPainter.lastSize, const Size(200, 100));
     final loads = List.of(platform.loads);
     expect(loads, ['https://example.com/']);
 
     await deliverWhole(_browser(visible: false, seq: 10));
     await tester.pump();
-    expect(await _paintsAfterRepaint(tester), 0, reason: 'a hidden Browser shows its page');
+    await _expectPaintedInvisibly(tester);
 
     await deliverWhole(_browser(visible: true, seq: 20));
     await tester.pump();
     expect(await _paintsAfterRepaint(tester), greaterThan(0));
+    expect(_WebViewPainter.lastSize, const Size(200, 100));
     expect(platform.controllers, 1, reason: 'showing the Browser again recreated its web view');
     expect(_PlatformView.mounts, 1, reason: 'hiding the Browser unmounted its web view');
     expect(platform.loads, loads, reason: 'showing the Browser again reloaded its page');
   });
+}
+
+Widget _app(VBrowser browser) => EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(width: 200, height: 100, child: BrowserSwt(value: browser)),
+      ),
+    );
+
+/// The web view is painted, so on web its iframe is in the page and loads, but within one pixel
+/// at the lowest alpha Flutter paints, so nothing of the page shows.
+Future<void> _expectPaintedInvisibly(WidgetTester tester) async {
+  expect(await _paintsAfterRepaint(tester), greaterThan(0),
+      reason: 'a hidden web view that is not painted never loads on web');
+  expect(_WebViewPainter.lastSize.width, lessThanOrEqualTo(1), reason: 'a hidden Browser shows its page');
+  expect(_WebViewPainter.lastSize.height, lessThanOrEqualTo(1), reason: 'a hidden Browser shows its page');
+  final opacity = tester.renderObject<RenderOpacity>(
+      find.ancestor(of: find.byType(_PlatformView), matching: find.byType(Opacity)).first);
+  expect(opacity.opacity, lessThanOrEqualTo(1 / 255), reason: 'a hidden Browser shows its page');
 }
 
 VBrowser _browser({required bool visible, int seq = 0}) => VBrowser()
@@ -169,9 +195,13 @@ class _WebViewPainter extends CustomPainter {
 
   static final ValueNotifier<int> repaint = ValueNotifier(0);
   static int paints = 0;
+  static Size lastSize = Size.zero;
 
   @override
-  void paint(Canvas canvas, Size size) => paints++;
+  void paint(Canvas canvas, Size size) {
+    paints++;
+    lastSize = size;
+  }
 
   @override
   bool shouldRepaint(_WebViewPainter oldDelegate) => true;

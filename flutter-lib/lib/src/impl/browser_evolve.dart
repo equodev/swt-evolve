@@ -79,6 +79,9 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
   // Desktop-only JS channel: native webviews have no sync JS<->Dart bridge, so
   // BrowserFunction calls go one-way through this instead. See _injectBrowserFunction.
   static const String _kFunctionChannel = 'EquoBrowserFunction';
+
+  /// The lowest opacity Flutter still paints (one alpha step): a hidden Browser stays painted.
+  static const double _hiddenOpacity = 1 / 255;
   // Last values pushed to Java, to suppress duplicate Title/StatusText events.
   String? _lastTitle;
   String _lastStatus = '';
@@ -834,14 +837,24 @@ class BrowserImpl<T extends BrowserSwt, V extends VBrowser>
 
   @override
   Widget build(BuildContext context) {
-    // Offstage rather than wrap's SizedBox.shrink: an unmounted web view is recreated, and its page
-    // reloaded, when the Browser is shown again.
-    return Offstage(
-      offstage: hidden,
-      child: inOwnLayer(tagSemantics(state, ValueListenableBuilder<double>(
-        valueListenable: appScaleNotifier,
-        builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
-      ))),
+    // A hidden Browser keeps its web view painted, at one nearly transparent pixel, rather than
+    // offstage: on web a platform view joins the page only once it is painted, and the engine skips
+    // an empty one, so a Browser hidden before its first load would never load its URL, and code
+    // that shows it once its page completes would wait forever. The tree is the same either way, so
+    // showing it again neither recreates the web view nor reloads its page.
+    return Align(
+      alignment: AlignmentDirectional.topStart,
+      child: Opacity(
+        opacity: hidden ? _hiddenOpacity : 1,
+        child: SizedBox(
+          width: hidden ? 1 : double.infinity,
+          height: hidden ? 1 : double.infinity,
+          child: inOwnLayer(tagSemantics(state, ValueListenableBuilder<double>(
+            valueListenable: appScaleNotifier,
+            builder: (context, zoom, _) => _unzoomed(WebViewWidget(controller: _controller), zoom),
+          ))),
+        ),
+      ),
     );
   }
 
