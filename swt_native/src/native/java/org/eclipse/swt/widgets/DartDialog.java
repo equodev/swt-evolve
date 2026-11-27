@@ -295,28 +295,34 @@ public abstract class DartDialog implements IDialog {
     }
 
     protected int openDialogWithFlutter(Object value, int fallback) {
+        String answer = openDialogWithFlutter(value, null);
+        if (answer != null && !answer.isEmpty()) {
+            try {
+                return Integer.parseInt(answer.trim());
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return fallback;
+    }
+
+    protected String openDialogWithFlutter(Object value, java.util.function.Function<String, Object> navigate) {
         long id = System.identityHashCode(this);
         String type = getClass().getSimpleName().substring(4);
         VDialog val = (VDialog) value;
         val.setSwt(type);
         val.setId(id);
-        int[] response = { fallback };
+        String[] response = { null };
         boolean[] done = { false };
         Display display = parent != null ? parent.getDisplay() : DartDisplay.getCurrent();
-        // Dialogs aren't DartWidgets and have no bridge of their own — register the close
-        // handler on the owning Display's comm via its bridge.
-        DisplayBridge bridge = display != null ? ((DartDisplay) display.getImpl()).displayBridge : null;
+        DisplayBridge bridge = dialogBridge(display);
         int closeType = dev.equo.swt.comm.ChannelHeader.requireType(type);
         if (bridge != null) {
             bridge.onChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_CLOSE, p -> {
-                if (p != null && !p.isEmpty()) {
-                    try {
-                        response[0] = Integer.parseInt(p.trim());
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
+                response[0] = p;
                 done[0] = true;
             });
+            if (navigate != null)
+                bridge.onChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_NAVIGATE_REQUEST, p -> bridge.sendOnChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_NAVIGATE, navigate.apply(p)));
         }
         Shell host = dialogHost();
         DartShell shell = host.getImpl() instanceof DartShell ? (DartShell) host.getImpl() : null;
@@ -328,13 +334,20 @@ public abstract class DartDialog implements IDialog {
             if (!display.readAndDispatch())
                 display.sleep();
         }
-        if (bridge != null)
+        if (bridge != null) {
             bridge.offChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_CLOSE);
+            if (navigate != null)
+                bridge.offChannel(closeType, id, dev.equo.swt.WireTable.CHANNEL_NAVIGATE_REQUEST);
+        }
         // A disposed host has already released the dialogs it was drawing, and marking a disposed
         // Shell dirty would send Flutter a value for a Shell it does not draw.
         if (shell != null && !host.isDisposed())
             shell.removeDialog(this);
         return response[0];
+    }
+
+    DisplayBridge dialogBridge(Display display) {
+        return ((DartDisplay) display.getImpl()).displayBridge;
     }
 
     Shell dialogHost() {

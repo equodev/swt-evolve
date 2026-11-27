@@ -457,7 +457,11 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
         if (configuredPath == null && configuredUri != null) {
             configuredPath = new java.io.File(java.net.URI.create(configuredUri)).getPath();
         }
-        if (configuredPath == null || configuredPath.trim().isEmpty()) {
+        if (configuredPath == null) {
+            fullPath = chooseOnClient();
+            return fullPath;
+        }
+        if (configuredPath.trim().isEmpty()) {
             return fullPath;
         }
         java.io.File file = new java.io.File(configuredPath);
@@ -469,6 +473,10 @@ public class DartFileDialog extends DartDialog implements IIFileDialog {
             filterPath = parentPath;
         }
         return fullPath;
+    }
+
+    String chooseOnClient() {
+        return FileDialogHelper.chooseOnClient(this);
     }
 
     public FileDialog getApi() {

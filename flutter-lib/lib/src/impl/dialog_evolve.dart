@@ -2,9 +2,12 @@ import 'package:flutter/widgets.dart';
 
 import '../gen/colordialog.dart';
 import '../gen/dialog.dart';
+import '../gen/directorydialog.dart';
+import '../gen/filedialog.dart';
 import '../gen/messagebox.dart';
 import '../gen/shell.dart';
 import 'colordialog_evolve.dart';
+import 'filedialog_evolve.dart';
 import 'messagebox_evolve.dart';
 
 /// The dialogs already shown for each shell record, by dialog id. The shell draws its dialogs and
@@ -32,5 +35,9 @@ void _openDialog(BuildContext context, VDialog d) {
       showMessageBoxDialog(context, d as VMessageBox, d.id);
     case 'ColorDialog':
       showColorDialog(context, d as VColorDialog, d.id);
+    case 'FileDialog':
+      showFileDialog(context, d as VFileDialog, d.id);
+    case 'DirectoryDialog':
+      showDirectoryDialog(context, d as VDirectoryDialog, d.id);
   }
 }

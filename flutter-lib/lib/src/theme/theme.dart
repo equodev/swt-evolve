@@ -41,6 +41,7 @@ import 'theme_settings/display_theme_settings.dart';
 import 'theme_settings/scaling_scale_theme_settings.dart';
 import 'theme_settings/message_box_theme_settings.dart';
 import 'theme_settings/colordialog_theme_settings.dart';
+import 'theme_settings/filedialog_theme_settings.dart';
 
 Color? _parseThemeColor(String? colorHex) {
   if (colorHex == null) {
@@ -694,6 +695,11 @@ ThemeData createLightNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final fileDialogTheme = getFileDialogLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -739,6 +745,7 @@ ThemeData createLightNonDefaultTheme(
       scalingScaleTheme,
       messageBoxTheme,
       colorDialogTheme,
+      fileDialogTheme,
     ],
   );
 }
@@ -946,6 +953,11 @@ ThemeData createDarkNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final fileDialogTheme = getFileDialogDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
@@ -991,6 +1003,7 @@ ThemeData createDarkNonDefaultTheme(
       scalingScaleTheme,
       messageBoxTheme,
       colorDialogTheme,
+      fileDialogTheme,
     ],
   );
 }

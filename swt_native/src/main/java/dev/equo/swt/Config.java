@@ -216,9 +216,24 @@ public class Config {
         return false;
     }
 
+    /**
+     * Which file and directory choosers a whole-tree app opens: {@code equo} (default) for the Flutter
+     * chooser over the app's file system, {@code eclipse} for the OS ones. Ignored without the native
+     * library ({@code dev.equo.swt.loadLibrary=false}, pure web), where there is no OS chooser to open.
+     */
+    public static final String FILE_DIALOGS = PROPERTY_PREFIX + "filedialogs";
+
+    /** The classes a whole-tree app keeps native. */
     private static boolean isWebHybridClass(Class<?> clazz) {
         boolean isDesk = "true".equals(System.getProperty("dev.equo.swt.desktop", "true"));
-        return !isDesk && (clazz == DirectoryDialog.class || clazz == FileDialog.class || clazz == Program.class);
+        if (isDesk)
+            return false;
+        if (clazz == Program.class)
+            return true;
+        if (clazz != DirectoryDialog.class && clazz != FileDialog.class)
+            return false;
+        boolean pureWeb = "false".equals(System.getProperty("dev.equo.swt.loadLibrary"));
+        return !pureWeb && Impl.eclipse.name().equals(System.getProperty(FILE_DIALOGS));
     }
 
     private static boolean isCreatedInsideDart() {

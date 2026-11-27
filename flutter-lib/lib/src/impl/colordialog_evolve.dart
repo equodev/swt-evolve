@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import '../comm/comm.dart';
 import '../gen/colordialog.dart';
 import '../gen/rgb.dart';
-import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_extensions/colordialog_theme_extension.dart';
+import 'utils/dialog_button.dart';
 import 'utils/pointer.dart';
 import 'utils/layered_layout_builder.dart';
 import '../gen/widgets.dart' show WireChannel, WireType;
@@ -120,7 +120,6 @@ class _ColorDialogState extends State<ColorDialogContent> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context).extension<ColorDialogThemeExtension>()!;
-    final btnTheme = Theme.of(context).extension<ButtonThemeExtension>()!;
 
     return Dialog(
       backgroundColor: theme.backgroundColor,
@@ -161,17 +160,15 @@ class _ColorDialogState extends State<ColorDialogContent> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _DialogButton(
+                      DialogButton(
                         label: 'Cancel',
                         isPrimary: false,
-                        btnTheme: btnTheme,
                         onPressed: () => _close(cancelledColor),
                       ),
                       SizedBox(width: theme.buttonSpacing),
-                      _DialogButton(
+                      DialogButton(
                         label: 'OK',
                         isPrimary: true,
-                        btnTheme: btnTheme,
                         onPressed: () => _close(packRgb(_color)),
                       ),
                     ],
@@ -426,63 +423,4 @@ class _HuePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_HuePainter old) => old.hue != hue || old.theme != theme;
-}
-
-class _DialogButton extends StatefulWidget {
-  final String label;
-  final bool isPrimary;
-  final ButtonThemeExtension btnTheme;
-  final VoidCallback onPressed;
-
-  const _DialogButton({
-    required this.label,
-    required this.isPrimary,
-    required this.btnTheme,
-    required this.onPressed,
-  });
-
-  @override
-  State<_DialogButton> createState() => _DialogButtonState();
-}
-
-class _DialogButtonState extends State<_DialogButton> {
-  bool _isHovering = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = widget.btnTheme;
-    final bgColor = _isHovering
-        ? (widget.isPrimary ? theme.pushButtonHoverColor : theme.secondaryButtonHoverColor)
-        : (widget.isPrimary ? theme.pushButtonColor : theme.secondaryButtonColor);
-    final textColor =
-        widget.isPrimary ? theme.pushButtonTextColor : theme.secondaryButtonTextColor;
-    final borderColor =
-        widget.isPrimary ? theme.pushButtonBorderColor : theme.secondaryButtonBorderColor;
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovering = true),
-      onExit: (_) => setState(() => _isHovering = false),
-      child: Material(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
-        child: InkWell(
-          onTap: widget.onPressed,
-          borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
-          splashColor: theme.splashColor,
-          highlightColor: theme.highlightColor,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(theme.pushButtonBorderRadius),
-              border: Border.all(color: borderColor, width: theme.pushButtonBorderWidth),
-            ),
-            padding: theme.pushButtonPadding,
-            child: Text(
-              widget.label,
-              style: (theme.pushButtonFontStyle ?? const TextStyle()).copyWith(color: textColor),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

@@ -241,13 +241,54 @@ public class ConfigTest {
         }
 
         @Test
-        void file_dialogs_stay_native_once_a_display_bridge_runs() {
+        void file_dialogs_are_the_flutter_ones_by_default_on_every_surface() {
             // DisplayBridge sets dev.equo.swt.desktop=false for the backend that ships.
             System.setProperty("dev.equo.swt.desktop", "false");
-            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isFalse();
-            assertThat(Config.isEquo(DirectoryDialog.class, Mocks.shell())).isFalse();
+            System.setProperty("dev.equo.swt.loadLibrary", "true");
+            for (String mode : new String[]{null, ConfigFlags.MODE_DESKTOP, ConfigFlags.MODE_CHROMIUM}) {
+                if (mode == null)
+                    System.clearProperty(ConfigFlags.MODE_PROPERTY);
+                else
+                    ConfigFlags.setMode(mode);
+                assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).as(mode).isTrue();
+                assertThat(Config.isEquo(DirectoryDialog.class, Mocks.shell())).as(mode).isTrue();
+            }
+        }
 
+        @Test
+        void the_file_dialogs_property_brings_back_the_os_choosers() {
+            System.setProperty("dev.equo.swt.desktop", "false");
+            System.setProperty("dev.equo.swt.loadLibrary", "true");
+            System.setProperty(Config.FILE_DIALOGS, "eclipse");
+            for (String mode : new String[]{null, ConfigFlags.MODE_DESKTOP, ConfigFlags.MODE_CHROMIUM}) {
+                if (mode == null)
+                    System.clearProperty(ConfigFlags.MODE_PROPERTY);
+                else
+                    ConfigFlags.setMode(mode);
+                assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).as(mode).isFalse();
+                assertThat(Config.isEquo(DirectoryDialog.class, Mocks.shell())).as(mode).isFalse();
+            }
+
+            System.setProperty(Config.FILE_DIALOGS, "equo");
+            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isTrue();
+        }
+
+        @Test
+        void pure_web_ignores_the_file_dialogs_property() {
+            System.setProperty("dev.equo.swt.desktop", "false");
+            System.setProperty("dev.equo.swt.loadLibrary", "false");
+            System.setProperty(Config.FILE_DIALOGS, "eclipse");
+            System.clearProperty(ConfigFlags.MODE_PROPERTY);
+
+            assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isTrue();
+            assertThat(Config.isEquo(DirectoryDialog.class, Mocks.shell())).isTrue();
+        }
+
+        @Test
+        void file_dialogs_outside_a_whole_tree_app_follow_the_default() {
             System.setProperty("dev.equo.swt.desktop", "true");
+            System.setProperty("dev.equo.swt.loadLibrary", "true");
+            System.setProperty(Config.FILE_DIALOGS, "eclipse");
             assertThat(Config.isEquo(FileDialog.class, Mocks.shell())).isTrue();
         }
 

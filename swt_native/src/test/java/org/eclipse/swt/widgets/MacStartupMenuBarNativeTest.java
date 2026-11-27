@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
@@ -35,6 +36,8 @@ public class MacStartupMenuBarNativeTest {
 
     private static final long TIMEOUT_MS = 30_000;
 
+    private static final String OS_CHOOSERS = "-D" + Config.FILE_DIALOGS + "=eclipse";
+
     @Test
     void installsTheApplicationMenuOnTheFirstEventLoopPassNotDuringInit() throws Exception {
         assertThat(runProbe(MenuProbe.class)).as("the child's output")
@@ -49,19 +52,33 @@ public class MacStartupMenuBarNativeTest {
     }
 
     /**
-     * The browser surface still opens the OS file and folder choosers, which run NSApp modally. They
-     * must not depend on the application menu, which a browser tab no longer builds.
+     * With {@code dev.equo.swt.filedialogs=eclipse} a browser tab opens the OS file and folder choosers,
+     * which run NSApp modally. They must not depend on the application menu, which a browser tab no
+     * longer builds.
      */
     @Test
     void opensTheNativeFileChooserInABrowserTab() throws Exception {
-        assertThat(runProbe(ChooserProbe.class, "-Dprobe.chooser=file")).as("the child's output")
-                .contains("menu=false chooser=aborted");
+        assertThat(runProbe(ChooserProbe.class, "-Dprobe.chooser=file", OS_CHOOSERS)).as("the child's output")
+                .contains("menu=false impl=SwtFileDialog chooser=aborted");
     }
 
     @Test
     void opensTheNativeFolderChooserInABrowserTab() throws Exception {
+        assertThat(runProbe(ChooserProbe.class, "-Dprobe.chooser=directory", OS_CHOOSERS)).as("the child's output")
+                .contains("menu=false impl=SwtDirectoryDialog chooser=aborted");
+    }
+
+    /** By default a browser tab opens the Flutter file and folder choosers: no OS chooser runs NSApp modally. */
+    @Test
+    void opensNoNativeFileChooserInABrowserTab() throws Exception {
+        assertThat(runProbe(ChooserProbe.class, "-Dprobe.chooser=file")).as("the child's output")
+                .contains("menu=false impl=DartFileDialog chooser=returned before it was aborted");
+    }
+
+    @Test
+    void opensNoNativeFolderChooserInABrowserTab() throws Exception {
         assertThat(runProbe(ChooserProbe.class, "-Dprobe.chooser=directory")).as("the child's output")
-                .contains("menu=false chooser=aborted");
+                .contains("menu=false impl=DartDirectoryDialog chooser=returned before it was aborted");
     }
 
     /**
@@ -188,10 +205,18 @@ public class MacStartupMenuBarNativeTest {
             DisplayBridgePlatform.init();
             DisplayBridgePlatform.syncMenuBar();
             Shell shell = new Shell(display);
-            String chooser = "file".equals(System.getProperty("probe.chooser"))
-                    ? open(() -> new FileDialog(shell, SWT.OPEN).open())
-                    : open(() -> new DirectoryDialog(shell).open());
-            System.out.println("menu=" + hasApplicationMenu() + " chooser=" + chooser);
+            String impl;
+            String chooser;
+            if ("file".equals(System.getProperty("probe.chooser"))) {
+                FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+                impl = dialog.getImpl().getClass().getSimpleName();
+                chooser = open(dialog::open);
+            } else {
+                DirectoryDialog dialog = new DirectoryDialog(shell);
+                impl = dialog.getImpl().getClass().getSimpleName();
+                chooser = open(dialog::open);
+            }
+            System.out.println("menu=" + hasApplicationMenu() + " impl=" + impl + " chooser=" + chooser);
             System.out.flush();
             Runtime.getRuntime().halt(0);
         }

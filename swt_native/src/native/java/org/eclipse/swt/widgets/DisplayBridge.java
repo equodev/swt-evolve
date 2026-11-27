@@ -382,6 +382,15 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         comm().remove(type, id, channel);
     }
 
+    /** Sends {@code args} on a channel {@link #onChannel} names, the way back to the surface's client. */
+    public void sendOnChannel(int type, long id, int channel, Object args) {
+        try {
+            serializeAndSend(type, id, channel, args);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Wires the {@code Display/{id}/ClientReady} handler that fires when the Flutter client (browser
      * or native window) has rendered the Display: syncs the Display bounds to the reported viewport

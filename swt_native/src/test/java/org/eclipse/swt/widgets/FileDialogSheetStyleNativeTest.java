@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
+import dev.equo.swt.Config;
+
 /**
  * The whole-tree build renders every Shell through Flutter, so a Shell has no NSWindow — {@code
  * Control.view} is a placeholder whose {@code window()} is nil. Cocoa answers a nil-parent sheet by
@@ -26,22 +28,36 @@ class FileDialogSheetStyleNativeTest {
 
     private static final String WEB_HYBRID = "dev.equo.swt.desktop";
 
+    private static final String LOAD_LIBRARY = "dev.equo.swt.loadLibrary";
+
     private String previous;
+    private String previousLoadLibrary;
+    private String previousFileDialogs;
 
     @BeforeEach
     void routeChoosersToTheOs() {
-        // Config sends FileDialog/DirectoryDialog to the native chooser exactly when this is off,
-        // which is the routing under test; DisplayBridge sets it for every whole-tree app.
+        // A whole-tree app (DisplayBridge turns WEB_HYBRID off) with the native library opens the OS
+        // choosers on request.
         previous = System.getProperty(WEB_HYBRID);
+        previousLoadLibrary = System.getProperty(LOAD_LIBRARY);
+        previousFileDialogs = System.getProperty(Config.FILE_DIALOGS);
         System.setProperty(WEB_HYBRID, "false");
+        System.setProperty(LOAD_LIBRARY, "true");
+        System.setProperty(Config.FILE_DIALOGS, "eclipse");
     }
 
     @AfterEach
     void restore() {
-        if (previous == null)
-            System.clearProperty(WEB_HYBRID);
+        restore(WEB_HYBRID, previous);
+        restore(LOAD_LIBRARY, previousLoadLibrary);
+        restore(Config.FILE_DIALOGS, previousFileDialogs);
+    }
+
+    private static void restore(String key, String value) {
+        if (value == null)
+            System.clearProperty(key);
         else
-            System.setProperty(WEB_HYBRID, previous);
+            System.setProperty(key, value);
     }
 
     @Test
