@@ -33,10 +33,13 @@ public final class SystemAppearance {
         clientDeadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(clientWaitMs);
     }
 
-    /** Records what the client reported; a value that names neither variant is ignored. */
-    public void report(String appearance) {
+    /**
+     * Records what the client reported; a value that names neither variant is ignored. The first
+     * report stands for the session: the application took its colours from it.
+     */
+    public synchronized void report(String appearance) {
         String variant = Config.themeVariant(appearance);
-        if (variant != null) reported = variant;
+        if (variant != null && reported == null) reported = variant;
         clientReported.countDown();
     }
 

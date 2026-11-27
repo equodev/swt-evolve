@@ -1402,6 +1402,21 @@ public class Config {
     }
 
     /**
+     * The flags {@code system}'s Display sends its clients: with the theme the application defines or
+     * the session's first client reported, so a client on a system of the other variant paints the
+     * theme the application chose its colours for. A copy only when the theme differs: the global
+     * flags serve every session.
+     */
+    public static ConfigFlags clientProperties(SystemAppearance system) {
+        ConfigFlags flags = getConfigFlags();
+        String theme = windowTheme(system);
+        if ("system".equals(theme) || theme.equals(flags.force_theme)) return flags;
+        ConfigFlags forSession = flags.copy();
+        forSession.force_theme = theme;
+        return forSession;
+    }
+
+    /**
      * Whether the system theme is dark. {@code Display.isSystemDarkTheme()} is SWT API from 3.112;
      * an older release has no notion of a system theme, so the theme Evolve paints is the only answer
      * there is. Looked up reflectively because this class compiles against every

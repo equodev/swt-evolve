@@ -390,6 +390,60 @@ public class ConfigFlags implements WireObject {
         w.write(gc_approximate_batching);
     }
 
+    /** A shallow copy, for sending one session flags that differ from the shared ones. */
+    public ConfigFlags copy() {
+        ConfigFlags c = new ConfigFlags();
+        c.ctabfolder_visible_controls = ctabfolder_visible_controls;
+        c.ctabfolder_topright_auto_hide = ctabfolder_topright_auto_hide;
+        c.ctabfolder_tab_scroll = ctabfolder_tab_scroll;
+        c.ctabfolder_chevron_after_tabs = ctabfolder_chevron_after_tabs;
+        c.image_disable_icons_replacement = image_disable_icons_replacement;
+        c.assets_path = assets_path;
+        c.disable_evolve_icons = disable_evolve_icons;
+        c.gc_icons_replacement = gc_icons_replacement;
+        c.use_swt_colors = use_swt_colors;
+        c.disable_swt_canvas_colors = disable_swt_canvas_colors;
+        c.disable_swt_canvas_colors_by_class = disable_swt_canvas_colors_by_class;
+        c.canvas_hover_fills_by_class = canvas_hover_fills_by_class;
+        c.canvas_selection_fills_by_class = canvas_selection_fills_by_class;
+        c.disable_control_gc_overlay = disable_control_gc_overlay;
+        c.use_swt_fonts = use_swt_fonts;
+        c.use_swt_font_colors = use_swt_font_colors;
+        c.use_swt_font_colors_by_widget = use_swt_font_colors_by_widget;
+        c.use_special_dropdown_button = use_special_dropdown_button;
+        c.preserve_icon_colors = preserve_icon_colors;
+        c.disable_hover_zoom = disable_hover_zoom;
+        c.custom_tooltip = custom_tooltip;
+        c.notification_popup = notification_popup;
+        c.force_theme = force_theme;
+        c.theme_name = theme_name;
+        c.theme_color = theme_color;
+        c.theme_colors_by_widget = theme_colors_by_widget;
+        c.show_theme_color_palette = show_theme_color_palette;
+        c.focus_indicators = focus_indicators;
+        c.show_scaling_control = show_scaling_control;
+        c.ui_zoom = ui_zoom;
+        c.decorations_align = decorations_align;
+        c.print_move = print_move;
+        c.csd_placement = csd_placement;
+        c.csd_os = csd_os;
+        c.csd_maximize = csd_maximize;
+        c.system_menu_bar = system_menu_bar;
+        c.decimal_separator = decimal_separator;
+        c.locale = locale;
+        c.regional_locale = regional_locale;
+        c.double_click_timeout_ms = double_click_timeout_ms;
+        c.hover_delay_ms = hover_delay_ms;
+        c.csd_titlebar_color = csd_titlebar_color;
+        c.font_point_scale = font_point_scale;
+        c.push_button_margin = push_button_margin;
+        c.bigger_icon_size = bigger_icon_size;
+        c.transparent_menu_check_box = transparent_menu_check_box;
+        c.use_swt_border = use_swt_border;
+        c.scale_vertical_minimum_at_top = scale_vertical_minimum_at_top;
+        return c;
+    }
+
     public static ConfigFlags use_swt_fonts(boolean v) {
         ConfigFlags configFlags = new ConfigFlags();
         configFlags.use_swt_fonts = v;

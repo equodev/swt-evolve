@@ -123,6 +123,32 @@ class ConfigThemeRuleTest {
     }
 
     @Test
+    void aLaterClientsReportDoesNotChangeTheSessionsTheme() {
+        appTheme(null);
+        SystemAppearance system = reported("dark");
+        system.report("light");
+
+        assertThat(system.reported()).isEqualTo("dark");
+        assertThat(Config.darkTheme(system)).isTrue();
+        assertThat(Config.windowTheme(system)).isEqualTo("dark");
+    }
+
+    @Test
+    void everyClientIsSentTheThemeTheSessionsFirstClientReported() {
+        appTheme(null);
+        ConfigFlags global = Config.getConfigFlags();
+
+        assertThat(Config.clientProperties(new SystemAppearance()))
+                .as("before any report each client follows its own system")
+                .isSameAs(global);
+        assertThat(Config.clientProperties(reported("dark")).force_theme).isEqualTo("dark");
+        assertThat(global.force_theme).as("the flags every session shares stay untouched").isNull();
+
+        appTheme("light");
+        assertThat(Config.clientProperties(reported("dark")).force_theme).isEqualTo("light");
+    }
+
+    @Test
     void aNewWindowOpensInTheThemeItsClientWillPaint() {
         appTheme("dark");
         assertThat(Config.windowTheme(reported("light"))).isEqualTo("dark");

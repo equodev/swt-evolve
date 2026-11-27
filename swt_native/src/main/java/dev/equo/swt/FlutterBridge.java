@@ -2818,13 +2818,18 @@ public abstract class FlutterBridge {
 
     protected void broadcastSwtEvolveProperties() {
         CommService comm = comm();
-        if (comm != null) comm.send(0, 0, WireTable.CHANNEL_SWT_EVOLVE_PROPERTIES, WidgetWire.fieldsOf(getConfigFlags()));
+        if (comm != null) comm.send(0, 0, WireTable.CHANNEL_SWT_EVOLVE_PROPERTIES, WidgetWire.fieldsOf(swtEvolveProperties()));
+    }
+
+    /** The flags this bridge's clients are sent. */
+    protected ConfigFlags swtEvolveProperties() {
+        return getConfigFlags();
     }
 
     protected void sendSwtEvolveProperties() {
         // Only under the debug switch: rendering the flags is slow on first use, and this runs on the
         // comm thread before the first ClientReady is posted to the UI thread.
-        if (Config.debug) System.out.println("will send: " + getConfigFlags());
+        if (Config.debug) System.out.println("will send: " + swtEvolveProperties());
         broadcastSwtEvolveProperties();
     }
 

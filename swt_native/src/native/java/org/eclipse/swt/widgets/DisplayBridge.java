@@ -482,6 +482,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return newestReportedViewport;
     }
 
+    @Override
+    protected dev.equo.swt.ConfigFlags swtEvolveProperties() {
+        return dev.equo.swt.Config.clientProperties(forDisplay != null ? forDisplay.systemAppearance : null);
+    }
+
     private void registerClientReadyHandler(DartDisplay display, long displayId) {
         // Completing clientReady + pushing swt.evolve.properties on the first ClientReady is handled
         // by the shared FlutterBridge.onClientReady template; here we only do the Display-specific
