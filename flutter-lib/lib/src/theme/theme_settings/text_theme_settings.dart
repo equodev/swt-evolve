@@ -15,6 +15,9 @@ import '../../impl/widget_config.dart';
 /// The inset between a single-line Text's frame, or its bounds when it has none, and the text.
 const EdgeInsets singleLineTextInset = EdgeInsets.symmetric(horizontal: 3.0);
 
+/// The space on each side of a search Text's icon; its box replaces the frame padding on that side.
+const double searchIconGap = 2.0;
+
 TextThemeExtension getTextLightTheme({
   required ColorScheme colorScheme,
   required TextTheme textTheme,
@@ -193,6 +196,13 @@ InputDecoration getInputDecoration(
 
   final textHeight = widgetTheme.fontSize * widgetTheme.lineHeight;
   final iconSize = min(widgetTheme.searchIconSize, textHeight);
+  // Flutter's default icon boxes are 48 px wide, which leaves a narrow search field no room for its text.
+  final iconBox = BoxConstraints.tightFor(width: iconSize + 2 * searchIconGap);
+  final framePadding = isBorderless ? singleLineTextInset : widgetTheme.contentPadding;
+  final contentPadding = framePadding.copyWith(
+    left: hasSearchIcon ? 0 : null,
+    right: hasCancelIcon ? 0 : null,
+  );
 
   final transparentBorder = OutlineInputBorder(
     borderRadius: BorderRadius.circular(borderRadius),
@@ -229,19 +239,21 @@ InputDecoration getInputDecoration(
     hintStyle: TextStyle(color: hintColor),
     isDense: true,
     // Without SWT.BORDER there is no frame, so none of the frame's padding either, as natively.
-    contentPadding: isBorderless ? singleLineTextInset : widgetTheme.contentPadding,
+    contentPadding: contentPadding,
     prefixIcon: hasSearchIcon
         ? Icon(Icons.search, color: iconColor, size: iconSize)
         : null,
+    prefixIconConstraints: hasSearchIcon ? iconBox : null,
     suffixIcon: hasCancelIcon
         ? IconButton(
             icon: Icon(Icons.close, color: iconColor, size: iconSize),
             onPressed: enabled ? onClear : null,
-            splashRadius: 16.0,
+            splashRadius: iconSize / 2 + searchIconGap,
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+            constraints: iconBox,
           )
         : null,
+    suffixIconConstraints: hasCancelIcon ? iconBox : null,
     border: isBorderless ? transparentBorder : outlineBorder,
     enabledBorder: isBorderless ? transparentBorder : outlineEnabled,
     focusedBorder: isBorderless ? transparentBorder : outlineFocused,
