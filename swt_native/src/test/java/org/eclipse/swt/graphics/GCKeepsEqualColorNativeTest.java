@@ -65,9 +65,16 @@ class GCKeepsEqualColorNativeTest {
         assertThat(gc.getBackground().getBlue()).isEqualTo(11);
 
         Color opaque = gc.getBackground();
-        gc.setBackground(new Color(display, 200, 10, 11, 128));
+        gc.setBackground(colorWithAlpha(200, 10, 11, 128));
         assertThat(gc.getBackground()).isNotSameAs(opaque);
-        assertThat(gc.getBackground().getAlpha()).isEqualTo(128);
+        assertThat(GraphicsUtils.getAlpha(gc.getBackground())).isEqualTo(128);
+    }
+
+    /** SWT 3.103 has no Color(Device, int, int, int, int) nor Color.getAlpha; its DartColor keeps an alpha. */
+    private Color colorWithAlpha(int red, int green, int blue, int alpha) {
+        DartColor color = new DartColor(display, red, green, blue, null);
+        color.alpha = alpha;
+        return color.getApi();
     }
 
     @Test

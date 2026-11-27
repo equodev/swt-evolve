@@ -180,6 +180,14 @@ InputDecoration getInputDecoration(
       (state.hasOwnBackground ?? false);
   final isReadOnly =
       !(state.editable ?? true) || hasStyle(state.style, SWT.READ_ONLY);
+  // A read-only Text with no frame and no scroll bars is text on its parent, as a Label is:
+  // enabled or not, it paints only a background the application gave it.
+  final isBare = isReadOnly &&
+      isBorderless &&
+      !hasStyle(state.style, SWT.H_SCROLL) &&
+      !hasStyle(state.style, SWT.V_SCROLL);
+  final paintsOwnGround =
+      !isBare || (appPaintsColors(context) && (state.hasOwnBackground ?? false));
 
   final iconColor = enabled ? widgetTheme.textColor : widgetTheme.disabledTextColor;
 
@@ -239,7 +247,7 @@ InputDecoration getInputDecoration(
     focusedBorder: isBorderless ? transparentBorder : outlineFocused,
     disabledBorder: isBorderless ? transparentBorder : outlineDisabled,
     fillColor: bgColor,
-    filled: shouldFill,
+    filled: shouldFill && paintsOwnGround,
     counterText: '',
     hoverColor: isReadOnly ? widgetTheme.backgroundColor.withOpacity(0) : null,
   );
