@@ -110,6 +110,22 @@ class CTabItemWidthMatchesRenderTest {
     }
 
     @Test
+    @DisplayName("neither selection nor the enabled state changes a tab's width")
+    void widthDoesNotFollowSelection() {
+        CTabFolder folder = folder();
+        CTabItem item = new CTabItem(folder, SWT.NONE);
+        item.setText("Untitled 12");
+        int unselected = widthOf(folder, 0);
+
+        assertThat(selectedWidthOf(folder, 0))
+                .as("the render side lays every label out in the style the active tab takes, so a "
+                        + "width change on selection would move what the strip holds, as SWT never does")
+                .isEqualTo(unselected);
+        folder.setEnabled(false);
+        assertThat(selectedWidthOf(folder, 0)).isEqualTo(unselected);
+    }
+
+    @Test
     @DisplayName("a tab is not narrower when the strip is short of room")
     void widthDoesNotCompress() {
         CTabFolder folder = folder();
@@ -156,6 +172,10 @@ class CTabItemWidthMatchesRenderTest {
     private CTabFolder folder() {
         Shell shell = Mocks.shell();
         return new CTabFolder(shell, SWT.NONE);
+    }
+
+    private int selectedWidthOf(CTabFolder folder, int index) {
+        return folder.getRenderer().computeSize(index, SWT.SELECTED, null, SWT.DEFAULT, SWT.DEFAULT).x;
     }
 
     private int widthOf(CTabFolder folder, int index) {

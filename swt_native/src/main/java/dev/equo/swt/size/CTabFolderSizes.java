@@ -32,8 +32,8 @@ public class CTabFolderSizes {
     /** How wide the chevron is drawn, which is what its ToolBar is laid out as. */
     public static final int CHEVRON_WIDTH = 18;
 
-    /** The style a tab's label is drawn in, which is the font to measure it in. */
+    /** The style every tab's label is laid out in, the active tab's, which is the font to measure it in. */
     public static TextStyle tabLabelStyle() {
-        return new TextStyle("Inter", 14, false, 500);
+        return new TextStyle("Inter", 14, false, 700);
     }
 }

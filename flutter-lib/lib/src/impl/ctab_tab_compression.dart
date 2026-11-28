@@ -49,33 +49,58 @@ String ctabShortenText(String text, double width, double Function(String) measur
 /// whole text when the tab has no tooltip of its own.
 const ctabShortenedLabel = #ctabShortenedLabel;
 
-/// A tab label that a compressed strip can shrink: its minimum intrinsic width is the label SWT
-/// measures at [minimumCharacters], and it draws its text shortened to the width it is given.
-class ShrinkableTabLabel extends StatelessWidget {
-  const ShrinkableTabLabel(this.text, {super.key, this.style, required this.minimumCharacters});
+/// A tab label drawn in [style] but laid out as wide as it is in [layoutStyle], so that a style
+/// that changes with the folder's focus does not change the tab's width.
+class TabLabel extends StatelessWidget {
+  const TabLabel(this.text, {super.key, this.style, this.layoutStyle});
 
   /// The raw SWT text, `&` markers included.
   final String text;
   final TextStyle? style;
+  final TextStyle? layoutStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (layoutStyle == null) return MnemonicText(text, style: style);
+    final width = measureTabLabel(context, parseMnemonic(text).text, layoutStyle).width;
+    return reserveTabLabelWidth(width, MnemonicText(text, style: style, textAlign: TextAlign.center));
+  }
+}
+
+/// [value]'s size drawn in [style] over the label style [context] inherits.
+Size measureTabLabel(BuildContext context, String value, TextStyle? style) {
+  final painter = TextPainter(
+    text: TextSpan(text: value, style: DefaultTextStyle.of(context).style.merge(style)),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final size = painter.size;
+  painter.dispose();
+  return size;
+}
+
+/// A centred [label] laid out at least [width] wide: the label's own box is that wide, so whatever
+/// measures the label measures the width it takes.
+Widget reserveTabLabelWidth(double width, Widget label) => SizedBox(width: width, child: label);
+
+/// A tab label that a compressed strip can shrink: its minimum intrinsic width is the label SWT
+/// measures at [minimumCharacters], and it draws its text shortened to the width it is given.
+/// Widths, and where the text is cut, come from [layoutStyle] when it is set.
+class ShrinkableTabLabel extends StatelessWidget {
+  const ShrinkableTabLabel(this.text,
+      {super.key, this.style, this.layoutStyle, required this.minimumCharacters});
+
+  /// The raw SWT text, `&` markers included.
+  final String text;
+  final TextStyle? style;
+  final TextStyle? layoutStyle;
   final int minimumCharacters;
 
   @override
   Widget build(BuildContext context) {
     final plain = parseMnemonic(text).text;
-    final effective = DefaultTextStyle.of(context).style.merge(style);
-    final scaler = MediaQuery.textScalerOf(context);
-    final direction = Directionality.of(context);
-    Size measure(String value) {
-      final painter = TextPainter(
-        text: TextSpan(text: value, style: effective),
-        textDirection: direction,
-        textScaler: scaler,
-        maxLines: 1,
-      )..layout();
-      final size = painter.size;
-      painter.dispose();
-      return size;
-    }
+    Size measure(String value) => measureTabLabel(context, value, layoutStyle ?? style);
 
     final full = measure(plain);
     final minLabel = ctabMinimumLabel(plain, minimumCharacters);
@@ -85,15 +110,23 @@ class ShrinkableTabLabel extends StatelessWidget {
       maxWidth: full.width.ceilToDouble(),
       height: full.height,
       child: LayoutBuilder(builder: (context, constraints) {
-        if (full.width <= constraints.maxWidth + 0.5) return MnemonicText(text, style: style);
+        if (full.width <= constraints.maxWidth + 0.5) {
+          return reserveTabLabelWidth(
+              full.width, MnemonicText(text, style: style, textAlign: TextAlign.center));
+        }
+        final shortened = ctabShortenText(plain, constraints.maxWidth, (value) => measure(value).width);
         return MetaData(
           metaData: ctabShortenedLabel,
-          child: Text(
-            ctabShortenText(plain, constraints.maxWidth, (value) => measure(value).width),
-            style: style,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.clip,
+          child: reserveTabLabelWidth(
+            measure(shortened).width,
+            Text(
+              shortened,
+              style: style,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.clip,
+            ),
           ),
         );
       }),

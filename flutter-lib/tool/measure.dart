@@ -200,6 +200,15 @@ class RenderBoxInfo {
 
   bool createdBy(String widgetType) => creator?.contains(widgetType) ?? false;
 
+  /// Whether [widgetType] is in the creator chain nearer this box than [ancestor] is.
+  bool createdBelow(String widgetType, String ancestor) {
+    final chain = creator;
+    if (chain == null) return false;
+    final at = chain.indexOf(widgetType);
+    final ancestorAt = chain.indexOf(ancestor);
+    return at >= 0 && (ancestorAt < 0 || at < ancestorAt);
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'type': type,
@@ -1365,7 +1374,7 @@ class WidgetMeasurer {
       final row = _findBoxCreatedBy(root, tabRow);
       if (row != null) {
         final tabs = <RenderBoxInfo>[];
-        _collectOutermostCreatedBy(row, 'KeyedSubtree', tabs);
+        _collectOutermostCreatedBy(row, 'KeyedSubtree', tabs, under: tabRow);
         if (tabs.isNotEmpty) discovered['tab'] = tabs.map(_probeJson).toList();
       }
       // The chevron the folder draws, which Java lays its chevron's ToolBar out as wide as.
@@ -1536,17 +1545,20 @@ class WidgetMeasurer {
   /// The outermost box built by [widget], found from the render tree itself rather than from a
   /// marker the widget has to carry — the same way rows are located.
   /// Every box created by [widget], outermost only: once one matches, its children are its parts.
+  /// With [under], only a [widget] that sits below that one: a [widget] wrapping [under] is in the
+  /// creator chain of every box inside it.
   void _collectOutermostCreatedBy(
     RenderBoxInfo box,
     String widget,
-    List<RenderBoxInfo> into,
-  ) {
-    if (box.createdBy(widget)) {
+    List<RenderBoxInfo> into, {
+    String? under,
+  }) {
+    if (under == null ? box.createdBy(widget) : box.createdBelow(widget, under)) {
       into.add(box);
       return;
     }
     for (final child in box.children) {
-      _collectOutermostCreatedBy(child, widget, into);
+      _collectOutermostCreatedBy(child, widget, into, under: under);
     }
   }
 
@@ -3329,7 +3341,8 @@ public class ${widgetType}Sizes {
     );
     if (stripHeight == null || border == null || borderStyled == null) return;
 
-    final labelStyle = _labelStyle(widgetType, analyses);
+    // Every tab is laid out in the style the active tab is drawn in.
+    final labelStyle = _labelStyle(widgetType, analyses, active: true);
     if (labelStyle == null) return;
 
     final tab = _tabGeometry(widgetType, analyses);
@@ -3422,7 +3435,7 @@ public class ${widgetType}Sizes {
       )
       ..writeln()
       ..writeln(
-        '    /** The style a tab\'s label is drawn in, which is the font to measure it in. */',
+        '    /** The style every tab\'s label is laid out in, the active tab\'s, which is the font to measure it in. */',
       )
       ..writeln('    public static TextStyle tabLabelStyle() {')
       ..writeln('        return $labelStyle;')
@@ -3883,10 +3896,16 @@ public class CoolBarSizes {
 
   /// The style the label on this container's own chrome is drawn in, as the `new TextStyle(...)`
   /// Java measures with. Read off the laid-out text rather than derived from the theme it came from,
-  /// so the side that measures a label and the side that draws it cannot drift apart.
-  String? _labelStyle(String widgetType, List<WidgetAnalysis> analyses) {
+  /// so the side that measures a label and the side that draws it cannot drift apart. With [active],
+  /// the style of the active tab shape's label, which the other cases leave out.
+  String? _labelStyle(
+    String widgetType,
+    List<WidgetAnalysis> analyses, {
+    bool active = false,
+  }) {
     final byStyle = <String, String>{};
     for (final m in analyses.expand((a) => a.measurements)) {
+      if ((m.style == 'tab:active') != active) continue;
       final text = m.discoveredComponents['text'];
       if (text is! Map) continue;
       final style = text['textStyle'];

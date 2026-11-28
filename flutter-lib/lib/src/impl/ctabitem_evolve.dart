@@ -103,6 +103,9 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
       ),
       active: isActive,
     );
+    // Every tab is laid out as wide as its label is in the style the selected tab of the active
+    // folder takes, so neither focus nor selection changes a tab's width, as in SWT.
+    final layoutStyle = getCTabItemTextStyle(itemTheme, textStyle, active: true);
     final imageWidget = _buildImageWidget(
       context,
       itemTheme,
@@ -130,13 +133,14 @@ class CTabItemImpl<T extends CTabItemSwt, V extends VCTabItem>
           if (compressTo == null)
             Padding(
               padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
-              child: MnemonicText(state.text, style: textStyle),
+              child: TabLabel(state.text ?? '', style: textStyle, layoutStyle: layoutStyle),
             )
           else
             Flexible(
               child: Padding(
                 padding: EdgeInsets.only(bottom: itemTheme.tabItemVerticalPadding),
-                child: ShrinkableTabLabel(state.text ?? '', style: textStyle, minimumCharacters: compressTo),
+                child: ShrinkableTabLabel(state.text ?? '',
+                    style: textStyle, layoutStyle: layoutStyle, minimumCharacters: compressTo),
               ),
             ),
         ],

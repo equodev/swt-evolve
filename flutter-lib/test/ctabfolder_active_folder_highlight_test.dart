@@ -3,12 +3,15 @@
 // upstream's shouldHighlight also requires the folder to be the active one.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FontLoader, rootBundle;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:swtflutter/main.dart';
 import 'package:swtflutter/src/gen/ctabfolder.dart';
 import 'package:swtflutter/src/gen/ctabitem.dart';
 import 'package:swtflutter/src/gen/swt.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart' show resetConfigFlags, setConfigFlags;
 // ignore: unused_import
 import 'package:swtflutter/src/impl/ctabfolder_evolve.dart';
 
@@ -16,11 +19,13 @@ VCTabFolder _folder({
   required int id,
   required String label,
   required bool highlight,
+  List<String> after = const [],
+  int selection = 0,
 }) =>
     VCTabFolder()
       ..id = id
       ..style = SWT.NONE
-      ..selection = 0
+      ..selection = selection
       ..enabled = true
       ..highlight = highlight
       ..highlightEnabled = true
@@ -28,7 +33,16 @@ VCTabFolder _folder({
         VCTabItem()
           ..id = id + 1
           ..text = label,
+        for (var i = 0; i < after.length; i++)
+          VCTabItem()
+            ..id = id + 2 + i
+            ..text = after[i],
       ];
+
+/// The box that holds one tab.
+Finder _tabBox(String label) => find
+    .ancestor(of: find.text(label), matching: find.byWidgetPredicate((w) => w is AnimatedContainer))
+    .first;
 
 Widget _stack(VCTabFolder value) => SizedBox(
       width: 300,
@@ -171,6 +185,48 @@ void main() {
       expect(dots, hasLength(2));
       expect(rgb(dots[0]), rgb(dots[1]),
           reason: 'the dot takes the tab text colour, and the selected tab no longer has its own');
+    });
+  }
+
+  for (final tabScroll in [true, false]) {
+    testWidgets('the selected tab keeps its width when its folder gains or loses focus '
+        '(ctabfolder_tab_scroll=$tabScroll)', (WidgetTester tester) async {
+      // The test font draws every weight at one width, which would hide the change.
+      await tester.runAsync(() async {
+        final loader = FontLoader('Inter');
+        for (final face in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+          loader.addFont(rootBundle.load('assets/fonts/Inter_18pt-$face.ttf'));
+        }
+        await loader.load();
+      });
+      setConfigFlags(ConfigFlags()..ctabfolder_tab_scroll = tabScroll);
+      addTearDown(resetConfigFlags);
+
+      Future<(double, double)> layout(bool highlight) async {
+        await tester.pumpWidget(_host([
+          _stack(_folder(
+              id: highlight ? 4000 : 5000, label: 'Untitled 12', highlight: highlight, after: ['Next'])),
+        ]));
+        await tester.pump();
+        while (tester.takeException() != null) {}
+        expect(_emphasised(tester, 'Untitled 12'), highlight);
+        return (tester.getSize(_tabBox('Untitled 12')).width, tester.getTopLeft(_tabBox('Next')).dx);
+      }
+
+      final (activeWidth, activeNext) = await layout(true);
+      final (idleWidth, idleNext) = await layout(false);
+
+      expect(idleWidth, activeWidth,
+          reason: 'the label\'s weight follows focus, the tab\'s width must not');
+      expect(idleNext, activeNext, reason: 'the tabs after it must not move');
+
+      await tester.pumpWidget(_host([
+        _stack(_folder(id: 6000, label: 'Untitled 12', highlight: true, after: ['Next'], selection: 1)),
+      ]));
+      await tester.pump();
+      while (tester.takeException() != null) {}
+      expect(tester.getSize(_tabBox('Untitled 12')).width, activeWidth,
+          reason: 'nor does selection: SWT never resizes a tab when another one is selected');
     });
   }
 }
