@@ -1,7 +1,11 @@
 package org.eclipse.swt.widgets;
 
 import dev.equo.swt.FlutterBridge;
+import dev.equo.swt.size.ViewRailsSizes;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ViewRails;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 
 public class DartSideBar extends DartComposite {
 
@@ -10,8 +14,32 @@ public class DartSideBar extends DartComposite {
     }
 
     @Override
+    public void _dirtied() {
+        ViewRails.touched(this);
+    }
+
+    @Override
     public Point computeSize(int wHint, int hHint, boolean changed) {
-        return railSize(this);
+        int rail = ViewRails.railWidth(this);
+        return rail >= 0 ? new Point(rail, rail == 0 ? 0 : ViewRailsSizes.MIN_HEIGHT) : railSize(this);
+    }
+
+    /**
+     * A view rail centers what else its trim holds (a minimized stack's trim icons) on the rail's
+     * axis, where its buttons are: the trim layout stretches each control across the bar and its
+     * content sits at the leading edge.
+     */
+    @Override
+    public void updateLayout(boolean all) {
+        super.updateLayout(all);
+        if (ViewRails.railWidth(this) <= 0) return;
+        int width = getClientArea().width;
+        for (Control child : _getChildren()) {
+            Rectangle bounds = child.getBounds();
+            int w = Math.min(width, child.computeSize(SWT.DEFAULT, SWT.DEFAULT).x);
+            int x = Math.max(0, (width - w) / 2);
+            if (bounds.x != x || bounds.width != w) child.setBounds(x, bounds.y, w, bounds.height);
+        }
     }
 
     /**

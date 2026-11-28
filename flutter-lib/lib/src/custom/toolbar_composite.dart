@@ -25,6 +25,7 @@ import '../nolayout.dart';
 import '../theme/theme_extensions/toolbar_theme_extension.dart';
 import '../theme/theme_extensions/toolitem_theme_extension.dart';
 import 'controls_item.dart';
+import 'view_rails.dart';
 import '../impl/utils/text_utils.dart';
 
 class HorizontalMenuBar extends StatelessWidget {
@@ -545,7 +546,11 @@ class StatusBarCompositeImpl extends CompositeImpl<StatusBarComposite, VComposit
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>()!;
     final backgroundColor = widgetTheme.compositeBackgroundColor;
 
-    final visibleChildren = children.where((child) => child.visible != false).toList()
+    // The rails stand in for e4's TrimStacks, wherever e4 put them.
+    final rails = ViewRails.current.value;
+    final visibleChildren = children
+        .where((child) => child.visible != false && !rails.isTrim(child.id))
+        .toList()
       ..sort((a, b) => (a.bounds?.x ?? 0).compareTo(b.bounds?.x ?? 0));
 
     final positionedItems = visibleChildren.map((child) {
@@ -600,9 +605,28 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
   List<double> _dividerLocalYs = [];
 
   @override
+  void initState() {
+    super.initState();
+    ViewRails.current.addListener(_railsChanged);
+  }
+
+  @override
+  void dispose() {
+    ViewRails.current.removeListener(_railsChanged);
+    super.dispose();
+  }
+
+  void _railsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget buildComposite() {
     final widgetTheme = Theme.of(context).extension<ToolBarThemeExtension>();
     final backgroundColor = widgetTheme!.compositeBackgroundColor;
+
+    final railSide = ViewRails.current.value.railSide(state.id);
+    if (railSide != null) return _buildRail(railSide, widgetTheme);
 
     final children = state.children;
 
@@ -695,6 +719,34 @@ class SideBarCompositeImpl extends CompositeImpl<SideBarComposite, VComposite> {
         ),
       ),
     ));
+  }
+
+  /// The view rail this side bar draws, with whatever else the trim holds between its two ends.
+  Widget _buildRail(int side, ToolBarThemeExtension theme) {
+    final rails = ViewRails.current.value;
+    // At the x and width Java laid them out with (centered on the rail), so what they open lands
+    // under them.
+    final others = [
+      for (final child in state.children ?? const <VControl>[])
+        if (child.visible != false && !rails.isTrim(child.id))
+          child.bounds == null
+              ? buildMapWidgetFromValue(child)
+              : Padding(
+                  padding: EdgeInsets.only(left: child.bounds!.x.toDouble()),
+                  child: SizedBox(width: child.bounds!.width.toDouble(), child: buildMapWidgetFromValue(child)),
+                ),
+    ];
+    final edge = BorderSide(color: theme.borderColor, width: theme.borderWidth);
+    final boundsHeight = state.bounds?.height;
+    return Container(
+      width: rails.railWidth(context),
+      height: (boundsHeight != null && boundsHeight > 0) ? boundsHeight.toDouble() : double.infinity,
+      decoration: BoxDecoration(
+        color: theme.compositeBackgroundColor,
+        border: side == SWT.RIGHT ? Border(left: edge) : Border(right: edge),
+      ),
+      child: ToolbarAreaMarker(active: true, child: ViewRail(side: side, rail: state, middle: others)),
+    );
   }
 
   Widget buildMapWidgetFromValue(VControl child) {

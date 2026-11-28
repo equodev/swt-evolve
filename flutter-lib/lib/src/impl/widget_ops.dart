@@ -1,5 +1,6 @@
 import '../comm/comm.dart';
 import '../custom/swing_island_evolve.dart';
+import '../custom/view_rails.dart';
 import 'browser_evolve.dart';
 import 'ctabfolder_evolve.dart';
 import 'display_evolve.dart';
@@ -24,4 +25,5 @@ void registerWidgetOps() => EquoCommService.ensureWidgetOps(() {
       ShellImpl.registerOps();
       SwingIslandRegion.registerOps();
       registerDisplayOps();
+      ViewRails.start();
     });

@@ -88,6 +88,7 @@ CTabFolderThemeExtension _getCTabFolderTheme({
     
     // Tab padding
     tabHorizontalPadding: 6.0,
+    coveredTabFadeWidth: 24.0,
     tabVerticalPadding: 0.0,
     
     // Tab typography

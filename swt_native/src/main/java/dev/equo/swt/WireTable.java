@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = -1581368982;
+    public static final int FINGERPRINT = 1774658174;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -271,6 +271,7 @@ public final class WireTable {
             "evolve.test.bootTraceResponse",
             "TabFolder/stripLaidOut",
             "swt.evolve.move.handled",
+            "ViewRails/show",
     };
 
     /** Record type names by number. */
@@ -411,6 +412,7 @@ public final class WireTable {
             "WidgetSizeBridge",
             "DisplayPopups",
             "WindowShells",
+            "ViewRails",
     };
 
     /** The keys of a map sent as tagged values, by number. */
@@ -900,10 +902,16 @@ public final class WireTable {
             "compactRows",
             "gc_approximate_batching",
             "trim_drag_handles",
+            "places",
+            "rails",
+            "stacks",
+            "trims",
+            "railSides",
+            "size",
     };
 
     /** Properties as `Class.name`, by number; null where no property has the number. */
-    public static final String[] PROPERTIES = new String[6339];
+    public static final String[] PROPERTIES = new String[6406];
 
     /** Each property's encoding, by number; null where nothing writes it. */
     public static final String[] KINDS = new String[PROPERTIES.length];
@@ -1592,6 +1600,12 @@ public final class WireTable {
         property(6336, "ViewForm.borderVisible", "bool");
         property(6337, "ViewForm.highlight", "int");
         property(6338, "ViewForm.separator", "int");
+        property(6400, "ViewRails.places", "long[]");
+        property(6401, "ViewRails.rails", "ref[]");
+        property(6402, "ViewRails.stacks", "ref[]");
+        property(6403, "ViewRails.trims", "ref[]");
+        property(6404, "ViewRails.railSides", "long[]");
+        property(6405, "ViewRails.size", "long");
     }
 
     private static void property(int number, String name, String kind) {
@@ -2346,6 +2360,9 @@ public final class WireTable {
     /** The channel `swt.evolve.move.handled`. */
     public static final int CHANNEL_SWT_EVOLVE_MOVE_HANDLED = 256;
 
+    /** The channel `ViewRails/show`. */
+    public static final int CHANNEL_VIEW_RAILS_SHOW = 257;
+
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;
 
@@ -2748,6 +2765,9 @@ public final class WireTable {
     /** The type `WindowShells`. */
     public static final int TYPE_WINDOW_SHELLS = 135;
 
+    /** The type `ViewRails`. */
+    public static final int TYPE_VIEW_RAILS = 136;
+
     /** The display's `activeShellId`. */
     public static final int DISPLAY_ACTIVE_SHELL_ID = 1792;
 
@@ -2774,6 +2794,24 @@ public final class WireTable {
 
     /** The display's `windowedShellIds`. */
     public static final int DISPLAY_WINDOWED_SHELL_IDS = 1800;
+
+    /** The view rails' `places`. */
+    public static final int VIEW_RAILS_PLACES = 6400;
+
+    /** The view rails' `rails`. */
+    public static final int VIEW_RAILS_RAILS = 6401;
+
+    /** The view rails' `stacks`. */
+    public static final int VIEW_RAILS_STACKS = 6402;
+
+    /** The view rails' `trims`. */
+    public static final int VIEW_RAILS_TRIMS = 6403;
+
+    /** The view rails' `railSides`. */
+    public static final int VIEW_RAILS_RAIL_SIDES = 6404;
+
+    /** The view rails' `size`. */
+    public static final int VIEW_RAILS_SIZE = 6405;
 
     /** The flag `assets_path`. */
     public static final int CONFIG_FLAGS_ASSETS_PATH = 1088;

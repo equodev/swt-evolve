@@ -51,6 +51,10 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
   // Tab padding
   final double tabHorizontalPadding;
   final double tabVerticalPadding;
+
+  /// How wide the tabs fade out before a shown topRight control drawn over them, and the control fades
+  /// in where the tabs drawn over it end: there is more under either.
+  final double coveredTabFadeWidth;
   
   // Tab typography
   final TextStyle? tabTextStyle;
@@ -138,6 +142,7 @@ class CTabFolderThemeExtension extends ThemeExtension<CTabFolderThemeExtension> 
     required this.tabHighlightBorderWidth,
     required this.tabBorderRadius,
     required this.tabHorizontalPadding,
+    required this.coveredTabFadeWidth,
     required this.tabVerticalPadding,
     this.tabTextStyle,
     this.tabSelectedTextStyle,

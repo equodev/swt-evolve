@@ -235,7 +235,9 @@ void main() {
       final shot = await _render(tester, _folder(highlighted: true));
       final page = _inFolder(tester, find.byType(IndexedStack).first);
       final tab = _selectedTab(tester);
-      final selectionGround = shot.at(tab.left + 3, tab.center.dy);
+      // Under the label, above the page: the tab's own ground, whatever the font draws.
+      final label = _inFolder(tester, find.text('View A'));
+      final selectionGround = shot.at(label.center.dx, (label.bottom + page.top) / 2);
       final stripGround = shot.at(_folderWidth - 8, page.top / 2);
 
       expect(shot.at(page.left - 1, page.center.dy), _sameInk(selectionGround));

@@ -1,6 +1,7 @@
 package org.eclipse.swt.custom;
 
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import dev.equo.swt.size.CTabFolderSizes;
@@ -50,14 +51,25 @@ class CTabFolderWrapTopRightTest {
         Config.defaultToEclipse();
     }
 
+    private ConfigFlags savedFlags;
+
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
+        savedFlags = Config.getConfigFlags();
     }
 
     @AfterEach
     void tearDown() {
         FlutterBridge.set(null);
+        Config.setConfigFlags(savedFlags);
+    }
+
+    /** Sets whether the topRight control is shown only on hover, floating over the tab row. */
+    private void hiddenUntilHover(boolean on) {
+        ConfigFlags flags = savedFlags.copy();
+        flags.ctabfolder_topright_auto_hide = on;
+        Config.setConfigFlags(flags);
     }
 
     private CTabFolder folder;
@@ -87,6 +99,55 @@ class CTabFolderWrapTopRightTest {
         folder.setTopRight(topRight, alignment);
         ((DartCTabFolder) folder.getImpl()).setButtonBounds();
         return topRight.getBounds();
+    }
+
+    private boolean wraps(int tabWidth) {
+        return topRightBounds(SWT.RIGHT | SWT.WRAP, tabWidth).y >= CTabFolderSizes.TAB_STRIP_HEIGHT;
+    }
+
+    /** The narrowest tabs that leave no room for the control while it keeps its room in the row. */
+    private int firstTabWidthThatWraps() {
+        hiddenUntilHover(false);
+        for (int width = 1; width < FOLDER_WIDTH; width++) {
+            if (wraps(width)) return width;
+        }
+        throw new AssertionError("the control never wraps");
+    }
+
+    @Test
+    void aHiddenUntilHoverControlStaysInTheTabRowWhileItCoversLittleOfTheLastTab() {
+        // At the first width that leaves no room, four tabs one pixel wider overrun it by a few pixels.
+        int width = firstTabWidthThatWraps();
+        hiddenUntilHover(true);
+
+        assertThat(wraps(width)).as("covering a few pixels of a %dpx tab", width).isFalse();
+    }
+
+    @Test
+    void aHiddenUntilHoverControlWrapsOnceItWouldCoverMostOfTheLastTab() {
+        hiddenUntilHover(true);
+
+        // Four 80px tabs leave the control far more than two thirds of the last one short.
+        assertThat(wraps(80)).isTrue();
+    }
+
+    @Test
+    void aControlThatAlwaysReservesItsRoomWrapsAsSoonAsItDoesNotFit() {
+        int width = firstTabWidthThatWraps();
+
+        assertThat(wraps(width)).isTrue();
+        assertThat(wraps(width - 1)).as("one pixel narrower, it fits").isFalse();
+    }
+
+    @Test
+    void beforeAnyTabIsShownAHiddenUntilHoverControlCoversNothingItDoesNotFitBeside() {
+        hiddenUntilHover(true);
+        topRightBounds(SWT.RIGHT | SWT.WRAP, 60);
+        DartCTabFolder impl = (DartCTabFolder) folder.getImpl();
+        for (CTabItem item : folder.getItems()) ((DartCTabItem) item.getImpl()).showing = false;
+
+        assertThat(CTabFolderHelper.fitsBesideTabs(impl, 40, 30)).as("no shown tab to cover").isFalse();
+        assertThat(CTabFolderHelper.fitsBesideTabs(impl, 30, 30)).as("it fits").isTrue();
     }
 
     @Test

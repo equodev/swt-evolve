@@ -30,6 +30,7 @@ import '../gen/color.dart';
 import '../gen/image.dart';
 import '../gen/rectangle.dart';
 import '../custom/toolbar_composite.dart';
+import '../custom/view_rails.dart';
 import 'composite_evolve.dart';
 import 'control_evolve.dart';
 import 'ctab_tab_compression.dart';
@@ -75,11 +76,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   /// The folder's build reads its size where its layout reads it again anyway: the root box takes
   /// the slot's size, and the tab bar works out the topRight control's place in a layout builder
-  /// that builds again at each new width. A topRight control wrapped onto a row of its own under
-  /// the tabs is placed from the folder's height in the build: that folder rebuilds.
+  /// that builds again at each new width. A topRight control that can wrap onto a row of its own
+  /// is placed in the build from Java's bounds for it, which a resize moves: that folder rebuilds.
   @override
-  bool sizeIsLayoutOnly(Size built, int width, int height) =>
-      !(state.tabPosition == SWT.BOTTOM && ((state.topRightAlignment ?? 0) & SWT.WRAP) != 0);
+  bool sizeIsLayoutOnly(Size built, int width, int height) => ((state.topRightAlignment ?? 0) & SWT.WRAP) == 0;
 
   /// Bumped when Java lays the tabs out again: the tab bar answers with a strip report.
   final ValueNotifier<int> _stripReportAsked = ValueNotifier<int>(0);
@@ -122,9 +122,10 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   /// Java's `{active}`: whether this folder holds the active part.
   static FutureOr<bool> _activationOp(int id, Uint8List frame, int start, int end) {
+    final active = TaggedValues.boolField(frame, start, _activeKey);
+    if (active != null) ViewRails.folderActivated(id, active);
     final folder = _live[id];
     if (folder == null) return false;
-    final active = TaggedValues.boolField(frame, start, _activeKey);
     if (active != null && folder.mounted) {
       // Kept on the state too, or a rebuild re-reads the last push's stale flag in extraSetState.
       folder.state.highlight = active;
@@ -136,6 +137,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
 
   @override
   void dispose() {
+    ViewRails.current.removeListener(_viewRailsChanged);
+    _viewHovered.dispose();
     VRegistry.instance.forgetDrawsHeldAt(_heldKey, _drawsHeld);
     _stripReportAsked.dispose();
     final popup = _chevronPopupRoute;
@@ -206,6 +209,21 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     // Java leaves a zero seq off the wire, so null is 0; a list requested before this mounted is
     // not reopened.
     _lastShowListPopupSeq = state.showListPopupSeq ?? 0;
+    ViewRails.current.addListener(_viewRailsChanged);
+  }
+
+  /// Whether this folder is a view stack the rails list: it then draws its selected view only, under
+  /// a header, and the rails switch between its views.
+  bool get _isViewStack => ViewRails.current.value.hostsStack(state.id);
+
+  bool _wasViewStack = false;
+
+  /// Whether the pointer is anywhere on this folder, header or view: a view header, and a folder
+  /// with a topRight control such as a view's toolbar, show their controls while it is.
+  final ValueNotifier<bool> _viewHovered = ValueNotifier<bool>(false);
+
+  void _viewRailsChanged() {
+    if (mounted && _isViewStack != _wasViewStack) setState(() {});
   }
 
   @override
@@ -276,6 +294,7 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
     builtAtBounds();
     final tabItems = getTabItems();
     final tabBodies = getTabBodies();
+    final viewHeader = _wasViewStack = _isViewStack;
 
     final isTabBottom = state.tabPosition == SWT.BOTTOM;
 
@@ -341,6 +360,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             outline: outline,
             stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
+            viewHeader: viewHeader,
+            viewHovered: _viewHovered,
             onTabSelected: _handleTabSelection,
             onTabClose: _handleTabClose,
             onMinimize: _toggleMinimize,
@@ -400,6 +421,8 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
             outline: outline,
             stripClip: stripClip,
             topRightComposite: getTopRightComposite(),
+            viewHeader: viewHeader,
+            viewHovered: _viewHovered,
             onTabSelected: _handleTabSelection,
             onTabClose: _handleTabClose,
             onMinimize: _toggleMinimize,
@@ -434,6 +457,17 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
         child: column,
       );
     }
+
+    // Always mounted, view header or not: a MouseRegion removed while the pointer is over it leaves
+    // the web engine's hover state behind.
+    final hoverShowsControls = viewHeader || getTopRightComposite() != null;
+    column = MouseRegion(
+      opaque: false,
+      onEnter: (_) => _viewHovered.value = hoverShowsControls && !ActiveDragTracker.isSuppressingHover,
+      onHover: (_) => _viewHovered.value = hoverShowsControls && !ActiveDragTracker.isSuppressingHover,
+      onExit: (_) => _viewHovered.value = false,
+      child: column,
+    );
 
     // Tab stops on the folder itself (VControl.tabStop: it hooks KeyDown, as natively), before its
     // pages; Java's FocusIn selects the first tab when none is.
@@ -752,6 +786,20 @@ class CTabFolderImpl<T extends CTabFolderSwt, V extends VCTabFolder>
   }
 }
 
+/// Leaves out the [cut] pixels at the left of the child, for painting and for the pointer alike.
+class _CutFromLeft extends CustomClipper<Rect> {
+  const _CutFromLeft(this.cut);
+
+  final double cut;
+
+  @override
+  Rect getClip(Size size) =>
+      cut <= 0 ? Rect.largest : Rect.fromLTRB(math.min(cut, size.width), 0, size.width, size.height);
+
+  @override
+  bool shouldReclip(_CutFromLeft oldClipper) => oldClipper.cut != cut;
+}
+
 class _CTabBar extends StatefulWidget {
   final VCTabFolder state;
   final CTabFolderSwt folderWidget;
@@ -765,6 +813,13 @@ class _CTabBar extends StatefulWidget {
   /// the outline runs along the edge that stays visible.
   final double stripClip;
   final VComposite? topRightComposite;
+
+  /// Drawn as a view stack's header: only the selected tab, flat, no chevron since the rails list
+  /// the other views, and the view's close button beside minimize and maximize.
+  final bool viewHeader;
+
+  /// Whether the pointer is on the folder this bar heads, and the folder shows its controls then.
+  final ValueNotifier<bool>? viewHovered;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<int> onTabClose;
   final VoidCallback onMinimize;
@@ -798,6 +853,8 @@ class _CTabBar extends StatefulWidget {
     this.outline,
     this.stripClip = 0,
     required this.topRightComposite,
+    this.viewHeader = false,
+    this.viewHovered,
     required this.onTabSelected,
     required this.onTabClose,
     required this.onMinimize,
@@ -831,10 +888,104 @@ class _CTabBarState extends State<_CTabBar> {
   late final StripReveal _reveal;
   final ValueNotifier<bool> _minimizeHovered = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _maximizeHovered = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _closeHovered = ValueNotifier<bool>(false);
+  // The controls of a view header that run past the folder are drawn in the overlay, anchored here.
+  final LayerLink _headerLink = LayerLink();
+  final OverlayPortalController _overflowPortal = OverlayPortalController();
+  final ValueNotifier<bool> _overflowHovered = ValueNotifier<bool>(false);
   // How far the tab row ends before the chevron's slot, set as the row lays out.
   final ValueNotifier<double> _trailingGap = ValueNotifier<double>(0);
   bool _isChevronHovered = false;
   int? _hoveredTabIndex;
+
+  final GlobalKey _overlaidControlsKey = GlobalKey();
+  final GlobalKey _tabAreaKey = GlobalKey();
+
+  /// What shows or hides the controls; see [_controlsShown].
+  Listenable get _controlsShownListenable => Listenable.merge([
+        _hoveringTopBar,
+        _overflowHovered,
+        if (widget.viewHovered != null) widget.viewHovered!,
+        TrackerSession.tracking,
+      ]);
+
+  /// The tab row under the overlaid controls, fading out over [fadeWidth] up to where they start
+  /// while they are shown over a tab: there is more of it under them.
+  Widget _fadingUnderControls(Widget tabs, double fadeWidth) => KeyedSubtree(
+        key: _tabAreaKey,
+        child: ListenableBuilder(
+          listenable: _controlsShownListenable,
+          child: tabs,
+          builder: (context, tabs) {
+            final end = _coveredTabsEnd();
+            if (end == null) return tabs!;
+            return ShaderMask(
+              blendMode: BlendMode.dstIn,
+              shaderCallback: (bounds) => LinearGradient(
+                colors: const [Colors.white, Colors.white, Colors.transparent],
+                stops: [
+                  0,
+                  ((end - fadeWidth) / bounds.width).clamp(0.0, 1.0),
+                  (end / bounds.width).clamp(0.0, 1.0),
+                ],
+              ).createShader(bounds),
+              child: tabs,
+            );
+          },
+        ),
+      );
+
+  /// Where, across the tab row, the shown overlaid controls start while they cover a tab and no tab
+  /// is hovered, as last laid out; null otherwise.
+  double? _coveredTabsEnd() {
+    if (_hoveredTabIndex != null || !_controlsShown) return null;
+    final area = _tabAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    final tabs = _rowState.currentState?._row;
+    final controls = _overlaidControlsKey.currentContext?.findRenderObject() as RenderBox?;
+    if (area == null || tabs == null || controls == null) return null;
+    if (!area.attached || !tabs.attached || !controls.attached) return null;
+    final controlsLeft = controls.localToGlobal(Offset.zero).dx;
+    if (tabs.localToGlobal(Offset(tabs.size.width, 0)).dx <= controlsLeft) return null;
+    return controlsLeft - area.localToGlobal(Offset.zero).dx;
+  }
+
+  final GlobalKey _overlaidControlsChildKey = GlobalKey();
+
+  /// [controls] drawn over the tab row, cut back from their left edge to where the tabs end while the
+  /// pointer is on any tab: the tabs they cover come out on top, so a close button can be pressed.
+  /// The cut edge fades in over [fadeWidth]: there is more of the controls under the tabs.
+  Widget _yieldingToHoveredTab(Widget controls, double fadeWidth) {
+    final cut = _hoveredTabOverlap();
+    // Keyed, so the controls keep their state as the fade comes and goes around them.
+    final keyed = KeyedSubtree(key: _overlaidControlsChildKey, child: controls);
+    return ClipRect(
+      key: _overlaidControlsKey,
+      clipper: _CutFromLeft(cut),
+      child: cut <= 0
+          ? keyed
+          : ShaderMask(
+              blendMode: BlendMode.dstIn,
+              shaderCallback: (bounds) => LinearGradient(
+                colors: const [Colors.transparent, Colors.white],
+                stops: [
+                  (cut / bounds.width).clamp(0.0, 1.0),
+                  ((cut + fadeWidth) / bounds.width).clamp(0.0, 1.0),
+                ],
+              ).createShader(bounds),
+              child: keyed,
+            ),
+    );
+  }
+
+  /// How far the tabs, as last laid out, run under the overlaid controls while one is hovered; 0 when
+  /// none is.
+  double _hoveredTabOverlap() {
+    if (_hoveredTabIndex == null) return 0;
+    final tabs = _rowState.currentState?._row;
+    final controls = _overlaidControlsKey.currentContext?.findRenderObject() as RenderBox?;
+    if (tabs == null || controls == null || !tabs.attached || !controls.attached) return 0;
+    return tabs.localToGlobal(Offset(tabs.size.width, 0)).dx - controls.localToGlobal(Offset.zero).dx;
+  }
 
   // The whole bar is built again for a hover change, so only for a real one.
   void _hoverTab(int index) {
@@ -847,11 +998,11 @@ class _CTabBarState extends State<_CTabBar> {
   int? _pendingFrom;
   int? _pendingTo;
 
-  // ctabfolder_topright_auto_hide (default true, matches the historical behaviour):
-  // the topRight/chevron/minimize/maximize block auto-hides until hovered and floats
-  // on top of the tab row without reserving space. Set to false to keep it always
-  // shown and reserving its own width in the tab row instead -- a client relying on
-  // an always-visible topRight toolbar needs both effects together, so this is one
+  // ctabfolder_topright_auto_hide (Java turns it on in the Eclipse IDE): the
+  // topRight/chevron/minimize/maximize block auto-hides until hovered and floats
+  // on top of the tab row without reserving space. Off, it is always shown and
+  // reserves its own width in the tab row instead -- a client relying on an
+  // always-visible topRight toolbar needs both effects together, so this is one
   // flag, not two: ctabfolder_visible_controls alone only removes the hover-fade, it
   // does not reserve space.
   bool get _autoHide => getConfigFlags().ctabfolder_topright_auto_hide != false;
@@ -865,11 +1016,29 @@ class _CTabBarState extends State<_CTabBar> {
   // An application hit-tests a Tracker drop against this block whether it is drawn or not (the
   // Eclipse workbench refuses one over a view tool bar), so it is drawn while a Tracker is open.
   bool get _controlsShown =>
-      _controlsAlwaysVisible || _hoveringTopBar.value || TrackerSession.tracking.value;
+      _controlsAlwaysVisible ||
+      _hoveringTopBar.value ||
+      (widget.viewHovered?.value ?? false) ||
+      _overflowHovered.value ||
+      TrackerSession.tracking.value;
+
+  /// Which way a view header's controls run past the folder, as Java laid them out: -1 to the left
+  /// (a stack on the right rail), 1 to the right (on the left rail), 0 when they fit.
+  int get _headerOverflow {
+    if (!widget.viewHeader) return 0;
+    final control = widget.topRightComposite?.bounds;
+    final folder = widget.state.bounds;
+    if (control == null || folder == null || control.width <= 0) return 0;
+    final place = ViewRails.current.value.places[widget.state.id];
+    if (place == null) return 0;
+    if (ViewRailPlace.isRight(place)) return control.x < 0 ? -1 : 0;
+    return control.x <= 0 && control.x + control.width > 0 ? 1 : 0;
+  }
 
   @override
   void initState() {
     super.initState();
+    _overflowPortal.show();
     _horizontalScrollController = ScrollController();
     _reveal = StripReveal(
       strip: _horizontalScrollController,
@@ -906,8 +1075,10 @@ class _CTabBarState extends State<_CTabBar> {
     _scrollbarHideTimer?.cancel();
     _scrollbarVisible.dispose();
     _hoveringTopBar.dispose();
+    _overflowHovered.dispose();
     _minimizeHovered.dispose();
     _maximizeHovered.dispose();
+    _closeHovered.dispose();
     _trailingGap.dispose();
     _horizontalScrollController.dispose();
     super.dispose();
@@ -933,6 +1104,11 @@ class _CTabBarState extends State<_CTabBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.viewHeader) return _buildBar(context);
+    return Theme(data: viewHeaderTheme(Theme.of(context)), child: Builder(builder: _buildBar));
+  }
+
+  Widget _buildBar(BuildContext context) {
     final widgetTheme = Theme.of(
       context,
     ).extension<CTabFolderThemeExtension>()!;
@@ -986,6 +1162,9 @@ class _CTabBarState extends State<_CTabBar> {
     final tabChildren = displayTabs.asMap().entries.map((entry) {
       final index = entry.key;
       final tab = entry.value;
+      // Every tab stays in the row, so the strip Java reads keeps its indices; only the selected one
+      // has a width.
+      if (widget.viewHeader && index != effectiveSelected) return const SizedBox.shrink();
       return _buildAdvancedTab(
         context: context,
         widgetTheme: widgetTheme,
@@ -993,7 +1172,8 @@ class _CTabBarState extends State<_CTabBar> {
         isHovered: index == _hoveredTabIndex,
         tab: tab,
         onTap: () => widget.onTabSelected(index),
-        onClose: tab.showCloseButton ? () => widget.onTabClose(index) : null,
+        // A view header closes from its controls, beside minimize and maximize.
+        onClose: tab.showCloseButton && !widget.viewHeader ? () => widget.onTabClose(index) : null,
         isTabBottom: isTabBottom,
         onHoverEnter: () => _hoverTab(index),
         onHoverExit: () => _unhoverTab(index),
@@ -1073,14 +1253,29 @@ class _CTabBarState extends State<_CTabBar> {
     // While overflowing, lay the controls out as a Row sibling so the chevron reserves space
     // and stays clickable, instead of floating over the tab row where clicks get swallowed.
     // Compressed tabs always leave the controls their width, as CTabFolder.getRightItemEdge does.
-    final Widget header = (_reserveTopRightSpace || _hasOverflow || !ctabTabScroll())
-        ? Row(children: [scrollableTabs, topRightControls])
-        : Stack(
-            children: [
-              Row(children: [scrollableTabs]),
-              Positioned(right: 0, top: 0, bottom: 0, child: topRightControls),
-            ],
-          );
+    final overflow = _headerOverflow;
+    final Widget header;
+    if (overflow != 0 && Overlay.maybeOf(context) != null) {
+      // Wider than the view: drawn over its neighbours from the view's outer edge, where Java placed
+      // them, so their menus open under them.
+      header = CompositedTransformTarget(
+        link: _headerLink,
+        child: OverlayPortal(
+          controller: _overflowPortal,
+          overlayChildBuilder: (_) => _overflowingControls(topRightControls, overflow > 0, height),
+          child: Row(children: [scrollableTabs]),
+        ),
+      );
+    } else {
+      header = (_reserveTopRightSpace || _hasOverflow || !ctabTabScroll())
+          ? Row(children: [scrollableTabs, topRightControls])
+          : Stack(
+              children: [
+                _fadingUnderControls(Row(children: [scrollableTabs]), widgetTheme.coveredTabFadeWidth),
+                Positioned(right: 0, top: 0, bottom: 0, child: _yieldingToHoveredTab(topRightControls, widgetTheme.coveredTabFadeWidth)),
+              ],
+            );
+    }
 
     Widget bar = header;
     double? barHeight = height;
@@ -1118,6 +1313,31 @@ class _CTabBarState extends State<_CTabBar> {
     );
     if (wrappedBounds != null || height == null) return strip;
     return _clipToShownHeight(strip, height, isTabBottom);
+  }
+
+  /// A view header's [controls] in the overlay, from the header's left edge rightwards or from its
+  /// right edge leftwards.
+  Widget _overflowingControls(Widget controls, bool towardRight, double? height) {
+    final anchor = towardRight ? Alignment.topLeft : Alignment.topRight;
+    return Positioned(
+      left: 0,
+      top: 0,
+      child: CompositedTransformFollower(
+        link: _headerLink,
+        targetAnchor: anchor,
+        followerAnchor: anchor,
+        showWhenUnlinked: false,
+        // Defers to the controls, which ignore the pointer while hidden: the header under them
+        // stays the view's.
+        child: MouseRegion(
+          opaque: false,
+          hitTestBehavior: HitTestBehavior.deferToChild,
+          onEnter: (_) => _overflowHovered.value = true,
+          onExit: (_) => _overflowHovered.value = false,
+          child: IntrinsicWidth(child: SizedBox(height: height, child: controls)),
+        ),
+      ),
+    );
   }
 
   /// [child], laid out [height] tall, cut on its page side to the tabHeight Java fixed.
@@ -1519,6 +1739,7 @@ class _CTabBarState extends State<_CTabBar> {
 
   /// Native SWT's showChevron: chevronVisible (default true) and either forced on or overflowing.
   bool get _showsChevron =>
+      !widget.viewHeader &&
       (widget.state.chevronVisible ?? true) &&
       ((widget.state.showChevron ?? false) || _hasOverflow);
 
@@ -1799,6 +2020,28 @@ class _CTabBarState extends State<_CTabBar> {
     return null;
   }
 
+  /// Runs a folder control's action. In a view header it relayouts the header under the pointer,
+  /// and a MouseRegion rebuilt away gets no exit, so the hover is dropped here; the next move over
+  /// the header sets it.
+  void _afterControl(VoidCallback action) {
+    if (widget.viewHeader) {
+      _hoveringTopBar.value = false;
+      _overflowHovered.value = false;
+      widget.viewHovered?.value = false;
+    }
+    action();
+  }
+
+  /// The selected view's index when this is a view header and the view can be closed: its close
+  /// button sits beside minimize and maximize instead of on the title.
+  int? _headerCloseIndex() {
+    if (!widget.viewHeader) return null;
+    final selected = _computeEffectiveSelected(widget.selectedIndex);
+    final tabs = widget.tabItems;
+    if (selected < 0 || selected >= tabs.length || !tabs[selected].showCloseButton) return null;
+    return selected;
+  }
+
   /// The width Java leaves between the topRight control and the folder's right edge, or 0 when it
   /// does not place the control from that edge.
   double _javaTrailingWidth(VComposite? topRightComposite, int alignment) {
@@ -1821,14 +2064,23 @@ class _CTabBarState extends State<_CTabBar> {
     required int alignment,
   }) {
     final showChevron = _showsChevron && !ctabChevronAfterTabs();
+    final closeIndex = _headerCloseIndex();
     final hasControls =
         topRightComposite != null || showMinimizeButton || showMaximizeButton ||
-        showChevron;
+        showChevron || closeIndex != null;
     if (!hasControls) return const SizedBox.shrink();
 
     final scaled = ListenableBuilder(
       listenable: Listenable.merge(
-          [_hoveringTopBar, _minimizeHovered, _maximizeHovered, TrackerSession.tracking]),
+          [
+            _hoveringTopBar,
+            _minimizeHovered,
+            _maximizeHovered,
+            _closeHovered,
+            _overflowHovered,
+            if (widget.viewHovered != null) widget.viewHovered!,
+            TrackerSession.tracking,
+          ]),
       builder: (context, _) {
         final controls = Row(
           mainAxisSize: MainAxisSize.min,
@@ -1845,7 +2097,8 @@ class _CTabBarState extends State<_CTabBar> {
             // control from that edge; the buttons take the same room here, so the control is drawn where
             // toDisplay() says it is.
             _ownToolbarPointer(ConstrainedBox(
-              constraints: BoxConstraints(minWidth: _javaTrailingWidth(topRightComposite, alignment)),
+              constraints: BoxConstraints(
+                  minWidth: _headerOverflow != 0 ? 0 : _javaTrailingWidth(topRightComposite, alignment)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -1860,7 +2113,7 @@ class _CTabBarState extends State<_CTabBar> {
                         widgetTheme: widgetTheme,
                         semanticsId: 'minimize:${widget.state.swt}/${widget.state.id}',
                         icon: isMinimized ? Icons.maximize : Icons.minimize,
-                        onTap: isVisible ? widget.onMinimize : () {},
+                        onTap: isVisible ? () => _afterControl(widget.onMinimize) : () {},
                         isHovered: _minimizeHovered.value,
                         onHoverChanged: (hovered) {
                           _minimizeHovered.value = hovered;
@@ -1878,10 +2131,28 @@ class _CTabBarState extends State<_CTabBar> {
                         widgetTheme: widgetTheme,
                         semanticsId: 'maximize:${widget.state.swt}/${widget.state.id}',
                         icon: isMaximized ? Icons.fullscreen_exit : Icons.fullscreen,
-                        onTap: isVisible ? widget.onMaximize : () {},
+                        onTap: isVisible ? () => _afterControl(widget.onMaximize) : () {},
                         isHovered: _maximizeHovered.value,
                         onHoverChanged: (hovered) {
                           _maximizeHovered.value = hovered;
+                        },
+                        enabled: true,
+                      );
+                    },
+                  ),
+                if (closeIndex != null)
+                  Builder(
+                    builder: (context) {
+                      final isVisible = _controlsShown;
+                      return _buildControlButton(
+                        context: context,
+                        widgetTheme: widgetTheme,
+                        semanticsId: 'close:${widget.state.swt}/${widget.state.id}',
+                        icon: Icons.close,
+                        onTap: isVisible ? () => _afterControl(() => widget.onTabClose(closeIndex)) : () {},
+                        isHovered: _closeHovered.value,
+                        onHoverChanged: (hovered) {
+                          _closeHovered.value = hovered;
                         },
                         enabled: true,
                       );

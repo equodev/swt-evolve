@@ -21,6 +21,7 @@ import './measure_theme_scales.dart' as theme_scales;
 import './measure_toolitem.dart' as toolitem;
 import './measure_tree.dart' as tree;
 import './measure_treeitem.dart' as treeitem;
+import './measure_view_rails.dart' as view_rails;
 
 void main() {
   // Canvas has no TextStyle to measure -- it reads ColorScheme directly and writes its Java file
@@ -39,6 +40,10 @@ void main() {
   // So is the height of a row of a CCombo's list: it reads CComboThemeExtension and writes
   // CComboListSizes immediately.
   ccombo_list.writeCComboListSizesFile();
+
+  // And so are the view rails' widths: it reads ViewRailsThemeExtension and writes ViewRailsSizes
+  // immediately.
+  view_rails.writeViewRailsSizesFile();
 
   final measurer = WidgetMeasurer();
 

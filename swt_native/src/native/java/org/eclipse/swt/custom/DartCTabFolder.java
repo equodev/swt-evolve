@@ -625,7 +625,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
                         rects[i].height = getControlHeight(ctrlSize);
                         rects[i].x = x;
                         rects[i].y = getControlY(size, rects, borderBottom, borderTop, i);
-                    } else if ((alignment & SWT.WRAP) != 0 && ctrlSize.x <= availableWidth) {
+                    } else if ((alignment & SWT.WRAP) != 0 && CTabFolderHelper.fitsBesideTabs(this, ctrlSize.x, availableWidth)) {
                         x -= ctrlSize.x;
                         rects[i].width = ctrlSize.x;
                         rects[i].height = getControlHeight(ctrlSize);
@@ -2704,6 +2704,7 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
         }
         ignoreResize = false;
         controlRects = rects;
+        CTabFolderHelper.layoutHeaderControls(this, rects, overflow[0]);
         if (changed || hovering) {
             updateBkImages(false);
         }
@@ -4861,6 +4862,10 @@ public class DartCTabFolder extends DartComposite implements ICTabFolder {
     }
 
     int showListPopupSeq = 0;
+
+    public void _dirtied() {
+        CTabFolderHelper.dirtied(this);
+    }
 
     int stripLayoutSeq = 0;
 

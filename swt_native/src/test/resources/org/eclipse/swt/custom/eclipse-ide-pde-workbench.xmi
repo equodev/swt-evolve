@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="ASCII"?>
+<!-- The layout of an Eclipse IDE workbench window as e4 saved it (workbench.xmi), PDE perspective, with the
+     bottom stack maximized: the stacks, sashes and editor area with the attributes a part stack's
+     place is read from. Parts, menus, trim and per-view state are left out. -->
+<application:Application xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmi:id="app">
+  <children xsi:type="basic:TrimmedWindow" xmi:id="_twPXgeb-EfGjmY4FLWhjLg" elementId="IDEWindow">
+    <children xsi:type="basic:PartSashContainer" xmi:id="_twPXgub-EfGjmY4FLWhjLg" horizontal="true" selectedElement="_twPXg-b-EfGjmY4FLWhjLg">
+      <children xsi:type="advanced:PerspectiveStack" xmi:id="_twPXg-b-EfGjmY4FLWhjLg" elementId="org.eclipse.ui.ide.perspectivestack" containerData="7500" selectedElement="_twPXhOb-EfGjmY4FLWhjLg">
+        <children xsi:type="advanced:Perspective" xmi:id="_twPXhOb-EfGjmY4FLWhjLg" elementId="org.eclipse.pde.ui.PDEPerspective" selectedElement="_twPXheb-EfGjmY4FLWhjLg">
+          <children xsi:type="basic:PartSashContainer" xmi:id="_twPXheb-EfGjmY4FLWhjLg" horizontal="true" selectedElement="_twPXi-b-EfGjmY4FLWhjLg">
+            <children xsi:type="basic:PartStack" xmi:id="_twPXhub-EfGjmY4FLWhjLg" elementId="topLeft" containerData="2500" selectedElement="_twPXh-b-EfGjmY4FLWhjLg">
+              <tags>org.eclipse.e4.primaryNavigationStack</tags>
+              <tags>MinimizedByZoom</tags>
+            </children>
+            <children xsi:type="basic:PartSashContainer" xmi:id="_twPXi-b-EfGjmY4FLWhjLg" containerData="7500" selectedElement="_twPXkub-EfGjmY4FLWhjLg">
+              <children xsi:type="basic:PartSashContainer" xmi:id="_twPXjOb-EfGjmY4FLWhjLg" containerData="7500" horizontal="true" visible="false" selectedElement="_twPXjub-EfGjmY4FLWhjLg">
+                <children xsi:type="advanced:Placeholder" xmi:id="_twPXjeb-EfGjmY4FLWhjLg" elementId="org.eclipse.ui.editorss" containerData="7500" visible="false" ref="_twP_jub-EfGjmY4FLWhjLg">
+                  <tags>Minimized</tags>
+                  <tags>MinimizedByZoom</tags>
+                </children>
+                <children xsi:type="basic:PartStack" xmi:id="_twPXjub-EfGjmY4FLWhjLg" elementId="org.eclipse.ui.views.ContentOutlineMStack" containerData="2500" visible="false" selectedElement="_twPXj-b-EfGjmY4FLWhjLg">
+                  <tags>Minimized</tags>
+                  <tags>MinimizedByZoom</tags>
+                </children>
+              </children>
+              <children xsi:type="basic:PartStack" xmi:id="_twPXkub-EfGjmY4FLWhjLg" elementId="bottomRight" containerData="2500" selectedElement="_twPXmeb-EfGjmY4FLWhjLg">
+                <tags>org.eclipse.e4.secondaryDataStack</tags>
+                <tags>Oomph</tags>
+                <tags>Maximized</tags>
+                <tags>active</tags>
+                <tags>noFocus</tags>
+              </children>
+            </children>
+          </children>
+        </children>
+      </children>
+      <children xsi:type="basic:PartStack" xmi:id="_twPXmub-EfGjmY4FLWhjLg" elementId="stickyFolderRight" containerData="2500" toBeRendered="false" />
+    </children>
+    <sharedElements xsi:type="advanced:Area" xmi:id="_twP_jub-EfGjmY4FLWhjLg" elementId="org.eclipse.ui.editorss">
+      <children xsi:type="basic:PartStack" xmi:id="_twP_j-b-EfGjmY4FLWhjLg" elementId="org.eclipse.e4.primaryDataStack">
+        <tags>EditorStack</tags>
+        <tags>org.eclipse.e4.primaryDataStack</tags>
+      </children>
+    </sharedElements>
+  </children>
+</application:Application>

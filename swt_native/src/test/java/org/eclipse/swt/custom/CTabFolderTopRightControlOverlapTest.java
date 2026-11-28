@@ -1,6 +1,7 @@
 package org.eclipse.swt.custom;
 
 import dev.equo.swt.Config;
+import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.FlutterBridge;
 import dev.equo.swt.harness.RecordingBridge;
 import org.eclipse.swt.SWT;
@@ -26,10 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 /**
- * A top-right control with {@code SWT.WRAP} wraps below the tabs rather than being drawn over the
- * last one. The tabs leave no room for a wrapped control, so whether it fits on the tab row is
- * decided from what is left beside them, and that has to include the gap its own placement keeps
- * from the folder's right edge.
+ * A top-right control with {@code SWT.WRAP} wraps below the tabs rather than being drawn over them.
+ * Shown only on hover, it may cover up to two thirds of the last tab, which stays readable, and
+ * hovering any tab draws the tabs over it; it covers no other tab. Whether it fits on the tab row is decided from what is left beside the tabs, and
+ * that has to include the gap its own placement keeps from the folder's right edge.
  */
 @ExtendWith(Mocks.class)
 class CTabFolderTopRightControlOverlapTest {
@@ -44,28 +45,40 @@ class CTabFolderTopRightControlOverlapTest {
         Config.defaultToEclipse();
     }
 
+    private ConfigFlags savedFlags;
+
     @BeforeEach
     void setUp() {
         FlutterBridge.set(new RecordingBridge());
+        savedFlags = Config.getConfigFlags();
+        // Shown only on hover: the mode in which a control may cover part of the last tab.
+        ConfigFlags flags = savedFlags.copy();
+        flags.ctabfolder_topright_auto_hide = true;
+        Config.setConfigFlags(flags);
     }
 
     @AfterEach
     void tearDown() {
         FlutterBridge.set(null);
+        Config.setConfigFlags(savedFlags);
     }
 
     @ParameterizedTest(name = "minimize and maximize shown: {0}")
     @ValueSource(booleans = {false, true})
-    @DisplayName("a wrapped top-right control never overlaps a tab, at any folder width")
+    @DisplayName("a wrap top-right control covers no tab but up to two thirds of the last one, at any folder width")
     void aWrappedTopRightControlNeverOverlapsATab(boolean minMax) {
         List<String> overlaps = new ArrayList<>();
         int tabRowRows = 0;
         for (int width = 260; width <= 560; width++) {
             CTabFolder folder = folderWithTopRight(width, SWT.RIGHT | SWT.WRAP, minMax);
             Rectangle control = folder.getTopRight().getBounds();
+            CTabItem last = lastShowing(folder);
             for (CTabItem item : folder.getItems()) {
-                if (item.isShowing() && item.getBounds().intersects(control)) {
-                    overlaps.add("at " + width + ": " + control + " over " + item.getText() + item.getBounds());
+                if (!item.isShowing() || !item.getBounds().intersects(control)) continue;
+                Rectangle tab = item.getBounds();
+                int covered = tab.x + tab.width - control.x;
+                if (item != last || covered > tab.width * 2 / 3) {
+                    overlaps.add("at " + width + ": " + control + " over " + item.getText() + tab);
                 }
             }
             if (control.y <= folder.getTabHeight() - control.height) tabRowRows++;
@@ -83,6 +96,12 @@ class CTabFolderTopRightControlOverlapTest {
 
         assertThat(control.y).as("drawn on the tab row, not wrapped below it").isLessThan(folder.getTabHeight());
         assertThat(control.x + control.width).isLessThanOrEqualTo(folder.getSize().x);
+    }
+
+    private static CTabItem lastShowing(CTabFolder folder) {
+        CTabItem last = null;
+        for (CTabItem item : folder.getItems()) if (item.isShowing()) last = item;
+        return last;
     }
 
     private CTabFolder folderWithTopRight(int width, int style, boolean minMax) {

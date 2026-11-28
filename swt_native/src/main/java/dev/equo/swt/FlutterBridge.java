@@ -2499,6 +2499,7 @@ public abstract class FlutterBridge {
     public void dirty(DartWidget widget) {
         if (widget == null || drawnByParent(widget))
             return;
+        widget._dirtied();
         registerForRefresh(widget);
         Serializer.dirtied(widget.getValue());
         synchronized (dirty) {

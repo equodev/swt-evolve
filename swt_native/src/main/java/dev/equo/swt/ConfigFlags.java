@@ -42,12 +42,11 @@ public class ConfigFlags implements WireObject {
 
     public boolean ctabfolder_visible_controls;
 
-    /** Default true (matches the historical behaviour): the CTabFolder topRight/minimize/
-     *  maximize/chevron block only appears on hover and floats on top of the tab row without
-     *  reserving space. Set to false to keep it always shown and reserving its own width in the
-     *  tab row (a Row sibling) instead -- lets a client that relies on an always-visible
-     *  topRight toolbar (e.g. via setTopRight) keep every tab reachable instead of some being
-     *  hidden underneath that floating overlay. */
+    /** Whether the CTabFolder topRight/minimize/maximize/chevron block appears only on hover and
+     *  floats on top of the tab row without reserving space. On by default only in the Eclipse IDE
+     *  (as {@link #view_rails}); elsewhere it is always shown and reserves its own width in the tab
+     *  row (a Row sibling), so every tab stays reachable. {@code -Dswt.evolve.ctabfolder_topright_auto_hide}
+     *  overrides it either way. */
     public boolean ctabfolder_topright_auto_hide;
 
     /** Default true: a CTabFolder whose tabs do not fit scrolls its tab strip. Set to false to lay
@@ -60,6 +59,17 @@ public class ConfigFlags implements WireObject {
      *  Off by default: the chevron stays at the strip's end. Set with
      *  {@code -Dswt.evolve.ctabfolder_chevron_after_tabs=true}. */
     public boolean ctabfolder_chevron_after_tabs;
+
+    /** On by default only in the Eclipse IDE (its {@code eclipse.product}): the e4 main window's view
+     *  stacks show one view each, and rails on the window's sides list every view of the perspective
+     *  (see {@code ViewRails}). {@code -Dswt.evolve.view_rails=true|false} overrides it; off, every
+     *  part stack keeps its tab strip. */
+    public boolean view_rails;
+
+    /** The view rails' size to start a session with: {@code small}, {@code medium} (the default) or
+     *  {@code large}, set with {@code -Dswt.evolve.view_rails_size}. The rail menu changes it for the
+     *  session. */
+    public String view_rails_size;
 
     public boolean image_disable_icons_replacement;
 
@@ -447,6 +457,9 @@ public class ConfigFlags implements WireObject {
         c.transparent_menu_check_box = transparent_menu_check_box;
         c.use_swt_border = use_swt_border;
         c.scale_vertical_minimum_at_top = scale_vertical_minimum_at_top;
+        c.view_rails = view_rails;
+        c.view_rails_size = view_rails_size;
+        c.gc_approximate_batching = gc_approximate_batching;
         return c;
     }
 

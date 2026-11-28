@@ -38,6 +38,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
   double get tabBorderRadius;
   double get tabHorizontalPadding;
   double get tabVerticalPadding;
+  double get coveredTabFadeWidth;
   TextStyle? get tabTextStyle;
   TextStyle? get tabSelectedTextStyle;
   Color get tabContentBackgroundColor;
@@ -99,6 +100,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
     double? tabBorderRadius,
     double? tabHorizontalPadding,
     double? tabVerticalPadding,
+    double? coveredTabFadeWidth,
     TextStyle? tabTextStyle,
     TextStyle? tabSelectedTextStyle,
     Color? tabContentBackgroundColor,
@@ -171,6 +173,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       tabBorderRadius: tabBorderRadius ?? this.tabBorderRadius,
       tabHorizontalPadding: tabHorizontalPadding ?? this.tabHorizontalPadding,
       tabVerticalPadding: tabVerticalPadding ?? this.tabVerticalPadding,
+      coveredTabFadeWidth: coveredTabFadeWidth ?? this.coveredTabFadeWidth,
       tabTextStyle: tabTextStyle ?? this.tabTextStyle,
       tabSelectedTextStyle: tabSelectedTextStyle ?? this.tabSelectedTextStyle,
       tabContentBackgroundColor:
@@ -329,6 +332,9 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       tabVerticalPadding: t < 0.5
           ? tabVerticalPadding
           : other.tabVerticalPadding,
+      coveredTabFadeWidth: t < 0.5
+          ? coveredTabFadeWidth
+          : other.coveredTabFadeWidth,
       tabTextStyle: TextStyle.lerp(tabTextStyle, other.tabTextStyle, t),
       tabSelectedTextStyle: TextStyle.lerp(
         tabSelectedTextStyle,
@@ -535,6 +541,10 @@ mixin _$CTabFolderThemeExtensionTailorMixin
               other.tabVerticalPadding,
             ) &&
             const DeepCollectionEquality().equals(
+              coveredTabFadeWidth,
+              other.coveredTabFadeWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
               tabTextStyle,
               other.tabTextStyle,
             ) &&
@@ -691,6 +701,7 @@ mixin _$CTabFolderThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(tabBorderRadius),
       const DeepCollectionEquality().hash(tabHorizontalPadding),
       const DeepCollectionEquality().hash(tabVerticalPadding),
+      const DeepCollectionEquality().hash(coveredTabFadeWidth),
       const DeepCollectionEquality().hash(tabTextStyle),
       const DeepCollectionEquality().hash(tabSelectedTextStyle),
       const DeepCollectionEquality().hash(tabContentBackgroundColor),
@@ -770,6 +781,11 @@ extension CTabFolderThemeExtensionBuildContextProps on BuildContext {
   double get tabHorizontalPadding =>
       cTabFolderThemeExtension.tabHorizontalPadding;
   double get tabVerticalPadding => cTabFolderThemeExtension.tabVerticalPadding;
+
+  /// How wide the tabs fade out before a shown topRight control drawn over them, and the control fades
+  /// in where the tabs drawn over it end: there is more under either.
+  double get coveredTabFadeWidth =>
+      cTabFolderThemeExtension.coveredTabFadeWidth;
   TextStyle? get tabTextStyle => cTabFolderThemeExtension.tabTextStyle;
   TextStyle? get tabSelectedTextStyle =>
       cTabFolderThemeExtension.tabSelectedTextStyle;

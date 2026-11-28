@@ -294,6 +294,21 @@ public class CTabFolderHelper {
      * head of the priority order, where its showing tabs are; the render side's need not be there,
      * so that walk is kept only without {@link #chevronAfterTabs}.
      */
+    /**
+     * Whether a {@code SWT.WRAP} control {@code width} wide stays in the tab row, beside tabs that
+     * leave it {@code available}. A hidden-until-hover control may cover up to two thirds of the last
+     * tab shown: that tab stays readable, and hovering any tab draws the tabs over it.
+     */
+    static boolean fitsBesideTabs(DartCTabFolder folder, int width, int available) {
+        if (width <= available) return true;
+        if (!Config.getConfigFlags().ctabfolder_topright_auto_hide) return false;
+        for (int i = folder.items.length - 1; i >= 0; i--) {
+            DartCTabItem item = (DartCTabItem) folder.items[i].getImpl();
+            if (item.showing) return width <= available + item.width * 2 / 3;
+        }
+        return false;
+    }
+
     static int lastShowingIndex(DartCTabFolder folder) {
         if (!chevronAfterTabs()) {
             int i = 0, lastIndex = -1;
@@ -538,6 +553,16 @@ public class CTabFolderHelper {
             if (closeEvent.doit)
                 item.dispose();
         }
+    }
+
+    /** The header row of a view stack the rails list runs past the folder when it does not fit. */
+    public static void layoutHeaderControls(DartCTabFolder folder, Rectangle[] rects, boolean[] overflow) {
+        ViewRails.layoutHeaderControls(folder, rects, overflow);
+    }
+
+    /** The folder was marked for the next flush: a change of a view stack can change the view rails. */
+    public static void dirtied(DartCTabFolder folder) {
+        ViewRails.touched(folder);
     }
 
     // The min/max flags belong to the listener, as in upstream onSelection: e4 marks a minimized

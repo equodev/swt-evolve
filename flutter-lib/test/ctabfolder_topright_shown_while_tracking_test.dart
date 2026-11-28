@@ -88,6 +88,82 @@ void main() {
     TrackerSession.sendForTesting = null;
   });
 
+  testWidgets('the topRight tool bar shows while the pointer is anywhere on the folder', (tester) async {
+    await tester.pumpWidget(EvolveApp(
+      theme: ThemeMode.light,
+      contentWidget: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: _folderWidth.toDouble(),
+          height: 300,
+          child: CTabFolderSwt<VCTabFolder>(value: _folder()),
+        ),
+      ),
+    ));
+    await tester.pump();
+    while (tester.takeException() != null) {}
+
+    final origin = tester.getTopLeft(find.byType(CTabFolderSwt<VCTabFolder>));
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: origin + const Offset(_folderWidth + 50, 200));
+    await tester.pump(const Duration(seconds: 1));
+    expect(_toolBarOpacity(tester), 0.0, reason: 'hidden while the pointer is off the folder');
+
+    await gesture.moveTo(origin + const Offset(200, 200));
+    await tester.pump(const Duration(seconds: 1));
+    expect(_toolBarOpacity(tester), 1.0, reason: 'the pointer on the view, under the tab row, shows it');
+
+    await gesture.moveTo(origin + const Offset(_folderWidth + 50, 200));
+    await tester.pump(const Duration(seconds: 1));
+    expect(_toolBarOpacity(tester), 0.0, reason: 'leaving the folder hides it again');
+
+    await gesture.removePointer();
+  });
+
+  testWidgets('the tabs the shown tool bar covers come out on top while the pointer is on any tab', (tester) async {
+    Future<void> pumpFolder(double width) async {
+      await tester.pumpWidget(EvolveApp(
+        theme: ThemeMode.light,
+        contentWidget: Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(width: width, height: 300, child: CTabFolderSwt<VCTabFolder>(value: _folder())),
+        ),
+      ));
+      await tester.pump();
+      while (tester.takeException() != null) {}
+    }
+
+    // The tab widths follow the platform's fonts: measured wide, the folder is then narrowed until the
+    // bar, which stays at the row's end, has its first item over the middle of the last tab.
+    await pumpFolder(_folderWidth.toDouble());
+    final last = tester.getRect(find.text('Projects'));
+    final narrow = _folderWidth - (tester.getRect(find.text('T')).left - last.center.dx);
+    expect(narrow, greaterThan(last.right), reason: 'the tabs still fit, under the bar');
+    await pumpFolder(narrow);
+
+    final covered = tester.getRect(find.text('Projects'));
+    expect(tester.getRect(find.text('T')).left, lessThan(covered.right), reason: 'the tool bar sits over the tab');
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await gesture.addPointer(location: Offset(narrow / 2, 200));
+    await tester.pump(const Duration(seconds: 1));
+    expect(_toolBarOpacity(tester), 1.0);
+    expect(find.text('T').hitTestable(), findsOneWidget, reason: 'over the tab, the tool bar takes the pointer');
+    final toolBarFade = find.ancestor(of: find.text('T'), matching: find.byType(ShaderMask));
+    final tabsFade = find.ancestor(of: find.text('Projects'), matching: find.byType(ShaderMask));
+    expect(tabsFade, findsOneWidget, reason: 'the covered tab fades out before the tool bar');
+    expect(toolBarFade, findsNothing, reason: 'the tool bar is drawn whole over the tabs');
+
+    final first = tester.getRect(find.text('Connections'));
+    await gesture.moveTo(Offset(first.left + 2, first.center.dy));
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('T').hitTestable(), findsNothing,
+        reason: 'with the pointer on a tab, the covered tab takes the pointer where they overlap');
+    expect(tabsFade, findsNothing, reason: 'the tabs on top are drawn whole');
+    expect(toolBarFade, findsOneWidget, reason: 'the tool bar fades in where the tabs over it end');
+    await gesture.removePointer();
+  });
+
   testWidgets('the topRight tool bar is drawn while a Tracker drags over the tab row',
       (tester) async {
     await tester.pumpWidget(EvolveApp(
@@ -107,8 +183,9 @@ void main() {
 
     final origin = tester.getTopLeft(find.byType(CTabFolderSwt<VCTabFolder>));
     final overToolBar = origin + const Offset(300, 12);
-    final gesture =
-        await tester.startGesture(origin + const Offset(200, 200), kind: PointerDeviceKind.mouse);
+    // Pressed off the folder: a pointer resting on the folder would show the bar anyway.
+    final gesture = await tester.startGesture(
+        origin + const Offset(_folderWidth + 50, 200), kind: PointerDeviceKind.mouse);
     await gesture.moveTo(overToolBar);
     await tester.pump(const Duration(seconds: 1));
     expect(_toolBarOpacity(tester), 0.0, reason: 'a held button reveals nothing on its own');
@@ -123,7 +200,7 @@ void main() {
     expect(find.text('T').hitTestable(), findsOneWidget);
 
     await gesture.up();
-    await gesture.moveTo(origin + const Offset(200, 200));
+    await gesture.moveTo(origin + const Offset(_folderWidth + 50, 200));
     await tester.pump(const Duration(seconds: 1));
 
     expect(TrackerSession.isTracking, isFalse);

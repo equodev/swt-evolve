@@ -1298,6 +1298,9 @@ public abstract class DartWidget implements IWidget {
         return org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
     }
 
+    public void _dirtied() {
+    }
+
     protected FlutterBridge bridge;
 
     public FlutterBridge getBridge() {

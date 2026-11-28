@@ -23,6 +23,8 @@ Map<String, dynamic> eventFields(VEvent e) => {
       if (e.segments != null) 'segments': e.segments,
       if (e.width != null) 'width': e.width,
       if (e.height != null) 'height': e.height,
+      if (e.start != null) 'start': e.start,
+      if (e.end != null) 'end': e.end,
     };
 
 /// Every frame sent so far, as (channel, the fields of the event it carries).

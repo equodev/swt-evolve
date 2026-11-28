@@ -35,6 +35,7 @@ import 'theme_settings/coolitem_theme_settings.dart';
 import 'theme_settings/toast_theme_settings.dart';
 import 'theme_settings/tooltip_theme_settings.dart';
 import 'theme_settings/sash_theme_settings.dart';
+import 'theme_settings/view_rails_theme_settings.dart';
 import 'theme_settings/canvas_theme_settings.dart';
 import 'theme_settings/styledtext_theme_settings.dart';
 import 'theme_settings/display_theme_settings.dart';
@@ -667,6 +668,11 @@ ThemeData createLightNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final viewRailsTheme = getViewRailsLightTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final canvasTheme = getCanvasLightTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -739,6 +745,7 @@ ThemeData createLightNonDefaultTheme(
       tooltipTheme,
       toastTheme,
       sashTheme,
+      viewRailsTheme,
       canvasTheme,
       styledTextTheme,
       displayTheme,
@@ -925,6 +932,11 @@ ThemeData createDarkNonDefaultTheme(
     textTheme: materialTextTheme,
     colorSchemeExtension: colorSchemeExtension,
   );
+  final viewRailsTheme = getViewRailsDarkTheme(
+    colorScheme: colorScheme,
+    textTheme: materialTextTheme,
+    colorSchemeExtension: colorSchemeExtension,
+  );
   final canvasTheme = getCanvasDarkTheme(
     colorScheme: colorScheme,
     textTheme: materialTextTheme,
@@ -997,6 +1009,7 @@ ThemeData createDarkNonDefaultTheme(
       tooltipTheme,
       toastTheme,
       sashTheme,
+      viewRailsTheme,
       canvasTheme,
       styledTextTheme,
       displayTheme,

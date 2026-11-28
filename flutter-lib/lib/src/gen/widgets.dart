@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = -1581368982;
+const int wireFingerprint = 1774658174;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -847,6 +847,12 @@ abstract final class WireKey {
   static const int k_ViewForm_borderVisible = 6336;
   static const int k_ViewForm_highlight = 6337;
   static const int k_ViewForm_separator = 6338;
+  static const int k_ViewRails_places = 6400;
+  static const int k_ViewRails_railSides = 6404;
+  static const int k_ViewRails_rails = 6401;
+  static const int k_ViewRails_size = 6405;
+  static const int k_ViewRails_stacks = 6402;
+  static const int k_ViewRails_trims = 6403;
   static const int k_Widget_style = 6208;
 }
 
@@ -1034,6 +1040,7 @@ abstract final class WireType {
   static const int widgetSizeBridge = 133; // WidgetSizeBridge
   static const int displayPopups = 134; // DisplayPopups
   static const int windowShells = 135; // WindowShells
+  static const int viewRails = 136; // ViewRails
 }
 
 /// Type names by the number a frame names a value's class with.
@@ -1170,6 +1177,7 @@ const Map<int, String> wireTypeNames = {
   130: 'TreeItem',
   131: 'URLTransfer',
   132: 'ViewForm',
+  136: 'ViewRails',
   133: 'WidgetSizeBridge',
   135: 'WindowShells',
 };
@@ -1293,6 +1301,7 @@ const Map<int, String> wireChannelNames = {
   106: 'Tree/Expand',
   107: 'Verify/Verify',
   108: 'VerifyKey/verifyKey',
+  257: 'ViewRails/show',
   109: 'VisibilityWindow/hide',
   110: 'VisibilityWindow/show',
   111: 'WinClose',
@@ -1696,6 +1705,7 @@ abstract final class WireChannel {
       254; // evolve.test.bootTraceResponse
   static const int tabFolderStripLaidOut = 255; // TabFolder/stripLaidOut
   static const int swtEvolveMoveHandled = 256; // swt.evolve.move.handled
+  static const int viewRailsShow = 257; // ViewRails/show
 }
 
 /// Map keys by the number a map sent as tagged values names them with.
@@ -2021,6 +2031,7 @@ const Map<int, String> wireMapKeyNames = {
   310: 'paintedTexts',
   311: 'pathData',
   312: 'pixels',
+  485: 'places',
   313: 'points',
   314: 'popups',
   315: 'port',
@@ -2037,6 +2048,8 @@ const Map<int, String> wireMapKeyNames = {
   326: 'print_move',
   327: 'push_button_margin',
   328: 'r',
+  489: 'railSides',
+  486: 'rails',
   329: 'ranges',
   330: 'rects',
   331: 'red',
@@ -2086,10 +2099,12 @@ const Map<int, String> wireMapKeyNames = {
   371: 'show_theme_color_palette',
   372: 'showing',
   373: 'single',
+  490: 'size',
   374: 'sortColumn',
   375: 'sortDirection',
   376: 'source',
   377: 'spacing',
+  487: 'stacks',
   378: 'start',
   379: 'startPage',
   380: 'startX',
@@ -2145,6 +2160,7 @@ const Map<int, String> wireMapKeyNames = {
   429: 'transform',
   430: 'transparent_menu_check_box',
   484: 'trim_drag_handles',
+  488: 'trims',
   431: 'type',
   432: 'types',
   433: 'ui_zoom',

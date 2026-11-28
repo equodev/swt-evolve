@@ -431,6 +431,20 @@ public class Config {
         return -1;
     }
 
+    /** The trim composite on {@code side} (SWT.TOP/BOTTOM/LEFT/RIGHT) of the e4 main window {@code shell}, or null. */
+    public static Control trimAt(Composite shell, int side) {
+        Object layout = trimLayout(shell);
+        if (layout == null) return null;
+        java.lang.reflect.Field[] f = trimFields(layout);
+        if (f == null) return null;
+        try {
+            Object trim = f[indexOfTrimSide(side)].get(layout);
+            return trim instanceof Control ? (Control) trim : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /**
      * Classifies the trim composite currently being constructed under {@code parent}. Returns
      * SWT.TOP/BOTTOM/LEFT/RIGHT, or -1 when it is not an e4 trim composite.
@@ -922,11 +936,18 @@ public class Config {
         return !flags.disable_evolve_icons || (flags.assets_path != null && !flags.assets_path.trim().isEmpty());
     }
 
+    /** Whether {@code product} is an Eclipse IDE: an EPP package, the SDK or the Platform. */
+    public static boolean isEclipseIde(String product) {
+        return product != null && (product.startsWith("org.eclipse.epp.package.")
+                || product.equals("org.eclipse.sdk.ide") || product.equals("org.eclipse.platform.ide"));
+    }
+
     public static ConfigFlags getConfigFlags() {
         if (configFlags == null) {
             configFlags = new ConfigFlags();
             configFlags.ctabfolder_visible_controls = Boolean.getBoolean("swt.evolve.ctabfolder_visible_controls");
-            configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide", "true"));
+            configFlags.ctabfolder_topright_auto_hide = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_topright_auto_hide",
+                    String.valueOf(isEclipseIde(System.getProperty("eclipse.product")))));
             configFlags.ctabfolder_tab_scroll = Boolean.parseBoolean(System.getProperty("swt.evolve.ctabfolder_tab_scroll", "true"));
             configFlags.image_disable_icons_replacement = Boolean.getBoolean("swt.evolve.image_disable_icons_replacement");
             configFlags.assets_path = System.getProperty("swt.evolve.assets_path");
@@ -992,6 +1013,9 @@ public class Config {
             configFlags.transparent_menu_check_box = Boolean.getBoolean("swt.evolve.transparent_menu_check_box");
             configFlags.scale_vertical_minimum_at_top = Boolean.getBoolean("swt.evolve.scale_vertical_minimum_at_top");
             configFlags.ctabfolder_chevron_after_tabs = Boolean.getBoolean("swt.evolve.ctabfolder_chevron_after_tabs");
+            configFlags.view_rails = Boolean.parseBoolean(System.getProperty("swt.evolve.view_rails",
+                    String.valueOf(isEclipseIde(System.getProperty("eclipse.product")))));
+            configFlags.view_rails_size = System.getProperty("swt.evolve.view_rails_size", "medium");
             configFlags.gc_approximate_batching = !"false".equals(System.getProperty("swt.evolve.gc_approximate_batching"));
             configFlags.trim_drag_handles = Boolean.getBoolean("swt.evolve.trim_drag_handles");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
