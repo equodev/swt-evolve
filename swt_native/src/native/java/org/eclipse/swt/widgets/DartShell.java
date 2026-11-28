@@ -694,35 +694,7 @@ public class DartShell extends DartDecorations implements IShell {
     }
 
     Shell getModalShell() {
-        Shell shell = null;
-        Shell[] modalShells = ((DartDisplay) display.getImpl()).modalShells;
-        if (modalShells != null) {
-            int bits = SWT.APPLICATION_MODAL | SWT.SYSTEM_MODAL;
-            int index = modalShells.length;
-            while (--index >= 0) {
-                Shell modal = modalShells[index];
-                if (modal != null) {
-                    if ((modal.style & bits) != 0) {
-                        Control control = this.getApi();
-                        while (control != null) {
-                            if (control == modal)
-                                break;
-                            control = ((DartControl) control.getImpl()).parent;
-                        }
-                        if (control != modal)
-                            return modal;
-                        break;
-                    }
-                    if ((modal.style & SWT.PRIMARY_MODAL) != 0) {
-                        if (shell == null)
-                            shell = getShell();
-                        if (((DartControl) modal.getImpl()).parent == shell)
-                            return modal;
-                    }
-                }
-            }
-        }
-        return null;
+        return DialogPresentation.modalShell(this.getApi(), ((DartDisplay) display.getImpl()).modalShells);
     }
 
     /**
@@ -981,6 +953,7 @@ public class DartShell extends DartDecorations implements IShell {
             updateModal();
         }
         bringToTop(false);
+        DialogPresentation.opening(this.getApi());
         ((DartDisplay) display.getImpl()).raiseShell(this.getApi());
         Shell prevActiveShell = display.getActiveShell();
         setWindowVisible(true, true);
@@ -1966,6 +1939,50 @@ public class DartShell extends DartDecorations implements IShell {
 
     public Shell[] _shells() {
         return shells;
+    }
+
+    int wirePresentation() {
+        return DialogPresentation.of(getApi());
+    }
+
+    Rectangle wirePageHost() {
+        return DialogPresentation.pageHost(getApi());
+    }
+
+    Shell wirePageOwner() {
+        return DialogPresentation.pageOwner(getApi());
+    }
+
+    int wirePageStrip() {
+        return DialogPages.isHosted(getApi()) ? DialogPages.TAB_STRIP : 0;
+    }
+
+    boolean wirePageMaximized() {
+        return DialogPages.isAreaMaximized(getApi());
+    }
+
+    int wirePageHeading() {
+        return DialogPageParts.headingHeight(getApi());
+    }
+
+    String wirePageTitle() {
+        return DialogPageParts.title(getApi());
+    }
+
+    String wirePageMessage() {
+        return DialogPageParts.message(getApi());
+    }
+
+    int wirePageMessageType() {
+        return DialogPageParts.messageType(getApi());
+    }
+
+    String[] wirePageSteps() {
+        return DialogPageParts.steps(getApi());
+    }
+
+    int wirePageStep() {
+        return DialogPageParts.step(getApi());
     }
 
     public void addDialog(DartDialog d) {

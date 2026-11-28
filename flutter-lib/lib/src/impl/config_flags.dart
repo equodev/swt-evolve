@@ -46,6 +46,10 @@ class ConfigFlags implements WireReadable {
   bool? disable_hover_zoom;
   bool? custom_tooltip;
   bool? notification_popup;
+
+  /// A dialog Shell is presented by what it is (alert, sheet, page, progress) in one frame per
+  /// window, with dialog chrome. Java decides each Shell's presentation; see `dialog_frame.dart`.
+  bool? modern_dialogs;
   bool? show_scaling_control;
 
   /// The zoom SWT draws its UI at, in percent — `swt.autoScale` already applied to the monitor's
@@ -161,6 +165,8 @@ class ConfigFlags implements WireReadable {
         custom_tooltip = r.boolean();
       case WireKey.k_ConfigFlags_notification_popup:
         notification_popup = r.boolean();
+      case WireKey.k_ConfigFlags_modern_dialogs:
+        modern_dialogs = r.boolean();
       case WireKey.k_ConfigFlags_show_scaling_control:
         show_scaling_control = r.boolean();
       case WireKey.k_ConfigFlags_ui_zoom:

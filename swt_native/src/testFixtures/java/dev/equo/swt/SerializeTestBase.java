@@ -251,6 +251,18 @@ public class SerializeTestBase {
             "Browser.functionNames", "a BrowserFunction created on the browser sets it",
             "Shell.dialogs", "a dialog opened on the shell sets it",
             "Shell.menuStripHeight", "the measured height of a menu strip, the same for every shell",
+            "Shell.presentation", "read from the shell's style, parent and JFace window when it is described; "
+                    + "DialogPresentation.setEnabled describes every shell again",
+            "Shell.pageHost", "follows the editor area a page is placed over (DialogPages)",
+            "Shell.pageOwner", "the page the dialog was opened from, set when it opens",
+            "Shell.pageStrip", "a constant for a page placed over the editor area (DialogPages)",
+            "Shell.pageMaximized", "follows the editor area's e4 Maximized tag (DialogPages)",
+            "Shell.pageHeading", "follows the JFace title area of a page (DialogPageParts)",
+            "Shell.pageTitle", "follows the JFace title area of a page (DialogPageParts)",
+            "Shell.pageMessage", "follows the JFace title area of a page (DialogPageParts)",
+            "Shell.pageMessageType", "follows the JFace title area of a page (DialogPageParts)",
+            "Shell.pageSteps", "follows the pages of a wizard (DialogPageParts)",
+            "Shell.pageStep", "follows the current page of a wizard (DialogPageParts)",
             "Shell.ownMenuStrip", "follows the items of the shell's menu bar, which their creation changes "
                     + "(Sizes.menuStripChanged)",
             "CTabFolder.chevronVisible", "only the package-private setChevronVisible changes it, which nothing calls",

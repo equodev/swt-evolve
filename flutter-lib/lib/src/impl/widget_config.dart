@@ -191,6 +191,7 @@ bool get customToolTip => getConfigFlags().custom_tooltip ?? false;
 /// True when clicking a main-toolbar item raises a notification card. See
 /// `EvolveNotification.maybeRaiseFor`.
 bool get notificationPopup => getConfigFlags().notification_popup ?? false;
+bool get modernDialogs => getConfigFlags().modern_dialogs ?? false;
 
 /// True when the bundled icon set may stand in for an image the application blits with
 /// `GC#drawImage`. Off by default: the set is keyed by the bare filename stem, so an application

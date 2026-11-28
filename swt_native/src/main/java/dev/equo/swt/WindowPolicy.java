@@ -113,14 +113,8 @@ public final class WindowPolicy {
     public static boolean ownsWindow(Shell shell, boolean isMainShell) {
         if (shell == null || shell.isDisposed() || isMainShell) return false;
 
-        Resolver r = resolver;
-        if (r != null) {
-            Boolean answer = r.ownsWindow(shell, false);
-            if (answer != null) return answer;
-        }
-
-        Boolean override = shellOverride(shell);
-        if (override != null) return override;
+        Boolean decided = decidedFor(shell);
+        if (decided != null) return decided;
 
         Mode mode = mode();
         if (mode == Mode.SINGLE) return false;
@@ -128,6 +122,21 @@ public final class WindowPolicy {
         if (isModal(shell)) return placement(MODAL_PROPERTY, mode) == Placement.OWN;
         if (shell.getParent() != null) return placement(DIALOGS_PROPERTY, mode) == Placement.OWN;
         return true;
+    }
+
+    /** What the application's {@link Resolver}, or else the shell's own {@link #SHELL_DATA_KEY}, says; null when neither answers. */
+    public static Boolean decidedFor(Shell shell) {
+        Resolver r = resolver;
+        if (r != null) {
+            Boolean answer = r.ownsWindow(shell, false);
+            if (answer != null) return answer;
+        }
+        return shellOverride(shell);
+    }
+
+    /** Whether the application asked for modal shells in windows of their own, which a dialog presentation then honours. */
+    public static boolean modalShellsGetOwnWindows() {
+        return placement(MODAL_PROPERTY, Mode.SINGLE) == Placement.OWN;
     }
 
     /** The per-shell override, or null when the shell carries none. */

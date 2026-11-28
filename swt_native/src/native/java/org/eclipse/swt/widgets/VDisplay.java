@@ -1,6 +1,5 @@
 package org.eclipse.swt.widgets;
 
-import dev.equo.swt.Config;
 import dev.equo.swt.ConfigFlags;
 import dev.equo.swt.Serializer;
 import java.util.ArrayList;
@@ -66,7 +65,7 @@ public class VDisplay {
         VDisplay v = new VDisplay();
         v.id = display.getApi().hashCode();
         v.swt = "Display";
-        v.config = Config.getConfigFlags();
+        v.config = DialogPresentation.flagsFor(display.getApi());
         // The OS's, the same for every session: a browser client follows its own locale instead.
         v.config.regional_locale = RegionalLocale.TAG;
         // Every shell, not only the ones on screen. This list is how the client knows a shell

@@ -10,7 +10,7 @@ public final class WireTable {
     }
 
     /** The table's fingerprint, which the client compares with its own when it connects. */
-    public static final int FINGERPRINT = 1774658174;
+    public static final int FINGERPRINT = 1978052693;
 
     /** Channel names by number: a global name, or what follows a widget's type and id. */
     public static final String[] CHANNELS = {
@@ -272,6 +272,7 @@ public final class WireTable {
             "TabFolder/stripLaidOut",
             "swt.evolve.move.handled",
             "ViewRails/show",
+            "DialogFrame/maximize",
     };
 
     /** Record type names by number. */
@@ -908,6 +909,18 @@ public final class WireTable {
             "trims",
             "railSides",
             "size",
+            "modern_dialogs",
+            "presentation",
+            "pageHost",
+            "pageOwner",
+            "pageHeading",
+            "pageMaximized",
+            "pageMessage",
+            "pageMessageType",
+            "pageStep",
+            "pageSteps",
+            "pageStrip",
+            "pageTitle",
     };
 
     /** Properties as `Class.name`, by number; null where no property has the number. */
@@ -1057,6 +1070,7 @@ public final class WireTable {
         property(1132, "ConfigFlags.regional_locale", "string");
         property(1133, "ConfigFlags.gc_approximate_batching", "bool");
         property(1134, "ConfigFlags.trim_drag_handles", "bool");
+        property(1135, "ConfigFlags.modern_dialogs", "bool");
         property(1152, "Control.background", "color");
         property(1153, "Control.backgroundImage", "image");
         property(1154, "Control.bounds", "rect");
@@ -1386,6 +1400,17 @@ public final class WireTable {
         property(4611, "Shell.maximumSize", "point");
         property(4612, "Shell.minimumSize", "point");
         property(4613, "Shell.modified", "bool");
+        property(4614, "Shell.presentation", "int");
+        property(4615, "Shell.pageHost", "rect");
+        property(4616, "Shell.pageOwner", "ref");
+        property(4617, "Shell.pageHeading", "int");
+        property(4618, "Shell.pageMaximized", "bool");
+        property(4619, "Shell.pageMessage", "string");
+        property(4620, "Shell.pageMessageType", "int");
+        property(4621, "Shell.pageStep", "int");
+        property(4622, "Shell.pageSteps", "string[]");
+        property(4623, "Shell.pageStrip", "int");
+        property(4624, "Shell.pageTitle", "string");
         property(4672, "Slider.increment", "int");
         property(4673, "Slider.maximum", "int");
         property(4674, "Slider.minimum", "int");
@@ -2363,6 +2388,9 @@ public final class WireTable {
     /** The channel `ViewRails/show`. */
     public static final int CHANNEL_VIEW_RAILS_SHOW = 257;
 
+    /** The channel `DialogFrame/maximize`. */
+    public static final int CHANNEL_DIALOG_FRAME_MAXIMIZE = 258;
+
     /** The type `Accessible`. */
     public static final int TYPE_ACCESSIBLE = 1;
 
@@ -2953,6 +2981,9 @@ public final class WireTable {
 
     /** The flag `trim_drag_handles`. */
     public static final int CONFIG_FLAGS_TRIM_DRAG_HANDLES = 1134;
+
+    /** The flag `modern_dialogs`. */
+    public static final int CONFIG_FLAGS_MODERN_DIALOGS = 1135;
 
     /** The event's `button`. */
     public static final int EVENT_BUTTON = 1856;

@@ -1303,6 +1303,7 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
 
     /** Whether {@code shell} is one {@link WindowPolicy} puts in a window of its own. */
     protected boolean ownsWindow(Shell shell) {
+        if (forDisplay != null && DialogPresentation.drawnInParent(shell, mainShell(forDisplay))) return false;
         return windowEligible(shell) && !isMainShell(forDisplay, shell);
     }
 

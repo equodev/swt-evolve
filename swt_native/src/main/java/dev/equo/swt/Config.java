@@ -978,6 +978,8 @@ public class Config {
             //   -Dswt.evolve.custom_tooltip=true   -Dswt.evolve.notification_popup=true
             configFlags.custom_tooltip = Boolean.getBoolean("swt.evolve.custom_tooltip");
             configFlags.notification_popup = Boolean.getBoolean("swt.evolve.notification_popup");
+            configFlags.modern_dialogs = Boolean.parseBoolean(System.getProperty("swt.evolve.modern_dialogs", "true"));
+            configFlags.dialog_presentation = System.getProperty("swt.evolve.dialog_presentation");
             String focusIndicators = System.getProperty("swt.evolve.focus_indicators");
             configFlags.focus_indicators = focusIndicators == null || focusIndicators.trim().isEmpty()
                     ? null

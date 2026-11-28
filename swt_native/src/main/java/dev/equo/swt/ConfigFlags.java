@@ -167,6 +167,15 @@ public class ConfigFlags implements WireObject {
      */
     public boolean notification_popup;
 
+    /** On by default: a dialog Shell is presented by what it is (alert, sheet, page, progress) in one
+     *  frame per window, with dialog chrome (see {@code DialogPresentation}). Off with
+     *  {@code -Dswt.evolve.modern_dialogs=false}: every Shell renders as a window, as before. */
+    public boolean modern_dialogs;
+
+    /** {@code <class>=<presentation>,...} from {@code -Dswt.evolve.dialog_presentation}: pins a dialog
+     *  class and its subclasses to a presentation. Java-side only. */
+    public String dialog_presentation;
+
     /** The theme the client draws when nothing selects another. */
     public static final String DEFAULT_THEME_NAME = "standard";
 
@@ -293,6 +302,7 @@ public class ConfigFlags implements WireObject {
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
             "scale_vertical_minimum_at_top", "ctabfolder_chevron_after_tabs",
             "bigger_icon_size", "regional_locale", "gc_approximate_batching", "trim_drag_handles",
+            "modern_dialogs",
     };
 
     /** The flags the client sets (a theme picked on its side). */
@@ -403,6 +413,8 @@ public class ConfigFlags implements WireObject {
         w.write(gc_approximate_batching);
         w.key(WireTable.CONFIG_FLAGS_TRIM_DRAG_HANDLES);
         w.write(trim_drag_handles);
+        w.key(WireTable.CONFIG_FLAGS_MODERN_DIALOGS);
+        w.write(modern_dialogs);
     }
 
     /** A shallow copy, for sending one session flags that differ from the shared ones. */
@@ -460,6 +472,8 @@ public class ConfigFlags implements WireObject {
         c.view_rails = view_rails;
         c.view_rails_size = view_rails_size;
         c.gc_approximate_batching = gc_approximate_batching;
+        c.modern_dialogs = modern_dialogs;
+        c.dialog_presentation = dialog_presentation;
         return c;
     }
 
@@ -516,6 +530,7 @@ public class ConfigFlags implements WireObject {
                 ", use_swt_border=" + use_swt_border +
                 ", scale_vertical_minimum_at_top=" + scale_vertical_minimum_at_top +
                 ", ctabfolder_chevron_after_tabs=" + ctabfolder_chevron_after_tabs +
+                ", modern_dialogs=" + modern_dialogs +
                 ", system_menu_bar=" + system_menu_bar +
                 ", decimal_separator='" + decimal_separator + '\'' +
                 ", locale='" + locale + '\'' +

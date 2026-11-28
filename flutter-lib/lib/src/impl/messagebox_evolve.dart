@@ -6,7 +6,10 @@ import '../gen/messagebox.dart';
 import '../gen/swt.dart';
 import '../theme/theme_extensions/button_theme_extension.dart';
 import '../theme/theme_extensions/message_box_theme_extension.dart';
+import 'dialog_frame.dart';
+import '../theme/theme_settings/dialog_frame_theme_settings.dart';
 import 'messagebox_layout.dart';
+import 'widget_config.dart';
 import 'utils/pointer.dart';
 import 'utils/quiet_animations.dart';
 import '../gen/widgets.dart' show WireChannel, WireType;
@@ -77,7 +80,9 @@ class _MessageBoxDialog extends StatelessWidget {
         autofocus: true,
         child: Dialog(
           backgroundColor: msgTheme.backgroundColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(msgTheme.borderRadius)),
+          // With the dialog presentations on, a message box is an alert like any JFace question.
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(modernDialogs ? dialogCardRadius : msgTheme.borderRadius)),
           child: tagSemantics(null, id: semanticsIdentifier, ConstrainedBox(
             constraints: BoxConstraints(minWidth: msgTheme.minWidth, maxWidth: msgTheme.maxWidth),
             child: Padding(
@@ -89,7 +94,7 @@ class _MessageBoxDialog extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _buildIcon(style, msgTheme),
+                      modernDialogs ? _iconTile(style, msgTheme) : _buildIcon(style, msgTheme),
                       SizedBox(width: msgTheme.iconTitleSpacing),
                       Expanded(child: Text(title, style: msgTheme.titleStyle ?? const TextStyle())),
                     ],
@@ -120,6 +125,17 @@ class _MessageBoxDialog extends StatelessWidget {
 void _answer(BuildContext context, int dialogId, int id) {
   Navigator.pop(context);
   EquoCommService.sendTo(WireType.messageBox, dialogId, WireChannel.close, '$id');
+}
+
+/// The alert's icon on a tile of its own colour, as the dialog presentations draw a question.
+Widget _iconTile(int style, MessageBoxThemeExtension theme) {
+  final icon = _buildIcon(style, theme) as Icon;
+  return Container(
+    width: dialogIconTileSize,
+    height: dialogIconTileSize,
+    decoration: dialogIconTileDecoration(icon.color ?? theme.iconInfoColor),
+    child: Icon(icon.icon, color: icon.color, size: dialogIconSize),
+  );
 }
 
 Widget _buildIcon(int style, MessageBoxThemeExtension theme) {

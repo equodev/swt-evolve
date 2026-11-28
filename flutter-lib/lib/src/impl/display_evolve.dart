@@ -23,6 +23,7 @@ import 'key_forwarding.dart';
 import 'menu_evolve.dart';
 import 'menu_key_trace.dart';
 import 'key_mapping.dart';
+import 'dialog_frame.dart';
 import 'shell_evolve.dart';
 import 'utils/key_edit_order.dart';
 import 'utils/pending_move.dart';
@@ -62,6 +63,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
   @override
   void initState() {
     super.initState();
+    pageRecordsChanged.addListener(_onPageRecordsChanged);
     _display = widget.value;
     FocusRequests.instance.holderFromDisplay(_display.focusHolderId);
     _publishHoldings();
@@ -130,6 +132,7 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   @override
   void dispose() {
+    pageRecordsChanged.removeListener(_onPageRecordsChanged);
     _stopRecords?.call();
     _stopPopupRecords?.call();
     VRegistry.instance.unwatchAt(_holderKey, _onHeldChanged);
@@ -359,6 +362,41 @@ class _DisplaySwtState extends State<DisplaySwt> {
 
   final Map<int, bool> _shellIsMainCache = {};
 
+  /// The page the user brought forward from its tab, if still open; else the newest one is shown.
+  int? _selectedPage;
+
+  /// The pages put aside for the editors under them, until a page is brought back or a new one opens.
+  bool _pagesAside = false;
+
+  final Set<int> _seenPages = {};
+
+  void _onPageRecordsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// A page that opens is shown, over whatever the user had chosen.
+  void _notePages(List<VShell> shells, bool modern) {
+    final open = <int>{};
+    for (final s in shells) {
+      if (!modern || !DialogPresentation.hostedPage(s)) continue;
+      open.add(s.id);
+      if (_seenPages.add(s.id)) {
+        _selectedPage = s.id;
+        _pagesAside = false;
+      }
+    }
+    _seenPages.retainAll(open);
+  }
+
+  /// A crumb walk ends once nothing is left above its crumb.
+  void _settlePopTarget(DialogFrame frame) {
+    final pop = dialogFramePopTarget.value;
+    if (pop == null || frame.walksTo(pop.target)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (identical(dialogFramePopTarget.value, pop)) dialogFramePopTarget.value = null;
+    });
+  }
+
   /// The shells Java is hosting in a window of their own. Ids only — the shell itself still
   /// arrives in [VDisplay.shells], because this client holds it even though it never draws it.
   Set<int> _windowedShellIds() {
@@ -537,6 +575,39 @@ class _DisplaySwtState extends State<DisplaySwt> {
         });
       }
 
+      final modern = modernDialogs;
+      _notePages(dialogShells, modern);
+      final frame = DialogFrame.of(dialogShells,
+          modern: modern, selectedPage: _selectedPage, pagesAside: _pagesAside);
+      _settlePopTarget(frame);
+      bool cornerCard(VShell s) => modern && DialogPresentation.cornerCard(s.presentation);
+      bool hosted(VShell s) => modern && DialogPresentation.hostedPage(s);
+      final pages = [for (final s in dialogShells) if (hosted(s)) s];
+      final dialogs = [for (final s in dialogShells) if (!hosted(s)) s];
+      Rect local(Rect r) => r.shift(-mainOrigin);
+      // The topmost modal shell shown in each frame, the window's or a page's, is drawn over a scrim.
+      final scrimFor = <int, int>{};
+      for (var i = 0; i < dialogs.length; i++) {
+        final s = dialogs[i];
+        if (isModalShell(s) && !frame.isHidden(s.id) && !cornerCard(s)) scrimFor[frame.owners[s.id] ?? 0] = i;
+      }
+      final scrimIndexes = {for (final e in scrimFor.entries) e.value: e.key};
+      final scrimColor = Theme.of(context).extension<DisplayThemeExtension>()!.modalOverlayColor;
+      final shownPage = frame.pages.where((p) => !frame.isHidden(p.shellId)).firstOrNull;
+      final stripPage = shownPage ?? frame.pages.lastOrNull;
+
+      Widget floating(VShell s, {Rect? centreIn}) => KeyedSubtree(
+            key: ValueKey(s.id),
+            child: FloatingShellChromeScope(
+              viewportConstraints: constraints,
+              activeShellId: _display.activeShellId,
+              frameHidden: frame.isHidden(s.id),
+              crumbs: frame.crumbsOf(s.id),
+              centreIn: centreIn,
+              child: gen.mapWidgetFromValue(s),
+            ),
+          );
+
       return WindowOriginScope(
         origin: mainOrigin,
         child: Stack(children: [
@@ -546,12 +617,57 @@ class _DisplaySwtState extends State<DisplaySwt> {
             key: ValueKey(s.id),
             child: Positioned.fill(child: RepaintBoundary(child: gen.mapWidgetFromValue(s))),
           ),
+        // Pages are part of the workbench: the menus and popups opened over it are drawn above them.
+        if (stripPage != null && !_pagesAside)
+          Positioned.fromRect(
+            key: const ValueKey('dialogFrame.pageStrip'),
+            rect: local(stripPage.host),
+            child: PageBackdrop(
+              pages: frame.pages,
+              shown: shownPage?.shellId,
+              stripHeight: stripPage.strip,
+              onSelect: (id) => setState(() {
+                _selectedPage = id;
+                _pagesAside = false;
+              }),
+              onEditors: () => setState(() => _pagesAside = true),
+              onClose: (id) => EquoCommService.sendTo(gen.WireType.shell, id, gen.WireChannel.shellClose, null),
+              onMaximize: (id) =>
+                  EquoCommService.sendTo(gen.WireType.shell, id, gen.WireChannel.dialogFrameMaximize, null),
+            ),
+          ),
+        for (final s in pages) floating(s),
+        if (stripPage != null && _pagesAside)
+          PageReturnChip(
+            host: local(stripPage.host),
+            pages: frame.pages,
+            onReturn: () => setState(() => _pagesAside = false),
+          ),
         for (final popup in (_popups ?? const <VMenu>[]))
           KeyedSubtree(
             key: ValueKey(popup.id),
             child: Positioned.fill(child: gen.mapWidgetFromValue(popup)),
           ),
-        ...floatingShells(context, dialogShells, constraints, _display.activeShellId),
+        for (var i = 0; i < dialogs.length; i++) ...[
+          if (cornerCard(dialogs[i]))
+            // The operation holds the window's input, as its modal dialog did, without dimming it.
+            Positioned.fill(
+              key: const ValueKey('dialogFrame.inputPaused'),
+              child: const MouseRegion(
+                cursor: SystemMouseCursors.progress,
+                child: AbsorbPointer(child: SizedBox.expand()),
+              ),
+            ),
+          if (scrimIndexes.containsKey(i))
+            scrimIndexes[i] == 0
+                ? Positioned.fill(key: const ValueKey('dialogFrame.scrim'), child: ColoredBox(color: scrimColor))
+                : Positioned.fromRect(
+                    key: const ValueKey('dialogFrame.scrim'),
+                    rect: local(frame.pageOf(scrimIndexes[i]!)!.host),
+                    child: ColoredBox(color: scrimColor)),
+          floating(dialogs[i],
+              centreIn: frame.ownerOf(dialogs[i].id) == null ? null : local(frame.ownerOf(dialogs[i].id)!.host)),
+        ],
         // Above the shells: one of them can be the tooltip's own.
         for (final tooltip in (_display.tooltips ?? []))
           KeyedSubtree(

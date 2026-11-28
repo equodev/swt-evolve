@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = 1774658174;
+const int wireFingerprint = 1978052693;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -286,6 +286,7 @@ abstract final class WireKey {
   static const int k_ConfigFlags_hover_delay_ms = 1108;
   static const int k_ConfigFlags_image_disable_icons_replacement = 1109;
   static const int k_ConfigFlags_locale = 1110;
+  static const int k_ConfigFlags_modern_dialogs = 1135;
   static const int k_ConfigFlags_notification_popup = 1111;
   static const int k_ConfigFlags_preserve_icon_colors = 1112;
   static const int k_ConfigFlags_print_move = 1113;
@@ -636,6 +637,17 @@ abstract final class WireKey {
   static const int k_Shell_maximumSize = 4611;
   static const int k_Shell_minimumSize = 4612;
   static const int k_Shell_modified = 4613;
+  static const int k_Shell_pageHeading = 4617;
+  static const int k_Shell_pageHost = 4615;
+  static const int k_Shell_pageMaximized = 4618;
+  static const int k_Shell_pageMessage = 4619;
+  static const int k_Shell_pageMessageType = 4620;
+  static const int k_Shell_pageOwner = 4616;
+  static const int k_Shell_pageStep = 4621;
+  static const int k_Shell_pageSteps = 4622;
+  static const int k_Shell_pageStrip = 4623;
+  static const int k_Shell_pageTitle = 4624;
+  static const int k_Shell_presentation = 4614;
   static const int k_Slider_increment = 4672;
   static const int k_Slider_maximum = 4673;
   static const int k_Slider_minimum = 4674;
@@ -883,6 +895,7 @@ const Set<int> wireRefKeys = {
   4480,
   4481,
   4545,
+  4616,
   5056,
   5057,
   5120,
@@ -1206,6 +1219,7 @@ const Map<int, String> wireChannelNames = {
   19: 'CloseWindow/close',
   20: 'Control/Move',
   21: 'Control/Resize',
+  258: 'DialogFrame/maximize',
   22: 'Dispose/Dispose',
   234: 'DnD/remoteDrag',
   235: 'DnD/remoteDropNone',
@@ -1706,6 +1720,7 @@ abstract final class WireChannel {
   static const int tabFolderStripLaidOut = 255; // TabFolder/stripLaidOut
   static const int swtEvolveMoveHandled = 256; // swt.evolve.move.handled
   static const int viewRailsShow = 257; // ViewRails/show
+  static const int dialogFrameMaximize = 258; // DialogFrame/maximize
 }
 
 /// Map keys by the number a map sent as tagged values names them with.
@@ -2011,6 +2026,7 @@ const Map<int, String> wireMapKeyNames = {
   291: 'minimumSize',
   292: 'minimumWidth',
   293: 'minutes',
+  491: 'modern_dialogs',
   294: 'modified',
   295: 'month',
   296: 'moveable',
@@ -2026,7 +2042,17 @@ const Map<int, String> wireMapKeyNames = {
   306: 'overwrite',
   307: 'ownMenuStrip',
   308: 'ownerDrawItemHeight',
+  495: 'pageHeading',
+  493: 'pageHost',
   309: 'pageIncrement',
+  496: 'pageMaximized',
+  497: 'pageMessage',
+  498: 'pageMessageType',
+  494: 'pageOwner',
+  499: 'pageStep',
+  500: 'pageSteps',
+  501: 'pageStrip',
+  502: 'pageTitle',
   475: 'paintedImages',
   310: 'paintedTexts',
   311: 'pathData',
@@ -2037,6 +2063,7 @@ const Map<int, String> wireMapKeyNames = {
   315: 'port',
   316: 'postData',
   317: 'preferredSize',
+  492: 'presentation',
   318: 'preserve_icon_colors',
   319: 'primary',
   320: 'printLineBackground',

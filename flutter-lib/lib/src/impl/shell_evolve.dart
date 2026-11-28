@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'menu_evolve.dart';
 import 'package:flutter/rendering.dart';
@@ -20,12 +22,16 @@ import '../gen/colordialog.dart';
 import '../gen/dialog.dart';
 import '../gen/event.dart';
 import '../gen/messagebox.dart';
+import '../gen/rectangle.dart';
 import '../gen/shell.dart';
 import '../gen/swt.dart';
 import '../gen/tooltip.dart';
 import '../impl/colordialog_evolve.dart';
 import '../impl/decorations_evolve.dart';
 import '../impl/dialog_evolve.dart';
+import 'dialog_frame.dart';
+import '../theme/theme_settings/dialog_frame_theme_settings.dart';
+import 'widget_config.dart';
 import '../impl/key_forwarding.dart';
 import '../impl/messagebox_evolve.dart';
 import '../impl/utils/image_utils.dart';
@@ -49,10 +55,23 @@ class FloatingShellChromeScope extends InheritedWidget {
   /// The shell SWT currently considers active (`VDisplay.activeShellId`), or null when none is.
   final int? activeShellId;
 
+  /// Under the top of the window's dialog frame: kept mounted, not shown (see [DialogFrame]).
+  final bool frameHidden;
+
+  /// The breadcrumb this shell shows as the top of a stacked dialog frame; empty otherwise.
+  final List<FrameCrumb> crumbs;
+
+  /// The area a presented dialog is centred in, when that is not the window: the page it was opened
+  /// from, in the window's coordinates.
+  final Rect? centreIn;
+
   const FloatingShellChromeScope({
     super.key,
     required this.viewportConstraints,
     required this.activeShellId,
+    this.frameHidden = false,
+    this.crumbs = const [],
+    this.centreIn,
     required super.child,
   });
 
@@ -68,7 +87,10 @@ class FloatingShellChromeScope extends InheritedWidget {
   @override
   bool updateShouldNotify(FloatingShellChromeScope oldWidget) =>
       viewportConstraints != oldWidget.viewportConstraints ||
-      activeShellId != oldWidget.activeShellId;
+      activeShellId != oldWidget.activeShellId ||
+      frameHidden != oldWidget.frameHidden ||
+      centreIn != oldWidget.centreIn ||
+      !listEquals(crumbs, oldWidget.crumbs);
 }
 
 bool isModalShell(VShell shell) =>
@@ -111,6 +133,10 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
   bool _initialBoundsSent = false;
   /// The bounds Java last set that the drawn size was reported against (see build).
   (int, int, int, int)? _drawnSizeReportedFor;
+  /// The bounds Java last set that a presented dialog's centred position was reported against.
+  (int, int, int, int)? _placedReportedFor;
+  /// This shell, once it has closed itself on the way to a crumb (see [dialogFramePopTarget]).
+  int? _closedForPopTarget;
 
   final ValueNotifier<double> _opacityNotifier = ValueNotifier(1.0);
   final FocusScopeNode _focusScopeNode = FocusScopeNode(debugLabel: 'ShellFocusScope');
@@ -128,6 +154,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     _wasVisible = state.visible ?? true;
     _opacityNotifier.value = (state.alpha ?? 255) / 255.0;
     _focusScopeNode.addListener(_handleFocusScopeChange);
+    dialogFramePopTarget.addListener(_onPopTarget);
     // A Tracker is opened on a Shell but is not a Control, so it has no State of its own to receive
     // on -- the Shell it belongs to carries its channel.
     _attachTrackerHost();
@@ -285,8 +312,70 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     if (_remoteDragId != id) _listenRemoteDrag(id);
   }
 
+  /// A page clipped to its editor area under the strip. One taller than the area scrolls: the wheel moves
+  /// the shell up inside the area, through Java, so the controls stay where Java has them.
+  Widget _pageViewport(Widget page, VRectangle host, Offset windowOrigin, Offset offset, double w, double height) {
+    final strip = (state.pageStrip ?? 0).toDouble();
+    final top = host.y - windowOrigin.dy + strip;
+    final bottom = host.y - windowOrigin.dy + host.height;
+    final visible = math.max(0.0, bottom - top);
+    final scrollMax = math.max(0.0, height - visible);
+    final scrolled = (top - offset.dy).clamp(0.0, scrollMax);
+    void scrollBy(double dy) {
+      final next = (scrolled + dy).clamp(0.0, scrollMax);
+      if (next == scrolled) return;
+      final b = state.bounds!;
+      widget.sendShellSetBounds(
+          state,
+          VEvent()
+            ..x = b.x
+            ..y = (host.y + strip - next).round()
+            ..width = b.width
+            ..height = b.height);
+    }
+
+    Widget clipped = ClipRect(clipper: _BandClipper(top - offset.dy, bottom - offset.dy), child: page);
+    if (scrollMax <= 0) return clipped;
+    final thumbH = math.max(24.0, visible * visible / height);
+    return Listener(
+      onPointerSignal: (signal) {
+        if (signal is PointerScrollEvent) {
+          // A list inside the page that scrolls takes the wheel first; only what is left moves the page.
+          GestureBinding.instance.pointerSignalResolver.register(signal, (e) => scrollBy((e as PointerScrollEvent).scrollDelta.dy));
+        }
+      },
+      child: Stack(clipBehavior: Clip.none, children: [
+        clipped,
+        Positioned(
+          key: ValueKey('dialogFrame.scrollThumb.${state.id}'),
+          right: dialogScrollThumbInset,
+          top: top - offset.dy + (visible - thumbH) * (scrolled / scrollMax),
+          width: dialogScrollThumbWidth,
+          height: thumbH,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: dialogScrollThumbDecoration(context),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  /// Whether the walk [pop] is over with this shell, showing [crumbs], on top: it reached its crumb,
+  /// or this dialog opened after the walk began.
+  static bool _endsPopWalk(int id, List<FrameCrumb> crumbs, PopTarget? pop) {
+    if (pop == null) return false;
+    return pop.target == id || (!pop.above.contains(id) && crumbs.any((c) => c.shellId == pop.target));
+  }
+
+  void _onPopTarget() {
+    if (mounted && DialogPresentation.stacks(state)) setState(() {});
+  }
+
   @override
   void dispose() {
+    dialogFramePopTarget.removeListener(_onPopTarget);
     final trackerHost = _trackerHostId;
     if (trackerHost != null) TrackerSession.detachHost(trackerHost);
     _stopPopupRecords?.call();
@@ -338,6 +427,9 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // rebuilding the shell for each one is the cost this bypass exists to avoid.
     if (change != null && change.isOnly(const {gen.WireKey.k_Shell_alpha})) return;
     super.setValue(value);
+    if (modernDialogs && DialogPresentation.hostedPage(value)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => pageRecordsChanged.value++);
+    }
     openNewDialogs(context, value);
     _noteVisibility(value.visible ?? true);
   }
@@ -477,11 +569,19 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
 
     final viewport = scope.viewportConstraints;
     final theme = Theme.of(context).extension<DisplayThemeExtension>()!;
+    final modern = modernDialogs;
+    final presented = modern && DialogPresentation.presented(state.presentation);
+    final cornerCard = modern && DialogPresentation.cornerCard(state.presentation);
+    final hostedPage = modern && DialogPresentation.hostedPage(state);
+    final frameHidden = scope.frameHidden;
+    final crumbs = scope.crumbs;
     final isFullScreen = state.fullScreen == true;
     final b = state.bounds;
 
     final titleBarH = _isTool ? theme.toolWindowTitleBarHeight : theme.titleBarHeight;
-    final headerH = _showTitleBar ? titleBarH : 0.0;
+    // A page's tab names it, so it has no header of its own.
+    final showHeader = _showTitleBar && !hostedPage;
+    final headerH = showHeader ? titleBarH : 0.0;
     // What the frame adds around the body on each axis: the border drawn around a floating pane.
     final chromeEdge =
         _showFloatingBorder && state.region == null ? 2 * theme.dialogBorderWidth : 0.0;
@@ -495,7 +595,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // a shell against the monitor, which on this surface is the viewport, and its bounds include
     // neither.
     double bodySize(double raw, double fallback, int? minimum, double fits) {
-      final wanted = math.max(raw > 0 ? raw : fallback, (minimum ?? 0).toDouble());
+      final wanted = math.max(raw > 0 ? raw : fallback, hostedPage ? 0.0 : (minimum ?? 0).toDouble());
       return math.min(wanted, math.max(fallback, fits));
     }
 
@@ -535,8 +635,27 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // drawing it, so the window's own origin comes off.
     final windowOrigin = WindowOriginScope.of(context);
 
+    Offset centred() {
+      final area = scope.centreIn ?? Rect.fromLTWH(0, 0, viewport.maxWidth, viewport.maxHeight);
+      return wholePixels(Offset(
+        area.left + (area.width - w - chromeEdge) / 2,
+        area.top + (area.height - frameH - chromeEdge) / 2,
+      ));
+    }
+
     Offset resolvedOffset() {
       if (isFullScreen || _maximized) return Offset.zero;
+      // A presented dialog sits in the middle of its window's frame, a progress card in its corner,
+      // wherever the application asked.
+      // A page is where Java placed it, over the editor area.
+      if (hostedPage && b != null) return Offset(b.x.toDouble(), b.y.toDouble()) - windowOrigin;
+      if (cornerCard) {
+        return wholePixels(Offset(
+          viewport.maxWidth - w - chromeEdge - cornerCardMargin,
+          viewport.maxHeight - frameH - chromeEdge - cornerCardMargin,
+        ));
+      }
+      if (presented) return centred();
       if (_offset != null) return _offset!;
       // An untrimmed shell counts as placed wherever its bounds are: the application anchors it to
       // a control and calls setLocation, and anchored at the window's top-left that location IS the
@@ -582,6 +701,25 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       );
     }
 
+    if (presented && !hostedPage && _initialBoundsSent && !_interacting && b != null && !(isFullScreen || _maximized)) {
+      final at = offset + windowOrigin;
+      final set = (b.x, b.y, b.width, b.height);
+      if ((at.dx.round() != b.x || at.dy.round() != b.y) && _placedReportedFor != set) {
+        _placedReportedFor = set;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) sendBoundsToJava();
+        });
+      }
+    }
+    if (presented && closesForPopTarget(state.id, crumbs, dialogFramePopTarget.value) && _closedForPopTarget != state.id) {
+      _closedForPopTarget = state.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.sendShellClose(state, null);
+      });
+    } else if (presented && crumbs.isNotEmpty && _endsPopWalk(state.id, crumbs, dialogFramePopTarget.value)) {
+      dialogFramePopTarget.value = null;
+    }
+
     if (!_initialBoundsSent) {
       _initialBoundsSent = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -614,7 +752,8 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     }
 
     final title = (state.modified == true ? '• ' : '') + (state.text ?? '');
-    final borderRadius = _showBorder ? theme.dialogBorderRadius : 0.0;
+    final borderRadius =
+        !_showBorder || hostedPage ? 0.0 : (modern ? dialogCardRadius : theme.dialogBorderRadius);
 
     Widget body = ClipRect(
       child: SizedBox(
@@ -623,11 +762,51 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
         child: super.build(context),
       ),
     );
+    final heading = hostedPage ? (state.pageHeading ?? 0).toDouble() : 0.0;
+    if (heading > 0) {
+      // Over the title area the dialog lays out itself: its labels stay JFace's, out of sight.
+      body = Stack(children: [
+        body,
+        Positioned(
+          key: ValueKey('dialogFrame.heading.${state.id}'),
+          left: 0,
+          top: 0,
+          width: w,
+          height: heading,
+          child: PageHeading(title: state.pageTitle, message: state.pageMessage, messageType: state.pageMessageType ?? 0),
+        ),
+      ]);
+    }
 
     Widget column = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (_showTitleBar)
+        if (showHeader && modern)
+          SizedBox(
+            width: w,
+            child: DialogFrameHeader(
+              shellId: state.id,
+              title: title,
+              crumbs: crumbs,
+              trailing: cornerCard ? ElapsedTime(style: theme.titleTextStyle) : null,
+              hasClose: _hasClose && !hostedPage,
+              hasMax: _hasMax && !_isTool && !presented,
+              isMaximized: _maximized,
+              isDraggable: _isDraggable && !presented,
+              height: titleBarH,
+              theme: theme,
+              onDragStart: () => setState(() => _interacting = true),
+              onDrag: (delta) => setState(() => _offset = (_offset ?? offset) + delta),
+              onDragEnd: () {
+                setState(() => _interacting = false);
+                sendBoundsToJava();
+              },
+              onDragCancel: () => setState(() => _interacting = false),
+              onClose: () => widget.sendShellClose(state, null),
+              onMaximize: onMaximize,
+            ),
+          )
+        else if (showHeader)
           SizedBox(
             width: w,
             child: _TitleBar(
@@ -723,10 +902,14 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       decoration: BoxDecoration(
         color: shellBg ?? theme.dialogBackgroundColor,
         borderRadius: BorderRadius.circular(isShaped ? 0 : borderRadius),
-        border: _showFloatingBorder && !isShaped
+        border: _showFloatingBorder && !isShaped && !hostedPage
             ? Border.all(color: theme.dialogBorderColor, width: theme.dialogBorderWidth)
             : null,
-        boxShadow: _showFloatingBorder && !isShaped
+        boxShadow: hostedPage
+            ? null
+            : _showFloatingBorder && !isShaped && modern
+            ? dialogCardShadow(theme)
+            : _showFloatingBorder && !isShaped
             ? [
                 BoxShadow(
                   color: theme.dialogShadowColor,
@@ -755,7 +938,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // Only a shell SWT activated may take the keyboard. `Shell.setVisible(true)` does not activate:
     // a JFace `SWT.ON_TOP` popup (content assist) is shown that way precisely so the control that
     // opened it keeps focus and can drive the popup from its own VerifyKeyListener.
-    if (!_autoFocusRequested && scope.activeShellId == state.id) {
+    if (!_autoFocusRequested && !frameHidden && scope.activeShellId == state.id) {
       _autoFocusRequested = true;
       // Two frames: a control Java focused lands at the end of the first, and nextFocus would skip it.
       WidgetsBinding.instance.addPostFrameCallback((_) => afterNextFrame(() {
@@ -768,11 +951,31 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
     // Always wrap in Opacity, never conditionally on opacity < 1.0 -- branching the widget
     // TYPE at this position tears down and remounts the whole content subtree on the first
     // alpha tick, wiping any already-committed GC shapes inside it.
-    final opacityWrapped = ValueListenableBuilder<double>(
+    Widget opacityWrapped = ValueListenableBuilder<double>(
       valueListenable: _opacityNotifier,
       child: content,
       builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
     );
+    final host = state.pageHost;
+    if (hostedPage && host != null) {
+      opacityWrapped = _pageViewport(opacityWrapped, host, windowOrigin, offset, w, frameH);
+    }
+    if (modern) {
+      // Always wrapped once the flag is on, for the same reason as the Opacity above: the dialog's
+      // content must not be remounted when it goes under the top of its frame and comes back.
+      opacityWrapped = Offstage(
+        offstage: frameHidden,
+        child: TickerMode(
+          enabled: !frameHidden,
+          child: presented
+              ? DialogAppear(
+                  shown: !frameHidden,
+                  delay: cornerCard ? progressCardDelay : Duration.zero,
+                  child: opacityWrapped)
+              : opacityWrapped,
+        ),
+      );
+    }
 
     // Clipped out here rather than around the shell's content: a region shapes the window itself,
     // and the shell's own background is what fills the frame, so clipping only what the shell
@@ -781,7 +984,7 @@ class ShellImpl<T extends ShellSwt, V extends VShell> extends DecorationsImpl<T,
       left: offset.dx,
       top: offset.dy,
       child: _ResizableWrapper(
-        enabled: _hasResize && !_maximized && !isFullScreen,
+        enabled: _hasResize && !_maximized && !isFullScreen && !hostedPage,
         room: EdgeInsets.fromLTRB(
           offset.dx,
           offset.dy,
@@ -1085,3 +1288,17 @@ class _RenderOutsetHitStack extends RenderStack {
 }
 
 enum _ResizeEdge { top, bottom, left, right, nw, ne, sw, se }
+
+
+/// The horizontal band of a page that its editor area shows.
+class _BandClipper extends CustomClipper<Rect> {
+  final double top, bottom;
+
+  _BandClipper(this.top, this.bottom);
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(-1e5, top, size.width + 1e5, bottom);
+
+  @override
+  bool shouldReclip(_BandClipper old) => old.top != top || old.bottom != bottom;
+}
