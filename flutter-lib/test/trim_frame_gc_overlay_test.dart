@@ -1,7 +1,5 @@
-// A trim contribution's frame is a Canvas that paints its drag-handle grip through its GC, with the
-// contribution's ToolBar beside it. The trim composites build that Canvas themselves, so under
-// trim_drag_handles they mount its GC, toned down and shown while the pointer is over the frame;
-// without the flag they mount none and the grip is not drawn.
+// A trim contribution's frame is a Canvas that paints its drag-handle grip through its GC. Under
+// trim_drag_handles the trim composites mount that GC; without it they mount none.
 
 import 'dart:math' show Rectangle;
 

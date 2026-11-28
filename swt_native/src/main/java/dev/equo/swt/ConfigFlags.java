@@ -260,9 +260,7 @@ public class ConfigFlags implements WireObject {
      *  {@code -Dswt.evolve.gc_approximate_batching=false} batches only what draws the same pixels. */
     public boolean gc_approximate_batching = true;
 
-    /** A framed trim tool bar shows its drag-handle grip, toned towards the trim's ground and revealed
-     *  while the pointer is over the frame. Off by default: the grip is not drawn;
-     *  {@code -Dswt.evolve.trim_drag_handles=true} turns it on. */
+    /** Trim tool bars show their drag-handle grip on hover; {@code -Dswt.evolve.trim_drag_handles=true}. */
     public boolean trim_drag_handles;
 
     /** Not a type a value names at runtime: the flags only ever travel as the display's. */

@@ -108,8 +108,7 @@ class ConfigFlags implements WireReadable {
   /// differently from drawn one by one (`swt.evolve.gc_approximate_batching`). On unless sent false.
   bool? gc_approximate_batching;
 
-  /// A framed trim tool bar shows its drag-handle grip, toned towards the trim's ground and revealed
-  /// while the pointer is over the frame (`swt.evolve.trim_drag_handles`). Off by default.
+  /// Trim tool bars show their drag-handle grip on hover (`swt.evolve.trim_drag_handles`). Off by default.
   bool? trim_drag_handles;
 
   /// The flags as an object of a binary frame, read field by field.
