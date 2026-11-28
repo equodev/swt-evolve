@@ -19,6 +19,9 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
   final double dividerVerticalPadding;
   final double separatorThickness;
   final double separatorWidth;
+  final double trimGripOpacity;
+  final Duration trimGripRevealDuration;
+  final Duration trimGripHideDuration;
 
   const ToolBarThemeExtension({
     required this.backgroundColor,
@@ -35,6 +38,9 @@ class ToolBarThemeExtension extends ThemeExtension<ToolBarThemeExtension> with _
     this.dividerVerticalPadding = 6.0,
     this.separatorThickness = 1.0,
     this.separatorWidth = 8.0,
+    this.trimGripOpacity = 0.4,
+    this.trimGripRevealDuration = const Duration(milliseconds: 250),
+    this.trimGripHideDuration = const Duration(milliseconds: 500),
   });
 }
 

@@ -16,6 +16,8 @@ import 'package:swtflutter/src/gen/composite.dart';
 import 'package:swtflutter/src/gen/rectangle.dart';
 import 'package:swtflutter/src/gen/swt.dart';
 import 'package:swtflutter/src/gen/toolbar.dart';
+import 'package:swtflutter/src/impl/config_flags.dart';
+import 'package:swtflutter/src/impl/widget_config.dart';
 
 import 'support/sent_events.dart';
 
@@ -90,10 +92,20 @@ void _expectDragReported(List<String> events) {
 }
 
 void main() {
-  setUp(() => EquoCommBase.recordSentFrames = true);
+  for (final handles in [false, true]) {
+    group('trim_drag_handles=$handles', () => _dragCases(handles));
+  }
+}
+
+void _dragCases(bool handles) {
+  setUp(() {
+    EquoCommBase.recordSentFrames = true;
+    setConfigFlags(ConfigFlags()..trim_drag_handles = handles);
+  });
   tearDown(() {
     EquoCommBase.recordSentFrames = false;
     EquoCommService.commForTesting.clearSentFrames();
+    resetConfigFlags();
   });
 
   testWidgets('dragging the grip of a frame in the main toolbar reports the drag on the frame',

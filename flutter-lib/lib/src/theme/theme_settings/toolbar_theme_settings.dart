@@ -47,6 +47,9 @@ ToolBarThemeExtension _getToolBarTheme({
     dividerVerticalPadding: 6.0,
     separatorThickness: 1.0,
     separatorWidth: 16.0,
+    trimGripOpacity: 0.4,
+    trimGripRevealDuration: const Duration(milliseconds: 250),
+    trimGripHideDuration: const Duration(milliseconds: 500),
   );
 }
 

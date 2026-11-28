@@ -466,23 +466,21 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
 Widget _withFrameGC(CompositeImpl composite, Color ground, Widget Function(bool isFrame) build) {
   if (composite.widget.value is! VCanvas) return build(false);
   Widget paintGround(Widget child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child);
+  final contribution = build(true);
   if (getConfigFlags().trim_drag_handles != true) {
-    return wrapCompositeInteractionChrome(composite, paintGround(build(true)));
+    return wrapCompositeInteractionChrome(composite, paintGround(contribution));
   }
+  final theme = Theme.of(composite.context).extension<ToolBarThemeExtension>()!;
   return wrapCompositeInteractionChrome(
       composite,
       _GripReveal(
-          builder: (hovered) => composite.stackGCUnderChildren(paintGround, build(true),
+          builder: (hovered) => composite.stackGCUnderChildren(paintGround, contribution,
               decorateGC: (gc) => AnimatedOpacity(
-                  opacity: hovered ? _gripOpacity : 0.0,
-                  duration: hovered ? _gripRevealDuration : _gripHideDuration,
+                  opacity: hovered ? theme.trimGripOpacity : 0.0,
+                  duration: hovered ? theme.trimGripRevealDuration : theme.trimGripHideDuration,
                   curve: Curves.easeOut,
                   child: gc))));
 }
-
-const double _gripOpacity = 0.4;
-const Duration _gripRevealDuration = Duration(milliseconds: 250);
-const Duration _gripHideDuration = Duration(milliseconds: 500);
 
 class _GripReveal extends StatefulWidget {
   final Widget Function(bool hovered) builder;

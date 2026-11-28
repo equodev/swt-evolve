@@ -25,6 +25,9 @@ mixin _$ToolBarThemeExtensionTailorMixin
   double get dividerVerticalPadding;
   double get separatorThickness;
   double get separatorWidth;
+  double get trimGripOpacity;
+  Duration get trimGripRevealDuration;
+  Duration get trimGripHideDuration;
 
   @override
   ToolBarThemeExtension copyWith({
@@ -42,6 +45,9 @@ mixin _$ToolBarThemeExtensionTailorMixin
     double? dividerVerticalPadding,
     double? separatorThickness,
     double? separatorWidth,
+    double? trimGripOpacity,
+    Duration? trimGripRevealDuration,
+    Duration? trimGripHideDuration,
   }) {
     return ToolBarThemeExtension(
       backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -61,6 +67,10 @@ mixin _$ToolBarThemeExtensionTailorMixin
           dividerVerticalPadding ?? this.dividerVerticalPadding,
       separatorThickness: separatorThickness ?? this.separatorThickness,
       separatorWidth: separatorWidth ?? this.separatorWidth,
+      trimGripOpacity: trimGripOpacity ?? this.trimGripOpacity,
+      trimGripRevealDuration:
+          trimGripRevealDuration ?? this.trimGripRevealDuration,
+      trimGripHideDuration: trimGripHideDuration ?? this.trimGripHideDuration,
     );
   }
 
@@ -97,6 +107,13 @@ mixin _$ToolBarThemeExtensionTailorMixin
           ? separatorThickness
           : other.separatorThickness,
       separatorWidth: t < 0.5 ? separatorWidth : other.separatorWidth,
+      trimGripOpacity: t < 0.5 ? trimGripOpacity : other.trimGripOpacity,
+      trimGripRevealDuration: t < 0.5
+          ? trimGripRevealDuration
+          : other.trimGripRevealDuration,
+      trimGripHideDuration: t < 0.5
+          ? trimGripHideDuration
+          : other.trimGripHideDuration,
     );
   }
 
@@ -160,6 +177,18 @@ mixin _$ToolBarThemeExtensionTailorMixin
             const DeepCollectionEquality().equals(
               separatorWidth,
               other.separatorWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              trimGripOpacity,
+              other.trimGripOpacity,
+            ) &&
+            const DeepCollectionEquality().equals(
+              trimGripRevealDuration,
+              other.trimGripRevealDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              trimGripHideDuration,
+              other.trimGripHideDuration,
             ));
   }
 
@@ -181,6 +210,9 @@ mixin _$ToolBarThemeExtensionTailorMixin
       const DeepCollectionEquality().hash(dividerVerticalPadding),
       const DeepCollectionEquality().hash(separatorThickness),
       const DeepCollectionEquality().hash(separatorWidth),
+      const DeepCollectionEquality().hash(trimGripOpacity),
+      const DeepCollectionEquality().hash(trimGripRevealDuration),
+      const DeepCollectionEquality().hash(trimGripHideDuration),
     );
   }
 }
@@ -205,4 +237,9 @@ extension ToolBarThemeExtensionBuildContextProps on BuildContext {
       toolBarThemeExtension.dividerVerticalPadding;
   double get separatorThickness => toolBarThemeExtension.separatorThickness;
   double get separatorWidth => toolBarThemeExtension.separatorWidth;
+  double get trimGripOpacity => toolBarThemeExtension.trimGripOpacity;
+  Duration get trimGripRevealDuration =>
+      toolBarThemeExtension.trimGripRevealDuration;
+  Duration get trimGripHideDuration =>
+      toolBarThemeExtension.trimGripHideDuration;
 }
