@@ -24,9 +24,16 @@ final class DisplayBridgePlatform {
         // the GTK calls below would throw UnsatisfiedLinkError; pure-web/browser needs no GTK init anyway.
         if (nativeLibraryOff())
             return;
+        // Loads SWT's GTK library, and the system's GLib with it, before the engine: the engine's
+        // RUNPATH would otherwise resolve the copies of GLib bundled for WebKitGTK.
         if (!GTKWrapper.IS_GTK4) {
             GTKWrapper.setupThreadLocking();
         }
+        // The bridge makes Xlib thread-safe when it loads, which libX11 before 1.8 honours only for
+        // the displays opened afterwards: GTK's, opened below, is shared with the engine's raster thread.
+        // Only the desktop surface runs an engine; a web install carries no bridge.
+        if (dev.equo.swt.ConfigFlags.isDesktopMode())
+            dev.equo.swt.FlutterNative.ensureLoaded();
         boolean init;
         if (GTKWrapper.IS_GTK4) {
             init = GTKWrapper.gtk_init_check();

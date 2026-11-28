@@ -19,8 +19,6 @@
 #include <string>     // std::string
 #include <type_traits>
 
-static void InitXThreads();
-
 // The webview_all Browser backend on Linux is WebKitGTK, which defaults to a
 // hardware GL renderer (accelerated compositing / DMABUF). Now that the FlView
 // is no longer destructively reparented (see the GtkOverlay note in
@@ -270,7 +268,6 @@ uintptr_t InitializeFlutterWindow(jint port, void *parentWnd, jlong widget_id,
 
   // Headless mode: create a hidden window to host Flutter
   if (!parentWnd) {
-    InitXThreads();
     if (!gtk_init_check(nullptr, nullptr)) {
       g_printerr("Failed to initialize GTK\n");
       return 0;
@@ -408,14 +405,10 @@ static int equo_x_error_handler(::Display *dpy, XErrorEvent *e) {
   return equo_previous_x_handler != nullptr ? equo_previous_x_handler(dpy, e) : 0;
 }
 
-// Makes Xlib safe for the threads that share GDK's X connection: GTK's main thread reads events from
-// it while the engine's raster thread presents through it (GLX/EGL on X11). Without XInitThreads,
-// libX11 before 1.8 aborts ("Unknown request in queue while dequeuing") when the two meet. It must
-// come before GTK opens the display; libX11 1.8 and later already call it when they load.
-static void InitXThreads() {
-  static bool done = false;
-  if (done) return;
-  done = true;
+// GTK's main thread and the engine's raster thread (GLX/EGL) share GDK's X connection. libX11 before
+// 1.8 locks only the displays opened after XInitThreads, so it runs at load: Java loads this library
+// before GTK opens its display (DisplayBridgePlatform.init). libX11 1.8 and later call it themselves.
+__attribute__((constructor)) static void InitXThreads() {
   XInitThreads();
 }
 
@@ -625,7 +618,6 @@ FlutterWindow *createDisplayWindow(int port, int64_t displayId, const char *widg
   fl_dart_project_set_dart_entrypoint_arguments(project, args);
   boot_record("FlDartProject", project_start);
 
-  InitXThreads();
   if (!boot_step("gtk_init", [] { return gtk_init_check(nullptr, nullptr); })) {
     g_printerr("Failed to initialize GTK\n");
     return nullptr;
