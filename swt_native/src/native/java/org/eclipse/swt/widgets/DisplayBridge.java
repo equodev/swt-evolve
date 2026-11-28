@@ -2490,6 +2490,11 @@ public abstract class DisplayBridge extends FlutterBridge implements WindowBridg
         return pending;
     }
 
+    /** Whether a Tab traversal still waits for the client's FocusIn, without clearing it. */
+    boolean keyboardTraversalPending() {
+        return keyboardTraversal;
+    }
+
     /**
      * A press in an inactive shell activates it before its MouseDown, as the window manager does
      * natively; the client's own report of that activation comes later and is absorbed. An ON_TOP
