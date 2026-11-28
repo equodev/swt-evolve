@@ -11,18 +11,24 @@ import org.junit.jupiter.api.Test;
 import javax.management.NotificationEmitter;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.lang.management.MemoryType;
 import java.lang.management.MemoryUsage;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -178,7 +184,7 @@ class TransportStressTest {
     }
 
     private static void report(int inFlight, Run run) {
-        System.out.printf("[transport-stress] inFlight=%d: heap after a young collection grew by at most %d MB, garbage included (limit %d)%s;"
+        System.out.printf("[transport-stress] inFlight=%d: heap after a collection grew by at most %d MB (limit %d)%s;"
                         + " a send allocated %.3f bytes per byte sent (%d MB over %d MB)%n",
                 inFlight, run.heap.peakGrowth >> 20, HEAP_LIMIT >> 20, run.heap.breach == null ? "" : ", " + run.heap.breach,
                 run.allocatedPerByteSent(), run.sendAllocated >> 20, run.bytesSent >> 20);
@@ -190,21 +196,25 @@ class TransportStressTest {
      * old-generation cycle.
      */
     private static final class HeapWatch implements AutoCloseable {
+        private static final Set<String> HEAP_POOLS = ManagementFactory.getMemoryPoolMXBeans().stream()
+                .filter(p -> p.getType() == MemoryType.HEAP)
+                .map(MemoryPoolMXBean::getName)
+                .collect(Collectors.toSet());
+        private static final long FULL_COLLECTION_TIMEOUT_SECONDS = 5;
+
         private final long limit;
         private final long baseline;
         private final List<Runnable> unsubscribe = new ArrayList<>();
-        private final Thread confirmer;
-        private volatile boolean confirming, closed;
+        private final Semaphore fullCollected = new Semaphore(0);
+        /** Each collector's id of its latest full collection. */
+        private final Map<String, Long> fullCollectionIds = new ConcurrentHashMap<>();
+        private volatile long heapAfterFullCollection;
+        private volatile boolean watching, confirming, closed;
         volatile long peakGrowth;
         volatile String breach;
 
-        HeapWatch(long limit) {
+        HeapWatch(long limit) throws InterruptedException {
             this.limit = limit;
-            System.gc();
-            baseline = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
-            confirmer = new Thread(this::confirmLoop, "heap-watch");
-            confirmer.setDaemon(true);
-            confirmer.start();
             for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
                 if (!(gc instanceof NotificationEmitter emitter)) continue;
                 javax.management.NotificationListener listener = (n, h) -> afterCollection(n);
@@ -216,33 +226,77 @@ class TransportStressTest {
                     }
                 });
             }
+            baseline = collectFully();
+            watching = true;
+            Thread confirmer = new Thread(this::confirmLoop, "heap-watch");
+            confirmer.setDaemon(true);
+            confirmer.start();
+        }
+
+        /**
+         * The heap kept by a full collection that ran after this call. Under -XX:+DisableExplicitGC or
+         * -XX:+ExplicitGCInvokesConcurrent, System.gc() runs no full collection, and the watch
+         * cannot judge anything.
+         */
+        private long collectFully() throws InterruptedException {
+            Map<String, Long> before = new HashMap<>();
+            for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans())
+                before.put(gc.getName(), gc.getCollectionCount());
+            fullCollected.drainPermits();
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(FULL_COLLECTION_TIMEOUT_SECONDS);
+            // Asked again each second: on OpenJ9 a System.gc() is not always followed by the
+            // notification of a newer full collection.
+            while (fullCollectionIds.entrySet().stream().noneMatch(e -> e.getValue() > before.getOrDefault(e.getKey(), 0L))) {
+                long left = deadline - System.nanoTime();
+                if (left <= 0)
+                    throw new IllegalStateException("System.gc() ran no full collection within " + FULL_COLLECTION_TIMEOUT_SECONDS
+                            + " s: collections before " + before + ", latest full collection ids " + fullCollectionIds);
+                System.gc();
+                fullCollected.tryAcquire(Math.min(left, TimeUnit.SECONDS.toNanos(1)), TimeUnit.NANOSECONDS);
+            }
+            return heapAfterFullCollection;
         }
 
         private void afterCollection(javax.management.Notification n) {
             if (!com.sun.management.GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION.equals(n.getType())) return;
             var info = com.sun.management.GarbageCollectionNotificationInfo.from((javax.management.openmbean.CompositeData) n.getUserData());
+            // The collection's own figures, not a read after it: the senders allocate again the moment
+            // it ends. Its pools include Metaspace and the code cache, which the baseline does not.
             long used = 0;
-            for (MemoryUsage pool : info.getGcInfo().getMemoryUsageAfterGc().values()) used += pool.getUsed();
-            long growth = used - baseline;
-            if (growth > limit && breach == null) confirming = true;
-            else if (!confirming && growth > peakGrowth) peakGrowth = growth;
+            for (Map.Entry<String, MemoryUsage> pool : info.getGcInfo().getMemoryUsageAfterGc().entrySet())
+                if (HEAP_POOLS.contains(pool.getKey())) used += pool.getValue().getUsed();
+            // The action, not the cause: each JVM names the cause of a System.gc() its own way.
+            if ("end of major GC".equals(info.getGcAction())) {
+                heapAfterFullCollection = used;
+                fullCollectionIds.put(info.getGcName(), info.getGcInfo().getId());
+                fullCollected.release();
+            } else if (watching) {
+                long growth = used - baseline;
+                if (growth > limit && breach == null) confirming = true;
+                else if (!confirming) record(growth);
+            }
         }
 
         private void confirmLoop() {
-            while (!closed) {
-                if (confirming) {
-                    System.gc();
-                    long growth = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed() - baseline;
-                    if (growth > peakGrowth) peakGrowth = growth;
-                    if (growth > limit) breach = "grown by " + (growth >> 20) + " MB after a full collection";
-                    confirming = false;
-                }
-                try {
+            try {
+                while (!closed) {
+                    if (confirming) {
+                        long growth = collectFully() - baseline;
+                        record(growth);
+                        if (growth > limit && breach == null) breach = "grown by " + (growth >> 20) + " MB after a full collection";
+                        confirming = false;
+                    }
                     Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    return;
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (IllegalStateException e) {
+                if (!closed && breach == null) breach = e.getMessage();
             }
+        }
+
+        private void record(long growth) {
+            if (growth > peakGrowth) peakGrowth = growth;
         }
 
         @Override
