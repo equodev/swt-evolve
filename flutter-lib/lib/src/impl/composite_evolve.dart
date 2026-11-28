@@ -357,7 +357,8 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
   }
 
   Widget stackGCUnderChildren(
-      Widget Function(Widget) paintBackground, Widget children) {
+      Widget Function(Widget) paintBackground, Widget children,
+      {Widget Function(Widget gc)? decorateGC}) {
     final gc = gcOverlay ?? (VGC()..id = state.id);
     final gcWidget = GCSwt<VGC>(key: gcOverlayKey, value: gc);
 
@@ -365,7 +366,7 @@ class CompositeImpl<T extends CompositeSwt, V extends VComposite>
       children: [
         Positioned.fill(child: paintBackground(const SizedBox.expand())),
         if (gcOverlay != null)
-          Positioned.fill(child: IgnorePointer(child: gcWidget))
+          Positioned.fill(child: IgnorePointer(child: decorateGC?.call(gcWidget) ?? gcWidget))
         else
           Offstage(child: gcWidget),
         children,

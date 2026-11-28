@@ -163,7 +163,7 @@ Widget mapWidget(String swt, int id) {
 }
 
 /// The table's fingerprint, which Java compares with its own when this client connects.
-const int wireFingerprint = 1570364007;
+const int wireFingerprint = -1581368982;
 
 /// Property numbers, for code that reads a frame by hand.
 abstract final class WireKey {
@@ -299,6 +299,7 @@ abstract final class WireKey {
   static const int k_ConfigFlags_theme_colors_by_widget = 1119;
   static const int k_ConfigFlags_theme_name = 1120;
   static const int k_ConfigFlags_transparent_menu_check_box = 1121;
+  static const int k_ConfigFlags_trim_drag_handles = 1134;
   static const int k_ConfigFlags_ui_zoom = 1122;
   static const int k_ConfigFlags_use_special_dropdown_button = 1123;
   static const int k_ConfigFlags_use_swt_border = 1124;
@@ -2143,6 +2144,7 @@ const Map<int, String> wireMapKeyNames = {
   428: 'tracking',
   429: 'transform',
   430: 'transparent_menu_check_box',
+  484: 'trim_drag_handles',
   431: 'type',
   432: 'types',
   433: 'ui_zoom',

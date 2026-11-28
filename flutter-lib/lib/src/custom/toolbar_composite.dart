@@ -453,22 +453,60 @@ class MainToolbarCompositeImpl extends CompositeImpl<ToolbarComposite, VComposit
   }
 }
 
-/// A trim contribution's frame is a Canvas that draws its drag-handle grip through its GC, so the
-/// frame paints its [ground] under the GC and the contribution it holds over it, as a Canvas does.
-/// The ground is a decoration, as it is on any other trim composite, so a press on the bare frame
-/// stays on it. [build] is told whether the composite is such a frame, so it leaves the ground to
-/// this; any other trim composite is returned as [build] makes it.
+/// A trim contribution's frame is a Canvas that draws its drag-handle grip through its GC. The frame
+/// paints its [ground] under the contribution it holds, as a Canvas does. The ground is a decoration,
+/// as it is on any other trim composite, so a press on the bare frame stays on it. [build] is told
+/// whether the composite is such a frame, so it leaves the ground to this; any other trim composite
+/// is returned as [build] makes it.
+///
+/// The grip is drawn only under `trim_drag_handles`, toned towards the ground and revealed while the
+/// pointer is over the frame, as a CTabFolder reveals its top-right controls. Without the flag the
+/// frame keeps no GC, so the grip's paints have nowhere to land.
 ///
 /// The frame reports the pointer over its grip, as a Canvas with children does: the application
 /// moves the contribution from the frame's MouseDown, MouseMove and DragDetect. A press there takes
 /// no focus, as on the rest of the trim.
 Widget _withFrameGC(CompositeImpl composite, Color ground, Widget Function(bool isFrame) build) {
   if (composite.widget.value is! VCanvas) return build(false);
+  Widget paintGround(Widget child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child);
+  if (getConfigFlags().trim_drag_handles != true) {
+    return wrapCompositeInteractionChrome(composite, paintGround(build(true)));
+  }
   return wrapCompositeInteractionChrome(
       composite,
-      composite.stackGCUnderChildren(
-          (child) => DecoratedBox(decoration: BoxDecoration(color: ground), child: child),
-          build(true)));
+      _GripReveal(
+          builder: (hovered) => composite.stackGCUnderChildren(paintGround, build(true),
+              decorateGC: (gc) => AnimatedOpacity(
+                  opacity: hovered ? _gripOpacity : 0.0,
+                  duration: hovered ? _gripRevealDuration : _gripHideDuration,
+                  curve: Curves.easeOut,
+                  child: gc))));
+}
+
+/// How much of the grip shows over the trim's ground once revealed: enough to find, not to stand out.
+const double _gripOpacity = 0.4;
+const Duration _gripRevealDuration = Duration(milliseconds: 250);
+const Duration _gripHideDuration = Duration(milliseconds: 500);
+
+class _GripReveal extends StatefulWidget {
+  final Widget Function(bool hovered) builder;
+
+  const _GripReveal({required this.builder});
+
+  @override
+  State<_GripReveal> createState() => _GripRevealState();
+}
+
+class _GripRevealState extends State<_GripReveal> {
+  bool _hovered = false;
+
+  void _hover(bool hovered) {
+    if (_hovered != hovered) setState(() => _hovered = hovered);
+  }
+
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+      onEnter: (_) => _hover(true), onExit: (_) => _hover(false), child: widget.builder(_hovered));
 }
 
 class ChipAddonImages extends InheritedWidget {

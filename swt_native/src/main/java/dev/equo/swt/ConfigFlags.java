@@ -260,6 +260,11 @@ public class ConfigFlags implements WireObject {
      *  {@code -Dswt.evolve.gc_approximate_batching=false} batches only what draws the same pixels. */
     public boolean gc_approximate_batching = true;
 
+    /** A framed trim tool bar shows its drag-handle grip, toned towards the trim's ground and revealed
+     *  while the pointer is over the frame. Off by default: the grip is not drawn;
+     *  {@code -Dswt.evolve.trim_drag_handles=true} turns it on. */
+    public boolean trim_drag_handles;
+
     /** Not a type a value names at runtime: the flags only ever travel as the display's. */
     @Override
     public int wireTypeId() {
@@ -279,7 +284,7 @@ public class ConfigFlags implements WireObject {
             "font_point_scale", "push_button_margin", "hover_delay_ms", "ctabfolder_tab_scroll",
             "decimal_separator", "locale", "transparent_menu_check_box", "use_swt_border",
             "scale_vertical_minimum_at_top", "ctabfolder_chevron_after_tabs",
-            "bigger_icon_size", "regional_locale", "gc_approximate_batching",
+            "bigger_icon_size", "regional_locale", "gc_approximate_batching", "trim_drag_handles",
     };
 
     /** The flags the client sets (a theme picked on its side). */
@@ -388,6 +393,8 @@ public class ConfigFlags implements WireObject {
         w.write(regional_locale);
         w.key(WireTable.CONFIG_FLAGS_GC_APPROXIMATE_BATCHING);
         w.write(gc_approximate_batching);
+        w.key(WireTable.CONFIG_FLAGS_TRIM_DRAG_HANDLES);
+        w.write(trim_drag_handles);
     }
 
     /** A shallow copy, for sending one session flags that differ from the shared ones. */
@@ -438,6 +445,7 @@ public class ConfigFlags implements WireObject {
         c.font_point_scale = font_point_scale;
         c.push_button_margin = push_button_margin;
         c.bigger_icon_size = bigger_icon_size;
+        c.trim_drag_handles = trim_drag_handles;
         c.transparent_menu_check_box = transparent_menu_check_box;
         c.use_swt_border = use_swt_border;
         c.scale_vertical_minimum_at_top = scale_vertical_minimum_at_top;
@@ -492,6 +500,7 @@ public class ConfigFlags implements WireObject {
                 ", bigger_icon_size=" + bigger_icon_size +
                 ", regional_locale='" + regional_locale + '\'' +
                 ", gc_approximate_batching=" + gc_approximate_batching +
+                ", trim_drag_handles=" + trim_drag_handles +
                 ", transparent_menu_check_box=" + transparent_menu_check_box +
                 ", use_swt_border=" + use_swt_border +
                 ", scale_vertical_minimum_at_top=" + scale_vertical_minimum_at_top +

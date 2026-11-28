@@ -993,6 +993,7 @@ public class Config {
             configFlags.scale_vertical_minimum_at_top = Boolean.getBoolean("swt.evolve.scale_vertical_minimum_at_top");
             configFlags.ctabfolder_chevron_after_tabs = Boolean.getBoolean("swt.evolve.ctabfolder_chevron_after_tabs");
             configFlags.gc_approximate_batching = !"false".equals(System.getProperty("swt.evolve.gc_approximate_batching"));
+            configFlags.trim_drag_handles = Boolean.getBoolean("swt.evolve.trim_drag_handles");
             // Maximize behavior. "direct" (default) calls window.equo.maximize() from Dart —
             // the pure-Flutter demo proved the engine keeps input through it. "bounds" resizes
             // to the screen via setWindowBounds; "native"/"fullscreen" use host ops.
